@@ -1,0 +1,22 @@
+# Node / Next
+node_modules/
+.next/
+out/
+dist/
+.turbo/
+
+# Logs
+*.log
+
+# Env (secrets)
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Sanity
+.sanity/
+
+# OS
+.DS_Store
+Thumbs.db
