@@ -1,29 +1,46 @@
-import { OSLO_TZ } from "./oslo";
+// app/lib/date/week.ts
 
-function startOfWeekISO(date = new Date()): string {
-  const d = new Date(
-    new Intl.DateTimeFormat("sv-SE", {
-      timeZone: OSLO_TZ,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(date)
-  );
+const OSLO_TZ = "Europe/Oslo";
 
-  const day = d.getDay() || 7; // søndag=0 -> 7
-  if (day !== 1) d.setDate(d.getDate() - (day - 1)); // mandag
-  return d.toISOString().slice(0, 10);
+// Hjelper: formatterer dato i Oslo som YYYY-MM-DD
+function formatOsloISO(date: Date): string {
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: OSLO_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  const d = parts.find((p) => p.type === "day")!.value;
+  return `${y}-${m}-${d}`;
 }
 
-export function weekRangeISO(weekOffset = 0) {
-  const start = new Date(startOfWeekISO());
+// Start på uke (mandag) i Oslo → YYYY-MM-DD
+function startOfWeekISO(date = new Date()): string {
+  // Lag "nå" i Oslo
+  const osloNow = new Date(
+    date.toLocaleString("en-US", { timeZone: OSLO_TZ })
+  );
+
+  // JS: 0=Sun..6=Sat → gjør Monday=0
+  const day = (osloNow.getDay() + 6) % 7;
+
+  const start = new Date(osloNow);
+  start.setDate(osloNow.getDate() - day);
+
+  return formatOsloISO(start);
+}
+
+// Ukedager (Man–Fre) i Oslo for valgt uke
+export function weekRangeISO(weekOffset = 0): string[] {
+  const start = new Date(`${startOfWeekISO()}T12:00:00`);
   start.setDate(start.getDate() + weekOffset * 7);
 
-  const days = Array.from({ length: 5 }).map((_, i) => {
+  return Array.from({ length: 5 }, (_, i) => {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    return d.toISOString().slice(0, 10);
+    return formatOsloISO(d);
   });
-
-  return days; // [YYYY-MM-DD x 5]
 }

@@ -1,6 +1,6 @@
 export const revalidate = 30;
 
-import { osloTodayISO } from "@/lib/date/oslo";
+import { osloTodayISODate } from "@/lib/date/oslo";
 import { cutoffStatusNow } from "@/lib/date/cutoff";
 import { getActiveAnnouncement, getMenuForDate } from "@/lib/sanity/queries";
 import TodayClient from "./todayClient";
@@ -12,7 +12,7 @@ function severityClasses(sev: "info" | "warning" | "critical") {
 }
 
 export default async function TodayPage() {
-  const today = osloTodayISO();
+  const today = osloTodayISODate();
   const cutoff = cutoffStatusNow();
 
   const announcement = await getActiveAnnouncement();
@@ -22,7 +22,11 @@ export default async function TodayPage() {
   return (
     <main className="p-6">
       {announcement && (
-        <div className={`mb-4 rounded-xl p-4 border ${severityClasses(announcement.severity)}`}>
+        <div
+          className={`mb-4 rounded-xl p-4 border ${severityClasses(
+            announcement.severity
+          )}`}
+        >
           <div className="font-semibold">{announcement.title}</div>
           <div className="mt-1 text-sm">{announcement.message}</div>
         </div>
@@ -58,7 +62,11 @@ export default async function TodayPage() {
         )}
       </section>
 
-      <TodayClient dateISO={today} cutoffLocked={cutoff.isLocked} menuAvailable={menuAvailable} />
+      <TodayClient
+        dateISO={today}
+        cutoffLocked={cutoff.isLocked}
+        menuAvailable={menuAvailable}
+      />
     </main>
   );
 }

@@ -1,0 +1,286 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   LUNCHPORTALEN – WORLD CLASS UI SYSTEM (LOCKED)
+   ========================================================= */
+
+:root{
+  /* Canvas */
+  --lp-bg: 255 250 243;
+  --lp-surface: 255 255 255;
+  --lp-text: 17 24 39;
+  --lp-muted: 100 116 139;
+  --lp-border: 226 232 240;
+  --lp-divider: 241 245 249;
+
+  /* Brand */
+  --lp-accent: 15 118 110;
+  --lp-accent-2: 176 139 87;
+  --lp-ring: 37 99 235;
+
+  /* Status */
+  --lp-ok-bg: 236 253 245;
+  --lp-ok-bd: 167 243 208;
+  --lp-ok-tx: 6 78 59;
+
+  --lp-warn-bg: 255 251 235;
+  --lp-warn-bd: 253 230 138;
+  --lp-warn-tx: 120 53 15;
+
+  --lp-crit-bg: 254 242 242;
+  --lp-crit-bd: 254 202 202;
+  --lp-crit-tx: 127 29 29;
+}
+
+/* ---------------------------------------------------------
+   Base
+--------------------------------------------------------- */
+
+html, body { height: 100%; }
+
+body{
+  background: rgb(var(--lp-bg));
+  color: rgb(var(--lp-text));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle premium canvas */
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 16% 0%, rgba(15,118,110,.14), transparent 62%),
+    radial-gradient(980px 560px at 86% 6%, rgba(176,139,87,.12), transparent 60%);
+  opacity: .9;
+}
+
+a{ color: inherit; text-decoration: none; }
+a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent-2), .55); }
+
+/* ---------------------------------------------------------
+   Layout
+--------------------------------------------------------- */
+
+.lp-container{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 36px 24px 56px;
+}
+
+/* ---------------------------------------------------------
+   Typography
+--------------------------------------------------------- */
+
+.lp-h1{
+  font-size: 38px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  background: linear-gradient(180deg, rgb(var(--lp-text)) 0%, rgb(39 39 42) 78%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lp-h2{
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lp-muted{ color: rgb(var(--lp-muted)); }
+
+/* ---------------------------------------------------------
+   Cards
+--------------------------------------------------------- */
+
+.lp-card{
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(var(--lp-border), .95);
+  border-radius: 22px;
+  box-shadow:
+    0 1px 2px rgba(17,24,39,.06),
+    0 22px 52px rgba(17,24,39,.08);
+  backdrop-filter: blur(8px);
+}
+
+.lp-card-pad{ padding: 26px; }
+
+.lp-divider{
+  height: 1px;
+  background: rgb(var(--lp-divider));
+}
+
+.lp-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+/* ---------------------------------------------------------
+   HERO IMAGE (single use)
+--------------------------------------------------------- */
+
+.lp-heroImage{
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  filter: saturate(1.15) contrast(1.05);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,0,0,.32) 0%,
+      rgba(0,0,0,.22) 42%,
+      rgba(0,0,0,.10) 100%
+    ),
+    url("/melhuscatering-lunsj-1018029.jpg") center/cover no-repeat;
+}
+
+.lp-heroImage::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(90% 70% at 20% 20%, rgba(0,0,0,.18), transparent 55%),
+    radial-gradient(100% 80% at 80% 10%, transparent 50%, rgba(0,0,0,.14) 100%);
+}
+
+/* Unified hero content */
+.lp-heroContent{
+  position: relative;
+  z-index: 1;
+  padding: 34px 36px 52px;
+  color: white;
+}
+
+.lp-heroContent .lp-h1{ color: white; background:none; }
+.lp-heroContent .lp-muted{ color: rgba(255,255,255,.86); }
+
+.lp-heroContent .lp-chip{
+  background: rgba(255,255,255,.16);
+  border-color: rgba(255,255,255,.20);
+  color: rgba(255,255,255,.92);
+}
+
+/* Overlap for first card */
+.lp-overlap{
+  margin-top: -28px;
+}
+
+/* Accent stripe */
+.lp-heroStripe{
+  position: relative;
+}
+.lp-heroStripe::before{
+  content:"";
+  position:absolute;
+  inset: 14px auto 14px 14px;
+  width: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--lp-accent)) 0%,
+    rgba(var(--lp-accent), .55) 100%
+  );
+}
+
+/* ---------------------------------------------------------
+   Chips
+--------------------------------------------------------- */
+
+.lp-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(var(--lp-border), .95);
+  background: rgba(255,255,255,.92);
+  color: rgb(var(--lp-text));
+}
+
+.lp-chip-ok{ background: rgb(var(--lp-ok-bg)); border-color: rgb(var(--lp-ok-bd)); color: rgb(var(--lp-ok-tx)); }
+.lp-chip-warn{ background: rgb(var(--lp-warn-bg)); border-color: rgb(var(--lp-warn-bd)); color: rgb(var(--lp-warn-tx)); }
+.lp-chip-crit{ background: rgb(var(--lp-crit-bg)); border-color: rgb(var(--lp-crit-bd)); color: rgb(var(--lp-crit-tx)); }
+
+/* ---------------------------------------------------------
+   Buttons
+--------------------------------------------------------- */
+
+.lp-btn, .lp-btn-primary{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 11px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.lp-btn{
+  border: 1px solid rgba(var(--lp-border), .98);
+  background: rgba(255,255,255,.92);
+}
+
+.lp-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(17,24,39,.10);
+}
+
+.lp-btn-primary{
+  border: 1px solid rgba(15,118,110,.45);
+  color: white;
+  background: linear-gradient(180deg, rgb(var(--lp-accent)) 0%, rgb(11 94 88) 100%);
+  box-shadow: 0 18px 44px rgba(15,118,110,.22);
+}
+
+/* ---------------------------------------------------------
+   Week list (product rhythm)
+--------------------------------------------------------- */
+
+.lp-sectionTitle{
+  font-size: 22px;
+  font-weight: 750;
+}
+
+.lp-listMeta{
+  font-size: 14px;
+  color: rgb(var(--lp-muted));
+}
+
+.lp-weekRow{
+  display:grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 14px;
+  padding: 14px 0;
+}
+
+.lp-weekDate{
+  font-size: 12px;
+  font-weight: 750;
+  color: rgb(var(--lp-muted));
+}
+
+.lp-weekTitle{
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.lp-weekSub{
+  font-size: 12px;
+  color: rgb(var(--lp-muted));
+  margin-top: 4px;
+}
+
+.lp-softDivider{
+  border-top: 1px solid rgba(var(--lp-border), .55);
+}

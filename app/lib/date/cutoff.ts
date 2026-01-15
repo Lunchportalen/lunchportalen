@@ -1,24 +1,22 @@
-import { OSLO_TZ } from "./oslo";
+// app/lib/date/cutoff.ts
 
-function osloHourMinute() {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: OSLO_TZ,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
+// true når klokka er >= 08:00 i Oslo
+export function isCutoffPassedNow(): boolean {
+  const now = new Date();
+  const oslo = new Date(
+    now.toLocaleString("en-US", { timeZone: "Europe/Oslo" })
+  );
 
-  const h = Number(parts.find(p => p.type === "hour")?.value ?? "0");
-  const m = Number(parts.find(p => p.type === "minute")?.value ?? "0");
-  return { h, m };
+  const h = oslo.getHours();
+  const m = oslo.getMinutes();
+
+  return h > 8 || (h === 8 && m >= 0);
 }
 
+// Wrapper brukt av pages / API
 export function cutoffStatusNow() {
-  if (process.env.DEV_BYPASS_CUTOFF === "true") {
-    return { isLocked: false, cutoffTime: "08:00" };
-  }
-
-  const { h, m } = osloHourMinute();
-  const isLocked = h > 8 || (h === 8 && m >= 0);
-  return { isLocked, cutoffTime: "08:00" };
+  return {
+    isLocked: isCutoffPassedNow(),
+    cutoffTime: "08:00",
+  };
 }

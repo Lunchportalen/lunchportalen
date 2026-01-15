@@ -1,0 +1,65 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabase/server";
+
+function serviceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(url, key);
+}
+
+export async function PATCH(req: Request) {
+  // ✅ Auth/role gate
+  const supa = await supabaseServer();
+
+  const { data: auth } = await supa.auth.getUser();
+  if (!auth?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: profile } = await supa
+    .from("profiles")
+    .select("role")
+    .eq("user_id", auth.user.id)
+    .single();
+
+  const role = profile?.role ?? "employee";
+  if (role !== "company_admin" && role !== "superadmin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // ✅ Input
+  const body = await req.json();
+  const { delivery_date, delivery_window, company_location_id, status } = body ?? {};
+
+  if (!delivery_date || !delivery_window || !company_location_id || !status) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  if (!["queued", "packed", "delivered"].includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const patch: any = { status, updated_at: new Date().toISOString() };
+  if (status === "packed") patch.packed_at = new Date().toISOString();
+  if (status === "delivered") patch.delivered_at = new Date().toISOString();
+
+  // ✅ Data update (service role)
+  const supabase = serviceSupabase();
+
+  const { error } = await supabase
+    .from("delivery_batches")
+    .upsert(
+      {
+        delivery_date,
+        delivery_window,
+        company_location_id,
+        ...patch,
+      },
+      { onConflict: "delivery_date,delivery_window,company_location_id" }
+    );
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}

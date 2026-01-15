@@ -38,3 +38,16 @@ export async function getMenuForDates(dates: string[]): Promise<MenuContent[]> {
     { dates }
   );
 }
+
+/**
+ * ✅ Hent menyinnhold for et datointervall (inklusive)
+ * Brukes til ukemeny (Man–Fre). Returnerer alle funn i intervallet sortert på dato.
+ */
+export async function getMenuForRange(from: string, to: string): Promise<MenuContent[]> {
+  return sanity.fetch(
+    `*[_type == "menuContent" && date >= $from && date <= $to] | order(date asc){
+      _id, date, description, allergens, isPublished
+    }`,
+    { from, to }
+  );
+}
