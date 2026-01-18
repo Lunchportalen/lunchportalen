@@ -1,62 +1,100 @@
+// /app/api/week/route.ts
 import { NextResponse } from "next/server";
 import { getMenuForRange } from "@/lib/sanity/queries";
+import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 
-function toISODateOslo(d: Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Oslo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
+export const revalidate = 30;
+
+const WEEKDAYS_NO = ["Man", "Tir", "Ons", "Tor", "Fre"] as const;
+
+function clampWeekOffset(v: number): 0 | 1 {
+  return (Math.max(0, Math.min(1, v)) as 0 | 1) ?? 0;
 }
 
-function addDays(date: Date, days: number) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-// Monday=0 .. Sunday=6 (Oslo)
-function osloWeekdayIndex(date: Date) {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Oslo",
-    weekday: "short",
-  }).format(date);
-
-  const map: Record<string, number> = {
-    Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6,
+/**
+ * 🔒 Uke 2 unlock: torsdag i uke 1 kl 08:00 (Oslo)
+ * week0MondayISO = mandag i inneværende uke (uke 0)
+ * unlockAt = (week0MondayISO + 3 dager) kl 08:00
+ */
+function week2UnlockFromWeek0Monday(week0MondayISO: string) {
+  const unlockDateISO = addDaysISO(week0MondayISO, 3); // Thursday
+  const unlockTimeHM = "08:00";
+  return {
+    unlockDateISO,
+    unlockTimeHM,
+    unlockAt: `${unlockDateISO}T08:00`,
   };
-  return map[weekday] ?? 0;
+}
+
+function isUnlocked(unlockDateISO: string, unlockTimeHM: string) {
+  const now = osloNowParts();
+  const nowDateISO = `${now.yyyy}-${now.mm}-${now.dd}`;
+  const nowTimeHM = `${String(now.hh).padStart(2, "0")}:${String(now.mi).padStart(2, "0")}`;
+
+  if (nowDateISO < unlockDateISO) return false;
+  if (nowDateISO > unlockDateISO) return true;
+  return nowTimeHM >= unlockTimeHM;
 }
 
 export async function GET(req: Request) {
+  const rid = `week_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
   try {
     const url = new URL(req.url);
-    const weekOffset = Math.max(0, Math.min(1, Number(url.searchParams.get("weekOffset") || "0"))); // maks 0/1
+    const weekOffset = clampWeekOffset(Number(url.searchParams.get("weekOffset") || "0"));
 
-    const now = new Date();
-    const idx = osloWeekdayIndex(now);
-    const monday = addDays(now, -idx + (weekOffset * 7));
-    const friday = addDays(monday, 4);
+    // ✅ Finn mandag for uke 0 (inneværende uke) i Oslo
+    const todayISO = osloTodayISODate();
+    const week0MondayISO = startOfWeekISO(todayISO);
 
-    const fromISO = toISODateOslo(monday);
-    const toISO = toISODateOslo(friday);
+    // ✅ Beregn mandag/fredag for ønsket uke (0 eller 1)
+    const mondayISO = addDaysISO(week0MondayISO, weekOffset * 7);
+    const fridayISO = addDaysISO(mondayISO, 4);
 
-    const items = await getMenuForRange(fromISO, toISO);
+    // 🔒 Lås ukeOffset=1 frem til torsdag 08:00 i uke 0
+    const { unlockDateISO, unlockTimeHM, unlockAt } = week2UnlockFromWeek0Monday(week0MondayISO);
+    const locked = weekOffset === 1 ? !isUnlocked(unlockDateISO, unlockTimeHM) : false;
+
+    // Returner alltid 5 dager (man–fre), men ikke lek innhold før unlock
+    if (locked) {
+      const days = Array.from({ length: 5 }).map((_, i) => {
+        const date = addDaysISO(mondayISO, i);
+        return {
+          date,
+          weekday: WEEKDAYS_NO[i],
+          isPublished: false,
+          description: null,
+          allergens: [],
+        };
+      });
+
+      return NextResponse.json({
+        ok: true,
+        rid,
+        range: { from: mondayISO, to: fridayISO },
+        weekOffset,
+        locked: true,
+        unlockAt,
+        days,
+      });
+    }
+
+    // ✅ Hent innhold når ikke låst
+    // getMenuForRange er nå "kundesynlig range":
+    // approvedForPublish==true + customerVisible==true + published
+    const items = await getMenuForRange(mondayISO, fridayISO);
 
     // Map for rask lookup
     const byDate = new Map<string, any>();
     for (const it of items || []) byDate.set(it.date, it);
 
-    // Returner alltid 5 dager (man–fre)
     const days = Array.from({ length: 5 }).map((_, i) => {
-      const d = addDays(monday, i);
-      const date = toISODateOslo(d);
+      const date = addDaysISO(mondayISO, i);
       const it = byDate.get(date);
 
       return {
         date,
-        weekday: ["Man", "Tir", "Ons", "Tor", "Fre"][i],
+        weekday: WEEKDAYS_NO[i],
         isPublished: !!it?.isPublished,
         description: it?.description ?? null,
         allergens: it?.allergens ?? [],
@@ -65,14 +103,17 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      range: { from: fromISO, to: toISO },
+      rid,
+      range: { from: mondayISO, to: fridayISO },
       weekOffset,
+      locked: false,
+      unlockAt,
       days,
     });
   } catch (err: any) {
     console.error("[GET /api/week]", err?.message || err, err);
     return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", detail: err?.message || String(err) },
+      { ok: false, rid, error: "SERVER_ERROR", detail: err?.message || String(err) },
       { status: 500 }
     );
   }

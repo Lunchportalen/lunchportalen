@@ -12,7 +12,7 @@ type KitchenOrder = {
 };
 
 type KitchenGroup = {
-  delivery_date: string;
+  delivery_date: string; // YYYY-MM-DD
   delivery_window: string;
   company: string;
   location: string;
@@ -32,6 +32,7 @@ async function setBatchStatus(payload: {
   const res = await fetch("/api/kitchen/batch", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
+    cache: "no-store",
     body: JSON.stringify(payload),
   });
 
@@ -42,10 +43,30 @@ async function setBatchStatus(payload: {
 }
 
 function StatusPill({ status }: { status: BatchStatus }) {
-  const label =
-    status === "queued" ? "Klar" : status === "packed" ? "Pakket" : "Levert";
+  const label = status === "queued" ? "Klar" : status === "packed" ? "Pakket" : "Levert";
+
+  const cls =
+    status === "queued"
+      ? "border-slate-200 bg-slate-50 text-slate-900"
+      : status === "packed"
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : "border-emerald-200 bg-emerald-50 text-emerald-900";
+
+  const dot =
+    status === "queued"
+      ? "bg-slate-500"
+      : status === "packed"
+      ? "bg-amber-500"
+      : "bg-emerald-500";
+
   return (
-    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs">
+    <span
+      className={[
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+        cls,
+      ].join(" ")}
+    >
+      <span aria-hidden className={["h-2 w-2 rounded-full", dot].join(" ")} />
       {label}
     </span>
   );
@@ -64,14 +85,30 @@ function Chip({
     <button
       onClick={onClick}
       className={[
-        "rounded-full border px-3 py-1 text-sm",
-        active ? "font-semibold shadow-sm" : "opacity-80 hover:opacity-100",
+        "rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm transition",
+        active
+          ? "font-semibold shadow-sm"
+          : "text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))]",
       ].join(" ")}
       type="button"
     >
       {label}
     </button>
   );
+}
+
+function fmtOsloTime(ts?: string | null) {
+  if (!ts) return "";
+  try {
+    return new Intl.DateTimeFormat("nb-NO", {
+      timeZone: "Europe/Oslo",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(ts));
+  } catch {
+    return "";
+  }
 }
 
 export default function KitchenView() {
@@ -82,10 +119,13 @@ export default function KitchenView() {
   const [activeWindow, setActiveWindow] = useState<string>("ALL");
   const [onlyNotDelivered, setOnlyNotDelivered] = useState(false);
 
+  const [busyKey, setBusyKey] = useState<string | null>(null); // per group action
+  const [toast, setToast] = useState<string | null>(null);
+
   async function load() {
     try {
       setErr(null);
-      const res = await fetch("/api/kitchen/today", { cache: "no-store" });
+      const res = await fetch("/api/kitchen/day", { cache: "no-store" });
       if (!res.ok) throw new Error(await res.text());
       const json = (await res.json()) as KitchenGroup[];
       setData(json);
@@ -98,7 +138,7 @@ export default function KitchenView() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 30000);
+    const t = setInterval(load, 30_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -127,62 +167,99 @@ export default function KitchenView() {
     return filteredGroups.reduce((sum, g) => sum + (g.orders?.length ?? 0), 0);
   }, [filteredGroups]);
 
-  // ✅ Sum per firma (i gjeldende visning)
   const companyTotals = useMemo(() => {
     const map = new Map<string, number>();
-
     for (const g of filteredGroups) {
       const company = g.company || "Ukjent firma";
       const prev = map.get(company) ?? 0;
       map.set(company, prev + (g.orders?.length ?? 0));
     }
-
-    return Array.from(map.entries()).sort((a, b) =>
-      a[0].localeCompare(b[0], "nb")
-    );
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "nb"));
   }, [filteredGroups]);
 
-  if (loading) return <p>Laster kjøkkenliste…</p>;
-  if (err) return <p>{err}</p>;
-  if (!data || data.length === 0) return <p>Ingen aktive bestillinger i dag.</p>;
+  const headerMeta = useMemo(() => {
+    const d = filteredGroups[0]?.delivery_date || "";
+    const windowsCount = new Set(filteredGroups.map((g) => g.delivery_window)).size;
+    return { date: d, windowsCount };
+  }, [filteredGroups]);
+
+  async function mark(g: KitchenGroup, status: BatchStatus) {
+    const key = `${g.delivery_date}:${g.delivery_window}:${g.company_location_id}`;
+    setBusyKey(key);
+    setToast(null);
+
+    try {
+      await setBatchStatus({
+        delivery_date: g.delivery_date,
+        delivery_window: g.delivery_window,
+        company_location_id: g.company_location_id,
+        status,
+      });
+
+      setToast(
+        status === "packed"
+          ? `Markert pakket • ${g.company} (${g.delivery_window})`
+          : `Markert levert • ${g.company} (${g.delivery_window})`
+      );
+
+      await load();
+    } catch (e: any) {
+      setToast(e?.message || "Kunne ikke oppdatere status");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-[rgb(var(--lp-muted))]">Laster kjøkkenliste…</p>;
+  }
+  if (err) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+        {err}
+      </div>
+    );
+  }
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 text-sm text-[rgb(var(--lp-muted))]">
+        Ingen aktive bestillinger i dag.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
+      {/* Top controls */}
       <div className="print:hidden space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Chip
-            active={activeWindow === "ALL"}
-            label="Alle"
-            onClick={() => setActiveWindow("ALL")}
-          />
-          {windows.map((w) => (
-            <Chip
-              key={w}
-              active={activeWindow === w}
-              label={w}
-              onClick={() => setActiveWindow(w)}
-            />
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip active={activeWindow === "ALL"} label="Alle" onClick={() => setActiveWindow("ALL")} />
+            {windows.map((w) => (
+              <Chip key={w} active={activeWindow === w} label={w} onClick={() => setActiveWindow(w)} />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-4 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] shadow-sm hover:bg-[rgb(var(--lp-bg))]"
+              type="button"
+            >
+              Skriv ut
+            </button>
+            <button
+              onClick={() => load()}
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-4 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] shadow-sm hover:bg-[rgb(var(--lp-bg))]"
+              type="button"
+            >
+              Oppdater
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => window.print()}
-            className="rounded-lg border px-4 py-2 text-sm shadow-sm"
-            type="button"
-          >
-            Skriv ut
-          </button>
-          <button
-            onClick={() => load()}
-            className="rounded-lg border px-4 py-2 text-sm shadow-sm"
-            type="button"
-          >
-            Oppdater
-          </button>
-
-          <label className="ml-1 inline-flex items-center gap-2 text-sm">
+          <label className="inline-flex items-center gap-2 text-sm text-[rgb(var(--lp-text))]">
             <input
               type="checkbox"
               checked={onlyNotDelivered}
@@ -191,27 +268,35 @@ export default function KitchenView() {
             Kun ikke levert
           </label>
 
-          <p className="text-sm opacity-70">
+          <p className="text-sm text-[rgb(var(--lp-muted))]">
             Oppdateres automatisk hvert 30. sekund
           </p>
+
+          {headerMeta.date ? (
+            <span className="ml-auto text-sm text-[rgb(var(--lp-muted))]">
+              <span className="font-semibold text-[rgb(var(--lp-text))]">Dato:</span> {headerMeta.date}
+              <span className="mx-2">•</span>
+              <span className="font-semibold text-[rgb(var(--lp-text))]">Vinduer:</span> {headerMeta.windowsCount}
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {/* ✅ Company totals */}
-      <div className="rounded-xl border p-4 text-sm print:rounded-none print:border-0 print:p-0">
-        <div className="mb-2 font-semibold">Sum per firma (visning)</div>
+      {/* Company totals */}
+      <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 text-sm print:rounded-none print:border-0 print:p-0">
+        <div className="mb-2 font-semibold text-[rgb(var(--lp-text))]">Sum per firma (visning)</div>
 
         {companyTotals.length === 0 ? (
-          <p className="opacity-70">Ingen data i valgt visning.</p>
+          <p className="text-[rgb(var(--lp-muted))]">Ingen data i valgt visning.</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {companyTotals.map(([company, count]) => (
               <div
                 key={company}
-                className="flex items-center justify-between border-b py-1 last:border-0"
+                className="flex items-center justify-between border-b border-[rgb(var(--lp-divider))] py-1 last:border-0"
               >
-                <span className="opacity-80">{company}</span>
-                <span className="font-semibold">{count}</span>
+                <span className="text-[rgb(var(--lp-muted))]">{company}</span>
+                <span className="font-semibold text-[rgb(var(--lp-text))]">{count}</span>
               </div>
             ))}
           </div>
@@ -219,90 +304,94 @@ export default function KitchenView() {
       </div>
 
       {/* Groups */}
-      {filteredGroups.map((g, i) => (
-        <section
-          key={`${g.delivery_window}:${g.company_location_id}:${i}`}
-          className="rounded-xl border p-4 shadow-sm print:shadow-none print:rounded-none print:border-0 print:p-0 print:break-inside-avoid"
-        >
-          <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold">
-                {g.delivery_window} – {g.company}
-              </h2>
-              <p className="text-sm opacity-70">{g.location}</p>
+      {filteredGroups.map((g, i) => {
+        const key = `${g.delivery_date}:${g.delivery_window}:${g.company_location_id}`;
+        const isBusy = busyKey === key;
 
-              {/* Totalsum per gruppe */}
-              <p className="mt-1 text-sm">
-                <span className="opacity-70">Kuverter:</span>{" "}
-                <span className="font-semibold">{g.orders.length}</span>
-              </p>
-            </div>
+        return (
+          <section
+            key={`${g.delivery_window}:${g.company_location_id}:${i}`}
+            className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-sm print:shadow-none print:rounded-none print:border-0 print:p-0 print:break-inside-avoid"
+          >
+            <header className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">
+                  {g.delivery_window} – {g.company}
+                </h2>
+                <p className="text-sm text-[rgb(var(--lp-muted))]">{g.location}</p>
 
-            <div className="flex items-center gap-3">
-              <StatusPill status={g.batch_status} />
+                <p className="mt-1 text-sm">
+                  <span className="text-[rgb(var(--lp-muted))]">Kuverter:</span>{" "}
+                  <span className="font-semibold text-[rgb(var(--lp-text))]">{g.orders.length}</span>
+                </p>
 
-              <div className="flex gap-2 print:hidden">
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm"
-                  type="button"
-                  onClick={async () => {
-                    await setBatchStatus({
-                      delivery_date: g.delivery_date,
-                      delivery_window: g.delivery_window,
-                      company_location_id: g.company_location_id,
-                      status: "packed",
-                    });
-                    load();
-                  }}
-                >
-                  Marker pakket
-                </button>
-
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm"
-                  type="button"
-                  onClick={async () => {
-                    await setBatchStatus({
-                      delivery_date: g.delivery_date,
-                      delivery_window: g.delivery_window,
-                      company_location_id: g.company_location_id,
-                      status: "delivered",
-                    });
-                    load();
-                  }}
-                >
-                  Marker levert
-                </button>
+                {(g.packed_at || g.delivered_at) && (
+                  <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                    {g.packed_at ? `Pakket: ${fmtOsloTime(g.packed_at)}` : null}
+                    {g.packed_at && g.delivered_at ? <span className="mx-2">•</span> : null}
+                    {g.delivered_at ? `Levert: ${fmtOsloTime(g.delivered_at)}` : null}
+                  </p>
+                )}
               </div>
-            </div>
-          </header>
 
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2 text-left">Navn</th>
-                <th className="py-2 text-left">Avdeling</th>
-                <th className="py-2 text-left">Notat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {g.orders.map((o, idx) => (
-                <tr key={`${o.id}:${idx}`} className="border-b last:border-0">
-                  <td className="py-2">{o.full_name}</td>
-                  <td className="py-2">{o.department || "–"}</td>
-                  <td className="py-2">{o.note || ""}</td>
+              <div className="flex items-center gap-3">
+                <StatusPill status={g.batch_status} />
+
+                <div className="flex gap-2 print:hidden">
+                  <button
+                    className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))] disabled:opacity-60"
+                    type="button"
+                    disabled={isBusy || g.batch_status === "packed" || g.batch_status === "delivered"}
+                    onClick={() => mark(g, "packed")}
+                  >
+                    {isBusy ? "Oppdaterer…" : "Marker pakket"}
+                  </button>
+
+                  <button
+                    className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))] disabled:opacity-60"
+                    type="button"
+                    disabled={isBusy || g.batch_status === "delivered"}
+                    onClick={() => mark(g, "delivered")}
+                  >
+                    {isBusy ? "Oppdaterer…" : "Marker levert"}
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[rgb(var(--lp-divider))]">
+                  <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Navn</th>
+                  <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Avdeling</th>
+                  <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Notat</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      ))}
+              </thead>
+              <tbody>
+                {g.orders.map((o, idx) => (
+                  <tr key={`${o.id}:${idx}`} className="border-b border-[rgb(var(--lp-divider))] last:border-0">
+                    <td className="py-2 text-[rgb(var(--lp-text))]">{o.full_name}</td>
+                    <td className="py-2 text-[rgb(var(--lp-muted))]">{o.department || "–"}</td>
+                    <td className="py-2 text-[rgb(var(--lp-text))]">{o.note || ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        );
+      })}
 
       {/* Footer totals */}
       <div className="pt-2 text-sm print:hidden">
-        <span className="opacity-70">Totalt (visning):</span>{" "}
-        <span className="font-semibold">{totalKuverter}</span>
+        <span className="text-[rgb(var(--lp-muted))]">Totalt (visning):</span>{" "}
+        <span className="font-semibold text-[rgb(var(--lp-text))]">{totalKuverter}</span>
       </div>
+
+      {toast && (
+        <div className="print:hidden rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

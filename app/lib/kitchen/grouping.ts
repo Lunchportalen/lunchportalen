@@ -1,31 +1,32 @@
-export const OSLO_TZ = "Europe/Oslo";
-
+// lib/kitchen/grouping.ts
 export type DbOrderRow = {
   id: string;
   user_id: string;
   note: string | null;
   created_at: string;
-  company_id: string | null;
-  location_id: string | null;
-  companies?: { id: string; name: string } | { id: string; name: string }[] | null;
-  company_locations?:
-    | {
-        id: string;
-        label: string;
-        address_line1: string;
-        postal_code: string;
-        city: string;
-        delivery_window_start: string | null;
-        delivery_window_end: string | null;
-      }
-    | any
-    | null;
+
+  company_id: string;
+  location_id: string;
+
+  // joins fra select(...)
+  companies?: { id: string; name: string } | null;
+
+  company_locations?: {
+    id: string;
+    name?: string | null; // noen har name
+    label?: string | null; // noen har label
+    address?: string | null;
+    address_line1?: string | null; // noen har address_line1
+    postal_code?: string | null;
+    city?: string | null;
+    delivery_json?: any; // { windowFrom/windowTo } eller andre varianter
+  } | null;
 };
 
 export type ProfileRow = {
   user_id: string;
-  name: string;
-  department: string | null;
+  name: string | null;
+  department?: string | null;
 };
 
 export type KitchenOrder = {
@@ -34,119 +35,168 @@ export type KitchenOrder = {
   name: string;
   department: string | null;
   note: string | null;
-  createdAt: string;
-  timeOslo: string;
+  timeOslo: string | null; // HH:MM (best-effort)
+};
+
+export type KitchenCompany = { id: string; name: string };
+
+export type KitchenLocation = {
+  id: string;
+  label: string;
+  addressLine1: string;
+  postalCode: string;
+  city: string;
 };
 
 export type KitchenGroup = {
-  key: string;
-  deliveryWindow: string; // "10:30–11:00"
-  company: { id: string; name: string };
-  location: {
-    id: string;
-    label: string;
-    addressLine1: string;
-    postalCode: string;
-    city: string;
-  };
+  key: string; // unikt per gruppe
+  deliveryWindow: string; // f.eks. "10:30–11:00"
+  company: KitchenCompany;
+  location: KitchenLocation;
   count: number;
   orders: KitchenOrder[];
 };
 
-function pickObj<T>(v: T | T[] | null | undefined): T | null {
-  if (!v) return null;
-  return Array.isArray(v) ? (v[0] ?? null) : v;
+function s(v: any): string {
+  return typeof v === "string" ? v.trim() : "";
 }
 
-function hhmm(v: string | null | undefined) {
-  if (!v) return "";
-  // "10:30:00" -> "10:30" eller "10:30"
-  return v.slice(0, 5);
+function pickLocationLabel(loc: any): string {
+  return s(loc?.label) || s(loc?.name) || "Ukjent lokasjon";
 }
 
-export function formatOsloTime(iso: string) {
-  try {
-    return new Intl.DateTimeFormat("nb-NO", {
-      timeZone: OSLO_TZ,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(iso));
-  } catch {
-    return "";
-  }
+function pickAddressLine1(loc: any): string {
+  return s(loc?.address_line1) || s(loc?.address) || "—";
 }
 
-export function formatDeliveryWindow(start: string | null, end: string | null) {
-  const s = hhmm(start);
-  const e = hhmm(end);
-  if (s && e) return `${s}–${e}`;
-  if (s) return `${s}–`;
-  if (e) return `–${e}`;
-  return "Ukjent vindu";
+function pickPostalCode(loc: any): string {
+  return s(loc?.postal_code) || "—";
 }
 
-export function buildKitchenGroups(rows: DbOrderRow[], profiles: Map<string, ProfileRow>) {
+function pickCity(loc: any): string {
+  return s(loc?.city) || "—";
+}
+
+function toOsloTimeHHMM(isoLike: string | null | undefined): string | null {
+  if (!isoLike) return null;
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Oslo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+
+  const hh = parts.find((p) => p.type === "hour")?.value;
+  const mm = parts.find((p) => p.type === "minute")?.value;
+  if (!hh || !mm) return null;
+  return `${hh}:${mm}`;
+}
+
+function pickWindow(loc: any): { from: string | null; to: string | null } {
+  const dj = loc?.delivery_json ?? null;
+
+  const from =
+    s(dj?.windowFrom) ||
+    s(dj?.window_from) ||
+    s(dj?.delivery_window_start) ||
+    null;
+
+  const to =
+    s(dj?.windowTo) ||
+    s(dj?.window_to) ||
+    s(dj?.delivery_window_end) ||
+    null;
+
+  return { from, to };
+}
+
+function formatWindow(from: string | null, to: string | null): string {
+  const f = from ?? "—";
+  const t = to ?? "—";
+  return `${f}–${t}`;
+}
+
+export function buildKitchenGroups(
+  orders: DbOrderRow[],
+  profilesMap: Map<string, ProfileRow>
+): KitchenGroup[] {
   const groups = new Map<string, KitchenGroup>();
 
-  for (const r of rows) {
-    const company = pickObj(r.companies);
-    const loc = pickObj(r.company_locations);
-
-    if (!company || !loc) continue; // skal ikke skje når FK er satt, men vi er robuste
-
-    const window = formatDeliveryWindow(loc.delivery_window_start, loc.delivery_window_end);
-    const key = `${window}||${company.id}||${loc.id}`;
-
-    const p = profiles.get(r.user_id);
-    const name = (p?.name && p.name.trim()) ? p.name.trim() : "Ukjent navn";
-    const dept = p?.department ?? null;
-
-    const order: KitchenOrder = {
-      orderId: r.id,
-      userId: r.user_id,
-      name,
-      department: dept,
-      note: r.note ?? null,
-      createdAt: r.created_at,
-      timeOslo: formatOsloTime(r.created_at),
+  for (const o of orders) {
+    const company: KitchenCompany = {
+      id: o.company_id,
+      name: s(o.companies?.name) || "Ukjent firma",
     };
 
-    if (!groups.has(key)) {
+    const locRaw = o.company_locations ?? {};
+    const loc: KitchenLocation = {
+      id: o.location_id,
+      label: pickLocationLabel(locRaw),
+      addressLine1: pickAddressLine1(locRaw),
+      postalCode: pickPostalCode(locRaw),
+      city: pickCity(locRaw),
+    };
+
+    const { from, to } = pickWindow(locRaw);
+    const deliveryWindow = formatWindow(from, to);
+
+    // gruppe-key = vindu + firma + lokasjon (stabil og unik)
+    const key = `${deliveryWindow}__${company.id}__${loc.id}`;
+
+    const prof = profilesMap.get(o.user_id);
+    const personName = s(prof?.name) || "Ukjent";
+    const dept = s(prof?.department) || null;
+
+    const order: KitchenOrder = {
+      orderId: o.id,
+      userId: o.user_id,
+      name: personName,
+      department: dept,
+      note: s(o.note) ? s(o.note) : null,
+      timeOslo: toOsloTimeHHMM(o.created_at),
+    };
+
+    const g = groups.get(key);
+    if (!g) {
       groups.set(key, {
         key,
-        deliveryWindow: window,
-        company: { id: company.id, name: company.name },
-        location: {
-          id: loc.id,
-          label: loc.label,
-          addressLine1: loc.address_line1,
-          postalCode: loc.postal_code,
-          city: loc.city,
-        },
-        count: 0,
-        orders: [],
+        deliveryWindow,
+        company,
+        location: loc,
+        count: 1,
+        orders: [order],
       });
+    } else {
+      g.count += 1;
+      g.orders.push(order);
     }
-
-    const g = groups.get(key)!;
-    g.orders.push(order);
-    g.count++;
   }
 
-  // Sortering: vindu, firma, lokasjon, og så tid i hver gruppe
-  const arr = Array.from(groups.values());
-  arr.sort((a, b) => {
-    const w = a.deliveryWindow.localeCompare(b.deliveryWindow);
-    if (w) return w;
-    const c = a.company.name.localeCompare(b.company.name);
-    if (c) return c;
+  // Sorter grupper: deliveryWindow → firma → lokasjon
+  const out = Array.from(groups.values());
+  out.sort((a, b) => {
+    if (a.deliveryWindow !== b.deliveryWindow) return a.deliveryWindow.localeCompare(b.deliveryWindow);
+    if (a.company.name !== b.company.name) return a.company.name.localeCompare(b.company.name);
     return a.location.label.localeCompare(b.location.label);
   });
 
-  for (const g of arr) {
-    g.orders.sort((x, y) => (x.createdAt < y.createdAt ? -1 : 1));
+  // Sorter ordre i hver gruppe: tid → avdeling → navn
+  for (const g of out) {
+    g.orders.sort((a, b) => {
+      const at = a.timeOslo ?? "";
+      const bt = b.timeOslo ?? "";
+      if (at !== bt) return at.localeCompare(bt);
+
+      const ad = a.department ?? "";
+      const bd = b.department ?? "";
+      if (ad !== bd) return ad.localeCompare(bd);
+
+      return a.name.localeCompare(b.name);
+    });
   }
 
-  return arr;
+  return out;
 }

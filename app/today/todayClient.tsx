@@ -1,31 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import React, { useEffect, useMemo, useState } from "react";
 
-type OrderRow = {
+type Choice = { key: string; label?: string };
+
+type DayChoiceRow = {
   id: string;
-  date: string; // YYYY-MM-DD
-  status: "active" | "canceled";
+  date: string;
+  choice_key: string;
   note: string | null;
-  created_at: string; // kvittering (registrert)
-  updated_at: string; // kvittering (avbestilt / oppdatert)
+  status: string;
+  created_at: string;
+  updated_at: string;
+  tier?: "BASIS" | "PREMIUM" | null;
 };
 
 type TodayState = {
   ok: boolean;
-  date: string; // YYYY-MM-DD
-  locked: boolean;
-  cutoffTime: string; // "08:00"
+  date: string;
+
+  // vi støtter begge varianter (legacy + ny)
+  locked?: boolean;
+  cutoffTime?: string;
+  cutoff?: { locked: boolean; cutoffTime: string; nowISO?: string };
+
   menuAvailable: boolean;
-  canAct?: boolean; // ✅ fra /api/today (ny)
-  reason?: string; // ✅ f.eks. PROFILE_MISSING_SCOPE
-  message?: string; // ✅ brukervennlig tekst fra API
+  canAct?: boolean;
+  reason?: string;
+  message?: string;
   rid?: string;
-  order: OrderRow | null;
+
+  dayChoice: DayChoiceRow | null;
+  tierToday?: "BASIS" | "PREMIUM" | null;
+
+  // ✅ Kontraktstyrte valg (anbefalt å returnere fra /api/today)
+  allowedChoices?: Choice[] | null;
+
   error?: string;
   detail?: string;
+};
+
+type SetChoiceResp = {
+  ok: boolean;
+  rid?: string;
+  error?: string;
+  message?: string;
+  detail?: string;
+  locked?: boolean;
+  cutoffTime?: string;
+  canAct?: boolean;
+
+  date?: string;
+  choice_key?: string;
+  note?: string | null;
+  tier?: "BASIS" | "PREMIUM";
+  updated_at?: string;
 };
 
 function formatOslo(ts?: string | null) {
@@ -38,40 +67,99 @@ function formatOslo(ts?: string | null) {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
     }).format(new Date(ts));
   } catch {
     return ts || "";
   }
 }
 
+type PillTone = "ok" | "neutral" | "warn" | "danger";
+function Pill({ tone, label }: { tone: PillTone; label: string }) {
+  const cls =
+    tone === "ok"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : tone === "warn"
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : tone === "danger"
+      ? "border-red-200 bg-red-50 text-red-900"
+      : "border-slate-200 bg-slate-50 text-slate-900";
+
+  const dot =
+    tone === "ok"
+      ? "bg-emerald-500"
+      : tone === "warn"
+      ? "bg-amber-500"
+      : tone === "danger"
+      ? "bg-red-500"
+      : "bg-slate-500";
+
+  return (
+    <div
+      className={[
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+        cls,
+      ].join(" ")}
+    >
+      <span aria-hidden className={["h-2 w-2 rounded-full", dot].join(" ")} />
+      {label}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2">
+      <div className="text-sm text-[rgb(var(--lp-muted))]">{label}</div>
+      <div className="text-sm font-semibold text-[rgb(var(--lp-text))]">{value}</div>
+    </div>
+  );
+}
+
+const FALLBACK_CHOICES: Choice[] = [
+  { key: "salatbar", label: "Salatbar" },
+  { key: "paasmurt", label: "Påsmurt" },
+  { key: "varmmat", label: "Varmmat" },
+  { key: "sushi", label: "Sushi" },
+  { key: "poke", label: "Pokébowl" },
+  { key: "thai", label: "Thaimat" },
+];
+
 export default function TodayClient(props: {
   dateISO: string;
   cutoffLocked: boolean;
+  cutoffTime: string;
   menuAvailable: boolean;
 }) {
-  const router = useRouter();
-  const supabase = supabaseBrowser();
-
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState<TodayState | null>(null);
+
+  const [choiceKey, setChoiceKey] = useState("");
   const [note, setNote] = useState("");
+
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   async function refresh() {
     setLoading(true);
-    setMsg(null);
+    setToast(null);
+
     try {
       const res = await fetch("/api/today", { cache: "no-store" });
       const json = (await res.json()) as TodayState;
 
       setState(json);
-      setNote(json?.order?.note || "");
 
-      // Hvis API gir en “forklaring”, bruk den som mild info (ikke som error)
-      if (json?.message) setMsg(json.message);
+      if (json?.ok) {
+        const dc = json.dayChoice;
+        if (dc?.choice_key) setChoiceKey(dc.choice_key);
+        if (typeof dc?.note === "string") setNote(dc.note ?? "");
+      }
+
+      if (!res.ok && !json?.message) setToast("Kunne ikke hente status.");
+      if (json?.message) setToast(json.message);
     } catch {
-      setMsg("Kunne ikke hente status. Prøv igjen.");
+      setToast("Kunne ikke hente status.");
     } finally {
       setLoading(false);
     }
@@ -79,250 +167,274 @@ export default function TodayClient(props: {
 
   useEffect(() => {
     refresh();
+    const t = setInterval(() => {
+      if (!busy) refresh();
+    }, 60_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fallback hvis API ikke har canAct ennå
-  const effectiveLocked = state?.ok ? state.locked : props.cutoffLocked;
-  const effectiveMenu = state?.ok ? state.menuAvailable : props.menuAvailable;
+  // ✅ Bruk API-fasit der det finnes
+  const effectiveLocked = useMemo(() => {
+    if (state?.ok) return state.cutoff?.locked ?? state.locked ?? props.cutoffLocked;
+    return props.cutoffLocked;
+  }, [state, props.cutoffLocked]);
 
-  const canAct =
-    state?.ok && typeof state.canAct === "boolean"
-      ? state.canAct
-      : !effectiveLocked && effectiveMenu;
+  const effectiveCutoffTime = useMemo(() => {
+    if (state?.ok) return state.cutoff?.cutoffTime ?? state.cutoffTime ?? props.cutoffTime ?? "08:00";
+    return props.cutoffTime ?? "08:00";
+  }, [state, props.cutoffTime]);
 
-  const hasOrder = !!(state?.ok && state.order);
-  const orderActive = state?.ok && state.order?.status === "active";
+  const effectiveMenu = useMemo(() => {
+    if (state?.ok) return !!state.menuAvailable;
+    return props.menuAvailable;
+  }, [state, props.menuAvailable]);
 
-  // Kvittering: registrert = created_at, avbestilt = updated_at
-  const receiptLabel = orderActive ? "✅ Registrert" : hasOrder ? "❌ Avbestilt" : null;
-  const receiptTime = orderActive ? state?.order?.created_at : state?.order?.updated_at;
+  // ✅ Bruk kontraktstyrte valg fra API om mulig
+  const choices: Choice[] = useMemo(() => {
+    const apiChoices = state?.ok ? state.allowedChoices : null;
+    if (Array.isArray(apiChoices) && apiChoices.length > 0) return apiChoices;
+    return FALLBACK_CHOICES;
+  }, [state]);
 
-  async function placeOrUpdate() {
+  const choiceLabel = useMemo(() => {
+    const hit = choices.find((c) => c.key === choiceKey);
+    return hit?.label ?? choiceKey;
+  }, [choiceKey, choices]);
+
+  // API canAct er fasit når den finnes
+  const canAct = useMemo(() => {
+    if (state?.ok && typeof state.canAct === "boolean") return state.canAct && !busy;
+    return !effectiveLocked && effectiveMenu && !busy;
+  }, [state, effectiveLocked, effectiveMenu, busy]);
+
+  const dc = state?.ok ? state.dayChoice : null;
+  const tier = dc?.tier ?? state?.tierToday ?? null;
+
+  // ✅ Dato som skal lagres: bruk API-date hvis tilgjengelig
+  const effectiveDateISO = useMemo(() => {
+    if (state?.ok && typeof state.date === "string" && state.date) return state.date;
+    return props.dateISO;
+  }, [state, props.dateISO]);
+
+  // Enterprise state model
+  const view = useMemo(() => {
+    if (loading) {
+      return {
+        pill: <Pill tone="neutral" label="Henter status" />,
+        title: "Status oppdateres",
+        subtitle: "Henter data fra systemet.",
+        tone: "neutral" as const,
+      };
+    }
+
+    if (!state?.ok) {
+      return {
+        pill: <Pill tone="danger" label="Kunne ikke hente" />,
+        title: "Status utilgjengelig",
+        subtitle: state?.rid ? `Ref: ${state.rid}` : "Prøv igjen.",
+        tone: "danger" as const,
+      };
+    }
+
+    if (state.reason === "PROFILE_MISSING_SCOPE") {
+      return {
+        pill: <Pill tone="warn" label="Mangler tilgang" />,
+        title: "Bestilling utilgjengelig",
+        subtitle: "Kontoen mangler firmatilknytning/leveringssted.",
+        tone: "warn" as const,
+      };
+    }
+
+    if (!effectiveMenu) {
+      return {
+        pill: <Pill tone="warn" label="Utilgjengelig" />,
+        title: "Bestilling utilgjengelig",
+        subtitle: "Dagens meny er ikke publisert.",
+        tone: "warn" as const,
+      };
+    }
+
+    if (effectiveLocked) {
+      return {
+        pill: <Pill tone="neutral" label="Endringer stengt" />,
+        title: "Bestilling stengt",
+        subtitle: `Frist passert (${effectiveCutoffTime}).`,
+        tone: "neutral" as const,
+      };
+    }
+
+    return {
+      pill: <Pill tone="ok" label="Endringer åpne" />,
+      title: "Bestilling åpen",
+      subtitle: `Åpent til ${effectiveCutoffTime}.`,
+      tone: "ok" as const,
+    };
+  }, [loading, state, effectiveMenu, effectiveLocked, effectiveCutoffTime]);
+
+  async function saveChoice() {
+    if (!choiceKey) {
+      setToast("Velg et alternativ før du lagrer.");
+      return;
+    }
+
+    // ✅ Guard: hvis API har allowedChoices, stopp ugyldig valg før POST
+    if (state?.ok && Array.isArray(state.allowedChoices) && state.allowedChoices.length > 0) {
+      const ok = state.allowedChoices.some((c) => c.key === choiceKey);
+      if (!ok) {
+        setToast("Valget er ikke tilgjengelig på din avtale i dag.");
+        return;
+      }
+    }
+
     setBusy(true);
-    setMsg(null);
+    setToast(null);
+
     try {
-      const res = await fetch("/api/order", {
+      const res = await fetch("/api/order/set-choice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
+        cache: "no-store",
+        body: JSON.stringify({
+          date: effectiveDateISO, // ✅ API-date når den finnes
+          choice_key: choiceKey,
+          note,
+        }),
       });
 
-      const json = await res.json().catch(() => ({}));
+      const json = (await res.json().catch(() => ({}))) as SetChoiceResp;
 
-      if (!res.ok || !json?.ok) {
-        const e = json?.error || "Ukjent feil";
-
-        if (e === "LOCKED_AFTER_0800")
-          setMsg("Det er låst etter 08:00. Endringer kan ikke gjøres nå.");
-        else if (e === "MENU_NOT_PUBLISHED")
-          setMsg("Meny er ikke publisert. Bestilling er ikke tilgjengelig.");
-        else if (e === "PROFILE_MISSING_SCOPE")
-          setMsg(
-            "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til."
-          );
-        else if (json?.message) setMsg(json.message);
-        else setMsg("Kunne ikke registrere bestilling. Prøv igjen.");
-
+      if (res.status === 423 || json?.locked) {
+        setToast(json?.message || `Endringer er stengt (${effectiveCutoffTime}).`);
+        await refresh();
         return;
       }
 
-      setMsg(orderActive ? "Bestilling oppdatert." : "Bestilling registrert.");
+      if (!res.ok || !json?.ok) {
+        setToast(json?.message || json?.error || "Kunne ikke lagre.");
+        return;
+      }
+
+      setToast(`Lagret • ${json.updated_at ? formatOslo(json.updated_at) : "nå"}`);
       await refresh();
     } finally {
       setBusy(false);
     }
   }
 
-  async function cancel() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/order", { method: "DELETE" });
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok || !json?.ok) {
-        const e = json?.error || "Ukjent feil";
-
-        if (e === "LOCKED_AFTER_0800")
-          setMsg("Det er låst etter 08:00. Endringer kan ikke gjøres nå.");
-        else if (e === "PROFILE_MISSING_SCOPE")
-          setMsg(
-            "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til."
-          );
-        else if (json?.message) setMsg(json.message);
-        else setMsg("Kunne ikke avbestille. Prøv igjen.");
-
-        return;
-      }
-
-      setMsg("Bestilling avbestilt.");
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function logout() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      await supabase.auth.signOut();
-      router.replace("/login");
-      router.refresh();
-    } catch {
-      setMsg("Kunne ikke logge ut. Prøv igjen.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const showActions = effectiveMenu && state?.ok && state.reason !== "PROFILE_MISSING_SCOPE";
+  const showForm = showActions;
 
   return (
-    <section className="mt-5 rounded-xl border border-white/15 p-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="text-sm opacity-70">Din bestilling</div>
-
-        <div className="flex items-center gap-2">
-          <a
-            href="/week"
-            className="rounded-lg border border-white/15 px-3 py-1 text-xs opacity-80 hover:bg-white/5"
-            title="Ukemeny (Man–Fre)"
-          >
-            Ukemeny
-          </a>
-
-          <button
-            className="rounded-lg border border-white/15 px-3 py-1 text-xs opacity-80 hover:bg-white/5"
-            onClick={logout}
-            disabled={busy}
-            title="Logg ut"
-          >
-            Logg ut
-          </button>
+    <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-sm font-semibold text-[rgb(var(--lp-text))]">{view.title}</div>
+          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{view.subtitle}</div>
         </div>
+        {view.pill}
       </div>
 
-      {/* Status + kvittering */}
-      {loading ? (
-        <div className="mt-2 text-sm opacity-70">Henter status…</div>
-      ) : state?.ok ? (
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
-          {!state.order ? (
-            <>
-              <div className="text-sm opacity-80">Ingen registrering for i dag.</div>
+      {state?.ok && effectiveMenu && dc && (
+        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))] p-4">
+          <div className="text-sm font-semibold text-[rgb(var(--lp-text))]">Registrert</div>
+          <div className="mt-2 divide-y divide-[rgb(var(--lp-divider))]">
+            <Row
+              label="Valg"
+              value={choices.find((c) => c.key === dc.choice_key)?.label ?? dc.choice_key}
+            />
+            <Row label="Avtale" value={tier ?? "—"} />
+            <Row label="Oppdatert" value={formatOslo(dc.updated_at) || "—"} />
+          </div>
+          {dc.note ? (
+            <div className="mt-3 text-sm text-[rgb(var(--lp-muted))]">
+              Kommentar: <span className="text-[rgb(var(--lp-text))]">{dc.note}</span>
+            </div>
+          ) : null}
+        </div>
+      )}
 
-              {state?.reason === "PROFILE_MISSING_SCOPE" ? (
-                <div className="mt-1 text-xs opacity-70">
-                  Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.
-                </div>
+      {showForm && (
+        <>
+          <div className="mt-5">
+            <label className="block text-sm font-semibold text-[rgb(var(--lp-text))]">
+              Velg for i dag
+            </label>
+            <select
+              className="mt-2 h-11 w-full rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)]"
+              value={choiceKey}
+              onChange={(e) => setChoiceKey(e.target.value)}
+              disabled={!canAct}
+            >
+              <option value="">Velg…</option>
+              {choices.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.label ?? c.key}
+                </option>
+              ))}
+            </select>
+
+            <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
+              {tier ? (
+                <>
+                  Dagens avtale:{" "}
+                  <span className="font-semibold text-[rgb(var(--lp-text))]">{tier}</span>
+                </>
               ) : (
-                <div className="mt-1 text-xs opacity-70">
-                  Du kan bestille frem til kl. {state.cutoffTime || "08:00"} (Trondheim).
-                </div>
+                <>
+                  Dagens avtale: <span className="text-[rgb(var(--lp-muted))]">—</span>
+                </>
               )}
-            </>
-          ) : (
-            <>
-              <div className="text-sm font-medium">{receiptLabel}</div>
-
-              <div className="mt-1 text-sm opacity-80">
-                Status:{" "}
-                <span className="font-medium">
-                  {state.order.status === "active" ? "Aktiv" : "Avbestilt"}
-                </span>
-              </div>
-
-              {receiptTime && (
-                <div className="mt-1 text-sm opacity-80">
-                  Tidspunkt: <span className="font-medium">{formatOslo(receiptTime)}</span>
-                </div>
-              )}
-
-              {state.order.note ? (
-                <div className="mt-2 text-xs opacity-70">
-                  Kommentar: <span className="opacity-90">{state.order.note}</span>
-                </div>
+              {choiceKey ? (
+                <>
+                  <span className="mx-2">•</span>
+                  Valgt:{" "}
+                  <span className="font-semibold text-[rgb(var(--lp-text))]">{choiceLabel}</span>
+                </>
               ) : null}
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="mt-2 text-sm opacity-70">
-          Kunne ikke hente status{state?.rid ? ` (ref: ${state.rid})` : ""}.
-        </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-[rgb(var(--lp-text))]">
+              Kommentar (valgfritt)
+            </label>
+            <input
+              className="mt-2 h-11 w-full rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)]"
+              placeholder="F.eks. uten løk"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={!canAct}
+              maxLength={280}
+            />
+            <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Maks 280 tegn.</div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-[rgb(var(--lp-cta))] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={saveChoice}
+              disabled={!canAct || busy}
+            >
+              {busy ? "Lagrer…" : "Lagre"}
+            </button>
+
+            <button
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-5 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))] disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={refresh}
+              disabled={busy}
+            >
+              Oppdater
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Kommentar */}
-      <div className="mt-4">
-        <label className="block text-sm opacity-70">Kommentar (valgfritt)</label>
-        <input
-          className="mt-2 w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 text-sm outline-none"
-          placeholder="F.eks. uten løk / glutenfri hvis mulig"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          disabled={!canAct || busy}
-        />
-      </div>
-
-      {/* Actions */}
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm"
-          onClick={placeOrUpdate}
-          disabled={!canAct || busy}
-        >
-          {orderActive ? "Oppdater" : "Bestill lunsj"}
-        </button>
-
-        <button
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm opacity-90"
-          onClick={cancel}
-          disabled={!canAct || busy || !orderActive}
-        >
-          Avbestill
-        </button>
-
-        <button
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm opacity-70"
-          onClick={refresh}
-          disabled={busy}
-        >
-          Oppdater
-        </button>
-      </div>
-
-      {/* Guardrails */}
-      <div className="mt-3 text-xs opacity-70">
-        Endringer kan gjøres frem til kl. {state?.cutoffTime || "08:00"} samme dag (Trondheim).
-      </div>
-
-      {effectiveLocked && (
-        <div className="mt-2 text-xs opacity-70">
-          Det er låst etter {state?.cutoffTime || "08:00"} – endringer er deaktivert.
+      {toast && (
+        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
+          {toast}
         </div>
       )}
-      {!effectiveMenu && (
-        <div className="mt-2 text-xs opacity-70">
-          Meny er ikke publisert – bestilling er deaktivert.
-        </div>
-      )}
-
-      {/* ✅ Påkrevd helge-CTA */}
-      <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3">
-        <div className="text-sm font-medium">Helgelevering (lørdag/søndag)</div>
-        <div className="mt-1 text-sm opacity-80">
-          Levering i helg bestilles ikke i Lunchportalen.
-        </div>
-        <a
-          href="https://melhuscatering.no/catering/bestill-her/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
-        >
-          Bestill helgelevering
-        </a>
-      </div>
-
-      {msg && <div className="mt-3 text-sm">{msg}</div>}
     </section>
   );
 }

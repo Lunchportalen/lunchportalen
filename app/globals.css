@@ -4,21 +4,34 @@
 
 /* =========================================================
    LUNCHPORTALEN – WORLD CLASS UI SYSTEM (LOCKED)
+   - Logo-driven palette (Gold + Graphite + Warm Cream)
+   - Calm cards + soft shadows
+   - High clarity typography
+   - CTA polish (no neon)
    ========================================================= */
 
 :root{
-  /* Canvas */
-  --lp-bg: 255 250 243;
-  --lp-surface: 255 255 255;
-  --lp-text: 17 24 39;
-  --lp-muted: 100 116 139;
-  --lp-border: 226 232 240;
-  --lp-divider: 241 245 249;
+  /* =========================
+     Canvas (logo-friendly)
+     ========================= */
+  --lp-bg: 255 250 243;           /* warm cream */
+  --lp-surface: 255 255 255;      /* white */
+  --lp-text: 24 24 27;            /* graphite */
+  --lp-muted: 82 82 91;           /* zinc-600 */
+  --lp-border: 228 228 231;       /* zinc-200 */
+  --lp-divider: 244 244 245;      /* zinc-100 */
 
-  /* Brand */
-  --lp-accent: 15 118 110;
-  --lp-accent-2: 176 139 87;
-  --lp-ring: 37 99 235;
+  /* =========================
+     Brand (from logo)
+     ========================= */
+  --lp-gold: 176 139 87;          /* logo gold */
+  --lp-graphite: 24 24 27;        /* logo dark */
+  --lp-cta: 176 139 87;           /* CTA = gold */
+  --lp-accent: 176 139 87;        /* main accent */
+  --lp-accent-2: 15 118 110;      /* secondary accent (optional) */
+
+  /* Focus ring */
+  --lp-ring: 176 139 87;
 
   /* Status */
   --lp-ok-bg: 236 253 245;
@@ -32,6 +45,9 @@
   --lp-crit-bg: 254 242 242;
   --lp-crit-bd: 254 202 202;
   --lp-crit-tx: 127 29 29;
+
+  /* Motion */
+  --lp-ease: cubic-bezier(.2,.8,.2,1);
 }
 
 /* ---------------------------------------------------------
@@ -45,25 +61,58 @@ body{
   color: rgb(var(--lp-text));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+
+  position: relative;
+  isolation: isolate;
 }
 
-/* Subtle premium canvas */
+/* Premium canvas glow (subtle, fixed) – uses brand gold */
 body::before{
   content:"";
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 0;
   background:
-    radial-gradient(1100px 620px at 16% 0%, rgba(15,118,110,.14), transparent 62%),
-    radial-gradient(980px 560px at 86% 6%, rgba(176,139,87,.12), transparent 60%);
-  opacity: .9;
+    radial-gradient(1100px 620px at 18% 0%, rgba(176,139,87,.11), transparent 62%),
+    radial-gradient(980px 560px at 86% 6%, rgba(24,24,27,.06), transparent 60%),
+    radial-gradient(900px 520px at 60% 120%, rgba(176,139,87,.07), transparent 55%);
+  opacity: .95;
 }
 
-a{ color: inherit; text-decoration: none; }
-a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent-2), .55); }
+/* Put app content above the canvas glow */
+body > header,
+body > main,
+body > footer{
+  position: relative;
+  z-index: 1;
+}
+
+::selection{
+  background: rgba(var(--lp-gold), .22);
+}
+
+/* Links */
+a{
+  color: inherit;
+  text-decoration: none;
+}
+a:hover{
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--lp-gold), .70);
+  text-underline-offset: 3px;
+}
+
+/* Focus ring (accessible) */
+:focus-visible{
+  outline: 2px solid rgba(var(--lp-ring), .65);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
 
 /* ---------------------------------------------------------
-   Layout
+   Helpers
 --------------------------------------------------------- */
 
 .lp-container{
@@ -72,14 +121,16 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   padding: 36px 24px 56px;
 }
 
+.lp-muted{ color: rgb(var(--lp-muted)); }
+
 /* ---------------------------------------------------------
    Typography
 --------------------------------------------------------- */
 
 .lp-h1{
-  font-size: 38px;
+  font-size: clamp(34px, 4vw, 44px);
   line-height: 1.05;
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: -0.035em;
   background: linear-gradient(180deg, rgb(var(--lp-text)) 0%, rgb(39 39 42) 78%);
   -webkit-background-clip: text;
@@ -87,12 +138,16 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   color: transparent;
 }
 
-.lp-h2{
-  font-size: 18px;
-  font-weight: 700;
+.lp-sectionTitle{
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 
-.lp-muted{ color: rgb(var(--lp-muted)); }
+.lp-listMeta{
+  font-size: 14px;
+  color: rgb(var(--lp-muted));
+}
 
 /* ---------------------------------------------------------
    Cards
@@ -103,9 +158,9 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   border: 1px solid rgba(var(--lp-border), .95);
   border-radius: 22px;
   box-shadow:
-    0 1px 2px rgba(17,24,39,.06),
-    0 22px 52px rgba(17,24,39,.08);
-  backdrop-filter: blur(8px);
+    0 1px 2px rgba(24,24,27,.06),
+    0 18px 44px rgba(24,24,27,.08);
+  backdrop-filter: blur(10px);
 }
 
 .lp-card-pad{ padding: 26px; }
@@ -113,6 +168,10 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
 .lp-divider{
   height: 1px;
   background: rgb(var(--lp-divider));
+}
+
+.lp-softDivider{
+  border-top: 1px solid rgba(var(--lp-border), .55);
 }
 
 .lp-row{
@@ -123,72 +182,90 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
 }
 
 /* ---------------------------------------------------------
-   HERO IMAGE (single use)
+   Media card (image blocks) – clean, brand-consistent
+--------------------------------------------------------- */
+
+.lp-mediaCard{
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--lp-border), .95);
+  background: rgba(255,255,255,.92);
+  box-shadow:
+    0 1px 2px rgba(24,24,27,.06),
+    0 18px 44px rgba(24,24,27,.08);
+}
+
+.lp-mediaCardInner{
+  height: 100%;
+  width: 100%;
+  background: #fff;
+}
+
+/* Generic image fill helper */
+.lp-mediaImage{
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------------------------------------------------------
+   Hero Image – CLEAN (no grading)
 --------------------------------------------------------- */
 
 .lp-heroImage{
   position: relative;
   border-radius: 28px;
   overflow: hidden;
-  filter: saturate(1.15) contrast(1.05);
   background:
-    linear-gradient(
-      90deg,
-      rgba(0,0,0,.32) 0%,
-      rgba(0,0,0,.22) 42%,
-      rgba(0,0,0,.10) 100%
-    ),
-    url("/melhuscatering-lunsj-1018029.jpg") center/cover no-repeat;
+    url("/matbilder/melhuscatering-lunsj-1018029.jpg") center/cover no-repeat;
 }
 
-.lp-heroImage::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(90% 70% at 20% 20%, rgba(0,0,0,.18), transparent 55%),
-    radial-gradient(100% 80% at 80% 10%, transparent 50%, rgba(0,0,0,.14) 100%);
-}
-
-/* Unified hero content */
+/* Unified hero content (if used elsewhere) */
 .lp-heroContent{
   position: relative;
   z-index: 1;
   padding: 34px 36px 52px;
   color: white;
 }
-
 .lp-heroContent .lp-h1{ color: white; background:none; }
 .lp-heroContent .lp-muted{ color: rgba(255,255,255,.86); }
 
-.lp-heroContent .lp-chip{
-  background: rgba(255,255,255,.16);
-  border-color: rgba(255,255,255,.20);
-  color: rgba(255,255,255,.92);
-}
-
 /* Overlap for first card */
-.lp-overlap{
-  margin-top: -28px;
-}
+.lp-overlap{ margin-top: -28px; }
 
-/* Accent stripe */
-.lp-heroStripe{
-  position: relative;
-}
+/* Accent stripe (brand gold) */
+.lp-heroStripe{ position: relative; }
 .lp-heroStripe::before{
   content:"";
   position:absolute;
   inset: 14px auto 14px 14px;
   width: 5px;
   border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    rgb(var(--lp-accent)) 0%,
-    rgba(var(--lp-accent), .55) 100%
-  );
+  background: linear-gradient(180deg, rgb(var(--lp-gold)) 0%, rgba(var(--lp-gold), .55) 100%);
 }
+
+/* ---------------------------------------------------------
+   Feature Image (Real photo – Sustainability/Benefits block)
+--------------------------------------------------------- */
+
+.lp-featureImage{
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  min-height: 360px;
+
+  background: url("/forsidebilder/lunchportalen-mobil-bestillingsbilde.png") center/cover no-repeat;
+
+  border: 1px solid rgba(var(--lp-border), .95);
+  box-shadow:
+    0 1px 2px rgba(24,24,27,.06),
+    0 18px 44px rgba(24,24,27,.08);
+}
+
+/* If filename has spaces, use:
+   background: url("/forsidebilder/Lunchportalen%20mobil%20bestillingsbilde.png") center/cover no-repeat;
+*/
 
 /* ---------------------------------------------------------
    Chips
@@ -201,21 +278,42 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
   border: 1px solid rgba(var(--lp-border), .95);
   background: rgba(255,255,255,.92);
   color: rgb(var(--lp-text));
 }
 
-.lp-chip-ok{ background: rgb(var(--lp-ok-bg)); border-color: rgb(var(--lp-ok-bd)); color: rgb(var(--lp-ok-tx)); }
-.lp-chip-warn{ background: rgb(var(--lp-warn-bg)); border-color: rgb(var(--lp-warn-bd)); color: rgb(var(--lp-warn-tx)); }
-.lp-chip-crit{ background: rgb(var(--lp-crit-bg)); border-color: rgb(var(--lp-crit-bd)); color: rgb(var(--lp-crit-tx)); }
+.lp-chip-ok{
+  background: rgba(var(--lp-ok-bg), .75);
+  border-color: rgba(var(--lp-ok-bd), .85);
+  color: rgb(var(--lp-ok-tx));
+}
+
+.lp-chip-warn{
+  background: rgba(var(--lp-warn-bg), .75);
+  border-color: rgba(var(--lp-warn-bd), .85);
+  color: rgb(var(--lp-warn-tx));
+}
+
+.lp-chip-crit{
+  background: rgba(var(--lp-crit-bg), .75);
+  border-color: rgba(var(--lp-crit-bd), .85);
+  color: rgb(var(--lp-crit-tx));
+}
+
+.lp-chip-neutral{
+  background: rgba(0,0,0,.06);
+  border-color: rgba(0,0,0,.12);
+  color: rgb(var(--lp-text));
+}
 
 /* ---------------------------------------------------------
-   Buttons
+   Buttons (brand gold)
 --------------------------------------------------------- */
 
-.lp-btn, .lp-btn-primary{
+.lp-btn,
+.lp-btn-primary{
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -223,39 +321,70 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   border-radius: 14px;
   font-size: 14px;
   font-weight: 800;
-  transition: transform .12s ease, box-shadow .12s ease;
+  line-height: 1;
+  transition: transform .14s var(--lp-ease), box-shadow .14s var(--lp-ease), opacity .14s var(--lp-ease);
+  user-select: none;
+  white-space: nowrap;
 }
 
 .lp-btn{
   border: 1px solid rgba(var(--lp-border), .98);
   background: rgba(255,255,255,.92);
 }
-
 .lp-btn:hover{
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(17,24,39,.10);
+  box-shadow: 0 14px 30px rgba(24,24,27,.10);
+}
+.lp-btn:active{
+  transform: translateY(0);
+  opacity: .95;
 }
 
 .lp-btn-primary{
-  border: 1px solid rgba(15,118,110,.45);
-  color: white;
-  background: linear-gradient(180deg, rgb(var(--lp-accent)) 0%, rgb(11 94 88) 100%);
-  box-shadow: 0 18px 44px rgba(15,118,110,.22);
+  border: 1px solid rgba(var(--lp-gold), .55);
+  color: rgb(var(--lp-graphite));
+  background: linear-gradient(180deg, rgba(var(--lp-gold), 1) 0%, rgba(156,118,74,1) 100%);
+  box-shadow: 0 18px 44px rgba(176,139,87,.22);
+}
+.lp-btn-primary:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 24px 58px rgba(176,139,87,.26);
+}
+.lp-btn-primary:active{
+  transform: translateY(0);
+  opacity: .96;
 }
 
 /* ---------------------------------------------------------
-   Week list (product rhythm)
+   Inputs (enterprise calm)
 --------------------------------------------------------- */
 
-.lp-sectionTitle{
-  font-size: 22px;
-  font-weight: 750;
+.lp-input{
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--lp-border), .95);
+  background: rgba(255,255,255,.92);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: rgb(var(--lp-text));
+  outline: none;
+  transition: border-color .14s var(--lp-ease), box-shadow .14s var(--lp-ease);
 }
 
-.lp-listMeta{
-  font-size: 14px;
+.lp-input:focus{
+  border-color: rgba(var(--lp-gold), .55);
+  box-shadow: 0 0 0 4px rgba(var(--lp-gold), .16);
+}
+
+.lp-label{
+  font-size: 12px;
+  font-weight: 700;
   color: rgb(var(--lp-muted));
 }
+
+/* ---------------------------------------------------------
+   Week list rhythm
+--------------------------------------------------------- */
 
 .lp-weekRow{
   display:grid;
@@ -281,6 +410,108 @@ a:hover{ text-decoration: underline; text-decoration-color: rgba(var(--lp-accent
   margin-top: 4px;
 }
 
-.lp-softDivider{
-  border-top: 1px solid rgba(var(--lp-border), .55);
+/* ---------------------------------------------------------
+   Modal (for confirmations like "Close company")
+--------------------------------------------------------- */
+
+.lp-modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(24,24,27,.38);
+  backdrop-filter: blur(6px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 18px;
+  z-index: 50;
 }
+
+.lp-modal{
+  width: min(560px, 100%);
+  border-radius: 22px;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(var(--lp-border), .95);
+  box-shadow:
+    0 2px 6px rgba(24,24,27,.10),
+    0 32px 80px rgba(24,24,27,.22);
+}
+
+.lp-modalHeader{
+  padding: 18px 18px 0;
+}
+
+.lp-modalBody{
+  padding: 12px 18px 18px;
+  color: rgb(var(--lp-muted));
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lp-modalActions{
+  display:flex;
+  gap: 10px;
+  padding: 0 18px 18px;
+  justify-content:flex-end;
+}
+
+/* ---------------------------------------------------------
+   Locked overlay (cutoff / paused)
+--------------------------------------------------------- */
+
+.lp-lockedOverlay{
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255,255,255,.74);
+  backdrop-filter: blur(8px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding: 16px;
+}
+
+.lp-lockedOverlayInner{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(var(--lp-border), .95);
+  padding: 10px 14px;
+  box-shadow: 0 12px 30px rgba(24,24,27,.10);
+  color: rgb(var(--lp-text));
+  font-weight: 750;
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------
+   Scrollbar (optional, subtle)
+--------------------------------------------------------- */
+
+@media (min-width: 768px){
+  *::-webkit-scrollbar{ width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb{
+    background: rgba(24,24,27,.14);
+    border-radius: 999px;
+    border: 2px solid rgba(255,255,255,.70);
+  }
+  *::-webkit-scrollbar-track{ background: transparent; }
+}
+
+/* ---------------------------------------------------------
+   Mobile tweaks
+--------------------------------------------------------- */
+
+@media (max-width: 640px){
+  .lp-container{ padding: 28px 16px 44px; }
+  .lp-heroContent{ padding: 26px 20px 36px; }
+  .lp-weekRow{ grid-template-columns: 92px 1fr; }
+  .lp-featureImage{ min-height: 300px; }
+}
+
+/* ---------------------------------------------------------
+   VS Code warning note:
+   "Unknown at rule @tailwind" is from the editor linter,
+   not Tailwind. It will compile correctly when PostCSS is set.
+--------------------------------------------------------- */

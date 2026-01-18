@@ -1,52 +1,68 @@
+// app/api/me/route.ts
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const AUTH_TIMEOUT_MS = 1500;
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+
 export async function GET() {
-  const supabase = await supabaseServer();
+  const rid = `me_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
 
-  const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth?.user) {
-    return NextResponse.json({ role: null }, { status: 401 });
-  }
+  try {
+    const supabase = await supabaseServer();
 
-  const userId = auth.user.id;
+    const userRes = (await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("getUser_timeout")), AUTH_TIMEOUT_MS)
+      ),
+    ])) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
 
-  const { data: rows, error: profErr } = await supabase
-    .from("profiles")
-    .select("role, company_id, location_id")
-    .eq("user_id", userId)
-    .limit(1);
+    const user = userRes.data?.user;
 
-  // ✅ Workaround: hvis DB/RLS går i loop (54001), ikke krasj appen
-  if (profErr) {
-    console.error("[api/me] profiles query error:", profErr);
-
-    const code = (profErr as any)?.code;
-    if (code === "54001") {
-      return NextResponse.json({
-        role: "employee",
-        company_id: null,
-        location_id: null,
-        user_id: userId,
-        degraded: true, // nyttig flagg til debugging
-      });
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, rid, error: "not_authenticated", user: null },
+        { status: 401, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
+    const profileRes = (await Promise.race([
+      supabase
+        .from("profiles")
+        .select("role, company_id")
+        .eq("id", user.id)
+        .maybeSingle(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("profile_timeout")), AUTH_TIMEOUT_MS)
+      ),
+    ]).catch(() => null)) as
+      | { data: { role?: Role | null; company_id?: string | null } | null }
+      | null;
+
+    const profile = profileRes?.data ?? null;
+
     return NextResponse.json(
-      { error: profErr.message, code },
-      { status: 500 }
+      {
+        ok: true,
+        rid,
+        user: {
+          id: user.id,
+          email: user.email ?? null,
+          role: (profile?.role as Role) || "employee",
+          companyId: profile?.company_id ?? null,
+        },
+      },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
+  } catch {
+    return NextResponse.json(
+      { ok: false, rid, error: "auth_check_failed", user: null },
+      { status: 401, headers: { "Cache-Control": "no-store" } }
     );
   }
-
-  const profile = rows?.[0] ?? null;
-
-  return NextResponse.json({
-    role: profile?.role ?? "employee",
-    company_id: profile?.company_id ?? null,
-    location_id: profile?.location_id ?? null,
-    user_id: userId,
-  });
 }

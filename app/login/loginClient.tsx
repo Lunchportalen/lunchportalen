@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabaseBrowser } from "../lib/supabase/client";
 
 export default function LoginClient() {
-  const supabase = supabaseBrowser();
   const router = useRouter();
+  const sp = useSearchParams();
+
+  // ✅ Support: /login?next=/home
+  const nextPath = useMemo(() => {
+    const n = sp.get("next");
+    // enkel sikkerhet: kun interne paths
+    if (!n || !n.startsWith("/")) return "/today";
+    if (n.startsWith("//")) return "/today";
+    return n;
+  }, [sp]);
+
+  const supabase = supabaseBrowser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +43,7 @@ export default function LoginClient() {
 
     // Viktig: sørg for at SSR/middleware får oppdatert cookies før vi går videre
     router.refresh();
-    router.replace("/today");
+    router.replace(nextPath);
   }
 
   async function onRegister(e: React.MouseEvent) {
@@ -56,9 +67,11 @@ export default function LoginClient() {
   }
 
   return (
-    <main className="p-6 max-w-md mx-auto">
+    <main className="mx-auto max-w-md p-6">
       <h1 className="text-2xl font-bold">Logg inn</h1>
-      <p className="mt-2 text-sm opacity-80">Logg inn for å bestille eller avbestille lunsj.</p>
+      <p className="mt-2 text-sm opacity-80">
+        Logg inn for å bestille eller avbestille lunsj.
+      </p>
 
       <form onSubmit={onLogin} className="mt-5 grid gap-3">
         <label className="text-sm">
@@ -87,8 +100,8 @@ export default function LoginClient() {
 
         <button
           disabled={busy}
-          className={`mt-2 rounded-lg px-4 py-2 border ${
-            busy ? "opacity-60 border-white/10" : "border-white/20 hover:bg-white/5"
+          className={`mt-2 rounded-lg border px-4 py-2 ${
+            busy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="submit"
         >
@@ -98,15 +111,15 @@ export default function LoginClient() {
         <button
           disabled={busy}
           onClick={onRegister}
-          className={`rounded-lg px-4 py-2 border ${
-            busy ? "opacity-60 border-white/10" : "border-white/20 hover:bg-white/5"
+          className={`rounded-lg border px-4 py-2 ${
+            busy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="button"
         >
           Opprett bruker (test)
         </button>
 
-        {msg ? <div className="text-sm mt-2">{msg}</div> : null}
+        {msg ? <div className="mt-2 text-sm">{msg}</div> : null}
       </form>
     </main>
   );

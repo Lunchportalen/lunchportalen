@@ -12,19 +12,21 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
+    "forceConsistentCasingInFileNames": true,
 
-    "baseUrl": "app",
+    /* =========================
+       Alias: @/* -> app/*
+       (baseUrl = ".")
+       ========================= */
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./app/*"]
     },
 
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "plugins": [{ "name": "next" }]
   },
+
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
@@ -33,5 +35,12 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": ["node_modules"]
+
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist",
+    "studio/.sanity",
+    "studio/.sanity/**"
+  ]
 }

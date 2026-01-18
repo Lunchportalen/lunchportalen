@@ -1,37 +1,44 @@
+// app/kitchen/page.tsx
 import { redirect } from "next/navigation";
 import KitchenView from "./KitchenView";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function Page() {
   const supabase = await supabaseServer();
 
+  // 🔐 Auth gate
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) {
-    redirect("/login");
+    redirect("/login?next=/kitchen");
   }
 
+  // 🔐 Role gate (profiles.id = auth.user.id)
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
-    .eq("user_id", auth.user.id)
-    .single();
+    .eq("id", auth.user.id)
+    .maybeSingle();
 
-  if (error) {
-    redirect("/today");
+  // Hvis profilen ikke kan leses -> send til uke (hoved)
+  if (error || !profile?.role) {
+    redirect("/week");
   }
 
-  const role = profile?.role ?? "employee";
+  const role = profile.role;
 
-  // ✅ Kun admin/superadmin
-  if (role !== "company_admin" && role !== "superadmin") {
-    redirect("/today");
+  // ✅ Kun kitchen og superadmin
+  if (!["kitchen", "superadmin"].includes(role)) {
+    redirect("/week");
   }
 
   return (
     <main className="mx-auto max-w-6xl p-6 print:p-0">
-      <h1 className="mb-6 text-3xl font-semibold">Kjøkken – dagens bestillinger</h1>
+      <h1 className="mb-6 text-3xl font-semibold">
+        Kjøkken – dagens bestillinger
+      </h1>
       <KitchenView />
     </main>
   );
