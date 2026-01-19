@@ -1,0 +1,66 @@
+// app/superadmin/firms/page.tsx
+import { osloTodayISODate } from "@/lib/date/oslo";
+import { listFirms } from "@/lib/superadmin/queries";
+import type { CompanyStatus, FirmsSortKey, SortDir } from "@/lib/superadmin/types";
+import FirmsTable from "@/components/superadmin/FirmsTable";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type SP = Record<string, string | string[] | undefined>;
+
+function sp1(v: string | string[] | undefined) {
+  if (!v) return "";
+  return Array.isArray(v) ? (v[0] ?? "") : v;
+}
+
+function safeStatus(v: string): CompanyStatus | "ALL" {
+  const s = String(v || "").toUpperCase();
+  if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED") return s as CompanyStatus;
+  return "ALL";
+}
+
+function safeSortKey(v: string): FirmsSortKey {
+  const s = String(v || "");
+  if (s === "name" || s === "status" || s === "created_at") return s;
+  return "created_at";
+}
+
+function safeSortDir(v: string): SortDir {
+  const s = String(v || "").toLowerCase();
+  return s === "asc" ? "asc" : "desc";
+}
+
+function safeInt(v: string, fallback: number, min: number, max: number) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  const x = Math.floor(n);
+  return Math.max(min, Math.min(max, x));
+}
+
+export default async function SuperadminFirmsPage(props: { searchParams?: SP }) {
+  const sp = props.searchParams ?? {};
+  const todayISO = osloTodayISODate();
+
+  const q = sp1(sp.q);
+  const status = safeStatus(sp1(sp.status));
+  const page = safeInt(sp1(sp.page) || "1", 1, 1, 1_000_000);
+  const pageSize = safeInt(sp1(sp.pageSize) || "50", 50, 10, 100);
+  const sortKey = safeSortKey(sp1(sp.sortKey));
+  const sortDir = safeSortDir(sp1(sp.sortDir));
+
+  const data = await listFirms({ q, status, page, pageSize, sortKey, sortDir, todayISO });
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-6">
+      <div className="mb-4">
+        <h1 className="text-xl font-semibold">Firma</h1>
+        <p className="text-sm text-muted-foreground">
+          Søk, filtrer og administrer firma. All visning er paginert og skalerer.
+        </p>
+      </div>
+
+      <FirmsTable initial={data} />
+    </div>
+  );
+}

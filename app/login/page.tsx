@@ -21,7 +21,7 @@ function safeNextPath(next: string | null) {
   if (!next.startsWith("/")) return FALLBACK;
   if (next.startsWith("//")) return FALLBACK;
 
-  // Ikke la public routes bli "next" (unngår loop)
+  // Unngå redirect-loop til public routes
   if (
     next === "/login" ||
     next.startsWith("/login/") ||
@@ -36,8 +36,9 @@ function safeNextPath(next: string | null) {
   return next;
 }
 
+// ✅ FASIT: superadmin skal til /superadmin (ikke /today og ikke /admin hvis dere bruker /superadmin)
 function homeForRole(role: Role) {
-  if (role === "superadmin") return "/admin";
+  if (role === "superadmin") return "/superadmin";
   if (role === "company_admin") return "/admin";
   if (role === "kitchen") return "/kitchen";
   if (role === "driver") return "/driver";
@@ -47,10 +48,11 @@ function homeForRole(role: Role) {
 function resolveNextForRole(role: Role, next: string) {
   // ✅ Superadmin skal aldri inn på operativ /week eller /min-side
   if (role === "superadmin") {
-    if (next.startsWith("/week") || next.startsWith("/min-side")) return "/admin";
+    if (next.startsWith("/week") || next.startsWith("/min-side")) return "/superadmin";
+    if (next.startsWith("/admin")) return "/superadmin"; // unngå gammel path
   }
 
-  // ✅ Kjøkken/driver bør heller ikke havne på week
+  // ✅ Kjøkken/driver bør heller ikke havne på week/min-side
   if (role === "kitchen") {
     if (next.startsWith("/week") || next.startsWith("/min-side")) return "/kitchen";
   }
@@ -58,7 +60,7 @@ function resolveNextForRole(role: Role, next: string) {
     if (next.startsWith("/week") || next.startsWith("/min-side")) return "/driver";
   }
 
-  // ✅ Company admin kan fint lande på /admin hvis next er week
+  // ✅ Company admin kan fint lande på /admin hvis next er week/min-side
   if (role === "company_admin") {
     if (next.startsWith("/week") || next.startsWith("/min-side")) return "/admin";
   }
@@ -97,7 +99,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ Check om allerede innlogget (skal aldri henge)
+  // ✅ Hvis allerede innlogget: send videre (skal aldri henge)
   useEffect(() => {
     let alive = true;
 
@@ -130,6 +132,7 @@ export default function LoginPage() {
     try {
       const sb = supabaseBrowser();
 
+      // ✅ signInWithPassword støtter ikke redirectTo/options
       const { error } = await sb.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -141,20 +144,11 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ Vent et øyeblikk så client-session rekker å oppdatere
+      // ✅ La session oppdatere seg
       await sb.auth.getSession().catch(() => null);
 
-      // ✅ Hent rolle fra /api/me og redirect riktig (superadmin -> /admin)
-      const me = await checkMe();
-      if (me?.ok) {
-        const role = me.user.role;
-        const resolved = resolveNextForRole(role, nextRaw) || homeForRole(role);
-        router.replace(resolved);
-        return;
-      }
-
-      // Fallback hvis /api/me feiler: gå til nextRaw
-      router.replace(nextRaw);
+      // ✅ All routing etter login går via callback (rollebasert)
+      router.replace(`/auth/callback?next=${encodeURIComponent(nextRaw)}`);
     } catch {
       setErr("Kunne ikke logge inn. Prøv igjen.");
       setPhase("form");
@@ -164,7 +158,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="grid gap-10 md:grid-cols-2 md:items-start">
-        {/* Venstre: tekst */}
+        {/* Venstre */}
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Logg inn</h1>
           <p className="mt-3 text-sm text-[rgb(var(--lp-muted))]">
@@ -180,7 +174,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Høyre: kort */}
+        {/* Høyre */}
         <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
           {phase === "checking" ? (
             <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -192,9 +186,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">
-                  E-post
-                </label>
+                <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">E-post</label>
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -207,9 +199,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">
-                  Passord
-                </label>
+                <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">Passord</label>
                 <input
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -235,16 +225,11 @@ export default function LoginPage() {
               </button>
 
               <div className="flex items-center justify-between text-sm">
-                <Link
-                  className="text-[rgb(var(--lp-muted))] hover:underline"
-                  href="/forgot-password"
-                >
+                <Link className="text-[rgb(var(--lp-muted))] hover:underline" href="/forgot-password">
                   Glemt passord?
                 </Link>
 
-                <span className="text-xs text-[rgb(var(--lp-muted))]">
-                  Next: {nextRaw}
-                </span>
+                <span className="text-xs text-[rgb(var(--lp-muted))]">Next: {nextRaw}</span>
               </div>
             </form>
           )}

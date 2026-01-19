@@ -31,29 +31,54 @@ function isCompanyStatus(x: any): x is CompanyStatus {
   return x === "active" || x === "paused" || x === "closed";
 }
 
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function safeName(v: any) {
+  const s = safeStr(v);
+  return s.length ? s : "Ukjent firma";
+}
+
 export default async function SuperadminPage() {
   const supabase = await supabaseServer();
 
-  // ✅ Auth
-  const { data: userRes } = await supabase.auth.getUser();
+  // =========================================================
+  // 1) Auth
+  // =========================================================
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
   const user = userRes?.user;
-  if (!user) redirect("/login?next=/superadmin");
 
-  // ✅ Role gate
+  if (userErr || !user) {
+    redirect("/login?next=/superadmin");
+  }
+
+  // =========================================================
+  // 2) Role gate (FASIT: profiles.user_id)
+  // =========================================================
   const { data: profile, error: pErr } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
+    .eq("user_id", user.id)
+    .single<ProfileRow>();
 
-  if (pErr || !profile) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin") redirect("/week");
+  if (pErr || !profile) {
+    // Ikke tilgang eller profil mangler -> tilbake til login
+    redirect("/login?next=/superadmin");
+  }
 
-  // ✅ Companies
+  if (profile.role !== "superadmin") {
+    redirect("/week");
+  }
+
+  // =========================================================
+  // 3) Companies (lett, men komplett grunnlag for UI)
+  // =========================================================
   const { data: companies, error: cErr } = await supabase
     .from("companies")
     .select("id,name,orgnr,status,created_at,updated_at")
-    .order("created_at", { ascending: false });
+    // Enterprise: sist endret først er mer operasjonelt enn created_at
+    .order("updated_at", { ascending: false });
 
   if (cErr) {
     return (
@@ -63,26 +88,36 @@ export default async function SuperadminPage() {
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
             Klarte ikke å hente firmalisten.
           </p>
-          <pre className="mt-3 whitespace-pre-wrap text-xs text-red-700">
-            {cErr.message}
-          </pre>
+          <pre className="mt-3 whitespace-pre-wrap text-xs text-red-700">{cErr.message}</pre>
         </div>
       </div>
     );
   }
 
-  // ✅ Map hard-typed (unngår any)
+  // =========================================================
+  // 4) Map hard-typed (unngår any)
+  // =========================================================
   const list: CompanyRow[] = (companies ?? [])
-    .map((c: any) => ({
-      id: String(c.id),
-      name: String(c.name ?? ""),
-      orgnr: c.orgnr ? String(c.orgnr) : null,
-      status: isCompanyStatus(c.status) ? c.status : "active",
-      created_at: String(c.created_at ?? ""),
-      updated_at: String(c.updated_at ?? ""),
-    }))
-    .filter((c) => c.id && c.name);
+    .map((c: any) => {
+      const id = safeStr(c.id);
+      const name = safeName(c.name);
+      const orgnr = c.orgnr ? safeStr(c.orgnr) : null;
+      const status: CompanyStatus = isCompanyStatus(c.status) ? c.status : "active";
 
+      return {
+        id,
+        name,
+        orgnr,
+        status,
+        created_at: safeStr(c.created_at),
+        updated_at: safeStr(c.updated_at),
+      };
+    })
+    .filter((c) => c.id.length > 0);
+
+  // =========================================================
+  // 5) Stats
+  // =========================================================
   const stats: Stats = {
     companiesTotal: list.length,
     companiesActive: list.filter((c) => c.status === "active").length,
@@ -90,5 +125,8 @@ export default async function SuperadminPage() {
     companiesClosed: list.filter((c) => c.status === "closed").length,
   };
 
+  // =========================================================
+  // 6) Render client UI
+  // =========================================================
   return <SuperadminClient initialCompanies={list} initialStats={stats} />;
 }

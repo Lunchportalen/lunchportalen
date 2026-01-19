@@ -486,6 +486,48 @@ a:hover{
 }
 
 /* ---------------------------------------------------------
+   Tables (Superadmin/Operations/Kitchen) – clean & readable
+--------------------------------------------------------- */
+
+.lp-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--lp-border), .95);
+  background: rgba(255,255,255,.92);
+  box-shadow:
+    0 1px 2px rgba(24,24,27,.05),
+    0 12px 34px rgba(24,24,27,.07);
+}
+
+.lp-table thead th{
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: rgba(var(--lp-muted), .95);
+  background: rgba(var(--lp-divider), .72);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(var(--lp-border), .75);
+}
+
+.lp-table tbody td{
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(var(--lp-border), .55);
+  font-size: 14px;
+}
+
+.lp-table tbody tr:last-child td{
+  border-bottom: 0;
+}
+
+.lp-table tbody tr:hover td{
+  background: rgba(var(--lp-gold), .06);
+}
+
+/* ---------------------------------------------------------
    Scrollbar (optional, subtle)
 --------------------------------------------------------- */
 
@@ -497,6 +539,28 @@ a:hover{
     border: 2px solid rgba(255,255,255,.70);
   }
   *::-webkit-scrollbar-track{ background: transparent; }
+}
+
+/* ---------------------------------------------------------
+   Print (Operations / Kitchen)
+--------------------------------------------------------- */
+
+@media print{
+  /* Hide chrome */
+  header, nav, button, .no-print{ display: none !important; }
+
+  /* Reduce background / effects */
+  body{ background: #fff !important; }
+  body::before{ display: none !important; }
+
+  /* Cards become flat for printing */
+  .lp-card, .lp-mediaCard{
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border-color: #ddd !important;
+  }
+
+  main{ padding: 0 !important; }
 }
 
 /* ---------------------------------------------------------

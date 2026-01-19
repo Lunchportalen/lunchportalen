@@ -37,9 +37,10 @@ export default async function KitchenPage(props: {
     );
   }
 
+  // NB: dere bruker app_metadata.is_admin som “kjøkken/superadmin”-flagg
   const isAdmin = (userRes.user.app_metadata as any)?.is_admin === true;
 
-  // ✅ Firma-admin (ikke superadmin/kjøkken) skal kunne laste ned avtale-PDF
+  // ✅ Firma-admin (ikke kjøkken/superadmin) skal kunne laste ned avtale-PDF
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-3xl p-6">
@@ -68,6 +69,7 @@ export default async function KitchenPage(props: {
   }
 
   // ✅ Kjøkken / superadmin: vis kjøkkenoversikt
+  // Viktig: kolonnenavn og relasjoner matcher ditt skjema
   const { data: rows, error: oErr } = await (supabase as any)
     .from("orders")
     .select(
@@ -75,14 +77,15 @@ export default async function KitchenPage(props: {
       id,
       user_id,
       note,
+      slot,
       created_at,
       company_id,
       location_id,
       companies ( id, name ),
       company_locations (
         id,
-        name,
-        address,
+        label,
+        address_line1,
         postal_code,
         city,
         delivery_json
@@ -90,8 +93,8 @@ export default async function KitchenPage(props: {
     `
     )
     .eq("date", date)
-    // NB: behold "ACTIVE" hvis det er det dere faktisk bruker i DB
-    .eq("status", "ACTIVE")
+    // ✅ DB/view/RPC bruker "active" (ikke "ACTIVE") – behold dette som fasit
+    .eq("status", "active")
     .order("created_at", { ascending: true });
 
   if (oErr) {
@@ -99,29 +102,39 @@ export default async function KitchenPage(props: {
       <main className="p-6">
         <h1 className="text-2xl font-bold">Kjøkkenoversikt</h1>
         <p className="mt-2 text-sm opacity-80">Kunne ikke hente bestillinger.</p>
-        <pre className="mt-4 whitespace-pre-wrap text-xs opacity-80">
-          {oErr.message}
-        </pre>
+        <pre className="mt-4 whitespace-pre-wrap text-xs opacity-80">{oErr.message}</pre>
       </main>
     );
   }
 
   const orders = (rows ?? []) as DbOrderRow[];
-  const userIds = Array.from(new Set(orders.map((o) => o.user_id).filter(Boolean)));
+
+  // ✅ orders.user_id matcher profiles.id hos deg
+  const profileIds = Array.from(
+    new Set(orders.map((o) => o.user_id).filter(Boolean))
+  ) as string[];
 
   const profilesMap = new Map<string, ProfileRow>();
 
-  if (userIds.length) {
+  if (profileIds.length) {
     const { data: profRows, error: pErr } = await (supabase as any)
       .from("profiles")
-      .select("user_id,name,department")
-      .in("user_id", userIds);
+      // profiles: id, name, department
+      .select("id,name,department")
+      .in("id", profileIds);
 
     if (pErr) {
-      console.error("[kitchen] profiles fetch failed", pErr.message);
+      console.error("[kjokken] profiles fetch failed", pErr.message);
     } else {
-      for (const p of (profRows ?? []) as ProfileRow[]) {
-        if (p?.user_id) profilesMap.set(p.user_id, p);
+      // Build map keyed by profile.id (== orders.user_id)
+      for (const p of (profRows ?? []) as any[]) {
+        if (p?.id) {
+          profilesMap.set(p.id, {
+            user_id: p.id, // for kompatibilitet om grouping forventer user_id-key
+            name: p.name ?? "",
+            department: p.department ?? null,
+          } as ProfileRow);
+        }
       }
     }
   }
@@ -131,7 +144,8 @@ export default async function KitchenPage(props: {
 
   const menu = await getMenuForDate(date);
   const menuText = menu?.isPublished ? menu.description || "—" : "Meny ikke publisert";
-  const allergens = menu?.isPublished && menu?.allergens?.length ? menu.allergens : [];
+  const allergens =
+    menu?.isPublished && menu?.allergens?.length ? menu.allergens : [];
 
   return (
     <KitchenClient

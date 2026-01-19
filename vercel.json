@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/week-visibility?key=${CRON_SECRET}",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/forecast?key=${CRON_SECRET}",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/preprod?key=${CRON_SECRET}",
+      "schedule": "5 8 * * 1-5"
     }
   ]
 }

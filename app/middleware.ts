@@ -38,6 +38,7 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/week") ||
     pathname.startsWith("/orders") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/superadmin") || // ✅ superadmin UI
     pathname.startsWith("/kitchen") ||
     pathname.startsWith("/driver") ||
     pathname.startsWith("/menus") || // ✅ superadmin menus/week
@@ -47,8 +48,11 @@ function isProtectedPath(pathname: string) {
 
 // Hvilke roller får tilgang hvor (Avensia-nivå: stramt og tydelig)
 function requiredRolesForPath(pathname: string): Role[] | null {
-  // Superadmin-område
-  if (pathname.startsWith("/admin/superadmin")) return ["superadmin"];
+  // ✅ Superadmin UI (dere bruker /superadmin i praksis)
+  if (pathname.startsWith("/superadmin")) return ["superadmin"];
+
+  // ✅ Superadmin API (ikke la dette være "alle roller")
+  if (pathname.startsWith("/api/superadmin")) return ["superadmin"];
 
   // Meny-admin (Sanity/publishing UI)
   if (pathname.startsWith("/menus")) return ["superadmin"];
@@ -68,6 +72,7 @@ function requiredRolesForPath(pathname: string): Role[] | null {
   }
 
   // API: krever innlogging hvis protected, men alle roller kan i utgangspunktet treffe API
+  // NB: spesifikke API-områder (som /api/superadmin) håndteres over.
   if (pathname.startsWith("/api")) {
     return ["employee", "company_admin", "superadmin", "kitchen", "driver"];
   }
@@ -129,10 +134,7 @@ export async function middleware(req: NextRequest) {
   if (!supabaseUrl || !supabaseAnon) {
     // Fail-closed på driftkritisk config
     if (isApiRequest(pathname)) {
-      return jsonError(
-        { ok: false, error: "SERVER_MISCONFIGURED", detail: "Missing Supabase env" },
-        500
-      );
+      return jsonError({ ok: false, error: "SERVER_MISCONFIGURED" }, 500);
     }
     return redirectToLogin(req, { error: "server_misconfigured" });
   }
@@ -191,7 +193,8 @@ export async function middleware(req: NextRequest) {
   const required = requiredRolesForPath(pathname);
   if (required && !required.includes(role)) {
     if (isApiRequest(pathname)) {
-      return jsonError({ ok: false, error: "FORBIDDEN_ROLE", role, required }, 403);
+      // ✅ Prod-safe: ikke lekke for mye info (hold det stramt)
+      return jsonError({ ok: false, error: "FORBIDDEN" }, 403);
     }
     // enterprise-riktig: send folk til fornuftig fallback
     const url = req.nextUrl.clone();
