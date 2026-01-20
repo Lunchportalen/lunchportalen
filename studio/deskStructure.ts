@@ -1,6 +1,5 @@
-import React from "react";
 import { CalendarIcon } from "@sanity/icons";
-import type { StructureResolver } from "sanity/desk";
+import type { StructureResolver } from "sanity/structure";
 
 import WeekPlannerTool from "./tools/weekPlanner/WeekPlanner";
 
