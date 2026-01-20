@@ -4,32 +4,46 @@
   "version": "1.0.0",
   "main": "package.json",
   "license": "UNLICENSED",
+
   "scripts": {
-    "dev": "sanity dev",
-    "start": "sanity start",
-    "build": "sanity build",
-    "deploy": "sanity deploy",
-    "deploy-graphql": "sanity graphql deploy"
+    "dev": "npx sanity dev",
+    "start": "npx sanity start",
+    "build": "npx sanity build",
+    "deploy": "npx sanity deploy",
+    "deploy-graphql": "npx sanity graphql deploy"
   },
-  "keywords": [
-    "sanity"
-  ],
+
+  "keywords": ["sanity"],
+
   "dependencies": {
-    "@sanity/desk-tool": "^2.36.2",
+    "sanity": "5.4.0",
+    "@sanity/vision": "5.4.0",
     "@sanity/icons": "^3.7.4",
-    "@sanity/vision": "^5.4.0",
-    "react": "^19.1",
-    "react-dom": "^19.1",
-    "sanity": "^5.4.0",
+
+    "react": "19.2.2",
+    "react-dom": "19.2.2",
+
     "styled-components": "^6.1.18"
   },
+
   "devDependencies": {
     "@sanity/eslint-config-studio": "^6.0.0",
-    "@types/react": "^19.1",
+
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+
     "eslint": "^9.28",
     "prettier": "^3.5",
     "typescript": "^5.8"
   },
+
+  "overrides": {
+    "react": "19.2.2",
+    "react-dom": "19.2.2",
+    "sanity": "5.4.0",
+    "@sanity/vision": "5.4.0"
+  },
+
   "prettier": {
     "semi": false,
     "printWidth": 100,
