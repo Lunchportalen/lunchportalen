@@ -360,7 +360,7 @@ export async function POST(req: Request) {
       status: "ACTIVE",
     }));
 
-    // ✅ Upsert + SELECT -> receipts (Avensia: verifiserbar lagring)
+    // ✅ Upsert + SELECT -> receipts (verifiserbar lagring)
     const { data: savedRaw, error: uErr } = await (supa as any)
       .from("day_choices")
       .upsert(rows, { onConflict: "company_id,location_id,user_id,date" })

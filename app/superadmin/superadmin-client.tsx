@@ -4,30 +4,38 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 
-type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
+/* =========================
+   Types
+========================= */
+
+type CompanyStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
 
 type CompanyRow = {
   id: string;
   name: string;
   orgnr: string | null;
-  status: CompanyStatus; // vi holder state i UPPERCASE
+  status: CompanyStatus; // UI holder UPPERCASE
   created_at: string;
   updated_at: string;
 };
 
 type Stats = {
   companiesTotal: number;
+  companiesPending: number;
   companiesActive: number;
   companiesPaused: number;
   companiesClosed: number;
 };
 
 type Props = {
-  // ✅ Deprecated: denne kan være tom nå (eller inneholde første side)
-  // Vi normaliserer og bruker den som initial page.
-  initialCompanies: any[];
-  // ✅ Deprecated: brukes som initial render inntil stats-endpoint svarer
-  initialStats: Stats;
+  initialCompanies: any[]; // deprecated, kan være tom / første side
+  initialStats: {
+    companiesTotal: number;
+    companiesActive: number;
+    companiesPaused: number;
+    companiesClosed: number;
+    companiesPending?: number; // bakoverkompat
+  }; // deprecated, brukes som initial fallback
 };
 
 type ApiOk = { ok: true; company: any; meta?: any };
@@ -45,35 +53,39 @@ type Tab = "firms" | "alerts" | "audit" | "system";
 function normalizeStatus(v: any): CompanyStatus {
   const s = String(v ?? "").trim();
   const up = s.toUpperCase();
-  if (up === "ACTIVE" || up === "PAUSED" || up === "CLOSED") return up as CompanyStatus;
+
+  if (up === "PENDING" || up === "ACTIVE" || up === "PAUSED" || up === "CLOSED") return up as CompanyStatus;
 
   const low = s.toLowerCase();
+  if (low === "pending") return "PENDING";
   if (low === "active") return "ACTIVE";
   if (low === "paused") return "PAUSED";
   if (low === "closed") return "CLOSED";
 
-  // safe fallback
-  return "ACTIVE";
+  // 🔒 Ukjent/mangler -> PENDING (aldri ACTIVE fallback)
+  return "PENDING";
 }
 
 function normalizeCompanyRow(raw: any): CompanyRow {
   return {
-    id: String(raw?.id ?? ""),
-    name: String(raw?.name ?? ""),
-    orgnr: raw?.orgnr ? String(raw.orgnr) : null,
+    id: String(raw?.id ?? "").trim(),
+    name: (String(raw?.name ?? "").trim() || "Ukjent firma").trim(),
+    orgnr: raw?.orgnr ? String(raw.orgnr).trim() : null,
     status: normalizeStatus(raw?.status),
-    created_at: String(raw?.created_at ?? raw?.createdAt ?? ""),
-    updated_at: String(raw?.updated_at ?? raw?.updatedAt ?? ""),
+    created_at: String(raw?.created_at ?? raw?.createdAt ?? "").trim(),
+    updated_at: String(raw?.updated_at ?? raw?.updatedAt ?? "").trim(),
   };
 }
 
 function statusPill(status: CompanyStatus) {
+  if (status === "PENDING") return "bg-sky-50 text-sky-900 ring-1 ring-sky-200";
   if (status === "ACTIVE") return "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200";
   if (status === "PAUSED") return "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
   return "bg-zinc-100 text-zinc-900 ring-1 ring-zinc-200";
 }
 
 function statusLabel(status: CompanyStatus) {
+  if (status === "PENDING") return "Pending";
   if (status === "ACTIVE") return "Active";
   if (status === "PAUSED") return "Paused";
   return "Closed";
@@ -81,6 +93,7 @@ function statusLabel(status: CompanyStatus) {
 
 function formatISO(iso: string) {
   try {
+    if (!iso) return "—";
     return new Date(iso).toLocaleString("no-NO", {
       year: "numeric",
       month: "2-digit",
@@ -89,13 +102,14 @@ function formatISO(iso: string) {
       minute: "2-digit",
     });
   } catch {
-    return iso;
+    return iso || "—";
   }
 }
 
 function calcStats(list: CompanyRow[]): Stats {
   return {
     companiesTotal: list.length,
+    companiesPending: list.filter((c) => c.status === "PENDING").length,
     companiesActive: list.filter((c) => c.status === "ACTIVE").length,
     companiesPaused: list.filter((c) => c.status === "PAUSED").length,
     companiesClosed: list.filter((c) => c.status === "CLOSED").length,
@@ -112,38 +126,88 @@ function chipBase(active: boolean) {
 }
 
 function reasonForStatus(status: CompanyStatus) {
+  if (status === "PENDING") return "Venter på godkjenning";
   if (status === "PAUSED") return "Midlertidig pause (manglende betaling / kontrakt)";
   if (status === "CLOSED") return "Stengt (kontrakt avsluttet / mislighold)";
-  return "Gjenåpnet";
+  return "Aktiv";
 }
 
 function errMsg(json: ApiErr | null | undefined, fallback = "UPDATE_FAILED") {
   const msg = json?.message || json?.error || fallback;
-  const detail = json?.detail ? `: ${typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail)}` : "";
+  const detail =
+    json?.detail ? `: ${typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail)}` : "";
   return `${msg}${detail}`;
 }
 
 /* =========================
-   Paging API types (NEW)
+   Paging API types
 ========================= */
 
 type ListRow = {
   id: string;
   name: string;
   orgnr: string | null;
-  status: "active" | "paused" | "closed" | "ACTIVE" | "PAUSED" | "CLOSED";
+  status: "pending" | "active" | "paused" | "closed" | "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
   created_at?: string;
   updated_at?: string;
 };
 
-type CompaniesListOk = { ok: true; rows: ListRow[]; nextCursor: string | null };
-type CompaniesListErr = ApiErr;
-type CompaniesListResp = CompaniesListOk | CompaniesListErr;
+type CompaniesListOk = { ok: true; items: ListRow[]; nextCursor: string | null; rid?: string };
+type CompaniesListResp = CompaniesListOk | ApiErr;
 
-type CompaniesStatsOk = { ok: true; total: number; active: number; paused: number; closed: number };
+type CompaniesStatsOk = {
+  ok: true;
+  rid?: string;
+  stats: {
+    companiesTotal: number;
+    companiesPending: number;
+    companiesActive: number;
+    companiesPaused: number;
+    companiesClosed: number;
+  };
+};
 type CompaniesStatsResp = CompaniesStatsOk | ApiErr;
 
 const PAGE_LIMIT = 50;
+
+/* =========================
+   Infinite scroll helper
+========================= */
+
+function useInfiniteScroll(opts: { enabled: boolean; onLoadMore: () => void; rootMargin?: string }) {
+  const { enabled, onLoadMore, rootMargin = "600px" } = opts;
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const el = ref.current;
+    if (!el) return;
+
+    let ticking = false;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.some((e) => e.isIntersecting);
+        if (!hit) return;
+        if (ticking) return;
+        ticking = true;
+        try {
+          onLoadMore();
+        } finally {
+          setTimeout(() => {
+            ticking = false;
+          }, 250);
+        }
+      },
+      { root: null, rootMargin, threshold: 0.01 }
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [enabled, onLoadMore, rootMargin]);
+
+  return ref;
+}
 
 /* =========================
    Main component
@@ -156,10 +220,10 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | CompanyStatus>("all");
 
-  // Debounced search (important for server paging)
+  // Debounced search
   const [qDebounced, setQDebounced] = useState(q);
   useEffect(() => {
-    const t = setTimeout(() => setQDebounced(q), 250);
+    const t = setTimeout(() => setQDebounced(q), 300);
     return () => clearTimeout(t);
   }, [q]);
 
@@ -169,39 +233,47 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   );
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const [loadingList, setLoadingList] = useState<boolean>(false);
-  const [loadingMore, setLoadingMore] = useState<boolean>(false);
-
-  // ✅ richer error (shows status + server error if available)
+  const [loadingList, setLoadingList] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
-  // Stats (enterprise: from stats endpoint)
+  // Stats
   const [stats, setStats] = useState<Stats>(() => {
     const derived = calcStats((initialCompanies || []).map(normalizeCompanyRow));
     return {
       companiesTotal: initialStats?.companiesTotal ?? derived.companiesTotal ?? 0,
+      companiesPending: initialStats?.companiesPending ?? derived.companiesPending ?? 0,
       companiesActive: initialStats?.companiesActive ?? derived.companiesActive ?? 0,
       companiesPaused: initialStats?.companiesPaused ?? derived.companiesPaused ?? 0,
       companiesClosed: initialStats?.companiesClosed ?? derived.companiesClosed ?? 0,
     };
   });
-  const [statsLoading, setStatsLoading] = useState<boolean>(false);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // UX
   const [toast, setToast] = useState<{ type: "ok" | "error"; msg: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [openRow, setOpenRow] = useState<string | null>(null);
 
-  // Abort / race protection for list loads
+  // Abort / race protection
   const listReqIdRef = useRef(0);
+  const listAbortRef = useRef<AbortController | null>(null);
 
   /* =========================
-     API: helpers
+     API helpers
   ========================= */
 
   function statusParam(v: "all" | CompanyStatus): string | null {
     if (v === "all") return null;
-    // API expects lower-case in our paging route
+    if (v === "PENDING") return "pending";
+    if (v === "ACTIVE") return "active";
+    if (v === "PAUSED") return "paused";
+    return "closed";
+  }
+
+  function statusPayload(v: CompanyStatus) {
+    // PATCH-API bør få lowercase (robust)
+    if (v === "PENDING") return "pending";
     if (v === "ACTIVE") return "active";
     if (v === "PAUSED") return "paused";
     return "closed";
@@ -216,13 +288,9 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   }
 
   function apiErrorMessage(res: Response, json: any, fallback: string) {
-    // prefer server-provided message/error
     const server =
-      (json?.message ? String(json.message) : "") ||
-      (json?.error ? String(json.error) : "") ||
-      "";
+      (json?.message ? String(json.message) : "") || (json?.error ? String(json.error) : "") || "";
 
-    // enrich based on HTTP status
     const statusHint =
       res.status === 401
         ? "Ikke innlogget (401)."
@@ -239,7 +307,7 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   }
 
   /* =========================
-     API: load stats
+     API: stats
   ========================= */
 
   async function loadStats() {
@@ -251,30 +319,31 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     if (res.ok && json && (json as any).ok === true) {
       const j = json as CompaniesStatsOk;
       setStats({
-        companiesTotal: j.total,
-        companiesActive: j.active,
-        companiesPaused: j.paused,
-        companiesClosed: j.closed,
+        companiesTotal: j.stats.companiesTotal,
+        companiesPending: j.stats.companiesPending,
+        companiesActive: j.stats.companiesActive,
+        companiesPaused: j.stats.companiesPaused,
+        companiesClosed: j.stats.companiesClosed,
       });
-    } else {
-      // We do NOT block UI on stats; but we can show a soft toast once
-      if (!res.ok) {
-        const msg = apiErrorMessage(res, json, "Kunne ikke hente stats.");
-        // show only if no other toast is active
-        setToast((prev) => prev ?? { type: "error", msg });
-        setTimeout(() => setToast(null), 3500);
-      }
+    } else if (!res.ok) {
+      const msg = apiErrorMessage(res, json, "Kunne ikke hente stats.");
+      setToast((prev) => prev ?? { type: "error", msg });
+      setTimeout(() => setToast(null), 3500);
     }
 
     setStatsLoading(false);
   }
 
   /* =========================
-     API: load first page (server-side search/filter)
+     API: list
   ========================= */
 
   async function loadFirstPage() {
     const reqId = ++listReqIdRef.current;
+
+    listAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    listAbortRef.current = ctrl;
 
     setLoadingList(true);
     setListError(null);
@@ -288,10 +357,13 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     if (st) usp.set("status", st);
     usp.set("limit", String(PAGE_LIMIT));
 
-    const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, { cache: "no-store" });
+    const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, {
+      cache: "no-store",
+      signal: ctrl.signal,
+    });
+
     const json = (await readJsonSafe<CompaniesListResp>(res)) as CompaniesListResp | null;
 
-    // ignore race
     if (reqId !== listReqIdRef.current) return;
 
     if (!res.ok || !json || (json as any).ok !== true) {
@@ -300,23 +372,11 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
       return;
     }
 
-    const ok = json as CompaniesListOk;
-    const normalized = (ok.rows || []).map((r) =>
-      normalizeCompanyRow({
-        id: r.id,
-        name: r.name,
-        orgnr: r.orgnr,
-        status: r.status,
-        created_at: (r as any).created_at,
-        updated_at: (r as any).updated_at,
-      })
-    );
-
-    setCompanies(normalized);
-    setCursor(ok.nextCursor ?? null);
+    const okJson = json as CompaniesListOk;
+    setCompanies((okJson.items || []).map(normalizeCompanyRow));
+    setCursor(okJson.nextCursor ?? null);
     setLoadingList(false);
 
-    // Stats refresh (always correct)
     loadStats().catch(() => {});
   }
 
@@ -343,17 +403,8 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
       return;
     }
 
-    const ok = json as CompaniesListOk;
-    const incoming = (ok.rows || []).map((r) =>
-      normalizeCompanyRow({
-        id: r.id,
-        name: r.name,
-        orgnr: r.orgnr,
-        status: r.status,
-        created_at: (r as any).created_at,
-        updated_at: (r as any).updated_at,
-      })
-    );
+    const okJson = json as CompaniesListOk;
+    const incoming = (okJson.items || []).map(normalizeCompanyRow);
 
     setCompanies((prev) => {
       const seen = new Set(prev.map((x) => x.id));
@@ -361,25 +412,34 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
       return prev.concat(add);
     });
 
-    setCursor(ok.nextCursor ?? null);
+    setCursor(okJson.nextCursor ?? null);
     setLoadingMore(false);
   }
 
-  // reload list on query/filter change
   useEffect(() => {
     if (tab !== "firms") return;
     loadFirstPage().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qDebounced, filter, tab]);
 
-  // initial stats refresh
   useEffect(() => {
     loadStats().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* =========================
-     PATCH status (existing endpoint)
+     Infinite scroll wiring
+  ========================= */
+
+  const hasMore = Boolean(cursor);
+  const canAutoLoad = tab === "firms" && hasMore && !loadingMore && !loadingList && !listError;
+  const sentinelRef = useInfiniteScroll({
+    enabled: canAutoLoad,
+    onLoadMore: () => loadMore(),
+  });
+
+  /* =========================
+     PATCH status
   ========================= */
 
   async function setCompanyStatus(companyId: string, status: CompanyStatus) {
@@ -392,7 +452,7 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ status, reason }),
+        body: JSON.stringify({ status: statusPayload(status), reason }),
       });
 
       const json = (await readJsonSafe<ApiResp>(res)) as ApiResp | null;
@@ -409,20 +469,18 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
 
       const updated = normalizeCompanyRow((json as ApiOk).company);
 
-      // Update current list row if present (do not assume it's loaded)
       setCompanies((prev) => prev.map((c) => (c.id === companyId ? updated : c)));
 
       setOpenRow(null);
       setToast({ type: "ok", msg: `Oppdatert: ${updated.name} → ${statusLabel(updated.status)}` });
       setTimeout(() => setToast(null), 2800);
 
-      // Always refresh stats (source of truth)
       loadStats().catch(() => {});
     });
   }
 
   /* =========================
-     PURGE (existing endpoint)
+     PURGE
   ========================= */
 
   async function deleteCompany(companyId: string, name: string) {
@@ -451,14 +509,12 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
         return;
       }
 
-      // Remove from current list if present
       setCompanies((prev) => prev.filter((c) => c.id !== companyId));
 
       setOpenRow(null);
       setToast({ type: "ok", msg: `Slettet (purge): ${name}` });
       setTimeout(() => setToast(null), 2800);
 
-      // Refresh stats + list to keep paging consistent
       loadStats().catch(() => {});
       loadFirstPage().catch(() => {});
     });
@@ -479,6 +535,15 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
             Drift og kontroll på firmanivå. Ingen unntak, ingen manuell støy.
           </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Link className={chipBase(false)} href="/superadmin/audit">
+              Audit-side
+            </Link>
+            <Link className={chipBase(false)} href="/superadmin/billing">
+              Faktura CSV
+            </Link>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -497,8 +562,7 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
           Firma
         </button>
         <button className={chipBase(tab === "alerts")} onClick={() => setTab("alerts")}>
-          Varsler
-          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">0</span>
+          Varsler <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">0</span>
         </button>
         <button className={chipBase(tab === "audit")} onClick={() => setTab("audit")}>
           Audit
@@ -523,8 +587,9 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
       )}
 
       {/* KPI */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Totalt" value={statsLoading ? "…" : String(stats.companiesTotal)} />
+        <StatCard label="Pending" value={statsLoading ? "…" : String(stats.companiesPending)} />
         <StatCard label="Active" value={statsLoading ? "…" : String(stats.companiesActive)} />
         <StatCard label="Paused" value={statsLoading ? "…" : String(stats.companiesPaused)} />
         <StatCard label="Closed" value={statsLoading ? "…" : String(stats.companiesClosed)} />
@@ -544,6 +609,9 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
             <div className="flex flex-wrap items-center gap-2">
               <button className={chipBase(filter === "all")} onClick={() => setFilter("all")}>
                 Alle
+              </button>
+              <button className={chipBase(filter === "PENDING")} onClick={() => setFilter("PENDING")}>
+                Pending
               </button>
               <button className={chipBase(filter === "ACTIVE")} onClick={() => setFilter("ACTIVE")}>
                 Active
@@ -594,18 +662,21 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
                         ].join(" ")}
                       >
                         <td className="px-5 py-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="font-medium">{c.name}</div>
-                              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
-                            </div>
+                          <div>
+                            <div className="font-medium">{c.name}</div>
+                            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
                           </div>
                         </td>
 
-                        <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
+                        <td className="px-5 py-4">{c.orgnr && c.orgnr.trim().length ? c.orgnr : "—"}</td>
 
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${statusPill(c.status)}`}>
+                          <span
+                            className={[
+                              "inline-flex items-center rounded-full px-2.5 py-1 text-xs ring-1",
+                              statusPill(c.status),
+                            ].join(" ")}
+                          >
                             {statusLabel(c.status)}
                           </span>
                         </td>
@@ -642,7 +713,7 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
                                   <MenuItem
                                     disabled={isPending || c.status === "ACTIVE"}
                                     onClick={() => setCompanyStatus(c.id, "ACTIVE")}
-                                    title="Gjenåpne firma (Active)"
+                                    title="Sett firma til Active"
                                   >
                                     Sett Active
                                   </MenuItem>
@@ -714,20 +785,25 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
                 {loadingMore ? "Laster…" : cursor ? "Last flere" : "Ingen flere"}
               </button>
 
-              {(isPending || loadingList) && (
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Oppdaterer…</div>
-              )}
+              {(isPending || loadingList) && <div className="text-xs text-[rgb(var(--lp-muted))]">Oppdaterer…</div>}
             </div>
           </div>
+
+          {/* Infinite scroll sentinel */}
+          <div ref={sentinelRef} className="h-2 w-full" />
         </div>
       )}
 
       {tab === "alerts" && <Placeholder title="Varsler" note="Knyttes til kvalitet/levering/betaling (kommer)." />}
-      {tab === "audit" && <Placeholder title="Audit" note="Audit trail for superadmin (kommer)." />}
+      {tab === "audit" && <Placeholder title="Audit" note="Bruk /superadmin/audit for full audit-view." />}
       {tab === "system" && <Placeholder title="Systemhelse" note="Driftstatus, cron, outbox, feilkø (kommer)." />}
     </div>
   );
 }
+
+/* =========================
+   UI components
+========================= */
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (

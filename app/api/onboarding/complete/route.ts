@@ -1,373 +1,687 @@
 // app/api/onboarding/complete/route.ts
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { generateAgreementPdf } from "@/lib/pdf/generateAgreementPdf";
 
+/* =========================================================
+   Types
+========================================================= */
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type PlanTier = "BASIS" | "LUXUS";
-type DayPlan = { enabled: boolean; tier: PlanTier; priceExVat: number };
 
-type TermsPayload = {
-  version: string;
-  updatedAt: string;
-  accepted: boolean;
-  acceptedAt: string;
-  creditConsent: boolean;
-  creditConsentAt: string;
-  creditCheckSystem: string; // Tripletex
-  billingPricesIncludeVat: boolean;
-  bindingMonths: number;
-  noticeMonths: number;
+type AgreementDay = {
+  enabled: boolean;
+  tier: PlanTier;
+  price_ex_vat: number;
+  price_inc_vat: number;
 };
+type AgreementDays = Record<DayKey, AgreementDay>;
 
-type CompletePayload = {
-  companyName: string;
-  orgnr: string;
-  adminPhone: string;
+type LocInput = {
+  company_id: string;
 
-  locationName: string;
+  location_name: string;
   address: string;
-  postalCode: string;
+  postal_code: string;
   city: string;
 
-  delivery: {
-    where: string;
-    whenNote: string;
-    contactName: string;
-    contactPhone: string;
-    windowFrom: string;
-    windowTo: string;
-  };
+  delivery_where: string;
+  delivery_when_note: string;
 
-  agreement: {
-    days: Record<DayKey, DayPlan>;
-    billingPricesIncludeVat?: boolean;
-  };
+  delivery_contact_name: string;
+  delivery_contact_phone: string;
 
-  terms: TermsPayload;
+  delivery_window_from: string;
+  delivery_window_to: string;
+
+  // NOT NULL hos dere (bekreftet av DB-feil)
+  delivery_contact_country: string;
+
+  // NOT NULL hos dere (bekreftet av DB-feil)
+  delivery_json: any;
+
+  // optional
+  delivery_contact_email?: string;
 };
 
-function isValidTimeHHMM(v: string) {
-  return /^\d{2}:\d{2}$/.test(v);
+/* =========================================================
+   Helpers
+========================================================= */
+function jsonError(status: number, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
 }
 
-function cleanStr(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  return s ? s : null;
+const cleanEmail = (v: any) => String(v ?? "").trim().toLowerCase();
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const digitsOnly = (v: any) => String(v ?? "").replace(/\D/g, "");
+const isNonEmpty = (v: any, min = 2) => String(v ?? "").trim().length >= min;
+const isValidTimeHHMM = (v: string) => /^\d{2}:\d{2}$/.test(v);
+
+function normalizeTier(v: any): PlanTier | null {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "basis") return "BASIS";
+  if (s === "luxus" || s === "luksus" || s === "lux") return "LUXUS";
+  return null;
 }
 
-function cleanISO(v: unknown): string | null {
-  const s = cleanStr(v);
-  if (!s) return null;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return s;
+function parsePrice(v: any): number {
+  if (typeof v === "number") return v;
+  const s = String(v ?? "").trim();
+  if (!s) return NaN;
+  let t = s.replace(",", ".").replace(/[^0-9.]/g, "");
+  const i = t.indexOf(".");
+  if (i !== -1) t = t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, "");
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
 }
 
-function normalizeOrgnr(v: string) {
-  return v.replace(/\s+/g, "").trim();
+/** supabaseAdmin kan være client eller factory */
+async function adminClient(): Promise<any> {
+  const s: any = supabaseAdmin as any;
+  return typeof s === "function" ? await s() : s;
 }
 
+async function findAuthUserIdByEmail(SB: any, email: string): Promise<string | null> {
+  if (SB.auth?.admin?.getUserByEmail) {
+    const { data, error } = await SB.auth.admin.getUserByEmail(email);
+    if (error) throw error;
+    return data?.user?.id ?? null;
+  }
+  const { data, error } = await SB.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) throw error;
+  const hit = (data?.users ?? []).find((u: any) => String(u.email ?? "").toLowerCase() === email);
+  return hit?.id ?? null;
+}
+
+function isTableMissingError(err: any) {
+  const msg = String(err?.message ?? err ?? "");
+  return msg.toLowerCase().includes("could not find the table") && msg.toLowerCase().includes("schema cache");
+}
+
+function pickString(v: any) {
+  const s = String(v ?? "").trim();
+  return s.length ? s : null;
+}
+function pickBool(v: any) {
+  return typeof v === "boolean" ? v : !!v;
+}
+
+/* =========================================================
+   Agreement JSON (SAFE) — NO raw_payload, NO passwords
+========================================================= */
+function buildAgreementJsonSafe(params: {
+  nowISO: string;
+  company_name: string;
+  orgnr: string;
+  employee_count: number;
+
+  full_name: string;
+  email: string;
+  phone: string;
+
+  dominantTier: PlanTier;
+  vatRate: number;
+  daysNorm: any;
+
+  delivery: any;
+  location: any;
+  terms: any;
+}) {
+  const {
+    nowISO,
+    company_name,
+    orgnr,
+    employee_count,
+    full_name,
+    email,
+    phone,
+    dominantTier,
+    vatRate,
+    daysNorm,
+    delivery,
+    location,
+    terms,
+  } = params;
+
+  const deliveryCountry = pickString(delivery?.contact_country) ?? "NO";
+
+  return {
+    version: 1,
+    created_at: nowISO,
+
+    company: {
+      name: company_name,
+      orgnr,
+      employee_count,
+    },
+
+    admin: {
+      full_name,
+      email,
+      phone,
+    },
+
+    delivery: {
+      where: pickString(delivery?.where),
+      when_note: pickString(delivery?.when_note),
+      contact_name: pickString(delivery?.contact_name),
+      contact_phone: pickString(delivery?.contact_phone),
+      contact_country: deliveryCountry,
+      window_from: pickString(delivery?.window_from),
+      window_to: pickString(delivery?.window_to),
+      contact_email: pickString(delivery?.contact_email),
+    },
+
+    location: {
+      name: pickString(location?.name),
+      address: pickString(location?.address),
+      postal_code: pickString(location?.postal_code),
+      city: pickString(location?.city),
+    },
+
+    terms: {
+      accepted_terms: pickBool(terms?.accepted_terms),
+      accepted_credit_check: pickBool(terms?.accepted_credit_check),
+      version: pickString(terms?.version),
+      binding_months: Number(terms?.binding_months ?? 12),
+      notice_months: Number(terms?.notice_months ?? 3),
+      accepted_at: pickString(terms?.accepted_at) ?? nowISO,
+      credit_consent_at: pickString(terms?.credit_consent_at) ?? (terms?.accepted_credit_check ? nowISO : null),
+      credit_check_system: pickString(terms?.credit_check_system) ?? "tripletex",
+    },
+
+    billing: {
+      prices_include_vat: true,
+      vat_rate: vatRate,
+      currency: "NOK",
+      invoice_cadence: "every_14_days",
+    },
+
+    plan: {
+      dominant_tier: dominantTier,
+      days: daysNorm,
+    },
+  };
+}
+
+/* =========================================================
+   Agreement days
+========================================================= */
+function buildDefaultDays(): AgreementDays {
+  const make = (): AgreementDay => ({ enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 });
+  return { mon: make(), tue: make(), wed: make(), thu: make(), fri: make() };
+}
+
+function getDayObj(input: any, k: DayKey) {
+  if (!input || typeof input !== "object") return null;
+  const map: Record<DayKey, string[]> = {
+    mon: ["mon", "monday", "mandag"],
+    tue: ["tue", "tuesday", "tirsdag"],
+    wed: ["wed", "wednesday", "onsdag"],
+    thu: ["thu", "thursday", "torsdag"],
+    fri: ["fri", "friday", "fredag"],
+  };
+  for (const key of map[k]) {
+    const v = input[key];
+    if (v && typeof v === "object") return v;
+  }
+  return null;
+}
+
+function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasAnyEnabled: boolean } | null {
+  const keys: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
+  const out = buildDefaultDays();
+  if (!input || typeof input !== "object") return { days: out, hasAnyEnabled: false };
+
+  let anyEnabled = false;
+
+  for (const k of keys) {
+    const d = getDayObj(input, k);
+    if (!d) continue;
+
+    const enabled = !!(d.enabled ?? d.selected ?? d.active);
+    const tier = normalizeTier(d.tier ?? d.plan_tier ?? d.level ?? d.plan) ?? out[k].tier;
+
+    // FE sender priceExVat
+    const exRaw = parsePrice(d.priceExVat ?? d.price_ex_vat);
+    const incRaw = parsePrice(d.priceIncVat ?? d.priceInclVat ?? d.price_incl_vat ?? d.price);
+
+    let price_ex_vat = 0;
+    let price_inc_vat = 0;
+
+    if (enabled) {
+      anyEnabled = true;
+      const hasEx = Number.isFinite(exRaw) && exRaw > 0;
+      const hasInc = Number.isFinite(incRaw) && incRaw > 0;
+      if (!hasEx && !hasInc) return null;
+
+      if (hasEx && hasInc) {
+        price_ex_vat = Math.round(exRaw);
+        price_inc_vat = Math.round(incRaw);
+      } else if (hasEx) {
+        price_ex_vat = Math.round(exRaw);
+        price_inc_vat = Math.round(exRaw * (1 + vat_rate));
+      } else {
+        price_inc_vat = Math.round(incRaw);
+        price_ex_vat = Math.round(incRaw / (1 + vat_rate));
+      }
+      if (price_ex_vat <= 0 || price_inc_vat <= 0) return null;
+    }
+
+    out[k] = { enabled, tier, price_ex_vat, price_inc_vat };
+  }
+
+  return { days: out, hasAnyEnabled: anyEnabled };
+}
+
+/* =========================================================
+   Profile sync (safe: never change role/company_id)
+========================================================= */
+async function syncProfileSafe(SB: any, user_id: string, display_name: string, phone: string) {
+  const existing = await SB.from("profiles").select("user_id").eq("user_id", user_id).maybeSingle();
+  if (existing.error) return existing;
+
+  const patchBase: any = { phone };
+
+  if (existing.data?.user_id) {
+    const u1 = await SB.from("profiles").update({ ...patchBase, full_name: display_name }).eq("user_id", user_id);
+    if (!u1.error) return u1;
+
+    const msg = String(u1.error?.message ?? "");
+    if (msg.includes("full_name") || msg.includes("schema cache") || msg.includes("column")) {
+      return SB.from("profiles").update({ ...patchBase, name: display_name }).eq("user_id", user_id);
+    }
+    return u1;
+  }
+
+  // minimal insert (uten role/company_id)
+  const i1 = await SB.from("profiles").insert({ user_id, phone, full_name: display_name });
+  if (!i1.error) return i1;
+
+  const msg = String(i1.error?.message ?? "");
+  if (msg.includes("full_name") || msg.includes("schema cache") || msg.includes("column")) {
+    return SB.from("profiles").insert({ user_id, phone, name: display_name });
+  }
+  return i1;
+}
+
+/* =========================================================
+   company_locations "ALL FIELDS" auto-mapping + NOT NULL hard fields
+========================================================= */
+function extractMissingColumn(errMsg: string): string | null {
+  const m = errMsg.match(/Could not find the '([^']+)' column/i);
+  return m?.[1] ?? null;
+}
+
+function candidateMap(loc: LocInput) {
+  return {
+    company_id: [{ company_id: loc.company_id }],
+
+    name: [{ name: loc.location_name }, { location_name: loc.location_name }, { navn: loc.location_name }],
+
+    address: [
+      { Adresse: loc.address },
+      { address1: loc.address },
+      { address_line1: loc.address },
+      { line1: loc.address },
+      { street_address: loc.address },
+      { street: loc.address },
+      { location_address: loc.address },
+      { adresse: loc.address },
+    ],
+
+    postal_code: [
+      { postal_code: loc.postal_code },
+      { postcode: loc.postal_code },
+      { zip: loc.postal_code },
+      { postnummer: loc.postal_code },
+      { Postnummer: loc.postal_code },
+    ],
+
+    city: [{ city: loc.city }, { poststed: loc.city }, { Poststed: loc.city }, { town: loc.city }],
+
+    delivery_where: [
+      { delivery_where: loc.delivery_where },
+      { delivery_point: loc.delivery_where },
+      { delivery_location: loc.delivery_where },
+      { leveringspunkt: loc.delivery_where },
+      { Leveringspunkt: loc.delivery_where },
+    ],
+
+    delivery_when_note: [
+      { delivery_when_note: loc.delivery_when_note },
+      { delivery_instructions: loc.delivery_when_note },
+      { instructions: loc.delivery_when_note },
+      { when_note: loc.delivery_when_note },
+      { whenNote: loc.delivery_when_note },
+      { leveringsinstruksjon: loc.delivery_when_note },
+      { Leveringsinstruksjon: loc.delivery_when_note },
+      { delivery_note: loc.delivery_when_note },
+    ],
+
+    delivery_contact_name: [
+      { delivery_contact_name: loc.delivery_contact_name },
+      { contact_name: loc.delivery_contact_name },
+      { delivery_contact: loc.delivery_contact_name },
+      { kontaktperson: loc.delivery_contact_name },
+      { Kontaktperson: loc.delivery_contact_name },
+    ],
+
+    delivery_contact_phone: [
+      { delivery_contact_phone: loc.delivery_contact_phone },
+      { contact_phone: loc.delivery_contact_phone },
+      { delivery_phone: loc.delivery_contact_phone },
+      { kontakttelefon: loc.delivery_contact_phone },
+      { TelefonVedLevering: loc.delivery_contact_phone },
+      { telefon_ved_levering: loc.delivery_contact_phone },
+    ],
+
+    // hard (exact column)
+    delivery_contact_country: [{ delivery_contact_country: loc.delivery_contact_country }],
+    delivery_json: [{ delivery_json: loc.delivery_json }],
+
+    delivery_window_from: [
+      { delivery_window_from: loc.delivery_window_from },
+      { window_from: loc.delivery_window_from },
+      { from_time: loc.delivery_window_from },
+      { leveringsvindu_fra: loc.delivery_window_from },
+      { LeveringsvinduFra: loc.delivery_window_from },
+    ],
+
+    delivery_window_to: [
+      { delivery_window_to: loc.delivery_window_to },
+      { window_to: loc.delivery_window_to },
+      { to_time: loc.delivery_window_to },
+      { leveringsvindu_til: loc.delivery_window_to },
+      { LeveringsvinduTil: loc.delivery_window_to },
+    ],
+
+    delivery_contact_email: loc.delivery_contact_email
+      ? [
+          { delivery_contact_email: loc.delivery_contact_email },
+          { contact_email: loc.delivery_contact_email },
+          { email: loc.delivery_contact_email },
+          { epost: loc.delivery_contact_email },
+        ]
+      : [],
+  } as const;
+}
+
+async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
+  const cmap = candidateMap(loc);
+  const pickIndex: Record<string, number> = {};
+  for (const k of Object.keys(cmap)) pickIndex[k] = 0;
+
+  for (let attempt = 0; attempt < 180; attempt++) {
+    let row: any = {};
+
+    for (const field of Object.keys(cmap)) {
+      const variants = (cmap as any)[field] as Array<Record<string, any>>;
+      if (!variants || variants.length === 0) continue;
+
+      const idx = pickIndex[field] ?? 0;
+      if (idx >= variants.length) continue;
+
+      row = { ...row, ...variants[idx] };
+    }
+
+    // hard required (NOT NULL)
+    row.delivery_contact_country = loc.delivery_contact_country || "NO";
+    row.delivery_json = loc.delivery_json ?? {};
+
+    const res = await SB.from("company_locations").insert(row).select("id").single();
+    if (!res.error) return res;
+
+    const msg = String(res.error?.message ?? "");
+
+    // real constraints -> stop
+    if (msg.toLowerCase().includes("violates not-null constraint")) return res;
+    if (msg.toLowerCase().includes("violates foreign key")) return res;
+
+    const missing = extractMissingColumn(msg);
+    if (!missing) return res;
+
+    let matchedField: string | null = null;
+    for (const logical of Object.keys(cmap)) {
+      const variants = (cmap as any)[logical] as Array<Record<string, any>>;
+      const idx = pickIndex[logical] ?? 0;
+      if (!variants || idx >= variants.length) continue;
+      const keys = Object.keys(variants[idx] ?? {});
+      if (keys.includes(missing)) {
+        matchedField = logical;
+        break;
+      }
+    }
+    if (!matchedField) return res;
+
+    const variants = (cmap as any)[matchedField] as Array<Record<string, any>>;
+    const next = (pickIndex[matchedField] ?? 0) + 1;
+    if (next < variants.length) pickIndex[matchedField] = next;
+    else pickIndex[matchedField] = variants.length; // drop
+  }
+
+  return { data: null, error: { message: "location_insert_failed_after_many_attempts" } };
+}
+
+/* =========================================================
+   POST
+========================================================= */
 export async function POST(req: Request) {
-  const rid = `onboarding_complete_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const SB = await adminClient();
+  if (!SB?.from || !SB?.auth?.admin) {
+    return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
+  }
+
+  const body = await req.json().catch(() => null);
+  if (!body) return jsonError(400, "BAD_REQUEST", "Ugyldig JSON");
+
+  // Inputs (snake_case)
+  const company_name = String(body?.company_name ?? "").trim();
+  const orgnr = digitsOnly(body?.orgnr);
+  const employee_count = Number(body?.employee_count ?? 0);
+
+  const full_name = String(body?.full_name ?? "").trim();
+  const email = cleanEmail(body?.email);
+  const phone = digitsOnly(body?.phone);
+
+  const password = String(body?.password ?? "");
+  const password_confirm = String(body?.password_confirm ?? "");
+
+  const delivery = body?.delivery ?? null; // where, when_note, contact_name, contact_phone, window_from, window_to, contact_country?
+  const location = body?.location ?? null; // name, address, postal_code, city
+  const agreement = body?.agreement ?? null; // days, vat_rate
+  const terms = body?.terms ?? null; // accepted_terms, accepted_credit_check, version...
+
+  // Validate base
+  if (!isNonEmpty(company_name, 2)) return jsonError(400, "VALIDATION", "Firmanavn er påkrevd");
+  if (orgnr.length !== 9) return jsonError(400, "VALIDATION", "Org.nr må være 9 siffer");
+  if (!Number.isFinite(employee_count) || employee_count < 20) return jsonError(400, "VALIDATION", "Firma må ha minimum 20 ansatte");
+
+  if (!isNonEmpty(full_name, 2)) return jsonError(400, "VALIDATION", "Navn er påkrevd");
+  if (!isEmail(email)) return jsonError(400, "VALIDATION", "Ugyldig e-postadresse");
+  if (phone.length < 6) return jsonError(400, "VALIDATION", "Telefon er påkrevd");
+  if (password.length < 8) return jsonError(400, "VALIDATION", "Passord må være minimum 8 tegn");
+  if (password !== password_confirm) return jsonError(400, "VALIDATION", "Passordene er ikke like");
+
+  // Delivery + location required (stjerne i UI)
+  if (!delivery) return jsonError(400, "VALIDATION", "Leveringsinfo mangler");
+  if (!location) return jsonError(400, "VALIDATION", "Lokasjon mangler");
+
+  if (!isNonEmpty(delivery?.where, 2)) return jsonError(400, "VALIDATION", "Leveringspunkt er påkrevd");
+  if (!isNonEmpty(delivery?.when_note, 2)) return jsonError(400, "VALIDATION", "Leveringsinstruksjon er påkrevd");
+  if (!isNonEmpty(delivery?.contact_name, 2)) return jsonError(400, "VALIDATION", "Kontaktperson er påkrevd");
+  if (!isNonEmpty(delivery?.contact_phone, 2)) return jsonError(400, "VALIDATION", "Telefon ved levering er påkrevd");
+  if (!isValidTimeHHMM(String(delivery?.window_from ?? "")) || !isValidTimeHHMM(String(delivery?.window_to ?? ""))) {
+    return jsonError(400, "VALIDATION", "Leveringsvindu må være på format HH:MM");
+  }
+
+  if (!isNonEmpty(location?.name, 2)) return jsonError(400, "VALIDATION", "Lokasjon (navn) er påkrevd");
+  if (!isNonEmpty(location?.address, 2)) return jsonError(400, "VALIDATION", "Adresse er påkrevd");
+  if (!isNonEmpty(location?.postal_code, 2)) return jsonError(400, "VALIDATION", "Postnummer er påkrevd");
+  if (!isNonEmpty(location?.city, 2)) return jsonError(400, "VALIDATION", "Poststed er påkrevd");
+
+  // Agreement
+  const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : 0.25;
+  const daysParsed = normalizeDays(agreement?.days, vatRate);
+  if (!daysParsed) return jsonError(400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå/pris.");
+  if (!daysParsed.hasAnyEnabled) return jsonError(400, "VALIDATION", "Velg minst én leveringsdag (man–fre).");
+
+  // Preflight
+  try {
+    const existing = await findAuthUserIdByEmail(SB, email);
+    if (existing) return jsonError(409, "EMAIL_EXISTS", "E-post er allerede registrert. Bruk innlogging eller en annen e-post.");
+  } catch (e: any) {
+    return jsonError(500, "AUTH_LOOKUP_FAILED", "Kunne ikke sjekke e-post i auth", e?.message ?? e);
+  }
+
+  const orgCheck = await SB.from("companies").select("id").eq("orgnr", orgnr).limit(1);
+  if (orgCheck.error) return jsonError(500, "DB", "Kunne ikke sjekke org.nr", orgCheck.error);
+  if ((orgCheck.data ?? []).length) return jsonError(409, "ORGNR_EXISTS", "Org.nr er allerede registrert");
+
+  // Build agreement_json SAFE (NO raw_payload, NO passwords)
+  const nowISO = new Date().toISOString();
+  const daysNorm = daysParsed.days;
+  const dominantTier: PlanTier = Object.values(daysNorm).some((d) => d.enabled && d.tier === "LUXUS") ? "LUXUS" : "BASIS";
+
+  const agreement_json = buildAgreementJsonSafe({
+    nowISO,
+    company_name,
+    orgnr,
+    employee_count,
+    full_name,
+    email,
+    phone,
+    dominantTier,
+    vatRate,
+    daysNorm,
+    delivery,
+    location,
+    terms,
+  });
+
+  // Commit + rollback
+  let companyId: string | null = null;
+  let userId: string | null = null;
+  let locationId: string | null = null;
 
   try {
-    const body = (await req.json().catch(() => null)) as Partial<CompletePayload> | null;
-
-    const companyName = cleanStr(body?.companyName);
-    const orgnrRaw = cleanStr(body?.orgnr);
-    const adminPhone = cleanStr(body?.adminPhone);
-
-    const locationName = cleanStr(body?.locationName);
-    const address = cleanStr(body?.address);
-    const postalCode = cleanStr(body?.postalCode);
-    const city = cleanStr(body?.city);
-
-    const delivery = body?.delivery;
-    const agreement = body?.agreement;
-    const terms = body?.terms;
-
-    // --- Validering ---
-    if (!companyName || !orgnrRaw) {
-      return NextResponse.json({ ok: false, rid, error: "Firmanavn og org.nr er obligatorisk." }, { status: 400 });
-    }
-
-    const orgnr = normalizeOrgnr(orgnrRaw);
-    if (!/^\d{9}$/.test(orgnr)) {
-      return NextResponse.json({ ok: false, rid, error: "Org.nr må være 9 siffer." }, { status: 400 });
-    }
-
-    if (!adminPhone) {
-      return NextResponse.json({ ok: false, rid, error: "Firma-admin telefon er obligatorisk." }, { status: 400 });
-    }
-
-    if (!locationName || !address || !postalCode || !city) {
-      return NextResponse.json({ ok: false, rid, error: "Leveringsadresse er ikke komplett." }, { status: 400 });
-    }
-
-    if (
-      !delivery ||
-      !cleanStr(delivery.where) ||
-      !cleanStr(delivery.whenNote) ||
-      !cleanStr(delivery.contactName) ||
-      !cleanStr(delivery.contactPhone) ||
-      !cleanStr(delivery.windowFrom) ||
-      !cleanStr(delivery.windowTo)
-    ) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Leveringsinfo mangler (leveringspunkt, instruksjon, kontakt, telefon, vindu)." },
-        { status: 400 }
-      );
-    }
-
-    const windowFrom = cleanStr(delivery.windowFrom)!;
-    const windowTo = cleanStr(delivery.windowTo)!;
-
-    if (!isValidTimeHHMM(windowFrom) || !isValidTimeHHMM(windowTo)) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Leveringsvindu må være på format HH:MM (f.eks. 08:30)." },
-        { status: 400 }
-      );
-    }
-
-    if (!agreement?.days) {
-      return NextResponse.json({ ok: false, rid, error: "Avtale mangler (valg per dag)." }, { status: 400 });
-    }
-
-    const enabledDays = Object.values(agreement.days || {}).filter((d) => d?.enabled);
-    if (enabledDays.length === 0) {
-      return NextResponse.json({ ok: false, rid, error: "Minst én dag må være aktiv i avtalen." }, { status: 400 });
-    }
-
-    if (!terms) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Du må akseptere avtalevilkår og samtykke til kredittvurdering." },
-        { status: 400 }
-      );
-    }
-
-    const termsVersion = cleanStr(terms.version);
-    const termsUpdatedAt = cleanISO(terms.updatedAt);
-    const acceptedAt = cleanISO(terms.acceptedAt);
-    const creditConsentAt = cleanISO(terms.creditConsentAt);
-
-    if (!terms.accepted || !terms.creditConsent || !termsVersion || !termsUpdatedAt || !acceptedAt || !creditConsentAt) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Du må akseptere avtalevilkår og samtykke til kredittvurdering." },
-        { status: 400 }
-      );
-    }
-
-    // --- 1) Verifiser bruker via session ---
-    const supa = await supabaseServer();
-    const { data: auth, error: authErr } = await supa.auth.getUser();
-    if (authErr || !auth?.user) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Du må være innlogget for å fullføre registreringen." },
-        { status: 401 }
-      );
-    }
-
-    const user = auth.user;
-    const userId = user.id;
-    const adminName =
-      typeof (user.user_metadata as any)?.name === "string" ? ((user.user_metadata as any).name as string) : null;
-    const adminEmail = user.email || null;
-
-    // --- 2) Service role ---
-    const admin = supabaseAdmin();
-
-    // Guardrail: ikke opprett nytt firma hvis profil allerede knyttet
-    const { data: existingProfile, error: existingErr } = await (admin as any)
-      .from("profiles")
-      .select("company_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existingErr) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Kunne ikke verifisere eksisterende profil.", detail: existingErr.message },
-        { status: 500 }
-      );
-    }
-    if (existingProfile?.company_id) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Denne brukeren er allerede knyttet til et firma." },
-        { status: 409 }
-      );
-    }
-
-    // --- 3) Opprett company (agreement_json inkl terms) ---
-    const agreementJson = {
-      ...agreement,
-      billingPricesIncludeVat: true,
-      terms: {
-        ...terms,
-        version: termsVersion,
-        updatedAt: termsUpdatedAt,
-        acceptedAt,
-        creditConsentAt,
-        billingPricesIncludeVat: true,
-        creditCheckSystem: "Tripletex",
-      },
-    };
-
-    const { data: company, error: companyErr } = await (admin as any)
-      .from("companies")
+    // 1) company
+    const insCompany = await SB.from("companies")
       .insert({
-        name: companyName,
+        name: company_name,
         orgnr,
-        plan_tier: "MIXED",
-        status: "ACTIVE",
-        agreement_json: agreementJson,
+        status: "pending",
+        plan_tier: dominantTier,
+        employee_count,
+        agreement_json,
       })
-      .select("*")
+      .select("id")
       .single();
 
-    if (companyErr || !company?.id) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Kunne ikke opprette firma.", detail: companyErr?.message },
-        { status: 500 }
-      );
-    }
+    if (insCompany.error) throw insCompany.error;
+    companyId = insCompany.data.id;
 
-    // --- 4) Opprett lokasjon ---
-    const deliveryJson = {
-      where: cleanStr(delivery.where) ?? "",
-      whenNote: cleanStr(delivery.whenNote) ?? "",
-      contactName: cleanStr(delivery.contactName) ?? "",
-      contactPhone: cleanStr(delivery.contactPhone) ?? "",
-      windowFrom,
-      windowTo,
+    // 2) auth user
+    const { data: created, error: createErr } = await SB.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { role: "company_admin", company_id: companyId },
+    });
+    if (createErr) throw createErr;
+
+    userId = created?.user?.id ?? null;
+    if (!userId) throw new Error("AUTH_CREATE_NO_USER_ID");
+
+    // 3) profiles (safe fields only)
+    const prof = await syncProfileSafe(SB, userId, full_name, phone);
+    if (prof.error) throw prof.error;
+
+    // 4) company_locations (all fields + hard NOT NULL)
+    const deliveryCountry = pickString(delivery?.contact_country) ?? "NO";
+
+    const delivery_json_for_location = {
+      where: String(delivery.where).trim(),
+      when_note: String(delivery.when_note).trim(),
+      contact_name: String(delivery.contact_name).trim(),
+      contact_phone: digitsOnly(delivery.contact_phone),
+      contact_country: deliveryCountry,
+      window_from: String(delivery.window_from).trim(),
+      window_to: String(delivery.window_to).trim(),
+      contact_email: delivery?.contact_email ? String(delivery.contact_email).trim() : null,
     };
 
-    const { data: location, error: locErr } = await (admin as any)
-      .from("company_locations")
-      .insert({
-        company_id: company.id,
-        name: locationName,
-        address,
-        postal_code: postalCode,
-        city,
-        delivery_json: deliveryJson,
-      })
-      .select("*")
-      .single();
-
-    if (locErr || !location?.id) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Firma opprettet, men lokasjon feilet.", detail: locErr?.message },
-        { status: 500 }
-      );
-    }
-
-    // --- 5) Opprett profil (uten email-kolonne) ---
-    const { error: profileErr } = await (admin as any)
-      .from("profiles")
-      .upsert(
-        {
-          user_id: userId,
-          role: "company_admin",
-          company_id: company.id,
-          location_id: location.id,
-          name: adminName,
-          phone: adminPhone,
-        },
-        { onConflict: "user_id" }
-      );
-
-    if (profileErr) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Firma opprettet, men profilen kunne ikke lagres.", detail: profileErr.message },
-        { status: 500 }
-      );
-    }
-
-    // --- 6) FULL PDF -> Storage ---
-    const pdfBytes = await generateAgreementPdf({
-      companyName,
-      orgnr,
-      adminName,
-      adminEmail,
-      adminPhone,
-
-      locationName,
-      address,
-      postalCode,
-      city,
-
-      delivery: {
-        where: deliveryJson.where,
-        whenNote: deliveryJson.whenNote,
-        contactName: deliveryJson.contactName,
-        contactPhone: deliveryJson.contactPhone,
-        windowFrom,
-        windowTo,
-      },
-
-      days: agreement.days,
-
-      terms: {
-        ...terms,
-        version: termsVersion,
-        updatedAt: termsUpdatedAt,
-        acceptedAt,
-        creditConsentAt,
-        creditCheckSystem: "Tripletex",
-        billingPricesIncludeVat: true,
-      },
+    const locRes = await insertLocationAllFieldsSmart(SB, {
+      company_id: companyId,
+      location_name: String(location.name).trim(),
+      address: String(location.address).trim(),
+      postal_code: String(location.postal_code).trim(),
+      city: String(location.city).trim(),
+      delivery_where: String(delivery.where).trim(),
+      delivery_when_note: String(delivery.when_note).trim(),
+      delivery_contact_name: String(delivery.contact_name).trim(),
+      delivery_contact_phone: digitsOnly(delivery.contact_phone),
+      delivery_window_from: String(delivery.window_from).trim(),
+      delivery_window_to: String(delivery.window_to).trim(),
+      delivery_contact_country: deliveryCountry,
+      delivery_json: delivery_json_for_location,
+      delivery_contact_email: delivery?.contact_email ? String(delivery.contact_email).trim() : undefined,
     });
 
-    const pdfPath = `agreements/${company.id}/agreement-${termsVersion}.pdf`;
+    if (locRes.error) throw locRes.error;
+    locationId = locRes.data?.id ?? null;
 
-    const upload = await admin.storage
-      .from("agreements")
-      .upload(pdfPath, Buffer.from(pdfBytes), {
-        contentType: "application/pdf",
-        upsert: true,
+    // 5) OPTIONAL tables (best-effort)
+    // company_agreements may not exist — do not fail onboarding
+    const insAgr = await SB.from("company_agreements").insert({
+      company_id: companyId,
+      location_id: locationId,
+      days_json: daysNorm,
+      billing_prices_include_vat: true,
+    });
+    if (insAgr.error && !isTableMissingError(insAgr.error)) throw insAgr.error;
+
+    // company_terms_acceptance may not exist — do not fail onboarding
+    if (terms?.version) {
+      const insTerms = await SB.from("company_terms_acceptance").insert({
+        company_id: companyId,
+        version: String(terms.version),
+        accepted_at: terms?.accepted_at ?? nowISO,
+        credit_consent_at: terms?.credit_consent_at ?? (terms?.accepted_credit_check ? nowISO : null),
+        credit_check_system: terms?.credit_check_system ?? "tripletex",
+        binding_months: Number(terms?.binding_months ?? 12),
+        notice_months: Number(terms?.notice_months ?? 3),
       });
-
-    if (upload.error) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Firma opprettet, men avtale-PDF kunne ikke lagres.", detail: upload.error.message },
-        { status: 500 }
-      );
+      if (insTerms.error && !isTableMissingError(insTerms.error)) throw insTerms.error;
     }
 
-    // --- 7) Oppdater agreement_json med pdf metadata ---
-    const { error: updErr } = await (admin as any)
-      .from("companies")
-      .update({
-        agreement_json: {
-          ...agreementJson,
-          terms: {
-            ...agreementJson.terms,
-            pdfPath,
-            pdfVersion: termsVersion,
-            signedAt: acceptedAt,
-          },
-        },
-      })
-      .eq("id", company.id);
+    return NextResponse.json({ ok: true, status: "pending", companyId, userId, locationId }, { status: 200 });
+  } catch (e: any) {
+    // rollback best effort (skip optional tables if missing)
+    try {
+      const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
+      if (delTerms?.error && !isTableMissingError(delTerms.error)) {
+        // ignore
+      }
+    } catch {}
+    try {
+      const delAgr = await SB.from("company_agreements").delete().eq("company_id", companyId);
+      if (delAgr?.error && !isTableMissingError(delAgr.error)) {
+        // ignore
+      }
+    } catch {}
+    try {
+      if (locationId) await SB.from("company_locations").delete().eq("id", locationId);
+    } catch {}
+    try {
+      if (userId) await SB.auth.admin.deleteUser(userId);
+    } catch {}
+    try {
+      if (companyId) await SB.from("companies").delete().eq("id", companyId);
+    } catch {}
 
-    if (updErr) {
-      return NextResponse.json(
-        { ok: false, rid, error: "Firma opprettet, men kunne ikke lagre PDF-metadata.", detail: updErr.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ ok: true, rid, companyId: company.id, locationId: location.id, pdfPath });
-  } catch (err: any) {
-    return NextResponse.json(
-      { ok: false, rid, error: "Serverfeil ved registrering.", detail: err?.message || String(err) },
-      { status: 500 }
-    );
+    return jsonError(500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
   }
 }

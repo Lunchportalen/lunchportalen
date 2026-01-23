@@ -1,7 +1,8 @@
+// components/auth/AuthStatus.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -9,7 +10,13 @@ type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type State =
   | { type: "loading" }
   | { type: "anon" }
-  | { type: "authed"; email: string | null; role?: Role };
+  | {
+      type: "authed";
+      email: string | null;
+      role?: Role;
+      label: string; // det som vises i headeren (klikkbart)
+      homeHref: string; // hvor man går når man klikker på label
+    };
 
 function roleLabel(role?: Role) {
   if (!role) return "";
@@ -20,32 +27,72 @@ function roleLabel(role?: Role) {
   return "Ansatt";
 }
 
+function roleHome(role?: Role): string {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  return "/week";
+}
+
+function displayLabel(email: string | null, role?: Role) {
+  // Ønsket av deg: “innlogget bruker” skal være klikkbar og ta deg “hjem”.
+  // Vi viser primært rollen (Superadmin/Admin/Kjøkken/Sjåfør/Ansatt) for rolig enterprise-header.
+  // Hvis du heller vil vise e-post: bytt return til `email ?? roleLabel(role) ?? "Min side"`.
+  const rl = roleLabel(role);
+  return rl || email || "Min side";
+}
+
+/**
+ * AuthStatus – PASSIV status-komponent
+ * ---------------------------------------------------------
+ * Viktige prinsipper (for å unngå canceled fetch / redirect-støy):
+ * - Ingen router.push / replace
+ * - Ingen fetch mot egne /api/* endepunkt
+ * - Kun lesing av Supabase session
+ * - Middleware er eneste autoritet for redirect
+ */
 export default function AuthStatus() {
   const [state, setState] = useState<State>({ type: "loading" });
 
+  const loginNext = useMemo(() => encodeURIComponent("/week"), []);
+
   useEffect(() => {
     const sb = supabaseBrowser();
+    let mounted = true;
 
-    // 1) initial session
-    sb.auth.getSession().then(({ data }) => {
-      const session = data.session;
-      if (session?.user) {
-        setState({ type: "authed", email: session.user.email ?? null });
-      } else {
-        setState({ type: "anon" });
-      }
-    });
+    function setAuthed(sessionUser: any) {
+      const email = (sessionUser?.email as string | null) ?? null;
+      const role = (sessionUser?.user_metadata?.role as Role | undefined) ?? undefined;
 
-    // 2) realtime updates (login/logout)
+      const label = displayLabel(email, role);
+      const homeHref = roleHome(role);
+
+      setState({ type: "authed", email, role, label, homeHref });
+    }
+
+    // 1) Initial session (én gang)
+    sb.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        const session = data.session;
+        if (session?.user) setAuthed(session.user);
+        else setState({ type: "anon" });
+      })
+      .catch(() => {
+        if (mounted) setState({ type: "anon" });
+      });
+
+    // 2) Realtime auth-endringer (login / logout)
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setState({ type: "authed", email: session.user.email ?? null });
-      } else {
-        setState({ type: "anon" });
-      }
+      if (!mounted) return;
+      if (session?.user) setAuthed(session.user);
+      else setState({ type: "anon" });
     });
 
     return () => {
+      mounted = false;
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -55,6 +102,7 @@ export default function AuthStatus() {
       const sb = supabaseBrowser();
       await sb.auth.signOut();
     } finally {
+      // Hard reload er korrekt her: middleware tar over
       window.location.href = "/";
     }
   }
@@ -66,9 +114,10 @@ export default function AuthStatus() {
   if (state.type === "anon") {
     return (
       <div className="flex items-center gap-3">
-        <Link className="text-sm hover:underline" href="/login?next=%2Fweek">
+        <Link className="text-sm hover:underline" href={`/login?next=${loginNext}`}>
           Logg inn
         </Link>
+
         <Link
           className="rounded-full bg-[rgb(var(--lp-accent))] px-4 py-2 text-sm font-semibold text-white"
           href="/register"
@@ -79,17 +128,20 @@ export default function AuthStatus() {
     );
   }
 
+  // authed
   return (
     <div className="flex items-center gap-3">
-      <span className="hidden text-sm text-[rgb(var(--lp-muted))] md:inline">
-        {roleLabel(state.role)}
-      </span>
-
-      <button
-        type="button"
-        onClick={logout}
-        className="text-sm font-medium hover:underline"
+      {/* ✅ Klikkbart “navn/rolle” tilbake til riktig side */}
+      <Link
+        href={state.homeHref}
+        className="text-sm text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))] hover:underline hover:decoration-[rgba(var(--lp-gold),.75)] hover:underline-offset-4"
+        title="Gå til din side"
+        aria-label="Gå til din side"
       >
+        {state.label}
+      </Link>
+
+      <button type="button" onClick={logout} className="text-sm font-medium hover:underline">
         Logg ut
       </button>
     </div>

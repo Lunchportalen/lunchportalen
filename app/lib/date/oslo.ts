@@ -7,25 +7,35 @@
  * - Europe/Oslo timezone
  * - Ingen eksterne libs
  * - Brukes av UI, API, cron og cutoff-logikk
+ * - ISO (YYYY-MM-DD) er intern standard
+ * - NO (DD-MM-YYYY) er visningsformat i Norge
  * =========================================================
  */
 
-type OsloParts = {
+export const OSLO_TZ = "Europe/Oslo";
+
+export type OsloWeekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+
+export type OsloParts = {
   yyyy: string;
   mm: string;
   dd: string;
-  weekday: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+  weekday: OsloWeekday;
   hh: number;
   mi: number;
   ss: number;
 };
+
+/* =========================================================
+   KJERNE – NÅTID I OSLO
+========================================================= */
 
 /**
  * Nåtid i Oslo – strukturerte deler
  */
 export function osloNowParts(): OsloParts {
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Oslo",
+    timeZone: OSLO_TZ,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -42,7 +52,7 @@ export function osloNowParts(): OsloParts {
     yyyy: get("year"),
     mm: get("month"),
     dd: get("day"),
-    weekday: get("weekday") as OsloParts["weekday"],
+    weekday: get("weekday") as OsloWeekday,
     hh: Number(get("hour")),
     mi: Number(get("minute")),
     ss: Number(get("second")),
@@ -51,7 +61,7 @@ export function osloNowParts(): OsloParts {
 
 /**
  * ISO-lignende timestamp i Oslo (YYYY-MM-DDTHH:mm:ss)
- * Brukes til logging / visning
+ * Kun for logging / visning (IKKE lagring)
  */
 export function osloNowISO(): string {
   const o = osloNowParts();
@@ -62,8 +72,20 @@ export function osloNowISO(): string {
 }
 
 /**
- * Dato i Oslo som YYYY-MM-DD
- * Brukes til DB-feltet `date`
+ * UTC ISO timestamp (YYYY-MM-DDTHH:mm:ss.sssZ)
+ * Brukes for lagring i Sanity: publishedAt / lockedAt
+ */
+export function nowISO(): string {
+  return new Date().toISOString();
+}
+
+/* =========================================================
+   DATO – ISO (INTERN)
+========================================================= */
+
+/**
+ * Dato i Oslo som ISO (YYYY-MM-DD)
+ * Brukes til DB, API, cron, cutoff, sortering
  */
 export function osloTodayISODate(): string {
   const o = osloNowParts();
@@ -71,12 +93,12 @@ export function osloTodayISODate(): string {
 }
 
 /**
- * Mandag (start på uke) for en gitt Oslo-dato (YYYY-MM-DD)
+ * Mandag (start på uke) for en gitt ISO-dato (YYYY-MM-DD)
+ * DST-safe (UTC midt på dagen)
  */
-export function startOfWeekISO(osloISO: string): string {
-  // Bruk midt på dagen for å unngå DST-kanter
-  const d = new Date(`${osloISO}T12:00:00Z`);
-  const day = d.getUTCDay(); // 0=Sun ... 1=Mon ... 6=Sat
+export function startOfWeekISO(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const day = d.getUTCDay(); // 0=Sun … 6=Sat
   const diffToMon = (day + 6) % 7;
   d.setUTCDate(d.getUTCDate() - diffToMon);
 
@@ -87,7 +109,8 @@ export function startOfWeekISO(osloISO: string): string {
 }
 
 /**
- * Legg til dager på en ISO-dato (YYYY-MM-DD) – DST-safe
+ * Legg til dager på ISO-dato (YYYY-MM-DD)
+ * DST-safe
  */
 export function addDaysISO(iso: string, days: number): string {
   const d = new Date(`${iso}T12:00:00Z`);
@@ -97,4 +120,56 @@ export function addDaysISO(iso: string, days: number): string {
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(d.getUTCDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+}
+
+/* =========================================================
+   DATO – NO (VISNING)
+========================================================= */
+
+/**
+ * Dato i Oslo som NO-format (DD-MM-YYYY)
+ * Kun UI / visning i Norge
+ */
+export function osloTodayNODate(): string {
+  const o = osloNowParts();
+  return `${o.dd}-${o.mm}-${o.yyyy}`;
+}
+
+/**
+ * ISO → NO (YYYY-MM-DD → DD-MM-YYYY)
+ */
+export function formatDateNO(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso ?? ""));
+  if (!m) return String(iso ?? "");
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+/**
+ * NO → ISO (DD-MM-YYYY → YYYY-MM-DD)
+ * Kun hvis input tas i NO-format
+ */
+export function parseDateNO(no: string): string {
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(String(no ?? ""));
+  if (!m) return String(no ?? "");
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+/* =========================================================
+   REGLER
+========================================================= */
+
+/**
+ * Publiseringsvindu: Torsdag–Søndag (Oslo)
+ */
+export function isPublishWindowOslo(): boolean {
+  const { weekday } = osloNowParts();
+  return weekday === "Thu" || weekday === "Fri" || weekday === "Sat" || weekday === "Sun";
+}
+
+/**
+ * Cutoff-sjekk: etter kl. 08:00 (Oslo)
+ */
+export function isAfterCutoff0800(): boolean {
+  const o = osloNowParts();
+  return o.hh > 8 || (o.hh === 8 && (o.mi > 0 || o.ss > 0));
 }

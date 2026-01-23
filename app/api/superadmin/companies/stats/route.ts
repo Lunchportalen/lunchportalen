@@ -5,45 +5,56 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function json(ok: boolean, body: any, status = 200) {
+  return NextResponse.json(
+    { ok, ...body },
+    {
+      status,
+      headers: {
+        // Superadmin skal være sanntidsnært. Ingen stale-cache her.
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
 }
 
 export async function GET() {
-  const supabase = await supabaseServer();
+  const rid = `sa_stats_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(401, "unauthorized", "Ikke innlogget");
-  const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return jsonError(403, "forbidden", "Mangler tilgang");
+  try {
+    const supabase = await supabaseServer();
 
-  // totals
-  const totalRes = await supabase.from("companies").select("*", { count: "exact", head: true });
-  if (totalRes.error) return jsonError(500, "db_error", "Kunne ikke hente total", totalRes.error);
+    const totalQ = supabase.from("companies").select("id", { count: "exact", head: true });
+    const pendingQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending");
+    const activeQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "active");
+    const pausedQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused");
+    const closedQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed");
 
-  const activeRes = await supabase
-    .from("companies")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "active");
-  if (activeRes.error) return jsonError(500, "db_error", "Kunne ikke hente active", activeRes.error);
+    const [total, pending, active, paused, closed] = await Promise.all([
+      totalQ,
+      pendingQ,
+      activeQ,
+      pausedQ,
+      closedQ,
+    ]);
 
-  const pausedRes = await supabase
-    .from("companies")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "paused");
-  if (pausedRes.error) return jsonError(500, "db_error", "Kunne ikke hente paused", pausedRes.error);
+    if (total.error) return json(false, { rid, error: total.error.message }, 500);
+    if (pending.error) return json(false, { rid, error: pending.error.message }, 500);
+    if (active.error) return json(false, { rid, error: active.error.message }, 500);
+    if (paused.error) return json(false, { rid, error: paused.error.message }, 500);
+    if (closed.error) return json(false, { rid, error: closed.error.message }, 500);
 
-  const closedRes = await supabase
-    .from("companies")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "closed");
-  if (closedRes.error) return jsonError(500, "db_error", "Kunne ikke hente closed", closedRes.error);
-
-  return NextResponse.json({
-    ok: true,
-    total: totalRes.count ?? 0,
-    active: activeRes.count ?? 0,
-    paused: pausedRes.count ?? 0,
-    closed: closedRes.count ?? 0,
-  });
+    return json(true, {
+      rid,
+      stats: {
+        companiesTotal: total.count ?? 0,
+        companiesPending: pending.count ?? 0,
+        companiesActive: active.count ?? 0,
+        companiesPaused: paused.count ?? 0,
+        companiesClosed: closed.count ?? 0,
+      },
+    });
+  } catch (e: any) {
+    return json(false, { rid, error: String(e?.message ?? "unknown") }, 500);
+  }
 }

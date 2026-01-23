@@ -1,14 +1,22 @@
-// /app/api/week/route.ts
+// app/api/week/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // ✅ gjør det eksplisitt: dette ER en dynamisk API-route
+export const revalidate = 30; // (valgfritt) ok å la stå – men route er fortsatt dynamisk
+
 import { NextResponse } from "next/server";
 import { getMenuForRange } from "@/lib/sanity/queries";
 import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 
-export const revalidate = 30;
-
 const WEEKDAYS_NO = ["Man", "Tir", "Ons", "Tor", "Fre"] as const;
 
-function clampWeekOffset(v: number): 0 | 1 {
-  return (Math.max(0, Math.min(1, v)) as 0 | 1) ?? 0;
+function jsonError(status: number, rid: string, error: string, detail?: any) {
+  return NextResponse.json({ ok: false, rid, error, detail: detail ?? undefined }, { status });
+}
+
+function clampWeekOffset(v: any): 0 | 1 {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return (Math.max(0, Math.min(1, n)) as 0 | 1) ?? 0;
 }
 
 /**
@@ -40,8 +48,11 @@ export async function GET(req: Request) {
   const rid = `week_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
+    // ✅ Next 15 warning kom fordi request.url ble brukt under statisk forsøk.
+    // Med dynamic="force-dynamic" er dette helt legitimt, og warningen forsvinner.
     const url = new URL(req.url);
-    const weekOffset = clampWeekOffset(Number(url.searchParams.get("weekOffset") || "0"));
+
+    const weekOffset = clampWeekOffset(url.searchParams.get("weekOffset") ?? "0");
 
     // ✅ Finn mandag for uke 0 (inneværende uke) i Oslo
     const todayISO = osloTodayISODate();
@@ -51,7 +62,7 @@ export async function GET(req: Request) {
     const mondayISO = addDaysISO(week0MondayISO, weekOffset * 7);
     const fridayISO = addDaysISO(mondayISO, 4);
 
-    // 🔒 Lås ukeOffset=1 frem til torsdag 08:00 i uke 0
+    // 🔒 Lås weekOffset=1 frem til torsdag 08:00 i uke 0
     const { unlockDateISO, unlockTimeHM, unlockAt } = week2UnlockFromWeek0Monday(week0MondayISO);
     const locked = weekOffset === 1 ? !isUnlocked(unlockDateISO, unlockTimeHM) : false;
 
@@ -64,7 +75,7 @@ export async function GET(req: Request) {
           weekday: WEEKDAYS_NO[i],
           isPublished: false,
           description: null,
-          allergens: [],
+          allergens: [] as string[],
         };
       });
 
@@ -80,11 +91,9 @@ export async function GET(req: Request) {
     }
 
     // ✅ Hent innhold når ikke låst
-    // getMenuForRange er nå "kundesynlig range":
-    // approvedForPublish==true + customerVisible==true + published
+    // getMenuForRange: approvedForPublish==true + customerVisible==true + published
     const items = await getMenuForRange(mondayISO, fridayISO);
 
-    // Map for rask lookup
     const byDate = new Map<string, any>();
     for (const it of items || []) byDate.set(it.date, it);
 
@@ -112,9 +121,6 @@ export async function GET(req: Request) {
     });
   } catch (err: any) {
     console.error("[GET /api/week]", err?.message || err, err);
-    return NextResponse.json(
-      { ok: false, rid, error: "SERVER_ERROR", detail: err?.message || String(err) },
-      { status: 500 }
-    );
+    return jsonError(500, rid, "SERVER_ERROR", err?.message || String(err));
   }
 }

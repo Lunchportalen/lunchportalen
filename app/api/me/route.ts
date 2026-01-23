@@ -2,49 +2,63 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const AUTH_TIMEOUT_MS = 1500;
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
+type ProfileRow = {
+  role: Role | null;
+  company_id: string | null;
+  is_disabled: boolean | null;
+};
+
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0" };
+}
+
 export async function GET() {
-  const rid = `me_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const rid = `me_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
     const supabase = await supabaseServer();
-
-    const userRes = (await Promise.race([
-      supabase.auth.getUser(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("getUser_timeout")), AUTH_TIMEOUT_MS)
-      ),
-    ])) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
-
-    const user = userRes.data?.user;
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user ?? null;
 
     if (!user) {
       return NextResponse.json(
-        { ok: false, rid, error: "not_authenticated", user: null },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
+        { ok: false, rid, user: null },
+        { status: 401, headers: noStore() }
       );
     }
 
-    const profileRes = (await Promise.race([
+    // ✅ Supabase query builder er "thenable" i typings.
+    // Vi gjør den til en ekte Promise via Promise.resolve(...)
+    const profRes = (await Promise.resolve(
       supabase
         .from("profiles")
-        .select("role, company_id")
-        .eq("id", user.id)
-        .maybeSingle(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("profile_timeout")), AUTH_TIMEOUT_MS)
-      ),
-    ]).catch(() => null)) as
-      | { data: { role?: Role | null; company_id?: string | null } | null }
-      | null;
+        .select("role, company_id, is_disabled")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    )) as { data: ProfileRow | null; error: any };
 
-    const profile = profileRes?.data ?? null;
+    if (profRes.error || !profRes.data) {
+      return NextResponse.json(
+        { ok: false, rid, error: "profile_missing", user: null },
+        { status: 403, headers: noStore() }
+      );
+    }
+
+    const prof = profRes.data;
+
+    if (prof.is_disabled === true) {
+      return NextResponse.json(
+        { ok: false, rid, error: "access_disabled", user: null },
+        { status: 403, headers: noStore() }
+      );
+    }
+
+    const role: Role = (prof.role as Role) ?? "employee";
 
     return NextResponse.json(
       {
@@ -53,16 +67,16 @@ export async function GET() {
         user: {
           id: user.id,
           email: user.email ?? null,
-          role: (profile?.role as Role) || "employee",
-          companyId: profile?.company_id ?? null,
+          role,
+          companyId: role === "superadmin" ? null : prof.company_id ?? null,
         },
       },
-      { status: 200, headers: { "Cache-Control": "no-store" } }
+      { status: 200, headers: noStore() }
     );
   } catch {
     return NextResponse.json(
-      { ok: false, rid, error: "auth_check_failed", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } }
+      { ok: false, rid, error: "me_failed", user: null },
+      { status: 401, headers: noStore() }
     );
   }
 }

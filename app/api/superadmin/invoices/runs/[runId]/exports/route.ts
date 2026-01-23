@@ -1,0 +1,55 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+function jsonError(status: number, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+}
+
+function isUuid(v: any) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+  );
+}
+
+async function adminDb(): Promise<any> {
+  const s: any = supabaseAdmin as any;
+  return typeof s === "function" ? await s() : s;
+}
+
+async function requireSuperadmin() {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return { ok: false as const, status: 401, message: "Ikke innlogget" };
+
+  const role = String(data.user.user_metadata?.role ?? "");
+  if (role !== "superadmin") return { ok: false as const, status: 403, message: "Ingen tilgang" };
+
+  return { ok: true as const };
+}
+
+export async function GET(_: Request, ctx: { params: { runId: string } }) {
+  const guard = await requireSuperadmin();
+  if (!guard.ok) return jsonError(guard.status, "AUTH", guard.message);
+
+  const runId = ctx.params.runId;
+  if (!isUuid(runId)) return jsonError(400, "BAD_REQUEST", "Ugyldig runId");
+
+  const db = await adminDb();
+  if (!db?.from) return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig (mangler .from)");
+
+  const { data, error } = await db
+    .from("invoice_exports")
+    .select("id, exported_at, exported_by, status, file_name, rows_count, amount_ex_vat, detail")
+    .eq("run_id", runId)
+    .order("exported_at", { ascending: false })
+    .limit(25);
+
+  if (error) return jsonError(500, "DB", "Kunne ikke hente eksportlogg", error);
+
+  return NextResponse.json({ ok: true, exports: data ?? [] }, { status: 200 });
+}

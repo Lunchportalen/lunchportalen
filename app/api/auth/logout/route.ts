@@ -1,33 +1,49 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+// app/api/auth/logout/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function json(ok: boolean, status: number, payload: Record<string, any>) {
-  return NextResponse.json({ ok, ...payload }, { status });
+import { NextResponse } from "next/server";
+import { supabaseRoute } from "@/lib/supabase/route";
+
+function wipeSupabaseCookies(res: NextResponse) {
+  // Supabase-cookies varierer litt i navn, men starter nesten alltid med "sb-"
+  // Vi sletter aggressivt alle cookies som ser ut som Supabase-auth.
+  const all = res.cookies.getAll?.() ?? [];
+  for (const c of all) {
+    const name = c.name || "";
+    if (
+      name.startsWith("sb-") ||
+      name.includes("supabase") ||
+      name.includes("auth-token") ||
+      name.includes("access-token") ||
+      name.includes("refresh-token")
+    ) {
+      res.cookies.set(name, "", { path: "/", maxAge: 0 });
+    }
+  }
+
+  // I tillegg: slett typiske Supabase cookie-navn (treffer ofte rett)
+  const common = [
+    "sb-access-token",
+    "sb-refresh-token",
+    "supabase-auth-token",
+  ];
+  for (const name of common) {
+    res.cookies.set(name, "", { path: "/", maxAge: 0 });
+  }
 }
 
-export async function POST() {
-  const rid = `logout_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function POST(req: Request) {
+  const res = NextResponse.json({ ok: true }, { status: 200 });
+  res.headers.set("cache-control", "no-store");
 
-  try {
-    const supabase = await supabaseServer();
+  const supabase = supabaseRoute(req, res);
 
-    const { error } = await supabase.auth.signOut();
+  // 1) normal supabase signout (skal skrive cookie-sletting via setAll)
+  await supabase.auth.signOut();
 
-    if (error) {
-      return json(false, 400, {
-        rid,
-        error: "logout_failed",
-        message: "Kunne ikke logge ut. Prøv igjen.",
-      });
-    }
+  // 2) hard wipe (failsafe)
+  wipeSupabaseCookies(res);
 
-    return json(true, 200, { rid });
-  } catch (err: any) {
-    console.error("[api/auth/logout]", err?.message || err, { rid, err });
-    return json(false, 500, {
-      rid,
-      error: "server_error",
-      message: "Kunne ikke logge ut akkurat nå.",
-    });
-  }
+  return res;
 }

@@ -1,26 +1,46 @@
-"use client";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-import { useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export default function LogoutPage() {
-  useEffect(() => {
-    (async () => {
-      try {
-        const sb = supabaseBrowser();
-        await sb.auth.signOut();
-      } finally {
-        // Hard refresh så SSR/cookies og UI er 100% sync
-        window.location.href = "/";
-      }
-    })();
-  }, []);
+export async function POST() {
+  const res = NextResponse.json({ ok: true }, { status: 200 });
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-sm text-[rgb(var(--lp-muted))]">Logger ut…</div>
-      </div>
-    </div>
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnon, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options: any) {
+        res.cookies.set({
+          name,
+          value,
+          ...options,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: options?.sameSite ?? "lax",
+          path: options?.path ?? "/",
+        });
+      },
+      remove(name: string, options: any) {
+        res.cookies.set({
+          name,
+          value: "",
+          ...options,
+          maxAge: 0,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: options?.sameSite ?? "lax",
+          path: options?.path ?? "/",
+        });
+      },
+    },
+  });
+
+  await supabase.auth.signOut();
+  return res;
 }

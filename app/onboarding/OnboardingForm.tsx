@@ -1,36 +1,37 @@
+// app/onboarding/OnboardingForm.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type PlanTier = "BASIS" | "LUXUS";
 
 type DayPlan = {
-  enabled: boolean; // kunden vil ha levering denne dagen
-  tier: PlanTier; // BASIS/LUXUS
-  priceExVat: number; // pris pr kuvert eks mva (UI-tekst under er justert til inkl. mva)
+  enabled: boolean;
+  tier: PlanTier;
+  priceExVat: number; // UI-tekst viser inkl mva, men vi lagrer tallet som "inkl mva" flag i payload
 };
 
 type DeliveryWindow = {
-  from: string; // "08:30"
-  to: string; // "10:00"
+  from: string;
+  to: string;
 };
 
 type FormState = {
-  // Firma (alt obligatorisk)
+  // Firma
   companyName: string;
   orgnr: string;
+  employeesCount: string; // ✅ nytt felt
 
-  // Firma-admin (alt obligatorisk)
+  // Firma-admin
   adminName: string;
   adminEmail: string;
   adminPhone: string;
   password: string;
   passwordConfirm: string;
 
-  // Levering (alt obligatorisk)
+  // Levering
   deliveryWhere: string;
   deliveryWhenNote: string;
   deliveryContactName: string;
@@ -45,12 +46,6 @@ type FormState = {
   days: Record<DayKey, DayPlan>;
 };
 
-function supabaseBrowser() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(url, anon);
-}
-
 function isValidTimeHHMM(v: string) {
   return /^\d{2}:\d{2}$/.test(v);
 }
@@ -64,13 +59,11 @@ const TERMS_VERSION = "v1.0";
 const TERMS_UPDATED_AT = "2026-01-16";
 
 function formatCurrencyNOK(value: number) {
-  // No Intl currency here to keep it stable/fast in all environments
   return `${Math.round(value)} kr`;
 }
 
 export default function OnboardingForm() {
   const router = useRouter();
-  const supabase = useMemo(() => supabaseBrowser(), []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +76,7 @@ export default function OnboardingForm() {
   const [form, setForm] = useState<FormState>({
     companyName: "",
     orgnr: "",
+    employeesCount: "",
 
     adminName: "",
     adminEmail: "",
@@ -129,6 +123,9 @@ export default function OnboardingForm() {
     // Firma
     if (!form.companyName.trim()) return "Firmanavn er obligatorisk.";
     if (!form.orgnr.trim()) return "Org.nr er obligatorisk.";
+
+    const employees = Number(String(form.employeesCount || "").trim());
+    if (!Number.isFinite(employees) || employees < 20) return "Firma må ha minimum 20 ansatte.";
 
     // Admin
     if (!form.adminName.trim()) return "Firma-admin: Navn er obligatorisk.";
@@ -187,78 +184,66 @@ export default function OnboardingForm() {
     setLoading(true);
 
     try {
-      // 1) Opprett firma-admin i Supabase Auth (telefon lagres i metadata)
-      const { data, error: signUpErr } = await supabase.auth.signUp({
-        email: form.adminEmail.trim(),
-        password: form.password,
-        options: {
-          data: {
-            name: form.adminName.trim(),
-            phone: form.adminPhone.trim(),
-            role: "company_admin",
-          },
-        },
-      });
-
-      if (signUpErr) throw new Error(signUpErr.message);
-
-      const session = data.session;
-      if (!session) {
-        throw new Error(
-          "Kontoen er opprettet. Sjekk e-post for bekreftelse før du kan fullføre registreringen."
-        );
-      }
-
       const nowISO = new Date().toISOString();
+      const employee_count = Number(String(form.employeesCount || "").trim());
 
-      // 2) Fullfør onboarding i DB (server)
+      // ✅ Atomisk onboarding på server (inkl. auth-opprettelse)
       const resp = await fetch("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
-          companyName: form.companyName.trim(),
+          company_name: form.companyName.trim(),
           orgnr: form.orgnr.trim(),
+          employee_count,
 
-          adminPhone: form.adminPhone.trim(),
+          full_name: form.adminName.trim(),
+          email: form.adminEmail.trim(),
+          phone: form.adminPhone.trim(),
 
-          locationName: form.locationName.trim(),
-          address: form.address.trim(),
-          postalCode: form.postalCode.trim(),
-          city: form.city.trim(),
+          password: form.password,
+          password_confirm: form.passwordConfirm,
+
+          location: {
+            name: form.locationName.trim(),
+            address: form.address.trim(),
+            postal_code: form.postalCode.trim(),
+            city: form.city.trim(),
+          },
 
           delivery: {
             where: form.deliveryWhere.trim(),
-            whenNote: form.deliveryWhenNote.trim(),
-            contactName: form.deliveryContactName.trim(),
-            contactPhone: form.deliveryContactPhone.trim(),
-            windowFrom: form.deliveryWindow.from,
-            windowTo: form.deliveryWindow.to,
+            when_note: form.deliveryWhenNote.trim(),
+            contact_name: form.deliveryContactName.trim(),
+            contact_phone: form.deliveryContactPhone.trim(),
+            window_from: form.deliveryWindow.from,
+            window_to: form.deliveryWindow.to,
           },
 
           agreement: {
             days: form.days,
-            billingPricesIncludeVat: true, // vi fakturerer inkl mva
+            billing_prices_include_vat: true,
           },
 
           terms: {
             version: TERMS_VERSION,
-            updatedAt: TERMS_UPDATED_AT,
-            accepted: true,
-            acceptedAt: nowISO,
-            creditConsent: true,
-            creditConsentAt: nowISO,
-            creditCheckSystem: "Tripletex",
-            billingPricesIncludeVat: true,
-            bindingMonths: 12,
-            noticeMonths: 3,
+            updated_at: TERMS_UPDATED_AT,
+            accepted_at: nowISO,
+            credit_consent_at: nowISO,
+            credit_check_system: "Tripletex",
+            binding_months: 12,
+            notice_months: 3,
           },
         }),
       });
 
-      const json = await resp.json();
-      if (!resp.ok || !json?.ok) throw new Error(json?.error || "Ukjent feil ved registrering.");
+      const json = await resp.json().catch(() => null);
 
-      router.push("/admin");
+      if (!resp.ok || !json?.ok) {
+        throw new Error(json?.message || json?.error || "Ukjent feil ved registrering.");
+      }
+
+      router.push(`/onboarding/thanks?status=${encodeURIComponent(json.status ?? "pending")}`);
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "Noe gikk galt.");
@@ -299,6 +284,19 @@ export default function OnboardingForm() {
                   onChange={(e) => set("orgnr", e.target.value)}
                   required
                 />
+              </label>
+
+              <label className="grid gap-1 md:col-span-2">
+                <span className="text-sm text-slate-600">Hvor mange ansatte? *</span>
+                <input
+                  className="rounded-xl border p-3"
+                  value={form.employeesCount}
+                  onChange={(e) => set("employeesCount", e.target.value)}
+                  inputMode="numeric"
+                  placeholder="Minst 20"
+                  required
+                />
+                <span className="text-xs text-slate-500">Minimum 20 ansatte for å registrere firma i Lunchportalen.</span>
               </label>
             </div>
           </section>
@@ -551,18 +549,10 @@ export default function OnboardingForm() {
           {/* TERMS + CREDIT CONSENT */}
           <section className="grid gap-2">
             <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-              />
+              <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} />
               <span>
                 Jeg har lest og aksepterer{" "}
-                <button
-                  type="button"
-                  className="underline opacity-90"
-                  onClick={() => setShowTermsModal(true)}
-                >
+                <button type="button" className="underline opacity-90" onClick={() => setShowTermsModal(true)}>
                   avtalevilkårene
                 </button>{" "}
                 *
@@ -579,8 +569,8 @@ export default function OnboardingForm() {
             </label>
 
             <p className="text-xs opacity-70">
-              Avtalen har <strong>12 måneders bindingstid</strong>. Oppsigelse: <strong>3 måneder</strong>{" "}
-              etter bindingstid. Alle priser faktureres <strong>inkl. mva</strong>.
+              Avtalen har <strong>12 måneders bindingstid</strong>. Oppsigelse: <strong>3 måneder</strong> etter
+              bindingstid. Alle priser faktureres <strong>inkl. mva</strong>.
             </p>
           </section>
 
@@ -596,7 +586,7 @@ export default function OnboardingForm() {
         </div>
       </form>
 
-      {/* Terms Modal (versioned + PDF link) */}
+      {/* Terms Modal */}
       {showTermsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
@@ -604,85 +594,36 @@ export default function OnboardingForm() {
               <div>
                 <h2 className="text-lg font-semibold">Avtalevilkår</h2>
                 <p className="text-sm opacity-70">
-                  Versjon: <strong>{TERMS_VERSION}</strong> • Sist oppdatert:{" "}
-                  <strong>{TERMS_UPDATED_AT}</strong>
+                  Versjon: <strong>{TERMS_VERSION}</strong> • Sist oppdatert: <strong>{TERMS_UPDATED_AT}</strong>
                 </p>
               </div>
-              <button
-                type="button"
-                className="rounded-xl border px-3 py-2 text-sm"
-                onClick={() => setShowTermsModal(false)}
-              >
+              <button type="button" className="rounded-xl border px-3 py-2 text-sm" onClick={() => setShowTermsModal(false)}>
                 Lukk
               </button>
             </div>
 
             <div className="max-h-[70vh] overflow-auto p-5 text-sm leading-6">
               <h3 className="font-semibold">1. Parter</h3>
-              <p>
-                Avtalen inngås mellom Lunchportalen (Leverandøren) og Kunden (juridisk enhet som registrerer avtalen).
-              </p>
+              <p>Avtalen inngås mellom Lunchportalen (Leverandøren) og Kunden (juridisk enhet som registrerer avtalen).</p>
 
               <h3 className="mt-4 font-semibold">2. Avtaleomfang</h3>
-              <p>
-                Leverandøren leverer tilgang til Lunchportalen og tilhørende tjenester i henhold til valgt avtale
-                (Basis/Luxus per dag) slik den er registrert i systemet.
-              </p>
+              <p>Leverandøren leverer tilgang til Lunchportalen og tilhørende tjenester i henhold til valgt avtale.</p>
 
               <h3 className="mt-4 font-semibold">3. Avtaleperiode og bindingstid</h3>
               <p>
-                Avtalen har <strong>12 (tolv) måneders bindingstid</strong> fra oppstart. Etter endt bindingstid løper
-                avtalen videre med <strong>3 (tre) måneders oppsigelsestid</strong>, regnet til utløpet av en måned.
+                Avtalen har <strong>12 (tolv) måneders bindingstid</strong>. Etter endt bindingstid løper avtalen videre med{" "}
+                <strong>3 (tre) måneders oppsigelsestid</strong>.
               </p>
 
               <h3 className="mt-4 font-semibold">4. Priser og fakturering</h3>
               <p>
-                Pris per kuvert følger avtalen slik den er registrert i systemet. <strong>Alle priser faktureres inkl. mva</strong>,
-                med mindre annet er skriftlig avtalt. Fakturering skjer i henhold til Leverandørens betalingsbetingelser.
-              </p>
-
-              <h3 className="mt-4 font-semibold">5. Levering og endringer</h3>
-              <p>
-                Levering skjer i henhold til leveringspunkt, leveringsinstruksjon og leveringsvindu registrert i systemet.
-                Endringer og avbestillinger følger gjeldende frister og systemregler.
+                Pris per kuvert følger avtalen slik den er registrert i systemet. <strong>Alle priser faktureres inkl. mva</strong>.
               </p>
 
               <h3 className="mt-4 font-semibold">6. Kredittvurdering (Tripletex)</h3>
               <p>
-                Kunden samtykker til at Leverandøren kan gjennomføre kredittvurdering av virksomheten i forbindelse med
-                avtaleinngåelse. Kredittvurderingen utføres i Leverandørens regnskapssystem <strong>Tripletex</strong>
-                (eventuelt via tilknyttet kredittopplysningsleverandør). Negativ vurdering kan medføre avslag eller krav om sikkerhet.
-              </p>
-
-              <h3 className="mt-4 font-semibold">7. Mislighold</h3>
-              <p>
-                Ved vesentlig mislighold kan Leverandøren suspendere leveranser eller heve avtalen i tråd med gjeldende rett.
-              </p>
-
-              <h3 className="mt-4 font-semibold">8. Ansvarsbegrensning</h3>
-              <p>
-                Leverandørens ansvar er begrenset til direkte tap og oppad begrenset til samlet vederlag for siste 12 måneder,
-                så langt loven tillater.
-              </p>
-
-              <h3 className="mt-4 font-semibold">9. Force majeure</h3>
-              <p>
-                Partene er fritatt for ansvar ved forhold utenfor rimelig kontroll som hindrer oppfyllelse av avtalen.
-              </p>
-
-              <h3 className="mt-4 font-semibold">10. Personvern</h3>
-              <p>
-                Behandling av personopplysninger skjer i samsvar med gjeldende personvernerklæring og GDPR.
-              </p>
-
-              <h3 className="mt-4 font-semibold">11. Endringer i vilkår</h3>
-              <p>
-                Leverandøren kan oppdatere vilkårene med 30 dagers varsel. Vesentlige endringer krever Kundens aksept dersom lov krever det.
-              </p>
-
-              <h3 className="mt-4 font-semibold">12. Lovvalg og verneting</h3>
-              <p>
-                Avtalen er underlagt norsk rett. Tvister søkes løst i minnelighet, ellers ved ordinær domstol med Leverandørens verneting.
+                Kunden samtykker til at Leverandøren kan gjennomføre kredittvurdering av virksomheten. Kredittvurderingen utføres i{" "}
+                <strong>Tripletex</strong>.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
@@ -695,17 +636,13 @@ export default function OnboardingForm() {
                   Åpne PDF-versjon
                 </a>
 
-                <button
-                  type="button"
-                  className="rounded-xl bg-black px-4 py-2 text-sm text-white"
-                  onClick={() => setShowTermsModal(false)}
-                >
+                <button type="button" className="rounded-xl bg-black px-4 py-2 text-sm text-white" onClick={() => setShowTermsModal(false)}>
                   Jeg forstår
                 </button>
               </div>
 
               <p className="mt-4 text-xs opacity-70">
-                (Visning: {TERMS_VERSION}) • Eksempelpris i avtalen: Basis {formatCurrencyNOK(90)} / Luxus {formatCurrencyNOK(130)}.
+                (Visning: {TERMS_VERSION}) • Eksempelpris: Basis {formatCurrencyNOK(90)} / Luxus {formatCurrencyNOK(130)}.
               </p>
             </div>
           </div>

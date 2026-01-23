@@ -8,7 +8,11 @@ import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import AuthStatus from "@/components/auth/AuthStatus";
+import SuperadminTopNavInline from "@/components/superadmin/SuperadminTopNavInline";
 
+/* =========================================================
+   Fonts
+========================================================= */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -21,6 +25,9 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+/* =========================================================
+   Metadata
+========================================================= */
 export const metadata: Metadata = {
   title: {
     default: "Lunchportalen – firmalunsj med kontroll",
@@ -53,25 +60,60 @@ export const metadata: Metadata = {
   },
 };
 
+/* =========================================================
+   Helpers
+========================================================= */
+function cleanPath(pathname: string) {
+  return (pathname || "").split("?")[0];
+}
+
 function isPublicPath(pathname: string) {
-  const p = (pathname || "").split("?")[0];
+  const p = cleanPath(pathname);
 
   return (
+    p === "/" || // ✅ Landing er offentlig
     p === "/login" ||
     p.startsWith("/login/") ||
     p === "/register" ||
     p.startsWith("/register/") ||
+    p === "/registrering" ||
+    p.startsWith("/registrering/") ||
+    p === "/onboarding" ||
+    p.startsWith("/onboarding/") ||
     p === "/forgot-password" ||
     p.startsWith("/forgot-password/")
   );
 }
 
+/** ✅ Sider der ansatte oftest misforstår */
+function isRegistrationFlow(pathname: string) {
+  const p = cleanPath(pathname);
+  return (
+    p === "/register" ||
+    p.startsWith("/register/") ||
+    p === "/registrering" ||
+    p.startsWith("/registrering/") ||
+    p === "/onboarding" ||
+    p.startsWith("/onboarding/")
+  );
+}
+
+/** ✅ “Fokusmodus” – skjul toppmeny for å unngå forvirring */
+function isFocusMode(pathname: string) {
+  const p = cleanPath(pathname);
+  return (
+    p === "/login" ||
+    p.startsWith("/login/") ||
+    p === "/forgot-password" ||
+    p.startsWith("/forgot-password/") ||
+    isRegistrationFlow(p) // ✅ inkluder registrering/onboarding
+  );
+}
+
 function getPathnameFromHeaders(h: Headers): string {
-  // 1) Prefer vår egen header fra middleware
   const fromMiddleware = h.get("x-pathname");
   if (fromMiddleware) return fromMiddleware;
 
-  // 2) Fallback: Next kan gi next-url i noen miljø (inneholder path+query)
   const nextUrl = h.get("next-url");
   if (nextUrl) {
     try {
@@ -82,22 +124,48 @@ function getPathnameFromHeaders(h: Headers): string {
     }
   }
 
-  // 3) Ikke bruk referer (kan feil-klassifisere /week etter login)
-  // Fail-open: returner tom streng -> chrome vises.
   return "";
 }
 
+function EmployeeMisunderstandingBanner() {
+  // Server-komponent, enkel og trygg.
+  return (
+    <div className="border-b border-[rgb(var(--lp-border))] bg-white/70">
+      <div className="mx-auto max-w-3xl px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[rgb(var(--lp-text))]">
+            <strong>Viktig:</strong> Denne registreringen er kun for{" "}
+            <strong>firma-admin</strong> (leder/ansvarlig).
+            <span className="text-[rgb(var(--lp-muted))]">
+              {" "}
+              Ansatte får tilgang via invitasjon.
+            </span>
+          </div>
+          <Link
+            href="/login"
+            className="inline-flex items-center rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-1 text-xs font-medium text-[rgb(var(--lp-text))] hover:bg-white/80"
+          >
+            Jeg er ansatt – gå til innlogging
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   Root layout
+========================================================= */
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const h = await headers();
-
   const pathname = getPathnameFromHeaders(h);
 
-  // ✅ Fail-open: hvis vi ikke vet path, viser vi chrome (tryggest).
-  const hideChrome = pathname ? isPublicPath(pathname) : false;
+  const focusMode = pathname ? isFocusMode(pathname) : false;
+  const showRegBanner = pathname ? isRegistrationFlow(pathname) : false;
 
   return (
     <html
@@ -106,14 +174,17 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-[rgb(var(--lp-bg))] text-[rgb(var(--lp-text))] antialiased">
-        {hideChrome ? (
-          <main>{children}</main>
+        {focusMode ? (
+          <>
+            {/* ✅ “Idiotsikker” ansatt-beskjed på registrering/onboarding */}
+            {showRegBanner ? <EmployeeMisunderstandingBanner /> : null}
+            <main>{children}</main>
+          </>
         ) : (
           <>
-            {/* ===== Header ===== */}
+            {/* ✅ EN header (global). Superadmin-knapper ligger i samme rad ved siden av Logg ut */}
             <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/80 backdrop-blur">
               <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:gap-4">
-                {/* Logo */}
                 <Link href="/" className="flex items-center">
                   <Image
                     src="/LunchPortalen_Enterprise_Logo_Pack/LP-logo-uten-bakgrunn.png"
@@ -126,17 +197,18 @@ export default async function RootLayout({
                   <span className="sr-only">Lunchportalen</span>
                 </Link>
 
-                {/* Actions (auth-aware) */}
-                <nav className="flex flex-nowrap items-center gap-3">
+                <nav className="flex items-center gap-3">
+                  {/* ✅ Kun synlig på /superadmin* og ligger ved siden av AuthStatus */}
+                  <SuperadminTopNavInline />
+
+                  {/* ✅ Innlogget label er klikkbar + Logg ut */}
                   <AuthStatus />
                 </nav>
               </div>
             </header>
 
-            {/* ===== Page content ===== */}
             <main>{children}</main>
 
-            {/* ===== Footer ===== */}
             <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
               <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-[rgb(var(--lp-muted))]">
                 © {new Date().getFullYear()} Lunchportalen

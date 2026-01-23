@@ -492,7 +492,7 @@ export async function POST(req: Request) {
         ok: true,
         rid,
 
-        // ✅ Kvittering (Avensia-nivå)
+        // ✅ Kvittering 
         receipt: {
           orderId: saved.id,
           status: "ACTIVE",

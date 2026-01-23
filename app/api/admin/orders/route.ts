@@ -3,19 +3,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
 
+/* =========================================================
+   Helpers
+========================================================= */
 function isISODate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
+}
+
+function isoToNO(d: string) {
+  // YYYY-MM-DD -> DD-MM-YYYY
+  const [y, m, day] = d.split("-");
+  return `${day}-${m}-${y}`;
 }
 
 // Join kan komme som object eller array (Supabase/PostgREST)
 function first<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? (v[0] ?? null) : v;
+  return Array.isArray(v) ? v[0] ?? null : v;
 }
 
 function jsonErr(status: number, rid: string, error: string, detail?: string) {
@@ -27,7 +35,8 @@ function jsonErr(status: number, rid: string, error: string, detail?: string) {
  * - company_admin: only orders for own company
  * - superadmin: can view all, or filter by ?company_id=
  * - date defaults to Oslo "today" if missing/invalid
- * - returns ACTIVE orders by default (matches your original behavior)
+ * - status defaults to ACTIVE
+ * - returns both ISO date + dateNO (DD-MM-YYYY)
  */
 export async function GET(req: NextRequest) {
   const rid = `admin_orders_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -35,31 +44,36 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
 
-    // date
+    /* =========================
+       Params
+    ========================= */
     const dateQ = url.searchParams.get("date");
-    const date = dateQ && isISODate(dateQ) ? dateQ : osloTodayISODate();
+    const dateISO = dateQ && isISODate(dateQ) ? dateQ : osloTodayISODate();
+    const dateNO = isoToNO(dateISO);
 
-    // optional filters (superadmin only for company_id)
     const requestedCompanyId = url.searchParams.get("company_id");
-    const statusQ = url.searchParams.get("status"); // optional override
+    const statusQ = url.searchParams.get("status");
     const status = statusQ ? String(statusQ).toUpperCase() : "ACTIVE";
 
-    // 1) scope lock (tenant security)
+    /* =========================
+       Scope & access
+    ========================= */
     const scope = await getScope(req);
     allowSuperadminOrCompanyAdmin(scope);
 
-    // 2) Determine effective company filter
     const companyId =
       scope.role === "superadmin"
-        ? (requestedCompanyId ? String(requestedCompanyId) : null) // null => all companies
+        ? requestedCompanyId
+          ? String(requestedCompanyId)
+          : null
         : mustCompanyId(scope);
 
-    // 3) Read orders
-    // We use admin client because we join + need stable reads even if RLS changes,
-    // but we still apply strict scope filtering in code (enterprise rule).
+    /* =========================
+       Read orders
+    ========================= */
     const admin = supabaseAdmin();
 
-    let q = (admin as any)
+    let q = admin
       .from("orders")
       .select(
         `
@@ -67,11 +81,16 @@ export async function GET(req: NextRequest) {
         user_id,
         note,
         created_at,
+        updated_at,
         company_id,
         location_id,
+        slot,
         date,
         status,
-        companies ( id, name ),
+        companies (
+          id,
+          name
+        ),
         company_locations (
           id,
           name,
@@ -84,7 +103,7 @@ export async function GET(req: NextRequest) {
         )
       `
       )
-      .eq("date", date)
+      .eq("date", dateISO)
       .eq("status", status)
       .order("created_at", { ascending: true });
 
@@ -96,15 +115,28 @@ export async function GET(req: NextRequest) {
       return jsonErr(500, rid, "ORDERS_READ_FAILED", error.message);
     }
 
-    // 4) Normalize join fields to objects (not arrays) for stable frontend
-    const normalized = (rows ?? []).map((r: any) => ({
+    /* =========================
+       Normalize joins + date
+    ========================= */
+    const orders = (rows ?? []).map((r: any) => ({
       ...r,
+      dateISO: r.date,
+      dateNO,
       companies: first(r.companies),
       company_locations: first(r.company_locations),
     }));
 
     return NextResponse.json(
-      { ok: true, rid, date, company_id: companyId, status, count: normalized.length, orders: normalized },
+      {
+        ok: true,
+        rid,
+        dateISO,
+        dateNO,
+        company_id: companyId,
+        status,
+        count: orders.length,
+        orders,
+      },
       { status: 200 }
     );
   } catch (e: any) {

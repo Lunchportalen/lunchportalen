@@ -10,6 +10,10 @@
    - CTA polish (no neon)
    ========================================================= */
 
+/* ---------------------------------------------------------
+   Tokens
+--------------------------------------------------------- */
+
 :root{
   /* =========================
      Canvas (logo-friendly)
@@ -51,7 +55,7 @@
 }
 
 /* ---------------------------------------------------------
-   Base
+   Base (Tailwind base runs first; we extend/lock here)
 --------------------------------------------------------- */
 
 html, body { height: 100%; }
@@ -109,6 +113,33 @@ a:hover{
   outline: 2px solid rgba(var(--lp-ring), .65);
   outline-offset: 3px;
   border-radius: 12px;
+}
+
+/* ---------------------------------------------------------
+   ✅ FIX: Copy/Select text must always work (admin UX)
+   - Use .lp-select-text on pages/components where copy matters
+   - Avoid putting user-select:none on wrappers
+--------------------------------------------------------- */
+
+.lp-select-text,
+.lp-select-text *{
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Buttons should still not select text while clicking */
+button,
+.lp-btn,
+.lp-btn-primary{
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Inputs should remain selectable/copyable */
+input,
+textarea{
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ---------------------------------------------------------
@@ -221,7 +252,7 @@ a:hover{
     url("/matbilder/melhuscatering-lunsj-1018029.jpg") center/cover no-repeat;
 }
 
-/* Unified hero content (if used elsewhere) */
+/* Unified hero content */
 .lp-heroContent{
   position: relative;
   z-index: 1;
@@ -323,7 +354,6 @@ a:hover{
   font-weight: 800;
   line-height: 1;
   transition: transform .14s var(--lp-ease), box-shadow .14s var(--lp-ease), opacity .14s var(--lp-ease);
-  user-select: none;
   white-space: nowrap;
 }
 
@@ -546,14 +576,11 @@ a:hover{
 --------------------------------------------------------- */
 
 @media print{
-  /* Hide chrome */
   header, nav, button, .no-print{ display: none !important; }
 
-  /* Reduce background / effects */
   body{ background: #fff !important; }
   body::before{ display: none !important; }
 
-  /* Cards become flat for printing */
   .lp-card, .lp-mediaCard{
     box-shadow: none !important;
     backdrop-filter: none !important;
@@ -575,7 +602,6 @@ a:hover{
 }
 
 /* ---------------------------------------------------------
-   VS Code warning note:
-   "Unknown at rule @tailwind" is from the editor linter,
-   not Tailwind. It will compile correctly when PostCSS is set.
+   VS Code note:
+   "Unknown at rule @tailwind" is editor lint noise.
 --------------------------------------------------------- */
