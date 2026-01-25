@@ -1,0 +1,389 @@
+{
+  "header": {
+    "brand": "Lunchportalen",
+    "roleLabel": "Admin",
+    "logout": "Logg ut",
+    "quickStatus": {
+      "companyActive": "Firma: Aktivt",
+      "nextDelivery": "Neste levering: {{date}}"
+    }
+  },
+
+  "adminPage": {
+    "title": "Admin",
+    "intro": "Oversikt, ansatte og kontroll på bestillinger – innenfor avtalen.",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "employees": "Ansatte",
+      "orders": "Ordrer",
+      "locations": "Lokasjoner",
+      "billing": "Faktura"
+    }
+  },
+
+  "controlCenter": {
+    "title": "Admin – Kontrollsenter",
+    "subtitle": "Full innsikt. Full kontroll. Null dag-til-dag-støy.",
+    "statusChips": {
+      "ok": "Status: Alt OK",
+      "attention": "Status: Krever tiltak",
+      "stopped": "Status: Stoppet"
+    },
+    "companyState": {
+      "active": "Firma: AKTIVT",
+      "paused": "Firma: PÅ PAUSE",
+      "closed": "Firma: STENGT"
+    },
+    "miniNav": {
+      "dashboard": "Dashboard",
+      "employees": "Ansatte",
+      "locations": "Lokasjoner",
+      "orders": "Ordrer"
+    },
+    "companyId": {
+      "label": "Firma-ID",
+      "copy": "Kopier",
+      "copied": "Kopiert."
+    }
+  },
+
+  "stats": {
+    "todayOrders": {
+      "title": "Ordrer i dag ({{status}})",
+      "empty": "Ingen ordre registrert i dag ennå.",
+      "cancelled": "Avbestilt: {{count}}"
+    },
+    "weekOrders": {
+      "title": "Ordrer denne uken ({{status}})",
+      "empty": "Ingen ordre registrert denne uken ennå.",
+      "cancelled": "Avbestilt: {{count}}"
+    },
+    "employees": {
+      "title": "Ansatte (aktive)",
+      "empty": "Ingen ansatte er lagt til ennå.",
+      "footer": "Deaktivert: {{disabled}} · Totalt: {{total}}"
+    },
+    "cutoff": {
+      "title": "Cut-off",
+      "time": "08:00",
+      "note": "Europe/Oslo · Ingen unntak",
+      "help": "Bestilling og avbestilling låses automatisk etter 08:00 samme dag. Dette kan ikke overstyres."
+    }
+  },
+
+  "companyBox": {
+    "title": "Admin (firma)",
+    "text": "Du administrerer kun innenfor avtalen. Ingen cut-off-overstyring. Ingen unntak.",
+    "fields": {
+      "company": "Firma",
+      "companyId": "Firma-ID",
+      "plan": "Plan",
+      "deliveryDays": "Leveringsdager",
+      "period": "Periode"
+    },
+    "states": {
+      "active": "Firmaet er aktivt og kan ta imot bestillinger.",
+      "paused": "Firmaet er satt på pause. Bestillinger er midlertidig stoppet.",
+      "closed": "Firmaet er stengt. Tilgang og bestillinger er deaktivert."
+    }
+  },
+
+  "employeesSection": {
+    "title": "Ansatte",
+    "intro": "Administrer ansatte i bedriften. Deaktivering sletter ikke historikk.",
+    "searchPlaceholder": "Søk navn, e-post, avdeling",
+    "buttons": {
+      "invite": "Inviter ansatt",
+      "downloadCsv": "Last ned CSV"
+    },
+    "csvHelp": "Last ned liste over ansatte i CSV-format (navn, e-post, avdeling, lokasjon, status).",
+    "counters": {
+      "showing": "Viser",
+      "activeInList": "Aktive (i listen)",
+      "disabledInList": "Deaktivert (i listen)",
+      "total": "Totalt (alle)"
+    },
+    "table": {
+      "name": "Navn",
+      "email": "E-post",
+      "department": "Avdeling",
+      "location": "Lokasjon",
+      "invitation": "Invitasjon",
+      "actions": "Handling",
+      "empty": {
+        "line1": "Ingen ansatte funnet.",
+        "line2": "Inviter første ansatt for å komme i gang."
+      }
+    },
+    "invitationStatus": {
+      "notSent": "Ikke sendt",
+      "sent": "Sendt {{date}}",
+      "opened": "Åpnet",
+      "accepted": "Akseptert",
+      "expired": "Utløpt – send på nytt"
+    },
+    "rowActions": {
+      "resend": "Send invitasjon på nytt",
+      "deactivate": "Deaktiver",
+      "activate": "Aktiver",
+      "copyLink": "Kopier invitasjonslenke"
+    },
+    "confirmDeactivate": {
+      "title": "Deaktivere ansatt?",
+      "text": "Ansatte mister tilgang umiddelbart. Historikk og ordre beholdes.",
+      "cancel": "Avbryt",
+      "confirm": "Deaktiver"
+    },
+    "toasts": {
+      "inviteSent": "Invitasjon sendt.",
+      "inviteResent": "Invitasjon sendt på nytt.",
+      "deactivated": "Ansatt deaktivert.",
+      "activated": "Ansatt aktivert.",
+      "error": "Noe gikk galt. Prøv igjen."
+    }
+  },
+
+  "employeesTable": {
+    "status": {
+      "active": "Aktiv",
+      "invited": "Invitert",
+      "disabled": "Deaktivert"
+    },
+    "actions": {
+      "enable": "Aktiver",
+      "disable": "Deaktiver",
+      "resendTitle": "Send invitasjon på nytt"
+    },
+    "csv": {
+      "title": "Last ned CSV (filtrert på søk)"
+    },
+    "location": {
+      "fallback": "Lokasjon"
+    },
+    "paging": {
+      "label": "Side {{page}} av {{total}} · {{count}} totalt"
+    }
+  },
+
+  "inviteModal": {
+    "title": "Inviter ansatt",
+    "subtitle": "Den ansatte får en e-post med registreringslenke.",
+    "fields": {
+      "name": {
+        "label": "Navn",
+        "placeholder": "Fornavn Etternavn",
+        "error": "Skriv inn navn."
+      },
+      "email": {
+        "label": "E-post",
+        "placeholder": "navn@firma.no",
+        "help": "Bruk jobbadressen. Private e-poster anbefales ikke.",
+        "error": "Skriv inn gyldig e-postadresse."
+      },
+      "department": {
+        "label": "Avdeling",
+        "placeholder": "F.eks. Salg, Drift, HR"
+      },
+      "location": {
+        "label": "Lokasjon",
+        "placeholder": "Velg lokasjon",
+        "error": "Velg lokasjon."
+      },
+      "note": {
+        "label": "Notat til kjøkken",
+        "placeholder": "Kort beskjed som gjelder neste leveranse"
+      }
+    },
+    "buttons": {
+      "cancel": "Avbryt",
+      "submit": "Send invitasjon"
+    }
+  },
+
+  "locationsSection": {
+    "title": "Lokasjoner",
+    "intro": "Organiser ansatte og leveringspunkter. Lokasjoner brukes for gruppering i kjøkkenvisning.",
+    "buttons": {
+      "new": "Ny lokasjon"
+    },
+    "table": {
+      "name": "Navn",
+      "address": "Adresse",
+      "window": "Leveringsvindu",
+      "employees": "Ansatte",
+      "status": "Status",
+      "actions": "Handling",
+      "empty": {
+        "line1": "Ingen lokasjoner lagt til.",
+        "line2": "Opprett lokasjon for å kunne knytte ansatte til riktig leveringspunkt."
+      }
+    },
+    "status": {
+      "active": "Aktiv",
+      "hidden": "Skjult"
+    },
+    "modal": {
+      "title": "Ny lokasjon",
+      "fields": {
+        "name": {
+          "label": "Lokasjonsnavn",
+          "placeholder": "F.eks. Hovedkontor"
+        },
+        "address": {
+          "label": "Adresse",
+          "placeholder": "Gateadresse, postnr, sted"
+        },
+        "window": {
+          "label": "Leveringsvindu",
+          "placeholder": "F.eks. 10:30–11:00"
+        }
+      },
+      "buttons": {
+        "cancel": "Avbryt",
+        "create": "Opprett lokasjon"
+      }
+    }
+  },
+
+  "ordersSection": {
+    "title": "Ordrer",
+    "intro": "Se bestillinger og avbestillinger. Cut-off håndheves automatisk.",
+    "filters": {
+      "date": "Dato",
+      "location": "Lokasjon",
+      "status": "Status",
+      "search": "Søk ansatt eller notat"
+    },
+    "table": {
+      "date": "Dato",
+      "employee": "Ansatt",
+      "location": "Lokasjon",
+      "status": "Status",
+      "time": "Tidspunkt",
+      "note": "Notat",
+      "actions": "Handling",
+      "empty": "Ingen ordre å vise for valgt filter."
+    },
+    "status": {
+      "registered": "Registrert",
+      "cancelled": "Avbestilt",
+      "locked": "Låst etter cut-off"
+    },
+    "cutoffInfo": {
+      "title": "Viktig om cut-off",
+      "text": "Etter 08:00 kan bestillinger ikke endres. Dette sikrer forutsigbarhet og mindre matsvinn."
+    }
+  },
+
+  "insightAI": {
+    "title": "Innsikt (AI)",
+    "intro": "Automatisk beregnet innsikt basert på faktisk bruk. Ingen manuelle overstyringer.",
+    "forecast": {
+      "title": "Forventet antall i morgen",
+      "note": "Basert på historikk, ukedag og nylige mønstre.",
+      "lowConfidence": "Lav sikkerhet",
+      "lowConfidenceHelp": "Hvis få datapunkter, vises lavere sikkerhet. Tallene brukes som støtte, ikke fasit."
+    },
+    "waste": {
+      "title": "Matsvinn-indikator",
+      "low": "God stabilitet. Lite avvik i bestillinger.",
+      "medium": "Noe variasjon. Vurder å minne ansatte om avbestilling før 08:00.",
+      "high": "Stor variasjon. Sjekk om mange bestiller sent eller glemmer å avbestille."
+    },
+    "stability": {
+      "title": "Stabilitet siste 14 dager",
+      "text": "Variasjon: {{level}} · Avvik: {{percent}}%"
+    },
+    "economy": {
+      "title": "Kostnadsbilde (estimat)",
+      "avgDay": "Gjennomsnitt per dag: {{amount}}",
+      "avgWeek": "Gjennomsnitt per uke: {{amount}}",
+      "change": "Endring vs forrige periode: {{percent}}%",
+      "note": "Estimat basert på avtaleramme og registrerte ordre."
+    },
+    "alerts": {
+      "title": "Varsler",
+      "items": [
+        "Uvanlig mange avbestillinger i dag.",
+        "Mange endringer tett opp mot cut-off.",
+        "Lav dekning på lokasjon {{name}} – sjekk om ansatte er knyttet riktig.",
+        "Få datapunkter siste uke – innsikt kan være mindre presis."
+      ],
+      "empty": "Ingen varsler akkurat nå."
+    },
+    "explain": "Innsikt genereres automatisk fra historikk. Den endrer ikke regler, cut-off eller avtale – og kan ikke brukes til unntak."
+  },
+
+  "audit": {
+    "page": {
+      "kicker": "Superadmin",
+      "title": "Audit / Revisjon",
+      "subtitle": "Hvem gjorde hva – og når. Minimumsspor for ansvar og revisjon.",
+      "back": "Tilbake"
+    },
+    "principle": {
+      "title": "Prinsipp",
+      "text": "Audit-loggen er ikke et analyseverktøy. Den eksisterer for ansvar, sporbarhet og revisjon. Hendelser kan ikke redigeres eller slettes."
+    },
+    "client": {
+      "title": "Hendelser",
+      "subtitle": "Read-only. Filtrer og søk ved behov.",
+      "filters": {
+        "q": "Søk (aktør, handling, firma, mål)",
+        "severity": "Alvorlighet",
+        "company": "Firma-ID",
+        "action": "Handling",
+        "clear": "Nullstill"
+      },
+      "table": {
+        "time": "Tid",
+        "severity": "Alvor",
+        "actor": "Aktør",
+        "company": "Firma",
+        "action": "Handling",
+        "target": "Mål",
+        "empty": "Ingen audit-events funnet."
+      },
+      "severity": {
+        "all": "Alle",
+        "info": "Info",
+        "warning": "Varsel",
+        "critical": "Kritisk"
+      },
+      "paging": {
+        "prev": "Forrige",
+        "next": "Neste",
+        "showing": "Viser {{x}} av {{y}}"
+      },
+      "errors": {
+        "loadTitle": "Kunne ikke hente audit-logg",
+        "retry": "Prøv igjen"
+      }
+    }
+  },
+
+  "insightPanel": {
+    "refresh": "Oppdater",
+    "loadErrorTitle": "Kunne ikke hente innsikt",
+    "retry": "Prøv igjen",
+    "cancelRate": "Avbestillingsrate: {{percent}}%"
+  },
+
+  "system": {
+    "errors": {
+      "noAccess": "Du har ikke tilgang til denne siden.",
+      "companyInactive": "Firmaet er ikke aktivt. Kontakt superadmin ved behov.",
+      "adminOnly": "Kun admin kan invitere og administrere ansatte.",
+      "generic": "Noe gikk galt. Last siden på nytt og prøv igjen.",
+      "network": "Tilkoblingen feilet. Sjekk nettverk og prøv igjen."
+    },
+    "micro": {
+      "lastUpdated": "Sist oppdatert: {{time}}",
+      "showing": "Viser {{x}} av {{y}}",
+      "next": "Neste",
+      "prev": "Forrige",
+      "loading": "Laster…",
+      "noResults": "Ingen treff"
+    }
+  }
+}

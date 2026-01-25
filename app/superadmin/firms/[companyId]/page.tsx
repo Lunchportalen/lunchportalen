@@ -1,9 +1,11 @@
 // app/superadmin/firms/[companyId]/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { supabaseServer } from "@/lib/supabase/server";
 import ChangeCompanyAdmin from "./ChangeCompanyAdmin";
 
@@ -27,8 +29,8 @@ type LocationRow = {
   name: string;
 };
 
-type RouteCtx = {
-  params: { companyId: string } | Promise<{ companyId: string }>;
+type PageProps = {
+  params: { companyId: string };
 };
 
 function isUuid(v: any) {
@@ -50,20 +52,31 @@ function normalizeStatus(v: any): CompanyStatus {
   return "PAUSED";
 }
 
-export default async function FirmPage(_req: any, ctx: RouteCtx) {
-  const params = await ctx.params;
-  const companyId = String(params.companyId ?? "");
+function fmtTs(ts: string) {
+  try {
+    return new Date(ts).toLocaleString("nb-NO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return ts;
+  }
+}
 
+export default async function FirmPage({ params }: PageProps) {
+  const companyId = String(params?.companyId ?? "");
   if (!isUuid(companyId)) redirect("/superadmin/firms");
 
   const supabase = await supabaseServer();
 
   // ---- auth ----
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: auth, error: uErr } = await supabase.auth.getUser();
+  const user = auth?.user ?? null;
 
-  if (!user) redirect(`/login?next=/superadmin/firms/${companyId}`);
+  if (uErr || !user) redirect(`/login?next=/superadmin/firms/${companyId}`);
 
   // ---- role check: must be superadmin ----
   const { data: me, error: meErr } = await supabase
@@ -72,10 +85,7 @@ export default async function FirmPage(_req: any, ctx: RouteCtx) {
     .or(`user_id.eq.${user.id},id.eq.${user.id}`)
     .maybeSingle();
 
-  if (meErr) {
-    // hard fail -> login
-    redirect("/login");
-  }
+  if (meErr) redirect("/login");
 
   const myRole = (String((me as any)?.role ?? "").toLowerCase() as Role) || "employee";
   if (myRole !== "superadmin") redirect("/");
@@ -140,11 +150,21 @@ export default async function FirmPage(_req: any, ctx: RouteCtx) {
               Org.nr: <span className="font-mono">{company.orgnr ?? "—"}</span>
             </span>
           </div>
+
+          {/* Full ansattoversikt (Superadmin) */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/superadmin/firms/${company.id}/employees`}
+              className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90"
+            >
+              Ansatte (full oversikt)
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-xs text-[rgb(var(--lp-muted))]">Sist oppdatert</div>
-          <div className="mt-1 text-sm font-medium">{new Date(company.updated_at).toLocaleString("nb-NO")}</div>
+          <div className="mt-1 text-sm font-medium">{fmtTs(company.updated_at)}</div>
         </div>
       </div>
 

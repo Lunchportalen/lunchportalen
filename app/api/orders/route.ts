@@ -72,6 +72,316 @@ function locked409(rid: string, dateISO: string, cutoffTime?: string, menuAvaila
   );
 }
 
+function blocked409(rid: string, dateISO: string, cutoffTime: string, menuAvailable: boolean, code: string, message: string, detail?: any) {
+  return NextResponse.json(
+    orderBase({
+      ok: false,
+      rid,
+      date: dateISO,
+      locked: false,
+      cutoffTime,
+      menuAvailable,
+      canAct: false,
+      error: code,
+      message,
+      receipt: null,
+      order: null,
+      detail: detail ?? undefined,
+    } as any),
+    { status: 409 }
+  );
+}
+
+function blocked403(rid: string, dateISO: string, cutoffTime: string, menuAvailable: boolean, code: string, message: string, detail?: any) {
+  return NextResponse.json(
+    orderBase({
+      ok: false,
+      rid,
+      date: dateISO,
+      locked: false,
+      cutoffTime,
+      menuAvailable,
+      canAct: false,
+      error: code,
+      message,
+      receipt: null,
+      order: null,
+      detail: detail ?? undefined,
+    } as any),
+    { status: 403 }
+  );
+}
+
+/* =========================================================
+   Enforcement helpers (server-side, cannot be bypassed)
+========================================================= */
+async function enforceCompanyAndAgreement(params: {
+  supabase: any;
+  rid: string;
+  dateISO: string;
+  cutoffTime: string;
+  menuAvailable: boolean;
+  company_id: string;
+}) {
+  const { supabase, rid, dateISO, cutoffTime, menuAvailable, company_id } = params;
+
+  // 1) Company status
+  const { data: cRow, error: cErr } = await supabase.from("companies").select("id,status").eq("id", company_id).maybeSingle();
+  if (cErr) {
+    logApiError("orders enforce company failed", cErr, { rid, dateISO, company_id });
+    return NextResponse.json(
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "COMPANY_LOOKUP_FAILED",
+        message: "Kunne ikke verifisere firmastatus.",
+        receipt: null,
+        order: null,
+      }),
+      { status: 500 }
+    );
+  }
+  if (!cRow) {
+    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "COMPANY_NOT_FOUND", "Fant ikke firmaet for kontoen din.", {
+      company_id,
+    });
+  }
+  if (String(cRow.status).toUpperCase() !== "ACTIVE") {
+    return blocked403(rid, dateISO, cutoffTime, menuAvailable, "COMPANY_BLOCKED", "Firmaet er deaktivert.", {
+      status: cRow.status,
+      company_id,
+    });
+  }
+
+  // 2) Agreement status (view/derived)
+  const { data: ag, error: aErr } = await supabase
+    .from("company_current_agreement")
+    .select("status,start_date,end_date,cutoff_time,timezone")
+    .eq("company_id", company_id)
+    .maybeSingle();
+
+  if (aErr) {
+    logApiError("orders enforce agreement failed", aErr, { rid, dateISO, company_id });
+    return NextResponse.json(
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AGREEMENT_LOOKUP_FAILED",
+        message: "Kunne ikke verifisere avtale.",
+        receipt: null,
+        order: null,
+      }),
+      { status: 500 }
+    );
+  }
+
+  if (!ag) {
+    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_MISSING", "Ingen aktiv avtale er registrert for firmaet.", {
+      company_id,
+    });
+  }
+
+  const agStatus = String(ag.status ?? "").toUpperCase();
+  if (agStatus !== "ACTIVE") {
+    return blocked403(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_INACTIVE", "Avtalen er ikke aktiv.", {
+      status: ag.status,
+    });
+  }
+
+  // Start/end sanity (ISO compare)
+  const start = String(ag.start_date ?? "");
+  const end = ag.end_date ? String(ag.end_date) : null;
+
+  if (start && dateISO < start) {
+    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_NOT_STARTED", "Avtalen har ikke startet ennå.", {
+      start_date: start,
+    });
+  }
+  if (end && dateISO > end) {
+    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_EXPIRED", "Avtalen er utløpt.", { end_date: end });
+  }
+
+  return null; // ✅ ok
+}
+
+/* =========================================================
+   GET: Hent status for dagens ordre (og UI-sannhet)
+========================================================= */
+export async function GET() {
+  const rid = `order_get_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  const dateISO = osloTodayISODate();
+  const cutoff = cutoffStatusNow();
+  const cutoffTime = cutoff.cutoffTime ?? "08:00";
+
+  try {
+    // Meny (best effort)
+    let menu: any = null;
+    try {
+      menu = await getMenuForDate(dateISO);
+    } catch (e: any) {
+      logApiError("GET /api/orders menu failed", e, { rid, dateISO });
+      menu = null;
+    }
+    const menuAvailable = !!menu?.isPublished;
+
+    const supabase = await supabaseServer();
+
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userRes?.user) {
+      return NextResponse.json(
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: cutoff.isLocked,
+          cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "UNAUTH",
+          message: "Ikke innlogget.",
+          receipt: null,
+          order: null,
+        }),
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: pErr } = await supabase
+      .from("profiles")
+      .select("company_id, location_id")
+      .eq("user_id", userRes.user.id)
+      .maybeSingle();
+
+    if (pErr) {
+      logApiError("GET /api/orders profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
+      return NextResponse.json(
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: cutoff.isLocked,
+          cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "PROFILE_LOOKUP_FAILED",
+          message: "Kunne ikke hente profil.",
+          receipt: null,
+          order: null,
+        }),
+        { status: 500 }
+      );
+    }
+
+    if (!(profile?.company_id && profile?.location_id)) {
+      return NextResponse.json(
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: cutoff.isLocked,
+          cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "PROFILE_MISSING_SCOPE",
+          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
+          receipt: null,
+          order: null,
+        }),
+        { status: 409 }
+      );
+    }
+
+    // ✅ Enforcement (firma + avtale) også for GET, slik at UI ikke lyver
+    const enfRes = await enforceCompanyAndAgreement({
+      supabase,
+      rid,
+      dateISO,
+      cutoffTime,
+      menuAvailable,
+      company_id: profile.company_id,
+    });
+    if (enfRes) return enfRes;
+
+    const { data: order, error: oErr } = await supabase
+      .from("orders")
+      .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
+      .eq("user_id", userRes.user.id)
+      .eq("date", dateISO)
+      .eq("company_id", profile.company_id)
+      .eq("location_id", profile.location_id)
+      .maybeSingle();
+
+    if (oErr) {
+      logApiError("GET /api/orders order lookup failed", oErr, { rid, userId: userRes.user.id, dateISO });
+      return NextResponse.json(
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: cutoff.isLocked,
+          cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "DB_ERROR",
+          message: "Kunne ikke hente ordrestatus.",
+          receipt: null,
+          order: null,
+        }),
+        { status: 500 }
+      );
+    }
+
+    const canAct = menuAvailable && !cutoff.isLocked;
+
+    return NextResponse.json(
+      orderBase({
+        ok: true,
+        rid,
+        date: dateISO,
+        locked: cutoff.isLocked,
+        cutoffTime,
+        menuAvailable,
+        canAct,
+        receipt: order?.id ? receiptFor(order.id, order.status, order.updated_at ?? order.created_at) : null,
+        order: order ?? null,
+      }),
+      { status: 200 }
+    );
+  } catch (err: any) {
+    logApiError("GET /api/orders failed", err, { rid, dateISO });
+    return NextResponse.json(
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: cutoff.isLocked,
+        cutoffTime,
+        menuAvailable: true,
+        canAct: false,
+        error: "SERVER_ERROR",
+        message: err?.message || String(err),
+        receipt: null,
+        order: null,
+      }),
+      { status: 500 }
+    );
+  }
+}
+
+/* =========================================================
+   POST: Registrer/oppdater bestilling (idempotent)
+========================================================= */
 export async function POST(req: Request) {
   const rid = `order_post_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -82,8 +392,6 @@ export async function POST(req: Request) {
 
   try {
     // ✅ Hard cutoff på server (aldri UI) – to lag:
-    // 1) eksisterende cutoff-status (gir rik respons)
-    // 2) guard (gir standardisert CUTOFF i catch)
     if (cutoff.isLocked) {
       return locked409(rid, dateISO, cutoffTime, true);
     }
@@ -101,22 +409,7 @@ export async function POST(req: Request) {
     const menuAvailable = !!menu?.isPublished;
 
     if (!menuAvailable) {
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable: false,
-          canAct: false,
-          error: "MENU_NOT_PUBLISHED",
-          message: "Meny er ikke publisert ennå.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
+      return blocked409(rid, dateISO, cutoffTime, false, "MENU_NOT_PUBLISHED", "Meny er ikke publisert ennå.");
     }
 
     const body = await req.json().catch(() => ({}));
@@ -199,6 +492,17 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+
+    // ✅ Enforcement (firma + avtale)
+    const enfRes = await enforceCompanyAndAgreement({
+      supabase,
+      rid,
+      dateISO,
+      cutoffTime,
+      menuAvailable,
+      company_id: profile.company_id,
+    });
+    if (enfRes) return enfRes;
 
     // ✅ Idempotent UPSERT (MÅ matche unik index: user_id, location_id, date)
     // ✅ NB: orders-schemaet har også slot. Hvis dere har default-slot i DB (anbefalt), er dette ok.
@@ -329,6 +633,9 @@ export async function POST(req: Request) {
   }
 }
 
+/* =========================================================
+   DELETE: Avbestill (status update, ikke fysisk delete)
+========================================================= */
 export async function DELETE() {
   const rid = `order_del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -419,6 +726,17 @@ export async function DELETE() {
         { status: 409 }
       );
     }
+
+    // ✅ Enforcement (firma + avtale)
+    const enfRes = await enforceCompanyAndAgreement({
+      supabase,
+      rid,
+      dateISO,
+      cutoffTime,
+      menuAvailable: true,
+      company_id: profile.company_id,
+    });
+    if (enfRes) return enfRes;
 
     // ✅ Avbestill = UPDATE status (ikke DELETE)
     const { data, error } = await supabase

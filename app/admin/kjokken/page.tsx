@@ -1,8 +1,14 @@
 // app/admin/kjokken/page.tsx
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { redirect } from "next/navigation";
+
 import KitchenClient from "./kitchenClient";
-import DownloadAgreementButton from "./komponent/DownloadAgreementButton";
+
+// ✅ RIKTIG import for ditt repo (app/admin/kjokken → app/components)
+import DownloadAgreementButton from "../../components/DownloadAgreementButton";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
@@ -12,12 +18,10 @@ import { buildKitchenGroups } from "@/lib/kitchen/grouping";
 import type { DbOrderRow, ProfileRow, KitchenGroup } from "@/lib/kitchen/grouping";
 
 function isISODate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(d);
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
 }
 
-export default async function KitchenPage(props: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
+export default async function KitchenPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
   const sp = props.searchParams ?? {};
   const qDateRaw = Array.isArray(sp.date) ? sp.date[0] : sp.date;
   const date = qDateRaw && isISODate(qDateRaw) ? qDateRaw : osloTodayISODate();
@@ -26,50 +30,42 @@ export default async function KitchenPage(props: {
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
 
   if (userErr || !userRes?.user) {
-    return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold">Kjøkkenoversikt</h1>
-        <p className="mt-2 text-sm opacity-80">Du må være innlogget.</p>
-        <a className="mt-4 inline-block underline" href="/login">
-          Gå til innlogging
-        </a>
-      </main>
-    );
+    redirect(`/login?next=/admin/kjokken?date=${encodeURIComponent(date)}`);
   }
+
+  const user = userRes.user;
 
   // NB: dere bruker app_metadata.is_admin som “kjøkken/superadmin”-flagg
-  const isAdmin = (userRes.user.app_metadata as any)?.is_admin === true;
+  const appMeta = (user.app_metadata ?? {}) as any;
+  const isAdminSystem = appMeta?.is_admin === true;
 
-  // ✅ Firma-admin (ikke kjøkken/superadmin) skal kunne laste ned avtale-PDF
-  if (!isAdmin) {
+  // ✅ Firma-admin: vis avtale-kort
+  if (!isAdminSystem) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
-        <h1 className="text-2xl font-bold">Admin</h1>
-        <p className="mt-2 text-sm opacity-80">
-          Her finner du firmainformasjon og avtale.
-        </p>
+      <main className="mx-auto max-w-3xl px-4 py-10">
+        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+          <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+          <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Firmainformasjon og avtale (PDF).</p>
 
-        <div className="mt-6 rounded-3xl border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Avtale</h2>
-          <p className="mt-2 text-sm opacity-70">
-            Last ned signert avtale-PDF (tidsbegrenset lenke).
-          </p>
-          <div className="mt-4">
-            <DownloadAgreementButton />
+          <div className="mt-6 rounded-3xl bg-white p-6 ring-1 ring-[rgb(var(--lp-border))]">
+            <h2 className="text-lg font-semibold">Avtale</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Last ned signert avtale-PDF (tidsbegrenset lenke).</p>
+            <div className="mt-4">
+              <DownloadAgreementButton />
+            </div>
           </div>
-        </div>
 
-        <div className="mt-6">
-          <a className="inline-block underline text-sm opacity-80" href="/today">
-            Tilbake til i dag
-          </a>
+          <div className="mt-6">
+            <a className="inline-block text-sm text-[rgb(var(--lp-muted))] hover:underline" href="/today">
+              Tilbake til i dag
+            </a>
+          </div>
         </div>
       </main>
     );
   }
 
-  // ✅ Kjøkken / superadmin: vis kjøkkenoversikt
-  // Viktig: kolonnenavn og relasjoner matcher ditt skjema
+  // ✅ Kjøkken / superadmin: hent bestillinger for dato
   const { data: rows, error: oErr } = await (supabase as any)
     .from("orders")
     .select(
@@ -93,49 +89,46 @@ export default async function KitchenPage(props: {
     `
     )
     .eq("date", date)
-    // ✅ DB/view/RPC bruker "active" (ikke "ACTIVE") – behold dette som fasit
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
   if (oErr) {
     return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold">Kjøkkenoversikt</h1>
-        <p className="mt-2 text-sm opacity-80">Kunne ikke hente bestillinger.</p>
-        <pre className="mt-4 whitespace-pre-wrap text-xs opacity-80">{oErr.message}</pre>
+      <main className="mx-auto max-w-4xl px-4 py-10">
+        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+          <h1 className="text-2xl font-semibold tracking-tight">Kjøkkenoversikt</h1>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente bestillinger.</p>
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-white p-4 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))]">
+            {oErr.message}
+          </pre>
+        </div>
       </main>
     );
   }
 
   const orders = (rows ?? []) as DbOrderRow[];
 
-  // ✅ orders.user_id matcher profiles.id hos deg
-  const profileIds = Array.from(
-    new Set(orders.map((o) => o.user_id).filter(Boolean))
-  ) as string[];
-
+  const profileIds = Array.from(new Set(orders.map((o) => o.user_id).filter(Boolean))) as string[];
   const profilesMap = new Map<string, ProfileRow>();
 
   if (profileIds.length) {
     const { data: profRows, error: pErr } = await (supabase as any)
       .from("profiles")
-      // profiles: id, name, department
       .select("id,name,department")
       .in("id", profileIds);
 
-    if (pErr) {
-      console.error("[kjokken] profiles fetch failed", pErr.message);
-    } else {
-      // Build map keyed by profile.id (== orders.user_id)
+    if (!pErr) {
       for (const p of (profRows ?? []) as any[]) {
         if (p?.id) {
           profilesMap.set(p.id, {
-            user_id: p.id, // for kompatibilitet om grouping forventer user_id-key
+            user_id: p.id,
             name: p.name ?? "",
             department: p.department ?? null,
           } as ProfileRow);
         }
       }
+    } else {
+      console.error("[admin/kjokken] profiles fetch failed:", pErr.message);
     }
   }
 
@@ -144,16 +137,7 @@ export default async function KitchenPage(props: {
 
   const menu = await getMenuForDate(date);
   const menuText = menu?.isPublished ? menu.description || "—" : "Meny ikke publisert";
-  const allergens =
-    menu?.isPublished && menu?.allergens?.length ? menu.allergens : [];
+  const allergens = menu?.isPublished && menu?.allergens?.length ? menu.allergens : [];
 
-  return (
-    <KitchenClient
-      dateISO={date}
-      total={total}
-      menuText={menuText}
-      allergens={allergens}
-      groups={groups}
-    />
-  );
+  return <KitchenClient dateISO={date} total={total} menuText={menuText} allergens={allergens} groups={groups} />;
 }

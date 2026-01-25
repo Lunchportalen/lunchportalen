@@ -1,555 +1,376 @@
 // app/admin/page.tsx
 export const revalidate = 0;
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-import { getMenuForDatesAdmin, type MenuContent } from "@/lib/sanity/queries";
+import {
+  loadAdminContext,
+  isAdminContextBlocked,
+  type AdminContextBlocked,
+} from "@/lib/admin/loadAdminContext";
 
-import EmployeesTable from "@/components/admin/EmployeesTable";
-import LocationsPanel from "@/components/admin/LocationsPanel";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type CompanyStatus = "active" | "paused" | "closed";
-type SystemLevel = "ok" | "followup" | "critical";
-
-/* =========================================================
-   Role helpers (samme prinsipp som middleware)
-========================================================= */
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-
-function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
-}
-
-function roleFromMetadata(user: any): Role {
-  const raw = String(user?.user_metadata?.role ?? "employee").toLowerCase();
-  if (raw === "company_admin") return "company_admin";
-  if (raw === "superadmin") return "superadmin";
-  if (raw === "kitchen") return "kitchen";
-  if (raw === "driver") return "driver";
-  return "employee";
-}
-
-function computeRole(user: any, profileRole?: any): Role {
-  const byEmail = roleByEmail(user?.email);
-  if (byEmail) return byEmail;
-
-  const pr = String(profileRole ?? "").toLowerCase();
-  if (pr === "company_admin") return "company_admin";
-  if (pr === "superadmin") return "superadmin";
-  if (pr === "kitchen") return "kitchen";
-  if (pr === "driver") return "driver";
-  if (pr === "employee") return "employee";
-
-  return roleFromMetadata(user);
-}
+import BlockedState from "@/components/admin/BlockedState";
+import SupportReportButton from "@/components/admin/SupportReportButton";
 
 /* =========================================================
    UI helpers
 ========================================================= */
-function chipClass(level: SystemLevel) {
-  if (level === "critical") return "lp-chip lp-chip-crit";
-  if (level === "followup") return "lp-chip lp-chip-warn";
-  return "lp-chip lp-chip-ok";
+function cx(...s: Array<string | false | null | undefined>) {
+  return s.filter(Boolean).join(" ");
 }
 
-function chipLabel(level: SystemLevel) {
-  if (level === "critical") return "Kritisk";
-  if (level === "followup") return "Krever oppfølging";
-  return "Alt OK";
+type Health = "ok" | "warn" | "bad";
+
+function HealthPill({ health }: { health: Health }) {
+  const label = health === "ok" ? "Alt OK" : health === "warn" ? "Krever tiltak" : "Kritisk";
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1",
+        health === "ok" && "bg-emerald-50 text-emerald-800 ring-emerald-200",
+        health === "warn" && "bg-amber-50 text-amber-900 ring-amber-200",
+        health === "bad" && "bg-rose-50 text-rose-900 ring-rose-200"
+      )}
+    >
+      <span
+        className={cx(
+          "h-2 w-2 rounded-full",
+          health === "ok" && "bg-emerald-500",
+          health === "warn" && "bg-amber-500",
+          health === "bad" && "bg-rose-500"
+        )}
+      />
+      {label}
+    </span>
+  );
 }
 
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createSupabaseClient(url, key, { auth: { persistSession: false } });
+function Card({
+  title,
+  subtitle,
+  right,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
+          {subtitle ? <p className="mt-1 text-sm text-neutral-600">{subtitle}</p> : null}
+        </div>
+        {right ? <div className="shrink-0">{right}</div> : null}
+      </div>
+      {children}
+    </section>
+  );
 }
 
-function hasText(v: unknown) {
-  return typeof v === "string" && v.trim().length > 0;
+function Kpi({
+  label,
+  value,
+  hint,
+  href,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  href?: string;
+}) {
+  const Inner = (
+    <div className="group rounded-2xl bg-neutral-50/70 p-5 ring-1 ring-black/5 transition hover:bg-white hover:shadow-[0_12px_38px_-30px_rgba(0,0,0,.45)]">
+      <div className="text-xs font-semibold tracking-wide text-neutral-600">{label}</div>
+      <div className="mt-2 text-2xl font-extrabold text-neutral-900">{value}</div>
+      {hint ? <div className="mt-2 text-sm text-neutral-600">{hint}</div> : null}
+      {href ? (
+        <div className="mt-4 text-sm font-semibold text-neutral-900 opacity-80 group-hover:opacity-100">
+          Se detaljer →
+        </div>
+      ) : null}
+    </div>
+  );
+
+  return href ? (
+    <Link href={href} className="block">
+      {Inner}
+    </Link>
+  ) : (
+    Inner
+  );
 }
 
-function hasAllergens(v: unknown) {
-  return Array.isArray(v) && v.length > 0;
+function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-neutral-900 ring-1 ring-black/10 transition hover:bg-white active:scale-[0.99]"
+    >
+      {children}
+    </Link>
+  );
 }
 
-async function countExact(q: any): Promise<number> {
-  const { count, error } = await q;
-  if (error) throw error;
-  return Number(count ?? 0);
+function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
+    >
+      {children}
+    </Link>
+  );
+}
+
+/* =========================================================
+   Mapping: blocked -> UI
+========================================================= */
+function blockedTitle(b: AdminContextBlocked) {
+  if (b.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
+  if (b.blocked === "MISSING_COMPANY_ID") return "Mangler firmatilknytning";
+  if (b.blocked === "COMPANY_INACTIVE") return "Firma er ikke aktivt";
+  return "Systemfeil";
+}
+
+function blockedBody(b: AdminContextBlocked) {
+  if (b.blocked === "ACCOUNT_DISABLED") return "Kontoen er deaktivert og har ikke tilgang til administrasjon.";
+  if (b.blocked === "MISSING_COMPANY_ID") return "Kontoen er registrert som company_admin, men mangler company_id.";
+  if (b.blocked === "COMPANY_INACTIVE") return "Tilgang er begrenset fordi firma ikke er aktivt.";
+  return "Vi klarte ikke å hente nødvendig oversikt akkurat nå.";
+}
+
+function blockedLevel(b: AdminContextBlocked): "followup" | "critical" {
+  return b.blocked === "COUNTS_FAILED" ? "critical" : "followup";
 }
 
 /* =========================================================
    Page
 ========================================================= */
-export default async function AdminPage() {
-  const supabase = await supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+export default async function AdminCommandCenterPage() {
+  const ctx = await loadAdminContext({
+    nextPath: "/admin",
+    enforceCompanyAdmin: true,
+    returnBlockedState: true,
+  });
 
-  if (!user) redirect("/login?next=/admin");
-
-  // --- robust profile load (støtter både profiles.user_id og profiles.id) ---
-  let profile:
-    | {
-        role: Role | null;
-        full_name: string | null;
-        email: string | null;
-        company_id: string | null;
-        location_id: string | null;
-      }
-    | null = null;
-
-  // 1) prøv user_id
-  {
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("role, full_name, email, company_id, location_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (p) profile = p as any;
-  }
-
-  // 2) fallback: prøv id (hvis dere bruker id = auth.user.id)
-  if (!profile) {
-    const { data: p2 } = await supabase
-      .from("profiles")
-      .select("role, full_name, email, company_id, location_id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (p2) profile = p2 as any;
-  }
-
-  const role = computeRole(user, profile?.role);
-
-  // ✅ Admin-siden er kun for superadmin og company_admin
-  if (role !== "superadmin" && role !== "company_admin") {
-    redirect("/week");
-  }
-
-  const isSuperadmin = role === "superadmin";
-
-  // ✅ company_admin må ha company_id for å kunne bruke admin
-  if (!isSuperadmin && !profile?.company_id) {
+  // Blocked / gated state
+  if (isAdminContextBlocked(ctx)) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-          <h1 className="text-2xl font-semibold tracking-tight">Admin – Kontrollsenter</h1>
-          <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-            Full innsikt. Full kontroll. Null dag-til-dag-støy.
-          </p>
-
-          <div className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-            <div className="text-sm font-semibold">Mangler firmatilknytning</div>
-            <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-              Kontoen din er ikke knyttet til et firma. Ta kontakt med superadmin.
-            </div>
-
-            <div className="mt-4 text-xs text-[rgb(var(--lp-muted))]">
-              Innlogget: <span className="font-mono">{user.email ?? user.id}</span>
-            </div>
-          </div>
+      <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
+        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+          <BlockedState
+            level={blockedLevel(ctx)}
+            title={blockedTitle(ctx)}
+            body={blockedBody(ctx)}
+            nextSteps={ctx.nextSteps}
+            action={
+              <SupportReportButton
+                reason={ctx.support.reason}
+                companyId={ctx.support.companyId}
+                locationId={ctx.support.locationId}
+              />
+            }
+            meta={[
+              { label: "auth.user.id", value: ctx.dbg.authUserId },
+              { label: "auth.user.email", value: ctx.dbg.authEmail || "—" },
+              { label: "profile.company_id", value: ctx.companyId ?? "—" },
+              { label: "profile.location_id", value: ctx.profile?.location_id ?? "—" },
+              { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "—" },
+              { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
+              ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "—" }] : []),
+              ...(Object.entries(ctx.dbg.q_counts ?? {})
+                .filter(([, v]) => v)
+                .slice(0, 10)
+                .map(([k, v]) => ({ label: `count.${k}`, value: String(v) }))),
+            ]}
+          />
         </div>
       </main>
     );
   }
 
-  // ----------------------------
-  // Company admin: firmastatus + dashboard-tall
-  // ----------------------------
-  let companyStatus: CompanyStatus | null = null;
+  // OK state
+  const companyName = ctx.company?.name ?? "Firma";
+  const counts = ctx.counts;
 
-  let dash:
-    | {
-        employees: { total: number; active: number; disabled: number };
-        orders: { today: { active: number; cancelled: number }; week: { active: number; cancelled: number } };
-        todayISO: string;
-        weekStartISO: string;
-        weekEndISO: string;
-      }
-    | null = null;
+  /**
+   * Health heuristics (rolig, ikke støy):
+   * - Hvis firma er ACTIVE (allerede gated), så er vi "ok".
+   * - Hvis ansatteDisabled er høyt, kan vi vurdere "warn" (valgfritt).
+   */
+  const health: Health = counts.employeesDisabled > 0 ? "warn" : "ok";
 
-  if (!isSuperadmin && profile?.company_id) {
-    const { data: company } = await supabase
-      .from("companies")
-      .select("status")
-      .eq("id", profile.company_id)
-      .maybeSingle();
-
-    companyStatus = (company?.status as CompanyStatus | undefined) ?? "active";
-
-    const todayISO = osloTodayISODate();
-    const weekStart = startOfWeekISO(todayISO);
-    const weekEnd = addDaysISO(weekStart, 7); // exclusive
-
-    const employeesTotalP = countExact(
-      supabase
-        .from("profiles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .eq("role", "employee")
-    );
-
-    const employeesActiveP = countExact(
-      supabase
-        .from("profiles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .eq("role", "employee")
-        .is("disabled_at", null)
-    );
-
-    const employeesDisabledP = countExact(
-      supabase
-        .from("profiles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .eq("role", "employee")
-        .not("disabled_at", "is", null)
-    );
-
-    const ordersTodayActiveP = countExact(
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .eq("date", todayISO)
-        .eq("status", "ACTIVE")
-    );
-
-    const ordersTodayCancelledP = countExact(
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .eq("date", todayISO)
-        .eq("status", "CANCELLED")
-    );
-
-    const ordersWeekActiveP = countExact(
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .gte("date", weekStart)
-        .lt("date", weekEnd)
-        .eq("status", "ACTIVE")
-    );
-
-    const ordersWeekCancelledP = countExact(
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", profile.company_id)
-        .gte("date", weekStart)
-        .lt("date", weekEnd)
-        .eq("status", "CANCELLED")
-    );
-
-    const [
-      employeesTotal,
-      employeesActive,
-      employeesDisabled,
-      ordersTodayActive,
-      ordersTodayCancelled,
-      ordersWeekActive,
-      ordersWeekCancelled,
-    ] = await Promise.all([
-      employeesTotalP,
-      employeesActiveP,
-      employeesDisabledP,
-      ordersTodayActiveP,
-      ordersTodayCancelledP,
-      ordersWeekActiveP,
-      ordersWeekCancelledP,
-    ]);
-
-    dash = {
-      employees: { total: employeesTotal, active: employeesActive, disabled: employeesDisabled },
-      orders: {
-        today: { active: ordersTodayActive, cancelled: ordersTodayCancelled },
-        week: { active: ordersWeekActive, cancelled: ordersWeekCancelled },
-      },
-      todayISO,
-      weekStartISO: weekStart,
-      weekEndISO: weekEnd,
-    };
-  }
-
-  // ----------------------------
-  // Superadmin: systemstatus (aggregert)
-  // ----------------------------
-  let counts = { active: 0, paused: 0, closed: 0 };
-  let alerts: { kind: "followup" | "critical"; text: string }[] = [];
-  let systemLevel: SystemLevel = "ok";
-
-  if (isSuperadmin) {
-    const { data: companies } = await supabase.from("companies").select("status").limit(5000);
-    const list = (companies ?? []) as { status: CompanyStatus | null }[];
-
-    for (const c of list) {
-      const s = (c.status ?? "active") as CompanyStatus;
-      if (s === "active") counts.active++;
-      else if (s === "paused") counts.paused++;
-      else counts.closed++;
-    }
-
-    if (counts.paused > 0) alerts.push({ kind: "followup", text: `${counts.paused} firma er pauset (krever oppfølging).` });
-    if (counts.closed > 0) alerts.push({ kind: "followup", text: `${counts.closed} firma er stengt (kontroller kontrakt/status).` });
-
-    const todayISO = osloTodayISODate();
-    const thisWeekStart = startOfWeekISO(todayISO);
-    const nextWeekStart = addDaysISO(thisWeekStart, 7);
-    const nextWeekDates = Array.from({ length: 5 }).map((_, i) => addDaysISO(nextWeekStart, i));
-
-    const sanityRows: MenuContent[] = await getMenuForDatesAdmin(nextWeekDates);
-    const byDate = new Map<string, MenuContent>();
-    for (const m of sanityRows) byDate.set(m.date, m);
-
-    let dbPublished = new Map<string, boolean>();
-    let canCheckDb = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    if (canCheckDb) {
-      const admin = supabaseAdmin();
-      const { data: visRows, error: visErr } = await admin
-        .from("menu_visibility_days")
-        .select("date,is_published")
-        .in("date", nextWeekDates);
-
-      if (!visErr) {
-        for (const r of visRows ?? []) {
-          dbPublished.set(String((r as any).date), Boolean((r as any).is_published));
-        }
-      } else {
-        canCheckDb = false;
-        alerts.push({ kind: "followup", text: "Kunne ikke verifisere publiseringsstatus i DB (menu_visibility_days)." });
-      }
-    } else {
-      alerts.push({ kind: "followup", text: "SUPABASE_SERVICE_ROLE_KEY mangler – publiseringsstatus kan ikke verifiseres." });
-    }
-
-    let missingCount = 0;
-    let unpublishedCount = 0;
-
-    for (const date of nextWeekDates) {
-      const menu = byDate.get(date);
-      const title = menu?.title ?? null;
-      const description = menu?.description ?? null;
-      const allergens = menu?.allergens ?? null;
-
-      const missing = !menu || !hasText(title) || !hasText(description) || !hasAllergens(allergens);
-
-      if (missing) {
-        missingCount++;
-        continue;
-      }
-
-      const published = (canCheckDb ? dbPublished.get(date) ?? false : false) || (menu?.isPublished ?? false);
-      if (!published) unpublishedCount++;
-    }
-
-    if (missingCount > 0) alerts.push({ kind: "followup", text: `${missingCount} dager mangler innhold i neste ukemeny (Man–Fre).` });
-    if (unpublishedCount > 0) alerts.push({ kind: "followup", text: `${unpublishedCount} dager er ikke publisert for neste uke.` });
-
-    systemLevel = "ok";
-    if (alerts.length > 0) systemLevel = "followup";
-    if (missingCount >= 3) systemLevel = "critical";
-    if (counts.paused >= 10) systemLevel = "critical";
-  }
-
-  const criticalCount = alerts.filter((a) => a.kind === "critical").length;
+  // KPI placeholders (til du har API / data)
+  const nextDeliveryLabel = "I morgen";
+  const nextDeliveryOrders = "—"; // TODO: koble på /api/admin/orders/next
+  const costLabel = "Siste 14 dager";
+  const costAmount = "—"; // TODO: koble på /api/admin/invoices/summary
+  const sustainabilityValue = "—"; // TODO: koble på /api/admin/sustainability/summary
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-        {/* Header */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+        {/* Topbar */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {isSuperadmin ? "Superadmin" : "Admin"} – Kontrollsenter
-            </h1>
-            <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Full innsikt. Full kontroll. Null dag-til-dag-støy.</p>
+            <div className="text-xs font-semibold tracking-wide text-neutral-600">
+              Admin · {companyName} · {ctx.profile.location_id ? "Lokasjon valgt" : "Lokasjon ikke satt"}
+            </div>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Command Center</h1>
+            <p className="mt-2 text-neutral-600">Rask oversikt, tydelige rammer og kontroll — uten støy.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {isSuperadmin ? (
-              <span className={chipClass(systemLevel)}>Status: {chipLabel(systemLevel)}</span>
-            ) : (
-              <span className="lp-chip lp-chip-neutral">Firma: {companyStatus ?? "—"}</span>
-            )}
+            <HealthPill health={health} />
+            <GhostLink href="/admin/agreement">Avtale</GhostLink>
+            <GhostLink href="/admin/people">Ansatte</GhostLink>
+            <GhostLink href="/admin/history">Historikk</GhostLink>
+            <GhostLink href="/admin/locations">Lokasjoner</GhostLink>
+            <PrimaryLink href="/admin/orders">Ordreoversikt</PrimaryLink>
           </div>
         </div>
 
-        {/* Tabs / nav */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          {isSuperadmin ? (
-            <>
-              <Link href="/admin/companies" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Firma
-              </Link>
-              <Link href="/admin/menus" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Meny
-              </Link>
-              <Link href="/admin/users" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Brukere
-              </Link>
-              <Link href="/admin/audit" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Audit
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/admin" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Dashboard
-              </Link>
+        {/* Hero KPIs */}
+        <Card
+          title="Oversikt"
+          subtitle="Dette er det eneste du trenger å se først."
+          right={
+            <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-black/10">
+              Firma: ACTIVE
+            </span>
+          }
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <Kpi
+              label="Neste levering"
+              value={`${nextDeliveryLabel} · ${nextDeliveryOrders} bestillinger`}
+              hint="Cut-off: kl. 08:00 (Europe/Oslo)"
+              href="/admin/orders"
+            />
+            <Kpi
+              label={`Kostnad (${costLabel})`}
+              value={costAmount}
+              hint="Basert på registrerte bestillinger (read-only)."
+              href="/admin/history"
+            />
+            <Kpi
+              label="Bærekraft"
+              value={sustainabilityValue}
+              hint="Matsvinn og kontroll (kommer)."
+              href="/admin/history"
+            />
+          </div>
 
-              <a href="#employees" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Ansatte
-              </a>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <GhostLink href="/api/admin/invoices/csv">Last ned fakturagrunnlag (CSV)</GhostLink>
+            <GhostLink href="/admin/history">Eksport & historikk</GhostLink>
+            <GhostLink href="/admin/people">Administrer ansatte</GhostLink>
+          </div>
+        </Card>
 
-              <a href="#locations" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Lokasjoner
-              </a>
+        {/* People summary */}
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <Card
+              title="Ansatte"
+              subtitle="Dette er admin-ansvar. Ansatte styrer bestilling/avbestilling selv."
+              right={
+                <div className="flex flex-wrap items-center gap-2">
+                  <GhostLink href="/admin/people">Åpne People</GhostLink>
+                  <PrimaryLink href="/admin/invite">Inviter</PrimaryLink>
+                </div>
+              }
+            >
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                  <div className="text-xs font-semibold text-neutral-600">Totalt</div>
+                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesTotal}</div>
+                </div>
+                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                  <div className="text-xs font-semibold text-neutral-600">Aktive</div>
+                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesActive}</div>
+                </div>
+                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                  <div className="text-xs font-semibold text-neutral-600">Deaktivert</div>
+                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesDisabled}</div>
+                </div>
+              </div>
 
-              <Link href="/admin/orders" className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90">
-                Ordrer
-              </Link>
+              {counts.employeesDisabled > 0 ? (
+                <div className="mt-5 rounded-2xl bg-amber-50/70 p-4 ring-1 ring-amber-200/60">
+                  <div className="text-sm font-semibold text-neutral-900">Anbefaling</div>
+                  <p className="mt-1 text-sm text-neutral-700">
+                    Du har deaktiverte ansatte. Hold listen ryddig for bedre kontroll og riktig tilgang.
+                  </p>
+                  <div className="mt-3">
+                    <GhostLink href="/admin/people">Se ansatte</GhostLink>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-5 rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                  <div className="text-sm font-semibold text-neutral-900">Alt ser ryddig ut</div>
+                  <p className="mt-1 text-sm text-neutral-600">Ingen deaktiverte ansatte akkurat nå.</p>
+                </div>
+              )}
+            </Card>
+          </div>
 
-              <span className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]">
-                Firma-ID: <span className="font-mono">{profile?.company_id ?? "—"}</span>
-              </span>
-            </>
-          )}
+          {/* Exports + Support */}
+          <div className="space-y-6">
+            <Card title="Fakturagrunnlag" subtitle="CSV for økonomi — ferdig formatert.">
+              <div className="flex flex-col gap-3">
+                <PrimaryLink href="/api/admin/invoices/csv">Last ned (siste 14 dager)</PrimaryLink>
+                <div className="text-sm text-neutral-600">
+                  Historikk er lesemodus. Cut-off og avtale kan ikke overstyres manuelt.
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Support" subtitle="Hvis noe ikke stemmer, send en rapport med én gang.">
+              <div className="flex flex-col gap-3">
+                <SupportReportButton
+                  reason="COMPANY_ADMIN_COMMAND_CENTER_SUPPORT_REPORT"
+                  companyId={ctx.companyId}
+                  locationId={ctx.profile.location_id ?? null}
+                />
+                <div className="text-sm text-neutral-600">
+                  Rapporten inkluderer firma, lokasjon og tidspunkt — så drift kan handle raskt.
+                </div>
+                <details>
+                  <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
+                    Vis teknisk info (kun ved behov)
+                  </summary>
+                  <pre className="mt-3 max-h-64 overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs text-white/85 ring-1 ring-black/10">
+{JSON.stringify(
+  {
+    companyId: ctx.companyId,
+    locationId: ctx.profile.location_id ?? null,
+    companyStatus: ctx.companyStatus,
+    authUserId: ctx.dbg.authUserId,
+    authEmail: ctx.dbg.authEmail,
+  },
+  null,
+  2
+)}
+                  </pre>
+                </details>
+              </div>
+            </Card>
+          </div>
         </div>
 
-        {/* Content */}
-        {isSuperadmin ? (
-          <>
-            <div className="mt-6 grid gap-4 md:grid-cols-4">
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Active firma</div>
-                <div className="mt-1 text-2xl font-semibold">{counts.active}</div>
-              </div>
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Paused firma</div>
-                <div className="mt-1 text-2xl font-semibold">{counts.paused}</div>
-              </div>
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Closed firma</div>
-                <div className="mt-1 text-2xl font-semibold">{counts.closed}</div>
-              </div>
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Kritiske varsler</div>
-                <div className="mt-1 text-2xl font-semibold">{criticalCount}</div>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold">Varsler</div>
-                <div className="flex gap-3">
-                  <Link href="/admin/menus" className="text-xs text-[rgb(var(--lp-muted))] hover:underline">
-                    Gå til meny →
-                  </Link>
-                  <Link href="/admin/companies" className="text-xs text-[rgb(var(--lp-muted))] hover:underline">
-                    Gå til firma →
-                  </Link>
-                </div>
-              </div>
-
-              {alerts.length === 0 ? (
-                <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen varsler. Systemet er rolig.</div>
-              ) : (
-                <ul className="mt-3 space-y-2 text-sm text-[rgb(var(--lp-muted))]">
-                  {alerts.slice(0, 6).map((a, idx) => (
-                    <li key={idx}>• {a.text}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Innlogget</div>
-                <div className="mt-1 text-sm font-medium">{user.email ?? user.id}</div>
-              </div>
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Rolle</div>
-                <div className="mt-1 text-sm font-medium">{role}</div>
-              </div>
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Prinsipp</div>
-                <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Kontrollsenter. Ingen unntak. Systemet er fasit.</div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="mt-6 grid gap-4 md:grid-cols-4">
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Ordrer i dag (ACTIVE)</div>
-                <div className="mt-1 text-2xl font-semibold">{dash?.orders.today.active ?? 0}</div>
-                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Avbestilt: {dash?.orders.today.cancelled ?? 0}</div>
-              </div>
-
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Ordrer denne uken (ACTIVE)</div>
-                <div className="mt-1 text-2xl font-semibold">{dash?.orders.week.active ?? 0}</div>
-                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Avbestilt: {dash?.orders.week.cancelled ?? 0}</div>
-              </div>
-
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte (aktive)</div>
-                <div className="mt-1 text-2xl font-semibold">{dash?.employees.active ?? 0}</div>
-                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                  Deaktivert: {dash?.employees.disabled ?? 0} · Totalt: {dash?.employees.total ?? 0}
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-xs text-[rgb(var(--lp-muted))]">Cut-off</div>
-                <div className="mt-1 text-2xl font-semibold">08:00</div>
-                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Europe/Oslo · Ingen unntak</div>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-3xl bg-[rgb(var(--lp-surface))] p-5 ring-1 ring-[rgb(var(--lp-border))]">
-              <h2 className="text-sm font-semibold">Admin (firma)</h2>
-              <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-                Du administrerer kun innenfor avtalen. Ingen cut-off-overstyring. Ingen unntak.
-              </p>
-
-              <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">
-                Firma-ID: <span className="font-mono">{profile?.company_id ?? "—"}</span>
-              </div>
-
-              <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
-                Periode: <span className="font-mono">{dash?.weekStartISO ?? "—"}</span> →{" "}
-                <span className="font-mono">{dash?.weekEndISO ?? "—"}</span>
-              </div>
-            </div>
-
-            <div id="employees" className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-              <EmployeesTable />
-            </div>
-
-            <div id="locations" className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-              <LocationsPanel />
-            </div>
-          </>
-        )}
+        {/* Footer */}
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
+          <span>Command Center viser kun beslutningsverdi. Detaljer ligger på undersider.</span>
+          <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/week">
+            Til ansattvisning →
+          </Link>
+        </div>
       </div>
     </main>
   );

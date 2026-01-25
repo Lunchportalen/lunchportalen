@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { CompanyStatus, FirmsQueryResult, FirmsSortKey, SortDir } from "@/lib/superadmin/types";
 
 function cx(...a: Array<string | false | null | undefined>) {
@@ -27,6 +27,13 @@ const STATUS_OPTIONS: Array<{ label: string; value: CompanyStatus | "ALL" }> = [
   { label: "Closed", value: "CLOSED" },
 ];
 const PAGE_SIZES = [25, 50, 100] as const;
+
+/** ✅ Viktig: UI skal tåle status i både lower/upper-case */
+function normalizeUiStatus(v: any): CompanyStatus {
+  const up = String(v ?? "").trim().toUpperCase();
+  if (up === "ACTIVE" || up === "PAUSED" || up === "CLOSED") return up as CompanyStatus;
+  return "CLOSED";
+}
 
 function StatusPill({ status }: { status: CompanyStatus }) {
   const base = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium";
@@ -144,6 +151,16 @@ function StatusMenuPortal(props: {
   );
 }
 
+async function readJsonSafe(res: Response) {
+  const t = await res.text();
+  if (!t) return null;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return null;
+  }
+}
+
 export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -166,6 +183,10 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [menuCurrentStatus, setMenuCurrentStatus] = useState<CompanyStatus>("ACTIVE");
+
+  const rows = initial.rows;
+  const page = initial.page;
+  const totalPages = initial.totalPages;
 
   const closeMenu = useCallback(() => {
     setMenuFor(null);
@@ -205,10 +226,6 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
   }, []);
-
-  const rows = initial.rows;
-  const page = initial.page;
-  const totalPages = initial.totalPages;
 
   const summary = useMemo(() => {
     if (!initial.total) return "0 treff";
@@ -287,17 +304,20 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
     setBusyId(companyId);
 
     try {
-      const res = await fetch("/api/superadmin/company-status", {
-        method: "PATCH",
+      const res = await fetch(`/api/superadmin/firms/${encodeURIComponent(companyId)}/status`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ companyId, status: next }),
+        body: JSON.stringify({ status: next }),
       });
 
-      const json = await res.json().catch(() => ({} as any));
+      const json: any = await readJsonSafe(res);
+
       if (!res.ok || !json?.ok) {
-        const msg = json?.error ? String(json.error) : "UPDATE_FAILED";
-        const detail = json?.detail ? `: ${String(json.detail)}` : "";
+        const msg = String(json?.message ?? json?.error ?? "UPDATE_FAILED");
+        const detail = json?.detail
+          ? `: ${typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail)}`
+          : "";
         throw new Error(`${msg}${detail}`);
       }
 
@@ -375,12 +395,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
               <th className="p-3">Ansatte</th>
               <th className="p-3">Plan</th>
               <th className="p-3">Binding igjen</th>
-              <Th
-                label="Opprettet"
-                active={sortKey === "created_at"}
-                dir={sortDir}
-                onClick={() => toggleSort("created_at")}
-              />
+              <Th label="Opprettet" active={sortKey === "created_at"} dir={sortDir} onClick={() => toggleSort("created_at")} />
               <th className="p-3 text-right">Handling</th>
             </tr>
           </thead>
@@ -399,14 +414,13 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
                 const plan = String(f.plan ?? "");
                 const bindingLeft = fmtBinding(f.bindingMonthsLeft);
 
+                const uiStatus = normalizeUiStatus(f.status);
+
                 return (
                   <tr key={f.id} className="border-b last:border-b-0 hover:bg-bg/60">
                     <td className="p-3">
                       <div className="flex flex-col">
-                        <Link
-                          className="font-medium underline-offset-4 hover:underline"
-                          href={`/superadmin/firms/${encodeURIComponent(f.id)}`}
-                        >
+                        <Link className="font-medium underline-offset-4 hover:underline" href={`/superadmin/firms/${encodeURIComponent(f.id)}`}>
                           {f.name}
                         </Link>
                         <span className="mt-0.5 text-xs text-muted-foreground">{f.id}</span>
@@ -414,7 +428,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
                     </td>
 
                     <td className="p-3">
-                      <StatusPill status={f.status as CompanyStatus} />
+                      <StatusPill status={uiStatus} />
                     </td>
 
                     <td className="p-3 tabular-nums">{employees}</td>
@@ -439,7 +453,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
                         <button
                           type="button"
                           disabled={busyId === f.id}
-                          onClick={(e) => openMenu(f.id, f.status as CompanyStatus, e.currentTarget)}
+                          onClick={(e) => openMenu(f.id, uiStatus, e.currentTarget)}
                           className={cx(
                             "inline-flex items-center rounded-xl border px-3 py-2 text-xs font-medium hover:bg-bg",
                             busyId === f.id && "opacity-50"
@@ -468,10 +482,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
             type="button"
             onClick={() => goPage(1)}
             disabled={page <= 1 || isPending}
-            className={cx(
-              "rounded-xl border px-3 py-2 text-sm hover:bg-surface",
-              (page <= 1 || isPending) && "opacity-50"
-            )}
+            className={cx("rounded-xl border px-3 py-2 text-sm hover:bg-surface", (page <= 1 || isPending) && "opacity-50")}
           >
             Første
           </button>
@@ -479,10 +490,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
             type="button"
             onClick={() => goPage(page - 1)}
             disabled={page <= 1 || isPending}
-            className={cx(
-              "rounded-xl border px-3 py-2 text-sm hover:bg-surface",
-              (page <= 1 || isPending) && "opacity-50"
-            )}
+            className={cx("rounded-xl border px-3 py-2 text-sm hover:bg-surface", (page <= 1 || isPending) && "opacity-50")}
           >
             Forrige
           </button>
@@ -490,10 +498,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
             type="button"
             onClick={() => goPage(page + 1)}
             disabled={page >= totalPages || isPending}
-            className={cx(
-              "rounded-xl border px-3 py-2 text-sm hover:bg-surface",
-              (page >= totalPages || isPending) && "opacity-50"
-            )}
+            className={cx("rounded-xl border px-3 py-2 text-sm hover:bg-surface", (page >= totalPages || isPending) && "opacity-50")}
           >
             Neste
           </button>
@@ -501,17 +506,13 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
             type="button"
             onClick={() => goPage(totalPages)}
             disabled={page >= totalPages || isPending}
-            className={cx(
-              "rounded-xl border px-3 py-2 text-sm hover:bg-surface",
-              (page >= totalPages || isPending) && "opacity-50"
-            )}
+            className={cx("rounded-xl border px-3 py-2 text-sm hover:bg-surface", (page >= totalPages || isPending) && "opacity-50")}
           >
             Siste
           </button>
         </div>
       </div>
 
-      {/* Single global portal */}
       <StatusMenuPortal
         open={!!menuFor}
         anchorRect={anchorRect}

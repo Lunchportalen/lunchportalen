@@ -33,7 +33,7 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.mts"
-  ],
+, "app/superadmin/superadmin-client.tsx"  ],
 
   "exclude": ["node_modules", ".next", "dist", "studio/**"]
 }

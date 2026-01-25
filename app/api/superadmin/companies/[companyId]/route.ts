@@ -1,280 +1,290 @@
-// app/api/superadmin/companies/[companyId]/route.ts
+// app/api/superadmin/companies/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import crypto from "node:crypto";
+import { NextResponse, type NextRequest } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getScope, requireSuperadmin, type Role } from "@/lib/auth/scope";
 
-type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
-type Severity = "info" | "warning" | "critical";
+/**
+ * ✅ FASIT
+ * - companies.status er ENESTE sannhetskilde (lowercase): pending|active|paused|closed
+ * - CLOSED skjules som default (include_closed=1 for å vise)
+ * - "Sist endret" kommer fra audit_events (action=COMPANY_STATUS_SET)
+ * - Superadmin-only
+ */
 
-type RouteCtx = {
-  // Next.js 15: params kan være Promise
-  params: { companyId: string } | Promise<{ companyId: string }>;
-};
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
+}
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+}
+function jsonOk(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+function rid() {
+  return crypto.randomBytes(8).toString("hex");
 }
 
-function isUuid(v: any) {
-  return (
-    typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
-  );
+const ALLOWED = new Set(["pending", "active", "paused", "closed"] as const);
+type CompanyStatus = "pending" | "active" | "paused" | "closed";
+
+function normStatus(v: any): CompanyStatus | null {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!ALLOWED.has(s as any)) return null;
+  return s as CompanyStatus;
 }
 
-function normalizeStatus(x: any): CompanyStatus | null {
-  const s = String(x ?? "").trim();
+function safeText(v: any, max = 200) {
+  const s = String(v ?? "").trim();
   if (!s) return null;
-  const up = s.toUpperCase();
-  if (up === "ACTIVE" || up === "PAUSED" || up === "CLOSED") return up as CompanyStatus;
-  return null;
+  return s.length > max ? s.slice(0, max) : s;
+}
+function asInt(v: string | null, fallback: number) {
+  const n = Number(v ?? "");
+  return Number.isFinite(n) ? Math.floor(n) : fallback;
+}
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
 }
 
-function severityFor(status: CompanyStatus): Severity {
-  if (status === "CLOSED") return "critical";
-  if (status === "PAUSED") return "warning";
-  return "info";
-}
+/**
+ * GET /api/superadmin/companies
+ *
+ * Query:
+ * - q=... (search name/orgnr)
+ * - status=pending|active|paused|closed (optional)
+ * - include_closed=1 (default 0)
+ * - page=1.. (default 1)
+ * - limit=1..200 (default 50)
+ * - sort=updated_at|created_at|name (default updated_at)
+ * - dir=asc|desc (default desc)
+ * - include_last=1 (default 1) include last_event from audit
+ * - include_stats=1 (default 1)
+ *
+ * Response:
+ * { ok, rid, page, limit, total, stats?, companies:[... { last_event? } ] }
+ */
+export async function GET(req: NextRequest) {
+  const requestId = rid();
 
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) throw new Error("MISSING_SUPABASE_URL");
-  if (!key) throw new Error("MISSING_SERVICE_ROLE_KEY");
-  return createClient(url, key, { auth: { persistSession: false } });
-}
+  // ✅ Auth + superadmin guard (FASIT)
+  let scope: Awaited<ReturnType<typeof getScope>>;
+  try {
+    scope = await getScope(req);
+    requireSuperadmin(scope);
+  } catch (e: any) {
+    return jsonErr(e?.status ?? 403, requestId, e?.code ?? "FORBIDDEN", e?.message ?? "Ingen tilgang.");
+  }
 
-async function requireSuperadmin() {
-  const supabase = await supabaseServer();
+  try {
+    const url = new URL(req.url);
 
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  const user = userRes?.user ?? null;
-  if (!user || userErr) return { ok: false as const, res: jsonError(401, "AUTH_REQUIRED", "Ikke innlogget.") };
+    const q = safeText(url.searchParams.get("q"), 80) ?? "";
+    const status = normStatus(url.searchParams.get("status")); // optional
+    const includeClosed = url.searchParams.get("include_closed") === "1";
 
-  const { data: profile, error: profErr } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+    const page = clamp(asInt(url.searchParams.get("page"), 1) || 1, 1, 10_000);
+    const limit = clamp(asInt(url.searchParams.get("limit"), 50) || 50, 1, 200);
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-  if (profErr) {
-    return {
-      ok: false as const,
-      res: jsonError(500, "PROFILE_LOOKUP_FAILED", "Kunne ikke lese profil.", profErr.message),
+    const sortRaw = String(url.searchParams.get("sort") ?? "updated_at").trim().toLowerCase();
+    const dirRaw = String(url.searchParams.get("dir") ?? "desc").trim().toLowerCase();
+    const sort: "updated_at" | "created_at" | "name" = (["updated_at", "created_at", "name"] as const).includes(sortRaw as any)
+      ? (sortRaw as any)
+      : "updated_at";
+    const dir: "asc" | "desc" = dirRaw === "asc" ? "asc" : "desc";
+
+    const includeLast = (url.searchParams.get("include_last") ?? "1") === "1";
+    const includeStats = (url.searchParams.get("include_stats") ?? "1") === "1";
+
+    const admin = supabaseAdmin();
+
+    // 1) List query (companies only)
+    let query = admin
+      .from("companies")
+      .select("id,name,orgnr,status,created_at,updated_at", { count: "exact" })
+      .order(sort, { ascending: dir === "asc" })
+      .range(from, to);
+
+    // Default: skjul CLOSED
+    if (!includeClosed) query = query.neq("status", "closed");
+
+    // Optional status filter
+    if (status) query = query.eq("status", status);
+
+    // Optional search on name/orgnr
+    if (q) {
+      const esc = q.replace(/%/g, "\\%").replace(/_/g, "\\_");
+      const like = `%${esc}%`;
+      query = query.or(`name.ilike.${like},orgnr.ilike.${like}`);
+    }
+
+    const listRes = await query;
+    if (listRes.error) return jsonErr(500, requestId, "db_error", "Kunne ikke hente firma.", listRes.error);
+
+    const companies = (listRes.data ?? []) as Array<{
+      id: string;
+      name: string;
+      orgnr: string | null;
+      status: CompanyStatus | string;
+      created_at: string;
+      updated_at: string;
+    }>;
+    const total = listRes.count ?? companies.length;
+
+    // 2) Stats (dashboard)
+    let stats:
+      | {
+          companiesTotal: number;
+          companiesPending: number;
+          companiesActive: number;
+          companiesPaused: number;
+          companiesClosed: number;
+        }
+      | undefined;
+
+    if (includeStats) {
+      const [p, a, pa, c] = await Promise.all([
+        admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
+        admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused"),
+        admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed"),
+      ]);
+
+      stats = {
+        companiesPending: p.count ?? 0,
+        companiesActive: a.count ?? 0,
+        companiesPaused: pa.count ?? 0,
+        companiesClosed: c.count ?? 0,
+        companiesTotal: (p.count ?? 0) + (a.count ?? 0) + (pa.count ?? 0) + (c.count ?? 0),
+      };
+    }
+
+    // 3) Last event per company (audit_events)
+    type LastEventRow = {
+      entity_id: string;
+      created_at: string;
+      actor_email: string | null;
+      actor_role: Role | string | null;
+      summary: string | null;
+      detail: any | null;
     };
-  }
 
-  if (!profile || profile.role !== "superadmin") {
-    return { ok: false as const, res: jsonError(403, "FORBIDDEN", "Kun superadmin har tilgang.") };
-  }
+    const lastByCompany: Record<string, LastEventRow> = {};
+    if (includeLast && companies.length) {
+      const ids = companies.map((c) => c.id);
 
-  return { ok: true as const, user };
-}
+      const aud = await admin
+        .from("audit_events")
+        .select("entity_id,created_at,actor_email,actor_role,summary,detail")
+        .eq("entity_type", "company")
+        .eq("action", "COMPANY_STATUS_SET")
+        .in("entity_id", ids)
+        .order("created_at", { ascending: false });
 
-async function getCompanyId(ctx: RouteCtx) {
-  const { companyId } = await Promise.resolve(ctx.params);
-  return companyId;
-}
-
-/**
- * GET: hent firma
- */
-export async function GET(_req: Request, ctx: RouteCtx) {
-  const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonError(400, "BAD_REQUEST", "Ugyldig companyId.");
-
-  const guard = await requireSuperadmin();
-  if (!guard.ok) return guard.res;
-
-  let admin;
-  try {
-    admin = supabaseAdmin();
-  } catch (e: any) {
-    return jsonError(500, "ADMIN_CLIENT_FAILED", "Mangler service role key.", e?.message ?? String(e));
-  }
-
-  const { data, error } = await admin
-    .from("companies")
-    .select("id,name,orgnr,status,created_at,updated_at")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (error) return jsonError(500, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", error.message);
-  if (!data) return jsonError(404, "NOT_FOUND", "Fant ikke firma.");
-
-  return NextResponse.json({ ok: true, company: data }, { status: 200 });
-}
-
-/**
- * PATCH: endre status
- * Body: { status: "ACTIVE"|"PAUSED"|"CLOSED", reason?: string }
- */
-export async function PATCH(req: Request, ctx: RouteCtx) {
-  const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonError(400, "BAD_REQUEST", "Ugyldig companyId.");
-
-  const guard = await requireSuperadmin();
-  if (!guard.ok) return guard.res;
-
-  const body = (await req.json().catch(() => null)) as { status?: any; reason?: string } | null;
-  const nextStatus = normalizeStatus(body?.status);
-  const reason = String(body?.reason ?? "").trim().slice(0, 220);
-
-  if (!nextStatus) return jsonError(400, "BAD_REQUEST", "Ugyldig status.");
-
-  let admin;
-  try {
-    admin = supabaseAdmin();
-  } catch (e: any) {
-    return jsonError(500, "ADMIN_CLIENT_FAILED", "Mangler service role key.", e?.message ?? String(e));
-  }
-
-  // fetch existing (for audit + idempotency)
-  const { data: existing, error: exErr } = await admin
-    .from("companies")
-    .select("id,name,orgnr,status,updated_at,created_at")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (exErr) return jsonError(500, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", exErr.message);
-  if (!existing) return jsonError(404, "NOT_FOUND", "Fant ikke firma.");
-
-  const prevStatus = normalizeStatus((existing as any).status) ?? "ACTIVE";
-  if (prevStatus === nextStatus) {
-    return NextResponse.json(
-      { ok: true, company: existing, meta: { prevStatus, newStatus: nextStatus, note: "No change" } },
-      { status: 200 }
-    );
-  }
-
-  const nowISO = new Date().toISOString();
-
-  const { data: updated, error: upErr } = await admin
-    .from("companies")
-    .update({ status: nextStatus, updated_at: nowISO })
-    .eq("id", companyId)
-    .select("id,name,orgnr,status,created_at,updated_at")
-    .single();
-
-  // ✅ Viktig: gi korrekt status + full detail hvis DB/policy/trigger stopper oss
-  if (upErr || !updated) {
-    console.error("COMPANY_STATUS_UPDATE_FAILED", {
-      companyId,
-      actor_user_id: guard.user.id,
-      nextStatus,
-      code: (upErr as any)?.code,
-      message: upErr?.message,
-      details: (upErr as any)?.details,
-      hint: (upErr as any)?.hint,
-      serviceRolePresent: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    });
-
-    const msg = upErr?.message ?? "Not allowed: status can only be changed by superadmin";
-    return jsonError(403, "FORBIDDEN", msg, {
-      code: (upErr as any)?.code,
-      details: (upErr as any)?.details,
-      hint: (upErr as any)?.hint,
-    });
-  }
-
-  // audit (fail-quiet)
-  try {
-    const mod = await import("@/lib/audit/log").catch(() => null);
-    const writeAudit = (mod as any)?.writeAudit;
-    if (typeof writeAudit === "function") {
-      await writeAudit({
-        actor_user_id: guard.user.id,
-        actor_role: "superadmin",
-        action: "company.status_changed",
-        severity: severityFor(nextStatus),
-        company_id: companyId,
-        target_type: "company",
-        target_id: companyId,
-        target_label: (updated as any)?.name ?? null,
-        before: { status: prevStatus },
-        after: { status: nextStatus },
-        meta: { reason: reason || null, orgnr: (updated as any)?.orgnr ?? null },
-      });
+      if (!aud.error && aud.data) {
+        for (const row of aud.data as LastEventRow[]) {
+          if (!lastByCompany[row.entity_id]) lastByCompany[row.entity_id] = row; // newest wins (already sorted)
+        }
+      }
     }
-  } catch {}
 
-  return NextResponse.json({ ok: true, company: updated, meta: { prevStatus, newStatus: nextStatus } }, { status: 200 });
+    return jsonOk({
+      ok: true,
+      rid: requestId,
+      page,
+      limit,
+      total,
+      q: q || null,
+      status: status || null,
+      include_closed: includeClosed,
+      sort,
+      dir,
+      ...(stats ? { stats } : {}),
+      companies: companies.map((c) => {
+        const s = normStatus(c.status) ?? "pending";
+        const last = lastByCompany[c.id];
+        return {
+          id: c.id,
+          name: c.name,
+          orgnr: c.orgnr ?? null,
+          status: s,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+          last_event: includeLast
+            ? last
+              ? {
+                  created_at: last.created_at,
+                  actor_email: last.actor_email,
+                  actor_role: last.actor_role,
+                  summary: last.summary,
+                  detail: last.detail,
+                }
+              : null
+            : undefined,
+        };
+      }),
+    });
+  } catch (e: any) {
+    return jsonErr(500, requestId, "server_error", "Uventet feil.", String(e?.message ?? e));
+  }
 }
 
 /**
- * DELETE: hard delete (kun companies-raden)
- * Body: { confirm: true, reason?: string }
+ * POST /api/superadmin/companies
+ * (valgfritt) Opprett firma (minimal)
+ * Body: { name: string, orgnr?: string|null, status?: pending|active|paused|closed }
+ *
+ * NB: Hvis dere ikke ønsker å opprette firma her, kan du slette denne.
  */
-export async function DELETE(req: Request, ctx: RouteCtx) {
-  const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonError(400, "BAD_REQUEST", "Ugyldig companyId.");
+export async function POST(req: NextRequest) {
+  const requestId = rid();
 
-  const guard = await requireSuperadmin();
-  if (!guard.ok) return guard.res;
-
-  const body = (await req.json().catch(() => null)) as { confirm?: boolean; reason?: string } | null;
-  if (!body?.confirm) return jsonError(400, "BAD_REQUEST", "Bekreft sletting (confirm=true).");
-
-  const reason = String(body?.reason ?? "").trim().slice(0, 220);
-
-  let admin;
+  let scope: Awaited<ReturnType<typeof getScope>>;
   try {
-    admin = supabaseAdmin();
+    scope = await getScope(req);
+    requireSuperadmin(scope);
   } catch (e: any) {
-    return jsonError(500, "ADMIN_CLIENT_FAILED", "Mangler service role key.", e?.message ?? String(e));
+    return jsonErr(e?.status ?? 403, requestId, e?.code ?? "FORBIDDEN", e?.message ?? "Ingen tilgang.");
   }
 
-  const { data: existing, error: exErr } = await admin
-    .from("companies")
-    .select("id,name,orgnr,status")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (exErr) return jsonError(500, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", exErr.message);
-  if (!existing) return jsonError(404, "NOT_FOUND", "Fant ikke firma.");
-
-  const del = await admin.from("companies").delete().eq("id", companyId);
-  if (del.error) {
-    console.error("COMPANY_DELETE_FAILED", {
-      companyId,
-      actor_user_id: guard.user.id,
-      code: (del.error as any)?.code,
-      message: del.error.message,
-      details: (del.error as any)?.details,
-      hint: (del.error as any)?.hint,
-      serviceRolePresent: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    });
-
-    return jsonError(409, "DELETE_BLOCKED", "Kan ikke slette firma (har avhengigheter).", {
-      code: (del.error as any)?.code,
-      details: (del.error as any)?.details,
-      hint: (del.error as any)?.hint,
-    });
-  }
-
-  // audit (fail-quiet)
   try {
-    const mod = await import("@/lib/audit/log").catch(() => null);
-    const writeAudit = (mod as any)?.writeAudit;
-    if (typeof writeAudit === "function") {
-      await writeAudit({
-        actor_user_id: guard.user.id,
-        actor_role: "superadmin",
-        action: "company.deleted",
-        severity: "critical",
-        company_id: companyId,
-        target_type: "company",
-        target_id: companyId,
-        target_label: (existing as any)?.name ?? null,
-        before: { company: existing },
-        after: null,
-        meta: { reason: reason || null, orgnr: (existing as any)?.orgnr ?? null },
-      });
-    }
-  } catch {}
+    const body = await req.json().catch(() => ({}));
 
-  return NextResponse.json({ ok: true, deleted: { id: companyId } }, { status: 200 });
+    const name = safeText(body?.name, 120);
+    const orgnr = safeText(body?.orgnr, 40);
+    const status = normStatus(body?.status) ?? "pending";
+
+    if (!name) return jsonErr(400, requestId, "bad_request", "Mangler name.");
+
+    const admin = supabaseAdmin();
+
+    const ins = await admin
+      .from("companies")
+      .insert({ name, orgnr: orgnr ?? null, status })
+      .select("id,name,orgnr,status,created_at,updated_at")
+      .single();
+
+    if (ins.error || !ins.data) return jsonErr(500, requestId, "db_error", "Kunne ikke opprette firma.", ins.error);
+
+    // audit (best effort)
+    await admin.from("audit_events").insert({
+      actor_user_id: scope.user_id ?? null,
+      actor_email: scope.email ?? null,
+      actor_role: scope.role ?? null,
+      action: "COMPANY_CREATED",
+      entity_type: "company",
+      entity_id: ins.data.id,
+      summary: `Company created: ${ins.data.name}`,
+      detail: { name: ins.data.name, orgnr: ins.data.orgnr ?? null, status: ins.data.status, rid: requestId },
+    });
+
+    return jsonOk({ ok: true, rid: requestId, company: ins.data }, 201);
+  } catch (e: any) {
+    return jsonErr(500, requestId, "server_error", "Uventet feil.", String(e?.message ?? e));
+  }
 }

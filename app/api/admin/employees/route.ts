@@ -3,171 +3,169 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+/**
+ * ADMIN / EMPLOYEES
+ * - company_admin: only employees in own company
+ * - superadmin: can see all OR filter by ?company_id=
+ * - Never trust client-provided company_id for company_admin
+ *
+ * GET -> list employees (paged) + optional counts
+ */
+
+const SELECT_FIELDS = "user_id,email,role,company_id,location_id,department,disabled_at,created_at,updated_at";
+
+function jsonErr(status: number, error: string, detail?: string, extra?: any) {
+  return NextResponse.json(
+    { ok: false, error, detail: detail ?? undefined, extra: extra ?? undefined },
+    { status }
+  );
 }
 
-function safeStr(v: any, max = 120) {
+function isUuid(v: any) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+  );
+}
+
+function asInt(v: any, fallback: number) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.floor(n) : fallback;
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function safeQ(v: any, max = 120) {
   const s = String(v ?? "").trim();
   if (!s) return "";
   return s.slice(0, max);
 }
 
-function clampInt(v: any, min: number, max: number, fallback: number) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return fallback;
-  const i = Math.floor(n);
-  return Math.min(max, Math.max(min, i));
+function resolveCompanyId(scope: any, req: NextRequest) {
+  const url = new URL(req.url);
+  const requestedCompanyId = url.searchParams.get("company_id");
+
+  if (scope.role === "superadmin") {
+    if (!requestedCompanyId) return null; // null => all
+    const v = String(requestedCompanyId).trim();
+    if (!v) return null;
+    if (!isUuid(v)) throw Object.assign(new Error("Ugyldig company_id i query."), { status: 400, code: "BAD_REQUEST" });
+    return v;
+  }
+
+  return mustCompanyId(scope); // locked to own
 }
 
-// Join kan komme som object eller array (Supabase/PostgREST)
-function first<T>(v: T | T[] | null | undefined): T | null {
-  if (!v) return null;
-  return Array.isArray(v) ? (v[0] ?? null) : v;
-}
-
-/**
- * Hent innlogget user + profile og verifiser at han er company_admin.
- * Viktig: company_id hentes fra DB, aldri fra klient.
- */
-async function requireCompanyAdmin() {
-  const sb = await supabaseServer();
-
-  const {
-    data: { user },
-    error: uerr,
-  } = await sb.auth.getUser();
-
-  if (uerr || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-
-  const role = String(user.user_metadata?.role ?? "employee").trim().toLowerCase();
-  if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
-
-  const { data: profile, error: perr } = await sb
-    .from("profiles")
-    .select("user_id, company_id, role, email, full_name")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
-  if (!profile?.company_id) throw Object.assign(new Error("missing_company"), { code: "missing_company" });
-  if (String(profile.role ?? "").toLowerCase() !== "company_admin")
-    throw Object.assign(new Error("role_mismatch"), { code: "role_mismatch" });
-
-  return { sb, user, profile, companyId: profile.company_id as string };
-}
-
-/**
- * ADMIN / EMPLOYEES (company_admin)
- * - only employees (role=employee) in own company
- * - supports:
- *   ?q=        (search name/email/department)
- *   ?page=     (1..)
- *   ?page_size (10..100)
- *   ?sort=     newest|oldest|name
- */
 export async function GET(req: NextRequest) {
   const rid = `admin_employees_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
-    const { sb, companyId } = await requireCompanyAdmin();
+    // Auth + scope
+    const scope = await getScope(req);
+    allowSuperadminOrCompanyAdmin(scope);
+
+    // Service role for stable reads
+    const admin = supabaseAdmin();
+
+    const companyId = resolveCompanyId(scope, req);
 
     const url = new URL(req.url);
-
-    const q = safeStr(url.searchParams.get("q"), 80);
-    const page = clampInt(url.searchParams.get("page"), 1, 10_000, 1);
-    const pageSize = clampInt(url.searchParams.get("page_size"), 10, 100, 25);
-    const sort = safeStr(url.searchParams.get("sort"), 20).toLowerCase() as "newest" | "oldest" | "name";
+    const q = safeQ(url.searchParams.get("q"));
+    const page = clamp(asInt(url.searchParams.get("page"), 1), 1, 99999);
+    const pageSize = clamp(asInt(url.searchParams.get("pageSize"), 25), 5, 50);
+    const includeCounts = String(url.searchParams.get("counts") ?? "").toLowerCase() === "1";
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    // base query
-    let query = sb
+    // LIST query (fresh builder, no reuse)
+    let listQ = admin
       .from("profiles")
-      .select(
-        `
-        user_id,
-        email,
-        full_name,
-        department,
-        location_id,
-        role,
-        created_at,
-        updated_at,
-        company_id,
-        companies ( id, name ),
-        company_locations (
-          id,
-          name,
-          label,
-          address,
-          address_line1,
-          postal_code,
-          city
-        )
-      `,
-        { count: "exact" }
-      )
-      .eq("company_id", companyId)
+      .select(SELECT_FIELDS, { count: "exact" })
       .eq("role", "employee")
-      .range(from, to);
+      .order("created_at", { ascending: false });
 
-    // search
+    if (companyId) listQ = listQ.eq("company_id", companyId);
+
     if (q) {
-      // PostgREST OR-søk
-      // NB: fjern potensielt problemtegn
-      const cleaned = q.replace(/[,*]/g, " ").trim();
-      const like = `*${cleaned}*`;
-      query = query.or(`full_name.ilike.${like},email.ilike.${like},department.ilike.${like}`);
+      listQ = listQ.or(`email.ilike.%${q}%,department.ilike.%${q}%`);
     }
 
-    // sorting
-    if (sort === "oldest") query = query.order("created_at", { ascending: true });
-    else if (sort === "name") query = query.order("full_name", { ascending: true, nullsFirst: false });
-    else query = query.order("created_at", { ascending: false }); // newest default
+    const { data, error, count } = await listQ.range(from, to);
+    if (error) return jsonErr(500, "DB_ERROR", error.message, { rid });
 
-    const { data: rows, error, count } = await query;
+    // Optional counts (fresh builders every time; no chaining reuse)
+    let counts: { total: number; active: number; disabled: number } | null = null;
 
-    if (error) return jsonError(500, "employees_read_failed", "Kunne ikke hente ansatte.", error);
+    if (includeCounts) {
+      // TOTAL
+      let totalQ = admin
+        .from("profiles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "employee");
+      if (companyId) totalQ = totalQ.eq("company_id", companyId);
+      const totalRes = await totalQ;
+      if (totalRes.error) return jsonErr(500, "DB_ERROR", totalRes.error.message, { rid, step: "counts_total" });
 
-    const employees = (rows ?? []).map((r: any) => ({
-      user_id: r.user_id,
-      email: r.email ?? null,
-      full_name: r.full_name ?? null,
-      department: r.department ?? null,
-      location_id: r.location_id ?? null,
-      role: r.role ?? "employee",
-      created_at: r.created_at ?? null,
-      updated_at: r.updated_at ?? null,
-      company_id: r.company_id ?? null,
-      companies: first(r.companies),
-      company_locations: first(r.company_locations),
-    }));
+      // ACTIVE (disabled_at is null)
+      let activeQ = admin
+        .from("profiles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "employee")
+        .is("disabled_at", null);
+      if (companyId) activeQ = activeQ.eq("company_id", companyId);
+      const activeRes = await activeQ;
+      if (activeRes.error) return jsonErr(500, "DB_ERROR", activeRes.error.message, { rid, step: "counts_active" });
+
+      // DISABLED (disabled_at is not null)
+      let disabledQ = admin
+        .from("profiles")
+        .select("user_id", { count: "exact", head: true })
+        .eq("role", "employee")
+        .not("disabled_at", "is", null);
+      if (companyId) disabledQ = disabledQ.eq("company_id", companyId);
+      const disabledRes = await disabledQ;
+      if (disabledRes.error) return jsonErr(500, "DB_ERROR", disabledRes.error.message, { rid, step: "counts_disabled" });
+
+      counts = {
+        total: Number(totalRes.count ?? 0),
+        active: Number(activeRes.count ?? 0),
+        disabled: Number(disabledRes.count ?? 0),
+      };
+    }
+
+    // Actor info (best effort)
+    let actor: { email: string | null; role: string; company_id: string | null } | null = null;
+    try {
+      const sb = await supabaseServer();
+      const { data: au } = await sb.auth.getUser();
+      actor = { email: au?.user?.email ?? null, role: scope.role, company_id: companyId };
+    } catch {}
 
     return NextResponse.json(
       {
         ok: true,
         rid,
         company_id: companyId,
-        q,
         page,
-        page_size: pageSize,
-        sort: sort || "newest",
-        count: count ?? employees.length,
-        employees,
+        pageSize,
+        total: Number(count ?? 0),
+        q: q || null,
+        counts,
+        actor,
+        employees: data ?? [],
       },
       { status: 200 }
     );
   } catch (e: any) {
-    const code = e?.code || "unknown";
-    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.");
-    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.");
-    if (code === "missing_company") return jsonError(400, "missing_company", "Mangler company_id på admin-profilen.");
-    if (code === "role_mismatch") return jsonError(403, "role_mismatch", "Rolle mismatch mellom auth og profil.");
-    if (code === "db_error") return jsonError(500, "db_error", "Databasefeil.", e?.detail);
-    return jsonError(500, "server_error", "Uventet feil.", String(e?.message ?? e));
+    const status = typeof e?.status === "number" ? e.status : 500;
+    const code = e?.code || "ERROR";
+    return jsonErr(status, code, e?.message || "Ukjent feil.", { rid });
   }
 }

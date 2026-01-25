@@ -50,13 +50,28 @@ async function findAuthUserByEmailPaged(admin: any, emailLower: string, rid: str
   return { user: null, error: { message: `Paging guard triggered (rid=${rid})` } };
 }
 
+/**
+ * Supabase Auth -> public.profiles kan være eventual consistent.
+ * Vi venter kort til profile-raden finnes (DB-trigger på auth.users).
+ */
+async function waitForProfile(admin: any, userId: string, rid: string) {
+  const maxRetries = 20; // ~4s
+  const sleepMs = 200;
+
+  for (let i = 0; i < maxRetries; i++) {
+    const { data, error } = await admin.from("profiles").select("id, company_id, role").eq("id", userId).maybeSingle();
+    if (!error && data?.id) return { ok: true as const, data };
+    await new Promise((r) => setTimeout(r, sleepMs));
+  }
+
+  return { ok: false as const, error: { message: `PROFILE_NOT_CREATED (rid=${rid})` } };
+}
+
 export async function POST(req: Request) {
   const rid = `onb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
     const body = await req.json();
-
-    // ✅ hos deg er supabaseAdmin en FUNKSJON
     const admin = supabaseAdmin();
 
     // =========================
@@ -85,7 +100,7 @@ export async function POST(req: Request) {
     if (!isEmail(admin_email)) return jsonError(400, "bad_request", "Ugyldig e-postadresse.", { rid });
     if (!admin_phone) return jsonError(400, "bad_request", "Telefon mangler.", { rid });
 
-    if (password.length < 8) return jsonError(400, "bad_request", "Passord må være minimum 8 tegn.", { rid });
+    if (password.length < 10) return jsonError(400, "bad_request", "Passord må være minimum 10 tegn.", { rid });
     if (password !== password2) return jsonError(400, "bad_request", "Passordene matcher ikke.", { rid });
 
     // =========================
@@ -97,20 +112,17 @@ export async function POST(req: Request) {
     }
 
     // =========================
-    // 2) Best practice: sjekk e-post i profiles først (raskt og presist)
+    // 2) Best practice: sjekk e-post i profiles først (presis “er i systemet”-fasit)
+    // ✅ FASIT: profiles.id (ikke user_id)
     // =========================
-    const profByEmail = await admin
-      .from("profiles")
-      .select("user_id, company_id, role, email")
-      .ilike("email", admin_email)
-      .maybeSingle();
+    const profByEmail = await admin.from("profiles").select("id, company_id, role, email").ilike("email", admin_email).maybeSingle();
 
     if (profByEmail.error) {
       return jsonError(500, "db_error", "Kunne ikke sjekke e-post i profiler.", { rid, supabase: profByEmail.error });
     }
 
     // Hvis e-post finnes og allerede er knyttet til firma → stopp (enterprise-strengt)
-    if (profByEmail.data?.user_id && profByEmail.data?.company_id) {
+    if (profByEmail.data?.id && profByEmail.data?.company_id) {
       return jsonError(
         409,
         "user_exists",
@@ -120,30 +132,23 @@ export async function POST(req: Request) {
     }
 
     // =========================
-    // 3) Finn auth-user om nødvendig (for å kunne knytte riktig)
+    // 3) Finn auth-user om nødvendig
     // =========================
     let existingAuthUser: AdminUser | null = null;
 
-    // Hvis prof finnes (uten company_id), så har vi user_id allerede, men vi kan fortsatt oppdatere metadata senere uten å hente auth-user.
-    // Hvis prof ikke finnes, kan auth-user likevel finnes (User already registered). Vi sjekker dette før vi prøver createUser.
-    if (!profByEmail.data?.user_id) {
+    if (!profByEmail.data?.id) {
       const found = await findAuthUserByEmailPaged(admin, admin_email, rid);
       if (found.error) {
         return jsonError(500, "auth_error", "Kunne ikke sjekke eksisterende bruker.", { rid, supabase: found.error });
       }
       existingAuthUser = found.user;
-      // Hvis auth-user finnes og allerede er knyttet via profiles.user_id → stopp
-      if (existingAuthUser?.id) {
-        const profByUser = await admin
-          .from("profiles")
-          .select("user_id, company_id, role")
-          .eq("user_id", existingAuthUser.id)
-          .maybeSingle();
 
+      // Hvis auth-user finnes og profile allerede er knyttet til firma → stopp
+      if (existingAuthUser?.id) {
+        const profByUser = await admin.from("profiles").select("id, company_id, role").eq("id", existingAuthUser.id).maybeSingle();
         if (profByUser.error) {
           return jsonError(500, "db_error", "Kunne ikke sjekke profil for eksisterende bruker.", { rid, supabase: profByUser.error });
         }
-
         if (profByUser.data?.company_id) {
           return jsonError(
             409,
@@ -156,7 +161,7 @@ export async function POST(req: Request) {
     }
 
     // =========================
-    // 4) Opprett company (Pending) – først nå, når e-post er “OK”
+    // 4) Opprett company (Pending) – først når e-post er OK
     // =========================
     const companyInsert = await admin
       .from("companies")
@@ -164,7 +169,7 @@ export async function POST(req: Request) {
         name: company_name,
         orgnr,
         status: "pending",
-        employee_count, // ✅ riktig kolonne i din DB
+        employee_count,
       })
       .select("id")
       .single();
@@ -176,68 +181,33 @@ export async function POST(req: Request) {
     const company_id = companyInsert.data.id as string;
 
     // =========================
-    // 5) Opprett/oppdater admin-bruker + profile
+    // 5) Opprett/oppdater admin-bruker
+    // ✅ Viktig: vi skriver IKKE profiles.insert/upsert her (FK-race).
+    // DB-trigger på auth.users oppretter profiles-raden.
+    // Etterpå oppdaterer vi profilen (trygge felter) når den finnes.
     // =========================
-    // Case A: profile finnes med email men uten company_id → knytt profilen til firma (user_id finnes)
-    if (profByEmail.data?.user_id && !profByEmail.data?.company_id) {
-      const user_id = profByEmail.data.user_id as string;
 
-      // Oppdater auth metadata (best effort)
-      const upd = await admin.auth.admin.updateUserById(user_id, {
-        user_metadata: {
-          role: "company_admin",
-          full_name: admin_name,
-          phone: admin_phone,
-          company_id,
-        },
-      });
-
-      if (upd.error) {
-        // rollback company
-        await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "auth_error", "Kunne ikke oppdatere eksisterende bruker.", { rid, supabase: upd.error });
-      }
-
-      // Upsert profile (match schemaet ditt)
-      const up = await admin.from("profiles").upsert(
-        {
-          user_id,
-          company_id,
-          role: "company_admin",
-          name: admin_name,
-          phone: admin_phone,
-          email: admin_email,
-          is_active: true,
-        },
-        { onConflict: "user_id" }
+    // Case A: profile finnes (email) men uten company_id → vi må knytte til firma uten “company_id update” i app.
+    // Her er fasit: oppdater auth metadata (company_id), trigger-opprettet profil vil plukke det opp på INSERT.
+    // Hvis profilen allerede finnes fra før, må superadmin håndtere flytting (vi stopper).
+    if (profByEmail.data?.id && !profByEmail.data?.company_id) {
+      // Dette er en “ghost/ubundet” profil. Vi skal IKKE endre company_id via update her.
+      // Vi krever ny bruker (eller superadmin). For onboarding: stopp tidlig.
+      await admin.from("companies").delete().eq("id", company_id);
+      return jsonError(
+        409,
+        "profile_exists_unbound",
+        "Denne e-posten finnes allerede i systemet (ubundet profil). Kontakt superadmin for opprydding før onboarding.",
+        { rid }
       );
-
-      if (up.error) {
-        await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "db_error", "Kunne ikke knytte profil til firma.", { rid, supabase: up.error });
-      }
-
-      // Auto-login kan feile (eksisterende passord kan være annet)
-      const supabase = await supabaseServer();
-      const signIn = await supabase.auth.signInWithPassword({ email: admin_email, password });
-
-      return NextResponse.json({
-        ok: true,
-        rid,
-        company_id,
-        status: "pending",
-        autoLogin: !signIn.error,
-        message: signIn.error
-          ? "Firma registrert. Logg inn manuelt."
-          : "Firma registrert. Du er nå logget inn.",
-      });
     }
 
-    // Case B: auth-user finnes (men ingen profile-email rad) → knytt (upsert) profile til firma
+    // Case B: auth-user finnes men ingen bundet profil
     if (existingAuthUser?.id) {
       const user_id = existingAuthUser.id;
 
       const upd = await admin.auth.admin.updateUserById(user_id, {
+        password, // sett nytt passord som del av onboarding (kontrollert)
         user_metadata: {
           ...(existingAuthUser.user_metadata ?? {}),
           role: "company_admin",
@@ -252,25 +222,31 @@ export async function POST(req: Request) {
         return jsonError(500, "auth_error", "Kunne ikke oppdatere eksisterende bruker.", { rid, supabase: upd.error });
       }
 
-      const up = await admin.from("profiles").upsert(
-        {
-          user_id,
-          company_id,
+      // Vent til profile finnes (eller finnes allerede) – oppdater trygge felter (ikke company_id)
+      const waited = await waitForProfile(admin, user_id, rid);
+      if (!waited.ok) {
+        await admin.from("companies").delete().eq("id", company_id);
+        return jsonError(500, "profile_not_created", "Profil ble ikke opprettet automatisk.", { rid, detail: waited.error });
+      }
+
+      const profUpd = await admin
+        .from("profiles")
+        .update({
           role: "company_admin",
           name: admin_name,
           phone: admin_phone,
           email: admin_email,
           is_active: true,
-        },
-        { onConflict: "user_id" }
-      );
+          disabled_at: null,
+          disabled_reason: null,
+        })
+        .eq("id", user_id);
 
-      if (up.error) {
+      if (profUpd.error) {
         await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "db_error", "Kunne ikke knytte profil til firma.", { rid, supabase: up.error });
+        return jsonError(500, "db_error", "Kunne ikke oppdatere profil.", { rid, supabase: profUpd.error });
       }
 
-      // Auto-login er ikke garantert her → best effort
       const supabase = await supabaseServer();
       const signIn = await supabase.auth.signInWithPassword({ email: admin_email, password });
 
@@ -280,13 +256,11 @@ export async function POST(req: Request) {
         company_id,
         status: "pending",
         autoLogin: !signIn.error,
-        message: signIn.error
-          ? "Firma registrert. Logg inn med eksisterende konto for å fullføre."
-          : "Firma registrert. Du er nå logget inn.",
+        message: signIn.error ? "Firma registrert. Logg inn manuelt." : "Firma registrert. Du er nå logget inn.",
       });
     }
 
-    // Case C: Ny bruker – opprett auth + insert profile + auto-login
+    // Case C: Ny bruker – opprett auth. Profiles lages av trigger. Deretter oppdater trygge felter.
     const createUser = await admin.auth.admin.createUser({
       email: admin_email,
       password,
@@ -306,43 +280,44 @@ export async function POST(req: Request) {
 
     const user_id = createUser.data.user.id;
 
-    const profRes = await admin.from("profiles").insert({
-      user_id,
-      company_id,
-      role: "company_admin",
-      name: admin_name,
-      phone: admin_phone,
-      email: admin_email,
-      is_active: true,
-    });
-
-    if (profRes.error) {
+    // Vent på trigger-opprettet profil
+    const waited = await waitForProfile(admin, user_id, rid);
+    if (!waited.ok) {
       await admin.auth.admin.deleteUser(user_id);
       await admin.from("companies").delete().eq("id", company_id);
-      return jsonError(500, "db_error", "Kunne ikke opprette profil.", { rid, supabase: profRes.error });
+      return jsonError(500, "profile_not_created", "Profil ble ikke opprettet automatisk.", { rid, detail: waited.error });
+    }
+
+    // Oppdater trygge felter (IKKE company_id)
+    const profUpd = await admin
+      .from("profiles")
+      .update({
+        role: "company_admin",
+        name: admin_name,
+        phone: admin_phone,
+        email: admin_email,
+        is_active: true,
+        disabled_at: null,
+        disabled_reason: null,
+      })
+      .eq("id", user_id);
+
+    if (profUpd.error) {
+      await admin.auth.admin.deleteUser(user_id);
+      await admin.from("companies").delete().eq("id", company_id);
+      return jsonError(500, "db_error", "Kunne ikke oppdatere profil.", { rid, supabase: profUpd.error });
     }
 
     const supabase = await supabaseServer();
     const signIn = await supabase.auth.signInWithPassword({ email: admin_email, password });
-
-    if (signIn.error) {
-      return NextResponse.json({
-        ok: true,
-        rid,
-        company_id,
-        status: "pending",
-        autoLogin: false,
-        message: "Firma registrert. Logg inn manuelt.",
-      });
-    }
 
     return NextResponse.json({
       ok: true,
       rid,
       company_id,
       status: "pending",
-      autoLogin: true,
-      message: "Firma registrert. Du er nå logget inn.",
+      autoLogin: !signIn.error,
+      message: signIn.error ? "Firma registrert. Logg inn manuelt." : "Firma registrert. Du er nå logget inn.",
     });
   } catch (e: any) {
     return jsonError(500, "server_error", "Uventet feil i onboarding.", { rid, message: String(e?.message ?? e) });

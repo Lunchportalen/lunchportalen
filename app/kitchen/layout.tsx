@@ -1,33 +1,82 @@
 // app/kitchen/layout.tsx
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import type { ReactNode } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 
-export default async function KitchenLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+function roleByEmail(email: string | null | undefined): Role | null {
+  const e = normEmail(email);
+  if (e === "superadmin@lunchportalen.no") return "superadmin";
+  if (e === "kjokken@lunchportalen.no") return "kitchen";
+  if (e === "driver@lunchportalen.no") return "driver";
+  return null;
+}
 
-  // Ikke innlogget
-  if (!user) redirect("/login?next=/kitchen");
+function normalizeRole(v: unknown): Role {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "superadmin") return "superadmin";
+  if (s === "kitchen") return "kitchen";
+  if (s === "driver") return "driver";
+  return "employee";
+}
 
-  const email = normEmail(user.email);
+function computeRoleNoDb(user: any): Role {
+  const emailRole = roleByEmail(user?.email);
+  if (emailRole) return emailRole;
 
-  // ✅ Fasit: kun KJØKKEN-konto får være her
-  if (email === "kjokken@lunchportalen.no") {
-    return <>{children}</>;
+  const appRole = normalizeRole(user?.app_metadata?.role);
+  if (appRole !== "employee") return appRole;
+
+  const metaRole = normalizeRole(user?.user_metadata?.role);
+  return metaRole;
+}
+
+function homeForRole(role: Role) {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  return "/week";
+}
+
+async function currentPathFromHeaders(fallback: string) {
+  try {
+    const h = await headers();
+    const url = h.get("x-url") || h.get("referer") || "";
+    if (url) {
+      const u = new URL(url);
+      return u.pathname + (u.search || "");
+    }
+  } catch {}
+  return fallback;
+}
+
+export default async function KitchenLayout({ children }: { children: ReactNode }) {
+  const sb = await supabaseServer();
+  const { data, error } = await sb.auth.getUser();
+  const user = data?.user ?? null;
+
+  if (error || !user) {
+    const next = encodeURIComponent(await currentPathFromHeaders("/kitchen"));
+    redirect(`/login?next=${next}`);
   }
 
-  // ✅ Superadmin skal alltid til superadmin
-  if (email === "superadmin@lunchportalen.no") redirect("/superadmin");
+  const role = computeRoleNoDb(user);
 
-  // ✅ Driver skal til driver
-  if (email === "driver@lunchportalen.no") redirect("/driver");
+  // Kjøkken + Superadmin har tilgang (1A)
+  if (role !== "kitchen" && role !== "superadmin") {
+    redirect(homeForRole(role));
+  }
 
-  // ✅ Kunder skal aldri til kitchen
-  // (company_admin / employee)
-  redirect("/admin");
+  return <>{children}</>;
 }

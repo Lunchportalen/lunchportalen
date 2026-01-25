@@ -42,23 +42,10 @@ function srv(): SupabaseClient {
 }
 
 function anonWithToken(access_token: string): SupabaseClient {
-  // RLS-test: bruker ANON + bearer token
   return createClient(URL, ANON, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${access_token}` } },
   });
-}
-
-async function createAuthUser(email: string, password: string, role: Role) {
-  const s = srv();
-  const res = await s.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { role },
-  });
-  if (res.error || !res.data.user) throw new Error(`createUser failed: ${res.error?.message}`);
-  return res.data.user.id;
 }
 
 async function signInAccessToken(email: string, password: string) {
@@ -75,7 +62,6 @@ function isoToday() {
 }
 
 function baseAgreement(ts: number) {
-  // companies.agreement_json er NOT NULL i din DB → må alltid settes i test-seed
   return {
     level: "BASIS",
     price_per_portion_ex_vat: 90,
@@ -88,16 +74,18 @@ function baseAgreement(ts: number) {
 }
 
 /**
- * profiles.role kan ikke endres i din DB (policy/trigger).
- * Derfor:
- * 1) prøv INSERT (setter role riktig ved første opprettelse)
- * 2) hvis den finnes allerede -> safe UPDATE uten role/company_id
+ * ✅ FASIT: profiles.id er FK/PK og skal være lik auth.users.id (profiles_id_fkey).
+ * Vi oppretter/oppdaterer profil med id=user_id, og vi rører aldri company_id/role via UPDATE.
+ *
+ * For test-seed gjør vi det enkelt:
+ * - INSERT med id=user_id + company_id + role (første gang)
+ * - hvis konflikt: UPDATE kun name/phone/email/is_active (ikke company_id/role)
  */
 async function ensureProfile(
   s: SupabaseClient,
   payload: {
-    user_id: string;
-    company_id: string | null; // superadmin kan være NULL (global)
+    user_id: string; // auth.users.id
+    company_id: string | null;
     role: Role;
     name: string;
     phone: string;
@@ -106,8 +94,7 @@ async function ensureProfile(
   }
 ) {
   const ins = await s.from("profiles").insert({
-    id: uuid(), // din DB krever id (NOT NULL)
-    user_id: payload.user_id,
+    id: payload.user_id, // ✅ FK/PK riktig
     company_id: payload.company_id,
     role: payload.role,
     name: payload.name,
@@ -136,7 +123,22 @@ async function ensureProfile(
       email: payload.email,
       is_active: payload.is_active,
     })
-    .eq("user_id", payload.user_id);
+    .eq("id", payload.user_id);
+}
+
+async function createAuthUser(email: string, password: string, role: Role, company_id: string | null) {
+  const s = srv();
+  const res = await s.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      role,
+      company_id, // nyttig i prosjektet
+    },
+  });
+  if (res.error || !res.data.user) throw new Error(`createUser failed: ${res.error?.message}`);
+  return res.data.user.id;
 }
 
 async function seed(): Promise<SeedOut> {
@@ -178,9 +180,9 @@ async function seed(): Promise<SeedOut> {
   const empBEmail = `empB_${ts}@test.local`;
   const pw = "TestPassw0rd!";
 
-  const superId = await createAuthUser(superEmail, pw, "superadmin");
-  const empAId = await createAuthUser(empAEmail, pw, "employee");
-  const empBId = await createAuthUser(empBEmail, pw, "employee");
+  const superId = await createAuthUser(superEmail, pw, "superadmin", null);
+  const empAId = await createAuthUser(empAEmail, pw, "employee", ca.data!.id);
+  const empBId = await createAuthUser(empBEmail, pw, "employee", cb.data!.id);
 
   // 3) profiles (policy-aware)
   const pS = await ensureProfile(s, {
@@ -322,10 +324,7 @@ async function cleanup(seed: SeedOut) {
   });
 
   await safe(async () => {
-    const { error } = await s
-      .from("profiles")
-      .delete()
-      .in("user_id", [seed.superadmin.user_id, seed.empA.user_id, seed.empB.user_id]);
+    const { error } = await s.from("profiles").delete().in("id", [seed.superadmin.user_id, seed.empA.user_id, seed.empB.user_id]);
     if (error) throw error;
   });
 
@@ -363,7 +362,6 @@ describe("Tenant isolation (RLS) — Lunchportalen", () => {
     const A = anonWithToken(token);
 
     const res = await A.from("orders").select("id, company_id").eq("id", S.orderB.id);
-    // kan være tomt eller error, men aldri data
     expect(res.data ?? []).toHaveLength(0);
   });
 
@@ -386,11 +384,11 @@ describe("Tenant isolation (RLS) — Lunchportalen", () => {
     const token = await signInAccessToken(S.empA.email, S.empA.password);
     const C = anonWithToken(token);
 
-    const res1 = await C.from("profiles").select("user_id, company_id, role").eq("user_id", S.superadmin.user_id);
+    const res1 = await C.from("profiles").select("id, company_id, role").eq("id", S.superadmin.user_id);
     expect(res1.error).toBeNull();
     expect(res1.data ?? []).toHaveLength(0);
 
-    const res2 = await C.from("profiles").select("user_id, company_id, role").eq("user_id", S.empA.user_id);
+    const res2 = await C.from("profiles").select("id, company_id, role").eq("id", S.empA.user_id);
     expect(res2.error).toBeNull();
     expect(res2.data ?? []).toHaveLength(1);
   });
@@ -402,7 +400,6 @@ describe("Tenant isolation (RLS) — Lunchportalen", () => {
     const C = anonWithToken(token);
 
     const res = await C.from("company_locations").select("id, company_id").eq("id", S.locA.id);
-    // ansatt skal ikke få data; enten tomt eller error er ok
     expect(res.data ?? []).toHaveLength(0);
   });
 

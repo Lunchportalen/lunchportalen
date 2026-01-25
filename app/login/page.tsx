@@ -8,21 +8,39 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
+/* =========================================================
+   Helpers (låst)
+========================================================= */
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function isSystemAccountEmail(email: string | null | undefined) {
+  const e = normEmail(email);
+  return e === "superadmin@lunchportalen.no" || e === "kjokken@lunchportalen.no" || e === "driver@lunchportalen.no";
+}
+
 function safeNextPath(next: string | null) {
   const FALLBACK = "/week";
   if (!next) return FALLBACK;
   if (!next.startsWith("/")) return FALLBACK;
   if (next.startsWith("//")) return FALLBACK;
+
+  // Unngå redirect-loops til auth-sider
   if (
     next === "/login" ||
     next.startsWith("/login/") ||
     next === "/register" ||
     next.startsWith("/register/") ||
+    next === "/registrering" ||
+    next.startsWith("/registrering/") ||
     next === "/forgot-password" ||
     next.startsWith("/forgot-password/")
   ) {
     return FALLBACK;
   }
+
   return next;
 }
 
@@ -43,29 +61,54 @@ function homeForRole(role: Role) {
   return "/week";
 }
 
+// Server skal bestemme endelig dest (hindrer bounce/hopp)
+function toRedirectUrl(nextRaw: string) {
+  return `/api/auth/redirect?next=${encodeURIComponent(nextRaw)}`;
+}
+
+type Phase = "form" | "loading" | "pending_profile";
+
+/* =========================================================
+   Page
+========================================================= */
+
 export default function LoginPage() {
   const sp = useSearchParams();
   const nextRaw = useMemo(() => safeNextPath(sp.get("next")), [sp]);
 
-  const [phase, setPhase] = useState<"form" | "loading">("form");
-  const [err, setErr] = useState<string>("");
+  const okParam = sp.get("ok");
+  const emailParam = sp.get("email") ?? "";
 
-  const [email, setEmail] = useState("");
+  const [phase, setPhase] = useState<Phase>("form");
+  const [err, setErr] = useState<string>("");
+  const [note, setNote] = useState<string>("");
+
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState("");
 
-  // ✅ Hvis allerede innlogget: send videre umiddelbart
+  // ✅ Friendly notice after invite flow
+  useEffect(() => {
+    if (okParam === "invite_accepted") {
+      setNote("Kontoen er opprettet. Logg inn for å komme i gang.");
+    }
+  }, [okParam]);
+
+  // ✅ Hvis allerede innlogget: LA SERVER BESTEMME riktig destinasjon
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const sb = supabaseBrowser();
-      const { data } = await sb.auth.getSession();
-      if (!alive) return;
 
-      const session = data?.session ?? null;
-      if (session?.user) {
-        const role = normalizeRole((session.user.user_metadata as any)?.role);
-        const target = nextRaw || homeForRole(role);
-        window.location.replace(target);
+    (async () => {
+      try {
+        const sb = supabaseBrowser();
+        const { data } = await sb.auth.getSession();
+        if (!alive) return;
+
+        const session = data?.session ?? null;
+        if (session?.user) {
+          window.location.replace(toRedirectUrl(nextRaw));
+        }
+      } catch {
+        // Ignorer: vi lar form vises
       }
     })();
 
@@ -74,11 +117,46 @@ export default function LoginPage() {
     };
   }, [nextRaw]);
 
+  async function pollProfileThenRedirect(next: string) {
+    setPhase("pending_profile");
+
+    const maxTries = 24; // ~12s
+    for (let i = 0; i < maxTries; i++) {
+      const r = await fetch("/api/auth/profile", { cache: "no-store" });
+      const j = await r.json().catch(() => null);
+
+      if (j?.ok && j?.profileExists && j?.profile) {
+        // Sperre: deaktivert
+        if (j.profile.disabled_at) {
+          setErr(j.profile.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
+          setPhase("form");
+          return;
+        }
+        // Sperre: inaktiv
+        if (j.profile.is_active === false) {
+          setErr("Kontoen er ikke aktiv ennå. Kontakt administrator.");
+          setPhase("form");
+          return;
+        }
+
+        // ✅ Server redirect bestemmer endelig dest (hindrer bounce)
+        window.location.replace(toRedirectUrl(next));
+        return;
+      }
+
+      await new Promise((res) => setTimeout(res, 500));
+    }
+
+    setErr("Vi setter opp kontoen din. Vent litt og prøv igjen hvis du ikke kommer videre.");
+    setPhase("form");
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (phase === "loading") return;
+    if (phase !== "form") return;
 
     setErr("");
+    setNote("");
     setPhase("loading");
 
     try {
@@ -95,32 +173,37 @@ export default function LoginPage() {
         return;
       }
 
+      // ✅ Viktig: sync til server-cookies hvis dere bruker egen session-endpoint (Avensia-mønster)
+      // Hvis /api/auth/session ikke finnes i prosjektet ditt, kan du fjerne hele denne blokken.
       const access_token = data.session?.access_token ?? null;
       const refresh_token = data.session?.refresh_token ?? null;
 
-      if (!access_token || !refresh_token) {
-        setErr("Innlogging feilet (mangler session). Prøv igjen.");
-        setPhase("form");
+      if (access_token && refresh_token) {
+        const res = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ access_token, refresh_token }),
+        });
+
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          setErr(j?.message || "Kunne ikke etablere serversession. Prøv igjen.");
+          setPhase("form");
+          return;
+        }
+      }
+
+      // ✅ SYSTEMKONTOER (superadmin/kjøkken/driver): ALDRI vent på profile/onboarding.
+      // Server bestemmer alltid endelig dest i /api/auth/redirect.
+      const signedInEmail = data?.user?.email ?? email.trim();
+      if (isSystemAccountEmail(signedInEmail)) {
+        window.location.replace(toRedirectUrl(nextRaw));
         return;
       }
 
-      // ✅ Sync til server-cookies
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ access_token, refresh_token }),
-      });
-
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        setErr(j?.message || "Kunne ikke etablere serversession. Prøv igjen.");
-        setPhase("form");
-        return;
-      }
-
-      // ✅ Videre
-      window.location.assign(nextRaw);
+      // ✅ Ordinære brukere: vent til profile er synlig (invitasjonsflyt kan være litt treg)
+      await pollProfileThenRedirect(nextRaw);
     } catch {
       setErr("Kunne ikke logge inn. Prøv igjen.");
       setPhase("form");
@@ -145,6 +228,19 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+          {note ? (
+            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-black ring-1 ring-[rgb(var(--lp-border))]">
+              {note}
+            </div>
+          ) : null}
+
+          {phase === "pending_profile" ? (
+            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-black ring-1 ring-[rgb(var(--lp-border))]">
+              <div className="font-semibold">Setter opp kontoen din…</div>
+              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Dette tar vanligvis bare et øyeblikk.</div>
+            </div>
+          ) : null}
+
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">E-post</label>
@@ -156,6 +252,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 inputMode="email"
                 required
+                disabled={phase !== "form"}
               />
             </div>
 
@@ -168,21 +265,20 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
+                disabled={phase !== "form"}
               />
             </div>
 
             {err && (
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900 ring-1 ring-red-200">
-                {err}
-              </div>
+              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900 ring-1 ring-red-200">{err}</div>
             )}
 
             <button
               type="submit"
-              disabled={phase === "loading"}
+              disabled={phase !== "form"}
               className="w-full rounded-2xl bg-[rgb(var(--lp-accent))] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {phase === "loading" ? "Logger inn…" : "Logg inn"}
+              {phase === "loading" ? "Logger inn…" : phase === "pending_profile" ? "Setter opp…" : "Logg inn"}
             </button>
 
             <div className="flex items-center justify-between text-sm">
@@ -191,6 +287,11 @@ export default function LoginPage() {
               </Link>
 
               <span className="text-xs text-[rgb(var(--lp-muted))]">Next: {nextRaw}</span>
+            </div>
+
+            <div className="pt-2 text-xs text-[rgb(var(--lp-muted))]">
+              Tips: Hvis det “hopper”, skyldes det nesten alltid at server må bestemme rolle/redirect. Denne siden bruker derfor{" "}
+              <code className="ml-1 rounded bg-black/5 px-1 py-0.5">/api/auth/redirect</code>.
             </div>
           </form>
         </div>

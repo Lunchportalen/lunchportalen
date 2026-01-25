@@ -1,10 +1,12 @@
 // app/admin/orders/page.tsx
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-
+import SupportReportButton from "@/components/admin/SupportReportButton";
 import OrdersTable from "@/components/admin/OrdersTable";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -82,8 +84,11 @@ export default async function AdminOrdersPage() {
   // Kun superadmin og company_admin
   if (role !== "superadmin" && role !== "company_admin") redirect("/week");
 
-  // company_admin må ha company_id
+  // company_admin må ha company_id (enterprise gate håndteres ellers på /admin)
   if (role === "company_admin" && !profile?.company_id) redirect("/admin");
+
+  const isCompanyAdmin = role === "company_admin";
+  const companyId = profile?.company_id ?? null;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -92,9 +97,7 @@ export default async function AdminOrdersPage() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Admin – Ordrer</h1>
-            <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-              Oversikt per dag. Kontroll, ikke støy.
-            </p>
+            <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Oversikt per dag. Kontroll, ikke støy.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -105,11 +108,32 @@ export default async function AdminOrdersPage() {
               ← Tilbake
             </Link>
 
-            {role === "company_admin" && (
+            {isCompanyAdmin ? (
               <span className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]">
-                Firma-ID: <span className="font-mono">{profile?.company_id ?? "—"}</span>
+                Firma-ID: <span className="font-mono">{companyId ?? "—"}</span>
+              </span>
+            ) : (
+              <span className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]">
+                Rolle: <span className="font-mono">{role}</span>
               </span>
             )}
+          </div>
+        </div>
+
+        {/* Enterprise note */}
+        <div className="mt-6 rounded-3xl bg-[rgb(var(--lp-surface))] p-5 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-sm font-semibold">Prinsipp</div>
+          <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+            Ordrer vises som <span className="font-semibold">fasit</span> (én sannhetskilde). Ingen manuelle unntak.
+            Ved avvik: logg med RID.
+          </p>
+
+          <div className="mt-4">
+            <SupportReportButton
+              reason="ADMIN_ORDERS_PAGE_GENERAL_REPORT"
+              companyId={isCompanyAdmin ? companyId : null}
+              locationId={profile?.location_id ?? null}
+            />
           </div>
         </div>
 

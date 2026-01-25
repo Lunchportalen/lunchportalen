@@ -16,15 +16,28 @@ import type {
 
 export type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
 
+/**
+ * companies-tabellen hos dere er MINIMAL.
+ * Derived felter hentes fra:
+ * - profiles (ansattcount)
+ * - company_current_agreement (plan + binding + delivery_days)
+ *
+ * 🔒 FASIT: Firmaplan i oversikten = høyeste nivå som finnes i avtalen
+ * - Hvis én eneste dag er LUXUS -> firmaplan = LUXUS
+ * - Ellers BASIS
+ */
 export type CompanyRow = {
   id: string;
   name: string;
   status: CompanyStatus;
-  plan: "BASIS" | "LUXUS" | string;
+
+  plan: "BASIS" | "LUXUS" | string | null;
   employees_count: number | null;
   contract_start: string | null; // YYYY-MM-DD
   contract_end: string | null; // YYYY-MM-DD
+
   created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type AuditSeverity = "info" | "warning" | "critical" | string;
@@ -59,7 +72,7 @@ export type DeliveryRow = {
   company_name?: string;
   location_id?: string | null;
   location_name?: string | null;
-  window_label?: string | null; // e.g. "lunch"
+  window_label?: string | null;
   portions: number;
   notes?: string | null;
   status?: string | null;
@@ -105,20 +118,27 @@ export type CronRunRow = {
 ========================= */
 
 function monthsBetweenISO(fromISO: string, toISO: string) {
-  // Enkel og stabil "binding igjen" (mnd): avrundet ned
-  // Begge som UTC-datoer for stabilitet
   const a = new Date(`${fromISO}T00:00:00Z`);
   const b = new Date(`${toISO}T00:00:00Z`);
-
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
 
   const years = b.getUTCFullYear() - a.getUTCFullYear();
   const months = b.getUTCMonth() - a.getUTCMonth();
   const total = years * 12 + months;
 
-  // hvis slutt-dag < start-dag → trekk 1 måned (konservativ)
   if (b.getUTCDate() < a.getUTCDate()) return Math.max(0, total - 1);
   return Math.max(0, total);
+}
+
+function addMonthsToISODate(startISO: string, months: number) {
+  const [y, m, d] = String(startISO).split("-").map(Number);
+  if (!y || !m || !d) return null;
+
+  const dt = new Date(Date.UTC(y, m - 1 + months, d));
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
 }
 
 export function bindingMonthsLeft(company: Pick<CompanyRow, "contract_end">, todayISO: string) {
@@ -127,8 +147,7 @@ export function bindingMonthsLeft(company: Pick<CompanyRow, "contract_end">, tod
 }
 
 /**
- * Liten helper for konsistent error-håndtering.
- * (Beholdes fordi du allerede bruker den flere steder.)
+ * Konsistent error-håndtering (beholdes)
  */
 function assertOk<T>(res: { data: T | null; error: any }, fallbackMessage = "Databasefeil") {
   if (res.error) throw new Error(res.error.message || fallbackMessage);
@@ -161,6 +180,140 @@ function normSortDir(d?: string): SortDir {
   return v === "asc" ? "asc" : "desc";
 }
 
+/**
+ * ✅ MINIMAL companies select (matcher DB)
+ */
+const COMPANIES_SELECT_MIN = "id,name,status,created_at,updated_at";
+
+function mapCompanyMinToRow(c: any): CompanyRow {
+  return {
+    id: String(c?.id ?? ""),
+    name: String(c?.name ?? ""),
+    status: (String(c?.status ?? "ACTIVE").toUpperCase() as CompanyStatus) || "ACTIVE",
+    created_at: c?.created_at ?? null,
+    updated_at: c?.updated_at ?? null,
+
+    plan: null,
+    employees_count: null,
+    contract_start: null,
+    contract_end: null,
+  };
+}
+
+/* =========================
+   Derived: Employees count (profiles)
+========================= */
+
+type ProfileMini = {
+  company_id: string | null;
+  role?: string | null;
+  is_active?: boolean | null;
+};
+
+async function fetchEmployeeCounts(companyIds: string[]) {
+  const map = new Map<string, number>();
+  if (!companyIds.length) return map;
+
+  const supabase = await supabaseServer();
+  const res = await supabase.from("profiles").select("company_id, role, is_active").in("company_id", companyIds);
+  if (res.error) return map;
+
+  const rows = (res.data || []) as ProfileMini[];
+  for (const r of rows) {
+    const cid = r.company_id ? String(r.company_id) : null;
+    if (!cid) continue;
+
+    const role = String(r.role ?? "employee").toLowerCase();
+    const active = r.is_active !== false;
+
+    if (!active) continue;
+    if (role !== "employee" && role !== "company_admin") continue;
+
+    map.set(cid, (map.get(cid) ?? 0) + 1);
+  }
+
+  return map;
+}
+
+/* =========================
+   Derived: Agreement (company_current_agreement)
+   - Velg deterministisk hvis flere rader per company_id:
+     1) status=ACTIVE
+     2) høyest updated_at
+   - Beregn end_date hvis mangler (start_date + binding_months)
+   - 🔒 Firmaplan i oversikt = høyeste nivå i delivery_days
+========================= */
+
+type AgreementMeta = {
+  plan: string | null; // firmaplan (BASIS/LUXUS)
+  contract_start: string | null;
+  contract_end: string | null;
+  binding_months: number | null;
+};
+
+function computeFirmPlan(planTier: string | null, deliveryDays: any): string | null {
+  // Hvis delivery_days inneholder LUXUS -> LUXUS, ellers BASIS.
+  // Vi bruker base-tier kun som fallback hvis delivery_days mangler helt.
+  const base = String(planTier ?? "").toUpperCase();
+  const raw = JSON.stringify(deliveryDays ?? {});
+  if (raw.includes("LUXUS")) return "LUXUS";
+  if (raw.includes("BASIS")) return "BASIS";
+  return base || null;
+}
+
+async function fetchAgreements(companyIds: string[]) {
+  const map = new Map<string, AgreementMeta>();
+  if (!companyIds.length) return map;
+
+  const supabase = await supabaseServer();
+
+  const res = await supabase
+    .from("company_current_agreement")
+    .select("company_id, status, plan_tier, delivery_days, binding_months, start_date, end_date, updated_at")
+    .in("company_id", companyIds);
+
+  if (res.error) return map;
+
+  const best = new Map<string, any>();
+
+  const rank = (r: any) => {
+    const st = String(r?.status ?? "").toUpperCase();
+    const w = st === "ACTIVE" ? 2 : st === "PAUSED" ? 1 : 0;
+    const ts = r?.updated_at ? Date.parse(String(r.updated_at)) : 0;
+    return w * 1_000_000_000_000 + ts;
+  };
+
+  for (const r of res.data || []) {
+    const cid = String((r as any).company_id);
+    const cur = best.get(cid);
+    if (!cur || rank(r) > rank(cur)) best.set(cid, r);
+  }
+
+  for (const [cid, r] of best.entries()) {
+    const planTier = (r as any).plan_tier ? String((r as any).plan_tier) : null;
+    const firmPlan = computeFirmPlan(planTier, (r as any).delivery_days);
+
+    const start = (r as any).start_date ? String((r as any).start_date) : null;
+    let end = (r as any).end_date ? String((r as any).end_date) : null;
+
+    const bmRaw = (r as any).binding_months;
+    const bindingMonths = Number.isFinite(Number(bmRaw)) ? Number(bmRaw) : null;
+
+    if (!end && start && bindingMonths !== null) {
+      end = addMonthsToISODate(start, bindingMonths);
+    }
+
+    map.set(cid, {
+      plan: firmPlan ? String(firmPlan).toUpperCase() : null,
+      contract_start: start,
+      contract_end: end,
+      binding_months: bindingMonths,
+    });
+  }
+
+  return map;
+}
+
 /* =========================
    DASHBOARD
 ========================= */
@@ -178,16 +331,10 @@ export async function getSuperadminCounts(todayISO: string) {
   if (paused.error) throw new Error(paused.error.message);
   if (closed.error) throw new Error(closed.error.message);
 
-  // Dagens leveranser (fra public.deliveries-viewet)
-  const deliveries = await supabase
-    .from("deliveries")
-    .select("portions", { count: "exact" })
-    .eq("date", todayISO);
-
+  const deliveries = await supabase.from("deliveries").select("portions", { count: "exact" }).eq("date", todayISO);
   if (deliveries.error) throw new Error(deliveries.error.message);
 
-  const totalPortions =
-    (deliveries.data || []).reduce((sum, r: any) => sum + (r?.portions ?? 0), 0) || 0;
+  const totalPortions = (deliveries.data || []).reduce((sum, r: any) => sum + (r?.portions ?? 0), 0) || 0;
 
   return {
     activeCompanies: active.count ?? 0,
@@ -198,15 +345,9 @@ export async function getSuperadminCounts(todayISO: string) {
   };
 }
 
-/**
- * “Alerts”: konservativ MVP—bygg fra:
- *  - status PAUSED/CLOSED (kritisk / warning)
- *  - siste quality_reports (info)
- */
 export async function getSuperadminAlerts(limit = 25) {
   const supabase = await supabaseServer();
 
-  // 1) Firma med PAUSED / CLOSED
   const firms = await supabase
     .from("companies")
     .select("id,name,status,updated_at")
@@ -216,7 +357,6 @@ export async function getSuperadminAlerts(limit = 25) {
 
   if (firms.error) throw new Error(firms.error.message);
 
-  // 2) Siste kvalitetsmeldinger
   const quality = await supabase
     .from("quality_reports")
     .select("id,company_id,category,text,created_at")
@@ -225,9 +365,7 @@ export async function getSuperadminAlerts(limit = 25) {
 
   if (quality.error) throw new Error(quality.error.message);
 
-  const companyIds = Array.from(
-    new Set((quality.data || []).map((q: any) => q.company_id).filter(Boolean))
-  );
+  const companyIds = Array.from(new Set((quality.data || []).map((q: any) => q.company_id).filter(Boolean)));
 
   const companyMap = new Map<string, string>();
   if (companyIds.length) {
@@ -257,37 +395,42 @@ export async function getSuperadminAlerts(limit = 25) {
       qualityId: q.id,
     })) || [];
 
-  return [...firmAlerts, ...qualityAlerts]
-    .sort((a, b) => (b.at || "").localeCompare(a.at || ""))
-    .slice(0, limit);
+  return [...firmAlerts, ...qualityAlerts].sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, limit);
 }
 
 /* =========================
-   FIRMA LISTE
+   FIRMA LISTE (enkelt)
 ========================= */
 
-/**
- * NB: Dette er en enkel liste-variant (limit),
- * og er ok for MVP/utvikling. For enterprise-skala bør vi
- * heller bruke paginering (range) + søk + sort.
- */
 export async function listCompaniesForSuperadmin(todayISO: string, limit = 200) {
   const supabase = await supabaseServer();
 
-  const res = await supabase
-    .from("companies")
-    .select("id,name,status,plan,employees_count,contract_start,contract_end,created_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
+  const res = await supabase.from("companies").select(COMPANIES_SELECT_MIN).order("created_at", { ascending: false }).limit(limit);
   if (res.error) throw new Error(res.error.message);
 
-  const rows = (res.data || []) as CompanyRow[];
+  const base = (res.data || []).map(mapCompanyMinToRow) as CompanyRow[];
+  const companyIds = base.map((c) => c.id);
 
-  return rows.map((c) => ({
-    ...c,
-    bindingMonthsLeft: bindingMonthsLeft(c, todayISO),
-  }));
+  const [empMap, agrMap] = await Promise.all([fetchEmployeeCounts(companyIds), fetchAgreements(companyIds)]);
+
+  const rows = base.map((c) => {
+    const agr = agrMap.get(c.id) ?? { plan: null, contract_start: null, contract_end: null, binding_months: null };
+
+    const enriched: CompanyRow = {
+      ...c,
+      employees_count: empMap.get(c.id) ?? 0,
+      plan: agr.plan ?? null,
+      contract_start: agr.contract_start ?? null,
+      contract_end: agr.contract_end ?? null,
+    };
+
+    return {
+      ...enriched,
+      bindingMonthsLeft: bindingMonthsLeft(enriched, todayISO),
+    };
+  });
+
+  return rows;
 }
 
 /* =========================
@@ -297,14 +440,22 @@ export async function listCompaniesForSuperadmin(todayISO: string, limit = 200) 
 export async function getCompanyById(companyId: string) {
   const supabase = await supabaseServer();
 
-  const res = await supabase
-    .from("companies")
-    .select("id,name,status,plan,employees_count,contract_start,contract_end,created_at")
-    .eq("id", companyId)
-    .single();
-
+  const res = await supabase.from("companies").select(COMPANIES_SELECT_MIN).eq("id", companyId).single();
   if (res.error) throw new Error(res.error.message);
-  return res.data as CompanyRow;
+
+  const base = mapCompanyMinToRow(res.data) as CompanyRow;
+
+  const [empMap, agrMap] = await Promise.all([fetchEmployeeCounts([companyId]), fetchAgreements([companyId])]);
+
+  const agr = agrMap.get(companyId) ?? { plan: null, contract_start: null, contract_end: null, binding_months: null };
+
+  return {
+    ...base,
+    employees_count: empMap.get(companyId) ?? 0,
+    plan: agr.plan ?? null,
+    contract_start: agr.contract_start ?? null,
+    contract_end: agr.contract_end ?? null,
+  } as CompanyRow;
 }
 
 export async function listCompanyDeliveries(companyId: string, fromISO: string, toISO: string) {
@@ -339,7 +490,6 @@ export async function listCompanyQuality(companyId: string, limit = 50) {
 export async function listCompanyAudit(companyId: string, limit = 100) {
   const supabase = await supabaseServer();
 
-  // ✅ matcher din audit_log-tabell (company_id, action, severity, before/after, etc.)
   const res = await supabase
     .from("audit_log")
     .select(
@@ -373,7 +523,6 @@ export async function listDeliveriesForDate(dateISO: string) {
 export async function listAuditGlobal(limit = 200) {
   const supabase = await supabaseServer();
 
-  // ✅ global audit list (superadmin)
   const res = await supabase
     .from("audit_log")
     .select(
@@ -438,10 +587,8 @@ export async function listCronRuns(limit = 50) {
 export async function getSuperadminHealth() {
   const supabase = await supabaseServer();
 
-  // 1) Supabase ping (beviser auth + db)
   const ping = await supabase.from("companies").select("id").limit(1);
 
-  // 2) Cron last runs
   const runs = await supabase
     .from("cron_runs")
     .select("job,status,detail,ran_at,meta")
@@ -468,13 +615,6 @@ export async function getSuperadminHealth() {
    FIRMA LISTE (enterprise paginert)
 ========================= */
 
-/**
- * Paginert firms-list brukt av /superadmin/firms (FirmsTable client).
- * Viktig:
- * - Alltid range() (skalerer)
- * - count: "exact" (kan endres til "estimated" senere)
- * - q: ilike(name)
- */
 export async function listFirms(input: FirmsQueryInput): Promise<FirmsQueryResult> {
   const supabase = await supabaseServer();
 
@@ -486,15 +626,10 @@ export async function listFirms(input: FirmsQueryInput): Promise<FirmsQueryResul
   const sortKey = normSortKey(input.sortKey);
   const sortDir = normSortDir(input.sortDir);
 
-  let query = supabase
-    .from("companies")
-    .select("id,name,status,plan,employees_count,contract_start,contract_end,created_at", { count: "exact" });
+  let query = supabase.from("companies").select("id,name,status,created_at", { count: "exact" });
 
   if (status !== "ALL") query = query.eq("status", status);
-
-  if (q.length) {
-    query = query.ilike("name", `%${q}%`);
-  }
+  if (q.length) query = query.ilike("name", `%${q}%`);
 
   const ascending = sortDir === "asc";
   query = query.order(sortKey, { ascending, nullsFirst: false }).order("id", { ascending: true });
@@ -510,23 +645,33 @@ export async function listFirms(input: FirmsQueryInput): Promise<FirmsQueryResul
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = clampInt(page, 1, totalPages);
 
+  const rowsRaw = (res.data || []) as any[];
+  const companyIds = rowsRaw.map((r) => String(r.id)).filter(Boolean);
+
+  const [empMap, agrMap] = await Promise.all([fetchEmployeeCounts(companyIds), fetchAgreements(companyIds)]);
+
   const todayISO = input.todayISO ?? null;
 
-  const rowsRaw = (res.data || []) as CompanyRow[];
+  const rows: FirmRow[] = rowsRaw.map((c) => {
+    const id = String(c.id);
+    const agr = agrMap.get(id) ?? { plan: null, contract_start: null, contract_end: null, binding_months: null };
 
-  const rows: FirmRow[] = rowsRaw.map((c) => ({
-    id: c.id,
-    name: c.name,
-    status: c.status,
-    created_at: c.created_at ?? null,
+    const contract_end = agr.contract_end ?? null;
+    const bindingLeft = todayISO && contract_end ? monthsBetweenISO(todayISO, contract_end) : null;
 
-    plan: c.plan ?? null,
-    employees_count: c.employees_count,
-    contract_start: c.contract_start,
-    contract_end: c.contract_end,
+    return {
+      id,
+      name: c.name,
+      status: c.status,
+      created_at: c.created_at ?? null,
 
-    bindingMonthsLeft: todayISO ? bindingMonthsLeft(c, todayISO) : null,
-  }));
+      employees_count: empMap.get(id) ?? 0,
+      plan: agr.plan ?? null,
+      contract_start: agr.contract_start ?? null,
+      contract_end,
+      bindingMonthsLeft: bindingLeft,
+    };
+  });
 
   return {
     rows,

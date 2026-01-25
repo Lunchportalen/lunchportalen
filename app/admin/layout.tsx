@@ -1,31 +1,94 @@
 // app/admin/layout.tsx
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import AdminNav from "./AdminNav";
 
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+
+/* =========================
+   Helpers (låst)
+========================= */
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function roleByEmail(email: string | null | undefined): Role | null {
+  const e = normEmail(email);
+  if (e === "superadmin@lunchportalen.no") return "superadmin";
+  if (e === "kjokken@lunchportalen.no") return "kitchen";
+  if (e === "driver@lunchportalen.no") return "driver";
+  return null;
+}
+
+function normalizeRole(v: unknown): Role {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "superadmin") return "superadmin";
+  if (s === "kitchen") return "kitchen";
+  if (s === "driver") return "driver";
+  return "employee";
+}
+
+function computeRoleNoDb(user: any): Role {
+  const emailRole = roleByEmail(user?.email);
+  if (emailRole) return emailRole;
+
+  const appRole = normalizeRole(user?.app_metadata?.role);
+  if (appRole !== "employee") return appRole;
+
+  const metaRole = normalizeRole(user?.user_metadata?.role);
+  return metaRole;
+}
+
+function homeForRole(role: Role) {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  return "/week";
+}
+
+async function currentPathFromHeaders(fallback: string) {
+  try {
+    const h = await headers();
+    const url = h.get("x-url") || h.get("referer") || "";
+    if (url) {
+      const u = new URL(url);
+      return u.pathname + (u.search || "");
+    }
+  } catch {}
+  return fallback;
+}
+
+/* =========================
+   Layout
+========================= */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = await supabaseServer();
+  const sb = await supabaseServer();
+  const { data, error } = await sb.auth.getUser();
+  const user = data?.user ?? null;
 
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-  if (!user) redirect("/login");
+  // Ikke innlogget → login (direkte)
+  if (error || !user) {
+    const next = encodeURIComponent(await currentPathFromHeaders("/admin"));
+    redirect(`/login?next=${next}`);
+  }
 
-  const role = String(user.user_metadata?.role ?? "employee");
-  if (role !== "company_admin") redirect("/login");
+  const role = computeRoleNoDb(user);
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
-        <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-          Oversikt, ansatte og kontrollert ordrelogikk.
-        </p>
-      </div>
+  // Kjøkken/driver skal aldri inn i admin
+  if (role === "kitchen" || role === "driver") {
+    redirect(homeForRole(role));
+  }
 
-      <AdminNav />
+  // Superadmin + company_admin har tilgang (1A)
+  if (role !== "company_admin" && role !== "superadmin") {
+    redirect(homeForRole(role));
+  }
 
-      <div className="mt-6">{children}</div>
-    </div>
-  );
+  return <>{children}</>;
 }

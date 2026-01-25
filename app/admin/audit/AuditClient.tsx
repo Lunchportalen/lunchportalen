@@ -1,143 +1,333 @@
 // app/admin/audit/AuditClient.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
-type AuditRow = {
+type Severity = "info" | "warning" | "critical";
+
+type AuditItem = {
   id: string;
   created_at: string;
-  actor_user_id: string;
-  actor_role: string;
+  actor_user_id: string | null;
+  actor_email: string | null;
+  actor_role: string | null;
   action: string;
-  severity: "info" | "warning" | "critical";
+  severity: Severity;
   company_id: string | null;
-  target_type: string | null;
-  target_id: string | null;
-  target_label: string | null;
+  location_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  summary: string | null;
+  detail: any | null;
 };
 
-type LoadState =
-  | { type: "loading" }
-  | { type: "error"; message: string }
-  | { type: "ready"; items: AuditRow[] };
+type ApiOk = {
+  ok: true;
+  rid: string;
+  meta: { limit: number; nextCursor: string | null; source: "audit_events"; filtered?: boolean };
+  items: AuditItem[];
+};
 
-export default function AuditClient() {
+type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
+type ApiRes = ApiOk | ApiErr;
+
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
+
+function fmtTs(ts: string) {
+  try {
+    return new Date(ts).toLocaleString("nb-NO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return ts;
+  }
+}
+
+function badgeForSeverity(s: Severity) {
+  if (s === "critical") return "bg-red-100 text-red-800 ring-1 ring-red-200";
+  if (s === "warning") return "bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200";
+  return "bg-slate-100 text-slate-800 ring-1 ring-slate-200";
+}
+
+async function readJson(res: Response) {
+  const txt = await res.text();
+  if (!txt) throw new Error(`Tom respons (HTTP ${res.status})`);
+  try {
+    return JSON.parse(txt);
+  } catch {
+    throw new Error(`Ugyldig JSON (HTTP ${res.status}): ${txt.slice(0, 220)}`);
+  }
+}
+
+function buildUrl(params: { limit: number; cursor: string | null; q: string; severity: "" | Severity }) {
+  const u = new URL("/api/superadmin/audit", window.location.origin);
+  u.searchParams.set("limit", String(params.limit));
+  if (params.cursor) u.searchParams.set("cursor", params.cursor);
+  if (params.q.trim()) u.searchParams.set("q", params.q.trim());
+  if (params.severity) u.searchParams.set("severity", params.severity);
+  return u.toString();
+}
+
+export function AuditClient() {
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<"all" | "info" | "warning" | "critical">("all");
-  const [state, setState] = useState<LoadState>({ type: "loading" });
+  const [severity, setSeverity] = useState<"" | Severity>("");
+  const [limit, setLimit] = useState(150);
 
-  async function load() {
-    setState({ type: "loading" });
+  const [items, setItems] = useState<AuditItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [rid, setRid] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, startMore] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const canLoadMore = useMemo(() => Boolean(nextCursor), [nextCursor]);
+
+  async function fetchFirst() {
+    setLoading(true);
+    setError(null);
+    setOpenId(null);
+
     try {
-      const r = await fetch("/api/superadmin/audit", { cache: "no-store" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j?.ok) throw new Error(j?.message || j?.error || "Kunne ikke hente audit");
-      setState({ type: "ready", items: (j.items ?? []) as AuditRow[] });
+      const url = buildUrl({ limit, cursor: null, q, severity });
+      const res = await fetch(url, { method: "GET", cache: "no-store" });
+      const data = (await readJson(res)) as ApiRes;
+
+      if (!data || (data as any).ok !== true) {
+        const err = data as ApiErr;
+        throw new Error(err?.message || err?.error || `Ukjent feil (HTTP ${res.status})`);
+      }
+
+      const ok = data as ApiOk;
+      setRid(ok.rid || null);
+      setItems(ok.items ?? []);
+      setNextCursor(ok.meta?.nextCursor ?? null);
     } catch (e: any) {
-      setState({ type: "error", message: e?.message || "Ukjent feil" });
+      setError(String(e?.message ?? e ?? "Ukjent feil"));
+      setItems([]);
+      setNextCursor(null);
+    } finally {
+      setLoading(false);
     }
   }
 
+  async function fetchMore() {
+    if (!nextCursor) return;
+
+    startMore(async () => {
+      try {
+        setError(null);
+
+        const url = buildUrl({ limit, cursor: nextCursor, q, severity });
+        const res = await fetch(url, { method: "GET", cache: "no-store" });
+        const data = (await readJson(res)) as ApiRes;
+
+        if (!data || (data as any).ok !== true) {
+          const err = data as ApiErr;
+          throw new Error(err?.message || err?.error || `Ukjent feil (HTTP ${res.status})`);
+        }
+
+        const ok = data as ApiOk;
+        setRid(ok.rid || null);
+
+        const incoming = ok.items ?? [];
+        setItems((prev) => {
+          const seen = new Set(prev.map((x) => x.id));
+          const add = incoming.filter((x) => !seen.has(x.id));
+          return [...prev, ...add];
+        });
+
+        setNextCursor(ok.meta?.nextCursor ?? null);
+      } catch (e: any) {
+        setError(String(e?.message ?? e ?? "Ukjent feil"));
+      }
+    });
+  }
+
   useEffect(() => {
-    load();
-  }, []);
-
-  const visible = useMemo(() => {
-    if (state.type !== "ready") return [];
-    const term = q.trim().toLowerCase();
-
-    return state.items
-      .filter((x) => (filter === "all" ? true : x.severity === filter))
-      .filter((x) => {
-        if (!term) return true;
-        const hay = `${x.action} ${x.target_label ?? ""} ${x.target_id ?? ""} ${x.company_id ?? ""}`.toLowerCase();
-        return hay.includes(term);
-      });
-  }, [state, q, filter]);
+    const t = setTimeout(() => fetchFirst(), 200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, severity, limit]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            className="lp-input sm:w-[360px]"
-            placeholder="Søk (action, dato, mål)…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <select
-            className="lp-input sm:w-[200px]"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
-            aria-label="Filter severity"
-          >
-            <option value="all">Alle severity</option>
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="critical">Critical</option>
-          </select>
-        </div>
+    <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end">
+          <div className="flex flex-col gap-1">
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Søk</div>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Søk i e-post, action, entity_type, summary eller UUID…"
+              className="w-full md:w-[360px] rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+            />
+          </div>
 
-        <button className="lp-btn w-full sm:w-auto" onClick={load}>
-          Oppdater
-        </button>
-      </div>
+          <div className="flex flex-col gap-1">
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Severity</div>
+            <select
+              value={severity}
+              onChange={(e) => setSeverity((e.target.value as any) || "")}
+              className="rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+            >
+              <option value="">Alle</option>
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
 
-      {state.type === "loading" ? (
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-          Laster audit…
-        </div>
-      ) : state.type === "error" ? (
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-sm font-semibold">Kunne ikke laste audit</div>
-          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{state.message}</div>
-          <button className="lp-btn mt-4" onClick={load}>
-            Prøv igjen
-          </button>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="px-5 py-4 text-sm font-semibold">Hendelser ({visible.length})</div>
-          <div className="lp-divider" />
-
-          <div className="divide-y divide-[rgb(var(--lp-divider))]">
-            {visible.map((x) => (
-              <div key={x.id} className="px-5 py-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={
-                      x.severity === "critical"
-                        ? "lp-chip lp-chip-crit"
-                        : x.severity === "warning"
-                        ? "lp-chip lp-chip-warn"
-                        : "lp-chip lp-chip-neutral"
-                    }
-                  >
-                    {x.severity}
-                  </span>
-
-                  <div className="text-sm font-semibold">{x.action}</div>
-                </div>
-
-                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                  {new Date(x.created_at).toLocaleString("nb-NO")} • {x.actor_role} •{" "}
-                  {x.target_label ?? x.target_id ?? "—"}
-                </div>
-
-                {x.company_id ? (
-                  <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                    Firma: <span className="font-mono">{x.company_id}</span>
-                  </div>
-                ) : null}
-              </div>
-            ))}
-
-            {visible.length === 0 ? (
-              <div className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]">Ingen treff.</div>
-            ) : null}
+          <div className="flex flex-col gap-1">
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Limit</div>
+            <select
+              value={String(limit)}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+            >
+              <option value="50">50</option>
+              <option value="150">150</option>
+              <option value="300">300</option>
+              <option value="500">500</option>
+            </select>
           </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-between gap-3 md:justify-end">
+          {loading ? (
+            <span className="text-xs text-[rgb(var(--lp-muted))]">Laster…</span>
+          ) : rid ? (
+            <span className="text-xs text-[rgb(var(--lp-muted))]">RID: {rid}</span>
+          ) : null}
+
+          <button
+            onClick={() => fetchFirst()}
+            className="rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90"
+          >
+            Oppdater
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-100">
+          <div className="font-semibold">Feil</div>
+          <div className="mt-1 whitespace-pre-wrap">{error}</div>
+        </div>
+      ) : null}
+
+      <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-white">
+              <tr className="text-xs text-[rgb(var(--lp-muted))]">
+                <th className="px-4 py-3">Tid</th>
+                <th className="px-4 py-3">Actor</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Severity</th>
+                <th className="px-4 py-3">Entity</th>
+                <th className="px-4 py-3">Summary</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+
+            <tbody className="bg-white">
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
+                    Laster audit-hendelser…
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
+                    Ingen hendelser funnet.
+                  </td>
+                </tr>
+              ) : (
+                items.map((x) => {
+                  const isOpen = openId === x.id;
+                  return (
+                    <tr key={x.id} className="border-t border-[rgb(var(--lp-border))]">
+                      <td className="px-4 py-3 whitespace-nowrap">{fmtTs(x.created_at)}</td>
+
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{x.actor_email || "—"}</div>
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">{x.actor_role || "ukjent rolle"}</div>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{x.action}</div>
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">
+                          company: {x.company_id ? x.company_id.slice(0, 8) : "—"}
+                          {x.location_id ? ` • loc: ${x.location_id.slice(0, 8)}` : ""}
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span className={cx("inline-flex items-center rounded-full px-2.5 py-1 text-xs", badgeForSeverity(x.severity))}>
+                          {x.severity}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{x.entity_type}</div>
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">{x.entity_id}</div>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <div className="text-sm">{x.summary || "—"}</div>
+                      </td>
+
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => setOpenId(isOpen ? null : x.id)}
+                          className="rounded-xl bg-white px-3 py-1.5 text-xs ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90"
+                        >
+                          {isOpen ? "Skjul" : "Detaljer"}
+                        </button>
+                      </td>
+
+                      {isOpen ? (
+                        <td colSpan={7} className="px-4 pb-4">
+                          <div className="mt-2 rounded-2xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+                            <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-white p-3 text-xs ring-1 ring-[rgb(var(--lp-border))]">
+{JSON.stringify(x.detail, null, 2)}
+                            </pre>
+                          </div>
+                        </td>
+                      ) : null}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-xs text-[rgb(var(--lp-muted))]">Viser {items.length} hendelser</div>
+
+        <button
+          onClick={fetchMore}
+          disabled={!canLoadMore || loadingMore || loading}
+          className={cx(
+            "rounded-2xl px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]",
+            !canLoadMore || loadingMore || loading ? "bg-white/60 text-[rgb(var(--lp-muted))]" : "bg-white hover:bg-white/90"
+          )}
+        >
+          {loadingMore ? "Laster…" : canLoadMore ? "Last mer" : "Ingen flere"}
+        </button>
+      </div>
     </div>
   );
 }

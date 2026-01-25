@@ -244,7 +244,6 @@ function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasA
     const enabled = !!(d.enabled ?? d.selected ?? d.active);
     const tier = normalizeTier(d.tier ?? d.plan_tier ?? d.level ?? d.plan) ?? out[k].tier;
 
-    // FE sender priceExVat
     const exRaw = parsePrice(d.priceExVat ?? d.price_ex_vat);
     const incRaw = parsePrice(d.priceIncVat ?? d.priceInclVat ?? d.price_incl_vat ?? d.price);
 
@@ -277,34 +276,47 @@ function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasA
 }
 
 /* =========================================================
-   Profile sync (safe: never change role/company_id)
+   Profile sync (FASIT)
+   - profiles.id === auth.users.id
+   - IKKE INSERT profiles her (unngår FK-race). DB-trigger skal opprette rad.
+   - Oppdater kun trygge felter (role/name/full_name/phone/is_active), aldri company_id.
 ========================================================= */
-async function syncProfileSafe(SB: any, user_id: string, display_name: string, phone: string) {
-  const existing = await SB.from("profiles").select("user_id").eq("user_id", user_id).maybeSingle();
-  if (existing.error) return existing;
+async function waitForProfileRow(SB: any, userId: string) {
+  const maxRetries = 25; // ~5s
+  const sleepMs = 200;
 
-  const patchBase: any = { phone };
-
-  if (existing.data?.user_id) {
-    const u1 = await SB.from("profiles").update({ ...patchBase, full_name: display_name }).eq("user_id", user_id);
-    if (!u1.error) return u1;
-
-    const msg = String(u1.error?.message ?? "");
-    if (msg.includes("full_name") || msg.includes("schema cache") || msg.includes("column")) {
-      return SB.from("profiles").update({ ...patchBase, name: display_name }).eq("user_id", user_id);
-    }
-    return u1;
+  for (let i = 0; i < maxRetries; i++) {
+    const { data, error } = await SB.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
+    if (!error && data?.id) return { ok: true as const, data };
+    await new Promise((r) => setTimeout(r, sleepMs));
   }
 
-  // minimal insert (uten role/company_id)
-  const i1 = await SB.from("profiles").insert({ user_id, phone, full_name: display_name });
-  if (!i1.error) return i1;
+  return { ok: false as const, error: { message: "PROFILE_NOT_CREATED" } };
+}
 
-  const msg = String(i1.error?.message ?? "");
-  if (msg.includes("full_name") || msg.includes("schema cache") || msg.includes("column")) {
-    return SB.from("profiles").insert({ user_id, phone, name: display_name });
+async function syncProfileSafe(SB: any, userId: string, display_name: string, phone: string) {
+  // Wait for trigger-created profile
+  const waited = await waitForProfileRow(SB, userId);
+  if (!waited.ok) return { data: null, error: waited.error };
+
+  // Update safe fields only (no company_id)
+  const patch: any = {
+    phone,
+    is_active: true,
+    disabled_at: null,
+    disabled_reason: null,
+  };
+
+  // Prefer full_name if col exists; fallback to name if not
+  let u1 = await SB.from("profiles").update({ ...patch, full_name: display_name }).eq("id", userId);
+  if (!u1.error) return u1;
+
+  const msg = String(u1.error?.message ?? "");
+  if (msg.includes("full_name") || msg.toLowerCase().includes("schema cache") || msg.toLowerCase().includes("column")) {
+    return SB.from("profiles").update({ ...patch, name: display_name }).eq("id", userId);
   }
-  return i1;
+
+  return u1;
 }
 
 /* =========================================================
@@ -378,7 +390,6 @@ function candidateMap(loc: LocInput) {
       { telefon_ved_levering: loc.delivery_contact_phone },
     ],
 
-    // hard (exact column)
     delivery_contact_country: [{ delivery_contact_country: loc.delivery_contact_country }],
     delivery_json: [{ delivery_json: loc.delivery_json }],
 
@@ -427,7 +438,6 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
       row = { ...row, ...variants[idx] };
     }
 
-    // hard required (NOT NULL)
     row.delivery_contact_country = loc.delivery_contact_country || "NO";
     row.delivery_json = loc.delivery_json ?? {};
 
@@ -436,7 +446,6 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
 
     const msg = String(res.error?.message ?? "");
 
-    // real constraints -> stop
     if (msg.toLowerCase().includes("violates not-null constraint")) return res;
     if (msg.toLowerCase().includes("violates foreign key")) return res;
 
@@ -459,7 +468,7 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
     const variants = (cmap as any)[matchedField] as Array<Record<string, any>>;
     const next = (pickIndex[matchedField] ?? 0) + 1;
     if (next < variants.length) pickIndex[matchedField] = next;
-    else pickIndex[matchedField] = variants.length; // drop
+    else pickIndex[matchedField] = variants.length;
   }
 
   return { data: null, error: { message: "location_insert_failed_after_many_attempts" } };
@@ -477,7 +486,6 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return jsonError(400, "BAD_REQUEST", "Ugyldig JSON");
 
-  // Inputs (snake_case)
   const company_name = String(body?.company_name ?? "").trim();
   const orgnr = digitsOnly(body?.orgnr);
   const employee_count = Number(body?.employee_count ?? 0);
@@ -489,12 +497,11 @@ export async function POST(req: Request) {
   const password = String(body?.password ?? "");
   const password_confirm = String(body?.password_confirm ?? "");
 
-  const delivery = body?.delivery ?? null; // where, when_note, contact_name, contact_phone, window_from, window_to, contact_country?
-  const location = body?.location ?? null; // name, address, postal_code, city
-  const agreement = body?.agreement ?? null; // days, vat_rate
-  const terms = body?.terms ?? null; // accepted_terms, accepted_credit_check, version...
+  const delivery = body?.delivery ?? null;
+  const location = body?.location ?? null;
+  const agreement = body?.agreement ?? null;
+  const terms = body?.terms ?? null;
 
-  // Validate base
   if (!isNonEmpty(company_name, 2)) return jsonError(400, "VALIDATION", "Firmanavn er påkrevd");
   if (orgnr.length !== 9) return jsonError(400, "VALIDATION", "Org.nr må være 9 siffer");
   if (!Number.isFinite(employee_count) || employee_count < 20) return jsonError(400, "VALIDATION", "Firma må ha minimum 20 ansatte");
@@ -502,10 +509,9 @@ export async function POST(req: Request) {
   if (!isNonEmpty(full_name, 2)) return jsonError(400, "VALIDATION", "Navn er påkrevd");
   if (!isEmail(email)) return jsonError(400, "VALIDATION", "Ugyldig e-postadresse");
   if (phone.length < 6) return jsonError(400, "VALIDATION", "Telefon er påkrevd");
-  if (password.length < 8) return jsonError(400, "VALIDATION", "Passord må være minimum 8 tegn");
+  if (password.length < 10) return jsonError(400, "VALIDATION", "Passord må være minimum 10 tegn");
   if (password !== password_confirm) return jsonError(400, "VALIDATION", "Passordene er ikke like");
 
-  // Delivery + location required (stjerne i UI)
   if (!delivery) return jsonError(400, "VALIDATION", "Leveringsinfo mangler");
   if (!location) return jsonError(400, "VALIDATION", "Lokasjon mangler");
 
@@ -522,7 +528,6 @@ export async function POST(req: Request) {
   if (!isNonEmpty(location?.postal_code, 2)) return jsonError(400, "VALIDATION", "Postnummer er påkrevd");
   if (!isNonEmpty(location?.city, 2)) return jsonError(400, "VALIDATION", "Poststed er påkrevd");
 
-  // Agreement
   const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : 0.25;
   const daysParsed = normalizeDays(agreement?.days, vatRate);
   if (!daysParsed) return jsonError(400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå/pris.");
@@ -540,7 +545,6 @@ export async function POST(req: Request) {
   if (orgCheck.error) return jsonError(500, "DB", "Kunne ikke sjekke org.nr", orgCheck.error);
   if ((orgCheck.data ?? []).length) return jsonError(409, "ORGNR_EXISTS", "Org.nr er allerede registrert");
 
-  // Build agreement_json SAFE (NO raw_payload, NO passwords)
   const nowISO = new Date().toISOString();
   const daysNorm = daysParsed.days;
   const dominantTier: PlanTier = Object.values(daysNorm).some((d) => d.enabled && d.tier === "LUXUS") ? "LUXUS" : "BASIS";
@@ -561,7 +565,6 @@ export async function POST(req: Request) {
     terms,
   });
 
-  // Commit + rollback
   let companyId: string | null = null;
   let userId: string | null = null;
   let locationId: string | null = null;
@@ -583,19 +586,25 @@ export async function POST(req: Request) {
     if (insCompany.error) throw insCompany.error;
     companyId = insCompany.data.id;
 
-    // 2) auth user
+    // 2) auth user (company_admin) — metadata brukes av DB-trigger til å lage profiles-raden med riktig company_id
     const { data: created, error: createErr } = await SB.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { role: "company_admin", company_id: companyId },
+      user_metadata: {
+        role: "company_admin",
+        company_id: companyId,
+        full_name,
+        name: full_name,
+        phone,
+      },
     });
     if (createErr) throw createErr;
 
     userId = created?.user?.id ?? null;
     if (!userId) throw new Error("AUTH_CREATE_NO_USER_ID");
 
-    // 3) profiles (safe fields only)
+    // 3) profiles — IKKE insert. Vent på trigger + oppdater trygge felter.
     const prof = await syncProfileSafe(SB, userId, full_name, phone);
     if (prof.error) throw prof.error;
 
@@ -633,8 +642,13 @@ export async function POST(req: Request) {
     if (locRes.error) throw locRes.error;
     locationId = locRes.data?.id ?? null;
 
+    // (valgfritt) Oppdater profile med location_id (trygt felt) etter at location finnes
+    if (locationId) {
+      const updLoc = await SB.from("profiles").update({ location_id: locationId }).eq("id", userId);
+      if (updLoc.error) throw updLoc.error;
+    }
+
     // 5) OPTIONAL tables (best-effort)
-    // company_agreements may not exist — do not fail onboarding
     const insAgr = await SB.from("company_agreements").insert({
       company_id: companyId,
       location_id: locationId,
@@ -643,7 +657,6 @@ export async function POST(req: Request) {
     });
     if (insAgr.error && !isTableMissingError(insAgr.error)) throw insAgr.error;
 
-    // company_terms_acceptance may not exist — do not fail onboarding
     if (terms?.version) {
       const insTerms = await SB.from("company_terms_acceptance").insert({
         company_id: companyId,
@@ -659,7 +672,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, status: "pending", companyId, userId, locationId }, { status: 200 });
   } catch (e: any) {
-    // rollback best effort (skip optional tables if missing)
+    // rollback best effort
     try {
       const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
       if (delTerms?.error && !isTableMissingError(delTerms.error)) {

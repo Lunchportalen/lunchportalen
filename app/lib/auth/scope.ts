@@ -55,6 +55,46 @@ function supabaseFromRequest(req: NextRequest) {
 }
 
 /* =========================================================
+   Helpers
+========================================================= */
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function roleByEmail(email: string | null | undefined): Role | null {
+  const e = normEmail(email);
+  if (e === "superadmin@lunchportalen.no") return "superadmin";
+  if (e === "kjokken@lunchportalen.no") return "kitchen";
+  if (e === "driver@lunchportalen.no") return "driver";
+  return null;
+}
+
+function normalizeRole(v: unknown): Role {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "superadmin") return "superadmin";
+  if (s === "kitchen") return "kitchen";
+  if (s === "driver") return "driver";
+  return "employee";
+}
+
+function isValidRole(role: any): role is Role {
+  return ["superadmin", "company_admin", "employee", "kitchen", "driver"].includes(String(role));
+}
+
+function computeRoleNoDb(user: any): Role {
+  const emailRole = roleByEmail(user?.email);
+  if (emailRole) return emailRole;
+
+  const appRole = normalizeRole(user?.app_metadata?.role);
+  if (appRole !== "employee") return appRole;
+
+  const metaRole = normalizeRole(user?.user_metadata?.role);
+  return metaRole;
+}
+
+/* =========================================================
    Scope loader (FASIT)
 ========================================================= */
 
@@ -80,30 +120,49 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // 2) Profile
+  // 2) Forsøk å hente profile (for tenant-roller), men superadmin skal ikke være avhengig av profile
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
     .select("user_id,email,role,company_id,location_id,is_active")
     .eq("user_id", user.id)
-    .single<ProfileRow>();
+    .maybeSingle<ProfileRow>();
 
-  if (profErr || !profile) {
+  // 3) Rolle: profilrolle har førsteprioritet hvis den finnes og er gyldig
+  let role: Role;
+
+  const profileRoleRaw = (profile?.role ?? "").toString().trim();
+  if (profileRoleRaw && isValidRole(profileRoleRaw)) {
+    role = profileRoleRaw as Role;
+  } else {
+    // fallback: metadata/email
+    role = computeRoleNoDb(user);
+  }
+
+  // 4) Hvis profile mangler:
+  //    - superadmin/kitchen/driver kan leve uten profile (systemroller)
+  //    - company_admin/employee MÅ ha profile
+  if (!profile || profErr) {
+    if (role === "superadmin" || role === "kitchen" || role === "driver") {
+      // systemrolle uten tenant binding
+      return {
+        user_id: user.id,
+        email: user.email ?? null,
+        role,
+        company_id: null,
+        location_id: null,
+        is_active: true,
+      };
+    }
     throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
   }
 
-  const roleRaw = (profile.role ?? "").toString();
-  if (!isValidRole(roleRaw)) {
-    throw new ScopeError("Ugyldig rolle", 403, "ROLE_INVALID");
-  }
-
-  const role: Role = roleRaw;
+  // 5) Aktivitetsstatus (håndheves når profile finnes)
   const is_active = profile.is_active !== false;
-
   if (!is_active) {
     throw new ScopeError("Konto deaktivert", 403, "ACCOUNT_DISABLED");
   }
 
-  // 3) Tenant binding
+  // 6) Tenant binding: tenant-roller må ha company_id
   if ((role === "company_admin" || role === "employee") && !profile.company_id) {
     throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
   }
@@ -121,10 +180,6 @@ export async function getScope(req: NextRequest): Promise<Scope> {
 /* =========================================================
    Role guards
 ========================================================= */
-
-function isValidRole(role: any): role is Role {
-  return ["superadmin", "company_admin", "employee", "kitchen", "driver"].includes(String(role));
-}
 
 export function requireRole(scope: Scope, allowed: Role[]) {
   if (!allowed.includes(scope.role)) {

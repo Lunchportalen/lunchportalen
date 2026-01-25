@@ -4,106 +4,173 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
 
-function jsonErr(status: number, rid: string, error: string, detail?: string) {
-  return NextResponse.json({ ok: false, rid, error, detail }, { status });
+type Tier = "BASIS" | "LUXUS";
+type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
+type AgreementStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED";
+
+const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
+
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
 }
 
-/**
- * ADMIN / AGREEMENTS
- * - company_admin: only own company agreement
- * - superadmin: can fetch/update any company agreement using ?company_id=
- * - Never trust client-provided company_id unless superadmin
- *
- * Assumes table: public.company_agreements (recommended) with:
- *   - id (uuid)
- *   - company_id (uuid) UNIQUE (one agreement per company)
- *   - plan_tier (text) e.g. BASIS/LUXUS
- *   - basis_days_per_week (int) (optional)
- *   - luxus_days_per_week (int) (optional)
- *   - price_basis (int) default 90 (optional)
- *   - price_luxus (int) default 130 (optional)
- *   - start_date, end_date (date) (optional)
- *   - status (text) Active/Paused/Closed (optional)
- *   - notes (text) (optional)
- *
- * If your table name differs, change TABLE below.
- */
-
-const TABLE = "company_agreements";
-
-const SELECT_FIELDS = `
-  id,
-  company_id,
-  plan_tier,
-  basis_days_per_week,
-  luxus_days_per_week,
-  price_basis,
-  price_luxus,
-  start_date,
-  end_date,
-  status,
-  notes,
-  updated_at,
-  created_at
-`;
-
-function normalizeTier(v: any) {
-  const s = String(v ?? "").toUpperCase().trim();
-  if (!s) return null;
-  if (!["BASIS", "LUXUS"].includes(s)) throw new Error("Ugyldig plan_tier. Bruk BASIS eller LUXUS.");
-  return s;
+function jsonOk(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
 }
 
-function toIntOrNull(v: any) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error("Ugyldig tallverdi.");
-  return Math.trunc(n);
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
 }
 
-function toDateOrNull(v: any) {
-  if (v === null || v === undefined || v === "") return null;
-  const s = String(v);
-  // Basic ISO date check YYYY-MM-DD
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error("Ugyldig datoformat. Bruk YYYY-MM-DD.");
-  return s;
+function mkRid() {
+  return `admin_agreements_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isUuid(v: any) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
+  );
+}
+
+function normalizeTier(v: any): Tier {
+  const s = String(v ?? "").trim().toUpperCase();
+  return s === "LUXUS" ? "LUXUS" : "BASIS";
+}
+
+function normalizeStatus(v: any): AgreementStatus {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED" || s === "DRAFT") return s;
+  return "DRAFT";
+}
+
+function normalizeDeliveryDays(v: any): DayKey[] {
+  // jsonb array: ["mon","tue",...]
+  if (!v) return DAY_KEYS.slice();
+  if (Array.isArray(v)) {
+    const set = new Set<DayKey>();
+    for (const x of v) {
+      const s = String(x ?? "").trim().toLowerCase();
+      if (DAY_KEYS.includes(s as DayKey)) set.add(s as DayKey);
+    }
+    return set.size ? Array.from(set) : DAY_KEYS.slice();
+  }
+  try {
+    const parsed = typeof v === "string" ? JSON.parse(v) : v;
+    if (Array.isArray(parsed)) return normalizeDeliveryDays(parsed);
+  } catch {}
+  return DAY_KEYS.slice();
+}
+
+type AgreementRow = {
+  id: string;
+  company_id: string;
+  status: AgreementStatus;
+  plan_tier: Tier;
+  price_per_cuvert_nok: number;
+  delivery_days: any; // jsonb
+  binding_months: number;
+  notice_months: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function viewModel(a: AgreementRow) {
+  return {
+    id: a.id,
+    company_id: a.company_id,
+    status: normalizeStatus(a.status),
+    plan_tier: normalizeTier(a.plan_tier),
+    price_per_cuvert_nok: Number(a.price_per_cuvert_nok ?? 0),
+    delivery_days: normalizeDeliveryDays(a.delivery_days),
+    binding_months: Number(a.binding_months ?? 0),
+    notice_months: Number(a.notice_months ?? 0),
+    start_date: a.start_date,
+    end_date: a.end_date ?? null,
+    notes: a.notes ?? null,
+    meta: {
+      created_at: a.created_at,
+      updated_at: a.updated_at,
+    },
+  };
 }
 
 export async function GET(req: NextRequest) {
-  const rid = `admin_agreements_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = mkRid();
 
   try {
-    // Auth + scope lock
     const scope = await getScope(req);
     allowSuperadminOrCompanyAdmin(scope);
 
     const url = new URL(req.url);
     const requestedCompanyId = url.searchParams.get("company_id");
 
+    // ✅ company_admin: own company only
+    // ✅ superadmin: must pass ?company_id=
     const companyId =
       scope.role === "superadmin"
-        ? (requestedCompanyId ? String(requestedCompanyId) : null)
+        ? (requestedCompanyId ? String(requestedCompanyId).trim() : null)
         : mustCompanyId(scope);
 
     if (scope.role === "superadmin" && !companyId) {
-      // Keep superadmin safe/explicit here: require company_id
       return jsonErr(400, rid, "BAD_REQUEST", "Superadmin må angi ?company_id= for avtaleoppslag.");
     }
+    if (!companyId || !isUuid(companyId)) {
+      return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig company_id.");
+    }
 
-    const supabase = await supabaseServer();
+    const sb = await supabaseServer();
 
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select(SELECT_FIELDS)
-      .eq("company_id", companyId!)
-      .maybeSingle();
+    // ✅ Hent avtaler fra fasit-tabell.
+    // For admin-UI ønsker vi:
+    // - current: ACTIVE hvis finnes, ellers nyeste
+    // - history: siste N (for historikk)
+    const { data: rows, error } = await sb
+      .from("company_agreements")
+      .select(
+        "id, company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, end_date, notes, created_at, updated_at"
+      )
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .limit(20);
 
-    if (error) return jsonErr(500, rid, "AGREEMENT_READ_FAILED", error.message);
+    if (error) return jsonErr(500, rid, "AGREEMENTS_READ_FAILED", "Kunne ikke hente avtaler.", error);
 
-    return NextResponse.json({ ok: true, rid, company_id: companyId, agreement: data ?? null }, { status: 200 });
+    const list = (rows ?? []) as AgreementRow[];
+    const active = list.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? null;
+    const latest = list[0] ?? null;
+
+    // Hvis dere vil tillate "ingen avtale" i admin: return ok:true med null i stedet.
+    if (!active && !latest) {
+      return jsonOk({
+        ok: true,
+        rid,
+        company_id: companyId,
+        readOnly: scope.role !== "superadmin",
+        current: null,
+        active: null,
+        latest: null,
+        history: [],
+      });
+    }
+
+    const current = (active ?? latest) as AgreementRow;
+
+    return jsonOk({
+      ok: true,
+      rid,
+      company_id: companyId,
+      readOnly: scope.role !== "superadmin", // company_admin får readOnly=true
+      current: viewModel(current),
+      active: active ? viewModel(active) : null,
+      latest: latest ? viewModel(latest) : null,
+      history: list.map(viewModel),
+    });
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
@@ -112,73 +179,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const rid = `admin_agreements_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  // 🔒 LÅST: Denne ruten er admin-read-only i denne fasen.
+  // Superadmin-endringer skal skje i dedikerte superadmin-ruter for å unngå regression.
+  const rid = mkRid();
+  return jsonErr(
+    405,
+    rid,
+    "METHOD_NOT_ALLOWED",
+    "Dette endepunktet er read-only. Avtaler endres kun av superadmin i egne superadmin-ruter."
+  );
+}
 
-  try {
-    // Auth + scope lock
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
+export async function POST() {
+  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk GET (les).");
+}
 
-    const url = new URL(req.url);
-    const requestedCompanyId = url.searchParams.get("company_id");
-
-    const companyId =
-      scope.role === "superadmin"
-        ? (requestedCompanyId ? String(requestedCompanyId) : null)
-        : mustCompanyId(scope);
-
-    if (scope.role === "superadmin" && !companyId) {
-      return jsonErr(400, rid, "BAD_REQUEST", "Superadmin må angi ?company_id= for å oppdatere avtale.");
-    }
-
-    const body = await req.json().catch(() => null);
-    if (!body) return jsonErr(400, rid, "BAD_REQUEST", "Mangler body.");
-
-    // Whitelist patch fields (enterprise safe)
-    const patch: Record<string, any> = {};
-
-    if ("plan_tier" in body) patch.plan_tier = normalizeTier(body.plan_tier);
-    if ("basis_days_per_week" in body) patch.basis_days_per_week = toIntOrNull(body.basis_days_per_week);
-    if ("luxus_days_per_week" in body) patch.luxus_days_per_week = toIntOrNull(body.luxus_days_per_week);
-
-    if ("price_basis" in body) patch.price_basis = toIntOrNull(body.price_basis);
-    if ("price_luxus" in body) patch.price_luxus = toIntOrNull(body.price_luxus);
-
-    if ("start_date" in body) patch.start_date = toDateOrNull(body.start_date);
-    if ("end_date" in body) patch.end_date = toDateOrNull(body.end_date);
-
-    if ("status" in body) patch.status = body.status ?? null;
-    if ("notes" in body) patch.notes = body.notes ?? null;
-
-    // Require something to update
-    if (Object.keys(patch).length === 0) {
-      return jsonErr(400, rid, "BAD_REQUEST", "Ingen gyldige felter å oppdatere.");
-    }
-
-    // Use admin client for robust upsert even if RLS changes,
-    // but still enforce company scope strictly in code.
-    const admin = supabaseAdmin();
-
-    // Upsert one agreement per company (requires UNIQUE(company_id) in table)
-    const { data, error } = await (admin as any)
-      .from(TABLE)
-      .upsert(
-        {
-          company_id: companyId!,
-          ...patch,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "company_id" }
-      )
-      .select(SELECT_FIELDS)
-      .single();
-
-    if (error) return jsonErr(500, rid, "AGREEMENT_UPDATE_FAILED", error.message);
-
-    return NextResponse.json({ ok: true, rid, company_id: companyId, agreement: data }, { status: 200 });
-  } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e));
-  }
+export async function DELETE() {
+  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk GET (les).");
 }

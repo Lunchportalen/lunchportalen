@@ -1,36 +1,158 @@
+// app/login/login-client.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "../lib/supabase/client";
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+
+type Profile = {
+  id: string;
+  role: Role | null;
+  company_id: string | null;
+  location_id: string | null;
+  is_active: boolean | null;
+  disabled_at: string | null;
+  disabled_reason: string | null;
+};
+
+type ApiProfileOk =
+  | { ok: true; pending: true; reason?: string; retryAfterMs?: number }
+  | { ok: true; pending: false; profile: Profile };
+
+type ApiProfileErr = { ok: false; error: string; message?: string };
+
+type ApiProfileRes = ApiProfileOk | ApiProfileErr;
+
+function isEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function landingForRole(role: Role | null | undefined) {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  return "/week"; // ✅ employee default
+}
+
+async function sleep(ms: number) {
+  await new Promise((r) => setTimeout(r, ms));
+}
 
 export default function LoginClient() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // ✅ Support: /login?next=/home
+  // ✅ Support: /login?next=/week
   const nextPath = useMemo(() => {
     const n = sp.get("next");
-    // enkel sikkerhet: kun interne paths
-    if (!n || !n.startsWith("/")) return "/today";
-    if (n.startsWith("//")) return "/today";
+    if (!n || !n.startsWith("/")) return "";
+    if (n.startsWith("//")) return "";
     return n;
   }, [sp]);
 
+  const okParam = sp.get("ok");
+  const prefillEmail = sp.get("email") ?? "";
+
   const supabase = supabaseBrowser();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState<string>("");
+  const [pendingProfile, setPendingProfile] = useState(false);
+
+  useEffect(() => {
+    if (okParam === "invite_accepted") {
+      setMsg("Kontoen er opprettet. Logg inn for å komme i gang.");
+    }
+  }, [okParam]);
+
+  async function pollProfileAndRedirect() {
+    setPendingProfile(true);
+
+    const maxAttempts = 10;
+    let delay = 450;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const r = await fetch("/api/profile", { cache: "no-store" });
+
+      // ✅ 202 = pending (profil/trigger-latency)
+      if (r.status === 202) {
+        await sleep(delay);
+        delay = Math.min(1500, Math.floor(delay * 1.4));
+        continue;
+      }
+
+      const data = (await r.json().catch(() => null)) as ApiProfileRes | null;
+
+      if (!data) {
+        await sleep(delay);
+        delay = Math.min(1500, Math.floor(delay * 1.4));
+        continue;
+      }
+
+      // Ikke innlogget lenger / cookies ikke satt
+      if (r.status === 401 || (data && "ok" in data && data.ok === false && data.error === "AUTH_REQUIRED")) {
+        setPendingProfile(false);
+        setMsg("Du er ikke innlogget. Prøv igjen.");
+        return;
+      }
+
+      // ✅ Klar
+      if (r.status === 200 && data.ok === true && data.pending === false) {
+        const prof = data.profile as Profile;
+
+        // Sperre: deaktivert
+        if (prof?.disabled_at) {
+          setPendingProfile(false);
+          setMsg(prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
+          return;
+        }
+
+        // Sperre: ikke aktiv
+        if (prof?.is_active === false) {
+          setPendingProfile(false);
+          setMsg("Kontoen er ikke aktiv ennå. Kontakt administrator.");
+          return;
+        }
+
+        const dest = nextPath || landingForRole(prof?.role ?? null);
+
+        // Viktig: sikre at SSR/middleware ser cookies før redirect
+        router.refresh();
+        router.replace(dest);
+        return;
+      }
+
+      // Alt annet → vent litt og prøv igjen
+      await sleep(delay);
+      delay = Math.min(1500, Math.floor(delay * 1.4));
+    }
+
+    setPendingProfile(false);
+    setMsg("Vi setter opp kontoen din. Vent litt og prøv å logge inn på nytt hvis du ikke kommer videre.");
+  }
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || pendingProfile) return;
+
     setMsg("");
     setBusy(true);
 
+    const eMail = email.trim().toLowerCase();
+
+    if (!isEmail(eMail)) {
+      setBusy(false);
+      setMsg("Skriv inn en gyldig e-postadresse.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: eMail,
       password,
     });
 
@@ -43,16 +165,28 @@ export default function LoginClient() {
 
     // Viktig: sørg for at SSR/middleware får oppdatert cookies før vi går videre
     router.refresh();
-    router.replace(nextPath);
+
+    await pollProfileAndRedirect();
   }
 
+  // ⚠️ KUN for test/dev. Ikke bruk i prod.
   async function onRegister(e: React.MouseEvent) {
     e.preventDefault();
+    if (busy || pendingProfile) return;
+
     setMsg("");
     setBusy(true);
 
+    const eMail = email.trim().toLowerCase();
+
+    if (!isEmail(eMail)) {
+      setBusy(false);
+      setMsg("Skriv inn en gyldig e-postadresse.");
+      return;
+    }
+
     const { error } = await supabase.auth.signUp({
-      email: email.trim(),
+      email: eMail,
       password,
     });
 
@@ -69,9 +203,14 @@ export default function LoginClient() {
   return (
     <main className="mx-auto max-w-md p-6">
       <h1 className="text-2xl font-bold">Logg inn</h1>
-      <p className="mt-2 text-sm opacity-80">
-        Logg inn for å bestille eller avbestille lunsj.
-      </p>
+      <p className="mt-2 text-sm opacity-80">Logg inn for å bestille eller avbestille lunsj.</p>
+
+      {pendingProfile ? (
+        <div className="mt-4 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm">
+          <div className="font-semibold">Setter opp kontoen din…</div>
+          <div className="mt-1 opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
+        </div>
+      ) : null}
 
       <form onSubmit={onLogin} className="mt-5 grid gap-3">
         <label className="text-sm">
@@ -83,6 +222,7 @@ export default function LoginClient() {
             type="email"
             autoComplete="email"
             required
+            disabled={busy || pendingProfile}
           />
         </label>
 
@@ -95,24 +235,25 @@ export default function LoginClient() {
             type="password"
             autoComplete="current-password"
             required
+            disabled={busy || pendingProfile}
           />
         </label>
 
         <button
-          disabled={busy}
+          disabled={busy || pendingProfile}
           className={`mt-2 rounded-lg border px-4 py-2 ${
-            busy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
+            busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="submit"
         >
-          {busy ? "Logger inn…" : "Logg inn"}
+          {pendingProfile ? "Setter opp…" : busy ? "Logger inn…" : "Logg inn"}
         </button>
 
         <button
-          disabled={busy}
+          disabled={busy || pendingProfile}
           onClick={onRegister}
           className={`rounded-lg border px-4 py-2 ${
-            busy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
+            busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="button"
         >

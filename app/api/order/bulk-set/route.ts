@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 type Body = {
   // hvis tier settes, gjelder det bare dager med denne tier
-  tier?: "BASIS" | "PREMIUM";
+  tier?: "BASIS" | "LUXUS";
   // hvis weekIndex settes: 0 = første uke (5 dager), 1 = andre uke (5 dager)
   weekIndex?: 0 | 1;
   choice_key: string;
@@ -30,9 +30,9 @@ type CompanyRow = {
   status?: CompanyStatus | null;
   paused_reason?: string | null;
   closed_reason?: string | null;
-  contract_week_tier: Record<string, "BASIS" | "PREMIUM"> | null;
+  contract_week_tier: Record<string, "BASIS" | "LUXUS"> | null;
   contract_basis_choices: Choice[] | null;
-  contract_premium_choices: Choice[] | null;
+  contract_luxus_choices: Choice[] | null;
 };
 
 type ReceiptRow = {
@@ -82,9 +82,7 @@ function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
 
-  const locked =
-    dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
-
+  const locked = dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
   return { locked, cutoffTime, now: `${now.dateISO}T${now.timeHM}` };
 }
 
@@ -144,7 +142,6 @@ async function getAuthedUserId() {
 
 /* =========================
    Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
 ========================= */
 async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
   const { data, error } = await (supa as any)
@@ -203,19 +200,13 @@ export async function POST(req: Request) {
     const weekIndex = body?.weekIndex;
 
     if (!choice_key) {
-      return NextResponse.json(
-        { ok: false, rid, error: "MISSING_CHOICE_KEY", message: "choice_key mangler." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, rid, error: "MISSING_CHOICE_KEY", message: "choice_key mangler." }, { status: 400 });
     }
-    if (tierFilter && tierFilter !== "BASIS" && tierFilter !== "PREMIUM") {
+    if (tierFilter && tierFilter !== "BASIS" && tierFilter !== "LUXUS") {
       return NextResponse.json({ ok: false, rid, error: "BAD_TIER", message: "Ugyldig tier." }, { status: 400 });
     }
     if (weekIndex !== undefined && weekIndex !== 0 && weekIndex !== 1) {
-      return NextResponse.json(
-        { ok: false, rid, error: "BAD_WEEK_INDEX", message: "Ugyldig weekIndex." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, rid, error: "BAD_WEEK_INDEX", message: "Ugyldig weekIndex." }, { status: 400 });
     }
 
     // Service role client (ingen RLS)
@@ -224,11 +215,11 @@ export async function POST(req: Request) {
       global: { headers: { "X-Client-Info": "lunchportalen-order-bulk-set" } },
     });
 
-    // profil (hos dere: profiles.user_id)
+    // ✅ profiles.id === auth.users.id (IKKE user_id)
     const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
       .select("company_id, location_id, role")
-      .eq("user_id", user_id)
+      .eq("id", user_id)
       .maybeSingle();
 
     const profile = (profileRaw ?? null) as ProfileRow | null;
@@ -264,7 +255,7 @@ export async function POST(req: Request) {
     // kontrakt
     const { data: companyRaw, error: cErr } = await (supa as any)
       .from("companies")
-      .select("id, contract_week_tier, contract_basis_choices, contract_premium_choices")
+      .select("id, contract_week_tier, contract_basis_choices, contract_luxus_choices")
       .eq("id", company_id)
       .single();
 
@@ -272,12 +263,15 @@ export async function POST(req: Request) {
 
     if (cErr || !company) {
       logApiError("POST /api/order/bulk-set company failed", cErr, { rid, company_id });
-      return NextResponse.json({ ok: false, rid, error: "COMPANY_CONTRACT_NOT_FOUND", message: "Fant ikke kontrakt." }, { status: 403 });
+      return NextResponse.json(
+        { ok: false, rid, error: "COMPANY_CONTRACT_NOT_FOUND", message: "Fant ikke kontrakt." },
+        { status: 403 }
+      );
     }
 
     const weekTier = company.contract_week_tier;
     const basisChoices = company.contract_basis_choices;
-    const premiumChoices = company.contract_premium_choices;
+    const luxusChoices = company.contract_luxus_choices;
 
     if (!weekTier) {
       return NextResponse.json(
@@ -311,7 +305,7 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const tier = (weekTier as any)[dayKey] as "BASIS" | "PREMIUM" | undefined;
+      const tier = (weekTier as any)[dayKey] as "BASIS" | "LUXUS" | undefined;
       if (!tier) {
         skippedNotAllowed.push(date);
         continue;
@@ -322,7 +316,7 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const allowed = tier === "BASIS" ? basisChoices : premiumChoices;
+      const allowed = tier === "BASIS" ? basisChoices : luxusChoices;
       const okChoice = Array.isArray(allowed) && allowed.some((x) => x?.key === choice_key);
       if (!okChoice) {
         skippedNotAllowed.push(date);
@@ -353,14 +347,13 @@ export async function POST(req: Request) {
     const rows = targets.map((date) => ({
       company_id,
       location_id,
-      user_id,
+      user_id, // day_choices.user_id = auth.users.id (bruker-id)
       date,
       choice_key,
       note: null,
       status: "ACTIVE",
     }));
 
-    // ✅ Upsert + SELECT -> receipts (verifiserbar lagring)
     const { data: savedRaw, error: uErr } = await (supa as any)
       .from("day_choices")
       .upsert(rows, { onConflict: "company_id,location_id,user_id,date" })
@@ -383,7 +376,6 @@ export async function POST(req: Request) {
         updatedAt: r.updated_at ?? null,
       }));
 
-    // Stabil rekkefølge på receipts (samme som targets)
     const receiptByDate = new Map(receipts.map((r) => [r.date, r]));
     const receiptsOrdered = targets.map((d) => receiptByDate.get(d)).filter(Boolean);
 
@@ -404,9 +396,9 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (e: any) {
-    logApiError("POST /api/order/bulk-set failed", e, { rid: "bulkset_unknown" });
+    logApiError("POST /api/order/bulk-set failed", e, { rid });
     return NextResponse.json(
-      { ok: false, rid: "bulkset_unknown", error: "SERVER_ERROR", message: "Uventet feil.", detail: String(e?.message ?? e) },
+      { ok: false, rid, error: "SERVER_ERROR", message: "Uventet feil.", detail: String(e?.message ?? e) },
       { status: 500 }
     );
   }

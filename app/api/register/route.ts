@@ -1,4 +1,8 @@
 // app/api/register/route.ts
+// ✅ Oppdatert til "profiles.id === auth.users.id" + ingen profiles INSERT/UPSERT i samme løype som createUser
+// - DB-trigger på auth.users skal opprette profiles-raden (id = auth.users.id) og sette company_id fra user_metadata
+// - Denne ruten: oppretter company + default location, oppretter auth-user med metadata, venter på profiles, oppdaterer trygge felter (ikke company_id)
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -36,7 +40,6 @@ function toInt(v: any) {
 }
 
 function strongEnoughPassword(pw: string) {
-  // Baseline: 10+ tegn, minst én bokstav og ett tall
   if (typeof pw !== "string") return false;
   if (pw.length < 10) return false;
   const hasLetter = /[A-Za-z]/.test(pw);
@@ -71,17 +74,14 @@ function registrationsEnabled(req: Request) {
 }
 
 type RegisterBody = {
-  // Firma
   companyName: string;
   orgnr?: string | null;
   employeesCount: number;
 
-  // Adresse (til default lokasjon)
   address?: string | null;
   postalCode?: string | null;
   city?: string | null;
 
-  // Admin bruker
   adminName: string;
   adminEmail: string;
   adminPassword: string;
@@ -95,12 +95,11 @@ async function insertCompany(
   sb: ReturnType<typeof supabaseAdmin>,
   payload: { name: string; orgnr: string | null; status: CompanyStatus; employeesCount: number }
 ) {
-  // prøv ulike kolonnenavn for ansattfelt (dersom schema varierer)
   const variants: any[] = [
     { name: payload.name, orgnr: payload.orgnr, status: payload.status, employees_count: payload.employeesCount },
     { name: payload.name, orgnr: payload.orgnr, status: payload.status, employee_count: payload.employeesCount },
     { name: payload.name, orgnr: payload.orgnr, status: payload.status, employees: payload.employeesCount },
-    { name: payload.name, orgnr: payload.orgnr, status: payload.status }, // fallback: uten ansattefelt
+    { name: payload.name, orgnr: payload.orgnr, status: payload.status },
   ];
 
   let lastErr: any = null;
@@ -114,61 +113,17 @@ async function insertCompany(
   throw lastErr ?? new Error("company_create_failed");
 }
 
-async function upsertProfileCompanyAdmin(
-  sb: ReturnType<typeof supabaseAdmin>,
-  args: {
-    userId: string;
-    companyId: string;
-    locationId: string;
-    adminName: string;
-    adminEmail: string;
-    adminPhone: string | null;
-  }
-) {
-  const base = {
-    company_id: args.companyId,
-    location_id: args.locationId,
-    role: "company_admin" as Role,
-    name: args.adminName,
-    email: args.adminEmail,
-    phone: args.adminPhone,
-    is_active: true,
-  };
+async function waitForProfile(sb: ReturnType<typeof supabaseAdmin>, userId: string) {
+  const maxRetries = 25; // ~5s
+  const sleepMs = 200;
 
-  // Dere har (skjermbilde): user_id + id i profiles.
-  // Vi setter begge for å være 100% kompatible.
-  const variants: any[] = [
-    { id: args.userId, user_id: args.userId, ...base },
-    { user_id: args.userId, ...base },
-    { id: args.userId, ...base },
-  ];
-
-  let lastErr: any = null;
-
-  for (const row of variants) {
-    // 1) prøv upsert onConflict id
-    {
-      const { error } = await sb.from("profiles").upsert(row, { onConflict: "id" } as any);
-      if (!error) return;
-      lastErr = error;
-    }
-
-    // 2) prøv upsert onConflict user_id
-    {
-      const { error } = await sb.from("profiles").upsert(row, { onConflict: "user_id" } as any);
-      if (!error) return;
-      lastErr = error;
-    }
-
-    // 3) fallback insert
-    {
-      const { error } = await sb.from("profiles").insert(row);
-      if (!error) return;
-      lastErr = error;
-    }
+  for (let i = 0; i < maxRetries; i++) {
+    const { data, error } = await sb.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
+    if (!error && data?.id) return { ok: true as const, data };
+    await new Promise((r) => setTimeout(r, sleepMs));
   }
 
-  throw lastErr ?? new Error("profile_create_failed");
+  return { ok: false as const, error: { message: "PROFILE_NOT_CREATED" } };
 }
 
 export async function POST(req: Request) {
@@ -205,9 +160,7 @@ export async function POST(req: Request) {
   // 2) Validering
   if (!companyName) return jsonError(400, "missing_companyName", "Mangler firmanavn.");
   if (!Number.isFinite(employeesCount)) return jsonError(400, "invalid_employeesCount", "Ugyldig antall ansatte.");
-  if (employeesCount < 20) {
-    return jsonError(400, "min_employees", "Firma må ha minimum 20 ansatte.", { min: 20, got: employeesCount });
-  }
+  if (employeesCount < 20) return jsonError(400, "min_employees", "Firma må ha minimum 20 ansatte.", { min: 20, got: employeesCount });
 
   if (orgnr && orgnr.length !== 9) return jsonError(400, "invalid_orgnr", "Org.nr må være 9 siffer.", { orgnr });
 
@@ -219,131 +172,114 @@ export async function POST(req: Request) {
 
   // 3) Sjekk at orgnr ikke er i bruk (hvis oppgitt)
   if (orgnr) {
-    const { data: existingCompany, error: existingCompanyErr } = await sb
-      .from("companies")
-      .select("id")
-      .eq("orgnr", orgnr)
-      .maybeSingle();
-
+    const { data: existingCompany, error: existingCompanyErr } = await sb.from("companies").select("id").eq("orgnr", orgnr).maybeSingle();
     if (existingCompanyErr) return jsonError(500, "db_error", "Kunne ikke sjekke org.nr.", existingCompanyErr);
     if (existingCompany) return jsonError(409, "orgnr_exists", "Et firma med dette org.nr finnes allerede.");
   }
 
-  // 4) Opprett auth-user (company_admin)
-  const createUserRes = await sb.auth.admin.createUser({
-    email: adminEmail,
-    password: adminPassword,
-    email_confirm: true,
-    user_metadata: {
-      role: "company_admin" satisfies Role,
-      name: adminName,
-    },
-  });
+  // 4) Opprett firma (pending) først, så default location, så auth-user med metadata som trigger bruker
+  const status: CompanyStatus = "pending";
+  let companyRow: any = null;
+  let companyId: string | null = null;
+  let locationId: string | null = null;
+  let userId: string | null = null;
 
-  if (createUserRes.error) {
-    return jsonError(409, "auth_create_failed", "Kunne ikke opprette bruker. E-post kan allerede være registrert.", {
-      message: createUserRes.error.message,
-    });
-  }
-
-  const user = createUserRes.data.user;
-  const userId = user?.id;
-
-  if (!userId || !isUuid(userId)) {
-    return jsonError(500, "auth_bad_user", "Opprettet bruker mangler gyldig id.");
-  }
-
-  // rollback: auth-user
+  // rollback helpers
   const rollbackAuthUser = async () => {
     try {
-      await sb.auth.admin.deleteUser(userId);
-    } catch {
-      // best effort
-    }
-  };
-
-  // 5) Opprett firma (pending)
-  const status: CompanyStatus = "pending";
-
-  let companyRow: any = null;
-
-  try {
-    companyRow = await insertCompany(sb, {
-      name: companyName,
-      orgnr,
-      status,
-      employeesCount,
-    });
-  } catch (e: any) {
-    await rollbackAuthUser();
-    return jsonError(500, "company_create_failed", "Kunne ikke opprette firma.", e?.message ?? e);
-  }
-
-  const companyId = companyRow?.id;
-  if (!companyId || !isUuid(companyId)) {
-    // cleanup (best effort)
-    try {
-      await sb.from("companies").delete().eq("id", companyId ?? "__nope__");
+      if (userId) await sb.auth.admin.deleteUser(userId);
     } catch {}
-    await rollbackAuthUser();
-    return jsonError(500, "company_bad_id", "Firma ble opprettet, men fikk ugyldig id.");
-  }
-
-  const rollbackCompany = async () => {
-    try {
-      await sb.from("companies").delete().eq("id", companyId);
-    } catch {
-      // best effort
-    }
   };
-
-  // 6) Default lokasjon
-  const locationId = crypto.randomUUID();
-
-  const { error: locErr } = await sb.from("company_locations").insert({
-    id: locationId,
-    company_id: companyId,
-    name: "Hovedlokasjon",
-    address: address,
-    postal_code: postalCode,
-    city: city,
-  } as any);
-
-  if (locErr) {
-    await rollbackCompany();
-    await rollbackAuthUser();
-    return jsonError(500, "location_create_failed", "Kunne ikke opprette lokasjon.", locErr);
-  }
-
   const rollbackLocation = async () => {
     try {
-      await sb.from("company_locations").delete().eq("id", locationId);
-    } catch {
-      // best effort
-    }
+      if (locationId) await sb.from("company_locations").delete().eq("id", locationId);
+    } catch {}
+  };
+  const rollbackCompany = async () => {
+    try {
+      if (companyId) await sb.from("companies").delete().eq("id", companyId);
+    } catch {}
   };
 
-  // 7) Profil for admin (må sette role + company_id + location_id)
   try {
-    await upsertProfileCompanyAdmin(sb, {
-      userId,
-      companyId,
-      locationId,
-      adminName: adminName!,
-      adminEmail,
-      adminPhone,
+    // 4a) company
+    companyRow = await insertCompany(sb, { name: companyName, orgnr, status, employeesCount });
+    companyId = companyRow?.id ?? null;
+
+    if (!companyId || !isUuid(companyId)) throw new Error("company_bad_id");
+
+    // 4b) default location
+    locationId = crypto.randomUUID();
+    const { error: locErr } = await sb.from("company_locations").insert({
+      id: locationId,
+      company_id: companyId,
+      name: "Hovedlokasjon",
+      address: address,
+      postal_code: postalCode,
+      city: city,
+    } as any);
+
+    if (locErr) throw locErr;
+
+    // 4c) auth-user (company_admin) — metadata brukes av DB-trigger til å lage profiles.id-raden med riktig company_id uten app-insert
+    const createUserRes = await sb.auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+      user_metadata: {
+        role: "company_admin" satisfies Role,
+        name: adminName,
+        full_name: adminName,
+        phone: adminPhone,
+        company_id: companyId,
+        location_id: locationId,
+      },
+    });
+
+    if (createUserRes.error) {
+      throw Object.assign(new Error("auth_create_failed"), { detail: createUserRes.error.message });
+    }
+
+    const user = createUserRes.data.user;
+    userId = user?.id ?? null;
+
+    if (!userId || !isUuid(userId)) throw new Error("auth_bad_user");
+
+    // 4d) wait for trigger-created profile + update safe fields (IKKE company_id)
+    const waited = await waitForProfile(sb, userId);
+    if (!waited.ok) throw Object.assign(new Error("profile_not_created"), { detail: waited.error });
+
+    const profUpd = await sb
+      .from("profiles")
+      .update({
+        role: "company_admin",
+        name: adminName,
+        full_name: adminName,
+        phone: adminPhone,
+        email: adminEmail,
+        location_id: locationId,
+        is_active: true,
+        disabled_at: null,
+        disabled_reason: null,
+      })
+      .eq("id", userId);
+
+    if (profUpd.error) throw profUpd.error;
+
+    return NextResponse.json({
+      ok: true,
+      company: { id: companyId, status },
+      admin: { user_id: userId, email: adminEmail },
+      location: { id: locationId },
     });
   } catch (e: any) {
+    await rollbackAuthUser();
     await rollbackLocation();
     await rollbackCompany();
-    await rollbackAuthUser();
-    return jsonError(500, "profile_create_failed", "Kunne ikke opprette profil.", e?.message ?? e);
-  }
 
-  return NextResponse.json({
-    ok: true,
-    company: { id: companyId, status },
-    admin: { user_id: userId, email: adminEmail },
-    location: { id: locationId },
-  });
+    return jsonError(500, "register_failed", "Registrering feilet – ingen data er lagret.", {
+      message: String(e?.message ?? e),
+      detail: e?.detail ?? undefined,
+    });
+  }
 }

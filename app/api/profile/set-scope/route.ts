@@ -1,71 +1,105 @@
 // app/api/profile/set-scope/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function supabaseAdmin() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
+}
+
+function json(status: number, body: any) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+
+function isUuid(v: any): v is string {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
 }
 
-function isUuid(v: any) {
-  return typeof v === "string" && /^[0-9a-fA-F-]{36}$/.test(v);
-}
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 export async function POST(req: Request) {
-  const supabase = await supabaseServer();
-  const { data: userRes } = await supabase.auth.getUser();
+  // ✅ VIKTIG: supabaseServer() er async hos dere
+  const sb = await supabaseServer();
+
+  const { data: userRes, error: userErr } = await sb.auth.getUser();
   const user = userRes?.user ?? null;
 
-  if (!user) return NextResponse.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
+  if (userErr || !user) return json(401, { ok: false, error: "AUTH_REQUIRED" });
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profErr } = await sb
     .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
+    .select("id, role, company_id, location_id")
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile?.role || !["superadmin", "company_admin", "employee"].includes(profile.role)) {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+  if (profErr) return json(500, { ok: false, error: "PROFILE_LOOKUP_FAILED", message: profErr.message });
+
+  if (!profile?.id || !profile.company_id) {
+    return NextResponse.json(
+      { ok: true, pending: true, reason: "PROFILE_NOT_READY", retryAfterMs: 800 },
+      { status: 202, headers: { ...noStore(), "Retry-After": "1" } }
+    );
+  }
+
+  const role = String(profile.role ?? "employee") as Role;
+
+  if (!["company_admin", "superadmin", "employee"].includes(role)) {
+    return json(403, { ok: false, error: "FORBIDDEN" });
   }
 
   const body = await req.json().catch(() => ({}));
-  const companyId = body?.companyId;
   const locationId = body?.locationId;
+  const companyIdFromClient = body?.companyId;
 
-  if (!isUuid(companyId) || !isUuid(locationId)) {
-    return NextResponse.json({ ok: false, error: "BAD_REQUEST" }, { status: 400 });
-  }
+  if (!isUuid(locationId)) return json(400, { ok: false, error: "BAD_REQUEST", message: "Ugyldig locationId." });
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ ok: false, error: "MISSING_SERVICE_ROLE_KEY" }, { status: 500 });
-  }
+  const companyId =
+    role === "superadmin"
+      ? (isUuid(companyIdFromClient) ? companyIdFromClient : null)
+      : String(profile.company_id);
+
+  if (!companyId) return json(400, { ok: false, error: "BAD_REQUEST", message: "Ugyldig companyId." });
 
   const admin = supabaseAdmin();
 
-  // Valider at location tilhører company
   const { data: loc, error: locErr } = await admin
     .from("company_locations")
-    .select("id,company_id")
+    .select("id, company_id")
     .eq("id", locationId)
     .maybeSingle();
 
-  if (locErr || !loc || loc.company_id !== companyId) {
-    return NextResponse.json({ ok: false, error: "INVALID_SCOPE" }, { status: 400 });
+  if (locErr || !loc || String(loc.company_id) !== String(companyId)) {
+    return json(400, { ok: false, error: "INVALID_SCOPE" });
   }
 
-  // Oppdater kun egen profil (user_id match)
-  const { error: upErr } = await admin
-    .from("profiles")
-    .update({ company_id: companyId, location_id: locationId })
-    .eq("user_id", user.id);
+  const res = NextResponse.json(
+    { ok: true, pending: false, scope: { companyId, locationId } },
+    { status: 200, headers: noStore() }
+  );
 
-  if (upErr) {
-    return NextResponse.json({ ok: false, error: "UPDATE_FAILED", message: upErr.message }, { status: 500 });
-  }
+  const secure = process.env.NODE_ENV === "production";
 
-  return NextResponse.json({ ok: true });
+  res.cookies.set("lp_company_id", String(companyId), {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
+  res.cookies.set("lp_location_id", String(locationId), {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
+  return res;
 }

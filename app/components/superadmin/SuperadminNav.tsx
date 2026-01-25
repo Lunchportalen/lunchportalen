@@ -16,14 +16,15 @@ export default function SuperadminNav() {
 
     return (
       <Link
+        key={href}
         href={href}
+        aria-current={active ? "page" : undefined}
         className={[
           "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm ring-1 transition",
           active
             ? "bg-white font-extrabold ring-[rgb(var(--lp-border))]"
             : "bg-white/60 font-semibold text-[rgb(var(--lp-muted))] ring-[rgb(var(--lp-border))] hover:bg-white",
         ].join(" ")}
-        aria-current={active ? "page" : undefined}
       >
         {label}
       </Link>
@@ -36,6 +37,8 @@ export default function SuperadminNav() {
       aria-label="Superadmin navigation"
     >
       {navItem("/superadmin", "Dashboard")}
+      {navItem("/superadmin/firms", "Firma")}
+      {navItem("/superadmin/esg", "ESG")}
       {navItem("/superadmin/audit", "Audit")}
     </nav>
   );

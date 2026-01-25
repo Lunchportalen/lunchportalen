@@ -2,12 +2,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import StatusDropdown, { type CompanyStatus as LcStatus } from "@/components/superadmin/StatusDropdown";
 
 /* =========================
    Types
 ========================= */
 
+type SystemState = "NORMAL" | "DEGRADED";
 type CompanyStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
 
 type CompanyRow = {
@@ -27,6 +29,8 @@ type Stats = {
   companiesClosed: number;
 };
 
+type LastEvent = { label: string; ts: string | null };
+
 type Props = {
   initialCompanies: any[]; // deprecated, kan være tom / første side
   initialStats: {
@@ -36,15 +40,24 @@ type Props = {
     companiesClosed: number;
     companiesPending?: number; // bakoverkompat
   }; // deprecated, brukes som initial fallback
+
+  // Motor-signaler (valgfri; kommer fra page.tsx)
+  systemState?: SystemState;
+  lastEvent?: LastEvent | null;
 };
 
-type ApiOk = { ok: true; company: any; meta?: any };
-type ApiDelOk = { ok: true; deleted: { id: string }; meta?: any };
-type ApiErr = { ok: false; error: string; message?: string; detail?: any };
-type ApiResp = ApiOk | ApiErr;
-type ApiDelResp = ApiDelOk | ApiErr;
+type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
+type CompaniesListOk = { ok: true; rid?: string; items: any[]; nextCursor: string | null };
+type CompaniesListResp = CompaniesListOk | ApiErr;
 
-type Tab = "firms" | "alerts" | "audit" | "system";
+type CompaniesStatsOk = {
+  ok: true;
+  rid?: string;
+  stats: Stats;
+};
+type CompaniesStatsResp = CompaniesStatsOk | ApiErr;
+
+type Tab = "firms" | "alerts" | "audit";
 
 /* =========================
    Helpers: status normalization
@@ -67,34 +80,43 @@ function normalizeStatus(v: any): CompanyStatus {
 }
 
 function normalizeCompanyRow(raw: any): CompanyRow {
+  // Støtt både `status` og `firm_status` fra API
+  const rawStatus = raw?.status ?? raw?.firm_status ?? raw?.firmStatus ?? raw?.firmStatus;
   return {
     id: String(raw?.id ?? "").trim(),
     name: (String(raw?.name ?? "").trim() || "Ukjent firma").trim(),
     orgnr: raw?.orgnr ? String(raw.orgnr).trim() : null,
-    status: normalizeStatus(raw?.status),
+    status: normalizeStatus(rawStatus),
     created_at: String(raw?.created_at ?? raw?.createdAt ?? "").trim(),
     updated_at: String(raw?.updated_at ?? raw?.updatedAt ?? "").trim(),
   };
+}
+
+function toLowerStatus(s: CompanyStatus): LcStatus {
+  if (s === "PENDING") return "pending";
+  if (s === "ACTIVE") return "active";
+  if (s === "PAUSED") return "paused";
+  return "closed";
+}
+
+function fromLowerStatus(s: LcStatus): CompanyStatus {
+  if (s === "pending") return "PENDING";
+  if (s === "active") return "ACTIVE";
+  if (s === "paused") return "PAUSED";
+  return "CLOSED";
 }
 
 function statusPill(status: CompanyStatus) {
   if (status === "PENDING") return "bg-sky-50 text-sky-900 ring-1 ring-sky-200";
   if (status === "ACTIVE") return "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200";
   if (status === "PAUSED") return "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
-  return "bg-zinc-100 text-zinc-900 ring-1 ring-zinc-200";
-}
-
-function statusLabel(status: CompanyStatus) {
-  if (status === "PENDING") return "Pending";
-  if (status === "ACTIVE") return "Active";
-  if (status === "PAUSED") return "Paused";
-  return "Closed";
+  return "bg-rose-50 text-rose-900 ring-1 ring-rose-200";
 }
 
 function formatISO(iso: string) {
   try {
     if (!iso) return "—";
-    return new Date(iso).toLocaleString("no-NO", {
+    return new Date(iso).toLocaleString("nb-NO", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -116,59 +138,35 @@ function calcStats(list: CompanyRow[]): Stats {
   };
 }
 
-function chipBase(active: boolean) {
+/* =========================
+   UI helpers
+========================= */
+
+function badgeSystem(state: SystemState) {
   return [
-    "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs ring-1 transition",
-    active
-      ? "bg-black text-white ring-black"
-      : "bg-white/60 text-[rgb(var(--lp-muted))] ring-[rgb(var(--lp-border))] hover:bg-white",
+    "inline-flex items-center rounded-lg px-3 py-2 text-xs font-extrabold ring-1",
+    state === "DEGRADED"
+      ? "bg-rose-50 text-rose-900 ring-rose-200"
+      : "bg-emerald-50 text-emerald-900 ring-emerald-200",
   ].join(" ");
 }
 
-function reasonForStatus(status: CompanyStatus) {
-  if (status === "PENDING") return "Venter på godkjenning";
-  if (status === "PAUSED") return "Midlertidig pause (manglende betaling / kontrakt)";
-  if (status === "CLOSED") return "Stengt (kontrakt avsluttet / mislighold)";
-  return "Aktiv";
+function chipBase(active: boolean) {
+  return [
+    "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold ring-1 transition",
+    active
+      ? "bg-neutral-900 text-white ring-neutral-900"
+      : "bg-white/70 text-neutral-800 ring-[rgb(var(--lp-border))] hover:bg-white",
+  ].join(" ");
 }
 
-function errMsg(json: ApiErr | null | undefined, fallback = "UPDATE_FAILED") {
-  const msg = json?.message || json?.error || fallback;
-  const detail =
-    json?.detail ? `: ${typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail)}` : "";
-  return `${msg}${detail}`;
+function softBtn() {
+  return "rounded-lg bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-black/5 transition";
 }
 
-/* =========================
-   Paging API types
-========================= */
-
-type ListRow = {
-  id: string;
-  name: string;
-  orgnr: string | null;
-  status: "pending" | "active" | "paused" | "closed" | "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
-  created_at?: string;
-  updated_at?: string;
-};
-
-type CompaniesListOk = { ok: true; items: ListRow[]; nextCursor: string | null; rid?: string };
-type CompaniesListResp = CompaniesListOk | ApiErr;
-
-type CompaniesStatsOk = {
-  ok: true;
-  rid?: string;
-  stats: {
-    companiesTotal: number;
-    companiesPending: number;
-    companiesActive: number;
-    companiesPaused: number;
-    companiesClosed: number;
-  };
-};
-type CompaniesStatsResp = CompaniesStatsOk | ApiErr;
-
-const PAGE_LIMIT = 50;
+function primaryBtn() {
+  return "rounded-lg bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-black transition";
+}
 
 /* =========================
    Infinite scroll helper
@@ -194,9 +192,7 @@ function useInfiniteScroll(opts: { enabled: boolean; onLoadMore: () => void; roo
         try {
           onLoadMore();
         } finally {
-          setTimeout(() => {
-            ticking = false;
-          }, 250);
+          setTimeout(() => (ticking = false), 250);
         }
       },
       { root: null, rootMargin, threshold: 0.01 }
@@ -209,11 +205,13 @@ function useInfiniteScroll(opts: { enabled: boolean; onLoadMore: () => void; roo
   return ref;
 }
 
+const PAGE_LIMIT = 50;
+
 /* =========================
    Main component
 ========================= */
 
-export default function SuperadminClient({ initialCompanies, initialStats }: Props) {
+export default function SuperadminClient({ initialCompanies, initialStats, systemState, lastEvent }: Props) {
   const [tab, setTab] = useState<Tab>("firms");
 
   // UI controls
@@ -223,21 +221,19 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   // Debounced search
   const [qDebounced, setQDebounced] = useState(q);
   useEffect(() => {
-    const t = setTimeout(() => setQDebounced(q), 300);
+    const t = setTimeout(() => setQDebounced(q), 250);
     return () => clearTimeout(t);
   }, [q]);
 
   // Data + paging
-  const [companies, setCompanies] = useState<CompanyRow[]>(() =>
-    (initialCompanies || []).map(normalizeCompanyRow)
-  );
+  const [companies, setCompanies] = useState<CompanyRow[]>(() => (initialCompanies || []).map(normalizeCompanyRow));
   const [cursor, setCursor] = useState<string | null>(null);
 
   const [loadingList, setLoadingList] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
-  // Stats
+  // Stats (FASIT: kommer alltid fra /api/superadmin/companies/stats)
   const [stats, setStats] = useState<Stats>(() => {
     const derived = calcStats((initialCompanies || []).map(normalizeCompanyRow));
     return {
@@ -250,10 +246,16 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   });
   const [statsLoading, setStatsLoading] = useState(false);
 
+  // Motor signals (fallback hvis ikke sendt fra server)
+  const derivedSystemState: SystemState =
+    systemState ?? (stats.companiesPaused + stats.companiesClosed > 0 ? "DEGRADED" : "NORMAL");
+
+  const derivedLastEvent: LastEvent | null =
+    lastEvent ?? (companies[0]?.updated_at ? { label: "Last change", ts: companies[0].updated_at } : null);
+
   // UX
   const [toast, setToast] = useState<{ type: "ok" | "error"; msg: string } | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [openRow, setOpenRow] = useState<string | null>(null);
+  const [isPending] = useTransition();
 
   // Abort / race protection
   const listReqIdRef = useRef(0);
@@ -271,25 +273,18 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     return "closed";
   }
 
-  function statusPayload(v: CompanyStatus) {
-    // PATCH-API bør få lowercase (robust)
-    if (v === "PENDING") return "pending";
-    if (v === "ACTIVE") return "active";
-    if (v === "PAUSED") return "paused";
-    return "closed";
-  }
-
   async function readJsonSafe<T = any>(res: Response): Promise<T | null> {
+    const t = await res.text();
+    if (!t) return null;
     try {
-      return (await res.json()) as T;
+      return JSON.parse(t) as T;
     } catch {
       return null;
     }
   }
 
   function apiErrorMessage(res: Response, json: any, fallback: string) {
-    const server =
-      (json?.message ? String(json.message) : "") || (json?.error ? String(json.error) : "") || "";
+    const server = (json?.message ? String(json.message) : "") || (json?.error ? String(json.error) : "") || "";
 
     const statusHint =
       res.status === 401
@@ -306,32 +301,40 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     return server ? `${fallback} ${statusHint} ${server}${detail}` : `${fallback} ${statusHint}${detail}`;
   }
 
+  function isAbort(err: any) {
+    return err?.name === "AbortError" || String(err?.message || "").toLowerCase().includes("aborted");
+  }
+
+  function toastOk(msg: string) {
+    setToast({ type: "ok", msg });
+    setTimeout(() => setToast(null), 2800);
+  }
+  function toastErr(msg: string) {
+    setToast({ type: "error", msg });
+    setTimeout(() => setToast(null), 3800);
+  }
+
   /* =========================
      API: stats
   ========================= */
 
   async function loadStats() {
     setStatsLoading(true);
+    try {
+      const res = await fetch("/api/superadmin/companies/stats", { cache: "no-store" });
+      const json = (await readJsonSafe<CompaniesStatsResp>(res)) as CompaniesStatsResp | null;
 
-    const res = await fetch("/api/superadmin/companies/stats", { cache: "no-store" });
-    const json = (await readJsonSafe<CompaniesStatsResp>(res)) as CompaniesStatsResp | null;
-
-    if (res.ok && json && (json as any).ok === true) {
-      const j = json as CompaniesStatsOk;
-      setStats({
-        companiesTotal: j.stats.companiesTotal,
-        companiesPending: j.stats.companiesPending,
-        companiesActive: j.stats.companiesActive,
-        companiesPaused: j.stats.companiesPaused,
-        companiesClosed: j.stats.companiesClosed,
-      });
-    } else if (!res.ok) {
-      const msg = apiErrorMessage(res, json, "Kunne ikke hente stats.");
-      setToast((prev) => prev ?? { type: "error", msg });
-      setTimeout(() => setToast(null), 3500);
+      if (res.ok && json && (json as any).ok === true) {
+        const j = json as CompaniesStatsOk;
+        setStats(j.stats);
+      } else if (!res.ok) {
+        toastErr(apiErrorMessage(res, json, "Kunne ikke hente stats."));
+      }
+    } catch (err) {
+      if (!isAbort(err)) toastErr("Kunne ikke hente stats (nettverksfeil).");
+    } finally {
+      setStatsLoading(false);
     }
-
-    setStatsLoading(false);
   }
 
   /* =========================
@@ -357,27 +360,32 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     if (st) usp.set("status", st);
     usp.set("limit", String(PAGE_LIMIT));
 
-    const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, {
-      cache: "no-store",
-      signal: ctrl.signal,
-    });
+    try {
+      const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
 
-    const json = (await readJsonSafe<CompaniesListResp>(res)) as CompaniesListResp | null;
+      const json = (await readJsonSafe<CompaniesListResp>(res)) as CompaniesListResp | null;
+      if (reqId !== listReqIdRef.current) return;
 
-    if (reqId !== listReqIdRef.current) return;
+      if (!res.ok || !json || (json as any).ok !== true) {
+        setListError(apiErrorMessage(res, json, "Kunne ikke hente firma."));
+        return;
+      }
 
-    if (!res.ok || !json || (json as any).ok !== true) {
-      setListError(apiErrorMessage(res, json, "Kunne ikke hente firma."));
-      setLoadingList(false);
-      return;
+      const okJson = json as CompaniesListOk;
+      setCompanies((okJson.items || []).map(normalizeCompanyRow));
+      setCursor(okJson.nextCursor ?? null);
+
+      loadStats().catch(() => {});
+    } catch (err) {
+      if (isAbort(err)) return;
+      if (reqId !== listReqIdRef.current) return;
+      setListError("Kunne ikke hente firma (nettverksfeil).");
+    } finally {
+      if (reqId === listReqIdRef.current) setLoadingList(false);
     }
-
-    const okJson = json as CompaniesListOk;
-    setCompanies((okJson.items || []).map(normalizeCompanyRow));
-    setCursor(okJson.nextCursor ?? null);
-    setLoadingList(false);
-
-    loadStats().catch(() => {});
   }
 
   async function loadMore() {
@@ -394,26 +402,30 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
     usp.set("limit", String(PAGE_LIMIT));
     usp.set("cursor", cursor);
 
-    const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, { cache: "no-store" });
-    const json = (await readJsonSafe<CompaniesListResp>(res)) as CompaniesListResp | null;
+    try {
+      const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, { cache: "no-store" });
+      const json = (await readJsonSafe<CompaniesListResp>(res)) as CompaniesListResp | null;
 
-    if (!res.ok || !json || (json as any).ok !== true) {
-      setListError(apiErrorMessage(res, json, "Kunne ikke hente flere firma."));
+      if (!res.ok || !json || (json as any).ok !== true) {
+        setListError(apiErrorMessage(res, json, "Kunne ikke hente flere firma."));
+        return;
+      }
+
+      const okJson = json as CompaniesListOk;
+      const incoming = (okJson.items || []).map(normalizeCompanyRow);
+
+      setCompanies((prev) => {
+        const seen = new Set(prev.map((x) => x.id));
+        const add = incoming.filter((x) => !seen.has(x.id));
+        return prev.concat(add);
+      });
+
+      setCursor(okJson.nextCursor ?? null);
+    } catch (err) {
+      if (!isAbort(err)) setListError("Kunne ikke hente flere firma (nettverksfeil).");
+    } finally {
       setLoadingMore(false);
-      return;
     }
-
-    const okJson = json as CompaniesListOk;
-    const incoming = (okJson.items || []).map(normalizeCompanyRow);
-
-    setCompanies((prev) => {
-      const seen = new Set(prev.map((x) => x.id));
-      const add = incoming.filter((x) => !seen.has(x.id));
-      return prev.concat(add);
-    });
-
-    setCursor(okJson.nextCursor ?? null);
-    setLoadingMore(false);
   }
 
   useEffect(() => {
@@ -439,315 +451,193 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
   });
 
   /* =========================
-     PATCH status
-  ========================= */
-
-  async function setCompanyStatus(companyId: string, status: CompanyStatus) {
-    const reason = reasonForStatus(status);
-
-    startTransition(async () => {
-      setToast(null);
-
-      const res = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ status: statusPayload(status), reason }),
-      });
-
-      const json = (await readJsonSafe<ApiResp>(res)) as ApiResp | null;
-
-      if (!json) {
-        setToast({ type: "error", msg: "Uventet svar fra server." });
-        return;
-      }
-
-      if (!res.ok || json.ok === false) {
-        setToast({ type: "error", msg: errMsg(json as any) });
-        return;
-      }
-
-      const updated = normalizeCompanyRow((json as ApiOk).company);
-
-      setCompanies((prev) => prev.map((c) => (c.id === companyId ? updated : c)));
-
-      setOpenRow(null);
-      setToast({ type: "ok", msg: `Oppdatert: ${updated.name} → ${statusLabel(updated.status)}` });
-      setTimeout(() => setToast(null), 2800);
-
-      loadStats().catch(() => {});
-    });
-  }
-
-  /* =========================
-     PURGE
-  ========================= */
-
-  async function deleteCompany(companyId: string, name: string) {
-    const typed = window.prompt(`Skriv PURGE for å slette firma "${name}" (inkl. ordre).`);
-    if (typed !== "PURGE") return;
-
-    startTransition(async () => {
-      setToast(null);
-
-      const res = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}/purge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ confirm: true, reason: "Purged av superadmin" }),
-      });
-
-      const json = (await readJsonSafe<ApiDelResp>(res)) as ApiDelResp | null;
-
-      if (!json) {
-        setToast({ type: "error", msg: "Uventet svar fra server." });
-        return;
-      }
-
-      if (!res.ok || (json as any).ok === false) {
-        setToast({ type: "error", msg: errMsg(json as any, "DELETE_FAILED") });
-        return;
-      }
-
-      setCompanies((prev) => prev.filter((c) => c.id !== companyId));
-
-      setOpenRow(null);
-      setToast({ type: "ok", msg: `Slettet (purge): ${name}` });
-      setTimeout(() => setToast(null), 2800);
-
-      loadStats().catch(() => {});
-      loadFirstPage().catch(() => {});
-    });
-  }
-
-  /* =========================
      Render
   ========================= */
 
   const visible = useMemo(() => companies, [companies]);
 
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Superadmin</h1>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Drift og kontroll på firmanivå. Ingen unntak, ingen manuell støy.
-          </p>
+  const primaryMetric = useMemo(() => (statsLoading ? "…" : String(stats.companiesActive)), [statsLoading, stats.companiesActive]);
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Link className={chipBase(false)} href="/superadmin/audit">
-              Audit-side
-            </Link>
-            <Link className={chipBase(false)} href="/superadmin/billing">
-              Faktura CSV
-            </Link>
-          </div>
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6">
+      {/* MOTOR TOP BAR */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-lg bg-black px-3 py-2 text-xs font-extrabold tracking-wide text-white">
+            SUPERADMIN MODE
+          </span>
+
+          <span className={badgeSystem(derivedSystemState)}>SYSTEM: {derivedSystemState}</span>
+
+          {derivedLastEvent?.label ? (
+            <span className="inline-flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-neutral-700 ring-1 ring-[rgb(var(--lp-border))]">
+              <span className="opacity-70">Sist:</span>
+              <span className="font-extrabold">{derivedLastEvent.label}</span>
+              <span className="opacity-70">{formatISO(derivedLastEvent.ts || "")}</span>
+            </span>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Søk firma (navn, orgnr, id)…"
-            className="w-full rounded-2xl bg-white/70 px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-black/10 md:w-[360px]"
-          />
+          <Link className={softBtn()} href="/superadmin/audit">
+            Audit
+          </Link>
+          <Link className={softBtn()} href="/superadmin/billing">
+            Invoice CSV
+          </Link>
+          <Link className={softBtn()} href="/superadmin/system">
+            System
+          </Link>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <button className={chipBase(tab === "firms")} onClick={() => setTab("firms")}>
-          Firma
-        </button>
-        <button className={chipBase(tab === "alerts")} onClick={() => setTab("alerts")}>
-          Varsler <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">0</span>
-        </button>
-        <button className={chipBase(tab === "audit")} onClick={() => setTab("audit")}>
-          Audit
-        </button>
-        <button className={chipBase(tab === "system")} onClick={() => setTab("system")}>
-          Systemhelse
-        </button>
+      {/* PRIMARY METRIC */}
+      <div className="mt-5 rounded-2xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="text-xs font-extrabold tracking-wide text-neutral-600">PRIMARY METRIC</div>
+            <div className="mt-1 text-sm font-bold text-neutral-700">ACTIVE FIRMS</div>
+            <div className="mt-2 text-4xl font-black tracking-tight text-neutral-950">{primaryMetric}</div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 md:w-[460px]">
+            <MiniMetric label="PENDING" value={statsLoading ? "…" : String(stats.companiesPending)} tone={statusPill("PENDING")} />
+            <MiniMetric label="PAUSED" value={statsLoading ? "…" : String(stats.companiesPaused)} tone={statusPill("PAUSED")} />
+            <MiniMetric label="CLOSED" value={statsLoading ? "…" : String(stats.companiesClosed)} tone={statusPill("CLOSED")} />
+          </div>
+        </div>
+      </div>
+
+      {/* ACTION LANE */}
+      <div className="mt-4 rounded-2xl bg-white/60 p-4 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1">
+            <div className="text-xs font-extrabold tracking-wide text-neutral-600">SEARCH FIRMS</div>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Søk firma (navn, orgnr, id)…"
+              className="mt-2 w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <button className={chipBase(tab === "firms")} onClick={() => setTab("firms")}>
+              Firms
+            </button>
+            <button className={chipBase(tab === "alerts")} onClick={() => setTab("alerts")}>
+              Alerts <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">0</span>
+            </button>
+            <button className={chipBase(tab === "audit")} onClick={() => setTab("audit")}>
+              Audit
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Toast */}
       {toast && (
         <div
           className={[
-            "mt-5 rounded-2xl px-4 py-3 text-sm ring-1",
-            toast.type === "ok"
-              ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
-              : "bg-red-50 text-red-900 ring-red-200",
+            "mt-4 rounded-xl px-4 py-3 text-sm font-semibold ring-1",
+            toast.type === "ok" ? "bg-emerald-50 text-emerald-900 ring-emerald-200" : "bg-rose-50 text-rose-900 ring-rose-200",
           ].join(" ")}
         >
           {toast.msg}
         </div>
       )}
 
-      {/* KPI */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Totalt" value={statsLoading ? "…" : String(stats.companiesTotal)} />
-        <StatCard label="Pending" value={statsLoading ? "…" : String(stats.companiesPending)} />
-        <StatCard label="Active" value={statsLoading ? "…" : String(stats.companiesActive)} />
-        <StatCard label="Paused" value={statsLoading ? "…" : String(stats.companiesPaused)} />
-        <StatCard label="Closed" value={statsLoading ? "…" : String(stats.companiesClosed)} />
-      </div>
-
-      {/* Body */}
+      {/* BODY */}
       {tab === "firms" && (
-        <div className="mt-6 rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="flex flex-col gap-3 border-b border-[rgb(var(--lp-border))] px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="mt-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="flex flex-col gap-3 border-b border-[rgb(var(--lp-border))] px-4 py-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-sm font-semibold">Firma</div>
-              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                Endringer her påvirker hele firmaet. Ansatte kan ikke omgå sperre.
-              </div>
+              <div className="text-xs font-extrabold tracking-wide text-neutral-600">FIRMS</div>
+              <div className="text-sm font-bold text-neutral-900">LIVE SYSTEM STATE</div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <button className={chipBase(filter === "all")} onClick={() => setFilter("all")}>
-                Alle
+                ALL
               </button>
               <button className={chipBase(filter === "PENDING")} onClick={() => setFilter("PENDING")}>
-                Pending
+                PENDING
               </button>
               <button className={chipBase(filter === "ACTIVE")} onClick={() => setFilter("ACTIVE")}>
-                Active
+                ACTIVE
               </button>
               <button className={chipBase(filter === "PAUSED")} onClick={() => setFilter("PAUSED")}>
-                Paused
+                PAUSED
               </button>
               <button className={chipBase(filter === "CLOSED")} onClick={() => setFilter("CLOSED")}>
-                Closed
+                CLOSED
               </button>
             </div>
           </div>
 
-          {/* Error */}
           {listError && (
-            <div className="border-b border-[rgb(var(--lp-border))] px-5 py-3 text-sm text-red-700">
+            <div className="border-b border-[rgb(var(--lp-border))] px-4 py-3 text-sm font-semibold text-rose-700">
               {listError}
             </div>
           )}
 
-          <div className="overflow-x-auto overflow-y-visible">
-            <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="sticky top-0 z-10 bg-white/80 text-xs text-[rgb(var(--lp-muted))] backdrop-blur">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+              <thead className="bg-neutral-50 text-xs font-extrabold tracking-wide text-neutral-600">
                 <tr className="border-b border-[rgb(var(--lp-border))]">
-                  <th className="px-5 py-3">Firma</th>
-                  <th className="px-5 py-3">Org.nr</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Sist endret</th>
-                  <th className="px-5 py-3 text-right">Handling</th>
+                  <th className="px-4 py-3">FIRMA</th>
+                  <th className="px-4 py-3">ORGNR</th>
+                  <th className="px-4 py-3">STATUS</th>
+                  <th className="px-4 py-3">SIST ENDRET</th>
+                  <th className="px-4 py-3 text-right">ACTION</th>
                 </tr>
               </thead>
 
               <tbody>
                 {loadingList ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-[rgb(var(--lp-muted))]">
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-neutral-600">
                       Laster…
                     </td>
                   </tr>
                 ) : (
                   <>
-                    {visible.map((c, idx) => (
-                      <tr
-                        key={c.id}
-                        className={[
-                          "border-b border-[rgb(var(--lp-border))] last:border-b-0",
-                          idx % 2 === 0 ? "bg-white/30" : "bg-white/10",
-                        ].join(" ")}
-                      >
-                        <td className="px-5 py-4">
-                          <div>
-                            <div className="font-medium">{c.name}</div>
-                            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
-                          </div>
+                    {visible.map((c) => (
+                      <tr key={c.id} className="border-b border-[rgb(var(--lp-border))] hover:bg-neutral-50/60">
+                        <td className="px-4 py-3">
+                          <div className="font-extrabold text-neutral-950">{c.name}</div>
+                          <div className="mt-0.5 font-mono text-xs text-neutral-500">{c.id}</div>
                         </td>
 
-                        <td className="px-5 py-4">{c.orgnr && c.orgnr.trim().length ? c.orgnr : "—"}</td>
+                        <td className="px-4 py-3 font-semibold text-neutral-800">{c.orgnr && c.orgnr.trim().length ? c.orgnr : "—"}</td>
 
-                        <td className="px-5 py-4">
-                          <span
-                            className={[
-                              "inline-flex items-center rounded-full px-2.5 py-1 text-xs ring-1",
-                              statusPill(c.status),
-                            ].join(" ")}
-                          >
-                            {statusLabel(c.status)}
+                        <td className="px-4 py-3">
+                          <span className={["inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-extrabold ring-1", statusPill(c.status)].join(" ")}>
+                            {c.status}
                           </span>
                         </td>
 
-                        <td className="px-5 py-4 text-xs text-[rgb(var(--lp-muted))]">{formatISO(c.updated_at)}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-neutral-700">{formatISO(c.updated_at)}</td>
 
-                        <td className="px-5 py-4 relative overflow-visible">
+                        <td className="px-4 py-3">
                           <div className="flex justify-end gap-2">
-                            <Link
-                              href={`/superadmin/firms/${encodeURIComponent(c.id)}`}
-                              className="rounded-2xl bg-white px-3 py-2 text-xs font-medium ring-1 ring-[rgb(var(--lp-border))] transition hover:bg-black/5"
-                            >
-                              Åpne
+                            <Link href={`/superadmin/firms/${encodeURIComponent(c.id)}`} className={primaryBtn()}>
+                              OPEN
                             </Link>
 
-                            <div className="relative">
-                              <button
-                                disabled={isPending}
-                                onClick={() => setOpenRow((v) => (v === c.id ? null : c.id))}
-                                className={[
-                                  "rounded-2xl px-3 py-2 text-xs font-medium ring-1 transition",
-                                  "disabled:cursor-not-allowed disabled:opacity-60",
-                                  "bg-white text-black ring-[rgb(var(--lp-border))] hover:bg-black/5",
-                                ].join(" ")}
-                              >
-                                Endre status
-                              </button>
-
-                              {openRow === c.id && (
-                                <div
-                                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-[rgb(var(--lp-border))] z-[9999]"
-                                  onMouseLeave={() => setOpenRow(null)}
-                                >
-                                  <MenuItem
-                                    disabled={isPending || c.status === "ACTIVE"}
-                                    onClick={() => setCompanyStatus(c.id, "ACTIVE")}
-                                    title="Sett firma til Active"
-                                  >
-                                    Sett Active
-                                  </MenuItem>
-
-                                  <MenuItem
-                                    disabled={isPending || c.status === "PAUSED" || c.status === "CLOSED"}
-                                    onClick={() => setCompanyStatus(c.id, "PAUSED")}
-                                    title="Sett firma på pause"
-                                  >
-                                    Sett Paused
-                                  </MenuItem>
-
-                                  <MenuItem
-                                    disabled={isPending || c.status === "CLOSED"}
-                                    danger
-                                    onClick={() => setCompanyStatus(c.id, "CLOSED")}
-                                    title="Steng firma (irreversibelt i praksis)"
-                                  >
-                                    Sett Closed
-                                  </MenuItem>
-
-                                  <div className="border-t border-[rgb(var(--lp-border))]" />
-
-                                  <MenuItem
-                                    disabled={isPending}
-                                    danger
-                                    onClick={() => deleteCompany(c.id, c.name)}
-                                    title='Purge: Sletter firma + ordre. Skriv "PURGE" for å bekrefte.'
-                                  >
-                                    Slett firma
-                                  </MenuItem>
-                                </div>
-                              )}
-                            </div>
+                            <StatusDropdown
+                              companyId={c.id}
+                              status={toLowerStatus(c.status)}
+                              endpoint={`/api/superadmin/firms/${encodeURIComponent(c.id)}/status`}
+                              onChanged={(next) => {
+                                const up = fromLowerStatus(next);
+                                setCompanies((prev) =>
+                                  prev.map((row) => (row.id === c.id ? { ...row, status: up, updated_at: new Date().toISOString() } : row))
+                                );
+                                toastOk(`Oppdatert status → ${up}`);
+                                loadStats().catch(() => {});
+                              }}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -755,7 +645,7 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
 
                     {visible.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-5 py-10 text-center text-sm text-[rgb(var(--lp-muted))]">
+                        <td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-neutral-600">
                           Ingen treff.
                         </td>
                       </tr>
@@ -766,10 +656,9 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
             </table>
           </div>
 
-          {/* Footer: paging */}
-          <div className="flex flex-col gap-2 border-t border-[rgb(var(--lp-border))] px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-xs text-[rgb(var(--lp-muted))]">
-              Viser {visible.length} firma{cursor ? " (flere tilgjengelig)" : ""}
+          <div className="flex flex-col gap-2 border-t border-[rgb(var(--lp-border))] px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div className="text-xs font-semibold text-neutral-600">
+              Viser <span className="font-extrabold text-neutral-900">{visible.length}</span> firma{cursor ? " (flere tilgjengelig)" : ""}
             </div>
 
             <div className="flex items-center gap-2">
@@ -777,26 +666,36 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
                 disabled={!cursor || loadingMore || loadingList}
                 onClick={loadMore}
                 className={[
-                  "rounded-2xl px-4 py-2 text-xs font-medium ring-1 transition",
+                  "rounded-lg px-4 py-2 text-xs font-extrabold ring-1 transition",
                   "disabled:cursor-not-allowed disabled:opacity-60",
-                  "bg-white text-black ring-[rgb(var(--lp-border))] hover:bg-black/5",
+                  "bg-white text-neutral-900 ring-[rgb(var(--lp-border))] hover:bg-black/5",
                 ].join(" ")}
               >
-                {loadingMore ? "Laster…" : cursor ? "Last flere" : "Ingen flere"}
+                {loadingMore ? "Laster…" : cursor ? "Load more" : "No more"}
               </button>
 
-              {(isPending || loadingList) && <div className="text-xs text-[rgb(var(--lp-muted))]">Oppdaterer…</div>}
+              {(isPending || loadingList) && <div className="text-xs font-semibold text-neutral-600">Oppdaterer…</div>}
             </div>
           </div>
 
-          {/* Infinite scroll sentinel */}
           <div ref={sentinelRef} className="h-2 w-full" />
         </div>
       )}
 
-      {tab === "alerts" && <Placeholder title="Varsler" note="Knyttes til kvalitet/levering/betaling (kommer)." />}
-      {tab === "audit" && <Placeholder title="Audit" note="Bruk /superadmin/audit for full audit-view." />}
-      {tab === "system" && <Placeholder title="Systemhelse" note="Driftstatus, cron, outbox, feilkø (kommer)." />}
+      {tab === "alerts" && <Placeholder title="ALERTS" note="Knyttes til kvalitet/levering/betaling (kommer)." />}
+      {tab === "audit" && <Placeholder title="AUDIT" note="Bruk /superadmin/audit for full audit-view." />}
+
+      {/* SIGNALS */}
+      <div className="mt-4 rounded-2xl bg-white/60 p-4 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
+        <div className="text-xs font-extrabold tracking-wide text-neutral-600">SIGNALS</div>
+        <div className="text-sm font-bold text-neutral-900">LAST 24H</div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+          <Signal label="Firms pending" value={statsLoading ? "…" : String(stats.companiesPending)} />
+          <Signal label="Firms paused" value={statsLoading ? "…" : String(stats.companiesPaused)} />
+          <Signal label="Firms closed" value={statsLoading ? "…" : String(stats.companiesClosed)} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -805,52 +704,37 @@ export default function SuperadminClient({ initialCompanies, initialStats }: Pro
    UI components
 ========================= */
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function MiniMetric({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-      <div className="text-xs text-[rgb(var(--lp-muted))]">{label}</div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
+    <div className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">{label}</div>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="text-2xl font-black text-neutral-950">{value}</div>
+        <span className={["inline-flex items-center rounded-lg px-2 py-1 text-[11px] font-extrabold ring-1", tone].join(" ")}>
+          {label}
+        </span>
+      </div>
     </div>
   );
 }
 
-function MenuItem({
-  children,
-  onClick,
-  disabled,
-  danger,
-  title,
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-  title?: string;
-}) {
+function Signal({ label, value }: { label: string; value: string }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={[
-        "flex w-full items-center justify-between px-4 py-3 text-left text-sm transition",
-        "disabled:cursor-not-allowed disabled:opacity-60",
-        danger ? "text-red-700 hover:bg-red-50" : "text-black hover:bg-black/5",
-      ].join(" ")}
-    >
-      <span>{children}</span>
-    </button>
+    <div className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">{label.toUpperCase()}</div>
+      <div className="mt-2 text-2xl font-black text-neutral-950">{value}</div>
+    </div>
   );
 }
 
 function Placeholder({ title, note }: { title: string; note: string }) {
   return (
-    <div className="mt-6 overflow-hidden rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
-      <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
-        <div className="text-sm font-semibold">{title}</div>
-        <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{note}</div>
+    <div className="mt-4 overflow-hidden rounded-2xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="border-b border-[rgb(var(--lp-border))] px-4 py-3">
+        <div className="text-xs font-extrabold tracking-wide text-neutral-600">{title}</div>
+        <div className="mt-1 text-sm font-bold text-neutral-900">{note}</div>
       </div>
-      <div className="px-5 py-10 text-sm text-[rgb(var(--lp-muted))]">Klar for neste modul.</div>
+      <div className="px-4 py-10 text-sm font-semibold text-neutral-600">Klar for neste modul.</div>
     </div>
   );
 }

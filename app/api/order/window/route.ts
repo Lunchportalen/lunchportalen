@@ -6,11 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMenuForRange } from "@/lib/sanity/queries";
 
+import { normalizeAgreement, resolveTierForDate } from "@/lib/agreements/normalizeAgreement";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-type Tier = "BASIS" | "PREMIUM";
+type Tier = "BASIS" | "LUXUS";
 type Choice = { key: string; label?: string };
 
 type CompanyStatus = "active" | "paused" | "closed";
@@ -20,21 +21,13 @@ type ProfileRow = {
   location_id: string | null;
 };
 
-type CompanyRow = {
-  contract_week_tier: Record<string, Tier> | null;
-  contract_basis_choices: Choice[] | null;
-  contract_premium_choices: Choice[] | null;
-  status?: CompanyStatus | null;
-  paused_reason?: string | null;
-  closed_reason?: string | null;
-};
-
-type DayOrderRow = {
+type OrderRow = {
   date: string; // YYYY-MM-DD or timestamptz-ish
-  wants_lunch: boolean | null;
-  choice_key: string | null;
   status: string | null; // ACTIVE/CANCELLED/etc.
+  note: string | null;
   updated_at: string | null;
+  slot: string | null;
+  location_id: string | null;
 };
 
 function assertEnv(name: string, v: string | undefined) {
@@ -71,24 +64,8 @@ function osloNowParts() {
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
-
-  const locked =
-    dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
-
+  const locked = dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
   return { locked, cutoffTime, now: `${now.dateISO}T${now.timeHM}` };
-}
-
-function isLocked(dateISO: string) {
-  return cutoffState(dateISO).locked;
-}
-
-function weekdayKeyOslo(dateISO: string): DayKey {
-  const d = new Date(`${dateISO}T12:00:00Z`);
-  const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
-  const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
-  const key = map[wd as keyof typeof map];
-  if (!key) throw new Error("Kun Man–Fre er gyldig.");
-  return key;
 }
 
 function weekdayLabelNO(dateISO: string): "Man" | "Tir" | "Ons" | "Tor" | "Fre" {
@@ -121,6 +98,13 @@ function asDateISO(v: any): string | null {
   }
 }
 
+/** ✅ choice lagres som note "choice:<key>" */
+function parseChoiceFromNote(note: string | null): string | null {
+  if (!note) return null;
+  const m = /(?:^|\s)choice:([a-z0-9_\-]+)/i.exec(note);
+  return m?.[1] ? m[1] : null;
+}
+
 async function getAuthedUserId() {
   const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
   const anon = assertEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -141,26 +125,8 @@ async function getAuthedUserId() {
   return data.user.id;
 }
 
-/** ✅ Premium inkluderer alltid Basis (union uten duplikater) */
-function mergeChoices(basis: Choice[] = [], premium: Choice[] = []) {
-  const seen = new Set<string>();
-  const out: Choice[] = [];
-  for (const c of basis) {
-    if (!c?.key || seen.has(c.key)) continue;
-    seen.add(c.key);
-    out.push(c);
-  }
-  for (const c of premium) {
-    if (!c?.key || seen.has(c.key)) continue;
-    seen.add(c.key);
-    out.push(c);
-  }
-  return out;
-}
-
 /* =========================
    Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
 ========================= */
 async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
   const { data, error } = await (supa as any)
@@ -170,35 +136,85 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
     .maybeSingle();
 
   if (error || !data) {
-    return {
-      ok: false as const,
-      status: 500,
-      error: "COMPANY_LOOKUP_FAILED",
-      reason: error?.message ?? "Company lookup failed",
-    };
+    return { ok: false as const, status: 500, error: "COMPANY_LOOKUP_FAILED", reason: error?.message ?? "Company lookup failed" };
   }
 
   const status = (data.status ?? "active") as CompanyStatus;
 
   if (status === "paused") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_PAUSED",
-      reason: (data.paused_reason as string | null) ?? "Firma er pauset.",
-    };
+    return { ok: false as const, status: 403, error: "COMPANY_PAUSED", reason: (data.paused_reason as string | null) ?? "Firma er pauset." };
   }
 
   if (status === "closed") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_CLOSED",
-      reason: (data.closed_reason as string | null) ?? "Firma er stengt.",
-    };
+    return { ok: false as const, status: 403, error: "COMPANY_CLOSED", reason: (data.closed_reason as string | null) ?? "Firma er stengt." };
   }
 
   return { ok: true as const };
+}
+
+/* =========================
+   ✅ Unwrap normalizeAgreement-result (AgreementResult)
+========================= */
+type AgreementNormalized = any;
+
+function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized } | { ok: false } {
+  if (!res) return { ok: false };
+
+  if (typeof res === "object" && "ok" in res) {
+    if ((res as any).ok === true && (res as any).agreement) return { ok: true, agreement: (res as any).agreement };
+    return { ok: false };
+  }
+
+  if (typeof res === "object") return { ok: true, agreement: res };
+
+  return { ok: false };
+}
+
+/* =========================
+   ✅ Prices (API source of truth)
+========================= */
+const PRICE_PER_TIER: Record<Tier, number> = {
+  BASIS: 90,
+  LUXUS: 130,
+};
+
+/**
+ * resolveTierForDate() hos dere returnerer ELLER:
+ *  - "BASIS"/"LUXUS"
+ *  - { tier: "BASIS"/"LUXUS", price: number }
+ */
+function extractTierAndPrice(res: any): { tier: Tier | null; unit_price: number | null } {
+  if (typeof res === "string") {
+    const t = res.toUpperCase().trim();
+    if (t === "BASIS" || t === "LUXUS") return { tier: t as Tier, unit_price: PRICE_PER_TIER[t as Tier] };
+    return { tier: null, unit_price: null };
+  }
+
+  if (res && typeof res === "object") {
+    const rawTier = String((res as any).tier ?? "").toUpperCase().trim();
+    const price = (res as any).price;
+
+    const tier = rawTier === "BASIS" || rawTier === "LUXUS" ? (rawTier as Tier) : null;
+    const unit_price = typeof price === "number" ? price : tier ? PRICE_PER_TIER[tier] : null;
+
+    return { tier, unit_price };
+  }
+
+  return { tier: null, unit_price: null };
+}
+
+/**
+ * ✅ Choices fra avtalen (defensiv for shape)
+ */
+function getChoicesForTier(agreement: any, tier: Tier): Choice[] {
+  if (!agreement) return [];
+
+  if (agreement.choicesByTier && Array.isArray(agreement.choicesByTier[tier])) return agreement.choicesByTier[tier] as Choice[];
+  if (agreement.choices && Array.isArray(agreement.choices[tier])) return agreement.choices[tier] as Choice[];
+  if (agreement.tiers?.[tier] && Array.isArray(agreement.tiers[tier].choices)) return agreement.tiers[tier].choices as Choice[];
+  if (agreement.weekplan?.tiers?.[tier] && Array.isArray(agreement.weekplan.tiers[tier].choices)) return agreement.weekplan.tiers[tier].choices as Choice[];
+
+  return [];
 }
 
 export async function GET() {
@@ -218,6 +234,7 @@ export async function GET() {
       global: { headers: { "X-Client-Info": "lunchportalen-order-window" } },
     });
 
+    // profiles (FASIT: profiles.user_id)
     const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
       .select("company_id, location_id")
@@ -236,40 +253,40 @@ export async function GET() {
     const company_id = profile.company_id;
     const location_id = profile.location_id;
 
-    // ✅ Company status gate (PAUSED/CLOSED)
+    // Company status gate (kun status)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
       return NextResponse.json({ ok: false, rid, error: gate.error, message: gate.reason }, { status: gate.status });
     }
 
-    // Firma-kontrakt: tier-plan + valg
-    const { data: companyRaw, error: cErr } = await (supa as any)
-      .from("companies")
-      .select("contract_week_tier, contract_basis_choices, contract_premium_choices, status, paused_reason, closed_reason")
-      .eq("id", company_id)
-      .single();
+    // ✅ Én sannhet: company_current_agreement
+    const { data: agreementRow, error: aErr } = await (supa as any)
+      .from("company_current_agreement")
+      .select("*")
+      .eq("company_id", company_id)
+      .maybeSingle();
 
-    const company = (companyRaw ?? null) as CompanyRow | null;
-
-    if (cErr || !company) {
+    if (aErr) {
       return NextResponse.json(
-        { ok: false, rid, error: "COMPANY_CONTRACT_NOT_FOUND", message: "Fant ikke kontrakt.", detail: cErr?.message },
-        { status: 403 }
+        { ok: false, rid, error: "AGREEMENT_FETCH_FAILED", message: "Kunne ikke hente avtale.", detail: aErr?.message },
+        { status: 500 }
       );
     }
 
-    const weekTier = (company.contract_week_tier ?? {}) as Record<string, Tier>;
-    const basisChoices = (Array.isArray(company.contract_basis_choices) ? company.contract_basis_choices : []) as Choice[];
-    const premiumRaw = (Array.isArray(company.contract_premium_choices) ? company.contract_premium_choices : []) as Choice[];
-    const premiumChoices = mergeChoices(basisChoices, premiumRaw);
-
     const today = osloNowParts().dateISO;
     const dates = getNextWeekdays(today, 10);
+    const fromISO = dates[0];
+    const toISO = dates[dates.length - 1];
 
-    // Les day_orders (wants + choice_key)
+    // Menytekst fra Sanity
+    const menuItems = await getMenuForRange(fromISO, toISO).catch(() => []);
+    const menuByDate = new Map<string, any>();
+    for (const it of menuItems || []) if (it?.date) menuByDate.set(it.date, it);
+
+    // ✅ Les orders (fasit)
     const { data: ordersRaw, error: oErr } = await (supa as any)
-      .from("day_orders")
-      .select("date, wants_lunch, choice_key, status, updated_at")
+      .from("orders")
+      .select("date,status,note,updated_at,slot,location_id")
       .eq("user_id", user_id)
       .eq("company_id", company_id)
       .eq("location_id", location_id)
@@ -277,73 +294,71 @@ export async function GET() {
 
     if (oErr) {
       return NextResponse.json(
-        { ok: false, rid, error: "DAYORDERS_FETCH_FAILED", message: "Kunne ikke hente bestilling.", detail: oErr.message },
+        { ok: false, rid, error: "ORDERS_FETCH_FAILED", message: "Kunne ikke hente bestilling.", detail: oErr.message },
         { status: 500 }
       );
     }
 
-    const byDate = new Map<string, DayOrderRow>();
-    for (const o of (ordersRaw ?? []) as DayOrderRow[]) {
+    const byDate = new Map<string, OrderRow>();
+    for (const o of (ordersRaw ?? []) as OrderRow[]) {
       const dISO = asDateISO(o?.date);
       if (!dISO) continue;
-      // Vi tar siste (hvis flere – skal ikke skje, men defensivt)
       byDate.set(dISO, o);
     }
 
-    // Menytekst fra Sanity
-    const fromISO = dates[0];
-    const toISO = dates[dates.length - 1];
-
-    const menuItems = await getMenuForRange(fromISO, toISO).catch(() => []);
-    const menuByDate = new Map<string, any>();
-    for (const it of menuItems || []) {
-      if (it?.date) menuByDate.set(it.date, it);
-    }
+    // ✅ Normalize agreement (kan være ugyldig)
+    const normRes = agreementRow ? normalizeAgreement(agreementRow) : null;
+    const unwrapped = unwrapAgreement(normRes);
+    const agreement = unwrapped.ok ? unwrapped.agreement : null;
 
     const now = osloNowParts();
 
     const days = dates.map((date) => {
-      const dayKey = weekdayKeyOslo(date);
       const weekdayNO = weekdayLabelNO(date);
+      const cutoff = cutoffState(date);
+      const menu = menuByDate.get(date);
 
-      const tier = weekTier[dayKey] ?? null; // BASIS | PREMIUM | null
+      // ✅ Per dag: resolveTierForDate(agreement, date) -> støtter både string og {tier,price}
+      const resolved = agreement ? resolveTierForDate(agreement, date) : null;
+      const { tier, unit_price } = extractTierAndPrice(resolved);
+
       const isEnabled = !!tier;
 
-      const allowedChoices: Choice[] = !isEnabled ? [] : tier === "BASIS" ? basisChoices : premiumChoices;
-
-      const menu = menuByDate.get(date);
-      const menuDescription = menu?.description ?? null;
-      const menuTitle = menu?.title ?? null;
-      const allergens = (menu?.allergens ?? []) as string[];
+      // ✅ choices fra avtalen (ikke companies.*)
+      const allowedChoices: Choice[] = tier ? getChoicesForTier(agreement, tier) : [];
 
       const saved = byDate.get(date);
-      const statusRaw = (saved?.status ?? "").toString().toUpperCase();
-      const isActive = statusRaw ? statusRaw === "ACTIVE" : true; // hvis status mangler, anta aktiv
+      const statusRaw = String(saved?.status ?? "").toUpperCase().trim();
+      const wantsLunch = statusRaw === "ACTIVE";
 
-      const wantsLunch = !!saved?.wants_lunch && isActive;
-      const selectedChoiceKey = typeof saved?.choice_key === "string" ? saved.choice_key : null;
+      const selectedChoiceKey = parseChoiceFromNote(saved?.note ?? null);
 
-      // Hvis lagret valg ikke er tillatt (kontrakt endret), nullstill
+      // Hvis lagret valg ikke er tillatt (avtale endret), nullstill
       const selectedOk = selectedChoiceKey && allowedChoices.some((c) => c.key === selectedChoiceKey);
       const safeSelected = selectedOk ? selectedChoiceKey : null;
 
-      const cutoff = cutoffState(date);
-
       return {
         date,
-        weekday: dayKey,
         weekdayLabel: weekdayNO,
         isLocked: cutoff.locked,
         cutoffTime: cutoff.cutoffTime,
         now: `${now.dateISO}T${now.timeHM}`,
+
+        // ✅ Window (avtale = sannhet)
         isEnabled,
-        tier, // styrt av firma
+        tier,
+        unit_price,
         allowedChoices,
+
+        // ✅ Orders (faktisk status/valg)
         wantsLunch,
         selectedChoiceKey: wantsLunch ? safeSelected : null,
-        menuTitle,
-        menuDescription,
-        allergens,
+
+        // Meny
+        menuTitle: menu?.title ?? null,
+        menuDescription: menu?.description ?? null,
+        allergens: (menu?.allergens ?? []) as string[],
+
         lastSavedAt: saved?.updated_at ?? null,
       };
     });
@@ -353,16 +368,13 @@ export async function GET() {
         ok: true,
         rid,
         scope: { company_id, location_id, user_id },
-        range: { from: dates[0], to: dates[dates.length - 1] },
+        range: { from: fromISO, to: toISO },
         days,
       },
       { status: 200 }
     );
   } catch (e: any) {
     logApiError("GET /api/order/window failed", e, { rid });
-    return NextResponse.json(
-      { ok: false, rid, error: "SERVER_ERROR", detail: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, rid, error: "SERVER_ERROR", detail: String(e?.message ?? e) }, { status: 500 });
   }
 }

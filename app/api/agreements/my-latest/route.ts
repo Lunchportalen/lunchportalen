@@ -1,54 +1,108 @@
+// app/api/agreements/my-latest/route.ts
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-export async function GET() {
-  const supa = await supabaseServer();
-  const { data: auth, error: authErr } = await supa.auth.getUser();
+/* =========================
+   Response helpers
+========================= */
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
+}
 
-  if (authErr || !auth?.user) {
-    return NextResponse.json({ ok: false, error: "Ikke innlogget." }, { status: 401 });
+function jsonOk(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+
+function jsonError(status: number, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+}
+
+/* =========================
+   Utils
+========================= */
+function safeText(v: any, max = 500) {
+  const s = String(v ?? "").trim();
+  return s ? s.slice(0, max) : "";
+}
+
+function isSafeStoragePath(p: string) {
+  // enkel guard: ikke tom, ikke absolutt, ikke traversal
+  if (!p) return false;
+  if (p.startsWith("/") || p.startsWith("http")) return false;
+  if (p.includes("..")) return false;
+  return true;
+}
+
+/* =========================
+   Route
+========================= */
+export async function GET() {
+  const rid = `agr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // 1) Auth (cookie/session)
+  const sb = await supabaseServer();
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
+
+  if (authErr || !user) {
+    return jsonError(401, "AUTH_REQUIRED", "Ikke innlogget.", { rid });
   }
 
-  const admin = supabaseAdmin();
-
-  const { data: profile, error: profileErr } = await admin
+  // 2) Tenant-sikker profil lookup (RLS) — bruk user_id, ikke admin service role
+  const { data: profile, error: profileErr } = await sb
     .from("profiles")
     .select("company_id")
-    .eq("user_id", auth.user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   if (profileErr) {
-    return NextResponse.json({ ok: false, error: "Kunne ikke hente profil.", detail: profileErr.message }, { status: 500 });
+    return jsonError(500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", { rid, detail: profileErr.message });
   }
 
-  if (!profile?.company_id) {
-    return NextResponse.json({ ok: false, error: "Ingen firmatilknytning funnet." }, { status: 404 });
+  const companyId = profile?.company_id ? String(profile.company_id) : "";
+  if (!companyId) {
+    return jsonError(404, "MISSING_COMPANY", "Ingen firmatilknytning funnet.", { rid });
   }
 
-  const { data: company, error: compErr } = await admin
-    .from("companies")
-    .select("agreement_json")
-    .eq("id", profile.company_id)
-    .single();
+  // 3) Tenant-sikker company lookup (RLS)
+  const { data: company, error: compErr } = await sb.from("companies").select("id, agreement_json").eq("id", companyId).maybeSingle();
 
   if (compErr) {
-    return NextResponse.json({ ok: false, error: "Kunne ikke hente firma.", detail: compErr.message }, { status: 500 });
+    return jsonError(500, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", { rid, detail: compErr.message });
+  }
+  if (!company?.id) {
+    return jsonError(404, "COMPANY_NOT_FOUND", "Fant ikke firma.", { rid, companyId });
   }
 
-  const pdfPath = (company as any)?.agreement_json?.terms?.pdfPath as string | undefined;
+  // 4) Finn pdfPath i agreement_json (låst format)
+  // Fasit: agreement_json.terms.pdfPath (som du allerede bruker)
+  const agreementJson = (company as any)?.agreement_json ?? null;
+  const pdfPath = safeText(agreementJson?.terms?.pdfPath, 500);
 
   if (!pdfPath) {
-    return NextResponse.json({ ok: false, error: "Ingen avtale-PDF funnet for firmaet." }, { status: 404 });
+    return jsonError(404, "NO_AGREEMENT_PDF", "Ingen avtale-PDF funnet for firmaet.", { rid, companyId });
+  }
+  if (!isSafeStoragePath(pdfPath)) {
+    return jsonError(400, "BAD_PDF_PATH", "Ugyldig pdfPath i avtaleoppsett.", { rid, companyId, pdfPath });
   }
 
+  // 5) Signert URL må lages med service role (storage signed URL)
+  const admin = supabaseAdmin();
   const { data, error } = await admin.storage.from("agreements").createSignedUrl(pdfPath, 60);
 
   if (error || !data?.signedUrl) {
-    return NextResponse.json({ ok: false, error: "Kunne ikke lage nedlastingslenke.", detail: error?.message }, { status: 500 });
+    return jsonError(500, "SIGNED_URL_FAILED", "Kunne ikke lage nedlastingslenke.", { rid, detail: error?.message ?? "unknown" });
   }
 
-  return NextResponse.json({ ok: true, url: data.signedUrl });
+  return jsonOk({
+    ok: true,
+    rid,
+    companyId,
+    url: data.signedUrl,
+    expiresInSeconds: 60,
+  });
 }

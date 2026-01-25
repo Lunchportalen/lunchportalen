@@ -30,7 +30,6 @@ function isUuid(v: any) {
 }
 
 function isIsoTs(v: any) {
-  // enkel sjekk for ISO timestamp (brukes som cursor)
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && !isNaN(Date.parse(v));
 }
 
@@ -57,9 +56,7 @@ function safeText(v: any, maxLen: number) {
 }
 
 function escapeForIlike(v: string) {
-  // best-effort: unngå wildcard-injeksjon
-  // NB: Supabase PostgREST støtter ikke alltid ESCAPE-klause via klienten,
-  // men vi "nøytraliserer" % og _ så brukeren ikke kan styre wildcardene.
+  // best-effort: nøytraliser wildcard-tegn
   return v.replace(/[%_]/g, (m) => `\\${m}`);
 }
 
@@ -78,6 +75,15 @@ type AuditItem = {
   summary: string | null;
   detail: any | null;
 };
+
+type ApiOk = {
+  ok: true;
+  rid: string;
+  meta: { limit: number; nextCursor: string | null; source: "audit_events" };
+  items: AuditItem[];
+};
+
+type ApiErr = { ok: false; rid: string; error: string; message?: string; detail?: any };
 
 /**
  * GET /api/superadmin/audit
@@ -101,18 +107,17 @@ export async function GET(req: Request) {
     const user = data?.user ?? null;
 
     if (authErr || !user) {
-      return json(401, { ok: false, error: "AUTH_REQUIRED", rid });
+      return json(401, { ok: false, error: "AUTH_REQUIRED", rid } satisfies ApiErr);
     }
 
     // ✅ Hard superadmin-fasit (unngå metadata-triksing)
     const email = normEmail(user.email);
     if (email !== "superadmin@lunchportalen.no") {
-      return json(403, { ok: false, error: "FORBIDDEN", rid });
+      return json(403, { ok: false, error: "FORBIDDEN", rid } satisfies ApiErr);
     }
 
     // Parse query
     const u = new URL(req.url);
-
     const limit = clampInt(u.searchParams.get("limit") ?? "300", 1, 500, 300);
 
     const cursor = u.searchParams.get("cursor");
@@ -122,7 +127,7 @@ export async function GET(req: Request) {
         error: "BAD_REQUEST",
         message: "Ugyldig cursor (ISO timestamp).",
         rid,
-      });
+      } satisfies ApiErr);
     }
 
     const companyId = u.searchParams.get("companyId");
@@ -132,7 +137,7 @@ export async function GET(req: Request) {
         error: "BAD_REQUEST",
         message: "Ugyldig companyId (uuid).",
         rid,
-      });
+      } satisfies ApiErr);
     }
 
     const actionFilterRaw = safeText(u.searchParams.get("action"), 120);
@@ -151,7 +156,7 @@ export async function GET(req: Request) {
         error: "MISSING_SERVICE_ROLE_KEY",
         message: String(e?.message ?? e),
         rid,
-      });
+      } satisfies ApiErr);
     }
 
     // ✅ Prod-standard: audit_events (ingen legacy fallback)
@@ -160,14 +165,16 @@ export async function GET(req: Request) {
     // Bygg query
     let qb = admin
       .from("audit_events")
-      .select(
-        "id,created_at,actor_user_id,actor_email,actor_role,action,entity_type,entity_id,summary,detail"
-      )
+      .select("id,created_at,actor_user_id,actor_email,actor_role,action,entity_type,entity_id,summary,detail")
       .order("created_at", { ascending: false })
       .limit(limit);
 
     if (cursor) qb = qb.lt("created_at", cursor);
+
+    // Merk: denne endpointen er superadmin-only; companyId-filter er frivillig
+    // Vi matcher companyId mot entity_id (slik dere har beskrevet).
     if (companyId) qb = qb.eq("entity_id", companyId);
+
     if (actionFilter) qb = qb.ilike("action", `%${actionFilter}%`);
 
     // 🔎 Søk (OR over flere felt)
@@ -192,7 +199,7 @@ export async function GET(req: Request) {
         message: error.message,
         rid,
         detail: error,
-      });
+      } satisfies ApiErr);
     }
 
     const safeItems: AuditItem[] = (items ?? []).map((x: any) => ({
@@ -213,18 +220,20 @@ export async function GET(req: Request) {
 
     const nextCursor = safeItems.length ? safeItems[safeItems.length - 1].created_at : null;
 
-    return json(200, {
+    const ok: ApiOk = {
       ok: true,
       rid,
       meta: { limit, nextCursor, source },
       items: safeItems,
-    });
+    };
+
+    return json(200, ok);
   } catch (e: any) {
     return json(500, {
       ok: false,
       error: "SERVER_ERROR",
       message: String(e?.message ?? "unknown"),
       rid,
-    });
+    } satisfies ApiErr);
   }
 }

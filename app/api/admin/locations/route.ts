@@ -2,190 +2,155 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+function noStore() {
+  return {
+    "Cache-Control": "no-store, max-age=0",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
+}
+
+function jsonOk(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+
+function jsonError(status: number, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+}
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+
+function safeInt(v: any, def: number, min: number, max: number) {
+  const n = Number.parseInt(String(v ?? ""), 10);
+  if (!Number.isFinite(n)) return def;
+  return Math.max(min, Math.min(max, n));
+}
+
+function pick(obj: any, keys: string[]) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+  }
+  return null;
+}
 
 /**
- * ADMIN / LOCATIONS
- * - company_admin: only own company locations
- * - superadmin: can see all OR filter by ?company_id=
- * - Never trust client-provided company_id for company_admin
- *
- * GET  -> list locations
- * PUT  -> update delivery contact fields (whitelist) + audit light write
+ * Hent innlogget user + profile og verifiser at han er company_admin.
+ * Viktig: company_id hentes fra DB, aldri fra klient.
  */
+async function requireCompanyAdmin() {
+  const sb = await supabaseServer();
 
-const SELECT_FIELDS =
-  "id,company_id,name,address,address_line1,postal_code,city,label,delivery_contact_name,delivery_contact_phone,delivery_notes,delivery_window_from,delivery_window_to";
+  const { data: auth, error: uerr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
 
-function jsonErr(status: number, error: string, detail?: string, extra?: any) {
-  return NextResponse.json(
-    { ok: false, error, detail: detail ?? undefined, extra: extra ?? undefined },
-    { status }
-  );
+  if (uerr || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
+
+  const { data: profile, error: perr } = await sb
+    .from("profiles")
+    .select("user_id, company_id, role, email, disabled_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
+
+  if (profile?.disabled_at) throw Object.assign(new Error("account_disabled"), { code: "account_disabled" });
+
+  const roleDb = String(profile?.role ?? "").trim().toLowerCase();
+  const roleMeta = String(user.user_metadata?.role ?? "").trim().toLowerCase();
+  const role = (roleDb || roleMeta || "employee") as Role;
+
+  if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
+
+  const companyId = profile?.company_id ? String(profile.company_id) : "";
+  if (!companyId) throw Object.assign(new Error("missing_company"), { code: "missing_company" });
+
+  return {
+    user,
+    companyId,
+    actorEmail: user.email ?? profile?.email ?? null,
+  };
 }
 
-function isUuid(v: any) {
-  return (
-    typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
-  );
-}
-
-function safeText(v: any, max = 500) {
-  const s = String(v ?? "").trim();
-  if (!s) return null;
-  return s.slice(0, max);
-}
-
-function digitsPlus(v: any, max = 40) {
-  const s = String(v ?? "").trim();
-  if (!s) return null;
-  // allow +, spaces, digits
-  const cleaned = s.replace(/[^\d+ ]/g, "").trim();
-  if (!cleaned) return null;
-  return cleaned.slice(0, max);
-}
-
-function normTime(v: any) {
-  // Accept HH:MM or null
-  const s = String(v ?? "").trim();
-  if (!s) return null;
-  if (!/^\d{2}:\d{2}$/.test(s)) return null;
-  const [hh, mm] = s.split(":").map((x) => Number(x));
-  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-  if (hh < 0 || hh > 23) return null;
-  if (mm < 0 || mm > 59) return null;
-  return s;
-}
-
-function cmpTime(a: string, b: string) {
-  // a,b are HH:MM
-  const [ah, am] = a.split(":").map(Number);
-  const [bh, bm] = b.split(":").map(Number);
-  return ah * 60 + am - (bh * 60 + bm);
-}
-
-export async function GET(req: NextRequest) {
-  const rid = `admin_locations_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function GET(req: Request) {
+  const rid = `loc_list_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
-    // Auth + scope (tenant lock)
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
-
-    const supabase = await supabaseServer();
+    const { companyId } = await requireCompanyAdmin();
+    const admin = supabaseAdmin();
 
     const url = new URL(req.url);
-    const requestedCompanyId = url.searchParams.get("company_id");
 
-    // company_admin MUST be locked to own company
-    const companyId =
-      scope.role === "superadmin"
-        ? requestedCompanyId
-          ? String(requestedCompanyId)
-          : null // null => all companies
-        : mustCompanyId(scope);
+    // UI kan sende companyId – men vi ignorerer den (tenant-safe)
+    const page = safeInt(url.searchParams.get("page"), 1, 1, 10_000);
+    const limit = safeInt(url.searchParams.get("limit"), 50, 1, 200);
 
-    let q = supabase
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    /**
+     * Viktig:
+     * I ditt miljø finnes ikke kolonnen company_locations.contact_name (ref: 42703).
+     * Derfor henter vi * og mapper med fallback.
+     */
+    const { data, error, count } = await admin
       .from("company_locations")
-      .select(SELECT_FIELDS)
-      .order("label", { ascending: true })
-      .order("name", { ascending: true });
+      .select("*", { count: "exact" })
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
-    if (companyId) q = q.eq("company_id", companyId);
+    if (error) {
+      return jsonError(500, "locations_list_failed", "Kunne ikke hente lokasjoner.", { rid, detail: error });
+    }
 
-    const { data, error } = await q;
-    if (error) return jsonErr(500, "DB_ERROR", error.message, { rid });
+    const locations = (data ?? []).map((r: any) => ({
+      id: String(r.id),
+      company_id: r.company_id ? String(r.company_id) : null,
 
-    return NextResponse.json({ ok: true, rid, company_id: companyId, locations: data ?? [] }, { status: 200 });
+      // Navn
+      name: pick(r, ["name", "title", "location_name"]) ?? null,
+
+      // Kontakt (ulike mulige feltnavn)
+      contact_name: pick(r, ["contact_name", "contact", "delivery_contact", "leveringskontakt"]) ?? null,
+      contact_phone: pick(r, ["contact_phone", "phone", "telephone", "contact_tlf", "leveringstelefon"]) ?? null,
+
+      // Leveringsvindu (ulike mulige feltnavn)
+      window_from: pick(r, ["window_from", "from", "time_from", "vindu_fra"]) ?? null,
+      window_to: pick(r, ["window_to", "to", "time_to", "vindu_til"]) ?? null,
+
+      // Notater
+      notes: pick(r, ["notes", "note", "comment", "notater"]) ?? null,
+
+      created_at: r.created_at ?? null,
+      updated_at: r.updated_at ?? null,
+    }));
+
+    return jsonOk({
+      ok: true,
+      rid,
+      companyId,
+      page,
+      limit,
+      total: Number(count ?? 0),
+      locations,
+      // Debug-hint ved behov (kan fjernes senere)
+      _info: { selected: "* (schema-safe mapper)", note: "Fallback mapping to avoid missing columns." },
+    });
   } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || "ERROR";
-    return jsonErr(status, code, e?.message || "Ukjent feil.", { rid });
-  }
-}
+    const code = e?.code || "unknown";
 
-export async function PUT(req: NextRequest) {
-  const rid = `admin_locations_put_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.", { rid });
+    if (code === "account_disabled") return jsonError(403, "account_disabled", "Kontoen er deaktivert.", { rid });
+    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.", { rid });
+    if (code === "missing_company")
+      return jsonError(400, "missing_company", "Mangler company_id på admin-profilen.", { rid });
+    if (code === "db_error") return jsonError(500, "db_error", "Databasefeil.", { rid, detail: e?.detail });
 
-  try {
-    // Auth + scope (tenant lock)
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
-
-    const supabase = await supabaseServer();
-
-    const body = await req.json().catch(() => null);
-    const id = body?.id;
-
-    if (!isUuid(id)) return jsonErr(400, "BAD_REQUEST", "Mangler/ugyldig id.", { rid });
-
-    // Read location to enforce scope
-    const { data: loc, error: locErr } = await supabase
-      .from("company_locations")
-      .select("id,company_id")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (locErr) return jsonErr(500, "DB_ERROR", locErr.message, { rid });
-    if (!loc) return jsonErr(404, "NOT_FOUND", "Lokasjon finnes ikke.", { rid });
-
-    // company_admin locked to own company
-    if (scope.role !== "superadmin") {
-      const myCompanyId = mustCompanyId(scope);
-      if (String((loc as any).company_id) !== String(myCompanyId)) {
-        return jsonErr(403, "FORBIDDEN", "Ingen tilgang til denne lokasjonen.", { rid });
-      }
-    }
-
-    // Allow only specific fields to be updated (whitelist)
-    const patch = {
-      delivery_contact_name: safeText(body.delivery_contact_name, 120),
-      delivery_contact_phone: digitsPlus(body.delivery_contact_phone, 40),
-      delivery_notes: safeText(body.delivery_notes, 800),
-      delivery_window_from: normTime(body.delivery_window_from),
-      delivery_window_to: normTime(body.delivery_window_to),
-    };
-
-    // If one time is provided, both should be valid or both null
-    if ((patch.delivery_window_from && !patch.delivery_window_to) || (!patch.delivery_window_from && patch.delivery_window_to)) {
-      return jsonErr(400, "BAD_REQUEST", "Begge tider må settes (from og to), eller ingen.", { rid });
-    }
-
-    // If both present, ensure from <= to
-    if (patch.delivery_window_from && patch.delivery_window_to) {
-      if (cmpTime(patch.delivery_window_from, patch.delivery_window_to) > 0) {
-        return jsonErr(400, "BAD_REQUEST", "delivery_window_from kan ikke være etter delivery_window_to.", { rid });
-      }
-    }
-
-    const { error: updErr } = await supabase.from("company_locations").update(patch).eq("id", id);
-    if (updErr) return jsonErr(500, "DB_ERROR", updErr.message, { rid });
-
-    // ---- audit light (best effort, skal ikke stoppe lagring) ----
-    try {
-      const { data: auth } = await supabase.auth.getUser();
-      const actorEmail = auth?.user?.email ?? null;
-      const actorUserId = auth?.user?.id ?? null;
-
-      await supabase.from("location_audit").insert({
-        location_id: id,
-        company_id: (loc as any).company_id,
-        actor_user_id: actorUserId,
-        actor_email: actorEmail,
-        action: "update",
-        diff: patch, // enkel "diff" (hva vi satte)
-      });
-    } catch {
-      // ignore
-    }
-
-    return NextResponse.json({ ok: true, rid }, { status: 200 });
-  } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || "ERROR";
-    return jsonErr(status, code, e?.message || "Ukjent feil.", { rid });
+    return jsonError(500, "server_error", "Uventet feil.", { rid, detail: String(e?.message ?? e) });
   }
 }
