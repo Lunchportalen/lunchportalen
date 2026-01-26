@@ -1,2 +1,10 @@
-#!/bin/sh
-node scripts/git-hooks/pre-push.cjs
+#!/usr/bin/env node
+const { execSync } = require("node:child_process");
+
+try {
+  console.log("Running preflight...");
+  execSync("npm run preflight", { stdio: "inherit" });
+} catch (e) {
+  console.error("❌ Preflight failed. Push aborted.");
+  process.exit(1);
+}
