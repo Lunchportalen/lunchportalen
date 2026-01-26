@@ -3,8 +3,51 @@ import { redirect } from "next/navigation";
 import KitchenView from "./KitchenView";
 import { supabaseServer } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+
+/* =========================================================
+   Role helpers (NO DB) – samme prinsipp som middleware
+========================================================= */
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function roleByEmail(email: string | null | undefined): Role | null {
+  const e = normEmail(email);
+  if (e === "superadmin@lunchportalen.no") return "superadmin";
+  if (e === "kjokken@lunchportalen.no") return "kitchen";
+  if (e === "driver@lunchportalen.no") return "driver";
+  return null;
+}
+
+function normalizeRole(v: unknown): Role {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "superadmin") return "superadmin";
+  if (s === "kitchen") return "kitchen";
+  if (s === "driver") return "driver";
+  return "employee";
+}
+
+function computeRoleNoDb(user: any): Role {
+  const emailRole = roleByEmail(user?.email);
+  if (emailRole) return emailRole;
+
+  const appRole = normalizeRole(user?.app_metadata?.role);
+  if (appRole !== "employee") return appRole;
+
+  const metaRole = normalizeRole(user?.user_metadata?.role);
+  return metaRole;
+}
+
+/* =========================================================
+   Page
+========================================================= */
 
 export default async function Page() {
   const supabase = await supabaseServer();
@@ -14,30 +57,17 @@ export default async function Page() {
   ========================= */
   const { data: auth, error: authErr } = await supabase.auth.getUser();
 
-  // Hvis auth feiler eller user mangler -> login (med next)
   if (authErr || !auth?.user) {
     redirect("/login?next=/kitchen");
   }
 
   /* =========================
-     🔐 ROLE GATE
-     profiles.id = auth.user.id
+     🔐 ROLE GATE (NO DB)
   ========================= */
-  const { data: profile, error: profileErr } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", auth.user.id)
-    .maybeSingle();
-
-  // Hvis profilen ikke kan leses -> send til hoved (uke)
-  if (profileErr || !profile?.role) {
-    redirect("/week");
-  }
-
-  const role = profile.role;
+  const role = computeRoleNoDb(auth.user);
 
   // ✅ Kun kitchen og superadmin
-  if (!["kitchen", "superadmin"].includes(role)) {
+  if (role !== "kitchen" && role !== "superadmin") {
     redirect("/week");
   }
 
@@ -45,39 +75,39 @@ export default async function Page() {
      ✅ PAGE
   ========================= */
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8 print:p-0">
-      {/* Sticky topp for kjøkken (bedre drift/bruk) */}
-      <div className="sticky top-0 z-10 -mx-6 mb-6 border-b border-slate-200 bg-[rgb(var(--lp-bg))]/90 px-6 py-4 backdrop-blur print:static print:border-0 print:bg-transparent print:backdrop-blur-0">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-slate-900">
-              Kjøkken – dagens bestillinger
-            </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Velg dato, bruk hurtigknapper og få full oversikt per firma,
-              lokasjon og ansatt.
-            </p>
-          </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 print:p-0">
+      {/* Header / topbar i samme rytme som andre sider */}
+      <div className="mb-8">
+        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Kjøkken</h1>
+              <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+                Dagens produksjonsliste – sortert per leveringsvindu, firma, lokasjon og ansatt. Klar for utskrift.
+              </p>
 
-          {/* Drifts-hints (informasjon – ikke knapper) */}
-          <div className="hidden flex-wrap gap-3 text-xs text-slate-600 md:flex print:hidden">
-            <div className="flex items-center gap-2">
-              <span aria-hidden>⌛</span>
-              <span>Hurtigvalg: i dag / neste</span>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
+                <span className="rounded-full bg-black/5 px-3 py-1">📅 Dato & leveringsdag</span>
+                <span className="rounded-full bg-black/5 px-3 py-1">⌛ Hurtigvalg</span>
+                <span className="rounded-full bg-black/5 px-3 py-1">🖨️ Print</span>
+                <span className="rounded-full bg-black/5 px-3 py-1">📦 Samlevolum</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span aria-hidden>📅</span>
-              <span>Datovelger + leveringsdag</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span aria-hidden>🖨️</span>
-              <span>Print-vennlig liste</span>
+
+            {/* Driftshint: kun info, ikke actions (KitchenView har kontrollene) */}
+            <div className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block print:hidden">
+              <div className="font-semibold text-slate-900">Driftsnotat</div>
+              <ul className="mt-2 space-y-1">
+                <li>• Bruk datovelger for å hente riktig produksjon</li>
+                <li>• Utskrift: bruk nettleserens print</li>
+                <li>• Superadmin kan også se kjøkkenvisning</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Selve kjøkkenvisningen (her ligger ekte knapper/datovelger) */}
+      {/* Selve kjøkkenvisningen (datovelger, grupper, print, eksport osv.) */}
       <KitchenView />
     </main>
   );

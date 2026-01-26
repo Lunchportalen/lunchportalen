@@ -194,14 +194,19 @@ export default function LoginPage() {
         }
       }
 
-      // ✅ SYSTEMKONTOER (superadmin/kjøkken/driver): ALDRI vent på profile/onboarding.
-      // Server bestemmer alltid endelig dest i /api/auth/redirect.
+      // ✅ Rolle fra metadata (ikke bare epost). Epost-sjekk beholdes som fallback.
+      const metaRole = normalizeRole((data.user as any)?.user_metadata?.role);
       const signedInEmail = data?.user?.email ?? email.trim();
-      if (isSystemAccountEmail(signedInEmail)) {
-        window.location.replace(toRedirectUrl(nextRaw));
+
+      // ✅ SYSTEMKONTOER (superadmin/kjøkken/driver): ALDRI vent på profile/onboarding.
+      // - Kjøkken/driver kan være auth-only
+      // - Superadmin påvirkes aldri
+      if (metaRole === "superadmin" || metaRole === "kitchen" || metaRole === "driver" || isSystemAccountEmail(signedInEmail)) {
+        window.location.replace(toRedirectUrl(homeForRole(metaRole)));
         return;
       }
 
+      // ✅ Company admin kan også bestille lunsj → håndteres som ordinær bruker (må ha profil)
       // ✅ Ordinære brukere: vent til profile er synlig (invitasjonsflyt kan være litt treg)
       await pollProfileThenRedirect(nextRaw);
     } catch {

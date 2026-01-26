@@ -107,17 +107,19 @@ function isProtectedPath(pathname: string) {
 
 /**
  * Stram fasit:
- * - systemkontoer har kun sitt område
- * - company_admin kun /admin
- * - kitchen kun /kitchen
- * - driver kun /driver
- * - employee kun /week,/orders,/min-side
+ * - superadmin: kan overalt (aldri blokkeres)
+ * - kitchen: kun /kitchen
+ * - driver: kun /driver
+ * - company_admin: /admin + ansatt-områder (/week,/orders,/min-side)
+ * - employee: /week,/orders,/min-side
  */
 function requiredRolesForPath(pathname: string): Role[] | null {
   if (pathname === "/superadmin" || pathname.startsWith("/superadmin/")) return ["superadmin"];
-  if (pathname === "/kitchen" || pathname.startsWith("/kitchen/")) return ["kitchen"];
-  if (pathname === "/driver" || pathname.startsWith("/driver/")) return ["driver"];
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return ["company_admin"];
+
+  if (pathname === "/kitchen" || pathname.startsWith("/kitchen/")) return ["kitchen", "superadmin"];
+  if (pathname === "/driver" || pathname.startsWith("/driver/")) return ["driver", "superadmin"];
+
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return ["company_admin", "superadmin"];
 
   if (
     pathname === "/week" ||
@@ -127,7 +129,8 @@ function requiredRolesForPath(pathname: string): Role[] | null {
     pathname === "/min-side" ||
     pathname.startsWith("/min-side/")
   ) {
-    return ["employee"];
+    // ✅ company_admin skal også kunne bestille/avbestille
+    return ["employee", "company_admin", "superadmin"];
   }
 
   return null;
@@ -198,9 +201,7 @@ function pickDestination(user: any, requestedNextRaw: string | null) {
    (kritisk: behold cookies satt av Supabase refresh)
 ========================================================= */
 function withCookies(from: NextResponse, to: NextResponse) {
-  // copy cookies that Supabase might have set on `from`
   for (const c of from.cookies.getAll()) {
-    // `c` inneholder name/value + options (path, expires, etc.)
     to.cookies.set(c.name, c.value, c);
   }
   return to;
@@ -294,16 +295,17 @@ export async function middleware(req: NextRequest) {
       u.pathname = "/login";
       u.search = "";
       u.searchParams.set("next", buildNextParam(pathname, searchParams));
-
-      // ✅ behold cookies fra res (refresh/clear)
       return withCookies(res, NextResponse.redirect(u, { status: 303 }));
     }
 
     const role = computeRoleNoDb(user);
 
-    // Systemkontoer: alltid til sitt område (ignorer alt)
+    // ✅ Superadmin påvirkes aldri: kan overalt
+    if (role === "superadmin") return res;
+
+    // Systemkontoer (kitchen/driver): alltid til sitt område (ignorer alt)
     const emailRole = roleByEmail(user.email);
-    if (emailRole) {
+    if (emailRole && emailRole !== "superadmin") {
       const home = homeForRole(emailRole);
       if (!(pathname === home || pathname.startsWith(home + "/"))) {
         return redirectTo(req, res, home);
@@ -320,10 +322,6 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  /* =========================
-     Default: ikke-public, ikke-bypass, ikke-protected
-     - Vi lar den passere (ingen hard redirect) for å unngå uventede loops
-  ========================= */
   return res;
 }
 
