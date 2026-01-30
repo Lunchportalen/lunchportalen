@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,7 +27,7 @@ type AuditItem = {
 type ApiOk = {
   ok: true;
   rid: string;
-  meta: { limit: number; nextCursor: string | null; source: string };
+  meta: { limit: number; nextCursor: string | null; source: string; filters?: any };
   items: AuditItem[];
 };
 
@@ -41,13 +42,14 @@ type ApiErr = {
 function isUuid(v: any) {
   return (
     typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
 }
 
 function isoNice(ts: string | null | undefined) {
   if (!ts) return "-";
   const s = String(ts);
+  // YYYY-MM-DD HH:MM:SS
   return s.replace("T", " ").slice(0, 19);
 }
 
@@ -107,6 +109,16 @@ async function copyText(text: string) {
   }
 }
 
+async function readJsonSafe(res: Response) {
+  const t = await res.text();
+  if (!t) return null;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return null;
+  }
+}
+
 export default function AuditClient() {
   const [items, setItems] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +156,7 @@ export default function AuditClient() {
   useEffect(() => {
     return () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current);
+      abortRef.current?.abort();
     };
   }, []);
 
@@ -169,6 +182,7 @@ export default function AuditClient() {
     if (actionDeb) p.set("action", actionDeb);
     if (qDeb) p.set("q", qDeb);
     if (cursor) p.set("cursor", cursor);
+
     return p.toString();
   }, [companyIdDeb, actionDeb, qDeb, cursor]);
 
@@ -184,6 +198,7 @@ export default function AuditClient() {
 
     try {
       let url = "/api/superadmin/audit";
+
       if (resetCursor && opts?.clearCursorBeforeFetch) {
         const p = new URLSearchParams();
         p.set("limit", String(limit));
@@ -196,10 +211,10 @@ export default function AuditClient() {
       }
 
       const r = await fetch(url, { cache: "no-store", signal: ac.signal });
-      const j = (await r.json()) as ApiOk | ApiErr;
+      const j = (await readJsonSafe(r)) as ApiOk | ApiErr | null;
 
       if (!j || (j as any).ok !== true) {
-        const je = j as ApiErr;
+        const je = (j ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" }) as ApiErr;
         throw new Error(je?.message || je?.error || "Ukjent feil");
       }
 
@@ -218,6 +233,7 @@ export default function AuditClient() {
     }
   }
 
+  // initial + whenever qs changes
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +256,7 @@ export default function AuditClient() {
   // Keyboard selection
   const [selectedIdx, setSelectedIdx] = useState<number>(-1);
 
-  // When data changes, keep selection sane
+  // keep selection sane when data changes
   useEffect(() => {
     if (viewItems.length === 0) {
       setSelectedIdx(-1);
@@ -254,27 +270,18 @@ export default function AuditClient() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // avoid hijacking when typing in inputs
       const el = document.activeElement as HTMLElement | null;
       const tag = el?.tagName?.toLowerCase();
-      const isTyping =
-        tag === "input" || tag === "textarea" || (el as any)?.isContentEditable;
-
+      const isTyping = tag === "input" || tag === "textarea" || (el as any)?.isContentEditable;
       if (isTyping) return;
       if (viewItems.length === 0) return;
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIdx((p) => {
-          const next = p < 0 ? 0 : Math.min(viewItems.length - 1, p + 1);
-          return next;
-        });
+        setSelectedIdx((p) => (p < 0 ? 0 : Math.min(viewItems.length - 1, p + 1)));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIdx((p) => {
-          const next = p < 0 ? 0 : Math.max(0, p - 1);
-          return next;
-        });
+        setSelectedIdx((p) => (p < 0 ? 0 : Math.max(0, p - 1)));
       } else if (e.key === "Enter") {
         if (selectedIdx < 0) return;
         e.preventDefault();
@@ -327,7 +334,15 @@ export default function AuditClient() {
           backdropFilter: "blur(10px)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
           <div>
             <div style={{ fontSize: 22, fontWeight: 900 }}>Audit</div>
             <div style={{ opacity: 0.7, fontSize: 13 }}>
@@ -409,7 +424,7 @@ export default function AuditClient() {
           <input
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            placeholder="action (f.eks. company_)"
+            placeholder="action (f.eks. orders.batch_)"
             style={{
               padding: 10,
               borderRadius: 12,
@@ -503,11 +518,7 @@ export default function AuditClient() {
           const selected = idx === selectedIdx;
 
           const rowBg =
-            selected
-              ? "rgba(0,0,0,0.04)"
-              : preset === "critical" && critical
-                ? "#fff7f7"
-                : "transparent";
+            selected ? "rgba(0,0,0,0.04)" : preset === "critical" && critical ? "#fff7f7" : "transparent";
 
           return (
             <div

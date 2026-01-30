@@ -1,7 +1,7 @@
 // app/week/WeekClient.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { formatDateForDisplay } from "@/lib/date/format";
 
 /* =========================================================
@@ -18,18 +18,17 @@ type OrderDay = {
   isLocked: boolean;
   isEnabled: boolean;
 
-  tier: Tier; // ✅ visnings-tier (fra window)
+  tier: Tier;
   allowedChoices: Choice[];
 
-  wantsLunch: boolean; // true == ACTIVE
+  wantsLunch: boolean;
   selectedChoiceKey: string | null;
 
   menuTitle?: string | null;
   menuDescription: string | null;
   allergens: string[];
 
-  // UI kvittering
-  lastSavedAt?: string | null; // "HH:MM" eller "DD.MM HH:MM" om du vil
+  lastSavedAt?: string | null; // "HH:MM"
 };
 
 type WindowResp = {
@@ -96,21 +95,35 @@ function canAct(day: OrderDay) {
 
 function safeUserMessage(raw: string) {
   const s = (raw || "").toLowerCase();
-  if (s.includes("locked") || s.includes("låst")) return "Dagen er låst etter 08:00.";
+
+  // error codes / patterns
+  if (s.includes("cutoff_locked") || s.includes("etter kl. 08") || s.includes("låst etter")) return "Dagen er låst etter 08:00.";
+  if (s.includes("date_locked_past") || s.includes("passert")) return "Datoen er passert og kan ikke endres.";
+  if (s.includes("company_paused") || s.includes("pauset")) return "Bestilling/avbestilling er midlertidig pauset for firma.";
+  if (s.includes("company_closed") || s.includes("stengt")) return "Firma er stengt. Bestilling/avbestilling er låst.";
+  if (s.includes("not_active") || s.includes("ikke aktivt")) return "Firma er ikke aktivt. Bestilling/avbestilling er låst.";
+
   if (s.includes("unauth") || s.includes("innlogget")) return "Du er ikke innlogget.";
-  if (s.includes("mangler menyvalg") || s.includes("no_choices")) return "Firmaavtalen mangler menyvalg.";
+  if (s.includes("no_choices") || s.includes("mangler menyvalg")) return "Firmaavtalen mangler menyvalg.";
   if (s.includes("ikke aktiv") || s.includes("not enabled")) return "Denne dagen er ikke aktiv i avtalen.";
   if (s.includes("weekend") || s.includes("helg")) return "Helg støttes ikke i portalen (Man–Fre).";
-  if (s.includes("no_order") || s.includes("må bestille")) return "Du må bestille lunsj før du kan velge meny.";
-  if (s.includes("not_active") || s.includes("aktiv bestilling")) return "Du må ha aktiv bestilling for å endre menyvalg.";
+  if (s.includes("no_order") || s.includes("må bestille")) return "Du må registrere lunsj før du kan velge meny.";
+  if (s.includes("aktiv bestilling")) return "Du må ha aktiv bestilling for å endre menyvalg.";
+
   return raw || "Noe gikk galt. Prøv igjen.";
 }
 
 function StatusChip({ day }: { day: OrderDay }) {
-  if (!day.isEnabled) return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">Ikke aktiv</span>;
-  if (day.isLocked) return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">🔒 Låst</span>;
-  if (day.wantsLunch) return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">✅ Bestilt</span>;
-  return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">⭕ Ikke bestilt</span>;
+  if (!day.isEnabled) {
+    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">Ikke aktiv</span>;
+  }
+  if (day.isLocked) {
+    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">🔒 Låst</span>;
+  }
+  if (day.wantsLunch) {
+    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">✅ Registrert</span>;
+  }
+  return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">⭕ Ikke registrert</span>;
 }
 
 function defaultChoiceKey(day: OrderDay) {
@@ -215,7 +228,8 @@ export default function WeekClient() {
   // per-day feil (ingen stille feil)
   const [dayMsg, setDayMsg] = useState<Record<string, string | null>>({});
 
-  const [savingDate, setSavingDate] = useState<string | null>(null);
+  // per-day saving (ingen optimistic UI)
+  const [savingByDate, setSavingByDate] = useState<Record<string, boolean>>({});
 
   // toast
   const [toast, setToast] = useState<string | null>(null);
@@ -226,7 +240,7 @@ export default function WeekClient() {
 
   // iOS safe-area padding
   const safeAreaStyle = useMemo(
-    () => ({ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" } as React.CSSProperties),
+    () => ({ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" } as CSSProperties),
     []
   );
 
@@ -237,6 +251,10 @@ export default function WeekClient() {
 
   function setDayError(date: string, text: string | null) {
     setDayMsg((prev) => ({ ...prev, [date]: text }));
+  }
+
+  function setSaving(date: string, v: boolean) {
+    setSavingByDate((prev) => ({ ...prev, [date]: v }));
   }
 
   async function loadWindow() {
@@ -262,8 +280,13 @@ export default function WeekClient() {
 
       // reset per-day errors for current days
       const nextDayMsg: Record<string, string | null> = {};
-      for (const d of days) nextDayMsg[d.date] = null;
+      const nextSaving: Record<string, boolean> = {};
+      for (const d of days) {
+        nextDayMsg[d.date] = null;
+        nextSaving[d.date] = Boolean(savingByDate[d.date]); // behold evt. pågående (sjeldent)
+      }
       setDayMsg(nextDayMsg);
+      setSavingByDate(nextSaving);
 
       setData({ ...json, days });
     } catch (e: any) {
@@ -302,40 +325,21 @@ export default function WeekClient() {
     return `${formatDateForDisplay(data.range.from)} – ${formatDateForDisplay(data.range.to)}`;
   }, [data?.range]);
 
+  const isAnySaving = useMemo(() => Object.values(savingByDate).some(Boolean), [savingByDate]);
+
   /* =========================================================
-     Actions (idempotent-klare)
+     Actions (server-verifisert, ingen optimistic UI)
   ========================================================= */
 
-  // Toggle -> nå sender vi wants_lunch eksplisitt + client_request_id (backend kan ignorere uten å feile)
-  async function toggleOrder(date: string, nextWantsLunch: boolean, daySnapshot?: OrderDay) {
+  async function toggleOrder(date: string, nextWantsLunch: boolean) {
     if (!data?.days?.length) return;
 
-    if (savingDate && savingDate !== date) {
-      showToast("⏳ Lagrer allerede. Prøv igjen om et øyeblikk.");
-      return;
-    }
-
-    setSavingDate(date);
+    if (savingByDate[date]) return;
+    setSaving(date, true);
     setMsg(null);
     setDayError(date, null);
 
-    // Optimistisk UI
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        days: prev.days.map((d) =>
-          d.date === date
-            ? {
-                ...d,
-                wantsLunch: nextWantsLunch,
-                selectedChoiceKey: nextWantsLunch ? d.selectedChoiceKey : null,
-              }
-            : d
-        ),
-      };
-    });
-
+    const daySnapshot = data.days.find((d) => d.date === date);
     const pick =
       nextWantsLunch && daySnapshot
         ? daySnapshot.selectedChoiceKey && daySnapshot.allowedChoices.some((c) => c.key === daySnapshot.selectedChoiceKey)
@@ -343,15 +347,17 @@ export default function WeekClient() {
           : defaultChoiceKey(daySnapshot)
         : null;
 
+    const rid = clientRequestId();
+
     try {
       const res = await fetch("/api/orders/toggle", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-rid": rid },
         cache: "no-store",
         body: JSON.stringify({
           date,
-          wants_lunch: nextWantsLunch, // ✅ idempotent-klart
-          client_request_id: clientRequestId(), // ✅ idempotent-klart
+          wants_lunch: nextWantsLunch,
+          client_request_id: rid,
           choice_key: nextWantsLunch ? pick : null,
         }),
       });
@@ -359,10 +365,10 @@ export default function WeekClient() {
       const json = (await res.json().catch(() => null)) as ToggleResp | null;
 
       if (!res.ok || !json || (json as any).ok === false) {
-        await loadWindow();
         const m = safeUserMessage((json as any)?.message || (json as any)?.error || "Kunne ikke lagre. Prøv igjen.");
         setDayError(date, m);
         showToast(`⚠️ ${m}`);
+        await loadWindow(); // refresh locks/status
         return;
       }
 
@@ -392,79 +398,53 @@ export default function WeekClient() {
         };
       });
 
-      const tier = (json as any).pricing?.tier as "BASIS" | "LUXUS" | undefined;
-      const unit = Number((json as any).pricing?.unit_price ?? 0);
-      const tierText = tier ? `${tier} (${unit} kr)` : "";
-      showToast(`✅ ${active ? "Bestilt" : "Avbestilt"}${tierText ? ` – ${tierText}` : ""}`);
+      showToast(`✅ ${active ? "Registrert" : "Avbestilt"} • ${formatDateForDisplay(date)} • ${serverHHMM}`);
     } catch {
-      await loadWindow();
       const m = "Kunne ikke lagre. Prøv igjen.";
       setDayError(date, m);
       showToast("⚠️ Kunne ikke lagre. Prøv igjen.");
+      await loadWindow();
     } finally {
-      setSavingDate(null);
+      setSaving(date, false);
     }
   }
 
-  // Autosave valg: POST /api/orders/choice (idempotent-klart med client_request_id)
   async function saveChoice(day: OrderDay, key: string) {
     if (!data?.days?.length) return;
     if (!canAct(day)) return;
+    if (savingByDate[day.date]) return;
 
     if (!day.wantsLunch) {
-      showToast("ℹ️ Bestill lunsj først for å velge meny.");
+      showToast("ℹ️ Registrer lunsj først for å velge meny.");
       return;
     }
     if (!day.allowedChoices.some((c) => c.key === key)) return;
 
-    if (savingDate && savingDate !== day.date) {
-      showToast("⏳ Lagrer allerede. Prøv igjen om et øyeblikk.");
-      return;
-    }
-
-    const prevKey = day.selectedChoiceKey;
-
-    setSavingDate(day.date);
+    setSaving(day.date, true);
     setMsg(null);
     setDayError(day.date, null);
 
-    // Optimistisk UI
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        days: prev.days.map((d) => (d.date === day.date ? { ...d, selectedChoiceKey: key } : d)),
-      };
-    });
+    const rid = clientRequestId();
 
     try {
       const res = await fetch("/api/orders/choice", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-rid": rid },
         cache: "no-store",
         body: JSON.stringify({
           date: day.date,
           choice_key: key,
-          client_request_id: clientRequestId(), // ✅ idempotent-klart
+          client_request_id: rid,
         }),
       });
 
       const json = (await res.json().catch(() => null)) as ChoiceSaveResp | null;
 
       if (!res.ok || !json || (json as any).ok === false) {
-        // rollback
-        setData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            days: prev.days.map((d) => (d.date === day.date ? { ...d, selectedChoiceKey: prevKey } : d)),
-          };
-        });
-
-        await loadWindow();
         const m = safeUserMessage((json as any)?.message || (json as any)?.error || "Kunne ikke lagre menyvalg.");
         setDayError(day.date, m);
         showToast(`⚠️ ${m}`);
+        await loadWindow();
         return;
       }
 
@@ -490,33 +470,25 @@ export default function WeekClient() {
         };
       });
 
-      showToast(`✅ Lagret: ${choiceLabel(day, key)}`);
+      showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateForDisplay(day.date)} • ${serverHHMM}`);
     } catch {
-      // rollback
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          days: prev.days.map((d) => (d.date === day.date ? { ...d, selectedChoiceKey: prevKey } : d)),
-        };
-      });
-
-      await loadWindow();
       const m = "Kunne ikke lagre menyvalg. Prøv igjen.";
       setDayError(day.date, m);
       showToast("⚠️ Kunne ikke lagre menyvalg. Prøv igjen.");
+      await loadWindow();
     } finally {
-      setSavingDate(null);
+      setSaving(day.date, false);
     }
   }
 
   function onToggleLunch(day: OrderDay) {
     if (!canAct(day)) return;
-    void toggleOrder(day.date, !day.wantsLunch, day);
+    void toggleOrder(day.date, !day.wantsLunch);
   }
 
   function onSelectChoice(day: OrderDay, key: string) {
     if (!canAct(day)) return;
+    if (day.selectedChoiceKey === key) return;
     void saveChoice(day, key);
   }
 
@@ -552,6 +524,7 @@ export default function WeekClient() {
               weekIndex === 0 ? "border-border bg-bg text-text" : "border-border/60 text-muted hover:bg-bg",
             ].join(" ")}
             aria-pressed={weekIndex === 0}
+            disabled={isAnySaving}
           >
             Denne uke
           </button>
@@ -563,6 +536,7 @@ export default function WeekClient() {
               weekIndex === 1 ? "border-border bg-bg text-text" : "border-border/60 text-muted hover:bg-bg",
             ].join(" ")}
             aria-pressed={weekIndex === 1}
+            disabled={isAnySaving}
           >
             Neste uke
           </button>
@@ -570,14 +544,14 @@ export default function WeekClient() {
             type="button"
             onClick={loadWindow}
             className="min-h-[44px] rounded-xl border border-border/40 px-3 py-2 text-sm text-muted hover:bg-bg transition"
-            disabled={loading || !!savingDate}
+            disabled={loading || isAnySaving}
           >
             Oppdater
           </button>
         </div>
       </div>
 
-      {/* Range */}
+      {/* Range + small stats */}
       <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="text-sm text-muted">
           {rangeText ? (
@@ -589,25 +563,15 @@ export default function WeekClient() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-sm">{savingDate ? <span className="text-muted">Lagrer…</span> : null}</div>
+        {!loading && !msg ? (
+          <div className="text-sm text-muted">
+            {summary.ordered} registrert • {summary.enabled} aktive • {summary.locked} låste
+            {isAnySaving ? <span className="ml-2">• Lagrer…</span> : null}
+          </div>
+        ) : (
+          <div className="text-sm text-muted">{isAnySaving ? "Lagrer…" : null}</div>
+        )}
       </div>
-
-      {/* Summary */}
-      {!loading && !msg ? (
-        <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-border bg-bg p-4 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-text">
-            <span className="font-medium">Ukeoversikt:</span>{" "}
-            <span className="text-muted">
-              {summary.ordered} bestilt • {summary.enabled} aktive dager • {summary.locked} låste
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="lp-chip">Man–Fre</span>
-            <span className="lp-chip">Cut-off 08:00</span>
-            <span className="lp-chip">Idempotent-ready</span>
-          </div>
-        </div>
-      ) : null}
 
       {/* Body */}
       {loading ? (
@@ -618,32 +582,15 @@ export default function WeekClient() {
         <>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {visibleDays.map((day) => {
-              const disabled = day.isLocked || !day.isEnabled || savingDate === day.date;
-              const activeChoice = day.selectedChoiceKey;
-              const unitPrice = day.tier === "BASIS" ? 90 : 130;
-
+              const saving = Boolean(savingByDate[day.date]);
+              const disabled = saving || day.isLocked || !day.isEnabled;
               const inlineErr = dayMsg[day.date] ?? null;
 
-              return (
-                <div
-                  key={day.date}
-                  className={["relative rounded-2xl border border-border bg-surface p-4", day.isLocked ? "opacity-95" : ""].join(" ")}
-                >
-                  {/* Locked overlay */}
-                  {day.isLocked ? (
-                    <div className="pointer-events-none absolute inset-0 rounded-2xl">
-                      <div className="absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[2px]" />
-                      <div className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface/90 px-3 py-1 text-xs text-muted shadow-sm">
-                        <span>🔒</span>
-                        <span className="font-medium text-text">Låst kl. 08:00</span>
-                      </div>
-                      <div className="absolute bottom-3 left-3 right-3 rounded-xl border border-border bg-surface/80 px-3 py-2 text-xs text-muted">
-                        Endringer er ikke mulig etter cut-off.
-                      </div>
-                    </div>
-                  ) : null}
+              const unitPrice = day.tier === "BASIS" ? 90 : 130;
 
-                  {/* Header */}
+              return (
+                <div key={day.date} className={["rounded-2xl border border-border bg-surface p-4", saving ? "ring-1 ring-border" : ""].join(" ")}>
+                  {/* Header row */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-lg font-semibold tracking-tight text-text">
@@ -652,123 +599,112 @@ export default function WeekClient() {
                       </div>
 
                       <div className="mt-1 text-sm text-muted">
-                        {day.menuTitle ? <span className="font-medium text-text">{day.menuTitle}:</span> : null}{" "}
-                        {day.menuDescription ? day.menuDescription : <span className="italic">Meny kommer</span>}
+                        {day.menuTitle ? <span className="font-medium text-text">{day.menuTitle}</span> : <span className="font-medium text-text">Meny</span>}
+                        {day.menuDescription ? <span className="text-muted"> • {day.menuDescription}</span> : <span className="italic"> • Kommer</span>}
                       </div>
-
-                      {day.allergens?.length ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {day.allergens.map((a) => (
-                            <span key={a} className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
-                              {a}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
                       <StatusChip day={day} />
-                      <span className="text-xs text-muted">
-                        {tierLabel(day.tier)} • {unitPrice} kr
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted">
+                          {tierLabel(day.tier)} • {unitPrice} kr
+                        </span>
+                        <TogglePill
+                          active={day.wantsLunch}
+                          disabled={disabled}
+                          onClick={() => onToggleLunch(day)}
+                          title={day.wantsLunch ? "Klikk for å avbestille" : "Klikk for å registrere"}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Inline error per dag */}
-                  {inlineErr ? (
-                    <div className="mt-3 rounded-2xl border border-border bg-bg px-4 py-3 text-sm text-muted">
-                      <span className="font-medium text-text">⚠️</span> {inlineErr}
+                  {/* Allergens */}
+                  {day.allergens?.length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {day.allergens.map((a) => (
+                        <span key={a} className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
+                          {a}
+                        </span>
+                      ))}
                     </div>
                   ) : null}
 
-                  {/* Actions */}
-                  <div className="mt-4 rounded-xl border border-border bg-bg p-3 sm:p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-medium text-text">Lunsj</div>
-                        <div className="text-xs text-muted">
-                          {!day.isEnabled ? "Ikke aktiv i avtalen." : day.isLocked ? "Låst etter 08:00." : "Kan endres frem til 08:00."}
-                        </div>
-                      </div>
-
-                      <TogglePill
-                        active={day.wantsLunch}
-                        disabled={disabled}
-                        onClick={() => onToggleLunch(day)}
-                        title={day.wantsLunch ? "Klikk for å avbestille" : "Klikk for å bestille"}
-                      />
+                  {/* Inline error (minimal, ikke boks) */}
+                  {inlineErr ? (
+                    <div className="mt-3 text-sm">
+                      <span className="text-muted">⚠️ </span>
+                      <span className="text-text">{inlineErr}</span>
                     </div>
+                  ) : null}
 
-                    {day.wantsLunch ? (
-                      <div className="mt-3">
-                        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-bg px-3 py-1 text-sm transition">
-                          <span className="text-muted">Valgt</span>
-                          <span className="font-medium text-text">{activeChoice ? choiceLabel(day, activeChoice) : "–"}</span>
-                        </div>
-
-                        <div className="mt-2 rounded-xl border border-border bg-surface p-2 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-                          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                            {day.allowedChoices.map((c) => {
-                              const active = day.selectedChoiceKey === c.key;
-
-                              return (
-                                <button
-                                  key={c.key}
-                                  type="button"
-                                  disabled={disabled}
-                                  onClick={() => onSelectChoice(day, c.key)}
-                                  className={[
-                                    "min-h-[44px] w-full sm:w-auto rounded-xl sm:rounded-full border px-3 py-2 text-sm transition",
-                                    "active:scale-[0.99] sm:active:scale-100",
-                                    "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgb(var(--lp-cta)/0.35)]",
-                                    disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-bg",
-                                    active
-                                      ? [
-                                          "bg-bg text-text font-medium",
-                                          "border-[rgba(255,0,140,0.55)]",
-                                          "ring-2 ring-[rgba(255,0,140,0.55)]",
-                                          "ring-offset-2 ring-offset-bg",
-                                          "shadow-[0_0_0_1px_rgba(255,0,140,0.10),0_0_14px_rgba(255,0,140,0.22)]",
-                                        ].join(" ")
-                                      : "border-border/60 bg-white text-text/80",
-                                  ].join(" ")}
-                                >
-                                  {c.label ?? c.key}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 text-xs text-muted">Menyvalg lagres automatisk.</div>
+                  {/* Choices (kun når registrert) */}
+                  {day.wantsLunch ? (
+                    <div className="mt-4">
+                      <div className="text-xs text-muted">
+                        Menyvalg{day.isLocked ? " (låst)" : ""}:
+                        <span className="ml-2 text-text font-medium">
+                          {day.selectedChoiceKey ? choiceLabel(day, day.selectedChoiceKey) : "Ikke valgt"}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="mt-3 text-sm text-muted">Ikke bestilt.</div>
-                    )}
-                  </div>
 
-                  <div className="mt-3 flex items-center justify-between text-xs text-muted">
-                    <span>{day.wantsLunch ? "✅ Bestilt" : "⭕ Ikke bestilt"}</span>
-                    <span>{day.lastSavedAt ? `Sist lagret: ${day.lastSavedAt}` : ""}</span>
+                      {day.allowedChoices?.length ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {day.allowedChoices.map((c) => {
+                            const active = day.selectedChoiceKey === c.key;
+                            return (
+                              <button
+                                key={c.key}
+                                type="button"
+                                disabled={disabled}
+                                onClick={() => onSelectChoice(day, c.key)}
+                                className={[
+                                  "min-h-[44px] rounded-full border px-4 py-2 text-sm transition",
+                                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(0,0,0,0.15)]",
+                                  disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-bg active:brightness-[0.99]",
+                                  active ? "bg-bg text-text font-medium border-border" : "border-border/60 bg-white text-text/80",
+                                ].join(" ")}
+                              >
+                                {c.label ?? c.key}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-sm text-muted">Ingen valg tilgjengelig i avtalen.</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-sm text-muted">
+                      {day.isEnabled ? (day.isLocked ? "Låst etter 08:00." : "Ikke registrert.") : "Ikke aktiv i avtalen."}
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="mt-4 flex items-center justify-between text-xs text-muted">
+                    <span>{saving ? "Lagrer…" : day.lastSavedAt ? `Sist lagret: ${day.lastSavedAt}` : ""}</span>
+                    <span className="opacity-80">Man–Fre</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Weekend CTA */}
-          <div className="mt-5 rounded-2xl border border-border bg-bg p-4">
+          {/* Weekend CTA (roligere) */}
+          <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-border bg-bg p-4">
             <div className="text-sm font-medium text-text">Helgelevering (lørdag/søndag)</div>
-            <div className="mt-1 text-sm text-muted">Levering i helg bestilles ikke i Lunchportalen.</div>
-            <a
-              href="https://melhuscatering.no/catering/bestill-her/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl border border-border px-4 py-2 text-sm text-text hover:bg-surface"
-            >
-              Bestill helgelevering
-            </a>
+            <div className="text-sm text-muted">Levering i helg bestilles ikke i Lunchportalen.</div>
+            <div>
+              <a
+                href="https://melhuscatering.no/catering/bestill-her/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center rounded-xl border border-border px-4 py-2 text-sm text-text hover:bg-surface"
+              >
+                Bestill helgelevering
+              </a>
+            </div>
           </div>
         </>
       )}

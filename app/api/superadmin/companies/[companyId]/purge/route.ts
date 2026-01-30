@@ -3,25 +3,22 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
-
 /**
- * ENTERPRISE FASIT (strammet inn):
+ * ENTERPRISE FASIT:
  * - 100% RPC-only: public.purge_company(...) er eneste “source of truth”
- * - Hard superadmin email gate (FASIT) + disabled gate + role drift check (fail-closed)
  * - GET = always RPC dry-run (counts)
- * - POST = RPC purge (or dryRun) + best-effort audit
+ * - POST/DELETE = RPC purge (or dryRun) + best-effort audit
  * - ACTIVE sperre håndteres av RPC, men vi mapper feilmeldingen til 409 ACTIVE_BLOCKED
- * - Ingen legacy delete/count helpers i route (DB er motoren)
+ * - Ingen throw i route (alltid jsonErr)
  */
 
-type Severity = "info" | "warning" | "critical";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type RouteCtx = {
-  params: { companyId: string } | Promise<{ companyId: string }>;
-};
+type Severity = "info" | "warning" | "critical";
+type RouteCtx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
 type PurgeBody = {
   confirm?: boolean;
@@ -29,15 +26,11 @@ type PurgeBody = {
   reason?: string;
 };
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
+function denyResponse(s: any): Response {
+  if (s?.response) return s.response as Response;
+  if (s?.res) return s.res as Response;
+  const rid = String(s?.ctx?.rid ?? "rid_missing");
+  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
 }
 
 function safeStr(v: any) {
@@ -46,68 +39,44 @@ function safeStr(v: any) {
 function normEmail(v: any) {
   return safeStr(v).toLowerCase();
 }
-function isUuid(v: any) {
+function isUuid(v: any): v is string {
   return (
     typeof v === "string" &&
     /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
   );
 }
 
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) throw new Error("MISSING_SUPABASE_URL");
-  if (!key) throw new Error("MISSING_SERVICE_ROLE_KEY");
-  return createClient(url, key, { auth: { persistSession: false } });
-}
-
 async function getCompanyId(ctx: RouteCtx) {
-  const { companyId } = await Promise.resolve(ctx.params);
-  return safeStr(companyId);
+  const p = await Promise.resolve(ctx.params as any);
+  return safeStr(p?.companyId);
 }
 
 /**
- * 🔒 Enterprise gate (fail-closed)
+ * Extra enterprise gate (fail-closed):
+ * - profiles.disabled_at må være null
+ * - profiles.role må være superadmin
+ *
+ * NB: maybeSingle() er ikke generisk hos dere -> ingen <T>
  */
-async function requireSuperadmin(rid: string) {
-  const sb = await supabaseServer();
+async function assertSuperadminNotDisabled(admin: any, userId: string) {
+  if (!userId) return { ok: false as const, code: "FORBIDDEN", message: "Mangler userId." };
 
-  const { data, error } = await sb.auth.getUser();
-  const user = data?.user ?? null;
-  if (error || !user) {
-    return { ok: false as const, res: jsonErr(401, rid, "AUTH_REQUIRED", "Ikke innlogget.") };
-  }
-
-  const email = normEmail(user.email);
-  if (email !== "superadmin@lunchportalen.no") {
-    return { ok: false as const, res: jsonErr(403, rid, "FORBIDDEN", "Kun superadmin har tilgang.") };
-  }
-
-  const { data: profile, error: pErr } = await sb
+  const { data, error } = await admin
     .from("profiles")
     .select("role,disabled_at")
-    .eq("user_id", user.id)
-    .maybeSingle<{ role: string | null; disabled_at: string | null }>();
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (pErr) {
-    return { ok: false as const, res: jsonErr(500, rid, "PROFILE_LOOKUP_FAILED", "Kunne ikke lese profil.", pErr.message) };
-  }
-  if (profile?.disabled_at) {
-    return { ok: false as const, res: jsonErr(403, rid, "FORBIDDEN", "Bruker er deaktivert.") };
-  }
-  if (profile?.role && String(profile.role) !== "superadmin") {
-    return { ok: false as const, res: jsonErr(403, rid, "FORBIDDEN", "Kun superadmin har tilgang.") };
-  }
+  if (error) return { ok: false as const, code: "PROFILE_LOOKUP_FAILED", message: "Kunne ikke lese profil.", detail: error };
 
-  return { ok: true as const, user };
+  const profile = (data ?? null) as { role: string | null; disabled_at: string | null } | null;
+
+  if (profile?.disabled_at) return { ok: false as const, code: "FORBIDDEN", message: "Bruker er deaktivert." };
+  if (profile?.role && String(profile.role) !== "superadmin") return { ok: false as const, code: "FORBIDDEN", message: "Kun superadmin har tilgang." };
+
+  return { ok: true as const };
 }
 
-/**
- * Audit best-effort:
- * - prøver "@/lib/audit/log".writeAudit
- * - fallback: insert i public.audit_events (hvis mulig)
- * - må aldri stoppe purge
- */
 async function bestEffortAudit(input: {
   actor_user_id: string;
   actor_email: string | null;
@@ -118,6 +87,7 @@ async function bestEffortAudit(input: {
   summary: string;
   detail: any;
 }) {
+  // 1) prøv lib/audit/log
   try {
     const mod = await import("@/lib/audit/log").catch(() => null);
     const writeAudit = (mod as any)?.writeAudit;
@@ -137,8 +107,11 @@ async function bestEffortAudit(input: {
       });
       return { ok: true as const, via: "lib/audit/log" as const };
     }
-  } catch {}
+  } catch {
+    // ignore
+  }
 
+  // 2) fallback audit_events insert
   try {
     const admin = supabaseAdmin();
     const { error } = await admin.from("audit_events").insert({
@@ -150,7 +123,8 @@ async function bestEffortAudit(input: {
       entity_id: input.entity_id,
       summary: input.summary,
       detail: input.detail ?? undefined,
-    });
+    } as any);
+
     if (error) return { ok: false as const, via: "audit_events" as const, error };
     return { ok: true as const, via: "audit_events" as const };
   } catch (e: any) {
@@ -173,25 +147,28 @@ function mapRpcError(rpcErr: any) {
 }
 
 /* =========================================================
-   GET: always returns RPC dry-run (counts)
-   /api/superadmin/companies/:id/purge?dryRun=1
+   GET: dry-run via RPC
 ========================================================= */
+export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
 
-export async function GET(req: NextRequest, ctx: RouteCtx) {
-  const rid = `purge_get_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.companies.purge.GET", ["superadmin"]);
+  if (deny) return deny;
 
   const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig companyId.");
-
-  const guard = await requireSuperadmin(rid);
-  if (!guard.ok) return guard.res;
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
 
   let admin: any;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "ADMIN_CLIENT_FAILED", "Mangler service role key.", e?.message ?? String(e));
+    return jsonErr(500, a, "ADMIN_CLIENT_FAILED", "Mangler service role key.", { message: String(e?.message ?? e) });
   }
+
+  const extra = await assertSuperadminNotDisabled(admin, a.scope?.userId ?? "");
+  if (!extra.ok) return jsonErr(403, a, extra.code, extra.message, extra.detail);
 
   const { data: company, error: cErr } = await admin
     .from("companies")
@@ -199,10 +176,10 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr.message);
-  if (!company) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke firma.");
+  if (cErr) return jsonErr(500, a, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr);
+  if (!company) return jsonErr(404, a, "NOT_FOUND", "Fant ikke firma.");
 
-  const actorEmail = normEmail(guard.user.email);
+  const actorEmail = normEmail(a.scope?.email ?? "");
 
   const { data: rpc, error: rpcErr } = await admin.rpc("purge_company", {
     p_company_id: companyId,
@@ -213,49 +190,46 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
 
   if (rpcErr) {
     const mapped = mapRpcError(rpcErr);
-    return jsonErr(mapped.status, rid, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
+    return jsonErr(mapped.status, a, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
   }
 
-  return jsonOk({
-    ok: true,
-    rid,
-    dryRun: true,
-    company,
-    rpc,
-  });
+  return jsonOk(a, { ok: true, rid: a.rid, dryRun: true, company, rpc }, 200);
 }
 
 /* =========================================================
-   POST: purge via RPC
-   Body: { confirm: true, dryRun?: boolean, reason?: string }
+   POST/DELETE: purge via RPC
 ========================================================= */
+export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
 
-export async function POST(req: NextRequest, ctx: RouteCtx) {
-  const rid = `purge_post_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.companies.purge.POST", ["superadmin"]);
+  if (deny) return deny;
 
   const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
 
-  const guard = await requireSuperadmin(rid);
-  if (!guard.ok) return guard.res;
-
-  const body = (await req.json().catch(() => null)) as PurgeBody | null;
-  if (!body?.confirm) return jsonErr(400, rid, "BAD_REQUEST", "Bekreft purge (confirm=true).");
+  const body = ((await readJson(req)) ?? null) as PurgeBody | null;
+  if (!body?.confirm) return jsonErr(400, a, "BAD_REQUEST", "Bekreft purge (confirm=true).");
 
   const dryRun = Boolean(body?.dryRun);
   const reasonRaw = safeStr(body?.reason);
   const reason = reasonRaw.slice(0, 220);
 
   if (!dryRun && reason.length < 8) {
-    return jsonErr(400, rid, "BAD_REQUEST", "reason må være minst 8 tegn.");
+    return jsonErr(400, a, "BAD_REQUEST", "reason må være minst 8 tegn.");
   }
 
   let admin: any;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "ADMIN_CLIENT_FAILED", "Mangler service role key.", e?.message ?? String(e));
+    return jsonErr(500, a, "ADMIN_CLIENT_FAILED", "Mangler service role key.", { message: String(e?.message ?? e) });
   }
+
+  const extra = await assertSuperadminNotDisabled(admin, a.scope?.userId ?? "");
+  if (!extra.ok) return jsonErr(403, a, extra.code, extra.message, extra.detail);
 
   const { data: company, error: cErr } = await admin
     .from("companies")
@@ -263,23 +237,23 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr.message);
-  if (!company) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke firma.");
+  if (cErr) return jsonErr(500, a, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr);
+  if (!company) return jsonErr(404, a, "NOT_FOUND", "Fant ikke firma.");
 
-  const actorEmail = normEmail(guard.user.email);
+  const actorEmail = normEmail(a.scope?.email ?? "");
 
   const startAudit =
     dryRun
       ? null
       : await bestEffortAudit({
-          actor_user_id: guard.user.id,
+          actor_user_id: a.scope?.userId ?? "",
           actor_email: actorEmail || null,
           action: "COMPANY_PURGE_STARTED",
           severity: "critical",
           entity_type: "company",
           entity_id: companyId,
           summary: `PURGE started: ${(company as any)?.name ?? companyId}`,
-          detail: { meta: { rid, reason: reason || null } },
+          detail: { meta: { rid: a.rid, reason: reason || null } },
         });
 
   const { data: rpc, error: rpcErr } = await admin.rpc("purge_company", {
@@ -294,44 +268,53 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
 
     if (!dryRun) {
       await bestEffortAudit({
-        actor_user_id: guard.user.id,
+        actor_user_id: a.scope?.userId ?? "",
         actor_email: actorEmail || null,
         action: "COMPANY_PURGE_FAILED",
         severity: "critical",
         entity_type: "company",
         entity_id: companyId,
         summary: `PURGE failed: ${(company as any)?.name ?? companyId}`,
-        detail: { meta: { rid, reason: reason || null, started_audit: startAudit, rpc: mapped.detail } },
+        detail: { meta: { rid: a.rid, reason: reason || null, started_audit: startAudit, rpc: mapped.detail } },
       });
     }
 
-    return jsonErr(mapped.status, rid, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
+    return jsonErr(mapped.status, a, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
   }
 
   const completedAudit =
     dryRun
       ? null
       : await bestEffortAudit({
-          actor_user_id: guard.user.id,
+          actor_user_id: a.scope?.userId ?? "",
           actor_email: actorEmail || null,
           action: "COMPANY_PURGE_COMPLETED",
           severity: "critical",
           entity_type: "company",
           entity_id: companyId,
           summary: `PURGE completed: ${(company as any)?.name ?? companyId}`,
-          detail: { before: { company }, after: null, meta: { rid, reason: reason || null, rpc, started_audit: startAudit } },
+          detail: { before: { company }, after: null, meta: { rid: a.rid, reason: reason || null, rpc, started_audit: startAudit } },
         });
 
-  return jsonOk({
-    ok: true,
-    rid,
-    dryRun,
-    company: { id: companyId, name: (company as any)?.name ?? null, orgnr: (company as any)?.orgnr ?? null, status: (company as any)?.status ?? null },
-    rpc,
-    audit: { started: startAudit, completed: completedAudit },
-  });
+  return jsonOk(
+    a,
+    {
+      ok: true,
+      rid: a.rid,
+      dryRun,
+      company: {
+        id: companyId,
+        name: (company as any)?.name ?? null,
+        orgnr: (company as any)?.orgnr ?? null,
+        status: (company as any)?.status ?? null,
+      },
+      rpc,
+      audit: { started: startAudit, completed: completedAudit },
+    },
+    200
+  );
 }
 
-export async function DELETE(req: NextRequest, ctx: RouteCtx) {
+export async function DELETE(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   return POST(req, ctx);
 }

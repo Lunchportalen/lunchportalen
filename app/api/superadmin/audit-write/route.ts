@@ -1,6 +1,7 @@
 // app/api/superadmin/audit-write/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -19,10 +20,7 @@ function ok(body: any, status = 200) {
 }
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json(
-    { ok: false, error, message, detail: detail ?? undefined },
-    { status, headers: noStore() }
-  );
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
 }
 
 function normEmail(v: any) {
@@ -32,7 +30,7 @@ function normEmail(v: any) {
 function isUuid(v: any) {
   return (
     typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
 }
 
@@ -63,7 +61,9 @@ type Body = {
 };
 
 function clampDetail(input: any) {
-  let detail: any = input ?? null;
+  // ✅ prefer-const fix (binding reassignes aldri)
+  const detail: any = input ?? null;
+
   try {
     const s = detail === null ? "" : JSON.stringify(detail);
     if (s.length > 20_000) return { truncated: true, bytes: s.length };
@@ -92,7 +92,6 @@ async function insertAudit(sb: any, payload: any): Promise<InsertAuditResult> {
     const b = await sb.from("audit_log").insert(payload);
     if (!b.error) return { kind: "ok", table: "audit_log" };
 
-    // hvis audit_log også ikke finnes/kolonner mangler → signalér ryddig
     if (isMissingTable(b.error) || isMissingColumn(b.error)) {
       return {
         kind: "err",
@@ -105,6 +104,12 @@ async function insertAudit(sb: any, payload: any): Promise<InsertAuditResult> {
   }
 
   return { kind: "err", error: "db_error", detail: a.error };
+}
+
+/** supabaseAdmin kan være client eller factory */
+async function adminClient(): Promise<any> {
+  const s: any = supabaseAdmin as any;
+  return typeof s === "function" ? await s() : s;
 }
 
 export async function POST(req: Request) {
@@ -138,16 +143,14 @@ export async function POST(req: Request) {
     if (!isUuid(entityId)) return jsonError(400, "BAD_REQUEST", "Ugyldig entityId (uuid).", { rid });
 
     const summary =
-      body.summary === undefined || body.summary === null
-        ? null
-        : String(body.summary).trim().slice(0, 500) || null;
+      body.summary === undefined || body.summary === null ? null : String(body.summary).trim().slice(0, 500) || null;
 
     const detail = clampDetail(body.detail);
 
     // 1) Service role (audit skal aldri stoppes av RLS)
     let sb: any;
     try {
-      sb = supabaseAdmin();
+      sb = await adminClient();
     } catch (e: any) {
       return jsonError(500, "SERVICE_ROLE_MISSING", "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", {
         rid,
@@ -169,7 +172,6 @@ export async function POST(req: Request) {
 
     const ins = await insertAudit(sb, payload);
 
-    // ✅ Nå er TS 100% happy: discriminant = kind
     if (ins.kind === "err") {
       if (ins.error === "audit_table_missing") {
         return jsonError(500, "AUDIT_TABLE_MISSING", "Finner verken audit_events eller audit_log i databasen.", {

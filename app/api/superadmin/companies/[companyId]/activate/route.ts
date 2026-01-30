@@ -1,55 +1,42 @@
 // app/api/superadmin/companies/[companyId]/activate/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { supabaseServer } from "@/lib/supabase/server";
 
-type RouteCtx = {
-  params: { companyId: string } | Promise<{ companyId: string }>;
-};
+/* =========================
+   Types
+========================= */
+type RouteCtx = { params: { companyId: string } | Promise<{ companyId: string }> };
+type ActivateBody = { note?: string };
 
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-}
-
-function ok(body: any, status = 200) {
-  return NextResponse.json({ ok: true, ...body }, { status, headers: noStore() });
-}
-
-function fail(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-
-function isUuid(v: any) {
-  return (
-    typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
-  );
-}
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-
+/* =========================
+   Utils
+========================= */
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-
+function normEmail(v: any) {
+  return safeStr(v).toLowerCase();
+}
 function safeName(v: any) {
   const s = safeStr(v);
   return s.length ? s : "der";
 }
-
 function env(name: string): string | null {
   const v = process.env[name];
   const s = String(v ?? "").trim();
   return s.length ? s : null;
+}
+function isUuid(v: any): v is string {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+  );
 }
 
 function isMissingColumnError(err: any) {
@@ -57,19 +44,20 @@ function isMissingColumnError(err: any) {
   const m = msg.toLowerCase();
   return m.includes("could not find the") && m.includes("column");
 }
-
 function isPgMissingColumn(err: any) {
   // Postgres undefined_column = 42703
   const code = String(err?.code ?? "");
   return code === "42703" || String(err?.message ?? "").toLowerCase().includes("does not exist");
 }
-
 function isMissingTableError(err: any) {
   const code = String(err?.code ?? "");
   // Postgres undefined_table = 42P01
   return code === "42P01" || String(err?.message ?? "").toLowerCase().includes("does not exist");
 }
 
+/* =========================
+   Best-effort email
+========================= */
 type MailResult = { sent: boolean; error: string | null };
 
 async function trySendMail(params: { to: string; subject: string; text: string; replyTo?: string }): Promise<MailResult> {
@@ -86,7 +74,6 @@ async function trySendMail(params: { to: string; subject: string; text: string; 
 
   let nodemailer: any;
   try {
-    // ✅ nodemailer eksporteres ikke alltid som default i ESM
     nodemailer = await import("nodemailer");
   } catch {
     return { sent: false, error: "nodemailer_not_installed" };
@@ -114,12 +101,9 @@ async function trySendMail(params: { to: string; subject: string; text: string; 
   }
 }
 
-type ActivateBody = { note?: string };
-
-/**
- * Best-effort audit -> prøver audit_events først, fallback audit_log.
- * Feil her skal aldri stoppe aktivering.
- */
+/* =========================
+   Best-effort audit
+========================= */
 async function tryAudit(
   sb: any,
   payload: {
@@ -132,6 +116,7 @@ async function tryAudit(
     summary?: string | null;
     detail?: any;
     created_at?: string;
+    rid?: string | null;
   }
 ) {
   try {
@@ -146,93 +131,93 @@ async function tryAudit(
       summary: payload.summary ?? null,
       detail: payload.detail ?? null,
       created_at: now,
+      rid: payload.rid ?? null,
     };
 
-    // 1) audit_events
     const a = await sb.from("audit_events").insert(row as any);
     if (!a.error) return;
 
-    // 2) fallback audit_log (legacy) om tabell/kolonner ikke finnes
     if (isMissingTableError(a.error) || isMissingColumnError(a.error) || isPgMissingColumn(a.error)) {
-      const b = await sb.from("audit_log").insert(row as any);
-      if (!b.error) return;
+      await sb.from("audit_log").insert(row as any);
     }
   } catch {
-    return;
+    // best effort
   }
 }
 
-export async function POST(req: Request, ctx: RouteCtx) {
-  const rid = `sa_activate_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+function denyResponse(s: any): Response {
+  if (s?.response) return s.response as Response;
+  if (s?.res) return s.res as Response;
+  const rid = String(s?.ctx?.rid ?? "rid_missing");
+  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+}
+
+/* =========================
+   POST
+========================= */
+export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.companies.activate.POST", ["superadmin"]);
+  if (deny) return deny;
+
+  const params = await ctx.params;
+  const companyId = safeStr(params?.companyId);
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+
+  const body = ((await readJson(req)) ?? {}) as ActivateBody;
+  const note = typeof body?.note === "string" ? body.note.trim().slice(0, 500) : null;
+
+  let sb: any;
+  try {
+    sb = supabaseAdmin();
+  } catch (e: any) {
+    return jsonErr(500, a, "SERVICE_ROLE_MISSING", "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", {
+      error: String(e?.message ?? e),
+    });
+  }
 
   try {
-    const { companyId } = await ctx.params;
-    if (!isUuid(companyId)) return fail(400, "bad_request", "Ugyldig companyId", { rid });
-
-    // 0) Session (cookie)
-    const sbUser = await supabaseServer();
-    const { data: auth, error: authErr } = await sbUser.auth.getUser();
-    if (authErr || !auth?.user) return fail(401, "unauthorized", "Ikke innlogget", { rid });
-
-    // ✅ Hard superadmin-fasit på e-post
-    const actorEmail = normEmail(auth.user.email);
-    if (actorEmail !== "superadmin@lunchportalen.no") {
-      return fail(403, "forbidden", "Kun superadmin kan aktivere firma", { rid });
-    }
-
-    const body = (await req.json().catch(() => ({}))) as ActivateBody;
-    const note = typeof body?.note === "string" ? body.note.trim().slice(0, 500) : null;
-
-    // 1) Service role
-    let sb: any;
-    try {
-      sb = supabaseAdmin();
-    } catch (e: any) {
-      return fail(500, "service_role_missing", "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", {
-        rid,
-        error: String(e?.message ?? e),
-      });
-    }
-
-    // 2) Les firma
+    // 1) Les firma
     const { data: existing, error: exErr } = await sb
       .from("companies")
       .select("id,name,status,agreement_json,updated_at")
       .eq("id", companyId)
       .maybeSingle();
 
-    if (exErr) return fail(500, "db_error", "Kunne ikke lese firma", { rid, exErr });
-    if (!existing) return fail(404, "not_found", "Firma finnes ikke", { rid });
+    if (exErr) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese firma.", exErr);
+    if (!existing) return jsonErr(404, a, "NOT_FOUND", "Firma finnes ikke.");
 
-    const currentStatus = String(existing.status ?? "").toLowerCase();
+    const currentStatus = String((existing as any).status ?? "").toLowerCase();
 
-    // ✅ Idempotent: allerede aktiv
+    // 2) Idempotent: allerede aktiv
     if (currentStatus === "active") {
       await tryAudit(sb, {
-        actor_user_id: auth.user.id,
-        actor_email: auth.user.email ?? null,
+        actor_user_id: a.scope?.userId ?? null,
+        actor_email: a.scope?.email ?? null,
         actor_role: "superadmin",
         action: "company_activate_noop",
         entity_type: "company",
         entity_id: companyId,
         summary: "Already active",
-        detail: { rid, status: "active" },
+        detail: { from: currentStatus, to: "active" },
+        rid: a.rid,
       });
 
-      return ok({ rid, company: existing, meta: { alreadyActive: true } });
+      return jsonOk(a, { ok: true, rid: a.rid, company: existing, meta: { alreadyActive: true } }, 200);
     }
 
     if (currentStatus !== "pending") {
-      return fail(409, "invalid_state", `Kan ikke aktivere firma fra status '${existing.status}'.`, {
-        rid,
-        status: existing.status,
+      return jsonErr(409, a, "INVALID_STATE", `Kan ikke aktivere firma fra status '${(existing as any).status}'.`, {
+        status: (existing as any).status,
       });
     }
 
     // 3) Update -> active (schema-safe)
     const now = new Date().toISOString();
 
-    // prøv rik update først (hvis kolonner finnes)
     let up = await sb
       .from("companies")
       .update(
@@ -248,7 +233,6 @@ export async function POST(req: Request, ctx: RouteCtx) {
       .single();
 
     if (up.error && (isMissingColumnError(up.error) || isPgMissingColumn(up.error))) {
-      // fallback på garanterte felt
       up = await sb
         .from("companies")
         .update({ status: "active", updated_at: now } as any)
@@ -257,19 +241,20 @@ export async function POST(req: Request, ctx: RouteCtx) {
         .single();
     }
 
-    if (up.error) return fail(500, "db_error", "Kunne ikke aktivere firma", { rid, upErr: up.error });
+    if (up.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke aktivere firma.", up.error);
 
-    // 3.1) Audit (best-effort)
+    // 3.1) Audit (best effort)
     await tryAudit(sb, {
-      actor_user_id: auth.user.id,
-      actor_email: auth.user.email ?? null,
+      actor_user_id: a.scope?.userId ?? null,
+      actor_email: a.scope?.email ?? null,
       actor_role: "superadmin",
       action: "company_activate",
       entity_type: "company",
       entity_id: companyId,
       summary: "Pending -> Active",
-      detail: { rid, from: "pending", to: "active", note },
+      detail: { from: "pending", to: "active", note },
       created_at: now,
+      rid: a.rid,
     });
 
     // 4) Email (best effort)
@@ -303,20 +288,24 @@ export async function POST(req: Request, ctx: RouteCtx) {
       emailError = mail.sent ? null : mail.error;
     }
 
-    return ok({
-      rid,
-      company: up.data,
-      meta: {
-        transitionedFrom: "pending",
-        transitionedTo: "active",
-        emailSent,
-        emailError,
+    return jsonOk(
+      a,
+      {
+        ok: true,
+        rid: a.rid,
+        company: up.data,
+        meta: {
+          transitionedFrom: "pending",
+          transitionedTo: "active",
+          emailSent,
+          emailError,
+        },
       },
-    });
+      200
+    );
   } catch (e: any) {
-    return fail(500, "server_error", "Uventet feil i aktivering.", {
-      rid,
-      error: String(e?.message ?? e),
+    return jsonErr(500, a, "SERVER_ERROR", "Uventet feil i aktivering.", {
+      message: String(e?.message ?? e),
     });
   }
 }

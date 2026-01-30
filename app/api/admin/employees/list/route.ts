@@ -1,50 +1,50 @@
+// app/api/admin/employees/list/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.employees.list", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+
   try {
-    const sb = await supabaseServer();
-    const { data: auth, error: authErr } = await sb.auth.getUser();
-    if (authErr || !auth?.user) return jsonError(401, "unauthorized", "Du må være innlogget.");
-
-    const userId = auth.user.id;
-
-    // role + company scope (RLS-safe read først)
-    const { data: me, error: meErr } = await sb
-      .from("profiles")
-      .select("user_id, role, company_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (meErr) return jsonError(500, "db_error", "Kunne ikke lese profil.", meErr);
-    if (!me) return jsonError(403, "forbidden", "Mangler profil.");
-    if (me.role !== "company_admin") return jsonError(403, "forbidden", "Kun firma-admin har tilgang.");
-    if (!me.company_id) return jsonError(400, "missing_company", "Mangler firmatilknytning.");
-
-    // bruk admin til å lese uten RLS-trøbbel, men med hard scope i kode
     const admin = supabaseAdmin();
+
     const { data: rows, error: rowsErr } = await admin
       .from("profiles")
-      .select("user_id, name, email, role, created_at, disabled_at, disabled_reason")
-      .eq("company_id", me.company_id)
+      .select("id, name, full_name, email, role, created_at, disabled_at, disabled_reason")
+      .eq("company_id", companyId)
       .in("role", ["employee"])
       .order("created_at", { ascending: false });
 
-    if (rowsErr) return jsonError(500, "db_error", "Kunne ikke hente ansatte.", rowsErr);
+    if (rowsErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ansatte.", { message: rowsErr.message });
 
-    return NextResponse.json({
+    return jsonOk({
       ok: true,
+      rid,
+      companyId,
       employees: (rows ?? []).map((r: any) => ({
-        user_id: r.user_id,
-        name: r.name ?? null,
+        user_id: r.id, // profiles.id = auth.user.id
+        name: r.full_name ?? r.name ?? null,
         email: r.email ?? null,
         role: r.role,
         created_at: r.created_at,
@@ -53,6 +53,6 @@ export async function GET() {
       })),
     });
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil.", String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

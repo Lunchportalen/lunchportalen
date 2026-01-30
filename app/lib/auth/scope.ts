@@ -99,7 +99,7 @@ function computeRoleNoDb(user: any): Role {
 ========================================================= */
 
 type ProfileRow = {
-  user_id: string;
+  id: string; // ✅ profiles.id = auth.user.id (fasit)
   email: string | null;
   role: string | null;
   company_id: string | null;
@@ -120,11 +120,11 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // 2) Forsøk å hente profile (for tenant-roller), men superadmin skal ikke være avhengig av profile
+  // 2) Hent profile (tenant-roller bruker profile; systemroller kan leve uten)
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
-    .select("user_id,email,role,company_id,location_id,is_active")
-    .eq("user_id", user.id)
+    .select("id,email,role,company_id,location_id,is_active")
+    .eq("id", user.id) // ✅ korrekt nøkkel
     .maybeSingle<ProfileRow>();
 
   // 3) Rolle: profilrolle har førsteprioritet hvis den finnes og er gyldig
@@ -134,7 +134,6 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   if (profileRoleRaw && isValidRole(profileRoleRaw)) {
     role = profileRoleRaw as Role;
   } else {
-    // fallback: metadata/email
     role = computeRoleNoDb(user);
   }
 
@@ -143,7 +142,6 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   //    - company_admin/employee MÅ ha profile
   if (!profile || profErr) {
     if (role === "superadmin" || role === "kitchen" || role === "driver") {
-      // systemrolle uten tenant binding
       return {
         user_id: user.id,
         email: user.email ?? null,
@@ -168,7 +166,7 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   }
 
   return {
-    user_id: profile.user_id,
+    user_id: user.id,
     email: profile.email ?? user.email ?? null,
     role,
     company_id: profile.company_id ?? null,

@@ -198,7 +198,6 @@ function pickDestination(user: any, requestedNextRaw: string | null) {
 
 /* =========================================================
    ✅ Cookie-safe redirects
-   (kritisk: behold cookies satt av Supabase refresh)
 ========================================================= */
 function withCookies(from: NextResponse, to: NextResponse) {
   for (const c of from.cookies.getAll()) {
@@ -223,7 +222,8 @@ export async function middleware(req: NextRequest) {
 
   if (isBypassPath(pathname)) return NextResponse.next();
 
-  let res = NextResponse.next();
+  // ✅ prefer-const fix
+  const res = NextResponse.next();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

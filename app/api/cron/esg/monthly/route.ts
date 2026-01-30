@@ -1,21 +1,49 @@
 // app/api/cron/esg/monthly/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+/* =========================================================
+   Dag-10: no-store + consistent JSON
+========================================================= */
 function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
 }
 function jsonOk(body: any, status = 200) {
   return NextResponse.json(body, { status, headers: noStore() });
 }
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+}
 
+/* =========================================================
+   Cron secret gate (fail-closed)
+   - Header: x-cron-secret
+   - Authorization: Bearer
+========================================================= */
+function requireCronSecret(req: NextRequest) {
+  const expected = (process.env.CRON_SECRET ?? "").trim();
+  if (!expected) throw new Error("cron_secret_missing");
+
+  const hdr = (req.headers.get("x-cron-secret") ?? "").trim();
+  const auth = (req.headers.get("authorization") ?? "").trim();
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+
+  const got = hdr || bearer;
+  if (!got || got !== expected) {
+    const err = new Error("forbidden");
+    (err as any).code = "forbidden";
+    throw err;
+  }
+}
+
+/* =========================================================
+   Helpers
+========================================================= */
 function isIsoMonth01(v: any) {
   return typeof v === "string" && /^\d{4}-\d{2}-01$/.test(v);
 }
@@ -31,39 +59,55 @@ function osloMonthStartISO(): string {
   return today.slice(0, 8) + "01"; // YYYY-MM-01
 }
 
-function requireCronSecret(req: NextRequest) {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return { ok: false, status: 500, message: "CRON_SECRET mangler i env" as const };
-
-  const hdr = req.headers.get("x-cron-secret") || "";
-  const auth = req.headers.get("authorization") || "";
-  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "";
-  const got = hdr || bearer;
-
-  if (got !== expected) return { ok: false, status: 401, message: "Ugyldig cron secret" as const };
-  return { ok: true as const };
-}
-
-// ✅ håndter både "client" og "factory"
+/* =========================================================
+   Supabase admin client
+   - supports both factory and instance variants
+========================================================= */
 async function getAdminClient() {
   const anyAdmin: any = supabaseAdmin as any;
   return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
 }
 
+/* =========================================================
+   POST /api/cron/esg/monthly?month=YYYY-MM-01
+   Default: current month start (Oslo)
+========================================================= */
 export async function POST(req: NextRequest) {
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
+  const rid = crypto.randomUUID?.() ?? `esg_build_monthly_${Date.now().toString(36)}`;
 
-  const guard = requireCronSecret(req);
-  if (!guard.ok) return jsonErr(guard.status, rid, "UNAUTHORIZED", guard.message);
+  // Gate FIRST (no side effects before secret validated)
+  try {
+    requireCronSecret(req);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i env");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
+    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
+  }
 
   const url = new URL(req.url);
-  const month = url.searchParams.get("month") || osloMonthStartISO();
-  if (!isIsoMonth01(month)) return jsonErr(400, rid, "BAD_REQUEST", "month må være YYYY-MM-01", { month });
+  const month = (url.searchParams.get("month") ?? "").trim() || osloMonthStartISO();
 
-  const admin = await getAdminClient();
+  if (!isIsoMonth01(month)) {
+    return jsonErr(400, rid, "bad_request", "month må være YYYY-MM-01", { month });
+  }
 
-  const { data, error } = await admin.rpc("esg_build_monthly", { p_month: month });
-  if (error) return jsonErr(500, rid, "RPC_ERROR", "esg_build_monthly feilet", error);
+  try {
+    const admin = await getAdminClient();
 
-  return jsonOk({ ok: true, rid, month, result: data });
+    const { data, error } = await admin.rpc("esg_build_monthly", { p_month: month });
+
+    if (error) {
+      return jsonErr(500, rid, "rpc_error", "esg_build_monthly feilet", {
+        message: error.message ?? String(error),
+        code: (error as any)?.code ?? null,
+        hint: (error as any)?.hint ?? null,
+        details: (error as any)?.details ?? null,
+      });
+    }
+
+    return jsonOk({ ok: true, rid, month, result: data }, 200);
+  } catch (e: any) {
+    return jsonErr(500, rid, "server_error", "ESG build monthly cron feilet", { message: String(e?.message ?? e), month });
+  }
 }

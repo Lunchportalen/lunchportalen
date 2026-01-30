@@ -1,135 +1,112 @@
 // app/api/orders/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { osloTodayISODate } from "@/lib/date/oslo";
-import { cutoffStatusNow } from "@/lib/date/cutoff";
+import type { NextRequest } from "next/server";
+
+import { osloTodayISODate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { getMenuForDate } from "@/lib/sanity/queries";
 import { supabaseServer } from "@/lib/supabase/server";
-import { assertBeforeCutoff0800 } from "@/lib/guards/cutoff";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { orderBase, receiptFor } from "@/lib/api/orderResponse";
 
-function clampNote(v: unknown) {
-  return (v ?? "").toString().trim().slice(0, 300);
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-// ✅ Konsistent logging + kontekst
-function logApiError(scope: string, err: any, extra?: Record<string, any>) {
-  try {
-    console.error(`[${scope}]`, err?.message || err, { ...extra, err });
-  } catch {
-    console.error(`[${scope}]`, err?.message || err);
-  }
-}
-
-function isDuplicateKeyError(err: any) {
-  const msg = String(err?.message ?? "").toLowerCase();
-  // Supabase/Postgres kan variere litt, vi sjekker bredt:
-  return msg.includes("duplicate") || msg.includes("unique constraint") || msg.includes("email_outbox_event_key_key");
-}
-
-async function queueBackupEmail(params: {
-  supabase: any;
-  eventKey: string;
-  subject: string;
-  text: string;
-  html?: string | null;
-}) {
-  const mailFrom = process.env.LP_BACKUP_FROM || "ordre@lunchportalen.no";
-  const mailTo = process.env.LP_BACKUP_TO || "ordre@lunchportalen.no";
-
-  const { error } = await params.supabase.from("email_outbox").insert({
-    event_key: params.eventKey,
-    mail_from: mailFrom,
-    mail_to: mailTo,
-    subject: params.subject,
-    body_text: params.text,
-    body_html: params.html ?? null,
-  });
-
-  if (error && !isDuplicateKeyError(error)) {
-    throw error;
-  }
-}
-
-function locked409(rid: string, dateISO: string, cutoffTime?: string, menuAvailable?: boolean) {
-  return NextResponse.json(
-    orderBase({
-      ok: false,
-      rid,
-      date: dateISO,
-      locked: true,
-      cutoffTime: cutoffTime ?? "08:00",
-      menuAvailable: menuAvailable ?? true,
-      canAct: false,
-      error: "LOCKED_AFTER_0800",
-      message: `Handling er stengt etter kl. ${cutoffTime ?? "08:00"} (Oslo-tid).`,
-      receipt: null,
-      order: null,
-    }),
-    { status: 409 }
-  );
-}
-
-function blocked409(rid: string, dateISO: string, cutoffTime: string, menuAvailable: boolean, code: string, message: string, detail?: any) {
-  return NextResponse.json(
-    orderBase({
-      ok: false,
-      rid,
-      date: dateISO,
-      locked: false,
-      cutoffTime,
-      menuAvailable,
-      canAct: false,
-      error: code,
-      message,
-      receipt: null,
-      order: null,
-      detail: detail ?? undefined,
-    } as any),
-    { status: 409 }
-  );
-}
-
-function blocked403(rid: string, dateISO: string, cutoffTime: string, menuAvailable: boolean, code: string, message: string, detail?: any) {
-  return NextResponse.json(
-    orderBase({
-      ok: false,
-      rid,
-      date: dateISO,
-      locked: false,
-      cutoffTime,
-      menuAvailable,
-      canAct: false,
-      error: code,
-      message,
-      receipt: null,
-      order: null,
-      detail: detail ?? undefined,
-    } as any),
-    { status: 403 }
-  );
-}
+// ✅ MUST audit (lukket sirkel)
+import { auditWriteMust } from "@/lib/audit/auditWrite";
 
 /* =========================================================
-   Enforcement helpers (server-side, cannot be bypassed)
+   Helpers
 ========================================================= */
-async function enforceCompanyAndAgreement(params: {
-  supabase: any;
+
+function clampNote(v: unknown) {
+  const s = String(v ?? "").trim();
+  return s.length ? s.slice(0, 300) : "";
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function lockForToday(dateISO: string): { locked: boolean; cutoffTime: string; lockCode: string | null } {
+  const cutoff = cutoffStatusForDate(dateISO);
+  if (cutoff === "TODAY_LOCKED") return { locked: true, cutoffTime: "08:00", lockCode: "LOCKED_AFTER_0800" };
+  if (cutoff === "PAST") return { locked: true, cutoffTime: "08:00", lockCode: "DATE_LOCKED_PAST" };
+  return { locked: false, cutoffTime: "08:00", lockCode: null };
+}
+
+type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
+function normCompanyStatus(v: any): CompanyLifecycle {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  if (s === "PENDING") return "PENDING";
+  return "UNKNOWN";
+}
+
+function adminClientOrNull() {
+  try {
+    return supabaseAdmin();
+  } catch {
+    return null;
+  }
+}
+
+function respond(status: number, body: any) {
+  return jsonOk(body, status);
+}
+
+type AgreementRow = {
+  status: any;
+  start_date: string | null;
+  end_date: string | null;
+  cutoff_time: string | null;
+  timezone: string | null;
+};
+
+async function enforceCompanyAndAgreement(input: {
   rid: string;
   dateISO: string;
   cutoffTime: string;
   menuAvailable: boolean;
   company_id: string;
+  location_id: string;
+  user_id: string;
+  actor_email: string | null;
+  actor_role: string | null;
 }) {
-  const { supabase, rid, dateISO, cutoffTime, menuAvailable, company_id } = params;
+  const { rid, dateISO, cutoffTime, menuAvailable, company_id, location_id, user_id } = input;
+
+  const admin = adminClientOrNull();
+  if (!admin) {
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "CONFIG_ERROR",
+        message: "Mangler service role konfigurasjon for firmastatus/avtale.",
+        detail: { missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"] },
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
 
   // 1) Company status
-  const { data: cRow, error: cErr } = await supabase.from("companies").select("id,status").eq("id", company_id).maybeSingle();
-  if (cErr) {
-    logApiError("orders enforce company failed", cErr, { rid, dateISO, company_id });
-    return NextResponse.json(
+  const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
+  if (cRes.error || !cRes.data) {
+    return respond(
+      500,
       orderBase({
         ok: false,
         rid,
@@ -140,34 +117,82 @@ async function enforceCompanyAndAgreement(params: {
         canAct: false,
         error: "COMPANY_LOOKUP_FAILED",
         message: "Kunne ikke verifisere firmastatus.",
+        detail: { error: cRes.error?.message ?? null, company_id },
         receipt: null,
         order: null,
-      }),
-      { status: 500 }
+      } as any)
     );
   }
-  if (!cRow) {
-    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "COMPANY_NOT_FOUND", "Fant ikke firmaet for kontoen din.", {
-      company_id,
-    });
-  }
-  if (String(cRow.status).toUpperCase() !== "ACTIVE") {
-    return blocked403(rid, dateISO, cutoffTime, menuAvailable, "COMPANY_BLOCKED", "Firmaet er deaktivert.", {
-      status: cRow.status,
-      company_id,
-    });
+
+  const companyStatus = normCompanyStatus((cRes.data as any).status);
+  if (companyStatus !== "ACTIVE") {
+    const reason =
+      companyStatus === "PAUSED" ? "COMPANY_PAUSED" : companyStatus === "CLOSED" ? "COMPANY_CLOSED" : "COMPANY_NOT_ACTIVE";
+
+    // MUST audit: enforcement block
+    try {
+      await auditWriteMust({
+        rid,
+        action: "ENFORCEMENT_BLOCK",
+        entity_type: "order",
+        entity_id: `${company_id}:${location_id}:${user_id}:${dateISO}`,
+        company_id,
+        location_id,
+        actor_user_id: user_id,
+        actor_email: input.actor_email,
+        actor_role: input.actor_role,
+        summary: reason,
+        detail: { route: "/api/orders", date: dateISO, company_status: companyStatus, reason, intent: "ORDER" },
+      });
+    } catch (e: any) {
+      return respond(
+        500,
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: false,
+          cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "AUDIT_INSERT_FAILED",
+          message: "Kunne ikke logge enforcement-block. Avbryter for å bevare fasit.",
+          detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
+          receipt: null,
+          order: null,
+        } as any)
+      );
+    }
+
+    return respond(
+      403,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: reason,
+        message: "Firmaet er deaktivert.",
+        detail: { company_status: companyStatus },
+        receipt: null,
+        order: null,
+      } as any)
+    );
   }
 
-  // 2) Agreement status (view/derived)
-  const { data: ag, error: aErr } = await supabase
+  // 2) Agreement (view/derived)
+  const aRes = await admin
     .from("company_current_agreement")
     .select("status,start_date,end_date,cutoff_time,timezone")
     .eq("company_id", company_id)
     .maybeSingle();
 
-  if (aErr) {
-    logApiError("orders enforce agreement failed", aErr, { rid, dateISO, company_id });
-    return NextResponse.json(
+  if (aRes.error) {
+    return respond(
+      500,
       orderBase({
         ok: false,
         rid,
@@ -178,24 +203,53 @@ async function enforceCompanyAndAgreement(params: {
         canAct: false,
         error: "AGREEMENT_LOOKUP_FAILED",
         message: "Kunne ikke verifisere avtale.",
+        detail: { error: aRes.error?.message ?? null },
         receipt: null,
         order: null,
-      }),
-      { status: 500 }
+      } as any)
     );
   }
 
+  const ag = (aRes.data as AgreementRow | null) ?? null;
   if (!ag) {
-    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_MISSING", "Ingen aktiv avtale er registrert for firmaet.", {
-      company_id,
-    });
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AGREEMENT_MISSING",
+        message: "Ingen aktiv avtale er registrert for firmaet.",
+        detail: { company_id },
+        receipt: null,
+        order: null,
+      } as any)
+    );
   }
 
-  const agStatus = String(ag.status ?? "").toUpperCase();
+  const agStatus = String(ag.status ?? "").trim().toUpperCase();
   if (agStatus !== "ACTIVE") {
-    return blocked403(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_INACTIVE", "Avtalen er ikke aktiv.", {
-      status: ag.status,
-    });
+    return respond(
+      403,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AGREEMENT_INACTIVE",
+        message: "Avtalen er ikke aktiv.",
+        detail: { status: ag.status },
+        receipt: null,
+        order: null,
+      } as any)
+    );
   }
 
   // Start/end sanity (ISO compare)
@@ -203,12 +257,42 @@ async function enforceCompanyAndAgreement(params: {
   const end = ag.end_date ? String(ag.end_date) : null;
 
   if (start && dateISO < start) {
-    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_NOT_STARTED", "Avtalen har ikke startet ennå.", {
-      start_date: start,
-    });
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AGREEMENT_NOT_STARTED",
+        message: "Avtalen har ikke startet ennå.",
+        detail: { start_date: start },
+        receipt: null,
+        order: null,
+      } as any)
+    );
   }
   if (end && dateISO > end) {
-    return blocked409(rid, dateISO, cutoffTime, menuAvailable, "AGREEMENT_EXPIRED", "Avtalen er utløpt.", { end_date: end });
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AGREEMENT_EXPIRED",
+        message: "Avtalen er utløpt.",
+        detail: { end_date: end },
+        receipt: null,
+        order: null,
+      } as any)
+    );
   }
 
   return null; // ✅ ok
@@ -217,642 +301,606 @@ async function enforceCompanyAndAgreement(params: {
 /* =========================================================
    GET: Hent status for dagens ordre (og UI-sannhet)
 ========================================================= */
-export async function GET() {
-  const rid = `order_get_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "orders.read", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
 
   const dateISO = osloTodayISODate();
-  const cutoff = cutoffStatusNow();
-  const cutoffTime = cutoff.cutoffTime ?? "08:00";
+  const lock = lockForToday(dateISO);
 
+  // Meny (best effort)
+  let menu: any = null;
   try {
-    // Meny (best effort)
-    let menu: any = null;
-    try {
-      menu = await getMenuForDate(dateISO);
-    } catch (e: any) {
-      logApiError("GET /api/orders menu failed", e, { rid, dateISO });
-      menu = null;
-    }
-    const menuAvailable = !!menu?.isPublished;
+    menu = await getMenuForDate(dateISO);
+  } catch {
+    menu = null;
+  }
+  const menuAvailable = !!menu?.isPublished;
 
-    const supabase = await supabaseServer();
+  const user_id = String(scope.userId ?? "").trim();
+  const company_id = String(scope.companyId ?? "").trim();
+  const location_id = String(scope.locationId ?? "").trim();
 
-    const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userRes?.user) {
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: cutoff.isLocked,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "UNAUTH",
-          message: "Ikke innlogget.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 401 }
-      );
-    }
-
-    const { data: profile, error: pErr } = await supabase
-      .from("profiles")
-      .select("company_id, location_id")
-      .eq("user_id", userRes.user.id)
-      .maybeSingle();
-
-    if (pErr) {
-      logApiError("GET /api/orders profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: cutoff.isLocked,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "PROFILE_LOOKUP_FAILED",
-          message: "Kunne ikke hente profil.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    if (!(profile?.company_id && profile?.location_id)) {
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: cutoff.isLocked,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "PROFILE_MISSING_SCOPE",
-          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
-    }
-
-    // ✅ Enforcement (firma + avtale) også for GET, slik at UI ikke lyver
-    const enfRes = await enforceCompanyAndAgreement({
-      supabase,
-      rid,
-      dateISO,
-      cutoffTime,
-      menuAvailable,
-      company_id: profile.company_id,
-    });
-    if (enfRes) return enfRes;
-
-    const { data: order, error: oErr } = await supabase
-      .from("orders")
-      .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
-      .eq("user_id", userRes.user.id)
-      .eq("date", dateISO)
-      .eq("company_id", profile.company_id)
-      .eq("location_id", profile.location_id)
-      .maybeSingle();
-
-    if (oErr) {
-      logApiError("GET /api/orders order lookup failed", oErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: cutoff.isLocked,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "DB_ERROR",
-          message: "Kunne ikke hente ordrestatus.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    const canAct = menuAvailable && !cutoff.isLocked;
-
-    return NextResponse.json(
-      orderBase({
-        ok: true,
-        rid,
-        date: dateISO,
-        locked: cutoff.isLocked,
-        cutoffTime,
-        menuAvailable,
-        canAct,
-        receipt: order?.id ? receiptFor(order.id, order.status, order.updated_at ?? order.created_at) : null,
-        order: order ?? null,
-      }),
-      { status: 200 }
-    );
-  } catch (err: any) {
-    logApiError("GET /api/orders failed", err, { rid, dateISO });
-    return NextResponse.json(
+  if (!user_id || !company_id) {
+    return respond(
+      409,
       orderBase({
         ok: false,
         rid,
         date: dateISO,
-        locked: cutoff.isLocked,
-        cutoffTime,
-        menuAvailable: true,
+        locked: lock.locked,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
         canAct: false,
-        error: "SERVER_ERROR",
-        message: err?.message || String(err),
+        error: "SCOPE_MISSING",
+        message: "Mangler scope (user/company).",
         receipt: null,
         order: null,
-      }),
-      { status: 500 }
+      } as any)
     );
   }
+  if (!location_id) {
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: lock.locked,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "LOCATION_MISSING",
+        message: "Mangler lokasjonstilknytning (location_id).",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  // ✅ Enforcement (firma + avtale)
+  const enfRes = await enforceCompanyAndAgreement({
+    rid,
+    dateISO,
+    cutoffTime: lock.cutoffTime,
+    menuAvailable,
+    company_id,
+    location_id,
+    user_id,
+    actor_email: scope.email ?? null,
+    actor_role: scope.role ?? null,
+  });
+  if (enfRes) return enfRes;
+
+  const sb = await supabaseServer();
+
+  const { data: order, error: oErr } = await sb
+    .from("orders")
+    .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
+    .eq("user_id", user_id)
+    .eq("date", dateISO)
+    .eq("company_id", company_id)
+    .eq("location_id", location_id)
+    .maybeSingle();
+
+  if (oErr) {
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: lock.locked,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "DB_ERROR",
+        message: "Kunne ikke hente ordrestatus.",
+        detail: { error: oErr.message },
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  const canAct = menuAvailable && !lock.locked;
+
+  return respond(
+    200,
+    orderBase({
+      ok: true,
+      rid,
+      date: dateISO,
+      locked: lock.locked,
+      cutoffTime: lock.cutoffTime,
+      menuAvailable,
+      canAct,
+      receipt: order?.id ? receiptFor(order.id, order.status, order.updated_at ?? order.created_at) : null,
+      order: order ?? null,
+    } as any)
+  );
 }
 
 /* =========================================================
    POST: Registrer/oppdater bestilling (idempotent)
 ========================================================= */
-export async function POST(req: Request) {
-  const rid = `order_post_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function POST(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-  // Stabil basisinfo (brukes også i catch)
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "orders.place", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
   const dateISO = osloTodayISODate();
-  const cutoff = cutoffStatusNow();
-  const cutoffTime = cutoff.cutoffTime ?? "08:00";
+  const lock = lockForToday(dateISO);
 
-  try {
-    // ✅ Hard cutoff på server (aldri UI) – to lag:
-    if (cutoff.isLocked) {
-      return locked409(rid, dateISO, cutoffTime, true);
-    }
-    assertBeforeCutoff0800("Bestilling");
-
-    // Meny (logg dersom Sanity/ENV feiler)
-    let menu: any = null;
-    try {
-      menu = await getMenuForDate(dateISO);
-    } catch (e: any) {
-      logApiError("POST /api/orders menu failed", e, { rid, dateISO });
-      menu = null;
-    }
-
-    const menuAvailable = !!menu?.isPublished;
-
-    if (!menuAvailable) {
-      return blocked409(rid, dateISO, cutoffTime, false, "MENU_NOT_PUBLISHED", "Meny er ikke publisert ennå.");
-    }
-
-    const body = await req.json().catch(() => ({}));
-    const note = clampNote(body?.note);
-
-    const supabase = await supabaseServer();
-
-    const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userRes?.user) {
-      logApiError("POST /api/orders auth failed", userErr, { rid, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "UNAUTH",
-          message: "Ikke innlogget.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 401 }
-      );
-    }
-
-    // ✅ Scope fra profil (company/location)
-    const { data: profile, error: pErr } = await supabase
-      .from("profiles")
-      .select("company_id, location_id")
-      .eq("user_id", userRes.user.id)
-      .maybeSingle();
-
-    if (pErr) {
-      logApiError("POST /api/orders profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "PROFILE_LOOKUP_FAILED",
-          message: "Kunne ikke hente profil.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    const hasScope = !!(profile?.company_id && profile?.location_id);
-
-    if (!hasScope) {
-      logApiError("POST /api/orders profile missing scope", "PROFILE_MISSING_SCOPE", {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        profile,
-      });
-
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "PROFILE_MISSING_SCOPE",
-          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
-    }
-
-    // ✅ Enforcement (firma + avtale)
-    const enfRes = await enforceCompanyAndAgreement({
-      supabase,
-      rid,
-      dateISO,
-      cutoffTime,
-      menuAvailable,
-      company_id: profile.company_id,
-    });
-    if (enfRes) return enfRes;
-
-    // ✅ Idempotent UPSERT (MÅ matche unik index: user_id, location_id, date)
-    // ✅ NB: orders-schemaet har også slot. Hvis dere har default-slot i DB (anbefalt), er dette ok.
-    const { data, error } = await supabase
-      .from("orders")
-      .upsert(
-        {
-          user_id: userRes.user.id,
-          date: dateISO,
-          status: "active", // ✅ enum: active/canceled
-          note,
-          company_id: profile!.company_id,
-          location_id: profile!.location_id,
-        },
-        { onConflict: "user_id,location_id,date" } // ✅ matcher indexen
-      )
-      .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
-      .single();
-
-    if (error) {
-      logApiError("POST /api/orders db upsert failed", error, {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
-      });
-
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable,
-          canAct: false,
-          error: "DB_ERROR",
-          message: error.message,
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    // ✅ Outbox: legg e-post-backup i kø (ikke la dette stoppe ordre)
-    try {
-      await queueBackupEmail({
-        supabase,
-        eventKey: `order_active_${userRes.user.id}_${profile!.location_id}_${dateISO}`,
-        subject: `Lunchportalen – Bestilling registrert (${dateISO})`,
-        text:
-          `Bestilling registrert\n\n` +
-          `Dato: ${dateISO}\n` +
-          `User: ${userRes.user.id}\n` +
-          `Company: ${profile!.company_id}\n` +
-          `Location: ${profile!.location_id}\n` +
-          (data?.slot ? `Slot: ${data.slot}\n` : "") +
-          `Status: active\n` +
-          (note ? `Notat: ${note}\n` : ""),
-      });
-    } catch (e: any) {
-      logApiError("POST /api/orders outbox enqueue failed", e, {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
-      });
-      // Fortsett likevel (ordre er viktigst)
-    }
-
-    return NextResponse.json(
+  if (lock.locked) {
+    return respond(
+      409,
       orderBase({
-        ok: true,
+        ok: false,
         rid,
         date: dateISO,
-        locked: false,
-        cutoffTime,
-        menuAvailable,
-        canAct: true,
-        error: null,
-        message: null,
-        receipt: receiptFor(data.id, data.status, data.updated_at ?? data.created_at),
-        order: data,
-      }),
-      { status: 200 }
+        locked: true,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: true,
+        canAct: false,
+        error: lock.lockCode ?? "LOCKED",
+        message: `Handling er stengt etter kl. ${lock.cutoffTime} (Oslo-tid).`,
+        receipt: null,
+        order: null,
+      } as any)
     );
-  } catch (err: any) {
-    // ✅ LÅST: korrekt JSON for cutoff (409) – samme shape
-    if (err?.code === "CUTOFF") {
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: true,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "cutoff",
-          message: err.message,
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
-    }
+  }
 
-    logApiError("POST /api/orders failed", err, { rid });
-    return NextResponse.json(
+  // Meny (best effort)
+  let menu: any = null;
+  try {
+    menu = await getMenuForDate(dateISO);
+  } catch {
+    menu = null;
+  }
+  const menuAvailable = !!menu?.isPublished;
+  if (!menuAvailable) {
+    return respond(
+      409,
       orderBase({
         ok: false,
         rid,
         date: dateISO,
         locked: false,
-        cutoffTime,
-        menuAvailable: true,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: false,
         canAct: false,
-        error: "SERVER_ERROR",
-        message: err?.message || String(err),
+        error: "MENU_NOT_PUBLISHED",
+        message: "Meny er ikke publisert ennå.",
         receipt: null,
         order: null,
-      }),
-      { status: 500 }
+      } as any)
     );
   }
+
+  const user_id = String(scope.userId ?? "").trim();
+  const company_id = String(scope.companyId ?? "").trim();
+  const location_id = String(scope.locationId ?? "").trim();
+
+  if (!user_id || !company_id) {
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "SCOPE_MISSING",
+        message: "Mangler scope (user/company).",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+  if (!location_id) {
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "LOCATION_MISSING",
+        message: "Mangler lokasjonstilknytning (location_id).",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  // ✅ Enforcement (firma + avtale)
+  const enfRes = await enforceCompanyAndAgreement({
+    rid,
+    dateISO,
+    cutoffTime: lock.cutoffTime,
+    menuAvailable,
+    company_id,
+    location_id,
+    user_id,
+    actor_email: scope.email ?? null,
+    actor_role: scope.role ?? null,
+  });
+  if (enfRes) return enfRes;
+
+  const body = await readJson(req);
+  const note = clampNote((body as any)?.note);
+
+  const sb = await supabaseServer();
+
+  const { data, error } = await sb
+    .from("orders")
+    .upsert(
+      {
+        user_id,
+        date: dateISO,
+        status: "ACTIVE",
+        note,
+        company_id,
+        location_id,
+      },
+      { onConflict: "user_id,location_id,date" }
+    )
+    .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
+    .single();
+
+  if (error || !data) {
+    // MUST audit: db error
+    try {
+      await auditWriteMust({
+        rid,
+        action: "ORDER_PLACE_FAILED",
+        entity_type: "order",
+        entity_id: `${company_id}:${location_id}:${user_id}:${dateISO}`,
+        company_id,
+        location_id,
+        actor_user_id: user_id,
+        actor_email: scope.email ?? null,
+        actor_role: scope.role ?? null,
+        summary: "DB_ERROR",
+        detail: { route: "/api/orders", date: dateISO, error: error?.message ?? "unknown" },
+      });
+    } catch (e: any) {
+      return respond(
+        500,
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: false,
+          cutoffTime: lock.cutoffTime,
+          menuAvailable,
+          canAct: false,
+          error: "AUDIT_INSERT_FAILED",
+          message: "Kunne ikke logge DB-feil. Avbryter for å bevare fasit.",
+          detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
+          receipt: null,
+          order: null,
+        } as any)
+      );
+    }
+
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "DB_ERROR",
+        message: error?.message ?? "Kunne ikke registrere bestilling.",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  // MUST audit: applied
+  try {
+    await auditWriteMust({
+      rid,
+      action: "ORDER_PLACE_APPLIED",
+      entity_type: "order",
+      entity_id: data.id,
+      company_id,
+      location_id,
+      actor_user_id: user_id,
+      actor_email: scope.email ?? null,
+      actor_role: scope.role ?? null,
+      summary: "Placed",
+      detail: { route: "/api/orders", date: dateISO, slot: data.slot ?? null },
+    });
+  } catch (e: any) {
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable,
+        canAct: false,
+        error: "AUDIT_INSERT_FAILED",
+        message: "Kunne ikke logge bestilling. Avbryter for å bevare fasit.",
+        detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  return respond(
+    200,
+    orderBase({
+      ok: true,
+      rid,
+      date: dateISO,
+      locked: false,
+      cutoffTime: lock.cutoffTime,
+      menuAvailable,
+      canAct: true,
+      error: null,
+      message: null,
+      receipt: receiptFor(data.id, data.status, data.updated_at ?? data.created_at),
+      order: data,
+    } as any)
+  );
 }
 
 /* =========================================================
    DELETE: Avbestill (status update, ikke fysisk delete)
 ========================================================= */
-export async function DELETE() {
-  const rid = `order_del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function DELETE(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "orders.cancel", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
 
   const dateISO = osloTodayISODate();
-  const cutoff = cutoffStatusNow();
-  const cutoffTime = cutoff.cutoffTime ?? "08:00";
+  const lock = lockForToday(dateISO);
 
-  try {
-    // ✅ Hard cutoff på server (aldri UI) – to lag:
-    if (cutoff.isLocked) {
-      return locked409(rid, dateISO, cutoffTime, true);
-    }
-    assertBeforeCutoff0800("Avbestilling");
-
-    const supabase = await supabaseServer();
-
-    const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userRes?.user) {
-      logApiError("DELETE /api/orders auth failed", userErr, { rid, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "UNAUTH",
-          message: "Ikke innlogget.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 401 }
-      );
-    }
-
-    const { data: profile, error: pErr } = await supabase
-      .from("profiles")
-      .select("company_id, location_id")
-      .eq("user_id", userRes.user.id)
-      .maybeSingle();
-
-    if (pErr) {
-      logApiError("DELETE /api/orders profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "PROFILE_LOOKUP_FAILED",
-          message: "Kunne ikke hente profil.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    const hasScope = !!(profile?.company_id && profile?.location_id);
-
-    if (!hasScope) {
-      logApiError("DELETE /api/orders profile missing scope", "PROFILE_MISSING_SCOPE", {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        profile,
-      });
-
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "PROFILE_MISSING_SCOPE",
-          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
-    }
-
-    // ✅ Enforcement (firma + avtale)
-    const enfRes = await enforceCompanyAndAgreement({
-      supabase,
-      rid,
-      dateISO,
-      cutoffTime,
-      menuAvailable: true,
-      company_id: profile.company_id,
-    });
-    if (enfRes) return enfRes;
-
-    // ✅ Avbestill = UPDATE status (ikke DELETE)
-    const { data, error } = await supabase
-      .from("orders")
-      .update({ status: "canceled" }) // ✅ enum: canceled (én L) — OBS: schemaet deres sier "canceled"
-      .eq("user_id", userRes.user.id)
-      .eq("date", dateISO)
-      .eq("company_id", profile!.company_id)
-      .eq("location_id", profile!.location_id)
-      .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
-      .maybeSingle();
-
-    if (error) {
-      logApiError("DELETE /api/orders db update failed", error, {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
-      });
-
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "DB_ERROR",
-          message: error.message,
-          receipt: null,
-          order: null,
-        }),
-        { status: 500 }
-      );
-    }
-
-    // ✅ Outbox: legg e-post-backup i kø (ikke la dette stoppe avbestilling)
-    try {
-      await queueBackupEmail({
-        supabase,
-        eventKey: `order_canceled_${userRes.user.id}_${profile!.location_id}_${dateISO}`,
-        subject: `Lunchportalen – Avbestilling registrert (${dateISO})`,
-        text:
-          `Avbestilling registrert\n\n` +
-          `Dato: ${dateISO}\n` +
-          `User: ${userRes.user.id}\n` +
-          `Company: ${profile!.company_id}\n` +
-          `Location: ${profile!.location_id}\n` +
-          (data?.slot ? `Slot: ${data.slot}\n` : "") +
-          `Status: canceled\n`,
-      });
-    } catch (e: any) {
-      logApiError("DELETE /api/orders outbox enqueue failed", e, {
-        rid,
-        userId: userRes.user.id,
-        dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
-      });
-      // Fortsett likevel
-    }
-
-    return NextResponse.json(
+  if (lock.locked) {
+    return respond(
+      409,
       orderBase({
-        ok: true,
+        ok: false,
         rid,
         date: dateISO,
-        locked: false,
-        cutoffTime,
+        locked: true,
+        cutoffTime: lock.cutoffTime,
         menuAvailable: true,
-        canAct: true,
-        receipt: receiptFor(data?.id ?? null, data?.status ?? "canceled", data?.updated_at ?? data?.created_at),
-        order: data ?? null,
-      }),
-      { status: 200 }
+        canAct: false,
+        error: lock.lockCode ?? "LOCKED",
+        message: `Handling er stengt etter kl. ${lock.cutoffTime} (Oslo-tid).`,
+        receipt: null,
+        order: null,
+      } as any)
     );
-  } catch (err: any) {
-    // ✅ LÅST: korrekt JSON for cutoff (409) – samme shape
-    if (err?.code === "CUTOFF") {
-      return NextResponse.json(
-        orderBase({
-          ok: false,
-          rid,
-          date: dateISO,
-          locked: true,
-          cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: "cutoff",
-          message: err.message,
-          receipt: null,
-          order: null,
-        }),
-        { status: 409 }
-      );
-    }
+  }
 
-    logApiError("DELETE /api/orders failed", err, { rid });
-    return NextResponse.json(
+  const user_id = String(scope.userId ?? "").trim();
+  const company_id = String(scope.companyId ?? "").trim();
+  const location_id = String(scope.locationId ?? "").trim();
+
+  if (!user_id || !company_id) {
+    return respond(
+      409,
       orderBase({
         ok: false,
         rid,
         date: dateISO,
         locked: false,
-        cutoffTime,
+        cutoffTime: lock.cutoffTime,
         menuAvailable: true,
         canAct: false,
-        error: "SERVER_ERROR",
-        message: err?.message || String(err),
+        error: "SCOPE_MISSING",
+        message: "Mangler scope (user/company).",
         receipt: null,
         order: null,
-      }),
-      { status: 500 }
+      } as any)
     );
   }
+  if (!location_id) {
+    return respond(
+      409,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: true,
+        canAct: false,
+        error: "LOCATION_MISSING",
+        message: "Mangler lokasjonstilknytning (location_id).",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  // ✅ Enforcement (firma + avtale) – menuAvailable irrelevant for cancel, men vi setter true for konsistens
+  const enfRes = await enforceCompanyAndAgreement({
+    rid,
+    dateISO,
+    cutoffTime: lock.cutoffTime,
+    menuAvailable: true,
+    company_id,
+    location_id,
+    user_id,
+    actor_email: scope.email ?? null,
+    actor_role: scope.role ?? null,
+  });
+  if (enfRes) return enfRes;
+
+  const sb = await supabaseServer();
+
+  const { data, error } = await sb
+    .from("orders")
+    .update({ status: "CANCELLED", updated_at: nowIso() })
+    .eq("user_id", user_id)
+    .eq("date", dateISO)
+    .eq("company_id", company_id)
+    .eq("location_id", location_id)
+    .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
+    .maybeSingle();
+
+  if (error) {
+    // MUST audit: db error
+    try {
+      await auditWriteMust({
+        rid,
+        action: "ORDER_CANCEL_FAILED",
+        entity_type: "order",
+        entity_id: `${company_id}:${location_id}:${user_id}:${dateISO}`,
+        company_id,
+        location_id,
+        actor_user_id: user_id,
+        actor_email: scope.email ?? null,
+        actor_role: scope.role ?? null,
+        summary: "DB_ERROR",
+        detail: { route: "/api/orders", date: dateISO, error: error.message },
+      });
+    } catch (e: any) {
+      return respond(
+        500,
+        orderBase({
+          ok: false,
+          rid,
+          date: dateISO,
+          locked: false,
+          cutoffTime: lock.cutoffTime,
+          menuAvailable: true,
+          canAct: false,
+          error: "AUDIT_INSERT_FAILED",
+          message: "Kunne ikke logge DB-feil. Avbryter for å bevare fasit.",
+          detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
+          receipt: null,
+          order: null,
+        } as any)
+      );
+    }
+
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: true,
+        canAct: false,
+        error: "DB_ERROR",
+        message: error.message,
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  if (!data?.id) {
+    // Idempotent: ingen ordre å avbestille
+    return respond(
+      404,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: true,
+        canAct: true,
+        error: "ORDER_NOT_FOUND",
+        message: "Ingen bestilling å avbestille.",
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  // MUST audit: applied
+  try {
+    await auditWriteMust({
+      rid,
+      action: "ORDER_CANCEL_APPLIED",
+      entity_type: "order",
+      entity_id: data.id,
+      company_id,
+      location_id,
+      actor_user_id: user_id,
+      actor_email: scope.email ?? null,
+      actor_role: scope.role ?? null,
+      summary: "Cancelled",
+      detail: { route: "/api/orders", date: dateISO, slot: data.slot ?? null },
+    });
+  } catch (e: any) {
+    return respond(
+      500,
+      orderBase({
+        ok: false,
+        rid,
+        date: dateISO,
+        locked: false,
+        cutoffTime: lock.cutoffTime,
+        menuAvailable: true,
+        canAct: false,
+        error: "AUDIT_INSERT_FAILED",
+        message: "Kunne ikke logge avbestilling. Avbryter for å bevare fasit.",
+        detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
+        receipt: null,
+        order: null,
+      } as any)
+    );
+  }
+
+  return respond(
+    200,
+    orderBase({
+      ok: true,
+      rid,
+      date: dateISO,
+      locked: false,
+      cutoffTime: lock.cutoffTime,
+      menuAvailable: true,
+      canAct: true,
+      receipt: receiptFor(data.id, data.status, data.updated_at ?? data.created_at),
+      order: data,
+    } as any)
+  );
 }

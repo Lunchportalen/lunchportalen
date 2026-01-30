@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { osloTodayISODate } from "@/lib/date/oslo";
+import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 
 function noStore() {
   return {
@@ -14,13 +14,28 @@ function noStore() {
   };
 }
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+/**
+ * GET /api/kitchen/today
+ * - redirect (read-only) til /api/kitchen/day?date=YYYY-MM-DD
+ * - valgfri query: ?date=YYYY-MM-DD
+ * - 307 for å bevare GET
+ * - no-store headers alltid
+ */
 export async function GET(req: Request) {
-  const today = osloTodayISODate();
+  const url = new URL(req.url);
+
+  // Valgfri date override
+  const q = safeStr(url.searchParams.get("date"));
+  const date = q && isIsoDate(q) ? q : osloTodayISODate();
 
   // Bygg absolutt URL basert på request (stabilt i prod)
   const u = new URL(req.url);
   u.pathname = "/api/kitchen/day";
-  u.search = `?date=${encodeURIComponent(today)}`;
+  u.search = `?date=${encodeURIComponent(date)}`;
 
   return NextResponse.redirect(u.toString(), {
     status: 307, // bevarer GET

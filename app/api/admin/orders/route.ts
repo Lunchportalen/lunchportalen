@@ -1,78 +1,89 @@
 // app/api/admin/orders/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
-import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
+
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 /* =========================================================
    Helpers
 ========================================================= */
-function isISODate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(d);
-}
 
+function isISODate(d: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
+}
 function isoToNO(d: string) {
-  // YYYY-MM-DD -> DD-MM-YYYY
-  const [y, m, day] = d.split("-");
+  const [y, m, day] = String(d).split("-");
   return `${day}-${m}-${y}`;
 }
-
 // Join kan komme som object eller array (Supabase/PostgREST)
 function first<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
   return Array.isArray(v) ? v[0] ?? null : v;
 }
-
-function jsonErr(status: number, rid: string, error: string, detail?: string) {
-  return NextResponse.json({ ok: false, rid, error, detail }, { status });
+function safeStr(v: any) {
+  return String(v ?? "").trim();
 }
 
-/**
- * ADMIN / ORDERS
- * - company_admin: only orders for own company
- * - superadmin: can view all, or filter by ?company_id=
- * - date defaults to Oslo "today" if missing/invalid
- * - status defaults to ACTIVE
- * - returns both ISO date + dateNO (DD-MM-YYYY)
- */
+function normStatus(v: any) {
+  const s = safeStr(v).toUpperCase();
+  if (!s) return "ACTIVE";
+  // tillat common variants
+  if (s === "CANCELED") return "CANCELLED";
+  if (s === "CANCEL") return "CANCELLED";
+  if (s === "PLACED") return "ACTIVE";
+  return s;
+}
+
+/* =========================================================
+   GET /api/admin/orders
+   - superadmin kan hente alle firma (eller filtere på company_id)
+   - company_admin er låst til scope.companyId
+========================================================= */
 export async function GET(req: NextRequest) {
-  const rid = `admin_orders_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.orders.read", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
 
   try {
     const url = new URL(req.url);
 
-    /* =========================
-       Params
-    ========================= */
-    const dateQ = url.searchParams.get("date");
+    const dateQ = safeStr(url.searchParams.get("date"));
     const dateISO = dateQ && isISODate(dateQ) ? dateQ : osloTodayISODate();
     const dateNO = isoToNO(dateISO);
 
-    const requestedCompanyId = url.searchParams.get("company_id");
-    const statusQ = url.searchParams.get("status");
-    const status = statusQ ? String(statusQ).toUpperCase() : "ACTIVE";
+    const statusQ = safeStr(url.searchParams.get("status"));
+    const status = normStatus(statusQ || "ACTIVE");
 
-    /* =========================
-       Scope & access
-    ========================= */
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
+    // superadmin: optional ?company_id= (tom => alle firma)
+    // company_admin: låst til egen companyId via scope
+    const requestedCompanyId = safeStr(url.searchParams.get("company_id")) || null;
 
-    const companyId =
-      scope.role === "superadmin"
-        ? requestedCompanyId
-          ? String(requestedCompanyId)
-          : null
-        : mustCompanyId(scope);
+    let companyId: string | null = null;
 
-    /* =========================
-       Read orders
-    ========================= */
+    if (scope.role === "superadmin") {
+      companyId = requestedCompanyId; // null => alle
+    } else {
+      const denyScope = requireCompanyScopeOr403(a.ctx);
+      if (denyScope) return denyScope;
+      companyId = safeStr(scope.companyId) || null;
+      if (!companyId) return jsonErr(403, rid, "MISSING_COMPANY_SCOPE", "Mangler company scope.");
+    }
+
     const admin = supabaseAdmin();
 
+    // NB: Supabase/PostgREST kan returnere join som object/array avhengig av relasjon.
     let q = admin
       .from("orders")
       .select(
@@ -112,36 +123,48 @@ export async function GET(req: NextRequest) {
     const { data: rows, error } = await q;
 
     if (error) {
-      return jsonErr(500, rid, "ORDERS_READ_FAILED", error.message);
+      return jsonErr(500, rid, "ORDERS_READ_FAILED", "Kunne ikke hente ordre.", {
+        message: error.message,
+        code: (error as any).code ?? null,
+        date: dateISO,
+        status,
+        company_id: companyId,
+      });
     }
 
-    /* =========================
-       Normalize joins + date
-    ========================= */
-    const orders = (rows ?? []).map((r: any) => ({
-      ...r,
-      dateISO: r.date,
-      dateNO,
-      companies: first(r.companies),
-      company_locations: first(r.company_locations),
-    }));
+    const orders = (rows ?? []).map((row: any) => {
+      const c = first(row.companies);
+      const l = first(row.company_locations);
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        dateISO,
+      return {
+        id: row.id,
+        user_id: row.user_id,
+        note: row.note ?? null,
+        created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null,
+        company_id: row.company_id,
+        location_id: row.location_id,
+        slot: row.slot ?? null,
+        date: row.date,
+        status: normStatus(row.status),
+        dateISO: row.date,
         dateNO,
-        company_id: companyId,
-        status,
-        count: orders.length,
-        orders,
-      },
-      { status: 200 }
-    );
+        companies: c,
+        company_locations: l,
+      };
+    });
+
+    return jsonOk({
+      ok: true as const,
+      rid,
+      dateISO,
+      dateNO,
+      company_id: companyId,
+      status,
+      count: orders.length,
+      orders,
+    });
   } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "admin/orders" });
   }
 }

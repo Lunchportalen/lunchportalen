@@ -1,80 +1,140 @@
 // app/api/cron/week-visibility/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { createClient as createSanityClient } from "@sanity/client";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import {
-  addDaysISO,
-  osloNowParts,
-  osloTodayISODate,
-  startOfWeekISO,
-} from "@/lib/date/oslo";
+import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { writeAudit } from "@/lib/audit/log";
 
 /**
  * =========================================================
- * CRON: Week visibility (LOCKED)
- * - Scheduled behavior:
- *   - Thu 08:00 Oslo: show week2 (only approved)
- *   - Fri 14:00 Oslo: hide week1 (always)
+ * CRON: Week visibility (Dag-10 clean)
+ * - NO cookies / NO scope
+ * - x-cron-secret gate (Authorization: Bearer supported)
+ * - idempotent
+ * - no-store + { ok, rid } + safe retry
  *
- * - Manual behavior (Superadmin bridge):
- *   POST { mode:"manual", date:"YYYY-MM-DD", publish:boolean, actorId?:string }
- *   -> updates Sanity customerVisible for that date (requires approvedForPublish)
- *   -> writes DB mirror menu_visibility_days (recommended)
- *   -> writes audit (if actorId present)
+ * Scheduled behavior:
+ * - Thu 08:00 Oslo: show week2 (only approved)
+ * - Fri 14:00 Oslo: hide week1 (always)
  *
- * Security:
- * - GET uses ?key=CRON_SECRET (backwards compatible)
- * - POST uses header: x-cron-secret: CRON_SECRET (recommended)
- *   (Authorization: Bearer also supported)
+ * Manual behavior (Superadmin bridge):
+ * POST { mode:"manual", date:"YYYY-MM-DD", publish:boolean, actorId?:string }
+ * -> updates Sanity customerVisible for that date (requires approvedForPublish)
+ * -> DB mirror menu_visibility_days (recommended)
+ * -> audit (if actorId present)
  * =========================================================
  */
 
+/* =========================================================
+   Response helpers (no-store)
+========================================================= */
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
+}
+function json(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return json({ ok: false, rid, error, message, detail: detail ?? undefined }, status);
+}
+
+/* =========================================================
+   Env guards
+========================================================= */
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
+  return String(v).trim();
+}
+
+/* =========================================================
+   Cron secret gate (fail-closed)
+   - Prefer: header x-cron-secret
+   - Also supports: Authorization: Bearer <secret>
+   - (Optional legacy): GET ?key=<secret> ONLY if header/bearer not present
+========================================================= */
+function requireCronSecret(req: Request, allowQueryKey = false) {
+  const want = (process.env.CRON_SECRET ?? "").trim();
+  if (!want) throw new Error("cron_secret_missing");
+
+  const hdr = (req.headers.get("x-cron-secret") ?? "").trim();
+  const auth = (req.headers.get("authorization") ?? "").trim();
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  const token = hdr || bearer;
+
+  if (token) {
+    if (token !== want) {
+      const err = new Error("forbidden");
+      (err as any).code = "forbidden";
+      throw err;
+    }
+    return;
+  }
+
+  if (allowQueryKey) {
+    const url = new URL(req.url);
+    const key = (url.searchParams.get("key") ?? "").trim();
+    if (key && key === want) return;
+
+    const err = new Error("forbidden");
+    (err as any).code = "forbidden";
+    throw err;
+  }
+
+  const err = new Error("forbidden");
+  (err as any).code = "forbidden";
+  throw err;
+}
+
+/* =========================================================
+   Helpers
+========================================================= */
+function isISODate(s: any) {
+  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+async function readJsonSafe(req: Request) {
+  const t = await req.text();
+  if (!t) return {};
+  try {
+    return JSON.parse(t);
+  } catch {
+    return {};
+  }
+}
+
+/* =========================================================
+   Clients (write)
+========================================================= */
 const sanityWrite = createSanityClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
-  apiVersion: process.env.NEXT_PUBLIC_SANITY_API_VERSION!,
-  token: process.env.SANITY_WRITE_TOKEN!, // ✅ write-token
+  projectId: requireEnv("NEXT_PUBLIC_SANITY_PROJECT_ID"),
+  dataset: requireEnv("NEXT_PUBLIC_SANITY_DATASET"),
+  apiVersion: requireEnv("NEXT_PUBLIC_SANITY_API_VERSION"),
+  token: requireEnv("SANITY_WRITE_TOKEN"),
   useCdn: false,
 });
 
 function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
   return createSupabaseClient(url, key, { auth: { persistSession: false } });
 }
 
-function verifyCron(req: Request): boolean {
-  const url = new URL(req.url);
-
-  // ✅ Backwards compatible: GET ?key=
-  const keyParam = url.searchParams.get("key");
-  if (keyParam && process.env.CRON_SECRET && keyParam === process.env.CRON_SECRET) return true;
-
-  // ✅ Preferred: header x-cron-secret or Authorization: Bearer
-  const hdr = req.headers.get("x-cron-secret") || "";
-  const auth = req.headers.get("authorization") || "";
-  const token = hdr || (auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : "");
-
-  return Boolean(token && process.env.CRON_SECRET && token === process.env.CRON_SECRET);
-}
-
-function isISODate(s: any) {
-  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
-}
-
-// ---------------------------
-// Sanity patch helpers
-// ---------------------------
+/* =========================================================
+   Sanity patch helpers
+   ⚠️ _type=="menuContent" (ikke "menuDay")
+========================================================= */
 async function patchVisibilityForRange(opts: {
   fromISO: string;
-  toISO: string; // eksklusiv
+  toISO: string; // exclusive
   visible: boolean;
   onlyApproved: boolean;
 }) {
   const { fromISO, toISO, visible, onlyApproved } = opts;
 
-  // ⚠️ Viktig: dere bruker _type=="menuContent" i queries.ts (ikke "menuDay")
   const ids: string[] = await sanityWrite.fetch(
     `*[
       _type=="menuContent" &&
@@ -85,34 +145,27 @@ async function patchVisibilityForRange(opts: {
     { from: fromISO, to: toISO }
   );
 
-  if (!ids?.length) return { total: 0, changed: 0 };
+  if (!ids?.length) return { total: 0, changed: 0, patchedIds: [] as string[] };
 
   const docs: { _id: string; customerVisible?: boolean }[] = await sanityWrite.fetch(
-    `*[_id in $ids]{_id, customerVisible}`,
+    `*[_id in $ids]{ _id, customerVisible }`,
     { ids }
   );
 
   const toPatch = docs.filter((d) => (d.customerVisible ?? false) !== visible);
-  if (!toPatch.length) return { total: ids.length, changed: 0 };
+  if (!toPatch.length) return { total: ids.length, changed: 0, patchedIds: [] as string[] };
 
   const now = new Date().toISOString();
   let tx = sanityWrite.transaction();
   for (const d of toPatch) {
-    tx = tx.patch(d._id, {
-      set: { customerVisible: visible, customerVisibleSetAt: now },
-    });
+    tx = tx.patch(d._id, { set: { customerVisible: visible, customerVisibleSetAt: now } });
   }
   await tx.commit();
 
-  return { total: ids.length, changed: toPatch.length };
+  return { total: ids.length, changed: toPatch.length, patchedIds: toPatch.map((d) => d._id) };
 }
 
-/** Manual: patch single day by date */
-async function patchVisibilityForDate(opts: {
-  dateISO: string;
-  visible: boolean;
-  onlyApproved: boolean;
-}) {
+async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean; onlyApproved: boolean }) {
   const { dateISO, visible, onlyApproved } = opts;
 
   const ids: string[] = await sanityWrite.fetch(
@@ -125,31 +178,29 @@ async function patchVisibilityForDate(opts: {
     { date: dateISO }
   );
 
-  if (!ids?.length) return { total: 0, changed: 0 };
+  if (!ids?.length) return { total: 0, changed: 0, patchedIds: [] as string[] };
 
   const docs: { _id: string; customerVisible?: boolean }[] = await sanityWrite.fetch(
-    `*[_id in $ids]{_id, customerVisible}`,
+    `*[_id in $ids]{ _id, customerVisible }`,
     { ids }
   );
 
   const toPatch = docs.filter((d) => (d.customerVisible ?? false) !== visible);
-  if (!toPatch.length) return { total: ids.length, changed: 0 };
+  if (!toPatch.length) return { total: ids.length, changed: 0, patchedIds: [] as string[] };
 
   const now = new Date().toISOString();
   let tx = sanityWrite.transaction();
   for (const d of toPatch) {
-    tx = tx.patch(d._id, {
-      set: { customerVisible: visible, customerVisibleSetAt: now },
-    });
+    tx = tx.patch(d._id, { set: { customerVisible: visible, customerVisibleSetAt: now } });
   }
   await tx.commit();
 
-  return { total: ids.length, changed: toPatch.length };
+  return { total: ids.length, changed: toPatch.length, patchedIds: toPatch.map((d) => d._id) };
 }
 
-// ---------------------------
-// DB mirror helpers
-// ---------------------------
+/* =========================================================
+   DB mirror helpers
+========================================================= */
 async function mirrorToDb(opts: { dateISO: string; visible: boolean; actorId?: string | null }) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { mirrored: false, skipped: "MISSING_SERVICE_ROLE_KEY" };
 
@@ -166,9 +217,7 @@ async function mirrorToDb(opts: { dateISO: string; visible: boolean; actorId?: s
       { onConflict: "date" }
     );
 
-  if (error) {
-    return { mirrored: false, error: error.message };
-  }
+  if (error) return { mirrored: false, error: error.message };
   return { mirrored: true };
 }
 
@@ -178,9 +227,7 @@ async function mirrorRangeToDb(opts: {
   visible: boolean;
   actorId?: string | null;
 }) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return { mirrored: false, count: 0, skipped: "MISSING_SERVICE_ROLE_KEY" };
-  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { mirrored: false, count: 0, skipped: "MISSING_SERVICE_ROLE_KEY" };
 
   const dates: string[] = [];
   let cur = opts.fromISO;
@@ -190,11 +237,11 @@ async function mirrorRangeToDb(opts: {
   }
 
   const admin = supabaseAdmin();
-  const nowISO = new Date().toISOString();
+  const now = new Date().toISOString();
   const rows = dates.map((d) => ({
     date: d,
     is_published: opts.visible,
-    updated_at: nowISO,
+    updated_at: now,
     updated_by: opts.actorId ?? null,
   }));
 
@@ -204,12 +251,21 @@ async function mirrorRangeToDb(opts: {
   return { mirrored: true, count: rows.length };
 }
 
-// ---------------------------
-// GET: scheduled runner (backwards compatible)
-// ---------------------------
+/* =========================================================
+   GET: scheduled runner
+   - Legacy query key supported for backwards compat (?key=)
+========================================================= */
 export async function GET(req: Request) {
-  if (!verifyCron(req)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const rid = `week_visibility_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Gate first (no side effects before secret validated)
+  try {
+    requireCronSecret(req, true);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i miljøvariabler");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
+    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
   }
 
   const oslo = osloNowParts();
@@ -227,113 +283,131 @@ export async function GET(req: Request) {
 
   const actions: any[] = [];
 
-  // ✅ Thu 08:00: show week2 if approved
-  if (isThu0800) {
-    const res = await patchVisibilityForRange({
-      fromISO: week2From,
-      toISO: week2To,
-      visible: true,
-      onlyApproved: true,
-    });
-
-    const mirror = await mirrorRangeToDb({
-      fromISO: week2From,
-      toISOExclusive: week2To,
-      visible: true,
-      actorId: null,
-    });
-
-    actions.push({
-      action: "show_week2_if_approved",
-      range: { from: week2From, to: week2To },
-      ...res,
-      mirror,
-    });
-
-    // Audit (system action) – fail-quiet
-    try {
-      await writeAudit({
-        actor_user_id: "00000000-0000-0000-0000-000000000000", // system
-        actor_role: "system",
-        action: "menu.week2_visible_scheduled",
-        severity: res.changed > 0 ? "info" : "info",
-        target_type: "range",
-        target_id: `${week2From}..${week2To}`,
-        target_label: `week2 ${week2From}..${week2To}`,
-        before: null,
-        after: { visible: true, onlyApproved: true, changed: res.changed },
-        meta: { schedule: "Thu 08:00", mirror },
+  try {
+    // Thu 08:00: show week2 if approved
+    if (isThu0800) {
+      const res = await patchVisibilityForRange({
+        fromISO: week2From,
+        toISO: week2To,
+        visible: true,
+        onlyApproved: true,
       });
-    } catch {}
-  }
 
-  // ✅ Fri 14:00: hide week1 always
-  if (isFri1400) {
-    const res = await patchVisibilityForRange({
-      fromISO: week1From,
-      toISO: week1To,
-      visible: false,
-      onlyApproved: false,
-    });
-
-    const mirror = await mirrorRangeToDb({
-      fromISO: week1From,
-      toISOExclusive: week1To,
-      visible: false,
-      actorId: null,
-    });
-
-    actions.push({
-      action: "hide_week1",
-      range: { from: week1From, to: week1To },
-      ...res,
-      mirror,
-    });
-
-    try {
-      await writeAudit({
-        actor_user_id: "00000000-0000-0000-0000-000000000000", // system
-        actor_role: "system",
-        action: "menu.week1_hidden_scheduled",
-        severity: res.changed > 0 ? "info" : "info",
-        target_type: "range",
-        target_id: `${week1From}..${week1To}`,
-        target_label: `week1 ${week1From}..${week1To}`,
-        before: null,
-        after: { visible: false, onlyApproved: false, changed: res.changed },
-        meta: { schedule: "Fri 14:00", mirror },
+      const mirror = await mirrorRangeToDb({
+        fromISO: week2From,
+        toISOExclusive: week2To,
+        visible: true,
+        actorId: null,
       });
-    } catch {}
-  }
 
-  return NextResponse.json({
-    ok: true,
-    oslo,
-    todayISO,
-    week: {
-      week1: { from: week1From, to: week1To },
-      week2: { from: week2From, to: week2To },
-    },
-    actions,
-    note: actions.length ? "Executed scheduled actions." : "No action at this minute.",
-  });
+      actions.push({
+        action: "show_week2_if_approved",
+        range: { from: week2From, to: week2To },
+        ...res,
+        mirror,
+      });
+
+      // Audit (system) – fail-quiet
+      try {
+        await writeAudit({
+          actor_user_id: "00000000-0000-0000-0000-000000000000",
+          actor_role: "system",
+          action: "menu.week2_visible_scheduled",
+          severity: "info",
+          target_type: "range",
+          target_id: `${week2From}..${week2To}`,
+          target_label: `week2 ${week2From}..${week2To}`,
+          before: null,
+          after: { visible: true, onlyApproved: true, changed: res.changed },
+          meta: { schedule: "Thu 08:00", mirror },
+        });
+      } catch {}
+    }
+
+    // Fri 14:00: hide week1 always
+    if (isFri1400) {
+      const res = await patchVisibilityForRange({
+        fromISO: week1From,
+        toISO: week1To,
+        visible: false,
+        onlyApproved: false,
+      });
+
+      const mirror = await mirrorRangeToDb({
+        fromISO: week1From,
+        toISOExclusive: week1To,
+        visible: false,
+        actorId: null,
+      });
+
+      actions.push({
+        action: "hide_week1",
+        range: { from: week1From, to: week1To },
+        ...res,
+        mirror,
+      });
+
+      try {
+        await writeAudit({
+          actor_user_id: "00000000-0000-0000-0000-000000000000",
+          actor_role: "system",
+          action: "menu.week1_hidden_scheduled",
+          severity: "info",
+          target_type: "range",
+          target_id: `${week1From}..${week1To}`,
+          target_label: `week1 ${week1From}..${week1To}`,
+          before: null,
+          after: { visible: false, onlyApproved: false, changed: res.changed },
+          meta: { schedule: "Fri 14:00", mirror },
+        });
+      } catch {}
+    }
+
+    return json(
+      {
+        ok: true,
+        rid,
+        oslo,
+        todayISO,
+        week: {
+          week1: { from: week1From, to: week1To },
+          week2: { from: week2From, to: week2To },
+        },
+        actions,
+        note: actions.length ? "Executed scheduled actions." : "No action at this minute.",
+      },
+      200
+    );
+  } catch (e: any) {
+    return jsonErr(500, rid, "server_error", "Cron week-visibility feilet", {
+      message: String(e?.message ?? e),
+      oslo,
+      todayISO,
+    });
+  }
 }
 
-// ---------------------------
-// POST: manual publish/unpublish (superadmin bridge calls this)
-// ---------------------------
+/* =========================================================
+   POST: manual publish/unpublish (superadmin bridge)
+   - Same cron secret gate (header/bearer)
+========================================================= */
 export async function POST(req: Request) {
-  if (!verifyCron(req)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const rid = `week_visibility_manual_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Gate first
+  try {
+    requireCronSecret(req, false);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i miljøvariabler");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
+    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
   }
 
-  const body = await req.json().catch(() => ({}));
+  const body = await readJsonSafe(req);
 
   if (body?.mode !== "manual") {
-    return NextResponse.json(
-      { ok: false, error: "BAD_REQUEST", message: "Use { mode:'manual', date, publish }." },
-      { status: 400 }
-    );
+    return jsonErr(400, rid, "bad_request", "Use { mode:'manual', date, publish }.");
   }
 
   const dateISO = body?.date;
@@ -341,48 +415,56 @@ export async function POST(req: Request) {
   const actorId = (body?.actorId ?? null) as string | null;
 
   if (!isISODate(dateISO) || typeof publish !== "boolean") {
-    return NextResponse.json({ ok: false, error: "BAD_REQUEST" }, { status: 400 });
+    return jsonErr(400, rid, "bad_request", "Ugyldig payload", { want: { mode: "manual", date: "YYYY-MM-DD", publish: true } });
   }
 
-  // Manual must respect onlyApproved to prevent leaking unapproved menus
-  const res = await patchVisibilityForDate({
-    dateISO,
-    visible: publish,
-    onlyApproved: true,
-  });
-
-  const mirror = await mirrorToDb({ dateISO, visible: publish, actorId });
-
-  // Audit (manual) – fail-quiet
   try {
-    if (actorId) {
-      await writeAudit({
-        actor_user_id: actorId,
-        actor_role: "superadmin",
-        action: "menu.visibility_changed",
-        severity: "info",
-        target_type: "menuContent",
-        target_id: dateISO,
-        target_label: dateISO,
-        before: null,
-        after: { customerVisible: publish },
-        meta: { source: "superadmin", mode: "manual", mirror, sanity: res },
-      });
-    }
-  } catch {}
+    // Manual must respect onlyApproved to prevent leaking unapproved menus
+    const res = await patchVisibilityForDate({
+      dateISO,
+      visible: publish,
+      onlyApproved: true,
+    });
 
-  return NextResponse.json({
-    ok: true,
-    mode: "manual",
-    date: dateISO,
-    publish,
-    result: res,
-    mirror,
-    note:
-      res.total === 0
-        ? "No menuContent found for date (or not approved)."
-        : res.changed === 0
-        ? "No change (already in desired state)."
-        : "Patched successfully.",
-  });
+    const mirror = await mirrorToDb({ dateISO, visible: publish, actorId });
+
+    // Audit (manual) – fail-quiet
+    try {
+      if (actorId) {
+        await writeAudit({
+          actor_user_id: actorId,
+          actor_role: "superadmin",
+          action: "menu.visibility_changed",
+          severity: "info",
+          target_type: "menuContent",
+          target_id: dateISO,
+          target_label: dateISO,
+          before: null,
+          after: { customerVisible: publish, changed: res.changed },
+          meta: { source: "superadmin", mode: "manual", mirror, sanity: res },
+        });
+      }
+    } catch {}
+
+    return json(
+      {
+        ok: true,
+        rid,
+        mode: "manual",
+        date: dateISO,
+        publish,
+        result: res,
+        mirror,
+        note:
+          res.total === 0
+            ? "No menuContent found for date (or not approved)."
+            : res.changed === 0
+            ? "No change (already in desired state)."
+            : "Patched successfully.",
+      },
+      200
+    );
+  } catch (e: any) {
+    return jsonErr(500, rid, "server_error", "Manual week-visibility feilet", { message: String(e?.message ?? e), dateISO, publish });
+  }
 }

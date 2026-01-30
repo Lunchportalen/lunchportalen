@@ -1,14 +1,20 @@
 // app/api/admin/metrics/daily/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "../../../../lib/supabase/server";
-import { osloTodayISODate } from "../../../../lib/date/oslo";
+import type { NextRequest } from "next/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+import { supabaseServer } from "@/lib/supabase/server";
+import { osloTodayISODate } from "@/lib/date/oslo";
+
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+
+/* =========================================================
+   Date helpers
+========================================================= */
 
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -18,6 +24,23 @@ function subDaysISO(dateISO: string, days: number) {
   const d = new Date(dateISO + "T00:00:00.000Z");
   d.setUTCDate(d.getUTCDate() - days);
   return isoDate(d);
+}
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function normCompanyStatus(v: any) {
+  const s = safeStr(v).toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  if (s === "PENDING") return "PENDING";
+  return "UNKNOWN";
+}
+
+function normOrderStatus(v: any) {
+  return safeStr(v).toUpperCase();
 }
 
 type DayPoint = {
@@ -42,9 +65,8 @@ function getOsloParts(dt: Date) {
   const m = parts.find((p) => p.type === "month")?.value ?? "01";
   const d = parts.find((p) => p.type === "day")?.value ?? "01";
   const hh = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const mm = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
 
-  return { dateISO: `${y}-${m}-${d}`, hh, mm };
+  return { dateISO: `${y}-${m}-${d}`, hh };
 }
 
 /**
@@ -59,112 +81,112 @@ function cancelledBefore0800Oslo(deliveryDateISO: string, cancelledAtISO: string
   return c.hh < 8; // strictly before 08:00
 }
 
-export async function GET(req: Request) {
-  const supabase = await supabaseServer();
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-  // 1) auth
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(401, "not_authenticated", "Ikke innlogget");
+  const { rid, scope } = a.ctx;
 
-  const role = String(userData.user.user_metadata?.role ?? "employee");
-  if (role !== "company_admin") return jsonError(403, "forbidden", "Kun company_admin");
+  const denyRole = requireRoleOr403(a.ctx, "admin.metrics.daily", ["company_admin"]);
+  if (denyRole) return denyRole;
 
-  // 2) find admin's company_id via profiles (RLS will enforce)
-  const { data: me, error: meErr } = await supabase
-    .from("profiles")
-    .select("company_id")
-    .eq("user_id", userData.user.id)
-    .single();
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
 
-  if (meErr || !me?.company_id) {
-    return jsonError(400, "no_company", "Fant ikke company_id på innlogget bruker", meErr);
-  }
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
 
-  const companyId = String(me.company_id);
+  try {
+    const sb = await supabaseServer();
 
-  // 3) company status gate
-  const { data: company, error: compErr } = await supabase
-    .from("companies")
-    .select("id,status")
-    .eq("id", companyId)
-    .single();
+    // Company status gate (må være ACTIVE)
+    const { data: company, error: compErr } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
 
-  if (compErr || !company) return jsonError(404, "company_not_found", "Fant ikke firma", compErr);
-  if (String((company as any).status) !== "active") {
-    return jsonError(403, "company_not_active", "Firma er ikke aktivt");
-  }
+    if (compErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: compErr.message });
+    if (!company) return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.");
 
-  // 4) period: default 14 days (inclusive). Optional query param: ?days=7/14/30 (clamped 7..30)
-  const url = new URL(req.url);
-  const daysRaw = Number(url.searchParams.get("days") ?? 14);
-  const days = Number.isFinite(daysRaw) ? Math.min(30, Math.max(7, Math.floor(daysRaw))) : 14;
+    const cStatus = normCompanyStatus((company as any).status);
+    if (cStatus !== "ACTIVE") return jsonErr(403, rid, "COMPANY_NOT_ACTIVE", "Firma er ikke aktivt.", { status: cStatus });
 
-  const today = osloTodayISODate(); // YYYY-MM-DD (Oslo)
-  const from = subDaysISO(today, days - 1); // inclusive range
+    // period: default 14 days (inclusive). Optional query param: ?days=7/14/30 (clamped 7..30)
+    const url = new URL(req.url);
+    const daysRaw = Number(url.searchParams.get("days") ?? 14);
+    const days = Number.isFinite(daysRaw) ? Math.min(30, Math.max(7, Math.floor(daysRaw))) : 14;
 
-  // Fetch orders for date window
-  const { data: rows, error } = await supabase
-    .from("orders")
-    .select("date,status,cancelled_at,updated_at")
-    .eq("company_id", companyId)
-    .gte("date", from)
-    .lte("date", today);
+    const today = osloTodayISODate(); // YYYY-MM-DD (Oslo)
+    const from = subDaysISO(today, days - 1); // inclusive range
 
-  if (error) return jsonError(500, "query_failed", "Kunne ikke hente dagserie", error);
+    // Fetch orders for date window (RLS via supabaseServer)
+    const { data: rows, error } = await sb
+      .from("orders")
+      .select("date,status,cancelled_at,updated_at")
+      .eq("company_id", companyId)
+      .gte("date", from)
+      .lte("date", today);
 
-  // Initialize stable series: one point per day
-  const map = new Map<string, DayPoint>();
-  for (let i = 0; i < days; i++) {
-    const d = new Date(from + "T00:00:00.000Z");
-    d.setUTCDate(d.getUTCDate() + i);
-    const dayISO = isoDate(d);
-    map.set(dayISO, { date: dayISO, orders: 0, cancelled: 0, cancelled_before_0800: 0 });
-  }
+    if (error) return jsonErr(500, rid, "QUERY_FAILED", "Kunne ikke hente dagserie.", { message: error.message });
 
-  // Aggregate
-  for (const r of rows ?? []) {
-    const day = String((r as any).date);
-    const status = String((r as any).status);
-    const cur = map.get(day) ?? { date: day, orders: 0, cancelled: 0, cancelled_before_0800: 0 };
-
-    cur.orders += 1;
-
-    if (status === "cancelled") {
-      cur.cancelled += 1;
-
-      const ts = (r as any).cancelled_at ?? (r as any).updated_at ?? null;
-      const tsISO = ts ? String(ts) : null;
-
-      if (cancelledBefore0800Oslo(day, tsISO)) {
-        cur.cancelled_before_0800 += 1;
-      }
+    // Initialize stable series: one point per day
+    const map = new Map<string, DayPoint>();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(from + "T00:00:00.000Z");
+      d.setUTCDate(d.getUTCDate() + i);
+      const dayISO = isoDate(d);
+      map.set(dayISO, { date: dayISO, orders: 0, cancelled: 0, cancelled_before_0800: 0 });
     }
 
-    map.set(day, cur);
+    // Aggregate
+    for (const r of rows ?? []) {
+      const day = safeStr((r as any).date);
+      if (!day) continue;
+
+      const status = normOrderStatus((r as any).status);
+      const cur = map.get(day) ?? { date: day, orders: 0, cancelled: 0, cancelled_before_0800: 0 };
+
+      cur.orders += 1;
+
+      if (status === "CANCELLED") {
+        cur.cancelled += 1;
+
+        const ts = (r as any).cancelled_at ?? (r as any).updated_at ?? null;
+        const tsISO = ts ? String(ts) : null;
+
+        if (cancelledBefore0800Oslo(day, tsISO)) {
+          cur.cancelled_before_0800 += 1;
+        }
+      }
+
+      map.set(day, cur);
+    }
+
+    const series = Array.from(map.values()).sort((x, y) => x.date.localeCompare(y.date));
+
+    const totals = series.reduce(
+      (acc, p) => {
+        acc.orders += p.orders;
+        acc.cancelled += p.cancelled;
+        acc.cancelled_before_0800 += p.cancelled_before_0800;
+        return acc;
+      },
+      { orders: 0, cancelled: 0, cancelled_before_0800: 0 }
+    );
+
+    return jsonOk({
+      ok: true,
+      rid,
+      companyId,
+      from,
+      to: today,
+      days,
+      series,
+      totals,
+      meta: {
+        cancellation_source: "cancelled_at fallback to updated_at",
+        cutoff: { time: "08:00", tz: "Europe/Oslo" },
+        status_cancelled_value: "CANCELLED",
+      },
+    });
+  } catch (e: any) {
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
-
-  const series = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
-
-  const totals = series.reduce(
-    (acc, p) => {
-      acc.orders += p.orders;
-      acc.cancelled += p.cancelled;
-      acc.cancelled_before_0800 += p.cancelled_before_0800;
-      return acc;
-    },
-    { orders: 0, cancelled: 0, cancelled_before_0800: 0 }
-  );
-
-  return NextResponse.json({
-    ok: true,
-    companyId,
-    from,
-    to: today,
-    days,
-    series,
-    totals,
-    meta: {
-      cancellation_source: "cancelled_at fallback to updated_at",
-    },
-  });
 }

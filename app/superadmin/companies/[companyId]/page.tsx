@@ -18,7 +18,7 @@ type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 type PlanTier = "BASIS" | "LUXUS";
 
-type ProfileRow = { role: Role };
+type ProfileRow = { role: Role | null; disabled_at?: string | null };
 
 type CompanyRow = {
   id: string;
@@ -66,7 +66,7 @@ function normalizeStatus(v: any): CompanyStatus {
 function formatISO(iso: string | null | undefined) {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("no-NO", {
+    return new Date(iso).toLocaleString("nb-NO", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -155,13 +155,42 @@ function billingLabel(v: any) {
 
 /**
  * Hard-fasit for superadmin.
- * Vi bruker e-post i tillegg til profiles.role for å unngå metadata-triksing og edge-cases.
+ * (Kan være flere senere → utvid til allowlist når dere vil.)
  */
 function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 function isHardSuperadmin(email: string | null | undefined) {
   return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
+/* =========================================================
+   Error Surface
+========================================================= */
+function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10 lp-select-text">
+      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-xs font-bold text-[rgb(var(--lp-muted))]">SUPERADMIN</div>
+        <div className="mt-2 text-lg font-semibold">{props.title ?? "Firma"}</div>
+        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{props.message}</p>
+        {props.detail ? (
+          <pre className="mt-3 whitespace-pre-wrap text-xs text-rose-700">{props.detail}</pre>
+        ) : null}
+        <div className="mt-4 flex gap-2">
+          <Link
+            href="/superadmin/companies"
+            className="rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+          >
+            Til firmaoversikt
+          </Link>
+          <Link href="/superadmin" className="rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50">
+            Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* =========================================================
@@ -184,15 +213,16 @@ export default async function SuperadminCompanyPage(props: {
     redirect(`/login?next=/superadmin/companies/${encodeURIComponent(companyId)}`);
   }
 
-  // 2) Role gate
+  // 2) Role gate (FASET: profiles.id = auth.user.id)
   const { data: profile, error: pErr } = await supabase
     .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
+    .select("role,disabled_at")
+    .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
-  if (pErr || !profile) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) redirect("/week");
+  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
+  if (profile.disabled_at) redirect("/login?next=/superadmin");
+  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) redirect("/login?next=/superadmin");
 
   // 3) Load company
   const { data: c, error: cErr } = await supabase
@@ -201,22 +231,7 @@ export default async function SuperadminCompanyPage(props: {
     .eq("id", companyId)
     .maybeSingle<CompanyRow>();
 
-  if (cErr) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-lg font-semibold">Firma</div>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente firma.</p>
-          <pre className="mt-3 whitespace-pre-wrap text-xs text-red-700">{cErr.message}</pre>
-          <div className="mt-4">
-            <Link href="/superadmin" className="rounded-2xl border px-4 py-2 text-sm">
-              Tilbake
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (cErr) return <ErrorSurface message="Kunne ikke hente firma." detail={safeStr(cErr.message)} />;
   if (!c) notFound();
 
   const status = normalizeStatus(c.status) as UiCompanyStatus;
@@ -235,15 +250,13 @@ export default async function SuperadminCompanyPage(props: {
     basisCount > 0 && luxusCount > 0
       ? `Blandingsplan: ${basisCount} dager Basis / ${luxusCount} dager Luxus`
       : luxusCount > 0
-        ? `Luxus (${luxusCount} dager)`
-        : basisCount > 0
-          ? `Basis (${basisCount} dager)`
-          : "—";
+      ? `Luxus (${luxusCount} dager)`
+      : basisCount > 0
+      ? `Basis (${basisCount} dager)`
+      : "—";
 
   const employeeCount =
-    Number.isFinite(Number(c.employee_count))
-      ? Number(c.employee_count)
-      : Number(agreement?.company?.employee_count ?? NaN);
+    Number.isFinite(Number(c.employee_count)) ? Number(c.employee_count) : Number(agreement?.company?.employee_count ?? NaN);
 
   const invoiceCadenceRaw = safeStr(agreement?.billing?.invoice_cadence) || "";
 
@@ -357,6 +370,16 @@ export default async function SuperadminCompanyPage(props: {
         </div>
       </div>
 
+      {/* B4: Faktura & historikk (read-only)
+          - Vi holder dette read-only og bygger det som en separat modul (InvoicesCard)
+          - Hvis dere ikke har filen enda: opprett den før dere importerer her.
+      */}
+      {/*
+      <div className="mt-6">
+        <InvoicesCard companyId={companyId} />
+      </div>
+      */}
+
       {/* Actions */}
       <div className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="text-sm font-semibold">Behandle registrering</div>
@@ -369,9 +392,7 @@ export default async function SuperadminCompanyPage(props: {
       {/* ✅ Audit (per firma) */}
       <div className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="text-sm font-semibold">Audit for firma</div>
-        <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-          Hendelser for dette firmaet (klikk en rad for detaljer).
-        </div>
+        <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Hendelser for dette firmaet (klikk en rad for detaljer).</div>
 
         <div className="mt-4">
           <AuditFeed companyId={companyId} initialLimit={200} title={undefined} />

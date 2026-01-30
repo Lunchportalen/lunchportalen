@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -18,7 +17,12 @@ function normEmail(v: any) {
 
 function isSystemAccountEmail(email: string | null | undefined) {
   const e = normEmail(email);
-  return e === "superadmin@lunchportalen.no" || e === "kjokken@lunchportalen.no" || e === "driver@lunchportalen.no";
+  return (
+    e === "superadmin@lunchportalen.no" ||
+    e === "kjokken@lunchportalen.no" ||
+    e === "driver@lunchportalen.no" ||
+    e === "ordre@lunchportalen.no"
+  );
 }
 
 function safeNextPath(next: string | null) {
@@ -27,7 +31,6 @@ function safeNextPath(next: string | null) {
   if (!next.startsWith("/")) return FALLBACK;
   if (next.startsWith("//")) return FALLBACK;
 
-  // Unngå redirect-loops til auth-sider
   if (
     next === "/login" ||
     next.startsWith("/login/") ||
@@ -61,7 +64,7 @@ function homeForRole(role: Role) {
   return "/week";
 }
 
-// Server skal bestemme endelig dest (hindrer bounce/hopp)
+// Server bestemmer endelig redirect
 function toRedirectUrl(nextRaw: string) {
   return `/api/auth/redirect?next=${encodeURIComponent(nextRaw)}`;
 }
@@ -86,14 +89,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState("");
 
-  // ✅ Friendly notice after invite flow
   useEffect(() => {
     if (okParam === "invite_accepted") {
       setNote("Kontoen er opprettet. Logg inn for å komme i gang.");
     }
   }, [okParam]);
 
-  // ✅ Hvis allerede innlogget: LA SERVER BESTEMME riktig destinasjon
+  // Hvis allerede innlogget → la server bestemme
   useEffect(() => {
     let alive = true;
 
@@ -107,9 +109,7 @@ export default function LoginPage() {
         if (session?.user) {
           window.location.replace(toRedirectUrl(nextRaw));
         }
-      } catch {
-        // Ignorer: vi lar form vises
-      }
+      } catch {}
     })();
 
     return () => {
@@ -120,26 +120,23 @@ export default function LoginPage() {
   async function pollProfileThenRedirect(next: string) {
     setPhase("pending_profile");
 
-    const maxTries = 24; // ~12s
+    const maxTries = 24;
     for (let i = 0; i < maxTries; i++) {
       const r = await fetch("/api/auth/profile", { cache: "no-store" });
       const j = await r.json().catch(() => null);
 
       if (j?.ok && j?.profileExists && j?.profile) {
-        // Sperre: deaktivert
         if (j.profile.disabled_at) {
-          setErr(j.profile.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
+          setErr(j.profile.disabled_reason || "Kontoen er deaktivert.");
           setPhase("form");
           return;
         }
-        // Sperre: inaktiv
         if (j.profile.is_active === false) {
-          setErr("Kontoen er ikke aktiv ennå. Kontakt administrator.");
+          setErr("Kontoen er ikke aktiv ennå.");
           setPhase("form");
           return;
         }
 
-        // ✅ Server redirect bestemmer endelig dest (hindrer bounce)
         window.location.replace(toRedirectUrl(next));
         return;
       }
@@ -147,7 +144,7 @@ export default function LoginPage() {
       await new Promise((res) => setTimeout(res, 500));
     }
 
-    setErr("Vi setter opp kontoen din. Vent litt og prøv igjen hvis du ikke kommer videre.");
+    setErr("Vi setter opp kontoen din. Vent litt og prøv igjen.");
     setPhase("form");
   }
 
@@ -173,8 +170,6 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ Viktig: sync til server-cookies hvis dere bruker egen session-endpoint (Avensia-mønster)
-      // Hvis /api/auth/session ikke finnes i prosjektet ditt, kan du fjerne hele denne blokken.
       const access_token = data.session?.access_token ?? null;
       const refresh_token = data.session?.refresh_token ?? null;
 
@@ -187,30 +182,30 @@ export default function LoginPage() {
         });
 
         if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          setErr(j?.message || "Kunne ikke etablere serversession. Prøv igjen.");
+          setErr("Kunne ikke etablere serversession.");
           setPhase("form");
           return;
         }
       }
 
-      // ✅ Rolle fra metadata (ikke bare epost). Epost-sjekk beholdes som fallback.
       const metaRole = normalizeRole((data.user as any)?.user_metadata?.role);
-      const signedInEmail = data?.user?.email ?? email.trim();
+      const signedInEmail = normEmail(data.user.email);
 
-      // ✅ SYSTEMKONTOER (superadmin/kjøkken/driver): ALDRI vent på profile/onboarding.
-      // - Kjøkken/driver kan være auth-only
-      // - Superadmin påvirkes aldri
+      // ✅ ORDRE-KONTO: alltid direkte til /outbox
+      if (signedInEmail === "ordre@lunchportalen.no") {
+        window.location.replace(toRedirectUrl("/outbox"));
+        return;
+      }
+
+      // ✅ Andre systemkontoer (uendret)
       if (metaRole === "superadmin" || metaRole === "kitchen" || metaRole === "driver" || isSystemAccountEmail(signedInEmail)) {
         window.location.replace(toRedirectUrl(homeForRole(metaRole)));
         return;
       }
 
-      // ✅ Company admin kan også bestille lunsj → håndteres som ordinær bruker (må ha profil)
-      // ✅ Ordinære brukere: vent til profile er synlig (invitasjonsflyt kan være litt treg)
       await pollProfileThenRedirect(nextRaw);
     } catch {
-      setErr("Kunne ikke logge inn. Prøv igjen.");
+      setErr("Kunne ikke logge inn.");
       setPhase("form");
     }
   }
@@ -233,50 +228,45 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-          {note ? (
-            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-black ring-1 ring-[rgb(var(--lp-border))]">
+          {note && (
+            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-[rgb(var(--lp-border))]">
               {note}
             </div>
-          ) : null}
+          )}
 
-          {phase === "pending_profile" ? (
-            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-black ring-1 ring-[rgb(var(--lp-border))]">
+          {phase === "pending_profile" && (
+            <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-[rgb(var(--lp-border))]">
               <div className="font-semibold">Setter opp kontoen din…</div>
               <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Dette tar vanligvis bare et øyeblikk.</div>
             </div>
-          ) : null}
+          )}
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">E-post</label>
+              <label className="text-xs font-medium">E-post</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-black/10"
+                className="mt-1 w-full rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
                 type="email"
-                autoComplete="email"
-                inputMode="email"
                 required
                 disabled={phase !== "form"}
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-[rgb(var(--lp-muted))]">Passord</label>
+              <label className="text-xs font-medium">Passord</label>
               <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-black/10"
+                className="mt-1 w-full rounded-2xl bg-white px-4 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
                 type="password"
-                autoComplete="current-password"
                 required
                 disabled={phase !== "form"}
               />
             </div>
 
-            {err && (
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900 ring-1 ring-red-200">{err}</div>
-            )}
+            {err && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900">{err}</div>}
 
             <button
               type="submit"
@@ -290,13 +280,7 @@ export default function LoginPage() {
               <Link className="text-[rgb(var(--lp-muted))] hover:underline" href="/forgot-password">
                 Glemt passord?
               </Link>
-
               <span className="text-xs text-[rgb(var(--lp-muted))]">Next: {nextRaw}</span>
-            </div>
-
-            <div className="pt-2 text-xs text-[rgb(var(--lp-muted))]">
-              Tips: Hvis det “hopper”, skyldes det nesten alltid at server må bestemme rolle/redirect. Denne siden bruker derfor{" "}
-              <code className="ml-1 rounded bg-black/5 px-1 py-0.5">/api/auth/redirect</code>.
             </div>
           </form>
         </div>

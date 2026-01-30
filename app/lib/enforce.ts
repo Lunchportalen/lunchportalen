@@ -1,352 +1,192 @@
 // lib/enforce.ts
 import "server-only";
-
-import crypto from "node:crypto";
-import { supabaseServer } from "@/lib/supabase/server";
-import { getScope } from "@/lib/auth/scope";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /* =========================================================
    Types
 ========================================================= */
 
-export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-export type CompanyStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
+export type CompanyStatus = "active" | "paused" | "closed";
 
-export type EnforcementErrorCode =
-  | "UNAUTHENTICATED"
-  | "FORBIDDEN"
-  | "COMPANY_NOT_FOUND"
-  | "COMPANY_BLOCKED"
-  | "AGREEMENT_MISSING"
-  | "AGREEMENT_INACTIVE"
-  | "AGREEMENT_EXPIRED"
-  | "DATE_CLOSED"
-  | "CUTOFF_PASSED"
-  | "INVALID_DATE";
+export type EnforcementAction = "ENFORCEMENT_ALLOW" | "ENFORCEMENT_BLOCK";
+export type EnforcementEntityType = "order" | "company" | "profile" | "system";
 
-export type EnforcementError = {
-  ok: false;
+export type EnforcementDecision =
+  | {
+      ok: true;
+      rid: string;
+      action: "ENFORCEMENT_ALLOW";
+    }
+  | {
+      ok: false;
+      rid: string;
+      action: "ENFORCEMENT_BLOCK";
+      status: CompanyStatus;
+      reason: string;
+      message: string;
+      detail?: any;
+    };
+
+export type AuditEnforcementInput = {
   rid: string;
-  error: EnforcementErrorCode;
-  message: string;
+  action: "ENFORCEMENT_BLOCK" | "ENFORCEMENT_ALLOW";
+
+  entity_type: EnforcementEntityType;
+  entity_id: string; // ✅ hard krav
+
+  company_id?: string | null;
+  actor_user_id?: string | null;
+
+  route?: string | null;
+  reason?: string | null;
   detail?: any;
 };
-
-export type Agreement = {
-  id: string;
-  company_id: string;
-  status: "ACTIVE" | "PAUSED" | "CLOSED";
-  plan_tier: string | null;
-  start_date: string; // ISO date
-  end_date: string | null;
-  binding_months: number | null;
-  delivery_days: string[] | null;
-  cutoff_time: string | null; // "08:00"
-  timezone: string | null; // "Europe/Oslo"
-};
-
-export type EnforcementContext = {
-  rid: string;
-  role: Role;
-  company_id: string | null;
-  user_id: string | null;
-  email: string | null;
-};
-
-export type ClosedDateChecker = (isoDate: string) => Promise<boolean>;
-
-export type EnforceWriteOk = {
-  ok: true;
-  ctx: EnforcementContext;
-  company_id: string;
-  agreement: Agreement;
-};
-
-export type EnforceWriteResult = EnforceWriteOk | EnforcementError;
-export type EnforceCancelResult = EnforceWriteOk | EnforcementError;
 
 /* =========================================================
    Helpers
 ========================================================= */
 
-function mkRid() {
-  return crypto.randomBytes(8).toString("hex");
+function mustStr(name: string, v: any) {
+  const s = String(v ?? "").trim();
+  if (!s) throw new Error(`audit_missing_${name}`);
+  return s;
 }
 
-function isIsoDate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
-}
-
-function todayOsloISO() {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Oslo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-
-  const y = parts.find((p) => p.type === "year")?.value ?? "1970";
-  const m = parts.find((p) => p.type === "month")?.value ?? "01";
-  const d = parts.find((p) => p.type === "day")?.value ?? "01";
-  return `${y}-${m}-${d}`;
-}
-
-function timeOsloHHMM() {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Oslo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(now);
-
-  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
-  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
-  return `${hh}:${mm}`;
-}
-
-function err(rid: string, error: EnforcementErrorCode, message: string, detail?: any): EnforcementError {
-  return { ok: false, rid, error, message, detail: detail ?? undefined };
-}
-
-/**
- * getScope() hos dere kan være:
- * - getScope()
- * - getScope(req)
- * Denne wrapperen støtter begge uten TS-kræsj.
- */
-async function getScopeSafe(req?: any) {
-  try {
-    if (req) return await (getScope as any)(req);
-    return await (getScope as any)();
-  } catch {
-    return await (getScope as any)(req);
-  }
-}
-
-function isErr(x: any): x is EnforcementError {
-  return !!x && typeof x === "object" && x.ok === false;
+function normStatus(v: any): CompanyStatus {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "active" || s === "paused" || s === "closed") return s;
+  return "paused"; // safest default
 }
 
 /* =========================================================
-   Audit hook (best effort)
+   HARD AUDIT
 ========================================================= */
 
-export async function auditEnforcementEvent(input: {
-  ctx: EnforcementContext;
-  action: string;
-  reason: EnforcementErrorCode;
-  endpoint?: string;
-  extra?: any;
-}) {
-  try {
-    const sb = await supabaseServer(); // ✅ await
-    const { ctx, action, reason, endpoint, extra } = input;
+export async function auditEnforcementEvent(sb: SupabaseClient, input: AuditEnforcementInput) {
+  const rid = mustStr("rid", input.rid);
+  const action = mustStr("action", input.action) as AuditEnforcementInput["action"];
 
-    await sb.from("audit_events").insert({
-      actor_user_id: ctx.user_id,
-      actor_email: ctx.email,
-      actor_role: ctx.role,
-      action,
-      entity_type: "company",
-      entity_id: ctx.company_id,
-      summary: `${reason}${endpoint ? ` @ ${endpoint}` : ""}`,
-      detail: extra ?? null,
-    });
-  } catch {
-    // ignore
-  }
-}
+  const entity_type = mustStr("entity_type", input.entity_type) as EnforcementEntityType;
+  const entity_id = mustStr("entity_id", input.entity_id); // ✅ stopper null/empty
 
-/* =========================================================
-   Context
-========================================================= */
-
-export async function getEnforcementContext(req?: any): Promise<EnforcementContext | EnforcementError> {
-  const rid = mkRid();
-
-  const scope = await getScopeSafe(req);
-  if (!scope?.ok) return err(rid, "UNAUTHENTICATED", "Ikke innlogget");
-
-  const role = (scope.role ?? "employee") as Role;
-
-  return {
+  const payload = {
     rid,
-    role,
-    company_id: scope.company_id ?? null,
-    user_id: scope.user_id ?? null,
-    email: scope.email ?? null,
+    action,
+    entity_type,
+    entity_id,
+    company_id: input.company_id ?? null,
+    actor_user_id: input.actor_user_id ?? null,
+    route: input.route ?? null,
+    reason: input.reason ?? null,
+    detail: input.detail ?? null,
   };
+
+  const { error } = await sb.from("audit_events").insert(payload);
+
+  if (error) {
+    const e = new Error(`AUDIT_INSERT_FAILED: ${error.message}`);
+    (e as any).cause = error;
+    (e as any).payload = payload;
+    throw e; // ✅ HARD FAIL
+  }
+
+  return { ok: true as const };
 }
 
 /* =========================================================
-   Core fetchers
+   Gates
 ========================================================= */
 
-async function readCompanyStatus(companyId: string) {
-  const sb = await supabaseServer(); // ✅ await
-  const { data, error } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
+async function enforceCompanyActiveOrBlock(args: {
+  sb: SupabaseClient;
+  rid: string;
 
-  return { id: String(data.id), status: String(data.status ?? "").toUpperCase() as CompanyStatus };
-}
+  companyStatus: CompanyStatus;
+  company_id: string | null;
+  actor_user_id: string | null;
 
-async function readCurrentAgreement(companyId: string): Promise<Agreement | null> {
-  const sb = await supabaseServer(); // ✅ await
+  entity_type: EnforcementEntityType;
+  entity_id: string;
 
-  const { data, error } = await sb
-    .from("company_current_agreement")
-    .select("id,company_id,status,plan_tier,start_date,end_date,binding_months,delivery_days,cutoff_time,timezone")
-    .eq("company_id", companyId)
-    .maybeSingle();
+  route: string;
+  reason: string;
+  detail?: any;
+}): Promise<EnforcementDecision> {
+  const status = normStatus(args.companyStatus);
 
-  if (error) throw error;
-  if (!data) return null;
-
-  return {
-    id: String(data.id),
-    company_id: String(data.company_id),
-    status: String(data.status ?? "ACTIVE").toUpperCase() as any,
-    plan_tier: (data.plan_tier ?? null) as any,
-    start_date: String(data.start_date),
-    end_date: data.end_date ? String(data.end_date) : null,
-    binding_months: (data.binding_months ?? null) as any,
-    delivery_days: (data.delivery_days ?? null) as any,
-    cutoff_time: (data.cutoff_time ?? null) as any,
-    timezone: (data.timezone ?? null) as any,
-  };
-}
-
-/* =========================================================
-   Guards (return typed payload OR typed error)
-========================================================= */
-
-async function guardCompanyActive(
-  ctx: EnforcementContext,
-  companyIdOverride?: string
-): Promise<{ company_id: string } | EnforcementError> {
-  const rid = ctx.rid;
-  const company_id = companyIdOverride ?? ctx.company_id ?? null;
-
-  if (ctx.role === "superadmin") {
-    if (!company_id) return err(rid, "FORBIDDEN", "Superadmin må angi company_id for firma-spesifikke handlinger");
-  } else {
-    if (!company_id) return err(rid, "FORBIDDEN", "Mangler firmatilgang");
+  if (status === "active") {
+    return { ok: true, rid: args.rid, action: "ENFORCEMENT_ALLOW" };
   }
 
-  const row = await readCompanyStatus(company_id);
-  if (!row) return err(rid, "COMPANY_NOT_FOUND", "Fant ikke firma");
-
-  if (row.status !== "ACTIVE") {
-    return err(rid, "COMPANY_BLOCKED", "Firmaet er deaktivert", { status: row.status });
-  }
-
-  return { company_id };
-}
-
-async function guardAgreementActive(ctx: EnforcementContext, company_id: string): Promise<Agreement | EnforcementError> {
-  const rid = ctx.rid;
-
-  const ag = await readCurrentAgreement(company_id);
-  if (!ag) return err(rid, "AGREEMENT_MISSING", "Ingen aktiv avtale er registrert for firmaet");
-
-  if (ag.status !== "ACTIVE") return err(rid, "AGREEMENT_INACTIVE", "Avtalen er ikke aktiv", { status: ag.status });
-
-  const today = todayOsloISO();
-  if (today < ag.start_date) {
-    return err(rid, "AGREEMENT_INACTIVE", "Avtalen har ikke startet ennå", { start_date: ag.start_date });
-  }
-  if (ag.end_date && today > ag.end_date) {
-    return err(rid, "AGREEMENT_EXPIRED", "Avtalen er utløpt", { end_date: ag.end_date });
-  }
-
-  return ag;
-}
-
-async function guardDateOpen(
-  ctx: EnforcementContext,
-  isoDate: string,
-  isClosedDate?: ClosedDateChecker
-): Promise<null | EnforcementError> {
-  const rid = ctx.rid;
-
-  if (!isIsoDate(isoDate)) return err(rid, "INVALID_DATE", "Ugyldig dato", { isoDate });
-
-  if (isClosedDate) {
-    const closed = await isClosedDate(isoDate);
-    if (closed) return err(rid, "DATE_CLOSED", "Datoen er stengt for bestilling", { date: isoDate });
-  }
-
-  return null;
-}
-
-async function guardCancelCutoff(ctx: EnforcementContext, isoDate: string, cutoffHHMM = "08:00"): Promise<null | EnforcementError> {
-  const rid = ctx.rid;
-
-  if (!isIsoDate(isoDate)) return err(rid, "INVALID_DATE", "Ugyldig dato", { isoDate });
-
-  const today = todayOsloISO();
-  if (isoDate !== today) return null;
-
-  const nowHHMM = timeOsloHHMM();
-  if (nowHHMM >= cutoffHHMM) {
-    return err(rid, "CUTOFF_PASSED", `Avbestilling stenger kl. ${cutoffHHMM} (Europe/Oslo)`, {
-      now: nowHHMM,
-      cutoff: cutoffHHMM,
-      date: isoDate,
-    });
-  }
-
-  return null;
-}
-
-/* =========================================================
-   Convenience (clean unions, TS-safe narrowing)
-========================================================= */
-
-export async function enforceOrderWrite(input: {
-  isoDate: string;
-  companyIdOverride?: string;
-  isClosedDate?: ClosedDateChecker;
-  req?: any;
-}): Promise<EnforceWriteResult> {
-  const ctxOrErr = await getEnforcementContext(input.req);
-  if (isErr(ctxOrErr)) return ctxOrErr;
-  const ctx = ctxOrErr;
-
-  const c = await guardCompanyActive(ctx, input.companyIdOverride);
-  if (isErr(c)) return c;
-
-  const ag = await guardAgreementActive(ctx, c.company_id);
-  if (isErr(ag)) return ag;
-
-  const dErr = await guardDateOpen(ctx, input.isoDate, input.isClosedDate);
-  if (dErr) return dErr;
-
-  return { ok: true, ctx, company_id: c.company_id, agreement: ag };
-}
-
-export async function enforceOrderCancel(input: {
-  isoDate: string;
-  companyIdOverride?: string;
-  isClosedDate?: ClosedDateChecker;
-  cutoffHHMM?: string;
-  req?: any;
-}): Promise<EnforceCancelResult> {
-  const base = await enforceOrderWrite({
-    isoDate: input.isoDate,
-    companyIdOverride: input.companyIdOverride,
-    isClosedDate: input.isClosedDate,
-    req: input.req,
+  await auditEnforcementEvent(args.sb, {
+    rid: args.rid,
+    action: "ENFORCEMENT_BLOCK",
+    entity_type: args.entity_type,
+    entity_id: args.entity_id,
+    company_id: args.company_id,
+    actor_user_id: args.actor_user_id,
+    route: args.route,
+    reason: args.reason,
+    detail: { status, ...args.detail },
   });
 
-  if (!base.ok) return base;
+  return {
+    ok: false,
+    rid: args.rid,
+    action: "ENFORCEMENT_BLOCK",
+    status,
+    reason: args.reason,
+    message: `Blocked: company status is ${status}`,
+    detail: args.detail,
+  };
+}
 
-  const cutoff = input.cutoffHHMM ?? base.agreement.cutoff_time ?? "08:00";
-  const cErr = await guardCancelCutoff(base.ctx, input.isoDate, cutoff);
-  if (cErr) return cErr;
+export async function enforceOrderCancel(args: {
+  sb: SupabaseClient;
+  rid: string;
 
-  return base;
+  companyStatus: CompanyStatus;
+  company_id: string | null;
+  actor_user_id: string | null;
+
+  orderId: string;
+  route: string;
+}): Promise<EnforcementDecision> {
+  return enforceCompanyActiveOrBlock({
+    sb: args.sb,
+    rid: args.rid,
+    companyStatus: args.companyStatus,
+    company_id: args.company_id,
+    actor_user_id: args.actor_user_id,
+    entity_type: "order",
+    entity_id: args.orderId,
+    route: args.route,
+    reason: "COMPANY_STATUS_NOT_ACTIVE",
+    detail: { op: "cancel" },
+  });
+}
+
+export async function enforceOrderToggleCancel(args: {
+  sb: SupabaseClient;
+  rid: string;
+
+  companyStatus: CompanyStatus;
+  company_id: string | null;
+  actor_user_id: string | null;
+
+  orderId: string;
+  route: string;
+}): Promise<EnforcementDecision> {
+  return enforceCompanyActiveOrBlock({
+    sb: args.sb,
+    rid: args.rid,
+    companyStatus: args.companyStatus,
+    company_id: args.company_id,
+    actor_user_id: args.actor_user_id,
+    entity_type: "order",
+    entity_id: args.orderId,
+    route: args.route,
+    reason: "COMPANY_STATUS_NOT_ACTIVE",
+    detail: { op: "toggle_cancel" },
+  });
 }

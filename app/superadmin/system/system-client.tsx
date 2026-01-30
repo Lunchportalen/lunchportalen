@@ -1,7 +1,8 @@
+// app/superadmin/system/system-client.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 
 /* =========================================================
    Types: Common
@@ -161,6 +162,99 @@ type PurgeOk = {
 };
 
 /* =========================================================
+   Enterprise: Plan / Preview
+========================================================= */
+type PlanItem = {
+  id: string;
+  area: "TOGGLE" | "KILL" | "RETENTION";
+  key: string;
+  from: string;
+  to: string;
+  severity: "normal" | "warn" | "danger";
+};
+
+function yn(v: any) {
+  return v ? "ON" : "OFF";
+}
+function buildPlan(prev: SystemSettings | null, next: SystemSettings | null): PlanItem[] {
+  if (!prev || !next) return [];
+  const out: PlanItem[] = [];
+
+  // toggles
+  (Object.keys(prev.toggles) as (keyof SystemToggles)[]).forEach((k) => {
+    const a = prev.toggles[k];
+    const b = next.toggles[k];
+    if (a === b) return;
+    out.push({
+      id: `toggle:${String(k)}`,
+      area: "TOGGLE",
+      key: String(k),
+      from: yn(a),
+      to: yn(b),
+      severity: k === "strict_mode" ? "warn" : "normal",
+    });
+  });
+
+  // killswitch
+  (Object.keys(prev.killswitch) as (keyof KillSwitch)[]).forEach((k) => {
+    const a = prev.killswitch[k];
+    const b = next.killswitch[k];
+    if (a === b) return;
+    const sev: PlanItem["severity"] =
+      k === "orders" || k === "cancellations" ? "danger" : "warn";
+    out.push({
+      id: `kill:${String(k)}`,
+      area: "KILL",
+      key: String(k),
+      from: yn(a),
+      to: yn(b),
+      severity: sev,
+    });
+  });
+
+  // retention
+  (Object.keys(prev.retention) as (keyof Retention)[]).forEach((k) => {
+    const a = prev.retention[k];
+    const b = next.retention[k];
+    if (a === b) return;
+    out.push({
+      id: `ret:${String(k)}`,
+      area: "RETENTION",
+      key: String(k),
+      from: String(a),
+      to: String(b),
+      severity: "warn",
+    });
+  });
+
+  // sort: danger → warn → normal
+  const rank = (s: PlanItem["severity"]) => (s === "danger" ? 0 : s === "warn" ? 1 : 2);
+  out.sort((x, y) => rank(x.severity) - rank(y.severity) || x.area.localeCompare(y.area));
+  return out;
+}
+
+function humanKey(k: string) {
+  const map: Record<string, string> = {
+    enforce_cutoff: "Håndhev cut-off (08:00)",
+    require_active_agreement: "Krev aktiv avtale",
+    employee_self_service: "Ansatt-selvbetjening",
+    company_admin_can_order: "Company admin kan bestille",
+    strict_mode: "Strict mode",
+    esg_engine: "ESG-motor",
+    email_backup: "E-post backup av ordre",
+
+    orders: "Blokker bestillinger",
+    cancellations: "Blokker avbestillinger",
+    emails: "Blokker e-post",
+    kitchen_feed: "Blokker kjøkken-feed",
+
+    orders_months: "Retention: ordre (mnd)",
+    audit_years: "Retention: audit (år)",
+  };
+  return map[k] ?? k;
+}
+
+/* =========================================================
    UI primitives
 ========================================================= */
 function Chip(props: { label: string; tone?: "neutral" | "good" | "warn" | "bad"; mono?: boolean }) {
@@ -186,12 +280,7 @@ function Chip(props: { label: string; tone?: "neutral" | "good" | "warn" | "bad"
   );
 }
 
-function TabButton(props: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  hint?: string;
-}) {
+function TabButton(props: { active: boolean; label: string; onClick: () => void; hint?: string }) {
   return (
     <button
       type="button"
@@ -215,7 +304,9 @@ function ToggleRow(props: {
   checked: boolean;
   onChange: (v: boolean) => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
+  const disabled = !!props.disabled;
   return (
     <label
       className={[
@@ -223,12 +314,14 @@ function ToggleRow(props: {
         props.danger
           ? "bg-rose-50 ring-rose-200 hover:bg-rose-50/80"
           : "bg-white ring-[rgb(var(--lp-border))] hover:bg-neutral-50",
+        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
       ].join(" ")}
     >
       <input
         type="checkbox"
         className="mt-1 h-5 w-5"
         checked={props.checked}
+        disabled={disabled}
         onChange={(e) => props.onChange(e.target.checked)}
       />
       <span className="flex-1">
@@ -239,17 +332,15 @@ function ToggleRow(props: {
   );
 }
 
-function SectionTitle(props: { overline: string; title: string; desc?: string; right?: React.ReactNode }) {
+function SectionTitle(props: { overline: string; title: string; desc?: string; right?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div>
         <div className="text-xs font-extrabold tracking-wide text-neutral-600">{props.overline}</div>
         <div className="mt-1 text-lg font-black tracking-tight text-neutral-950">{props.title}</div>
-        {props.desc ? (
-          <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">{props.desc}</div>
-        ) : null}
+        {props.desc ? <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">{props.desc}</div> : null}
       </div>
-      {props.right ? <div className="flex items-center gap-2">{props.right}</div> : null}
+      {props.right ? <div className="flex flex-wrap items-center gap-2">{props.right}</div> : null}
     </div>
   );
 }
@@ -338,10 +429,17 @@ export default function SystemClient() {
   const [sysDraft, setSysDraft] = useState<SystemSettings | null>(null);
   const [isSavingSettings, startSavingSettings] = useTransition();
 
+  // Enterprise: Read-only default, explicit unlock
+  const [editMode, setEditMode] = useState(false);
+
   const sysDirty = useMemo(() => {
     if (!sys || !sysDraft) return false;
     return JSON.stringify(sys) !== JSON.stringify(sysDraft);
   }, [sys, sysDraft]);
+
+  const plan = useMemo(() => buildPlan(sys, sysDraft), [sys, sysDraft]);
+  const planDangerCount = useMemo(() => plan.filter((p) => p.severity === "danger").length, [plan]);
+  const planWarnCount = useMemo(() => plan.filter((p) => p.severity === "warn").length, [plan]);
 
   async function loadSystemSettings() {
     setSysLoading(true);
@@ -380,8 +478,36 @@ export default function SystemClient() {
     setSysDraft(next);
   }
 
+  function discardChanges() {
+    if (!sys) return;
+    setSysDraft(sys);
+    toastOk("Endringer forkastet.");
+  }
+
+  function lockControls() {
+    if (sysDirty) {
+      const ok = window.confirm("Du har ulagrede endringer. Vil du låse kontrollene og forkaste endringene?");
+      if (!ok) return;
+      discardChanges();
+    }
+    setEditMode(false);
+  }
+
+  function unlockControls() {
+    setEditMode(true);
+    toastOk("Kontroller låst opp (Edit mode).");
+  }
+
   async function saveSystemSettings() {
     if (!sysDraft) return;
+
+    // send only the mutable parts
+    const payload = {
+      toggles: sysDraft.toggles,
+      killswitch: sysDraft.killswitch,
+      retention: sysDraft.retention,
+    };
+
     startSavingSettings(async () => {
       setSysErr(null);
       try {
@@ -389,7 +515,7 @@ export default function SystemClient() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-          body: JSON.stringify(sysDraft),
+          body: JSON.stringify(payload),
         });
         const json = await readJsonSafe<SystemResp>(res);
         if (!res.ok || !json || (json as any).ok !== true) {
@@ -400,12 +526,31 @@ export default function SystemClient() {
         setSys(ok.settings);
         setSysDraft(ok.settings);
         toastOk("Systeminnstillinger lagret.");
-        // refresh feed so last-change feels “magical”
+        setEditMode(false);
         loadRecent().catch(() => {});
       } catch (e: any) {
         toastErr(`Kunne ikke lagre systeminnstillinger. ${safeStr(e?.message) || ""}`.trim());
       }
     });
+  }
+
+  /* -------------------------
+     Settings preview modal
+  ------------------------- */
+  const [settingsPreviewOpen, setSettingsPreviewOpen] = useState(false);
+  const [applyAcknowledge, setApplyAcknowledge] = useState(false);
+
+  function openSettingsPreview() {
+    setApplyAcknowledge(false);
+    setSettingsPreviewOpen(true);
+  }
+
+  function canApply() {
+    if (!editMode) return false;
+    if (!sysDraft || !sysDirty) return false;
+    // if we have danger items, require ack
+    if (planDangerCount > 0 && !applyAcknowledge) return false;
+    return true;
   }
 
   /* -------------------------
@@ -485,12 +630,14 @@ export default function SystemClient() {
   }
 
   const rootActive = isBgActive(bg);
+
+  // countdown tick (eslint-safe)
   const rootRemainingMs = useMemo(() => {
     if (!rootActive || !bg?.expires_at) return 0;
+    void bgTick;
     return new Date(bg.expires_at).getTime() - Date.now();
   }, [rootActive, bg?.expires_at, bgTick]);
 
-  // tick every second when active (countdown)
   useEffect(() => {
     if (!rootActive) return;
     const t = window.setInterval(() => setBgTick((x) => x + 1), 1000);
@@ -561,10 +708,7 @@ export default function SystemClient() {
     usp.set("limit", String(PAGE_LIMIT));
 
     try {
-      const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, {
-        cache: "no-store",
-        signal: ctrl.signal,
-      });
+      const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, { cache: "no-store", signal: ctrl.signal });
       const json = await readJsonSafe<CompaniesListResp>(res);
       if (reqId !== reqIdRef.current) return;
 
@@ -629,10 +773,10 @@ export default function SystemClient() {
   const [confirmId, setConfirmId] = useState("");
   const [reason, setReason] = useState("");
 
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewErr, setPreviewErr] = useState<string | null>(null);
-  const [preview, setPreview] = useState<any | null>(null);
+  const [purgePreviewOpen, setPurgePreviewOpen] = useState(false);
+  const [purgePreviewLoading, setPurgePreviewLoading] = useState(false);
+  const [purgePreviewErr, setPurgePreviewErr] = useState<string | null>(null);
+  const [purgePreview, setPurgePreview] = useState<any | null>(null);
 
   const [dangerOpen, setDangerOpen] = useState(false);
   const [dangerAcknowledge, setDangerAcknowledge] = useState(false);
@@ -653,16 +797,16 @@ export default function SystemClient() {
     setConfirmWord("");
     setConfirmId("");
     setReason("");
-    setPreviewOpen(false);
-    setPreview(null);
-    setPreviewErr(null);
+    setPurgePreviewOpen(false);
+    setPurgePreview(null);
+    setPurgePreviewErr(null);
   }
 
-  async function loadPreview(companyId: string) {
-    setPreviewOpen(true);
-    setPreviewLoading(true);
-    setPreviewErr(null);
-    setPreview(null);
+  async function loadPurgePreview(companyId: string) {
+    setPurgePreviewOpen(true);
+    setPurgePreviewLoading(true);
+    setPurgePreviewErr(null);
+    setPurgePreview(null);
 
     try {
       const res = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}/purge?dryRun=1`, {
@@ -671,16 +815,16 @@ export default function SystemClient() {
       const json = await readJsonSafe<any>(res);
 
       if (!res.ok || !json?.ok) {
-        setPreviewErr(apiErrorMessage(res, json, "Kunne ikke hente dry-run rapport."));
-        setPreviewLoading(false);
+        setPurgePreviewErr(apiErrorMessage(res, json, "Kunne ikke hente dry-run rapport."));
+        setPurgePreviewLoading(false);
         return;
       }
 
-      setPreview(json);
-      setPreviewLoading(false);
+      setPurgePreview(json);
+      setPurgePreviewLoading(false);
     } catch (e: any) {
-      setPreviewErr(`Kunne ikke hente dry-run rapport. ${safeStr(e?.message) || ""}`.trim());
-      setPreviewLoading(false);
+      setPurgePreviewErr(`Kunne ikke hente dry-run rapport. ${safeStr(e?.message) || ""}`.trim());
+      setPurgePreviewLoading(false);
     }
   }
 
@@ -735,7 +879,8 @@ export default function SystemClient() {
     return "NORMAL";
   }, [kills, killsActiveCount]);
 
-  const stateTone: "good" | "warn" | "bad" = systemState === "NORMAL" ? "good" : systemState === "DEGRADED" ? "warn" : "bad";
+  const stateTone: "good" | "warn" | "bad" =
+    systemState === "NORMAL" ? "good" : systemState === "DEGRADED" ? "warn" : "bad";
 
   const lastEvent = recent?.[0] ?? null;
 
@@ -763,38 +908,40 @@ export default function SystemClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dangerOpen, qDebounced]);
 
+  const controlsDisabled = !editMode || sysLoading || isSavingSettings;
+
   /* =========================================================
      Render
   ========================================================= */
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-12 pt-6">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-5 md:pt-6">
       {/* Header row */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-xs font-extrabold tracking-wide text-neutral-600">SUPERADMIN • CONTROL ROOM</div>
-          <div className="mt-1 text-2xl font-black tracking-tight text-neutral-950">System Control</div>
+          <div className="mt-1 text-xl md:text-2xl font-black tracking-tight text-neutral-950">System Control</div>
           <div className="mt-1 text-sm font-semibold text-[rgb(var(--lp-muted))]">
             Situational awareness → policy controls → simulation → forensics.
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <Link
             href="/superadmin"
-            className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+            className="w-full md:w-auto rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
           >
             Tilbake
           </Link>
           <Link
             href="/superadmin/audit"
-            className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+            className="w-full md:w-auto rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
           >
             Audit
           </Link>
           <button
             type="button"
             onClick={() => refreshAll()}
-            className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-neutral-800"
+            className="w-full md:w-auto rounded-xl bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-neutral-800"
           >
             Refresh
           </button>
@@ -804,6 +951,7 @@ export default function SystemClient() {
       {/* Toast */}
       {toast && (
         <div
+          aria-live="polite"
           className={[
             "mt-4 rounded-xl px-4 py-3 text-sm font-semibold ring-1",
             toast.type === "ok"
@@ -821,34 +969,35 @@ export default function SystemClient() {
       <div className="sticky top-2 z-30 mt-5">
         <div
           className={[
-            "rounded-3xl bg-white/90 backdrop-blur ring-1 px-4 py-3",
+            "rounded-3xl bg-white/90 backdrop-blur ring-1 px-3 py-2 md:px-4 md:py-3",
             rootActive ? "ring-rose-200" : "ring-[rgb(var(--lp-border))]",
           ].join(" ")}
         >
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip label={`STATE: ${systemState}`} tone={stateTone} />
-              <Chip label={rootActive ? `ROOT: ACTIVE (${msToClock(rootRemainingMs)})` : "ROOT: OFF"} tone={rootActive ? "bad" : "neutral"} />
-              <Chip label={`KILL: ${killsActiveCount} active`} tone={killsActiveCount ? "warn" : "good"} />
-              {sysDraft ? (
+            {/* chips: mobile scroll, desktop wrap */}
+            <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+              <div className="flex min-w-max flex-wrap items-center gap-2 md:min-w-0">
+                <Chip label={`STATE: ${systemState}`} tone={stateTone} />
                 <Chip
-                  label={`RETENTION: ${sysDraft.retention.orders_months}m / ${sysDraft.retention.audit_years}y`}
-                  tone="neutral"
-                  mono
+                  label={rootActive ? `ROOT: ACTIVE (${msToClock(rootRemainingMs)})` : "ROOT: OFF"}
+                  tone={rootActive ? "bad" : "neutral"}
                 />
-              ) : (
-                <Chip label="RETENTION: —" tone="neutral" mono />
-              )}
-              {sysDirty ? <Chip label="UNSAVED CHANGES" tone="warn" /> : null}
+                <Chip label={`KILL: ${killsActiveCount} active`} tone={killsActiveCount ? "warn" : "good"} />
+                {sysDraft ? (
+                  <Chip label={`RETENTION: ${sysDraft.retention.orders_months}m / ${sysDraft.retention.audit_years}y`} tone="neutral" mono />
+                ) : (
+                  <Chip label="RETENTION: —" tone="neutral" mono />
+                )}
+                <Chip label={editMode ? "MODE: EDIT" : "MODE: READ"} tone={editMode ? "warn" : "neutral"} />
+                {sysDirty ? <Chip label="UNSAVED CHANGES" tone="warn" /> : null}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2">
-                <TabButton active={tab === "overview"} label="Overview" onClick={() => setTab("overview")} />
-                <TabButton active={tab === "controls"} label="Controls" onClick={() => setTab("controls")} />
-                <TabButton active={tab === "simulation"} label="Simulation" onClick={() => setTab("simulation")} />
-                <TabButton active={tab === "forensics"} label="Forensics" onClick={() => setTab("forensics")} />
-              </div>
+              <TabButton active={tab === "overview"} label="Overview" onClick={() => setTab("overview")} />
+              <TabButton active={tab === "controls"} label="Controls" onClick={() => setTab("controls")} />
+              <TabButton active={tab === "simulation"} label="Simulation" onClick={() => setTab("simulation")} />
+              <TabButton active={tab === "forensics"} label="Forensics" onClick={() => setTab("forensics")} />
             </div>
           </div>
 
@@ -900,9 +1049,7 @@ export default function SystemClient() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] text-neutral-600">
-                Cache: no-store • Runtime: nodejs
-              </span>
+              <span className="font-mono text-[11px] text-neutral-600">Cache: no-store • Runtime: nodejs</span>
             </div>
           </div>
         </div>
@@ -927,14 +1074,17 @@ export default function SystemClient() {
                   >
                     Go to Controls
                   </button>
-                  {!rootActive ? (
+                  {!editMode ? (
                     <button
                       type="button"
-                      onClick={() => setTab("controls")}
+                      onClick={() => {
+                        setTab("controls");
+                        unlockControls();
+                      }}
                       className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-neutral-800"
-                      title="Root Mode startes under Controls"
+                      title="Kontroller låses opp under Controls"
                     >
-                      Enter Root Mode
+                      Unlock Controls
                     </button>
                   ) : null}
                 </>
@@ -955,10 +1105,10 @@ export default function SystemClient() {
               </div>
 
               <div className="rounded-2xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
-                <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">ROOT MODE</div>
-                <div className="mt-1 text-xl font-black text-neutral-950">{rootActive ? "ACTIVE" : "OFF"}</div>
+                <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">CONTROL MODE</div>
+                <div className="mt-1 text-xl font-black text-neutral-950">{editMode ? "EDIT" : "READ"}</div>
                 <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
-                  {rootActive ? `Expires in ${msToClock(rootRemainingMs)}` : "Required for irreversible actions."}
+                  {editMode ? "Changes enabled." : "Read-only by default."}
                 </div>
               </div>
 
@@ -1002,9 +1152,7 @@ export default function SystemClient() {
                   {!rootActive ? (
                     <div className="rounded-xl bg-yellow-50 p-3 ring-1 ring-yellow-200">
                       <div className="text-xs font-extrabold text-yellow-800">Root mode is OFF</div>
-                      <div className="mt-1 text-xs font-semibold text-yellow-900">
-                        Irreversible actions krever break-glass.
-                      </div>
+                      <div className="mt-1 text-xs font-semibold text-yellow-900">Irreversible actions krever break-glass.</div>
                     </div>
                   ) : null}
 
@@ -1012,7 +1160,7 @@ export default function SystemClient() {
                     <div className="rounded-xl bg-yellow-50 p-3 ring-1 ring-yellow-200">
                       <div className="text-xs font-extrabold text-yellow-800">Unsaved changes</div>
                       <div className="mt-1 text-xs font-semibold text-yellow-900">
-                        Du har endringer som ikke er lagret.
+                        Du har endringer som ikke er lagret. Bruk Preview → Apply.
                       </div>
                     </div>
                   ) : null}
@@ -1023,9 +1171,7 @@ export default function SystemClient() {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-extrabold tracking-wide text-neutral-600">RECENT CRITICAL ACTIONS</div>
-                    <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
-                      De siste hendelsene som betyr noe.
-                    </div>
+                    <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">De siste hendelsene som betyr noe.</div>
                   </div>
                   <button
                     type="button"
@@ -1103,10 +1249,13 @@ export default function SystemClient() {
             <SectionTitle
               overline="CONTROLS"
               title="Platform policy controls"
-              desc="Endringer slår inn umiddelbart. Alt er sporbar drift."
+              desc="Read-only som standard. Lås opp bevisst → Preview → Apply."
               right={
                 <>
                   {sysDirty ? <Chip label="UNSAVED" tone="warn" /> : null}
+                  {planDangerCount ? <Chip label={`DANGER: ${planDangerCount}`} tone="bad" /> : null}
+                  {planWarnCount ? <Chip label={`WARN: ${planWarnCount}`} tone="warn" /> : null}
+
                   <button
                     type="button"
                     onClick={() => loadSystemSettings()}
@@ -1115,19 +1264,55 @@ export default function SystemClient() {
                   >
                     {sysLoading ? "Laster…" : "Reload"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => saveSystemSettings()}
-                    disabled={!sysDraft || !sysDirty || isSavingSettings}
-                    className={[
-                      "rounded-xl px-4 py-2 text-xs font-extrabold ring-1 transition",
-                      !sysDraft || !sysDirty || isSavingSettings
-                        ? "bg-neutral-200 text-neutral-700 ring-neutral-200"
-                        : "bg-neutral-900 text-white ring-neutral-900 hover:bg-neutral-800",
-                    ].join(" ")}
-                  >
-                    {isSavingSettings ? "Lagrer…" : "Lagre"}
-                  </button>
+
+                  {!editMode ? (
+                    <button
+                      type="button"
+                      onClick={() => unlockControls()}
+                      className="rounded-xl bg-neutral-900 px-4 py-2 text-xs font-extrabold text-white hover:bg-neutral-800"
+                    >
+                      Unlock controls
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => lockControls()}
+                        className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+                      >
+                        Lock
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => discardChanges()}
+                        disabled={!sysDirty}
+                        className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50 disabled:opacity-60"
+                      >
+                        Discard
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openSettingsPreview()}
+                        disabled={!sysDirty}
+                        className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50 disabled:opacity-60"
+                      >
+                        Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => saveSystemSettings()}
+                        disabled={!canApply() || isSavingSettings}
+                        className={[
+                          "rounded-xl px-4 py-2 text-xs font-extrabold ring-1 transition",
+                          !canApply() || isSavingSettings
+                            ? "bg-neutral-200 text-neutral-700 ring-neutral-200"
+                            : "bg-neutral-900 text-white ring-neutral-900 hover:bg-neutral-800",
+                        ].join(" ")}
+                      >
+                        {isSavingSettings ? "Applying…" : "Apply"}
+                      </button>
+                    </>
+                  )}
                 </>
               }
             />
@@ -1137,47 +1322,75 @@ export default function SystemClient() {
               <div className="mt-3 text-sm font-semibold text-neutral-700">Laster systeminnstillinger…</div>
             ) : (
               <>
+                {/* Mode banner */}
+                <div className={["mt-4 rounded-2xl p-3 ring-1", editMode ? "bg-yellow-50 ring-yellow-200" : "bg-neutral-50 ring-neutral-200"].join(" ")}>
+                  <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="text-xs font-extrabold tracking-wide text-neutral-700">
+                        {editMode ? "EDIT MODE" : "READ MODE"}
+                      </div>
+                      <div className="mt-0.5 text-xs font-semibold text-neutral-700">
+                        {editMode
+                          ? "Endringer er aktivert. Bruk Preview → Apply for å gjøre endringer sporbare."
+                          : "Kontroller er låst. Dette reduserer risiko for uhell."}
+                      </div>
+                    </div>
+                    {editMode && sysDirty ? (
+                      <div className="mt-2 md:mt-0 flex flex-wrap items-center gap-2">
+                        <Chip label={`${plan.length} changes`} tone={planDangerCount ? "bad" : planWarnCount ? "warn" : "neutral"} />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                   <ToggleRow
                     title="Håndhev cut-off (08:00)"
                     desc="Stopper bestilling/avbestilling etter cut-off når aktiv."
                     checked={sysDraft.toggles.enforce_cutoff}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("enforce_cutoff", v)}
                   />
                   <ToggleRow
                     title="Krev aktiv avtale"
                     desc="Hvis aktiv: ingen bestilling uten avtale."
                     checked={sysDraft.toggles.require_active_agreement}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("require_active_agreement", v)}
                   />
                   <ToggleRow
                     title="Ansatt-selvbetjening"
                     desc="Hvis aktiv: ansatte kan bestille/avbestille selv."
                     checked={sysDraft.toggles.employee_self_service}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("employee_self_service", v)}
                   />
                   <ToggleRow
                     title="Company admin kan bestille"
                     desc="Hvis aktiv: company_admin kan også bestille lunsj."
                     checked={sysDraft.toggles.company_admin_can_order}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("company_admin_can_order", v)}
                   />
                   <ToggleRow
                     title="Strict mode"
                     desc="Hvis aktiv: ingen unntak i normal drift (overstyring krever root)."
                     checked={sysDraft.toggles.strict_mode}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("strict_mode", v)}
                   />
                   <ToggleRow
                     title="ESG-motor"
                     desc="Aktiver intern ESG-/matsvinnmotor (ikke synlig for ansatte)."
                     checked={sysDraft.toggles.esg_engine}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("esg_engine", v)}
                   />
                   <ToggleRow
                     title="E-post backup av ordre"
                     desc="Aktiver outbox/retry til ordre@lunchportalen.no."
                     checked={sysDraft.toggles.email_backup}
+                    disabled={controlsDisabled}
                     onChange={(v) => setToggle("email_backup", v)}
                   />
                 </div>
@@ -1188,6 +1401,9 @@ export default function SystemClient() {
                     overline="EMERGENCY"
                     title="Kill switches"
                     desc="Nødknapper. Slår inn umiddelbart. Brukes kun ved driftshendelser."
+                    right={
+                      planDangerCount ? <Chip label="HIGH RISK" tone="bad" /> : <Chip label="SAFE" tone="neutral" />
+                    }
                   />
                   <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                     <ToggleRow
@@ -1195,6 +1411,7 @@ export default function SystemClient() {
                       title="Blokker bestillinger"
                       desc="Stopp alle nye bestillinger system-wide."
                       checked={sysDraft.killswitch.orders}
+                      disabled={controlsDisabled}
                       onChange={(v) => setKill("orders", v)}
                     />
                     <ToggleRow
@@ -1202,6 +1419,7 @@ export default function SystemClient() {
                       title="Blokker avbestillinger"
                       desc="Stopp alle avbestillinger system-wide."
                       checked={sysDraft.killswitch.cancellations}
+                      disabled={controlsDisabled}
                       onChange={(v) => setKill("cancellations", v)}
                     />
                     <ToggleRow
@@ -1209,6 +1427,7 @@ export default function SystemClient() {
                       title="Blokker e-post"
                       desc="Stopp alle e-postutsendelser (backup/kvittering)."
                       checked={sysDraft.killswitch.emails}
+                      disabled={controlsDisabled}
                       onChange={(v) => setKill("emails", v)}
                     />
                     <ToggleRow
@@ -1216,9 +1435,16 @@ export default function SystemClient() {
                       title="Blokker kjøkken-feed"
                       desc="Stopp generering/visning av kjøkkenoversikt ved behov."
                       checked={sysDraft.killswitch.kitchen_feed}
+                      disabled={controlsDisabled}
                       onChange={(v) => setKill("kitchen_feed", v)}
                     />
                   </div>
+
+                  {editMode ? (
+                    <div className="mt-3 text-[11px] font-semibold text-rose-900">
+                      Tips: Bruk Preview før Apply. Kill switches medfører øyeblikkelig effekt og tydelig spor i audit.
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Retention */}
@@ -1233,11 +1459,14 @@ export default function SystemClient() {
                       <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">ORDRE (MÅNEDER)</div>
                       <input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         min={1}
                         max={60}
+                        disabled={controlsDisabled}
                         value={sysDraft.retention.orders_months}
                         onChange={(e) => setRetention("orders_months", Number(e.target.value))}
-                        className="mt-2 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="mt-2 w-full rounded-2xl bg-white px-4 py-3.5 md:py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-neutral-900 disabled:opacity-60"
                       />
                       <div className="mt-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">Anbefalt: 12–24 mnd.</div>
                     </div>
@@ -1245,11 +1474,14 @@ export default function SystemClient() {
                       <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">AUDIT (ÅR)</div>
                       <input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         min={1}
                         max={15}
+                        disabled={controlsDisabled}
                         value={sysDraft.retention.audit_years}
                         onChange={(e) => setRetention("audit_years", Number(e.target.value))}
-                        className="mt-2 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                        className="mt-2 w-full rounded-2xl bg-white px-4 py-3.5 md:py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] focus:outline-none focus:ring-2 focus:ring-neutral-900 disabled:opacity-60"
                       />
                       <div className="mt-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">Anbefalt: 3–7 år.</div>
                     </div>
@@ -1324,9 +1556,7 @@ export default function SystemClient() {
                       <option value="OFFBOARDING">OFFBOARDING</option>
                       <option value="LEGAL">LEGAL</option>
                     </select>
-                    <div className="mt-2 text-[11px] font-semibold text-[rgb(var(--lp-muted))]">
-                      Purpose lagres i audit_meta_events.
-                    </div>
+                    <div className="mt-2 text-[11px] font-semibold text-[rgb(var(--lp-muted))]">Purpose lagres i audit_meta_events.</div>
                   </div>
 
                   <div>
@@ -1357,7 +1587,7 @@ export default function SystemClient() {
             )}
           </div>
 
-          {/* Danger zone (collapsed by default) */}
+          {/* Danger zone */}
           <div className="rounded-3xl bg-white ring-1 ring-[rgb(var(--lp-border))] p-4">
             <SectionTitle
               overline="IRREVERSIBLE"
@@ -1380,9 +1610,7 @@ export default function SystemClient() {
             />
 
             {!dangerOpen ? (
-              <div className="mt-3 text-xs font-semibold text-[rgb(var(--lp-muted))]">
-                Irreversible actions er skjult til du åpner dette panelet.
-              </div>
+              <div className="mt-3 text-xs font-semibold text-[rgb(var(--lp-muted))]">Irreversible actions er skjult til du åpner dette panelet.</div>
             ) : (
               <div className="mt-4 space-y-4">
                 <div className="rounded-3xl bg-rose-50 p-4 ring-1 ring-rose-200">
@@ -1393,20 +1621,14 @@ export default function SystemClient() {
                   </div>
 
                   <label className="mt-3 flex items-center gap-2 text-xs font-extrabold text-rose-900">
-                    <input
-                      type="checkbox"
-                      checked={dangerAcknowledge}
-                      onChange={(e) => setDangerAcknowledge(e.target.checked)}
-                    />
+                    <input type="checkbox" checked={dangerAcknowledge} onChange={(e) => setDangerAcknowledge(e.target.checked)} />
                     I understand this is irreversible
                   </label>
 
                   {!rootActive ? (
                     <div className="mt-3 rounded-xl bg-yellow-50 p-3 ring-1 ring-yellow-200">
                       <div className="text-xs font-extrabold text-yellow-900">Requires Root Mode</div>
-                      <div className="mt-1 text-xs font-semibold text-yellow-900">
-                        Start break-glass før du kan utføre purge.
-                      </div>
+                      <div className="mt-1 text-xs font-semibold text-yellow-900">Start break-glass før du kan utføre purge.</div>
                     </div>
                   ) : null}
                 </div>
@@ -1421,63 +1643,65 @@ export default function SystemClient() {
                     className="mt-2 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   />
 
-                  {companiesErr ? (
-                    <div className="mt-3 text-sm font-semibold text-rose-700">{companiesErr}</div>
-                  ) : null}
+                  {companiesErr ? <div className="mt-3 text-sm font-semibold text-rose-700">{companiesErr}</div> : null}
 
                   <div className="mt-3 max-h-64 overflow-auto rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
-                    <table className="w-full border-collapse text-left text-sm">
-                      <thead className="sticky top-0 bg-neutral-50 text-xs font-extrabold tracking-wide text-neutral-600">
-                        <tr className="border-b border-[rgb(var(--lp-border))]">
-                          <th className="px-4 py-3">FIRMA</th>
-                          <th className="px-4 py-3">STATUS</th>
-                          <th className="px-4 py-3">SIST</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loadingCompanies ? (
-                          <tr>
-                            <td colSpan={3} className="px-4 py-8 text-center text-sm font-semibold text-neutral-600">
-                              Laster…
-                            </td>
+                    <div className="min-w-[720px] md:min-w-0">
+                      <table className="w-full border-collapse text-left text-sm">
+                        <thead className="sticky top-0 bg-neutral-50 text-xs font-extrabold tracking-wide text-neutral-600">
+                          <tr className="border-b border-[rgb(var(--lp-border))]">
+                            <th className="px-3 py-2 md:px-4 md:py-3">FIRMA</th>
+                            <th className="px-3 py-2 md:px-4 md:py-3">STATUS</th>
+                            <th className="px-3 py-2 md:px-4 md:py-3">SIST</th>
                           </tr>
-                        ) : items.length === 0 ? (
-                          <tr>
-                            <td colSpan={3} className="px-4 py-8 text-center text-sm font-semibold text-neutral-600">
-                              Ingen treff.
-                            </td>
-                          </tr>
-                        ) : (
-                          items.map((c) => {
-                            const active = selected?.id === c.id;
-                            return (
-                              <tr
-                                key={c.id}
-                                className={[
-                                  "border-b border-[rgb(var(--lp-border))] cursor-pointer",
-                                  active ? "bg-neutral-50" : "hover:bg-neutral-50/60",
-                                ].join(" ")}
-                                onClick={() => {
-                                  setSelected(c);
-                                  resetDangerForm();
-                                }}
-                              >
-                                <td className="px-4 py-3">
-                                  <div className="font-extrabold text-neutral-950">{c.name}</div>
-                                  <div className="mt-0.5 font-mono text-xs text-neutral-500">{c.id}</div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))]">
-                                    {String(c.status).toUpperCase()}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-xs font-semibold text-neutral-700">{formatISO(c.updated_at)}</td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {loadingCompanies ? (
+                            <tr>
+                              <td colSpan={3} className="px-3 py-8 md:px-4 text-center text-sm font-semibold text-neutral-600">
+                                Laster…
+                              </td>
+                            </tr>
+                          ) : items.length === 0 ? (
+                            <tr>
+                              <td colSpan={3} className="px-3 py-8 md:px-4 text-center text-sm font-semibold text-neutral-600">
+                                Ingen treff.
+                              </td>
+                            </tr>
+                          ) : (
+                            items.map((c) => {
+                              const active = selected?.id === c.id;
+                              return (
+                                <tr
+                                  key={c.id}
+                                  className={[
+                                    "border-b border-[rgb(var(--lp-border))] cursor-pointer",
+                                    active ? "bg-neutral-50" : "hover:bg-neutral-50/60",
+                                  ].join(" ")}
+                                  onClick={() => {
+                                    setSelected(c);
+                                    resetDangerForm();
+                                  }}
+                                >
+                                  <td className="px-3 py-2 md:px-4 md:py-3">
+                                    <div className="font-extrabold text-neutral-950">{c.name}</div>
+                                    <div className="mt-0.5 font-mono text-xs text-neutral-500">{c.id}</div>
+                                  </td>
+                                  <td className="px-3 py-2 md:px-4 md:py-3">
+                                    <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))]">
+                                      {String(c.status).toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 md:px-4 md:py-3 text-xs font-semibold text-neutral-700">
+                                    {formatISO(c.updated_at)}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div className="mt-2 flex items-center justify-between gap-2">
@@ -1510,10 +1734,10 @@ export default function SystemClient() {
                         <div className="text-xs font-extrabold tracking-wide text-neutral-600">TARGET</div>
                         <div className="mt-1 font-black text-neutral-950">{selected.name}</div>
                         <div className="mt-1 font-mono text-xs text-neutral-600">{selected.id}</div>
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => loadPreview(selected.id)}
+                            onClick={() => loadPurgePreview(selected.id)}
                             className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
                           >
                             Preview impact
@@ -1531,25 +1755,25 @@ export default function SystemClient() {
                         </div>
                       </div>
 
-                      {previewOpen ? (
+                      {purgePreviewOpen ? (
                         <div className="rounded-2xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
                           <div className="text-xs font-extrabold tracking-wide text-neutral-600">PREVIEW</div>
-                          {previewLoading ? (
+                          {purgePreviewLoading ? (
                             <div className="mt-2 text-sm font-semibold text-neutral-700">Laster rapport…</div>
-                          ) : previewErr ? (
-                            <div className="mt-2 text-sm font-semibold text-rose-700">{previewErr}</div>
-                          ) : preview ? (
+                          ) : purgePreviewErr ? (
+                            <div className="mt-2 text-sm font-semibold text-rose-700">{purgePreviewErr}</div>
+                          ) : purgePreview ? (
                             <div className="mt-2 space-y-2">
                               <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">
                                 Rapport fra /purge?dryRun=1 (ingen sletting).
                               </div>
                               <div className="grid grid-cols-2 gap-2">
-                                <MiniStat label="orders" value={String(preview?.report?.orders ?? "—")} />
-                                <MiniStat label="profiles" value={String(preview?.report?.profiles ?? "—")} />
-                                <MiniStat label="locations" value={String(preview?.report?.company_locations ?? "—")} />
-                                <MiniStat label="agreements" value={String(preview?.report?.agreements ?? "—")} />
+                                <MiniStat label="orders" value={String(purgePreview?.report?.orders ?? "—")} />
+                                <MiniStat label="profiles" value={String(purgePreview?.report?.profiles ?? "—")} />
+                                <MiniStat label="locations" value={String(purgePreview?.report?.company_locations ?? "—")} />
+                                <MiniStat label="agreements" value={String(purgePreview?.report?.agreements ?? "—")} />
                               </div>
-                              <div className="text-[11px] font-mono text-neutral-600">rid: {safeStr(preview?.rid) || "—"}</div>
+                              <div className="text-[11px] font-mono text-neutral-600">rid: {safeStr(purgePreview?.rid) || "—"}</div>
                             </div>
                           ) : (
                             <div className="mt-2 text-sm font-semibold text-neutral-700">Ingen rapport.</div>
@@ -1636,21 +1860,15 @@ export default function SystemClient() {
             />
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <EmptyState
-                title="Scenario builder (v1)"
-                desc="Velg dato + firma + endring → få en preview av kjøkkenresultat. (Kobles på API i neste steg.)"
-              />
-              <EmptyState
-                title="Delta output"
-                desc="Her vises effekten: porsjoner, avvik, kost/ESG delta – før noe endres."
-              />
+              <EmptyState title="Scenario builder (v1)" desc="Velg dato + firma + endring → få preview av kjøkkenresultat." />
+              <EmptyState title="Delta output" desc="Her vises effekten: porsjoner, avvik, kost/ESG delta – før noe endres." />
             </div>
 
             <div className="mt-4 rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
               <div className="text-xs font-extrabold tracking-wide text-neutral-600">WHY THIS FEELS 15 YEARS AHEAD</div>
               <div className="mt-2 text-xs font-semibold text-neutral-700">
-                Simulation er det som gjør at drift blir forutsigbar: du ser konsekvens før handling. Når vi kobler på “policy engine + preview”,
-                vil dette oppleves som et kontrollrom, ikke et adminpanel.
+                Simulation gjør drift forutsigbar: du ser konsekvens før handling. Når vi kobler på “policy engine + preview”,
+                oppleves dette som et kontrollrom, ikke et adminpanel.
               </div>
             </div>
           </div>
@@ -1676,10 +1894,7 @@ export default function SystemClient() {
                   >
                     Refresh
                   </button>
-                  <Link
-                    href="/superadmin/audit"
-                    className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-neutral-800"
-                  >
+                  <Link href="/superadmin/audit" className="rounded-xl bg-neutral-900 px-3 py-2 text-xs font-extrabold text-white hover:bg-neutral-800">
                     Open Audit
                   </Link>
                 </>
@@ -1702,6 +1917,168 @@ export default function SystemClient() {
           </div>
         </div>
       )}
+
+      {/* =====================================================
+          SETTINGS PREVIEW MODAL
+      ====================================================== */}
+      {settingsPreviewOpen ? (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSettingsPreviewOpen(false)} />
+          <div className="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center">
+            <div className="mx-auto w-full max-w-3xl rounded-t-3xl md:rounded-3xl bg-white p-4 ring-1 ring-[rgb(var(--lp-border))] md:shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-extrabold tracking-wide text-neutral-600">PREVIEW</div>
+                  <div className="mt-1 text-lg font-black text-neutral-950">Plan → Preview → Apply</div>
+                  <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
+                    Dette er endringene som vil bli skrevet til systemet.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettingsPreviewOpen(false)}
+                  className="rounded-xl bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Chip label={`${plan.length} changes`} tone={planDangerCount ? "bad" : planWarnCount ? "warn" : "neutral"} />
+                {planDangerCount ? <Chip label={`DANGER: ${planDangerCount}`} tone="bad" /> : null}
+                {planWarnCount ? <Chip label={`WARN: ${planWarnCount}`} tone="warn" /> : null}
+                <Chip label={editMode ? "MODE: EDIT" : "MODE: READ"} tone={editMode ? "warn" : "neutral"} />
+              </div>
+
+              {plan.length === 0 ? (
+                <div className="mt-4 rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
+                  <div className="text-sm font-black text-neutral-950">Ingen endringer</div>
+                  <div className="mt-1 text-xs font-semibold text-neutral-700">Gjør en endring i Controls for å bygge en plan.</div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  {plan.map((p) => (
+                    <div
+                      key={p.id}
+                      className={[
+                        "rounded-2xl p-3 ring-1",
+                        p.severity === "danger"
+                          ? "bg-rose-50 ring-rose-200"
+                          : p.severity === "warn"
+                            ? "bg-yellow-50 ring-yellow-200"
+                            : "bg-white ring-[rgb(var(--lp-border))]",
+                      ].join(" ")}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Chip
+                            label={p.area}
+                            tone={p.severity === "danger" ? "bad" : p.severity === "warn" ? "warn" : "neutral"}
+                            mono
+                          />
+                          <div className="text-sm font-extrabold text-neutral-950">{humanKey(p.key)}</div>
+                        </div>
+                        <div className="text-xs font-semibold text-neutral-700">
+                          <span className="font-mono">{p.from}</span> → <span className="font-mono">{p.to}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {planDangerCount ? (
+                <div className="mt-4 rounded-2xl bg-rose-50 p-3 ring-1 ring-rose-200">
+                  <div className="text-xs font-extrabold tracking-wide text-rose-800">HIGH RISK CHANGE</div>
+                  <div className="mt-1 text-xs font-semibold text-rose-900">
+                    Planen inneholder endringer som kan stoppe bestilling/avbestilling. Bekreft før Apply.
+                  </div>
+                  <label className="mt-3 flex items-center gap-2 text-xs font-extrabold text-rose-900">
+                    <input
+                      type="checkbox"
+                      checked={applyAcknowledge}
+                      onChange={(e) => setApplyAcknowledge(e.target.checked)}
+                    />
+                    I understand this impacts production
+                  </label>
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex flex-col gap-2 md:flex-row md:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    discardChanges();
+                    setSettingsPreviewOpen(false);
+                  }}
+                  disabled={!sysDirty}
+                  className="w-full md:w-auto rounded-xl bg-white px-4 py-2 text-xs font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50 disabled:opacity-60"
+                >
+                  Discard
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsPreviewOpen(false);
+                    saveSystemSettings();
+                  }}
+                  disabled={!canApply() || isSavingSettings}
+                  className={[
+                    "w-full md:w-auto rounded-xl px-4 py-2 text-xs font-extrabold ring-1 transition",
+                    !canApply() || isSavingSettings
+                      ? "bg-neutral-200 text-neutral-700 ring-neutral-200"
+                      : "bg-neutral-900 text-white ring-neutral-900 hover:bg-neutral-800",
+                  ].join(" ")}
+                >
+                  {isSavingSettings ? "Applying…" : "Apply now"}
+                </button>
+              </div>
+
+              <div className="mt-3 text-[11px] font-semibold text-[rgb(var(--lp-muted))]">
+                Enterprise rule: Changes are intentional, visible, and traceable. (Server-side enforcement tar vi i steg B.)
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* =====================================================
+          MOBILE: STICKY BOTTOM ACTION BAR (Edit + Dirty)
+      ====================================================== */}
+      {tab === "controls" && editMode && sysDirty ? (
+        <div className="fixed inset-x-0 bottom-3 z-40 px-4 md:hidden">
+          <div className="mx-auto max-w-6xl rounded-3xl bg-white/95 backdrop-blur p-2 ring-1 ring-[rgb(var(--lp-border))] shadow-lg">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => discardChanges()}
+                className="flex-1 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={() => openSettingsPreview()}
+                className="flex-1 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold ring-1 ring-[rgb(var(--lp-border))] hover:bg-neutral-50"
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                onClick={() => saveSystemSettings()}
+                disabled={!canApply() || isSavingSettings}
+                className={[
+                  "flex-1 rounded-2xl px-3 py-3 text-sm font-extrabold transition",
+                  !canApply() || isSavingSettings ? "bg-neutral-200 text-neutral-700" : "bg-neutral-900 text-white hover:bg-neutral-800",
+                ].join(" ")}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

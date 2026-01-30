@@ -93,6 +93,31 @@ export function osloTodayISODate(): string {
 }
 
 /**
+ * Streng ISO-dato-sjekk (YYYY-MM-DD)
+ * Brukes i API validering (fasit)
+ */
+export function isIsoDate(v: any): v is string {
+  const s = String(v ?? "");
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+
+  const yyyy = Number(m[1]);
+  const mm = Number(m[2]);
+  const dd = Number(m[3]);
+  if (mm < 1 || mm > 12) return false;
+  if (dd < 1 || dd > 31) return false;
+
+  // Kalender-validering (hindrer 2026-02-31 osv.)
+  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00Z`);
+  const ok =
+    d.getUTCFullYear() === yyyy &&
+    d.getUTCMonth() + 1 === mm &&
+    d.getUTCDate() === dd;
+
+  return ok;
+}
+
+/**
  * Mandag (start på uke) for en gitt ISO-dato (YYYY-MM-DD)
  * DST-safe (UTC midt på dagen)
  */
@@ -167,9 +192,26 @@ export function isPublishWindowOslo(): boolean {
 }
 
 /**
- * Cutoff-sjekk: etter kl. 08:00 (Oslo)
+ * Cutoff-sjekk: etter kl. 08:00 (Oslo) – "nå"
  */
 export function isAfterCutoff0800(): boolean {
   const o = osloNowParts();
   return o.hh > 8 || (o.hh === 8 && (o.mi > 0 || o.ss > 0));
+}
+
+/**
+ * Cutoff-status for en spesifikk dato
+ * - fortid: alltid låst
+ * - i dag: låst etter 08:00 Oslo
+ * - fremtid: ikke låst
+ */
+export function cutoffStatusForDate(isoDate: string): "PAST" | "TODAY_OPEN" | "TODAY_LOCKED" | "FUTURE_OPEN" {
+  const today = osloTodayISODate();
+
+  if (!isIsoDate(isoDate)) return "PAST"; // safe default (API vil uansett validere)
+
+  if (isoDate < today) return "PAST";
+  if (isoDate > today) return "FUTURE_OPEN";
+
+  return isAfterCutoff0800() ? "TODAY_LOCKED" : "TODAY_OPEN";
 }

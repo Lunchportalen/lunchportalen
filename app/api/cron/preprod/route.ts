@@ -1,19 +1,87 @@
 // app/api/cron/preprod/route.ts
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { osloTodayISODate } from "@/lib/date/oslo";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-function requireCronAuth(req: Request) {
-  // ✅ Vercel cron i ditt oppsett: ?key=${CRON_SECRET}
-  const url = new URL(req.url);
-  const got = url.searchParams.get("key") || "";
-  const want = process.env.CRON_SECRET || "";
-  return Boolean(want && got === want);
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { osloTodayISODate } from "@/lib/date/oslo";
+
+/**
+ * =========================================================
+ * CRON: preprod signals (Dag-10 clean)
+ * - NO cookies / NO scope
+ * - x-cron-secret gate (Authorization: Bearer supported)
+ * - (Optional legacy) GET ?key=CRON_SECRET supported
+ * - uses SERVICE ROLE for RPC + logging (cron_runs)
+ * - no-store + { ok, rid }
+ *
+ * RPC:
+ * - lp_generate_signals_for_date(p_date)
+ * =========================================================
+ */
+
+/* =========================================================
+   Response helpers
+========================================================= */
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
+}
+function json(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return json({ ok: false, rid, error, message, detail: detail ?? undefined }, status);
 }
 
+/* =========================================================
+   Cron secret gate (fail-closed)
+   - Prefer: header x-cron-secret
+   - Support: Authorization: Bearer <secret>
+   - Optional legacy: GET ?key=<secret>
+========================================================= */
+function requireCronSecret(req: Request, allowQueryKey = true) {
+  const want = (process.env.CRON_SECRET ?? "").trim();
+  if (!want) throw new Error("cron_secret_missing");
+
+  const hdr = (req.headers.get("x-cron-secret") ?? "").trim();
+  const auth = (req.headers.get("authorization") ?? "").trim();
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  const token = hdr || bearer;
+
+  if (token) {
+    if (token !== want) {
+      const err = new Error("forbidden");
+      (err as any).code = "forbidden";
+      throw err;
+    }
+    return;
+  }
+
+  if (allowQueryKey) {
+    const url = new URL(req.url);
+    const key = (url.searchParams.get("key") ?? "").trim();
+    if (key && key === want) return;
+  }
+
+  const err = new Error("forbidden");
+  (err as any).code = "forbidden";
+  throw err;
+}
+
+/* =========================================================
+   Supabase admin client
+   - Cron MUST NOT use cookie/session client
+========================================================= */
+async function getAdminClient() {
+  const anyAdmin: any = supabaseAdmin as any;
+  return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
+}
+
+/* =========================================================
+   Logging helpers (fail-quiet)
+========================================================= */
 function log(scope: string, payload: any) {
   try {
     console.log(`[cron:${scope}]`, payload);
@@ -22,42 +90,90 @@ function log(scope: string, payload: any) {
   }
 }
 
+async function logCronRun(
+  admin: any,
+  payload: { job: string; status: "ok" | "error"; rid: string; detail?: string | null; meta?: Record<string, any> }
+) {
+  try {
+    await admin.from("cron_runs").insert({
+      job: payload.job,
+      status: payload.status,
+      rid: payload.rid,
+      detail: payload.detail ?? null,
+      meta: payload.meta ?? {},
+    });
+  } catch {
+    // no-op
+  }
+}
+
+/* =========================================================
+   GET /api/cron/preprod
+========================================================= */
 export async function GET(req: Request) {
-  if (!requireCronAuth(req)) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  const rid = crypto.randomUUID?.() ?? `preprod_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Gate first
+  try {
+    requireCronSecret(req, true);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i env");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
+    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
   }
 
-  const supabase = await supabaseServer();
   const today = osloTodayISODate();
+  const meta = { date: today };
 
-  log("preprod:start", { date: today });
+  log("preprod:start", { rid, ...meta });
 
-  const { data, error } = await supabase.rpc("lp_generate_signals_for_date", { p_date: today });
+  try {
+    const admin = await getAdminClient();
 
-  if (error) {
-    log("preprod:error", { date: today, message: error.message });
+    const { data, error } = await admin.rpc("lp_generate_signals_for_date", { p_date: today });
 
-    // ✅ enterprise: logg cron-run
-    await supabase.from("cron_runs").insert({
+    if (error) {
+      log("preprod:error", { rid, ...meta, message: error.message });
+
+      await logCronRun(admin, {
+        job: "preprod",
+        status: "error",
+        rid,
+        detail: error.message,
+        meta,
+      });
+
+      return jsonErr(500, rid, "rpc_error", "lp_generate_signals_for_date feilet", {
+        message: error.message ?? String(error),
+        code: (error as any)?.code ?? null,
+        hint: (error as any)?.hint ?? null,
+        details: (error as any)?.details ?? null,
+        ...meta,
+      });
+    }
+
+    const upserted = data ?? 0;
+
+    await logCronRun(admin, {
       job: "preprod",
-      status: "error",
-      detail: error.message,
-      meta: { date: today },
+      status: "ok",
+      rid,
+      meta: { ...meta, signals_upserted: upserted },
     });
 
-    return NextResponse.json({ ok: false, error: error.message, date: today }, { status: 500 });
+    log("preprod:done", { rid, ...meta, signals_upserted: upserted });
+
+    return json({ ok: true, rid, ...meta, signals_upserted: upserted }, 200);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+
+    // Best effort: try to log
+    try {
+      const admin = await getAdminClient();
+      await logCronRun(admin, { job: "preprod", status: "error", rid, detail: msg, meta });
+    } catch {}
+
+    return jsonErr(500, rid, "server_error", "Preprod cron feilet", { message: msg, ...meta });
   }
-
-  const upserted = data ?? 0;
-
-  // ✅ enterprise: logg cron-run
-  await supabase.from("cron_runs").insert({
-    job: "preprod",
-    status: "ok",
-    meta: { date: today, signals_upserted: upserted },
-  });
-
-  log("preprod:done", { date: today, signals_upserted: upserted });
-
-  return NextResponse.json({ ok: true, date: today, signals_upserted: upserted });
 }

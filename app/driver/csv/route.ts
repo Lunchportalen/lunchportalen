@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextResponse, type NextRequest } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { noStoreHeaders } from "@/lib/http/noStore";
+import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import { jsonErr } from "@/lib/http/respond";
 
 function csvEscape(v: any) {
   const s = String(v ?? "");
@@ -12,66 +12,136 @@ function csvEscape(v: any) {
   return s;
 }
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const window = url.searchParams.get("window");
-  const today = new Date().toISOString().slice(0, 10);
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
 
-  if (!window) {
-    return NextResponse.json({ error: "Missing window param" }, { status: 400 });
+function normalizeWindow(v: any) {
+  // Slot/window skal være stabilt – men vi lar det være case-insensitive i query
+  return safeStr(v);
+}
+
+/**
+ * GET ?window=<slot>&date=YYYY-MM-DD
+ * - Driver CSV export (read-only)
+ * - Auth: driver | superadmin
+ * - Uses current schema:
+ *   orders: date, status, slot, note, company_id, location_id, user_id
+ *   companies: id, name
+ *   company_locations: id, name, address, delivery_contact_name/phone/country OR contact_name/phone, delivery_window_from/to
+ *   profiles: user_id, full_name, department
+ */
+export async function GET(req: NextRequest) {
+  const s = await scopeOr401(req);
+  if ((s as any)?.ok === false) return (s as any).res;
+
+  const { rid } = (s as any).ctx;
+
+  const roleBlock = requireRoleOr403((s as any).ctx, "driver.csv", ["driver", "superadmin"]);
+  if (roleBlock) return roleBlock;
+
+  // Confirm cookie-session (fail-closed)
+  const sb = await supabaseServer();
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
+
+  let admin: ReturnType<typeof supabaseAdmin>;
+  try {
+    admin = supabaseAdmin();
+  } catch (e: any) {
+    return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.", { detail: safeStr(e?.message ?? e) });
   }
 
-  const { data, error } = await supabase
+  const url = new URL(req.url);
+  const windowQ = normalizeWindow(url.searchParams.get("window"));
+  const qDate = safeStr(url.searchParams.get("date"));
+  const date = qDate && isIsoDate(qDate) ? qDate : osloTodayISODate();
+
+  if (!windowQ) {
+    return jsonErr(400, rid, "MISSING_WINDOW", "Missing window param.");
+  }
+
+  // 1) Hent ordregrunnlag (ACTIVE for dato + slot)
+  const { data: orders, error: oErr } = await admin
     .from("orders")
-    .select(`
-      id,
-      delivery_window,
-      note,
-      company_locations (
-        name,
-        delivery_contact_name,
-        delivery_contact_phone,
-        delivery_contact_country,
-        companies ( name )
-      ),
-      profiles ( full_name, department )
-    `)
-    .eq("delivery_date", today)
-    .eq("status", "active")
-    .eq("delivery_window", window);
+    .select("id, slot, note, company_id, location_id, user_id, date, status")
+    .eq("date", date)
+    .eq("status", "ACTIVE")
+    .eq("slot", windowQ);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (oErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente orders.", { message: oErr.message, code: (oErr as any).code ?? null });
 
-  const header = [
-    "Leveringsvindu",
-    "Firma",
-    "Lokasjon",
-    "Kontakt",
-    "Telefon",
-    "Ansatt",
-    "Avdeling",
-    "Notat",
-  ];
+  const rows = orders ?? [];
+  if (!rows.length) {
+    const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
+    const csv = header.map(csvEscape).join(",") + "\n";
+    return new NextResponse(csv, {
+      headers: {
+        ...noStoreHeaders(),
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="driver_${date}_${windowQ}.csv"`,
+      },
+    });
+  }
 
-  const rows = (data ?? []).map((o: any) => [
-    o.delivery_window,
-    o.company_locations.companies.name,
-    o.company_locations.name,
-    o.company_locations.delivery_contact_name ?? "",
-    `${o.company_locations.delivery_contact_country ?? ""} ${o.company_locations.delivery_contact_phone ?? ""}`.trim(),
-    o.profiles.full_name,
-    o.profiles.department ?? "",
-    o.note ?? "",
+  const companyIds = Array.from(new Set(rows.map((o: any) => o.company_id).filter(Boolean)));
+  const locationIds = Array.from(new Set(rows.map((o: any) => o.location_id).filter(Boolean)));
+  const userIds = Array.from(new Set(rows.map((o: any) => o.user_id).filter(Boolean)));
+
+  // 2) Metadata i parallel
+  const [companiesRes, locationsRes, profilesRes] = await Promise.all([
+    companyIds.length ? admin.from("companies").select("id, name").in("id", companyIds) : Promise.resolve({ data: [], error: null as any }),
+    locationIds.length
+      ? admin
+          .from("company_locations")
+          .select(
+            "id, name, company_id, delivery_contact_name, delivery_contact_phone, delivery_contact_country, contact_name, contact_phone"
+          )
+          .in("id", locationIds)
+      : Promise.resolve({ data: [], error: null as any }),
+    userIds.length ? admin.from("profiles").select("user_id, full_name, department").in("user_id", userIds) : Promise.resolve({ data: [], error: null as any }),
   ]);
 
-  const csv = [header, ...rows]
-    .map((r) => r.map(csvEscape).join(","))
-    .join("\n");
+  if (companiesRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmaer.", { message: companiesRes.error.message });
+  if (locationsRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", { message: locationsRes.error.message });
+  if (profilesRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", { message: profilesRes.error.message });
+
+  const compMap = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
+  const locMap = new Map((locationsRes.data ?? []).map((l: any) => [String(l.id), l]));
+  const profMap = new Map((profilesRes.data ?? []).map((p: any) => [String(p.user_id), p]));
+
+  // 3) CSV bygg
+  const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
+
+  const csvRows = rows.map((o: any) => {
+    const comp = compMap.get(String(o.company_id));
+    const loc = locMap.get(String(o.location_id));
+    const prof = profMap.get(String(o.user_id));
+
+    const contactName = (loc as any)?.delivery_contact_name ?? (loc as any)?.contact_name ?? "";
+    const cc = safeStr((loc as any)?.delivery_contact_country);
+    const phone = safeStr((loc as any)?.delivery_contact_phone ?? (loc as any)?.contact_phone);
+    const contactPhone = `${cc} ${phone}`.trim();
+
+    return [
+      windowQ,
+      safeStr(comp?.name) || "",
+      safeStr((loc as any)?.name) || "",
+      safeStr(contactName) || "",
+      contactPhone,
+      safeStr((prof as any)?.full_name) || "",
+      safeStr((prof as any)?.department) || "",
+      safeStr(o.note) || "",
+    ];
+  });
+
+  const csv = [header, ...csvRows].map((r) => r.map(csvEscape).join(",")).join("\n");
 
   return new NextResponse(csv, {
     headers: {
+      ...noStoreHeaders(),
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="driver_${today}_${window}.csv"`,
+      "Content-Disposition": `attachment; filename="driver_${date}_${windowQ}.csv"`,
     },
   });
 }

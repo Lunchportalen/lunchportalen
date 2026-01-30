@@ -15,6 +15,8 @@ function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 
+const ORDER_EMAIL = "ordre@lunchportalen.no";
+
 // HARD e-post-fasit (samme logikk som middleware)
 function roleByEmail(email: string | null | undefined): Role | null {
   const e = normEmail(email);
@@ -68,12 +70,23 @@ function safeNextPath(next: string | null | undefined, fallback = "/week") {
 /**
  * Enkel RBAC for redirect-beslutning:
  * - superadmin kan alt
- * - company_admin kan /admin + /week
+ * - company_admin kan /admin + /week (+ /outbox hvis dere vil, men vi trenger ikke)
  * - kitchen kan /kitchen
  * - driver kan /driver
  * - employee kan /week
+ * - ordre@lunchportalen.no kan /outbox (hard)
  */
-function canAccess(role: Role, path: string) {
+function canAccess(role: Role, path: string, email?: string | null) {
+  const e = normEmail(email);
+
+  // ✅ HARD: ordre-konto kan alltid gå til /outbox (og kun det "området")
+  if (e === ORDER_EMAIL) {
+    if (path.startsWith("/outbox")) return true;
+    // la den likevel kunne gå til /week hvis dere ønsker (valgfritt):
+    // if (path.startsWith("/week")) return true;
+    return false;
+  }
+
   if (role === "superadmin") return true;
 
   if (path.startsWith("/superadmin")) return false;
@@ -82,10 +95,12 @@ function canAccess(role: Role, path: string) {
   if (path.startsWith("/kitchen")) return role === "kitchen";
   if (path.startsWith("/driver")) return role === "driver";
 
+  // Tillat outbox kun for superadmin (ordre håndteres over)
+  if (path.startsWith("/outbox")) return false;
+
   // Default: /week og alt annet som ikke er "område" behandles som employee-safe
   if (path.startsWith("/week")) return true;
 
-  // Hvis dere har flere områder senere: legg de inn eksplisitt her.
   return true;
 }
 
@@ -130,7 +145,6 @@ export async function GET(req: NextRequest) {
 
   // Les next (rå)
   const nextRaw = url.searchParams.get("next");
-  // NB: fallback bestemmes senere av rolle også, men vi trenger en trygg path uansett
   const nextSafe = safeNextPath(nextRaw, "/week");
 
   const sb = await supabaseServer();
@@ -144,12 +158,19 @@ export async function GET(req: NextRequest) {
   }
 
   const user = data.user;
+  const email = normEmail(user.email);
 
-  // Rolle-prioritet (samme prinsipp som middleware bør bruke):
+  // ✅ HARD: ordre@... skal ALLTID til /outbox uansett next
+  if (email === ORDER_EMAIL) {
+    const to = new URL("/outbox", url.origin);
+    return NextResponse.redirect(to, { status: 303 });
+  }
+
+  // Rolle-prioritet:
   // 1) Hard epost-fasit (systemkontoer)
-  // 2) profiles.role (autoritet for ordinære brukere)
-  // 3) user_metadata.role (fallback hvis profiles ikke er tilgjengelig enda)
-  // 4) employee (siste fallback)
+  // 2) profiles.role
+  // 3) user_metadata.role
+  // 4) employee
   const byEmail = roleByEmail(user.email);
   const byProfiles = byEmail ? null : await roleFromProfiles(sb, user.id);
   const byMeta = byEmail || byProfiles ? null : roleFromUserMetadata(user);
@@ -157,19 +178,14 @@ export async function GET(req: NextRequest) {
   const role: Role = byEmail ?? byProfiles ?? byMeta ?? "employee";
   const home = homeForRole(role);
 
-  // Hvis next er gitt: bruk den kun om rollen kan gå dit, ellers hjem
-  // Hvis next ikke er gitt: alltid hjem
   const hasNext = typeof nextRaw === "string" && nextRaw.trim().length > 0;
 
   let target = home;
   if (hasNext) {
     const candidate = safeNextPath(nextRaw, home);
-
-    // Hvis candidate peker til "feil område" for rollen → hjem
-    target = canAccess(role, candidate) ? candidate : home;
+    target = canAccess(role, candidate, user.email) ? candidate : home;
   }
 
-  // Viktig: redirect alltid med origin fra req (ikke req.url som base for path)
   const to = new URL(target, url.origin);
   return NextResponse.redirect(to, { status: 303 });
 }

@@ -1,24 +1,26 @@
+// app/api/admin/employees/disable/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
-
-function safeText(v: any) {
-  const s = String(v ?? "").trim();
-  return s.length ? s : null;
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
 type Body = {
   user_id: string;
   disabled: boolean;
   reason?: string | null;
 };
+
+function safeText(v: any) {
+  const s = String(v ?? "").trim();
+  return s.length ? s : null;
+}
 
 function isUuid(v: any) {
   return (
@@ -27,55 +29,54 @@ function isUuid(v: any) {
   );
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.employees.disable.bulk", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+
+  const body = (await readJson(req)) as Partial<Body>;
+  const userId = String((body as any)?.user_id ?? "").trim();
+
+  if (!isUuid(userId)) return jsonErr(400, rid, "INVALID_USER_ID", "Ugyldig user_id.");
+
+  const disabled = Boolean((body as any)?.disabled);
+  const reason = safeText((body as any)?.reason);
+
   try {
-    const sb = await supabaseServer();
-    const { data: auth, error: authErr } = await sb.auth.getUser();
-    if (authErr || !auth?.user) return jsonError(401, "unauthorized", "Du må være innlogget.");
-
-    const meId = auth.user.id;
-
-    const { data: me, error: meErr } = await sb
-      .from("profiles")
-      .select("user_id, role, company_id")
-      .eq("user_id", meId)
-      .maybeSingle();
-
-    if (meErr) return jsonError(500, "db_error", "Kunne ikke lese profil.", meErr);
-    if (!me) return jsonError(403, "forbidden", "Mangler profil.");
-    if (me.role !== "company_admin") return jsonError(403, "forbidden", "Kun firma-admin har tilgang.");
-    if (!me.company_id) return jsonError(400, "missing_company", "Mangler firmatilknytning.");
-
-    const body = (await req.json().catch(() => null)) as Body | null;
-    if (!body) return jsonError(400, "bad_json", "Ugyldig JSON.");
-
-    if (!isUuid(body.user_id)) return jsonError(400, "invalid_user_id", "Ugyldig user_id.");
-    const disabled = !!body.disabled;
-    const reason = safeText(body.reason);
-
-    // Sikkerhet: sjekk at brukeren du endrer faktisk er ansatt i ditt firma
     const admin = supabaseAdmin();
 
-    const { data: target, error: tErr } = await admin
-      .from("profiles")
-      .select("user_id, company_id, role")
-      .eq("user_id", body.user_id)
-      .maybeSingle();
+    // Viktig: schema hos dere bruker profiles.id som userId
+    const { data: target, error: tErr } = await admin.from("profiles").select("id, company_id, role").eq("id", userId).maybeSingle();
 
-    if (tErr) return jsonError(500, "db_error", "Kunne ikke lese ansatt.", tErr);
-    if (!target) return jsonError(404, "not_found", "Fant ikke ansatt.");
-    if (target.company_id !== me.company_id) return jsonError(403, "forbidden", "Kan kun endre ansatte i eget firma.");
-    if (target.role !== "employee") return jsonError(400, "invalid_target", "Kun ansatte kan deaktiveres her.");
+    if (tErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lese ansatt.", { message: tErr.message });
+    if (!target) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke ansatt.");
+
+    if (String((target as any).company_id ?? "") !== companyId) {
+      return jsonErr(403, rid, "FORBIDDEN", "Kan kun endre ansatte i eget firma.");
+    }
+    if (String((target as any).role ?? "").toLowerCase() !== "employee") {
+      return jsonErr(400, rid, "INVALID_TARGET", "Kun ansatte kan deaktiveres her.");
+    }
 
     const patch = disabled
       ? { disabled_at: new Date().toISOString(), disabled_reason: reason ?? "Deaktivert av firma-admin" }
       : { disabled_at: null, disabled_reason: null };
 
-    const { error: uErr } = await admin.from("profiles").update(patch).eq("user_id", body.user_id);
-    if (uErr) return jsonError(500, "db_error", "Kunne ikke oppdatere ansatt.", uErr);
+    const { error: uErr } = await admin.from("profiles").update(patch).eq("id", userId);
+    if (uErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke oppdatere ansatt.", { message: uErr.message });
 
-    return NextResponse.json({ ok: true, user_id: body.user_id, disabled });
+    return jsonOk({ ok: true, rid, user_id: userId, disabled }, 200);
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil.", String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

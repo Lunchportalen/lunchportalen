@@ -1,4 +1,4 @@
-// app/superadmin/companies/companies-client.tsx
+// app/superadmin/companies/[companyId]/companies-client.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -82,10 +82,11 @@ function fmtTs(ts: string | null | undefined) {
 }
 
 function badgeClass(status: CompanyStatus) {
-  if (status === "active") return "bg-green-100 text-green-800 ring-green-200";
-  if (status === "paused") return "bg-yellow-100 text-yellow-800 ring-yellow-200";
-  if (status === "closed") return "bg-red-100 text-red-800 ring-red-200";
-  return "bg-gray-100 text-gray-800 ring-gray-200";
+  // match enterprise-ish palette (no surprises)
+  if (status === "active") return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  if (status === "paused") return "bg-amber-50 text-amber-800 ring-amber-200";
+  if (status === "closed") return "bg-rose-50 text-rose-800 ring-rose-200";
+  return "bg-neutral-50 text-neutral-700 ring-neutral-200";
 }
 
 function statusLabel(status: CompanyStatus) {
@@ -109,7 +110,7 @@ function btnClass(variant: "primary" | "ghost" | "danger" | "muted" = "ghost", d
     variant === "primary"
       ? "bg-neutral-900 text-white ring-neutral-900 hover:bg-neutral-800 focus:ring-neutral-900"
       : variant === "danger"
-      ? "bg-red-600 text-white ring-red-600 hover:bg-red-500 focus:ring-red-600"
+      ? "bg-rose-600 text-white ring-rose-600 hover:bg-rose-500 focus:ring-rose-600"
       : variant === "muted"
       ? "bg-neutral-100 text-neutral-700 ring-neutral-200 hover:bg-neutral-200 focus:ring-neutral-400"
       : "bg-white text-neutral-800 ring-neutral-200 hover:bg-neutral-50 focus:ring-neutral-400";
@@ -117,10 +118,14 @@ function btnClass(variant: "primary" | "ghost" | "danger" | "muted" = "ghost", d
   return `${base} ${v} ${dis}`;
 }
 
-async function readJson(res: Response) {
+async function readJsonSafe(res: Response) {
   const t = await res.text();
-  if (!t) throw new Error(`Tom respons (HTTP ${res.status})`);
-  return JSON.parse(t);
+  if (!t) return null;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return null;
+  }
 }
 
 function buildListUrl(opts: {
@@ -143,6 +148,30 @@ function buildListUrl(opts: {
   p.set("include_last", "1");
   p.set("include_stats", "1");
   return `/api/superadmin/companies?${p.toString()}`;
+}
+
+/**
+ * STATUS API
+ * Repoet har nå: POST /api/superadmin/companies/status  { companyId, status }
+ * (ikke /api/superadmin/companies/[id]/status)
+ */
+async function setStatusViaApi(companyId: string, status: CompanyStatus, reason?: string) {
+  const res = await fetch(`/api/superadmin/companies/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    cache: "no-store",
+    body: JSON.stringify({ companyId, status, reason: reason?.trim() || null }),
+  });
+
+  const json = await readJsonSafe(res);
+  if (res.ok && json && json.ok === true) return { ok: true as const, json };
+
+  return {
+    ok: false as const,
+    json,
+    status: res.status,
+    message: (json && (json.message || json.error)) || `HTTP ${res.status}`,
+  };
 }
 
 export default function CompaniesClient({ initial }: Props) {
@@ -168,8 +197,10 @@ export default function CompaniesClient({ initial }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Debounce search
+  // Debounce search + abort in-flight
+  const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<any>(null);
+  const seqRef = useRef(0);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / (limit || 50))), [total, limit]);
 
@@ -193,24 +224,55 @@ export default function CompaniesClient({ initial }: Props) {
       ...next,
     } as any;
 
+    const url = buildListUrl(opts);
+
+    // cancel previous
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    const mySeq = ++seqRef.current;
+
     setLoading(true);
     setErr(null);
 
-    const url = buildListUrl(opts);
-    const res = await fetch(url, { cache: "no-store" });
-    const json = (await readJson(res)) as ApiRes;
+    try {
+      const res = await fetch(url, { cache: "no-store", signal: ac.signal, headers: { "Cache-Control": "no-store" } });
+      const json = (await readJsonSafe(res)) as ApiRes | null;
 
-    if (!isOk(json)) {
+      if (ac.signal.aborted) return;
+      if (mySeq !== seqRef.current) return;
+
+      if (!json) {
+        setRows([]);
+        setStats(null);
+        setTotal(0);
+        setErr(`Tom/ugyldig respons (HTTP ${res.status})`);
+        setLoading(false);
+        return;
+      }
+
+      if (!isOk(json)) {
+        setRows([]);
+        setStats(null);
+        setTotal(0);
+        setErr(json?.message ?? "Ukjent feil");
+        setLoading(false);
+        return;
+      }
+
+      setRows(json.companies ?? []);
+      setStats(json.stats ?? null);
+      setTotal(json.total ?? 0);
       setLoading(false);
-      setErr(json?.message ?? "Ukjent feil");
-      return;
+    } catch (e: any) {
+      if (ac.signal.aborted) return;
+      setRows([]);
+      setStats(null);
+      setTotal(0);
+      setErr(String(e?.message ?? e));
+      setLoading(false);
     }
-
-    setRows(json.companies ?? []);
-    setStats(json.stats ?? null);
-    setTotal(json.total ?? 0);
-
-    setLoading(false);
   }
 
   // First load (if no initial)
@@ -225,9 +287,7 @@ export default function CompaniesClient({ initial }: Props) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       // Reset til side 1 ved filter-endring
-      startTransition(() => {
-        setPage(1);
-      });
+      startTransition(() => setPage(1));
       fetchList({ page: 1 }).catch((e) => setErr(String(e?.message ?? e)));
     }, 350);
 
@@ -250,23 +310,15 @@ export default function CompaniesClient({ initial }: Props) {
     setRows((r) => r.map((x) => (x.id === companyId ? { ...x, status: nextStatus } : x)));
 
     try {
-      const res = await fetch(`/api/superadmin/companies/${companyId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ status: nextStatus, reason: reason?.trim() || null }),
-      });
-      const json = (await readJson(res)) as any;
+      const r = await setStatusViaApi(companyId, nextStatus, reason);
 
-      if (!json?.ok) {
-        // rollback
+      if (!r.ok) {
         setRows(prev);
-        setErr(json?.message ?? "Kunne ikke endre status.");
+        setErr(r.message || "Kunne ikke endre status.");
         return;
       }
 
-      // Refresh list for last_event/stats correctness
-      setNotice(`Status oppdatert: ${statusLabel(json?.changed?.from ?? "pending")} → ${statusLabel(nextStatus)}`);
+      setNotice(`Status oppdatert → ${statusLabel(nextStatus)}`);
       fetchList().catch(() => {});
     } catch (e: any) {
       setRows(prev);
@@ -301,7 +353,7 @@ export default function CompaniesClient({ initial }: Props) {
   const canNext = page < totalPages;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 lp-select-text">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
@@ -330,27 +382,27 @@ export default function CompaniesClient({ initial }: Props) {
 
       {/* Stats */}
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <button className={statCardClass(status === "ALL")} onClick={() => quickFilter("ALL")}>
+        <button className={statCardClass(status === "ALL")} onClick={() => quickFilter("ALL")} disabled={loading}>
           <div className="text-xs text-neutral-500">Total</div>
           <div className="mt-1 text-xl font-semibold">{stats?.companiesTotal ?? "—"}</div>
         </button>
 
-        <button className={statCardClass(status === "active")} onClick={() => quickFilter("active")}>
+        <button className={statCardClass(status === "active")} onClick={() => quickFilter("active")} disabled={loading}>
           <div className="text-xs text-neutral-500">Active</div>
           <div className="mt-1 text-xl font-semibold">{stats?.companiesActive ?? "—"}</div>
         </button>
 
-        <button className={statCardClass(status === "paused")} onClick={() => quickFilter("paused")}>
+        <button className={statCardClass(status === "paused")} onClick={() => quickFilter("paused")} disabled={loading}>
           <div className="text-xs text-neutral-500">Paused</div>
           <div className="mt-1 text-xl font-semibold">{stats?.companiesPaused ?? "—"}</div>
         </button>
 
-        <button className={statCardClass(status === "pending")} onClick={() => quickFilter("pending")}>
+        <button className={statCardClass(status === "pending")} onClick={() => quickFilter("pending")} disabled={loading}>
           <div className="text-xs text-neutral-500">Pending</div>
           <div className="mt-1 text-xl font-semibold">{stats?.companiesPending ?? "—"}</div>
         </button>
 
-        <button className={statCardClass(status === "closed")} onClick={() => quickFilter("closed")}>
+        <button className={statCardClass(status === "closed")} onClick={() => quickFilter("closed")} disabled={loading}>
           <div className="text-xs text-neutral-500">Closed</div>
           <div className="mt-1 text-xl font-semibold">{stats?.companiesClosed ?? "—"}</div>
         </button>
@@ -416,14 +468,14 @@ export default function CompaniesClient({ initial }: Props) {
 
       {/* Messages */}
       {err ? (
-        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
           <div className="font-medium">Feil</div>
           <div className="mt-1 opacity-90">{err}</div>
         </div>
       ) : null}
 
       {notice ? (
-        <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           <div className="font-medium">OK</div>
           <div className="mt-1 opacity-90">{notice}</div>
         </div>
@@ -432,9 +484,7 @@ export default function CompaniesClient({ initial }: Props) {
       {/* Table */}
       <div className="mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <div className="text-sm text-neutral-600">
-            {loading ? "Laster…" : `Viser ${rows.length} av ${total}`}
-          </div>
+          <div className="text-sm text-neutral-600">{loading ? "Laster…" : `Viser ${rows.length} av ${total}`}</div>
 
           <div className="flex items-center gap-2 text-sm text-neutral-600">
             <span>
@@ -497,7 +547,6 @@ export default function CompaniesClient({ initial }: Props) {
 
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {/* Primary actions */}
                         {c.status === "pending" ? (
                           <>
                             <button className={btnClass("primary", isPending || loading)} onClick={() => setCompanyStatus(c.id, "active")}>
@@ -526,7 +575,6 @@ export default function CompaniesClient({ initial }: Props) {
                             </button>
                           </>
                         ) : (
-                          // closed
                           <>
                             <button className={btnClass("primary", isPending || loading)} onClick={() => setCompanyStatus(c.id, "active", "Gjenåpnet")}>
                               Gjenåpne

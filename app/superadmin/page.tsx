@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { redirect } from "next/navigation";
+import { cookies, headers } from "next/headers";
 
 import SuperadminClient from "./superadmin-client";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -79,10 +80,14 @@ function buildLastEvent(list: CompanyRow[]): LastEvent {
   return ts ? { label: "Last company change", ts } : null;
 }
 
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
 /** Minimal, enterprise-grade error surface (no leaks) */
 function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
       <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur">
         <div className="flex items-center justify-between">
           <div className="text-xs font-extrabold tracking-wide text-neutral-600">SUPERADMIN MODE</div>
@@ -102,6 +107,71 @@ function ErrorSurface(props: { title?: string; message: string; detail?: string 
   );
 }
 
+async function getOriginFromHeaders(): Promise<string> {
+  const h = await headers(); // ✅ din Next krever await her
+  const proto = safeStr(h.get("x-forwarded-proto")) || "http";
+  const host = safeStr(h.get("x-forwarded-host")) || safeStr(h.get("host"));
+  return host ? `${proto}://${host}` : "http://localhost:3000";
+}
+
+async function readJsonSafe<T = any>(res: Response): Promise<T | null> {
+  const t = await res.text();
+  if (!t) return null;
+  try {
+    return JSON.parse(t) as T;
+  } catch {
+    return null;
+  }
+}
+
+type DashboardApiOk = {
+  ok: true;
+  rid: string;
+  data: {
+    companies: { active: number; pending: number; paused: number; closed: number; total: number };
+    orders: { today: number; tomorrow: number; week: number };
+    alerts: { pendingCompanies: number; pausedCompanies: number };
+  };
+};
+type DashboardApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
+
+async function fetchDashboardStats(): Promise<{ stats: Stats | null; degradedByFeed: boolean }> {
+  try {
+    const origin = await getOriginFromHeaders();
+    const cookieHeader = cookies().toString();
+
+    const res = await fetch(`${origin}/api/superadmin/dashboard`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-store",
+        cookie: cookieHeader,
+      },
+    });
+
+    const json = await readJsonSafe<DashboardApiOk | DashboardApiErr>(res);
+
+    if (!res.ok || !json || (json as any).ok !== true) {
+      return { stats: null, degradedByFeed: true };
+    }
+
+    const ok = json as DashboardApiOk;
+    const c = ok.data.companies;
+
+    const stats: Stats = {
+      companiesTotal: Number(c.total ?? 0) || 0,
+      companiesPending: Number(c.pending ?? 0) || 0,
+      companiesActive: Number(c.active ?? 0) || 0,
+      companiesPaused: Number(c.paused ?? 0) || 0,
+      companiesClosed: Number(c.closed ?? 0) || 0,
+    };
+
+    return { stats, degradedByFeed: false };
+  } catch {
+    return { stats: null, degradedByFeed: true };
+  }
+}
+
 /* =========================
    Page
 ========================= */
@@ -109,9 +179,7 @@ function ErrorSurface(props: { title?: string; message: string; detail?: string 
 export default async function SuperadminPage() {
   const supabase = await supabaseServer();
 
-  /* =========================================================
-     1) Auth (fail-closed)
-  ========================================================= */
+  // 1) Auth
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
   const user = userRes?.user ?? null;
 
@@ -119,68 +187,50 @@ export default async function SuperadminPage() {
     redirect("/login?next=/superadmin");
   }
 
-  /* =========================================================
-     2) Gate (hard superadmin email + disabled check)
-     ✅ Superadmin skal ALDRI påvirkes av metadata.
-  ========================================================= */
-  const email = normEmail(user.email);
-  if (email !== "superadmin@lunchportalen.no") {
-    redirect("/week");
-  }
-
-  const { data: profile, error: pErr } = await supabase
-    .from("profiles")
-    .select("role,disabled_at")
-    .eq("user_id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  // Fail-closed hvis profiles ikke kan leses (security > convenience)
-  if (pErr) {
+  // 2) Hard gate (email først)
+  if (!isHardSuperadmin(user.email)) {
     redirect("/login?next=/superadmin");
   }
 
-  // Disabled gate
+  // 3) Profile read
+  const { data: profile, error: pErr } = await supabase
+    .from("profiles")
+    .select("role,disabled_at")
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (pErr) {
+    return <ErrorSurface message="Kunne ikke verifisere superadmin-profil." detail={safeStr(pErr.message)} />;
+  }
+
   if (profile?.disabled_at) {
     redirect("/login?next=/superadmin");
   }
 
-  // Hvis role finnes og ikke superadmin -> stopp (ekstra-lag)
   if (profile?.role && profile.role !== "superadmin") {
-    redirect("/week");
+    redirect("/login?next=/superadmin");
   }
 
-  /* =========================================================
-     3) Companies (initial seed)
-  ========================================================= */
+  // 4) Companies (seed)
   const { data: companies, error: cErr } = await supabase
     .from("companies")
     .select("id,name,orgnr,status,created_at,updated_at")
     .order("updated_at", { ascending: false });
 
   if (cErr) {
-    return (
-      <ErrorSurface
-        message="Klarte ikke å hente firmalisten."
-        detail={safeStr(cErr.message)}
-      />
-    );
+    return <ErrorSurface message="Klarte ikke å hente firmalisten." detail={safeStr(cErr.message)} />;
   }
 
-  /* =========================================================
-     4) Normalize + hard typing
-  ========================================================= */
+  // 5) Normalize
   const list: CompanyRow[] = (companies ?? [])
     .map((c: any) => {
       const id = safeStr(c.id);
       if (!id) return null;
 
-      const name = safeName(c.name);
-      const orgnr = c.orgnr ? safeStr(c.orgnr) : null;
-
       return {
         id,
-        name,
-        orgnr,
+        name: safeName(c.name),
+        orgnr: c.orgnr ? safeStr(c.orgnr) : null,
         status: toCompanyStatus(c.status),
         created_at: safeStr(c.created_at),
         updated_at: safeStr(c.updated_at),
@@ -188,16 +238,16 @@ export default async function SuperadminPage() {
     })
     .filter(Boolean) as CompanyRow[];
 
-  /* =========================================================
-     5) Stats + signals
-  ========================================================= */
-  const stats = computeStats(list);
-  const systemState = computeSystemState(stats);
+  // 6) Stats + signals
+  const localStats = computeStats(list);
+
+  const { stats: apiStats, degradedByFeed } = await fetchDashboardStats();
+  const stats = apiStats ?? localStats;
+
+  const systemState: SystemState = degradedByFeed ? "DEGRADED" : computeSystemState(stats);
   const lastEvent = buildLastEvent(list);
 
-  /* =========================================================
-     6) Render client UI
-  ========================================================= */
+  // 7) Render
   return (
     <SuperadminClient
       initialCompanies={list}

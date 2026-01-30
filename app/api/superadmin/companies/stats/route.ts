@@ -1,60 +1,61 @@
 // app/api/superadmin/companies/stats/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function json(ok: boolean, body: any, status = 200) {
-  return NextResponse.json(
-    { ok, ...body },
-    {
-      status,
-      headers: {
-        // Superadmin skal være sanntidsnært. Ingen stale-cache her.
-        "Cache-Control": "no-store, max-age=0",
-      },
-    }
-  );
+function denyResponse(s: any): Response {
+  if (s?.response) return s.response as Response;
+  if (s?.res) return s.res as Response;
+  const rid = String(s?.ctx?.rid ?? "rid_missing");
+  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
 }
 
-export async function GET() {
-  const rid = `sa_stats_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+export async function GET(req: NextRequest): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, "api.superadmin.companies.stats.GET", ["superadmin"]);
+  if (deny) return deny;
 
   try {
-    const supabase = await supabaseServer();
-
-    const totalQ = supabase.from("companies").select("id", { count: "exact", head: true });
-    const pendingQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending");
-    const activeQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "active");
-    const pausedQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused");
-    const closedQ = supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed");
+    const admin = supabaseAdmin();
 
     const [total, pending, active, paused, closed] = await Promise.all([
-      totalQ,
-      pendingQ,
-      activeQ,
-      pausedQ,
-      closedQ,
+      admin.from("companies").select("id", { count: "exact", head: true }),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed"),
     ]);
 
-    if (total.error) return json(false, { rid, error: total.error.message }, 500);
-    if (pending.error) return json(false, { rid, error: pending.error.message }, 500);
-    if (active.error) return json(false, { rid, error: active.error.message }, 500);
-    if (paused.error) return json(false, { rid, error: paused.error.message }, 500);
-    if (closed.error) return json(false, { rid, error: closed.error.message }, 500);
+    if (total.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", total.error);
+    if (pending.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", pending.error);
+    if (active.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", active.error);
+    if (paused.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", paused.error);
+    if (closed.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", closed.error);
 
-    return json(true, {
-      rid,
-      stats: {
-        companiesTotal: total.count ?? 0,
-        companiesPending: pending.count ?? 0,
-        companiesActive: active.count ?? 0,
-        companiesPaused: paused.count ?? 0,
-        companiesClosed: closed.count ?? 0,
+    return jsonOk(
+      ctx,
+      {
+        ok: true,
+        rid: ctx.rid,
+        stats: {
+          companiesTotal: Number(total.count ?? 0),
+          companiesPending: Number(pending.count ?? 0),
+          companiesActive: Number(active.count ?? 0),
+          companiesPaused: Number(paused.count ?? 0),
+          companiesClosed: Number(closed.count ?? 0),
+        },
       },
-    });
+      200
+    );
   } catch (e: any) {
-    return json(false, { rid, error: String(e?.message ?? "unknown") }, 500);
+    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente stats.", { message: String(e?.message ?? e) });
   }
 }

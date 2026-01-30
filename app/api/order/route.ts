@@ -1,11 +1,41 @@
-import { NextResponse } from "next/server";
+// app/api/order/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import type { NextRequest } from "next/server";
+
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { cutoffStatusNow } from "@/lib/date/cutoff";
 import { getMenuForDate } from "@/lib/sanity/queries";
 import { supabaseServer } from "@/lib/supabase/server";
 
+// ✅ Dag-10 helpers (Response + rid + no-store via respond)
+import { jsonOk } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
+
+/* =========================================================
+   Route-local jsonErr (beholder canAct:false for UI)
+   - Ingen NextResponse
+========================================================= */
+function jsonErr(rid: string, status: number, error: string, message: string, detail?: any) {
+  const body = { ok: false, rid, error, message, canAct: false, detail: detail ?? undefined };
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
+  });
+}
+
 function clampNote(v: unknown) {
-  return (v ?? "").toString().trim().slice(0, 300);
+  return String(v ?? "").trim().slice(0, 300);
+}
+
+function ridNow(prefix: string) {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
 }
 
 // ✅ Konsistent logging + kontekst
@@ -19,7 +49,6 @@ function logApiError(scope: string, err: any, extra?: Record<string, any>) {
 
 function isDuplicateKeyError(err: any) {
   const msg = String(err?.message ?? "").toLowerCase();
-  // Supabase/Postgres kan variere litt, vi sjekker bredt:
   return msg.includes("duplicate") || msg.includes("unique constraint") || msg.includes("email_outbox_event_key_key");
 }
 
@@ -42,13 +71,14 @@ async function queueBackupEmail(params: {
     body_html: params.html ?? null,
   });
 
-  if (error && !isDuplicateKeyError(error)) {
-    throw error;
-  }
+  if (error && !isDuplicateKeyError(error)) throw error;
 }
 
-export async function POST(req: Request) {
-  const rid = `order_post_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+/* =========================================================
+   POST: Create/activate today's order (idempotent upsert)
+========================================================= */
+export async function POST(req: NextRequest) {
+  const rid = ridNow("order_post");
 
   try {
     // ✅ DB: orders.date er type DATE → forventer "YYYY-MM-DD"
@@ -56,22 +86,15 @@ export async function POST(req: Request) {
     const cutoff = cutoffStatusNow();
 
     if (cutoff.isLocked) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "LOCKED_AFTER_0800",
-          rid,
-          date: dateISO,
-          locked: true,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true, // irrelevant når locked=true
-          canAct: false,
-        },
-        { status: 409 }
-      );
+      return jsonErr(rid, 409, "LOCKED_AFTER_0800", "Endringer er låst etter kl. 08:00 i dag.", {
+        date: dateISO,
+        locked: true,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+      });
     }
 
-    // Meny (logg dersom Sanity/ENV feiler)
+    // Meny (best effort)
     let menu: any = null;
     try {
       menu = await getMenuForDate(dateISO);
@@ -81,24 +104,22 @@ export async function POST(req: Request) {
     }
 
     const menuAvailable = !!menu?.isPublished;
-
     if (!menuAvailable) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "MENU_NOT_PUBLISHED",
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: false,
-          canAct: false,
-        },
-        { status: 409 }
-      );
+      return jsonErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert.", {
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: false,
+      });
     }
 
-    const body = await req.json().catch(() => ({}));
+    // Body (safe)
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
     const note = clampNote(body?.note);
 
     const supabase = await supabaseServer();
@@ -106,19 +127,12 @@ export async function POST(req: Request) {
     const { data: userRes, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userRes?.user) {
       logApiError("POST /api/order auth failed", userErr, { rid, dateISO });
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "UNAUTH",
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable,
-          canAct: false,
-        },
-        { status: 401 }
-      );
+      return jsonErr(rid, 401, "UNAUTH", "Du må være innlogget.", {
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable,
+      });
     }
 
     // ✅ Scope fra profil (company/location)
@@ -130,25 +144,19 @@ export async function POST(req: Request) {
 
     if (pErr) {
       logApiError("POST /api/order profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "PROFILE_LOOKUP_FAILED",
-          detail: pErr.message,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, 500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", {
+        detail: pErr.message,
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable,
+      });
     }
 
-    const hasScope = !!(profile?.company_id && profile?.location_id);
+    const company_id = safeStr(profile?.company_id);
+    const location_id = safeStr(profile?.location_id);
 
-    if (!hasScope) {
+    if (!company_id || !location_id) {
       logApiError("POST /api/order profile missing scope", "PROFILE_MISSING_SCOPE", {
         rid,
         userId: userRes.user.id,
@@ -156,21 +164,14 @@ export async function POST(req: Request) {
         profile,
       });
 
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "PROFILE_MISSING_SCOPE",
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable,
-          canAct: false,
-          reason: "PROFILE_MISSING_SCOPE",
-          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-        },
-        { status: 409 }
-      );
+      return jsonErr(rid, 409, "PROFILE_MISSING_SCOPE", "Kontoen mangler firmatilknytning/leveringssted.", {
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable,
+        reason: "PROFILE_MISSING_SCOPE",
+        message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
+      });
     }
 
     // ✅ Idempotent UPSERT (MÅ matche unik index: user_id, location_id, date)
@@ -180,12 +181,12 @@ export async function POST(req: Request) {
         {
           user_id: userRes.user.id,
           date: dateISO,
-          status: "active", // ✅ enum: active/canceled
+          status: "active", // legacy i denne route (orders/* bruker ACTIVE). Beholdt for kompat.
           note,
-          company_id: profile!.company_id,
-          location_id: profile!.location_id,
+          company_id,
+          location_id,
         },
-        { onConflict: "user_id,location_id,date" } // ✅ matcher indexen
+        { onConflict: "user_id,location_id,date" }
       )
       .select("id, date, status, note, company_id, location_id, created_at, updated_at")
       .single();
@@ -195,38 +196,31 @@ export async function POST(req: Request) {
         rid,
         userId: userRes.user.id,
         dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
+        company_id,
+        location_id,
       });
 
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "DB_ERROR",
-          detail: error.message,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, 500, "DB_ERROR", "Kunne ikke lagre bestilling.", {
+        detail: error.message,
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable,
+      });
     }
 
-    // ✅ Outbox: legg e-post-backup i kø (ikke la dette stoppe ordre)
+    // ✅ Outbox: legg e-post-backup i kø (best effort)
     try {
       await queueBackupEmail({
         supabase,
-        eventKey: `order_active_${userRes.user.id}_${profile!.location_id}_${dateISO}`,
+        eventKey: `order_active_${userRes.user.id}_${location_id}_${dateISO}`,
         subject: `Lunchportalen – Bestilling registrert (${dateISO})`,
         text:
           `Bestilling registrert\n\n` +
           `Dato: ${dateISO}\n` +
           `User: ${userRes.user.id}\n` +
-          `Company: ${profile!.company_id}\n` +
-          `Location: ${profile!.location_id}\n` +
+          `Company: ${company_id}\n` +
+          `Location: ${location_id}\n` +
           `Status: active\n` +
           (note ? `Notat: ${note}\n` : ""),
       });
@@ -235,13 +229,12 @@ export async function POST(req: Request) {
         rid,
         userId: userRes.user.id,
         dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
+        company_id,
+        location_id,
       });
-      // Fortsett likevel (ordre er viktigst)
     }
 
-    return NextResponse.json({
+    return jsonOk({
       ok: true,
       rid,
       date: dateISO,
@@ -259,34 +252,29 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     logApiError("POST /api/order failed", err, { rid });
-    return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", detail: err?.message || String(err), rid, canAct: false },
-      { status: 500 }
-    );
+    return jsonErr(rid, 500, "SERVER_ERROR", "Serverfeil.", { detail: err?.message || String(err) });
   }
 }
 
-export async function DELETE() {
-  const rid = `order_del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+/* =========================================================
+   DELETE: Cancel today's order (legacy endpoint)
+   - Denne brukes fortsatt av noen klienter.
+   - Setter status="canceled" (legacy) for kompat.
+========================================================= */
+export async function DELETE(_req: NextRequest) {
+  const rid = ridNow("order_del");
 
   try {
     const dateISO = osloTodayISODate();
     const cutoff = cutoffStatusNow();
 
     if (cutoff.isLocked) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "LOCKED_AFTER_0800",
-          rid,
-          date: dateISO,
-          locked: true,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true,
-          canAct: false,
-        },
-        { status: 409 }
-      );
+      return jsonErr(rid, 409, "LOCKED_AFTER_0800", "Endringer er låst etter kl. 08:00 i dag.", {
+        date: dateISO,
+        locked: true,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+      });
     }
 
     const supabase = await supabaseServer();
@@ -294,19 +282,12 @@ export async function DELETE() {
     const { data: userRes, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userRes?.user) {
       logApiError("DELETE /api/order auth failed", userErr, { rid, dateISO });
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "UNAUTH",
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true,
-          canAct: false,
-        },
-        { status: 401 }
-      );
+      return jsonErr(rid, 401, "UNAUTH", "Du må være innlogget.", {
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+      });
     }
 
     const { data: profile, error: pErr } = await supabase
@@ -317,25 +298,19 @@ export async function DELETE() {
 
     if (pErr) {
       logApiError("DELETE /api/order profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "PROFILE_LOOKUP_FAILED",
-          detail: pErr.message,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, 500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", {
+        detail: pErr.message,
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+      });
     }
 
-    const hasScope = !!(profile?.company_id && profile?.location_id);
+    const company_id = safeStr(profile?.company_id);
+    const location_id = safeStr(profile?.location_id);
 
-    if (!hasScope) {
+    if (!company_id || !location_id) {
       logApiError("DELETE /api/order profile missing scope", "PROFILE_MISSING_SCOPE", {
         rid,
         userId: userRes.user.id,
@@ -343,31 +318,24 @@ export async function DELETE() {
         profile,
       });
 
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "PROFILE_MISSING_SCOPE",
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true,
-          canAct: false,
-          reason: "PROFILE_MISSING_SCOPE",
-          message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-        },
-        { status: 409 }
-      );
+      return jsonErr(rid, 409, "PROFILE_MISSING_SCOPE", "Kontoen mangler firmatilknytning/leveringssted.", {
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+        reason: "PROFILE_MISSING_SCOPE",
+        message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
+      });
     }
 
     // ✅ Avbestill = UPDATE status (ikke DELETE)
     const { data, error } = await supabase
       .from("orders")
-      .update({ status: "canceled" }) // ✅ enum: canceled (én L)
+      .update({ status: "canceled" }) // legacy (én L)
       .eq("user_id", userRes.user.id)
       .eq("date", dateISO)
-      .eq("company_id", profile!.company_id)
-      .eq("location_id", profile!.location_id)
+      .eq("company_id", company_id)
+      .eq("location_id", location_id)
       .select("id, date, status, note, company_id, location_id, created_at, updated_at")
       .maybeSingle();
 
@@ -376,38 +344,31 @@ export async function DELETE() {
         rid,
         userId: userRes.user.id,
         dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
+        company_id,
+        location_id,
       });
 
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "DB_ERROR",
-          detail: error.message,
-          rid,
-          date: dateISO,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime ?? "08:00",
-          menuAvailable: true,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, 500, "DB_ERROR", "Kunne ikke avbestille.", {
+        detail: error.message,
+        date: dateISO,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime ?? "08:00",
+        menuAvailable: true,
+      });
     }
 
-    // ✅ Outbox: legg e-post-backup i kø (ikke la dette stoppe avbestilling)
+    // ✅ Outbox: legg e-post-backup i kø (best effort)
     try {
       await queueBackupEmail({
         supabase,
-        eventKey: `order_canceled_${userRes.user.id}_${profile!.location_id}_${dateISO}`,
+        eventKey: `order_canceled_${userRes.user.id}_${location_id}_${dateISO}`,
         subject: `Lunchportalen – Avbestilling registrert (${dateISO})`,
         text:
           `Avbestilling registrert\n\n` +
           `Dato: ${dateISO}\n` +
           `User: ${userRes.user.id}\n` +
-          `Company: ${profile!.company_id}\n` +
-          `Location: ${profile!.location_id}\n` +
+          `Company: ${company_id}\n` +
+          `Location: ${location_id}\n` +
           `Status: canceled\n`,
       });
     } catch (e: any) {
@@ -415,13 +376,12 @@ export async function DELETE() {
         rid,
         userId: userRes.user.id,
         dateISO,
-        company_id: profile!.company_id,
-        location_id: profile!.location_id,
+        company_id,
+        location_id,
       });
-      // Fortsett likevel
     }
 
-    return NextResponse.json({
+    return jsonOk({
       ok: true,
       rid,
       date: dateISO,
@@ -439,9 +399,6 @@ export async function DELETE() {
     });
   } catch (err: any) {
     logApiError("DELETE /api/order failed", err, { rid });
-    return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", detail: err?.message || String(err), rid, canAct: false },
-      { status: 500 }
-    );
+    return jsonErr(rid, 500, "SERVER_ERROR", "Serverfeil.", { detail: err?.message || String(err) });
   }
 }

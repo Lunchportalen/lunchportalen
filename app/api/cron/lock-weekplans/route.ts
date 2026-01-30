@@ -1,24 +1,50 @@
+// app/api/cron/lock-weekplans/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { sanityServer } from "@/lib/sanity/server";
 import { nowISO, osloTodayISODate } from "@/lib/date/oslo";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+/* =========================================================
+   Dag-10: no-store + consistent JSON
+========================================================= */
+function noStore() {
+  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
+}
+function json(body: any, status = 200) {
+  return NextResponse.json(body, { status, headers: noStore() });
+}
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  return json({ ok: false, rid, error, message, detail: detail ?? undefined }, status);
 }
 
-function isAuthorized(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const got = req.headers.get("x-cron-secret") || req.headers.get("authorization")?.replace("Bearer ", "");
-  return !!secret && !!got && got === secret;
+/* =========================================================
+   Cron secret gate (NO cookies / NO scope)
+   - Header: x-cron-secret: <CRON_SECRET>
+   - (Optional fallback) Authorization: Bearer <CRON_SECRET>
+========================================================= */
+function requireCronSecret(req: Request) {
+  const want = (process.env.CRON_SECRET ?? "").trim();
+  if (!want) throw new Error("cron_secret_missing"); // fail-closed for cron endpoints
+
+  const gotHeader = (req.headers.get("x-cron-secret") ?? "").trim();
+  const gotBearer = (req.headers.get("authorization") ?? "").trim().replace(/^Bearer\s+/i, "");
+  const got = gotHeader || gotBearer;
+
+  if (!got || got !== want) {
+    const err = new Error("forbidden");
+    (err as any).code = "forbidden";
+    throw err;
+  }
 }
 
-/**
- * Lås alle publiserte ukeplaner som inkluderer "i dag" og ikke allerede er låst.
- * (Vi låser ukeplanen på doc-nivå, ikke per dag.)
- */
+/* =========================================================
+   Query
+   - Lock all published weekPlans that include "today" and are not locked yet.
+   - Lock is on document level (lockedAt), not per day.
+========================================================= */
 const FIND_TO_LOCK_GROQ = /* groq */ `
 *[_type=="weekPlan"
   && defined(publishedAt)
@@ -32,35 +58,58 @@ const FIND_TO_LOCK_GROQ = /* groq */ `
 }
 `;
 
+/* =========================================================
+   GET /api/cron/lock-weekplans
+========================================================= */
 export async function GET(req: Request) {
   const rid = `lock_weekplans_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-  if (!isAuthorized(req)) {
-    return jsonError(401, "unauthorized", "Mangler/ugyldig cron secret", { rid });
+  // Gate FIRST (no side effects before secret validated)
+  try {
+    requireCronSecret(req);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg === "cron_secret_missing") {
+      return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i miljøvariabler");
+    }
+    if (msg === "forbidden" || e?.code === "forbidden") {
+      return jsonErr(403, rid, "forbidden", "Mangler/ugyldig cron secret");
+    }
+    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
   }
 
   const today = osloTodayISODate();
   const ts = nowISO();
 
   try {
-    const toLock: { _id: string; weekStart?: string }[] = await sanityServer.fetch(FIND_TO_LOCK_GROQ, { today });
+    const toLock = (await sanityServer.fetch(FIND_TO_LOCK_GROQ, { today })) as { _id: string; weekStart?: string }[];
 
     if (!toLock?.length) {
-      return NextResponse.json({ ok: true, rid, today, locked: 0, ids: [] }, { status: 200 });
+      return json({ ok: true, rid, today, lockedAt: ts, locked: 0, ids: [] }, 200);
     }
 
-    // Patch i transaksjon
+    // Idempotent: query excludes lockedAt; repeated runs => locked:0 after first successful commit
     let tx = sanityServer.transaction();
     for (const d of toLock) {
-      tx = tx.patch(d._id, (p) => p.set({ lockedAt: ts }));
+      tx = tx.patch(d._id, (p: any) => p.set({ lockedAt: ts }));
     }
     await tx.commit();
 
-    return NextResponse.json(
-      { ok: true, rid, today, lockedAt: ts, locked: toLock.length, ids: toLock.map((d) => d._id) },
-      { status: 200 }
+    return json(
+      {
+        ok: true,
+        rid,
+        today,
+        lockedAt: ts,
+        locked: toLock.length,
+        ids: toLock.map((d) => d._id),
+      },
+      200
     );
   } catch (e: any) {
-    return jsonError(500, "sanity_error", "Kunne ikke låse ukeplaner", { rid, today, message: e?.message ?? String(e) });
+    return jsonErr(500, rid, "sanity_error", "Kunne ikke låse ukeplaner", {
+      today,
+      message: String(e?.message ?? e),
+    });
   }
 }

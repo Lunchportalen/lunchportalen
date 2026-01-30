@@ -1,45 +1,55 @@
 // app/api/orders/choice/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { backupOrderEvent } from "@/lib/orderBackup";
+
+// ✅ Dag-10 standard helpers (Response + no-store + rid via ctx)
+import { jsonOk } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
+import {
+  scopeOr401,
+  requireRoleOr403,
+  requireCompanyScopeOr403,
+  readJson,
+} from "@/lib/http/routeGuard";
+
+// ✅ Oslo single source of truth
+import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
 /* =========================================================
-   Response helpers
+   Route-local jsonErr (beholder canAct:false for UI)
+   - Ingen NextResponse
+   - Bruker noStoreHeaders()
+   - Bruker rid fra ctx (samme som scopeOr401)
 ========================================================= */
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
+function jsonErr(ctx: { rid: string }, status: number, error: string, message: string, detail?: any) {
+  const body = { ok: false, rid: ctx.rid, error, message, canAct: false, detail: detail ?? undefined };
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
+  });
 }
 
-function rid() {
-  return crypto.randomBytes(8).toString("hex");
-}
-
-function jsonErr(status: number, _rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json(
-    { ok: false, rid: _rid, error, message, detail: detail ?? undefined },
-    { status, headers: noStore() }
-  );
-}
-
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
+function nowIso() {
+  return new Date().toISOString();
 }
 
 /* =========================================================
    Validators / helpers
 ========================================================= */
 
-function isIsoDate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
-}
-
 function safeText(v: any) {
   const s = String(v ?? "").trim();
   return s.length ? s : null;
+}
+function safeStr(v: any) {
+  return String(v ?? "").trim();
 }
 
 // Note-format: "choice:<key>" (kan ligge sammen med andre linjer)
@@ -53,87 +63,225 @@ function setChoiceInNote(note: string | null | undefined, choiceKey: string) {
   return [`choice:${choiceKey}`, ...rest].join("\n");
 }
 
+function eventKeyForChoice(input: {
+  companyId: string;
+  locationId: string;
+  userId: string;
+  date: string;
+  choiceKey: string;
+  clientRequestId?: string | null;
+}) {
+  const cr = safeStr(input.clientRequestId);
+  if (cr) return `choice:${input.companyId}:${input.locationId}:${input.userId}:${input.date}:${cr}`;
+  return `choice:${input.companyId}:${input.locationId}:${input.userId}:${input.date}:${input.choiceKey}`;
+}
+
+/* =========================================================
+   Types
+========================================================= */
+
+type CompanyRow = {
+  id: string;
+  status: string | null;
+};
+
+type OrderRow = {
+  id: string;
+  date: string;
+  status: string | null;
+  note: string | null;
+  slot: string | null;
+  user_id: string;
+  company_id: string | null;
+  location_id: string | null;
+};
+
 /* =========================================================
    Route
 ========================================================= */
 
 export async function POST(req: NextRequest) {
-  const _rid = rid();
+  // ✅ scope gate – rid må være samme som scopeOr401
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-  // ✅ supabaseServer() hos dere returnerer Promise<SupabaseClient>
+  const ctx = a.ctx;
+  const { rid, scope } = ctx;
+
+  // ✅ role gate (NY SIGNATUR)
+  const denyRole = requireRoleOr403(ctx, "orders.choice", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  // ✅ company scope gate (NY SIGNATUR)
+  const denyScope = requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
+
+  const userId = String(scope.userId ?? "").trim();
+  const userEmail = scope.email ?? null;
+  const companyId = String(scope.companyId ?? "").trim();
+  const locationId = String(scope.locationId ?? "").trim();
+
+  if (!companyId || !locationId || !userId) {
+    return jsonErr(ctx, 403, "missing_scope", "Mangler firmatilknytning (company/location).");
+  }
+
   const sb = await supabaseServer();
 
-  let body: any = null;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonErr(400, _rid, "bad_json", "Ugyldig JSON i forespørsel.");
-  }
+  // Body (safe JSON)
+  const body = await readJson(req);
 
   const date = safeText(body?.date);
   const choice_key = safeText(body?.choice_key);
+  const client_request_id = safeText(body?.client_request_id);
 
-  if (!date || !isIsoDate(date)) return jsonErr(400, _rid, "bad_date", "Ugyldig dato.");
-  if (!choice_key) return jsonErr(400, _rid, "bad_choice", "Mangler choice_key.");
+  if (!date || !isIsoDate(date)) return jsonErr(ctx, 400, "bad_date", "Ugyldig dato.", { date });
+  if (!choice_key) return jsonErr(ctx, 400, "bad_choice", "Mangler choice_key.", { choice_key });
 
-  // Auth
-  const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user) return jsonErr(401, _rid, "unauthorized", "Du er ikke innlogget.");
+  // ✅ Cutoff / past-lock (per dato)
+  const cutoff = cutoffStatusForDate(date);
+  if (cutoff === "PAST") {
+    return jsonErr(ctx, 403, "DATE_LOCKED_PAST", "Datoen er passert og kan ikke endres.", { date });
+  }
+  if (cutoff === "TODAY_LOCKED") {
+    return jsonErr(ctx, 409, "LOCKED_AFTER_0800", "Endringer er låst etter kl. 08:00 i dag.", {
+      date,
+      cutoff: "08:00",
+    });
+  }
 
-  const user_id = auth.user.id;
+  // ✅ Company status gate (ACTIVE-only) – deterministisk via service role
+  const admin = supabaseAdmin();
+  const { data: company, error: cErr } = await admin
+    .from("companies")
+    .select("id,status")
+    .eq("id", companyId)
+    .maybeSingle<CompanyRow>();
 
-  // Hent profil (company_id)
-  const { data: profile, error: profErr } = await sb
-    .from("profiles")
-    .select("user_id, company_id")
-    .eq("user_id", user_id)
-    .maybeSingle();
+  if (cErr) return jsonErr(ctx, 500, "db_company", "Kunne ikke hente firmastatus.", { message: cErr.message });
+  if (!company) return jsonErr(ctx, 403, "forbidden", "Firma finnes ikke.", { companyId });
 
-  if (profErr) return jsonErr(500, _rid, "db_profile", "Kunne ikke hente profil.", profErr);
-  if (!profile?.company_id) return jsonErr(403, _rid, "no_company", "Mangler firmatilknytning.");
+  const companyStatus = String(company.status ?? "").toLowerCase().trim();
+  if (companyStatus && companyStatus !== "active") {
+    return jsonErr(ctx, 403, "company_blocked", "Firma er ikke aktivt.", { companyStatus });
+  }
 
-  const company_id = String(profile.company_id);
-
-  // Finn dagens order for bruker+dato (autosave endrer kun valg på eksisterende ACTIVE)
+  // Finn dagens order for bruker+dato
   const { data: order, error: ordErr } = await sb
     .from("orders")
-    .select("id, date, status, note, slot")
-    .eq("user_id", user_id)
-    .eq("company_id", company_id)
+    .select("id,date,status,note,slot,user_id,company_id,location_id")
+    .eq("user_id", userId)
+    .eq("company_id", companyId)
+    .eq("location_id", locationId)
     .eq("date", date)
-    .maybeSingle();
+    .maybeSingle<OrderRow>();
 
-  if (ordErr) return jsonErr(500, _rid, "db_order", "Kunne ikke hente bestilling.", ordErr);
+  if (ordErr) return jsonErr(ctx, 500, "db_order", "Kunne ikke hente bestilling.", { message: ordErr.message });
+  if (!order) return jsonErr(ctx, 409, "no_order", "Du må bestille lunsj før du kan velge meny.", { date });
 
-  if (!order) {
-    return jsonErr(409, _rid, "no_order", "Du må bestille lunsj før du kan velge meny.");
+  // Belt & suspenders
+  if (order.user_id !== userId) {
+    return jsonErr(ctx, 403, "forbidden", "Du kan kun endre menyvalg på egen ordre.", { orderUserId: order.user_id });
+  }
+  if (String(order.company_id ?? "") !== companyId || String(order.location_id ?? "") !== locationId) {
+    return jsonErr(ctx, 403, "forbidden", "Du har ikke tilgang til denne ordren.", {
+      orderCompanyId: order.company_id,
+      orderLocationId: order.location_id,
+      companyId,
+      locationId,
+    });
   }
 
   const status = String(order.status ?? "").toUpperCase();
   if (status !== "ACTIVE") {
-    return jsonErr(409, _rid, "not_active", "Du må ha aktiv bestilling for å endre menyvalg.");
+    return jsonErr(ctx, 409, "not_active", "Du må ha aktiv bestilling for å endre menyvalg.", { status });
   }
 
   const nextNote = setChoiceInNote(order.note, choice_key);
 
+  // ✅ Idempotens: hvis note allerede er lik -> no-op (ingen backup)
+  if (String(order.note ?? "") === String(nextNote)) {
+    return jsonOk({
+      ok: true,
+      rid,
+      changed: false,
+      canAct: true,
+      order: {
+        id: order.id,
+        date: order.date,
+        status: "ACTIVE",
+        note: order.note,
+        slot: order.slot ?? null,
+        updated_at: null,
+        saved_at: null,
+      },
+    });
+  }
+
+  // ✅ Race-safe update: match id + tenant + user + status
+  const savedAt = nowIso();
   const { data: updated, error: updErr } = await sb
     .from("orders")
-    .update({ note: nextNote })
+    .update({ note: nextNote, updated_at: savedAt })
     .eq("id", order.id)
-    .select("id, date, status, note, slot")
-    .single();
+    .eq("company_id", companyId)
+    .eq("location_id", locationId)
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .select("id,date,status,note,slot,updated_at,created_at")
+    .maybeSingle<{
+      id: string;
+      date: string;
+      status: string | null;
+      note: string | null;
+      slot: string | null;
+      updated_at: string | null;
+      created_at: string | null;
+    }>();
 
-  if (updErr) return jsonErr(500, _rid, "db_update", "Kunne ikke lagre menyvalg.", updErr);
+  if (updErr) return jsonErr(ctx, 500, "db_update", "Kunne ikke lagre menyvalg.", { message: updErr.message });
+  if (!updated) return jsonErr(ctx, 409, "conflict", "Kunne ikke lagre menyvalg (ordre endret/ikke aktiv).");
+
+  // ✅ E-post-backup (kun etter verifisert lagring) – best effort
+  try {
+    await backupOrderEvent({
+      eventType: "CHOICE_SET",
+      rid,
+      eventKey: eventKeyForChoice({
+        companyId,
+        locationId,
+        userId,
+        date,
+        choiceKey: choice_key,
+        clientRequestId: client_request_id,
+      }),
+      userId,
+      userEmail,
+      companyId,
+      locationId,
+      date,
+      status: "ACTIVE",
+      choiceKey: choice_key,
+      orderId: updated.id,
+      timestampISO: savedAt,
+    });
+  } catch {
+    // ignore
+  }
 
   return jsonOk({
     ok: true,
-    rid: _rid,
+    rid,
+    changed: true,
+    canAct: true,
     order: {
       id: updated.id,
       date: updated.date,
-      status: updated.status,
+      status: String(updated.status ?? "").toUpperCase(),
       note: updated.note,
       slot: updated.slot ?? null,
+      updated_at: updated.updated_at,
+      saved_at: savedAt,
+      created_at: updated.created_at,
     },
   });
 }

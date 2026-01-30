@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import ChangeCompanyAdmin from "./ChangeCompanyAdmin";
@@ -29,14 +29,20 @@ type LocationRow = {
   name: string;
 };
 
+type ProfileRow = { role: Role | null };
+
 type PageProps = {
-  params: { companyId: string };
+  params: { companyId: string } | Promise<{ companyId: string }>;
 };
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
 
 function isUuid(v: any) {
   return (
     typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
 }
 
@@ -46,9 +52,10 @@ function normalizeStatus(v: any): CompanyStatus {
 
   const sl = String(v ?? "").trim().toLowerCase();
   if (sl === "active") return "ACTIVE";
-  if (sl === "paused" || sl === "pending") return "PAUSED";
+  if (sl === "paused") return "PAUSED";
   if (sl === "closed") return "CLOSED";
 
+  // Fail-safe
   return "PAUSED";
 }
 
@@ -66,29 +73,39 @@ function fmtTs(ts: string) {
   }
 }
 
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
 export default async function FirmPage({ params }: PageProps) {
-  const companyId = String(params?.companyId ?? "");
+  const p = (await params) as { companyId: string };
+  const companyId = safeStr(p?.companyId);
+
+  if (!companyId) notFound();
   if (!isUuid(companyId)) redirect("/superadmin/firms");
 
   const supabase = await supabaseServer();
 
   // ---- auth ----
-  const { data: auth, error: uErr } = await supabase.auth.getUser();
+  const { data: auth, error: authErr } = await supabase.auth.getUser();
   const user = auth?.user ?? null;
 
-  if (uErr || !user) redirect(`/login?next=/superadmin/firms/${companyId}`);
+  if (authErr || !user) {
+    redirect(`/login?next=/superadmin/firms/${encodeURIComponent(companyId)}`);
+  }
 
-  // ---- role check: must be superadmin ----
+  // ---- superadmin gate (FASET: profiles.id = auth.user.id) ----
   const { data: me, error: meErr } = await supabase
     .from("profiles")
     .select("role")
-    .or(`user_id.eq.${user.id},id.eq.${user.id}`)
-    .maybeSingle();
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
 
-  if (meErr) redirect("/login");
-
-  const myRole = (String((me as any)?.role ?? "").toLowerCase() as Role) || "employee";
-  if (myRole !== "superadmin") redirect("/");
+  if (meErr || !me?.role) redirect("/login?next=/superadmin");
+  if (me.role !== "superadmin" || !isHardSuperadmin(user.email)) redirect("/login?next=/superadmin");
 
   // ---- company ----
   const { data: companyRaw, error: cErr } = await supabase
@@ -125,7 +142,7 @@ export default async function FirmPage({ params }: PageProps) {
   }));
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
       {/* Top */}
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
@@ -154,7 +171,7 @@ export default async function FirmPage({ params }: PageProps) {
           {/* Full ansattoversikt (Superadmin) */}
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
-              href={`/superadmin/firms/${company.id}/employees`}
+              href={`/superadmin/firms/${encodeURIComponent(company.id)}/employees`}
               className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/90"
             >
               Ansatte (full oversikt)

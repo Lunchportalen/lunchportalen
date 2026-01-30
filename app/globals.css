@@ -143,6 +143,42 @@ textarea{
 }
 
 /* ---------------------------------------------------------
+   ✅ NEW: Button + form controls polish (consistent)
+   - Remove iOS tap highlights
+   - Cursor consistency
+   - Disabled states readable
+--------------------------------------------------------- */
+
+button,
+[role="button"],
+a,
+select,
+input[type="checkbox"],
+input[type="radio"]{
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled,
+.lp-btn:disabled,
+.lp-btn-primary:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled{
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+button,
+.lp-btn,
+.lp-btn-primary{
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------
    Helpers
 --------------------------------------------------------- */
 
@@ -555,6 +591,58 @@ textarea{
 
 .lp-table tbody tr:hover td{
   background: rgba(var(--lp-gold), .06);
+}
+
+/* ---------------------------------------------------------
+   ✅ NEW: Subtle skeleton (loading)
+--------------------------------------------------------- */
+
+.lp-skeleton{
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(0,0,0,.05);
+}
+.lp-skeleton::after{
+  content:"";
+  position:absolute;
+  inset:-40% -60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: translateX(-30%);
+  animation: lp-shimmer 1.25s var(--lp-ease) infinite;
+}
+@keyframes lp-shimmer{
+  0%{ transform: translateX(-30%); }
+  100%{ transform: translateX(30%); }
+}
+
+/* ---------------------------------------------------------
+   ✅ NEW: Toast (non-blocking notices)
+--------------------------------------------------------- */
+
+.lp-toast{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  width: min(420px, calc(100% - 36px));
+  border-radius: 18px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(var(--lp-border), .95);
+  box-shadow:
+    0 2px 10px rgba(24,24,27,.12),
+    0 30px 80px rgba(24,24,27,.16);
+  backdrop-filter: blur(10px);
+  padding: 12px 14px;
+}
+.lp-toastTitle{
+  font-size: 12px;
+  font-weight: 800;
+}
+.lp-toastBody{
+  margin-top: 2px;
+  font-size: 13px;
+  color: rgb(var(--lp-muted));
 }
 
 /* ---------------------------------------------------------

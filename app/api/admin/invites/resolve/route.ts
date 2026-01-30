@@ -1,45 +1,82 @@
+// app/api/invites/resolve/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import type { NextRequest } from "next/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+import { rid as makeRid } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+function getBaseUrl() {
+  const raw = safeStr(process.env.NEXT_PUBLIC_SITE_URL);
+  if (!raw) return null;
+  return raw.replace(/\/$/, "");
 }
 
-export async function GET(req: Request) {
+function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
+  const body = { ok: false, rid, error, message, detail: detail ?? undefined };
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
+  });
+}
+function jsonOk(rid: string, body: any, status = 200) {
+  return new Response(JSON.stringify({ ...body, rid }), {
+    status,
+    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+export async function GET(req: NextRequest) {
+  const rid = makeRid();
+
+  const url = new URL(req.url);
+  const code = safeStr(url.searchParams.get("invite") ?? url.searchParams.get("code"));
+  if (!code) return jsonErr(400, rid, "missing_invite", "Mangler invitasjonskode.");
+
+  const base = getBaseUrl();
+  if (!base) return jsonErr(500, rid, "config_error", "NEXT_PUBLIC_SITE_URL mangler. Kan ikke bygge registerUrl.");
+
+  // Call lookup internally (same origin)
+  const lookupUrl = new URL(`${base}/api/invites/lookup`);
+  lookupUrl.searchParams.set("code", code);
+
   try {
-    const url = new URL(req.url);
-    const code = String(url.searchParams.get("code") ?? "").trim();
-    if (!code) return jsonError(400, "missing_code", "Mangler invitasjonskode.");
+    const res = await fetch(lookupUrl.toString(), {
+      method: "GET",
+      headers: { "x-lp-rid": rid },
+      cache: "no-store",
+    });
 
-    const admin = supabaseAdmin();
-
-    const { data: row, error } = await admin
-      .from("company_invites")
-      .select("code, company_id, revoked_at, companies:company_id ( id, name, status )")
-      .eq("code", code)
-      .maybeSingle();
-
-    if (error) return jsonError(500, "db_error", "Kunne ikke slå opp invitasjon.", error);
-    if (!row) return jsonError(404, "not_found", "Invitasjonslenken finnes ikke.");
-    if (row.revoked_at) return jsonError(410, "revoked", "Invitasjonslenken er ikke lenger aktiv.");
-
-    const company = (row as any).companies;
-    if (!company?.id) return jsonError(404, "company_missing", "Fant ikke firmaet bak lenken.");
-
-    // valgfritt: stans registrering hvis firma er paused/closed
-    const status = String(company.status ?? "").toLowerCase();
-    if (status && status !== "active") {
-      return jsonError(403, "company_inactive", "Firmaet er ikke aktivt, og kan ikke ta imot ansatte nå.", { status });
+    const txt = await res.text();
+    let j: any = null;
+    try {
+      j = txt ? JSON.parse(txt) : null;
+    } catch {
+      j = null;
     }
 
-    return NextResponse.json({
+    if (!res.ok || !j?.ok) {
+      // forward best-effort
+      return new Response(txt || JSON.stringify({ ok: false, rid, error: "lookup_failed", message: "Lookup feilet." }), {
+        status: res.status || 500,
+        headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
+      });
+    }
+
+    const registerUrl = `${base}/register?invite=${encodeURIComponent(code)}`;
+
+    return jsonOk(rid, {
       ok: true,
-      company: { id: company.id, name: company.name, status: company.status },
+      invite: { code, company_id: j.company?.id ?? null, created_at: null },
+      company: j.company,
+      registerUrl,
     });
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil ved oppslag av invitasjon.", String(e?.message ?? e));
+    return jsonErr(500, rid, "server_error", "Uventet feil ved resolve av invitasjon.", { message: String(e?.message ?? e) });
   }
 }

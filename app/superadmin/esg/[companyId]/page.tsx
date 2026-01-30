@@ -3,16 +3,63 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { redirect, notFound } from "next/navigation";
 import SuperadminEsgClient from "./SuperadminEsgClient";
+import { supabaseServer } from "@/lib/supabase/server";
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type ProfileRow = { role: Role | null };
 
 type Props = { params: { companyId: string } | Promise<{ companyId: string }> };
 
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function isUuid(v: any) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
+  );
+}
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
 export default async function SuperadminEsgCompanyPage({ params }: Props) {
   const p = (await params) as { companyId: string };
-  const companyId = p.companyId;
+  const companyId = safeStr(p?.companyId);
+
+  if (!companyId || !isUuid(companyId)) notFound();
+
+  const sb = await supabaseServer();
+
+  // Auth gate
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
+
+  if (authErr || !user) {
+    redirect(`/login?next=/superadmin/esg/${encodeURIComponent(companyId)}`);
+  }
+
+  // Role gate (FASET: profiles.id = auth.user.id)
+  const { data: profile, error: pErr } = await sb
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
+  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+    redirect("/login?next=/superadmin");
+  }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-16 pt-8">
+    <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 lp-select-text">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight">ESG</h1>
         <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">

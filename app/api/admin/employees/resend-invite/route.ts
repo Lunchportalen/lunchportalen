@@ -1,14 +1,16 @@
 // app/api/admin/employees/resend-invite/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseServer } from "@/lib/supabase/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
 function isUuid(v: any): v is string {
   return (
@@ -21,94 +23,79 @@ function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 
-async function requireCompanyAdmin() {
-  const sb = await supabaseServer();
-
-  const {
-    data: { user },
-    error: uerr,
-  } = await sb.auth.getUser();
-
-  if (uerr || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-
-  const role = String(user.user_metadata?.role ?? "employee").trim().toLowerCase();
-  if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
-
-  const { data: profile, error: perr } = await sb
-    .from("profiles")
-    .select("user_id, company_id, role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
-  if (!profile?.company_id) throw Object.assign(new Error("missing_company"), { code: "missing_company" });
-  if (String(profile.role ?? "").toLowerCase() !== "company_admin")
-    throw Object.assign(new Error("role_mismatch"), { code: "role_mismatch" });
-
-  return { sb, companyId: String(profile.company_id) };
-}
-
 export async function POST(req: NextRequest) {
-  const rid = `resend_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.employees.resend_invite", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+
+  const body = await readJson(req);
+  const userId = String((body as any)?.user_id ?? "").trim();
+  if (!isUuid(userId)) return jsonErr(400, rid, "INVALID_USER_ID", "Mangler/ugyldig user_id.");
 
   try {
-    const { sb, companyId } = await requireCompanyAdmin();
+    const sb = await supabaseServer();
 
-    const body = await req.json().catch(() => ({} as any));
-    const userId = String(body?.user_id ?? "").trim();
-
-    if (!isUuid(userId)) return jsonError(400, "invalid_user_id", "Mangler/ugyldig user_id.", { rid });
-
-    // 1) Verify employee belongs to company + fetch email + disabled state
+    // Verify employee belongs to company + fetch email + disabled state
     const { data: prof, error: pErr } = await sb
       .from("profiles")
-      .select("user_id,email,company_id,role,disabled_at")
-      .eq("user_id", userId)
+      .select("id,email,company_id,role,disabled_at")
+      .eq("id", userId) // profiles.id = auth.user.id
       .maybeSingle();
 
-    if (pErr) return jsonError(500, "db_error", "Kunne ikke lese ansattprofil.", pErr);
-    if (!prof) return jsonError(404, "not_found", "Ansatt finnes ikke.", { rid });
+    if (pErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lese ansattprofil.", { message: pErr.message });
+    if (!prof) return jsonErr(404, rid, "NOT_FOUND", "Ansatt finnes ikke.");
 
-    if (String((prof as any).company_id) !== companyId) return jsonError(403, "forbidden", "Ingen tilgang.", { rid });
-    if (String((prof as any).role ?? "").toLowerCase() !== "employee")
-      return jsonError(403, "forbidden_role", "Kun employee kan få ny invitasjon.", { rid });
-    if ((prof as any).disabled_at) return jsonError(409, "disabled", "Ansatt er deaktivert. Aktiver før invitasjon.", { rid });
-
-    const email = normEmail((prof as any).email);
-    if (!email) return jsonError(400, "missing_email", "Ansatt mangler e-post.", { rid });
-
-    // blokkér systemkontoer uansett (failsafe)
-    const systemEmails = new Set(["superadmin@lunchportalen.no", "kjokken@lunchportalen.no", "driver@lunchportalen.no"]);
-    if (systemEmails.has(email)) return jsonError(400, "forbidden_email", "Kan ikke invitere systemkonto.", { rid });
-
-    // 2) Check auth user activity (avoid spamming active users)
-    const admin = supabaseAdmin();
-
-    const { data: uData, error: uErr } = await admin.auth.admin.getUserById(userId);
-    if (uErr) return jsonError(500, "auth_read_failed", "Kunne ikke lese auth-bruker.", uErr);
-
-    const au = uData?.user as any;
-    const lastSignIn = (au?.last_sign_in_at as string | null) ?? null;
-    if (lastSignIn) {
-      return jsonError(409, "already_active", "Brukeren er allerede aktiv (har logget inn).", { rid });
+    if (String((prof as any).company_id ?? "") !== companyId) return jsonErr(403, rid, "FORBIDDEN", "Ingen tilgang.");
+    if (String((prof as any).role ?? "").toLowerCase() !== "employee") {
+      return jsonErr(403, rid, "FORBIDDEN_ROLE", "Kun employee kan få ny invitasjon.");
+    }
+    if ((prof as any).disabled_at) {
+      return jsonErr(409, rid, "DISABLED", "Ansatt er deaktivert. Aktiver før invitasjon.");
     }
 
-    // 3) Re-send invite by email (Supabase sends invite mail)
+    const email = normEmail((prof as any).email);
+    if (!email) return jsonErr(400, rid, "MISSING_EMAIL", "Ansatt mangler e-post.");
+
+    // failsafe: blokkér systemkontoer
+    const systemEmails = new Set(["superadmin@lunchportalen.no", "kjokken@lunchportalen.no", "driver@lunchportalen.no"]);
+    if (systemEmails.has(email)) return jsonErr(400, rid, "FORBIDDEN_EMAIL", "Kan ikke invitere systemkonto.");
+
+    const admin = supabaseAdmin();
+
+    // Check auth user activity (avoid spamming active users)
+    const { data: uData, error: uErr } = await admin.auth.admin.getUserById(userId);
+    if (uErr) return jsonErr(500, rid, "AUTH_READ_FAILED", "Kunne ikke lese auth-bruker.", { message: uErr.message });
+
+    const au = (uData as any)?.user as any;
+    const lastSignIn = (au?.last_sign_in_at as string | null) ?? null;
+    if (lastSignIn) {
+      return jsonErr(409, rid, "ALREADY_ACTIVE", "Brukeren er allerede aktiv (har logget inn).", { lastSignIn });
+    }
+
+    // Re-send invite by email (Supabase sends invite mail)
     const { error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
       data: {
-        // HARD-LOCK metadata
         role: "employee",
         company_id: companyId,
       },
     });
 
-    if (invErr) return jsonError(400, "invite_failed", "Kunne ikke sende invitasjon på nytt.", invErr);
+    if (invErr) return jsonErr(400, rid, "INVITE_FAILED", "Kunne ikke sende invitasjon på nytt.", { message: invErr.message });
 
-    // 4) Employee audit light (best effort)
+    // Employee audit light (best effort)
     try {
-      const { data: auth } = await sb.auth.getUser();
-      const actorEmail = auth?.user?.email ?? null;
-      const actorUserId = auth?.user?.id ?? null;
+      const actorEmail = scope.email ?? null;
+      const actorUserId = String(scope.userId ?? "").trim() || null;
 
       await admin.from("employee_audit").insert({
         employee_user_id: userId,
@@ -122,14 +109,8 @@ export async function POST(req: NextRequest) {
       // ignore
     }
 
-    return NextResponse.json({ ok: true, rid, user_id: userId, email }, { status: 200 });
+    return jsonOk({ ok: true, rid, user_id: userId, email }, 200);
   } catch (e: any) {
-    const code = e?.code || "unknown";
-    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.");
-    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.");
-    if (code === "missing_company") return jsonError(400, "missing_company", "Mangler company_id på admin-profilen.");
-    if (code === "role_mismatch") return jsonError(403, "role_mismatch", "Rolle mismatch mellom auth og profil.");
-    if (code === "db_error") return jsonError(500, "db_error", "Databasefeil.", e?.detail);
-    return jsonError(500, "server_error", "Uventet feil.", String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

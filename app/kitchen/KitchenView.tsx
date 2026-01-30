@@ -1,7 +1,8 @@
 // app/kitchen/KitchenView.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 type BatchStatus = "queued" | "packed" | "delivered";
 
@@ -26,37 +27,6 @@ type KitchenGroup = {
   orders: KitchenOrder[];
 };
 
-// ====== API response from /api/kitchen/orders ======
-type KitchenOrdersApiRow = {
-  order_id: string;
-  created_at: string;
-
-  delivery_date: string; // YYYY-MM-DD
-  delivery_slot: string; // delivery window
-  status: string; // kan være queued/packed/delivered (eller annen). Vi normaliserer.
-
-  order_note: string | null;
-
-  company_id: string;
-  company_name: string;
-
-  location_id: string;
-  location_name: string;
-
-  profile_id: string;
-  employee_name: string;
-  employee_department: string | null;
-  employee_phone?: string | null;
-
-  // Hvis orders-endpoint merge'r batches: disse kan komme med (valgfritt)
-  packed_at?: string | null;
-  delivered_at?: string | null;
-};
-
-type KitchenOrdersApiResponse =
-  | { ok: true; date: string; rows: KitchenOrdersApiRow[]; rid?: string }
-  | { ok: false; error: string; detail?: any; rid?: string };
-
 const OSLO_TZ = "Europe/Oslo";
 
 /* =========================
@@ -75,12 +45,10 @@ function sleep(ms: number) {
 }
 
 function isISODate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(d);
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
 }
 
-/**
- * ✅ UTC-sikker addDays på ISO-dato (unngår off-by-one pga toISOString/timezone)
- */
+/** ✅ UTC-sikker addDays (unngår off-by-one) */
 function addDaysISO(iso: string, deltaDays: number) {
   if (!isISODate(iso)) return iso;
   const [y, m, d] = iso.split("-").map((x) => Number(x));
@@ -104,7 +72,6 @@ function nextBusinessDayISO(fromISO: string) {
 }
 
 function fmtOsloYMDNow() {
-  // ✅ Returnerer YYYY-MM-DD i Oslo-tid direkte
   return new Intl.DateTimeFormat("en-CA", { timeZone: OSLO_TZ }).format(new Date());
 }
 
@@ -163,19 +130,10 @@ function staleLabel(mins: number) {
   return `${mins} min`;
 }
 
-/**
- * Visningsformat:
- * - Norge (nb-NO/nn-NO) -> dd-mm-yyyy
- * - Andre land -> YYYY-MM-DD
- *
- * NB: Data/URL/DB forblir alltid ISO.
- */
 function formatDateForLocale(iso: string) {
   if (!iso || !isISODate(iso)) return iso;
 
-  const loc =
-    typeof navigator !== "undefined" && navigator.language ? navigator.language.toLowerCase() : "en";
-
+  const loc = typeof navigator !== "undefined" && navigator.language ? navigator.language.toLowerCase() : "en";
   if (loc.startsWith("nb-no") || loc.startsWith("nn-no")) {
     const [y, m, d] = iso.split("-");
     return `${d}-${m}-${y}`;
@@ -199,138 +157,156 @@ function normalizeBatchStatus(raw: string | null | undefined): BatchStatus {
   return "queued";
 }
 
-function maxStatus(a: BatchStatus, b: BatchStatus): BatchStatus {
-  const rank: Record<BatchStatus, number> = { queued: 0, packed: 1, delivered: 2 };
-  return rank[b] > rank[a] ? b : a;
-}
-
 function groupVisualState(status: BatchStatus) {
   const isDelivered = status === "delivered";
   return {
-    sectionClass: isDelivered ? "opacity-70 grayscale" : "",
-    headerBadge:
+    sectionClass: isDelivered ? "opacity-70" : "",
+    badge:
       status === "queued"
-        ? "border-slate-200 bg-slate-50 text-slate-900"
+        ? "bg-slate-900/5 text-slate-900"
         : status === "packed"
-        ? "border-amber-200 bg-amber-50 text-amber-900"
-        : "border-emerald-200 bg-emerald-50 text-emerald-900",
-    headerDot:
+          ? "bg-amber-500/10 text-amber-900"
+          : "bg-emerald-500/10 text-emerald-900",
+    dot:
       status === "queued"
         ? "bg-slate-500"
         : status === "packed"
-        ? "bg-amber-500"
-        : "bg-emerald-500",
-    headerLabel: status === "queued" ? "Klar" : status === "packed" ? "Pakket" : "✓ Levert",
+          ? "bg-amber-500"
+          : "bg-emerald-500",
+    label: status === "queued" ? "Klar" : status === "packed" ? "Pakket" : "✓ Levert",
   };
 }
 
-function Chip({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
+function buildRid(prefix: string) {
+  try {
+    // eslint-disable-next-line no-undef
+    return `${prefix}_${crypto.randomUUID()}`;
+  } catch {
+    return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+}
+
+function toServerStatus(s: BatchStatus): "QUEUED" | "PACKED" | "DELIVERED" {
+  if (s === "packed") return "PACKED";
+  if (s === "delivered") return "DELIVERED";
+  return "QUEUED";
+}
+
+async function setBatchStatus(payload: { date: string; slot: string; location_id: string; status: BatchStatus }) {
+  const rid = buildRid("kitchen_batch_set");
+
+  const res = await fetch("/api/kitchen/batch/set", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-rid": rid },
+    cache: "no-store",
+    body: JSON.stringify({
+      date: payload.date,
+      slot: payload.slot,
+      location_id: payload.location_id,
+      status: toServerStatus(payload.status),
+    }),
+  });
+
+  const txt = await res.text();
+  const json = safeJsonParse<any>(txt);
+
+  if (!res.ok) {
+    const detail = typeof json?.detail === "string" ? json.detail : json?.detail ? JSON.stringify(json.detail) : null;
+    throw new Error(detail || json?.message || json?.error || txt || "Kunne ikke oppdatere status");
+  }
+
+  if (json && typeof json === "object" && json.ok === false) {
+    throw new Error(json?.message || json?.error || "Kunne ikke oppdatere status");
+  }
+}
+
+type KitchenDayOk = KitchenGroup[];
+type KitchenDayErr = { ok: false; rid?: string; error?: string; detail?: any; message?: string };
+
+/* =========================
+   UI primitives (calm)
+========================= */
+function Pill({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={[
-        "rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm transition",
-        active
-          ? "font-semibold shadow-sm"
-          : "text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))]",
-      ].join(" ")}
       type="button"
+      className={[
+        "inline-flex items-center justify-center rounded-full px-3 py-2 text-sm transition",
+        "min-h-[44px] select-none",
+        active ? "bg-slate-900 text-white shadow-sm" : "bg-white/70 text-slate-700 hover:bg-white hover:text-slate-900",
+      ].join(" ")}
     >
       {label}
     </button>
   );
 }
 
-async function setBatchStatus(payload: {
-  delivery_date: string;
-  delivery_window: string;
-  company_location_id: string;
-  status: BatchStatus;
+function IconBtn({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
 }) {
-  const res = await fetch("/api/kitchen/batch", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    const maybe = safeJsonParse<any>(txt);
-    const detail =
-      typeof maybe?.detail === "string"
-        ? maybe.detail
-        : maybe?.detail
-        ? JSON.stringify(maybe.detail)
-        : null;
-
-    throw new Error(detail || maybe?.error || maybe?.message || txt || "Kunne ikke oppdatere status");
-  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={[
+        "inline-flex items-center justify-center rounded-full",
+        "h-11 w-11 sm:h-10 sm:w-10",
+        "bg-white/70 hover:bg-white text-slate-900",
+        "shadow-sm ring-1 ring-black/5",
+        "disabled:opacity-60",
+      ].join(" ")}
+      title={label}
+    >
+      {children}
+    </button>
+  );
 }
 
-/**
- * mapper rows (flat) -> KitchenGroup[] (for this UI)
- * ✅ batch_status utledes fra row.status (aggregert til maks-status per gruppe)
- * ✅ packed_at / delivered_at tas med hvis de finnes på row (fra merged endpoint)
- */
-function rowsToGroups(dateISO: string, rows: KitchenOrdersApiRow[]): KitchenGroup[] {
-  const map = new Map<string, KitchenGroup>();
+function PrimaryBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "inline-flex items-center justify-center rounded-2xl",
+        "min-h-[48px] px-4 py-3 text-sm font-semibold",
+        "bg-slate-900 text-white shadow-sm",
+        "hover:opacity-95 disabled:opacity-60",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
+}
 
-  for (const r of rows) {
-    const delivery_window = r.delivery_slot || "—";
-    const company = r.company_name || "Ukjent firma";
-    const location = r.location_name || "Ukjent lokasjon";
-    const company_location_id = r.location_id;
-
-    const key = `${r.delivery_date || dateISO}__${delivery_window}__${company_location_id}`;
-
-    const rowStatus = normalizeBatchStatus(r.status);
-
-    if (!map.has(key)) {
-      map.set(key, {
-        delivery_date: r.delivery_date || dateISO,
-        delivery_window,
-        company,
-        location,
-        company_location_id,
-        batch_status: rowStatus,
-        packed_at: r.packed_at ?? null,
-        delivered_at: r.delivered_at ?? null,
-        orders: [],
-      });
-    } else {
-      // Aggreger batch-status (delivered > packed > queued)
-      const g = map.get(key)!;
-      g.batch_status = maxStatus(g.batch_status, rowStatus);
-
-      // behold første ikke-null tidsstempel (hvis flere rader har samme)
-      if (!g.packed_at && r.packed_at) g.packed_at = r.packed_at;
-      if (!g.delivered_at && r.delivered_at) g.delivered_at = r.delivered_at;
-    }
-
-    map.get(key)!.orders.push({
-      id: r.order_id,
-      full_name: r.employee_name || "Ukjent",
-      department: r.employee_department ?? null,
-      note: r.order_note ?? null,
-    });
-  }
-
-  return Array.from(map.values()).sort((a, b) => {
-    const w = a.delivery_window.localeCompare(b.delivery_window, "nb");
-    if (w !== 0) return w;
-    const c = a.company.localeCompare(b.company, "nb");
-    if (c !== 0) return c;
-    return a.location.localeCompare(b.location, "nb");
-  });
+function SecondaryBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "inline-flex items-center justify-center rounded-2xl",
+        "min-h-[48px] px-4 py-3 text-sm font-semibold",
+        "bg-white/70 text-slate-900 shadow-sm ring-1 ring-black/5",
+        "hover:bg-white disabled:opacity-60",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
 }
 
 export default function KitchenView() {
@@ -348,9 +324,12 @@ export default function KitchenView() {
   // Drawer / "åpne batch"
   const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
 
-  // ✅ Inline feedback rett under batch-kortet (ikke nederst på siden)
+  // Secondary controls sheet (mobil)
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // ✅ Inline feedback under batch
   const [inlineNotice, setInlineNotice] = useState<{
-    key: string; // groupKey = date__window__loc
+    key: string;
     message: string;
     canUndo: boolean;
     target?: {
@@ -367,7 +346,7 @@ export default function KitchenView() {
   const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
   const [tick, setTick] = useState(0);
 
-  // ✅ velg dato (Oslo) – default i dag (ISO internt)
+  // ✅ velg dato (Oslo)
   const [dateISO, setDateISO] = useState<string>(fmtOsloYMDNow());
 
   useEffect(() => {
@@ -375,11 +354,12 @@ export default function KitchenView() {
     return () => clearInterval(t);
   }, []);
 
-  // ESC lukker drawer (og inline notice hvis du vil)
+  // ESC lukker sheets/drawers
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpenGroupKey(null);
+        setFiltersOpen(false);
       }
     }
     window.addEventListener("keydown", onKey);
@@ -389,45 +369,35 @@ export default function KitchenView() {
   async function fetchDayOnce(dISO: string): Promise<KitchenGroup[]> {
     if (!isISODate(dISO)) throw new Error("Ugyldig dato");
 
-    const res = await fetch(`/api/kitchen/orders?date=${encodeURIComponent(dISO)}`, {
+    const rid = buildRid("kitchen_day");
+    const res = await fetch(`/api/kitchen/day?date=${encodeURIComponent(dISO)}`, {
       cache: "no-store",
+      headers: { "x-rid": rid },
     });
 
     const txt = await res.text();
+    const json = safeJsonParse<any>(txt);
 
     if (!res.ok) {
-      const maybe = safeJsonParse<any>(txt);
-      const detail =
-        typeof maybe?.detail === "string"
-          ? maybe.detail
-          : maybe?.detail
-          ? JSON.stringify(maybe.detail)
-          : null;
-
-      throw new Error(detail || maybe?.message || maybe?.error || txt || "Kunne ikke hente bestillinger");
+      const detail = typeof json?.detail === "string" ? json.detail : json?.detail ? JSON.stringify(json.detail) : null;
+      throw new Error(detail || json?.message || json?.error || txt || "Kunne ikke hente kjøkkenliste");
     }
 
-    const json = safeJsonParse<KitchenOrdersApiResponse>(txt);
-    if (!json || typeof json !== "object") throw new Error("Ugyldig respons fra server");
-
-    if (!("ok" in json) || json.ok !== true) {
-      const detail =
-        typeof (json as any)?.detail === "string"
-          ? (json as any).detail
-          : (json as any)?.detail
-          ? JSON.stringify((json as any).detail)
-          : null;
-      const err = (json as any)?.error || "Kunne ikke hente bestillinger";
-      throw new Error(detail || err);
+    if (Array.isArray(json)) {
+      return (json as KitchenDayOk).map((g) => ({ ...g, batch_status: normalizeBatchStatus(g.batch_status) }));
     }
 
-    const rows = (json as any).rows as KitchenOrdersApiRow[];
-    return rowsToGroups(dISO, rows ?? []);
+    if (json && typeof json === "object" && json.ok === false) {
+      const j = json as KitchenDayErr;
+      const detail = typeof j.detail === "string" ? j.detail : j.detail ? JSON.stringify(j.detail) : null;
+      throw new Error(detail || j.message || j.error || "Kunne ikke hente kjøkkenliste");
+    }
+
+    throw new Error("Ugyldig respons fra server");
   }
 
   async function load() {
     setIsRefreshing(true);
-
     try {
       setSoftWarning(null);
 
@@ -439,7 +409,6 @@ export default function KitchenView() {
         setHardErr(null);
         return;
       } catch {
-        // lite retry
         await sleep(1200);
         const groups = await fetchDayOnce(dateISO);
         setData(groups);
@@ -449,7 +418,7 @@ export default function KitchenView() {
         return;
       }
     } catch (e: any) {
-      const msg = e?.message || "Kunne ikke hente bestillinger";
+      const msg = e?.message || "Kunne ikke hente kjøkkenliste";
       if (data && data.length > 0) {
         setSoftWarning(`Kunne ikke oppdatere akkurat nå. Viser siste kjente data. (${msg})`);
       } else {
@@ -461,20 +430,16 @@ export default function KitchenView() {
     }
   }
 
-  // Reload når dato endres (og auto-refresh hvert 30s)
   useEffect(() => {
-    load();
+    void load();
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateISO]);
 
-  // Lukker drawer hvis data endres og batchen ikke finnes i data
   useEffect(() => {
     if (!openGroupKey) return;
-    const exists = (data ?? []).some(
-      (g) => `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}` === openGroupKey
-    );
+    const exists = (data ?? []).some((g) => `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}` === openGroupKey);
     if (!exists) setOpenGroupKey(null);
   }, [data, openGroupKey]);
 
@@ -486,16 +451,9 @@ export default function KitchenView() {
 
   const filteredGroups = useMemo(() => {
     let groups = data ?? [];
-
-    if (activeWindow !== "ALL") {
-      groups = groups.filter((g) => g.delivery_window === activeWindow);
-    }
-
-    if (onlyNotDelivered) {
-      groups = groups.filter((g) => g.batch_status !== "delivered");
-    }
-
-    return groups;
+    if (activeWindow !== "ALL") groups = groups.filter((g) => g.delivery_window === activeWindow);
+    if (onlyNotDelivered) groups = groups.filter((g) => normalizeBatchStatus(g.batch_status) !== "delivered");
+    return groups.map((g) => ({ ...g, batch_status: normalizeBatchStatus(g.batch_status) }));
   }, [data, activeWindow, onlyNotDelivered]);
 
   const totalKuverter = useMemo(() => {
@@ -511,51 +469,22 @@ export default function KitchenView() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "nb"));
   }, [filteredGroups]);
 
-  const headerMeta = useMemo(() => {
-    const d = dateISO;
-    const windowsCount = new Set(filteredGroups.map((g) => g.delivery_window)).size;
-    return { date: d, windowsCount };
-  }, [filteredGroups, dateISO]);
-
   const staleMins = useMemo(() => {
     void tick;
     if (!lastSuccessAt) return null;
     return minsSince(lastSuccessAt);
   }, [lastSuccessAt, tick]);
 
-  const STALE_WARN_MIN = 3;
-  const STALE_CRIT_MIN = 10;
-
-  const staleBanner = useMemo(() => {
-    if (staleMins == null) return null;
-    if (staleMins < STALE_WARN_MIN) return null;
-
-    const isCrit = staleMins >= STALE_CRIT_MIN;
-    return {
-      text: isCrit
-        ? `Viktig: Data har ikke oppdatert på ${staleLabel(staleMins)}. Sjekk nett / API, eller oppdater siden.`
-        : `Merk: Data har ikke oppdatert på ${staleLabel(staleMins)}. Viser siste vellykkede oppdatering.`,
-      cls: isCrit
-        ? "border-red-200 bg-red-50 text-red-900"
-        : "border-amber-200 bg-amber-50 text-amber-900",
-      dot: isCrit ? "bg-red-500" : "bg-amber-500",
-      meta: `Siste vellykkede oppdatering: ${lastUpdated ?? "—"}`,
-    };
-  }, [staleMins, lastUpdated]);
-
   const printId = useMemo(() => {
-    const dateForId = headerMeta.date || fmtOsloYMDNow(); // ISO
     const windowLabel = activeWindow === "ALL" ? "ALL" : activeWindow;
-    return makeKitchenPrintId({ dateISO: dateForId, windowLabel, totalKuverter });
-  }, [headerMeta.date, activeWindow, totalKuverter]);
+    return makeKitchenPrintId({ dateISO: dateISO || fmtOsloYMDNow(), windowLabel, totalKuverter });
+  }, [dateISO, activeWindow, totalKuverter]);
 
   async function mark(g: KitchenGroup, status: BatchStatus) {
     const busy = `${g.delivery_date}:${g.delivery_window}:${g.company_location_id}`;
     setBusyKey(busy);
 
     const groupKey = `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}`;
-
-    // ✅ Oppdater inline notice (ved samme kort)
     const target = {
       delivery_date: g.delivery_date,
       delivery_window: g.delivery_window,
@@ -563,27 +492,22 @@ export default function KitchenView() {
       company: g.company,
     };
 
-    // ✅ Vis umiddelbar feedback rett under kortet
     setInlineNotice({
       key: groupKey,
-      message:
-        status === "packed" ? "Markert pakket" : status === "delivered" ? "Markert levert" : "Merking fjernet",
+      message: status === "packed" ? "Markert pakket" : status === "delivered" ? "Markert levert" : "Merking fjernet",
       canUndo: status !== "queued",
       target,
     });
 
     try {
       await setBatchStatus({
-        delivery_date: g.delivery_date,
-        delivery_window: g.delivery_window,
-        company_location_id: g.company_location_id,
+        date: g.delivery_date,
+        slot: g.delivery_window,
+        location_id: g.company_location_id,
         status,
       });
-
-      // refresh for å få korrekt status fra GET (etter merge)
       await load();
     } catch (e: any) {
-      // Vis feilen rett under samme kort
       setInlineNotice({
         key: groupKey,
         message: e?.message || "Kunne ikke oppdatere status",
@@ -596,13 +520,11 @@ export default function KitchenView() {
   }
 
   async function markDeliveredWithConfirm(g: KitchenGroup) {
-    if (g.batch_status === "delivered") return;
-
+    if (normalizeBatchStatus(g.batch_status) === "delivered") return;
     const ok = window.confirm(
       `Bekreft levering:\n\nFirma: ${g.company}\nVindu: ${g.delivery_window}\nKuverter: ${g.orders.length}\n\nVil du markere som levert?`
     );
     if (!ok) return;
-
     await mark(g, "delivered");
   }
 
@@ -612,38 +534,21 @@ export default function KitchenView() {
     );
     if (!ok) return;
 
-    const payload = {
-      delivery_date: target.delivery_date,
-      delivery_window: target.delivery_window,
-      company_location_id: target.company_location_id,
-      status: "queued" as BatchStatus,
-    };
-
-    const busy = `${payload.delivery_date}:${payload.delivery_window}:${payload.company_location_id}`;
+    const busy = `${target.delivery_date}:${target.delivery_window}:${target.company_location_id}`;
     setBusyKey(busy);
 
     try {
-      await setBatchStatus(payload);
-      setInlineNotice((prev) =>
-        prev
-          ? {
-              ...prev,
-              message: "Merking fjernet",
-              canUndo: false,
-            }
-          : prev
-      );
+      await setBatchStatus({
+        date: target.delivery_date,
+        slot: target.delivery_window,
+        location_id: target.company_location_id,
+        status: "queued",
+      });
+
+      setInlineNotice((prev) => (prev ? { ...prev, message: "Merking fjernet", canUndo: false } : prev));
       await load();
     } catch (e: any) {
-      setInlineNotice((prev) =>
-        prev
-          ? {
-              ...prev,
-              message: e?.message || "Kunne ikke fjerne merking",
-              canUndo: false,
-            }
-          : prev
-      );
+      setInlineNotice((prev) => (prev ? { ...prev, message: e?.message || "Kunne ikke fjerne merking", canUndo: false } : prev));
     } finally {
       setBusyKey(null);
     }
@@ -653,13 +558,9 @@ export default function KitchenView() {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
-        // liten, diskret feedback (øverst ville vært støy) – vi gjenbruker inlineNotice ikke her
         return;
       }
-    } catch {
-      // fallback
-    }
-
+    } catch {}
     try {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -670,13 +571,10 @@ export default function KitchenView() {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-    } catch {
-      // ignorer
-    }
+    } catch {}
   }
 
   async function findNextDayWithOrders() {
-    // søker fremover i 14 dager, hopper over helg
     let cur = dateISO;
     for (let i = 0; i < 14; i++) {
       cur = nextBusinessDayISO(cur);
@@ -686,67 +584,70 @@ export default function KitchenView() {
         return;
       }
     }
-    // legg beskjed i en nøytral inline notice (ikke knyttet til kort)
-    setInlineNotice({
-      key: "__GLOBAL__",
-      message: "Fant ingen dager med bestillinger de neste 14 dagene.",
-      canUndo: false,
-    });
+    setInlineNotice({ key: "__GLOBAL__", message: "Fant ingen dager med bestillinger de neste 14 dagene.", canUndo: false });
   }
 
-  /* =========================
-     UI
-  ========================= */
-  const dateLabel = formatDateForLocale(headerMeta.date || dateISO);
+  async function logout() {
+    const ok = window.confirm("Vil du logge ut av Lunchportalen?");
+    if (!ok) return;
 
-  // Drawer-data: finn valgt group (fra data, ikke filtrert)
+    try {
+      const sb = supabaseBrowser();
+      await sb.auth.signOut();
+    } catch {
+      // no-op
+    } finally {
+      window.location.replace("/login");
+    }
+  }
+
+  const dateLabel = formatDateForLocale(dateISO);
+
   const openGroup = useMemo(() => {
     if (!openGroupKey) return null;
-    return (
-      (data ?? []).find(
-        (g) => `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}` === openGroupKey
-      ) || null
-    );
+    return (data ?? []).find((g) => `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}` === openGroupKey) || null;
   }, [openGroupKey, data]);
 
+  const liveLabel = isRefreshing ? "Oppdaterer…" : "Live";
+
   return (
-    <div className="space-y-6">
-      {/* PRINT */}
+    <div
+      className={[
+        "relative",
+        "min-h-[calc(100svh)]",
+        "bg-[radial-gradient(1200px_600px_at_50%_0%,rgba(15,23,42,0.06),transparent_70%)]",
+      ].join(" ")}
+    >
+      {/* Safe-area + print styles */}
       <style>{`
+        :root{
+          --lp-safe-top: env(safe-area-inset-top);
+          --lp-safe-bot: env(safe-area-inset-bottom);
+        }
         @media print {
           @page { margin: 12mm; }
           html, body { background: #fff !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
           table { page-break-inside: avoid; }
           tr, td, th { page-break-inside: avoid; }
           section { break-inside: avoid; page-break-inside: avoid; }
-
           button, input, select, textarea { display: none !important; }
-
+          a[href]:after { content: "" !important; }
           .lp-print-border { border: 1px solid #e5e7eb !important; }
           .lp-print-tight { padding: 0 !important; margin: 0 !important; }
           .lp-print-mt { margin-top: 10mm !important; }
           .lp-print-h2 { font-size: 14pt !important; line-height: 1.2 !important; }
           .lp-print-meta { font-size: 10pt !important; color: #374151 !important; }
           .lp-print-summary { margin-top: 6mm !important; }
-          a[href]:after { content: "" !important; }
-
           .lp-sign { margin-top: 6mm !important; }
           .lp-sign-row { display: flex !important; gap: 10mm !important; }
           .lp-sign-box { flex: 1 1 0%; }
           .lp-sign-label { font-size: 10pt !important; color: #374151 !important; margin-bottom: 2mm !important; }
           .lp-sign-line { border-bottom: 1px solid #111827 !important; height: 8mm !important; }
           .lp-sign-meta { font-size: 9pt !important; color: #6b7280 !important; margin-top: 2mm !important; }
-
           .lp-print-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 9pt;
-            color: #374151;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            text-align: center; font-size: 9pt; color: #374151;
           }
         }
       `}</style>
@@ -762,7 +663,7 @@ export default function KitchenView() {
             <div className="lp-print-meta mt-1">
               Dato: <span className="font-semibold">{dateLabel || "-"}</span>
               <span className="mx-2">•</span>
-              Vinduer: <span className="font-semibold">{headerMeta.windowsCount}</span>
+              Vinduer: <span className="font-semibold">{new Set(filteredGroups.map((g) => g.delivery_window)).size}</span>
             </div>
             <div className="lp-print-meta mt-1">
               Totalt kuverter (visning): <span className="font-semibold">{totalKuverter}</span>
@@ -777,10 +678,7 @@ export default function KitchenView() {
           <div className="text-sm font-semibold text-black mb-2">Sum per firma (visning)</div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
             {companyTotals.map(([company, count]) => (
-              <div
-                key={company}
-                className="flex items-center justify-between border-b border-slate-200 py-1 last:border-0"
-              >
+              <div key={company} className="flex items-center justify-between border-b border-slate-200 py-1 last:border-0">
                 <span className="text-slate-700">{company}</span>
                 <span className="font-semibold text-black">{count}</span>
               </div>
@@ -790,438 +688,476 @@ export default function KitchenView() {
         <div className="lp-print-mt" />
       </div>
 
-      {/* Stale banner */}
-      {(() => {
-        const stale = (() => {
-          if (staleMins == null) return null;
-          if (staleMins < 3) return null;
-          const isCrit = staleMins >= 10;
-          return {
-            text: isCrit
-              ? `Viktig: Data har ikke oppdatert på ${staleLabel(staleMins)}. Sjekk nett / API, eller oppdater siden.`
-              : `Merk: Data har ikke oppdatert på ${staleLabel(staleMins)}. Viser siste vellykkede oppdatering.`,
-            cls: isCrit
-              ? "border-red-200 bg-red-50 text-red-900"
-              : "border-amber-200 bg-amber-50 text-amber-900",
-            dot: isCrit ? "bg-red-500" : "bg-amber-500",
-            meta: `Siste vellykkede oppdatering: ${lastUpdated ?? "—"}`,
-          };
-        })();
+      {/* Sticky App Topbar */}
+      <div
+        className={[
+          "print:hidden",
+          "sticky top-0 z-40",
+          "backdrop-blur-xl",
+          "bg-white/60",
+          "ring-1 ring-black/5",
+        ].join(" ")}
+        style={{ paddingTop: "var(--lp-safe-top)" }}
+      >
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="flex items-center justify-between py-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="text-lg sm:text-xl font-semibold text-slate-900">Kjøkken</div>
+                <div className="hidden sm:flex items-center gap-2 text-sm text-slate-700">
+                  <span aria-hidden className={["h-2 w-2 rounded-full", isRefreshing ? "bg-amber-500" : "bg-emerald-500"].join(" ")} />
+                  <span className="font-medium">{liveLabel}</span>
+                  <span className="text-slate-400">•</span>
+                  <span>
+                    Sist oppdatert: <span className="font-semibold text-slate-900">{lastUpdated ?? "—"}</span>
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span>
+                    Sist OK:{" "}
+                    <span className="font-semibold text-slate-900">{staleMins === null ? "—" : staleLabel(staleMins)}</span>
+                  </span>
+                </div>
+              </div>
 
-        if (!stale) return null;
+              <div className="mt-1 flex items-center gap-2 text-sm text-slate-700">
+                <label className="inline-flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm ring-1 ring-black/5">
+                  <span className="text-slate-500" aria-hidden>
+                    📅
+                  </span>
+                  <input
+                    type="date"
+                    value={dateISO}
+                    onChange={(e) => setDateISO(e.target.value)}
+                    className="bg-transparent outline-none"
+                  />
+                </label>
 
-        return (
-          <div className={["print:hidden rounded-2xl border px-4 py-3 text-sm", stale.cls].join(" ")}>
-            <div className="flex items-start gap-3">
-              <span aria-hidden className={["mt-1 h-2 w-2 rounded-full", stale.dot].join(" ")} />
-              <div className="min-w-0">
-                <div className="font-semibold">{stale.text}</div>
-                <div className="mt-1 text-xs opacity-90">{stale.meta}</div>
+                <div className="hidden sm:flex items-center gap-2">
+                  <SecondaryBtn label="Forrige" onClick={() => setDateISO(addDaysISO(dateISO, -1))} />
+                  <SecondaryBtn label="I dag" onClick={() => setDateISO(fmtOsloYMDNow())} />
+                  <SecondaryBtn label="Neste" onClick={() => setDateISO(addDaysISO(dateISO, 1))} />
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
 
-      {/* Soft warning */}
-      {softWarning && (
-        <div className="print:hidden rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {softWarning}
-        </div>
-      )}
+            <div className="flex items-center gap-2">
+              <IconBtn label="Verktøy" onClick={() => setFiltersOpen(true)}>
+                <span aria-hidden>⚙️</span>
+              </IconBtn>
 
-      {/* Hard error (første load) */}
-      {hardErr && (!data || data.length === 0) && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-          {hardErr}
-        </div>
-      )}
+              <IconBtn label="Oppdater" onClick={() => load()} disabled={isRefreshing}>
+                <span aria-hidden>↻</span>
+              </IconBtn>
 
-      {/* Controls */}
-      <div className="print:hidden space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {windows.map((w) => (
-              <Chip
-                key={w}
-                active={activeWindow === w}
-                label={w === "ALL" ? "Alle" : w}
-                onClick={() => setActiveWindow(w)}
-              />
-            ))}
+              <IconBtn label="Skriv ut" onClick={() => window.print()}>
+                <span aria-hidden>🖨️</span>
+              </IconBtn>
+
+              <IconBtn label="Logg ut" onClick={logout}>
+                <span aria-hidden>⎋</span>
+              </IconBtn>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.print()}
-              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-4 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] shadow-sm hover:bg-[rgb(var(--lp-bg))]"
-              type="button"
-            >
-              Skriv ut
-            </button>
+          {/* Desktop: windows pills + toggles */}
+          <div className="hidden sm:block pb-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {windows.map((w) => (
+                <Pill key={w} active={activeWindow === w} label={w === "ALL" ? "Alle" : w} onClick={() => setActiveWindow(w)} />
+              ))}
 
-            <button
-              onClick={() => load()}
-              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-4 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] shadow-sm hover:bg-[rgb(var(--lp-bg))]"
-              type="button"
-            >
-              Oppdater
-            </button>
+              <div className="ml-auto flex items-center gap-3 text-sm text-slate-700">
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={onlyNotDelivered} onChange={(e) => setOnlyNotDelivered(e.target.checked)} />
+                  Kun ikke levert
+                </label>
+
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm ring-1 ring-black/5">
+                  <span className="text-slate-500">Kjøkken-ID</span>
+                  <code className="font-mono text-slate-900">{printId}</code>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(printId)}
+                    className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:opacity-95"
+                  >
+                    Kopier
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {inlineNotice?.key === "__GLOBAL__" && (
+              <div className="mt-3 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-800 shadow-sm ring-1 ring-black/5">
+                {inlineNotice.message}
+              </div>
+            )}
+
+            {softWarning && (
+              <div className="mt-3 rounded-2xl bg-amber-500/10 px-4 py-3 text-sm text-amber-900 shadow-sm ring-1 ring-black/5">
+                {softWarning}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Date controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDateISO(addDaysISO(dateISO, -1))}
-            className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--lp-bg))]"
-          >
-            ← Forrige
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDateISO(fmtOsloYMDNow())}
-            className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--lp-bg))]"
-          >
-            I dag
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDateISO(addDaysISO(dateISO, 1))}
-            className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--lp-bg))]"
-          >
-            Neste →
-          </button>
-
-          <label className="ml-2 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm">
-            <span aria-hidden>📅</span>
-            <input
-              type="date"
-              value={dateISO}
-              onChange={(e) => setDateISO(e.target.value)}
-              className="bg-transparent outline-none"
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={() => setDateISO(nextBusinessDayISO(dateISO))}
-            className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--lp-bg))]"
-            title="Hopper til neste ukedag (Man–Fre)"
-          >
-            Neste leveringsdag
-          </button>
-
-          <button
-            type="button"
-            onClick={findNextDayWithOrders}
-            className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:opacity-95"
-            title="Finn neste dag (fremover) som faktisk har bestillinger"
-          >
-            Finn neste med bestillinger
-          </button>
-
-          <span className="ml-2 text-sm text-[rgb(var(--lp-muted))]">
-            <span className="font-semibold text-[rgb(var(--lp-text))]">Dato:</span>{" "}
-            {formatDateForLocale(dateISO)}
-            <span className="ml-2 text-xs opacity-60">({dateISO})</span>
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-[rgb(var(--lp-text))]">
-            <input
-              type="checkbox"
-              checked={onlyNotDelivered}
-              onChange={(e) => setOnlyNotDelivered(e.target.checked)}
-            />
-            Kun ikke levert
-          </label>
-
-          <div className="flex flex-wrap items-center gap-2 text-sm text-[rgb(var(--lp-muted))]">
-            <span>Oppdateres automatisk hvert 30. sekund</span>
-            <span className="mx-2">•</span>
-            <span>
-              Sist oppdatert:{" "}
-              <span className="font-semibold text-[rgb(var(--lp-text))]">{lastUpdated ?? "—"}</span>
-            </span>
-            <span className="mx-2">•</span>
-            <span className="inline-flex items-center gap-2">
-              <span
-                aria-hidden
-                className={[
-                  "h-2 w-2 rounded-full",
-                  isRefreshing ? "bg-amber-500" : "bg-emerald-500",
-                ].join(" ")}
-              />
-              <span className="text-[rgb(var(--lp-muted))]">{isRefreshing ? "Oppdaterer…" : "Live"}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Screen ID */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-[rgb(var(--lp-muted))]">Kjøkken-ID:</span>
-
-          <code className="rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-sm text-[rgb(var(--lp-text))]">
-            {printId}
-          </code>
-
-          <button
-            type="button"
-            onClick={() => copyToClipboard(printId)}
-            className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] shadow-sm hover:bg-[rgb(var(--lp-bg))]"
-          >
-            Kopier
-          </button>
-
-          <span className="text-xs text-[rgb(var(--lp-muted))]">Brukes for sporbarhet i utskrift/arkiv.</span>
-        </div>
-
-        {/* Global inline notice (ikke knyttet til et kort) */}
-        {inlineNotice?.key === "__GLOBAL__" && (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800">
-            {inlineNotice.message}
-          </div>
-        )}
       </div>
 
-      {/* Empty state (viser fortsatt kontroller over) */}
-      {!loading && (!data || data.length === 0) && !hardErr && (
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 text-sm text-[rgb(var(--lp-muted))]">
-          Ingen aktive bestillinger for valgt dato.
-          <div className="mt-3 flex flex-wrap gap-2 print:hidden">
-            <button
-              type="button"
-              onClick={() => setDateISO(nextBusinessDayISO(dateISO))}
-              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--lp-bg))]"
-            >
-              Gå til neste leveringsdag
-            </button>
-            <button
-              type="button"
-              onClick={findNextDayWithOrders}
-              className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:opacity-95"
-            >
-              Finn neste dag med bestillinger
-            </button>
+      {/* Content */}
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        {/* Mobil statuslinje (kompakt) */}
+        <div className="sm:hidden mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden className={["h-2 w-2 rounded-full", isRefreshing ? "bg-amber-500" : "bg-emerald-500"].join(" ")} />
+              <span className="font-semibold text-slate-900">{liveLabel}</span>
+            </span>
+            <span className="text-slate-500">
+              Sist: <span className="font-semibold text-slate-900">{lastUpdated ?? "—"}</span>
+            </span>
           </div>
+          <div className="mt-1 text-slate-500">
+            Sist OK: <span className="font-semibold text-slate-900">{staleMins === null ? "—" : staleLabel(staleMins)}</span>
+          </div>
+
+          {softWarning ? (
+            <div className="mt-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-900">{softWarning}</div>
+          ) : null}
         </div>
-      )}
 
-      {/* Company totals */}
-      {data && data.length > 0 && (
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 text-sm print:hidden">
-          <div className="mb-2 font-semibold text-[rgb(var(--lp-text))]">Sum per firma (visning)</div>
+        {/* Hard error */}
+        {hardErr && (!data || data.length === 0) && (
+          <div className="mt-4 rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-900 shadow-sm ring-1 ring-black/5">
+            {hardErr}
+          </div>
+        )}
 
-          {companyTotals.length === 0 ? (
-            <p className="text-[rgb(var(--lp-muted))]">Ingen data i valgt visning.</p>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {companyTotals.map(([company, count]) => (
-                <div
-                  key={company}
-                  className="flex items-center justify-between border-b border-[rgb(var(--lp-divider))] py-1 last:border-0"
-                >
-                  <span className="text-[rgb(var(--lp-muted))]">{company}</span>
-                  <span className="font-semibold text-[rgb(var(--lp-text))]">{count}</span>
-                </div>
-              ))}
+        {/* Empty */}
+        {!loading && (!data || data.length === 0) && !hardErr && (
+          <div className="mt-6 rounded-3xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5">
+            <div className="text-base font-semibold text-slate-900">Ingen aktive bestillinger</div>
+            <div className="mt-1 text-sm text-slate-600">Valgt dato har ingen bestillinger i systemet.</div>
+
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SecondaryBtn label="Neste leveringsdag" onClick={() => setDateISO(nextBusinessDayISO(dateISO))} />
+              <PrimaryBtn label="Finn neste dag med bestillinger" onClick={findNextDayWithOrders} />
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Groups */}
-      {filteredGroups.map((g, i) => {
-        const busy = `${g.delivery_date}:${g.delivery_window}:${g.company_location_id}`;
-        const isBusy = busyKey === busy;
+        {/* Summary */}
+        {data && data.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="text-sm text-slate-600">Totalt (visning)</div>
+                <div className="text-3xl font-semibold tracking-tight text-slate-900">{totalKuverter}</div>
+              </div>
 
-        const v = groupVisualState(g.batch_status);
-
-        const groupKey = `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}`;
-
-        const inlineForThis = inlineNotice?.key === groupKey ? inlineNotice : null;
-
-        return (
-          <div key={`${g.delivery_window}:${g.company_location_id}:${i}`} className="space-y-3">
-            <section
-              role="button"
-              tabIndex={0}
-              onClick={() => setOpenGroupKey(groupKey)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setOpenGroupKey(groupKey);
-              }}
-              className={[
-                "rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-sm",
-                "print:shadow-none print:rounded-none print:border-0 print:p-0 print:break-inside-avoid",
-                "cursor-pointer transition hover:border-slate-300 hover:shadow-md",
-                v.sectionClass,
-              ].join(" ")}
-              title="Klikk for å åpne batch"
-            >
-              <header className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">
-                    {g.delivery_window} – {g.company}
-                  </h2>
-                  <p className="text-sm text-[rgb(var(--lp-muted))]">{g.location}</p>
-
-                  <p className="mt-1 text-sm">
-                    <span className="text-[rgb(var(--lp-muted))]">Kuverter:</span>{" "}
-                    <span className="font-semibold text-[rgb(var(--lp-text))]">{g.orders.length}</span>
-                  </p>
-
-                  {(g.packed_at || g.delivered_at) && (
-                    <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                      {g.packed_at ? `Pakket: ${fmtOsloTime(g.packed_at)}` : null}
-                      {g.packed_at && g.delivered_at ? <span className="mx-2">•</span> : null}
-                      {g.delivered_at ? `Levert: ${fmtOsloTime(g.delivered_at)}` : null}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span
-                    className={[
-                      "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-                      v.headerBadge,
-                    ].join(" ")}
-                  >
-                    <span aria-hidden className={["h-2 w-2 rounded-full", v.headerDot].join(" ")} />
-                    {v.headerLabel}
-                  </span>
-
-                  <div className="flex gap-2 print:hidden">
-                    <button
-                      className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))] disabled:opacity-60"
-                      type="button"
-                      disabled={isBusy || g.batch_status !== "queued"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        mark(g, "packed");
-                      }}
-                    >
-                      {isBusy ? "Oppdaterer…" : "Marker pakket"}
-                    </button>
-
-                    <button
-                      className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))] disabled:opacity-60"
-                      type="button"
-                      disabled={isBusy || g.batch_status === "delivered"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markDeliveredWithConfirm(g);
-                      }}
-                    >
-                      {isBusy ? "Oppdaterer…" : "Marker levert"}
-                    </button>
-                  </div>
-                </div>
-              </header>
-
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-[rgb(var(--lp-divider))]">
-                    <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Navn</th>
-                    <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Avdeling</th>
-                    <th className="py-2 text-left font-semibold text-[rgb(var(--lp-text))]">Notat</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {g.orders.map((o, idx) => (
-                    <tr
-                      key={`${o.id}:${idx}`}
-                      className="border-b border-[rgb(var(--lp-divider))] last:border-0"
-                    >
-                      <td className="py-2 text-[rgb(var(--lp-text))]">{o.full_name}</td>
-                      <td className="py-2 text-[rgb(var(--lp-muted))]">{o.department || "–"}</td>
-                      <td className="py-2 text-[rgb(var(--lp-text))]">{o.note || ""}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* PRINT signatur */}
-              <div className="hidden print:block lp-sign">
-                <div className="lp-sign-row">
-                  <div className="lp-sign-box">
-                    <div className="lp-sign-label">
-                      Pakket av (navn + signatur)
-                      {g.packed_at ? (
-                        <span className="lp-sign-meta"> • Tid: {fmtOsloTime(g.packed_at)}</span>
-                      ) : null}
-                    </div>
-                    <div className="lp-sign-line" />
-                    <div className="lp-sign-meta">
-                      Batch: {g.delivery_window} • {g.company} • {g.location}
-                    </div>
-                  </div>
-
-                  <div className="lp-sign-box">
-                    <div className="lp-sign-label">
-                      Levert av (navn + signatur)
-                      {g.delivered_at ? (
-                        <span className="lp-sign-meta"> • Tid: {fmtOsloTime(g.delivered_at)}</span>
-                      ) : null}
-                    </div>
-                    <div className="lp-sign-line" />
-                    <div className="lp-sign-meta">
-                      Dato: {formatDateForLocale(g.delivery_date)} • Lokasjon ID: {g.company_location_id}
-                    </div>
-                  </div>
+              <div className="hidden sm:block text-right">
+                <div className="text-sm text-slate-600">Vinduer</div>
+                <div className="text-xl font-semibold text-slate-900">
+                  {new Set(filteredGroups.map((g) => g.delivery_window)).size}
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* ✅ Inline feedback rett under akkurat denne batchen */}
-            {inlineForThis && (
-              <div
-                className={[
-                  "rounded-2xl border bg-white px-4 py-3 text-sm",
-                  inlineForThis.message.toLowerCase().includes("kunne ikke")
-                    ? "border-red-200 bg-red-50 text-red-900"
-                    : "border-pink-200 bg-pink-50 text-pink-900",
-                ].join(" ")}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span>{inlineForThis.message}</span>
-
-                  {inlineForThis.canUndo && inlineForThis.target && (
-                    <button
-                      type="button"
-                      onClick={() => unmarkInline(inlineForThis.target!)}
-                      className="rounded-xl border border-pink-200 bg-white px-3 py-2 text-sm font-semibold text-pink-700 hover:bg-pink-50 disabled:opacity-60"
-                      disabled={!!busyKey}
-                      title="Fjern merking og sett tilbake til Klar"
-                    >
-                      Fjern merking
-                    </button>
-                  )}
+            {companyTotals.length > 0 && (
+              <div className="mt-5 rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5">
+                <div className="text-sm font-semibold text-slate-900">Sum per firma (visning)</div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {companyTotals.map(([company, count]) => (
+                    <div key={company} className="flex items-center justify-between rounded-2xl bg-white/60 px-4 py-3 ring-1 ring-black/5">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm text-slate-700">{company}</div>
+                      </div>
+                      <div className="text-sm font-semibold text-slate-900">{count}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
-        );
-      })}
+        )}
 
-      {/* Footer totals */}
-      {data && data.length > 0 && (
-        <div className="pt-2 text-sm print:hidden">
-          <span className="text-[rgb(var(--lp-muted))]">Totalt (visning):</span>{" "}
-          <span className="font-semibold text-[rgb(var(--lp-text))]">{totalKuverter}</span>
+        {inlineNotice?.key === "__GLOBAL__" && (
+          <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-800 shadow-sm ring-1 ring-black/5">
+            {inlineNotice.message}
+          </div>
+        )}
+
+        {/* Groups */}
+        <div className="mt-6 space-y-5 pb-24 sm:pb-8">
+          {filteredGroups.map((g, i) => {
+            const busy = `${g.delivery_date}:${g.delivery_window}:${g.company_location_id}`;
+            const isBusy = busyKey === busy;
+
+            const v = groupVisualState(g.batch_status);
+            const groupKey = `${g.delivery_date}__${g.delivery_window}__${g.company_location_id}`;
+            const inlineForThis = inlineNotice?.key === groupKey ? inlineNotice : null;
+
+            return (
+              <div key={`${g.delivery_date}:${g.delivery_window}:${g.company_location_id}:${i}`} className="space-y-3">
+                <section
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setOpenGroupKey(groupKey)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setOpenGroupKey(groupKey);
+                  }}
+                  className={[
+                    "rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5",
+                    "cursor-pointer transition hover:bg-white/80",
+                    "print:shadow-none print:rounded-none print:p-0 print:ring-0 print:bg-white",
+                    v.sectionClass,
+                  ].join(" ")}
+                  title="Åpne batch"
+                >
+                  <header className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+                          {g.delivery_window} <span className="text-slate-400">•</span> {g.company}
+                        </h2>
+                        <span className={["inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", v.badge].join(" ")}>
+                          <span aria-hidden className={["h-2 w-2 rounded-full", v.dot].join(" ")} />
+                          {v.label}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm text-slate-600">{g.location}</p>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-700">
+                        <div>
+                          Kuverter: <span className="font-semibold text-slate-900">{g.orders.length}</span>
+                        </div>
+
+                        {(g.packed_at || g.delivered_at) && (
+                          <div className="text-slate-500">
+                            {g.packed_at ? `Pakket ${fmtOsloTime(g.packed_at)}` : null}
+                            {g.packed_at && g.delivered_at ? <span className="mx-2">•</span> : null}
+                            {g.delivered_at ? `Levert ${fmtOsloTime(g.delivered_at)}` : null}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Desktop inline actions */}
+                    <div className="hidden sm:flex items-center gap-2">
+                      <SecondaryBtn
+                        label={isBusy ? "Oppdaterer…" : "Marker pakket"}
+                        disabled={isBusy || g.batch_status !== "queued"}
+                        onClick={() => void mark(g, "packed")}
+                      />
+                      <SecondaryBtn
+                        label={isBusy ? "Oppdaterer…" : "Marker levert"}
+                        disabled={isBusy || g.batch_status === "delivered"}
+                        onClick={() => void markDeliveredWithConfirm(g)}
+                      />
+                    </div>
+                  </header>
+
+                  {/* Desktop table */}
+                  <div className="mt-5 hidden sm:block">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-600">
+                          <th className="py-2 font-semibold">Navn</th>
+                          <th className="py-2 font-semibold">Avdeling</th>
+                          <th className="py-2 font-semibold">Notat</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.orders.map((o, idx) => (
+                          <tr key={`${o.id}:${idx}`} className="align-top">
+                            <td className="py-2 text-slate-900">{o.full_name}</td>
+                            <td className="py-2 text-slate-600">{o.department || "–"}</td>
+                            <td className="py-2 text-slate-900">{o.note || ""}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile list */}
+                  <div className="mt-4 sm:hidden space-y-2">
+                    {g.orders.map((o) => (
+                      <div key={o.id} className="rounded-2xl bg-white/60 px-4 py-3 ring-1 ring-black/5">
+                        <div className="text-sm font-semibold text-slate-900">{o.full_name}</div>
+                        <div className="mt-1 text-sm text-slate-600">{o.department || "–"}</div>
+                        {o.note ? <div className="mt-2 text-sm text-slate-900">{o.note}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* PRINT signatur */}
+                  <div className="hidden print:block lp-sign">
+                    <div className="lp-sign-row">
+                      <div className="lp-sign-box">
+                        <div className="lp-sign-label">
+                          Pakket av (navn + signatur)
+                          {g.packed_at ? <span className="lp-sign-meta"> • Tid: {fmtOsloTime(g.packed_at)}</span> : null}
+                        </div>
+                        <div className="lp-sign-line" />
+                        <div className="lp-sign-meta">
+                          Batch: {g.delivery_window} • {g.company} • {g.location}
+                        </div>
+                      </div>
+
+                      <div className="lp-sign-box">
+                        <div className="lp-sign-label">
+                          Levert av (navn + signatur)
+                          {g.delivered_at ? <span className="lp-sign-meta"> • Tid: {fmtOsloTime(g.delivered_at)}</span> : null}
+                        </div>
+                        <div className="lp-sign-line" />
+                        <div className="lp-sign-meta">
+                          Dato: {formatDateForLocale(g.delivery_date)} • Lokasjon ID: {g.company_location_id}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Inline feedback */}
+                {inlineForThis && (
+                  <div
+                    className={[
+                      "rounded-2xl px-4 py-3 text-sm shadow-sm ring-1 ring-black/5",
+                      inlineForThis.message.toLowerCase().includes("kunne ikke")
+                        ? "bg-red-500/10 text-red-900"
+                        : "bg-emerald-500/10 text-emerald-900",
+                    ].join(" ")}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span>{inlineForThis.message}</span>
+
+                      {inlineForThis.canUndo && inlineForThis.target && (
+                        <button
+                          type="button"
+                          onClick={() => void unmarkInline(inlineForThis.target!)}
+                          className="rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-white ring-1 ring-black/5 disabled:opacity-60"
+                          disabled={!!busyKey}
+                          title="Fjern merking og sett tilbake til Klar"
+                        >
+                          Fjern merking
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {loading && <div className="mt-6 text-sm text-slate-600">Laster kjøkkenliste…</div>}
+      </div>
+
+      {/* Mobile Bottom Action Bar */}
+      <div className="print:hidden sm:hidden fixed left-0 right-0 bottom-0 z-40" style={{ paddingBottom: "var(--lp-safe-bot)" }}>
+        <div className="mx-auto w-full max-w-6xl px-4 pb-3">
+          <div className="rounded-3xl bg-white/70 p-3 shadow-lg ring-1 ring-black/5 backdrop-blur-xl">
+            <div className="grid grid-cols-3 gap-2">
+              <SecondaryBtn label="I dag" onClick={() => setDateISO(fmtOsloYMDNow())} />
+              <SecondaryBtn label="Neste" onClick={() => setDateISO(nextBusinessDayISO(dateISO))} />
+              <SecondaryBtn label="Oppdater" onClick={() => load()} disabled={isRefreshing} />
+            </div>
+            <div className="mt-2">
+              <PrimaryBtn label="Finn neste med bestillinger" onClick={findNextDayWithOrders} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Sheet (mobil) */}
+      {filtersOpen && (
+        <div
+          className="print:hidden fixed inset-0 z-50 bg-black/30"
+          onClick={() => setFiltersOpen(false)}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div
+            className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ paddingBottom: "var(--lp-safe-bot)" }}
+          >
+            <div className="rounded-t-3xl bg-white/95 p-5 shadow-2xl ring-1 ring-black/10 backdrop-blur-xl">
+              <div className="flex items-center justify-between">
+                <div className="text-base font-semibold text-slate-900">Verktøy</div>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                >
+                  Lukk
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-slate-900">Leveringsvindu</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {windows.map((w) => (
+                    <Pill key={w} active={activeWindow === w} label={w === "ALL" ? "Alle" : w} onClick={() => setActiveWindow(w)} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-900/5 px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">Kun ikke levert</div>
+                  <div className="text-sm text-slate-600">Skjul leverte batcher i listen</div>
+                </div>
+                <input type="checkbox" checked={onlyNotDelivered} onChange={(e) => setOnlyNotDelivered(e.target.checked)} />
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-slate-900/5 px-4 py-3">
+                <div className="text-sm text-slate-700">Kjøkken-ID</div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <code className="truncate font-mono text-sm text-slate-900">{printId}</code>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(printId)}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+                  >
+                    Kopier
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <SecondaryBtn label="Skriv ut" onClick={() => window.print()} />
+                <SecondaryBtn label="Neste leveringsdag" onClick={() => setDateISO(nextBusinessDayISO(dateISO))} />
+              </div>
+
+              {/* Logg ut (mobil) */}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+                >
+                  Logg ut
+                </button>
+              </div>
+
+              {inlineNotice?.key === "__GLOBAL__" && (
+                <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm text-slate-800 shadow-sm ring-1 ring-black/5">
+                  {inlineNotice.message}
+                </div>
+              )}
+
+              {softWarning && (
+                <div className="mt-3 rounded-2xl bg-amber-500/10 px-4 py-3 text-sm text-amber-900 ring-1 ring-black/5">
+                  {softWarning}
+                </div>
+              )}
+
+              <div className="mt-3 text-xs text-slate-500">Tips: Trykk ESC for å lukke.</div>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="hidden print:block lp-print-footer" />
-      {loading && <p className="text-sm text-[rgb(var(--lp-muted))]">Laster kjøkkenliste…</p>}
-
-      {/* =========================
-          Drawer / åpne batch
-         ========================= */}
+      {/* Batch Drawer */}
       {openGroup && (
         <div
           className="fixed inset-0 z-50 bg-black/30 p-4 print:hidden"
@@ -1230,123 +1166,78 @@ export default function KitchenView() {
           role="dialog"
         >
           <div
-            className="mx-auto mt-10 w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl"
+            className="mx-auto mt-10 w-full max-w-4xl rounded-3xl bg-white/95 p-6 shadow-2xl ring-1 ring-black/10 backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {(() => {
               const v = groupVisualState(openGroup.batch_status);
+              const busy = `${openGroup.delivery_date}:${openGroup.delivery_window}:${openGroup.company_location_id}`;
+              const isBusy = busyKey === busy;
 
               return (
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-lg font-semibold text-slate-900">
-                          {openGroup.delivery_window} – {openGroup.company}
+                          {openGroup.delivery_window} <span className="text-slate-400">•</span> {openGroup.company}
                         </h3>
 
-                        <span
-                          className={[
-                            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-                            v.headerBadge,
-                          ].join(" ")}
-                        >
-                          <span aria-hidden className={["h-2 w-2 rounded-full", v.headerDot].join(" ")} />
-                          {v.headerLabel}
+                        <span className={["inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold", v.badge].join(" ")}>
+                          <span aria-hidden className={["h-2 w-2 rounded-full", v.dot].join(" ")} />
+                          {v.label}
                         </span>
                       </div>
 
                       <p className="mt-1 text-sm text-slate-600">{openGroup.location}</p>
 
-                      <div className="mt-2 flex flex-wrap gap-3 text-sm">
-                        <div className="text-slate-700">
-                          Kuverter:{" "}
-                          <span className="font-semibold text-slate-900">{openGroup.orders.length}</span>
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-700">
+                        <div>
+                          Kuverter: <span className="font-semibold text-slate-900">{openGroup.orders.length}</span>
                         </div>
-                        <div className="text-slate-700">
-                          Dato:{" "}
-                          <span className="font-semibold text-slate-900">
-                            {formatDateForLocale(openGroup.delivery_date)}
-                          </span>
+                        <div>
+                          Dato: <span className="font-semibold text-slate-900">{formatDateForLocale(openGroup.delivery_date)}</span>
                         </div>
                         {openGroup.packed_at ? (
-                          <div className="text-slate-700">
-                            Pakket:{" "}
-                            <span className="font-semibold text-slate-900">
-                              {fmtOsloTime(openGroup.packed_at)}
-                            </span>
+                          <div>
+                            Pakket: <span className="font-semibold text-slate-900">{fmtOsloTime(openGroup.packed_at)}</span>
                           </div>
                         ) : null}
                         {openGroup.delivered_at ? (
-                          <div className="text-slate-700">
-                            Levert:{" "}
-                            <span className="font-semibold text-slate-900">
-                              {fmtOsloTime(openGroup.delivered_at)}
-                            </span>
+                          <div>
+                            Levert: <span className="font-semibold text-slate-900">{fmtOsloTime(openGroup.delivered_at)}</span>
                           </div>
                         ) : null}
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
-                        onClick={() => window.print()}
-                      >
-                        Skriv ut
-                      </button>
-
-                      <button
-                        type="button"
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
-                        onClick={() => setOpenGroupKey(null)}
-                      >
-                        Lukk
-                      </button>
+                      <SecondaryBtn label="Skriv ut" onClick={() => window.print()} />
+                      <SecondaryBtn label="Lukk" onClick={() => setOpenGroupKey(null)} />
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60"
-                      disabled={openGroup.batch_status !== "queued"}
-                      onClick={async () => {
-                        await mark(openGroup, "packed");
-                      }}
-                    >
-                      Marker pakket
-                    </button>
-
-                    <button
-                      type="button"
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60"
-                      disabled={openGroup.batch_status === "delivered"}
-                      onClick={async () => {
-                        await markDeliveredWithConfirm(openGroup);
-                      }}
-                    >
-                      Marker levert
-                    </button>
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+                    <SecondaryBtn
+                      label={isBusy ? "Oppdaterer…" : "Marker pakket"}
+                      disabled={isBusy || openGroup.batch_status !== "queued"}
+                      onClick={() => void mark(openGroup, "packed")}
+                    />
+                    <SecondaryBtn
+                      label={isBusy ? "Oppdaterer…" : "Marker levert"}
+                      disabled={isBusy || openGroup.batch_status === "delivered"}
+                      onClick={() => void markDeliveredWithConfirm(openGroup)}
+                    />
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-slate-200">
-                    <div className="grid grid-cols-12 gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
-                      <div className="col-span-4">Navn</div>
-                      <div className="col-span-3">Avdeling</div>
-                      <div className="col-span-5">Notat</div>
-                    </div>
-
-                    <div className="divide-y">
-                      {openGroup.orders.map((o) => (
-                        <div key={o.id} className="grid grid-cols-12 gap-2 px-3 py-2 text-sm">
-                          <div className="col-span-4 text-slate-900">{o.full_name}</div>
-                          <div className="col-span-3 text-slate-600">{o.department || "–"}</div>
-                          <div className="col-span-5 text-slate-900">{o.note || ""}</div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="mt-5 space-y-2">
+                    {openGroup.orders.map((o) => (
+                      <div key={o.id} className="rounded-2xl bg-slate-900/5 px-4 py-3">
+                        <div className="text-sm font-semibold text-slate-900">{o.full_name}</div>
+                        <div className="mt-1 text-sm text-slate-600">{o.department || "–"}</div>
+                        {o.note ? <div className="mt-2 text-sm text-slate-900">{o.note}</div> : null}
+                      </div>
+                    ))}
                   </div>
 
                   <div className="mt-3 text-xs text-slate-500">Tips: Trykk ESC for å lukke.</div>
@@ -1356,6 +1247,8 @@ export default function KitchenView() {
           </div>
         </div>
       )}
+
+      <div className="hidden print:block lp-print-footer" />
     </div>
   );
 }

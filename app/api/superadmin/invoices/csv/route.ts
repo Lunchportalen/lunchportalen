@@ -1,6 +1,7 @@
 // app/api/superadmin/invoices/csv/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -21,7 +22,7 @@ function csvResponse(csv: string, filename: string) {
 }
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail }, { status });
+  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 type Agreement = {
@@ -44,15 +45,31 @@ function pickTierForDate(agreements: Agreement[], dateISO: string): PlanTier {
   return safeTier(matches[0]?.plan_tier);
 }
 
+/** supabaseAdmin kan være client eller factory */
+async function adminClient(): Promise<any> {
+  const s: any = supabaseAdmin as any;
+  return typeof s === "function" ? await s() : s;
+}
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
 export async function GET(req: Request) {
+  // cookie-auth: må være innlogget
   const supabase = await supabaseServer();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   const user = auth?.user ?? null;
 
   if (authErr || !user) return jsonError(401, "unauthorized", "Ikke innlogget");
 
-  const role = String(user.user_metadata?.role ?? "").toLowerCase();
-  if (role !== "superadmin") return jsonError(403, "forbidden", "Ingen tilgang");
+  // ✅ Hard superadmin gate (ikke metadata)
+  if (!isHardSuperadmin(user.email)) return jsonError(403, "forbidden", "Ingen tilgang");
+
+  // (valgfritt ekstra-lag): hvis dere senere vil sjekke profiles.role, gjør det her.
 
   const url = new URL(req.url);
   const qFrom = url.searchParams.get("from");
@@ -65,7 +82,8 @@ export async function GET(req: Request) {
 
   if (from >= to) return jsonError(400, "bad_range", "Ugyldig periode", { from, to });
 
-  const admin = supabaseAdmin();
+  // ✅ Service role (RLS skal ikke stoppe fakturagrunnlag)
+  const admin = await adminClient();
 
   // companies
   const cQ = admin.from("companies").select("id,name");
@@ -76,7 +94,7 @@ export async function GET(req: Request) {
   const companyNameById = new Map<string, string>();
   for (const c of companies) companyNameById.set(c.id, String((c as any).name ?? "—"));
 
-  const companyIds = companies.map((c) => c.id);
+  const companyIds = companies.map((c: any) => c.id);
   if (!companyIds.length) return csvResponse(toCsv([]), `invoice_ALL_${from}_to_${to}.csv`);
 
   // locations
@@ -109,7 +127,8 @@ export async function GET(req: Request) {
   }
 
   // orders
-  let oQ = admin
+  // ✅ prefer-const fix: oQ reassignes ikke
+  const oQ = admin
     .from("orders")
     .select("company_id,date,location_id,slot,status")
     .in("company_id", companyIds)

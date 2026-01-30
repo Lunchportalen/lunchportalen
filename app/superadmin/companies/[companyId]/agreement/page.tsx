@@ -16,40 +16,52 @@ function isUuid(v: any) {
   );
 }
 
+function nextUrl(companyId: string) {
+  return `/superadmin/companies/${companyId}/agreement`;
+}
+
 export default async function CompanyAgreementPage(props: { params: { id: string } }) {
   const companyId = String(props?.params?.id ?? "").trim();
   if (!companyId || !isUuid(companyId)) redirect("/superadmin/companies");
 
-  // ✅ Server auth check uten getScope(req) (som er API-only)
-  const sb = await Promise.resolve(supabaseServer() as any);
+  const sb = await supabaseServer();
 
-  const { data: userRes, error: userErr } = await sb.auth.getUser();
-  const user = userRes?.user ?? null;
+  // -----------------------------
+  // Auth gate
+  // -----------------------------
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
 
-  if (userErr || !user) {
-    redirect(`/login?next=${encodeURIComponent(`/superadmin/companies/${companyId}/agreement`)}`);
+  if (authErr || !user) {
+    redirect(`/login?next=${encodeURIComponent(nextUrl(companyId))}`);
   }
 
-  // Hent rolle fra profiles (fasit hos dere)
+  // -----------------------------
+  // Role gate (fasit: profiles.id = auth.user.id)
+  // -----------------------------
   const { data: profile, error: profErr } = await sb
     .from("profiles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (profErr) {
-    // Fail closed
-    redirect(`/login?next=${encodeURIComponent(`/superadmin/companies/${companyId}/agreement`)}`);
+  // Fail closed
+  if (profErr || !profile?.role) {
+    redirect(`/login?next=${encodeURIComponent(nextUrl(companyId))}`);
   }
 
-  const role = String((profile as any)?.role ?? "").toLowerCase();
+  const role = String(profile.role).toLowerCase();
   if (role !== "superadmin") {
-    redirect(`/login?next=${encodeURIComponent(`/superadmin`)}`);
+    // Fail closed (ikke slippe inn)
+    redirect("/login?next=/superadmin");
   }
 
+  // -----------------------------
+  // UI
+  // -----------------------------
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-3">
+    <main className="mx-auto max-w-5xl p-6 lp-select-text">
+      <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-neutral-500">Superadmin</div>
           <h1 className="text-2xl font-semibold tracking-tight">Avtale / plan / binding</h1>
@@ -57,13 +69,16 @@ export default async function CompanyAgreementPage(props: { params: { id: string
         </div>
 
         <div className="flex items-center gap-2">
-          <Link className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50" href={`/superadmin/companies/${companyId}`}>
+          <Link
+            className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+            href={`/superadmin/companies/${companyId}`}
+          >
             ← Tilbake
           </Link>
         </div>
-      </div>
+      </header>
 
       <AgreementClient companyId={companyId} />
-    </div>
+    </main>
   );
 }

@@ -1,78 +1,74 @@
 // app/api/admin/dashboard/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-/**
- * Hent innlogget user + profile og verifiser at han er company_admin.
- * Viktig: company_id hentes fra DB, aldri fra klient.
- */
-async function requireCompanyAdmin() {
-  const sb = await supabaseServer();
+type CountRes = { ok: true; count: number } | { ok: false; error: any };
 
-  const {
-    data: { user },
-    error: uerr,
-  } = await sb.auth.getUser();
-
-  if (uerr || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-
-  const role = String(user.user_metadata?.role ?? "employee").trim().toLowerCase();
-  if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
-
-  const { data: profile, error: perr } = await sb
-    .from("profiles")
-    .select("user_id, company_id, role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
-  if (!profile?.company_id) throw Object.assign(new Error("missing_company"), { code: "missing_company" });
-  if (String(profile.role ?? "").toLowerCase() !== "company_admin")
-    throw Object.assign(new Error("role_mismatch"), { code: "role_mismatch" });
-
-  return { sb, user, companyId: profile.company_id as string };
-}
-
-// Helper for count-only queries
-async function countExact(q: any): Promise<number> {
+async function countExact(q: any): Promise<CountRes> {
   const { count, error } = await q;
-  if (error) throw error;
-  return Number(count ?? 0);
+  if (error) return { ok: false, error };
+  return { ok: true, count: Number(count ?? 0) };
 }
 
+function errDetail(e: any) {
+  if (!e) return null;
+  if (typeof e === "string") return e;
+  if (e instanceof Error) return { name: e.name, message: e.message };
+  try {
+    return JSON.parse(JSON.stringify(e));
+  } catch {
+    return String(e);
+  }
+}
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+/* =========================================================
+   GET /api/admin/dashboard
+========================================================= */
 export async function GET(req: NextRequest) {
-  const rid = `admin_dash_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.dashboard.read", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = safeStr(scope.companyId);
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
 
   try {
-    const { sb, companyId } = await requireCompanyAdmin();
+    const sb = await supabaseServer();
 
     const todayISO = osloTodayISODate();
     const weekStart = startOfWeekISO(todayISO);
     const weekEnd = addDaysISO(weekStart, 7); // exclusive
 
-    // ----------------------------
     // Employees
-    // ----------------------------
     const employeesTotalP = countExact(
-      sb
-        .from("profiles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("role", "employee")
+      sb.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
     );
 
     const employeesActiveP = countExact(
       sb
         .from("profiles")
-        .select("user_id", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("role", "employee")
         .is("disabled_at", null)
@@ -81,36 +77,22 @@ export async function GET(req: NextRequest) {
     const employeesDisabledP = countExact(
       sb
         .from("profiles")
-        .select("user_id", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("role", "employee")
         .not("disabled_at", "is", null)
     );
 
-    // ----------------------------
     // Orders (today)
-    // ----------------------------
     const ordersTodayActiveP = countExact(
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("date", todayISO)
-        .eq("status", "ACTIVE")
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("date", todayISO).eq("status", "ACTIVE")
     );
 
     const ordersTodayCancelledP = countExact(
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("date", todayISO)
-        .eq("status", "CANCELLED")
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("date", todayISO).eq("status", "CANCELLED")
     );
 
-    // ----------------------------
     // Orders (this week)
-    // ----------------------------
     const ordersWeekActiveP = countExact(
       sb
         .from("orders")
@@ -131,26 +113,11 @@ export async function GET(req: NextRequest) {
         .eq("status", "CANCELLED")
     );
 
-    // ----------------------------
     // Company status (info)
-    // ----------------------------
-    const { data: company, error: cErr } = await sb
-      .from("companies")
-      .select("id,name,status")
-      .eq("id", companyId)
-      .maybeSingle();
+    const { data: company, error: cErr } = await sb.from("companies").select("id,name,status").eq("id", companyId).maybeSingle();
+    if (cErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firmastatus.", errDetail(cErr));
 
-    if (cErr) return jsonError(500, "company_read_failed", "Kunne ikke lese firmastatus.", cErr);
-
-    const [
-      employeesTotal,
-      employeesActive,
-      employeesDisabled,
-      ordersTodayActive,
-      ordersTodayCancelled,
-      ordersWeekActive,
-      ordersWeekCancelled,
-    ] = await Promise.all([
+    const results = await Promise.all([
       employeesTotalP,
       employeesActiveP,
       employeesDisabledP,
@@ -160,36 +127,40 @@ export async function GET(req: NextRequest) {
       ordersWeekCancelledP,
     ]);
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        company: {
-          id: company?.id ?? companyId,
-          name: company?.name ?? null,
-          status: company?.status ?? "active",
-        },
-        cutoff: { time: "08:00", tz: "Europe/Oslo" },
-        dates: { todayISO, weekStartISO: weekStart, weekEndISO: weekEnd },
-        employees: {
-          total: employeesTotal,
-          active: employeesActive,
-          disabled: employeesDisabled,
-        },
-        orders: {
-          today: { active: ordersTodayActive, cancelled: ordersTodayCancelled },
-          week: { active: ordersWeekActive, cancelled: ordersWeekCancelled },
-        },
+    const firstErr = results.find((r) => !r.ok) as Extract<CountRes, { ok: false }> | undefined;
+    if (firstErr) return jsonErr(500, rid, "COUNT_FAILED", "Kunne ikke hente dashboard-tall.", errDetail(firstErr.error));
+
+    const [
+      employeesTotal,
+      employeesActive,
+      employeesDisabled,
+      ordersTodayActive,
+      ordersTodayCancelled,
+      ordersWeekActive,
+      ordersWeekCancelled,
+    ] = results.map((r) => (r as Extract<CountRes, { ok: true }>).count);
+
+    return jsonOk({
+      ok: true,
+      rid,
+      company: {
+        id: company?.id ?? companyId,
+        name: company?.name ?? null,
+        status: company?.status ?? "active",
       },
-      { status: 200 }
-    );
+      cutoff: { time: "08:00", tz: "Europe/Oslo" },
+      dates: { todayISO, weekStartISO: weekStart, weekEndISO: weekEnd },
+      employees: {
+        total: employeesTotal,
+        active: employeesActive,
+        disabled: employeesDisabled,
+      },
+      orders: {
+        today: { active: ordersTodayActive, cancelled: ordersTodayCancelled },
+        week: { active: ordersWeekActive, cancelled: ordersWeekCancelled },
+      },
+    });
   } catch (e: any) {
-    const code = e?.code || "unknown";
-    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.");
-    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.");
-    if (code === "missing_company") return jsonError(400, "missing_company", "Mangler company_id på admin-profilen.");
-    if (code === "role_mismatch") return jsonError(403, "role_mismatch", "Rolle mismatch mellom auth og profil.");
-    if (code === "db_error") return jsonError(500, "db_error", "Databasefeil.", e?.detail);
-    return jsonError(500, "server_error", "Uventet feil.", String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", errDetail(e));
   }
 }

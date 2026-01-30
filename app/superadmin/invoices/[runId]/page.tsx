@@ -1,34 +1,97 @@
-import Link from "next/link";
-import { cookies } from "next/headers";
-import InvoiceRunDetailClient from "@/components/superadmin/InvoiceRunDetailClient";
-
+// app/superadmin/invoices/[runId]/page.tsx
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import Link from "next/link";
+import type React from "react";
+import { cookies, headers } from "next/headers";
+import { redirect, notFound } from "next/navigation";
+
+import InvoiceRunDetailClient from "@/components/superadmin/InvoiceRunDetailClient";
+import { supabaseServer } from "@/lib/supabase/server";
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type ProfileRow = { role: Role | null };
+
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
+async function getBaseUrl() {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+
+  const env = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "").replace(/\/$/, "");
+  if (!host) return env;
+
+  return `${proto}://${host}`.replace(/\/$/, "");
+}
 
 async function getRun(runId: string) {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${encodeURIComponent(c.value)}`)
-    .join("; ");
+  const c = await cookies();
+  const base = await getBaseUrl();
 
-  const res = await fetch(`/api/superadmin/invoices/runs/${runId}`, {
+  const res = await fetch(`${base}/api/superadmin/invoices/runs/${encodeURIComponent(runId)}`, {
     cache: "no-store",
-    headers: { cookie: cookieHeader },
+    headers: {
+      // ✅ viktig i Next 15 server fetch: viderefør cookies til API route
+      cookie: c.toString(),
+    },
   }).catch(() => null);
 
   if (!res || !res.ok) return null;
   return res.json().catch(() => null);
 }
 
-// ✅ Next 15: params er async
-export default async function InvoiceRunDetailPage(props: { params: Promise<{ runId: string }> }) {
-  const { runId } = await props.params;
+// ✅ Next 15: params kan være Promise
+export default async function InvoiceRunDetailPage(props: {
+  params: { runId: string } | Promise<{ runId: string }>;
+}) {
+  const p = await props.params;
+  const runId = safeStr(p?.runId);
 
+  if (!runId) notFound();
+
+  // -----------------------------
+  // Superadmin gate (FASET)
+  // -----------------------------
+  const sb = await supabaseServer();
+
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
+
+  if (authErr || !user) {
+    redirect(`/login?next=/superadmin/invoices/${encodeURIComponent(runId)}`);
+  }
+
+  const { data: profile, error: pErr } = await sb
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
+  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+    redirect("/login?next=/superadmin");
+  }
+
+  // -----------------------------
+  // Load run (via API)
+  // -----------------------------
   const data = await getRun(runId);
 
   if (!data?.ok) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-6 py-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
         <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-lg font-semibold text-[rgb(var(--lp-text))]">Fant ikke fakturakjøring</div>
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
@@ -46,7 +109,7 @@ export default async function InvoiceRunDetailPage(props: { params: Promise<{ ru
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
+    <main className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-[rgb(var(--lp-text))]">

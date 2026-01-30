@@ -1,78 +1,89 @@
 // app/api/admin/users/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-function asString(v: any) {
+function safeStr(v: any) {
   return String(v ?? "").trim();
 }
+function asLimit(v: any, def = 200) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return def;
+  return Math.min(500, Math.max(1, Math.floor(n)));
+}
+function normCompanyStatus(v: any) {
+  const s = safeStr(v).toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  if (s === "PENDING") return "PENDING";
+  return "UNKNOWN";
+}
 
-export async function GET(req: Request) {
-  const supabase = await supabaseServer();
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-  // 1) auth
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(401, "not_authenticated", "Ikke innlogget");
+  const { rid, scope } = a.ctx;
 
-  const role = asString(userData.user.user_metadata?.role ?? "employee");
-  if (role !== "company_admin") return jsonError(403, "forbidden", "Kun company_admin");
+  const denyRole = requireRoleOr403(a.ctx, "admin.users.read", ["company_admin"]);
+  if (denyRole) return denyRole;
 
-  // 2) company_id via profile (RLS enforces)
-  const { data: me, error: meErr } = await supabase
-    .from("profiles")
-    .select("company_id")
-    .eq("user_id", userData.user.id)
-    .single();
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
 
-  if (meErr || !me?.company_id) return jsonError(400, "no_company", "Fant ikke company_id", meErr);
+  const companyId = safeStr(scope.companyId);
+  const userId = safeStr(scope.userId);
 
-  const companyId = String(me.company_id);
+  if (!userId) return jsonErr(401, rid, "UNAUTH", "Ikke innlogget.");
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler company_id i scope.");
 
-  // 3) status gate
-  const { data: company, error: compErr } = await supabase
-    .from("companies")
-    .select("id,status")
-    .eq("id", companyId)
-    .single();
+  try {
+    const sb = await supabaseServer();
 
-  if (compErr || !company) return jsonError(404, "company_not_found", "Fant ikke firma", compErr);
-  if (asString((company as any).status) !== "active") return jsonError(403, "company_not_active", "Firma er ikke aktivt");
+    // status gate (firma må være ACTIVE)
+    const { data: company, error: compErr } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
 
-  // 4) optional filters (safe + simple)
-  const url = new URL(req.url);
-  const q = asString(url.searchParams.get("q"));
-  const limitRaw = Number(url.searchParams.get("limit") ?? 200);
-  const limit = Number.isFinite(limitRaw) ? Math.min(500, Math.max(1, Math.floor(limitRaw))) : 200;
+    if (compErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: compErr.message });
+    if (!company) return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.");
 
-  // 5) list users (RLS: admin can read only within own company)
-  // NOTE: Supabase query builder doesn't support OR across columns cleanly without ilike on one column.
-  // We do a simple approach:
-  // - if q present: filter by full_name ilike; if you want department too, we can add RPC later.
-  let query = supabase
-    .from("profiles")
-    .select("user_id,full_name,department,created_at")
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: true })
-    .limit(limit);
+    const status = normCompanyStatus((company as any).status);
+    if (status !== "ACTIVE") {
+      return jsonErr(403, rid, "COMPANY_NOT_ACTIVE", "Firma er ikke aktivt.", { status });
+    }
 
-  if (q) {
-    query = query.ilike("full_name", `%${q}%`);
+    const url = new URL(req.url);
+    const q = safeStr(url.searchParams.get("q"));
+    const limit = asLimit(url.searchParams.get("limit"), 200);
+
+    let query = sb
+      .from("profiles")
+      .select("id,full_name,department,created_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+
+    if (q) query = query.ilike("full_name", `%${q}%`);
+
+    const { data: rows, error } = await query;
+    if (error) return jsonErr(500, rid, "QUERY_FAILED", "Kunne ikke hente ansatte.", { message: error.message });
+
+    return jsonOk({
+      ok: true,
+      rid,
+      companyId,
+      count: (rows ?? []).length,
+      users: rows ?? [],
+    });
+  } catch (e: any) {
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
-
-  const { data: rows, error } = await query;
-
-  if (error) return jsonError(500, "query_failed", "Kunne ikke hente ansatte", error);
-
-  return NextResponse.json({
-    ok: true,
-    companyId,
-    count: (rows ?? []).length,
-    users: rows ?? [],
-  });
 }

@@ -50,8 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Lunchportalen – firmalunsj med kontroll",
-    description:
-      "Firmalunsj med kontroll, mindre svinn og forutsigbarhet – cut-off kl. 08:00.",
+    description: "Firmalunsj med kontroll, mindre svinn og forutsigbarhet – cut-off kl. 08:00.",
   },
   icons: {
     icon: "/favicon.ico",
@@ -111,9 +110,11 @@ function isFocusMode(pathname: string) {
 }
 
 function getPathnameFromHeaders(h: Headers): string {
+  // Prefer middleware-provided pathname if present
   const fromMiddleware = h.get("x-pathname");
   if (fromMiddleware) return fromMiddleware;
 
+  // Some setups provide next-url
   const nextUrl = h.get("next-url");
   if (nextUrl) {
     try {
@@ -121,6 +122,27 @@ function getPathnameFromHeaders(h: Headers): string {
       return nextUrl.split("?")[0];
     } catch {
       return nextUrl.split("?")[0];
+    }
+  }
+
+  // Try x-url / x-forwarded-uri / x-original-url (variasjoner)
+  const xurl = h.get("x-url") || h.get("x-forwarded-uri") || h.get("x-original-url") || "";
+  if (xurl) {
+    try {
+      const u = xurl.startsWith("http") ? new URL(xurl) : new URL(xurl, "http://local");
+      return u.pathname;
+    } catch {
+      return xurl.split("?")[0];
+    }
+  }
+
+  // Last resort: referer
+  const ref = h.get("referer");
+  if (ref) {
+    try {
+      return new URL(ref).pathname;
+    } catch {
+      return "";
     }
   }
 
@@ -134,12 +156,8 @@ function EmployeeMisunderstandingBanner() {
       <div className="mx-auto max-w-3xl px-4 py-3 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-[rgb(var(--lp-text))]">
-            <strong>Viktig:</strong> Denne registreringen er kun for{" "}
-            <strong>firma-admin</strong> (leder/ansvarlig).
-            <span className="text-[rgb(var(--lp-muted))]">
-              {" "}
-              Ansatte får tilgang via invitasjon.
-            </span>
+            <strong>Viktig:</strong> Denne registreringen er kun for <strong>firma-admin</strong> (leder/ansvarlig).
+            <span className="text-[rgb(var(--lp-muted))]"> Ansatte får tilgang via invitasjon.</span>
           </div>
           <Link
             href="/login"
@@ -156,58 +174,96 @@ function EmployeeMisunderstandingBanner() {
 /* =========================================================
    Root layout
 ========================================================= */
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // ✅ Your Next version: headers() is async
   const h = await headers();
   const pathname = getPathnameFromHeaders(h);
 
   const focusMode = pathname ? isFocusMode(pathname) : false;
   const showRegBanner = pathname ? isRegistrationFlow(pathname) : false;
 
+  // NOTE: isPublicPath is kept for future gating, not used directly here.
+  // const isPublic = pathname ? isPublicPath(pathname) : false;
+
   return (
-    <html
-      lang="no"
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
-      suppressHydrationWarning
-    >
+    <html lang="no" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full bg-[rgb(var(--lp-bg))] text-[rgb(var(--lp-text))] antialiased">
         {focusMode ? (
           <>
             {/* ✅ “Idiotsikker” ansatt-beskjed på registrering/onboarding */}
             {showRegBanner ? <EmployeeMisunderstandingBanner /> : null}
-            <main>{children}</main>
+
+            {/* ✅ Fokusmodus får fortsatt en ren, sentrert container */}
+            <main className="min-h-[calc(100vh-1px)]">
+              <div className="mx-auto w-full max-w-3xl px-4 py-8">{children}</div>
+            </main>
+
+            <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
+              <div className="mx-auto max-w-3xl px-4 py-6 text-xs text-[rgb(var(--lp-muted))]">
+                © {new Date().getFullYear()} Lunchportalen
+              </div>
+            </footer>
           </>
         ) : (
           <>
-            {/* ✅ EN header (global). Superadmin-knapper ligger i samme rad ved siden av Logg ut */}
-            <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/80 backdrop-blur">
+            {/* ✅ Global header */}
+            <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] bg-white/75 backdrop-blur">
               <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:gap-4">
-                <Link href="/" className="flex items-center">
-                  <Image
-                    src="/LunchPortalen_Enterprise_Logo_Pack/LP-logo-uten-bakgrunn.png"
-                    alt="Lunchportalen"
-                    width={220}
-                    height={44}
-                    priority
-                    className="h-auto w-[170px] md:w-[210px]"
-                  />
-                  <span className="sr-only">Lunchportalen</span>
-                </Link>
+                <div className="flex items-center gap-4">
+                  <Link href="/" className="flex items-center">
+                    <Image
+                      src="/LunchPortalen_Enterprise_Logo_Pack/LP-logo-uten-bakgrunn.png"
+                      alt="Lunchportalen"
+                      width={220}
+                      height={44}
+                      priority
+                      className="h-auto w-[170px] md:w-[210px]"
+                    />
+                    <span className="sr-only">Lunchportalen</span>
+                  </Link>
+
+                  {/* ✅ Primary nav (diskret) */}
+                  <nav className="hidden items-center gap-1 text-sm md:flex">
+                    <Link
+                      href="/week"
+                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
+                    >
+                      Uke
+                    </Link>
+                    <Link
+                      href="/kitchen"
+                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
+                    >
+                      Kjøkken
+                    </Link>
+                    <Link
+                      href="/driver"
+                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
+                    >
+                      Sjåfør
+                    </Link>
+                    <Link
+                      href="/admin"
+                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
+                    >
+                      Admin
+                    </Link>
+                  </nav>
+                </div>
 
                 <nav className="flex items-center gap-3">
                   {/* ✅ Kun synlig på /superadmin* og ligger ved siden av AuthStatus */}
                   <SuperadminTopNavInline />
-
-                  {/* ✅ Innlogget label er klikkbar + Logg ut */}
+                  {/* ✅ Innlogget label + Logg ut */}
                   <AuthStatus />
                 </nav>
               </div>
             </header>
 
-            <main>{children}</main>
+            {/* ✅ AppShell body */}
+            <main className="min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)]">
+              <div className="mx-auto w-full max-w-6xl px-4 py-8">{children}</div>
+            </main>
 
             <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
               <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-[rgb(var(--lp-muted))]">

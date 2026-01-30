@@ -1,11 +1,19 @@
 // app/superadmin/firms/page.tsx
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import { redirect } from "next/navigation";
+
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { listFirms } from "@/lib/superadmin/queries";
 import type { CompanyStatus, FirmsSortKey, SortDir } from "@/lib/superadmin/types";
 import FirmsTable from "@/components/superadmin/FirmsTable";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+import { supabaseServer } from "@/lib/supabase/server";
+
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type ProfileRow = { role: Role | null };
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -38,7 +46,40 @@ function safeInt(v: string, fallback: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
 }
 
+function normEmail(v: any) {
+  return String(v ?? "").trim().toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
+}
+
 export default async function SuperadminFirmsPage(props: { searchParams?: SP }) {
+  // -----------------------------
+  // Auth + superadmin gate (FASET)
+  // -----------------------------
+  const sb = await supabaseServer();
+
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  const user = auth?.user ?? null;
+
+  if (authErr || !user) {
+    redirect("/login?next=/superadmin/firms");
+  }
+
+  const { data: profile, error: pErr } = await sb
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
+  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+    redirect("/login?next=/superadmin");
+  }
+
+  // -----------------------------
+  // Query params → listFirms
+  // -----------------------------
   const sp = props.searchParams ?? {};
   const todayISO = osloTodayISODate();
 
@@ -52,15 +93,15 @@ export default async function SuperadminFirmsPage(props: { searchParams?: SP }) 
   const data = await listFirms({ q, status, page, pageSize, sortKey, sortDir, todayISO });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6">
-      <div className="mb-4">
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 lp-select-text">
+      <header className="mb-4">
         <h1 className="text-xl font-semibold">Firma</h1>
         <p className="text-sm text-muted-foreground">
           Søk, filtrer og administrer firma. All visning er paginert og skalerer.
         </p>
-      </div>
+      </header>
 
       <FirmsTable initial={data} />
-    </div>
+    </main>
   );
 }

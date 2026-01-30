@@ -12,10 +12,11 @@ export default async function SuperadminSystemPage() {
 
   // ✅ Kun sjekk at bruker finnes (ikke gjør role/email/next-logikk her)
   // Redirect-autoritet er /api/auth/redirect (og middleware)
-  const { data } = await sb.auth.getUser();
+  const { data, error } = await sb.auth.getUser();
   const user = data?.user ?? null;
 
-  if (!user) {
+  // Fail closed
+  if (error || !user) {
     // ✅ ikke send next her — unngår loop
     redirect("/login");
   }

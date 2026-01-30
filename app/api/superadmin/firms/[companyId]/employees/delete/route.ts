@@ -1,35 +1,26 @@
 // app/api/superadmin/firms/[companyId]/employees/delete/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
+function safeStr(v: any) {
+  return String(v ?? "").trim();
 }
 
 function norm(v: any) {
-  return String(v ?? "").trim().toLowerCase();
+  return safeStr(v).toLowerCase();
 }
-function isUuid(v: any) {
+
+function isUuid(v: any): v is string {
   return (
     typeof v === "string" &&
     /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
   );
-}
-
-async function requireSuperadmin() {
-  const sb = await supabaseServer();
-  const { data: auth, error } = await sb.auth.getUser();
-  const user = auth?.user ?? null;
-  if (error || !user) throw new Error("not_authenticated");
-  if (norm(user.email) !== "superadmin@lunchportalen.no") throw new Error("forbidden");
-  return user;
 }
 
 function isProtectedSystemEmail(email: string) {
@@ -37,18 +28,26 @@ function isProtectedSystemEmail(email: string) {
   return e === "superadmin@lunchportalen.no" || e === "kjokken@lunchportalen.no" || e === "driver@lunchportalen.no";
 }
 
-export async function POST(req: Request, ctx: { params: { companyId: string } }) {
-  const rid = `sa_emp_del_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
+
+export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return (s?.response as Response) || (s?.res as Response) || jsonErr(401, { rid: "rid_missing" }, "UNAUTHENTICATED", "Du må være innlogget.");
+
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.firms.employees.delete.POST", ["superadmin"]);
+  if (deny) return deny;
+
+  const params = await ctx.params;
+  const companyId = safeStr(params?.companyId);
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+
+  const body = (await readJson(req)) ?? {};
+  const user_id = safeStr(body?.user_id);
+
+  if (!isUuid(user_id)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig user_id.", { user_id });
 
   try {
-    const actor = await requireSuperadmin();
-    const companyId = String(ctx.params.companyId ?? "");
-
-    const body = await req.json().catch(() => ({}));
-    const user_id = String(body.user_id ?? "");
-
-    if (!isUuid(user_id)) return json({ ok: false, rid, error: "invalid_user_id" }, 400);
-
     const admin = supabaseAdmin();
 
     // Les profil for å verifisere firma-tilhørighet
@@ -58,16 +57,19 @@ export async function POST(req: Request, ctx: { params: { companyId: string } })
       .eq("user_id", user_id)
       .maybeSingle();
 
-    if (prof.error) return json({ ok: false, rid, error: "profile_read_failed", detail: prof.error }, 500);
-    if (!prof.data) return json({ ok: false, rid, error: "not_found" }, 404);
+    if (prof.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese profil.", prof.error);
+    if (!prof.data) return jsonErr(404, a, "NOT_FOUND", "Fant ikke bruker/profil.");
 
-    const email = String(prof.data.email ?? "");
+    const email = safeStr(prof.data.email ?? "");
     if (email && isProtectedSystemEmail(email)) {
-      return json({ ok: false, rid, error: "protected_account", message: "Systemkonto kan ikke slettes." }, 403);
+      return jsonErr(403, a, "PROTECTED_ACCOUNT", "Systemkonto kan ikke slettes.");
     }
 
-    if (String(prof.data.company_id ?? "") !== companyId) {
-      return json({ ok: false, rid, error: "tenant_mismatch" }, 403);
+    if (safeStr(prof.data.company_id) !== companyId) {
+      return jsonErr(403, a, "TENANT_MISMATCH", "Bruker tilhører ikke dette firmaet.", {
+        companyId,
+        profileCompanyId: safeStr(prof.data.company_id),
+      });
     }
 
     // 1) Slett pending invites for epost (clean-up)
@@ -77,22 +79,22 @@ export async function POST(req: Request, ctx: { params: { companyId: string } })
 
     // 2) Slett profil
     const delProf = await admin.from("profiles").delete().eq("user_id", user_id);
-    if (delProf.error) return json({ ok: false, rid, error: "profile_delete_failed", detail: delProf.error }, 500);
+    if (delProf.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke slette profil.", delProf.error);
 
     // 3) Slett auth-user
     const delAuth = await admin.auth.admin.deleteUser(user_id);
-    if (delAuth.error) {
-      // Profil er allerede slettet, så vi må gi klar beskjed
-      return json({ ok: false, rid, error: "auth_delete_failed", message: "Profil slettet, men auth-user kunne ikke slettes.", detail: delAuth.error }, 500);
+    if ((delAuth as any)?.error) {
+      return jsonErr(
+        500,
+        a,
+        "AUTH_DELETE_FAILED",
+        "Profil slettet, men auth-user kunne ikke slettes.",
+        (delAuth as any).error
+      );
     }
 
-    // (Valgfritt) Audit – hvis du har audit_events, kan vi insert her også
-
-    return json({ ok: true, rid, message: "Bruker slettet." });
+    return jsonOk(a, { ok: true, rid: a.rid, message: "Bruker slettet." }, 200);
   } catch (e: any) {
-    const m = String(e?.message ?? e);
-    if (m === "not_authenticated") return json({ ok: false, rid, error: "not_authenticated" }, 401);
-    if (m === "forbidden") return json({ ok: false, rid, error: "forbidden" }, 403);
-    return json({ ok: false, rid, error: "server_error", detail: m }, 500);
+    return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke slette bruker.", { message: String(e?.message ?? e) });
   }
 }

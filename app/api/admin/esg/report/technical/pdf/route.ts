@@ -1,25 +1,26 @@
+// app/api/admin/esg/technical/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
-import { getScope, mustCompanyId } from "@/lib/auth/scope";
+import { jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { buildTechnicalAppendixPdf } from "@/lib/esg/pdf-technical";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function pdfResponse(bytes: Uint8Array, filename: string) {
+function pdfResponse(bytes: Uint8Array, filename: string, rid: string) {
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
-      ...noStore(),
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store, max-age=0",
+      Pragma: "no-cache",
+      Expires: "0",
+      "x-lp-rid": rid,
     },
   });
 }
@@ -42,33 +43,47 @@ function safeFilenamePart(v: any) {
 }
 
 export async function GET(req: NextRequest) {
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
   const supabase = await supabaseServer();
 
+  // 1) Scope
+  const a = await scopeOr401(req);
+  if (a instanceof Response) return a;
+  const ctx = a.ctx;
+
+  // 2) Role gate (company_admin)
+  const b = requireRoleOr403(ctx, ["company_admin"]);
+  if (b instanceof Response) return b;
+
+  // 3) Company scope gate
+  const c = requireCompanyScopeOr403(ctx);
+  if (c instanceof Response) return c;
+
+  const companyId = String(ctx.scope.companyId);
+
   try {
-    const scope: any = await getScope(req);
-    if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-    if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-
-    const companyId = mustCompanyId(scope);
-    if (!companyId) return jsonErr(403, rid, "FORBIDDEN", "Mangler company_id");
-
     const url = new URL(req.url);
     const year = clampYear(Number(url.searchParams.get("year") ?? osloYear()));
 
     const { data: yearly, error: yErr } = await supabase
       .from("esg_yearly_snapshots")
-      .select("year, ordered_count, cancelled_in_time_count, waste_meals, waste_kg, waste_co2e_kg, computed_version, locked_at, lock_hash, lock_version")
+      .select(
+        "year, ordered_count, cancelled_in_time_count, waste_meals, waste_kg, waste_co2e_kg, computed_version, locked_at, lock_hash, lock_version"
+      )
       .eq("company_id", companyId)
       .eq("year", year)
       .maybeSingle();
 
-    if (yErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente årssnapshot", yErr);
+    if (yErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente årssnapshot.", { message: yErr.message });
 
-    const { data: c, error: cErr } = await supabase.from("companies").select("name").eq("id", companyId).maybeSingle();
-    if (cErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmanavn", cErr);
+    const { data: cRow, error: cErr } = await supabase
+      .from("companies")
+      .select("name")
+      .eq("id", companyId)
+      .maybeSingle();
 
-    const companyName = (c as any)?.name ?? null;
+    if (cErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente firmanavn.", { message: cErr.message });
+
+    const companyName = (cRow as any)?.name ?? null;
 
     const bytes = await buildTechnicalAppendixPdf({
       companyName,
@@ -87,8 +102,8 @@ export async function GET(req: NextRequest) {
     });
 
     const safe = safeFilenamePart(companyName);
-    return pdfResponse(bytes, `Technical_ESG_${safe}_${year}.pdf`);
+    return pdfResponse(bytes, `Technical_ESG_${safe}_${year}.pdf`, ctx.rid);
   } catch (e: any) {
-    return jsonErr(500, rid, "UNEXPECTED", "Uventet feil", { message: String(e?.message ?? e) });
+    return jsonErr(500, ctx.rid, "unexpected", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

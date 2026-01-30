@@ -1,110 +1,131 @@
 // app/api/superadmin/companies/[companyId]/agreement/status/route.ts
-// ✅ Små, trygge status-endringer: ACTIVE / PAUSED / CLOSED
-// - Viktig: getScope() skal ha NextRequest (ikke SupabaseClient)
-// - Oppdaterer company_agreements (ikke view) + holder companies.status i sync
-// - Idempotent: hvis allerede samme status -> ok:true
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid } from "@/lib/agreements/normalize";
-import { writeAuditEvent } from "@/lib/audit/write";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function rid() {
-  return crypto.randomUUID();
-}
-function jsonErr(status: number, r: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid: r, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 type Status = "ACTIVE" | "PAUSED" | "CLOSED";
 
-export async function POST(req: NextRequest, ctx: Ctx) {
-  const r = rid();
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function toDbCompanyStatus(s: Status) {
+  return s.toLowerCase(); // active/paused/closed
+}
+
+function osloISODate() {
+  // YYYY-MM-DD (Europe/Oslo)
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+async function tryAuditMeta(admin: any, payload: any) {
+  try {
+    await admin.from("audit_meta_events").insert(payload);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function denyResponse(s: any): Response {
+  if (s?.response) return s.response as Response;
+  if (s?.res) return s.res as Response;
+  const rid = String(s?.ctx?.rid ?? "rid_missing");
+  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+}
+
+export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.companies.agreement.status.POST", ["superadmin"]);
+  if (deny) return deny;
+
+  const params = await Promise.resolve(ctx.params as any);
+  const companyId = safeStr(params?.companyId);
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+
+  const body = (await readJson(req)) ?? {};
+  const sRaw = safeStr(body?.status ?? "").toUpperCase();
+  const next = sRaw as Status;
+
+  if (next !== "ACTIVE" && next !== "PAUSED" && next !== "CLOSED") {
+    return jsonErr(400, a, "BAD_REQUEST", "status må være ACTIVE/PAUSED/CLOSED.");
+  }
+
+  const admin = supabaseAdmin();
 
   try {
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
-    if (scope.role !== "superadmin") return jsonErr(403, r, "forbidden", "Kun superadmin");
-
-    const params = await Promise.resolve(ctx.params as any);
-    const companyId = String(params?.companyId ?? "").trim();
-    if (!isUuid(companyId)) return jsonErr(400, r, "bad_request", "Ugyldig companyId");
-
-    let body: any = null;
-    try {
-      body = await req.json();
-    } catch {
-      return jsonErr(400, r, "bad_json", "Ugyldig JSON");
-    }
-
-    const s = String(body?.status ?? "").trim().toUpperCase() as Status;
-    if (s !== "ACTIVE" && s !== "PAUSED" && s !== "CLOSED") {
-      return jsonErr(400, r, "bad_request", "status må være ACTIVE/PAUSED/CLOSED");
-    }
-
-    const admin = supabaseAdmin();
-
     // Finn "current" (foretrukket ACTIVE ellers nyeste) for audit + for å vite agreementId
     const { data: list, error: listErr } = await admin
       .from("company_agreements")
-      .select("id, company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, end_date, notes, updated_at")
+      .select(
+        "id, company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, end_date, notes, updated_at, created_at"
+      )
       .eq("company_id", companyId)
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (listErr) return jsonErr(500, r, "db_error", "Kunne ikke lese avtaler", listErr);
+    if (listErr) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese avtaler.", listErr);
 
     const rows = (list ?? []) as any[];
     const current = rows.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? rows[0] ?? null;
-    if (!current?.id) return jsonErr(404, r, "not_found", "Fant ingen avtale for firmaet");
+    if (!current?.id) return jsonErr(404, a, "NOT_FOUND", "Fant ingen avtale for firmaet.");
 
     // Idempotent
     const prevStatus = String(current.status ?? "").toUpperCase();
-    if (prevStatus === s) {
-      return jsonOk({ ok: true, rid: r, company_id: companyId, agreement_id: current.id, status: s, idempotent: true });
+    if (prevStatus === next) {
+      return jsonOk(
+        a,
+        {
+          ok: true,
+          rid: a.rid,
+          company_id: companyId,
+          agreement_id: String(current.id),
+          status: next,
+          idempotent: true,
+        },
+        200
+      );
     }
 
-    // Hvis vi setter ACTIVE: pause alle andre ACTIVE først (sikker invariant)
+    // Hvis ACTIVE: pause andre ACTIVE først (invariant)
     let pausedOtherActiveIds: string[] = [];
-    if (s === "ACTIVE") {
+    if (next === "ACTIVE") {
       const pause = await admin
         .from("company_agreements")
-        .update({ status: "PAUSED", updated_at: new Date().toISOString(), updated_by: scope.user_id ?? null } as any)
+        .update({ status: "PAUSED", updated_at: new Date().toISOString(), updated_by: a.scope?.userId ?? null } as any)
         .eq("company_id", companyId)
         .eq("status", "ACTIVE")
         .neq("id", current.id)
         .select("id");
-      if (pause.error) return jsonErr(500, r, "db_error", "Kunne ikke pause annen ACTIVE-avtale", pause.error);
+
+      if (pause.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke pause annen ACTIVE-avtale.", pause.error);
       pausedOtherActiveIds = (pause.data ?? []).map((x: any) => String(x.id));
     }
 
     // Oppdater valgt agreement
     const patch: any = {
-      status: s,
+      status: next,
       updated_at: new Date().toISOString(),
-      updated_by: scope.user_id ?? null,
+      updated_by: a.scope?.userId ?? null,
     };
-    // Hvis CLOSED: sett end_date hvis mangler
-    if (s === "CLOSED" && !current.end_date) {
-      // Oslo-dato: enkel og stabil nok her
-      const oslo = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" })
-        .format(new Date());
-      patch.end_date = oslo; // YYYY-MM-DD
-    }
-    // Hvis ACTIVE: nullstill end_date (typisk)
-    if (s === "ACTIVE") patch.end_date = null;
+
+    if (next === "CLOSED" && !current.end_date) patch.end_date = osloISODate();
+    if (next === "ACTIVE") patch.end_date = null;
 
     const upd = await admin
       .from("company_agreements")
@@ -113,55 +134,68 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .select("id, company_id, status, end_date, updated_at")
       .single();
 
-    if (upd.error) return jsonErr(500, r, "db_error", "Kunne ikke oppdatere status", upd.error);
+    if (upd.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke oppdatere status.", upd.error);
 
-    // Sync companies.status
-    await admin.from("companies").update({ status: s, updated_at: new Date().toISOString() } as any).eq("id", companyId);
+    // Sync companies.status (lowercase)
+    await admin
+      .from("companies")
+      .update({ status: toDbCompanyStatus(next), updated_at: new Date().toISOString() } as any)
+      .eq("id", companyId);
 
-    // Audit (best-effort)
-    const audit = await writeAuditEvent({
-      scope,
+    // Audit (best effort)
+    const auditOk = await tryAuditMeta(admin, {
+      actor_user_id: a.scope?.userId ?? null,
+      actor_email: a.scope?.email ?? null,
       action: "agreement.status",
+      purpose: null,
       entity_type: "company_agreement",
       entity_id: String(current.id),
-      summary: `Endret status til ${s} for company (${companyId})`,
+      rid: a.rid,
       detail: {
-        rid: r,
         company_id: companyId,
-        agreement_id: current.id,
+        agreement_id: String(current.id),
         from: prevStatus,
-        to: s,
+        to: next,
         paused_other_active_ids: pausedOtherActiveIds,
         before: current,
         after: upd.data,
       },
+      created_at: new Date().toISOString(),
     });
 
-    return jsonOk({
-      ok: true,
-      rid: r,
-      company_id: upd.data?.company_id ?? companyId,
-      agreement_id: upd.data?.id ?? current.id,
-      status: (upd.data?.status ?? s) as Status,
-      end_date: upd.data?.end_date ?? null,
-      paused_other_active_ids: pausedOtherActiveIds,
-      audit_ok: (audit as any)?.ok === true,
-      audit_event: (audit as any)?.ok ? (audit as any).audit : null,
-      audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
-    });
+    return jsonOk(
+      a,
+      {
+        ok: true,
+        rid: a.rid,
+        company_id: upd.data?.company_id ?? companyId,
+        agreement_id: upd.data?.id ?? String(current.id),
+        status: (upd.data?.status ?? next) as Status,
+        end_date: upd.data?.end_date ?? null,
+        paused_other_active_ids: pausedOtherActiveIds,
+        audit_ok: auditOk,
+      },
+      200
+    );
   } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, r, code, String(e?.message ?? e));
+    return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke oppdatere agreement status.", {
+      message: String(e?.message ?? e),
+    });
   }
 }
 
-export async function GET() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST.");
+export async function GET(req: NextRequest): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
 }
-export async function PUT() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST.");
+export async function PUT(req: NextRequest): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
 }
-export async function DELETE() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST.");
+export async function DELETE(req: NextRequest): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
+  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
 }

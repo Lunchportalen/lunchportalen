@@ -1,10 +1,15 @@
 // app/api/admin/agreements/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
-import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
+
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 type Tier = "BASIS" | "LUXUS";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -12,42 +17,25 @@ type AgreementStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED";
 
 const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-
-function mkRid() {
-  return `admin_agreements_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function isUuid(v: any) {
+function isUuid(v: unknown) {
   return (
     typeof v === "string" &&
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
 }
 
-function normalizeTier(v: any): Tier {
+function normalizeTier(v: unknown): Tier {
   const s = String(v ?? "").trim().toUpperCase();
   return s === "LUXUS" ? "LUXUS" : "BASIS";
 }
 
-function normalizeStatus(v: any): AgreementStatus {
+function normalizeStatus(v: unknown): AgreementStatus {
   const s = String(v ?? "").trim().toUpperCase();
   if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED" || s === "DRAFT") return s;
   return "DRAFT";
 }
 
-function normalizeDeliveryDays(v: any): DayKey[] {
-  // jsonb array: ["mon","tue",...]
+function normalizeDeliveryDays(v: unknown): DayKey[] {
   if (!v) return DAY_KEYS.slice();
   if (Array.isArray(v)) {
     const set = new Set<DayKey>();
@@ -100,36 +88,41 @@ function viewModel(a: AgreementRow) {
   };
 }
 
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
 export async function GET(req: NextRequest) {
-  const rid = mkRid();
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.read", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const url = new URL(req.url);
+
+  const requestedCompanyId = safeStr(url.searchParams.get("company_id")) || null;
+
+  let companyId: string | null = null;
+
+  if (scope.role === "superadmin") {
+    if (!requestedCompanyId) return jsonErr(400, rid, "BAD_REQUEST", "Superadmin må angi ?company_id= for avtaleoppslag.");
+    if (!isUuid(requestedCompanyId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig company_id.");
+    companyId = requestedCompanyId;
+  } else {
+    const denyScope = requireCompanyScopeOr403(a.ctx);
+    if (denyScope) return denyScope;
+
+    const myCompanyId = safeStr(scope.companyId);
+    if (!isUuid(myCompanyId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig company_id.");
+    companyId = myCompanyId;
+  }
 
   try {
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
-
-    const url = new URL(req.url);
-    const requestedCompanyId = url.searchParams.get("company_id");
-
-    // ✅ company_admin: own company only
-    // ✅ superadmin: must pass ?company_id=
-    const companyId =
-      scope.role === "superadmin"
-        ? (requestedCompanyId ? String(requestedCompanyId).trim() : null)
-        : mustCompanyId(scope);
-
-    if (scope.role === "superadmin" && !companyId) {
-      return jsonErr(400, rid, "BAD_REQUEST", "Superadmin må angi ?company_id= for avtaleoppslag.");
-    }
-    if (!companyId || !isUuid(companyId)) {
-      return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig company_id.");
-    }
-
     const sb = await supabaseServer();
 
-    // ✅ Hent avtaler fra fasit-tabell.
-    // For admin-UI ønsker vi:
-    // - current: ACTIVE hvis finnes, ellers nyeste
-    // - history: siste N (for historikk)
     const { data: rows, error } = await sb
       .from("company_agreements")
       .select(
@@ -139,61 +132,65 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (error) return jsonErr(500, rid, "AGREEMENTS_READ_FAILED", "Kunne ikke hente avtaler.", error);
+    if (error) return jsonErr(500, rid, "AGREEMENTS_READ_FAILED", "Kunne ikke hente avtaler.", { message: error.message });
 
     const list = (rows ?? []) as AgreementRow[];
     const active = list.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? null;
     const latest = list[0] ?? null;
 
-    // Hvis dere vil tillate "ingen avtale" i admin: return ok:true med null i stedet.
-    if (!active && !latest) {
-      return jsonOk({
-        ok: true,
-        rid,
-        company_id: companyId,
-        readOnly: scope.role !== "superadmin",
-        current: null,
-        active: null,
-        latest: null,
-        history: [],
-      });
-    }
-
-    const current = (active ?? latest) as AgreementRow;
-
     return jsonOk({
       ok: true,
       rid,
       company_id: companyId,
-      readOnly: scope.role !== "superadmin", // company_admin får readOnly=true
-      current: viewModel(current),
+      readOnly: scope.role !== "superadmin",
+      current: active ? viewModel(active) : latest ? viewModel(latest) : null,
       active: active ? viewModel(active) : null,
       latest: latest ? viewModel(latest) : null,
       history: list.map(viewModel),
     });
   } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e));
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
 
 export async function PUT(req: NextRequest) {
-  // 🔒 LÅST: Denne ruten er admin-read-only i denne fasen.
-  // Superadmin-endringer skal skje i dedikerte superadmin-ruter for å unngå regression.
-  const rid = mkRid();
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.write", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
+
   return jsonErr(
     405,
     rid,
     "METHOD_NOT_ALLOWED",
-    "Dette endepunktet er read-only. Avtaler endres kun av superadmin i egne superadmin-ruter."
+    "Dette endepunktet er read-only. Avtaler endres kun av superadmin i egne superadmin-ruter.",
+    { method: "PUT" }
   );
 }
 
-export async function POST() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk GET (les).");
+export async function POST(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.write", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  return jsonErr(405, rid, "METHOD_NOT_ALLOWED", "Bruk GET (les).", { method: "POST" });
 }
 
-export async function DELETE() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk GET (les).");
+export async function DELETE(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.write", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  return jsonErr(405, rid, "METHOD_NOT_ALLOWED", "Bruk GET (les).", { method: "DELETE" });
 }

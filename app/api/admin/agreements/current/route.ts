@@ -1,39 +1,46 @@
+// app/api/admin/agreements/current/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-export async function GET() {
-  // ✅ VIKTIG: supabaseServer() er async i prosjektet ditt → må awaites
-  const supabase = await supabaseServer();
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-  const {
-    data: { user },
-    error: authErr,
-  } = await supabase.auth.getUser();
+  const { rid, scope } = a.ctx;
 
-  if (authErr || !user) return jsonError(401, "unauthorized", "Ikke innlogget");
+  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.current", ["company_admin"]);
+  if (denyRole) return denyRole;
 
-  const role = String(user.user_metadata?.role ?? "").toLowerCase();
-  const companyId = String(user.user_metadata?.company_id ?? "").trim();
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
 
-  if (role !== "company_admin") return jsonError(403, "forbidden", "Ingen tilgang");
-  if (!companyId) return jsonError(400, "missing_company_id", "Mangler company_id på profilen");
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
 
-  const { data, error } = await supabase
-    .from("company_agreements")
-    .select("id,status,plan_tier,start_date,end_date,binding_months,delivery_days,cutoff_time,timezone,created_at")
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  try {
+    const sb = await supabaseServer();
 
-  if (error) return jsonError(500, "db_error", "Kunne ikke hente avtale", error);
+    const { data, error } = await sb
+      .from("company_agreements")
+      .select("id,status,plan_tier,start_date,end_date,binding_months,delivery_days,cutoff_time,timezone,created_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  return NextResponse.json({ ok: true, agreement: data ?? null }, { status: 200 });
+    if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", error);
+
+    return jsonOk({ ok: true, rid, companyId, agreement: data ?? null });
+  } catch (e: any) {
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+  }
 }

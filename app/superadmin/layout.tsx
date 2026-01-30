@@ -44,7 +44,7 @@ function isHardSuperadminEmail(email: string | null | undefined) {
 }
 
 function computeRoleFromUserMetadata(user: any): Role {
-  // Never trust client-supplied fields, but server-side user object is still “soft”
+  // Server-side user object, but metadata is still a "soft" signal.
   const appRole = normalizeRole(user?.app_metadata?.role);
   if (appRole !== "employee") return appRole;
 
@@ -54,23 +54,18 @@ function computeRoleFromUserMetadata(user: any): Role {
 
 async function currentPathFromHeaders() {
   try {
-    const h = await headers();
-    const url = h.get("x-url") || h.get("referer") || "";
+    const h = await headers(); // ✅ your Next requires await
+
+    // Best-effort: if you set "x-url" in middleware, prefer that.
+    const url = h.get("x-url") || h.get("next-url") || h.get("referer") || "";
     if (url) {
       const u = new URL(url);
       const path = (u.pathname || "/superadmin") + (u.search || "");
       return path.startsWith("/superadmin") ? path : "/superadmin";
     }
   } catch {}
-  return "/superadmin";
-}
 
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
+  return "/superadmin";
 }
 
 /* =========================
@@ -94,10 +89,11 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
   const hardOk = isHardSuperadminEmail(user.email);
 
   // ✅ Also read profiles to enforce disabled gate and detect role drift
+  // ✅ FASET: profiles.id = auth.user.id
   const { data: profile, error: pErr } = await sb
     .from("profiles")
     .select("role,disabled_at")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
   // Fail-closed if profiles cannot be read (security > convenience)
@@ -112,15 +108,22 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
     redirect(`/api/auth/redirect?next=${next}`);
   }
 
-  // If hard email is correct, allow regardless of profiles.role (avoid lockout).
-  // If hard email is not correct, require profiles.role === superadmin OR user metadata role.
-  const metaRole = computeRoleFromUserMetadata(user);
   const dbRole = normalizeRole(profile?.role);
 
-  const allowed =
-    hardOk ||
-    dbRole === "superadmin" ||
-    metaRole === "superadmin"; // fallback for early-stage setups (still server-side user obj)
+  // ✅ Policy:
+  // - If hard email matches → allow regardless of db role (avoid lockout).
+  // - Else require dbRole === superadmin (metadata is last-resort only).
+  let allowed = false;
+
+  if (hardOk) {
+    allowed = true;
+  } else if (dbRole === "superadmin") {
+    allowed = true;
+  } else {
+    // Last resort for early-stage setups (still server-side), optional:
+    const metaRole = computeRoleFromUserMetadata(user);
+    allowed = metaRole === "superadmin";
+  }
 
   if (!allowed) {
     const next = encodeURIComponent(await currentPathFromHeaders());
@@ -130,9 +133,7 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
   // ✅ Enterprise shell (consistent, calm, "command center")
   return (
     <div className="min-h-[calc(100vh-0px)] bg-[rgb(var(--lp-bg))]">
-      {/* Top shell */}
       <div className="mx-auto max-w-7xl px-4 pb-16 pt-8">
-        {/* Header row */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white ring-1 ring-[rgb(var(--lp-border))] shadow-sm">
@@ -144,30 +145,25 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
             </div>
           </div>
 
-          {/* Right meta */}
           <div className="flex items-center justify-between gap-2 sm:justify-end">
             <div className="hidden sm:block rounded-2xl bg-white/70 px-3 py-2 text-xs font-bold text-neutral-700 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
               {normEmail(user.email)}
             </div>
 
-            {/* System badge placeholder – safe, no data leaks */}
             <div className="rounded-2xl bg-white/70 px-3 py-2 text-xs font-extrabold text-neutral-700 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
               SYSTEM: <span className="text-emerald-700">NORMAL</span>
             </div>
           </div>
         </div>
 
-        {/* Nav */}
         <div className="mb-6">
           <SuperadminNav />
         </div>
 
-        {/* Content surface */}
         <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur sm:p-6">
           {children}
         </div>
 
-        {/* Footer meta (quiet) */}
         <div className="mt-6 text-[11px] font-semibold text-[rgb(var(--lp-muted))]">
           Cache: no-store • Runtime: nodejs
         </div>

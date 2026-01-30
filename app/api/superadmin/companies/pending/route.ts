@@ -1,48 +1,44 @@
 // app/api/superadmin/companies/pending/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function jsonError(
-  status: number,
-  error: string,
-  message: string,
-  detail?: any
-) {
-  return NextResponse.json(
-    { ok: false, error, message, detail: detail ?? undefined },
-    { status }
-  );
+function denyResponse(s: any): Response {
+  if (s?.response) return s.response as Response;
+  if (s?.res) return s.res as Response;
+  const rid = String(s?.ctx?.rid ?? "rid_missing");
+  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
 }
 
-export async function GET() {
-  // ⚠️ supabaseServer() er async hos dere
-  const sb = await supabaseServer();
+export async function GET(req: NextRequest): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return denyResponse(s);
 
-  /**
-   * Henter siste 20 firma med status = 'pending'
-   * Brukes av Superadmin-header (🔔) og pending-oversikt
-   */
-  const { data, error } = await sb
-    .from("companies")
-    .select("id, name, orgnr, status, created_at")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, "api.superadmin.companies.pending.GET", ["superadmin"]);
+  if (deny) return deny;
 
-  if (error) {
-    return jsonError(
-      500,
-      "db_error",
-      "Kunne ikke hente pending-firma",
-      error
-    );
+  try {
+    const admin = supabaseAdmin();
+
+    const { data, error } = await admin
+      .from("companies")
+      .select("id, name, orgnr, status, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente pending-firma.", error);
+
+    return jsonOk(ctx, { ok: true, rid: ctx.rid, companies: data ?? [] }, 200);
+  } catch (e: any) {
+    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente pending-firma.", {
+      message: String(e?.message ?? e),
+    });
   }
-
-  return NextResponse.json({
-    ok: true,
-    companies: data ?? [],
-  });
 }

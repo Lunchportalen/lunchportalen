@@ -1,57 +1,51 @@
 // app/api/admin/employees/invites/stats/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+export async function GET(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
 
-function isUuid(v: any): v is string {
-  return (
-    typeof v === "string" &&
-    /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(v)
-  );
-}
+  const { rid, scope } = a.ctx;
 
-export async function GET(req: Request) {
-  const rid = `inv_stats_${Math.random().toString(16).slice(2)}`;
+  const denyRole = requireRoleOr403(a.ctx, "admin.employees.invites.stats", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
 
   try {
-    const url = new URL(req.url);
-    const companyId = url.searchParams.get("companyId");
-
-    if (!isUuid(companyId)) return jsonError(400, "bad_request", "Mangler/ugyldig companyId.", { rid });
-
-    const sb = await supabaseServer(); // ✅ IMPORTANT
+    const admin = supabaseAdmin();
     const nowIso = new Date().toISOString();
 
-    const totalQ = sb.from("employee_invites").select("id", { count: "exact", head: true }).eq("company_id", companyId);
+    const totalQ = admin.from("employee_invites").select("id", { count: "exact", head: true }).eq("company_id", companyId);
 
-    const activeQ = sb
+    const activeQ = admin
       .from("employee_invites")
       .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .is("used_at", null)
       .gt("expires_at", nowIso);
 
-    const usedQ = sb
+    const usedQ = admin
       .from("employee_invites")
       .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .not("used_at", "is", null);
 
-    const expiredQ = sb
+    const expiredQ = admin
       .from("employee_invites")
       .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
@@ -61,11 +55,12 @@ export async function GET(req: Request) {
     const [totalR, activeR, usedR, expiredR] = await Promise.all([totalQ, activeQ, usedQ, expiredQ]);
 
     const anyErr = totalR.error || activeR.error || usedR.error || expiredR.error;
-    if (anyErr) return jsonError(500, "db_error", "Kunne ikke hente invitasjonsstatistikk.", { rid, anyErr });
+    if (anyErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente invitasjonsstatistikk.", anyErr);
 
     return jsonOk({
       ok: true,
       rid,
+      companyId,
       stats: {
         total: Number(totalR.count ?? 0),
         active: Number(activeR.count ?? 0),
@@ -74,6 +69,6 @@ export async function GET(req: Request) {
       },
     });
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil.", { rid, message: String(e?.message ?? e) });
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

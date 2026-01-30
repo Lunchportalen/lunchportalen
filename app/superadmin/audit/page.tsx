@@ -1,55 +1,103 @@
 // app/superadmin/audit/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import AuditFeed from "@/components/audit/AuditFeed";
 import { redirect } from "next/navigation";
+import { supabaseServer } from "@/lib/supabase/server";
+import AuditClient from "./audit-client";
 
-type SP = Record<string, string | string[] | undefined>;
 
-function first(sp: SP, key: string) {
-  const v = sp[key];
-  return Array.isArray(v) ? v[0] : v;
+type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type ProfileRow = { role: Role | null; disabled_at?: string | null };
+
+/* =========================
+   Helpers (enterprise-safe)
+========================= */
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+function normEmail(v: any) {
+  return safeStr(v).toLowerCase();
+}
+function isHardSuperadmin(email: string | null | undefined) {
+  return normEmail(email) === "superadmin@lunchportalen.no";
 }
 
-function hasAnyQuery(sp: SP) {
-  return Object.keys(sp || {}).some((k) => {
-    const v = sp[k];
-    if (Array.isArray(v)) return v.length > 0 && String(v[0] ?? "").trim().length > 0;
-    return String(v ?? "").trim().length > 0;
-  });
+/** Minimal, enterprise-grade error surface (no leaks) */
+function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
+      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-extrabold tracking-wide text-neutral-600">SUPERADMIN MODE</div>
+          <div className="text-xs font-extrabold text-rose-700">AUDIT</div>
+        </div>
+
+        <div className="mt-2 text-2xl font-black tracking-tight text-neutral-950">{props.title ?? "Audit"}</div>
+        <p className="mt-2 text-sm font-semibold text-[rgb(var(--lp-muted))]">{props.message}</p>
+
+        {props.detail ? (
+          <pre className="mt-4 overflow-auto rounded-2xl bg-white p-3 text-xs font-semibold text-rose-700 ring-1 ring-neutral-200">
+            {props.detail}
+          </pre>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
-function clampLimit(v: any, fallback = 200) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(1, Math.min(500, Math.floor(n)));
-}
+/* =========================
+   Page
+========================= */
+export default async function SuperadminAuditPage() {
+  const supabase = await supabaseServer();
 
-export default function SuperadminAuditPage({ searchParams }: { searchParams?: SP }) {
-  const sp = searchParams ?? {};
+  /* =========================================================
+     1) Auth (fail-closed)
+  ========================================================= */
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
+  const user = userRes?.user ?? null;
 
-  // Default: stabil URL (bookmarks/back-button)
-  if (!hasAnyQuery(sp)) {
-    redirect("/superadmin/audit?limit=200");
+  if (userErr || !user) {
+    redirect("/login?next=/superadmin/audit");
   }
 
-  const initialLimit = clampLimit(first(sp, "limit"), 200);
+  /* =========================================================
+     2) Hard gate (email først)
+     ✅ Superadmin skal ikke være avhengig av metadata for å "bli" superadmin.
+  ========================================================= */
+  if (!isHardSuperadmin(user.email)) {
+    redirect("/login?next=/superadmin/audit");
+  }
 
-  return (
-    <main className="lp-select-text" style={{ padding: 20, display: "grid", gap: 14 }}>
-      <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Audit</h1>
-          <p style={{ margin: "6px 0 0 0", opacity: 0.75 }}>
-            Revisjonslogg for Superadmin. Klikk en rad for detaljer.
-          </p>
-        </div>
-      </header>
+  /* =========================================================
+     3) Profile read (FASET hos dere: profiles.user_id = auth.users.id)
+     - Brukes kun som ekstra sikkerhetslag (disabled / mismatch)
+  ========================================================= */
+  const { data: profile, error: pErr } = await supabase
+    .from("profiles")
+    .select("role,disabled_at")
+    .eq("user_id", user.id)
+    .maybeSingle<ProfileRow>();
 
-      <section>
-        <AuditFeed initialLimit={initialLimit} />
-      </section>
-    </main>
-  );
+  // Fail-closed hvis profiles ikke kan leses
+  if (pErr) {
+    return <ErrorSurface message="Kunne ikke verifisere superadmin-profil." detail={safeStr(pErr.message)} />;
+  }
+
+  // Disabled gate
+  if (profile?.disabled_at) {
+    redirect("/login?next=/superadmin/audit");
+  }
+
+  // Ekstra lag: hvis role finnes og er noe annet enn superadmin -> stopp
+  if (profile?.role && profile.role !== "superadmin") {
+    redirect("/login?next=/superadmin/audit");
+  }
+
+  /* =========================================================
+     4) Render client UI
+  ========================================================= */
+  return <AuditClient />;
 }

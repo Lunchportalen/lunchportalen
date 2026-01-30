@@ -277,9 +277,6 @@ function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasA
 
 /* =========================================================
    Profile sync (FASIT)
-   - profiles.id === auth.users.id
-   - IKKE INSERT profiles her (unngår FK-race). DB-trigger skal opprette rad.
-   - Oppdater kun trygge felter (role/name/full_name/phone/is_active), aldri company_id.
 ========================================================= */
 async function waitForProfileRow(SB: any, userId: string) {
   const maxRetries = 25; // ~5s
@@ -295,11 +292,9 @@ async function waitForProfileRow(SB: any, userId: string) {
 }
 
 async function syncProfileSafe(SB: any, userId: string, display_name: string, phone: string) {
-  // Wait for trigger-created profile
   const waited = await waitForProfileRow(SB, userId);
   if (!waited.ok) return { data: null, error: waited.error };
 
-  // Update safe fields only (no company_id)
   const patch: any = {
     phone,
     is_active: true,
@@ -307,8 +302,8 @@ async function syncProfileSafe(SB: any, userId: string, display_name: string, ph
     disabled_reason: null,
   };
 
-  // Prefer full_name if col exists; fallback to name if not
-  let u1 = await SB.from("profiles").update({ ...patch, full_name: display_name }).eq("id", userId);
+  // ✅ prefer-const fix
+  const u1 = await SB.from("profiles").update({ ...patch, full_name: display_name }).eq("id", userId);
   if (!u1.error) return u1;
 
   const msg = String(u1.error?.message ?? "");
@@ -504,7 +499,8 @@ export async function POST(req: Request) {
 
   if (!isNonEmpty(company_name, 2)) return jsonError(400, "VALIDATION", "Firmanavn er påkrevd");
   if (orgnr.length !== 9) return jsonError(400, "VALIDATION", "Org.nr må være 9 siffer");
-  if (!Number.isFinite(employee_count) || employee_count < 20) return jsonError(400, "VALIDATION", "Firma må ha minimum 20 ansatte");
+  if (!Number.isFinite(employee_count) || employee_count < 20)
+    return jsonError(400, "VALIDATION", "Firma må ha minimum 20 ansatte");
 
   if (!isNonEmpty(full_name, 2)) return jsonError(400, "VALIDATION", "Navn er påkrevd");
   if (!isEmail(email)) return jsonError(400, "VALIDATION", "Ugyldig e-postadresse");
@@ -586,7 +582,7 @@ export async function POST(req: Request) {
     if (insCompany.error) throw insCompany.error;
     companyId = insCompany.data.id;
 
-    // 2) auth user (company_admin) — metadata brukes av DB-trigger til å lage profiles-raden med riktig company_id
+    // 2) auth user (company_admin)
     const { data: created, error: createErr } = await SB.auth.admin.createUser({
       email,
       password,

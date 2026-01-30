@@ -1,14 +1,16 @@
 // app/api/admin/locations/export/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getScope, allowSuperadminOrCompanyAdmin, mustCompanyId } from "@/lib/auth/scope";
 
-function jsonErr(status: number, rid: string, error: string, detail?: string) {
-  return NextResponse.json({ ok: false, rid, error, detail }, { status });
-}
+// ✅ Dag-10 helpers
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { jsonErr } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
 
 function csvEscape(v: any) {
   if (v === null || v === undefined) return "";
@@ -17,25 +19,55 @@ function csvEscape(v: any) {
   return s;
 }
 
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function csvResponse(csv: string, filename: string, rid: string) {
+  const headers = {
+    ...noStoreHeaders(),
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": `attachment; filename="${filename}"`,
+    "x-lp-rid": rid,
+  } as Record<string, string>;
+
+  return new Response(csv, { status: 200, headers });
+}
+
 export async function GET(req: NextRequest) {
-  const rid = `loc_csv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
+  const a = await scopeOr401(req);
+  if (a instanceof Response) return a;
+  const ctx = a.ctx;
+
+  // 2) Roles: superadmin OR company_admin (NY SIGNATUR)
+  const denyRole = requireRoleOr403(ctx, "admin.locations.export", ["superadmin", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  // 3) company scope:
+  // - company_admin: låst til egen companyId
+  // - superadmin: kan eksportere alle eller filtrere på ?company_id=
+  const url = new URL(req.url);
+  const requestedCompanyId = safeStr(url.searchParams.get("company_id")) || null;
+
+  const role = safeStr(ctx.scope.role);
+  const ctxCompanyId = safeStr(ctx.scope.companyId);
+
+  let companyId: string | null = null;
+
+  if (role === "superadmin") {
+    companyId = requestedCompanyId || null; // null => alle
+  } else {
+    const denyScope = requireCompanyScopeOr403(ctx);
+    if (denyScope) return denyScope;
+    companyId = ctxCompanyId || null;
+    if (!companyId) return jsonErr(ctx, "missing_company", "Mangler company_id i scope.");
+  }
 
   try {
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
-
-    const url = new URL(req.url);
-    const requestedCompanyId = url.searchParams.get("company_id");
-
-    const companyId =
-      scope.role === "superadmin"
-        ? requestedCompanyId
-          ? String(requestedCompanyId)
-          : null
-        : mustCompanyId(scope);
-
     const admin = supabaseAdmin();
 
+    // Schema-fast select (som før). Hvis dere får 42703, bytt til "*" og fallback-map.
     let q = admin
       .from("company_locations")
       .select(
@@ -47,7 +79,15 @@ export async function GET(req: NextRequest) {
     if (companyId) q = q.eq("company_id", companyId);
 
     const { data: rows, error } = await q;
-    if (error) return jsonErr(500, rid, "DB_ERROR", error.message);
+
+    if (error) {
+      return jsonErr(ctx, "locations_export_failed", "Databasefeil.", {
+        code: (error as any).code ?? null,
+        message: (error as any).message ?? String(error),
+        detail: (error as any).details ?? null,
+        hint: (error as any).hint ?? null,
+      });
+    }
 
     const header = [
       "id",
@@ -89,17 +129,8 @@ export async function GET(req: NextRequest) {
     const csv = lines.join("\n");
     const filename = `locations${companyId ? `_company_${companyId}` : ""}.csv`;
 
-    return new NextResponse(csv, {
-      status: 200,
-      headers: {
-        "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="${filename}"`,
-        "x-lp-rid": rid,
-      },
-    });
+    return csvResponse(csv, filename, ctx.rid);
   } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || "ERROR";
-    return jsonErr(status, rid, code, String(e?.message ?? e));
+    return jsonErr(ctx, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }

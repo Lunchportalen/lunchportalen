@@ -1,54 +1,58 @@
 // app/kitchen/page.tsx
-import { redirect } from "next/navigation";
-import KitchenView from "./KitchenView";
-import { supabaseServer } from "@/lib/supabase/server";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { redirect } from "next/navigation";
+import KitchenView from "./KitchenView";
+import { supabaseServer } from "@/lib/supabase/server";
+
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 /* =========================================================
-   Role helpers (NO DB) – samme prinsipp som middleware
+   Helpers (enterprise-safe)
 ========================================================= */
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+function normEmail(v: unknown) {
+  return safeStr(v).toLowerCase();
 }
 
+/**
+ * 🔒 NO-EXCEPTION RULE:
+ * - Hard system-e-poster er fasit
+ * - Deretter profiles.role (server truth)
+ */
 function roleByEmail(email: string | null | undefined): Role | null {
   const e = normEmail(email);
+  if (!e) return null;
+
   if (e === "superadmin@lunchportalen.no") return "superadmin";
   if (e === "kjokken@lunchportalen.no") return "kitchen";
   if (e === "driver@lunchportalen.no") return "driver";
+
   return null;
 }
 
 function normalizeRole(v: unknown): Role {
-  const s = String(v ?? "").trim().toLowerCase();
+  const s = safeStr(v).toLowerCase();
+
   if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
   if (s === "superadmin") return "superadmin";
   if (s === "kitchen") return "kitchen";
   if (s === "driver") return "driver";
+
   return "employee";
 }
 
-function computeRoleNoDb(user: any): Role {
-  const emailRole = roleByEmail(user?.email);
-  if (emailRole) return emailRole;
-
-  const appRole = normalizeRole(user?.app_metadata?.role);
-  if (appRole !== "employee") return appRole;
-
-  const metaRole = normalizeRole(user?.user_metadata?.role);
-  return metaRole;
+function allowKitchenOrSuperadmin(role: Role) {
+  return role === "kitchen" || role === "superadmin";
 }
 
 /* =========================================================
    Page
 ========================================================= */
-
 export default async function Page() {
   const supabase = await supabaseServer();
 
@@ -56,18 +60,41 @@ export default async function Page() {
      🔐 AUTH GATE
   ========================= */
   const { data: auth, error: authErr } = await supabase.auth.getUser();
+  const user = auth?.user ?? null;
 
-  if (authErr || !auth?.user) {
+  if (authErr || !user) {
     redirect("/login?next=/kitchen");
   }
 
   /* =========================
-     🔐 ROLE GATE (NO DB)
+     🔐 ROLE GATE (Hard email først, deretter profiles.role)
+     FASET: profiles.user_id = auth.users.id
   ========================= */
-  const role = computeRoleNoDb(auth.user);
+  const emailRole = roleByEmail(user.email);
+  let role: Role = emailRole ?? "employee";
 
-  // ✅ Kun kitchen og superadmin
-  if (role !== "kitchen" && role !== "superadmin") {
+  if (!emailRole) {
+    // Fail-closed: hvis vi ikke får profil => ut
+    const { data: profile, error: pErr } = await supabase
+      .from("profiles")
+      .select("role, disabled_at, is_active")
+      .eq("user_id", user.id)
+      .maybeSingle<{
+        role: string | null;
+        disabled_at: string | null;
+        is_active: boolean | null;
+      }>();
+
+    if (pErr || !profile) redirect("/login?next=/kitchen");
+
+    // Disabled gate
+    if (profile.disabled_at) redirect("/login?next=/kitchen");
+    if (profile.is_active === false) redirect("/login?next=/kitchen");
+
+    role = normalizeRole(profile.role);
+  }
+
+  if (!allowKitchenOrSuperadmin(role)) {
     redirect("/week");
   }
 
@@ -77,7 +104,7 @@ export default async function Page() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 print:p-0">
       {/* Header / topbar i samme rytme som andre sider */}
-      <div className="mb-8">
+      <div className="mb-8 print:hidden">
         <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
@@ -95,19 +122,25 @@ export default async function Page() {
             </div>
 
             {/* Driftshint: kun info, ikke actions (KitchenView har kontrollene) */}
-            <div className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block print:hidden">
+            <aside className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block">
               <div className="font-semibold text-slate-900">Driftsnotat</div>
               <ul className="mt-2 space-y-1">
                 <li>• Bruk datovelger for å hente riktig produksjon</li>
                 <li>• Utskrift: bruk nettleserens print</li>
                 <li>• Superadmin kan også se kjøkkenvisning</li>
               </ul>
-            </div>
+            </aside>
           </div>
         </div>
       </div>
 
-      {/* Selve kjøkkenvisningen (datovelger, grupper, print, eksport osv.) */}
+      {/* Print header (kun print) */}
+      <div className="mb-4 hidden print:block">
+        <div className="text-xl font-semibold">Kjøkken – produksjonsliste</div>
+        <div className="text-xs text-slate-600">Generert fra Lunchportalen</div>
+      </div>
+
+      {/* Selve kjøkkenvisningen */}
       <KitchenView />
     </main>
   );

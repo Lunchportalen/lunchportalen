@@ -1,30 +1,17 @@
 // app/api/superadmin/firms/[companyId]/status/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getScope } from "@/lib/auth/scope";
 
-/* =========================
-   Response helpers
-========================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
+function safeStr(v: any) {
+  return String(v ?? "").trim();
 }
 
-/* =========================
-   Utils
-========================= */
-function rid() {
-  return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
-}
 function isUuid(v: any): v is string {
   return (
     typeof v === "string" &&
@@ -32,39 +19,34 @@ function isUuid(v: any): v is string {
   );
 }
 
-type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
-
 // UI/produktets fasit (uppercase)
 const ALLOWED_UP = new Set(["PENDING", "ACTIVE", "PAUSED", "CLOSED"]);
 
-// ✅ DB-format: companies_status_check bruker typisk lowercase
+// ✅ DB-format: companies.status er lowercase
 function toDbStatus(up: string) {
-  // Hvis dere senere velger annet format, er det kun her dere endrer.
   return up.toLowerCase(); // pending/active/paused/closed
 }
 
-export async function POST(req: NextRequest, ctx: Ctx) {
-  const requestId = rid();
+type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
-  // Next.js: await params
+export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
+  const s: any = await scopeOr401(req);
+  if (!s?.ok) return (s?.response as Response) || (s?.res as Response) || jsonErr(401, { rid: "rid_missing" }, "UNAUTHENTICATED", "Du må være innlogget.");
+
+  const a = s.ctx;
+  const deny = requireRoleOr403(a, "api.superadmin.firms.status.POST", ["superadmin"]);
+  if (deny) return deny;
+
   const params = await ctx.params;
-  const companyId = String(params?.companyId ?? "").trim();
-  if (!isUuid(companyId)) return jsonErr(400, requestId, "BAD_REQUEST", "Ugyldig companyId.");
+  const companyId = safeStr(params?.companyId);
+  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
 
-  // Auth
-  const scope = await getScope(req).catch(() => null);
-  if (!scope) return jsonErr(401, requestId, "UNAUTHORIZED", "Ikke innlogget.");
-  if ((scope as any).role !== "superadmin") {
-    return jsonErr(403, requestId, "FORBIDDEN", "Kun superadmin kan endre firmastatus.");
-  }
-
-  // Body
-  const body = await req.json().catch(() => null);
-  const raw = String(body?.status ?? body?.statusUpper ?? "").trim();
+  const body = (await readJson(req)) ?? {};
+  const raw = safeStr(body?.status ?? body?.statusUpper);
   const nextUp = raw.toUpperCase();
 
   if (!ALLOWED_UP.has(nextUp)) {
-    return jsonErr(400, requestId, "BAD_REQUEST", "Ugyldig status.", {
+    return jsonErr(400, a, "BAD_REQUEST", "Ugyldig status.", {
       received: raw,
       normalized: nextUp,
       allowed: Array.from(ALLOWED_UP),
@@ -73,25 +55,28 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
   const nextDb = toDbStatus(nextUp);
 
-  // ✅ Tabellen som faktisk brukes hos deg: companies.status
-  const { data, error } = await supabaseAdmin()
-    .from("companies")
-    .update({ status: nextDb })
-    .eq("id", companyId)
-    .select("id,status,updated_at")
-    .single();
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("companies")
+      .update({ status: nextDb })
+      .eq("id", companyId)
+      .select("id,status,updated_at")
+      .single();
 
-  if (error) {
-    return jsonErr(500, requestId, "DB_ERROR", "Kunne ikke oppdatere status.", {
-      tableTried: "companies",
-      columnTried: "status",
-      sent: nextDb,
-      message: error.message,
-      details: (error as any).details,
-      hint: (error as any).hint,
-      code: (error as any).code,
-    });
+    if (error) {
+      return jsonErr(500, a, "DB_ERROR", "Kunne ikke oppdatere status.", {
+        table: "companies",
+        column: "status",
+        sent: nextDb,
+        message: (error as any).message,
+        details: (error as any).details,
+        hint: (error as any).hint,
+        code: (error as any).code,
+      });
+    }
+
+    return jsonOk(a, { ok: true, rid: a.rid, company: data }, 200);
+  } catch (e: any) {
+    return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke oppdatere status.", { message: String(e?.message ?? e) });
   }
-
-  return jsonOk({ ok: true, rid: requestId, company: data });
 }

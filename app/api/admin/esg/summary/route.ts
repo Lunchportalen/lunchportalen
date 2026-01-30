@@ -1,20 +1,17 @@
+// app/api/admin/esg/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase/server";
-import { getScope, mustCompanyId } from "@/lib/auth/scope";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+/* =========================================================
+   Date helpers (Oslo month boundaries)
+========================================================= */
 
 function isoMonthStart(d = new Date()) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -29,26 +26,31 @@ function isoMonthStart(d = new Date()) {
 
 function addMonths(isoMonth01: string, delta: number) {
   const [y, m] = isoMonth01.split("-").map(Number);
-  const d = new Date(Date.UTC(y, (m - 1) + delta, 1));
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
   const yy = d.getUTCFullYear();
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
   return `${yy}-${mm}-01`;
 }
 
 export async function GET(req: NextRequest) {
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
-
   const supabase = await supabaseServer();
 
-  // robust scope (fungerer både hvis getScope returnerer Scope eller {ok:false})
-  const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-  if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
+  // 1) Scope
+  const a = await scopeOr401(req);
+  if (a instanceof Response) return a;
+  const ctx = a.ctx;
 
-  const companyId = mustCompanyId(scope);
-  if (!companyId) return jsonErr(403, rid, "FORBIDDEN", "Mangler company_id");
+  // 2) Role gate (admin-side ESG: company_admin)
+  const b = requireRoleOr403(ctx, ["company_admin"]);
+  if (b instanceof Response) return b;
 
-  // Siste 12 mnd inkl inneværende
+  // 3) Company scope gate
+  const c = requireCompanyScopeOr403(ctx);
+  if (c instanceof Response) return c;
+
+  const companyId = String(ctx.scope.companyId);
+
+  // 4) Last 12 months incl current
   const thisMonth = isoMonthStart(); // YYYY-MM-01
   const fromMonth = addMonths(thisMonth, -11);
   const year = Number(thisMonth.slice(0, 4));
@@ -63,7 +65,9 @@ export async function GET(req: NextRequest) {
     .lte("month", thisMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente månedssnapshots", mErr);
+  if (mErr) {
+    return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente månedssnapshots.", { message: mErr.message });
+  }
 
   const { data: yearly, error: yErr } = await supabase
     .from("esg_yearly_snapshots")
@@ -74,7 +78,19 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente årssnapshot", yErr);
+  if (yErr) {
+    return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente årssnapshot.", { message: yErr.message });
+  }
 
-  return jsonOk({ ok: true, rid, year, months: months ?? [], yearly: yearly ?? null });
+  return jsonOk(
+    {
+      ok: true,
+      rid: ctx.rid,
+      companyId,
+      year,
+      months: months ?? [],
+      yearly: yearly ?? null,
+    },
+    200
+  );
 }

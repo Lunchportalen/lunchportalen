@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type Body = {
   // hvis tier settes, gjelder det bare dager med denne tier
@@ -109,7 +110,9 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 /** Finn 10 neste hverdager fra startISO (inkl start hvis den er hverdag) */
 function getNextWeekdays(startISO: string, days: number) {
   const out: string[] = [];
-  let d = new Date(`${startISO}T00:00:00Z`);
+
+  // ✅ prefer-const: binding reassignes ikke (Date-objektet muteres)
+  const d = new Date(`${startISO}T00:00:00Z`);
 
   while (out.length < days) {
     const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);

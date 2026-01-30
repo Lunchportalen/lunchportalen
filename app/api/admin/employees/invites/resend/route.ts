@@ -1,27 +1,23 @@
 // app/api/admin/employees/invites/resend/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+/* =========================================================
+   Helpers
+========================================================= */
 
-function safeUUID(v: any) {
+function safeUUID(v: unknown) {
   const s = String(v ?? "").trim();
   if (!s) return null;
   const ok =
@@ -29,44 +25,45 @@ function safeUUID(v: any) {
   return ok ? s : null;
 }
 
-async function requireCompanyAdmin() {
-  const sb = await supabaseServer();
-  const { data: auth, error: uerr } = await sb.auth.getUser();
-  const user = auth?.user ?? null;
-  if (uerr || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-
-  const { data: profile, error: perr } = await sb
-    .from("profiles")
-    .select("user_id, company_id, role, disabled_at")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
-  if (profile?.disabled_at) throw Object.assign(new Error("account_disabled"), { code: "account_disabled" });
-
-  const roleDb = String(profile?.role ?? "").trim().toLowerCase();
-  const roleMeta = String(user.user_metadata?.role ?? "").trim().toLowerCase();
-  const role = (roleDb || roleMeta || "employee") as Role;
-  if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
-
-  const companyId = profile?.company_id ? String(profile.company_id) : "";
-  if (!companyId) throw Object.assign(new Error("missing_company"), { code: "missing_company" });
-
-  return { companyId };
-}
-
-function mustEnv(name: string) {
+function mustEnvStr(name: string): string | null {
   const v = process.env[name];
-  if (!v) throw new Error(`Missing env ${name}`);
-  return v;
+  const s = String(v ?? "").trim();
+  return s ? s : null;
 }
 
-async function sendInviteEmail(to: string, link: string) {
-  const host = mustEnv("SMTP_HOST");
-  const port = Number(mustEnv("SMTP_PORT"));
-  const user = mustEnv("SMTP_USER");
-  const pass = mustEnv("SMTP_PASS");
-  const from = process.env.SMTP_FROM || user;
+function getPublicAppUrl(): string | null {
+  const env =
+    process.env.PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_VERCEL_URL;
+
+  const s = String(env ?? "").trim();
+  if (!s) return null;
+
+  const u = s.startsWith("http") ? s : `https://${s}`;
+  return u.replace(/\/+$/, "");
+}
+
+function sha256Hex(input: string) {
+  return crypto.createHash("sha256").update(input).digest("hex");
+}
+
+async function sendInviteEmail(to: string, link: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const host = mustEnvStr("SMTP_HOST");
+  const portRaw = mustEnvStr("SMTP_PORT");
+  const user = mustEnvStr("SMTP_USER");
+  const pass = mustEnvStr("SMTP_PASS");
+  const from = String(process.env.SMTP_FROM ?? user ?? "").trim();
+
+  if (!host) return { ok: false, error: "Missing env SMTP_HOST" };
+  if (!portRaw) return { ok: false, error: "Missing env SMTP_PORT" };
+  if (!user) return { ok: false, error: "Missing env SMTP_USER" };
+  if (!pass) return { ok: false, error: "Missing env SMTP_PASS" };
+  if (!from) return { ok: false, error: "Missing env SMTP_FROM" };
+
+  const port = Number(portRaw);
+  if (!Number.isFinite(port)) return { ok: false, error: "Invalid SMTP_PORT" };
 
   const transport = nodemailer.createTransport({
     host,
@@ -81,22 +78,47 @@ async function sendInviteEmail(to: string, link: string) {
     `Åpne denne lenken for å akseptere invitasjonen og sette passord:\n${link}\n\n` +
     `Hvis du ikke forventet denne e-posten, kan du ignorere den.`;
 
-  await transport.sendMail({ from, to, subject, text });
+  try {
+    await transport.sendMail({ from, to, subject, text });
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: String(e?.message ?? e ?? "Email send failed") };
+  }
 }
 
-export async function POST(req: Request) {
-  const rid = `inv_resend_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+/* =========================================================
+   Route
+========================================================= */
+export async function POST(req: NextRequest) {
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const { rid, scope } = a.ctx;
+
+  const denyRole = requireRoleOr403(a.ctx, "admin.employees.invites.resend", ["company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const companyId = String(scope.companyId ?? "").trim();
+  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+
+  const body = await readJson(req);
+  const inviteId = safeUUID((body as any)?.inviteId ?? (body as any)?.id);
+  if (!inviteId) return jsonErr(400, rid, "INVALID_INVITE_ID", "Ugyldig inviteId.");
+
+  const appUrl = getPublicAppUrl();
+  if (!appUrl) {
+    return jsonErr(500, rid, "CONFIG_ERROR", "Mangler app-url konfigurasjon.", {
+      missing: ["PUBLIC_APP_URL (eller NEXT_PUBLIC_APP_URL/NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_VERCEL_URL)"],
+    });
+  }
+
+  const admin = supabaseAdmin();
 
   try {
-    const { companyId } = await requireCompanyAdmin();
-    const body = await req.json().catch(() => ({}));
-
-    const inviteId = safeUUID(body.inviteId ?? body.id);
-    if (!inviteId) return jsonError(400, "invalid_invite_id", "Ugyldig inviteId.", { rid });
-
-    const admin = supabaseAdmin();
-
-    // Hent invite (må tilhøre firma, ikke brukt)
+    // must belong to company, not used
     const cur = await admin
       .from("employee_invites")
       .select("id, email, token_hash, expires_at, used_at")
@@ -104,22 +126,22 @@ export async function POST(req: Request) {
       .eq("company_id", companyId)
       .maybeSingle();
 
-    if (cur.error) return jsonError(500, "invite_read_failed", "Kunne ikke hente invitasjon.", { rid, detail: cur.error });
-    if (!cur.data) return jsonError(404, "invite_not_found", "Invitasjon ikke funnet.", { rid });
-    if (cur.data.used_at) return jsonError(400, "already_used", "Invitasjonen er allerede brukt.", { rid });
+    if (cur.error) return jsonErr(500, rid, "INVITE_READ_FAILED", "Kunne ikke hente invitasjon.", cur.error);
+    if (!cur.data) return jsonErr(404, rid, "INVITE_NOT_FOUND", "Invitasjon ikke funnet.");
+    if ((cur.data as any).used_at) return jsonErr(400, rid, "ALREADY_USED", "Invitasjonen er allerede brukt.");
 
-    // Lag NY token (rotasjon)
+    const email = String((cur.data as any).email ?? "").trim();
+    if (!email) return jsonErr(500, rid, "INVITE_INVALID", "Invitasjonen mangler e-post.");
+
+    const oldHash = String((cur.data as any).token_hash ?? "");
+
+    // rotate token
     const token = crypto.randomBytes(32).toString("hex");
-    const newHash = crypto.createHash("sha256").update(token).digest("hex");
-    const oldHash = String(cur.data.token_hash);
-
-    const appUrl = mustEnv("PUBLIC_APP_URL").replace(/\/$/, "");
+    const newHash = sha256Hex(token);
     const link = `${appUrl}/accept-invite?token=${encodeURIComponent(token)}`;
+    const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
 
-    // Vi oppdaterer først token_hash, men ruller tilbake hvis sending feiler.
-    // (Da beholder vi gammel link gyldig ved send-feil.)
-    const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 dager
-
+    // update first; rollback on mail failure
     const upd1 = await admin
       .from("employee_invites")
       .update({ token_hash: newHash, expires_at: newExpiry })
@@ -127,42 +149,32 @@ export async function POST(req: Request) {
       .eq("company_id", companyId)
       .is("used_at", null);
 
-    if (upd1.error) return jsonError(500, "invite_update_failed", "Kunne ikke oppdatere invitasjon.", { rid, detail: upd1.error });
+    if (upd1.error) return jsonErr(500, rid, "INVITE_UPDATE_FAILED", "Kunne ikke oppdatere invitasjon.", upd1.error);
 
-    try {
-      // SEND E-POST
-      await sendInviteEmail(String(cur.data.email), link);
-
-      // Markér last_sent_at etter suksess
-      const upd2 = await admin
-        .from("employee_invites")
-        .update({ last_sent_at: new Date().toISOString() })
-        .eq("id", inviteId)
-        .eq("company_id", companyId);
-
-      if (upd2.error) {
-        // Ikke kritisk; vi returnerer ok men med warning
-        return jsonOk({ ok: true, rid, message: "Invitasjon sendt (men last_sent_at kunne ikke oppdateres).", warning: upd2.error });
-      }
-
-      return jsonOk({ ok: true, rid, message: "Invitasjon sendt på nytt." });
-    } catch (mailErr: any) {
-      // ROLLBACK token_hash -> gammel (så vi ikke lagrer noe nytt ved send-feil)
-      await admin
-        .from("employee_invites")
-        .update({ token_hash: oldHash })
-        .eq("id", inviteId)
-        .eq("company_id", companyId);
-
-      return jsonError(500, "email_send_failed", "Kunne ikke sende e-post. Ingenting ble lagret.", { rid, detail: String(mailErr?.message ?? mailErr) });
+    const sent = await sendInviteEmail(email, link);
+    if (sent.ok === false) {
+      // rollback to old hash (best effort)
+      await admin.from("employee_invites").update({ token_hash: oldHash }).eq("id", inviteId).eq("company_id", companyId);
+      return jsonErr(500, rid, "EMAIL_SEND_FAILED", "Kunne ikke sende e-post. Ingenting ble lagret.", { message: sent.error });
     }
+
+    const upd2 = await admin
+      .from("employee_invites")
+      .update({ last_sent_at: new Date().toISOString() })
+      .eq("id", inviteId)
+      .eq("company_id", companyId);
+
+    if (upd2.error) {
+      return jsonOk({
+        ok: true,
+        rid,
+        message: "Invitasjon sendt (men last_sent_at kunne ikke oppdateres).",
+        warning: upd2.error,
+      });
+    }
+
+    return jsonOk({ ok: true, rid, message: "Invitasjon sendt på nytt." });
   } catch (e: any) {
-    const code = e?.code || "unknown";
-    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.", { rid });
-    if (code === "account_disabled") return jsonError(403, "account_disabled", "Kontoen er deaktivert.", { rid });
-    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.", { rid });
-    if (code === "missing_company") return jsonError(400, "missing_company", "Mangler company_id på admin-profilen.", { rid });
-    if (code === "db_error") return jsonError(500, "db_error", "Databasefeil.", { rid, detail: e?.detail });
-    return jsonError(500, "server_error", "Uventet feil.", { rid, detail: String(e?.message ?? e) });
+    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
