@@ -2,7 +2,7 @@ name: Codex – Critical Audit & Autofix
 
 on:
   schedule:
-    - cron: "0 20 * * *" # kjører hver dag 20:00
+    - cron: "0 20 * * *" # hver dag 20:00
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -84,10 +84,8 @@ jobs:
         if: steps.critical.outputs.exitcode != '0'
         shell: bash
         run: |
-          # Låst enterprise-kjerne: Codex får ikke endre dette automatisk
           FORBIDDEN_REGEX='^(lib/auth/|lib/guards/|lib/http/routeGuard|lib/date/oslo/|lib/audit/|lib/orderBackup/|app/api/auth/|app/api/cron/)'
           CHANGED_FILES=$(git diff --name-only)
-
           HIT=$(echo "$CHANGED_FILES" | grep -E "$FORBIDDEN_REGEX" || true)
           if [ -n "$HIT" ]; then
             echo "❌ Forbidden paths touched by patch:"
@@ -111,7 +109,7 @@ jobs:
         run: |
           echo "## Automatisk patch (ci:critical)" > pr_body.md
           echo "" >> pr_body.md
-          echo "**Gate:** \`npm run ci:critical\`" >> pr_body.md
+          echo "**Gate:** \`npm run ci:critical\` + Vercel Preview required" >> pr_body.md
           echo "" >> pr_body.md
 
           echo "### Endringer (diffstat)" >> pr_body.md
@@ -136,7 +134,6 @@ jobs:
         shell: bash
         run: |
           git add -A
-          git status
           git commit -m "fix(critical): automated Codex patch" || exit 0
 
       - name: Push branch
@@ -150,3 +147,6 @@ jobs:
           branch: ${{ steps.branch.outputs.branch }}
           title: "fix(critical): automated Codex patch"
           body-path: ${{ steps.report.outputs.body_path }}
+          labels: |
+            autofix
+            risk:low

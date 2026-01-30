@@ -1,0 +1,68 @@
+name: Deps – Weekly update PR
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # mandag 06:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: deps-weekly
+  cancel-in-progress: false
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create branch
+        id: branch
+        shell: bash
+        run: |
+          BR="bot/deps-$(date +%Y%m%d)"
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+          git checkout -b "$BR"
+
+      - name: Update deps (safe)
+        shell: bash
+        run: |
+          npm update
+          npm audit fix || true
+
+      - name: Run enterprise gate
+        run: npm run ci:critical
+
+      - name: Commit
+        shell: bash
+        run: |
+          git add -A
+          git commit -m "chore(deps): weekly dependency updates" || exit 0
+
+      - name: Push
+        run: git push origin "${{ steps.branch.outputs.branch }}"
+
+      - name: PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ steps.branch.outputs.branch }}
+          title: "chore(deps): weekly updates"
+          body: |
+            Ukentlig dependency-oppdatering. Gate: `npm run ci:critical` må være grønn + Vercel Preview.
+          labels: |
+            deps
+            risk:medium

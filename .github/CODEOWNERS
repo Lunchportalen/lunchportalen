@@ -1,0 +1,12 @@
+# Default: alle filer kan i praksis reviewes av teamet
+* @your-org/your-team
+
+# Låst enterprise-kjerne: krever owner-review hvis PR rører dette
+/lib/auth/ @your-org/owners
+/lib/guards/ @your-org/owners
+/lib/http/routeGuard* @your-org/owners
+/lib/date/oslo/ @your-org/owners
+/lib/audit/ @your-org/owners
+/lib/orderBackup/ @your-org/owners
+/app/api/auth/ @your-org/owners
+/app/api/cron/ @your-org/owners
