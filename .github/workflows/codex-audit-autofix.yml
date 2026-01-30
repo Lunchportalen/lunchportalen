@@ -16,7 +16,7 @@ concurrency:
 jobs:
   audit_autofix:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
@@ -65,6 +65,10 @@ jobs:
         if: steps.critical.outputs.exitcode != '0'
         run: npm run ci:critical
 
+      # -------------------------
+      # Guards (enterprise-safe)
+      # -------------------------
+
       - name: Guard – stop if patch is too large
         if: steps.critical.outputs.exitcode != '0'
         shell: bash
@@ -75,6 +79,57 @@ jobs:
             echo "❌ Patch too large (>300 lines). Stopping."
             exit 1
           fi
+
+      - name: Guard – block forbidden core paths
+        if: steps.critical.outputs.exitcode != '0'
+        shell: bash
+        run: |
+          # Låst enterprise-kjerne: Codex får ikke endre dette automatisk
+          FORBIDDEN_REGEX='^(lib/auth/|lib/guards/|lib/http/routeGuard|lib/date/oslo/|lib/audit/|lib/orderBackup/|app/api/auth/|app/api/cron/)'
+          CHANGED_FILES=$(git diff --name-only)
+
+          HIT=$(echo "$CHANGED_FILES" | grep -E "$FORBIDDEN_REGEX" || true)
+          if [ -n "$HIT" ]; then
+            echo "❌ Forbidden paths touched by patch:"
+            echo "$HIT"
+            exit 1
+          fi
+
+      - name: Guard – no new dependencies (lock package-lock)
+        if: steps.critical.outputs.exitcode != '0'
+        shell: bash
+        run: |
+          if git diff --name-only | grep -q '^package-lock\.json$'; then
+            echo "❌ package-lock.json changed. New deps are not allowed in autofix."
+            exit 1
+          fi
+
+      - name: Prepare PR report
+        if: steps.critical.outputs.exitcode != '0'
+        id: report
+        shell: bash
+        run: |
+          echo "## Automatisk patch (ci:critical)" > pr_body.md
+          echo "" >> pr_body.md
+          echo "**Gate:** \`npm run ci:critical\`" >> pr_body.md
+          echo "" >> pr_body.md
+
+          echo "### Endringer (diffstat)" >> pr_body.md
+          echo '```' >> pr_body.md
+          git diff --stat >> pr_body.md
+          echo '```' >> pr_body.md
+          echo "" >> pr_body.md
+
+          echo "### Endrede filer" >> pr_body.md
+          echo '```' >> pr_body.md
+          git diff --name-only >> pr_body.md
+          echo '```' >> pr_body.md
+          echo "" >> pr_body.md
+
+          echo "### Original feil" >> pr_body.md
+          echo "Se \`critical.log\` i branchen." >> pr_body.md
+
+          echo "body_path=pr_body.md" >> "$GITHUB_OUTPUT"
 
       - name: Commit changes
         if: steps.critical.outputs.exitcode != '0'
@@ -94,7 +149,4 @@ jobs:
         with:
           branch: ${{ steps.branch.outputs.branch }}
           title: "fix(critical): automated Codex patch"
-          body: |
-            Automatisk patch generert etter feilet `npm run ci:critical`.
-
-            🔍 Original feil er logget i `critical.log` i denne branchen.
+          body-path: ${{ steps.report.outputs.body_path }}
