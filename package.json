@@ -8,16 +8,24 @@
     "dev": "next dev",
     "build": "npm run audit:api && npm run check:admin-copy && next build",
     "start": "next start",
+
     "lint": "next lint",
-    "lint:ci": "node -e \"process.exit(0)\" && next lint || node -e \"process.exit(0)\"",
+    "lint:ci": "next lint || node -e \"process.exit(0)\"",
+
     "typecheck": "tsc --noEmit",
+
     "test": "vitest --config vitest.config.ts",
     "test:run": "vitest run --config vitest.config.ts",
     "test:tenant": "vitest run app/tests/tenant-isolation.test.ts --config vitest.config.ts",
+
     "check:admin-copy": "node scripts/check-admin-no-hardcoded-text.mjs",
     "audit:api": "node scripts/audit-api-routes.mjs",
+
     "preflight": "npm run typecheck && npm run test:run && npm run lint:ci && npm run audit:api",
-    "push:ok": "npm run preflight && git status --porcelain",
+    "ci:critical": "npm run preflight && npm run build",
+
+    "push:ok": "npm run ci:critical && node -e \"process.exit(require('child_process').execSync('git status --porcelain').toString().trim() ? 1 : 0)\"",
+
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:check": "git config core.hooksPath"
   },

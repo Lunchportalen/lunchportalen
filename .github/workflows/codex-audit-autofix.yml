@@ -1,0 +1,100 @@
+name: Codex – Critical Audit & Autofix
+
+on:
+  schedule:
+    - cron: "0 20 * * *" # kjører hver dag 20:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: codex-critical-audit-autofix
+  cancel-in-progress: false
+
+jobs:
+  audit_autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run critical checks (capture log)
+        id: critical
+        shell: bash
+        run: |
+          set +e
+          npm run ci:critical > critical.log 2>&1
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Stop if ci:critical is green
+        if: steps.critical.outputs.exitcode == '0'
+        run: echo "✅ ci:critical is green. No changes needed."
+
+      - name: Create autofix branch
+        if: steps.critical.outputs.exitcode != '0'
+        id: branch
+        shell: bash
+        run: |
+          BR="bot/codex-autofix-$(date +%Y%m%d-%H%M%S)"
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+          git checkout -b "$BR"
+
+      - name: Run Codex audit + autofix
+        if: steps.critical.outputs.exitcode != '0'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/codex-audit-autofix.mjs
+
+      - name: Re-run critical checks after patch
+        if: steps.critical.outputs.exitcode != '0'
+        run: npm run ci:critical
+
+      - name: Guard – stop if patch is too large
+        if: steps.critical.outputs.exitcode != '0'
+        shell: bash
+        run: |
+          CHANGED=$(git diff --numstat | awk '{a+=$1; d+=$2} END{print a+d}')
+          echo "Changed lines: ${CHANGED:-0}"
+          if [ "${CHANGED:-0}" -gt 300 ]; then
+            echo "❌ Patch too large (>300 lines). Stopping."
+            exit 1
+          fi
+
+      - name: Commit changes
+        if: steps.critical.outputs.exitcode != '0'
+        shell: bash
+        run: |
+          git add -A
+          git status
+          git commit -m "fix(critical): automated Codex patch" || exit 0
+
+      - name: Push branch
+        if: steps.critical.outputs.exitcode != '0'
+        run: git push origin "${{ steps.branch.outputs.branch }}"
+
+      - name: Open pull request
+        if: steps.critical.outputs.exitcode != '0'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ steps.branch.outputs.branch }}
+          title: "fix(critical): automated Codex patch"
+          body: |
+            Automatisk patch generert etter feilet `npm run ci:critical`.
+
+            🔍 Original feil er logget i `critical.log` i denne branchen.
