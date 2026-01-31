@@ -3,44 +3,63 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import type { NextRequest } from "next/server";
-
+import { NextResponse, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonErr } from "@/lib/http/respond";
 
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
-import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
-
+/**
+ * GET /api/admin/agreements/current
+ * - Henter gjeldende avtale for innlogget firma-admin
+ * - Runtime-only (bruker Supabase + env)
+ * - Skal aldri prerendres i build
+ */
 export async function GET(req: NextRequest) {
-  const a = await scopeOr401(req);
-  if (a.ok === false) return a.res;
+  // 1) Standard scope guard (gir ctx + rid)
+  const s = await scopeOr401(req);
+  if ((s as any)?.ok === false) return (s as any).res;
 
-  const { rid, scope } = a.ctx;
+  const { rid, companyId } = (s as any).ctx;
 
-  const denyRole = requireRoleOr403(a.ctx, "admin.agreements.current", ["company_admin"]);
-  if (denyRole) return denyRole;
+  // 2) Role gate (admin scope)
+  const roleBlock = requireRoleOr403((s as any).ctx, "admin.agreements.current", ["company_admin", "superadmin"]);
+  if (roleBlock) return roleBlock;
 
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
-
-  const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
-
-  try {
-    const sb = await supabaseServer();
-
-    const { data, error } = await sb
-      .from("company_agreements")
-      .select("id,status,plan_tier,start_date,end_date,binding_months,delivery_days,cutoff_time,timezone,created_at")
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", error);
-
-    return jsonOk({ ok: true, rid, companyId, agreement: data ?? null });
-  } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+  // 3) Bekreft cookie-session (fail closed)
+  const sb = await supabaseServer();
+  const { data: auth, error: authErr } = await sb.auth.getUser();
+  if (authErr || !auth?.user) {
+    return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
   }
+
+  if (!companyId) {
+    return jsonErr(400, rid, "MISSING_COMPANY", "Mangler companyId i session.");
+  }
+
+  // 4) Hent gjeldende avtale (nyeste start_date)
+  const { data, error } = await sb
+    .from("agreements")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", { message: error.message });
+  }
+
+  // 5) Returnér
+  return NextResponse.json(
+    {
+      ok: true,
+      rid,
+      agreement: data ?? null,
+    },
+    {
+      status: 200,
+      headers: noStoreHeaders(),
+    }
+  );
 }
