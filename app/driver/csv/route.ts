@@ -1,3 +1,8 @@
+// app/driver/csv/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -18,7 +23,18 @@ function safeStr(v: any) {
 
 function normalizeWindow(v: any) {
   // Slot/window skal være stabilt – men vi lar det være case-insensitive i query
+  // Samtidig vil vi ikke "gjenkjenne" nye/ukjente verdier – kun trim/normalisering.
   return safeStr(v);
+}
+
+function joinPhone(country: string, phone: string) {
+  const cc = safeStr(country);
+  const p = safeStr(phone);
+  if (!cc && !p) return "";
+  if (!cc) return p;
+  if (!p) return cc;
+  // Sørg for at vi ikke dobler "+" eller mellomrom
+  return `${cc} ${p}`.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -28,23 +44,26 @@ function normalizeWindow(v: any) {
  * - Uses current schema:
  *   orders: date, status, slot, note, company_id, location_id, user_id
  *   companies: id, name
- *   company_locations: id, name, address, delivery_contact_name/phone/country OR contact_name/phone, delivery_window_from/to
+ *   company_locations: id, name, company_id, delivery_contact_name/phone/country OR contact_name/phone
  *   profiles: user_id, full_name, department
  */
 export async function GET(req: NextRequest) {
+  // 0) Standard scope guard
   const s = await scopeOr401(req);
   if ((s as any)?.ok === false) return (s as any).res;
 
   const { rid } = (s as any).ctx;
 
+  // 0.1) Role gate (driver.csv)
   const roleBlock = requireRoleOr403((s as any).ctx, "driver.csv", ["driver", "superadmin"]);
   if (roleBlock) return roleBlock;
 
-  // Confirm cookie-session (fail-closed)
+  // 0.2) Confirm cookie-session (fail-closed)
   const sb = await supabaseServer();
   const { data: auth, error: authErr } = await sb.auth.getUser();
   if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
 
+  // 0.3) Admin client (service role)
   let admin: ReturnType<typeof supabaseAdmin>;
   try {
     admin = supabaseAdmin();
@@ -52,6 +71,7 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.", { detail: safeStr(e?.message ?? e) });
   }
 
+  // 1) Query params
   const url = new URL(req.url);
   const windowQ = normalizeWindow(url.searchParams.get("window"));
   const qDate = safeStr(url.searchParams.get("date"));
@@ -61,7 +81,7 @@ export async function GET(req: NextRequest) {
     return jsonErr(400, rid, "MISSING_WINDOW", "Missing window param.");
   }
 
-  // 1) Hent ordregrunnlag (ACTIVE for dato + slot)
+  // 2) Hent ordregrunnlag (ACTIVE for dato + slot)
   const { data: orders, error: oErr } = await admin
     .from("orders")
     .select("id, slot, note, company_id, location_id, user_id, date, status")
@@ -69,11 +89,19 @@ export async function GET(req: NextRequest) {
     .eq("status", "ACTIVE")
     .eq("slot", windowQ);
 
-  if (oErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente orders.", { message: oErr.message, code: (oErr as any).code ?? null });
+  if (oErr) {
+    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente orders.", {
+      message: oErr.message,
+      code: (oErr as any).code ?? null,
+    });
+  }
 
   const rows = orders ?? [];
+
+  // 3) Hvis ingen rader: returnér tom CSV med header
+  const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
+
   if (!rows.length) {
-    const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
     const csv = header.map(csvEscape).join(",") + "\n";
     return new NextResponse(csv, {
       headers: {
@@ -84,44 +112,45 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const companyIds = Array.from(new Set(rows.map((o: any) => o.company_id).filter(Boolean)));
-  const locationIds = Array.from(new Set(rows.map((o: any) => o.location_id).filter(Boolean)));
-  const userIds = Array.from(new Set(rows.map((o: any) => o.user_id).filter(Boolean)));
+  const companyIds = Array.from(new Set(rows.map((o: any) => o.company_id).filter(Boolean))).map(String);
+  const locationIds = Array.from(new Set(rows.map((o: any) => o.location_id).filter(Boolean))).map(String);
+  const userIds = Array.from(new Set(rows.map((o: any) => o.user_id).filter(Boolean))).map(String);
 
-  // 2) Metadata i parallel
+  // 4) Metadata i parallell
   const [companiesRes, locationsRes, profilesRes] = await Promise.all([
-    companyIds.length ? admin.from("companies").select("id, name").in("id", companyIds) : Promise.resolve({ data: [], error: null as any }),
+    companyIds.length
+      ? admin.from("companies").select("id, name").in("id", companyIds)
+      : Promise.resolve({ data: [], error: null as any }),
     locationIds.length
       ? admin
           .from("company_locations")
-          .select(
-            "id, name, company_id, delivery_contact_name, delivery_contact_phone, delivery_contact_country, contact_name, contact_phone"
-          )
+          .select("id, name, company_id, delivery_contact_name, delivery_contact_phone, delivery_contact_country, contact_name, contact_phone")
           .in("id", locationIds)
       : Promise.resolve({ data: [], error: null as any }),
-    userIds.length ? admin.from("profiles").select("user_id, full_name, department").in("user_id", userIds) : Promise.resolve({ data: [], error: null as any }),
+    userIds.length
+      ? admin.from("profiles").select("user_id, full_name, department").in("user_id", userIds)
+      : Promise.resolve({ data: [], error: null as any }),
   ]);
 
-  if (companiesRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmaer.", { message: companiesRes.error.message });
-  if (locationsRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", { message: locationsRes.error.message });
-  if (profilesRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", { message: profilesRes.error.message });
+  if (companiesRes.error)
+    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmaer.", { message: companiesRes.error.message });
+  if (locationsRes.error)
+    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", { message: locationsRes.error.message });
+  if (profilesRes.error)
+    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", { message: profilesRes.error.message });
 
   const compMap = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
   const locMap = new Map((locationsRes.data ?? []).map((l: any) => [String(l.id), l]));
   const profMap = new Map((profilesRes.data ?? []).map((p: any) => [String(p.user_id), p]));
 
-  // 3) CSV bygg
-  const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
-
+  // 5) CSV bygg
   const csvRows = rows.map((o: any) => {
     const comp = compMap.get(String(o.company_id));
     const loc = locMap.get(String(o.location_id));
     const prof = profMap.get(String(o.user_id));
 
     const contactName = (loc as any)?.delivery_contact_name ?? (loc as any)?.contact_name ?? "";
-    const cc = safeStr((loc as any)?.delivery_contact_country);
-    const phone = safeStr((loc as any)?.delivery_contact_phone ?? (loc as any)?.contact_phone);
-    const contactPhone = `${cc} ${phone}`.trim();
+    const contactPhone = joinPhone((loc as any)?.delivery_contact_country, (loc as any)?.delivery_contact_phone ?? (loc as any)?.contact_phone);
 
     return [
       windowQ,
@@ -135,7 +164,7 @@ export async function GET(req: NextRequest) {
     ];
   });
 
-  const csv = [header, ...csvRows].map((r) => r.map(csvEscape).join(",")).join("\n");
+  const csv = [header, ...csvRows].map((r) => r.map(csvEscape).join(",")).join("\n") + "\n";
 
   return new NextResponse(csv, {
     headers: {
