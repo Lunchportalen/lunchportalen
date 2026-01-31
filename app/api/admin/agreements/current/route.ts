@@ -4,40 +4,64 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { noStoreHeaders } from "@/lib/http/noStore";
-import { jsonErr } from "@/lib/http/respond";
+import { jsonErr, rid as makeRid } from "@/lib/http/respond";
+
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
 
 export async function GET(req: NextRequest) {
-  const s = await scopeOr401(req);
-  if ((s as any)?.ok === false) return (s as any).res;
+  const rid = safeStr(req.headers.get("x-rid")) || makeRid();
 
-  const { rid, companyId } = (s as any).ctx;
+  try {
+    // ✅ Late import – unngår env i build/import
+    const { supabaseServer } = await import("@/lib/supabase/server");
+    const sb = await supabaseServer();
 
-  const roleBlock = requireRoleOr403((s as any).ctx, "admin.agreements.current", ["company_admin", "superadmin"]);
-  if (roleBlock) return roleBlock;
+    // 1) Auth (fail-closed)
+    const { data: auth, error: authErr } = await sb.auth.getUser();
+    const user = auth?.user ?? null;
+    if (authErr || !user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
 
-  // ✅ Late import – ingen env ved build/import
-  const { supabaseServer } = await import("@/lib/supabase/server");
+    // 2) Role check: company_admin eller superadmin (fail-closed)
+    const { data: prof, error: profErr } = await sb
+      .from("profiles")
+      .select("role, company_id")
+      .eq("id", user.id)
+      .maybeSingle();
 
-  const sb = await supabaseServer();
-  const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
+    if (profErr) return jsonErr(500, rid, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", { message: profErr.message });
 
-  if (!companyId) return jsonErr(400, rid, "MISSING_COMPANY", "Mangler companyId i session.");
+    const role = String((prof as any)?.role ?? "");
+    if (role !== "company_admin" && role !== "superadmin") {
+      return jsonErr(403, rid, "FORBIDDEN", "Ingen tilgang.");
+    }
 
-  const { data, error } = await sb
-    .from("agreements")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    const companyId = String((prof as any)?.company_id ?? "");
+    if (!companyId && role !== "superadmin") {
+      return jsonErr(400, rid, "MISSING_COMPANY", "Mangler company_id.");
+    }
 
-  if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", { message: error.message });
+    // 3) Hent siste avtale for firma
+    const q = sb
+      .from("agreements")
+      .select("*")
+      .order("start_date", { ascending: false })
+      .limit(1);
 
-  return NextResponse.json(
-    { ok: true, rid, agreement: data ?? null },
-    { status: 200, headers: noStoreHeaders() }
-  );
+    const { data, error } =
+      role === "superadmin" && !companyId
+        ? await q.maybeSingle()
+        : await q.eq("company_id", companyId).maybeSingle();
+
+    if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", { message: error.message });
+
+    return NextResponse.json(
+      { ok: true, rid, agreement: data ?? null },
+      { status: 200, headers: noStoreHeaders() }
+    );
+  } catch (e: any) {
+    return jsonErr(500, rid, "INTERNAL_ERROR", "Uventet feil.", { message: safeStr(e?.message ?? e) });
+  }
 }
