@@ -5,6 +5,7 @@ Enterprise-safe autofix motor (NO CLI):
 - Kaller OpenAI Responses API via fetch (Node 20)
 - Forventer unified diff (git apply kompatibelt)
 - Skriver codex.patch og forsøker å apply patchen
+- Hvis modellen ikke gir diff: NO-OP (grønn workflow), lagrer codex.raw.txt
 ------------------------------------------------------------ */
 
 import fs from "node:fs";
@@ -54,7 +55,7 @@ function isUnifiedDiff(text) {
 }
 
 function extractFirstUnifiedDiffBlock(text) {
-  // Hvis modellen skriver noe før diffen, finn starten.
+  // Hvis modellen skriver noe før diffen, finn starten på diff-blokken.
   const s = normalizeNewlines(String(text ?? ""));
   const idx = s.indexOf("diff --git ");
   if (idx >= 0) return s.slice(idx);
@@ -77,7 +78,6 @@ function runQuiet(cmd) {
 
 /**
  * Hard guard: aldri tillat CLI-instruksjoner å snike seg inn i output.
- * (Skal aldri inneholde "codex --..." eller "--system"/"--prompt")
  */
 function guardNoCliArtifacts(rawText) {
   const t = String(rawText ?? "");
@@ -95,7 +95,6 @@ function guardNoCliArtifacts(rawText) {
 async function openaiUnifiedDiff({ apiKey, model, inputText }) {
   const url = "https://api.openai.com/v1/responses";
 
-  // ✅ Viktig: Responses API krever content.type = "input_text"
   const body = {
     model,
     input: [
@@ -103,6 +102,7 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
         role: "system",
         content: [
           {
+            // ✅ Responses API krever "input_text"
             type: "input_text",
             text: [
               "Du er LUNCHPORTALEN AUTOFIX BOT.",
@@ -114,6 +114,7 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
               "- Cut-off 08:00 Europe/Oslo og no-exception rule skal aldri brytes.",
               "- Bevar API-shapes. Ikke endre response-formater.",
               "- Output KUN unified git diff (git apply kompatibel).",
+              "- Hvis du ikke kan foreslå en trygg minimal patch, returner INGEN diff (tomt svar).",
               "- Ingen forklaringer. Kun diff.",
             ].join("\n"),
           },
@@ -172,7 +173,6 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
     text = chunks.join("\n");
   }
 
-  // 3) fallback
   return String(text || "");
 }
 
@@ -199,7 +199,6 @@ async function main() {
     runQuiet("git reset --hard");
   } catch {}
 
-  // Hard cap for request-størrelse
   const raw = await openaiUnifiedDiff({
     apiKey,
     model,
@@ -208,7 +207,7 @@ async function main() {
 
   const rawNorm = normalizeNewlines(raw);
 
-  // Sikkerhet: avvis hvis modellen prøver å “snakke CLI”
+  // Guard: avvis CLI-artefakter i output
   try {
     guardNoCliArtifacts(rawNorm);
   } catch (e) {
@@ -220,14 +219,16 @@ async function main() {
   let cleaned = stripCodeFences(rawNorm);
   cleaned = extractFirstUnifiedDiffBlock(cleaned).trimEnd() + "\n";
 
+  // ✅ Kontrollert NO-OP hvis modellen ikke ga diff
   if (!isUnifiedDiff(cleaned)) {
     safeWrite("codex.raw.txt", rawNorm);
-    throw new Error(
-      "Model did not return a unified diff. Saved raw output to codex.raw.txt"
+    process.stdout.write(
+      "ℹ️ No unified diff returned. No safe autofix suggested. Exiting without changes.\n"
     );
+    return;
   }
 
-  // Hvis diffen er tom (sjeldent), stopp rolig
+  // Tom diff → NO-OP
   if (!cleaned.trim()) {
     safeWrite("codex.raw.txt", rawNorm);
     process.stdout.write("ℹ️ Empty diff returned. No changes to apply.\n");
