@@ -90,6 +90,21 @@ jobs:
           OPENAI_MODEL: gpt-5
         run: node scripts/codex-audit-autofix.mjs
 
+      # 🔎 Detect whether a patch was produced
+      - name: Detect patch (codex.patch)
+        if: steps.critical.outputs.exitcode != '0'
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "codex.patch" ]; then
+            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+            echo "✅ codex.patch found"
+          else
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ No codex.patch produced (NO-OP)."
+          fi
+
       - name: Upload patch artifacts (if any)
         if: steps.critical.outputs.exitcode != '0'
         uses: actions/upload-artifact@v4
@@ -101,8 +116,16 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      # ✅ If no patch was produced, we exit cleanly (green)
+      - name: Stop (NO-OP) if no patch was produced
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'false'
+        run: echo "✅ No safe patch suggested. Exiting cleanly."
+
+      # -------------------------
+      # Re-run critical only if patch exists
+      # -------------------------
       - name: Re-run critical checks after patch (capture log)
-        if: steps.critical.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         id: critical_after
         shell: bash
         run: |
@@ -111,8 +134,8 @@ jobs:
           echo "exitcode=$?" >> "$GITHUB_OUTPUT"
           set -e
 
-      - name: Upload critical.after.log (if failing path)
-        if: steps.critical.outputs.exitcode != '0'
+      - name: Upload critical.after.log (if patch path)
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: critical-after-log
@@ -121,7 +144,7 @@ jobs:
           retention-days: 7
 
       - name: Stop if still failing after patch
-        if: steps.critical.outputs.exitcode != '0' && steps.critical_after.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.critical_after.outputs.exitcode != '0'
         shell: bash
         run: |
           echo "❌ ci:critical is still failing after patch."
@@ -129,10 +152,10 @@ jobs:
           exit 1
 
       # -------------------------
-      # Guards (enterprise-safe)
+      # Guards (enterprise-safe) – only when patch exists
       # -------------------------
       - name: Guard – stop if patch is too large
-        if: steps.critical.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -144,7 +167,7 @@ jobs:
           fi
 
       - name: Guard – block forbidden core paths
-        if: steps.critical.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -158,7 +181,7 @@ jobs:
           fi
 
       - name: Guard – no new dependencies (lock package-lock)
-        if: steps.critical.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -168,27 +191,27 @@ jobs:
           fi
 
       # -------------------------
-      # Only proceed if there are actual changes
+      # Proceed only if there are actual changes (patch exists)
       # -------------------------
       - name: Detect changes
-        if: steps.critical.outputs.exitcode != '0'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
         id: changes
         shell: bash
         run: |
           set -euo pipefail
           if git diff --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "No changes produced by autofix. Stopping."
+            echo "No changes in working tree. Stopping."
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Stop if no changes
-        if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'false'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'false'
         run: exit 0
 
       - name: Prepare PR report
-        if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'true'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
         id: report
         shell: bash
         run: |
@@ -210,14 +233,14 @@ jobs:
           echo '```' >> pr_body.md
           echo "" >> pr_body.md
 
-          echo "### Logger/artefakter" >> pr_body.md
-          echo "- Se artifacts: critical.log, critical.after.log, codex.patch (hvis generert)." >> pr_body.md
+          echo "### Artefakter" >> pr_body.md
+          echo "- Se artifacts: critical.log, critical.after.log, codex.patch/codex.raw.txt" >> pr_body.md
           echo "" >> pr_body.md
 
           echo "body_path=pr_body.md" >> "$GITHUB_OUTPUT"
 
       - name: Commit changes
-        if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'true'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -225,14 +248,14 @@ jobs:
           git commit -m "fix(critical): automated patch" || exit 0
 
       - name: Push branch
-        if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'true'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git push --set-upstream origin "${{ steps.branch.outputs.branch }}"
 
       - name: Open pull request
-        if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'true'
+        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ${{ steps.branch.outputs.branch }}
