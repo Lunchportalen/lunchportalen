@@ -1,4 +1,8 @@
 // app/api/superadmin/menus-week/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
@@ -7,9 +11,38 @@ import { getMenuForDatesAdmin, type MenuContent } from "@/lib/sanity/queries";
 
 type DayStatus = "published" | "unpublished" | "missing";
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function makeRid() {
+  return `rid_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+}
+
+function jsonOk(rid: string, data: any, init?: number) {
+  return NextResponse.json({ ok: true, rid, ...data }, { status: init ?? 200 });
+}
+
+function jsonErr(rid: string, status: number, error: string, message?: string, detail?: any) {
+  return NextResponse.json(
+    {
+      ok: false,
+      rid,
+      error,
+      message: message ?? error,
+      detail: detail ?? null,
+    },
+    { status }
+  );
+}
+
 function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url) throw new Error("MISSING_NEXT_PUBLIC_SUPABASE_URL");
+  if (!key) throw new Error("MISSING_SUPABASE_SERVICE_ROLE_KEY");
+
   return createSupabaseClient(url, key, { auth: { persistSession: false } });
 }
 
@@ -41,128 +74,133 @@ function hasAllergens(arr: unknown) {
  *    unpublished => komplett + ikke publisert
  */
 export async function GET(req: Request) {
-  // 1) Auth + superadmin guard
-  const supabase = await supabaseServer();
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  const user = userRes?.user ?? null;
+  const rid = safeStr((req.headers as any)?.get?.("x-rid")) || makeRid();
 
-  if (!user || userErr) {
-    return NextResponse.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
-  }
+  try {
+    // 1) Auth + superadmin guard
+    const supabase = await supabaseServer();
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    const user = userRes?.user ?? null;
 
-  const { data: profile, error: profErr } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+    if (!user || userErr) {
+      return jsonErr(rid, 401, "AUTH_REQUIRED", "Du må være innlogget for å bruke denne ruten.");
+    }
 
-  if (profErr || profile?.role !== "superadmin") {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
-  }
+    const { data: profile, error: profErr } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-  // 2) Offset
-  const url = new URL(req.url);
-  const offsetRaw = url.searchParams.get("offset");
-  const offset = Number(offsetRaw ?? 0);
-  const safeOffset = Number.isFinite(offset) ? clamp(offset, -52, 104) : 0;
+    if (profErr) {
+      return jsonErr(rid, 500, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", profErr.message);
+    }
 
-  // 3) Week dates (Mon–Fri)
-  const todayISO = osloTodayISODate();
-  const weekStart = startOfWeekISO(todayISO);
-  const monday = addDaysISO(weekStart, safeOffset * 7);
+    if (profile?.role !== "superadmin") {
+      return jsonErr(rid, 403, "FORBIDDEN", "Kun superadmin har tilgang.");
+    }
 
-  const days = Array.from({ length: 5 }).map((_, i) => ({
-    date: addDaysISO(monday, i),
-    weekday: weekdayNoShortByIndex(i),
-  }));
-  const dates = days.map((d) => d.date);
+    // 2) Offset
+    const url = new URL(req.url);
+    const offsetRaw = url.searchParams.get("offset");
+    const offset = Number(offsetRaw ?? 0);
+    const safeOffset = Number.isFinite(offset) ? clamp(offset, -52, 104) : 0;
 
-  // 4) Sanity (admin): hent ALT (ikke drafts)
-  const sanityRows: MenuContent[] = await getMenuForDatesAdmin(dates);
-  const byDate = new Map<string, MenuContent>();
-  for (const m of sanityRows) byDate.set(m.date, m);
+    // 3) Week dates (Mon–Fri)
+    const todayISO = osloTodayISODate();
+    const weekStart = startOfWeekISO(todayISO);
+    const monday = addDaysISO(weekStart, safeOffset * 7);
 
-  // 5) Visibility mirror (DB)
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ ok: false, error: "MISSING_SERVICE_ROLE_KEY" }, { status: 500 });
-  }
+    const days = Array.from({ length: 5 }).map((_, i) => ({
+      date: addDaysISO(monday, i),
+      weekday: weekdayNoShortByIndex(i),
+    }));
+    const dates = days.map((d) => d.date);
 
-  const admin = supabaseAdmin();
-  const { data: visRows, error: visErr } = await admin
-    .from("menu_visibility_days")
-    .select("date,is_published")
-    .in("date", dates);
+    // 4) Sanity (admin): hent ALT (ikke drafts)
+    const sanityRows: MenuContent[] = await getMenuForDatesAdmin(dates);
+    const byDate = new Map<string, MenuContent>();
+    for (const m of sanityRows) byDate.set(m.date, m);
 
-  if (visErr) {
-    return NextResponse.json(
-      { ok: false, error: "VIS_READ_FAILED", detail: visErr.message },
-      { status: 500 }
-    );
-  }
+    // 5) Visibility mirror (DB) – service role
+    let admin;
+    try {
+      admin = supabaseAdmin();
+    } catch (e: any) {
+      // Dette skal ikke stoppe bygg/CI – men vil stoppe ruten runtime hvis env mangler
+      return jsonErr(rid, 500, "MISSING_ENV", "Mangler nødvendige miljøvariabler for admin-lesing.", safeStr(e?.message));
+    }
 
-  const dbPublished = new Map<string, boolean>();
-  for (const r of visRows ?? []) {
-    // Supabase kan returnere date som "YYYY-MM-DD" eller Date-ish
-    const key = String((r as any).date);
-    dbPublished.set(key, Boolean((r as any).is_published));
-  }
+    const { data: visRows, error: visErr } = await admin
+      .from("menu_visibility_days")
+      .select("date,is_published")
+      .in("date", dates);
 
-  // 6) Build payload
-  const payload = days.map((d) => {
-    const menu = byDate.get(d.date);
+    if (visErr) {
+      return jsonErr(rid, 500, "VIS_READ_FAILED", "Kunne ikke lese publiseringsstatus.", visErr.message);
+    }
 
-    const title = menu?.title ?? null;
-    const description = menu?.description ?? null;
-    const allergens = menu?.allergens ?? null;
-    const tier = menu?.tier ?? null;
+    const dbPublished = new Map<string, boolean>();
+    for (const r of visRows ?? []) {
+      const key = String((r as any).date);
+      dbPublished.set(key, Boolean((r as any).is_published));
+    }
 
-    const approvedForPublish = menu?.approvedForPublish ?? null;
-    const customerVisible = menu?.customerVisible ?? null;
+    // 6) Build payload
+    const payload = days.map((d) => {
+      const menu = byDate.get(d.date);
 
-    const missing =
-      !menu ||
-      !hasText(title) ||
-      !hasText(description) ||
-      !hasAllergens(allergens);
+      const title = menu?.title ?? null;
+      const description = menu?.description ?? null;
+      const allergens = menu?.allergens ?? null;
+      const tier = (menu as any)?.tier ?? null;
 
-    // “Published” = DB mirror (styrer hva kundene ser) – fallback til menu.isPublished
-    const published =
-      (dbPublished.get(d.date) ?? false) || (menu?.isPublished ?? false);
+      const approvedForPublish = (menu as any)?.approvedForPublish ?? null;
+      const customerVisible = (menu as any)?.customerVisible ?? null;
 
-    const status: DayStatus = missing ? "missing" : published ? "published" : "unpublished";
+      const missing = !menu || !hasText(title) || !hasText(description) || !hasAllergens(allergens);
 
-    return {
-      date: d.date,
-      weekday: d.weekday,
+      // “Published” = DB mirror (styrer hva kundene ser) – fallback til menu.isPublished
+      const published = (dbPublished.get(d.date) ?? false) || Boolean((menu as any)?.isPublished ?? false);
 
-      // Innhold (fra Sanity)
-      title,
-      description,
-      allergens,
-      tier,
+      const status: DayStatus = missing ? "missing" : published ? "published" : "unpublished";
 
-      // Kontrollfelt (fra Sanity)
-      approvedForPublish,
-      customerVisible,
+      return {
+        date: d.date,
+        weekday: d.weekday,
 
-      // Status for UI
-      status,
+        // Innhold (fra Sanity)
+        title,
+        description,
+        allergens,
+        tier,
 
-      // Debug/diag (valgfritt, men nyttig i admin)
-      _id: (menu as any)?._id ?? null,
-      isPublished: menu?.isPublished ?? false,
-      dbPublished: dbPublished.get(d.date) ?? false,
-    };
-  });
+        // Kontrollfelt (fra Sanity)
+        approvedForPublish,
+        customerVisible,
 
-  return NextResponse.json(
-    {
-      ok: true,
-      week: {
-        weekStart: monday,
-        days: payload,
+        // Status for UI
+        status,
+
+        // Debug/diag (admin only)
+        _id: (menu as any)?._id ?? null,
+        isPublished: Boolean((menu as any)?.isPublished ?? false),
+        dbPublished: dbPublished.get(d.date) ?? false,
+      };
+    });
+
+    // 7) OK
+    return jsonOk(
+      rid,
+      {
+        week: {
+          weekStart: monday,
+          days: payload,
+        },
       },
-    },
-    { status: 200 }
-  );
+      200
+    );
+  } catch (e: any) {
+    return jsonErr(rid, 500, "INTERNAL_ERROR", "Uventet feil i menus-week.", safeStr(e?.message ?? e));
+  }
 }
