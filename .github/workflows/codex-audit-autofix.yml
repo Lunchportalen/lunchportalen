@@ -45,6 +45,15 @@ jobs:
           echo "exitcode=$?" >> "$GITHUB_OUTPUT"
           set -e
 
+      - name: Upload critical.log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: critical-log
+          path: critical.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Stop if ci:critical is green
         if: steps.critical.outputs.exitcode == '0'
         run: echo "✅ ci:critical is green. No changes needed."
@@ -72,25 +81,25 @@ jobs:
           git checkout -b "$BR"
 
       # -------------------------
-      # Ensure Codex CLI exists
+      # Run SDK-based autofix (NO codex CLI)
       # -------------------------
-      - name: Install Codex CLI
-        if: steps.critical.outputs.exitcode != '0'
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Installer Codex CLI globalt for runneren
-          # (nødvendig for at "codex" kommandoen skal finnes)
-          npm i -g @openai/codex
-
-          echo "Codex version:"
-          codex --version || true
-
-      - name: Run Codex audit + autofix
+      - name: Run Codex audit + autofix (SDK)
         if: steps.critical.outputs.exitcode != '0'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5
         run: node scripts/codex-audit-autofix.mjs
+
+      - name: Upload patch artifacts (if any)
+        if: steps.critical.outputs.exitcode != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-patch-artifacts
+          path: |
+            codex.patch
+            codex.raw.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Re-run critical checks after patch (capture log)
         if: steps.critical.outputs.exitcode != '0'
@@ -102,12 +111,21 @@ jobs:
           echo "exitcode=$?" >> "$GITHUB_OUTPUT"
           set -e
 
+      - name: Upload critical.after.log (if failing path)
+        if: steps.critical.outputs.exitcode != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: critical-after-log
+          path: critical.after.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Stop if still failing after patch
         if: steps.critical.outputs.exitcode != '0' && steps.critical_after.outputs.exitcode != '0'
         shell: bash
         run: |
           echo "❌ ci:critical is still failing after patch."
-          echo "See critical.after.log in job logs."
+          echo "See critical.after.log (artifact) for details."
           exit 1
 
       # -------------------------
@@ -160,7 +178,7 @@ jobs:
           set -euo pipefail
           if git diff --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "No changes produced by Codex. Stopping."
+            echo "No changes produced by autofix. Stopping."
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
@@ -192,8 +210,9 @@ jobs:
           echo '```' >> pr_body.md
           echo "" >> pr_body.md
 
-          echo "### Original feil" >> pr_body.md
-          echo "Se \`critical.log\` i Actions-run (og i branchen hvis du laster opp loggfil)." >> pr_body.md
+          echo "### Logger/artefakter" >> pr_body.md
+          echo "- Se artifacts: critical.log, critical.after.log, codex.patch (hvis generert)." >> pr_body.md
+          echo "" >> pr_body.md
 
           echo "body_path=pr_body.md" >> "$GITHUB_OUTPUT"
 
@@ -203,7 +222,7 @@ jobs:
         run: |
           set -euo pipefail
           git add -A
-          git commit -m "fix(critical): automated Codex patch"
+          git commit -m "fix(critical): automated patch" || exit 0
 
       - name: Push branch
         if: steps.critical.outputs.exitcode != '0' && steps.changes.outputs.has_changes == 'true'
@@ -217,7 +236,7 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           branch: ${{ steps.branch.outputs.branch }}
-          title: "fix(critical): automated Codex patch"
+          title: "fix(critical): automated patch"
           body-path: ${{ steps.report.outputs.body_path }}
           labels: |
             autofix
