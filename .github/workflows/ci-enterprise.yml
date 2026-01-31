@@ -1,13 +1,10 @@
-name: "CI: enterprise"
+name: CI Enterprise
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
   pull_request:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: read
 
 jobs:
   enterprise:
@@ -15,17 +12,14 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install
         run: npm ci
 
-      - name: Run enterprise gate
-        run: npm run ci:critical
+      - name: Enterprise gate
+        run: npm run ci:enterprise
