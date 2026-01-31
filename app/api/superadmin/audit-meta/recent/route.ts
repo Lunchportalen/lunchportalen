@@ -1,9 +1,11 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getScope } from "@/lib/auth/scope";
 
 function noStore() {
@@ -27,6 +29,8 @@ async function requireSuperadmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const r = rid();
   try {
     await requireSuperadmin(req);
@@ -52,3 +56,6 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, r, "SERVER_ERROR", "Ukjent feil ved henting av audit-meta.", { msg });
   }
 }
+
+
+

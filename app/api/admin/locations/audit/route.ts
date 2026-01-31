@@ -1,11 +1,11 @@
 // app/api/admin/locations/audit/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -30,6 +30,8 @@ function safeStr(v: any) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -95,3 +97,5 @@ export async function GET(req: NextRequest) {
 
   return jsonOk(ctx, { ok: true, latest: row ?? null });
 }
+
+

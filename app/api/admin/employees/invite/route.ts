@@ -1,4 +1,5 @@
 // app/api/admin/employees/invite/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,7 +8,6 @@ import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -110,7 +110,7 @@ function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-async function findActiveInvite(admin: ReturnType<typeof supabaseAdmin>, companyId: string, email: string) {
+async function findActiveInvite(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, companyId: string, email: string) {
   const nowISO = new Date().toISOString();
   const { data, error } = await admin
     .from("employee_invites")
@@ -127,7 +127,7 @@ async function findActiveInvite(admin: ReturnType<typeof supabaseAdmin>, company
   return { ok: true as const, invite: data ?? null };
 }
 
-async function cleanupExpiredUnused(admin: ReturnType<typeof supabaseAdmin>, companyId: string) {
+async function cleanupExpiredUnused(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, companyId: string) {
   await admin
     .from("employee_invites")
     .delete()
@@ -141,7 +141,7 @@ async function cleanupExpiredUnused(admin: ReturnType<typeof supabaseAdmin>, com
  * - Firma-admin velger aldri location
  * - Hvis firma mangler default -> stopp
  */
-async function getDefaultLocationId(admin: ReturnType<typeof supabaseAdmin>, companyId: string) {
+async function getDefaultLocationId(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, companyId: string) {
   const c = await admin.from("companies").select("id, default_location_id").eq("id", companyId).maybeSingle();
   if (c.error) return { ok: false as const, error: c.error };
   const defaultId = c.data?.default_location_id ? String(c.data.default_location_id) : "";
@@ -161,6 +161,8 @@ async function getDefaultLocationId(admin: ReturnType<typeof supabaseAdmin>, com
 }
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -188,7 +190,7 @@ export async function POST(req: NextRequest) {
   if (!email || !isEmail(email)) return jsonErr(400, rid, "INVALID_EMAIL", "Ugyldig e-postadresse.");
   if (isSystemEmail(email)) return jsonErr(400, rid, "FORBIDDEN_EMAIL", "Denne e-posten kan ikke inviteres som ansatt.");
 
-  let admin: ReturnType<typeof supabaseAdmin>;
+  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
@@ -286,3 +288,5 @@ export async function GET() {
   const rid = makeRidLocal();
   return jsonErr(405, rid, "METHOD_NOT_ALLOWED", "Bruk POST for å invitere ansatte.");
 }
+
+

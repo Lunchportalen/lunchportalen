@@ -1,7 +1,11 @@
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export const dynamic = "force-dynamic";
 
 type LoginBody = { email?: string; password?: string };
 
@@ -80,3 +84,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+
+

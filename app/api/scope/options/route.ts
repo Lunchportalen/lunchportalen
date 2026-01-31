@@ -1,6 +1,10 @@
 // app/api/scope/options/route.ts
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 function supabaseAdmin() {
@@ -12,6 +16,9 @@ function supabaseAdmin() {
 }
 
 export async function GET() {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes?.user ?? null;
@@ -51,3 +58,6 @@ export async function GET() {
 
   return NextResponse.json({ ok: true, companies: companies ?? [], locations: locations ?? [] });
 }
+
+
+

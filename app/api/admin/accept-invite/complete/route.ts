@@ -1,4 +1,5 @@
 // app/api/admin/accept-invite/complete/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -125,3 +126,5 @@ export async function GET(_req: NextRequest) {
   const ctx = { rid } as any;
   return jsonErr(ctx, "method_not_allowed", "Bruk POST.", { method: "GET" });
 }
+
+

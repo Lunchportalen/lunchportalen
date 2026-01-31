@@ -1,10 +1,11 @@
 // app/api/public/onboarding/register/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -68,6 +69,9 @@ async function waitForProfile(admin: any, userId: string, rid: string) {
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `onb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -323,3 +327,6 @@ export async function POST(req: Request) {
     return jsonError(500, "server_error", "Uventet feil i onboarding.", { rid, message: String(e?.message ?? e) });
   }
 }
+
+
+

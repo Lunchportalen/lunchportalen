@@ -1,11 +1,11 @@
 // app/api/admin/invoices/csv/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
 import { toCsv, type InvoiceRow } from "@/lib/billing/csv";
 import {
@@ -73,6 +73,8 @@ function csvResponse(csv: string, filename: string, rid: string) {
 ========================================================= */
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
   const ctx = { rid } as any; // for jsonErr(ctx, ...)
 
@@ -208,3 +210,5 @@ export async function GET(req: NextRequest) {
   const csv = toCsv(rows);
   return csvResponse(csv, `invoice_${companyId}_${from}_to_${to}.csv`, rid);
 }
+
+

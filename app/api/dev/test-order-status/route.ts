@@ -1,14 +1,18 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function json(status: number, body: any) {
   return NextResponse.json(body, { status });
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   // Krev innlogget bruker
@@ -36,3 +40,6 @@ export async function POST(req: Request) {
   if (error) return json(500, { ok: false, error: error.message, detail: error });
   return json(200, { ok: true, result: data });
 }
+
+
+

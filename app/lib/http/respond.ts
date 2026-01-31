@@ -147,10 +147,13 @@ export function jsonErr(...args: any[]): Response {
 
     const ridVal = ctxRid(ctxOrRid) || genRid();
 
-    const payload =
-      detail === undefined
-        ? ({ ok: false as const, rid: ridVal, error, message } as const)
-        : ({ ok: false as const, rid: ridVal, error, message, detail } as const);
+    const payload = {
+      ok: false as const,
+      rid: ridVal,
+      error,
+      message,
+      detail: detail === undefined ? null : detail,
+    } as const;
 
     return NextResponse.json(payload, { status, headers: noStoreHeaders() });
   } catch {

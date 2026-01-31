@@ -5,7 +5,6 @@ export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 /**
@@ -75,6 +74,7 @@ function requireCronSecret(req: Request, allowQueryKey = true) {
    - Cron MUST NOT use cookie/session client
 ========================================================= */
 async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const anyAdmin: any = supabaseAdmin as any;
   return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
 }

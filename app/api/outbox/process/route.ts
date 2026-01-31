@@ -1,9 +1,11 @@
+
+
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function backoffMinutes(attempts: number) {
   // 0->1min, 1->5min, 2->15min, 3->60min, 4->180min, 5+->360min
@@ -20,6 +22,8 @@ function addMinutesISO(mins: number) {
 }
 
 export async function POST() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   // 1) Auth + superadmin-sjekk (RLS-policy krever superadmin for select/update)
@@ -116,3 +120,6 @@ export async function POST() {
 
   return NextResponse.json({ ok: true, processed: rows.length, sent, failed });
 }
+
+
+

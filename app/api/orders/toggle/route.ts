@@ -1,12 +1,11 @@
 // app/api/orders/toggle/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -33,7 +32,7 @@ function safeStr(v: unknown) {
 
 function normAction(v: any): ToggleAction | null {
   const s = safeStr(v).toLowerCase();
-  if (s === "cancel" || s === "canceled" || s === "cancelled") return "cancel";
+  if (s === "cancel" || s === "canceled") return "cancel";
   if (s === "place" || s === "active" || s === "order") return "place";
   return null;
 }
@@ -106,7 +105,8 @@ function normCompanyStatus(v: any): CompanyLifecycle {
   return "UNKNOWN";
 }
 
-function adminClientOrNull() {
+async function adminClientOrNull() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   try {
     return supabaseAdmin();
   } catch {
@@ -136,6 +136,8 @@ function mkEntityKey(company_id: string, location_id: string, user_id: string, i
    Route
 ========================================================= */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -189,7 +191,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ✅ Firmastatus (service role)
-    const admin = adminClientOrNull();
+  const admin = await adminClientOrNull();
     if (!admin) {
       return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon for firmastatus/audit.", {
         missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
@@ -396,3 +398,4 @@ export async function POST(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "orders/toggle" });
   }
 }
+

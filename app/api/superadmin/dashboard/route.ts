@@ -1,4 +1,5 @@
 // app/api/superadmin/dashboard/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,7 +7,6 @@ export const revalidate = 0;
 import { type NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 type DashboardCounts = {
@@ -44,6 +44,8 @@ function startOfWeekISO(iso: string) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const gate = await scopeOr401(req);
 
   // ✅ Hos dere: fail returnerer Response direkte
@@ -105,3 +107,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "DASHBOARD_FAIL", "Uventet feil ved bygging av dashboard.", String(e?.message ?? e));
   }
 }
+
+

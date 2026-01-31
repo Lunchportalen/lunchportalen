@@ -1,10 +1,11 @@
 // app/api/weekplan/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { fetchNextPublishedWeekPlan } from "@/lib/sanity/weekplan";
 
 const OSLO_TZ = "Europe/Oslo";
 
@@ -38,6 +39,9 @@ function defaultWeekPattern(): Record<DayKey, Tier> {
 }
 
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { fetchNextPublishedWeekPlan } = await import("@/lib/sanity/weekplan");
   const rid = `weekplan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   // 1) Auth + company scope
@@ -95,3 +99,6 @@ export async function GET() {
     plan,
   });
 }
+
+
+

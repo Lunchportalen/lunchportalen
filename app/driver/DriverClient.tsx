@@ -4,6 +4,9 @@
 import React, { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+/* =========================================================
+   Types
+========================================================= */
 type ApiErr = {
   ok: false;
   rid?: string;
@@ -34,6 +37,19 @@ type Stop = {
 
 type StopsOk = { ok: true; rid?: string; date: string; stops: Stop[] };
 
+// jsonOk-wrapper: { ok, rid, data }
+type ApiWrapped<T> = {
+  ok: boolean;
+  rid?: string;
+  data?: T;
+  error?: string;
+  message?: string;
+  detail?: any;
+};
+
+/* =========================================================
+   Helpers
+========================================================= */
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
@@ -96,7 +112,6 @@ function makeRid() {
 
 /**
  * ✅ FASIT: alltid send cookies/session til interne API-ruter
- * (Driver stopp fikk 403 uten dette i tidligere iterasjoner)
  */
 async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   return fetch(input, {
@@ -117,6 +132,94 @@ function prettyDetail(d: any) {
   } catch {
     return String(d);
   }
+}
+
+/**
+ * Normaliserer stops-responsen slik at UI alltid jobber med StopsOk
+ * Støtter (robust):
+ *  - Direkte: { ok:true, date, stops }
+ *  - Wrapped A: { ok:true, rid, data:{ ok:true, date, stops } }
+ *  - Wrapped B: { ok:true, rid, data:{ date, stops } }  (vanlig jsonOk-wrapper)
+ */
+type NormStops = { ok: true; data: StopsOk } | { ok: false; err: ApiErr };
+
+function normalizeStopsResponse(res: Response, json: any, fallbackRid: string): NormStops {
+  const status = res.status;
+
+  if (!json) {
+    return {
+      ok: false,
+      err: {
+        ok: false,
+        rid: fallbackRid,
+        error: `HTTP_${status}`,
+        message: `Kunne ikke hente stopp (HTTP ${status}).`,
+        detail: null,
+        status,
+      },
+    };
+  }
+
+  const ridAny = safeStr(json?.rid) || fallbackRid;
+
+  function toStopsOk(x: any, rid: string): StopsOk | null {
+    if (!x || typeof x !== "object") return null;
+    if (typeof x.date === "string" && Array.isArray(x.stops)) {
+      return { ok: true, rid, date: String(x.date), stops: x.stops as Stop[] };
+    }
+    return null;
+  }
+
+  // 1) Direkte payload
+  if (json?.ok === true) {
+    const direct = toStopsOk(json, safeStr(json?.rid) || ridAny);
+    if (direct) return { ok: true, data: direct };
+  }
+
+  // 2) Wrapped payload i json.data
+  if (json?.ok === true && json?.data) {
+    const inner = json.data;
+    const innerRid = ridAny;
+
+    const mapped = toStopsOk(inner, innerRid);
+    if (mapped) return { ok: true, data: mapped };
+
+    const mapped2 = toStopsOk(inner?.data, innerRid);
+    if (mapped2) return { ok: true, data: mapped2 };
+  }
+
+  // 3) Hvis API eksplisitt ok:false
+  if (json?.ok === false) {
+    return {
+      ok: false,
+      err: {
+        ok: false,
+        rid: ridAny,
+        error: safeStr(json?.error) || `HTTP_${status}`,
+        message: safeStr(json?.message) || safeStr(json?.error) || "API-feil.",
+        detail: json?.detail ?? json ?? null,
+        status,
+      },
+    };
+  }
+
+  // 4) Uventet struktur
+  const msg =
+    safeStr(json?.message) ||
+    safeStr(json?.error) ||
+    (res.ok ? "Mangler gyldig stops-data i respons." : `Kunne ikke hente stopp (HTTP ${status}).`);
+
+  return {
+    ok: false,
+    err: {
+      ok: false,
+      rid: ridAny,
+      error: safeStr(json?.error) || "bad_payload",
+      message: msg,
+      detail: json?.detail ?? json ?? null,
+      status,
+    },
+  };
 }
 
 /* =========================
@@ -218,14 +321,20 @@ export default function DriverClient() {
 
   const [toolsOpen, setToolsOpen] = useState(false);
 
-  const stops = data?.stops ?? [];
+  // ✅ Stabil stops-referanse uten "missing dependency: data"
+  const stopsRaw = data?.stops;
+
+  const stops = useMemo<Stop[]>(() => {
+    return Array.isArray(stopsRaw) ? (stopsRaw as Stop[]) : [];
+  }, [stopsRaw]);
+
   const count = useMemo(() => stops.length, [stops]);
   const deliveredCount = useMemo(() => stops.filter((s) => s.delivered).length, [stops]);
 
   const shownDate = data?.date ?? date;
   const shownDateSafe = isISODate(shownDate) ? shownDate : date;
 
-  async function load(nextDate = date) {
+  async function load(nextDate: string) {
     const d = safeStr(nextDate) || todayISO();
     setLoading(true);
     setErr(null);
@@ -238,29 +347,36 @@ export default function DriverClient() {
         headers: { "x-rid": rid },
       });
 
-      const json = (await readJsonSafe(res)) as StopsOk | ApiErr | null;
+      const json = await readJsonSafe(res);
+      const norm = normalizeStopsResponse(res, json, rid);
 
-      if (!res.ok || !json || (json as any).ok !== true) {
-        const e = (json ?? {}) as ApiErr;
-        const status = res.status;
-
+      // 1) HTTP-feil
+      if (!res.ok) {
         const apiErr: ApiErr = {
           ok: false,
-          rid: e.rid || rid,
-          error: e.error || `HTTP_${status}`,
-          message: e.message || e.error || `Kunne ikke hente stopp (HTTP ${status}).`,
-          detail: e.detail ?? null,
-          status,
+          rid: safeStr(json?.rid) || rid,
+          error: safeStr(json?.error) || `HTTP_${res.status}`,
+          message: safeStr(json?.message) || safeStr(json?.error) || `Kunne ikke hente stopp (HTTP ${res.status}).`,
+          detail: json?.detail ?? json ?? null,
+          status: res.status,
         };
-
         setData(null);
         setLastApiErr(apiErr);
-        setErr(apiErr.message ?? `Kunne ikke hente stopp (HTTP ${status}).`);
+        setErr(apiErr.message ?? `Kunne ikke hente stopp (HTTP ${res.status}).`);
         return;
       }
 
+      // 2) HTTP ok, men payload feil
+      if (!("data" in norm)) {
+        setData(null);
+        setLastApiErr(norm.err);
+        setErr(norm.err.message ?? "Kunne ikke hente stopp.");
+        return;
+      }
+
+      // 3) OK
       setLastApiErr(null);
-      setData(json as StopsOk);
+      setData(norm.data);
     } catch (e: any) {
       const apiErr: ApiErr = {
         ok: false,
@@ -296,26 +412,44 @@ export default function DriverClient() {
           }),
         });
 
-        const json = (await readJsonSafe(res)) as { ok: true; rid?: string } | ApiErr | null;
+        const json = await readJsonSafe(res);
+        const status = res.status;
 
-        if (!res.ok || !json || (json as any).ok !== true) {
-          const e = (json ?? {}) as ApiErr;
-          const status = res.status;
-
+        // 1) HTTP-feil
+        if (!res.ok) {
           const apiErr: ApiErr = {
             ok: false,
-            rid: e.rid || rid,
-            error: e.error || `HTTP_${status}`,
-            message: e.message || e.error || `Kunne ikke markere levert (HTTP ${status}).`,
-            detail: e.detail ?? null,
+            rid: safeStr(json?.rid) || rid,
+            error: safeStr(json?.error) || `HTTP_${status}`,
+            message: safeStr(json?.message) || safeStr(json?.error) || `Kunne ikke markere levert (HTTP ${status}).`,
+            detail: json?.detail ?? json ?? null,
             status,
           };
-
           setLastApiErr(apiErr);
           setErr(apiErr.message ?? `Kunne ikke markere levert (HTTP ${status}).`);
           return;
         }
 
+        // 2) HTTP ok – støtte både direkte og wrapped ok
+        const directOk = json?.ok === true;
+        const wrappedOk = json?.ok === true && json?.data?.ok === true;
+        const wrappedOk2 = json?.ok === true && json?.data && typeof json.data === "object";
+
+        if (!directOk && !wrappedOk && !wrappedOk2) {
+          const apiErr: ApiErr = {
+            ok: false,
+            rid: safeStr(json?.rid) || rid,
+            error: safeStr(json?.error) || "bad_payload",
+            message: safeStr(json?.message) || safeStr(json?.error) || "Mangler gyldig confirm-respons.",
+            detail: json?.detail ?? json ?? null,
+            status,
+          };
+          setLastApiErr(apiErr);
+          setErr(apiErr.message ?? "Mangler gyldig confirm-respons.");
+          return;
+        }
+
+        // 3) OK
         setLastApiErr(null);
         await load(s.date);
       } catch (e: any) {
@@ -377,11 +511,6 @@ export default function DriverClient() {
   useEffect(() => {
     void load(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    void load(date);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   // ESC lukker sheet
@@ -421,8 +550,7 @@ export default function DriverClient() {
             <div className="min-w-0">
               <div className="text-lg sm:text-xl font-semibold text-slate-900">Sjåfør</div>
               <div className="mt-1 text-sm text-slate-700">
-                {fmtDateLong(shownDateSafe)} •{" "}
-                <span className="font-semibold text-slate-900">{count}</span> stopp •{" "}
+                {fmtDateLong(shownDateSafe)} • <span className="font-semibold text-slate-900">{count}</span> stopp •{" "}
                 <span className="font-semibold text-slate-900">{deliveredCount}</span> levert
               </div>
             </div>
@@ -503,10 +631,8 @@ export default function DriverClient() {
 
       {/* Main */}
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pb-24 sm:pb-8">
-        {/* Loading */}
         {loading ? <div className="mt-6 text-sm text-slate-600">Laster…</div> : null}
 
-        {/* Error */}
         {!loading && err ? (
           <div className="mt-6 rounded-3xl bg-red-500/10 p-6 shadow-sm ring-1 ring-black/5">
             <div className="text-base font-semibold text-red-900">Feil</div>
@@ -535,13 +661,13 @@ export default function DriverClient() {
                 {showTech ? (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs text-slate-600">
-                      <b>Status:</b> {lastApiErr.status ?? "—"} &nbsp;•&nbsp; <b>RID:</b> {lastApiErr.rid ?? "—"} &nbsp;•&nbsp;{" "}
-                      <b>Error:</b> {lastApiErr.error ?? "—"}
+                      <b>Status:</b> {lastApiErr.status ?? "—"} &nbsp;•&nbsp; <b>RID:</b> {lastApiErr.rid ?? "—"}{" "}
+                      &nbsp;•&nbsp; <b>Error:</b> {lastApiErr.error ?? "—"}
                     </div>
 
                     {techDetail ? (
                       <pre className="max-h-64 overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
-{techDetail}
+                        {techDetail}
                       </pre>
                     ) : (
                       <div className="text-xs text-slate-600">Ingen detail i respons.</div>
@@ -566,7 +692,6 @@ export default function DriverClient() {
           </div>
         ) : null}
 
-        {/* Empty */}
         {!loading && !err && count === 0 ? (
           <div className="mt-6 rounded-3xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5">
             <div className="text-base font-semibold text-slate-900">Ingen leveranser</div>
@@ -579,7 +704,6 @@ export default function DriverClient() {
           </div>
         ) : null}
 
-        {/* Stops */}
         {!loading && !err && count > 0 ? (
           <div className="mt-6 space-y-4">
             {stops.map((s) => {
@@ -670,7 +794,12 @@ export default function DriverClient() {
 
       {/* Tools Sheet */}
       {toolsOpen && (
-        <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setToolsOpen(false)} aria-modal="true" role="dialog">
+        <div
+          className="fixed inset-0 z-50 bg-black/30"
+          onClick={() => setToolsOpen(false)}
+          aria-modal="true"
+          role="dialog"
+        >
           <div
             className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl"
             onClick={(e) => e.stopPropagation()}

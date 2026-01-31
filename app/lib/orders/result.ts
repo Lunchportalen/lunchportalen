@@ -1,7 +1,7 @@
 // lib/orders/result.ts
 export type OrderStatus =
   | "registered"
-  | "cancelled"
+  | "canceled"
   | "too_late"
   | "closed_date"
   | "company_paused";

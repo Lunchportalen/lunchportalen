@@ -1,9 +1,11 @@
 // app/api/auth/redirect/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -141,6 +143,8 @@ function roleFromUserMetadata(user: any): Role | null {
 ========================================================= */
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const url = new URL(req.url);
 
   // Les next (rå)
@@ -189,3 +193,6 @@ export async function GET(req: NextRequest) {
   const to = new URL(target, url.origin);
   return NextResponse.redirect(to, { status: 303 });
 }
+
+
+

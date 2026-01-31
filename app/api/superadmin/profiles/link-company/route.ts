@@ -1,10 +1,11 @@
 // app/api/superadmin/profiles/link-company/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -18,6 +19,9 @@ function isUuid(v: any): v is string {
 }
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const sb = await supabaseServer();
 
   // Bekreft superadmin
@@ -89,3 +93,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, company, profile: updated });
 }
+
+
+

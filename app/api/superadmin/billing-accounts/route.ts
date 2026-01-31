@@ -1,8 +1,10 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -16,6 +18,8 @@ function isUuid(v: any) {
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -43,3 +47,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }
+
+
+

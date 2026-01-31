@@ -1,9 +1,12 @@
 // app/api/onboarding/complete/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { type NextRequest, NextResponse } from "next/server";
+import { jsonErr, rid as makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Types
@@ -79,6 +82,7 @@ function parsePrice(v: any): number {
 
 /** supabaseAdmin kan være client eller factory */
 async function adminClient(): Promise<any> {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = supabaseAdmin as any;
   return typeof s === "function" ? await s() : s;
 }
@@ -472,7 +476,10 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
 /* =========================================================
    POST
 ========================================================= */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid(req);
   const SB = await adminClient();
   if (!SB?.from || !SB?.auth?.admin) {
     return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
@@ -565,6 +572,33 @@ export async function POST(req: Request) {
   let userId: string | null = null;
   let locationId: string | null = null;
 
+  const fail = async (e: any) => {
+    // rollback best effort
+    try {
+      const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
+      if (delTerms?.error && !isTableMissingError(delTerms.error)) {
+        // ignore
+      }
+    } catch {}
+    try {
+      const delAgr = await SB.from("company_agreements").delete().eq("company_id", companyId);
+      if (delAgr?.error && !isTableMissingError(delAgr.error)) {
+        // ignore
+      }
+    } catch {}
+    try {
+      if (locationId) await SB.from("company_locations").delete().eq("id", locationId);
+    } catch {}
+    try {
+      if (userId) await SB.auth.admin.deleteUser(userId);
+    } catch {}
+    try {
+      if (companyId) await SB.from("companies").delete().eq("id", companyId);
+    } catch {}
+
+    return jsonErr(500, rid, "ONBOARDING_FAILED", "Registrering feilet â€“ ingen data er lagret.", e?.message ?? e);
+  };
+
   try {
     // 1) company
     const insCompany = await SB.from("companies")
@@ -579,7 +613,7 @@ export async function POST(req: Request) {
       .select("id")
       .single();
 
-    if (insCompany.error) throw insCompany.error;
+    if (insCompany.error) return await fail(insCompany.error);
     companyId = insCompany.data.id;
 
     // 2) auth user (company_admin)
@@ -595,14 +629,14 @@ export async function POST(req: Request) {
         phone,
       },
     });
-    if (createErr) throw createErr;
+    if (createErr) return await fail(createErr);
 
     userId = created?.user?.id ?? null;
-    if (!userId) throw new Error("AUTH_CREATE_NO_USER_ID");
+    if (!userId) return await fail(new Error("AUTH_CREATE_NO_USER_ID"));
 
     // 3) profiles — IKKE insert. Vent på trigger + oppdater trygge felter.
     const prof = await syncProfileSafe(SB, userId, full_name, phone);
-    if (prof.error) throw prof.error;
+    if (prof.error) return await fail(prof.error);
 
     // 4) company_locations (all fields + hard NOT NULL)
     const deliveryCountry = pickString(delivery?.contact_country) ?? "NO";
@@ -635,13 +669,13 @@ export async function POST(req: Request) {
       delivery_contact_email: delivery?.contact_email ? String(delivery.contact_email).trim() : undefined,
     });
 
-    if (locRes.error) throw locRes.error;
+    if (locRes.error) return await fail(locRes.error);
     locationId = locRes.data?.id ?? null;
 
     // (valgfritt) Oppdater profile med location_id (trygt felt) etter at location finnes
     if (locationId) {
       const updLoc = await SB.from("profiles").update({ location_id: locationId }).eq("id", userId);
-      if (updLoc.error) throw updLoc.error;
+      if (updLoc.error) return await fail(updLoc.error);
     }
 
     // 5) OPTIONAL tables (best-effort)
@@ -651,7 +685,7 @@ export async function POST(req: Request) {
       days_json: daysNorm,
       billing_prices_include_vat: true,
     });
-    if (insAgr.error && !isTableMissingError(insAgr.error)) throw insAgr.error;
+    if (insAgr.error && !isTableMissingError(insAgr.error)) return await fail(insAgr.error);
 
     if (terms?.version) {
       const insTerms = await SB.from("company_terms_acceptance").insert({
@@ -663,7 +697,7 @@ export async function POST(req: Request) {
         binding_months: Number(terms?.binding_months ?? 12),
         notice_months: Number(terms?.notice_months ?? 3),
       });
-      if (insTerms.error && !isTableMissingError(insTerms.error)) throw insTerms.error;
+      if (insTerms.error && !isTableMissingError(insTerms.error)) return await fail(insTerms.error);
     }
 
     return NextResponse.json({ ok: true, status: "pending", companyId, userId, locationId }, { status: 200 });
@@ -694,3 +728,5 @@ export async function POST(req: Request) {
     return jsonError(500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
   }
 }
+
+

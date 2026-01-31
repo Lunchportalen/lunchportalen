@@ -1,8 +1,10 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -22,6 +24,8 @@ function csvEscape(v: any) {
 }
 
 export async function GET(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const url = new URL(req.url);
   const runId = url.searchParams.get("runId");
   const format = (url.searchParams.get("format") ?? "json").toLowerCase();
@@ -106,3 +110,6 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ ok: true, runId, rows }, { status: 200 });
 }
+
+
+

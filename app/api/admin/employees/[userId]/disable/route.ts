@@ -1,11 +1,11 @@
 // app/api/admin/employees/[userId]/disable/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -21,6 +21,8 @@ function isUuid(v: unknown): v is string {
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteCtx) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -95,3 +97,5 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
     return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+

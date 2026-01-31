@@ -1,52 +1,115 @@
-import { sanity } from "@/lib/sanity/client";
+// lib/sanity/weekplan.ts
+import { createClient } from "@sanity/client";
 
-export type Dish = {
-  _id: string;
-  title: string;
-  description?: string | null;
-  allergens?: string[] | null;
-  tags?: string[] | null;
-};
+function mustEnv(name: string, v: string | undefined) {
+  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
+}
 
-export type WeekDay = {
-  date: string; // ISO YYYY-MM-DD
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
+
+mustEnv("NEXT_PUBLIC_SANITY_PROJECT_ID", projectId);
+mustEnv("NEXT_PUBLIC_SANITY_DATASET", dataset);
+
+const sanityRead = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: true,
+});
+
+export type WeekPlanStatus = "draft" | "open" | "current" | "archived";
+
+export type WeekPlanDay = {
+  date: string; // YYYY-MM-DD
   level: "BASIS" | "LUXUS";
-  dishes: Dish[];
+  dishes: any[]; // references or resolved docs, avhenger av GROQ
+  kitchenNote?: string | null;
 };
 
-export type WeekPlan = {
+export type WeekPlanDoc = {
   _id: string;
-  weekStart: string; // ISO YYYY-MM-DD
+  _type: "weekPlan";
+  weekKey?: string;
+  weekStart?: string; // YYYY-MM-DD
+  status?: WeekPlanStatus;
+  approvedForPublish?: boolean;
+  customerVisible?: boolean;
   publishedAt?: string | null;
   lockedAt?: string | null;
-  days: WeekDay[];
+  locked?: boolean;
+  visibleFrom?: string | null;
+  becomesCurrentAt?: string | null;
+  days?: WeekPlanDay[];
+  noteForKitchen?: string | null;
 };
 
-const NEXT_PUBLISHED_WEEKPLAN_GROQ = /* groq */ `
-*[_type=="weekPlan"
-  && approvedForPublish==true
-  && customerVisible==true
-  && defined(publishedAt)
-  && weekStart >= $today
-] | order(weekStart asc)[0]{
+/**
+ * GROQ – vi resolver dish-referanser lett (title + allergens) uten å overdrive payload.
+ * Du kan utvide senere.
+ */
+const WEEKPLAN_PROJECTION = `{
   _id,
+  _type,
+  weekKey,
   weekStart,
+  status,
+  approvedForPublish,
+  customerVisible,
   publishedAt,
   lockedAt,
-  days[]{
+  locked,
+  visibleFrom,
+  becomesCurrentAt,
+  noteForKitchen,
+  "days": days[]{
     date,
     level,
+    kitchenNote,
     "dishes": dishes[]->{
       _id,
       title,
-      description,
       allergens,
       tags
     }
   }
-}
-`;
+}`;
 
-export async function fetchNextPublishedWeekPlan(todayISO: string): Promise<WeekPlan | null> {
-  return sanity.fetch(NEXT_PUBLISHED_WEEKPLAN_GROQ, { today: todayISO });
+export async function fetchCurrentWeekPlan(todayISO: string): Promise<WeekPlanDoc | null> {
+  // current er fasit: status=="current"
+  // fallback: hvis ingen current, ta nyeste som er customerVisible==true
+  const q = `
+    coalesce(
+      *[_type=="weekPlan" && status=="current"][0]${WEEKPLAN_PROJECTION},
+      *[_type=="weekPlan" && customerVisible==true] | order(weekStart desc)[0]${WEEKPLAN_PROJECTION},
+      null
+    )
+  `;
+
+  const plan = await sanityRead.fetch<WeekPlanDoc | null>(q, { todayISO });
+  return plan ?? null;
+}
+
+export async function fetchNextOpenWeekPlan(todayISO: string): Promise<WeekPlanDoc | null> {
+  // "next" betyr: status=="open" OG weekStart etter i dag (robust)
+  const q = `
+    *[
+      _type=="weekPlan" &&
+      status=="open" &&
+      defined(weekStart) &&
+      weekStart > $todayISO
+    ] | order(weekStart asc)[0]${WEEKPLAN_PROJECTION}
+  `;
+
+  const plan = await sanityRead.fetch<WeekPlanDoc | null>(q, { todayISO });
+  return plan ?? null;
+}
+
+/**
+ * Back-compat: gammel funksjon som tidligere het "published".
+ * Nå betyr det i praksis "open".
+ */
+export async function fetchNextPublishedWeekPlan(todayISO: string) {
+  return fetchNextOpenWeekPlan(todayISO);
 }

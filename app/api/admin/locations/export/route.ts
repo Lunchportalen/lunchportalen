@@ -1,11 +1,11 @@
 // app/api/admin/locations/export/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 helpers
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
@@ -35,6 +35,8 @@ function csvResponse(csv: string, filename: string, rid: string) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -134,3 +136,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(ctx, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+

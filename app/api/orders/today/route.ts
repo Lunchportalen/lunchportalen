@@ -1,12 +1,11 @@
 // app/api/orders/today/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { osloNowISO, osloTodayISODate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { orderBase, receiptFor } from "@/lib/api/orderResponse";
@@ -39,7 +38,8 @@ function normCompanyStatus(v: any): CompanyLifecycle {
   return "UNKNOWN";
 }
 
-function adminClientOrNull() {
+async function adminClientOrNull() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   try {
     return supabaseAdmin();
   } catch {
@@ -63,6 +63,8 @@ function jsonOrder(status: number, body: any) {
    POST (place/cancel today)
 ========================================================= */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -206,7 +208,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Company status (service role) – fail-closed
-    const admin = adminClientOrNull();
+    const admin = await adminClientOrNull();
     if (!admin) {
       return jsonOrder(
         500,
@@ -396,6 +398,8 @@ export async function POST(req: NextRequest) {
    GET (read-only status)
 ========================================================= */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -521,3 +525,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

@@ -1,11 +1,11 @@
 // app/api/invites/lookup/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { rid as makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 
@@ -38,6 +38,8 @@ function jsonOk(rid: string, body: any, status = 200) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
 
   try {
@@ -80,3 +82,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "server_error", "Uventet feil ved oppslag av invitasjon.", errDetail(e));
   }
 }
+
+

@@ -1,4 +1,5 @@
 // app/api/kitchen/batch/set/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,8 +7,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { jsonErr } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
@@ -66,6 +65,9 @@ type KitchenBatchRow = {
 };
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // ✅ Guard: scope + rid
   const a = await scopeOr401(req);
   if ((a as any)?.ok === false) return (a as any).res;
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
   if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
 
   // ✅ Service role for upsert
-  let admin: ReturnType<typeof supabaseAdmin>;
+  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
@@ -237,3 +239,5 @@ export async function POST(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", safeStr(e?.message ?? e), { at: "kitchen/batch/set" });
   }
 }
+
+

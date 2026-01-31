@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getActiveBreakGlass, isActiveSession, requirePurpose } from "@/lib/superadmin/breakGlass";
 
 function denyResponse(s: any): Response {
@@ -20,7 +19,8 @@ function denyResponse(s: any): Response {
 
 async function writeMeta(ctx: { rid: string; scope: any }, action: string, purpose?: string | null, detail?: any) {
   try {
-    const sb = await supabaseServer();
+    const { supabaseServer } = await import("@/lib/supabase/server");
+  const sb = await supabaseServer();
     await sb.from("audit_meta_events").insert({
       actor_user_id: ctx?.scope?.userId ?? null,
       actor_email: ctx?.scope?.email ?? null,
@@ -65,6 +65,7 @@ export async function GET(req: NextRequest): Promise<Response> {
    POST: start
 ========================================================= */
 export async function POST(req: NextRequest): Promise<Response> {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -132,6 +133,7 @@ export async function POST(req: NextRequest): Promise<Response> {
    DELETE: end
 ========================================================= */
 export async function DELETE(req: NextRequest): Promise<Response> {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 

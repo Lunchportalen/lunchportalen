@@ -1,8 +1,16 @@
+// studio/schemas/weekPlan.ts
 import { defineField, defineType } from "sanity";
 
-const LEVELS = [
+const LEVELS: { title: string; value: string }[] = [
   { title: "Basis", value: "BASIS" },
   { title: "Luxus", value: "LUXUS" },
+];
+
+const STATUSES: { title: string; value: string }[] = [
+  { title: "Draft", value: "draft" },
+  { title: "Open (neste uke – kan bestilles)", value: "open" },
+  { title: "Current (denne uken)", value: "current" },
+  { title: "Archived (historikk)", value: "archived" },
 ];
 
 export default defineType({
@@ -11,9 +19,25 @@ export default defineType({
   type: "document",
   fields: [
     defineField({
+      name: "weekKey",
+      title: "Ukenøkkel (ISO, f.eks. 2026-W05)",
+      type: "string",
+      validation: (Rule) => Rule.required().regex(/^\d{4}-W\d{2}$/),
+    }),
+
+    defineField({
       name: "weekStart",
       title: "Uke start (Mandag)",
-      type: "date", // lagres som YYYY-MM-DD (ISO)
+      type: "date",
+      validation: (Rule) => Rule.required(),
+    }),
+
+    defineField({
+      name: "status",
+      title: "Status",
+      type: "string",
+      options: { list: STATUSES, layout: "radio" },
+      initialValue: "draft",
       validation: (Rule) => Rule.required(),
     }),
 
@@ -30,6 +54,20 @@ export default defineType({
       type: "boolean",
       initialValue: false,
     }),
+
+    // Systemfelter (cron setter disse)
+    defineField({
+      name: "visibleFrom",
+      title: "Synlig fra (ansatte)",
+      type: "datetime",
+      readOnly: true,
+    }),
+    defineField({
+      name: "becomesCurrentAt",
+      title: "Blir aktiv uke (fredag 14:00)",
+      type: "datetime",
+      readOnly: true,
+    }),
     defineField({
       name: "publishedAt",
       title: "Publisert tidspunkt",
@@ -38,9 +76,16 @@ export default defineType({
     }),
     defineField({
       name: "lockedAt",
-      title: "Låst etter 08:00",
+      title: "Låst tidspunkt",
       type: "datetime",
       readOnly: true,
+    }),
+    defineField({
+      name: "locked",
+      title: "Låst (ingen endringer)",
+      type: "boolean",
+      readOnly: true,
+      initialValue: false,
     }),
 
     defineField({
@@ -56,7 +101,7 @@ export default defineType({
             defineField({
               name: "date",
               title: "Dato",
-              type: "date", // ISO lagring
+              type: "date",
               validation: (Rule) => Rule.required(),
             }),
             defineField({
@@ -72,6 +117,11 @@ export default defineType({
               type: "array",
               of: [{ type: "reference", to: [{ type: "dish" }] }],
               validation: (Rule) => Rule.required().min(1).max(6),
+            }),
+            defineField({
+              name: "kitchenNote",
+              title: "Notat til kjøkken",
+              type: "string",
             }),
           ],
           preview: {
@@ -95,18 +145,33 @@ export default defineType({
           return true;
         }),
     }),
+
+    defineField({
+      name: "noteForKitchen",
+      title: "Overordnet notat til kjøkken",
+      type: "text",
+    }),
   ],
 
   preview: {
-    select: { weekStart: "weekStart", approved: "approvedForPublish", visible: "customerVisible", lockedAt: "lockedAt" },
+    select: {
+      weekKey: "weekKey",
+      weekStart: "weekStart",
+      status: "status",
+      approved: "approvedForPublish",
+      visible: "customerVisible",
+      locked: "locked",
+    },
     prepare(sel) {
       const flags = [
+        sel.status || "unknown",
         sel.approved ? "Godkjent" : "Ikke godkjent",
         sel.visible ? "Synlig" : "Skjult",
-        sel.lockedAt ? "Låst" : "Åpen",
+        sel.locked ? "Låst" : "Åpen",
       ].join(" • ");
+
       return {
-        title: sel.weekStart ? `Ukeplan: ${sel.weekStart}` : "Ukeplan",
+        title: sel.weekKey ? `Ukeplan: ${sel.weekKey}` : sel.weekStart ? `Ukeplan: ${sel.weekStart}` : "Ukeplan",
         subtitle: flags,
       };
     },

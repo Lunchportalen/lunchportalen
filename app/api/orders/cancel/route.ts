@@ -1,12 +1,11 @@
 // app/api/orders/cancel/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -39,7 +38,8 @@ function normCompanyStatus(v: any): CompanyLifecycle {
   return "UNKNOWN";
 }
 
-function adminClientOrNull() {
+async function adminClientOrNull() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   try {
     return supabaseAdmin();
   } catch {
@@ -112,8 +112,8 @@ async function setCancelled(sb: any, input: { company_id: string; user_id: strin
   if (!r1.error && r1.data) return { ok: true as const, used: "CANCELLED" as const, row: r1.data as SavedOrder };
 
   // Fallback for eldre verdier (idempotent “uansett hva som lå før”)
-  const r2 = await tryUpdate("cancelled");
-  if (!r2.error && r2.data) return { ok: true as const, used: "cancelled" as const, row: r2.data as SavedOrder };
+  const r2 = await tryUpdate("canceled");
+  if (!r2.error && r2.data) return { ok: true as const, used: "canceled" as const, row: r2.data as SavedOrder };
 
   const r3 = await tryUpdate("canceled");
   if (!r3.error && r3.data) return { ok: true as const, used: "canceled" as const, row: r3.data as SavedOrder };
@@ -128,6 +128,8 @@ async function setCancelled(sb: any, input: { company_id: string; user_id: strin
    Route
 ========================================================= */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -168,7 +170,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Firmastatus (service role) – fail-closed
-    const admin = adminClientOrNull();
+  const admin = await adminClientOrNull();
     if (!admin) {
       return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon for firmastatus/audit.", {
         missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
@@ -331,3 +333,4 @@ export async function POST(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "orders/cancel" });
   }
 }
+

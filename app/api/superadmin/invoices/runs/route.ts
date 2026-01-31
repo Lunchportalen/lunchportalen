@@ -1,8 +1,10 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 /* =========================================================
    Helpers
@@ -25,6 +27,8 @@ function jsonError(
    - Superadmin only
 ========================================================= */
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   // ─────────────────────────────────────────────────────
@@ -79,3 +83,6 @@ export async function GET() {
     { status: 200 }
   );
 }
+
+
+

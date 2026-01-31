@@ -1,11 +1,11 @@
 // app/api/admin/orders/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
@@ -48,6 +48,8 @@ function normStatus(v: any) {
    - company_admin er låst til scope.companyId
 ========================================================= */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -168,3 +170,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "admin/orders" });
   }
 }
+
+

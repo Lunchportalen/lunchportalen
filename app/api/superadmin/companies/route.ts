@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /**
  * ✅ FASIT
@@ -57,6 +56,8 @@ async function bestEffortAudit(admin: any, row: any) {
  * GET /api/superadmin/companies
  */
 export async function GET(req: NextRequest): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -229,6 +230,8 @@ export async function GET(req: NextRequest): Promise<Response> {
  * Body: { name: string, orgnr?: string|null, status?: pending|active|paused|closed }
  */
 export async function POST(req: NextRequest): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -274,3 +277,4 @@ export async function POST(req: NextRequest): Promise<Response> {
     return jsonErr(500, ctx, "SERVER_ERROR", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+

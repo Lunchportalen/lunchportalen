@@ -1,11 +1,11 @@
 // app/api/admin/employees/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -55,6 +55,8 @@ function pickEmployee(row: AnyRow) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 🔐 401 (NY SIGNATUR: Response | { ok:true, ctx })
   const s = await scopeOr401(req);
   if (s instanceof Response) return s;
@@ -132,3 +134,5 @@ export async function POST(req: NextRequest) {
     route: "/api/admin/employees",
   });
 }
+
+

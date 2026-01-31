@@ -1,5 +1,9 @@
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { writeAudit } from "@/lib/audit/log";
 
@@ -16,6 +20,9 @@ function supabaseAdmin() {
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const body = await req.json().catch(() => ({}));
   const targetUserId = (body?.userId ?? "").toString().trim();
   const newRole = body?.role;
@@ -102,3 +109,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, prevRole, newRole }, { status: 200 });
 }
+
+
+

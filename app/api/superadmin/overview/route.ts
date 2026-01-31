@@ -1,10 +1,11 @@
 // app/api/superadmin/overview/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -22,6 +23,9 @@ function subDaysISO(dateISO: string, days: number) {
 }
 
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `sa_over_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -68,7 +72,7 @@ export async function GET() {
     for (const o of orders ?? []) {
       ordersTotal += 1;
       const st = String((o as any).status ?? "").toLowerCase();
-      if (st === "cancelled" || st === "canceled") ordersCancelled += 1;
+      if (st === "canceled") ordersCancelled += 1;
       else ordersActive += 1;
     }
 
@@ -86,3 +90,6 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "server_error", message: String(e?.message ?? e), rid }, { status: 500, headers: noStore() });
   }
 }
+
+
+

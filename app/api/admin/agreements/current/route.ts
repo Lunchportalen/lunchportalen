@@ -1,4 +1,5 @@
 // app/api/admin/agreements/current/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   try {
     // ✅ Late import – unngår env i build/import
     const { supabaseServer } = await import("@/lib/supabase/server");
-    const sb = await supabaseServer();
+  const sb = await supabaseServer();
 
     // 1) Auth (fail-closed)
     const { data: auth, error: authErr } = await sb.auth.getUser();
@@ -65,3 +66,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "INTERNAL_ERROR", "Uventet feil.", { message: safeStr(e?.message ?? e) });
   }
 }
+
+

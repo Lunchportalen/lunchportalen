@@ -5,7 +5,6 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 
 // ✅ Dag-10 helpers
 import { jsonOk } from "@/lib/http/respond";
@@ -56,6 +55,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   // ✅ scope gate
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;

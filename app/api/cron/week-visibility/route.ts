@@ -1,11 +1,10 @@
 // app/api/cron/week-visibility/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { createClient as createSanityClient } from "@sanity/client";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { writeAudit } from "@/lib/audit/log";
 
@@ -109,18 +108,20 @@ async function readJsonSafe(req: Request) {
 /* =========================================================
    Clients (write)
 ========================================================= */
-const sanityWrite = createSanityClient({
-  projectId: requireEnv("NEXT_PUBLIC_SANITY_PROJECT_ID"),
-  dataset: requireEnv("NEXT_PUBLIC_SANITY_DATASET"),
-  apiVersion: requireEnv("NEXT_PUBLIC_SANITY_API_VERSION"),
-  token: requireEnv("SANITY_WRITE_TOKEN"),
-  useCdn: false,
-});
+async function getSanityWrite() {
+  const { createClient } = await import("@sanity/client");
+  return createClient({
+    projectId: requireEnv("NEXT_PUBLIC_SANITY_PROJECT_ID"),
+    dataset: requireEnv("NEXT_PUBLIC_SANITY_DATASET"),
+    apiVersion: requireEnv("NEXT_PUBLIC_SANITY_API_VERSION"),
+    token: requireEnv("SANITY_WRITE_TOKEN"),
+    useCdn: false,
+  });
+}
 
-function supabaseAdmin() {
-  const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
-  return createSupabaseClient(url, key, { auth: { persistSession: false } });
+async function getSupabaseAdmin() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  return supabaseAdmin();
 }
 
 /* =========================================================
@@ -134,6 +135,7 @@ async function patchVisibilityForRange(opts: {
   onlyApproved: boolean;
 }) {
   const { fromISO, toISO, visible, onlyApproved } = opts;
+  const sanityWrite = await getSanityWrite();
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
@@ -167,6 +169,7 @@ async function patchVisibilityForRange(opts: {
 
 async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean; onlyApproved: boolean }) {
   const { dateISO, visible, onlyApproved } = opts;
+  const sanityWrite = await getSanityWrite();
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
@@ -204,7 +207,7 @@ async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean;
 async function mirrorToDb(opts: { dateISO: string; visible: boolean; actorId?: string | null }) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { mirrored: false, skipped: "MISSING_SERVICE_ROLE_KEY" };
 
-  const admin = supabaseAdmin();
+  const admin = await getSupabaseAdmin();
   const { error } = await admin
     .from("menu_visibility_days")
     .upsert(
@@ -236,7 +239,7 @@ async function mirrorRangeToDb(opts: {
     cur = addDaysISO(cur, 1);
   }
 
-  const admin = supabaseAdmin();
+  const admin = await getSupabaseAdmin();
   const now = new Date().toISOString();
   const rows = dates.map((d) => ({
     date: d,
@@ -468,3 +471,4 @@ export async function POST(req: Request) {
     return jsonErr(500, rid, "server_error", "Manual week-visibility feilet", { message: String(e?.message ?? e), dateISO, publish });
   }
 }
+

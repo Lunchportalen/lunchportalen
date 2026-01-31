@@ -1,9 +1,11 @@
 // app/api/superadmin/agreements/[agreementId]/resume/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
@@ -24,6 +26,8 @@ function mkRid() {
 type Ctx = { params: { agreementId: string } | Promise<{ agreementId: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = mkRid();
 
   try {
@@ -156,3 +160,6 @@ export async function PUT() {
 export async function DELETE() {
   return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å aktivere avtale.");
 }
+
+
+

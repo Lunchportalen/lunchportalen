@@ -1,9 +1,11 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getScope } from "@/lib/auth/scope";
 import { toCsv } from "@/lib/esg/csv";
 
@@ -40,6 +42,8 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = crypto.randomUUID?.() ?? String(Date.now());
 
   const supabase = await supabaseServer();
@@ -87,3 +91,6 @@ export async function GET(req: NextRequest) {
   const csv = toCsv((data ?? []) as any, headers);
   return csvResponse(csv, `ESG_YEARLY_${year}.csv`);
 }
+
+
+

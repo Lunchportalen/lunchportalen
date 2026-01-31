@@ -1,10 +1,10 @@
 // app/api/cron/cleanup-invites/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Response helpers (no-store + consistent JSON)
@@ -62,6 +62,8 @@ function asDetailString(detail: unknown) {
    POST /api/cron/cleanup-invites
 ========================================================= */
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
 
   try {
@@ -112,3 +114,5 @@ export async function POST(req: Request) {
     return json({ ok: false, rid, error: "server_error", detail: msg }, 500);
   }
 }
+
+

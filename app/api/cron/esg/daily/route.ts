@@ -5,7 +5,6 @@ export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Dag-10: no-store + consistent JSON
@@ -64,6 +63,7 @@ function requireCronSecret(req: NextRequest) {
    - supports both factory and instance variants
 ========================================================= */
 async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const anyAdmin: any = supabaseAdmin as any;
   return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
 }

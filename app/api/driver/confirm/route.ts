@@ -1,3 +1,4 @@
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -5,7 +6,6 @@ export const revalidate = 0;
 import { type NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 function pickResponse(x: any): Response | null {
@@ -19,6 +19,8 @@ function safeStr(v: any) {
 }
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a: any = await scopeOr401(req);
   if (!a?.ok) return pickResponse(a) ?? new Response("Unauthorized", { status: 401 });
 
@@ -74,3 +76,5 @@ export async function POST(req: NextRequest) {
 
   return jsonOk({ ok: true, rid: ctx.rid, confirmation: data });
 }
+
+

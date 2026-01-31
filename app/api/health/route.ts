@@ -1,10 +1,14 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { jsonOk } from "@/lib/http/resp";
 
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
   const { data: auth } = await sb.auth.getUser();
 
@@ -20,3 +24,6 @@ export async function GET() {
     db: { ok: !error, ms: dbMs },
   });
 }
+
+
+

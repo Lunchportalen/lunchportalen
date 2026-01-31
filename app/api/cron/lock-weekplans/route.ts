@@ -1,10 +1,10 @@
 // app/api/cron/lock-weekplans/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { sanityServer } from "@/lib/sanity/server";
 import { nowISO, osloTodayISODate } from "@/lib/date/oslo";
 
 /* =========================================================
@@ -62,6 +62,8 @@ const FIND_TO_LOCK_GROQ = /* groq */ `
    GET /api/cron/lock-weekplans
 ========================================================= */
 export async function GET(req: Request) {
+  
+  const { sanityServer } = await import("@/lib/sanity/server");
   const rid = `lock_weekplans_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   // Gate FIRST (no side effects before secret validated)
@@ -113,3 +115,5 @@ export async function GET(req: Request) {
     });
   }
 }
+
+

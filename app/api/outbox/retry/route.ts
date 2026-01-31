@@ -1,10 +1,13 @@
 // app/api/outbox/retry/route.ts
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
@@ -174,3 +177,6 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+

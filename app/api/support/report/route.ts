@@ -1,9 +1,11 @@
 // app/api/support/report/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -31,6 +33,8 @@ function jsonError(status: number, rid: string, error: string, message: string, 
 }
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = crypto.randomUUID();
 
   try {
@@ -81,3 +85,6 @@ export async function POST(req: NextRequest) {
     return jsonError(500, rid, "SERVER_ERROR", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+
+

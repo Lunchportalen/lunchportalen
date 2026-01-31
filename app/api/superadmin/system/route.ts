@@ -7,7 +7,6 @@ import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseServer } from "@/lib/supabase/server";
 import {
   getSystemSettings,
   type SystemSettings,
@@ -221,6 +220,7 @@ export async function GET(req: NextRequest): Promise<Response> {
    PUT
 ========================================================= */
 export async function PUT(req: NextRequest): Promise<Response> {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 

@@ -1,10 +1,12 @@
 // app/api/kitchen/companies/route.ts
+
+
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 type BatchStatus = "queued" | "packed" | "delivered";
@@ -78,6 +80,8 @@ function pickCompanyName(c: any): string {
  * Cursor er company_id (uuid) – stabilt og lett.
  */
 export async function GET(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `kcomp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 
   try {
@@ -240,3 +244,6 @@ export async function GET(req: Request) {
     );
   }
 }
+
+
+

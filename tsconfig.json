@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
+
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -18,10 +19,20 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"]
+      "@/*": ["./*"],
+
+      "@/app/*": ["./app/*"],
+      "@/lib/*": ["./lib/*", "./app/lib/*", "./src/lib/*"],
+      "@/components/*": ["./components/*", "./app/components/*", "./src/components/*"],
+      "@/types/*": ["./types/*", "./app/types/*", "./src/types/*"],
+
+      "@/superadmin/*": ["./app/superadmin/*"],
+      "@/admin/*": ["./app/admin/*"],
+      "@/kitchen/*": ["./app/kitchen/*"],
+      "@/driver/*": ["./app/driver/*"]
     },
 
-    "types": ["vitest"],
+    "types": ["node"],
 
     "plugins": [{ "name": "next" }]
   },
@@ -33,7 +44,7 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.mts"
-, "app/superadmin/superadmin-client.tsx"  ],
+  ],
 
   "exclude": ["node_modules", ".next", "dist", "studio/**"]
 }

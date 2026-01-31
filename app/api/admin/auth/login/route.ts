@@ -1,4 +1,5 @@
 // app/api/admin/auth/login/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,8 +42,7 @@ export async function POST(req: NextRequest) {
   try {
     // ✅ Late import: hindrer env-evaluering under next build
     const { supabaseServer } = await import("@/lib/supabase/server");
-
-    const sb = await supabaseServer();
+  const sb = await supabaseServer();
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error || !data?.user) {
@@ -72,3 +72,5 @@ export async function POST(req: NextRequest) {
     });
   }
 }
+
+

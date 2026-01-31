@@ -1,8 +1,10 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -13,6 +15,8 @@ function cleanEmail(v: any) {
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   try {
     const body = await req.json().catch(() => null);
 
@@ -85,3 +89,6 @@ export async function POST(req: Request) {
     return jsonError(500, "server_error", "Uventet feil.", e?.message ?? e);
   }
 }
+
+
+

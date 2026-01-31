@@ -1,3 +1,4 @@
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -5,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type PlanTier = "BASIS" | "LUXUS";
 type AgreementInput = {
@@ -23,6 +23,8 @@ function safeStr(v: any) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const g = await scopeOr401(req);
   if (g instanceof Response) return g;
 
@@ -47,6 +49,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const g = await scopeOr401(req);
   if (g instanceof Response) return g;
 
@@ -91,3 +95,5 @@ export async function POST(req: NextRequest) {
 
   return jsonOk(g.ctx, { ok: true, data });
 }
+
+

@@ -1,14 +1,14 @@
 // app/api/kitchen/orders/batch-status/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 
-type OrderStatus = "active" | "cancelled" | "delivered";
+type OrderStatus = "active" | "canceled" | "delivered";
 const allowedRoles = ["kitchen", "superadmin"] as const;
 
 function isISODate(d: string) {
@@ -59,6 +59,8 @@ function parseQuery(req: NextRequest) {
  * - Returnerer hvor mange ordre som matcher (og ev. id-liste innenfor en cap)
  */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s = await scopeOr401(req);
   if (s.ok === false) return s.res;
 
@@ -141,6 +143,8 @@ export async function GET(req: NextRequest) {
  * - Logger 1 audit-rad (batch)
  */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s = await scopeOr401(req);
   if (s.ok === false) return s.res;
 
@@ -153,7 +157,7 @@ export async function POST(req: NextRequest) {
   const body = ((await readJson(req)) ?? {}) as Body;
 
   const status = asString(body.status) as OrderStatus;
-  if (!["active", "cancelled", "delivered"].includes(status)) {
+  if (!["active", "canceled", "delivered"].includes(status)) {
     return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig status.", { status });
   }
 
@@ -289,3 +293,5 @@ export async function POST(req: NextRequest) {
 
   return jsonOk({ ok: true, rid, updated, matched: idsToUpdate.length, status }, 200);
 }
+
+

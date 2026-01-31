@@ -5,7 +5,6 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 helpers
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
@@ -62,6 +61,7 @@ async function readBody(req: NextRequest): Promise<Record<string, any>> {
 }
 
 async function handleRevoke(ctx: any, code: string) {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const role = safeStr(ctx?.scope?.role);
   const ctxCompanyId = safeStr(ctx?.scope?.companyId);
 

@@ -1,11 +1,11 @@
 // app/api/kitchen/batch/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Dag-3 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -36,6 +36,8 @@ function isIsoDate(d: string) {
  * Table: delivery_batches
  */
 export async function PATCH(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Auth gate (401) — scopeOr401: Response | { ok:true, ctx }
   const scoped = await scopeOr401(req);
   if (scoped instanceof Response) return scoped;
@@ -123,3 +125,5 @@ export async function PATCH(req: NextRequest) {
     delivered_at: patch.delivered_at ?? null,
   });
 }
+
+

@@ -3,12 +3,15 @@
 // - DB-trigger på auth.users skal opprette profiles-raden (id = auth.users.id) og sette company_id fra user_metadata
 // - Denne ruten: oppretter company + default location, oppretter auth-user med metadata, venter på profiles, oppdaterer trygge felter (ikke company_id)
 
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { jsonErr, rid as makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
@@ -62,7 +65,7 @@ function isUuid(v: any) {
  * - REGISTRATIONS_ADMIN_KEY=<hemmelig>
  * - request header: x-registration-key: <hemmelig>
  */
-function registrationsEnabled(req: Request) {
+function registrationsEnabled(req: NextRequest) {
   const enabled = String(process.env.REGISTRATIONS_ENABLED ?? "").toLowerCase() === "true";
   if (enabled) return true;
 
@@ -92,7 +95,7 @@ type RegisterBody = {
 // DB helpers (robuste varianter)
 // -----------------------------
 async function insertCompany(
-  sb: ReturnType<typeof supabaseAdmin>,
+  sb: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>,
   payload: { name: string; orgnr: string | null; status: CompanyStatus; employeesCount: number }
 ) {
   const variants: any[] = [
@@ -106,14 +109,14 @@ async function insertCompany(
 
   for (const v of variants) {
     const { data, error } = await sb.from("companies").insert(v).select("*").single();
-    if (!error && data?.id) return data;
+    if (!error && data?.id) return { data, error: null };
     lastErr = error;
   }
 
-  throw lastErr ?? new Error("company_create_failed");
+  return { data: null, error: lastErr ?? new Error("company_create_failed") };
 }
 
-async function waitForProfile(sb: ReturnType<typeof supabaseAdmin>, userId: string) {
+async function waitForProfile(sb: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, userId: string) {
   const maxRetries = 25; // ~5s
   const sleepMs = 200;
 
@@ -126,7 +129,10 @@ async function waitForProfile(sb: ReturnType<typeof supabaseAdmin>, userId: stri
   return { ok: false as const, error: { message: "PROFILE_NOT_CREATED" } };
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid(req);
   const sb = supabaseAdmin();
 
   // 0) Hard gate
@@ -201,12 +207,24 @@ export async function POST(req: Request) {
     } catch {}
   };
 
+  const fail = async (e: any) => {
+    await rollbackAuthUser();
+    await rollbackLocation();
+    await rollbackCompany();
+    return jsonErr(500, rid, "register_failed", "Registrering feilet â€“ ingen data er lagret.", {
+      message: String(e?.message ?? e),
+      detail: e?.detail ?? undefined,
+    });
+  };
+
   try {
     // 4a) company
-    companyRow = await insertCompany(sb, { name: companyName, orgnr, status, employeesCount });
+    const insCompany = await insertCompany(sb, { name: companyName, orgnr, status, employeesCount });
+    if (insCompany.error) return await fail(insCompany.error);
+    companyRow = insCompany.data;
     companyId = companyRow?.id ?? null;
 
-    if (!companyId || !isUuid(companyId)) throw new Error("company_bad_id");
+    if (!companyId || !isUuid(companyId)) return await fail(new Error("company_bad_id"));
 
     // 4b) default location
     locationId = crypto.randomUUID();
@@ -219,7 +237,7 @@ export async function POST(req: Request) {
       city: city,
     } as any);
 
-    if (locErr) throw locErr;
+    if (locErr) return await fail(locErr);
 
     // 4c) auth-user (company_admin) — metadata brukes av DB-trigger til å lage profiles.id-raden med riktig company_id uten app-insert
     const createUserRes = await sb.auth.admin.createUser({
@@ -237,17 +255,17 @@ export async function POST(req: Request) {
     });
 
     if (createUserRes.error) {
-      throw Object.assign(new Error("auth_create_failed"), { detail: createUserRes.error.message });
+      return await fail(Object.assign(new Error("auth_create_failed"), { detail: createUserRes.error.message }));
     }
 
     const user = createUserRes.data.user;
     userId = user?.id ?? null;
 
-    if (!userId || !isUuid(userId)) throw new Error("auth_bad_user");
+    if (!userId || !isUuid(userId)) return await fail(new Error("auth_bad_user"));
 
     // 4d) wait for trigger-created profile + update safe fields (IKKE company_id)
     const waited = await waitForProfile(sb, userId);
-    if (!waited.ok) throw Object.assign(new Error("profile_not_created"), { detail: waited.error });
+    if (!waited.ok) return await fail(Object.assign(new Error("profile_not_created"), { detail: waited.error }));
 
     const profUpd = await sb
       .from("profiles")
@@ -264,7 +282,7 @@ export async function POST(req: Request) {
       })
       .eq("id", userId);
 
-    if (profUpd.error) throw profUpd.error;
+    if (profUpd.error) return await fail(profUpd.error);
 
     return NextResponse.json({
       ok: true,
@@ -283,3 +301,7 @@ export async function POST(req: Request) {
     });
   }
 }
+
+
+
+

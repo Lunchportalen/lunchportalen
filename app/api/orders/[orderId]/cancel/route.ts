@@ -8,7 +8,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { assertBeforeCutoffForDeliveryDate } from "@/lib/guards/cutoff";
-import { supabaseServer } from "@/lib/supabase/server";
 
 /* =========================================================
    Fasit response helpers (no-store + rid)
@@ -78,6 +77,7 @@ type OrderRow = {
 ========================================================= */
 
 export async function PATCH(req: NextRequest, { params }: { params: { orderId: string } }) {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const r = rid();
 
   try {
@@ -185,7 +185,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
     // -----------------------------
     const curr = String(order.status ?? "").toUpperCase();
     const isCancelled = curr === "CANCELLED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED"; // safe
-    const isLegacyCancelled = String(order.status ?? "").toLowerCase() === "canceled" || String(order.status ?? "").toLowerCase() === "cancelled";
+    const isLegacyCancelled = String(order.status ?? "").toLowerCase() === "canceled";
 
     if (isCancelled || isLegacyCancelled) {
       return jsonOk({

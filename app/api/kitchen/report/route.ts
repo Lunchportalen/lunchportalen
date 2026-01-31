@@ -1,11 +1,11 @@
 // app/api/kitchen/report/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { jsonOk, jsonErr, rid as makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
@@ -110,6 +110,8 @@ function makeTotals(): Totals {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
 
   // ✅ Auth gate (cookie/session)
@@ -289,3 +291,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "unexpected_error", "Uventet feil i kjøkkenrapport.", safeStr(e?.message || e));
   }
 }
+
+

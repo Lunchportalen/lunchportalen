@@ -1,10 +1,11 @@
 // app/api/superadmin/users/cleanup/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -26,6 +27,7 @@ function isEmail(v: string) {
 }
 
 async function requireSuperadmin() {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
   const { data: auth, error } = await sb.auth.getUser();
   const user = auth?.user ?? null;
@@ -36,6 +38,7 @@ async function requireSuperadmin() {
   if (email === "superadmin@lunchportalen.no") return { user, actorEmail: user.email ?? null };
 
   // Fallback: profiles.role hvis dere også støtter det
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const admin = supabaseAdmin();
   const p = await admin.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
   const role = String(p.data?.role ?? user.user_metadata?.role ?? "").trim().toLowerCase() as Role;
@@ -44,7 +47,7 @@ async function requireSuperadmin() {
   return { user, actorEmail: user.email ?? null };
 }
 
-async function bestEffortAudit(admin: ReturnType<typeof supabaseAdmin>, evt: any) {
+async function bestEffortAudit(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, evt: any) {
   try {
     await admin.from("audit_events").insert({
       actor_user_id: evt.actor_user_id,
@@ -61,7 +64,7 @@ async function bestEffortAudit(admin: ReturnType<typeof supabaseAdmin>, evt: any
   } catch {}
 }
 
-async function findAuthUserIdByEmail(admin: ReturnType<typeof supabaseAdmin>, email: string) {
+async function findAuthUserIdByEmail(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, email: string) {
   // Iterer noen sider for sikkerhet (kan økes senere)
   for (let page = 1; page <= 20; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
@@ -74,6 +77,8 @@ async function findAuthUserIdByEmail(admin: ReturnType<typeof supabaseAdmin>, em
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `su_cleanup_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -182,3 +187,4 @@ export async function POST(req: Request) {
     return jsonError(500, "server_error", "Uventet feil.", { rid, detail: String(e?.message ?? e) });
   }
 }
+

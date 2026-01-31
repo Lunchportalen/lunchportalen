@@ -1,3 +1,4 @@
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,13 +7,14 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { osloTodayISODate } from "@/lib/date/oslo";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function isISODate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // scopeOr401: Response ved 401, ellers { ok:true, ctx }
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -58,3 +60,5 @@ export async function GET(req: NextRequest) {
     rows: data ?? [],
   });
 }
+
+

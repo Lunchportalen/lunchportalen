@@ -5,7 +5,6 @@ export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 /* =========================================================
    Response helpers (fasit)
@@ -81,6 +80,7 @@ type OrderRow = {
 ========================================================= */
 
 export async function POST(req: NextRequest, ctx: { params: { orderId: string } }) {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const r = rid();
 
   try {

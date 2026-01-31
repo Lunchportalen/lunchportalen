@@ -1,9 +1,11 @@
 // app/api/auth/profile/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -22,6 +24,8 @@ function safeRole(v: any): Role {
 }
 
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `authprof_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   const sb = await supabaseServer();
@@ -104,3 +108,6 @@ export async function GET() {
     },
   });
 }
+
+
+

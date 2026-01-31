@@ -1,9 +1,11 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getScope } from "@/lib/auth/scope";
 
 function noStore() {
@@ -33,6 +35,8 @@ function addMonths(isoMonth01: string, delta: number) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = crypto.randomUUID?.() ?? String(Date.now());
 
   const supabase = await supabaseServer();
@@ -79,3 +83,6 @@ export async function GET(req: NextRequest) {
 
   return jsonOk({ ok: true, rid, company_id: companyId, year, months: months ?? [], yearly: yearly ?? null });
 }
+
+
+

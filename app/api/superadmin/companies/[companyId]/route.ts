@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
@@ -42,6 +41,8 @@ function qBool(req: NextRequest, key: string, fallback: boolean) {
 }
 
 export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -111,3 +112,4 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
     return jsonErr(500, a, "SERVER_ERROR", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+

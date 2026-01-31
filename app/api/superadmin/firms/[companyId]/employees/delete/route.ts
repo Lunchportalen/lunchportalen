@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -31,6 +30,8 @@ function isProtectedSystemEmail(email: string) {
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return (s?.response as Response) || (s?.res as Response) || jsonErr(401, { rid: "rid_missing" }, "UNAUTHENTICATED", "Du må være innlogget.");
 
@@ -98,3 +99,4 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
     return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke slette bruker.", { message: String(e?.message ?? e) });
   }
 }
+

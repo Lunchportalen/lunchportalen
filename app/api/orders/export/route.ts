@@ -1,11 +1,11 @@
 // app/api/admin/orders/export/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
@@ -49,6 +49,8 @@ function errDetail(e: any) {
    GET /api/admin/orders/export (CSV)
 ========================================================= */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -175,3 +177,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(status, rid, code, String(e?.message ?? e), errDetail(e));
   }
 }
+
+

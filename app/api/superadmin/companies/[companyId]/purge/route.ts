@@ -15,7 +15,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Severity = "info" | "warning" | "critical";
 type RouteCtx = { params: { companyId: string } | Promise<{ companyId: string }> };
@@ -113,6 +112,7 @@ async function bestEffortAudit(input: {
 
   // 2) fallback audit_events insert
   try {
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const admin = supabaseAdmin();
     const { error } = await admin.from("audit_events").insert({
       actor_user_id: input.actor_user_id,
@@ -150,6 +150,8 @@ function mapRpcError(rpcErr: any) {
    GET: dry-run via RPC
 ========================================================= */
 export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -200,6 +202,8 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
    POST/DELETE: purge via RPC
 ========================================================= */
 export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 

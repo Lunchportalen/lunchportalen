@@ -1,11 +1,11 @@
 // app/api/driver/bulk-set/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -74,6 +74,8 @@ async function readJson(req: NextRequest) {
  * }
  */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const r = rid();
 
   // ---- auth ----
@@ -182,3 +184,5 @@ export async function POST(req: NextRequest) {
     200
   );
 }
+
+

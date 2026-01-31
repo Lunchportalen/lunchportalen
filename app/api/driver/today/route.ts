@@ -1,10 +1,10 @@
 // app/api/driver/today/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
@@ -53,6 +53,8 @@ type ApiOk = { ok: true; rid: string; date: string; deliveries: Delivery[] };
  * - Kun ACTIVE orders (Avensia: én sannhet)
  */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 🔐 Scope + rid
   const s = await scopeOr401(req);
   if ((s as any).ok === false) return (s as any).res;
@@ -68,7 +70,7 @@ export async function GET(req: NextRequest) {
   const qDate = asIsoDate(u.searchParams.get("date"));
   const date = qDate ?? osloTodayISODate();
 
-  let admin: ReturnType<typeof supabaseAdmin>;
+  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
@@ -217,3 +219,5 @@ export async function GET(req: NextRequest) {
 
   return jsonOk({ ok: true, rid, date, deliveries } satisfies ApiOk, 200);
 }
+
+

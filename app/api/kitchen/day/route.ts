@@ -1,4 +1,5 @@
 // app/api/kitchen/day/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,7 +7,6 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 
 type BatchStatus = "queued" | "packed" | "delivered";
@@ -170,6 +170,8 @@ async function fetchOrdersActive(supabase: ServiceClient, date: string) {
 }
 
 export async function GET(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `kday_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 
   try {
@@ -348,3 +350,5 @@ export async function GET(req: Request) {
     return noStore({ ok: false, rid, error: "kitchen_day_failed", detail: e?.message || String(e) }, 500);
   }
 }
+
+

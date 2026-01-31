@@ -1,9 +1,11 @@
 // app/api/superadmin/users/set-scope/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -37,6 +39,8 @@ function normRole(v: any): Role | null {
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   try {
     const body = await req.json().catch(() => null);
     if (!body) return jsonError(400, "invalid_json", "Ugyldig JSON i request.");
@@ -135,3 +139,6 @@ export async function POST(req: Request) {
     return jsonError(500, "server_error", "Uventet feil.", e?.message ?? e);
   }
 }
+
+
+

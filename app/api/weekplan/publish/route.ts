@@ -1,11 +1,12 @@
 // app/api/weekplan/publish/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { sanityServer } from "@/lib/sanity/server";
 import { isPublishWindowOslo, nowISO } from "@/lib/date/oslo";
-import { supabaseServer } from "@/lib/supabase/server";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -64,6 +65,9 @@ function alreadyPublished(doc: any) {
    Route
 ========================= */
 export async function POST(req: Request) {
+  
+  const { sanityServer } = await import("@/lib/sanity/server");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `publish_weekplan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   // 1) Auth + role
@@ -148,3 +152,6 @@ export async function POST(req: Request) {
 export async function GET() {
   return jsonError(405, "method_not_allowed", "Bruk POST for å publisere ukeplan.");
 }
+
+
+

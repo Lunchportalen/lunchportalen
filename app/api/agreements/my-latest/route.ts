@@ -1,10 +1,11 @@
 // app/api/agreements/my-latest/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================
    Response helpers
@@ -41,6 +42,9 @@ function isSafeStoragePath(p: string) {
    Route
 ========================= */
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `agr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   // 1) Auth (cookie/session)
@@ -106,3 +110,6 @@ export async function GET() {
     expiresInSeconds: 60,
   });
 }
+
+
+

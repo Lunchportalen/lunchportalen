@@ -1,11 +1,11 @@
 // app/api/admin/invoices/csv/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
 import { normalizeAgreement, isAgreementInvalid, resolveTierForDate, type AgreementNormalized } from "@/lib/agreements/normalizeAgreement";
 import { PRICE_PER_TIER, type PlanTier } from "@/lib/pricing/priceForDate";
@@ -60,6 +60,8 @@ function csvLine(values: unknown[]) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -233,3 +235,5 @@ export async function GET(req: NextRequest) {
     });
   }
 }
+
+

@@ -1,9 +1,11 @@
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getScope } from "@/lib/auth/scope";
 
 // ✅ RIKTIG: filen finnes hos dere
@@ -33,6 +35,8 @@ function isUuid(v: any): v is string {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = crypto.randomUUID?.() ?? String(Date.now());
   const supabase = await supabaseServer();
 
@@ -77,3 +81,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, rid, year, company_id: companyId ?? null, items }, { headers: noStore() });
 }
+
+
+

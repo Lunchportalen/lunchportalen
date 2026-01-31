@@ -1,11 +1,11 @@
 // app/api/admin/metrics/daily/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
@@ -82,6 +82,8 @@ function cancelledBefore0800Oslo(deliveryDateISO: string, cancelledAtISO: string
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -190,3 +192,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+

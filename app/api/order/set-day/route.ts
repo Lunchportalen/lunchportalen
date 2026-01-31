@@ -1,4 +1,9 @@
 // app/api/order/set-day/route.ts
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
@@ -204,3 +209,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, rid, error: "SERVER_ERROR", detail: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+
+

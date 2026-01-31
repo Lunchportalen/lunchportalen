@@ -1,9 +1,11 @@
 // app/api/me/route.ts
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import { NextResponse } from "next/server";
+
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -18,6 +20,8 @@ function noStore() {
 }
 
 export async function GET() {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `me_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -80,3 +84,6 @@ export async function GET() {
     );
   }
 }
+
+
+

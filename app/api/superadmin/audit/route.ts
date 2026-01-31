@@ -1,10 +1,10 @@
 // app/api/superadmin/audit/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 
 /* =========================================================
@@ -119,6 +119,9 @@ type ApiErr = { ok: false; rid: string; error: string; message?: string; detail?
     - q=<string> (optional search; actor_email/action/entity_type/summary/rid)
 ========================================================= */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
 
   try {
@@ -190,7 +193,7 @@ export async function GET(req: NextRequest) {
     /* =========================
        Service role client
     ========================= */
-    let admin: ReturnType<typeof supabaseAdmin>;
+    let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
@@ -295,3 +298,5 @@ export async function GET(req: NextRequest) {
     } satisfies ApiErr);
   }
 }
+
+

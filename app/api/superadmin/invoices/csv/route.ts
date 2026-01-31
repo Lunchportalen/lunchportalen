@@ -1,11 +1,10 @@
 // app/api/superadmin/invoices/csv/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
 import { toCsv, type InvoiceRow } from "@/lib/billing/csv";
 import { safeTier, unitPriceNOK, type PlanTier } from "@/lib/billing/pricing";
@@ -47,6 +46,7 @@ function pickTierForDate(agreements: Agreement[], dateISO: string): PlanTier {
 
 /** supabaseAdmin kan være client eller factory */
 async function adminClient(): Promise<any> {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = supabaseAdmin as any;
   return typeof s === "function" ? await s() : s;
 }
@@ -59,6 +59,8 @@ function isHardSuperadmin(email: string | null | undefined) {
 }
 
 export async function GET(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   // cookie-auth: må være innlogget
   const supabase = await supabaseServer();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
@@ -182,3 +184,4 @@ export async function GET(req: Request) {
   const name = companyId ? `invoice_${companyId}_${from}_to_${to}.csv` : `invoice_ALL_${from}_to_${to}.csv`;
   return csvResponse(csv, name);
 }
+

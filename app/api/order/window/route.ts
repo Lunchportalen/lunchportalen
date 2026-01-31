@@ -1,10 +1,12 @@
 // app/api/order/window/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { getMenuForRange } from "@/lib/sanity/queries";
 import { normalizeAgreement, resolveTierForDate } from "@/lib/agreements/normalizeAgreement";
 
 // ✅ Dag-3 standard guards (samme mønster som toggle/cancel)
@@ -14,9 +16,6 @@ import { noStoreHeaders } from "@/lib/http/noStore";
 // ✅ Oslo SSoT
 import { osloTodayISODate, addDaysISO, isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 type Tier = "BASIS" | "LUXUS";
 type Choice = { key: string; label?: string };
@@ -217,6 +216,9 @@ function getNextWorkdays(startISO: string, count: number) {
 ========================================================= */
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { getMenuForRange } = await import("@/lib/sanity/queries");
   const rid = ridFromReq(req);
 
   // ✅ scope gate (én sannhetskilde)
@@ -400,3 +402,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+

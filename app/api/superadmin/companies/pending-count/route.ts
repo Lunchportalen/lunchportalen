@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
@@ -16,6 +15,8 @@ function denyResponse(s: any): Response {
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -40,3 +41,4 @@ export async function GET(req: NextRequest): Promise<Response> {
     });
   }
 }
+

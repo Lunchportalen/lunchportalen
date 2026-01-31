@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isUuid } from "@/lib/agreements/normalize";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
@@ -47,6 +46,8 @@ function denyResponse(s: any): Response {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -199,3 +200,4 @@ export async function DELETE(req: NextRequest): Promise<Response> {
   if (!s?.ok) return denyResponse(s);
   return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
 }
+

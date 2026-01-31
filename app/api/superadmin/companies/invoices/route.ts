@@ -1,3 +1,4 @@
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -5,13 +6,14 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const g = await scopeOr401(req);
   if (g instanceof Response) return g;
 
@@ -52,3 +54,5 @@ export async function GET(req: NextRequest) {
     invoices: data ?? [],
   });
 }
+
+

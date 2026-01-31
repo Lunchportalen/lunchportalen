@@ -1,11 +1,11 @@
 // app/api/admin/invites/resend/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -43,6 +43,8 @@ type InviteRow = {
 };
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Scope
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -166,3 +168,5 @@ export async function POST(req: NextRequest) {
     return jsonErr(ctx, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+

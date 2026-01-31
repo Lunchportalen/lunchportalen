@@ -28,7 +28,7 @@ type ReceiptRow = {
    🔒 STATUS-FASIT (JUSTER HER hvis dere bruker andre ord)
 ========================================================= */
 const ACTIVE_STATUSES = new Set(["confirmed", "active", "ordered"]);
-const CANCELED_STATUSES = new Set(["canceled", "cancelled"]);
+const CANCELED_STATUSES = new Set(["canceled"]);
 
 /* =========================================================
    Utils

@@ -1,10 +1,11 @@
 // app/api/profile/set-scope/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -24,6 +25,9 @@ function isUuid(v: any): v is string {
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 export async function POST(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // ✅ VIKTIG: supabaseServer() er async hos dere
   const sb = await supabaseServer();
 
@@ -103,3 +107,6 @@ export async function POST(req: Request) {
 
   return res;
 }
+
+
+

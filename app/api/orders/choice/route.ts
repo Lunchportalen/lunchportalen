@@ -1,12 +1,11 @@
 // app/api/orders/choice/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { backupOrderEvent } from "@/lib/orderBackup";
 
 // ✅ Dag-10 standard helpers (Response + no-store + rid via ctx)
@@ -101,6 +100,9 @@ type OrderRow = {
 ========================================================= */
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // ✅ scope gate – rid må være samme som scopeOr401
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
@@ -285,3 +287,5 @@ export async function POST(req: NextRequest) {
     },
   });
 }
+
+

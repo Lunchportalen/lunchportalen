@@ -1,10 +1,10 @@
 // app/api/kitchen/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
@@ -49,6 +49,8 @@ function isUuid(v: unknown) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s = await scopeOr401(req);
   if (s.ok === false) return s.res;
 
@@ -86,7 +88,7 @@ export async function GET(req: NextRequest) {
     .from("orders")
     .select("id,user_id,company_id,location_id,note,status")
     .eq("date", date)
-    .neq("status", "cancelled");
+    .neq("status", "canceled");
 
   if (oErr) {
     return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente kjøkkenordre.", {
@@ -191,3 +193,5 @@ export async function GET(req: NextRequest) {
 
   return jsonOk(resp, 200);
 }
+
+

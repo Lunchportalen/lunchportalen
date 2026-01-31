@@ -1,10 +1,11 @@
 // app/api/superadmin/billing/export/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -25,6 +26,9 @@ function csvEscape(v: any) {
 }
 
 export async function GET(req: Request) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `sa_bill_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -83,7 +87,7 @@ export async function GET(req: Request) {
       a.orders_total += 1;
 
       const st = String(o.status ?? "").toLowerCase();
-      if (st === "cancelled" || st === "canceled") a.orders_cancelled += 1;
+      if (st === "canceled") a.orders_cancelled += 1;
       else a.orders_active += 1;
 
       agg.set(cid, a);
@@ -129,3 +133,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "server_error", message: String(e?.message ?? e), rid }, { status: 500, headers: noStore() });
   }
 }
+
+
+

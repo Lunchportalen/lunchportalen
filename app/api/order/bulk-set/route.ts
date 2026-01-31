@@ -1,13 +1,14 @@
 // app/api/order/bulk-set/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 type Body = {
   // hvis tier settes, gjelder det bare dager med denne tier
@@ -406,3 +407,5 @@ export async function POST(req: Request) {
     );
   }
 }
+
+

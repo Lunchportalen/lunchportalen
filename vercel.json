@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/week-visibility?key=${CRON_SECRET}",
-      "schedule": "* * * * *"
+      "path": "/api/cron/week-scheduler?key=${CRON_SECRET}",
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/cron/forecast?key=${CRON_SECRET}",

@@ -1,11 +1,11 @@
 // app/api/admin/invites/register/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { rid as makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 
@@ -85,7 +85,7 @@ async function readJsonSafe(req: NextRequest) {
    Helpers (auth / profile)
 ========================================================= */
 
-async function listUsersFindByEmail(admin: ReturnType<typeof supabaseAdmin>, email: string): Promise<FindUserRes> {
+async function listUsersFindByEmail(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, email: string): Promise<FindUserRes> {
   const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) return { ok: false, error };
 
@@ -93,7 +93,7 @@ async function listUsersFindByEmail(admin: ReturnType<typeof supabaseAdmin>, ema
   return { ok: true, userid: hit?.id ? String(hit.id) : null };
 }
 
-async function waitForProfile(admin: ReturnType<typeof supabaseAdmin>, userId: string) {
+async function waitForProfile(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, userId: string) {
   const maxRetries = 25; // ~5s
   const sleepMs = 200;
 
@@ -110,6 +110,8 @@ async function waitForProfile(admin: ReturnType<typeof supabaseAdmin>, userId: s
 ========================================================= */
 
 export async function POST(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
 
   try {
@@ -227,3 +229,5 @@ export async function POST(req: NextRequest) {
     return jsonErr(500, rid, "server_error", "Uventet feil ved registrering.", errDetail(e));
   }
 }
+
+

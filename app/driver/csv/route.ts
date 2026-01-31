@@ -1,11 +1,10 @@
 // app/driver/csv/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
@@ -48,6 +47,9 @@ function joinPhone(country: string, phone: string) {
  *   profiles: user_id, full_name, department
  */
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 0) Standard scope guard
   const s = await scopeOr401(req);
   if ((s as any)?.ok === false) return (s as any).res;
@@ -64,7 +66,7 @@ export async function GET(req: NextRequest) {
   if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
 
   // 0.3) Admin client (service role)
-  let admin: ReturnType<typeof supabaseAdmin>;
+  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
@@ -174,3 +176,5 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+

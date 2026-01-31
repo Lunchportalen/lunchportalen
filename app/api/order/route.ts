@@ -1,4 +1,5 @@
 // app/api/order/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,8 +8,6 @@ import type { NextRequest } from "next/server";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { cutoffStatusNow } from "@/lib/date/cutoff";
-import { getMenuForDate } from "@/lib/sanity/queries";
-import { supabaseServer } from "@/lib/supabase/server";
 
 // ✅ Dag-10 helpers (Response + rid + no-store via respond)
 import { jsonOk } from "@/lib/http/respond";
@@ -78,6 +77,9 @@ async function queueBackupEmail(params: {
    POST: Create/activate today's order (idempotent upsert)
 ========================================================= */
 export async function POST(req: NextRequest) {
+  
+  const { getMenuForDate } = await import("@/lib/sanity/queries");
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = ridNow("order_post");
 
   try {
@@ -262,6 +264,8 @@ export async function POST(req: NextRequest) {
    - Setter status="canceled" (legacy) for kompat.
 ========================================================= */
 export async function DELETE(_req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = ridNow("order_del");
 
   try {
@@ -402,3 +406,5 @@ export async function DELETE(_req: NextRequest) {
     return jsonErr(rid, 500, "SERVER_ERROR", "Serverfeil.", { detail: err?.message || String(err) });
   }
 }
+
+

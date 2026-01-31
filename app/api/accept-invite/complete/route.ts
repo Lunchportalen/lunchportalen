@@ -6,12 +6,14 @@
 // - lookup/update i profiles skjer på user_id (siden schema har user_id som kobling mot auth)
 // - vi feiler tidlig hvis invite mangler location_id (det betyr at default-lokasjon ikke er satt/trigger mangler)
 
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================
    Response helpers
@@ -48,19 +50,19 @@ function toMs(v: any): number | null {
   return Number.isFinite(ms) ? ms : null;
 }
 
-async function safeDeleteAuthUser(admin: ReturnType<typeof supabaseAdmin>, userId: string) {
+async function safeDeleteAuthUser(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, userId: string) {
   try {
     await admin.auth.admin.deleteUser(userId);
   } catch {}
 }
 
 /** ⚠️ listUsers kan være paginert – vi bruker den kun som fallback (dev/små miljø). */
-async function listAuthUsers(admin: ReturnType<typeof supabaseAdmin>) {
+async function listAuthUsers(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>) {
   const res = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   const users = (res as any)?.data?.users as any[] | undefined;
   return users ?? [];
 }
-async function findAuthUserByEmail(admin: ReturnType<typeof supabaseAdmin>, email: string) {
+async function findAuthUserByEmail(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, email: string) {
   const users = await listAuthUsers(admin);
   return users.find((u) => normEmail(u?.email) === email) ?? null;
 }
@@ -70,7 +72,7 @@ async function findAuthUserByEmail(admin: ReturnType<typeof supabaseAdmin>, emai
  * NB: lookup på user_id (ikke id) pga schema/guard.
  * Vi FEILER IKKE hvis den ikke er synlig ennå.
  */
-async function waitForProfileRowByUserId(admin: ReturnType<typeof supabaseAdmin>, userId: string) {
+async function waitForProfileRowByUserId(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, userId: string) {
   const maxRetries = 20; // ~4s
   const sleepMs = 200;
 
@@ -94,6 +96,8 @@ async function waitForProfileRowByUserId(admin: ReturnType<typeof supabaseAdmin>
    Route
 ========================= */
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `accept_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -311,3 +315,6 @@ export async function POST(req: Request) {
 export async function GET() {
   return jsonError(405, "method_not_allowed", "Bruk POST for å fullføre invitasjon.");
 }
+
+
+

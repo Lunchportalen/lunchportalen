@@ -1,11 +1,11 @@
 // app/api/admin/employees/export/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { rid as makeRid } from "@/lib/http/respond";
 
@@ -44,6 +44,8 @@ function first<T>(v: T | T[] | null | undefined): T | null {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
 
   // 401 gate
@@ -184,3 +186,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+

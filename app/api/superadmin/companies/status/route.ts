@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Types / constants
@@ -73,6 +72,8 @@ async function readJsonSafe(req: NextRequest): Promise<any> {
 ========================================================= */
 
 export async function GET(req: NextRequest): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -129,6 +130,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 ========================================================= */
 
 export async function POST(req: NextRequest): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -186,3 +189,4 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
   }
 }
+

@@ -1,4 +1,5 @@
 // app/api/admin/esg/technical/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,7 +7,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { buildTechnicalAppendixPdf } from "@/lib/esg/pdf-technical";
@@ -43,6 +43,8 @@ function safeFilenamePart(v: any) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   // 1) Scope
@@ -107,3 +109,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, ctx.rid, "unexpected", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
+
+

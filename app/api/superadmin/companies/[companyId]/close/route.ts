@@ -6,7 +6,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type RouteCtx = { params: { companyId: string } | Promise<{ companyId: string }> };
 type Body = { note?: string };
@@ -51,6 +50,8 @@ function denyResponse(s: any): Response {
 }
 
 export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -131,3 +132,4 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     return jsonErr(500, a, "SERVER_ERROR", "Uventet feil i close.", { message: String(e?.message ?? e) });
   }
 }
+

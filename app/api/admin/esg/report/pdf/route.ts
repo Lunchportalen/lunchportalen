@@ -1,4 +1,5 @@
 // app/api/admin/esg/report/pdf/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,7 +7,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
 import { buildEsgPdf } from "@/lib/esg/pdf";
@@ -62,6 +62,8 @@ function toMonthRangeLast12(toMonth01: string) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -164,3 +166,5 @@ export async function GET(req: NextRequest) {
 
   return pdfResponse(bytes, filename, ctx.rid);
 }
+
+

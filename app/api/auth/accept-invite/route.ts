@@ -6,12 +6,14 @@
 // - Venter til profiles-raden finnes (trigger), verifiserer at company_id er riktig, oppdaterer kun trygge felter.
 // - Marker invite brukt til slutt.
 
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -34,14 +36,14 @@ function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-async function findUserIdByEmail(admin: ReturnType<typeof supabaseAdmin>, email: string) {
+async function findUserIdByEmail(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, email: string) {
   const listRes = await admin.auth.admin.listUsers({ perPage: 1000, page: 1 });
   const users = (listRes as any)?.data?.users as any[] | undefined;
   const hit = users?.find((u) => normEmail(u?.email) === email);
   return hit?.id ? String(hit.id) : null;
 }
 
-async function waitForProfile(admin: ReturnType<typeof supabaseAdmin>, userId: string) {
+async function waitForProfile(admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>, userId: string) {
   const maxRetries = 25; // ~5s
   const sleepMs = 200;
 
@@ -54,6 +56,8 @@ async function waitForProfile(admin: ReturnType<typeof supabaseAdmin>, userId: s
 }
 
 export async function POST(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `acc_inv_${Math.random().toString(16).slice(2)}`;
 
   try {
@@ -202,3 +206,6 @@ export async function POST(req: Request) {
     return jsonError(500, "server_error", "Uventet feil.", { rid, message: String(e?.message ?? e) });
   }
 }
+
+
+

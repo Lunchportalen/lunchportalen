@@ -1,10 +1,10 @@
 // app/api/driver/orders/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
@@ -18,6 +18,8 @@ function isISODate(d: string) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s = await scopeOr401(req);
   if (s.ok === false) return s.res;
 
@@ -53,3 +55,5 @@ export async function GET(req: NextRequest) {
 
   return jsonOk({ ok: true, rid, rows: data ?? [] }, 200);
 }
+
+

@@ -1,13 +1,13 @@
 // app/api/superadmin/menus-week/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { MenuContent } from "@/lib/sanity/queries";
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-import { getMenuForDatesAdmin, type MenuContent } from "@/lib/sanity/queries";
 
 type DayStatus = "published" | "unpublished" | "missing";
 
@@ -74,6 +74,10 @@ function hasAllergens(arr: unknown) {
  *    unpublished => komplett + ikke publisert
  */
 export async function GET(req: Request) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { getMenuForDatesAdmin } = await import("@/lib/sanity/queries");
   const rid = safeStr((req.headers as any)?.get?.("x-rid")) || makeRid();
 
   try {
@@ -204,3 +208,6 @@ export async function GET(req: Request) {
     return jsonErr(rid, 500, "INTERNAL_ERROR", "Uventet feil i menus-week.", safeStr(e?.message ?? e));
   }
 }
+
+
+

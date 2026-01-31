@@ -1,12 +1,15 @@
 // app/api/order/set-choice/route.ts
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 type Body = {
   date: string; // YYYY-MM-DD
@@ -520,3 +523,6 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+

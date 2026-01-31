@@ -1,12 +1,11 @@
 // app/api/kitchen/batch/reset/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
@@ -36,6 +35,9 @@ function batchKey(date: string, slot: string, location_id: string) {
  * MUST audit (fail-closed)
  */
 export async function POST(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
   const { data: auth, error: authErr } = await sb.auth.getUser();
   if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
 
-  let admin: ReturnType<typeof supabaseAdmin>;
+  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
@@ -106,3 +108,5 @@ export async function POST(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? e), { at: "kitchen/batch/reset" });
   }
 }
+
+

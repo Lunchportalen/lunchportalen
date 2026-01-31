@@ -1,4 +1,5 @@
 // app/api/admin/esg/report/executive/pdf/route.ts
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,7 +7,6 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/server";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
 import { buildExecutiveOnePagerPdf } from "@/lib/esg/pdf-executive";
@@ -58,6 +58,8 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
+  
+  const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope
   const a = await scopeOr401(req);
   if (a instanceof Response) return a;
@@ -135,3 +137,5 @@ export async function GET(req: NextRequest) {
   const safe = safeFilenamePart(companyName);
   return pdfResponse(bytes, `Executive_ESG_${safe}_${year}.pdf`, ctx.rid);
 }
+
+

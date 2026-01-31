@@ -1,9 +1,11 @@
 // app/api/superadmin/agreements/[agreementId]/activate/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
@@ -25,6 +27,8 @@ function onlyIds(rows: any[] | null | undefined) {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = `sa_activate_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -133,3 +137,6 @@ export async function PUT() {
 export async function DELETE() {
   return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å aktivere avtale.");
 }
+
+
+

@@ -1,9 +1,9 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function jsonError(status: number, error: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
@@ -23,11 +23,13 @@ function isUuid(v: any) {
  * Vi normaliserer til et "db"-objekt.
  */
 async function adminDb(): Promise<any> {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = supabaseAdmin as any;
   return typeof s === "function" ? await s() : s;
 }
 
 async function requireSuperadmin() {
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return { ok: false as const, status: 401, message: "Ikke innlogget" };
@@ -52,6 +54,8 @@ type InvoiceLine = {
 };
 
 export async function GET(_: Request, ctx: { params: { runId: string } }) {
+  
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const guard = await requireSuperadmin();
   if (!guard.ok) return jsonError(guard.status, "AUTH", guard.message);
 
@@ -138,3 +142,4 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
 
   return NextResponse.json({ ok: true, run: runRes.data, rows, totals });
 }
+
