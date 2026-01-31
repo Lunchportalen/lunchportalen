@@ -1,10 +1,10 @@
 name: CI Enterprise
 
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: "0 3 * * *"
-  pull_request:
 
 jobs:
   enterprise:
@@ -13,6 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20

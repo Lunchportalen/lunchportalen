@@ -15,11 +15,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node (20)
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -33,12 +31,8 @@ jobs:
       - name: Tests
         run: npm run test:run
 
-      - name: Lint (non-blocking)
+      - name: Lint (CI)
         run: npm run lint:ci
 
       - name: Build
         run: npm run build
-
-      # Audit kjører – men får ikke stoppe "Required CI" før dere er ferdig å migrere alt
-      - name: API audit (report only for now)
-        run: npm run audit:api || true
