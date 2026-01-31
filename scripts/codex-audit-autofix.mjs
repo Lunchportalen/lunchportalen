@@ -11,6 +11,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
+/* =========================================================
+   Helpers
+========================================================= */
+
 function requireEnv(name) {
   const v = process.env[name];
   if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
@@ -29,12 +33,8 @@ function safeWrite(p, content) {
   fs.writeFileSync(p, content ?? "", "utf8");
 }
 
-function run(cmd) {
-  return execSync(cmd, { stdio: "pipe", encoding: "utf8" });
-}
-
-function runQuiet(cmd) {
-  execSync(cmd, { stdio: "ignore" });
+function normalizeNewlines(s) {
+  return String(s ?? "").replace(/\r\n/g, "\n");
 }
 
 function stripCodeFences(s) {
@@ -43,10 +43,6 @@ function stripCodeFences(s) {
   out = out.replace(/^```(?:diff)?\s*\n/i, "");
   out = out.replace(/\n```$/i, "");
   return out;
-}
-
-function normalizeNewlines(s) {
-  return String(s ?? "").replace(/\r\n/g, "\n");
 }
 
 function isUnifiedDiff(text) {
@@ -58,7 +54,7 @@ function isUnifiedDiff(text) {
 }
 
 function extractFirstUnifiedDiffBlock(text) {
-  // Hvis modellen skriver noe før diffen, prøv å finne starten på diff-blokken.
+  // Hvis modellen skriver noe før diffen, finn starten.
   const s = normalizeNewlines(String(text ?? ""));
   const idx = s.indexOf("diff --git ");
   if (idx >= 0) return s.slice(idx);
@@ -71,9 +67,20 @@ function extractFirstUnifiedDiffBlock(text) {
   return s;
 }
 
-function guardNoCliArtifacts(s) {
-  // Sikkerhetsnett: vi vil aldri at output skal inneholde CLI-instruksjoner.
-  const t = String(s ?? "");
+function run(cmd) {
+  return execSync(cmd, { stdio: "pipe", encoding: "utf8" });
+}
+
+function runQuiet(cmd) {
+  execSync(cmd, { stdio: "ignore" });
+}
+
+/**
+ * Hard guard: aldri tillat CLI-instruksjoner å snike seg inn i output.
+ * (Skal aldri inneholde "codex --..." eller "--system"/"--prompt")
+ */
+function guardNoCliArtifacts(rawText) {
+  const t = String(rawText ?? "");
   if (/\bcodex\b/i.test(t) || /--system\b/i.test(t) || /--prompt\b/i.test(t)) {
     throw new Error(
       "Model output contained CLI artifacts (codex/--system/--prompt). Refusing to apply. Saved raw output to codex.raw.txt"
@@ -81,9 +88,14 @@ function guardNoCliArtifacts(s) {
   }
 }
 
+/* =========================================================
+   OpenAI: Responses API → unified diff
+========================================================= */
+
 async function openaiUnifiedDiff({ apiKey, model, inputText }) {
   const url = "https://api.openai.com/v1/responses";
 
+  // ✅ Viktig: Responses API krever content.type = "input_text"
   const body = {
     model,
     input: [
@@ -91,7 +103,7 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
         role: "system",
         content: [
           {
-            type: "text",
+            type: "input_text",
             text: [
               "Du er LUNCHPORTALEN AUTOFIX BOT.",
               "MÅL: Få `npm run ci:critical` grønn med minst mulig endring.",
@@ -111,7 +123,7 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
         role: "user",
         content: [
           {
-            type: "text",
+            type: "input_text",
             text: [
               "ci:critical feilet. Her er loggen:",
               "",
@@ -143,30 +155,30 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
 
   const data = await res.json();
 
-  // Mest robuste: prøv output_text først
+  // Robust parsing:
+  // 1) output_text hvis finnes
   let text = typeof data.output_text === "string" ? data.output_text : "";
 
-  // Deretter samle fra output-array
+  // 2) ellers samle tekst fra output items
   if (!text) {
     const out = Array.isArray(data.output) ? data.output : [];
     const chunks = [];
     for (const item of out) {
       const content = Array.isArray(item?.content) ? item.content : [];
       for (const c of content) {
-        const t = c?.text;
-        if (typeof t === "string" && t.trim()) chunks.push(t);
+        if (typeof c?.text === "string" && c.text.trim()) chunks.push(c.text);
       }
     }
     text = chunks.join("\n");
   }
 
-  // Siste fallback: hvis API returnerer noe annet
-  if (!text) {
-    text = JSON.stringify(data, null, 2);
-  }
-
+  // 3) fallback
   return String(text || "");
 }
+
+/* =========================================================
+   Main
+========================================================= */
 
 async function main() {
   const apiKey = requireEnv("OPENAI_API_KEY");
@@ -182,36 +194,21 @@ async function main() {
     );
   }
 
-  // Ren arbeidsflate – workflowen lager branch før dette, så vi kan reset'e trygt.
+  // Ren arbeidsflate: unngå halvt appliserte patches
   try {
     runQuiet("git reset --hard");
   } catch {}
 
+  // Hard cap for request-størrelse
   const raw = await openaiUnifiedDiff({
     apiKey,
     model,
     inputText: criticalLog.slice(0, 120_000),
   });
 
-  // Sikkerhetsnett – lagre raw hvis noe er rart
   const rawNorm = normalizeNewlines(raw);
 
-  // Stripp fences og prøv å finne diff-blokk
-  let cleaned = stripCodeFences(rawNorm);
-  cleaned = extractFirstUnifiedDiffBlock(cleaned).trimEnd() + "\n";
-
-  // Hvis modellen “prater”, vil vi heller stoppe enn å apply noe ukjent
-  // (vi forventer KUN diff)
-  // Samtidig: hvis diff-blokken finnes, la den gå.
-  if (!isUnifiedDiff(cleaned)) {
-    safeWrite("codex.raw.txt", rawNorm);
-    throw new Error(
-      "Model did not return a unified diff. Saved raw output to codex.raw.txt"
-    );
-  }
-
-  // Guard: aldri CLI-artifacts i output
-  // (Dette fanger også “codex --model ...” hvis det somehow lekker inn)
+  // Sikkerhet: avvis hvis modellen prøver å “snakke CLI”
   try {
     guardNoCliArtifacts(rawNorm);
   } catch (e) {
@@ -219,7 +216,18 @@ async function main() {
     throw e;
   }
 
-  // Hvis diffen er tom/uten endringer, stopp rolig
+  // Rens output til ren diff
+  let cleaned = stripCodeFences(rawNorm);
+  cleaned = extractFirstUnifiedDiffBlock(cleaned).trimEnd() + "\n";
+
+  if (!isUnifiedDiff(cleaned)) {
+    safeWrite("codex.raw.txt", rawNorm);
+    throw new Error(
+      "Model did not return a unified diff. Saved raw output to codex.raw.txt"
+    );
+  }
+
+  // Hvis diffen er tom (sjeldent), stopp rolig
   if (!cleaned.trim()) {
     safeWrite("codex.raw.txt", rawNorm);
     process.stdout.write("ℹ️ Empty diff returned. No changes to apply.\n");
@@ -228,7 +236,7 @@ async function main() {
 
   safeWrite("codex.patch", cleaned);
 
-  // Dry-run først
+  // Dry-run: valider patch før apply
   try {
     run("git apply --check codex.patch");
   } catch (e) {
