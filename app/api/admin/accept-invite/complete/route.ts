@@ -9,9 +9,6 @@ import crypto from "node:crypto";
 import { jsonOk, jsonErr, rid as makeRid } from "@/lib/http/respond";
 import { readJson } from "@/lib/http/routeGuard";
 
-/* =========================================================
-   Utils
-========================================================= */
 function safeText(v: unknown, max = 120) {
   const s = String(v ?? "").trim();
   return s ? s.slice(0, max) : null;
@@ -29,13 +26,12 @@ function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-/* =========================================================
-   Supabase admin helpers (late import)
-========================================================= */
+/** Late-bound type */
 type AdminClient = ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
 
 async function getAdmin(): Promise<AdminClient> {
-  const mod = await import("@/lib/supabase/admin"); // ✅ late import
+  // ✅ Late import: unngår env-evaluering under next build
+  const mod = await import("@/lib/supabase/admin");
   return mod.supabaseAdmin();
 }
 
@@ -63,25 +59,17 @@ async function findAuthUserByEmail(admin: AdminClient, email: string) {
 }
 
 async function waitForProfile(admin: AdminClient, userId: string) {
-  const maxRetries = 30;
+  const maxRetries = 30; // ~6s
   const sleepMs = 200;
 
   for (let i = 0; i < maxRetries; i++) {
-    const { data, error } = await admin
-      .from("profiles")
-      .select("id, company_id")
-      .eq("id", userId)
-      .maybeSingle();
-
+    const { data, error } = await admin.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
     if (!error && data?.id) return data as { id: string; company_id: string | null };
     await new Promise((r) => setTimeout(r, sleepMs));
   }
   return null;
 }
 
-/* =========================================================
-   POST /api/admin/accept-invite/complete
-========================================================= */
 export async function POST(req: NextRequest) {
   const rid = makeRid();
   const ctx = { rid } as any;
@@ -95,16 +83,14 @@ export async function POST(req: NextRequest) {
     const nameInput = safeText(body?.name ?? body?.full_name ?? body?.fullName, 120);
 
     if (!token) return jsonErr(ctx, "missing_token", "Mangler token.");
-    if (!password || password.length < 10)
-      return jsonErr(ctx, "bad_password", "Passord må være minst 10 tegn.");
-    if (password2 && password !== password2)
-      return jsonErr(ctx, "pw_mismatch", "Passordene er ikke like.");
+    if (!password || password.length < 10) return jsonErr(ctx, "bad_password", "Passord må være minst 10 tegn.");
+    if (password2 && password !== password2) return jsonErr(ctx, "pw_mismatch", "Passordene er ikke like.");
 
-    const admin = await getAdmin(); // ✅ late import
+    const admin = await getAdmin();
     const token_hash = sha256Hex(token);
     const nowIso = new Date().toISOString();
 
-    // 1) Finn gyldig invitasjon
+    // 1) Finn gyldig invite (ubrukt + ikke utløpt)
     const inv = await admin
       .from("employee_invites")
       .select("id, email, company_id, location_id, department, full_name, expires_at, used_at")
@@ -117,12 +103,10 @@ export async function POST(req: NextRequest) {
     if (!inv.data) return jsonErr(ctx, "invalid_token", "Ugyldig eller utløpt invitasjon.");
 
     const email = normEmail(inv.data.email);
-    if (!email || !isEmail(email))
-      return jsonErr(ctx, "invalid_email", "Ugyldig e-post på invitasjonen.");
+    if (!email || !isEmail(email)) return jsonErr(ctx, "invalid_email", "Ugyldig e-post på invitasjonen.");
 
     const company_id = String(inv.data.company_id ?? "");
-    if (!company_id)
-      return jsonErr(ctx, "invite_corrupt", "Invitasjonen mangler company_id.");
+    if (!company_id) return jsonErr(ctx, "invite_corrupt", "Invitasjonen mangler company_id.");
 
     const location_id = inv.data.location_id ? String(inv.data.location_id) : null;
     const department = inv.data.department ?? null;
@@ -137,8 +121,8 @@ export async function POST(req: NextRequest) {
 
     const displayName = full_name || email;
 
-    // 2) Opprett / oppdater auth-user
-    let createdNew = false;
+    // 2) Opprett/oppdater auth-user (idempotent)
+    let createdNewAuthUser = false;
     let userId: string | null = null;
 
     const create = await admin.auth.admin.createUser({
@@ -156,16 +140,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (!create.error) {
-      createdNew = true;
+      createdNewAuthUser = true;
       userId = String((create as any)?.data?.user?.id ?? "") || null;
       if (!userId) {
         const u = await findAuthUserByEmail(admin, email);
-        userId = u?.id ?? null;
+        userId = u?.id ? String(u.id) : null;
       }
     } else {
       const existing = await findAuthUserByEmail(admin, email);
-      if (!existing?.id)
-        return jsonErr(ctx, "auth_user_lookup_failed", "Kunne ikke opprette eller finne konto.");
+      if (!existing?.id) {
+        return jsonErr(ctx, "auth_user_lookup_failed", "Kunne ikke opprette eller finne brukerkonto.", {
+          create_error: (create as any)?.error?.message ?? "unknown",
+        });
+      }
 
       userId = String(existing.id);
 
@@ -182,34 +169,48 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (upd.error)
-        return jsonErr(ctx, "auth_update_failed", "Kunne ikke oppdatere konto.", upd.error.message);
+      if (upd.error) {
+        return jsonErr(ctx, "auth_update_failed", "Kunne ikke oppdatere konto.", (upd as any).error?.message);
+      }
     }
 
     if (!userId) {
-      if (createdNew) {
+      if (createdNewAuthUser) {
         const u = await findAuthUserByEmail(admin, email);
-        if (u?.id) await safeDeleteAuthUser(admin, u.id);
+        if (u?.id) await safeDeleteAuthUser(admin, String(u.id));
       }
       return jsonErr(ctx, "auth_not_ready", "Kunne ikke bekrefte bruker i auth.");
     }
 
-    // 3) Vent på profile-trigger
+    // 3) Vent til profiles finnes (trigger)
     const profile = await waitForProfile(admin, userId);
     if (!profile) {
-      if (createdNew) await safeDeleteAuthUser(admin, userId);
-      return jsonErr(ctx, "profile_not_created", "Profil ble ikke opprettet.", { userId });
+      if (createdNewAuthUser) await safeDeleteAuthUser(admin, userId);
+      return jsonErr(
+        ctx,
+        "profile_not_created",
+        "Profil ble ikke opprettet automatisk. Sjekk DB-trigger på auth.users → public.profiles.",
+        { userId }
+      );
     }
 
-    if (String(profile.company_id) !== company_id)
-      return jsonErr(ctx, "company_mismatch", "Kontoen er knyttet til annet firma.");
+    // 4) Sikkerhet: company må stemme
+    if (!profile.company_id) {
+      return jsonErr(ctx, "profile_not_bound", "Profil er ikke knyttet til firma.", { userId });
+    }
+    if (String(profile.company_id) !== String(company_id)) {
+      return jsonErr(ctx, "company_mismatch", "Kontoen er knyttet til et annet firma. Kontakt superadmin.", {
+        existingCompany: profile.company_id,
+        inviteCompany: company_id,
+      });
+    }
 
-    // 4) Oppdater profil (trygge felt)
+    // 5) Oppdater trygge felt i profiles (IKKE company_id)
     const profUpd = await admin
       .from("profiles")
       .update({
         email,
-        full_name,
+        full_name: full_name ?? inviteFullName ?? null,
         name: displayName,
         department,
         location_id,
@@ -220,18 +221,18 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", userId);
 
-    if (profUpd.error)
-      return jsonErr(ctx, "profile_update_failed", "Kunne ikke oppdatere profil.", profUpd.error);
+    if (profUpd.error) return jsonErr(ctx, "profile_update_failed", "Kunne ikke oppdatere profil.", profUpd.error);
 
-    // 5) Marker invitasjon brukt
-    const mark = await admin
-      .from("employee_invites")
-      .update({ used_at: nowIso })
-      .eq("id", inv.data.id)
-      .is("used_at", null);
+    // 6) Marker invitasjon brukt (race-safe)
+    const mark = await admin.from("employee_invites").update({ used_at: nowIso }).eq("id", inv.data.id).is("used_at", null);
 
     if (mark.error) {
-      return jsonOk(ctx, { ok: true, rid, message: "Konto opprettet, men invitasjon ikke markert brukt." });
+      return jsonOk(ctx, {
+        ok: true,
+        rid,
+        message: "Konto opprettet, men kunne ikke markere invitasjon brukt.",
+        warning: mark.error,
+      });
     }
 
     return jsonOk(ctx, { ok: true, rid, message: "Konto opprettet." });
