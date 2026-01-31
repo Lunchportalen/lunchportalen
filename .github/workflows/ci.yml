@@ -36,22 +36,47 @@ jobs:
       - name: Lint (CI)
         run: npm run lint:ci
 
-      # 🔒 Fail fast – gir krystallklar feilmelding hvis secrets mangler
+      # 🔒 Fail fast – krystallklar feilmelding hvis secrets mangler
       - name: Verify required secrets
         shell: bash
+        env:
+          # Supabase
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+          # Sanity
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+
+          # Token (map: vi bruker repo-secret SANITY_WRITE_TOKEN)
+          SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
         run: |
           set -euo pipefail
           : "${NEXT_PUBLIC_SUPABASE_URL:?Missing NEXT_PUBLIC_SUPABASE_URL secret}"
           : "${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Missing NEXT_PUBLIC_SUPABASE_ANON_KEY secret}"
           : "${SUPABASE_SERVICE_ROLE_KEY:?Missing SUPABASE_SERVICE_ROLE_KEY secret}"
+
+          : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID secret}"
+          : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET secret}"
+          : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION secret}"
+
+          # Token er valgfri i noen oppsett – men siden dere faktisk har den, verifiserer vi den også:
+          : "${SANITY_API_TOKEN:?Missing SANITY_WRITE_TOKEN secret (mapped to SANITY_API_TOKEN)}"
+
+      - name: Build
         env:
+          # Supabase
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Build
+          # Sanity
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+
+          # Sanity token (map fra SANITY_WRITE_TOKEN)
+          SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
         run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
