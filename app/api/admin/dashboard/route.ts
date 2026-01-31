@@ -1,5 +1,4 @@
 // app/api/admin/dashboard/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,17 +6,20 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 type CountRes = { ok: true; count: number } | { ok: false; error: any };
 
-async function countExact(q: any): Promise<CountRes> {
-  const { count, error } = await q;
-  if (error) return { ok: false, error };
-  return { ok: true, count: Number(count ?? 0) };
+// ✅ Tar imot query-builder og await-er den inni
+async function countExact(builder: any): Promise<CountRes> {
+  try {
+    const { count, error } = await builder;
+    if (error) return { ok: false, error };
+    return { ok: true, count: Number(count ?? 0) };
+  } catch (e) {
+    return { ok: false, error: e };
+  }
 }
 
 function errDetail(e: any) {
@@ -39,20 +41,21 @@ function safeStr(v: any) {
    GET /api/admin/dashboard
 ========================================================= */
 export async function GET(req: NextRequest) {
-  
+  // ✅ Late import – CI-safe
   const { supabaseServer } = await import("@/lib/supabase/server");
+
   const a = await scopeOr401(req);
-  if (a.ok === false) return a.res;
+  if ((a as any).ok === false) return (a as any).res;
 
-  const { rid, scope } = a.ctx;
+  const { rid, scope } = (a as any).ctx;
 
-  const denyRole = requireRoleOr403(a.ctx, "admin.dashboard.read", ["company_admin"]);
+  const denyRole = requireRoleOr403((a as any).ctx, "admin.dashboard.read", ["company_admin"]);
   if (denyRole) return denyRole;
 
-  const denyScope = requireCompanyScopeOr403(a.ctx);
+  const denyScope = requireCompanyScopeOr403((a as any).ctx);
   if (denyScope) return denyScope;
 
-  const companyId = safeStr(scope.companyId);
+  const companyId = safeStr((scope as any)?.companyId);
   if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
 
   try {
@@ -146,9 +149,9 @@ export async function GET(req: NextRequest) {
       ok: true,
       rid,
       company: {
-        id: company?.id ?? companyId,
-        name: company?.name ?? null,
-        status: company?.status ?? "active",
+        id: (company as any)?.id ?? companyId,
+        name: (company as any)?.name ?? null,
+        status: (company as any)?.status ?? "active",
       },
       cutoff: { time: "08:00", tz: "Europe/Oslo" },
       dates: { todayISO, weekStartISO: weekStart, weekEndISO: weekEnd },
@@ -166,5 +169,3 @@ export async function GET(req: NextRequest) {
     return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", errDetail(e));
   }
 }
-
-
