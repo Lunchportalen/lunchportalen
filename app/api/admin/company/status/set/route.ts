@@ -1,133 +1,91 @@
 // app/api/admin/company/status/set/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { auditWriteMust } from "@/lib/audit/auditWrite";
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+function ridFrom(req: NextRequest) {
+  return safeStr(req.headers.get("x-rid")) || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+function ok(rid: string, body: any, status = 200) {
+  return NextResponse.json({ ok: true, rid, ...body }, { status });
+}
+function err(rid: string, status: number, code: string, message: string, detail?: any) {
+  return NextResponse.json({ ok: false, rid, error: code, message, detail: detail ?? null }, { status });
+}
+
+async function readJsonLoose(req: NextRequest) {
+  try {
+    return await req.json();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * POST /api/admin/company/status/set
- *
- * Bruk:
- *  - Kun superadmin
- *  - Låser firmastatus sentralt (ACTIVE | PAUSED | CLOSED)
- *  - Fail-closed + MUST audit
- *
- * Body:
- *  {
- *    company_id: string,
- *    status: "ACTIVE" | "PAUSED" | "CLOSED",
- *    reason?: string
- *  }
+ * Body: { status: "ACTIVE" | "PAUSED" | "CLOSED", companyId?: string }
+ * Roles: company_admin | superadmin
  */
-
-function safeStr(v: any) {
-  return String(v ?? "").trim();
-}
-
-type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
-function normStatus(v: any): CompanyStatus | null {
-  const s = safeStr(v).toUpperCase();
-  if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED") return s;
-  return null;
-}
-
 export async function POST(req: NextRequest) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const a = await scopeOr401(req);
-  if (a.ok === false) return a.res;
+  const rid = ridFrom(req);
+  const body = (await readJsonLoose(req)) ?? {};
+  const status = safeStr(body.status).toUpperCase();
 
-  const { rid, scope } = a.ctx;
-
-  const denyRole = requireRoleOr403(a.ctx, "admin.company.status.set", ["superadmin"]);
-  if (denyRole) return denyRole;
-
-  let admin;
-  try {
-    admin = supabaseAdmin();
-  } catch {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.");
+  if (!["ACTIVE", "PAUSED", "CLOSED"].includes(status)) {
+    return err(rid, 400, "BAD_STATUS", "Ugyldig status.", { status });
   }
 
   try {
-    const body = await readJson(req);
+    // 🔑 LATE IMPORT – stopper env-evaluering under build
+    const { supabaseServer } = await import("@/lib/supabase/server");
+    const sb = await supabaseServer();
 
-    const company_id = safeStr(body?.company_id);
-    const status = normStatus(body?.status);
-    const reason = safeStr(body?.reason) || null;
+    // Auth
+    const { data: auth, error: authErr } = await sb.auth.getUser();
+    const user = auth?.user ?? null;
+    if (authErr || !user) return err(rid, 401, "UNAUTHENTICATED", "Du må være innlogget.");
 
-    if (!company_id) return jsonErr(400, rid, "MISSING_COMPANY", "Mangler company_id.");
-    if (!status) return jsonErr(400, rid, "INVALID_STATUS", "Ugyldig status.");
-
-    // hent eksisterende
-    const { data: existing, error: exErr } = await admin
-      .from("companies")
-      .select("id,status")
-      .eq("id", company_id)
+    // Profil
+    const { data: prof, error: profErr } = await sb
+      .from("profiles")
+      .select("role, company_id")
+      .eq("id", user.id)
       .maybeSingle();
 
-    if (exErr || !existing) {
-      return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.", {
-        message: exErr?.message ?? null,
-      });
+    if (profErr) return err(rid, 500, "PROFILE_READ_FAILED", "Kunne ikke lese profil.");
+
+    const role = String((prof as any)?.role ?? "");
+    const ownCompanyId = safeStr((prof as any)?.company_id);
+    const targetCompanyId =
+      role === "superadmin" ? safeStr(body.companyId) || ownCompanyId : ownCompanyId;
+
+    if (!targetCompanyId) {
+      return err(rid, 400, "MISSING_COMPANY", "Mangler companyId.");
     }
 
-    // no-op guard
-    if (safeStr(existing.status).toUpperCase() === status) {
-      return jsonOk({
-        ok: true,
-        rid,
-        company_id,
-        status,
-        unchanged: true,
-      });
+    if (!["company_admin", "superadmin", "admin"].includes(role)) {
+      return err(rid, 403, "FORBIDDEN", "Ingen tilgang.");
     }
 
-    const { error: upErr } = await admin
+    const { error: upErr } = await sb
       .from("companies")
       .update({ status })
-      .eq("id", company_id);
+      .eq("id", targetCompanyId);
 
-    if (upErr) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke oppdatere firmastatus.", {
-        message: upErr.message,
-      });
-    }
+    if (upErr) return err(rid, 500, "DB_ERROR", "Kunne ikke oppdatere status.", upErr.message);
 
-    // MUST audit
-    await auditWriteMust({
-      rid,
-      action: "COMPANY_STATUS_SET",
-      entity_type: "company",
-      entity_id: company_id,
-      company_id,
-      location_id: null,
-      actor_user_id: safeStr(scope.userId),
-      actor_email: scope.email ?? null,
-      actor_role: scope.role ?? null,
-      summary: `Company status ${status}`,
-      detail: {
-        before: safeStr(existing.status).toUpperCase(),
-        after: status,
-        reason,
-      },
-    });
-
-    return jsonOk({
-      ok: true,
-      rid,
-      company_id,
-      status,
-    });
+    return ok(rid, { companyId: targetCompanyId, status });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? e), { at: "admin/company/status/set" });
+    return err(rid, 500, "UNHANDLED", "Uventet feil.", safeStr(e?.message ?? e));
   }
 }
 
-
+export async function GET(req: NextRequest) {
+  const rid = ridFrom(req);
+  return err(rid, 405, "method_not_allowed", "Bruk POST.", { method: "GET" });
+}
