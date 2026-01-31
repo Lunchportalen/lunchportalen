@@ -3,33 +3,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-// Dag-10 standard helpers
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonErr } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { readJson } from "@/lib/http/routeGuard";
 
-/* =========================================================
-   Utils
-========================================================= */
-function safeStr(v: unknown) {
+function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-function normEmail(v: unknown) {
+function normEmail(v: any) {
   return safeStr(v).toLowerCase();
 }
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-/* =========================================================
-   POST /api/admin/auth/login
-   - Runtime-only (bruker Supabase + env)
-   - Setter session-cookie via Supabase
-   - Returnerer aldri tokens i body
-========================================================= */
 export async function POST(req: NextRequest) {
   let body: any;
   try {
@@ -49,12 +39,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const sb = await supabaseServer();
+    // ✅ Late import: hindrer env-evaluering under next build
+    const { supabaseServer } = await import("@/lib/supabase/server");
 
-    const { data, error } = await sb.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const sb = await supabaseServer();
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error || !data?.user) {
       return jsonErr(401, undefined as any, "LOGIN_FAILED", "Feil e-post eller passord.", {
@@ -62,9 +51,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // NB:
-    // - Supabase setter cookie automatisk
-    // - UI verifiserer videre via /api/admin/auth
+    // NB: ingen tokens returneres – UI verifiserer videre via /api/admin/auth
     return NextResponse.json(
       {
         ok: true,
@@ -76,10 +63,7 @@ export async function POST(req: NextRequest) {
       },
       {
         status: 200,
-        headers: {
-          ...noStoreHeaders(),
-          "content-type": "application/json; charset=utf-8",
-        },
+        headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
       }
     );
   } catch (e: any) {
