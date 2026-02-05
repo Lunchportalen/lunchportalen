@@ -10,6 +10,11 @@ jobs:
   enterprise:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,3 +29,6 @@ jobs:
 
       - name: Enterprise gate
         run: npm run ci:enterprise
+        env:
+          RC: "true"
+          CI_MODE: "rc"
