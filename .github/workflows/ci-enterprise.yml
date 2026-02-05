@@ -16,6 +16,7 @@ jobs:
   enterprise:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     env:
       # ✅ RC audit mode (deterministisk)
       RC_MODE: "true"
@@ -65,17 +66,32 @@ jobs:
           set -euo pipefail
           echo "=== COMMIT ==="
           git rev-parse HEAD
-          echo "=== PACKAGE SCRIPTS (audit:api / ci:enterprise / build:enterprise) ==="
-          node -e "const p=require('./package.json'); console.log('audit:api=', p.scripts['audit:api']); console.log('ci:enterprise=', p.scripts['ci:enterprise']); console.log('build:enterprise=', p.scripts['build:enterprise']);"
-          echo "=== SCRIPT HASH (audit-api-routes.mjs) ==="
-          sha256sum scripts/audit-api-routes.mjs || shasum -a 256 scripts/audit-api-routes.mjs
-          echo "=== SCRIPT HEAD (first 40 lines) ==="
-          sed -n '1,40p' scripts/audit-api-routes.mjs
+
+          echo "=== PACKAGE SCRIPTS (audit:api / audit:repo / ci:enterprise / build:enterprise) ==="
+          node -e "const p=require('./package.json'); console.log('audit:api=', p.scripts['audit:api']); console.log('audit:repo=', p.scripts['audit:repo']); console.log('ci:enterprise=', p.scripts['ci:enterprise']); console.log('build:enterprise=', p.scripts['build:enterprise']);"
+
+          echo "=== SCRIPT HASH (audit-api-routes.mjs / audit-repo.mjs) ==="
+          sha256sum scripts/audit-api-routes.mjs scripts/audit-repo.mjs 2>/dev/null || (shasum -a 256 scripts/audit-api-routes.mjs scripts/audit-repo.mjs)
+
+          echo "=== SCRIPT HEAD (first 30 lines) ==="
+          sed -n '1,30p' scripts/audit-api-routes.mjs
+          echo "---"
+          sed -n '1,30p' scripts/audit-repo.mjs
+
           echo "=== ENV ==="
           echo "RC_MODE=$RC_MODE CI_MODE=$CI_MODE CI=$CI"
 
+      - name: Guard: no legacy audit-repo.js references
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -n "audit-repo\.js" -- . ':!package-lock.json'; then
+            echo "❌ Found legacy reference to audit-repo.js. Use scripts/audit-repo.mjs."
+            exit 1
+          fi
+          echo "✅ No legacy audit-repo.js references."
+
       # ✅ Enterprise gate (explicit, deterministic)
-      # (Ikke bruk npm run ci:enterprise her – vi kjører gates eksplisitt for å sikre RC_MODE i audit)
       - name: Enterprise gate (RC, explicit)
         shell: bash
         run: |
@@ -103,6 +119,8 @@ jobs:
           echo "==> admin copy check"
           npm run check:admin-copy
 
-          echo "==> build enterprise"
+          echo "==> agents:check"
           npm run agents:check
-          next build
+
+          echo "==> build:enterprise"
+          npm run build:enterprise

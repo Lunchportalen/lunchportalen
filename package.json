@@ -6,24 +6,39 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+
     "build": "next build",
+
     "build:enterprise": "cross-env RC_MODE=true npm run agents:check && cross-env RC_MODE=true npm run audit:api && cross-env RC_MODE=true npm run audit:repo && cross-env RC_MODE=true npm run check:admin-copy && cross-env RC_MODE=true next build",
+
     "start": "next start",
+
     "lint": "next lint",
     "lint:ci": "next lint || node -e \"process.exit(0)\"",
+
     "typecheck": "tsc --noEmit",
+
     "test": "vitest --config vitest.config.ts",
     "test:run": "vitest run --config vitest.config.ts",
     "test:tenant": "vitest run tests/tenant-isolation.test.ts --config vitest.config.ts",
+
     "check:admin-copy": "node scripts/check-admin-no-hardcoded-text.mjs",
+
     "audit:api": "cross-env RC_MODE=true node scripts/audit-api-routes.mjs",
     "audit:repo": "node scripts/audit-repo.mjs",
+
     "sanity:live": "node scripts/sanity-live.mjs",
+
     "agents:check": "node scripts/agents-ci.mjs",
+
     "preflight": "npm run agents:check && npm run typecheck && npm run test:run && npm run lint:ci && npm run audit:api && npm run audit:repo",
-    "ci:enterprise": "cross-env-shell RC_MODE=true \"npm run agents:check && npm run typecheck && npm run test:run && npm run test:tenant && npm run lint && npm run build:enterprise\"",
+
+    "ci:enterprise": "cross-env RC_MODE=true npm run agents:check && npm run typecheck && npm run test:run && npm run test:tenant && npm run lint:ci && npm run build:enterprise",
+
     "ci:critical": "npm run ci:enterprise",
+
     "push:ok": "npm run ci:critical && node -e \"process.exit(require('child_process').execSync('git status --porcelain').toString().trim() ? 1 : 0)\"",
+
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:check": "git config core.hooksPath"
   },
