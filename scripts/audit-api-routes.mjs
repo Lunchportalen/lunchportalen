@@ -14,7 +14,7 @@ const RC_EXTRA_PREFIXES = [
 ];
 const EXCLUDED_PREFIXES = ["app/api/admin/", "app/api/auth/", "app/api/driver/"];
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
-// NOTE: Full Dag-10 migration of admin APIs is planned post-RC.
+// NOTE: Full Day-10 migration of superadmin APIs is planned post-RC.
 
 function walk(dir) {
   const out = [];
@@ -101,42 +101,70 @@ const files = walk(API_DIR).filter((p) => p.endsWith(".ts") || p.endsWith(".tsx"
 const routes = files.filter((p) => p.endsWith("route.ts") || p.endsWith("route.tsx"));
 
 const findings = [];
+const excluded = [];
 const outOfScope = [];
 for (const f of routes) {
   const src = read(f);
+  if (isExcludedRoute(f)) {
+    excluded.push({ file: rel(f), reason: "Explicitly excluded for RC." });
+    continue;
+  }
   if (!isAuditedRoute(f)) {
-    outOfScope.push({
-      file: rel(f),
-      reason: isExcludedRoute(f) ? "Explicitly excluded for RC." : "Out of scope for RC.",
-    });
+    const issues = auditRoute(f, src);
+    if (issues.length) {
+      outOfScope.push({
+        file: rel(f),
+        reason: "Out of scope for RC.",
+        issues,
+      });
+    }
     continue;
   }
   const issues = auditRoute(f, src);
   if (issues.length) findings.push({ file: rel(f), issues });
 }
 
-if (!findings.length) {
+const warn = findings;
+const info = excluded;
+const fail = outOfScope;
+
+const warnCount = warn.length;
+const infoCount = info.length;
+const failCount = fail.length;
+
+if (!warnCount && !failCount) {
   console.log("API AUDIT OK");
-  if (outOfScope.length) {
-    console.log("\nOut of scope for RC:");
-    for (const it of outOfScope) {
-      console.log(`- ${it.file} (${it.reason})`);
-    }
+  if (infoCount) {
+    console.log("\nINFO:");
+    for (const it of info) console.log(`- ${it.file} (${it.reason})`);
   }
+  console.log(`\nSummary: FAIL ${failCount} | WARN ${warnCount} | INFO ${infoCount}`);
   process.exit(0);
 }
 
 console.log("API AUDIT: Avvik funnet\n");
-for (const it of findings) {
-  console.log(`- ${it.file}`);
-  for (const msg of it.issues) console.log(`   â€¢ ${msg}`);
-}
-if (outOfScope.length) {
-  console.log("\nOut of scope for RC:");
-  for (const it of outOfScope) {
+if (failCount) {
+  console.log("FAIL:");
+  for (const it of fail) {
     console.log(`- ${it.file} (${it.reason})`);
+    for (const msg of it.issues) console.log(`  - ${msg}`);
   }
+  console.log("");
 }
-console.log("\nFiks disse, eller migrer til app/api/_template/route.ts-standard.\n");
+if (warnCount) {
+  console.log("WARN:");
+  for (const it of warn) {
+    console.log(`- ${it.file}`);
+    for (const msg of it.issues) console.log(`  - ${msg}`);
+  }
+  console.log("");
+}
+if (infoCount) {
+  console.log("INFO:");
+  for (const it of info) console.log(`- ${it.file} (${it.reason})`);
+  console.log("");
+}
+console.log("Fiks disse, eller migrer til app/api/_template/route.ts-standard.\n");
+console.log(`Summary: FAIL ${failCount} | WARN ${warnCount} | INFO ${infoCount}`);
 
-process.exit(1);
+process.exit(failCount ? 1 : 0);
