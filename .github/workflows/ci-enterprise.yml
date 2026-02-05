@@ -93,6 +93,17 @@ jobs:
           fi
           echo "✅ No legacy audit-repo.js references."
 
+      - name: Guard: audit-repo.mjs must exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f scripts/audit-repo.mjs ]; then
+            echo "❌ scripts/audit-repo.mjs is missing in this commit"
+            ls -la scripts || true
+            exit 1
+          fi
+          echo "✅ scripts/audit-repo.mjs exists"
+
       # ✅ Enterprise gate (explicit, deterministic)
       - name: Enterprise gate (RC, explicit)
         shell: bash
