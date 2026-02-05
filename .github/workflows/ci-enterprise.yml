@@ -46,7 +46,7 @@ jobs:
       - name: Install
         run: npm ci
 
-      # 🔒 Fail-fast – tydelig feilmelding hvis secrets mangler
+      # 🔒 Fail-fast – krystallklar feilmelding hvis secrets mangler
       - name: Verify required env
         shell: bash
         run: |
@@ -57,6 +57,22 @@ jobs:
           : "${SUPABASE_SERVICE_ROLE_KEY:?Missing SUPABASE_SERVICE_ROLE_KEY secret}"
           echo "✅ Required env present."
           echo "✅ RC_MODE=$RC_MODE CI_MODE=$CI_MODE"
+
+      # 🔎 PROOF – viser nøyaktig commit, scripts og hvilken audit-kommando CI faktisk kjører
+      - name: PROOF (commit + audit fingerprint)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== COMMIT ==="
+          git rev-parse HEAD
+          echo "=== PACKAGE SCRIPTS (audit:api / ci:enterprise / build:enterprise) ==="
+          node -e "const p=require('./package.json'); console.log('audit:api=', p.scripts['audit:api']); console.log('ci:enterprise=', p.scripts['ci:enterprise']); console.log('build:enterprise=', p.scripts['build:enterprise']);"
+          echo "=== SCRIPT HASH (audit-api-routes.mjs) ==="
+          sha256sum scripts/audit-api-routes.mjs || shasum -a 256 scripts/audit-api-routes.mjs
+          echo "=== SCRIPT HEAD (first 40 lines) ==="
+          sed -n '1,40p' scripts/audit-api-routes.mjs
+          echo "=== ENV ==="
+          echo "RC_MODE=$RC_MODE CI_MODE=$CI_MODE CI=$CI"
 
       # ✅ Enterprise gate (explicit, deterministic)
       # (Ikke bruk npm run ci:enterprise her – vi kjører gates eksplisitt for å sikre RC_MODE i audit)
