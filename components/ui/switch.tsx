@@ -47,7 +47,7 @@ export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(function S
             "bg-[color:var(--lp-surface)]",
             "shadow-[var(--lp-shadow-sm)]",
             "transition-[background-color,border-color,box-shadow] duration-200 [transition-timing-function:var(--lp-ease)]",
-            "peer-focus-visible:[box-shadow:0_0_0_4px_var(--lp-ring)]",
+            "peer-focus-visible:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
             "peer-checked:bg-[color:var(--lp-accent)] peer-checked:border-transparent",
             "peer-checked:hover:bg-[color:var(--lp-accent-2)]"
           )}

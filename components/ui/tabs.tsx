@@ -80,7 +80,7 @@ export function TabsTrigger({ className, value, children, ...props }: TabsTrigge
       className={cn(
         "h-10 rounded-xl px-4 text-sm font-semibold",
         "transition-[transform,box-shadow,background-color,color,opacity] duration-200 [transition-timing-function:var(--lp-ease)]",
-        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--lp-ring)]",
+        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)]",
         selected
           ? "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)] shadow-[var(--lp-shadow-sm)]"
           : "text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface)] hover:text-[color:var(--lp-fg)]",

@@ -26,7 +26,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
         // Placeholder
         "placeholder:opacity-60",
         // Focus (same ring language as Button/Card)
-        "outline-none focus:[box-shadow:0_0_0_4px_var(--lp-ring)]",
+        "outline-none focus:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
         // Disabled
         "disabled:cursor-not-allowed disabled:opacity-70",
         // Motion (subtle)

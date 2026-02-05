@@ -23,7 +23,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTML
   { className, ...props },
   ref
 ) {
-  return <h3 ref={ref} className={cn("text-lg font-semibold", className)} {...props} />;
+  return <h3 ref={ref} className={cn("text-base font-semibold tracking-tight text-[color:var(--lp-fg)]", className)} {...props} />;
 });
 CardTitle.displayName = "CardTitle";
 
@@ -46,7 +46,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   { className, ...props },
   ref
 ) {
-  return <div ref={ref} className={cn("px-5 pb-5 pt-0", className)} {...props} />;
+  return <div ref={ref} className={cn("px-6 pb-6 pt-0", className)} {...props} />;
 });
 CardFooter.displayName = "CardFooter";
 

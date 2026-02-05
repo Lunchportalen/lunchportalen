@@ -22,7 +22,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(fun
         "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)]",
         "border border-[color:var(--lp-border)] shadow-[var(--lp-shadow-sm)]",
         "placeholder:opacity-60",
-        "outline-none focus:[box-shadow:0_0_0_4px_var(--lp-ring)]",
+        "outline-none focus:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
         "disabled:cursor-not-allowed disabled:opacity-70",
         "transition-[box-shadow,border-color,background-color] duration-200 [transition-timing-function:var(--lp-ease)]",
         "hover:bg-[color:var(--lp-surface-2)]",

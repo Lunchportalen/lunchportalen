@@ -39,7 +39,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(functi
             "outline-none",
             "transition-[box-shadow,border-color,background-color,transform] duration-200 [transition-timing-function:var(--lp-ease)]",
             "hover:bg-[color:var(--lp-surface-2)]",
-            "focus:[box-shadow:0_0_0_4px_var(--lp-ring)]",
+            "focus:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
             "checked:bg-[color:var(--lp-accent)] checked:border-transparent",
             "checked:hover:bg-[color:var(--lp-accent-2)]",
             "active:scale-[0.98]",

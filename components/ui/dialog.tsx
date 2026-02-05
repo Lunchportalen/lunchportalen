@@ -117,9 +117,9 @@ export function DialogContent({
   if (!open) return null;
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
       {/* overlay */}
-      <div className="absolute inset-0 bg-black/35" onMouseDown={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]" onMouseDown={() => setOpen(false)} />
 
       {/* panel */}
       <div
@@ -127,7 +127,7 @@ export function DialogContent({
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
         className={cn(
-          "relative w-full max-w-lg rounded-3xl",
+          "relative w-full max-w-lg rounded-2xl",
           "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)]",
           "ring-1 ring-[color:var(--lp-border)]",
           "shadow-[var(--lp-shadow-md)] [box-shadow:var(--lp-shadow-md),var(--lp-shadow-inset)]",
@@ -149,7 +149,7 @@ export function DialogContent({
                 type="button"
                 onClick={() => setOpen(false)}
                 className="ml-auto rounded-xl p-2 text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface-2)] hover:text-[color:var(--lp-fg)]
-                           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--lp-ring)]"
+                           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)]"
                 aria-label="Lukk"
               >
                 ✕

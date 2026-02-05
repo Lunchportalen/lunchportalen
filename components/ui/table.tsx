@@ -20,7 +20,7 @@ export const Table = React.forwardRef<HTMLDivElement, TableProps>(function Table
     <div
       ref={ref}
       className={cn(
-        "w-full overflow-x-auto rounded-3xl",
+        "w-full overflow-x-auto rounded-2xl",
         "bg-[color:var(--lp-surface)] ring-1 ring-[color:var(--lp-border)]",
         "shadow-[var(--lp-shadow-sm)] [box-shadow:var(--lp-shadow-sm),var(--lp-shadow-inset)]",
         className
@@ -55,7 +55,7 @@ export const THead = React.forwardRef<
     <thead
       ref={ref}
       className={cn(
-        "bg-[color:var(--lp-surface-2)] text-[color:var(--lp-muted)]",
+        "border-b border-[color:var(--lp-border)] bg-[color:var(--lp-surface-2)] text-[color:var(--lp-muted)]",
         className
       )}
       {...props}
@@ -68,7 +68,17 @@ export const TBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(function TBody({ className, ...props }, ref) {
-  return <tbody ref={ref} className={cn("text-[color:var(--lp-fg)]", className)} {...props} />;
+  return (
+    <tbody
+      ref={ref}
+      className={cn(
+        "text-[color:var(--lp-fg)]",
+        "[&>tr:nth-child(even)]:bg-[color:var(--lp-surface-2)]",
+        className
+      )}
+      {...props}
+    />
+  );
 });
 TBody.displayName = "TBody";
 
@@ -80,7 +90,8 @@ export const TR = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTM
         className={cn(
           "border-b border-[color:var(--lp-border)]",
           "transition-[background-color] duration-200 [transition-timing-function:var(--lp-ease)]",
-          "hover:bg-[color:var(--lp-surface-2)]",
+          "hover:bg-[color:var(--lp-surface-alt)]",
+          "last:border-b-0",
           className
         )}
         {...props}
@@ -98,7 +109,7 @@ export const TH = React.forwardRef<
     <th
       ref={ref}
       className={cn(
-        "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--lp-muted)]",
+        "px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--lp-muted)]",
         "whitespace-nowrap",
         className
       )}
@@ -117,7 +128,7 @@ export const TD = React.forwardRef<
     <td
       ref={ref}
       className={cn(
-        "px-4 py-3 align-middle font-normal text-[color:var(--lp-fg)]",
+        "px-5 py-3.5 align-middle text-sm font-normal text-[color:var(--lp-fg)]",
         isSpanning && "py-10 text-[color:var(--lp-muted)]",
         className
       )}

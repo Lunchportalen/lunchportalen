@@ -649,9 +649,9 @@ export default function SystemClient() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-4">
+    <div className="mx-auto w-full max-w-4xl space-y-6">
       {/* SYSTEMSTATUS */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="text-xs font-extrabold tracking-wide text-neutral-600">SYSTEMSTATUS</div>
         <h1 className="mt-1 text-lg font-extrabold text-neutral-900">Systemstatus</h1>
         <div className="mt-3 flex items-center gap-2">
@@ -671,7 +671,7 @@ export default function SystemClient() {
           <div className="mt-3 space-y-2">
             {checks.length ? (
               checks.map((c) => (
-                <div key={c.key} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+                <div key={c.key} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-neutral-900">{c.message}</div>
                     <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(c.status)].join(" ")}>
@@ -679,7 +679,7 @@ export default function SystemClient() {
                     </span>
                   </div>
                   {c.status !== "OK" && c.key === "runtime" && runtimeDetails ? (
-                    <div className="mt-2 rounded-lg bg-white/70 p-2 text-xs text-neutral-700 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="mt-2 rounded-lg bg-[rgb(var(--lp-surface-2))] p-3 text-xs text-neutral-700 ring-1 ring-[rgb(var(--lp-border))]">
                       <div className="font-semibold text-neutral-900">Detaljer</div>
                       <div className="mt-1">Mangler env: {runtimeMissing.length ? runtimeMissing.join(", ") : "—"}</div>
                       <div className="mt-1">
@@ -690,7 +690,7 @@ export default function SystemClient() {
                 </div>
               ))
             ) : (
-              <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+              <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
                 Ingen sjekker tilgjengelig ennå.
               </div>
             )}
@@ -704,7 +704,7 @@ export default function SystemClient() {
 
       {/* FEIL */}
       {err ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 shadow-[var(--lp-shadow-soft)]">
           {err}
           {rid ? <div className="mt-1 text-xs font-mono text-rose-800">RID: {rid}</div> : null}
         </div>
@@ -712,13 +712,13 @@ export default function SystemClient() {
 
       {/* LOADING */}
       {loading ? (
-        <div className="rounded-2xl bg-white/70 p-4 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="rounded-2xl bg-[rgb(var(--lp-surface-2))] p-4 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
           Laster systemstatus…
         </div>
       ) : null}
 
       {/* REPARASJONER */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Reparasjoner</div>
@@ -769,7 +769,7 @@ export default function SystemClient() {
         <div className="mt-3 space-y-2">
           {jobItems.length ? (
             jobItems.map((job) => (
-              <div key={job.id} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+              <div key={job.id} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-neutral-900">{jobLabel(job.job_type)}</div>
                   <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", jobTone(job.state)].join(" ")}>
@@ -784,7 +784,7 @@ export default function SystemClient() {
               </div>
             ))
           ) : (
-            <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+            <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
               Ingen jobber i køen.
             </div>
           )}
@@ -792,7 +792,7 @@ export default function SystemClient() {
       </div>
 
       {/* ORDRE-INTEGRITET */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Ordre-integritet</div>
@@ -849,7 +849,7 @@ export default function SystemClient() {
                 const idsText = ids.join(", ");
 
                 return (
-                  <div key={i.id} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+                  <div key={i.id} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-neutral-900">
                         {i.type} • {i.status}
@@ -876,7 +876,7 @@ export default function SystemClient() {
                 );
               })
             ) : (
-              <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+              <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
                 Ingen ordre-integritet hendelser.
               </div>
             )}
@@ -885,7 +885,7 @@ export default function SystemClient() {
       </div>
 
       {/* FLYTDIAGNOSTIKK */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Flytdiagnostikk</div>
@@ -915,7 +915,7 @@ export default function SystemClient() {
               const idsText = ids.join(", ");
 
               return (
-                <div key={c.key} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+              <div key={c.key} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-neutral-900">{c.message}</div>
                     <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(c.status)].join(" ")}>
@@ -941,7 +941,7 @@ export default function SystemClient() {
               );
             })
           ) : (
-            <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+            <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
               Ingen flytsjekk kjørt ennå.
             </div>
           )}
@@ -949,14 +949,14 @@ export default function SystemClient() {
       </div>
 
       {/* OPS-LOGG */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="text-sm font-semibold text-neutral-900">Ops-logg</div>
         <div className="mt-1 text-xs text-neutral-600">Totalt: {opsTotal}</div>
 
         <div className="mt-3 space-y-2">
           {opsItems.length ? (
             opsItems.map((o, idx) => (
-              <div key={`${o.event}_${idx}`} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+              <div key={`${o.event}_${idx}`} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-neutral-900">{o.event}</div>
                   <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", opsTone(o.level)].join(" ")}>
@@ -968,7 +968,7 @@ export default function SystemClient() {
               </div>
             ))
           ) : (
-            <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+            <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
               Ingen ops-hendelser.
             </div>
           )}
@@ -976,14 +976,14 @@ export default function SystemClient() {
       </div>
 
       {/* HENDELSER */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="text-sm font-semibold text-neutral-900">Hendelser</div>
         <div className="mt-1 text-xs text-neutral-600">Totalt: {incidentTotal}</div>
 
         <div className="mt-3 space-y-2">
           {incidentItems.length ? (
             incidentItems.map((i) => (
-              <div key={i.id} className="rounded-xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+              <div key={i.id} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-neutral-900">
                     {i.type} • {i.status}
@@ -1000,14 +1000,14 @@ export default function SystemClient() {
               </div>
             ))
           ) : (
-            <div className="rounded-xl bg-white/70 p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
+            <div className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-neutral-600 ring-1 ring-[rgb(var(--lp-border))]">
               Ingen åpne hendelser.
             </div>
           )}
         </div>
       </div>
       {/* CODEX PROMPT (LIVE) */}
-      <div className="rounded-2xl bg-white/80 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Codex Prompt (Live)</div>
@@ -1038,7 +1038,7 @@ export default function SystemClient() {
           </div>
         ) : null}
 
-        <div className="mt-3 rounded-xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="mt-3 rounded-xl bg-[rgb(var(--lp-surface-2))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <pre className="whitespace-pre-wrap text-xs font-mono text-neutral-900">
             {codexPrompt?.prompt || "Ingen prompt generert ennå."}
           </pre>

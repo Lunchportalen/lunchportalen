@@ -6,6 +6,7 @@
   --lp-bg: 255 250 243;
   --lp-surface: 255 255 255;
   --lp-surface-alt: 248 244 238;
+  --lp-surface-2: 252 248 243;
   --lp-text: 26 26 26;
   --lp-fg: 26 26 26;
   --lp-muted: 82 82 91;
@@ -21,14 +22,17 @@
   --lp-warning: 181 71 8;
   --lp-danger: 180 35 24;
 
-  --lp-ring: 176 139 87;
+  --lp-ring: 176, 139, 87;
 
-  --lp-radius-card: 16px;
+  --lp-radius-card: 18px;
   --lp-radius-btn: 12px;
   --lp-radius-badge: 999px;
 
-  --lp-shadow-card: 0 6px 24px rgba(26, 26, 26, 0.06);
-  --lp-shadow-soft: 0 2px 8px rgba(26, 26, 26, 0.05);
+  --lp-shadow-card: 0 10px 30px rgba(26, 26, 26, 0.1);
+  --lp-shadow-soft: 0 3px 12px rgba(26, 26, 26, 0.06);
+  --lp-shadow-sm: 0 1px 3px rgba(26, 26, 26, 0.06), 0 4px 12px rgba(26, 26, 26, 0.05);
+  --lp-shadow-md: 0 14px 40px rgba(26, 26, 26, 0.16);
+  --lp-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -47,6 +51,7 @@ body {
   background: rgb(var(--lp-bg));
   color: rgb(var(--lp-text));
   font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -68,7 +73,7 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(var(--lp-ring), 0.7);
+  outline: 2px solid rgba(var(--lp-ring), 0.6);
   outline-offset: 3px;
   border-radius: 10px;
 }
@@ -201,6 +206,7 @@ h3 {
   border: 1px solid rgba(var(--lp-border), 0.9);
   border-radius: var(--lp-radius-card);
   box-shadow: var(--lp-shadow-soft);
+  transition: box-shadow 0.2s var(--lp-ease), border-color 0.2s var(--lp-ease);
 }
 
 .lp-card--elevated {
@@ -208,11 +214,11 @@ h3 {
 }
 
 .lp-card-header {
-  padding: 20px 20px 0;
+  padding: 22px 22px 0;
 }
 
 .lp-card-content {
-  padding: 20px;
+  padding: 22px;
 }
 
 /* Buttons */
@@ -228,12 +234,18 @@ h3 {
   font-size: 14px;
   font-weight: 600;
   border: 1px solid transparent;
+  letter-spacing: -0.01em;
   transition: background-color 0.15s var(--lp-ease),
     color 0.15s var(--lp-ease),
     border-color 0.15s var(--lp-ease),
     box-shadow 0.15s var(--lp-ease),
     transform 0.15s var(--lp-ease),
     opacity 0.15s var(--lp-ease);
+}
+
+.lp-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
 }
 
 .lp-btn:disabled {
@@ -246,11 +258,12 @@ h3 {
   background: rgb(var(--lp-text));
   color: #ffffff;
   border-color: rgba(var(--lp-text), 0.9);
-  box-shadow: var(--lp-shadow-soft);
+  box-shadow: var(--lp-shadow-sm);
 }
 
 .lp-btn--primary:hover {
   background: rgba(var(--lp-text), 0.92);
+  box-shadow: var(--lp-shadow-card);
 }
 
 .lp-btn--primary.lp-btn--stable:hover,
@@ -266,21 +279,24 @@ h3 {
   background: rgb(var(--lp-surface-alt));
   color: rgb(var(--lp-text));
   border-color: rgba(var(--lp-border), 0.9);
+  box-shadow: var(--lp-shadow-soft);
 }
 
 .lp-btn--secondary:hover {
   background: rgba(var(--lp-surface-alt), 0.7);
+  box-shadow: var(--lp-shadow-sm);
 }
 
 .lp-btn--ghost,
 .lp-btn-ghost {
   background: transparent;
   color: rgb(var(--lp-text));
-  border-color: transparent;
+  border-color: rgba(var(--lp-border), 0.4);
 }
 
 .lp-btn--ghost:hover {
   background: rgba(var(--lp-surface-alt), 0.7);
+  border-color: rgba(var(--lp-border), 0.7);
 }
 
 .lp-btn--destructive,
@@ -288,10 +304,12 @@ h3 {
   background: rgb(var(--lp-danger));
   color: #ffffff;
   border-color: rgba(var(--lp-danger), 0.9);
+  box-shadow: var(--lp-shadow-soft);
 }
 
 .lp-btn--destructive:hover {
   background: rgba(var(--lp-danger), 0.9);
+  box-shadow: var(--lp-shadow-sm);
 }
 
 .lp-btn--sm {
@@ -352,6 +370,7 @@ h3 {
   background: rgb(var(--lp-surface));
   border: 1px solid rgba(var(--lp-border), 0.9);
   border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-soft);
 }
 
 .lp-h1 {
