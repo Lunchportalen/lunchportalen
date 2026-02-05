@@ -12,5 +12,6 @@
       "path": "/api/cron/preprod?key=${CRON_SECRET}",
       "schedule": "5 8 * * 1-5"
     }
-  ]
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- studio"
 }
