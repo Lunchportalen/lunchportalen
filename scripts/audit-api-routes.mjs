@@ -15,16 +15,10 @@ const RC_EXTRA_PREFIXES = [
 const EXCLUDED_PREFIXES = ["app/api/admin/", "app/api/auth/", "app/api/driver/"];
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
 // NOTE: Full Day-10 migration of superadmin APIs is planned post-RC.
-const RC_MODE =
-  process.env.RC_MODE === "true" ||
-  process.env.CI_MODE === "rc" ||
-  process.env.RC === "true";
+const RC_MODE = process.env.RC_MODE === "true";
 
 console.log("[AUDIT MODE]", {
-  CI: process.env.CI,
-  RC: process.env.RC,
   RC_MODE: process.env.RC_MODE,
-  CI_MODE: process.env.CI_MODE,
 });
 
 function walk(dir) {
