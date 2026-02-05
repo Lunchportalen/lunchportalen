@@ -11,6 +11,19 @@ const AUDITED_PREFIXES = [
 ];
 const RC_EXTRA_PREFIXES = [
   // K1-K4 routes introduced after RC should be added here explicitly.
+  "app/api/agreements/",
+  "app/api/me/",
+  "app/api/onboarding/",
+  "app/api/order/",
+  "app/api/orders/",
+  "app/api/outbox/",
+  "app/api/profile/",
+  "app/api/public/",
+  "app/api/register/",
+  "app/api/scope/",
+  "app/api/support/",
+  "app/api/week/",
+  "app/api/weekplan/",
 ];
 const EXCLUDED_PREFIXES = [
   "app/api/admin/",
@@ -23,6 +36,8 @@ const EXCLUDED_PREFIXES = [
   "app/api/kitchen/",
   "app/api/example/",
   "app/api/template/",
+  "app/api/_template/",
+  "app/api/accept-invite/",
 ];
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
 
@@ -157,7 +172,8 @@ if (failCount) {
   console.log("FAIL:");
   for (const it of fail) {
     console.log(`- ${it.file} (${it.reason})`);
-    for (const msg of it.issues) console.log(`  - ${msg}`);
+    const issues = Array.isArray(it.issues) ? it.issues : [];
+    for (const msg of issues) console.log(`  - ${msg}`);
   }
   console.log("");
 }
@@ -165,7 +181,8 @@ if (warnCount) {
   console.log("WARN:");
   for (const it of warn) {
     console.log(`- ${it.file}`);
-    for (const msg of it.issues) console.log(`  - ${msg}`);
+    const issues = Array.isArray(it.issues) ? it.issues : [];
+    for (const msg of issues) console.log(`  - ${msg}`);
   }
   console.log("");
 }
