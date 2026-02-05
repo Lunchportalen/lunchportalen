@@ -81,11 +81,13 @@ jobs:
           echo "=== ENV ==="
           echo "RC_MODE=$RC_MODE CI_MODE=$CI_MODE CI=$CI"
 
-      - name: Guard: no legacy audit-repo.js references
+      - name: Guard: ban legacy audit-repo.js references
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -n "audit-repo\.js" -- . ':!package-lock.json'; then
+          if git grep -n "audit-repo\.js" -- . \
+            ':!package-lock.json' \
+            ':!.github/workflows/ci-enterprise.yml'; then
             echo "❌ Found legacy reference to audit-repo.js. Use scripts/audit-repo.mjs."
             exit 1
           fi
