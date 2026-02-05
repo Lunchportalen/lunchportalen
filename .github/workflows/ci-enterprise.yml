@@ -81,15 +81,15 @@ jobs:
           echo "=== ENV ==="
           echo "RC_MODE=$RC_MODE CI_MODE=$CI_MODE CI=$CI"
 
-      - name: "Guard: ban audit-repo.js forever"
+      - name: "Guard: ban legacy audit-repo.js forever"
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -n "audit-repo\.js" -- . ':!package-lock.json'; then
-            echo "❌ Legacy audit-repo.js reference found. Use audit-repo.mjs only."
+          if git grep -n "audit-repo\.js" -- . ':!package-lock.json' ':!.github/workflows/ci-enterprise.yml'; then
+            echo "❌ Legacy audit-repo reference found. Use audit-repo.mjs only."
             exit 1
           fi
-          echo "✅ No legacy audit-repo.js references."
+          echo "✅ No legacy audit-repo references."
 
       - name: "Guard: audit-repo.mjs must exist"
         shell: bash
@@ -128,6 +128,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git rev-parse HEAD
           node -e "const p=require('./package.json'); console.log('audit:repo =>', p.scripts['audit:repo'])"
           ls -la scripts | sed -n '1,120p'
 
