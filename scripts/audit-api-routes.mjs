@@ -12,13 +12,23 @@ const AUDITED_PREFIXES = [
 const RC_EXTRA_PREFIXES = [
   // K1-K4 routes introduced after RC should be added here explicitly.
 ];
-const EXCLUDED_PREFIXES = ["app/api/admin/", "app/api/auth/", "app/api/driver/"];
+const EXCLUDED_PREFIXES = [
+  "app/api/admin/",
+  "app/api/auth/",
+  "app/api/driver/",
+  "app/api/cron/",
+  "app/api/debug/",
+  "app/api/dev/",
+  "app/api/health/",
+  "app/api/kitchen/",
+  "app/api/example/",
+  "app/api/template/",
+];
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
-// NOTE: Full Day-10 migration of superadmin APIs is planned post-RC.
-const RC_MODE = process.env.RC_MODE === "true";
 
 console.log("[AUDIT MODE]", {
   RC_MODE: process.env.RC_MODE,
+  CI: process.env.CI,
 });
 
 function walk(dir) {
@@ -43,14 +53,12 @@ function hasAny(src, needles) {
   return needles.some((n) => src.includes(n));
 }
 
-function isAuditedRoute(file) {
-  const r = rel(file);
-  return AUDIT_PREFIXES.some((prefix) => r.startsWith(prefix));
+function isAuditedRoute(routePath) {
+  return AUDIT_PREFIXES.some((prefix) => routePath.startsWith(prefix));
 }
 
-function isExcludedRoute(file) {
-  const r = rel(file);
-  return EXCLUDED_PREFIXES.some((prefix) => r.startsWith(prefix));
+function isExcludedRoute(routePath) {
+  return EXCLUDED_PREFIXES.some((prefix) => routePath.startsWith(prefix));
 }
 
 function auditRoute(file, src) {
@@ -107,31 +115,28 @@ const routes = files.filter((p) => p.endsWith("route.ts") || p.endsWith("route.t
 
 const findings = [];
 const excluded = [];
-const outOfScope = [];
+const unknownScope = [];
 for (const f of routes) {
+  const routePath = rel(f);
+  if (isExcludedRoute(routePath)) {
+    excluded.push({ file: routePath, reason: "Explicitly excluded." });
+    continue;
+  }
+  if (!isAuditedRoute(routePath)) {
+    unknownScope.push({
+      file: routePath,
+      reason: "Unknown scope: not audited and not excluded.",
+    });
+    continue;
+  }
   const src = read(f);
-  if (isExcludedRoute(f)) {
-    excluded.push({ file: rel(f), reason: "Explicitly excluded for RC." });
-    continue;
-  }
-  if (!isAuditedRoute(f)) {
-    const issues = auditRoute(f, src);
-    if (issues.length) {
-      outOfScope.push({
-        file: rel(f),
-        reason: "Out of scope for RC.",
-        issues,
-      });
-    }
-    continue;
-  }
   const issues = auditRoute(f, src);
-  if (issues.length) findings.push({ file: rel(f), issues });
+  if (issues.length) findings.push({ file: routePath, issues });
 }
 
 const warn = findings;
-const info = RC_MODE ? [...excluded, ...outOfScope] : excluded;
-const fail = RC_MODE ? [] : outOfScope;
+const info = excluded;
+const fail = unknownScope;
 
 const warnCount = warn.length;
 const infoCount = info.length;
