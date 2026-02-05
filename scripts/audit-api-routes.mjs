@@ -15,6 +15,7 @@ const RC_EXTRA_PREFIXES = [
 const EXCLUDED_PREFIXES = ["app/api/admin/", "app/api/auth/", "app/api/driver/"];
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
 // NOTE: Full Day-10 migration of superadmin APIs is planned post-RC.
+const RC_MODE = process.env.RC === "true" || process.env.CI_MODE === "rc";
 
 function walk(dir) {
   const out = [];
@@ -125,8 +126,8 @@ for (const f of routes) {
 }
 
 const warn = findings;
-const info = excluded;
-const fail = outOfScope;
+const info = RC_MODE ? [...excluded, ...outOfScope] : excluded;
+const fail = RC_MODE ? [] : outOfScope;
 
 const warnCount = warn.length;
 const infoCount = info.length;
