@@ -13,5 +13,5 @@
       "schedule": "5 8 * * 1-5"
     }
   ],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- studio"
+  "ignoreCommand": "git diff --name-only HEAD^ HEAD | grep -q '^studio/' && ! git diff --name-only HEAD^ HEAD | grep -vq '^studio/'"
 }
