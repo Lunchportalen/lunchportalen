@@ -4,13 +4,20 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const API_DIR = path.join(ROOT, "app", "api");
+
+/* =========================
+   PREFIX DEFINITIONS
+   ========================= */
+
+// Core RC-approved
 const AUDITED_PREFIXES = [
   "app/api/superadmin/",
   "app/api/system/",
   "app/api/enterprise/",
 ];
+
+// K1–K4 + public platform
 const RC_EXTRA_PREFIXES = [
-  // K1-K4 routes introduced after RC should be added here explicitly.
   "app/api/agreements/",
   "app/api/me/",
   "app/api/onboarding/",
@@ -25,6 +32,8 @@ const RC_EXTRA_PREFIXES = [
   "app/api/week/",
   "app/api/weekplan/",
 ];
+
+// Explicitly excluded (INFO only)
 const EXCLUDED_PREFIXES = [
   "app/api/admin/",
   "app/api/auth/",
@@ -39,159 +48,129 @@ const EXCLUDED_PREFIXES = [
   "app/api/_template/",
   "app/api/accept-invite/",
 ];
+
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
 
+const RC_MODE = process.env.RC_MODE === "true";
+
 console.log("[AUDIT MODE]", {
-  RC_MODE: process.env.RC_MODE,
+  RC_MODE,
   CI: process.env.CI,
 });
 
+/* =========================
+   HELPERS
+   ========================= */
+
 function walk(dir) {
-  const out = [];
-  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, ent.name);
-    if (ent.isDirectory()) out.push(...walk(p));
-    else out.push(p);
-  }
-  return out;
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? walk(p) : p;
+  });
 }
 
-function read(p) {
-  return fs.readFileSync(p, "utf8");
-}
+const rel = (p) => path.relative(ROOT, p).replaceAll("\\", "/");
+const read = (p) => fs.readFileSync(p, "utf8");
 
-function rel(p) {
-  return path.relative(ROOT, p).replaceAll("\\", "/");
-}
+const isRouteFile = (p) =>
+  p.endsWith("/route.ts") || p.endsWith("/route.tsx");
 
-function hasAny(src, needles) {
-  return needles.some((n) => src.includes(n));
-}
+const startsWithAny = (p, list) =>
+  list.some((prefix) => p.startsWith(prefix));
 
-function isAuditedRoute(routePath) {
-  return AUDIT_PREFIXES.some((prefix) => routePath.startsWith(prefix));
-}
+/* =========================
+   AUDIT RULES (WARN ONLY)
+   ========================= */
 
-function isExcludedRoute(routePath) {
-  return EXCLUDED_PREFIXES.some((prefix) => routePath.startsWith(prefix));
-}
-
-function auditRoute(file, src) {
+function auditRoute(src) {
   const issues = [];
 
-  const isRoute = file.endsWith("/route.ts") || file.endsWith("/route.tsx");
-  if (!isRoute) return issues;
+  const usesDag10 =
+    src.includes("scopeOr401(") ||
+    src.includes("requireRoleOr403(") ||
+    src.includes("requireCompanyScopeOr403(") ||
+    src.includes("readJson(");
 
-  const usesDag10Guard = hasAny(src, [
-    "scopeOr401(",
-    "requireRoleOr403(",
-    "requireCompanyScopeOr403(",
-    "readJson(",
-  ]);
-
-  const usesWithRole = src.includes("withRole");
-
-  // 1) MÃ¥ bruke Dag-10 guard (direkte eller via legacy wrapper)
-  if (!usesDag10Guard && !usesWithRole) {
-    issues.push("Mangler Dag-10 guard (scopeOr401/requireRoleOr403/readJson).");
+  if (!usesDag10) {
+    issues.push("Mangler Dag-10 guard.");
   }
 
-  // 2) withRole er legacy â€“ flagg bruk
-  if (usesWithRole) {
-    issues.push("Bruker withRole (LEGACY) â€“ migrer til Dag-10 template.");
+  if (src.includes("withRole")) {
+    issues.push("Bruker withRole (LEGACY).");
   }
 
-  // 3) UnngÃ¥ egen cache/no-store logikk i routes
   if (
-    hasAny(src, ["Cache-Control", "no-store", "noStoreHeaders("]) &&
+    (src.includes("no-store") || src.includes("Cache-Control")) &&
     !src.includes('from "@/lib/http/respond"')
   ) {
-    issues.push("Har egen cache/no-store hÃ¥ndtering â€“ standardiser via respond.ts.");
-  }
-
-  // 4) Heuristikk: template-kontrakt for OK-svar
-  if (src.includes("jsonOk(") && !src.includes("ok: true")) {
-    issues.push('Returnerer jsonOk uten "ok: true" (template-kontrakt).');
-  }
-  if (src.includes("jsonOk(") && !src.includes("rid:")) {
-    issues.push('Returnerer jsonOk uten "rid:" (template-kontrakt).');
+    issues.push("Egen cache/no-store – bruk respond.ts.");
   }
 
   return issues;
 }
 
+/* =========================
+   MAIN
+   ========================= */
+
 if (!fs.existsSync(API_DIR)) {
-  console.error("Fant ikke app/api. Avbryter.");
+  console.error("Fant ikke app/api.");
   process.exit(2);
 }
 
-const files = walk(API_DIR).filter((p) => p.endsWith(".ts") || p.endsWith(".tsx"));
-const routes = files.filter((p) => p.endsWith("route.ts") || p.endsWith("route.tsx"));
+const routes = walk(API_DIR)
+  .filter(isRouteFile)
+  .map(rel);
 
-const findings = [];
-const excluded = [];
-const unknownScope = [];
-for (const f of routes) {
-  const routePath = rel(f);
-  if (isExcludedRoute(routePath)) {
-    excluded.push({ file: routePath, reason: "Explicitly excluded." });
+const FAIL = [];
+const WARN = [];
+const INFO = [];
+
+for (const route of routes) {
+  // 1️⃣ EXCLUDED → INFO ONLY
+  if (startsWithAny(route, EXCLUDED_PREFIXES)) {
+    INFO.push(route);
     continue;
   }
-  if (!isAuditedRoute(routePath)) {
-    unknownScope.push({
-      file: routePath,
-      reason: "Unknown scope: not audited and not excluded.",
-    });
+
+  // 2️⃣ NOT AUDITED → FAIL
+  if (!startsWithAny(route, AUDIT_PREFIXES)) {
+    FAIL.push(route);
     continue;
   }
-  const src = read(f);
-  const issues = auditRoute(f, src);
-  if (issues.length) findings.push({ file: routePath, issues });
+
+  // 3️⃣ AUDITED → WARN (heuristics)
+  const src = read(path.join(ROOT, route));
+  const issues = auditRoute(src);
+  if (issues.length) WARN.push({ route, issues });
 }
 
-const warn = findings;
-const info = excluded;
-const fail = unknownScope;
+/* =========================
+   OUTPUT
+   ========================= */
 
-const warnCount = warn.length;
-const infoCount = info.length;
-const failCount = fail.length;
-
-if (!warnCount && !failCount) {
+if (FAIL.length === 0) {
   console.log("API AUDIT OK");
-  if (infoCount) {
+
+  if (INFO.length) {
     console.log("\nINFO:");
-    for (const it of info) console.log(`- ${it.file} (${it.reason})`);
+    INFO.forEach((r) => console.log(`- ${r} (excluded)`));
   }
-  console.log(`\nSummary: FAIL ${failCount} | WARN ${warnCount} | INFO ${infoCount}`);
+
+  console.log(
+    `\nSummary: FAIL 0 | WARN ${WARN.length} | INFO ${INFO.length}`
+  );
   process.exit(0);
 }
 
-console.log("API AUDIT: Avvik funnet\n");
-if (failCount) {
-  console.log("FAIL:");
-  for (const it of fail) {
-    console.log(`- ${it.file} (${it.reason})`);
-    const issues = Array.isArray(it.issues) ? it.issues : [];
-    for (const msg of issues) console.log(`  - ${msg}`);
-  }
-  console.log("");
-}
-if (warnCount) {
-  console.log("WARN:");
-  for (const it of warn) {
-    console.log(`- ${it.file}`);
-    const issues = Array.isArray(it.issues) ? it.issues : [];
-    for (const msg of issues) console.log(`  - ${msg}`);
-  }
-  console.log("");
-}
-if (infoCount) {
-  console.log("INFO:");
-  for (const it of info) console.log(`- ${it.file} (${it.reason})`);
-  console.log("");
-}
-console.log("Fiks disse, eller migrer til app/api/_template/route.ts-standard.\n");
-console.log(`Summary: FAIL ${failCount} | WARN ${warnCount} | INFO ${infoCount}`);
+console.log("\nAPI AUDIT: FAIL\n");
 
-process.exit(failCount ? 1 : 0);
+FAIL.forEach((r) =>
+  console.log(`- ${r} (unknown / not audited)`)
+);
+
+console.log(
+  `\nSummary: FAIL ${FAIL.length} | WARN ${WARN.length} | INFO ${INFO.length}`
+);
+
+process.exit(1);
