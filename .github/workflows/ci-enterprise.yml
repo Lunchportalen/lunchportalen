@@ -6,22 +6,37 @@ on:
   schedule:
     - cron: "0 3 * * *"
 
+concurrency:
+  group: ci-enterprise-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   enterprise:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      # ✅ RC audit mode (deterministisk)
+      RC_MODE: "true"
+      CI_MODE: "rc"
+
+      # ✅ Required runtime secrets
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RC_MODE: "true"
-      CI_MODE: "rc"
+
+      # ✅ Optional / if present (leave blank if not set)
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+      SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -29,5 +44,47 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Enterprise gate
-        run: npm run ci:enterprise
+      # 🔒 Fail-fast – tydelig feilmelding hvis secrets mangler
+      - name: Verify required env
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SYSTEM_MOTOR_SECRET:?Missing SYSTEM_MOTOR_SECRET secret}"
+          : "${NEXT_PUBLIC_SUPABASE_URL:?Missing NEXT_PUBLIC_SUPABASE_URL secret}"
+          : "${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Missing NEXT_PUBLIC_SUPABASE_ANON_KEY secret}"
+          : "${SUPABASE_SERVICE_ROLE_KEY:?Missing SUPABASE_SERVICE_ROLE_KEY secret}"
+          echo "✅ Required env present."
+          echo "✅ RC_MODE=$RC_MODE CI_MODE=$CI_MODE"
+
+      # ✅ Enterprise gate (explicit, deterministic)
+      # (Ikke bruk npm run ci:enterprise her – vi kjører samme gates eksplisitt for å sikre RC_MODE i audit)
+      - name: Enterprise gate (RC, explicit)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "==> typecheck"
+          npm run typecheck
+
+          echo "==> tests"
+          npm run test:run
+
+          echo "==> tenant tests"
+          npm run test:tenant
+
+          echo "==> lint"
+          npm run lint
+
+          echo "==> audit:api (RC_MODE must be true)"
+          node -e "console.log('[CI AUDIT ENV]', { RC_MODE: process.env.RC_MODE, CI_MODE: process.env.CI_MODE, CI: process.env.CI });"
+          npm run audit:api
+
+          echo "==> audit:repo"
+          npm run audit:repo
+
+          echo "==> admin copy check"
+          npm run check:admin-copy
+
+          echo "==> build enterprise"
+          npm run agents:check
+          next build
