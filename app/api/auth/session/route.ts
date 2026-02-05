@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseRoute } from "@/lib/supabase/route";
 
 function copySetCookie(from: NextResponse, to: NextResponse) {
@@ -19,36 +20,25 @@ function copySetCookie(from: NextResponse, to: NextResponse) {
 }
 
 export async function POST(req: Request) {
+  const rid = makeRid();
   const body = await req.json().catch(() => ({}));
   const access_token = String(body?.access_token ?? "");
   const refresh_token = String(body?.refresh_token ?? "");
 
   // ✅ Én response som Supabase får lov å sette cookies på
-  const res = NextResponse.json({ ok: true }, { status: 200 });
+  const res = jsonOk(rid, { ok: true, rid, data: {} }, 200) as NextResponse;
   res.headers.set("cache-control", "no-store");
 
   const supabase = await supabaseRoute(res);
 
   if (!access_token || !refresh_token) {
-    return copySetCookie(
-      res,
-      NextResponse.json(
-        { ok: false, code: "BAD_INPUT", message: "Mangler access_token/refresh_token" },
-        { status: 400 }
-      )
-    );
+    return copySetCookie(res, jsonErr(rid, "Mangler access_token/refresh_token", 400, "BAD_INPUT") as NextResponse);
   }
 
   const { error } = await supabase.auth.setSession({ access_token, refresh_token });
 
   if (error) {
-    return copySetCookie(
-      res,
-      NextResponse.json(
-        { ok: false, code: "SESSION_SET_FAILED", message: error.message },
-        { status: 401 }
-      )
-    );
+    return copySetCookie(res, jsonErr(rid, error.message, 401, "SESSION_SET_FAILED") as NextResponse);
   }
 
   return res;

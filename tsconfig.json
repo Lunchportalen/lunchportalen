@@ -22,9 +22,9 @@
       "@/*": ["./*"],
 
       "@/app/*": ["./app/*"],
-      "@/lib/*": ["./lib/*", "./app/lib/*", "./src/lib/*"],
-      "@/components/*": ["./components/*", "./app/components/*", "./src/components/*"],
-      "@/types/*": ["./types/*", "./app/types/*", "./src/types/*"],
+      "@/lib/*": ["./lib/*", "./src/lib/*"],
+      "@/components/*": ["./components/*", "./src/components/*"],
+      "@/types/*": ["./types/*", "./src/types/*"],
 
       "@/superadmin/*": ["./app/superadmin/*"],
       "@/admin/*": ["./app/admin/*"],

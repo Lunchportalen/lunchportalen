@@ -16,9 +16,13 @@ import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
 // ✅ Backup mail (failsafe)
 import { sendOrderBackup } from "@/lib/orders/orderBackup";
+import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
+import { osloNowISO } from "@/lib/date/oslo";
 
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
+import { auditSafe } from "@/lib/ops/auditSafe";
+import { requireRule } from "@/lib/agreement/requireRule";
 
 /* =========================================================
    Helpers
@@ -75,6 +79,23 @@ function normNote(v: any): string | null {
 function normSlot(v: any): string | null {
   const s = String(v ?? "").trim().toLowerCase();
   return s ? s : null;
+}
+
+function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
+  try {
+    const d = new Date(`${isoDate}T12:00:00Z`);
+    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
+    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
+      Mon: "mon",
+      Tue: "tue",
+      Wed: "wed",
+      Thu: "thu",
+      Fri: "fri",
+    };
+    return map[wd] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /* =========================================================
@@ -145,8 +166,8 @@ export async function POST(req: NextRequest) {
   const user_id = String(scope.userId ?? "").trim();
   const location_id = String(scope.locationId ?? "").trim();
 
-  if (!company_id || !user_id) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler scope (user/company).");
-  if (!location_id) return jsonErr(409, rid, "LOCATION_MISSING", "Mangler lokasjonstilknytning (location_id).");
+  if (!company_id || !user_id) return jsonErr(rid, "Mangler scope (user/company).", 409, "SCOPE_MISSING");
+  if (!location_id) return jsonErr(rid, "Mangler lokasjonstilknytning (location_id).", 409, "LOCATION_MISSING");
 
   const sb = await supabaseServer();
 
@@ -158,28 +179,20 @@ export async function POST(req: NextRequest) {
     const slot = normSlot(body?.slot);
 
     if (!isIsoDate(isoDate)) {
-      return jsonErr(400, rid, "INVALID_DATE", "Ugyldig dato (YYYY-MM-DD).", { date: isoDate });
-    }
-
-    const cutoff = cutoffStatusForDate(isoDate);
-    if (cutoff === "PAST") {
-      return jsonErr(403, rid, "DATE_LOCKED_PAST", "Datoen er passert og kan ikke endres.", { date: isoDate });
-    }
-    if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(403, rid, "CUTOFF_LOCKED", "Endringer er låst etter kl. 08:00 i dag.", { date: isoDate, cutoff: "08:00" });
+      return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
     }
 
     // Firmastatus (service role) – fail-closed
-  const admin = await adminClientOrNull();
+    const admin = await adminClientOrNull();
     if (!admin) {
-      return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon for firmastatus/audit.", {
+      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, { code: "CONFIG_ERROR", detail: {
         missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
-      });
+      } });
     }
 
     const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
     if (cRes.error || !cRes.data) {
-      return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke lese firmastatus.", { error: cRes.error?.message ?? null });
+      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: { error: cRes.error?.message ?? null } });
     }
 
     const companyStatus = normCompanyStatus((cRes.data as any).status);
@@ -190,7 +203,7 @@ export async function POST(req: NextRequest) {
       const reason =
         companyStatus === "PAUSED" ? "COMPANY_PAUSED" : companyStatus === "CLOSED" ? "COMPANY_CLOSED" : "COMPANY_NOT_ACTIVE";
 
-      try {
+      await auditSafe(async () => {
         await auditWriteMust({
           rid,
           action: "ENFORCEMENT_BLOCK",
@@ -204,15 +217,26 @@ export async function POST(req: NextRequest) {
           summary: reason,
           detail: { route: "/api/orders/cancel", intent: "CANCEL", date: isoDate, slot, company_status: companyStatus },
         });
-      } catch (e: any) {
-        return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge enforcement-block. Avbryter for å bevare fasit.", {
-          reason,
-          company_status: companyStatus,
-          audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-        });
-      }
+      }, rid);
 
-      return jsonErr(403, rid, reason, "Avbestilling er låst pga firmastatus.", { company_status: companyStatus });
+      return jsonErr(rid, "Avbestilling er låst pga firmastatus.", 403, { code: reason, detail: { company_status: companyStatus } });
+    }
+
+    const cutoff = cutoffStatusForDate(isoDate);
+    if (cutoff === "PAST") {
+      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date: isoDate } });
+    }
+    if (cutoff === "TODAY_LOCKED") {
+      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, { code: "CUTOFF_LOCKED", detail: { date: isoDate, cutoff: "08:00" } });
+    }
+    const dayKey = weekdayKeyOslo(isoDate);
+    if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: isoDate } });
+
+    const ruleSlot = slot ?? "lunch";
+    const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot: ruleSlot, rid });
+    if (!ruleRes.ok) {
+      const err = ruleRes as { status: number; error: string; message: string };
+      return jsonErr(rid, err.message, err.status ?? 400, err.error);
     }
 
     // Apply cancel (idempotent)
@@ -220,8 +244,7 @@ export async function POST(req: NextRequest) {
 
     if (!cancelled.ok) {
       if ((cancelled as any).notFound) {
-        // Best-effort audit (MUST)
-        try {
+        await auditSafe(async () => {
           await auditWriteMust({
             rid,
             action: "ORDER_CANCEL_NOT_FOUND",
@@ -235,16 +258,12 @@ export async function POST(req: NextRequest) {
             summary: "No order to cancel",
             detail: { route: "/api/orders/cancel", date: isoDate, slot },
           });
-        } catch (e: any) {
-          return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge cancel-not-found. Avbryter for å bevare fasit.", {
-            audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-          });
-        }
+        }, rid);
 
-        return jsonErr(404, rid, "ORDER_NOT_FOUND", "Ingen bestilling å avbestille.", { date: isoDate, slot });
+        return jsonErr(rid, "Ingen bestilling å avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
       }
 
-      try {
+      await auditSafe(async () => {
         await auditWriteMust({
           rid,
           action: "ORDER_CANCEL_FAILED",
@@ -263,19 +282,23 @@ export async function POST(req: NextRequest) {
             error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown"),
           },
         });
-      } catch (e: any) {
-        return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge cancel-feil. Avbryter for å bevare fasit.", {
-          audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-        });
-      }
+      }, rid);
 
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke avbestille.", {
+      return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "DB_ERROR", detail: {
         error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown"),
-      });
+      } });
     }
 
     // Backup mail (failsafe – må ikke stoppe user flow)
     const pricing = pricingFallback(isoDate);
+    const backupTs = osloNowISO();
+    let backupNames: { company_name: string | null; location_name: string | null } = { company_name: null, location_name: null };
+    try {
+      backupNames = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
+    } catch {
+      // ignore
+    }
+
     const backup = await sendOrderBackup({
       rid,
       action: "CANCEL",
@@ -286,14 +309,16 @@ export async function POST(req: NextRequest) {
       user_id,
       company_id,
       location_id,
+      company_name: backupNames.company_name ?? null,
+      location_name: backupNames.location_name ?? null,
       actor_email: scope.email ?? null,
       actor_role: scope.role ?? null,
       note: cancelled.row?.note ?? note ?? null,
+      timestamp_oslo: backupTs,
       extra: { route: "/api/orders/cancel", pricing },
     });
 
-    // MUST audit: backup result
-    try {
+    await auditSafe(async () => {
       await auditWriteMust({
         rid,
         action: backup.ok ? "ORDER_BACKUP_SENT" : "ORDER_BACKUP_FAILED",
@@ -307,15 +332,9 @@ export async function POST(req: NextRequest) {
         summary: backup.ok ? "Backup email sent" : "Backup email failed",
         detail: { route: "/api/orders/cancel", date: isoDate, slot, backup },
       });
-    } catch (e: any) {
-      return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge backup-status. Avbryter for å bevare fasit.", {
-        audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-      });
-    }
+    }, rid);
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       order: {
         id: cancelled.row?.id ?? null,
         date: isoDate,
@@ -330,7 +349,6 @@ export async function POST(req: NextRequest) {
       backup,
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "orders/cancel" });
+    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "orders/cancel" } });
   }
 }
-

@@ -3,28 +3,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
+import { requireRule } from "@/lib/agreement/requireRule";
+import { immutabilityStatusForDate } from "@/lib/orders/immutability";
+import { sendOrderBackup } from "@/lib/orders/orderBackup";
+import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
+import { cutoffStatusForDate, osloNowISO } from "@/lib/date/oslo";
 
 /* =========================================================
    Response helpers (fasit)
 ========================================================= */
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function rid() {
-  return crypto.randomUUID();
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonErr(status: number, r: string, error: string, message: string, detail?: any) {
-  return NextResponse.json(
-    { ok: false, rid: r, error, message, detail: detail ?? undefined },
-    { status, headers: noStore() }
-  );
-}
 async function readJson(req: NextRequest) {
   const t = await req.text();
   if (!t) return {};
@@ -36,6 +26,23 @@ async function readJson(req: NextRequest) {
 }
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
+  try {
+    const d = new Date(`${isoDate}T12:00:00Z`);
+    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
+    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
+      Mon: "mon",
+      Tue: "tue",
+      Wed: "wed",
+      Thu: "thu",
+      Fri: "fri",
+    };
+    return map[wd] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /* =========================================================
@@ -73,6 +80,7 @@ type OrderRow = {
   status: string | null;
   note: string | null;
   updated_at: string | null;
+  slot?: string | null;
 };
 
 /* =========================================================
@@ -81,12 +89,12 @@ type OrderRow = {
 
 export async function POST(req: NextRequest, ctx: { params: { orderId: string } }) {
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const r = rid();
+  const r = makeRid();
 
   try {
     const orderId = String(ctx?.params?.orderId ?? "").trim();
-    if (!orderId || !isUuid(orderId)) {
-      return jsonErr(400, r, "bad_request", "Ugyldig orderId.", { orderId });
+    if (!orderId) {
+      return jsonErr(r, "Ugyldig orderId.", 400, { code: "bad_request", detail: { orderId } });
     }
 
     const sb = await supabaseServer();
@@ -96,7 +104,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     const { data: auth, error: authErr } = await sb.auth.getUser();
     if (authErr || !auth?.user) {
-      return jsonErr(401, r, "unauthorized", "Ikke innlogget.", { authErr: authErr?.message });
+      return jsonErr(r, "Ikke innlogget.", 401, { code: "unauthorized", detail: { authErr: authErr?.message } });
     }
 
     // -----------------------------
@@ -104,13 +112,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     const body = (await readJson(req)) as ToggleBody;
     if (typeof body.wantsLunch !== "boolean") {
-      return jsonErr(
-        400,
-        r,
-        "bad_request",
-        "Mangler wantsLunch (boolean). Send ønsket slutt-tilstand (idempotent).",
-        { received: body }
-      );
+      return jsonErr(r, "Mangler wantsLunch (boolean). Send ønsket slutt-tilstand (idempotent).", 400, { code: "bad_request", detail: { received: body } });
     }
 
     const desiredStatus = body.wantsLunch ? "ACTIVE" : "CANCELLED";
@@ -125,23 +127,23 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       .maybeSingle<ProfileRow>();
 
     if (pErr) {
-      return jsonErr(500, r, "db_error", "Kunne ikke lese profil.", { pErr: pErr.message });
+      return jsonErr(r, "Kunne ikke lese profil.", 500, { code: "db_error", detail: { pErr: pErr.message } });
     }
     if (!profile) {
-      return jsonErr(403, r, "forbidden", "Profil finnes ikke.", { userId: auth.user.id });
+      return jsonErr(r, "Profil finnes ikke.", 403, { code: "forbidden", detail: { userId: auth.user.id } });
     }
     if (profile.disabled_at) {
-      return jsonErr(403, r, "forbidden", "Konto er deaktivert.", { disabled_at: profile.disabled_at });
+      return jsonErr(r, "Konto er deaktivert.", 403, { code: "forbidden", detail: { disabled_at: profile.disabled_at } });
     }
 
     const role = profile.role ?? null;
     if (role !== "employee" && role !== "company_admin") {
-      return jsonErr(403, r, "forbidden", "Ingen tilgang til å endre bestillinger med denne rollen.", { role });
+      return jsonErr(r, "Ingen tilgang til å endre bestillinger med denne rollen.", 403, { code: "forbidden", detail: { role } });
     }
 
     const companyId = String(profile.company_id ?? "").trim();
     if (!companyId) {
-      return jsonErr(403, r, "forbidden", "Mangler company_id på profil.", { role });
+      return jsonErr(r, "Mangler company_id på profil.", 403, { code: "forbidden", detail: { role } });
     }
 
     // -----------------------------
@@ -154,15 +156,15 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       .maybeSingle<CompanyRow>();
 
     if (cErr) {
-      return jsonErr(500, r, "db_error", "Kunne ikke lese firmastatus.", { cErr: cErr.message });
+      return jsonErr(r, "Kunne ikke lese firmastatus.", 500, { code: "db_error", detail: { cErr: cErr.message } });
     }
     if (!company) {
-      return jsonErr(403, r, "forbidden", "Firma finnes ikke (eller ingen tilgang).", { companyId });
+      return jsonErr(r, "Firma finnes ikke (eller ingen tilgang).", 403, { code: "forbidden", detail: { companyId } });
     }
 
     const companyStatus = String(company.status ?? "").toLowerCase();
     if (companyStatus && companyStatus !== "active") {
-      return jsonErr(403, r, "company_blocked", "Firma er ikke aktivt.", { companyStatus });
+      return jsonErr(r, "Firma er ikke aktivt.", 403, { code: "company_blocked", detail: { companyStatus } });
     }
 
     // -----------------------------
@@ -172,17 +174,61 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     const { data: existing, error: exErr } = await sb
       .from("orders")
-      .select("id,user_id,company_id,location_id,date,status,note,updated_at")
+      .select("id,user_id,company_id,location_id,date,status,note,updated_at,slot")
       .eq("id", orderId)
       .eq("company_id", companyId)
-      .eq("user_id", auth.user.id)
       .maybeSingle<OrderRow>();
 
     if (exErr) {
-      return jsonErr(500, r, "db_error", "Kunne ikke lese ordre.", { exErr: exErr.message });
+      return jsonErr(r, "Kunne ikke lese ordre.", 500, { code: "db_error", detail: { exErr: exErr.message } });
     }
     if (!existing) {
-      return jsonErr(404, r, "not_found", "Ordre finnes ikke (eller du har ikke tilgang).", { orderId });
+      return jsonErr(r, "Ordre finnes ikke (eller du har ikke tilgang).", 404, { code: "not_found", detail: { orderId } });
+    }
+    if (String(existing.user_id ?? "") !== auth.user.id) {
+      return jsonErr(r, "Du har ikke tilgang til denne ordren.", 403, { code: "forbidden", detail: { orderId } });
+    }
+
+    // -----------------------------
+    // Immutability after 08:05 (Oslo)
+    // -----------------------------
+    const cutoff = cutoffStatusForDate(existing.date);
+    if (cutoff === "PAST") {
+      return jsonErr(r, "Datoen er passert og kan ikke endres.", 403, "DATE_LOCKED_PAST");
+    }
+    if (cutoff === "TODAY_LOCKED") {
+      return jsonErr(r, "Endringer er låst etter kl. 08:00 i dag.", 403, "LOCKED_AFTER_0800");
+    }
+
+    const imm = immutabilityStatusForDate(existing.date);
+    if (imm.locked) {
+      const msg =
+        imm.lockCode === "DATE_LOCKED_PAST"
+          ? "Datoen er passert og kan ikke endres."
+          : "Endringer er låst etter kl. 08:05 i dag.";
+      return jsonErr(r, msg, 423, imm.lockCode ?? "LOCKED");
+    }
+
+    // -----------------------------
+    // Agreement rules gate (fail-closed)
+    // -----------------------------
+    const slotVal = String((existing as any)?.slot ?? "").trim() || "lunch";
+    const dayKey = weekdayKeyOslo(existing.date);
+    if (!dayKey) {
+      return jsonErr(r, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: existing.date } });
+    }
+
+    let admin: any = null;
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/admin");
+      admin = supabaseAdmin();
+    } catch {
+      return jsonErr(r, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
+    }
+    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: slotVal, rid: r });
+    if (!ruleRes.ok) {
+      const err = ruleRes as { status: number; error: string; message: string };
+      return jsonErr(r, err.message, err.status ?? 400, err.error);
     }
 
     // -----------------------------
@@ -194,9 +240,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       typeof body.note === "string" ? body.note : body.note === null ? null : existing.note;
 
     if (already && nextNote === existing.note) {
-      return jsonOk({
-        ok: true,
-        rid: r,
+      return jsonOk(r, {
         changed: false,
         order: { id: existing.id, date: existing.date, status: desiredStatus, note: existing.note },
       });
@@ -212,15 +256,40 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       .maybeSingle<{ id: string; date: string; status: string | null; note: string | null; updated_at: string | null }>();
 
     if (upErr) {
-      return jsonErr(500, r, "db_error", "Kunne ikke oppdatere ordre.", { upErr: upErr.message });
+      return jsonErr(r, "Kunne ikke oppdatere ordre.", 500, { code: "db_error", detail: { upErr: upErr.message } });
     }
     if (!updated) {
-      return jsonErr(409, r, "conflict", "Ordre kunne ikke oppdateres (race/tilgang).");
+      return jsonErr(r, "Ordre kunne ikke oppdateres (race/tilgang).", 409, "conflict");
     }
 
-    return jsonOk({
-      ok: true,
-      rid: r,
+    const backupTs = osloNowISO();
+    const locId = String(existing.location_id ?? profile.location_id ?? "").trim();
+    try {
+      if (!locId) throw new Error("missing_location");
+      const names = await fetchCompanyLocationNames({ admin, companyId, locationId: locId });
+      await sendOrderBackup({
+        rid: r,
+        action: desiredStatus === "ACTIVE" ? "PLACE" : "CANCEL",
+        status: desiredStatus,
+        orderId: updated.id,
+        date: updated.date,
+        slot: existing.slot ?? null,
+        user_id: auth.user.id,
+        company_id: companyId,
+        location_id: locId,
+        company_name: names.company_name ?? null,
+        location_name: names.location_name ?? null,
+        actor_email: null,
+        actor_role: profile.role ?? null,
+        note: updated.note ?? null,
+        timestamp_oslo: backupTs,
+        extra: { route: "/api/orders/[orderId]/toggle" },
+      });
+    } catch {
+      // best effort
+    }
+
+    return jsonOk(r, {
       changed: true,
       order: {
         id: updated.id,
@@ -231,6 +300,6 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       },
     });
   } catch (e: any) {
-    return jsonErr(500, r, "unexpected", "Uventet feil i toggle.", { message: e?.message ?? String(e) });
+    return jsonErr(r, "Uventet feil i toggle.", 500, { code: "unexpected", detail: { message: e?.message ?? String(e) } });
   }
 }

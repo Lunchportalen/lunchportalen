@@ -6,15 +6,13 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import SuperadminUsersClient from "@/components/superadmin/SuperadminUsersClient";
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | null };
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 export default async function SuperadminUsersPage() {

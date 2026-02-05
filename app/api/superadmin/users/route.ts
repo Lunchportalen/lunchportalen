@@ -5,14 +5,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function norm(v: any) {
   return String(v ?? "").trim().toLowerCase();
@@ -32,7 +26,7 @@ async function requireSuperadmin() {
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
 
   // Hard e-post-fasit (samme som i middleware-prinsippet)
-  if (norm(user.email) !== "superadmin@lunchportalen.no") {
+  if (!isSuperadminEmail(user.email)) {
     throw Object.assign(new Error("forbidden"), { code: "forbidden" });
   }
 
@@ -40,9 +34,8 @@ async function requireSuperadmin() {
 }
 
 export async function GET(req: Request) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `sa_users_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     await requireSuperadmin();
@@ -87,11 +80,9 @@ export async function GET(req: Request) {
 
     const { data, error, count } = await query.range(from, to);
 
-    if (error) {
-      return json({ ok: false, rid, error: "list_failed", message: "Kunne ikke hente brukere.", detail: error }, 500);
-    }
+    if (error) return jsonErr(rid, "Kunne ikke hente brukere.", 500, { code: "list_failed", detail: error });
 
-    return json({
+    return jsonOk(rid, {
       ok: true,
       rid,
       page,
@@ -108,13 +99,11 @@ export async function GET(req: Request) {
         disabled_at: r.disabled_at ?? null,
         created_at: r.created_at ?? null,
       })),
-    });
+    }, 200);
   } catch (e: any) {
     const code = e?.code || "unknown";
-    if (code === "not_authenticated") return json({ ok: false, rid, error: "not_authenticated" }, 401);
-    if (code === "forbidden") return json({ ok: false, rid, error: "forbidden" }, 403);
-    return json({ ok: false, rid, error: "server_error", detail: String(e?.message ?? e) }, 500);
+    if (code === "not_authenticated") return jsonErr(rid, "Ikke innlogget.", 401, "not_authenticated");
+    if (code === "forbidden") return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil.", 500, { code: "server_error", detail: String(e?.message ?? e) });
   }
 }
-
-

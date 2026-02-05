@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Oslo time helpers (single source of truth)
@@ -32,30 +32,26 @@ function todayOsloISODate() {
    - UI viser ikke "Neste uke" før torsdag 08:00
 ========================================================= */
 export async function GET() {
-  
-  const { fetchNextOpenWeekPlan } = await import("@/lib/sanity/weekplan");
-  const today = todayOsloISODate();
+  const rid = makeRid();
 
-  // Henter KUN weekPlan med status "open"
-  // (systemet åpner denne torsdag 08:00)
-  const plan = await fetchNextOpenWeekPlan(today);
+  try {
+    const { fetchNextOpenWeekPlan } = await import("@/lib/sanity/weekplan");
+    const today = todayOsloISODate();
 
-  if (!plan) {
-    // Ingen åpen neste uke ennå → helt forventet før torsdag 08:00
-    return NextResponse.json(
-      { ok: true, today, plan: null },
-      { status: 200 }
-    );
+    // Henter KUN weekPlan med status "open"
+    // (systemet åpner denne torsdag 08:00)
+    const plan = await fetchNextOpenWeekPlan(today);
+
+    if (!plan) {
+      // Ingen åpen neste uke ennå → helt forventet før torsdag 08:00
+      return jsonOk(rid, { ok: true, today, plan: null }, 200);
+    }
+
+    return jsonOk(rid, { ok: true, today, plan }, 200);
+  } catch (e: any) {
+    return jsonErr(rid, "Kunne ikke hente neste uke.", 500, { code: "WEEKPLAN_NEXT_FAILED", detail: {
+      message: String(e?.message ?? e),
+    } });
   }
-
-  return NextResponse.json(
-    {
-      ok: true,
-      today,
-      plan,
-    },
-    { status: 200 }
-  );
 }
-
 

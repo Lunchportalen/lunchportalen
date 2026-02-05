@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { rid as makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
+import { makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 
@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
 
   const secret = safeStr(process.env.CRON_SECRET);
   if (!secret) {
-    // jsonErr-signaturen deres: jsonErr(ctxOrRid, error, message, detail?)
+    // jsonErr-signaturen deres: jsonErr(rid, message, status?, error?)
     // Her bruker vi ctx-like { rid } for å matche resten av prosjektet.
-    return jsonErr({ rid } as any, "cron_secret_missing", "CRON_SECRET er ikke satt i environment.", null);
+    return jsonErr(rid, "CRON_SECRET er ikke satt i environment.", 400, "cron_secret_missing");
   }
 
   const got = safeStr(req.headers.get("x-cron-secret"));
   if (!got || got !== secret) {
-    return jsonErr({ rid } as any, "cron_forbidden", "Ugyldig eller manglende x-cron-secret.", null);
+    return jsonErr(rid, "Ugyldig eller manglende x-cron-secret.", 400, "cron_forbidden");
   }
 
   try {

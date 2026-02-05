@@ -3,7 +3,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -15,36 +16,24 @@ function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-function ridFrom(req: NextRequest) {
-  const h = safeStr(req.headers.get("x-rid"));
-  return h || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-function ok(rid: string, body: any, status = 200) {
-  return NextResponse.json({ ok: true, rid, ...body }, { status });
-}
-function err(rid: string, status: number, code: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error: code, message, detail: detail ?? null }, { status });
-}
-
 export async function POST(req: NextRequest) {
-  const rid = ridFrom(req);
+  const rid = makeRid();
 
   let body: any = null;
   try {
     body = await req.json();
   } catch {
-    return err(rid, 400, "BAD_JSON", "Ugyldig JSON-body.");
+    return jsonErr(rid, "Ugyldig JSON-body.", 400, "BAD_JSON");
   }
 
   const email = normEmail(body?.email);
   const password = String(body?.password ?? "");
 
   if (!email || !isEmail(email)) {
-    return err(rid, 400, "BAD_EMAIL", "Ugyldig e-post.", { email });
+    return jsonErr(rid, "Ugyldig e-post.", 400, { code: "BAD_EMAIL", detail: { email } });
   }
   if (!password || password.length < 6) {
-    return err(rid, 400, "BAD_PASSWORD", "Ugyldig passord.");
+    return jsonErr(rid, "Ugyldig passord.", 400, "BAD_PASSWORD");
   }
 
   try {
@@ -54,22 +43,20 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-    if (error || !data?.user) {
-      return err(rid, 401, "LOGIN_FAILED", "Feil e-post eller passord.", { message: error?.message ?? "no_user" });
-    }
+    if (error || !data?.user) return jsonErr(rid, "Feil e-post eller passord.", 401, { code: "LOGIN_FAILED", detail: { message: error?.message ?? "no_user" } });
 
     // Supabase setter cookie-session automatisk via server-clienten.
     // Vi returnerer aldri tokens i body.
-    return ok(rid, {
+    return jsonOk(rid, {
       user: { id: data.user.id, email: data.user.email ?? email },
       message: "Innlogget."
-    });
+    }, 200);
   } catch (e: any) {
-    return err(rid, 500, "UNHANDLED", "Uventet feil ved innlogging.", { message: safeStr(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil ved innlogging.", 500, { code: "UNHANDLED", detail: { message: safeStr(e?.message ?? e) } });
   }
 }
 
 export async function GET(req: NextRequest) {
-  const rid = ridFrom(req);
-  return err(rid, 405, "method_not_allowed", "Bruk POST.", { method: "GET" });
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST.", 405, { code: "method_not_allowed", detail: { method: "GET" } });
 }

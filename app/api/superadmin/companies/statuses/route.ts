@@ -11,7 +11,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 // Fasit i systemet (companies.status)
@@ -31,13 +31,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     label: value.toUpperCase(), // UI-vennlig
   })) satisfies Array<{ value: CompanyStatus; label: string }>;
 
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       statuses: items,
-    },
-    200
-  );
+    }, 200);
 }
+

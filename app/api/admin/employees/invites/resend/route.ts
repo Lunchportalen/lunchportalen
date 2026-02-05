@@ -104,17 +104,17 @@ export async function POST(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const body = await readJson(req);
   const inviteId = safeUUID((body as any)?.inviteId ?? (body as any)?.id);
-  if (!inviteId) return jsonErr(400, rid, "INVALID_INVITE_ID", "Ugyldig inviteId.");
+  if (!inviteId) return jsonErr(rid, "Ugyldig inviteId.", 400, "INVALID_INVITE_ID");
 
   const appUrl = getPublicAppUrl();
   if (!appUrl) {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Mangler app-url konfigurasjon.", {
+    return jsonErr(rid, "Mangler app-url konfigurasjon.", 500, { code: "CONFIG_ERROR", detail: {
       missing: ["PUBLIC_APP_URL (eller NEXT_PUBLIC_APP_URL/NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_VERCEL_URL)"],
-    });
+    } });
   }
 
   const admin = supabaseAdmin();
@@ -128,12 +128,12 @@ export async function POST(req: NextRequest) {
       .eq("company_id", companyId)
       .maybeSingle();
 
-    if (cur.error) return jsonErr(500, rid, "INVITE_READ_FAILED", "Kunne ikke hente invitasjon.", cur.error);
-    if (!cur.data) return jsonErr(404, rid, "INVITE_NOT_FOUND", "Invitasjon ikke funnet.");
-    if ((cur.data as any).used_at) return jsonErr(400, rid, "ALREADY_USED", "Invitasjonen er allerede brukt.");
+    if (cur.error) return jsonErr(rid, "Kunne ikke hente invitasjon.", 500, { code: "INVITE_READ_FAILED", detail: cur.error });
+    if (!cur.data) return jsonErr(rid, "Invitasjon ikke funnet.", 404, "INVITE_NOT_FOUND");
+    if ((cur.data as any).used_at) return jsonErr(rid, "Invitasjonen er allerede brukt.", 400, "ALREADY_USED");
 
     const email = String((cur.data as any).email ?? "").trim();
-    if (!email) return jsonErr(500, rid, "INVITE_INVALID", "Invitasjonen mangler e-post.");
+    if (!email) return jsonErr(rid, "Invitasjonen mangler e-post.", 500, "INVITE_INVALID");
 
     const oldHash = String((cur.data as any).token_hash ?? "");
 
@@ -151,13 +151,13 @@ export async function POST(req: NextRequest) {
       .eq("company_id", companyId)
       .is("used_at", null);
 
-    if (upd1.error) return jsonErr(500, rid, "INVITE_UPDATE_FAILED", "Kunne ikke oppdatere invitasjon.", upd1.error);
+    if (upd1.error) return jsonErr(rid, "Kunne ikke oppdatere invitasjon.", 500, { code: "INVITE_UPDATE_FAILED", detail: upd1.error });
 
     const sent = await sendInviteEmail(email, link);
     if (sent.ok === false) {
       // rollback to old hash (best effort)
       await admin.from("employee_invites").update({ token_hash: oldHash }).eq("id", inviteId).eq("company_id", companyId);
-      return jsonErr(500, rid, "EMAIL_SEND_FAILED", "Kunne ikke sende e-post. Ingenting ble lagret.", { message: sent.error });
+      return jsonErr(rid, "Kunne ikke sende e-post. Ingenting ble lagret.", 500, { code: "EMAIL_SEND_FAILED", detail: { message: sent.error } });
     }
 
     const upd2 = await admin
@@ -167,18 +167,14 @@ export async function POST(req: NextRequest) {
       .eq("company_id", companyId);
 
     if (upd2.error) {
-      return jsonOk({
-        ok: true,
-        rid,
+      return jsonOk(rid, {
         message: "Invitasjon sendt (men last_sent_at kunne ikke oppdateres).",
         warning: upd2.error,
       });
     }
 
-    return jsonOk({ ok: true, rid, message: "Invitasjon sendt på nytt." });
+    return jsonOk(rid, { message: "Invitasjon sendt på nytt." });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

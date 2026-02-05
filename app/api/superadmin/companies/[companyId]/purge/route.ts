@@ -29,7 +29,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 function safeStr(v: any) {
@@ -160,17 +160,17 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (deny) return deny;
 
   const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   let admin: any;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, a, "ADMIN_CLIENT_FAILED", "Mangler service role key.", { message: String(e?.message ?? e) });
+    return jsonErr(a.rid, "Mangler service role key.", 500, { code: "ADMIN_CLIENT_FAILED", detail: { message: String(e?.message ?? e) } });
   }
 
   const extra = await assertSuperadminNotDisabled(admin, a.scope?.userId ?? "");
-  if (!extra.ok) return jsonErr(403, a, extra.code, extra.message, extra.detail);
+  if (!extra.ok) return jsonErr(a.rid, extra.message, 403, { code: extra.code, detail: extra.detail });
 
   const { data: company, error: cErr } = await admin
     .from("companies")
@@ -178,8 +178,8 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, a, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr);
-  if (!company) return jsonErr(404, a, "NOT_FOUND", "Fant ikke firma.");
+  if (cErr) return jsonErr(a.rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: cErr });
+  if (!company) return jsonErr(a.rid, "Fant ikke firma.", 404, "NOT_FOUND");
 
   const actorEmail = normEmail(a.scope?.email ?? "");
 
@@ -192,10 +192,10 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   if (rpcErr) {
     const mapped = mapRpcError(rpcErr);
-    return jsonErr(mapped.status, a, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
+    return jsonErr(a.rid, mapped.message, mapped.status ?? 400, mapped.error);
   }
 
-  return jsonOk(a, { ok: true, rid: a.rid, dryRun: true, company, rpc }, 200);
+  return jsonOk(a.rid, { ok: true, rid: a.rid, dryRun: true, company, rpc }, 200);
 }
 
 /* =========================================================
@@ -212,28 +212,28 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (deny) return deny;
 
   const companyId = await getCompanyId(ctx);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = ((await readJson(req)) ?? null) as PurgeBody | null;
-  if (!body?.confirm) return jsonErr(400, a, "BAD_REQUEST", "Bekreft purge (confirm=true).");
+  if (!body?.confirm) return jsonErr(a.rid, "Bekreft purge (confirm=true).", 400, "BAD_REQUEST");
 
   const dryRun = Boolean(body?.dryRun);
   const reasonRaw = safeStr(body?.reason);
   const reason = reasonRaw.slice(0, 220);
 
   if (!dryRun && reason.length < 8) {
-    return jsonErr(400, a, "BAD_REQUEST", "reason må være minst 8 tegn.");
+    return jsonErr(a.rid, "reason må være minst 8 tegn.", 400, "BAD_REQUEST");
   }
 
   let admin: any;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, a, "ADMIN_CLIENT_FAILED", "Mangler service role key.", { message: String(e?.message ?? e) });
+    return jsonErr(a.rid, "Mangler service role key.", 500, { code: "ADMIN_CLIENT_FAILED", detail: { message: String(e?.message ?? e) } });
   }
 
   const extra = await assertSuperadminNotDisabled(admin, a.scope?.userId ?? "");
-  if (!extra.ok) return jsonErr(403, a, extra.code, extra.message, extra.detail);
+  if (!extra.ok) return jsonErr(a.rid, extra.message, 403, { code: extra.code, detail: extra.detail });
 
   const { data: company, error: cErr } = await admin
     .from("companies")
@@ -241,8 +241,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, a, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", cErr);
-  if (!company) return jsonErr(404, a, "NOT_FOUND", "Fant ikke firma.");
+  if (cErr) return jsonErr(a.rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: cErr });
+  if (!company) return jsonErr(a.rid, "Fant ikke firma.", 404, "NOT_FOUND");
 
   const actorEmail = normEmail(a.scope?.email ?? "");
 
@@ -283,7 +283,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       });
     }
 
-    return jsonErr(mapped.status, a, mapped.error, mapped.message, { companyId, rpc: mapped.detail });
+    return jsonErr(a.rid, mapped.message, mapped.status ?? 400, mapped.error);
   }
 
   const completedAudit =

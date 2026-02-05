@@ -3,8 +3,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import crypto from "node:crypto";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -26,13 +27,6 @@ async function readJsonLoose(req: NextRequest) {
   } catch {
     return null;
   }
-}
-
-function ok(rid: string, body: any, status = 200) {
-  return NextResponse.json({ ok: true, rid, ...body }, { status });
-}
-function err(rid: string, status: number, code: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error: code, message, detail: detail ?? null }, { status });
 }
 
 type AdminClient = ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
@@ -67,16 +61,16 @@ async function waitForProfile(admin: AdminClient, userId: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const rid = safeStr(req.headers.get("x-rid")) || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const rid = makeRid();
 
   const body = (await readJsonLoose(req)) ?? {};
   const token = safeStr((body as any).token);
   const password = String((body as any).password ?? "");
   const password2 = String((body as any).password2 ?? "");
 
-  if (!token) return err(rid, 400, "missing_token", "Mangler token.");
-  if (!password || password.length < 10) return err(rid, 400, "bad_password", "Passord må være minst 10 tegn.");
-  if (password2 && password !== password2) return err(rid, 400, "pw_mismatch", "Passordene er ikke like.");
+  if (!token) return jsonErr(rid, "Mangler token.", 400, "missing_token");
+  if (!password || password.length < 10) return jsonErr(rid, "Passord må være minst 10 tegn.", 400, "bad_password");
+  if (password2 && password !== password2) return jsonErr(rid, "Passordene er ikke like.", 400, "pw_mismatch");
 
   const admin = await getAdmin();
   const token_hash = sha256Hex(token);
@@ -91,14 +85,14 @@ export async function POST(req: NextRequest) {
     .gt("expires_at", nowIso)
     .maybeSingle();
 
-  if (inv.error) return err(rid, 500, "invite_lookup_failed", "Kunne ikke verifisere invitasjon.", inv.error.message);
-  if (!inv.data) return err(rid, 400, "invalid_token", "Ugyldig eller utløpt invitasjon.");
+  if (inv.error) return jsonErr(rid, "Kunne ikke verifisere invitasjon.", 500, { code: "invite_lookup_failed", detail: inv.error.message });
+  if (!inv.data) return jsonErr(rid, "Ugyldig eller utløpt invitasjon.", 400, "invalid_token");
 
   const email = normEmail(inv.data.email);
-  if (!email || !isEmail(email)) return err(rid, 400, "invalid_email", "Ugyldig e-post på invitasjonen.");
+  if (!email || !isEmail(email)) return jsonErr(rid, "Ugyldig e-post på invitasjonen.", 400, "invalid_email");
 
   const company_id = String(inv.data.company_id ?? "");
-  if (!company_id) return err(rid, 500, "invite_corrupt", "Invitasjonen mangler company_id.");
+  if (!company_id) return jsonErr(rid, "Invitasjonen mangler company_id.", 500, "invite_corrupt");
 
   const full_name = safeStr(inv.data.full_name) || email;
 
@@ -127,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
   } else {
     const existing = await findAuthUserByEmail(admin, email);
-    if (!existing?.id) return err(rid, 500, "auth_user_lookup_failed", "Kunne ikke opprette eller finne konto.");
+    if (!existing?.id) return jsonErr(rid, "Kunne ikke opprette eller finne konto.", 500, "auth_user_lookup_failed");
 
     userId = String(existing.id);
 
@@ -144,21 +138,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (upd.error) return err(rid, 500, "auth_update_failed", "Kunne ikke oppdatere konto.", upd.error.message);
+    if (upd.error) return jsonErr(rid, "Kunne ikke oppdatere konto.", 500, { code: "auth_update_failed", detail: upd.error.message });
   }
 
-  if (!userId) return err(rid, 500, "auth_not_ready", "Kunne ikke bekrefte bruker i auth.");
+  if (!userId) return jsonErr(rid, "Kunne ikke bekrefte bruker i auth.", 500, "auth_not_ready");
 
   // 3) wait profile
   const profile = await waitForProfile(admin, userId);
-  if (!profile) return err(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk.", { userId });
+  if (!profile) return jsonErr(rid, "Profil ble ikke opprettet automatisk.", 500, { code: "profile_not_created", detail: { userId } });
 
-  if (!profile.company_id) return err(rid, 500, "profile_not_bound", "Profil er ikke knyttet til firma.", { userId });
+  if (!profile.company_id) return jsonErr(rid, "Profil er ikke knyttet til firma.", 500, { code: "profile_not_bound", detail: { userId } });
   if (String(profile.company_id) !== company_id)
-    return err(rid, 403, "company_mismatch", "Kontoen er knyttet til et annet firma.", {
+    return jsonErr(rid, "Kontoen er knyttet til et annet firma.", 403, { code: "company_mismatch", detail: {
       existingCompany: profile.company_id,
       inviteCompany: company_id,
-    });
+    } });
 
   // 4) update profile safe fields
   const profUpd = await admin
@@ -176,16 +170,16 @@ export async function POST(req: NextRequest) {
     })
     .eq("id", userId);
 
-  if (profUpd.error) return err(rid, 500, "profile_update_failed", "Kunne ikke oppdatere profil.", profUpd.error.message);
+  if (profUpd.error) return jsonErr(rid, "Kunne ikke oppdatere profil.", 500, { code: "profile_update_failed", detail: profUpd.error.message });
 
   // 5) mark invite used
   const mark = await admin.from("employee_invites").update({ used_at: nowIso }).eq("id", inv.data.id).is("used_at", null);
-  if (mark.error) return ok(rid, { message: "Konto opprettet, men kunne ikke markere invitasjon brukt." }, 200);
+  if (mark.error) return jsonOk(rid, { message: "Konto opprettet, men kunne ikke markere invitasjon brukt." }, 200);
 
-  return ok(rid, { message: "Konto opprettet." }, 200);
+  return jsonOk(rid, { message: "Konto opprettet." }, 200);
 }
 
 export async function GET(req: NextRequest) {
-  const rid = safeStr(req.headers.get("x-rid")) || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  return err(rid, 405, "method_not_allowed", "Bruk POST for å fullføre invitasjon.", { method: "GET" });
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å fullføre invitasjon.", 405, { code: "method_not_allowed", detail: { method: "GET" } });
 }

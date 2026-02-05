@@ -1,276 +1,123 @@
-// app/layout.tsx
 import "./globals.css";
 
-import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
+import type { Metadata, Viewport } from "next";
+import { Fraunces, Manrope } from "next/font/google";
 import { headers } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import AppHeader from "@/components/AppHeader";
 
-import AuthStatus from "@/components/auth/AuthStatus";
-import SuperadminTopNavInline from "@/components/superadmin/SuperadminTopNavInline";
+const fontBody = Manrope({ subsets: ["latin"], variable: "--lp-font-body", display: "swap" });
+const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--lp-font-display", display: "swap" });
 
-/* =========================================================
-   Fonts
-========================================================= */
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-/* =========================================================
-   Metadata
-========================================================= */
 export const metadata: Metadata = {
   title: {
-    default: "Lunchportalen – firmalunsj med kontroll",
+    default: "Lunchportalen",
     template: "%s | Lunchportalen",
   },
-  description:
-    "Lunchportalen er en digital lunsjløsning for bedrifter: dere setter rammene, ansatte bestiller selv innenfor avtalen, med cut-off kl. 08:00. Mindre matsvinn, mindre administrasjon, full oversikt.",
+  description: "Enterprise lunch portal.",
   applicationName: "Lunchportalen",
-  metadataBase: new URL("https://lunchportalen.no"),
-  alternates: { canonical: "/" },
-  robots: { index: true, follow: true },
-  openGraph: {
-    type: "website",
-    siteName: "Lunchportalen",
-    title: "Lunchportalen – firmalunsj med kontroll",
-    description:
-      "Mindre matsvinn. Mindre administrasjon. Full forutsigbarhet. En lunsjløsning utviklet for bedrifter.",
-    url: "https://lunchportalen.no",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Lunchportalen – firmalunsj med kontroll",
-    description: "Firmalunsj med kontroll, mindre svinn og forutsigbarhet – cut-off kl. 08:00.",
-  },
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
-/* =========================================================
-   Helpers
-========================================================= */
-function cleanPath(pathname: string) {
-  return (pathname || "").split("?")[0];
-}
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
-function isPublicPath(pathname: string) {
-  const p = cleanPath(pathname);
+async function resolvePathname() {
+  const h = await headers();
+  const pathname = h.get("x-pathname");
+  if (pathname) return pathname;
 
-  return (
-    p === "/" || // ✅ Landing er offentlig
-    p === "/login" ||
-    p.startsWith("/login/") ||
-    p === "/register" ||
-    p.startsWith("/register/") ||
-    p === "/registrering" ||
-    p.startsWith("/registrering/") ||
-    p === "/onboarding" ||
-    p.startsWith("/onboarding/") ||
-    p === "/forgot-password" ||
-    p.startsWith("/forgot-password/")
-  );
-}
-
-/** ✅ Sider der ansatte oftest misforstår */
-function isRegistrationFlow(pathname: string) {
-  const p = cleanPath(pathname);
-  return (
-    p === "/register" ||
-    p.startsWith("/register/") ||
-    p === "/registrering" ||
-    p.startsWith("/registrering/") ||
-    p === "/onboarding" ||
-    p.startsWith("/onboarding/")
-  );
-}
-
-/** ✅ “Fokusmodus” – skjul toppmeny for å unngå forvirring */
-function isFocusMode(pathname: string) {
-  const p = cleanPath(pathname);
-  return (
-    p === "/login" ||
-    p.startsWith("/login/") ||
-    p === "/forgot-password" ||
-    p.startsWith("/forgot-password/") ||
-    isRegistrationFlow(p) // ✅ inkluder registrering/onboarding
-  );
-}
-
-function getPathnameFromHeaders(h: Headers): string {
-  // Prefer middleware-provided pathname if present
-  const fromMiddleware = h.get("x-pathname");
-  if (fromMiddleware) return fromMiddleware;
-
-  // Some setups provide next-url
-  const nextUrl = h.get("next-url");
+  const nextUrl = h.get("next-url") || "";
   if (nextUrl) {
     try {
-      if (nextUrl.startsWith("http")) return new URL(nextUrl).pathname;
-      return nextUrl.split("?")[0];
+      const url = nextUrl.startsWith("http") ? new URL(nextUrl) : new URL(nextUrl, "http://local");
+      return url.pathname;
     } catch {
-      return nextUrl.split("?")[0];
+      return nextUrl.split("?")[0] || "";
     }
   }
 
-  // Try x-url / x-forwarded-uri / x-original-url (variasjoner)
-  const xurl = h.get("x-url") || h.get("x-forwarded-uri") || h.get("x-original-url") || "";
-  if (xurl) {
-    try {
-      const u = xurl.startsWith("http") ? new URL(xurl) : new URL(xurl, "http://local");
-      return u.pathname;
-    } catch {
-      return xurl.split("?")[0];
-    }
+  try {
+    const raw =
+      h.get("x-url") ||
+      h.get("x-forwarded-uri") ||
+      h.get("x-original-url") ||
+      h.get("referer") ||
+      "";
+    if (!raw) return "";
+    const url = raw.startsWith("http") ? new URL(raw) : new URL(raw, "http://local");
+    return url.pathname;
+  } catch {
+    return "";
   }
-
-  // Last resort: referer
-  const ref = h.get("referer");
-  if (ref) {
-    try {
-      return new URL(ref).pathname;
-    } catch {
-      return "";
-    }
-  }
-
-  return "";
 }
 
-function EmployeeMisunderstandingBanner() {
-  // Server-komponent, enkel og trygg.
+function isAuthPath(pathname: string) {
   return (
-    <div className="border-b border-[rgb(var(--lp-border))] bg-white/70">
-      <div className="mx-auto max-w-3xl px-4 py-3 text-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[rgb(var(--lp-text))]">
-            <strong>Viktig:</strong> Denne registreringen er kun for <strong>firma-admin</strong> (leder/ansvarlig).
-            <span className="text-[rgb(var(--lp-muted))]"> Ansatte får tilgang via invitasjon.</span>
-          </div>
-          <Link
-            href="/login"
-            className="inline-flex items-center rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-1 text-xs font-medium text-[rgb(var(--lp-text))] hover:bg-white/80"
-          >
-            Jeg er ansatt – gå til innlogging
-          </Link>
-        </div>
-      </div>
-    </div>
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/register" ||
+    pathname.startsWith("/register/") ||
+    pathname === "/registrering" ||
+    pathname.startsWith("/registrering/") ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/forgot-password/") ||
+    pathname === "/logout" ||
+    pathname.startsWith("/logout/") ||
+    pathname === "/accept-invite" ||
+    pathname.startsWith("/accept-invite/") ||
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback/")
   );
 }
 
-/* =========================================================
-   Root layout
-========================================================= */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // ✅ Your Next version: headers() is async
-  const h = await headers();
-  const pathname = getPathnameFromHeaders(h);
+  const pathname = await resolvePathname();
+  const authRoute = pathname ? isAuthPath(pathname) : false;
+  const isAdminArea = pathname
+    ? pathname.startsWith("/admin") || pathname.startsWith("/superadmin")
+    : false;
 
-  const focusMode = pathname ? isFocusMode(pathname) : false;
-  const showRegBanner = pathname ? isRegistrationFlow(pathname) : false;
+  const areaLabel = (() => {
+    if (!pathname) return "Lunchportalen";
+    if (pathname.startsWith("/week") || pathname.startsWith("/orders") || pathname.startsWith("/min-side")) return "Ansatt";
+    if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken")) return "Kjøkken";
+    if (pathname.startsWith("/driver")) return "Sjåfør";
+    if (pathname.startsWith("/system")) return "System";
+    return "Lunchportalen";
+  })();
 
-  // NOTE: isPublicPath is kept for future gating, not used directly here.
-  // const isPublic = pathname ? isPublicPath(pathname) : false;
+  const nav = (() => {
+    if (!pathname) return [];
+    if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken")) {
+      return [{ label: "Rapport", href: "/kitchen" }];
+    }
+    if (pathname.startsWith("/driver")) {
+      return [{ label: "Ruter", href: "/driver" }];
+    }
+    if (pathname.startsWith("/system")) {
+      return [{ label: "Status", href: "/system" }];
+    }
+    return [
+      { label: "Ukeplan", href: "/week" },
+      { label: "Bestillinger", href: "/orders" },
+      { label: "Min side", href: "/min-side" },
+    ];
+  })();
 
   return (
-    <html lang="no" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
-      <body className="min-h-full bg-[rgb(var(--lp-bg))] text-[rgb(var(--lp-text))] antialiased">
-        {focusMode ? (
-          <>
-            {/* ✅ “Idiotsikker” ansatt-beskjed på registrering/onboarding */}
-            {showRegBanner ? <EmployeeMisunderstandingBanner /> : null}
-
-            {/* ✅ Fokusmodus får fortsatt en ren, sentrert container */}
-            <main className="min-h-[calc(100vh-1px)]">
-              <div className="mx-auto w-full max-w-3xl px-4 py-8">{children}</div>
-            </main>
-
-            <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
-              <div className="mx-auto max-w-3xl px-4 py-6 text-xs text-[rgb(var(--lp-muted))]">
-                © {new Date().getFullYear()} Lunchportalen
-              </div>
-            </footer>
-          </>
+    <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} h-full`}>
+      <body className="min-h-full">
+        {authRoute ? (
+          children
         ) : (
-          <>
-            {/* ✅ Global header */}
-            <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] bg-white/75 backdrop-blur">
-              <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:gap-4">
-                <div className="flex items-center gap-4">
-                  <Link href="/" className="flex items-center">
-                    <Image
-                      src="/LunchPortalen_Enterprise_Logo_Pack/LP-logo-uten-bakgrunn.png"
-                      alt="Lunchportalen"
-                      width={220}
-                      height={44}
-                      priority
-                      className="h-auto w-[170px] md:w-[210px]"
-                    />
-                    <span className="sr-only">Lunchportalen</span>
-                  </Link>
-
-                  {/* ✅ Primary nav (diskret) */}
-                  <nav className="hidden items-center gap-1 text-sm md:flex">
-                    <Link
-                      href="/week"
-                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
-                    >
-                      Uke
-                    </Link>
-                    <Link
-                      href="/kitchen"
-                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
-                    >
-                      Kjøkken
-                    </Link>
-                    <Link
-                      href="/driver"
-                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
-                    >
-                      Sjåfør
-                    </Link>
-                    <Link
-                      href="/admin"
-                      className="rounded-lg px-3 py-2 text-[rgb(var(--lp-muted))] hover:bg-black/5 hover:text-[rgb(var(--lp-text))]"
-                    >
-                      Admin
-                    </Link>
-                  </nav>
-                </div>
-
-                <nav className="flex items-center gap-3">
-                  {/* ✅ Kun synlig på /superadmin* og ligger ved siden av AuthStatus */}
-                  <SuperadminTopNavInline />
-                  {/* ✅ Innlogget label + Logg ut */}
-                  <AuthStatus />
-                </nav>
-              </div>
-            </header>
-
-            {/* ✅ AppShell body */}
-            <main className="min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)]">
-              <div className="mx-auto w-full max-w-6xl px-4 py-8">{children}</div>
+          <div className="lp-page">
+            {!isAdminArea ? <AppHeader areaLabel={areaLabel} nav={nav} /> : null}
+            <main className="lp-main">
+              <div className="lp-container">{children}</div>
             </main>
-
-            <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
-              <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-[rgb(var(--lp-muted))]">
-                © {new Date().getFullYear()} Lunchportalen
-              </div>
-            </footer>
-          </>
+          </div>
         )}
       </body>
     </html>

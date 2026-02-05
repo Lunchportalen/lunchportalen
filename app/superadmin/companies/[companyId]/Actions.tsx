@@ -16,7 +16,7 @@ type ApiErr = { ok: false; error: string; message?: string; detail?: any };
 type ApiRes = ApiOk | ApiErr;
 
 function niceError(e: any) {
-  return e?.message || "Noe gikk galt. Prøv igjen.";
+  return e?.message || "Noe gikk galt. PrÃ¸v igjen.";
 }
 
 async function post(url: string) {
@@ -94,7 +94,7 @@ export default function Actions({ companyId, status, onStatusChange }: Props) {
             "bg-white text-red-700 ring-[rgb(var(--lp-border))] hover:bg-red-50",
           ].join(" ")}
         >
-          Avslå
+          AvslÃ¥
         </button>
       </div>
 

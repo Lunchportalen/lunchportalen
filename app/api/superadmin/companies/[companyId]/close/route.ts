@@ -46,7 +46,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   const params = await ctx.params;
   const companyId = safeStr(params?.companyId);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = ((await readJson(req)) ?? {}) as Body;
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : null;
@@ -70,8 +70,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   try {
     const { data: company, error: cErr } = await sb.from("companies").select("id,name,status").eq("id", companyId).maybeSingle();
-    if (cErr) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese firma.", cErr);
-    if (!company) return jsonErr(404, a, "NOT_FOUND", "Firma finnes ikke.");
+    if (cErr) return jsonErr(a.rid, "Kunne ikke lese firma.", 500, { code: "DB_ERROR", detail: cErr });
+    if (!company) return jsonErr(a.rid, "Firma finnes ikke.", 404, "NOT_FOUND");
 
     const st = String((company as any).status ?? "").toLowerCase();
 
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         rid: a.rid,
       });
 
-      return jsonOk(a, { ok: true, rid: a.rid, company, meta: { alreadyClosed: true } }, 200);
+      return jsonOk(a.rid, { ok: true, rid: a.rid, company, meta: { alreadyClosed: true } }, 200);
     }
 
     const now = new Date().toISOString();
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         .single();
     }
 
-    if (up.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke close firma.", up.error);
+    if (up.error) return jsonErr(a.rid, "Kunne ikke close firma.", 500, { code: "DB_ERROR", detail: up.error });
 
     await tryAudit(sb, {
       actor_user_id: a.scope?.userId ?? null,
@@ -127,9 +127,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       rid: a.rid,
     });
 
-    return jsonOk(a, { ok: true, rid: a.rid, company: up.data }, 200);
+    return jsonOk(a.rid, { ok: true, rid: a.rid, company: up.data }, 200);
   } catch (e: any) {
-    return jsonErr(500, a, "SERVER_ERROR", "Uventet feil i close.", { message: String(e?.message ?? e) });
+    return jsonErr(a.rid, "Uventet feil i close.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
 

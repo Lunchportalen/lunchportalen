@@ -7,8 +7,8 @@ import { redirect } from "next/navigation";
 
 import KitchenClient from "./kitchenClient";
 
-// ✅ RIKTIG import for ditt repo (app/admin/kjokken → app/components)
-import DownloadAgreementButton from "../../components/DownloadAgreementButton";
+// ✅ RIKTIG import for ditt repo (app/admin/kjokken → components)
+import DownloadAgreementButton from "@/components/DownloadAgreementButton";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";

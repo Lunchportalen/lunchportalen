@@ -48,7 +48,22 @@ export default function CompaniesClient() {
         throw new Error(j?.message || j?.error || "Kunne ikke hente firma");
       }
 
-      setState({ type: "ready", items: (j.companies ?? []) as CompanyRow[] });
+      const items = Array.isArray(j?.data?.items) ? j.data.items : [];
+      const mapped: CompanyRow[] = items.map((c: any) => {
+        const employees = Number.isFinite(Number(c?.employeesCount)) ? Number(c?.employeesCount) : 0;
+        const admins = Number.isFinite(Number(c?.adminsCount)) ? Number(c?.adminsCount) : 0;
+        const st = String(c?.status ?? "active").toLowerCase();
+        const status: CompanyStatus = st === "paused" || st === "closed" || st === "active" ? (st as CompanyStatus) : "active";
+        return {
+          id: String(c?.id ?? ""),
+          name: String(c?.name ?? ""),
+          status,
+          usersCount: employees + admins,
+          orgnr: c?.orgnr ?? null,
+          updatedAt: c?.updatedAt ?? c?.updated_at ?? null,
+        };
+      });
+      setState({ type: "ready", items: mapped });
     } catch (e: any) {
       setState({ type: "error", message: e?.message || "Ukjent feil" });
     }

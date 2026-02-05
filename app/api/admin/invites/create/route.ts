@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Kun company_admin (NY SIGNATUR)
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
   const userId = safeStr(ctx.scope.userId);
   const companyId = safeStr(ctx.scope.companyId);
 
-  if (!userId) return jsonErr(ctx, "not_authenticated", "Ikke innlogget.");
-  if (!companyId) return jsonErr(ctx, "missing_company", "Mangler company_id i scope.");
+  if (!userId) return jsonErr(ctx.rid, "Ikke innlogget.", 400, "not_authenticated");
+  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const admin = supabaseAdmin();
@@ -54,9 +54,9 @@ export async function POST(req: NextRequest) {
       .is("revoked_at", null);
 
     if (revokeRes.error) {
-      return jsonErr(ctx, "invite_revoke_failed", "Kunne ikke deaktivere tidligere invitasjoner.", {
+      return jsonErr(ctx.rid, "Kunne ikke deaktivere tidligere invitasjoner.", 400, { code: "invite_revoke_failed", detail: {
         message: revokeRes.error.message,
-      });
+      } });
     }
 
     // Lag ny invite
@@ -69,23 +69,21 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (iErr || !inv) {
-      return jsonErr(ctx, "invite_create_failed", "Kunne ikke opprette invitasjonslenke.", {
+      return jsonErr(ctx.rid, "Kunne ikke opprette invitasjonslenke.", 400, { code: "invite_create_failed", detail: {
         message: iErr?.message ?? "unknown",
-      });
+      } });
     }
 
     const base = safeStr(process.env.NEXT_PUBLIC_SITE_URL).replace(/\/$/, "") || "http://localhost:3000";
     const url = `${base}/register?invite=${encodeURIComponent(inv.code)}`;
 
-    return jsonOk(ctx, {
+    return jsonOk(ctx.rid, {
       ok: true,
       invite: { code: inv.code, url, created_at: inv.created_at, company_id: inv.company_id },
     });
   } catch (e: any) {
-    return jsonErr(ctx, "server_error", "Uventet feil ved opprettelse av invitasjon.", {
+    return jsonErr(ctx.rid, "Uventet feil ved opprettelse av invitasjon.", 400, { code: "server_error", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
-
-

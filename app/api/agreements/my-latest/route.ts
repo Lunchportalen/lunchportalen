@@ -5,21 +5,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 
 /* =========================
    Response helpers
 ========================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
 function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+  const r = String(detail?.rid ?? "") || makeRid();
+  return jsonErr(r, message, status, error);
 }
 
 /* =========================
@@ -60,7 +53,7 @@ export async function GET() {
   const { data: profile, error: profileErr } = await sb
     .from("profiles")
     .select("company_id")
-    .eq("user_id", user.id)
+    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
     .maybeSingle();
 
   if (profileErr) {
@@ -102,7 +95,7 @@ export async function GET() {
     return jsonError(500, "SIGNED_URL_FAILED", "Kunne ikke lage nedlastingslenke.", { rid, detail: error?.message ?? "unknown" });
   }
 
-  return jsonOk({
+  return jsonOk(rid, {
     ok: true,
     rid,
     companyId,
@@ -110,6 +103,3 @@ export async function GET() {
     expiresInSeconds: 60,
   });
 }
-
-
-

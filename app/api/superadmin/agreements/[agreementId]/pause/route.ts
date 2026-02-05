@@ -5,31 +5,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
-function mkRid() {
-  return `sa_pause_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Ctx = { params: { agreementId: string } | Promise<{ agreementId: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = mkRid();
+  const rid = makeRid();
 
   try {
     const scope = await getScope(req);
@@ -37,12 +23,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     // ✅ Hard rule
     if (scope.role !== "superadmin") {
-      return jsonErr(403, rid, "FORBIDDEN", "Kun superadmin kan pause avtale.");
+      return jsonErr(rid, "Kun superadmin kan pause avtale.", 403, "FORBIDDEN");
     }
 
     const params = await Promise.resolve(ctx.params as any);
     const agreementId = String(params?.agreementId ?? "").trim();
-    if (!isUuid(agreementId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig agreementId.");
+    if (!isUuid(agreementId)) return jsonErr(rid, "Ugyldig agreementId.", 400, "BAD_REQUEST");
 
     const admin = supabaseAdmin();
 
@@ -55,27 +41,25 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .eq("id", agreementId)
       .maybeSingle();
 
-    if (before.error) return jsonErr(500, rid, "READ_FAILED", "Kunne ikke lese avtale.", before.error);
-    if (!before.data?.id) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke avtale.");
+    if (before.error) return jsonErr(rid, "Kunne ikke lese avtale.", 500, { code: "READ_FAILED", detail: before.error });
+    if (!before.data?.id) return jsonErr(rid, "Fant ikke avtale.", 404, "NOT_FOUND");
 
     // Idempotency: already paused
     if (String((before.data as any).status) === "PAUSED") {
-      return jsonOk({
-        ok: true,
-        rid,
+      return jsonOk(rid, {
         agreement: before.data,
         idempotent: true,
-      });
+      }, 200);
     }
 
     const companyId = String((before.data as any).company_id ?? "").trim();
     if (!isUuid(companyId)) {
-      return jsonErr(500, rid, "DATA_INVALID", "Avtalen har ugyldig company_id.", { company_id: (before.data as any).company_id });
+      return jsonErr(rid, "Avtalen har ugyldig company_id.", 500, { code: "DATA_INVALID", detail: { company_id: (before.data as any).company_id } });
     }
 
     // Company name (best-effort for audit summary)
     const company = await admin.from("companies").select("id, name, status").eq("id", companyId).maybeSingle();
-    if (company.error) return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", company.error);
+    if (company.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
 
     // Update -> PAUSED
     const upd = await admin
@@ -87,7 +71,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       )
       .single();
 
-    if (upd.error) return jsonErr(500, rid, "PAUSE_FAILED", "Kunne ikke pause avtale.", upd.error);
+    if (upd.error) return jsonErr(rid, "Kunne ikke pause avtale.", 500, { code: "PAUSE_FAILED", detail: upd.error });
 
     // (Anbefalt) Hold companies.status i sync når vi pauser
     await admin.from("companies").update({ status: "PAUSED", updated_at: new Date().toISOString() } as any).eq("id", companyId);
@@ -108,32 +92,30 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       },
     });
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       agreement: upd.data,
       audit_ok: (audit as any)?.ok === true,
       audit_event: (audit as any)?.ok ? (audit as any).audit : null,
       audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
-    });
+    }, 200);
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e));
+    return jsonErr(rid, String(e?.message ?? e), status, code);
   }
 }
 
-export async function GET() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å pause avtale.");
+export async function GET(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å pause avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function PUT() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å pause avtale.");
+export async function PUT(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å pause avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function DELETE() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å pause avtale.");
+export async function DELETE(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å pause avtale.", 405, "METHOD_NOT_ALLOWED");
 }
-
-
-

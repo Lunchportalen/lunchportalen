@@ -5,18 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { isSuperadminEmail, systemRoleByEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
-function norm(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function safeText(v: any, max = 200) {
   const s = String(v ?? "").trim();
   return s ? s.slice(0, max) : null;
@@ -34,19 +25,17 @@ async function requireSuperadmin() {
   const { data: auth, error } = await sb.auth.getUser();
   const user = auth?.user ?? null;
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-  if (norm(user.email) !== "superadmin@lunchportalen.no") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
+  if (!isSuperadminEmail(user.email)) throw Object.assign(new Error("forbidden"), { code: "forbidden" });
   return user;
 }
 
 function isProtectedSystemEmail(email: string) {
-  const e = norm(email);
-  return e === "superadmin@lunchportalen.no" || e === "kjokken@lunchportalen.no" || e === "driver@lunchportalen.no";
+  return systemRoleByEmail(email) !== null;
 }
 
 export async function POST(req: Request) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `sa_disable_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     await requireSuperadmin();
@@ -56,7 +45,7 @@ export async function POST(req: Request) {
     const user_id = String(body.user_id ?? "");
     const reason = safeText(body.reason ?? "Disabled by superadmin", 200);
 
-    if (!isUuid(user_id)) return json({ ok: false, rid, error: "invalid_user_id" }, 400);
+    if (!isUuid(user_id)) return jsonErr(rid, "Ugyldig user_id.", 400, "invalid_user_id");
 
     // Hent profil
     const prof = await admin
@@ -65,12 +54,12 @@ export async function POST(req: Request) {
       .eq("user_id", user_id)
       .maybeSingle();
 
-    if (prof.error) return json({ ok: false, rid, error: "profile_read_failed", detail: prof.error }, 500);
-    if (!prof.data) return json({ ok: false, rid, error: "not_found" }, 404);
+    if (prof.error) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "profile_read_failed", detail: prof.error });
+    if (!prof.data) return jsonErr(rid, "Fant ikke bruker.", 404, "not_found");
 
     const email = String(prof.data.email ?? "");
     if (email && isProtectedSystemEmail(email)) {
-      return json({ ok: false, rid, error: "protected_account", message: "Systemkonto kan ikke deaktiveres." }, 403);
+      return jsonErr(rid, "Systemkonto kan ikke deaktiveres.", 403, "protected_account");
     }
 
     // Deaktiver profil (ingen auth-slett her)
@@ -83,15 +72,13 @@ export async function POST(req: Request) {
       })
       .eq("user_id", user_id);
 
-    if (upd.error) return json({ ok: false, rid, error: "disable_failed", detail: upd.error }, 500);
+    if (upd.error) return jsonErr(rid, "Kunne ikke deaktivere bruker.", 500, { code: "disable_failed", detail: upd.error });
 
-    return json({ ok: true, rid, message: "Bruker deaktivert." });
+    return jsonOk(rid, { ok: true, rid, message: "Bruker deaktivert." }, 200);
   } catch (e: any) {
     const code = e?.code || "unknown";
-    if (code === "not_authenticated") return json({ ok: false, rid, error: "not_authenticated" }, 401);
-    if (code === "forbidden") return json({ ok: false, rid, error: "forbidden" }, 403);
-    return json({ ok: false, rid, error: "server_error", detail: String(e?.message ?? e) }, 500);
+    if (code === "not_authenticated") return jsonErr(rid, "Ikke innlogget.", 401, "not_authenticated");
+    if (code === "forbidden") return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil.", 500, { code: "server_error", detail: String(e?.message ?? e) });
   }
 }
-
-

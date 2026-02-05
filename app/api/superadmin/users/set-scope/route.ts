@@ -5,12 +5,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function clean(v: any) {
@@ -39,11 +40,11 @@ function normRole(v: any): Role | null {
 }
 
 export async function POST(req: Request) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
+  const rid = makeRid();
   try {
     const body = await req.json().catch(() => null);
-    if (!body) return jsonError(400, "invalid_json", "Ugyldig JSON i request.");
+    if (!body) return jsonError(rid, 400, "invalid_json", "Ugyldig JSON i request.");
 
     const email = cleanEmail(body.email ?? body.p_target_email);
     const role = normRole(body.role ?? body.p_role);
@@ -55,15 +56,15 @@ export async function POST(req: Request) {
     const companyName = clean(body.companyName ?? body.company_name ?? "");
     const locationLabel = clean(body.locationLabel ?? body.location_label ?? "");
 
-    if (!email) return jsonError(400, "missing_email", "Mangler e-post.");
-    if (!role) return jsonError(400, "invalid_role", "Ugyldig rolle.");
+    if (!email) return jsonError(rid, 400, "missing_email", "Mangler e-post.");
+    if (!role) return jsonError(rid, 400, "invalid_role", "Ugyldig rolle.");
 
     const supabase = await supabaseServer();
 
     // Må være innlogget
     const { data: auth, error: authErr } = await supabase.auth.getUser();
-    if (authErr) return jsonError(401, "unauthenticated", "Ikke innlogget.", authErr);
-    if (!auth?.user) return jsonError(401, "unauthenticated", "Ikke innlogget.");
+    if (authErr) return jsonError(rid, 401, "unauthenticated", "Ikke innlogget.", authErr);
+    if (!auth?.user) return jsonError(rid, 401, "unauthenticated", "Ikke innlogget.");
 
     // Ekstra sikkerhet: verifiser superadmin i profiles (RPC sjekker også)
     const { data: me, error: meErr } = await supabase
@@ -72,9 +73,9 @@ export async function POST(req: Request) {
       .or(`user_id.eq.${auth.user.id},id.eq.${auth.user.id}`)
       .maybeSingle();
 
-    if (meErr) return jsonError(500, "profile_read_failed", "Kunne ikke lese profil.", meErr);
+    if (meErr) return jsonError(rid, 500, "profile_read_failed", "Kunne ikke lese profil.", meErr);
     if (String(me?.role ?? "").toLowerCase() !== "superadmin") {
-      return jsonError(403, "forbidden", "Kun superadmin kan endre rolle/scope.");
+      return jsonError(rid, 403, "forbidden", "Kun superadmin kan endre rolle/scope.");
     }
 
     // ✅ For roller som trenger scope: slå opp IDs robust (unngå copy/paste UUID-problemer)
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
       // Hvis UUID mangler/er ugyldig, slå opp via navn/label
       if (!company_id || !isUuid(String(company_id))) {
         if (!companyName) {
-          return jsonError(400, "missing_company", "Mangler companyName (eller gyldig company_id).");
+          return jsonError(rid, 400, "missing_company", "Mangler companyName (eller gyldig company_id).");
         }
         const { data: c, error: cErr } = await supabase
           .from("companies")
@@ -90,14 +91,14 @@ export async function POST(req: Request) {
           .eq("name", companyName)
           .maybeSingle();
 
-        if (cErr) return jsonError(500, "company_lookup_failed", "Kunne ikke finne firma.", cErr);
-        if (!c?.id) return jsonError(404, "company_not_found", "Fant ikke firma.");
+        if (cErr) return jsonError(rid, 500, "company_lookup_failed", "Kunne ikke finne firma.", cErr);
+        if (!c?.id) return jsonError(rid, 404, "company_not_found", "Fant ikke firma.");
         company_id = c.id;
       }
 
       if (!location_id || !isUuid(String(location_id))) {
         if (!locationLabel) {
-          return jsonError(400, "missing_location", "Mangler locationLabel (eller gyldig location_id).");
+          return jsonError(rid, 400, "missing_location", "Mangler locationLabel (eller gyldig location_id).");
         }
         const { data: l, error: lErr } = await supabase
           .from("company_locations")
@@ -106,8 +107,8 @@ export async function POST(req: Request) {
           .eq("label", locationLabel)
           .maybeSingle();
 
-        if (lErr) return jsonError(500, "location_lookup_failed", "Kunne ikke finne lokasjon.", lErr);
-        if (!l?.id) return jsonError(404, "location_not_found", "Fant ikke lokasjon.");
+        if (lErr) return jsonError(rid, 500, "location_lookup_failed", "Kunne ikke finne lokasjon.", lErr);
+        if (!l?.id) return jsonError(rid, 404, "location_not_found", "Fant ikke lokasjon.");
         location_id = l.id;
       }
     } else {
@@ -126,19 +127,17 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error("[api/superadmin/users/set-scope] rpc error:", error);
-      return jsonError(500, "rpc_failed", "Kunne ikke oppdatere rolle/scope.", error);
+      return jsonError(rid, 500, "rpc_failed", "Kunne ikke oppdatere rolle/scope.", error);
     }
 
     if (!data?.ok) {
-      return jsonError(400, data?.error ?? "failed", data?.message ?? "Kunne ikke oppdatere.", data);
+      return jsonError(rid, 400, data?.error ?? "failed", data?.message ?? "Kunne ikke oppdatere.", data);
     }
 
-    return NextResponse.json(data);
+    return jsonOk(rid, data, 200);
   } catch (e: any) {
     console.error("[api/superadmin/users/set-scope] server error:", e);
-    return jsonError(500, "server_error", "Uventet feil.", e?.message ?? e);
+    return jsonError(rid, 500, "server_error", "Uventet feil.", e?.message ?? e);
   }
 }
-
-
 

@@ -65,6 +65,8 @@ export default function AcceptInviteClient({ token }: Props) {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -173,56 +175,79 @@ export default function AcceptInviteClient({ token }: Props) {
           name="full_name"
           type="text"
           autoComplete="name"
-          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
+          className="w-full min-h-[44px] rounded-xl border border-border bg-white px-3 py-2 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
           placeholder="Ola Nordmann"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-text">Passord</label>
-        <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
-          placeholder="Minst 10 tegn"
-          required
-          minLength={10}
-        />
+        <div className="relative">
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            className="w-full min-h-[44px] rounded-xl border border-border bg-white px-3 py-2 pr-12 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
+            placeholder="Minst 10 tegn"
+            required
+            minLength={10}
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-text hover:bg-slate-50"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? "Skjul" : "Vis"}
+          </button>
+        </div>
         <p className="mt-1 text-xs text-muted">Bruk minst 10 tegn. Gjerne en setning du husker.</p>
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-text">Bekreft passord</label>
-        <input
-          value={password2}
-          onChange={(e) => setPassword2(e.target.value)}
-          name="password2"
-          type="password"
-          autoComplete="new-password"
-          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
-          placeholder="Skriv passordet på nytt"
-          required
-          minLength={10}
-        />
+        <div className="relative">
+          <input
+            value={password2}
+            onChange={(e) => setPassword2(e.target.value)}
+            name="password2"
+            type={showPassword2 ? "text" : "password"}
+            autoComplete="new-password"
+            className="w-full min-h-[44px] rounded-xl border border-border bg-white px-3 py-2 pr-12 text-text outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))]"
+            placeholder="Skriv passordet på nytt"
+            required
+            minLength={10}
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-text hover:bg-slate-50"
+            onClick={() => setShowPassword2((v) => !v)}
+            aria-pressed={showPassword2}
+          >
+            {showPassword2 ? "Skjul" : "Vis"}
+          </button>
+        </div>
       </div>
 
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-2xl bg-[rgb(var(--lp-cta))] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 active:opacity-90 disabled:opacity-60"
+        className="w-full min-h-[48px] rounded-2xl bg-[rgb(var(--lp-cta))] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 active:opacity-90 disabled:opacity-60"
       >
         {submitting ? "Aktiverer…" : "Aktiver konto"}
       </button>
 
       <p className="text-center text-xs text-muted">
         Har du allerede konto?{" "}
-        <a className="underline" href="/login">
+        <a className="inline-flex min-h-[44px] items-center underline" href="/login">
           Logg inn
         </a>
       </p>
     </form>
   );
 }
+
+
+

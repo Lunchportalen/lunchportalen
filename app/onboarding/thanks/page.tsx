@@ -1,5 +1,6 @@
 // app/onboarding/thanks/page.tsx
 import Link from "next/link";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
 export default function Thanks({ searchParams }: { searchParams?: Record<string, string> }) {
   const status = searchParams?.status ?? "pending";
@@ -36,10 +37,10 @@ export default function Thanks({ searchParams }: { searchParams?: Record<string,
         <p className="mt-2">
           📧{" "}
           <a
-            href="mailto:post@lunchportalen.no"
+            href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}
             className="font-medium underline hover:no-underline"
           >
-            post@lunchportalen.no
+            {SYSTEM_EMAILS.SUPPORT}
           </a>
         </p>
       </div>

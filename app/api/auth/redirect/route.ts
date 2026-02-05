@@ -5,7 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { SYSTEM_EMAILS, systemRoleByEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -17,15 +19,9 @@ function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 
-const ORDER_EMAIL = "ordre@lunchportalen.no";
-
 // HARD e-post-fasit (samme logikk som middleware)
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function homeForRole(role: Role) {
@@ -76,13 +72,13 @@ function safeNextPath(next: string | null | undefined, fallback = "/week") {
  * - kitchen kan /kitchen
  * - driver kan /driver
  * - employee kan /week
- * - ordre@lunchportalen.no kan /outbox (hard)
+ * - ordre-konto kan /outbox (hard)
  */
 function canAccess(role: Role, path: string, email?: string | null) {
   const e = normEmail(email);
 
   // ✅ HARD: ordre-konto kan alltid gå til /outbox (og kun det "området")
-  if (e === ORDER_EMAIL) {
+  if (e === SYSTEM_EMAILS.ORDER) {
     if (path.startsWith("/outbox")) return true;
     // la den likevel kunne gå til /week hvis dere ønsker (valgfritt):
     // if (path.startsWith("/week")) return true;
@@ -143,56 +139,66 @@ function roleFromUserMetadata(user: any): Role | null {
 ========================================================= */
 
 export async function GET(req: NextRequest) {
-  
-  const { supabaseServer } = await import("@/lib/supabase/server");
-  const url = new URL(req.url);
+  const rid = makeRid();
 
-  // Les next (rå)
-  const nextRaw = url.searchParams.get("next");
-  const nextSafe = safeNextPath(nextRaw, "/week");
+  try {
+    const { supabaseServer } = await import("@/lib/supabase/server");
+    const url = new URL(req.url);
 
-  const sb = await supabaseServer();
+    // Les next (rå)
+    const nextRaw = url.searchParams.get("next");
+    const nextSafe = safeNextPath(nextRaw, "/week");
 
-  const { data, error } = await sb.auth.getUser();
-  if (error || !data?.user) {
-    // Ikke innlogget → til login, behold trygg next
-    const loginUrl = new URL("/login", url.origin);
-    loginUrl.searchParams.set("next", nextSafe);
-    return NextResponse.redirect(loginUrl, { status: 303 });
+    const sb = await supabaseServer();
+
+    const { data, error } = await sb.auth.getUser();
+    if (error || !data?.user) {
+      // Ikke innlogget → til login, behold trygg next
+      const loginUrl = new URL("/login", url.origin);
+      loginUrl.searchParams.set("next", nextSafe);
+      const res = jsonOk(rid, { ok: true, target: loginUrl.toString() }, 303);
+      res.headers.set("Location", loginUrl.toString());
+      return res;
+    }
+
+    const user = data.user;
+    const email = normEmail(user.email);
+
+    // ✅ HARD: ordre-konto skal ALLTID til /outbox uansett next
+    if (email === SYSTEM_EMAILS.ORDER) {
+      const to = new URL("/outbox", url.origin);
+      const res = jsonOk(rid, { ok: true, target: to.toString() }, 303);
+      res.headers.set("Location", to.toString());
+      return res;
+    }
+
+    // Rolle-prioritet:
+    // 1) Hard epost-fasit (systemkontoer)
+    // 2) profiles.role
+    // 3) user_metadata.role
+    // 4) employee
+    const byEmail = roleByEmail(user.email);
+    const byProfiles = byEmail ? null : await roleFromProfiles(sb, user.id);
+    const byMeta = byEmail || byProfiles ? null : roleFromUserMetadata(user);
+
+    const role: Role = byEmail ?? byProfiles ?? byMeta ?? "employee";
+    const home = homeForRole(role);
+
+    const hasNext = typeof nextRaw === "string" && nextRaw.trim().length > 0;
+
+    let target = home;
+    if (hasNext) {
+      const candidate = safeNextPath(nextRaw, home);
+      target = canAccess(role, candidate, user.email) ? candidate : home;
+    }
+
+    const to = new URL(target, url.origin);
+    const res = jsonOk(rid, { ok: true, target: to.toString() }, 303);
+    res.headers.set("Location", to.toString());
+    return res;
+  } catch (e: any) {
+    return jsonErr(rid, "Kunne ikke fullføre redirect.", 500, { code: "REDIRECT_FAILED", detail: {
+      message: String(e?.message ?? e),
+    } });
   }
-
-  const user = data.user;
-  const email = normEmail(user.email);
-
-  // ✅ HARD: ordre@... skal ALLTID til /outbox uansett next
-  if (email === ORDER_EMAIL) {
-    const to = new URL("/outbox", url.origin);
-    return NextResponse.redirect(to, { status: 303 });
-  }
-
-  // Rolle-prioritet:
-  // 1) Hard epost-fasit (systemkontoer)
-  // 2) profiles.role
-  // 3) user_metadata.role
-  // 4) employee
-  const byEmail = roleByEmail(user.email);
-  const byProfiles = byEmail ? null : await roleFromProfiles(sb, user.id);
-  const byMeta = byEmail || byProfiles ? null : roleFromUserMetadata(user);
-
-  const role: Role = byEmail ?? byProfiles ?? byMeta ?? "employee";
-  const home = homeForRole(role);
-
-  const hasNext = typeof nextRaw === "string" && nextRaw.trim().length > 0;
-
-  let target = home;
-  if (hasNext) {
-    const candidate = safeNextPath(nextRaw, home);
-    target = canAccess(role, candidate, user.email) ? candidate : home;
-  }
-
-  const to = new URL(target, url.origin);
-  return NextResponse.redirect(to, { status: 303 });
 }
-
-
-

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const admin = supabaseAdmin();
 
   const userId = String(scope.userId ?? "").trim();
-  if (!userId) return jsonErr(401, rid, "UNAUTH", "Ikke innlogget.");
+  if (!userId) return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
 
   const { data: profile, error: pErr } = await admin
     .from("profiles")
@@ -56,15 +56,13 @@ export async function GET(req: NextRequest) {
     .eq("id", userId)
     .maybeSingle();
 
-  if (pErr) return jsonErr(500, rid, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", { message: pErr.message });
-  if (!profile) return jsonErr(403, rid, "PROFILE_MISSING", "Profil mangler. Kontakt support.");
+  if (pErr) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "PROFILE_READ_FAILED", detail: { message: pErr.message } });
+  if (!profile) return jsonErr(rid, "Profil mangler. Kontakt support.", 403, "PROFILE_MISSING");
 
   const role = normRole((profile as any).role);
 
   if ((profile as any).disabled_at) {
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       locked: true,
       reason: "disabled",
       profile: { ...profile, role },
@@ -73,9 +71,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!(profile as any).company_id) {
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       locked: true,
       reason: "missing_company",
       profile: { ...profile, role },
@@ -89,12 +85,10 @@ export async function GET(req: NextRequest) {
     .eq("id", (profile as any).company_id)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: cErr.message });
+  if (cErr) return jsonErr(rid, "Kunne ikke lese firma.", 500, { code: "COMPANY_READ_FAILED", detail: { message: cErr.message } });
 
   if (!company) {
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       locked: true,
       reason: "company_not_found",
       profile: { ...profile, role },
@@ -105,9 +99,7 @@ export async function GET(req: NextRequest) {
   const status = normStatus((company as any).status);
 
   if (status !== "ACTIVE") {
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       locked: true,
       reason: "company_not_active",
       profile: { ...profile, role },
@@ -115,13 +107,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return jsonOk({
-    ok: true,
-    rid,
+  return jsonOk(rid, {
     locked: false,
     profile: { ...profile, role },
     company: { ...company, status },
   });
 }
-
 

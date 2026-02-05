@@ -12,20 +12,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 
 /* =========================
    Response helpers
 ========================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
 function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+  const r = String(detail?.rid ?? "") || makeRid();
+  return jsonErr(r, message, status, error);
 }
 
 /* =========================
@@ -131,7 +126,7 @@ export async function POST(req: Request) {
 
     // Idempotens: brukt invite → returner OK (frontend kan sende til /login)
     if (inv.data.used_at) {
-      return jsonOk({
+      return jsonOk(rid, {
         ok: true,
         rid,
         email,
@@ -285,7 +280,7 @@ export async function POST(req: Request) {
       .is("used_at", null);
 
     if (mark.error) {
-      return jsonOk({
+      return jsonOk(rid, {
         ok: true,
         rid,
         userId,
@@ -297,7 +292,7 @@ export async function POST(req: Request) {
       });
     }
 
-    return jsonOk({
+    return jsonOk(rid, {
       ok: true,
       rid,
       userId,
@@ -315,6 +310,3 @@ export async function POST(req: Request) {
 export async function GET() {
   return jsonError(405, "method_not_allowed", "Bruk POST for å fullføre invitasjon.");
 }
-
-
-

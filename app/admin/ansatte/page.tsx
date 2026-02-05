@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 /* =========================================================
    Typer
@@ -31,17 +32,7 @@ type ToggleRes =
    Helpers
 ========================================================= */
 function fmtDate(s: string) {
-  try {
-    return new Date(s).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return s;
-  }
+  return formatDateTimeNO(s);
 }
 
 /* =========================================================

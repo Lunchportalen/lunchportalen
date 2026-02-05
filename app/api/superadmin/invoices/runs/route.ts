@@ -4,30 +4,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Helpers
 ========================================================= */
-function jsonError(
-  status: number,
-  error: string,
-  message: string,
-  detail?: any
-) {
-  return NextResponse.json(
-    { ok: false, error, message, detail: detail ?? undefined },
-    { status }
-  );
-}
-
 /* =========================================================
    GET /api/superadmin/invoices/runs
    - List invoice runs (latest first)
    - Superadmin only
 ========================================================= */
 export async function GET() {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
@@ -37,12 +25,12 @@ export async function GET() {
   const { data: userData, error: userErr } = await supabase.auth.getUser();
 
   if (userErr || !userData?.user) {
-    return jsonError(401, "NOT_AUTHENTICATED", "Ikke innlogget");
+    return jsonErr(rid, "Ikke innlogget", 401, "NOT_AUTHENTICATED");
   }
 
   const role = String(userData.user.user_metadata?.role ?? "");
   if (role !== "superadmin") {
-    return jsonError(403, "FORBIDDEN", "Kun superadmin har tilgang");
+    return jsonErr(rid, "Kun superadmin har tilgang", 403, "FORBIDDEN");
   }
 
   // ─────────────────────────────────────────────────────
@@ -64,25 +52,12 @@ export async function GET() {
     .limit(50);
 
   if (error) {
-    return jsonError(
-      500,
-      "DB_FAILED",
-      "Kunne ikke hente fakturakjøringer",
-      error
-    );
+    return jsonErr(rid, "Kunne ikke hente fakturakjÃ¸ringer", 500, { code: "DB_FAILED", detail: error });
   }
 
   // ─────────────────────────────────────────────────────
   // Success
   // ─────────────────────────────────────────────────────
-  return NextResponse.json(
-    {
-      ok: true,
-      runs: data ?? [],
-    },
-    { status: 200 }
-  );
+  return jsonOk(rid, { runs: data ?? [] });
 }
-
-
 

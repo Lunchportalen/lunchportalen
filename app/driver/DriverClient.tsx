@@ -3,6 +3,7 @@
 
 import React, { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 /* =========================================================
    Types
@@ -27,6 +28,12 @@ type Stop = {
   locationId: string;
   locationName: string | null;
   addressLine: string | null;
+  deliveryWhere: string | null;
+  deliveryWhenNote: string | null;
+  deliveryContactName: string | null;
+  deliveryContactPhone: string | null;
+  deliveryWindowFrom: string | null;
+  deliveryWindowTo: string | null;
 
   orderCount: number;
 
@@ -76,13 +83,7 @@ function fmtDateLong(iso: string) {
 function fmtTS(iso?: string | null) {
   try {
     if (!iso) return "—";
-    return new Date(iso).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeNO(iso);
   } catch {
     return "—";
   }
@@ -309,7 +310,7 @@ function SecondaryBtn({
 }
 
 export default function DriverClient() {
-  const [date, setDate] = useState<string>(todayISO());
+  const [date] = useState<string>(todayISO());
   const [data, setData] = useState<StopsOk | null>(null);
 
   const [err, setErr] = useState<string | null>(null);
@@ -468,7 +469,18 @@ export default function DriverClient() {
   }
 
   async function copyStop(s: Stop) {
-    const text = [safeStr(s.companyName) || s.companyId, safeStr(s.locationName) || s.locationId, safeStr(s.addressLine)]
+    const deliveryWindow =
+      safeStr(s.deliveryWindowFrom) && safeStr(s.deliveryWindowTo)
+        ? `${safeStr(s.deliveryWindowFrom)}–${safeStr(s.deliveryWindowTo)}`
+        : safeStr(s.deliveryWindowFrom) || safeStr(s.deliveryWindowTo) || "";
+    const text = [
+      safeStr(s.companyName) || s.companyId,
+      safeStr(s.locationName) || s.locationId,
+      safeStr(s.addressLine),
+      safeStr(s.deliveryWhere),
+      safeStr(s.deliveryWhenNote),
+      deliveryWindow,
+    ]
       .filter(Boolean)
       .join(" – ");
     try {
@@ -533,17 +545,9 @@ export default function DriverClient() {
         "bg-[radial-gradient(1200px_600px_at_50%_0%,rgba(15,23,42,0.06),transparent_70%)]",
       ].join(" ")}
     >
-      <style>{`
-        :root{
-          --lp-safe-top: env(safe-area-inset-top);
-          --lp-safe-bot: env(safe-area-inset-bottom);
-        }
-      `}</style>
-
       {/* Sticky Topbar */}
       <div
-        className={["sticky top-0 z-40", "backdrop-blur-xl", "bg-white/60", "ring-1 ring-black/5"].join(" ")}
-        style={{ paddingTop: "var(--lp-safe-top)" }}
+        className={["sticky top-0 z-40 lp-safe-top", "backdrop-blur-xl", "bg-white/60", "ring-1 ring-black/5"].join(" ")}
       >
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
@@ -570,61 +574,14 @@ export default function DriverClient() {
             </div>
           </div>
 
-          {/* Desktop controls */}
-          <div className="hidden sm:flex items-center justify-between pb-3">
-            <div className="flex items-end gap-3">
-              <label className="inline-flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm ring-1 ring-black/5">
-                <span className="text-slate-500" aria-hidden>
-                  📅
-                </span>
-                <input
-                  type="date"
-                  value={shownDateSafe}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="bg-transparent outline-none"
-                />
-              </label>
-
-              <SecondaryBtn
-                label="Til i dag"
-                onClick={() => {
-                  setErr(null);
-                  setLastApiErr(null);
-                  setDate(todayISO());
-                }}
-                disabled={pending}
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/5">
-                <div className="text-xs text-slate-600">Leveringsprogress</div>
-                <div className="mt-1 flex items-center gap-3">
-                  <div className="h-2 w-40 rounded-full bg-slate-900/10 overflow-hidden">
-                    <div className="h-full bg-slate-900" style={{ width: `${deliveryProgress}%` }} />
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">{deliveryProgress}%</div>
-                </div>
+          <div className="hidden sm:flex items-center justify-end pb-3">
+            <div className="rounded-2xl bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/5">
+              <div className="text-xs text-slate-600">Leveringsprogress</div>
+              <div className="mt-1 flex items-center gap-3">
+                <progress className="lp-progress w-40" value={deliveryProgress} max={100} />
+                <div className="text-sm font-semibold text-slate-900">{deliveryProgress}%</div>
               </div>
             </div>
-          </div>
-
-          {/* Mobile compact date */}
-          <div className="sm:hidden pb-3">
-            <label className="inline-flex w-full items-center justify-between gap-2 rounded-2xl bg-white/70 px-3 py-2 shadow-sm ring-1 ring-black/5">
-              <span className="inline-flex items-center gap-2">
-                <span className="text-slate-500" aria-hidden>
-                  📅
-                </span>
-                <span className="text-sm text-slate-700">Dato</span>
-              </span>
-              <input
-                type="date"
-                value={shownDateSafe}
-                onChange={(e) => setDate(e.target.value)}
-                className="bg-transparent text-sm outline-none"
-              />
-            </label>
           </div>
         </div>
       </div>
@@ -677,17 +634,8 @@ export default function DriverClient() {
               </div>
             ) : null}
 
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-5">
               <PrimaryBtn label="Prøv igjen" onClick={() => load(shownDateSafe)} disabled={pending} />
-              <SecondaryBtn
-                label="Til i dag"
-                onClick={() => {
-                  setErr(null);
-                  setLastApiErr(null);
-                  setDate(todayISO());
-                }}
-                disabled={pending}
-              />
             </div>
           </div>
         ) : null}
@@ -697,8 +645,7 @@ export default function DriverClient() {
             <div className="text-base font-semibold text-slate-900">Ingen leveranser</div>
             <div className="mt-1 text-sm text-slate-600">Det er ingen stopp for valgt dato.</div>
 
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <SecondaryBtn label="Til i dag" onClick={() => setDate(todayISO())} disabled={pending} />
+            <div className="mt-5">
               <PrimaryBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending} />
             </div>
           </div>
@@ -708,6 +655,14 @@ export default function DriverClient() {
           <div className="mt-6 space-y-4">
             {stops.map((s) => {
               const title = `${safeStr(s.companyName) || s.companyId} • ${safeStr(s.locationName) || s.locationId}`;
+              const deliveryWindow =
+                safeStr(s.deliveryWindowFrom) && safeStr(s.deliveryWindowTo)
+                  ? `${safeStr(s.deliveryWindowFrom)}–${safeStr(s.deliveryWindowTo)}`
+                  : safeStr(s.deliveryWindowFrom) || safeStr(s.deliveryWindowTo) || null;
+              const deliveryContact =
+                safeStr(s.deliveryContactName) || safeStr(s.deliveryContactPhone)
+                  ? [safeStr(s.deliveryContactName), safeStr(s.deliveryContactPhone)].filter(Boolean).join(" • ")
+                  : null;
 
               return (
                 <div key={s.key} className="rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5">
@@ -715,6 +670,15 @@ export default function DriverClient() {
                     <div className="min-w-0">
                       <div className="text-base font-semibold text-slate-900">{title}</div>
                       <div className="mt-1 text-sm text-slate-600">{safeStr(s.addressLine) || "Adresse: —"}</div>
+
+                      {(s.deliveryWhere || s.deliveryWhenNote || deliveryWindow || deliveryContact) && (
+                        <div className="mt-2 rounded-2xl bg-white/70 px-3 py-2 text-xs text-slate-700 ring-1 ring-black/5">
+                          {s.deliveryWhere ? <div>Levering: {s.deliveryWhere}</div> : null}
+                          {s.deliveryWhenNote ? <div>Instruks: {s.deliveryWhenNote}</div> : null}
+                          {deliveryWindow ? <div>Vindu: {deliveryWindow}</div> : null}
+                          {deliveryContact ? <div>Kontakt: {deliveryContact}</div> : null}
+                        </div>
+                      )}
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         <span className="rounded-full bg-slate-900/5 px-3 py-1 text-xs text-slate-800">
@@ -773,19 +737,10 @@ export default function DriverClient() {
       </div>
 
       {/* Mobile Bottom Action Bar */}
-      <div className="sm:hidden fixed left-0 right-0 bottom-0 z-40" style={{ paddingBottom: "var(--lp-safe-bot)" }}>
+      <div className="sm:hidden fixed left-0 right-0 bottom-0 z-40 lp-safe-bottom">
         <div className="mx-auto w-full max-w-6xl px-4 pb-3">
           <div className="rounded-3xl bg-white/70 p-3 shadow-lg ring-1 ring-black/5 backdrop-blur-xl">
-            <div className="grid grid-cols-2 gap-2">
-              <SecondaryBtn
-                label="Til i dag"
-                onClick={() => {
-                  setErr(null);
-                  setLastApiErr(null);
-                  setDate(todayISO());
-                }}
-                disabled={pending}
-              />
+            <div>
               <SecondaryBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending || loading} />
             </div>
           </div>
@@ -794,17 +749,14 @@ export default function DriverClient() {
 
       {/* Tools Sheet */}
       {toolsOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/30"
-          onClick={() => setToolsOpen(false)}
-          aria-modal="true"
-          role="dialog"
-        >
-          <div
-            className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl"
-            onClick={(e) => e.stopPropagation()}
-            style={{ paddingBottom: "var(--lp-safe-bot)" }}
-          >
+        <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
+          <button
+            type="button"
+            aria-label="Lukk verktøy"
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setToolsOpen(false)}
+          />
+          <div className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl lp-safe-bottom">
             <div className="rounded-t-3xl bg-white/95 p-5 shadow-2xl ring-1 ring-black/10 backdrop-blur-xl">
               <div className="flex items-center justify-between">
                 <div className="text-base font-semibold text-slate-900">Verktøy</div>
@@ -824,23 +776,12 @@ export default function DriverClient() {
                 </div>
 
                 <div className="mt-3">
-                  <div className="h-2 w-full rounded-full bg-slate-900/10 overflow-hidden">
-                    <div className="h-full bg-slate-900" style={{ width: `${deliveryProgress}%` }} />
-                  </div>
+                  <progress className="lp-progress w-full" value={deliveryProgress} max={100} />
                   <div className="mt-1 text-xs text-slate-600">{deliveryProgress}% levert</div>
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <SecondaryBtn
-                  label="Til i dag"
-                  onClick={() => {
-                    setErr(null);
-                    setLastApiErr(null);
-                    setDate(todayISO());
-                  }}
-                  disabled={pending}
-                />
+              <div className="mt-4">
                 <SecondaryBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending || loading} />
               </div>
 
@@ -862,3 +803,6 @@ export default function DriverClient() {
     </div>
   );
 }
+
+
+

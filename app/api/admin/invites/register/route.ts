@@ -6,8 +6,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { rid as makeRid } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Types
@@ -29,19 +28,7 @@ function isFindUserErr(r: FindUserRes): r is { ok: false; error: any } {
 /* =========================================================
    Response helpers (explicit status)
 ========================================================= */
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid, error, message, detail: detail ?? undefined };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
-function jsonOk(rid: string, body: any, status = 200) {
-  return new Response(JSON.stringify({ ...body, rid }), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
+ 
 
 /* =========================================================
    Utils
@@ -123,11 +110,11 @@ export async function POST(req: NextRequest) {
     const password = String(raw.password ?? "");
     const password2 = String(raw.password2 ?? "");
 
-    if (!invite) return jsonErr(400, rid, "missing_invite", "Mangler invitasjonskode.");
-    if (!name) return jsonErr(400, rid, "invalid_name", "Navn må være minst 2 tegn.");
-    if (!email || !isEmail(email)) return jsonErr(400, rid, "invalid_email", "Ugyldig e-post.");
-    if (!password || password.length < 10) return jsonErr(400, rid, "weak_password", "Passord må være minst 10 tegn.");
-    if (password2 && password !== password2) return jsonErr(400, rid, "pw_mismatch", "Passordene er ikke like.");
+    if (!invite) return jsonErr(rid, "Mangler invitasjonskode.", 400, "missing_invite");
+    if (!name) return jsonErr(rid, "Navn må være minst 2 tegn.", 400, "invalid_name");
+    if (!email || !isEmail(email)) return jsonErr(rid, "Ugyldig e-post.", 400, "invalid_email");
+    if (!password || password.length < 10) return jsonErr(rid, "Passord må være minst 10 tegn.", 400, "weak_password");
+    if (password2 && password !== password2) return jsonErr(rid, "Passordene er ikke like.", 400, "pw_mismatch");
 
     const admin = supabaseAdmin();
 
@@ -138,12 +125,12 @@ export async function POST(req: NextRequest) {
       .eq("code", invite)
       .maybeSingle();
 
-    if (invErr) return jsonErr(500, rid, "db_error", "Kunne ikke validere invitasjonskode.", errDetail(invErr));
-    if (!inv) return jsonErr(404, rid, "not_found", "Invitasjonslenken finnes ikke.");
-    if ((inv as any).revoked_at) return jsonErr(410, rid, "revoked", "Invitasjonslenken er ikke lenger aktiv.");
+    if (invErr) return jsonErr(rid, "Kunne ikke validere invitasjonskode.", 500, { code: "db_error", detail: errDetail(invErr) });
+    if (!inv) return jsonErr(rid, "Invitasjonslenken finnes ikke.", 404, "not_found");
+    if ((inv as any).revoked_at) return jsonErr(rid, "Invitasjonslenken er ikke lenger aktiv.", 410, "revoked");
 
     const company_id = safeStr((inv as any).company_id);
-    if (!company_id) return jsonErr(500, rid, "invite_corrupt", "Invitasjonen mangler company_id.");
+    if (!company_id) return jsonErr(rid, "Invitasjonen mangler company_id.", 500, "invite_corrupt");
 
     /* 2) Create / update auth user (idempotent) */
     let createdNew = false;
@@ -161,11 +148,11 @@ export async function POST(req: NextRequest) {
       const found = await listUsersFindByEmail(admin, email);
 
       if (isFindUserErr(found)) {
-        return jsonErr(500, rid, "list_users_failed", "Kunne ikke lese auth-brukere.", errDetail(found.error));
+        return jsonErr(rid, "Kunne ikke lese auth-brukere.", 500, { code: "list_users_failed", detail: errDetail(found.error) });
       }
 
       if (!found.userid) {
-        return jsonErr(400, rid, "create_user_failed", "Kunne ikke opprette bruker. E-post kan allerede være i bruk.");
+        return jsonErr(rid, "Kunne ikke opprette bruker. E-post kan allerede være i bruk.", 400, "create_user_failed");
       }
 
       userId = found.userid;
@@ -177,7 +164,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (upd.error) {
-        return jsonErr(500, rid, "auth_update_failed", "Kunne ikke oppdatere bruker.", errDetail(upd.error));
+        return jsonErr(rid, "Kunne ikke oppdatere bruker.", 500, { code: "auth_update_failed", detail: errDetail(upd.error) });
       }
     } else {
       createdNew = true;
@@ -192,18 +179,18 @@ export async function POST(req: NextRequest) {
           await admin.auth.admin.deleteUser(userId);
         } catch {}
       }
-      return jsonErr(500, rid, "profile_not_created", "Profil ble ikke opprettet automatisk (mangler trigger).", { userId });
+      return jsonErr(rid, "Profil ble ikke opprettet automatisk (mangler trigger).", 500, { code: "profile_not_created", detail: { userId } });
     }
 
     if (!profile.company_id) {
-      return jsonErr(500, rid, "profile_not_bound", "Profil mangler company_id (trigger-feil).", { userId });
+      return jsonErr(rid, "Profil mangler company_id (trigger-feil).", 500, { code: "profile_not_bound", detail: { userId } });
     }
 
     if (String(profile.company_id) !== company_id) {
-      return jsonErr(409, rid, "company_mismatch", "Kontoen er knyttet til et annet firma.", {
+      return jsonErr(rid, "Kontoen er knyttet til et annet firma.", 409, { code: "company_mismatch", detail: {
         existingCompany: profile.company_id,
         inviteCompany: company_id,
-      });
+      } });
     }
 
     /* 4) Update profile fields (IKKE company_id) */
@@ -221,13 +208,11 @@ export async function POST(req: NextRequest) {
       .eq("id", userId);
 
     if (profUpdErr) {
-      return jsonErr(500, rid, "profile_update_failed", "Kunne ikke oppdatere profil.", errDetail(profUpdErr));
+      return jsonErr(rid, "Kunne ikke oppdatere profil.", 500, { code: "profile_update_failed", detail: errDetail(profUpdErr) });
     }
 
-    return jsonOk(rid, { ok: true, user_id: userId, company_id, role: "employee" }, 200);
+    return jsonOk(rid, { user_id: userId, company_id, role: "employee" }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "Uventet feil ved registrering.", errDetail(e));
+    return jsonErr(rid, "Uventet feil ved registrering.", 500, { code: "server_error", detail: errDetail(e) });
   }
 }
-
-

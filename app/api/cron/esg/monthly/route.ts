@@ -3,21 +3,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
-
-/* =========================================================
-   Dag-10: no-store + consistent JSON
-========================================================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
+import { type NextRequest } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Cron secret gate (fail-closed)
@@ -73,23 +60,23 @@ async function getAdminClient() {
    Default: current month start (Oslo)
 ========================================================= */
 export async function POST(req: NextRequest) {
-  const rid = crypto.randomUUID?.() ?? `esg_build_monthly_${Date.now().toString(36)}`;
+  const rid = makeRid();
 
   // Gate FIRST (no side effects before secret validated)
   try {
     requireCronSecret(req);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i env");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
-    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
+    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i env", 500, "misconfigured");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const url = new URL(req.url);
   const month = (url.searchParams.get("month") ?? "").trim() || osloMonthStartISO();
 
   if (!isIsoMonth01(month)) {
-    return jsonErr(400, rid, "bad_request", "month må være YYYY-MM-01", { month });
+    return jsonErr(rid, "month må være YYYY-MM-01", 400, { code: "bad_request", detail: { month } });
   }
 
   try {
@@ -98,16 +85,16 @@ export async function POST(req: NextRequest) {
     const { data, error } = await admin.rpc("esg_build_monthly", { p_month: month });
 
     if (error) {
-      return jsonErr(500, rid, "rpc_error", "esg_build_monthly feilet", {
+      return jsonErr(rid, "esg_build_monthly feilet", 500, { code: "rpc_error", detail: {
         message: error.message ?? String(error),
         code: (error as any)?.code ?? null,
         hint: (error as any)?.hint ?? null,
         details: (error as any)?.details ?? null,
-      });
+      } });
     }
 
-    return jsonOk({ ok: true, rid, month, result: data }, 200);
+    return jsonOk(rid, { ok: true, rid, month, result: data }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "ESG build monthly cron feilet", { message: String(e?.message ?? e), month });
+    return jsonErr(rid, "ESG build monthly cron feilet", 500, { code: "server_error", detail: { message: String(e?.message ?? e), month } });
   }
 }

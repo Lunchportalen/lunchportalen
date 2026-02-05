@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 type OutboxStatus = "ALL" | "PENDING" | "FAILED" | "SENT";
 
@@ -23,13 +24,7 @@ function safeStr(v: any) {
 function fmt(iso?: string | null) {
   try {
     if (!iso) return "—";
-    return new Date(iso).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeNO(iso);
   } catch {
     return "—";
   }
@@ -104,7 +99,7 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
       setCounts(null);
 
       if (res.status === 401 || res.status === 403) {
-        window.location.href = loginHref;
+        setMsg("Ingen tilgang. Auth håndteres server-side; logg inn på nytt om nødvendig.");
       }
       return;
     }
@@ -129,7 +124,7 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
       setErr(message);
 
       if (res.status === 401 || res.status === 403) {
-        window.location.href = loginHref;
+        setMsg("Ingen tilgang. Auth håndteres server-side; logg inn på nytt om nødvendig.");
       }
       return;
     }
@@ -225,7 +220,18 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
         </div>
       ) : null}
 
-      {msg ? <div className="mb-3 rounded-2xl border p-3 text-sm">{msg}</div> : null}
+      {msg ? (
+        <div className="mb-3 rounded-2xl border p-3 text-sm">
+          <div>{msg}</div>
+          {err && (err.includes("401") || err.includes("403") || msg.toLowerCase().includes("tilgang")) ? (
+            <div className="mt-1 text-xs">
+              <a className="underline" href={loginHref}>
+                Gå til innlogging
+              </a>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto rounded-2xl border">
         <table className="w-full border-collapse text-sm">

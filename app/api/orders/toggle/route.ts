@@ -9,16 +9,21 @@ import type { NextRequest } from "next/server";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 
 // ✅ Oslo single source of truth
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
+import { type Tier } from "@/lib/agreements/normalize";
+import { requireRule } from "@/lib/agreement/requireRule";
 
 // ✅ Backup mail (failsafe)
 import { sendOrderBackup } from "@/lib/orders/orderBackup";
+import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
+import { osloNowISO } from "@/lib/date/oslo";
 
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
+import { auditSafe } from "@/lib/ops/auditSafe";
 
 /* =========================================================
    Input normalization
@@ -61,6 +66,23 @@ function isoWeekday(isoDate: string): number | null {
     const day = d.getUTCDay(); // 0=Sun..6=Sat
     if (day === 0) return 7;
     return day;
+  } catch {
+    return null;
+  }
+}
+
+function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
+  try {
+    const d = new Date(`${isoDate}T12:00:00Z`);
+    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
+    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
+      Mon: "mon",
+      Tue: "tue",
+      Wed: "wed",
+      Thu: "thu",
+      Fri: "fri",
+    };
+    return map[wd] ?? null;
   } catch {
     return null;
   }
@@ -132,6 +154,11 @@ function mkEntityKey(company_id: string, location_id: string, user_id: string, i
   return `${company_id}:${location_id}:${user_id}:${isoDate}:${slot}`;
 }
 
+function isMissingColumnError(err: any, column: string) {
+  const msg = String(err?.message ?? "").toLowerCase();
+  return msg.includes("column") && msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("not exist"));
+}
+
 /* =========================================================
    Route
 ========================================================= */
@@ -146,15 +173,12 @@ export async function POST(req: NextRequest) {
   const denyRole = requireRoleOr403(a.ctx, "orders.toggle", ["employee", "company_admin"]);
   if (denyRole) return denyRole;
 
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
-
   const user_id = safeStr(scope.userId);
   const company_id = safeStr(scope.companyId);
   const location_id = safeStr(scope.locationId);
 
-  if (!user_id || !company_id) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler scope (user/company).");
-  if (!location_id) return jsonErr(409, rid, "LOCATION_MISSING", "Mangler lokasjonstilknytning (location_id).");
+  if (!user_id || !company_id) return jsonErr(rid, "Mangler scope (user/company).", 409, "SCOPE_MISSING");
+  if (!location_id) return jsonErr(rid, "Mangler lokasjonstilknytning (location_id).", 409, "LOCATION_MISSING");
 
   const sb = await supabaseServer();
 
@@ -170,46 +194,33 @@ export async function POST(req: NextRequest) {
       normAction(body?.action ?? body?.intent ?? body?.status) ??
       (typeof wants === "boolean" ? (wants ? "place" : "cancel") : null);
 
-    if (!isIsoDate(isoDate)) return jsonErr(400, rid, "INVALID_DATE", "Ugyldig dato (YYYY-MM-DD).", { date: isoDate });
+    if (!isIsoDate(isoDate)) return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
 
     if (!action) {
-      return jsonErr(409, rid, "BAD_REQUEST", "Mangler eller ugyldig action.", {
+      return jsonErr(rid, "Mangler eller ugyldig action.", 409, { code: "BAD_REQUEST", detail: {
         hint: "action=place|cancel eller wantsLunch=true|false",
-      });
-    }
-
-    // ✅ Cutoff enforcement (Oslo)
-    const cutoff = cutoffStatusForDate(isoDate);
-    if (cutoff === "PAST") {
-      return jsonErr(403, rid, "DATE_LOCKED_PAST", "Datoen er passert og kan ikke endres.", { date: isoDate });
-    }
-    if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(403, rid, "CUTOFF_LOCKED", "Endringer er låst etter kl. 08:00 i dag.", {
-        date: isoDate,
-        cutoff: "08:00",
-      });
+      } });
     }
 
     // ✅ Firmastatus (service role)
-  const admin = await adminClientOrNull();
+    const admin = await adminClientOrNull();
     if (!admin) {
-      return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon for firmastatus/audit.", {
+      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, { code: "CONFIG_ERROR", detail: {
         missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
-      });
+      } });
     }
 
     const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
     if (cRes.error || !cRes.data) {
-      return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke lese firmastatus.", {
+      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: {
         error: cRes.error?.message ?? null,
-      });
+      } });
     }
 
     const companyStatus = normCompanyStatus((cRes.data as any).status);
 
     // ✅ Company lifecycle:
     // - place/cancel blocked hvis ikke ACTIVE
-    // VIKTIG: enforcement-block skal alltid returnere 403 (ikke 500) selv om audit feiler
     if (companyStatus !== "ACTIVE") {
       const reason =
         companyStatus === "PAUSED"
@@ -220,8 +231,7 @@ export async function POST(req: NextRequest) {
           ? "COMPANY_PENDING"
           : "COMPANY_NOT_ACTIVE";
 
-      // MUST audit (best-effort i enforcement): audit-feil skal IKKE endre statuskode
-      try {
+      await auditSafe(async () => {
         await auditWriteMust({
           rid,
           action: "ENFORCEMENT_BLOCK",
@@ -241,16 +251,30 @@ export async function POST(req: NextRequest) {
             company_status: companyStatus,
           },
         });
-      } catch (e: any) {
-        // ⚠️ fall-through til 403 uansett
-        console.error(`[orders/toggle] audit enforcement failed rid=${rid}`, e?.message ?? e);
-      }
+      }, rid);
 
-      return jsonErr(403, rid, reason, "Handling er låst pga firmastatus.", {
-        company_status: companyStatus,
-        action,
-      });
+      return jsonErr(rid, "Handling er låst pga firmastatus.", 403, reason);
     }
+
+    // ✅ Cutoff enforcement (Oslo)
+    const cutoff = cutoffStatusForDate(isoDate);
+    if (cutoff === "PAST") {
+      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, "DATE_LOCKED_PAST");
+    }
+    if (cutoff === "TODAY_LOCKED") {
+      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, "CUTOFF_LOCKED");
+    }
+    // ✅ Agreement rules gate (fail-closed)
+    const dayKey = weekdayKeyOslo(isoDate);
+    if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: isoDate } });
+
+    const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot, rid });
+    if (!ruleRes.ok) {
+      const err = ruleRes as { status: number; error: string; message: string };
+      return jsonErr(rid, err.message, err.status ?? 400, err.error);
+    }
+
+    const ruleTier = ruleRes.rule.tier as Tier;
 
     // ✅ Upsert-mål:
     // - Primær: (user_id, location_id, date, slot)
@@ -268,7 +292,17 @@ export async function POST(req: NextRequest) {
       note,
       status: nextStatus,
       updated_at: savedAt,
+      ...(ruleTier ? { tier: ruleTier } : {}),
     };
+
+    async function upsertOrder(payloadObj: any, onConflict: string) {
+      const r = await sb.from("orders").upsert(payloadObj, { onConflict }).select("id,date,status,note,slot,created_at,updated_at").maybeSingle();
+      if (payloadObj?.tier && r.error && isMissingColumnError(r.error, "tier")) {
+        const { tier, ...noTier } = payloadObj;
+        return await sb.from("orders").upsert(noTier, { onConflict }).select("id,date,status,note,slot,created_at,updated_at").maybeSingle();
+      }
+      return r;
+    }
 
     let saved:
       | {
@@ -282,32 +316,23 @@ export async function POST(req: NextRequest) {
         }
       | null = null;
 
-    const r1 = await sb
-      .from("orders")
-      .upsert(payload, { onConflict: "user_id,location_id,date,slot" })
-      .select("id,date,status,note,slot,created_at,updated_at")
-      .maybeSingle();
+    const r1 = await upsertOrder(payload, "user_id,location_id,date,slot");
 
     if (!r1.error && r1.data) {
       saved = r1.data as any;
     } else {
-      const r2 = await sb
-        .from("orders")
-        .upsert(payload, { onConflict: "company_id,user_id,date,slot" })
-        .select("id,date,status,note,slot,created_at,updated_at")
-        .maybeSingle();
+      const r2 = await upsertOrder(payload, "company_id,user_id,date,slot");
 
       if (r2.error || !r2.data) {
-        return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lagre.", {
+        return jsonErr(rid, "Kunne ikke lagre.", 500, { code: "DB_ERROR", detail: {
           error: r2.error?.message ?? r1.error?.message ?? "Unknown DB error",
           hint: "Sjekk at det finnes unik constraint på onConflict-kolonnene.",
-        });
+        } });
       }
       saved = r2.data as any;
     }
 
-    // MUST audit: order change (fail-closed)
-    try {
+    await auditSafe(async () => {
       await auditWriteMust({
         rid,
         action: action === "place" ? "ORDER_PLACED" : "ORDER_CANCELLED",
@@ -328,13 +353,17 @@ export async function POST(req: NextRequest) {
           pricing,
         },
       });
-    } catch (e: any) {
-      return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge ordreendring. Avbryter for å bevare fasit.", {
-        audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-      });
-    }
+    }, rid);
 
     // Backup mail (failsafe – må ikke stoppe user flow)
+    const backupTs = osloNowISO();
+    let backupNames: { company_name: string | null; location_name: string | null } = { company_name: null, location_name: null };
+    try {
+      backupNames = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
+    } catch {
+      // ignore
+    }
+
     const backup = await sendOrderBackup({
       rid,
       action: action === "place" ? "PLACE" : "CANCEL",
@@ -345,14 +374,16 @@ export async function POST(req: NextRequest) {
       user_id,
       company_id,
       location_id,
+      company_name: backupNames.company_name ?? null,
+      location_name: backupNames.location_name ?? null,
       actor_email: scope.email ?? null,
       actor_role: scope.role ?? null,
       note: saved.note ?? note ?? null,
+      timestamp_oslo: backupTs,
       extra: { route: "/api/orders/toggle", pricing },
     });
 
-    // MUST audit: backup result (fail-closed iht. fasit)
-    try {
+    await auditSafe(async () => {
       await auditWriteMust({
         rid,
         action: backup.ok ? "ORDER_BACKUP_SENT" : "ORDER_BACKUP_FAILED",
@@ -372,15 +403,9 @@ export async function POST(req: NextRequest) {
           backup,
         },
       });
-    } catch (e: any) {
-      return jsonErr(500, rid, "AUDIT_INSERT_FAILED", "Kunne ikke logge backup-status. Avbryter for å bevare fasit.", {
-        audit_error: String(e?.message ?? e ?? "Unknown audit error"),
-      });
-    }
+    }, rid);
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       order: {
         id: saved.id,
         date: saved.date,
@@ -395,7 +420,6 @@ export async function POST(req: NextRequest) {
       backup,
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "orders/toggle" });
+    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "orders/toggle" } });
   }
 }
-

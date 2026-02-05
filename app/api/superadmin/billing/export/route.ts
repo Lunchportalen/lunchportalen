@@ -6,13 +6,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
 }
 
 function isoDate(s: string) {
@@ -26,18 +24,17 @@ function csvEscape(v: any) {
 }
 
 export async function GET(req: Request) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `sa_bill_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const sbUser = await supabaseServer();
     const { data: auth, error: authErr } = await sbUser.auth.getUser();
-    if (authErr || !auth?.user) return NextResponse.json({ ok: false, error: "unauthorized", rid }, { status: 401, headers: noStore() });
+    if (authErr || !auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
 
-    if (normEmail(auth.user.email) !== "superadmin@lunchportalen.no") {
-      return NextResponse.json({ ok: false, error: "forbidden", rid }, { status: 403, headers: noStore() });
+    if (!isSuperadminEmail(auth.user.email)) {
+      return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
     }
 
     const url = new URL(req.url);
@@ -45,10 +42,7 @@ export async function GET(req: Request) {
     const to = url.searchParams.get("to") ?? "";
 
     if (!isoDate(from) || !isoDate(to)) {
-      return NextResponse.json(
-        { ok: false, error: "bad_request", message: "Krever ?from=YYYY-MM-DD&to=YYYY-MM-DD", rid },
-        { status: 400, headers: noStore() }
-      );
+      return jsonErr(rid, "Krever ?from=YYYY-MM-DD&to=YYYY-MM-DD", 400, "bad_request");
     }
 
     const sb = supabaseAdmin();
@@ -59,12 +53,12 @@ export async function GET(req: Request) {
       .gte("date", from)
       .lte("date", to);
 
-    if (oErr) return NextResponse.json({ ok: false, error: "db_error", message: oErr.message, rid }, { status: 500, headers: noStore() });
+    if (oErr) return jsonErr(rid, oErr.message, 500, "db_error");
 
     const companyIds = Array.from(new Set((orders ?? []).map((o: any) => o.company_id).filter(Boolean)));
     const { data: companies, error: cErr } = await sb.from("companies").select("id,name,status").in("id", companyIds);
 
-    if (cErr) return NextResponse.json({ ok: false, error: "db_error", message: cErr.message, rid }, { status: 500, headers: noStore() });
+    if (cErr) return jsonErr(rid, cErr.message, 500, "db_error");
 
     const byId = new Map<string, any>();
     for (const c of companies ?? []) byId.set(c.id, c);
@@ -130,9 +124,7 @@ export async function GET(req: Request) {
       headers: { ...noStore(), "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${filename}"`, "x-lp-rid": rid },
     });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: "server_error", message: String(e?.message ?? e), rid }, { status: 500, headers: noStore() });
+    return jsonErr(rid, String(e?.message ?? e), 500, "server_error");
   }
 }
-
-
 

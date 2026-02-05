@@ -4,9 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { writeAudit } from "@/lib/audit/log";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /**
  * =========================================================
@@ -27,19 +27,6 @@ import { writeAudit } from "@/lib/audit/log";
  * -> audit (if actorId present)
  * =========================================================
  */
-
-/* =========================================================
-   Response helpers (no-store)
-========================================================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
-}
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return json({ ok: false, rid, error, message, detail: detail ?? undefined }, status);
-}
 
 /* =========================================================
    Env guards
@@ -259,16 +246,16 @@ async function mirrorRangeToDb(opts: {
    - Legacy query key supported for backwards compat (?key=)
 ========================================================= */
 export async function GET(req: Request) {
-  const rid = `week_visibility_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   // Gate first (no side effects before secret validated)
   try {
     requireCronSecret(req, true);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i miljøvariabler");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
-    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
+    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i miljøvariabler", 500, "misconfigured");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const oslo = osloNowParts();
@@ -366,27 +353,24 @@ export async function GET(req: Request) {
       } catch {}
     }
 
-    return json(
-      {
-        ok: true,
-        rid,
-        oslo,
-        todayISO,
-        week: {
-          week1: { from: week1From, to: week1To },
-          week2: { from: week2From, to: week2To },
-        },
-        actions,
-        note: actions.length ? "Executed scheduled actions." : "No action at this minute.",
+    return jsonOk(rid, {
+      ok: true,
+      rid,
+      oslo,
+      todayISO,
+      week: {
+        week1: { from: week1From, to: week1To },
+        week2: { from: week2From, to: week2To },
       },
-      200
-    );
+      actions,
+      note: actions.length ? "Executed scheduled actions." : "No action at this minute.",
+    }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "Cron week-visibility feilet", {
+    return jsonErr(rid, "Cron week-visibility feilet", 500, { code: "server_error", detail: {
       message: String(e?.message ?? e),
       oslo,
       todayISO,
-    });
+    } });
   }
 }
 
@@ -395,22 +379,22 @@ export async function GET(req: Request) {
    - Same cron secret gate (header/bearer)
 ========================================================= */
 export async function POST(req: Request) {
-  const rid = `week_visibility_manual_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   // Gate first
   try {
     requireCronSecret(req, false);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i miljøvariabler");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
-    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
+    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i miljøvariabler", 500, "misconfigured");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const body = await readJsonSafe(req);
 
   if (body?.mode !== "manual") {
-    return jsonErr(400, rid, "bad_request", "Use { mode:'manual', date, publish }.");
+    return jsonErr(rid, "Use { mode:'manual', date, publish }.", 400, "bad_request");
   }
 
   const dateISO = body?.date;
@@ -418,7 +402,7 @@ export async function POST(req: Request) {
   const actorId = (body?.actorId ?? null) as string | null;
 
   if (!isISODate(dateISO) || typeof publish !== "boolean") {
-    return jsonErr(400, rid, "bad_request", "Ugyldig payload", { want: { mode: "manual", date: "YYYY-MM-DD", publish: true } });
+    return jsonErr(rid, "Ugyldig payload", 400, { code: "bad_request", detail: { want: { mode: "manual", date: "YYYY-MM-DD", publish: true } } });
   }
 
   try {
@@ -449,26 +433,22 @@ export async function POST(req: Request) {
       }
     } catch {}
 
-    return json(
-      {
-        ok: true,
-        rid,
-        mode: "manual",
-        date: dateISO,
-        publish,
-        result: res,
-        mirror,
-        note:
-          res.total === 0
-            ? "No menuContent found for date (or not approved)."
-            : res.changed === 0
-            ? "No change (already in desired state)."
-            : "Patched successfully.",
-      },
-      200
-    );
+    return jsonOk(rid, {
+      ok: true,
+      rid,
+      mode: "manual",
+      date: dateISO,
+      publish,
+      result: res,
+      mirror,
+      note:
+        res.total === 0
+          ? "No menuContent found for date (or not approved)."
+          : res.changed === 0
+          ? "No change (already in desired state)."
+          : "Patched successfully.",
+    }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "Manual week-visibility feilet", { message: String(e?.message ?? e), dateISO, publish });
+    return jsonErr(rid, "Manual week-visibility feilet", 500, { code: "server_error", detail: { message: String(e?.message ?? e), dateISO, publish } });
   }
 }
-

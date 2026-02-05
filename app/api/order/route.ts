@@ -6,8 +6,12 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { osloTodayISODate } from "@/lib/date/oslo";
-import { cutoffStatusNow } from "@/lib/date/cutoff";
+import { osloNowISO, osloTodayISODate } from "@/lib/date/oslo";
+import { cutoffStatusNow } from "@/lib/cutoff";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
+import { requireRule } from "@/lib/agreement/requireRule";
+import { sendOrderBackup } from "@/lib/orders/orderBackup";
+import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
 
 // ✅ Dag-10 helpers (Response + rid + no-store via respond)
 import { jsonOk } from "@/lib/http/respond";
@@ -17,8 +21,26 @@ import { noStoreHeaders } from "@/lib/http/noStore";
    Route-local jsonErr (beholder canAct:false for UI)
    - Ingen NextResponse
 ========================================================= */
-function jsonErr(rid: string, status: number, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid, error, message, canAct: false, detail: detail ?? undefined };
+function jsonErr(rid: string, message: string, status = 400, error?: unknown) {
+  let errorVal: unknown = "ERROR";
+  let detail: unknown = undefined;
+
+  if (error !== undefined) {
+    if (typeof error === "object" && error && "code" in (error as any)) {
+      const code = (error as any).code;
+      errorVal = typeof code === "string" ? code : "ERROR";
+      if ("detail" in (error as any)) detail = (error as any).detail;
+    } else if (typeof error === "string") {
+      errorVal = error;
+    } else if (error instanceof Error) {
+      errorVal = error.message || "ERROR";
+    } else {
+      errorVal = error;
+    }
+  }
+
+  const body: any = { ok: false, rid, error: errorVal, message, status, canAct: false };
+  if (detail !== undefined) body.detail = detail;
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
@@ -35,6 +57,28 @@ function ridNow(prefix: string) {
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
+}
+
+function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
+  try {
+    const d = new Date(`${isoDate}T12:00:00Z`);
+    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
+    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
+      Mon: "mon",
+      Tue: "tue",
+      Wed: "wed",
+      Thu: "thu",
+      Fri: "fri",
+    };
+    return map[wd] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isMissingColumnError(err: any, column: string) {
+  const msg = String(err?.message ?? "").toLowerCase();
+  return msg.includes("column") && msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("not exist"));
 }
 
 // ✅ Konsistent logging + kontekst
@@ -58,8 +102,8 @@ async function queueBackupEmail(params: {
   text: string;
   html?: string | null;
 }) {
-  const mailFrom = process.env.LP_BACKUP_FROM || "ordre@lunchportalen.no";
-  const mailTo = process.env.LP_BACKUP_TO || "ordre@lunchportalen.no";
+  const mailFrom = process.env.LP_BACKUP_FROM || SYSTEM_EMAILS.ORDER;
+  const mailTo = process.env.LP_BACKUP_TO || SYSTEM_EMAILS.ORDER;
 
   const { error } = await params.supabase.from("email_outbox").insert({
     event_key: params.eventKey,
@@ -88,12 +132,12 @@ export async function POST(req: NextRequest) {
     const cutoff = cutoffStatusNow();
 
     if (cutoff.isLocked) {
-      return jsonErr(rid, 409, "LOCKED_AFTER_0800", "Endringer er låst etter kl. 08:00 i dag.", {
+      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 409, { code: "LOCKED_AFTER_0800", detail: {
         date: dateISO,
         locked: true,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
-      });
+      } });
     }
 
     // Meny (best effort)
@@ -107,12 +151,12 @@ export async function POST(req: NextRequest) {
 
     const menuAvailable = !!menu?.isPublished;
     if (!menuAvailable) {
-      return jsonErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert.", {
+      return jsonErr(rid, "Meny er ikke publisert.", 409, { code: "MENU_NOT_PUBLISHED", detail: {
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: false,
-      });
+      } });
     }
 
     // Body (safe)
@@ -129,12 +173,12 @@ export async function POST(req: NextRequest) {
     const { data: userRes, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userRes?.user) {
       logApiError("POST /api/order auth failed", userErr, { rid, dateISO });
-      return jsonErr(rid, 401, "UNAUTH", "Du må være innlogget.", {
+      return jsonErr(rid, "Du må være innlogget.", 401, { code: "UNAUTH", detail: {
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable,
-      });
+      } });
     }
 
     // ✅ Scope fra profil (company/location)
@@ -146,13 +190,13 @@ export async function POST(req: NextRequest) {
 
     if (pErr) {
       logApiError("POST /api/order profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return jsonErr(rid, 500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", {
+      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
         detail: pErr.message,
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable,
-      });
+      } });
     }
 
     const company_id = safeStr(profile?.company_id);
@@ -166,32 +210,63 @@ export async function POST(req: NextRequest) {
         profile,
       });
 
-      return jsonErr(rid, 409, "PROFILE_MISSING_SCOPE", "Kontoen mangler firmatilknytning/leveringssted.", {
+      return jsonErr(rid, "Kontoen mangler firmatilknytning/leveringssted.", 409, { code: "PROFILE_MISSING_SCOPE", detail: {
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable,
         reason: "PROFILE_MISSING_SCOPE",
         message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-      });
+      } });
+    }
+
+    // ✅ Agreement rules gate (fail-closed)
+    let ruleTier: "BASIS" | "LUXUS" | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/admin");
+      const admin = supabaseAdmin();
+      const dayKey = weekdayKeyOslo(dateISO);
+      if (!dayKey) {
+        return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
+      }
+      const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot: "lunch", rid });
+      if (!ruleRes.ok) {
+        const err = ruleRes as { status: number; error: string; message: string };
+        return jsonErr(rid, err.message, err.status ?? 400, err.error);
+      }
+      ruleTier = ruleRes.rule.tier;
+    } catch (e: any) {
+      return jsonErr(rid, "Mangler service role konfigurasjon for avtalerregler.", 500, { code: "CONFIG_ERROR", detail: { error: String(e?.message ?? e) } });
     }
 
     // ✅ Idempotent UPSERT (MÅ matche unik index: user_id, location_id, date)
-    const { data, error } = await supabase
+    const payload = {
+      user_id: userRes.user.id,
+      date: dateISO,
+      status: "active", // legacy i denne route (orders/* bruker ACTIVE). Beholdt for kompat.
+      note,
+      company_id,
+      location_id,
+      slot: "lunch",
+      ...(ruleTier ? { tier: ruleTier } : {}),
+    };
+
+    let { data, error } = await supabase
       .from("orders")
-      .upsert(
-        {
-          user_id: userRes.user.id,
-          date: dateISO,
-          status: "active", // legacy i denne route (orders/* bruker ACTIVE). Beholdt for kompat.
-          note,
-          company_id,
-          location_id,
-        },
-        { onConflict: "user_id,location_id,date" }
-      )
-      .select("id, date, status, note, company_id, location_id, created_at, updated_at")
+      .upsert(payload, { onConflict: "user_id,location_id,date" })
+      .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
       .single();
+
+    if (error && payload.tier && isMissingColumnError(error, "tier")) {
+      const { tier, ...noTier } = payload as any;
+      const retry = await supabase
+        .from("orders")
+        .upsert(noTier, { onConflict: "user_id,location_id,date" })
+        .select("id, date, status, note, company_id, location_id, created_at, updated_at, slot")
+        .single();
+      data = retry.data as any;
+      error = retry.error as any;
+    }
 
     if (error) {
       logApiError("POST /api/order db upsert failed", error, {
@@ -202,13 +277,13 @@ export async function POST(req: NextRequest) {
         location_id,
       });
 
-      return jsonErr(rid, 500, "DB_ERROR", "Kunne ikke lagre bestilling.", {
+      return jsonErr(rid, "Kunne ikke lagre bestilling.", 500, { code: "DB_ERROR", detail: {
         detail: error.message,
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable,
-      });
+      } });
     }
 
     // ✅ Outbox: legg e-post-backup i kø (best effort)
@@ -236,7 +311,34 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return jsonOk({
+    const backupTs = osloNowISO();
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/admin");
+      const admin = supabaseAdmin();
+      const names = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
+      await sendOrderBackup({
+        rid,
+        action: "PLACE",
+        status: "ACTIVE",
+        orderId: data.id,
+        date: dateISO,
+        slot: "lunch",
+        user_id: userRes.user.id,
+        company_id,
+        location_id,
+        company_name: names.company_name ?? null,
+        location_name: names.location_name ?? null,
+        actor_email: userRes.user.email ?? null,
+        actor_role: null,
+        note: data.note ?? null,
+        timestamp_oslo: backupTs,
+        extra: { route: "/api/order" },
+      });
+    } catch {
+      // best effort
+    }
+
+    return jsonOk(rid, {
       ok: true,
       rid,
       date: dateISO,
@@ -254,7 +356,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     logApiError("POST /api/order failed", err, { rid });
-    return jsonErr(rid, 500, "SERVER_ERROR", "Serverfeil.", { detail: err?.message || String(err) });
+    return jsonErr(rid, "Serverfeil.", 500, { code: "SERVER_ERROR", detail: { detail: err?.message || String(err) } });
   }
 }
 
@@ -273,12 +375,12 @@ export async function DELETE(_req: NextRequest) {
     const cutoff = cutoffStatusNow();
 
     if (cutoff.isLocked) {
-      return jsonErr(rid, 409, "LOCKED_AFTER_0800", "Endringer er låst etter kl. 08:00 i dag.", {
+      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 409, { code: "LOCKED_AFTER_0800", detail: {
         date: dateISO,
         locked: true,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
-      });
+      } });
     }
 
     const supabase = await supabaseServer();
@@ -286,12 +388,12 @@ export async function DELETE(_req: NextRequest) {
     const { data: userRes, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userRes?.user) {
       logApiError("DELETE /api/order auth failed", userErr, { rid, dateISO });
-      return jsonErr(rid, 401, "UNAUTH", "Du må være innlogget.", {
+      return jsonErr(rid, "Du må være innlogget.", 401, { code: "UNAUTH", detail: {
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
-      });
+      } });
     }
 
     const { data: profile, error: pErr } = await supabase
@@ -302,13 +404,13 @@ export async function DELETE(_req: NextRequest) {
 
     if (pErr) {
       logApiError("DELETE /api/order profile failed", pErr, { rid, userId: userRes.user.id, dateISO });
-      return jsonErr(rid, 500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", {
+      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
         detail: pErr.message,
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
-      });
+      } });
     }
 
     const company_id = safeStr(profile?.company_id);
@@ -322,14 +424,31 @@ export async function DELETE(_req: NextRequest) {
         profile,
       });
 
-      return jsonErr(rid, 409, "PROFILE_MISSING_SCOPE", "Kontoen mangler firmatilknytning/leveringssted.", {
+      return jsonErr(rid, "Kontoen mangler firmatilknytning/leveringssted.", 409, { code: "PROFILE_MISSING_SCOPE", detail: {
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
         reason: "PROFILE_MISSING_SCOPE",
         message: "Kontoen din mangler firmatilknytning/leveringssted. Ta kontakt med admin for å bli lagt til.",
-      });
+      } });
+    }
+
+    // ✅ Agreement rules gate (fail-closed)
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/admin");
+      const admin = supabaseAdmin();
+      const dayKey = weekdayKeyOslo(dateISO);
+      if (!dayKey) {
+        return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
+      }
+      const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot: "lunch", rid });
+      if (!ruleRes.ok) {
+        const err = ruleRes as { status: number; error: string; message: string };
+        return jsonErr(rid, err.message, err.status ?? 400, err.error);
+      }
+    } catch (e: any) {
+      return jsonErr(rid, "Mangler service role konfigurasjon for avtalerregler.", 500, { code: "CONFIG_ERROR", detail: { error: String(e?.message ?? e) } });
     }
 
     // ✅ Avbestill = UPDATE status (ikke DELETE)
@@ -352,13 +471,13 @@ export async function DELETE(_req: NextRequest) {
         location_id,
       });
 
-      return jsonErr(rid, 500, "DB_ERROR", "Kunne ikke avbestille.", {
+      return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "DB_ERROR", detail: {
         detail: error.message,
         date: dateISO,
         locked: false,
         cutoffTime: cutoff.cutoffTime ?? "08:00",
         menuAvailable: true,
-      });
+      } });
     }
 
     // ✅ Outbox: legg e-post-backup i kø (best effort)
@@ -385,7 +504,34 @@ export async function DELETE(_req: NextRequest) {
       });
     }
 
-    return jsonOk({
+    const backupTs = osloNowISO();
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/admin");
+      const admin = supabaseAdmin();
+      const names = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
+      await sendOrderBackup({
+        rid,
+        action: "CANCEL",
+        status: "CANCELLED",
+        orderId: data?.id ?? null,
+        date: dateISO,
+        slot: "lunch",
+        user_id: userRes.user.id,
+        company_id,
+        location_id,
+        company_name: names.company_name ?? null,
+        location_name: names.location_name ?? null,
+        actor_email: userRes.user.email ?? null,
+        actor_role: null,
+        note: data?.note ?? null,
+        timestamp_oslo: backupTs,
+        extra: { route: "/api/order" },
+      });
+    } catch {
+      // best effort
+    }
+
+    return jsonOk(rid, {
       ok: true,
       rid,
       date: dateISO,
@@ -403,8 +549,6 @@ export async function DELETE(_req: NextRequest) {
     });
   } catch (err: any) {
     logApiError("DELETE /api/order failed", err, { rid });
-    return jsonErr(rid, 500, "SERVER_ERROR", "Serverfeil.", { detail: err?.message || String(err) });
+    return jsonErr(rid, "Serverfeil.", 500, { code: "SERVER_ERROR", detail: { detail: err?.message || String(err) } });
   }
 }
-
-

@@ -34,11 +34,11 @@ export async function POST(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const body = await readJson(req);
   const inviteId = safeUUID((body as any)?.inviteId ?? (body as any)?.id);
-  if (!inviteId) return jsonErr(400, rid, "INVALID_INVITE_ID", "Ugyldig inviteId.");
+  if (!inviteId) return jsonErr(rid, "Ugyldig inviteId.", 400, "INVALID_INVITE_ID");
 
   try {
     const admin = supabaseAdmin();
@@ -50,12 +50,10 @@ export async function POST(req: NextRequest) {
       .eq("company_id", companyId)
       .is("used_at", null);
 
-    if (del.error) return jsonErr(500, rid, "REVOKE_FAILED", "Kunne ikke trekke tilbake invitasjonen.", del.error);
+    if (del.error) return jsonErr(rid, "Kunne ikke trekke tilbake invitasjonen.", 500, { code: "REVOKE_FAILED", detail: del.error });
 
-    return jsonOk({ ok: true, rid, message: "Invitasjon trukket tilbake." });
+    return jsonOk(rid, { message: "Invitasjon trukket tilbake." });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

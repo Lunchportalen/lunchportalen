@@ -22,7 +22,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 function isUuid(v: any): v is string {
@@ -65,14 +65,14 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const params = await Promise.resolve(ctx.params as any);
   const companyId = String(params?.companyId ?? "").trim();
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = (await readJson(req)) ?? {};
   const nextStatus = normStatus(body?.status);
   const reason = safeText(body?.reason);
 
   if (!nextStatus) {
-    return jsonErr(400, a, "BAD_REQUEST", "Ugyldig status. Bruk: pending/active/paused/closed.");
+    return jsonErr(a.rid, "Ugyldig status. Bruk: pending/active/paused/closed.", 400, "BAD_REQUEST");
   }
 
   const admin = supabaseAdmin();
@@ -81,13 +81,13 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
     // 1) Les nåværende status
     const cur = await admin.from("companies").select("id,status,updated_at,name").eq("id", companyId).single();
 
-    if (cur.error || !cur.data) return jsonErr(404, a, "NOT_FOUND", "Fant ikke firma.", cur.error);
+    if (cur.error || !cur.data) return jsonErr(a.rid, "Fant ikke firma.", 404, { code: "NOT_FOUND", detail: cur.error });
 
     const fromStatus = normStatus(cur.data.status) ?? "pending";
 
     // 2) Valider overgang
     if (!canTransition(fromStatus, nextStatus)) {
-      return jsonErr(409, a, "INVALID_TRANSITION", `Ugyldig overgang: ${fromStatus} → ${nextStatus}`);
+      return jsonErr(a.rid, `Ugyldig overgang: ${fromStatus} → ${nextStatus}`, 409, "INVALID_TRANSITION");
     }
 
     // 3) Race-sikring (optimistic concurrency): oppdater kun hvis updated_at matcher
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       .single();
 
     if (upd.error || !upd.data) {
-      return jsonErr(409, a, "CONFLICT", "Status ble endret av noen andre. Oppdater siden og prøv igjen.", upd.error);
+      return jsonErr(a.rid, "Status ble endret av noen andre. Oppdater siden og prøv igjen.", 409, { code: "CONFLICT", detail: upd.error });
     }
 
     // 4) Audit (best effort)
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       200
     );
   } catch (e: any) {
-    return jsonErr(500, a, "SERVER_ERROR", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(a.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
 

@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { rid as makeRid } from "@/lib/http/respond";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 
 function safeStr(v: any) {
@@ -17,29 +17,15 @@ function getBaseUrl() {
   return raw.replace(/\/$/, "");
 }
 
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid, error, message, detail: detail ?? undefined };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
-function jsonOk(rid: string, body: any, status = 200) {
-  return new Response(JSON.stringify({ ...body, rid }), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
-
 export async function GET(req: NextRequest) {
   const rid = makeRid();
 
   const url = new URL(req.url);
   const code = safeStr(url.searchParams.get("invite") ?? url.searchParams.get("code"));
-  if (!code) return jsonErr(400, rid, "missing_invite", "Mangler invitasjonskode.");
+  if (!code) return jsonErr(rid, "Mangler invitasjonskode.", 400, "missing_invite");
 
   const base = getBaseUrl();
-  if (!base) return jsonErr(500, rid, "config_error", "NEXT_PUBLIC_SITE_URL mangler. Kan ikke bygge registerUrl.");
+  if (!base) return jsonErr(rid, "NEXT_PUBLIC_SITE_URL mangler. Kan ikke bygge registerUrl.", 500, "config_error");
 
   // Call lookup internally (same origin)
   const lookupUrl = new URL(`${base}/api/invites/lookup`);
@@ -71,12 +57,11 @@ export async function GET(req: NextRequest) {
     const registerUrl = `${base}/register?invite=${encodeURIComponent(code)}`;
 
     return jsonOk(rid, {
-      ok: true,
       invite: { code, company_id: j.company?.id ?? null, created_at: null },
       company: j.company,
       registerUrl,
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "Uventet feil ved resolve av invitasjon.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil ved resolve av invitasjon.", 500, { code: "server_error", detail: { message: String(e?.message ?? e) } });
   }
 }

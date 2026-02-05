@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
-  if (!s?.ok) return (s?.response as Response) || (s?.res as Response) || jsonErr(401, { rid: "rid_missing" }, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (!s?.ok) return (s?.response as Response) || (s?.res as Response) || jsonErr("rid_missing", "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   const a = s.ctx;
   const deny = requireRoleOr403(a, "api.superadmin.firms.status.POST", ["superadmin"]);
@@ -40,18 +40,18 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const params = await ctx.params;
   const companyId = safeStr(params?.companyId);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = (await readJson(req)) ?? {};
   const raw = safeStr(body?.status ?? body?.statusUpper);
   const nextUp = raw.toUpperCase();
 
   if (!ALLOWED_UP.has(nextUp)) {
-    return jsonErr(400, a, "BAD_REQUEST", "Ugyldig status.", {
+    return jsonErr(a.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: {
       received: raw,
       normalized: nextUp,
       allowed: Array.from(ALLOWED_UP),
-    });
+    } });
   }
 
   const nextDb = toDbStatus(nextUp);
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       .single();
 
     if (error) {
-      return jsonErr(500, a, "DB_ERROR", "Kunne ikke oppdatere status.", {
+      return jsonErr(a.rid, "Kunne ikke oppdatere status.", 500, { code: "DB_ERROR", detail: {
         table: "companies",
         column: "status",
         sent: nextDb,
@@ -73,12 +73,12 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         details: (error as any).details,
         hint: (error as any).hint,
         code: (error as any).code,
-      });
+      } });
     }
 
-    return jsonOk(a, { ok: true, rid: a.rid, company: data }, 200);
+    return jsonOk(a.rid, { ok: true, rid: a.rid, company: data }, 200);
   } catch (e: any) {
-    return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke oppdatere status.", { message: String(e?.message ?? e) });
+    return jsonErr(a.rid, "Kunne ikke oppdatere status.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
 

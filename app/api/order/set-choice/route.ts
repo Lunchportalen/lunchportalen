@@ -4,11 +4,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 type Body = {
@@ -214,7 +214,7 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
 }
 
 export async function POST(req: Request) {
-  const rid = `setchoice_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const body = (await req.json().catch(() => null)) as Partial<Body> | null;
@@ -225,42 +225,26 @@ export async function POST(req: Request) {
 
     // 0) Input validering
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return NextResponse.json(
-        { ok: false, rid, error: "BAD_DATE", message: "Ugyldig datoformat. Bruk YYYY-MM-DD." },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Ugyldig datoformat. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
     }
     if (!choice_key) {
-      return NextResponse.json(
-        { ok: false, rid, error: "MISSING_CHOICE_KEY", message: "choice_key mangler." },
-        { status: 400 }
-      );
+      return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
     }
 
     // 1) Auth (cookie-basert)
     const user_id = await getAuthedUserId();
     if (!user_id) {
-      return NextResponse.json(
-        { ok: false, rid, error: "UNAUTH", message: "Ikke innlogget." },
-        { status: 401 }
-      );
+      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
     }
 
     // 2) Cutoff-lås
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "LOCKED",
-          message: "Dagen er låst etter 08:00.",
-          locked: true,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 423 }
-      );
+      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
+        locked: true,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 3) Ukedag (Man–Fri)
@@ -268,18 +252,11 @@ export async function POST(req: Request) {
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "WEEKDAY_ONLY",
-          message: "Dato må være Man–Fre. Helg bestilles ikke i portalen.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 4) Service role for DB (ingen RLS)
@@ -296,68 +273,37 @@ export async function POST(req: Request) {
 
     if (pErr) {
       logApiError("POST /api/order/set-choice profile failed", pErr, { rid, user_id, date });
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_LOOKUP_FAILED",
-          detail: pErr.message,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
+        detail: pErr.message,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     if (!profile) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_NOT_FOUND",
-          message: "Fant ikke profil.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 403 }
-      );
+      return jsonErr(rid, "Fant ikke profil.", 403, { code: "PROFILE_NOT_FOUND", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     const company_id = profile.company_id;
     const location_id = profile.location_id;
 
     if (!company_id || !location_id) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_MISSING_SCOPE",
-          message: "Profil mangler company_id/location_id.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 403 }
-      );
+      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, { code: "PROFILE_MISSING_SCOPE", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 6) ✅ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: gate.error,
-          message: gate.reason,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: gate.status }
-      );
+      return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
     }
 
     // 7) Hent kontrakt fra companies
@@ -371,82 +317,47 @@ export async function POST(req: Request) {
 
     if (cErr || !company) {
       logApiError("POST /api/order/set-choice company failed", cErr, { rid, company_id });
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "COMPANY_CONTRACT_NOT_FOUND",
-          message: "Fant ikke firma/kontrakt.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 403 }
-      );
+      return jsonErr(rid, "Fant ikke firma/kontrakt.", 403, { code: "COMPANY_CONTRACT_NOT_FOUND", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     const weekTier = company.contract_week_tier;
     if (!weekTier) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "CONTRACT_MISSING_WEEK_TIER",
-          message: "Kontrakt mangler contract_week_tier.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, { code: "CONTRACT_MISSING_WEEK_TIER", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     const tier = weekTier[dayKey];
     if (!tier) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "CONTRACT_MISSING_DAY_TIER",
-          message: "Kontrakt mangler tier-plan for denne dagen.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Kontrakt mangler tier-plan for denne dagen.", 400, { code: "CONTRACT_MISSING_DAY_TIER", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     const allowed = tier === "BASIS" ? company.contract_basis_choices : company.contract_premium_choices;
 
     if (!Array.isArray(allowed) || allowed.length === 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "CONTRACT_MISSING_CHOICES",
-          message: "Kontrakt mangler menyvalg.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Kontrakt mangler menyvalg.", 400, { code: "CONTRACT_MISSING_CHOICES", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     if (!allowed.some((x) => x?.key === choice_key)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "INVALID_CHOICE",
-          message: `Ugyldig valg for ${tier}-dag.`,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, `Ugyldig valg for ${tier}-dag.`, 400, { code: "INVALID_CHOICE", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 8) Upsert til day_choices (idempotent) + receipt
@@ -478,51 +389,34 @@ export async function POST(req: Request) {
         choice_key,
       });
 
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "SAVE_FAILED",
-          message: "Kunne ikke lagre valg.",
-          detail: uErr?.message,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, "Kunne ikke lagre valg.", 500, { code: "SAVE_FAILED", detail: uErr?.message });
     }
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
+    return jsonOk(rid, {
+      ok: true,
+      rid,
 
-        // ✅ Kvittering 
-        receipt: {
-          orderId: saved.id,
-          status: "ACTIVE",
-          date: saved.date,
-          updatedAt: saved.updated_at ?? null,
-        },
-
+      // ✅ Kvittering 
+      receipt: {
+        orderId: saved.id,
+        status: "ACTIVE",
         date: saved.date,
-        choice_key: saved.choice_key,
-        note: saved.note ?? null,
-        tier,
-        updated_at: saved.updated_at ?? null,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: true,
-        scope: { company_id, location_id, user_id },
+        updatedAt: saved.updated_at ?? null,
       },
-      { status: 200 }
-    );
+
+      date: saved.date,
+      choice_key: saved.choice_key,
+      note: saved.note ?? null,
+      tier,
+      updated_at: saved.updated_at ?? null,
+      locked: false,
+      cutoffTime: cutoff.cutoffTime,
+      canAct: true,
+      scope: { company_id, location_id, user_id },
+    }, 200);
   } catch (e: any) {
     logApiError("POST /api/order/set-choice failed", e, { rid: "setchoice_unknown" });
-    return NextResponse.json(
-      { ok: false, rid: "setchoice_unknown", error: "SERVER_ERROR", detail: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    return jsonErr("setchoice_unknown", "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-
-
 

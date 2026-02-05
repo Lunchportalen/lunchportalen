@@ -4,9 +4,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
 
 import { osloNowParts, osloTodayISODate } from "@/lib/date/oslo";
+import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
+import { opsLog } from "@/lib/ops/log";
 
 /* =========================================================
    Constants / types
@@ -26,16 +28,12 @@ type AgreementRow = {
   end_date: string | null;
 };
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
 function rid(prefix = "weekplan") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function jsonError(status: number, rid: string, error: string, message?: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+function jsonError(status: number, rid: string, error: string, message?: string, _detail?: unknown) {
+  return jsonErr(rid, message || "Ukjent feil", status, error);
 }
 
 function normalizeTier(v: any): Tier {
@@ -43,21 +41,23 @@ function normalizeTier(v: any): Tier {
   return s === "LUXUS" ? "LUXUS" : "BASIS";
 }
 
-function normalizeDeliveryDays(v: any): DayKey[] {
-  if (!v) return DAY_KEYS.slice();
-  if (Array.isArray(v)) {
-    const set = new Set<DayKey>();
-    for (const x of v) {
-      const s = String(x ?? "").trim().toLowerCase();
-      if (DAY_KEYS.includes(s as DayKey)) set.add(s as DayKey);
-    }
-    return set.size ? Array.from(set) : DAY_KEYS.slice();
-  }
-  try {
-    const parsed = typeof v === "string" ? JSON.parse(v) : v;
-    if (Array.isArray(parsed)) return normalizeDeliveryDays(parsed);
-  } catch {}
-  return DAY_KEYS.slice();
+function logDeliveryDaysWarning(args: {
+  rid: string;
+  company_id: string;
+  agreement_id?: string | null;
+  raw: any;
+  unknown: string[];
+  days: string[];
+}) {
+  if (!args.unknown.length) return;
+  opsLog("agreement.delivery_days.warning", {
+    rid: args.rid,
+    company_id: args.company_id,
+    agreement_id: args.agreement_id ?? null,
+    unknown: args.unknown,
+    days: args.days,
+    raw: args.raw ?? null,
+  });
 }
 
 /**
@@ -146,6 +146,7 @@ export async function GET(req: Request) {
       .from("company_current_agreement")
       .select("company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, start_date, end_date")
       .eq("company_id", companyId)
+      .eq("status", "ACTIVE")
       .maybeSingle();
 
     if (agrErr) return jsonError(500, _rid, "AGREEMENT_LOOKUP_FAILED", "Kunne ikke hente avtale (fasit).", agrErr);
@@ -153,7 +154,16 @@ export async function GET(req: Request) {
 
     const agreement = agr as AgreementRow;
     const tier: Tier = normalizeTier(agreement.plan_tier);
-    const deliveryDays = normalizeDeliveryDays(agreement.delivery_days);
+    const deliveryNorm = normalizeDeliveryDaysStrict(agreement.delivery_days);
+    logDeliveryDaysWarning({
+      rid: _rid,
+      company_id: companyId,
+      agreement_id: (agreement as any)?.id ?? null,
+      raw: agreement.delivery_days ?? null,
+      unknown: deliveryNorm.unknown,
+      days: deliveryNorm.days,
+    });
+    const deliveryDays = deliveryNorm.days;
 
     // 🔒 Cutoff fasit i systemet: 08:00 Oslo
     const cutoff = "08:00";
@@ -216,36 +226,29 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid: _rid,
-        today: todayISO,
-        weekOffset,
-        locked,
-        unlockAt,
-        cutoff,
-        agreement: {
-          companyId,
-          plan_tier: tier,
-          price_per_cuvert_nok: agreement.price_per_cuvert_nok,
-          delivery_days: deliveryDays,
-          start_date: agreement.start_date,
-          end_date: agreement.end_date,
-        },
-        sanity: {
-          currentStatus: currentPlan?.status ?? null,
-          nextStatus: nextPlan?.status ?? null,
-        },
-        plan: plan ?? null,
-        days,
+    return jsonOk(_rid, {
+      today: todayISO,
+      weekOffset,
+      locked,
+      unlockAt,
+      cutoff,
+      agreement: {
+        companyId,
+        plan_tier: tier,
+        price_per_cuvert_nok: agreement.price_per_cuvert_nok,
+        delivery_days: deliveryDays,
+        start_date: agreement.start_date,
+        end_date: agreement.end_date,
       },
-      { headers: noStore() }
-    );
+      sanity: {
+        currentStatus: currentPlan?.status ?? null,
+        nextStatus: nextPlan?.status ?? null,
+      },
+      plan: plan ?? null,
+      days,
+    });
   } catch (err: any) {
     console.error("[GET /api/weekplan]", err?.message || err, err);
     return jsonError(500, _rid, "SERVER_ERROR", err?.message || String(err));
   }
 }
-
-

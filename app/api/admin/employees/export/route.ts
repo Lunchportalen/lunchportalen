@@ -7,7 +7,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
-import { rid as makeRid } from "@/lib/http/respond";
+import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function csvEscape(v: unknown) {
   if (v === null || v === undefined) return "";
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   // 401 gate
   const s = await scopeOr401(req);
-  if (s instanceof Response) return s;
+  if (s.ok === false) return s.res;
   const ctx = s.ctx;
 
   // 403 gate (superadmin OR company_admin)
@@ -60,17 +60,11 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const q = String(url.searchParams.get("q") ?? "").trim().slice(0, 80);
 
-  // superadmin kan velge company_id, ellers egen companyId
-  const requestedCompanyId = String(url.searchParams.get("company_id") ?? "").trim() || null;
+  const cg = requireCompanyScopeOr403(ctx);
+  if (cg instanceof Response) return cg;
 
-  let companyId: string | null = null;
-  if (String((ctx as any)?.role ?? "") === "superadmin") {
-    companyId = requestedCompanyId; // null = alle firma
-  } else {
-    const cg = requireCompanyScopeOr403(ctx);
-    if (cg instanceof Response) return cg;
-    companyId = String((cg as any).companyId ?? "") || null;
-  }
+  const companyId = String(ctx.scope.companyId ?? "").trim() || null;
+  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const admin = supabaseAdmin();
@@ -97,7 +91,7 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(10000);
 
-    if (companyId) query = query.eq("company_id", companyId);
+    query = query.eq("company_id", companyId);
 
     if (q) {
       // ilike med %...% (ikke "*" – det er fulltext-operator, ikke ilike)
@@ -108,10 +102,7 @@ export async function GET(req: NextRequest) {
 
     const { data: rows, error } = await query;
     if (error) {
-      return NextResponse.json(
-        { ok: false, rid, error: "EMPLOYEES_READ_FAILED", message: "Kunne ikke hente ansatte.", detail: error },
-        { status: 500, headers: noStoreHeaders(rid) }
-      );
+      return jsonErr(rid, "Kunne ikke hente ansatte.", 500, { code: "EMPLOYEES_READ_FAILED", detail: error });
     }
 
     const header = [
@@ -166,8 +157,7 @@ export async function GET(req: NextRequest) {
     }
 
     const csv = lines.join("\n");
-    const suffix = companyId ? `_company_${companyId}` : "";
-    const filename = `employees${suffix}.csv`;
+    const filename = `employees_company_${companyId}.csv`;
 
     return new NextResponse(csv, {
       status: 200,
@@ -180,11 +170,6 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return NextResponse.json(
-      { ok: false, rid, error: code, message: "Uventet feil.", detail: String(e?.message ?? e) },
-      { status, headers: noStoreHeaders(rid) }
-    );
+    return jsonErr(rid, "Uventet feil.", status, code);
   }
 }
-
-

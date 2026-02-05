@@ -4,32 +4,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-/* =========================================================
-   Response helpers (no-store)
-========================================================= */
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  } as const;
-}
-function json(status: number, body: any) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Utils
 ========================================================= */
-function makeRid() {
-  return `sa_audit_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function safeText(v: any, maxLen: number) {
   const s = String(v ?? "").trim();
   if (!s) return "";
@@ -119,7 +101,6 @@ type ApiErr = { ok: false; rid: string; error: string; message?: string; detail?
     - q=<string> (optional search; actor_email/action/entity_type/summary/rid)
 ========================================================= */
 export async function GET(req: NextRequest) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
@@ -132,15 +113,10 @@ export async function GET(req: NextRequest) {
     const { data, error: authErr } = await supabase.auth.getUser();
     const user = data?.user ?? null;
 
-    if (authErr || !user) {
-      return json(401, { ok: false, error: "AUTH_REQUIRED", message: "Du må være innlogget.", rid } satisfies ApiErr);
-    }
+    if (authErr || !user) return jsonErr(rid, "Du må være innlogget.", 401, "AUTH_REQUIRED");
 
     // ✅ Superadmin gate (hard-fasit epost)
-    const email = normEmail(user.email);
-    if (email !== "superadmin@lunchportalen.no") {
-      return json(403, { ok: false, error: "FORBIDDEN", message: "Ikke tilgang.", rid } satisfies ApiErr);
-    }
+    if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ikke tilgang.", 403, "FORBIDDEN");
 
     /* =========================
        Parse query
@@ -150,37 +126,13 @@ export async function GET(req: NextRequest) {
     const limit = clampInt(u.searchParams.get("limit") ?? "300", 1, 500, 300);
 
     const cursor = safeText(u.searchParams.get("cursor"), 60);
-    if (cursor && !isIsoTs(cursor)) {
-      return json(400, {
-        ok: false,
-        error: "BAD_REQUEST",
-        message: "Ugyldig cursor (ISO timestamp).",
-        rid,
-        detail: { cursor },
-      } satisfies ApiErr);
-    }
+    if (cursor && !isIsoTs(cursor)) return jsonErr(rid, "Ugyldig cursor (ISO timestamp).", 400, { code: "BAD_REQUEST", detail: { cursor } });
 
     const companyId = safeText(u.searchParams.get("companyId"), 80);
-    if (companyId && !isUuid(companyId)) {
-      return json(400, {
-        ok: false,
-        error: "BAD_REQUEST",
-        message: "Ugyldig companyId (uuid).",
-        rid,
-        detail: { companyId },
-      } satisfies ApiErr);
-    }
+    if (companyId && !isUuid(companyId)) return jsonErr(rid, "Ugyldig companyId (uuid).", 400, { code: "BAD_REQUEST", detail: { companyId } });
 
     const entityId = safeText(u.searchParams.get("entityId"), 80);
-    if (entityId && !isUuid(entityId)) {
-      return json(400, {
-        ok: false,
-        error: "BAD_REQUEST",
-        message: "Ugyldig entityId (uuid).",
-        rid,
-        detail: { entityId },
-      } satisfies ApiErr);
-    }
+    if (entityId && !isUuid(entityId)) return jsonErr(rid, "Ugyldig entityId (uuid).", 400, { code: "BAD_REQUEST", detail: { entityId } });
 
     const entityTypeRaw = safeText(u.searchParams.get("entityType"), 60);
     const actionRaw = safeText(u.searchParams.get("action"), 120);
@@ -197,12 +149,7 @@ export async function GET(req: NextRequest) {
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
-      return json(500, {
-        ok: false,
-        error: "MISSING_SERVICE_ROLE_KEY",
-        message: String(e?.message ?? e),
-        rid,
-      } satisfies ApiErr);
+      return jsonErr(rid, String(e?.message ?? e), 500, "MISSING_SERVICE_ROLE_KEY");
     }
 
     const source = "audit_events" as const;
@@ -242,13 +189,11 @@ export async function GET(req: NextRequest) {
     const { data: items, error } = await qb;
 
     if (error) {
-      return json(500, {
-        ok: false,
-        error: "READ_FAILED",
-        message: error.message,
-        rid,
-        detail: { code: error.code, details: (error as any).details, hint: (error as any).hint },
-      } satisfies ApiErr);
+      return jsonErr(rid, error.message, 500, { code: "READ_FAILED", detail: {
+        code: error.code,
+        details: (error as any).details,
+        hint: (error as any).hint,
+      } });
     }
 
     const safeItems: AuditItem[] = (items ?? []).map((x: any) => ({
@@ -288,15 +233,8 @@ export async function GET(req: NextRequest) {
       items: safeItems,
     };
 
-    return json(200, ok);
+    return jsonOk(rid, ok, 200);
   } catch (e: any) {
-    return json(500, {
-      ok: false,
-      error: "SERVER_ERROR",
-      message: String(e?.message ?? "unknown"),
-      rid,
-    } satisfies ApiErr);
+    return jsonErr(rid, String(e?.message ?? "unknown"), 500, "SERVER_ERROR");
   }
 }
-
-

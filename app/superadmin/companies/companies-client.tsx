@@ -1,49 +1,100 @@
-// app/superadmin/companies/companies-client.tsx
+﻿// app/superadmin/companies/companies-client.tsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 type SortKey = "updated_at" | "created_at" | "name";
 type SortDir = "asc" | "desc";
+type CompanyView = "active" | "archived";
 
 type CompanyRow = {
   id: string;
   name: string;
   orgnr: string | null;
   status: CompanyStatus | null;
-  plan?: string | null;
-  employees_count?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  planLabel?: string | null;
+  employeesCount?: number | null;
+  adminsCount?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  archivedAt?: string | null;
 };
 
-type Stats = {
-  companiesTotal?: number;
-  companiesPending?: number;
-  companiesActive?: number;
-  companiesPaused?: number;
-  companiesClosed?: number;
+type AgreementSnapshot = {
+  agreementId: string | null;
+  status: string | null;
+  planTier: string | null;
+  planLabel: string | null;
+  pricePerCuvertNok: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  updatedAt: string | null;
+};
+
+type CompanyDetail = {
+  company: {
+    id: string;
+    name: string;
+    orgnr: string | null;
+    status: CompanyStatus | string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  };
+  counts: {
+    employeesCount: number;
+    adminsCount: number;
+  };
+  agreement: AgreementSnapshot | null;
+  source?: {
+    companies?: string;
+    profiles?: string;
+    agreement?: string;
+  };
 };
 
 type ApiOk = {
   ok: true;
-  rid?: string;
-  companies: CompanyRow[];
-  page?: number;
-  limit?: number;
-  total?: number;
-  pages?: number;
-  stats?: Stats;
+  rid: string;
+  data: {
+    items: CompanyRow[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    source?: {
+      companies?: string;
+      profiles?: string;
+      agreement?: string;
+    };
+    filters?: {
+      q?: string | null;
+      status?: string | null;
+      includeClosed?: boolean;
+      sort?: SortKey | string | null;
+      dir?: SortDir | string | null;
+    };
+  };
 };
 
-type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
+type ApiErr = { ok: false; rid?: string; error: string; message?: string; status?: number; detail?: any };
 type ApiRes = ApiOk | ApiErr;
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
+}
+
+const ALLOWED_LIMITS = [10, 25, 50, 100] as const;
+type AllowedLimit = (typeof ALLOWED_LIMITS)[number];
+function normalizeLimit(v: any) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 25;
+  const i = Math.floor(n);
+  return ALLOWED_LIMITS.includes(i as AllowedLimit) ? i : 25;
 }
 
 function normStatus(v: any): CompanyStatus {
@@ -62,17 +113,7 @@ function clampInt(v: any, fallback: number, min: number, max: number) {
 
 function fmtTs(ts?: string | null) {
   if (!ts) return "—";
-  try {
-    return new Date(ts).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return String(ts);
-  }
+  return formatDateTimeNO(ts);
 }
 
 function badgeClass(status: CompanyStatus) {
@@ -84,9 +125,9 @@ function badgeClass(status: CompanyStatus) {
 
 function statusLabel(status: CompanyStatus) {
   if (status === "active") return "Aktiv";
-  if (status === "paused") return "Pauser";
+  if (status === "paused") return "Pauset";
   if (status === "closed") return "Stengt";
-  return "Pending";
+  return "Venter";
 }
 
 function isSortKey(v: any): v is SortKey {
@@ -104,8 +145,10 @@ function buildQueryString(q: {
   limit: number;
   sort: SortKey;
   dir: SortDir;
+  view: CompanyView;
 }) {
   const sp = new URLSearchParams();
+  if (q.view === "archived") sp.set("view", "archived");
   if (q.q) sp.set("q", q.q);
   if (q.status) sp.set("status", q.status);
   if (q.include_closed) sp.set("include_closed", "1");
@@ -128,47 +171,65 @@ async function readJsonSafe(res: Response): Promise<any | null> {
 
 /**
  * API-endepunkt
- * - primær: /api/superadmin/companies
- * - fallback: /api/superadmin/firms
+ * - /api/superadmin/companies
  */
 async function fetchCompanies(qs: string, signal?: AbortSignal): Promise<ApiRes> {
-  const tryFetch = async (url: string) => {
-    const r = await fetch(url, { cache: "no-store", signal, headers: { "Cache-Control": "no-store" } });
-    const body = await readJsonSafe(r);
+  const r = await fetch(`/api/superadmin/companies?${qs}`, {
+    cache: "no-store",
+    signal,
+    headers: { "Cache-Control": "no-store" },
+  });
+  const body = await readJsonSafe(r);
 
-    if (r.ok && body) return body as ApiRes;
+  if (r.ok && body) return body as ApiRes;
 
-    // Hvis 404, la caller prøve fallback
-    if (r.status === 404) return { ok: false, error: "NOT_FOUND", message: "404", detail: { url } } as ApiErr;
+  return {
+    ok: false,
+    rid: body?.rid,
+    error: body?.error || "HTTP_ERROR",
+    message: body?.message || `HTTP ${r.status}`,
+    status: r.status,
+    detail: body?.detail ?? body,
+  } as ApiErr;
+}
 
-    return {
-      ok: false,
-      rid: body?.rid,
-      error: body?.error || "HTTP_ERROR",
-      message: body?.message || `HTTP ${r.status}`,
-      detail: body?.detail ?? body,
-    } as ApiErr;
-  };
+async function fetchArchivedCompanies(qs: string, signal?: AbortSignal): Promise<ApiRes> {
+  const r = await fetch(`/api/superadmin/companies?${qs}`, {
+    cache: "no-store",
+    signal,
+    headers: { "Cache-Control": "no-store" },
+  });
+  const body = await readJsonSafe(r);
 
-  const primary = await tryFetch(`/api/superadmin/companies?${qs}`);
-  if (primary && (primary as any).ok === true) return primary;
+  if (r.ok && body) return body as ApiRes;
 
-  // fallback bare hvis primær ser ut til å mangle
-  const maybeErr = primary as ApiErr;
-  if (maybeErr?.error === "NOT_FOUND") {
-    const fallback = await tryFetch(`/api/superadmin/firms?${qs}`);
-    if (fallback && (fallback as any).ok === true) return fallback;
+  return {
+    ok: false,
+    rid: body?.rid,
+    error: body?.error || "HTTP_ERROR",
+    message: body?.message || `HTTP ${r.status}`,
+    status: r.status,
+    detail: body?.detail ?? body,
+  } as ApiErr;
+}
+async function fetchCompanyDetail(companyId: string, signal?: AbortSignal): Promise<{ ok: true; rid: string; data: CompanyDetail } | ApiErr> {
+  const r = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}`, {
+    cache: "no-store",
+    signal,
+    headers: { "Cache-Control": "no-store" },
+  });
+  const body = await readJsonSafe(r);
 
-    const err2 = fallback as ApiErr;
-    return {
-      ok: false,
-      error: "API_MISSING",
-      message: "Fant ikke API-endepunkt for firmaoversikt.",
-      detail: { primary: maybeErr?.detail, fallback: err2?.detail },
-    };
-  }
+  if (r.ok && body?.ok === true) return body as { ok: true; rid: string; data: CompanyDetail };
 
-  return primary as ApiRes;
+  return {
+    ok: false,
+    rid: body?.rid,
+    error: body?.error || "HTTP_ERROR",
+    message: body?.message || `HTTP ${r.status}`,
+    status: r.status,
+    detail: body?.detail ?? body,
+  } as ApiErr;
 }
 
 /**
@@ -228,25 +289,33 @@ export default function CompaniesClient() {
   const initial = useMemo(() => {
     const q = safeStr(searchParams.get("q"));
     const statusRaw = safeStr(searchParams.get("status")).toLowerCase();
+    const viewRaw = safeStr(searchParams.get("view")).toLowerCase();
+    const archivedRaw = safeStr(searchParams.get("archived"));
+    const tabRaw = safeStr(searchParams.get("tab")).toLowerCase();
     const status: "" | CompanyStatus =
       statusRaw === "pending" || statusRaw === "active" || statusRaw === "paused" || statusRaw === "closed"
         ? (statusRaw as CompanyStatus)
         : "";
+    const view: CompanyView =
+      archivedRaw === "1" || archivedRaw === "true" || tabRaw === "archived" || viewRaw === "archived"
+        ? "archived"
+        : "active";
 
     const include_closed = safeStr(searchParams.get("include_closed")) === "1";
 
     const page = clampInt(searchParams.get("page"), 1, 1, 9999);
-    const limit = clampInt(searchParams.get("limit"), 50, 1, 500);
+    const limit = normalizeLimit(searchParams.get("limit"));
 
     const sortRaw = safeStr(searchParams.get("sort"));
     const dirRaw = safeStr(searchParams.get("dir"));
     const sort: SortKey = isSortKey(sortRaw) ? sortRaw : "updated_at";
     const dir: SortDir = isSortDir(dirRaw) ? dirRaw : "desc";
 
-    return { q, status, include_closed, page, limit, sort, dir };
+    return { q, status, include_closed, page, limit, sort, dir, view };
   }, [searchParams]);
 
   const [qText, setQText] = useState(initial.q);
+  const [view, setView] = useState<CompanyView>(initial.view);
   const [status, setStatus] = useState<"" | CompanyStatus>(initial.status);
   const [includeClosed, setIncludeClosed] = useState(initial.include_closed);
   const [page, setPage] = useState(initial.page);
@@ -256,9 +325,13 @@ export default function CompaniesClient() {
 
   // Data state
   const [rows, setRows] = useState<CompanyRow[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const [pages, setPages] = useState<number | null>(null);
+  const [systemTruth, setSystemTruth] = useState<{
+    rid?: string;
+    source?: { companies?: string; profiles?: string; agreement?: string };
+    filters?: { q?: string | null; status?: string | null; includeClosed?: boolean; sort?: string | null; dir?: string | null };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<ApiErr | null>(null);
 
@@ -268,8 +341,16 @@ export default function CompaniesClient() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmPayload = useRef<{ id: string; name: string; next: CompanyStatus } | null>(null);
 
+  // Detail panel
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailErr, setDetailErr] = useState<ApiErr | null>(null);
+  const [detail, setDetail] = useState<CompanyDetail | null>(null);
+  const [detailRid, setDetailRid] = useState<string | null>(null);
+
   const abortRef = useRef<AbortController | null>(null);
   const reqSeq = useRef(0);
+  const detailAbortRef = useRef<AbortController | null>(null);
 
   // Debounce søk
   useEffect(() => {
@@ -290,14 +371,17 @@ export default function CompaniesClient() {
       limit,
       sort,
       dir,
+      view,
     });
-  }, [qText, status, includeClosed, page, limit, sort, dir]);
+  }, [qText, status, includeClosed, page, limit, sort, dir, view]);
 
   useEffect(() => {
+    const current = searchParams.toString();
+    if (current === qs) return;
     startTransition(() => {
       router.replace(`/superadmin/companies?${qs}`);
     });
-  }, [qs, router, startTransition]);
+  }, [qs, router, startTransition, searchParams]);
 
   // Data fetch
   useEffect(() => {
@@ -310,60 +394,59 @@ export default function CompaniesClient() {
     setErr(null);
     setStatusErr(null);
 
-    fetchCompanies(qs, ac.signal)
+    const fetcher = view === "archived" ? fetchArchivedCompanies : fetchCompanies;
+
+    fetcher(qs, ac.signal)
       .then((res) => {
         if (ac.signal.aborted) return;
         if (seq !== reqSeq.current) return;
 
         if (!res || (res as any).ok !== true) {
           setRows([]);
-          setStats(null);
           setTotal(null);
           setPages(null);
+          setSystemTruth(null);
           setErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
           return;
         }
 
         const ok = res as ApiOk;
-
-        // Tolerant parsing (i tilfelle API returnerer litt andre feltnavn)
-        const list = Array.isArray((ok as any).companies)
-          ? (ok as any).companies
-          : Array.isArray((ok as any).rows)
-          ? (ok as any).rows
-          : Array.isArray((ok as any).data)
-          ? (ok as any).data
-          : [];
-
+        const list = Array.isArray(ok.data?.items) ? ok.data.items : [];
         const normalized: CompanyRow[] = list
           .map((x: any) => ({
             id: safeStr(x?.id),
             name: safeStr(x?.name) || "Ukjent firma",
             orgnr: x?.orgnr ?? null,
             status: normStatus(x?.status),
-            plan: x?.plan ?? x?.plan_tier ?? null,
-            employees_count: Number.isFinite(Number(x?.employees_count))
+            planLabel: x?.planLabel ?? x?.plan ?? null,
+            employeesCount: Number.isFinite(Number(x?.employeesCount))
+              ? Number(x?.employeesCount)
+              : Number.isFinite(Number(x?.employees_count))
               ? Number(x?.employees_count)
-              : Number.isFinite(Number(x?.employee_count))
-              ? Number(x?.employee_count)
               : null,
-            created_at: x?.created_at ?? null,
-            updated_at: x?.updated_at ?? null,
+            adminsCount: Number.isFinite(Number(x?.adminsCount)) ? Number(x?.adminsCount) : null,
+            createdAt: x?.createdAt ?? x?.created_at ?? null,
+            updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
+            archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
           }))
           .filter((x: CompanyRow) => !!x.id);
 
         setRows(normalized);
-        setStats(ok.stats ?? null);
-        setTotal(Number.isFinite(Number((ok as any).total)) ? Number((ok as any).total) : null);
-        setPages(Number.isFinite(Number((ok as any).pages)) ? Number((ok as any).pages) : null);
+        setTotal(Number.isFinite(Number(ok.data?.total)) ? Number(ok.data.total) : null);
+        setPages(Number.isFinite(Number(ok.data?.totalPages)) ? Number(ok.data.totalPages) : null);
+        setSystemTruth({
+          rid: ok.rid,
+          source: ok.data?.source,
+          filters: ok.data?.filters,
+        });
         setErr(null);
       })
       .catch((e) => {
         if (ac.signal.aborted) return;
         setRows([]);
-        setStats(null);
         setTotal(null);
         setPages(null);
+        setSystemTruth(null);
         setErr({ ok: false, error: "FETCH_FAILED", message: e?.message || "Fetch feilet", detail: e });
       })
       .finally(() => {
@@ -372,7 +455,43 @@ export default function CompaniesClient() {
       });
 
     return () => ac.abort();
-  }, [qs]);
+  }, [qs, view]);
+
+  useEffect(() => {
+    if (!detailId) return;
+    detailAbortRef.current?.abort();
+    const ac = new AbortController();
+    detailAbortRef.current = ac;
+
+    setDetailLoading(true);
+    setDetailErr(null);
+
+    fetchCompanyDetail(detailId, ac.signal)
+      .then((res) => {
+        if (ac.signal.aborted) return;
+        if (!res || (res as any).ok !== true) {
+          setDetail(null);
+          setDetailRid((res as any)?.rid ?? null);
+          setDetailErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
+          return;
+        }
+        const ok = res as { ok: true; rid: string; data: CompanyDetail };
+        setDetail(ok.data);
+        setDetailRid(ok.rid ?? null);
+      })
+      .catch((e) => {
+        if (ac.signal.aborted) return;
+        setDetail(null);
+        setDetailRid(null);
+        setDetailErr({ ok: false, error: "FETCH_FAILED", message: e?.message || "Kunne ikke hente detaljer", detail: e });
+      })
+      .finally(() => {
+        if (ac.signal.aborted) return;
+        setDetailLoading(false);
+      });
+
+    return () => ac.abort();
+  }, [detailId]);
 
   const canPrev = page > 1;
   const canNext = pages ? page < pages : rows.length === limit;
@@ -386,6 +505,17 @@ export default function CompaniesClient() {
   function closeConfirm() {
     setConfirmOpen(false);
     confirmPayload.current = null;
+  }
+
+  function openDetail(row: CompanyRow) {
+    setDetailId(row.id);
+  }
+
+  function closeDetail() {
+    setDetailId(null);
+    setDetail(null);
+    setDetailErr(null);
+    setDetailRid(null);
   }
 
   function applyLocalStatus(id: string, next: CompanyStatus) {
@@ -415,11 +545,10 @@ export default function CompaniesClient() {
   }
 
   return (
-    <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+    <div className="mt-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">Firmaoversikt</h1>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight md:text-2xl">Firmaoversikt</h2>
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
             Søk, filtrer og åpne firma for avtale, status, ansatte og audit.
           </p>
@@ -449,6 +578,37 @@ export default function CompaniesClient() {
         </div>
       </header>
 
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setView("active");
+            setPage(1);
+          }}
+          className={[
+            "rounded-full border px-3 py-1 text-xs",
+            view === "active" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50",
+          ].join(" ")}
+        >
+          Aktive
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setView("archived");
+            setStatus("");
+            setIncludeClosed(false);
+            setPage(1);
+          }}
+          className={[
+            "rounded-full border px-3 py-1 text-xs",
+            view === "archived" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50",
+          ].join(" ")}
+        >
+          Slettet (Arkiv)
+        </button>
+      </div>
+
       {/* Controls */}
       <section className="mt-6 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="grid gap-3 md:grid-cols-12 md:items-end">
@@ -457,28 +617,30 @@ export default function CompaniesClient() {
             <input
               value={qText}
               onChange={(e) => setQText(e.target.value)}
-              placeholder="Navn, orgnr…"
+              placeholder="Navn, org.nr …"
               className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm outline-none"
             />
           </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-xs text-[rgb(var(--lp-muted))]">Status</label>
-            <select
-              value={status}
-              onChange={(e) => {
-                setPage(1);
-                setStatus((e.target.value as any) || "");
-              }}
-              className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm"
-            >
-              <option value="">Alle</option>
-              <option value="pending">Pending</option>
-              <option value="active">Aktiv</option>
-              <option value="paused">Pauser</option>
-              <option value="closed">Stengt</option>
-            </select>
-          </div>
+          {view === "active" ? (
+            <div className="md:col-span-3">
+              <label className="block text-xs text-[rgb(var(--lp-muted))]">Status</label>
+              <select
+                value={status}
+                onChange={(e) => {
+                  setPage(1);
+                  setStatus((e.target.value as any) || "");
+                }}
+                className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm"
+              >
+                <option value="">Alle</option>
+                <option value="pending">Venter</option>
+                <option value="active">Aktiv</option>
+                <option value="paused">Pauset</option>
+                <option value="closed">Stengt</option>
+              </select>
+            </div>
+          ) : null}
 
           <div className="md:col-span-2">
             <label className="block text-xs text-[rgb(var(--lp-muted))]">Limit</label>
@@ -486,11 +648,11 @@ export default function CompaniesClient() {
               value={String(limit)}
               onChange={(e) => {
                 setPage(1);
-                setLimit(clampInt(e.target.value, 50, 1, 500));
+                setLimit(normalizeLimit(e.target.value));
               }}
               className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm"
             >
-              {[25, 50, 100, 200, 300, 500].map((n) => (
+              {ALLOWED_LIMITS.map((n) => (
                 <option key={n} value={String(n)}>
                   {n}
                 </option>
@@ -530,52 +692,24 @@ export default function CompaniesClient() {
           </div>
 
           <div className="md:col-span-12">
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={includeClosed}
-                onChange={(e) => {
-                  setPage(1);
-                  setIncludeClosed(e.target.checked);
-                }}
-              />
-              <span>Inkluder stengte firma</span>
-            </label>
+            {view === "active" ? (
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={includeClosed}
+                  onChange={(e) => {
+                    setPage(1);
+                    setIncludeClosed(e.target.checked);
+                  }}
+                />
+                <span>Inkluder stengte firma</span>
+              </label>
+            ) : null}
 
             {isPending ? <span className="ml-3 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer…</span> : null}
           </div>
         </div>
 
-        {/* Stats row (hvis API leverer) */}
-        {stats ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {typeof stats.companiesTotal === "number" ? (
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-                Totalt: {stats.companiesTotal}
-              </span>
-            ) : null}
-            {typeof stats.companiesPending === "number" ? (
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-                Pending: {stats.companiesPending}
-              </span>
-            ) : null}
-            {typeof stats.companiesActive === "number" ? (
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-                Aktiv: {stats.companiesActive}
-              </span>
-            ) : null}
-            {typeof stats.companiesPaused === "number" ? (
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-                Paus: {stats.companiesPaused}
-              </span>
-            ) : null}
-            {typeof stats.companiesClosed === "number" ? (
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-                Stengt: {stats.companiesClosed}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
       </section>
 
       {/* Error */}
@@ -595,35 +729,65 @@ export default function CompaniesClient() {
         </section>
       ) : null}
 
+      {!err && !loading && typeof total === "number" && total === 0 ? (
+        <section className="mt-4 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">System truth</div>
+          <div className="mt-1 text-sm font-semibold text-[rgb(var(--lp-text))]">0 firma i kilde</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+            {systemTruth?.rid ? `rid: ${systemTruth.rid}` : "rid: (mangler)"}
+          </div>
+          <div className="mt-3 grid gap-2 text-xs text-[rgb(var(--lp-muted))] md:grid-cols-2">
+            <div>
+              <div className="font-semibold text-[rgb(var(--lp-text))]">Kilde</div>
+              <div>companies: {systemTruth?.source?.companies ?? "companies"}</div>
+              <div>profiles: {systemTruth?.source?.profiles ?? "profiles"}</div>
+              <div>agreement: {systemTruth?.source?.agreement ?? "company_current_agreement"}</div>
+            </div>
+            <div>
+              <div className="font-semibold text-[rgb(var(--lp-text))]">Filtre</div>
+              <div>q: {systemTruth?.filters?.q ?? "—"}</div>
+              <div>status: {systemTruth?.filters?.status ?? "all"}</div>
+              <div>includeClosed: {String(systemTruth?.filters?.includeClosed ?? false)}</div>
+              <div>sort: {systemTruth?.filters?.sort ?? "updated_at"} / {systemTruth?.filters?.dir ?? "desc"}</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
+            Vurdering: Ingen firma i databasen for valgt kilde og filter. Hvis du forventer data, er det sannsynlig feil
+            datakilde eller tomt miljø.
+          </div>
+        </section>
+      ) : null}
+
       {/* Status confirm modal */}
-      {confirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-xl ring-1 ring-neutral-200">
-            <div className="text-xs font-bold text-neutral-500">Bekreft</div>
-            <div className="mt-1 text-lg font-semibold text-neutral-950">Endre firmastatus</div>
+      {confirmOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4 backdrop-blur-sm">
+              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200 transition-[transform,opacity] duration-150 ease-out">
+                <div className="text-xs font-bold text-neutral-500">Bekreft</div>
+                <div className="mt-1 text-lg font-semibold text-neutral-950">Endre firmastatus</div>
 
-            <p className="mt-2 text-sm text-neutral-700">
-              Du er i ferd med å endre status for{" "}
-              <span className="font-semibold">{confirmPayload.current?.name ?? "firma"}</span> til{" "}
-              <span className="font-semibold">{statusLabel(confirmPayload.current?.next ?? "pending")}</span>.
-            </p>
+                <p className="mt-2 text-sm text-neutral-700">
+                  Du er i ferd med å endre status for{" "}
+                  <span className="font-semibold">{confirmPayload.current?.name ?? "firma"}</span> til{" "}
+                  <span className="font-semibold">{statusLabel(confirmPayload.current?.next ?? "pending")}</span>.
+                </p>
 
-            {statusErr ? (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
-                {statusErr}
-              </div>
-            ) : null}
+                {statusErr ? (
+                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
+                    {statusErr}
+                  </div>
+                ) : null}
 
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
-                className="rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+                className="rounded-full border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
                 onClick={closeConfirm}
                 disabled={!!statusBusyId}
               >
                 Avbryt
               </button>
               <button
-                className="rounded-2xl bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60"
+                className="rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60"
                 onClick={doChangeStatus}
                 disabled={!!statusBusyId}
               >
@@ -631,11 +795,95 @@ export default function CompaniesClient() {
               </button>
             </div>
           </div>
+        </div>,
+            document.body
+          )
+        : null}
+
+      {/* Detail drawer */}
+      {detailId ? (
+        <div className="fixed inset-0 z-40">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/20"
+            onClick={closeDetail}
+            aria-label="Lukk detaljer"
+          />
+          <div className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl ring-1 ring-neutral-200">
+            <div className="flex items-start justify-between border-b border-[rgb(var(--lp-border))] px-5 py-4">
+              <div>
+                <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Firma</div>
+                <div className="mt-1 text-lg font-semibold text-[rgb(var(--lp-text))]">
+                  {detail?.company?.name ?? "Laster..."}
+                </div>
+                {detailRid ? <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">rid: {detailRid}</div> : null}
+              </div>
+              <button className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50" onClick={closeDetail}>
+                Lukk
+              </button>
+            </div>
+
+            <div className="h-[calc(100%-64px)] overflow-y-auto px-5 py-4">
+                  {detailLoading ? (
+                    <div className="text-sm text-[rgb(var(--lp-muted))]">Laster detaljer...</div>
+                  ) : detailErr ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  <div className="font-semibold">Kunne ikke hente detaljer</div>
+                  <div className="mt-1 text-xs">
+                    {detailErr.message || "Ukjent feil."} {detailErr.rid ? `rid: ${detailErr.rid}` : ""}
+                  </div>
+                </div>
+              ) : detail ? (
+                <div className="space-y-4">
+                  <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Firma</div>
+                    <div className="mt-1 text-sm font-semibold text-[rgb(var(--lp-text))]">{detail.company.name}</div>
+                    <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                      Org.nr: {detail.company.orgnr ?? "—"} • Status: {statusLabel(normStatus(detail.company.status))}
+                    </div>
+                    <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">ID: {detail.company.id}</div>
+                  </section>
+
+                  <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Tellinger</div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                      <div className="rounded-2xl border bg-white px-3 py-2">
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte</div>
+                        <div className="text-base font-semibold">{detail.counts.employeesCount}</div>
+                      </div>
+                      <div className="rounded-2xl border bg-white px-3 py-2">
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">Company admins</div>
+                        <div className="text-base font-semibold">{detail.counts.adminsCount}</div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Avtale</div>
+                    {detail.agreement ? (
+                      <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">
+                        <div>Plan: {detail.agreement.planLabel ?? "—"}</div>
+                        <div>Plan-tier: {detail.agreement.planTier ?? "—"}</div>
+                        <div>Status: {detail.agreement.status ?? "—"}</div>
+                        <div>Start: {detail.agreement.startDate ?? "—"}</div>
+                        <div>Slutt: {detail.agreement.endDate ?? "—"}</div>
+                        <div>Sist oppdatert: {detail.agreement.updatedAt ?? "—"}</div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen aktiv avtale.</div>
+                    )}
+                  </section>
+                </div>
+              ) : (
+                <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen data.</div>
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
 
       {/* Table */}
-      <section className="mt-6 overflow-hidden rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
+      <section className="mt-6 rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
           <div className="text-sm font-semibold">Firma</div>
           <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og avtale.</div>
@@ -659,7 +907,7 @@ export default function CompaniesClient() {
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Plan</th>
                 <th className="px-5 py-3">Ansatte</th>
-                <th className="px-5 py-3">Sist endret</th>
+                <th className="px-5 py-3">{view === "archived" ? "Arkivert" : "Sist endret"}</th>
                 <th className="px-5 py-3 text-right">Handling</th>
               </tr>
             </thead>
@@ -686,58 +934,82 @@ export default function CompaniesClient() {
                     <tr
                       key={c.id}
                       className={[
-                        "border-b border-[rgb(var(--lp-border))] last:border-b-0",
+                        "border-b border-[rgb(var(--lp-border))] last:border-b-0 cursor-pointer",
                         idx % 2 === 0 ? "bg-white/30" : "bg-white/10",
                       ].join(" ")}
+                      onClick={() => openDetail(c)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openDetail(c);
+                        }
+                      }}
+                      aria-label={`Åpne ${c.name}`}
                     >
-                      <td className="px-5 py-4">
-                        <div className="font-medium">{c.name}</div>
-                        <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
-                      </td>
-                      <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", badgeClass(st)].join(" ")}>
-                          {statusLabel(st)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">{safeStr(c.plan) || "—"}</td>
-                      <td className="px-5 py-4">
-                        {Number.isFinite(Number(c.employees_count)) ? String(c.employees_count) : "—"}
-                      </td>
-                      <td className="px-5 py-4">{fmtTs(c.updated_at)}</td>
+                  <td className="px-5 py-4">
+                    <div className="font-medium">{c.name}</div>
+                    <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
+                  </td>
+                  <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
+                  <td className="px-5 py-4">
+                    <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", badgeClass(st)].join(" ")}>
+                      {statusLabel(st)}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">{safeStr(c.planLabel) || "—"}</td>
+                  <td className="px-5 py-4">
+                    {Number.isFinite(Number(c.employeesCount)) ? String(c.employeesCount) : "—"}
+                  </td>
+                      <td className="px-5 py-4">{fmtTs(view === "archived" ? c.archivedAt ?? c.updatedAt : c.updatedAt)}</td>
 
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={() => openConfirm(c, "active")}
-                            title="Sett firma aktivt"
-                          >
-                            Aktivér
-                          </button>
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={() => openConfirm(c, "paused")}
-                            title="Sett firma på pause"
-                          >
-                            Pause
-                          </button>
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={() => openConfirm(c, "closed")}
-                            title="Steng firma"
-                          >
-                            Steng
-                          </button>
+                          {view === "active" ? (
+                            <>
+                              <button
+                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                                disabled={busy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openConfirm(c, "active");
+                                }}
+                                title="Sett firma aktivt"
+                              >
+                                Aktivér
+                              </button>
+                              <button
+                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                                disabled={busy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openConfirm(c, "paused");
+                                }}
+                                title="Sett firma på pause"
+                              >
+                                Pause
+                              </button>
+                              <button
+                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                                disabled={busy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openConfirm(c, "closed");
+                                }}
+                                title="Steng firma"
+                              >
+                                Steng
+                              </button>
+                            </>
+                          ) : null}
 
                           <Link
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-                            href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
+                            href={`/superadmin/companies/${c.id}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            Åpne →
+                            Åpne
                           </Link>
                         </div>
                       </td>
@@ -759,7 +1031,7 @@ export default function CompaniesClient() {
               disabled={!canPrev || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              ← Forrige
+              Forrige
             </button>
 
             <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
@@ -772,11 +1044,20 @@ export default function CompaniesClient() {
               disabled={!canNext || loading}
               onClick={() => setPage((p) => p + 1)}
             >
-              Neste →
+              Neste
             </button>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
+
+
+
+
+
+
+
+
+

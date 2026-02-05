@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { redirect } from "next/navigation";
-import SystemClient from "./system-client";
+import SystemClient from "./SystemClient";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export default async function SuperadminSystemPage() {

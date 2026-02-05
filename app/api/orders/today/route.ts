@@ -11,11 +11,14 @@ import { osloNowISO, osloTodayISODate, cutoffStatusForDate } from "@/lib/date/os
 import { orderBase, receiptFor } from "@/lib/api/orderResponse";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
-import { jsonOk } from "@/lib/http/respond";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
+import { auditSafe } from "@/lib/ops/auditSafe";
+import { sendOrderBackup } from "@/lib/orders/orderBackup";
+import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
 
 type Action = "place" | "cancel";
 
@@ -54,9 +57,13 @@ function lockedStateForDate(dateISO: string): { locked: boolean; cutoffTime: str
   return { locked: false, cutoffTime: "08:00", lockCode: null };
 }
 
-function jsonOrder(status: number, body: any) {
-  // jsonOk gir no-store + json; vi bruker den konsekvent også for ok:false bodies
-  return jsonOk(body, status);
+function jsonOrder(ctx: { rid: string }, status: number, body: any) {
+  if (body?.ok === false) {
+    const error = String(body?.error ?? "ERROR");
+    const message = String(body?.message ?? "Ukjent feil.");
+    return jsonErr(ctx.rid, message, status, error);
+  }
+  return jsonOk(ctx.rid, body, status);
 }
 
 /* =========================================================
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
   const location_id = String(scope.locationId ?? "").trim();
 
   if (!user_id || !company_id) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       409,
       orderBase({
         ok: false,
@@ -101,7 +108,7 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!location_id) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       409,
       orderBase({
         ok: false,
@@ -125,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     const action = body?.action;
     if (action !== "place" && action !== "cancel") {
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         400,
         orderBase({
           ok: false,
@@ -144,73 +151,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const lock = lockedStateForDate(today);
-    if (lock.locked) {
-      // MUST audit: cutoff block
-      try {
-        await auditWriteMust({
-          rid,
-          action: "ENFORCEMENT_BLOCK",
-          entity_type: "order",
-          entity_id: `${company_id}:${location_id}:${user_id}:${today}`,
-          company_id,
-          location_id,
-          actor_user_id: user_id,
-          actor_email: scope.email ?? null,
-          actor_role: scope.role ?? null,
-          summary: lock.lockCode ?? "LOCKED",
-          detail: {
-            route: "/api/orders/today",
-            reason: lock.lockCode,
-            message: "Bestilling/avbestilling er låst etter 08:00.",
-            intent: action.toUpperCase(),
-            date: today,
-            cutoffTime: lock.cutoffTime,
-          },
-        });
-      } catch (e: any) {
-        return jsonOrder(
-          500,
-          orderBase({
-            ok: false,
-            rid,
-            date: today,
-            locked: true,
-            cutoffTime: lock.cutoffTime,
-            menuAvailable: true,
-            canAct: false,
-            error: "AUDIT_INSERT_FAILED",
-            message: "Kunne ikke logge enforcement-block. Avbryter for å bevare fasit.",
-            detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
-            receipt: null,
-            order: null,
-          } as any)
-        );
-      }
-
-      return jsonOrder(
-        409,
-        orderBase({
-          ok: false,
-          rid,
-          date: today,
-          locked: true,
-          cutoffTime: lock.cutoffTime,
-          menuAvailable: true,
-          canAct: false,
-          error: lock.lockCode ?? "LOCKED",
-          message: "Bestilling/avbestilling er låst etter 08:00.",
-          detail: null,
-          receipt: null,
-          order: null,
-        } as any)
-      );
-    }
-
-    // Company status (service role) – fail-closed
     const admin = await adminClientOrNull();
     if (!admin) {
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         500,
         orderBase({
           ok: false,
@@ -231,7 +174,7 @@ export async function POST(req: NextRequest) {
 
     const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
     if (cRes.error || !cRes.data) {
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         500,
         orderBase({
           ok: false,
@@ -255,8 +198,7 @@ export async function POST(req: NextRequest) {
       const reason =
         companyStatus === "PAUSED" ? "COMPANY_PAUSED" : companyStatus === "CLOSED" ? "COMPANY_CLOSED" : "COMPANY_NOT_ACTIVE";
 
-      // MUST audit: company lifecycle block
-      try {
+      await auditSafe(async () => {
         await auditWriteMust({
           rid,
           action: "ENFORCEMENT_BLOCK",
@@ -277,27 +219,9 @@ export async function POST(req: NextRequest) {
             company_status: companyStatus,
           },
         });
-      } catch (e: any) {
-        return jsonOrder(
-          500,
-          orderBase({
-            ok: false,
-            rid,
-            date: today,
-            locked: false,
-            cutoffTime: "08:00",
-            menuAvailable: true,
-            canAct: false,
-            error: "AUDIT_INSERT_FAILED",
-            message: "Kunne ikke logge enforcement-block. Avbryter for å bevare fasit.",
-            detail: { audit_error: String(e?.message ?? e ?? "Unknown audit error") },
-            receipt: null,
-            order: null,
-          } as any)
-        );
-      }
+      }, rid);
 
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         403,
         orderBase({
           ok: false,
@@ -310,6 +234,50 @@ export async function POST(req: NextRequest) {
           error: reason,
           message: "Firmaet er deaktivert.",
           detail: { company_status: companyStatus },
+          receipt: null,
+          order: null,
+        } as any)
+      );
+    }
+
+    const lock = lockedStateForDate(today);
+    if (lock.locked) {
+      await auditSafe(async () => {
+        await auditWriteMust({
+          rid,
+          action: "ENFORCEMENT_BLOCK",
+          entity_type: "order",
+          entity_id: `${company_id}:${location_id}:${user_id}:${today}`,
+          company_id,
+          location_id,
+          actor_user_id: user_id,
+          actor_email: scope.email ?? null,
+          actor_role: scope.role ?? null,
+          summary: lock.lockCode ?? "LOCKED",
+          detail: {
+            route: "/api/orders/today",
+            reason: lock.lockCode,
+            message: "Bestilling/avbestilling er låst etter 08:00.",
+            intent: action.toUpperCase(),
+            date: today,
+            cutoffTime: lock.cutoffTime,
+          },
+        });
+      }, rid);
+
+      return jsonOrder(a.ctx,
+        409,
+        orderBase({
+          ok: false,
+          rid,
+          date: today,
+          locked: true,
+          cutoffTime: lock.cutoffTime,
+          menuAvailable: true,
+          canAct: false,
+          error: lock.lockCode ?? "LOCKED",
+          message: "Bestilling/avbestilling er låst etter 08:00.",
+          detail: null,
           receipt: null,
           order: null,
         } as any)
@@ -338,7 +306,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (uErr || !upserted) {
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         500,
         orderBase({
           ok: false,
@@ -357,7 +325,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return jsonOrder(
+    const backupTs = osloNowISO();
+    try {
+      const names = admin
+        ? await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id })
+        : { company_name: null, location_name: null };
+      await sendOrderBackup({
+        rid,
+        action: action === "place" ? "PLACE" : "CANCEL",
+        status: nextStatus,
+        orderId: upserted.id,
+        date: upserted.date,
+        slot: "lunch",
+        user_id,
+        company_id,
+        location_id,
+        company_name: names.company_name ?? null,
+        location_name: names.location_name ?? null,
+        actor_email: scope.email ?? null,
+        actor_role: scope.role ?? null,
+        note: upserted.note ?? null,
+        timestamp_oslo: backupTs,
+        extra: { route: "/api/orders/today" },
+      });
+    } catch {
+      // best effort
+    }
+
+    return jsonOrder(a.ctx,
       200,
       orderBase({
         ok: true,
@@ -374,7 +369,7 @@ export async function POST(req: NextRequest) {
       } as any)
     );
   } catch (e: any) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       500,
       orderBase({
         ok: false,
@@ -419,7 +414,7 @@ export async function GET(req: NextRequest) {
   const lock = lockedStateForDate(today);
 
   if (!user_id || !company_id) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       409,
       orderBase({
         ok: false,
@@ -438,7 +433,7 @@ export async function GET(req: NextRequest) {
     );
   }
   if (!location_id) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       409,
       orderBase({
         ok: false,
@@ -470,7 +465,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (oErr) {
-      return jsonOrder(
+      return jsonOrder(a.ctx,
         500,
         orderBase({
           ok: false,
@@ -489,7 +484,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       200,
       orderBase({
         ok: true,
@@ -506,7 +501,7 @@ export async function GET(req: NextRequest) {
       } as any)
     );
   } catch (e: any) {
-    return jsonOrder(
+    return jsonOrder(a.ctx,
       500,
       orderBase({
         ok: false,
@@ -525,4 +520,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
 

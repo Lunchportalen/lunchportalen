@@ -13,10 +13,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import crypto from "crypto";
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function safeText(v: any) {
@@ -56,9 +57,8 @@ async function waitForProfile(admin: ReturnType<typeof import("@/lib/supabase/ad
 }
 
 export async function POST(req: Request) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `acc_inv_${Math.random().toString(16).slice(2)}`;
+  const rid = makeRid();
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -68,9 +68,9 @@ export async function POST(req: Request) {
     const password = String(body?.password ?? "");
     const password2 = String(body?.password2 ?? "");
 
-    if (!token) return jsonError(400, "bad_request", "Mangler token.", { rid });
-    if (!password || password.length < 10) return jsonError(400, "bad_request", "Passord må være minst 10 tegn.", { rid });
-    if (password2 && password !== password2) return jsonError(400, "bad_request", "Passordene er ikke like.", { rid });
+    if (!token) return jsonError(rid, 400, "bad_request", "Mangler token.");
+    if (!password || password.length < 10) return jsonError(rid, 400, "bad_request", "Passord må være minst 10 tegn.");
+    if (password2 && password !== password2) return jsonError(rid, 400, "bad_request", "Passordene er ikke like.");
 
     const admin = supabaseAdmin();
     const token_hash = sha256Hex(token);
@@ -83,18 +83,18 @@ export async function POST(req: Request) {
       .is("used_at", null)
       .maybeSingle();
 
-    if (invErr) return jsonError(500, "db_error", "Kunne ikke lese invitasjon.", { rid, invErr });
-    if (!invite) return jsonError(400, "invite_invalid", "Ugyldig eller utløpt invitasjon.", { rid });
+    if (invErr) return jsonError(rid, 500, "db_error", "Kunne ikke lese invitasjon.", invErr);
+    if (!invite) return jsonError(rid, 400, "invite_invalid", "Ugyldig eller utløpt invitasjon.");
 
     if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
-      return jsonError(400, "invite_expired", "Invitasjonen er utløpt.", { rid });
+      return jsonError(rid, 400, "invite_expired", "Invitasjonen er utløpt.");
     }
 
     const email = normEmail(invite.email);
-    if (!email || !isEmail(email)) return jsonError(500, "invite_corrupt", "Invitasjonen mangler gyldig e-post.", { rid });
+    if (!email || !isEmail(email)) return jsonError(rid, 500, "invite_corrupt", "Invitasjonen mangler gyldig e-post.");
 
     const company_id = invite.company_id ? String(invite.company_id) : "";
-    if (!company_id) return jsonError(500, "invite_corrupt", "Invitasjonen mangler company_id.", { rid });
+    if (!company_id) return jsonError(rid, 500, "invite_corrupt", "Invitasjonen mangler company_id.");
 
     const location_id = invite.location_id ? String(invite.location_id) : null;
     const department = invite.department ?? null;
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
 
     if (createRes.error) {
       userId = await findUserIdByEmail(admin, email);
-      if (!userId) return jsonError(500, "auth_error", "Kunne ikke opprette/finne bruker.", { rid, detail: createRes.error.message });
+      if (!userId) return jsonError(rid, 500, "auth_error", "Kunne ikke opprette/finne bruker.", createRes.error.message);
 
       const upd = await admin.auth.admin.updateUserById(userId, {
         password,
@@ -138,40 +138,28 @@ export async function POST(req: Request) {
         },
       });
 
-      if (upd.error) return jsonError(500, "auth_error", "Kunne ikke oppdatere bruker.", { rid, detail: upd.error.message });
+      if (upd.error) return jsonError(rid, 500, "auth_error", "Kunne ikke oppdatere bruker.", upd.error.message);
     } else {
       userId = createRes.data.user?.id ? String(createRes.data.user.id) : null;
     }
 
-    if (!userId) return jsonError(500, "auth_error", "Uventet: mangler userId.", { rid });
+    if (!userId) return jsonError(rid, 500, "auth_error", "Uventet: mangler userId.");
 
     // 3) Vent til profiles finnes (DB-trigger på auth.users)
     const profile = await waitForProfile(admin, userId);
     if (!profile) {
-      return jsonError(
-        500,
-        "profile_not_created",
-        "Profil ble ikke opprettet automatisk. Sjekk DB-trigger på auth.users → public.profiles.",
-        { rid, userId }
-      );
+      return jsonError(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk. Sjekk DB-trigger på auth.users → public.profiles.", { userId });
     }
 
     // 4) Sikkerhet: company_id må være satt av trigger, og matche invitasjonen
     if (!profile.company_id) {
-      return jsonError(
-        500,
-        "profile_not_bound",
-        "Profil ble opprettet, men er ikke knyttet til firma. Trigger må sette profiles.company_id ved INSERT.",
-        { rid, userId }
-      );
+      return jsonError(rid, 500, "profile_not_bound", "Profil ble opprettet, men er ikke knyttet til firma. Trigger må sette profiles.company_id ved INSERT.", { userId });
     }
     if (String(profile.company_id) !== company_id) {
-      return jsonError(
-        409,
-        "company_mismatch",
-        "Kontoen finnes allerede og er knyttet til et annet firma. Kontakt superadmin.",
-        { rid, existingCompany: profile.company_id, inviteCompany: company_id }
-      );
+      return jsonError(rid, 409, "company_mismatch", "Kontoen finnes allerede og er knyttet til et annet firma. Kontakt superadmin.", {
+        existingCompany: profile.company_id,
+        inviteCompany: company_id,
+      });
     }
 
     // 5) Oppdater kun trygge felter (IKKE company_id)
@@ -190,7 +178,7 @@ export async function POST(req: Request) {
       })
       .eq("id", userId);
 
-    if (profUpd.error) return jsonError(500, "db_error", "Kunne ikke oppdatere profil.", { rid, profUpd: profUpd.error });
+    if (profUpd.error) return jsonError(rid, 500, "db_error", "Kunne ikke oppdatere profil.", profUpd.error);
 
     // 6) Marker invitasjon brukt
     const { error: useErr } = await admin
@@ -199,13 +187,11 @@ export async function POST(req: Request) {
       .eq("id", invite.id)
       .is("used_at", null);
 
-    if (useErr) return jsonError(500, "db_error", "Kunne ikke markere invitasjon brukt.", { rid, useErr });
+    if (useErr) return jsonError(rid, 500, "db_error", "Kunne ikke markere invitasjon brukt.", useErr);
 
-    return NextResponse.json({ ok: true, rid, email }, { status: 200 });
+    return jsonOk(rid, { ok: true, rid, email }, 200);
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil.", { rid, message: String(e?.message ?? e) });
+    return jsonError(rid, 500, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
   }
 }
-
-
 

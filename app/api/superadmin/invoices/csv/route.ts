@@ -8,20 +8,20 @@ import { NextResponse } from "next/server";
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
 import { toCsv, type InvoiceRow } from "@/lib/billing/csv";
 import { safeTier, unitPriceNOK, type PlanTier } from "@/lib/billing/pricing";
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, makeRid } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
 
-function csvResponse(csv: string, filename: string) {
+function csvResponse(csv: string, filename: string, rid: string) {
   return new NextResponse(csv, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
+      ...noStoreHeaders(),
+      "x-lp-rid": rid,
     },
   });
-}
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 type Agreement = {
@@ -51,25 +51,18 @@ async function adminClient(): Promise<any> {
   return typeof s === "function" ? await s() : s;
 }
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
-}
-
 export async function GET(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   // cookie-auth: må være innlogget
   const supabase = await supabaseServer();
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   const user = auth?.user ?? null;
 
-  if (authErr || !user) return jsonError(401, "unauthorized", "Ikke innlogget");
+  if (authErr || !user) return jsonErr(rid, "Ikke innlogget", 401, "unauthorized");
 
   // ✅ Hard superadmin gate (ikke metadata)
-  if (!isHardSuperadmin(user.email)) return jsonError(403, "forbidden", "Ingen tilgang");
+  if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ingen tilgang", 403, "forbidden");
 
   // (valgfritt ekstra-lag): hvis dere senere vil sjekke profiles.role, gjør det her.
 
@@ -82,7 +75,7 @@ export async function GET(req: Request) {
   const from = isIsoDate(qFrom) ? qFrom! : def.from;
   const to = isIsoDate(qTo) ? qTo! : def.to;
 
-  if (from >= to) return jsonError(400, "bad_range", "Ugyldig periode", { from, to });
+  if (from >= to) return jsonErr(rid, "Ugyldig periode", 400, { code: "bad_range", detail: { from, to } });
 
   // ✅ Service role (RLS skal ikke stoppe fakturagrunnlag)
   const admin = await adminClient();
@@ -90,18 +83,18 @@ export async function GET(req: Request) {
   // companies
   const cQ = admin.from("companies").select("id,name");
   const cRes = companyId ? await cQ.eq("id", companyId) : await cQ;
-  if (cRes.error) return jsonError(500, "db_error", "Kunne ikke hente firma", cRes.error);
+  if (cRes.error) return jsonErr(rid, "Kunne ikke hente firma", 500, { code: "db_error", detail: cRes.error });
 
   const companies = cRes.data ?? [];
   const companyNameById = new Map<string, string>();
   for (const c of companies) companyNameById.set(c.id, String((c as any).name ?? "—"));
 
   const companyIds = companies.map((c: any) => c.id);
-  if (!companyIds.length) return csvResponse(toCsv([]), `invoice_ALL_${from}_to_${to}.csv`);
+  if (!companyIds.length) return csvResponse(toCsv([]), `invoice_ALL_${from}_to_${to}.csv`, rid);
 
   // locations
   const locRes = await admin.from("company_locations").select("id,name,company_id").in("company_id", companyIds);
-  if (locRes.error) return jsonError(500, "db_error", "Kunne ikke hente lokasjoner", locRes.error);
+  if (locRes.error) return jsonErr(rid, "Kunne ikke hente lokasjoner", 500, { code: "db_error", detail: locRes.error });
 
   const locName = new Map<string, string>();
   for (const l of locRes.data ?? []) locName.set(l.id, String((l as any).name ?? ""));
@@ -113,7 +106,7 @@ export async function GET(req: Request) {
     .in("company_id", companyIds)
     .order("start_date", { ascending: false });
 
-  if (agRes.error) return jsonError(500, "db_error", "Kunne ikke hente avtaler", agRes.error);
+  if (agRes.error) return jsonErr(rid, "Kunne ikke hente avtaler", 500, { code: "db_error", detail: agRes.error });
 
   const agreementsByCompany = new Map<string, Agreement[]>();
   for (const a of agRes.data ?? []) {
@@ -139,7 +132,7 @@ export async function GET(req: Request) {
     .eq("status", "ACTIVE");
 
   const oRes = await oQ;
-  if (oRes.error) return jsonError(500, "db_error", "Kunne ikke hente ordre", oRes.error);
+  if (oRes.error) return jsonErr(rid, "Kunne ikke hente ordre", 500, { code: "db_error", detail: oRes.error });
 
   // group: company + date + location + slot + tier
   const buckets = new Map<
@@ -182,6 +175,5 @@ export async function GET(req: Request) {
 
   const csv = toCsv(rows);
   const name = companyId ? `invoice_${companyId}_${from}_to_${to}.csv` : `invoice_ALL_${from}_to_${to}.csv`;
-  return csvResponse(csv, name);
+  return csvResponse(csv, name, rid);
 }
-

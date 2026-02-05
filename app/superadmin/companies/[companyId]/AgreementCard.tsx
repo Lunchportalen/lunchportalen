@@ -78,7 +78,7 @@ export default function AgreementCard({ companyId, initialTier, initialAgreement
 
       <div className="mt-4">
         <button onClick={save} disabled={pending} className="rounded-xl bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-60">
-          {pending ? "Lagrer…" : "Lagre avtale"}
+          {pending ? "Lagrerâ¦" : "Lagre avtale"}
         </button>
       </div>
     </div>

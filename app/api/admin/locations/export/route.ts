@@ -39,32 +39,19 @@ export async function GET(req: NextRequest) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Roles: superadmin OR company_admin (NY SIGNATUR)
   const denyRole = requireRoleOr403(ctx, "admin.locations.export", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
 
-  // 3) company scope:
-  // - company_admin: låst til egen companyId
-  // - superadmin: kan eksportere alle eller filtrere på ?company_id=
-  const url = new URL(req.url);
-  const requestedCompanyId = safeStr(url.searchParams.get("company_id")) || null;
+  // 3) company scope (låst for alle roller)
+  const denyScope = requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
 
-  const role = safeStr(ctx.scope.role);
-  const ctxCompanyId = safeStr(ctx.scope.companyId);
-
-  let companyId: string | null = null;
-
-  if (role === "superadmin") {
-    companyId = requestedCompanyId || null; // null => alle
-  } else {
-    const denyScope = requireCompanyScopeOr403(ctx);
-    if (denyScope) return denyScope;
-    companyId = ctxCompanyId || null;
-    if (!companyId) return jsonErr(ctx, "missing_company", "Mangler company_id i scope.");
-  }
+  const companyId = safeStr(ctx.scope.companyId) || null;
+  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const admin = supabaseAdmin();
@@ -78,17 +65,17 @@ export async function GET(req: NextRequest) {
       .order("name", { ascending: true })
       .limit(10000);
 
-    if (companyId) q = q.eq("company_id", companyId);
+    q = q.eq("company_id", companyId);
 
     const { data: rows, error } = await q;
 
     if (error) {
-      return jsonErr(ctx, "locations_export_failed", "Databasefeil.", {
+      return jsonErr(ctx.rid, "Databasefeil.", 400, { code: "locations_export_failed", detail: {
         code: (error as any).code ?? null,
         message: (error as any).message ?? String(error),
         detail: (error as any).details ?? null,
         hint: (error as any).hint ?? null,
-      });
+      } });
     }
 
     const header = [
@@ -129,12 +116,10 @@ export async function GET(req: NextRequest) {
     }
 
     const csv = lines.join("\n");
-    const filename = `locations${companyId ? `_company_${companyId}` : ""}.csv`;
+    const filename = `locations_company_${companyId}.csv`;
 
     return csvResponse(csv, filename, ctx.rid);
   } catch (e: any) {
-    return jsonErr(ctx, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(ctx.rid, "Uventet feil.", 400, { code: "server_error", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

@@ -72,6 +72,8 @@ export default function OnboardingForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedCreditConsent, setAcceptedCreditConsent] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     companyName: "",
@@ -272,6 +274,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.companyName}
                   onChange={(e) => set("companyName", e.target.value)}
+                  autoComplete="organization"
                   required
                 />
               </label>
@@ -282,6 +285,8 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.orgnr}
                   onChange={(e) => set("orgnr", e.target.value)}
+                  inputMode="numeric"
+                  autoComplete="off"
                   required
                 />
               </label>
@@ -292,7 +297,11 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.employeesCount}
                   onChange={(e) => set("employeesCount", e.target.value)}
+                  type="number"
                   inputMode="numeric"
+                  min={20}
+                  step={1}
+                  autoComplete="off"
                   placeholder="Minst 20"
                   required
                 />
@@ -311,6 +320,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.adminName}
                   onChange={(e) => set("adminName", e.target.value)}
+                  autoComplete="name"
                   required
                 />
               </label>
@@ -322,6 +332,8 @@ export default function OnboardingForm() {
                   value={form.adminEmail}
                   onChange={(e) => set("adminEmail", e.target.value)}
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   required
                 />
               </label>
@@ -332,33 +344,58 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.adminPhone}
                   onChange={(e) => set("adminPhone", e.target.value)}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   required
                 />
               </label>
 
               <label className="grid gap-1 md:col-span-2">
                 <span className="text-sm text-slate-600">Passord *</span>
-                <input
-                  className="rounded-xl border p-3"
-                  value={form.password}
-                  onChange={(e) => set("password", e.target.value)}
-                  type="password"
-                  minLength={8}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    className="w-full rounded-xl border p-3 pr-12"
+                    value={form.password}
+                    onChange={(e) => set("password", e.target.value)}
+                    type={showPassword ? "text" : "password"}
+                    minLength={8}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? "Skjul" : "Vis"}
+                  </button>
+                </div>
                 <span className="text-xs text-slate-500">Minimum 8 tegn.</span>
               </label>
 
               <label className="grid gap-1 md:col-span-2">
                 <span className="text-sm text-slate-600">Bekreft passord *</span>
-                <input
-                  className="rounded-xl border p-3"
-                  value={form.passwordConfirm}
-                  onChange={(e) => set("passwordConfirm", e.target.value)}
-                  type="password"
-                  minLength={8}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    className="w-full rounded-xl border p-3 pr-12"
+                    value={form.passwordConfirm}
+                    onChange={(e) => set("passwordConfirm", e.target.value)}
+                    type={showPasswordConfirm ? "text" : "password"}
+                    minLength={8}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    onClick={() => setShowPasswordConfirm((v) => !v)}
+                    aria-pressed={showPasswordConfirm}
+                  >
+                    {showPasswordConfirm ? "Skjul" : "Vis"}
+                  </button>
+                </div>
                 <span className="text-xs text-slate-500">Må være identisk med passordet.</span>
               </label>
             </div>
@@ -376,6 +413,7 @@ export default function OnboardingForm() {
                   value={form.deliveryWhere}
                   onChange={(e) => set("deliveryWhere", e.target.value)}
                   placeholder="F.eks. resepsjon, varemottak, bakinngang, etasje"
+                  autoComplete="off"
                   required
                 />
               </label>
@@ -387,6 +425,7 @@ export default function OnboardingForm() {
                   value={form.deliveryWhenNote}
                   onChange={(e) => set("deliveryWhenNote", e.target.value)}
                   placeholder="F.eks. ring ved ankomst, bruk porttelefon, kontakt resepsjon"
+                  autoComplete="off"
                   required
                 />
               </label>
@@ -397,6 +436,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.deliveryContactName}
                   onChange={(e) => set("deliveryContactName", e.target.value)}
+                  autoComplete="name"
                   required
                 />
               </label>
@@ -407,6 +447,9 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.deliveryContactPhone}
                   onChange={(e) => set("deliveryContactPhone", e.target.value)}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   required
                 />
               </label>
@@ -417,6 +460,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.locationName}
                   onChange={(e) => set("locationName", e.target.value)}
+                  autoComplete="organization"
                   required
                 />
               </label>
@@ -427,6 +471,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.address}
                   onChange={(e) => set("address", e.target.value)}
+                  autoComplete="street-address"
                   required
                 />
               </label>
@@ -437,6 +482,8 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.postalCode}
                   onChange={(e) => set("postalCode", e.target.value)}
+                  inputMode="numeric"
+                  autoComplete="postal-code"
                   required
                 />
               </label>
@@ -447,6 +494,7 @@ export default function OnboardingForm() {
                   className="rounded-xl border p-3"
                   value={form.city}
                   onChange={(e) => set("city", e.target.value)}
+                  autoComplete="address-level2"
                   required
                 />
               </label>
@@ -460,7 +508,9 @@ export default function OnboardingForm() {
                     onChange={(e) =>
                       set("deliveryWindow", { ...form.deliveryWindow, from: e.target.value })
                     }
+                    type="time"
                     placeholder="08:30"
+                    autoComplete="off"
                     required
                   />
                 </label>
@@ -473,7 +523,9 @@ export default function OnboardingForm() {
                     onChange={(e) =>
                       set("deliveryWindow", { ...form.deliveryWindow, to: e.target.value })
                     }
+                    type="time"
                     placeholder="10:00"
+                    autoComplete="off"
                     required
                   />
                 </label>
@@ -495,9 +547,10 @@ export default function OnboardingForm() {
                 return (
                   <div key={d} className="rounded-2xl border p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <label className="flex items-center gap-2">
+                      <label className="flex min-h-[44px] items-center gap-3">
                         <input
                           type="checkbox"
+                          className="h-5 w-5"
                           checked={dp.enabled}
                           onChange={(e) => setDay(d, { enabled: e.target.checked })}
                         />
@@ -509,7 +562,7 @@ export default function OnboardingForm() {
                           type="button"
                           disabled={!dp.enabled}
                           onClick={() => setDay(d, { tier: "BASIS", priceExVat: 90 })}
-                          className={`rounded-xl border px-3 py-2 text-sm disabled:opacity-50 ${
+                          className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-sm disabled:opacity-50 ${
                             dp.tier === "BASIS" ? "bg-black text-white" : "bg-white"
                           }`}
                         >
@@ -519,20 +572,21 @@ export default function OnboardingForm() {
                           type="button"
                           disabled={!dp.enabled}
                           onClick={() => setDay(d, { tier: "LUXUS", priceExVat: 130 })}
-                          className={`rounded-xl border px-3 py-2 text-sm disabled:opacity-50 ${
+                          className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-sm disabled:opacity-50 ${
                             dp.tier === "LUXUS" ? "bg-black text-white" : "bg-white"
                           }`}
                         >
                           Luxus
                         </button>
 
-                        <label className="ml-2 flex items-center gap-2 text-sm">
+                        <label className="ml-2 flex min-h-[44px] items-center gap-2 text-sm">
                           <span className="text-slate-600">Pris *</span>
                           <input
                             disabled={!dp.enabled}
                             className="w-28 rounded-xl border p-2 disabled:opacity-50"
                             type="number"
                             min={1}
+                            inputMode="numeric"
                             value={dp.priceExVat}
                             onChange={(e) => setDay(d, { priceExVat: Number(e.target.value || 0) })}
                           />
@@ -548,20 +602,30 @@ export default function OnboardingForm() {
 
           {/* TERMS + CREDIT CONSENT */}
           <section className="grid gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} />
+            <label className="flex min-h-[44px] items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="h-5 w-5"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+              />
               <span>
                 Jeg har lest og aksepterer{" "}
-                <button type="button" className="underline opacity-90" onClick={() => setShowTermsModal(true)}>
+                <button
+                  type="button"
+                  className="min-h-[44px] underline opacity-90"
+                  onClick={() => setShowTermsModal(true)}
+                >
                   avtalevilkårene
                 </button>{" "}
                 *
               </span>
             </label>
 
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-[44px] items-center gap-3 text-sm">
               <input
                 type="checkbox"
+                className="h-5 w-5"
                 checked={acceptedCreditConsent}
                 onChange={(e) => setAcceptedCreditConsent(e.target.checked)}
               />
@@ -574,12 +638,15 @@ export default function OnboardingForm() {
             </p>
           </section>
 
-          <div className="flex items-center justify-between gap-3">
-            <button disabled={loading} className="rounded-xl bg-black px-5 py-3 text-white disabled:opacity-60">
+          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+            <button
+              disabled={loading}
+              className="min-h-[48px] rounded-xl bg-black px-5 py-3 text-white disabled:opacity-60"
+            >
               {loading ? "Registrerer..." : "Opprett firmakonto"}
             </button>
 
-            <a className="text-sm underline opacity-80" href="/login">
+            <a className="min-h-[44px] text-sm underline opacity-80" href="/login">
               Har du konto? Logg inn
             </a>
           </div>
@@ -589,7 +656,7 @@ export default function OnboardingForm() {
       {/* Terms Modal */}
       {showTermsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
             <div className="flex items-start justify-between gap-4 border-b p-5">
               <div>
                 <h2 className="text-lg font-semibold">Avtalevilkår</h2>
@@ -597,7 +664,11 @@ export default function OnboardingForm() {
                   Versjon: <strong>{TERMS_VERSION}</strong> • Sist oppdatert: <strong>{TERMS_UPDATED_AT}</strong>
                 </p>
               </div>
-              <button type="button" className="rounded-xl border px-3 py-2 text-sm" onClick={() => setShowTermsModal(false)}>
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border px-4 py-2 text-sm"
+                onClick={() => setShowTermsModal(false)}
+              >
                 Lukk
               </button>
             </div>
@@ -628,7 +699,7 @@ export default function OnboardingForm() {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
-                  className="rounded-xl border px-4 py-2 text-sm"
+                  className="min-h-[44px] rounded-xl border px-4 py-2 text-sm"
                   href={`/api/onboarding/terms-pdf?version=${encodeURIComponent(TERMS_VERSION)}`}
                   target="_blank"
                   rel="noreferrer"
@@ -636,7 +707,11 @@ export default function OnboardingForm() {
                   Åpne PDF-versjon
                 </a>
 
-                <button type="button" className="rounded-xl bg-black px-4 py-2 text-sm text-white" onClick={() => setShowTermsModal(false)}>
+                <button
+                  type="button"
+                  className="min-h-[44px] rounded-xl bg-black px-4 py-2 text-sm text-white"
+                  onClick={() => setShowTermsModal(false)}
+                >
                   Jeg forstår
                 </button>
               </div>
@@ -651,3 +726,6 @@ export default function OnboardingForm() {
     </>
   );
 }
+
+
+

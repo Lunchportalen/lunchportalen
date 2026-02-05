@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { formatDateTimeSecondsNO } from "@/lib/date/format";
 
 type Severity = "info" | "warning" | "critical";
 
@@ -36,18 +37,7 @@ function cx(...c: Array<string | false | null | undefined>) {
 }
 
 function fmtTs(ts: string) {
-  try {
-    return new Date(ts).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return ts;
-  }
+  return formatDateTimeSecondsNO(ts);
 }
 
 function badgeForSeverity(s: Severity) {
@@ -224,7 +214,7 @@ export function AuditClient() {
         </div>
       ) : null}
 
-      <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="mt-4 rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-white">

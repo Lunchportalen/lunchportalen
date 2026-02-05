@@ -4,20 +4,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function json(status: number, body: any) {
-  return NextResponse.json(body, { status });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export async function POST(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   // Krev innlogget bruker
   const { data: u, error: uErr } = await supabase.auth.getUser();
-  if (uErr || !u.user) return json(401, { ok: false, error: "not_authenticated" });
+  if (uErr || !u.user) return jsonErr(rid, "Ikke innlogget.", 401, "not_authenticated");
 
   // Body
   const body = await req.json().catch(() => null);
@@ -25,10 +21,10 @@ export async function POST(req: Request) {
   const status = String(body?.status ?? "canceled"); // "active" | "canceled"
 
   if (!/^[0-9a-fA-F-]{36}$/.test(orderId)) {
-    return json(400, { ok: false, error: "bad_order_id" });
+    return jsonErr(rid, "Ugyldig orderId.", 400, "bad_order_id");
   }
   if (!["active", "canceled"].includes(status)) {
-    return json(400, { ok: false, error: "bad_status" });
+    return jsonErr(rid, "Ugyldig status.", 400, "bad_status");
   }
 
   // Kall RPC (auth.uid() fungerer her)
@@ -37,9 +33,8 @@ export async function POST(req: Request) {
     p_status: status,
   });
 
-  if (error) return json(500, { ok: false, error: error.message, detail: error });
-  return json(200, { ok: true, result: data });
+  if (error) return jsonErr(rid, "Kunne ikke oppdatere ordrestatus.", 500, { code: "db_error", detail: { message: error.message, detail: error } });
+  return jsonOk(rid, { ok: true, result: data }, 200);
 }
-
 
 

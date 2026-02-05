@@ -3,20 +3,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 function ridFrom(req: NextRequest) {
   return safeStr(req.headers.get("x-rid")) || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-function ok(rid: string, body: any, status = 200) {
-  return NextResponse.json({ ok: true, rid, ...body }, { status });
-}
-function err(rid: string, status: number, code: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error: code, message, detail: detail ?? null }, { status });
 }
 
 type CountRes = { ok: true; count: number } | { ok: false; error: any };
@@ -48,37 +44,23 @@ function errDetail(e: any) {
  * - Runtime-only + CI-safe (ingen env/importkjeder ved build)
  */
 export async function GET(req: NextRequest) {
-  const rid = ridFrom(req);
-
   try {
     // ✅ LATE IMPORT – stopper env-evaluering under next build
     const { supabaseServer } = await import("@/lib/supabase/server");
     const sb = await supabaseServer();
 
-    // 1) Auth (fail-closed)
-    const { data: auth, error: authErr } = await sb.auth.getUser();
-    const user = auth?.user ?? null;
-    if (authErr || !user) return err(rid, 401, "UNAUTHENTICATED", "Du må være innlogget.");
+    const gate = await scopeOr401(req);
+    if (gate.ok === false) return gate.res;
+    const ctx = gate.ctx;
 
-    // 2) Profile role/companyId
-    const { data: prof, error: profErr } = await sb
-      .from("profiles")
-      .select("role, company_id")
-      .eq("id", user.id)
-      .maybeSingle();
+    const denyRole = requireRoleOr403(ctx, "admin.dashboard.read", ["company_admin", "superadmin"]);
+    if (denyRole) return denyRole;
 
-    if (profErr) return err(rid, 500, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", { message: profErr.message });
+    const denyScope = requireCompanyScopeOr403(ctx);
+    if (denyScope) return denyScope;
 
-    const role = safeStr((prof as any)?.role);
-    const companyId = safeStr((prof as any)?.company_id);
-
-    // Tillatt: company_admin (krever companyId), superadmin/admin (kan også ha companyId)
-    if (!["company_admin", "superadmin", "admin"].includes(role)) {
-      return err(rid, 403, "FORBIDDEN", "Ingen tilgang.");
-    }
-    if (role === "company_admin" && !companyId) {
-      return err(rid, 409, "SCOPE_MISSING", "Mangler companyId i scope.");
-    }
+    const companyId = safeStr(ctx.scope.companyId);
+    if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
     const todayISO = osloTodayISODate();
     const weekStart = startOfWeekISO(todayISO);
@@ -117,7 +99,7 @@ export async function GET(req: NextRequest) {
 
     // Company info
     const { data: company, error: cErr } = await sb.from("companies").select("id,name,status").eq("id", companyId).maybeSingle();
-    if (cErr) return err(rid, 500, "COMPANY_READ_FAILED", "Kunne ikke lese firmastatus.", errDetail(cErr));
+    if (cErr) return jsonErr(ctx.rid, "Kunne ikke lese firmastatus.", 400, { code: "COMPANY_READ_FAILED", detail: errDetail(cErr) });
 
     const results = await Promise.all([
       employeesTotalP,
@@ -130,7 +112,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const firstErr = results.find((r) => !r.ok) as Extract<CountRes, { ok: false }> | undefined;
-    if (firstErr) return err(rid, 500, "COUNT_FAILED", "Kunne ikke hente dashboard-tall.", errDetail(firstErr.error));
+    if (firstErr) return jsonErr(ctx.rid, "Kunne ikke hente dashboard-tall.", 400, { code: "COUNT_FAILED", detail: errDetail(firstErr.error) });
 
     const [
       employeesTotal,
@@ -142,7 +124,7 @@ export async function GET(req: NextRequest) {
       ordersWeekCancelled,
     ] = results.map((r) => (r as Extract<CountRes, { ok: true }>).count);
 
-    return ok(rid, {
+    return jsonOk(ctx.rid, {
       company: {
         id: (company as any)?.id ?? companyId,
         name: (company as any)?.name ?? null,
@@ -157,6 +139,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e: any) {
-    return err(rid, 500, "UNHANDLED", "Uventet feil.", errDetail(e));
+    const rid = ridFrom(req);
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: errDetail(e) });
   }
 }

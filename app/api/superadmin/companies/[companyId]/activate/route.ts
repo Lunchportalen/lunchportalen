@@ -6,6 +6,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
 /* =========================
    Types
@@ -148,7 +149,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 /* =========================
@@ -166,7 +167,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
 
   const params = await ctx.params;
   const companyId = safeStr(params?.companyId);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = ((await readJson(req)) ?? {}) as ActivateBody;
   const note = typeof body?.note === "string" ? body.note.trim().slice(0, 500) : null;
@@ -175,9 +176,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   try {
     sb = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, a, "SERVICE_ROLE_MISSING", "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", {
+    return jsonErr(a.rid, "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", 500, { code: "SERVICE_ROLE_MISSING", detail: {
       error: String(e?.message ?? e),
-    });
+    } });
   }
 
   try {
@@ -188,8 +189,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .eq("id", companyId)
       .maybeSingle();
 
-    if (exErr) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese firma.", exErr);
-    if (!existing) return jsonErr(404, a, "NOT_FOUND", "Firma finnes ikke.");
+    if (exErr) return jsonErr(a.rid, "Kunne ikke lese firma.", 500, { code: "DB_ERROR", detail: exErr });
+    if (!existing) return jsonErr(a.rid, "Firma finnes ikke.", 404, "NOT_FOUND");
 
     const currentStatus = String((existing as any).status ?? "").toLowerCase();
 
@@ -207,13 +208,13 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         rid: a.rid,
       });
 
-      return jsonOk(a, { ok: true, rid: a.rid, company: existing, meta: { alreadyActive: true } }, 200);
+      return jsonOk(a.rid, { ok: true, rid: a.rid, company: existing, meta: { alreadyActive: true } }, 200);
     }
 
     if (currentStatus !== "pending") {
-      return jsonErr(409, a, "INVALID_STATE", `Kan ikke aktivere firma fra status '${(existing as any).status}'.`, {
+      return jsonErr(a.rid, `Kan ikke aktivere firma fra status '${(existing as any).status}'.`, 409, { code: "INVALID_STATE", detail: {
         status: (existing as any).status,
-      });
+      } });
     }
 
     // 3) Update -> active (schema-safe)
@@ -242,7 +243,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         .single();
     }
 
-    if (up.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke aktivere firma.", up.error);
+    if (up.error) return jsonErr(a.rid, "Kunne ikke aktivere firma.", 500, { code: "DB_ERROR", detail: up.error });
 
     // 3.1) Audit (best effort)
     await tryAudit(sb, {
@@ -259,7 +260,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     });
 
     // 4) Email (best effort)
-    const supportEmail = "ordre@lunchportalen.no";
+    const supportEmail = SYSTEM_EMAILS.SUPPORT;
     const appUrl = (env("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
     const loginUrl = `${appUrl}/login`;
 
@@ -305,9 +306,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       200
     );
   } catch (e: any) {
-    return jsonErr(500, a, "SERVER_ERROR", "Uventet feil i aktivering.", {
+    return jsonErr(a.rid, "Uventet feil i aktivering.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
-

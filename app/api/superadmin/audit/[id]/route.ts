@@ -5,32 +5,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Ctx = {
   params: { id: string } | Promise<{ id: string }>;
 };
-
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-}
-
-function json(status: number, body: any) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return json(status, { ok: false, error, message, detail: detail ?? undefined });
-}
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 
 function isUuid(v: string) {
   return /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(
@@ -49,16 +30,15 @@ function supabaseAdmin() {
 }
 
 export async function GET(_req: Request, ctx: Ctx) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `sa_audit_one_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   const params = await ctx.params;
   const id = String((params as any)?.id ?? "").trim();
 
   if (!isUuid(id)) {
-    return jsonError(400, "invalid_id", "Ugyldig audit-id", { rid });
+    return jsonErr(rid, "Ugyldig audit-id", 400, "invalid_id");
   }
 
   // ✅ VIKTIG: await
@@ -71,12 +51,12 @@ export async function GET(_req: Request, ctx: Ctx) {
   } = await supabase.auth.getUser();
 
   if (authErr || !user) {
-    return jsonError(401, "unauthorized", "Ikke innlogget", { rid });
+    return jsonErr(rid, "Ikke innlogget", 401, "unauthorized");
   }
 
   // ✅ Hard superadmin-fasit (unngå metadata-triksing)
-  if (normEmail(user.email) !== "superadmin@lunchportalen.no") {
-    return jsonError(403, "forbidden", "Kun superadmin har tilgang", { rid });
+  if (!isSuperadminEmail(user.email)) {
+    return jsonErr(rid, "Kun superadmin har tilgang", 403, "forbidden");
   }
 
   // --- fetch audit ---
@@ -84,7 +64,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonError(500, "missing_service_role_key", String(e?.message ?? e), { rid });
+    return jsonErr(rid, String(e?.message ?? e), 500, "missing_service_role_key");
   }
 
   // Velg kun felt vi faktisk trenger (stabil API-kontrakt)
@@ -95,14 +75,14 @@ export async function GET(_req: Request, ctx: Ctx) {
     .maybeSingle();
 
   if (error) {
-    return jsonError(500, "read_failed", "Kunne ikke hente audit-hendelse", { rid, db: error });
+    return jsonErr(rid, "Kunne ikke hente audit-hendelse", 500, { code: "read_failed", detail: { db: error } });
   }
 
   if (!data) {
-    return jsonError(404, "not_found", "Audit-hendelse finnes ikke", { rid });
+    return jsonErr(rid, "Audit-hendelse finnes ikke", 404, "not_found");
   }
 
-  return json(200, {
+  return jsonOk(rid, {
     ok: true,
     rid,
     audit: {
@@ -117,8 +97,6 @@ export async function GET(_req: Request, ctx: Ctx) {
       summary: data.summary ?? null,
       detail: data.detail ?? null,
     },
-  });
+  }, 200);
 }
-
-
 

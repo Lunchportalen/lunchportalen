@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Security (cron secret in query)
@@ -74,32 +74,38 @@ async function callInternal(req: Request, path: string) {
 }
 
 export async function GET(req: Request) {
-  if (!requireCronAuth(req)) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  const rid = makeRid();
+
+  try {
+    if (!requireCronAuth(req)) return jsonErr(rid, "Ugyldig cron secret.", 401, "unauthorized");
+
+    const p = osloNowParts();
+    const triggered: string[] = [];
+    const results: any[] = [];
+
+    // Thursday 08:00 -> make next week visible/open (existing endpoint)
+    if (inWindow(p, "Thursday", 8, 10)) {
+      triggered.push("thursday_08_open_next");
+      results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
+    }
+
+    // Friday 14:00 -> rollover/lock weekplans (existing endpoint)
+    if (inWindow(p, "Friday", 14, 10)) {
+      triggered.push("friday_14_rollover");
+      results.push({ action: "lock-weekplans", ...(await callInternal(req, "/api/cron/lock-weekplans")) });
+    }
+
+    // If outside both windows -> no-op (idempotent)
+    return jsonOk(rid, {
+      ok: true,
+      oslo: p,
+      triggered,
+      results,
+      note: triggered.length ? "Triggered scheduled actions." : "No-op (outside time windows).",
+    }, 200);
+  } catch (e: any) {
+    return jsonErr(rid, "Uventet feil i week-scheduler.", 500, { code: "WEEK_SCHEDULER_FAILED", detail: {
+      message: String(e?.message ?? e),
+    } });
   }
-
-  const p = osloNowParts();
-  const triggered: string[] = [];
-  const results: any[] = [];
-
-  // Thursday 08:00 -> make next week visible/open (existing endpoint)
-  if (inWindow(p, "Thursday", 8, 10)) {
-    triggered.push("thursday_08_open_next");
-    results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
-  }
-
-  // Friday 14:00 -> rollover/lock weekplans (existing endpoint)
-  if (inWindow(p, "Friday", 14, 10)) {
-    triggered.push("friday_14_rollover");
-    results.push({ action: "lock-weekplans", ...(await callInternal(req, "/api/cron/lock-weekplans")) });
-  }
-
-  // If outside both windows -> no-op (idempotent)
-  return NextResponse.json({
-    ok: true,
-    oslo: p,
-    triggered,
-    results,
-    note: triggered.length ? "Triggered scheduled actions." : "No-op (outside time windows).",
-  });
 }

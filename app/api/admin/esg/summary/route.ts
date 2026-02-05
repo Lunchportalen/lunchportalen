@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   // 1) Scope
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Role gate (admin-side ESG: company_admin)
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
     .order("month", { ascending: true });
 
   if (mErr) {
-    return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente månedssnapshots.", { message: mErr.message });
+    return jsonErr(ctx.rid, "Kunne ikke hente månedssnapshots.", 500, { code: "db_error", detail: { message: mErr.message } });
   }
 
   const { data: yearly, error: yErr } = await supabase
@@ -81,20 +81,8 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (yErr) {
-    return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente årssnapshot.", { message: yErr.message });
+    return jsonErr(ctx.rid, "Kunne ikke hente årssnapshot.", 500, { code: "db_error", detail: { message: yErr.message } });
   }
 
-  return jsonOk(
-    {
-      ok: true,
-      rid: ctx.rid,
-      companyId,
-      year,
-      months: months ?? [],
-      yearly: yearly ?? null,
-    },
-    200
-  );
+  return jsonOk(ctx.rid, { companyId, year, months: months ?? [], yearly: yearly ?? null }, 200);
 }
-
-

@@ -1,4 +1,4 @@
-// app/admin/people/page.tsx
+﻿// app/admin/people/page.tsx
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,57 +12,8 @@ import {
 } from "@/lib/admin/loadAdminContext";
 
 import BlockedState from "@/components/admin/BlockedState";
-
-import EmployeesTable from "@/components/admin/EmployeesTable";
-import InvitesPanel from "@/components/admin/InvitesPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
-
-function SectionCard({
-  title,
-  subtitle,
-  right,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  right?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
-          {subtitle ? <p className="mt-1 text-sm text-neutral-600">{subtitle}</p> : null}
-        </div>
-        {right ? <div className="shrink-0">{right}</div> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-neutral-900 ring-1 ring-black/10 transition hover:bg-white active:scale-[0.99]"
-    >
-      {children}
-    </Link>
-  );
-}
-
-function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
-    >
-      {children}
-    </Link>
-  );
-}
+import PeopleClient from "./PeopleClient";
 
 /* =========================================================
    Blocked UI mapping
@@ -85,7 +36,7 @@ function blockedLevel(ctx: AdminContextBlocked): "followup" | "critical" {
   return ctx.blocked === "COUNTS_FAILED" ? "critical" : "followup";
 }
 
-export default async function AdminPeoplePage() {
+export default async function AdminPeoplePage({ searchParams }: { searchParams?: { q?: string } }) {
   const ctx = await loadAdminContext({
     nextPath: "/admin/people",
     enforceCompanyAdmin: true,
@@ -94,162 +45,55 @@ export default async function AdminPeoplePage() {
 
   if (isAdminContextBlocked(ctx)) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-          <div className="mb-6">
-            <GhostLink href="/admin">← Tilbake</GhostLink>
-          </div>
-
-          <BlockedState
-            level={blockedLevel(ctx)}
-            title={blockedTitle(ctx)}
-            body={blockedBody(ctx)}
-            nextSteps={ctx.nextSteps}
-            action={
-              <SupportReportButton
-                reason={ctx.support.reason}
-                companyId={ctx.support.companyId}
-                locationId={ctx.support.locationId}
-              />
-            }
-            meta={[
-              { label: "auth.user.id", value: ctx.dbg.authUserId },
-              { label: "auth.user.email", value: ctx.dbg.authEmail || "—" },
-              { label: "company_id", value: ctx.companyId ?? "—" },
-              { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "—" },
-              { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
-              ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "—" }] : []),
-              ...(Object.entries(ctx.dbg.q_counts ?? {})
-                .filter(([, v]) => v)
-                .slice(0, 10)
-                .map(([k, v]) => ({ label: `count.${k}`, value: String(v) }))),
-            ]}
-          />
+      <div className="lp-container py-8">
+        <div className="mb-6">
+          <Link
+            href="/admin"
+            className="lp-btn lp-btn--ghost min-h-[44px] border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-2 text-sm font-semibold"
+          >
+            Tilbake
+          </Link>
         </div>
-      </main>
+
+        <BlockedState
+          level={blockedLevel(ctx)}
+          title={blockedTitle(ctx)}
+          body={blockedBody(ctx)}
+          nextSteps={ctx.nextSteps}
+          action={
+            <SupportReportButton
+              reason={ctx.support.reason}
+              companyId={ctx.support.companyId}
+              locationId={ctx.support.locationId}
+              buttonClassName="lp-btn lp-btn--secondary"
+            />
+          }
+          meta={[
+            { label: "auth.user.id", value: ctx.dbg.authUserId },
+            { label: "auth.user.email", value: ctx.dbg.authEmail || "-" },
+            { label: "company_id", value: ctx.companyId ?? "-" },
+            { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "-" },
+            { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
+            ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "-" }] : []),
+            ...(Object.entries(ctx.dbg.q_counts ?? {})
+              .filter(([, v]) => v)
+              .slice(0, 10)
+              .map(([k, v]) => ({ label: `count.${k}`, value: String(v) }))),
+          ]}
+        />
+      </div>
     );
   }
 
-  const { companyId, company, counts, user } = ctx;
+  const { companyId, user, profile } = ctx;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        {/* Topbar */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {company?.name ?? "Firma"} · People
-            </div>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Ansatte</h1>
-            <p className="mt-2 text-neutral-600">Inviter, deaktiver og hold oversikt — uten støy.</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <GhostLink href="/admin">← Command Center</GhostLink>
-            <PrimaryLink href="/admin/invite">Inviter</PrimaryLink>
-          </div>
-        </div>
-
-        {/* Quick stats */}
-        <SectionCard
-          title="Status"
-          subtitle="Rask oversikt over bruk og tilgang."
-          right={<span className="text-xs font-semibold text-neutral-600">Innlogget: {user.email ?? user.id}</span>}
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-              <div className="text-xs font-semibold text-neutral-600">Totalt</div>
-              <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesTotal}</div>
-            </div>
-            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-              <div className="text-xs font-semibold text-neutral-600">Aktive</div>
-              <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesActive}</div>
-            </div>
-            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-              <div className="text-xs font-semibold text-neutral-600">Deaktivert</div>
-              <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesDisabled}</div>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Employees */}
-        <div className="mt-6">
-          <SectionCard
-            title="Ansatte"
-            subtitle="Dette er de ansatte som kan bestille lunsj innenfor avtalen."
-            right={
-              <div className="flex flex-wrap items-center gap-2">
-                <GhostLink href="/admin/export/employees.csv">Last ned CSV</GhostLink>
-                <PrimaryLink href="/admin/invite">Inviter flere</PrimaryLink>
-              </div>
-            }
-          >
-            <EmployeesTable companyId={companyId} companyName={company?.name ?? null} viewerEmail={user.email ?? null} canInvite />
-
-            <div className="mt-6 rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-              <div className="text-xs font-semibold tracking-wide text-neutral-700">Tips</div>
-              <p className="mt-1 text-sm text-neutral-600">
-                Hold listen ryddig: deaktiver ansatte som har sluttet, og inviter nye fra e-postliste.
-              </p>
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Invites */}
-        <div className="mt-6">
-          <SectionCard
-            title="Invitasjoner"
-            subtitle="Send, følg opp og hold kontroll på tilgang."
-            right={<PrimaryLink href="/admin/invite">Ny invitasjon</PrimaryLink>}
-          >
-            <InvitesPanel />
-          </SectionCard>
-        </div>
-
-        {/* Support */}
-        <div className="mt-6">
-          <SectionCard title="Support" subtitle="Hvis noe ikke stemmer, send en rapport med kontekst.">
-            <div className="flex flex-wrap items-center gap-3">
-              <SupportReportButton
-                reason="COMPANY_ADMIN_PEOPLE_SUPPORT_REPORT"
-                companyId={companyId}
-                locationId={ctx.profile.location_id ?? null}
-              />
-              <div className="text-sm text-neutral-600">
-                Rapporten inkluderer firma, lokasjon og tidspunkt — så drift kan handle raskt.
-              </div>
-            </div>
-
-            <details className="mt-5">
-              <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
-                Vis teknisk info (kun ved behov)
-              </summary>
-              <pre className="mt-3 max-h-64 overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs text-white/85 ring-1 ring-black/10">
-{JSON.stringify(
-  {
-    companyId,
-    q_company: ctx.dbg.q_company,
-    q_counts: ctx.dbg.q_counts,
-    authUserId: ctx.dbg.authUserId,
-    authEmail: ctx.dbg.authEmail,
-  },
-  null,
-  2
-)}
-              </pre>
-            </details>
-          </SectionCard>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
-          <span>People er et admin-verktøy. Ansatte administrerer egne bestillinger.</span>
-          <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/admin">
-            Til Command Center →
-          </Link>
-        </div>
-      </div>
-    </main>
+    <PeopleClient
+      initialQuery={typeof searchParams?.q === "string" ? searchParams?.q : ""}
+      viewerEmail={user.email ?? user.id}
+      supportCompanyId={companyId}
+      supportLocationId={profile.location_id ?? null}
+    />
   );
 }
+

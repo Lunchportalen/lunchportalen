@@ -6,6 +6,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import OutboxClient from "../superadmin/outbox/outbox-client";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -17,7 +18,6 @@ function normRole(v: any) {
   return safeStr(v).toLowerCase().replace(/[^a-z]/g, "");
 }
 
-const ORDER_EMAIL = "ordre@lunchportalen.no";
 const NEXT = "/outbox";
 
 export default async function OutboxOpsPage() {
@@ -27,7 +27,7 @@ export default async function OutboxOpsPage() {
   if (authErr || !auth?.user) redirect(`/login?next=${encodeURIComponent(NEXT)}`);
 
   const email = normEmail(auth.user.email);
-  if (email === ORDER_EMAIL) {
+  if (email === SYSTEM_EMAILS.ORDER) {
     // ✅ Ordre-bruker får slippe inn uten profiles
     return <OutboxClient apiBase="/api/outbox" />;
   }

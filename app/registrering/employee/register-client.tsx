@@ -32,6 +32,9 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
 
   // confirm (obligatorisk)
   const [confirm, setConfirm] = useState(false);
@@ -52,11 +55,12 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
     if (name.trim().length < 2) return false;
     if (!isEmail(emailNorm)) return false;
     if (password.length < 8) return false;
+    if (password !== password2) return false;
     if (!confirm) return false;
     if (posting) return false;
 
     return true;
-  }, [invite, loading, resolveError, companyName, name, emailNorm, password, confirm, posting]);
+  }, [invite, loading, resolveError, companyName, name, emailNorm, password, password2, confirm, posting]);
 
   // Resolve invite → show locked company
   useEffect(() => {
@@ -118,6 +122,7 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
     if (name.trim().length < 2) return setPostError("Skriv inn navn (minst 2 tegn).");
     if (!isEmail(emailNorm)) return setPostError("Ugyldig e-postadresse.");
     if (password.length < 8) return setPostError("Passord må være minst 8 tegn.");
+    if (password !== password2) return setPostError("Passordene er ikke like.");
     if (!confirm) return setPostError("Du må bekrefte at du er ansatt i bedriften.");
 
     setPosting(true);
@@ -201,6 +206,8 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="navn@firma.no"
+              type="email"
+              inputMode="email"
               autoComplete="email"
               disabled={posting || !!resolveError || loading}
             />
@@ -208,22 +215,55 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
 
           <div>
             <label className="text-sm font-medium">Passord *</label>
-            <input
-              className="mt-1 w-full rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              placeholder="Minst 8 tegn"
-              autoComplete="new-password"
-              disabled={posting || !!resolveError || loading}
-            />
+            <div className="relative">
+              <input
+                className="mt-1 w-full rounded-2xl bg-white px-4 py-3 pr-12 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                placeholder="Minst 8 tegn"
+                autoComplete="new-password"
+                disabled={posting || !!resolveError || loading}
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-white"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? "Skjul" : "Vis"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Bekreft passord *</label>
+            <div className="relative">
+              <input
+                className="mt-1 w-full rounded-2xl bg-white px-4 py-3 pr-12 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                type={showPassword2 ? "text" : "password"}
+                placeholder="Skriv passordet på nytt"
+                autoComplete="new-password"
+                disabled={posting || !!resolveError || loading}
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-white"
+                onClick={() => setShowPassword2((v) => !v)}
+                aria-pressed={showPassword2}
+              >
+                {showPassword2 ? "Skjul" : "Vis"}
+              </button>
+            </div>
           </div>
 
           {/* checkbox */}
-          <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-[rgb(var(--lp-border))]">
+          <label className="flex min-h-[44px] items-start gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-[rgb(var(--lp-border))]">
             <input
               type="checkbox"
-              className="mt-1 h-4 w-4"
+              className="mt-1 h-5 w-5"
               checked={confirm}
               onChange={(e) => setConfirm(e.target.checked)}
               disabled={posting || !!resolveError || loading}
@@ -248,7 +288,7 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
             type="submit"
             disabled={!canSubmit}
             className={[
-              "w-full rounded-2xl px-5 py-3 text-sm font-medium ring-1 transition",
+              "w-full min-h-[48px] rounded-2xl px-5 py-3 text-sm font-medium ring-1 transition",
               "disabled:cursor-not-allowed disabled:opacity-60",
               "bg-black text-white ring-black hover:bg-black/90",
             ].join(" ")}
@@ -258,14 +298,20 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
 
           <div className="pt-1 text-center text-sm text-[rgb(var(--lp-muted))]">
             Har du allerede konto?{" "}
-            <Link href="/login" className="font-medium text-[rgb(var(--lp-text))] underline underline-offset-4">
+            <Link
+              href="/login"
+              className="inline-flex min-h-[44px] items-center font-medium text-[rgb(var(--lp-text))] underline underline-offset-4"
+            >
               Logg inn
             </Link>
           </div>
 
           <div className="pt-1 text-center text-sm text-[rgb(var(--lp-muted))]">
             Er du firma-admin?{" "}
-            <Link href="/registrering" className="font-medium text-[rgb(var(--lp-text))] underline underline-offset-4">
+            <Link
+              href="/registrering"
+              className="inline-flex min-h-[44px] items-center font-medium text-[rgb(var(--lp-text))] underline underline-offset-4"
+            >
               Registrer bedrift
             </Link>
           </div>
@@ -274,3 +320,13 @@ export default function EmployeeRegisterClient({ invite }: { invite: string }) {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+

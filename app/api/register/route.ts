@@ -9,15 +9,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import crypto from "node:crypto";
-import { jsonErr, rid as makeRid } from "@/lib/http/respond";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function safeText(v: any) {
@@ -132,19 +133,19 @@ async function waitForProfile(sb: ReturnType<typeof import("@/lib/supabase/admin
 export async function POST(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = makeRid(req);
+  const rid = makeRid();
   const sb = supabaseAdmin();
 
   // 0) Hard gate
   if (!registrationsEnabled(req)) {
-    return jsonError(403, "registrations_disabled", "Registrering er midlertidig stengt.");
+    return jsonError(rid, 403, "registrations_disabled", "Registrering er midlertidig stengt.");
   }
 
   let body: RegisterBody;
   try {
     body = (await req.json()) as RegisterBody;
   } catch {
-    return jsonError(400, "invalid_json", "Ugyldig JSON i request.");
+    return jsonError(rid, 400, "invalid_json", "Ugyldig JSON i request.");
   }
 
   // 1) Normalisering
@@ -164,23 +165,23 @@ export async function POST(req: NextRequest) {
   const city = safeText(body.city);
 
   // 2) Validering
-  if (!companyName) return jsonError(400, "missing_companyName", "Mangler firmanavn.");
-  if (!Number.isFinite(employeesCount)) return jsonError(400, "invalid_employeesCount", "Ugyldig antall ansatte.");
-  if (employeesCount < 20) return jsonError(400, "min_employees", "Firma må ha minimum 20 ansatte.", { min: 20, got: employeesCount });
+  if (!companyName) return jsonError(rid, 400, "missing_companyName", "Mangler firmanavn.");
+  if (!Number.isFinite(employeesCount)) return jsonError(rid, 400, "invalid_employeesCount", "Ugyldig antall ansatte.");
+  if (employeesCount < 20) return jsonError(rid, 400, "min_employees", "Firma må ha minimum 20 ansatte.", { min: 20, got: employeesCount });
 
-  if (orgnr && orgnr.length !== 9) return jsonError(400, "invalid_orgnr", "Org.nr må være 9 siffer.", { orgnr });
+  if (orgnr && orgnr.length !== 9) return jsonError(rid, 400, "invalid_orgnr", "Org.nr må være 9 siffer.", { orgnr });
 
-  if (!adminName) return jsonError(400, "missing_adminName", "Mangler navn på admin.");
-  if (!adminEmail || !isEmail(adminEmail)) return jsonError(400, "invalid_email", "Ugyldig e-postadresse.");
+  if (!adminName) return jsonError(rid, 400, "missing_adminName", "Mangler navn på admin.");
+  if (!adminEmail || !isEmail(adminEmail)) return jsonError(rid, 400, "invalid_email", "Ugyldig e-postadresse.");
   if (!strongEnoughPassword(adminPassword)) {
-    return jsonError(400, "weak_password", "Passordet må være minst 10 tegn og inneholde både bokstaver og tall.");
+    return jsonError(rid, 400, "weak_password", "Passordet må være minst 10 tegn og inneholde både bokstaver og tall.");
   }
 
   // 3) Sjekk at orgnr ikke er i bruk (hvis oppgitt)
   if (orgnr) {
     const { data: existingCompany, error: existingCompanyErr } = await sb.from("companies").select("id").eq("orgnr", orgnr).maybeSingle();
-    if (existingCompanyErr) return jsonError(500, "db_error", "Kunne ikke sjekke org.nr.", existingCompanyErr);
-    if (existingCompany) return jsonError(409, "orgnr_exists", "Et firma med dette org.nr finnes allerede.");
+    if (existingCompanyErr) return jsonError(rid, 500, "db_error", "Kunne ikke sjekke org.nr.", existingCompanyErr);
+    if (existingCompany) return jsonError(rid, 409, "orgnr_exists", "Et firma med dette org.nr finnes allerede.");
   }
 
   // 4) Opprett firma (pending) først, så default location, så auth-user med metadata som trigger bruker
@@ -211,10 +212,10 @@ export async function POST(req: NextRequest) {
     await rollbackAuthUser();
     await rollbackLocation();
     await rollbackCompany();
-    return jsonErr(500, rid, "register_failed", "Registrering feilet â€“ ingen data er lagret.", {
+    return jsonErr(rid, "Registrering feilet â€“ ingen data er lagret.", 500, { code: "register_failed", detail: {
       message: String(e?.message ?? e),
       detail: e?.detail ?? undefined,
-    });
+    } });
   };
 
   try {
@@ -284,24 +285,22 @@ export async function POST(req: NextRequest) {
 
     if (profUpd.error) return await fail(profUpd.error);
 
-    return NextResponse.json({
+    return jsonOk(rid, {
       ok: true,
       company: { id: companyId, status },
       admin: { user_id: userId, email: adminEmail },
       location: { id: locationId },
-    });
+    }, 200);
   } catch (e: any) {
     await rollbackAuthUser();
     await rollbackLocation();
     await rollbackCompany();
 
-    return jsonError(500, "register_failed", "Registrering feilet – ingen data er lagret.", {
+    return jsonError(rid, 500, "register_failed", "Registrering feilet – ingen data er lagret.", {
       message: String(e?.message ?? e),
       detail: e?.detail ?? undefined,
     });
   }
 }
-
-
 
 

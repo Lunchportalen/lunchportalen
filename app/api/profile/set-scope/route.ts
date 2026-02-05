@@ -6,14 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function json(status: number, body: any) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any): v is string {
   return (
@@ -23,9 +16,18 @@ function isUuid(v: any): v is string {
 }
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
+function normCompanyStatus(v: any): CompanyStatus {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PENDING") return "PENDING";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  return "UNKNOWN";
+}
 
 export async function POST(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // ✅ VIKTIG: supabaseServer() er async hos dere
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
   const { data: userRes, error: userErr } = await sb.auth.getUser();
   const user = userRes?.user ?? null;
 
-  if (userErr || !user) return json(401, { ok: false, error: "AUTH_REQUIRED" });
+  if (userErr || !user) return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
 
   const { data: profile, error: profErr } = await sb
     .from("profiles")
@@ -42,35 +44,45 @@ export async function POST(req: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profErr) return json(500, { ok: false, error: "PROFILE_LOOKUP_FAILED", message: profErr.message });
+  if (profErr) return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: profErr.message });
 
   if (!profile?.id || !profile.company_id) {
-    return NextResponse.json(
-      { ok: true, pending: true, reason: "PROFILE_NOT_READY", retryAfterMs: 800 },
-      { status: 202, headers: { ...noStore(), "Retry-After": "1" } }
-    );
+    const res = jsonOk(rid, { ok: true, pending: true, reason: "PROFILE_NOT_READY", retryAfterMs: 800 }, 202) as NextResponse;
+    res.headers.set("Retry-After", "1");
+    return res;
   }
 
   const role = String(profile.role ?? "employee") as Role;
 
-  if (!["company_admin", "superadmin", "employee"].includes(role)) {
-    return json(403, { ok: false, error: "FORBIDDEN" });
-  }
+  if (!["company_admin", "superadmin", "employee"].includes(role)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
 
   const body = await req.json().catch(() => ({}));
   const locationId = body?.locationId;
   const companyIdFromClient = body?.companyId;
 
-  if (!isUuid(locationId)) return json(400, { ok: false, error: "BAD_REQUEST", message: "Ugyldig locationId." });
+  if (!isUuid(locationId)) return jsonErr(rid, "Ugyldig locationId.", 400, "BAD_REQUEST");
 
   const companyId =
     role === "superadmin"
       ? (isUuid(companyIdFromClient) ? companyIdFromClient : null)
       : String(profile.company_id);
 
-  if (!companyId) return json(400, { ok: false, error: "BAD_REQUEST", message: "Ugyldig companyId." });
+  if (!companyId) return jsonErr(rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const admin = supabaseAdmin();
+
+  const { data: company, error: compErr } = await admin
+    .from("companies")
+    .select("id,status")
+    .eq("id", companyId)
+    .maybeSingle();
+
+  if (compErr || !company?.id) return jsonErr(rid, "Kunne ikke verifisere firmastatus.", 500, "COMPANY_LOOKUP_FAILED");
+
+  const companyStatus = normCompanyStatus((company as any).status);
+  if (companyStatus !== "ACTIVE") {
+    return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: companyStatus } });
+  }
 
   const { data: loc, error: locErr } = await admin
     .from("company_locations")
@@ -78,14 +90,9 @@ export async function POST(req: Request) {
     .eq("id", locationId)
     .maybeSingle();
 
-  if (locErr || !loc || String(loc.company_id) !== String(companyId)) {
-    return json(400, { ok: false, error: "INVALID_SCOPE" });
-  }
+  if (locErr || !loc || String(loc.company_id) !== String(companyId)) return jsonErr(rid, "Ugyldig scope.", 400, "INVALID_SCOPE");
 
-  const res = NextResponse.json(
-    { ok: true, pending: false, scope: { companyId, locationId } },
-    { status: 200, headers: noStore() }
-  );
+  const res = jsonOk(rid, { ok: true, pending: false, scope: { companyId, locationId } }, 200) as NextResponse;
 
   const secure = process.env.NODE_ENV === "production";
 
@@ -107,6 +114,4 @@ export async function POST(req: Request) {
 
   return res;
 }
-
-
 

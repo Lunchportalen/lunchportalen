@@ -5,14 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
@@ -23,25 +18,20 @@ function subDaysISO(dateISO: string, days: number) {
 }
 
 export async function GET() {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `sa_over_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const sbUser = await supabaseServer();
     const { data: auth, error: authErr } = await sbUser.auth.getUser();
-    if (authErr || !auth?.user) {
-      return NextResponse.json({ ok: false, error: "unauthorized", rid }, { status: 401, headers: noStore() });
-    }
-    if (normEmail(auth.user.email) !== "superadmin@lunchportalen.no") {
-      return NextResponse.json({ ok: false, error: "forbidden", rid }, { status: 403, headers: noStore() });
-    }
+    if (authErr || !auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
+    if (!isSuperadminEmail(auth.user.email)) return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
 
     const sb = supabaseAdmin();
 
     const { data: companies, error: cErr } = await sb.from("companies").select("id,name,status,updated_at,agreement_json").order("updated_at", { ascending: false });
-    if (cErr) return NextResponse.json({ ok: false, error: "db_error", message: cErr.message, rid }, { status: 500, headers: noStore() });
+    if (cErr) return jsonErr(rid, cErr.message, 500, "db_error");
 
     let total = 0, pending = 0, active = 0, paused = 0, closed = 0;
     const pendingList: any[] = [];
@@ -66,7 +56,7 @@ export async function GET() {
     const from = subDaysISO(today, 6);
 
     const { data: orders, error: oErr } = await sb.from("orders").select("id,status,date").gte("date", from).lte("date", today);
-    if (oErr) return NextResponse.json({ ok: false, error: "db_error", message: oErr.message, rid }, { status: 500, headers: noStore() });
+    if (oErr) return jsonErr(rid, oErr.message, 500, "db_error");
 
     let ordersTotal = 0, ordersActive = 0, ordersCancelled = 0;
     for (const o of orders ?? []) {
@@ -76,20 +66,15 @@ export async function GET() {
       else ordersActive += 1;
     }
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        companies: { total, pending, active, paused, closed },
-        ordersLast7Days: { from, to: today, total: ordersTotal, active: ordersActive, cancelled: ordersCancelled },
-        pendingCompanies: pendingList.slice(0, 50),
-      },
-      { status: 200, headers: noStore() }
-    );
+    return jsonOk(rid, {
+      ok: true,
+      rid,
+      companies: { total, pending, active, paused, closed },
+      ordersLast7Days: { from, to: today, total: ordersTotal, active: ordersActive, cancelled: ordersCancelled },
+      pendingCompanies: pendingList.slice(0, 50),
+    }, 200);
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: "server_error", message: String(e?.message ?? e), rid }, { status: 500, headers: noStore() });
+    return jsonErr(rid, String(e?.message ?? e), 500, "server_error");
   }
 }
-
-
 

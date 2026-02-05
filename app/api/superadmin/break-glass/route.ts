@@ -14,7 +14,7 @@ function denyResponse(s: any): Response {
     if ("res" in s && s.res instanceof Response) return s.res as Response;
   }
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 async function writeMeta(ctx: { rid: string; scope: any }, action: string, purpose?: string | null, detail?: any) {
@@ -49,15 +49,15 @@ export async function GET(req: NextRequest): Promise<Response> {
   if (deny) return deny;
 
   const userId = ctx.scope?.userId ?? null;
-  if (!userId) return jsonErr(401, ctx, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (!userId) return jsonErr(ctx.rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   try {
     const active = await getActiveBreakGlass(userId);
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, active: active ?? null }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, active: active ?? null }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente break-glass status.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente break-glass status.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
 
@@ -75,20 +75,20 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (deny) return deny;
 
   const userId = ctx.scope?.userId ?? null;
-  if (!userId) return jsonErr(401, ctx, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (!userId) return jsonErr(ctx.rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   const body = (await readJson(req)) ?? {};
   if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Ugyldig body.");
+    return jsonErr(ctx.rid, "Ugyldig body.", 400, "BAD_REQUEST");
   }
 
   let purpose: string;
   try {
     purpose = requirePurpose((body as any)?.purpose);
   } catch (e: any) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Du må velge formål (purpose).", {
+    return jsonErr(ctx.rid, "Du må velge formål (purpose).", 400, { code: "BAD_REQUEST", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 
   const note = String((body as any)?.note ?? "").trim() || null;
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     const existing = await getActiveBreakGlass(userId);
     if (existing && isActiveSession(existing)) {
-      return jsonOk(ctx, { ok: true, rid: ctx.rid, active: existing, alreadyActive: true }, 200);
+      return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, active: existing, alreadyActive: true }, 200);
     }
 
     const startedAt = new Date();
@@ -117,15 +117,15 @@ export async function POST(req: NextRequest): Promise<Response> {
       .select("id,actor_user_id,actor_email,purpose,note,started_at,expires_at,ended_at")
       .maybeSingle();
 
-    if (error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke starte break-glass.", error);
+    if (error) return jsonErr(ctx.rid, "Kunne ikke starte break-glass.", 500, { code: "DB_ERROR", detail: error });
 
     await writeMeta(ctx, "BREAK_GLASS_START", purpose, { minutes, note });
 
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, active: data ?? null }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, active: data ?? null }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke starte break-glass.", {
+    return jsonErr(ctx.rid, "Kunne ikke starte break-glass.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
 
@@ -143,12 +143,12 @@ export async function DELETE(req: NextRequest): Promise<Response> {
   if (deny) return deny;
 
   const userId = ctx.scope?.userId ?? null;
-  if (!userId) return jsonErr(401, ctx, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (!userId) return jsonErr(ctx.rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   try {
     const active = await getActiveBreakGlass(userId);
     if (!active) {
-      return jsonOk(ctx, { ok: true, rid: ctx.rid, ended: false, active: null }, 200);
+      return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, ended: false, active: null }, 200);
     }
 
     const sb = await supabaseServer();
@@ -157,14 +157,15 @@ export async function DELETE(req: NextRequest): Promise<Response> {
       .update({ ended_at: new Date().toISOString() })
       .eq("id", (active as any).id);
 
-    if (error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke avslutte break-glass.", error);
+    if (error) return jsonErr(ctx.rid, "Kunne ikke avslutte break-glass.", 500, { code: "DB_ERROR", detail: error });
 
     await writeMeta(ctx, "BREAK_GLASS_END", String((active as any)?.purpose ?? null), { id: (active as any).id });
 
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, ended: true, active: null }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, ended: true, active: null }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke avslutte break-glass.", {
+    return jsonErr(ctx.rid, "Kunne ikke avslutte break-glass.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
+

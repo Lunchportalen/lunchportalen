@@ -14,12 +14,10 @@ export default async function Page() {
   const href = `/api/superadmin/billing/export?from=${from}&to=${to}`;
 
   return (
-    <main className="lp-select-text" style={{ padding: 16, maxWidth: 900, margin: "0 auto", display: "grid", gap: 14 }}>
+    <main className="lp-select-text mx-auto grid max-w-[900px] gap-4 p-4">
       <header>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-          Fakturagrunnlag (CSV)
-        </h1>
-        <p style={{ opacity: 0.85 }}>
+        <h1 className="text-[22px] font-semibold">Fakturagrunnlag (CSV)</h1>
+        <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
           Standard: siste 14 dager. Du kan endre perioden ved å justere query i URL.
         </p>
       </header>
@@ -27,30 +25,13 @@ export default async function Page() {
       <section>
         <a
           href={href}
-          style={{
-            display: "inline-block",
-            padding: "12px 16px",
-            borderRadius: 12,
-            border: "1px solid rgba(0,0,0,0.15)",
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
+          className="inline-flex items-center rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-4 py-3 text-sm font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
         >
           Last ned CSV (14 dager)
         </a>
       </section>
 
-      <section
-        style={{
-          marginTop: 8,
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-          fontSize: 12,
-          opacity: 0.75,
-          wordBreak: "break-all",
-        }}
-      >
-        {href}
-      </section>
+      <section className="lp-mono mt-2 break-all text-xs text-[rgb(var(--lp-muted))]">{href}</section>
     </main>
   );
 }

@@ -4,10 +4,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function isUuid(v: any) {
@@ -18,21 +19,21 @@ function isUuid(v: any) {
 }
 
 export async function POST(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
   const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(401, "NOT_AUTHENTICATED", "Ikke innlogget");
+  if (userErr || !userData.user) return jsonError(rid, 401, "NOT_AUTHENTICATED", "Ikke innlogget");
 
   const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return jsonError(403, "FORBIDDEN", "Kun superadmin");
+  if (role !== "superadmin") return jsonError(rid, 403, "FORBIDDEN", "Kun superadmin");
 
   const body = await req.json().catch(() => null);
   const company_id = body?.company_id;
   const tripletex_customer_id = String(body?.tripletex_customer_id ?? "").trim() || null;
 
-  if (!isUuid(company_id)) return jsonError(400, "BAD_COMPANY_ID", "company_id må være UUID");
+  if (!isUuid(company_id)) return jsonError(rid, 400, "BAD_COMPANY_ID", "company_id må være UUID");
 
   // Upsert
   const { error } = await supabase.from("company_billing_accounts").upsert(
@@ -43,10 +44,8 @@ export async function POST(req: Request) {
     { onConflict: "company_id" }
   );
 
-  if (error) return jsonError(500, "UPSERT_FAILED", "Kunne ikke lagre mapping", error);
+  if (error) return jsonError(rid, 500, "UPSERT_FAILED", "Kunne ikke lagre mapping", error);
 
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return jsonOk(rid, { ok: true }, 200);
 }
-
-
 

@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 
@@ -58,7 +59,7 @@ type ApiErr = {
 type ApiRes = ApiOk | ApiErr;
 
 type Props = {
-  // Valgfritt: kan fylles fra server-side page.tsx for å unngå “blank” først
+  // Valgfritt: kan fylles fra server-side page.tsx for Ã¥ unngÃ¥ âblankâ fÃ¸rst
   initial?: Partial<ApiOk>;
 };
 
@@ -67,18 +68,8 @@ function isOk(x: ApiRes): x is ApiOk {
 }
 
 function fmtTs(ts: string | null | undefined) {
-  if (!ts) return "—";
-  try {
-    return new Date(ts).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return ts;
-  }
+  if (!ts) return "â";
+  return formatDateTimeNO(ts);
 }
 
 function badgeClass(status: CompanyStatus) {
@@ -152,7 +143,7 @@ function buildListUrl(opts: {
 
 /**
  * STATUS API
- * Repoet har nå: POST /api/superadmin/companies/status  { companyId, status }
+ * Repoet har nÃ¥: POST /api/superadmin/companies/status  { companyId, status }
  * (ikke /api/superadmin/companies/[id]/status)
  */
 async function setStatusViaApi(companyId: string, status: CompanyStatus, reason?: string) {
@@ -206,10 +197,10 @@ export default function CompaniesClient({ initial }: Props) {
 
   const activeFiltersLabel = useMemo(() => {
     const bits: string[] = [];
-    if (q.trim()) bits.push(`Søk: “${q.trim()}”`);
+    if (q.trim()) bits.push(`SÃ¸k: â${q.trim()}â`);
     if (status !== "ALL") bits.push(`Status: ${statusLabel(status)}`);
     if (includeClosed) bits.push("Vis arkiverte");
-    return bits.length ? bits.join(" · ") : "Ingen filtre";
+    return bits.length ? bits.join(" Â· ") : "Ingen filtre";
   }, [q, status, includeClosed]);
 
   async function fetchList(next?: Partial<Parameters<typeof buildListUrl>[0]>) {
@@ -318,7 +309,7 @@ export default function CompaniesClient({ initial }: Props) {
         return;
       }
 
-      setNotice(`Status oppdatert → ${statusLabel(nextStatus)}`);
+      setNotice(`Status oppdatert â ${statusLabel(nextStatus)}`);
       fetchList().catch(() => {});
     } catch (e: any) {
       setRows(prev);
@@ -384,27 +375,27 @@ export default function CompaniesClient({ initial }: Props) {
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <button className={statCardClass(status === "ALL")} onClick={() => quickFilter("ALL")} disabled={loading}>
           <div className="text-xs text-neutral-500">Total</div>
-          <div className="mt-1 text-xl font-semibold">{stats?.companiesTotal ?? "—"}</div>
+          <div className="mt-1 text-xl font-semibold">{stats?.companiesTotal ?? "â"}</div>
         </button>
 
         <button className={statCardClass(status === "active")} onClick={() => quickFilter("active")} disabled={loading}>
           <div className="text-xs text-neutral-500">Active</div>
-          <div className="mt-1 text-xl font-semibold">{stats?.companiesActive ?? "—"}</div>
+          <div className="mt-1 text-xl font-semibold">{stats?.companiesActive ?? "â"}</div>
         </button>
 
         <button className={statCardClass(status === "paused")} onClick={() => quickFilter("paused")} disabled={loading}>
           <div className="text-xs text-neutral-500">Paused</div>
-          <div className="mt-1 text-xl font-semibold">{stats?.companiesPaused ?? "—"}</div>
+          <div className="mt-1 text-xl font-semibold">{stats?.companiesPaused ?? "â"}</div>
         </button>
 
         <button className={statCardClass(status === "pending")} onClick={() => quickFilter("pending")} disabled={loading}>
           <div className="text-xs text-neutral-500">Pending</div>
-          <div className="mt-1 text-xl font-semibold">{stats?.companiesPending ?? "—"}</div>
+          <div className="mt-1 text-xl font-semibold">{stats?.companiesPending ?? "â"}</div>
         </button>
 
         <button className={statCardClass(status === "closed")} onClick={() => quickFilter("closed")} disabled={loading}>
           <div className="text-xs text-neutral-500">Closed</div>
-          <div className="mt-1 text-xl font-semibold">{stats?.companiesClosed ?? "—"}</div>
+          <div className="mt-1 text-xl font-semibold">{stats?.companiesClosed ?? "â"}</div>
         </button>
       </div>
 
@@ -412,11 +403,11 @@ export default function CompaniesClient({ initial }: Props) {
       <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
           <div className="w-full md:max-w-sm">
-            <label className="sr-only">Søk</label>
+            <label className="sr-only">SÃ¸k</label>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Søk på firmanavn eller orgnr…"
+              placeholder="SÃ¸k pÃ¥ firmanavn eller orgnrâ¦"
               className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none ring-offset-2 focus:ring-2 focus:ring-neutral-400"
             />
           </div>
@@ -449,8 +440,8 @@ export default function CompaniesClient({ initial }: Props) {
             <option value="updated_at:asc">Sist oppdatert (eldst)</option>
             <option value="created_at:desc">Opprettet (nyest)</option>
             <option value="created_at:asc">Opprettet (eldst)</option>
-            <option value="name:asc">Navn (A–Å)</option>
-            <option value="name:desc">Navn (Å–A)</option>
+            <option value="name:asc">Navn (AâÃ)</option>
+            <option value="name:desc">Navn (ÃâA)</option>
           </select>
 
           <select
@@ -482,9 +473,9 @@ export default function CompaniesClient({ initial }: Props) {
       ) : null}
 
       {/* Table */}
-      <div className="mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <div className="mt-5 rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <div className="text-sm text-neutral-600">{loading ? "Laster…" : `Viser ${rows.length} av ${total}`}</div>
+          <div className="text-sm text-neutral-600">{loading ? "Lasterâ¦" : `Viser ${rows.length} av ${total}`}</div>
 
           <div className="flex items-center gap-2 text-sm text-neutral-600">
             <span>
@@ -515,7 +506,7 @@ export default function CompaniesClient({ initial }: Props) {
             <tbody className="divide-y divide-neutral-200">
               {rows.map((c) => {
                 const last = c.last_event ?? null;
-                const lastWho = last?.actor_email ?? last?.actor_role ?? "—";
+                const lastWho = last?.actor_email ?? last?.actor_role ?? "â";
 
                 return (
                   <tr key={c.id} className="hover:bg-neutral-50">
@@ -528,7 +519,7 @@ export default function CompaniesClient({ initial }: Props) {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-neutral-700">{c.orgnr ?? "—"}</td>
+                    <td className="px-4 py-3 text-neutral-700">{c.orgnr ?? "â"}</td>
 
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${badgeClass(c.status)}`}>
@@ -539,7 +530,7 @@ export default function CompaniesClient({ initial }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
                         <div className="text-neutral-900">{fmtTs(last?.created_at ?? null)}</div>
-                        <div className="text-xs text-neutral-500">{last ? lastWho : "—"}</div>
+                        <div className="text-xs text-neutral-500">{last ? lastWho : "â"}</div>
                       </div>
                     </td>
 
@@ -576,8 +567,8 @@ export default function CompaniesClient({ initial }: Props) {
                           </>
                         ) : (
                           <>
-                            <button className={btnClass("primary", isPending || loading)} onClick={() => setCompanyStatus(c.id, "active", "Gjenåpnet")}>
-                              Gjenåpne
+                            <button className={btnClass("primary", isPending || loading)} onClick={() => setCompanyStatus(c.id, "active", "GjenÃ¥pnet")}>
+                              GjenÃ¥pne
                             </button>
                             <button className={btnClass("ghost", isPending || loading)} onClick={() => setIncludeClosed(true)}>
                               Vis i liste
@@ -610,7 +601,7 @@ export default function CompaniesClient({ initial }: Props) {
                 <span className="font-medium text-neutral-900">{totalPages}</span>
               </>
             ) : (
-              "—"
+              "â"
             )}
           </div>
 

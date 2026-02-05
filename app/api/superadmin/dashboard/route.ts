@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 
     // Companies status counts (forutsetter companies.status = active|pending|paused|closed)
     const { data: companyRows, error: cErr } = await sb.from("companies").select("status");
-    if (cErr) return jsonErr(500, rid, "DB_COMPANIES", "Kunne ikke lese firma-status.", cErr);
+    if (cErr) return jsonErr(rid, "Kunne ikke lese firma-status.", 500, { code: "DB_COMPANIES", detail: cErr });
 
     const counts = { active: 0, pending: 0, paused: 0, closed: 0, total: 0 };
     for (const r of companyRows ?? []) {
@@ -92,9 +92,9 @@ export async function GET(req: NextRequest) {
       sb.from("orders").select("id", { count: "exact", head: true }).gte("date", weekStart).lt("date", weekEndExclusive),
     ]);
 
-    if (o1Err) return jsonErr(500, rid, "DB_ORDERS_TODAY", "Kunne ikke telle ordre (i dag).", o1Err);
-    if (o2Err) return jsonErr(500, rid, "DB_ORDERS_TOMORROW", "Kunne ikke telle ordre (i morgen).", o2Err);
-    if (o3Err) return jsonErr(500, rid, "DB_ORDERS_WEEK", "Kunne ikke telle ordre (uke).", o3Err);
+    if (o1Err) return jsonErr(rid, "Kunne ikke telle ordre (i dag).", 500, { code: "DB_ORDERS_TODAY", detail: o1Err });
+    if (o2Err) return jsonErr(rid, "Kunne ikke telle ordre (i morgen).", 500, { code: "DB_ORDERS_TOMORROW", detail: o2Err });
+    if (o3Err) return jsonErr(rid, "Kunne ikke telle ordre (uke).", 500, { code: "DB_ORDERS_WEEK", detail: o3Err });
 
     const payload: DashboardCounts = {
       companies: { ...counts },
@@ -102,9 +102,9 @@ export async function GET(req: NextRequest) {
       alerts: { pendingCompanies: counts.pending, pausedCompanies: counts.paused },
     };
 
-    return jsonOk({ ok: true, rid, data: payload });
+    return jsonOk(rid, { ok: true, rid, data: payload });
   } catch (e: any) {
-    return jsonErr(500, rid, "DASHBOARD_FAIL", "Uventet feil ved bygging av dashboard.", String(e?.message ?? e));
+    return jsonErr(rid, "Uventet feil ved bygging av dashboard.", 500, { code: "DASHBOARD_FAIL", detail: String(e?.message ?? e) });
   }
 }
 

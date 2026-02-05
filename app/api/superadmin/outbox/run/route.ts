@@ -14,7 +14,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -48,20 +48,17 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
     }
 
-    return jsonOk(
-      ctx,
-      {
+    return jsonOk(ctx.rid, {
         ok: true,
         rid: ctx.rid,
         run: res,
         before,
         after,
-      },
-      200
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "OUTBOX_RUN_FAILED", "Kunne ikke kjøre outbox.", {
+    return jsonErr(ctx.rid, "Kunne ikke kjøre outbox.", 500, { code: "OUTBOX_RUN_FAILED", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
+

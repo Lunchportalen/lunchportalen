@@ -1,8 +1,11 @@
 // app/api/auth/logout/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
 import { supabaseRoute } from "@/lib/supabase/route";
 
 function wipeSupabaseCookies(res: NextResponse) {
@@ -33,17 +36,24 @@ function wipeSupabaseCookies(res: NextResponse) {
   }
 }
 
-export async function POST(req: Request) {
-  const res = NextResponse.json({ ok: true }, { status: 200 });
-  res.headers.set("cache-control", "no-store");
+export async function POST(req: NextRequest) {
+  const rid = makeRid();
 
-  const supabase = supabaseRoute(req, res);
+  try {
+    const payload = { ok: true as const, rid, data: { loggedOut: true } };
+    const res = jsonOk(rid, payload, 200) as NextResponse;
+    const supabase = supabaseRoute(req, res);
 
-  // 1) normal supabase signout (skal skrive cookie-sletting via setAll)
-  await supabase.auth.signOut();
+    // 1) normal supabase signout (skal skrive cookie-sletting via setAll)
+    await supabase.auth.signOut();
 
-  // 2) hard wipe (failsafe)
-  wipeSupabaseCookies(res);
+    // 2) hard wipe (failsafe)
+    wipeSupabaseCookies(res);
 
-  return res;
+    return res;
+  } catch (e: any) {
+    return jsonErr(rid, "Kunne ikke logge ut.", 500, { code: "LOGOUT_FAILED", detail: {
+      message: String(e?.message ?? e ?? "unknown"),
+    } });
+  }
 }

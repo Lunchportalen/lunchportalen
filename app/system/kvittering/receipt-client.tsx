@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
 type ReceiptRow = {
@@ -69,13 +71,7 @@ function addDaysISO(iso: string, deltaDays: number): string {
 function fmtTs(iso?: string | null) {
   try {
     if (!iso) return "—";
-    return new Date(iso).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeNO(iso);
   } catch {
     return "—";
   }
@@ -300,18 +296,10 @@ export default function ReceiptClient() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-wrap { padding: 0 !important; }
-          .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        }
-      `}</style>
-
-      <div className="print-wrap">
+      <div className="lp-receipt-wrap">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Kvittering – ordre@lunchportalen.no</h1>
+            <h1 className="text-xl font-semibold">Kvittering – {SYSTEM_EMAILS.ORDER}</h1>
             <div className="text-sm opacity-70">
               Dato: <span className="font-medium">{dateDD || "—"}</span>
               {rid ? <span className="ml-3">RID: {rid}</span> : null}
@@ -362,7 +350,7 @@ export default function ReceiptClient() {
         ) : (
           <div className="space-y-4">
             {grouped.map((c) => (
-              <div key={c.companyId} className="card rounded-2xl border p-4">
+              <div key={c.companyId} className="lp-receipt-card rounded-2xl border p-4">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="text-lg font-semibold">{c.companyName}</div>
                   <div className="text-sm opacity-80">

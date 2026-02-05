@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = safeStr(scope.companyId);
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const sb = await supabaseServer();
@@ -60,11 +60,11 @@ export async function GET(req: NextRequest) {
     // Company active gate
     const { data: company, error: compErr } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
 
-    if (compErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: compErr.message });
-    if (!company) return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.");
+    if (compErr) return jsonErr(rid, "Kunne ikke lese firma.", 500, { code: "COMPANY_READ_FAILED", detail: { message: compErr.message } });
+    if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "COMPANY_NOT_FOUND");
 
     const cStatus = normCompanyStatus((company as any).status);
-    if (cStatus !== "ACTIVE") return jsonErr(403, rid, "COMPANY_NOT_ACTIVE", "Firma er ikke aktivt.", { status: cStatus });
+    if (cStatus !== "ACTIVE") return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: cStatus } });
 
     // Window: default 30 days (clamped 7..90)
     const url = new URL(req.url);
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     // Orders in window
     const { data: rows, error } = await sb.from("orders").select("date,status").eq("company_id", companyId).gte("date", fromISO).lte("date", todayISO);
 
-    if (error) return jsonErr(500, rid, "QUERY_FAILED", "Kunne ikke hente sammendrag.", { message: error.message });
+    if (error) return jsonErr(rid, "Kunne ikke hente sammendrag.", 500, { code: "QUERY_FAILED", detail: { message: error.message } });
 
     // Aggregate
     let orders = 0;
@@ -91,17 +91,13 @@ export async function GET(req: NextRequest) {
     const active = Math.max(0, orders - cancelled);
     const cancellation_rate = orders > 0 ? Number((cancelled / orders).toFixed(4)) : 0;
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       window: { from: fromISO, to: todayISO, days },
       totals: { orders, active, cancelled, cancellation_rate },
       meta: { status_cancelled_value: "CANCELLED" },
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

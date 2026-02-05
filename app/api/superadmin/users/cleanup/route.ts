@@ -5,23 +5,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { isSuperadminEmail, normEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
@@ -34,8 +27,7 @@ async function requireSuperadmin() {
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
 
   // Hard-fasit på systemkonto, som dere allerede bruker
-  const email = normEmail(user.email);
-  if (email === "superadmin@lunchportalen.no") return { user, actorEmail: user.email ?? null };
+  if (isSuperadminEmail(user.email)) return { user, actorEmail: user.email ?? null };
 
   // Fallback: profiles.role hvis dere også støtter det
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -77,9 +69,8 @@ async function findAuthUserIdByEmail(admin: ReturnType<typeof import("@/lib/supa
 }
 
 export async function POST(req: Request) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `su_cleanup_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const { user, actorEmail } = await requireSuperadmin();
@@ -88,7 +79,7 @@ export async function POST(req: Request) {
     const email = normEmail(body.email);
     const dryRun = Boolean(body.dryRun);
 
-    if (!email || !isEmail(email)) return jsonError(400, "invalid_email", "Ugyldig e-post.", { rid });
+    if (!email || !isEmail(email)) return jsonError(rid, 400, "invalid_email", "Ugyldig e-post.");
 
     const admin = supabaseAdmin();
 
@@ -110,7 +101,7 @@ export async function POST(req: Request) {
     const authHit = await findAuthUserIdByEmail(admin, email);
 
     if (dryRun) {
-      return jsonOk({
+      return jsonOk(rid, {
         ok: true,
         rid,
         dryRun: true,
@@ -120,7 +111,7 @@ export async function POST(req: Request) {
           profiles: prof.data ?? [],
           invites: inv.data ?? [],
         },
-      });
+      }, 200);
     }
 
     // 1) Slett invites først
@@ -163,7 +154,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return jsonOk({
+    return jsonOk(rid, {
       ok: true,
       rid,
       email,
@@ -179,12 +170,11 @@ export async function POST(req: Request) {
         authFind: authHit.error ?? null,
         authDelete: authDeleteError,
       },
-    });
+    }, 200);
   } catch (e: any) {
     const code = e?.code || "unknown";
-    if (code === "not_authenticated") return jsonError(401, "not_authenticated", "Du må være innlogget.", { rid });
-    if (code === "forbidden") return jsonError(403, "forbidden", "Ingen tilgang.", { rid });
-    return jsonError(500, "server_error", "Uventet feil.", { rid, detail: String(e?.message ?? e) });
+    if (code === "not_authenticated") return jsonError(rid, 401, "not_authenticated", "Du må være innlogget.");
+    if (code === "forbidden") return jsonError(rid, 403, "forbidden", "Ingen tilgang.");
+    return jsonError(rid, 500, "server_error", "Uventet feil.", { detail: String(e?.message ?? e) });
   }
 }
-

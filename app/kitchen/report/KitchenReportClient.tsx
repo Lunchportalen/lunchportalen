@@ -126,220 +126,6 @@ export default function KitchenReportClient() {
 
   return (
     <main className="lp-kitchen-report">
-      {/* Print-first global styles */}
-      <style jsx global>{`
-        .lp-kitchen-report {
-          padding: 16px;
-        }
-
-        .lp-card {
-          background: #fff;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 14px;
-          padding: 14px;
-          margin: 0 0 12px;
-        }
-
-        .lp-row {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .lp-h1 {
-          font-size: 22px;
-          margin: 0;
-          line-height: 1.2;
-        }
-
-        .lp-h2 {
-          font-size: 18px;
-          margin: 0;
-          line-height: 1.25;
-        }
-
-        .lp-muted {
-          color: rgba(0, 0, 0, 0.6);
-          font-size: 13px;
-          margin: 6px 0 0;
-        }
-
-        .lp-kicker {
-          color: rgba(0, 0, 0, 0.55);
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-        }
-
-        .lp-toolbar {
-          position: sticky;
-          top: 0;
-          z-index: 30;
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(6px);
-        }
-
-        .lp-field {
-          display: inline-flex;
-          flex-direction: column;
-          gap: 6px;
-          min-width: 160px;
-        }
-
-        .lp-label {
-          font-size: 12px;
-          color: rgba(0, 0, 0, 0.6);
-        }
-
-        .lp-field select,
-        .lp-field input {
-          height: 38px;
-          border-radius: 10px;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          padding: 0 10px;
-          background: #fff;
-          font: inherit;
-        }
-
-        .lp-btn {
-          height: 38px;
-          border-radius: 10px;
-          border: 1px solid rgba(0, 0, 0, 0.14);
-          padding: 0 12px;
-          background: #fff;
-          cursor: pointer;
-          font: inherit;
-        }
-
-        .lp-btn:active {
-          transform: translateY(1px);
-        }
-
-        .lp-totals {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .lp-totalBox {
-          min-width: 110px;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 12px;
-          padding: 10px 12px;
-          background: #fff;
-        }
-
-        .lp-num {
-          font-size: 20px;
-          font-weight: 700;
-        }
-
-        .lp-companyHead {
-          display: flex;
-          justify-content: space-between;
-          gap: 12px;
-          flex-wrap: wrap;
-          align-items: baseline;
-        }
-
-        .lp-locations {
-          margin-top: 10px;
-          display: grid;
-          gap: 10px;
-        }
-
-        .lp-location {
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 12px;
-          padding: 12px;
-        }
-
-        .lp-locationTop {
-          display: flex;
-          justify-content: space-between;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .lp-locationMeta {
-          display: grid;
-          gap: 4px;
-        }
-
-        .lp-badges {
-          display: flex;
-          gap: 6px;
-          flex-wrap: wrap;
-          justify-content: flex-end;
-        }
-
-        .lp-badge {
-          font-size: 12px;
-          border-radius: 999px;
-          padding: 6px 10px;
-          border: 1px solid rgba(0, 0, 0, 0.14);
-          background: #fff;
-          white-space: nowrap;
-        }
-
-        .lp-flags {
-          margin-top: 8px;
-          display: grid;
-          gap: 6px;
-        }
-
-        .lp-flag {
-          font-size: 12px;
-          color: rgba(0, 0, 0, 0.7);
-          display: flex;
-          gap: 8px;
-          align-items: flex-start;
-        }
-
-        .lp-flagDot {
-          margin-top: 6px;
-          width: 8px;
-          height: 8px;
-          border-radius: 999px;
-          background: rgba(0, 0, 0, 0.25);
-          flex: 0 0 auto;
-        }
-
-        .lp-notes {
-          margin-top: 8px;
-          font-size: 12px;
-          color: rgba(0, 0, 0, 0.7);
-          border-top: 1px dashed rgba(0, 0, 0, 0.14);
-          padding-top: 8px;
-        }
-
-        /* Print */
-        @media print {
-          .lp-kitchen-report {
-            padding: 0 !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .lp-card {
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            margin: 0 0 10px !important;
-          }
-          .page-break {
-            break-before: page;
-            page-break-before: always;
-          }
-          /* A4-ish spacing: */
-          @page {
-            size: A4 portrait;
-            margin: 12mm;
-          }
-        }
-      `}</style>
-
       <header className="lp-card lp-toolbar no-print">
         <div className="lp-row">
           <div>
@@ -347,7 +133,7 @@ export default function KitchenReportClient() {
             <div className="lp-muted">Read-only · firma → lokasjon · totaler + avvik · utskriftsklar</div>
           </div>
 
-          <div className="lp-row" style={{ alignItems: "flex-end" }}>
+          <div className="lp-row items-end">
             <label className="lp-field">
               <span className="lp-label">Modus</span>
               <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
@@ -389,7 +175,7 @@ export default function KitchenReportClient() {
             <div className="lp-row">
               <div>
                 <div className="lp-kicker">{data.mode === "week" ? "Uke" : "Dag"}</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                <div className="text-lg font-semibold">
                   {data.mode === "week"
                     ? `${data.dates[0]} → ${data.dates[data.dates.length - 1]}`
                     : data.date}
@@ -438,7 +224,7 @@ export default function KitchenReportClient() {
                     <div key={`${c.companyId}:${loc.locationId}`} className="lp-location">
                       <div className="lp-locationTop">
                         <div className="lp-locationMeta">
-                          <div style={{ fontWeight: 700 }}>{loc.locationName}</div>
+                          <div className="font-semibold">{loc.locationName}</div>
                           {safeStr(loc.address) ? (
                             <div className="lp-muted">{loc.address}</div>
                           ) : (

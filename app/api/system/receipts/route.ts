@@ -31,9 +31,9 @@ export async function GET(req: NextRequest) {
   const date = url.searchParams.get("date") || osloTodayISODate();
 
   if (!isISODate(date)) {
-    return jsonErr(400, rid, "bad_request", "Ugyldig dato. Bruk YYYY-MM-DD.", {
+    return jsonErr(rid, "Ugyldig dato. Bruk YYYY-MM-DD.", 400, { code: "bad_request", detail: {
       received: date,
-    });
+    } });
   }
 
   const sb = supabaseAdmin();
@@ -47,14 +47,14 @@ export async function GET(req: NextRequest) {
     .order("employee_name", { ascending: true });
 
   if (error) {
-    return jsonErr(500, rid, "db_error", "Kunne ikke hente kvitteringsgrunnlag.", {
+    return jsonErr(rid, "Kunne ikke hente kvitteringsgrunnlag.", 500, { code: "db_error", detail: {
       code: error.code,
       message: error.message,
       details: error.details,
-    });
+    } });
   }
 
-  return jsonOk({
+  return jsonOk(rid, {
     rid,
     date,
     rows: data ?? [],

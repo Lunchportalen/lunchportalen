@@ -21,7 +21,7 @@ function denyResponse(s: any): Response {
     if ("res" in s && s.res instanceof Response) return s.res as Response;
   }
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 function pickBool(v: any, fallback: boolean) {
@@ -208,11 +208,11 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   try {
     const settings = await getSystemSettings();
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, settings }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, settings }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente systeminnstillinger.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente systeminnstillinger.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
 
@@ -230,7 +230,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
   if (deny) return deny;
 
   const userId = ctx.scope?.userId ?? null;
-  if (!userId) return jsonErr(401, ctx, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (!userId) return jsonErr(ctx.rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   try {
     const current = await getSystemSettings();
@@ -245,7 +245,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
     // Idempotency: én rid => én effekt
     const okToApply = await ensureIdempotentApplied(sb, ctx.rid);
     if (!okToApply) {
-      return jsonOk(ctx, { ok: true, rid: ctx.rid, idempotent: true, settings: current }, 200);
+      return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, idempotent: true, settings: current }, 200);
     }
 
     // Root gate hvis nødvendig
@@ -253,11 +253,11 @@ export async function PUT(req: NextRequest): Promise<Response> {
     if (policy.required) {
       root = await getActiveRootSession(sb, userId);
       if (!root) {
-        return jsonErr(403, ctx, "ROOT_REQUIRED", "Denne endringen krever aktiv Root Mode (break-glass).", {
+        return jsonErr(ctx.rid, "Denne endringen krever aktiv Root Mode (break-glass).", 403, { code: "ROOT_REQUIRED", detail: {
           reasons: policy.reasons,
           severity: policy.severity,
           plan,
-        });
+        } });
       }
     }
 
@@ -305,7 +305,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
         detail: { error },
       });
 
-      return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke lagre systeminnstillinger.", error);
+      return jsonErr(ctx.rid, "Kunne ikke lagre systeminnstillinger.", 500, { code: "DB_ERROR", detail: error });
     }
 
     const settings = await getSystemSettings();
@@ -336,10 +336,11 @@ export async function PUT(req: NextRequest): Promise<Response> {
       },
     });
 
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, settings }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, settings }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke lagre systeminnstillinger.", {
+    return jsonErr(ctx.rid, "Kunne ikke lagre systeminnstillinger.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
+

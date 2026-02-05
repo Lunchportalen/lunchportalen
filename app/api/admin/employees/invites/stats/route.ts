@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const admin = supabaseAdmin();
@@ -57,11 +57,9 @@ export async function GET(req: NextRequest) {
     const [totalR, activeR, usedR, expiredR] = await Promise.all([totalQ, activeQ, usedQ, expiredQ]);
 
     const anyErr = totalR.error || activeR.error || usedR.error || expiredR.error;
-    if (anyErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente invitasjonsstatistikk.", anyErr);
+    if (anyErr) return jsonErr(rid, "Kunne ikke hente invitasjonsstatistikk.", 500, { code: "DB_ERROR", detail: anyErr });
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       stats: {
         total: Number(totalR.count ?? 0),
@@ -71,8 +69,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

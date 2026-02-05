@@ -11,7 +11,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -35,15 +35,13 @@ export async function GET(req: NextRequest): Promise<Response> {
       admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed"),
     ]);
 
-    if (total.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", total.error);
-    if (pending.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", pending.error);
-    if (active.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", active.error);
-    if (paused.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", paused.error);
-    if (closed.error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente stats.", closed.error);
+    if (total.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: total.error });
+    if (pending.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: pending.error });
+    if (active.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: active.error });
+    if (paused.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: paused.error });
+    if (closed.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: closed.error });
 
-    return jsonOk(
-      ctx,
-      {
+    return jsonOk(ctx.rid, {
         ok: true,
         rid: ctx.rid,
         stats: {
@@ -53,11 +51,10 @@ export async function GET(req: NextRequest): Promise<Response> {
           companiesPaused: Number(paused.count ?? 0),
           companiesClosed: Number(closed.count ?? 0),
         },
-      },
-      200
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente stats.", { message: String(e?.message ?? e) });
+    return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
+
 

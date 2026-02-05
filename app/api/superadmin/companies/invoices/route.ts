@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const companyId = safeStr(url.searchParams.get("companyId"));
-  if (!companyId) return jsonErr(400, g.ctx, "BAD_INPUT", "Mangler companyId.");
+  if (!companyId) return jsonErr(g.ctx.rid, "Mangler companyId.", 400, "BAD_INPUT");
 
   const admin = supabaseAdmin();
 
@@ -46,10 +46,10 @@ export async function GET(req: NextRequest) {
     .order("period_start", { ascending: false });
 
   if (error) {
-    return jsonErr(500, g.ctx, "DB_ERROR", "Kunne ikke hente fakturaer.", error);
+    return jsonErr(g.ctx.rid, "Kunne ikke hente fakturaer.", 500, { code: "DB_ERROR", detail: error });
   }
 
-  return jsonOk(g.ctx, {
+  return jsonOk(g.ctx.rid, {
     ok: true,
     invoices: data ?? [],
   });

@@ -5,34 +5,31 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function json(status: number, body: any) {
-  return NextResponse.json(body, { status, headers: noStore() });
+type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
+function normCompanyStatus(v: any): CompanyStatus {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PENDING") return "PENDING";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  return "UNKNOWN";
 }
 
 export async function GET() {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `prof_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     // ✅ Viktig i ditt prosjekt: supabaseServer() er async
     const sb = await supabaseServer();
 
     const { data: auth, error: authErr } = await sb.auth.getUser();
-    if (authErr) {
-      return json(401, { ok: false, rid, error: "not_authenticated", message: "Not authenticated." });
-    }
+    if (authErr) return jsonErr(rid, "Not authenticated.", 401, "not_authenticated");
 
     const user = auth?.user ?? null;
-    if (!user?.id) {
-      return json(401, { ok: false, rid, error: "not_authenticated", message: "Not authenticated." });
-    }
+    if (!user?.id) return jsonErr(rid, "Not authenticated.", 401, "not_authenticated");
 
     // ✅ Service-side check med cookie-auth (RLS gjelder)
     const p = await sb
@@ -43,30 +40,50 @@ export async function GET() {
 
     // Ved RLS/kolonnefeil: ikke leak, men returner profileExists=false
     if (p.error) {
-      return json(200, {
+      return jsonOk(rid, {
         ok: true,
         rid,
         profileExists: false,
         userId: user.id,
         note: "profile_query_error",
-      });
+      }, 200);
     }
 
     if (!p.data?.id) {
-      return json(200, { ok: true, rid, profileExists: false, userId: user.id });
+      return jsonOk(rid, { ok: true, rid, profileExists: false, userId: user.id }, 200);
     }
 
-    return json(200, { ok: true, rid, profileExists: true, userId: user.id, profile: p.data });
+    if (!p.data?.company_id) {
+      return jsonOk(rid, { ok: true, rid, profileExists: false, userId: user.id, pending: true, reason: "PROFILE_NOT_READY" }, 200);
+    }
+
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const admin = supabaseAdmin();
+    const { data: company, error: compErr } = await admin
+      .from("companies")
+      .select("id,status")
+      .eq("id", p.data.company_id)
+      .maybeSingle();
+
+    if (compErr || !company?.id) return jsonErr(rid, "Kunne ikke verifisere firmastatus.", 500, "company_lookup_failed");
+
+    const companyStatus = normCompanyStatus((company as any).status);
+    if (companyStatus !== "ACTIVE") {
+      return jsonOk(rid, {
+        ok: true,
+        rid,
+        profileExists: true,
+        pending: true,
+        reason: companyStatus === "PENDING" ? "COMPANY_PENDING" : "COMPANY_NOT_ACTIVE",
+        company_status: companyStatus,
+        userId: user.id,
+        profile: p.data,
+      }, 200);
+    }
+
+    return jsonOk(rid, { ok: true, rid, profileExists: true, pending: false, userId: user.id, profile: p.data }, 200);
   } catch (e: any) {
-    return json(500, {
-      ok: false,
-      rid,
-      error: "server_error",
-      message: "Unexpected error.",
-      detail: String(e?.message ?? e),
-    });
+    return jsonErr(rid, "Unexpected error.", 500, { code: "server_error", detail: String(e?.message ?? e) });
   }
 }
-
-
 

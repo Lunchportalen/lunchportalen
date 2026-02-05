@@ -5,10 +5,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function isEmail(v: any) {
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `onb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const body = await req.json();
@@ -94,25 +95,25 @@ export async function POST(req: Request) {
     // =========================
     // Validation
     // =========================
-    if (!company_name) return jsonError(400, "bad_request", "Firmanavn mangler.", { rid });
-    if (orgnr.length !== 9) return jsonError(400, "bad_request", "Org.nr må være 9 siffer.", { rid });
+    if (!company_name) return jsonError(rid, 400, "bad_request", "Firmanavn mangler.");
+    if (orgnr.length !== 9) return jsonError(rid, 400, "bad_request", "Org.nr må være 9 siffer.");
     if (!Number.isFinite(employee_count) || employee_count < 20) {
-      return jsonError(400, "bad_request", "Firma må ha minimum 20 ansatte.", { rid });
+      return jsonError(rid, 400, "bad_request", "Firma må ha minimum 20 ansatte.");
     }
 
-    if (!admin_name) return jsonError(400, "bad_request", "Admin-navn mangler.", { rid });
-    if (!isEmail(admin_email)) return jsonError(400, "bad_request", "Ugyldig e-postadresse.", { rid });
-    if (!admin_phone) return jsonError(400, "bad_request", "Telefon mangler.", { rid });
+    if (!admin_name) return jsonError(rid, 400, "bad_request", "Admin-navn mangler.");
+    if (!isEmail(admin_email)) return jsonError(rid, 400, "bad_request", "Ugyldig e-postadresse.");
+    if (!admin_phone) return jsonError(rid, 400, "bad_request", "Telefon mangler.");
 
-    if (password.length < 10) return jsonError(400, "bad_request", "Passord må være minimum 10 tegn.", { rid });
-    if (password !== password2) return jsonError(400, "bad_request", "Passordene matcher ikke.", { rid });
+    if (password.length < 10) return jsonError(rid, 400, "bad_request", "Passord må være minimum 10 tegn.");
+    if (password !== password2) return jsonError(rid, 400, "bad_request", "Passordene matcher ikke.");
 
     // =========================
     // 1) Guard: unik orgnr
     // =========================
     const existingCompany = await admin.from("companies").select("id").eq("orgnr", orgnr).maybeSingle();
     if (existingCompany.data?.id) {
-      return jsonError(409, "conflict", "Dette org.nr er allerede registrert.", { rid });
+      return jsonError(rid, 409, "conflict", "Dette org.nr er allerede registrert.");
     }
 
     // =========================
@@ -122,16 +123,16 @@ export async function POST(req: Request) {
     const profByEmail = await admin.from("profiles").select("id, company_id, role, email").ilike("email", admin_email).maybeSingle();
 
     if (profByEmail.error) {
-      return jsonError(500, "db_error", "Kunne ikke sjekke e-post i profiler.", { rid, supabase: profByEmail.error });
+      return jsonError(rid, 500, "db_error", "Kunne ikke sjekke e-post i profiler.", profByEmail.error);
     }
 
     // Hvis e-post finnes og allerede er knyttet til firma → stopp (enterprise-strengt)
     if (profByEmail.data?.id && profByEmail.data?.company_id) {
       return jsonError(
+        rid,
         409,
         "user_exists",
-        "Denne e-posten er allerede registrert og knyttet til et firma. Logg inn i stedet, eller bruk en annen e-post.",
-        { rid }
+        "Denne e-posten er allerede registrert og knyttet til et firma. Logg inn i stedet, eller bruk en annen e-post."
       );
     }
 
@@ -143,7 +144,7 @@ export async function POST(req: Request) {
     if (!profByEmail.data?.id) {
       const found = await findAuthUserByEmailPaged(admin, admin_email, rid);
       if (found.error) {
-        return jsonError(500, "auth_error", "Kunne ikke sjekke eksisterende bruker.", { rid, supabase: found.error });
+        return jsonError(rid, 500, "auth_error", "Kunne ikke sjekke eksisterende bruker.", found.error);
       }
       existingAuthUser = found.user;
 
@@ -151,14 +152,14 @@ export async function POST(req: Request) {
       if (existingAuthUser?.id) {
         const profByUser = await admin.from("profiles").select("id, company_id, role").eq("id", existingAuthUser.id).maybeSingle();
         if (profByUser.error) {
-          return jsonError(500, "db_error", "Kunne ikke sjekke profil for eksisterende bruker.", { rid, supabase: profByUser.error });
+          return jsonError(rid, 500, "db_error", "Kunne ikke sjekke profil for eksisterende bruker.", profByUser.error);
         }
         if (profByUser.data?.company_id) {
           return jsonError(
+            rid,
             409,
             "user_exists",
-            "Denne e-posten er allerede registrert og knyttet til et firma. Logg inn i stedet, eller bruk en annen e-post.",
-            { rid }
+            "Denne e-posten er allerede registrert og knyttet til et firma. Logg inn i stedet, eller bruk en annen e-post."
           );
         }
       }
@@ -179,7 +180,7 @@ export async function POST(req: Request) {
       .single();
 
     if (companyInsert.error || !companyInsert.data?.id) {
-      return jsonError(500, "db_error", "Kunne ikke opprette firma.", { rid, supabase: companyInsert.error });
+      return jsonError(rid, 500, "db_error", "Kunne ikke opprette firma.", companyInsert.error);
     }
 
     const company_id = companyInsert.data.id as string;
@@ -199,10 +200,10 @@ export async function POST(req: Request) {
       // Vi krever ny bruker (eller superadmin). For onboarding: stopp tidlig.
       await admin.from("companies").delete().eq("id", company_id);
       return jsonError(
+        rid,
         409,
         "profile_exists_unbound",
-        "Denne e-posten finnes allerede i systemet (ubundet profil). Kontakt superadmin for opprydding før onboarding.",
-        { rid }
+        "Denne e-posten finnes allerede i systemet (ubundet profil). Kontakt superadmin for opprydding før onboarding."
       );
     }
 
@@ -223,14 +224,14 @@ export async function POST(req: Request) {
 
       if (upd.error) {
         await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "auth_error", "Kunne ikke oppdatere eksisterende bruker.", { rid, supabase: upd.error });
+        return jsonError(rid, 500, "auth_error", "Kunne ikke oppdatere eksisterende bruker.", upd.error);
       }
 
       // Vent til profile finnes (eller finnes allerede) – oppdater trygge felter (ikke company_id)
       const waited = await waitForProfile(admin, user_id, rid);
       if (!waited.ok) {
         await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "profile_not_created", "Profil ble ikke opprettet automatisk.", { rid, detail: waited.error });
+        return jsonError(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk.", waited.error);
       }
 
       const profUpd = await admin
@@ -248,20 +249,20 @@ export async function POST(req: Request) {
 
       if (profUpd.error) {
         await admin.from("companies").delete().eq("id", company_id);
-        return jsonError(500, "db_error", "Kunne ikke oppdatere profil.", { rid, supabase: profUpd.error });
+        return jsonError(rid, 500, "db_error", "Kunne ikke oppdatere profil.", profUpd.error);
       }
 
       const supabase = await supabaseServer();
       const signIn = await supabase.auth.signInWithPassword({ email: admin_email, password });
 
-      return NextResponse.json({
+      return jsonOk(rid, {
         ok: true,
         rid,
         company_id,
         status: "pending",
         autoLogin: !signIn.error,
         message: signIn.error ? "Firma registrert. Logg inn manuelt." : "Firma registrert. Du er nå logget inn.",
-      });
+      }, 200);
     }
 
     // Case C: Ny bruker – opprett auth. Profiles lages av trigger. Deretter oppdater trygge felter.
@@ -279,7 +280,7 @@ export async function POST(req: Request) {
 
     if (createUser.error || !createUser.data?.user?.id) {
       await admin.from("companies").delete().eq("id", company_id);
-      return jsonError(500, "auth_error", "Kunne ikke opprette admin-bruker.", { rid, supabase: createUser.error });
+      return jsonError(rid, 500, "auth_error", "Kunne ikke opprette admin-bruker.", createUser.error);
     }
 
     const user_id = createUser.data.user.id;
@@ -289,7 +290,7 @@ export async function POST(req: Request) {
     if (!waited.ok) {
       await admin.auth.admin.deleteUser(user_id);
       await admin.from("companies").delete().eq("id", company_id);
-      return jsonError(500, "profile_not_created", "Profil ble ikke opprettet automatisk.", { rid, detail: waited.error });
+      return jsonError(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk.", waited.error);
     }
 
     // Oppdater trygge felter (IKKE company_id)
@@ -309,24 +310,22 @@ export async function POST(req: Request) {
     if (profUpd.error) {
       await admin.auth.admin.deleteUser(user_id);
       await admin.from("companies").delete().eq("id", company_id);
-      return jsonError(500, "db_error", "Kunne ikke oppdatere profil.", { rid, supabase: profUpd.error });
+      return jsonError(rid, 500, "db_error", "Kunne ikke oppdatere profil.", profUpd.error);
     }
 
     const supabase = await supabaseServer();
     const signIn = await supabase.auth.signInWithPassword({ email: admin_email, password });
 
-    return NextResponse.json({
+    return jsonOk(rid, {
       ok: true,
       rid,
       company_id,
       status: "pending",
       autoLogin: !signIn.error,
       message: signIn.error ? "Firma registrert. Logg inn manuelt." : "Firma registrert. Du er nå logget inn.",
-    });
+    }, 200);
   } catch (e: any) {
-    return jsonError(500, "server_error", "Uventet feil i onboarding.", { rid, message: String(e?.message ?? e) });
+    return jsonError(rid, 500, "server_error", "Uventet feil i onboarding.", { message: String(e?.message ?? e) });
   }
 }
-
-
 

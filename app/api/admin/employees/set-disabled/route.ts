@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const body = (await readJson(req)) as Partial<Body>;
   const userId = String((body as any)?.user_id ?? "").trim();
 
-  if (!isUuid(userId)) return jsonErr(400, rid, "INVALID_USER_ID", "Ugyldig user_id.");
+  if (!isUuid(userId)) return jsonErr(rid, "Ugyldig user_id.", 400, "INVALID_USER_ID");
 
   const disabled = Boolean((body as any)?.disabled);
   const reason = safeText((body as any)?.reason);
@@ -60,14 +60,14 @@ export async function POST(req: NextRequest) {
     // Viktig: schema hos dere bruker profiles.id som userId
     const { data: target, error: tErr } = await admin.from("profiles").select("id, company_id, role").eq("id", userId).maybeSingle();
 
-    if (tErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lese ansatt.", { message: tErr.message });
-    if (!target) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke ansatt.");
+    if (tErr) return jsonErr(rid, "Kunne ikke lese ansatt.", 500, { code: "DB_ERROR", detail: { message: tErr.message } });
+    if (!target) return jsonErr(rid, "Fant ikke ansatt.", 404, "NOT_FOUND");
 
     if (String((target as any).company_id ?? "") !== companyId) {
-      return jsonErr(403, rid, "FORBIDDEN", "Kan kun endre ansatte i eget firma.");
+      return jsonErr(rid, "Kan kun endre ansatte i eget firma.", 403, "FORBIDDEN");
     }
     if (String((target as any).role ?? "").toLowerCase() !== "employee") {
-      return jsonErr(400, rid, "INVALID_TARGET", "Kun ansatte kan deaktiveres her.");
+      return jsonErr(rid, "Kun ansatte kan deaktiveres her.", 400, "INVALID_TARGET");
     }
 
     const patch = disabled
@@ -75,12 +75,10 @@ export async function POST(req: NextRequest) {
       : { disabled_at: null, disabled_reason: null };
 
     const { error: uErr } = await admin.from("profiles").update(patch).eq("id", userId);
-    if (uErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke oppdatere ansatt.", { message: uErr.message });
+    if (uErr) return jsonErr(rid, "Kunne ikke oppdatere ansatt.", 500, { code: "DB_ERROR", detail: { message: uErr.message } });
 
-    return jsonOk({ ok: true, rid, user_id: userId, disabled }, 200);
+    return jsonOk(rid, { user_id: userId, disabled }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

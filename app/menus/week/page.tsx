@@ -5,19 +5,19 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { weekRangeISO, weekRangeISOFrom } from "@/lib/date/week";
 import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/sanity/queries";
+import { formatDateNO, formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
 
 function isISODate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
 }
 
 function dayNameNO(dateISO: string) {
-  const d = new Date(`${dateISO}T12:00:00+01:00`);
-  return d.toLocaleDateString("nb-NO", { weekday: "long" });
+  const name = formatWeekdayNO(dateISO);
+  return name ? name.charAt(0).toUpperCase() + name.slice(1) : "";
 }
 
 function prettyDateNO(dateISO: string) {
-  const d = new Date(`${dateISO}T12:00:00+01:00`);
-  return d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short" });
+  return formatDayMonthShortNO(dateISO);
 }
 
 function chipClass(kind: "ok" | "warn" | "crit" | "neutral") {
@@ -119,7 +119,7 @@ export default async function MenusWeekPage(props: {
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                    {dateISO}
+                    {formatDateNO(dateISO)}
                   </div>
                 </div>
 

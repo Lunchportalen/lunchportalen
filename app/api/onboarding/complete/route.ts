@@ -5,8 +5,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest, NextResponse } from "next/server";
-import { jsonErr, rid as makeRid } from "@/lib/http/respond";
+import { type NextRequest } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Types
@@ -52,8 +52,9 @@ type LocInput = {
 /* =========================================================
    Helpers
 ========================================================= */
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 const cleanEmail = (v: any) => String(v ?? "").trim().toLowerCase();
@@ -479,14 +480,12 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
 export async function POST(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = makeRid(req);
+  const rid = makeRid();
   const SB = await adminClient();
-  if (!SB?.from || !SB?.auth?.admin) {
-    return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
-  }
+  if (!SB?.from || !SB?.auth?.admin) return jsonError(rid, 500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
 
   const body = await req.json().catch(() => null);
-  if (!body) return jsonError(400, "BAD_REQUEST", "Ugyldig JSON");
+  if (!body) return jsonError(rid, 400, "BAD_REQUEST", "Ugyldig JSON");
 
   const company_name = String(body?.company_name ?? "").trim();
   const orgnr = digitsOnly(body?.orgnr);
@@ -504,49 +503,49 @@ export async function POST(req: NextRequest) {
   const agreement = body?.agreement ?? null;
   const terms = body?.terms ?? null;
 
-  if (!isNonEmpty(company_name, 2)) return jsonError(400, "VALIDATION", "Firmanavn er påkrevd");
-  if (orgnr.length !== 9) return jsonError(400, "VALIDATION", "Org.nr må være 9 siffer");
+  if (!isNonEmpty(company_name, 2)) return jsonError(rid, 400, "VALIDATION", "Firmanavn er påkrevd");
+  if (orgnr.length !== 9) return jsonError(rid, 400, "VALIDATION", "Org.nr må være 9 siffer");
   if (!Number.isFinite(employee_count) || employee_count < 20)
-    return jsonError(400, "VALIDATION", "Firma må ha minimum 20 ansatte");
+    return jsonError(rid, 400, "VALIDATION", "Firma må ha minimum 20 ansatte");
 
-  if (!isNonEmpty(full_name, 2)) return jsonError(400, "VALIDATION", "Navn er påkrevd");
-  if (!isEmail(email)) return jsonError(400, "VALIDATION", "Ugyldig e-postadresse");
-  if (phone.length < 6) return jsonError(400, "VALIDATION", "Telefon er påkrevd");
-  if (password.length < 10) return jsonError(400, "VALIDATION", "Passord må være minimum 10 tegn");
-  if (password !== password_confirm) return jsonError(400, "VALIDATION", "Passordene er ikke like");
+  if (!isNonEmpty(full_name, 2)) return jsonError(rid, 400, "VALIDATION", "Navn er påkrevd");
+  if (!isEmail(email)) return jsonError(rid, 400, "VALIDATION", "Ugyldig e-postadresse");
+  if (phone.length < 6) return jsonError(rid, 400, "VALIDATION", "Telefon er påkrevd");
+  if (password.length < 10) return jsonError(rid, 400, "VALIDATION", "Passord må være minimum 10 tegn");
+  if (password !== password_confirm) return jsonError(rid, 400, "VALIDATION", "Passordene er ikke like");
 
-  if (!delivery) return jsonError(400, "VALIDATION", "Leveringsinfo mangler");
-  if (!location) return jsonError(400, "VALIDATION", "Lokasjon mangler");
+  if (!delivery) return jsonError(rid, 400, "VALIDATION", "Leveringsinfo mangler");
+  if (!location) return jsonError(rid, 400, "VALIDATION", "Lokasjon mangler");
 
-  if (!isNonEmpty(delivery?.where, 2)) return jsonError(400, "VALIDATION", "Leveringspunkt er påkrevd");
-  if (!isNonEmpty(delivery?.when_note, 2)) return jsonError(400, "VALIDATION", "Leveringsinstruksjon er påkrevd");
-  if (!isNonEmpty(delivery?.contact_name, 2)) return jsonError(400, "VALIDATION", "Kontaktperson er påkrevd");
-  if (!isNonEmpty(delivery?.contact_phone, 2)) return jsonError(400, "VALIDATION", "Telefon ved levering er påkrevd");
+  if (!isNonEmpty(delivery?.where, 2)) return jsonError(rid, 400, "VALIDATION", "Leveringspunkt er påkrevd");
+  if (!isNonEmpty(delivery?.when_note, 2)) return jsonError(rid, 400, "VALIDATION", "Leveringsinstruksjon er påkrevd");
+  if (!isNonEmpty(delivery?.contact_name, 2)) return jsonError(rid, 400, "VALIDATION", "Kontaktperson er påkrevd");
+  if (!isNonEmpty(delivery?.contact_phone, 2)) return jsonError(rid, 400, "VALIDATION", "Telefon ved levering er påkrevd");
   if (!isValidTimeHHMM(String(delivery?.window_from ?? "")) || !isValidTimeHHMM(String(delivery?.window_to ?? ""))) {
-    return jsonError(400, "VALIDATION", "Leveringsvindu må være på format HH:MM");
+    return jsonError(rid, 400, "VALIDATION", "Leveringsvindu må være på format HH:MM");
   }
 
-  if (!isNonEmpty(location?.name, 2)) return jsonError(400, "VALIDATION", "Lokasjon (navn) er påkrevd");
-  if (!isNonEmpty(location?.address, 2)) return jsonError(400, "VALIDATION", "Adresse er påkrevd");
-  if (!isNonEmpty(location?.postal_code, 2)) return jsonError(400, "VALIDATION", "Postnummer er påkrevd");
-  if (!isNonEmpty(location?.city, 2)) return jsonError(400, "VALIDATION", "Poststed er påkrevd");
+  if (!isNonEmpty(location?.name, 2)) return jsonError(rid, 400, "VALIDATION", "Lokasjon (navn) er påkrevd");
+  if (!isNonEmpty(location?.address, 2)) return jsonError(rid, 400, "VALIDATION", "Adresse er påkrevd");
+  if (!isNonEmpty(location?.postal_code, 2)) return jsonError(rid, 400, "VALIDATION", "Postnummer er påkrevd");
+  if (!isNonEmpty(location?.city, 2)) return jsonError(rid, 400, "VALIDATION", "Poststed er påkrevd");
 
   const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : 0.25;
   const daysParsed = normalizeDays(agreement?.days, vatRate);
-  if (!daysParsed) return jsonError(400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå/pris.");
-  if (!daysParsed.hasAnyEnabled) return jsonError(400, "VALIDATION", "Velg minst én leveringsdag (man–fre).");
+  if (!daysParsed) return jsonError(rid, 400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå/pris.");
+  if (!daysParsed.hasAnyEnabled) return jsonError(rid, 400, "VALIDATION", "Velg minst én leveringsdag (man–fre).");
 
   // Preflight
   try {
     const existing = await findAuthUserIdByEmail(SB, email);
-    if (existing) return jsonError(409, "EMAIL_EXISTS", "E-post er allerede registrert. Bruk innlogging eller en annen e-post.");
+    if (existing) return jsonError(rid, 409, "EMAIL_EXISTS", "E-post er allerede registrert. Bruk innlogging eller en annen e-post.");
   } catch (e: any) {
-    return jsonError(500, "AUTH_LOOKUP_FAILED", "Kunne ikke sjekke e-post i auth", e?.message ?? e);
+    return jsonError(rid, 500, "AUTH_LOOKUP_FAILED", "Kunne ikke sjekke e-post i auth", e?.message ?? e);
   }
 
   const orgCheck = await SB.from("companies").select("id").eq("orgnr", orgnr).limit(1);
-  if (orgCheck.error) return jsonError(500, "DB", "Kunne ikke sjekke org.nr", orgCheck.error);
-  if ((orgCheck.data ?? []).length) return jsonError(409, "ORGNR_EXISTS", "Org.nr er allerede registrert");
+  if (orgCheck.error) return jsonError(rid, 500, "DB", "Kunne ikke sjekke org.nr", orgCheck.error);
+  if ((orgCheck.data ?? []).length) return jsonError(rid, 409, "ORGNR_EXISTS", "Org.nr er allerede registrert");
 
   const nowISO = new Date().toISOString();
   const daysNorm = daysParsed.days;
@@ -596,7 +595,7 @@ export async function POST(req: NextRequest) {
       if (companyId) await SB.from("companies").delete().eq("id", companyId);
     } catch {}
 
-    return jsonErr(500, rid, "ONBOARDING_FAILED", "Registrering feilet â€“ ingen data er lagret.", e?.message ?? e);
+    return jsonErr(rid, "Registrering feilet â€“ ingen data er lagret.", 500, { code: "ONBOARDING_FAILED", detail: e?.message ?? e });
   };
 
   try {
@@ -700,7 +699,7 @@ export async function POST(req: NextRequest) {
       if (insTerms.error && !isTableMissingError(insTerms.error)) return await fail(insTerms.error);
     }
 
-    return NextResponse.json({ ok: true, status: "pending", companyId, userId, locationId }, { status: 200 });
+    return jsonOk(rid, { ok: true, status: "pending", companyId, userId, locationId }, 200);
   } catch (e: any) {
     // rollback best effort
     try {
@@ -725,8 +724,6 @@ export async function POST(req: NextRequest) {
       if (companyId) await SB.from("companies").delete().eq("id", companyId);
     } catch {}
 
-    return jsonError(500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
+    return jsonError(rid, 500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
   }
 }
-
-

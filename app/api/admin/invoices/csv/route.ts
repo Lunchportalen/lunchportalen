@@ -11,7 +11,7 @@ import { normalizeAgreement, isAgreementInvalid, resolveTierForDate, type Agreem
 import { PRICE_PER_TIER, type PlanTier } from "@/lib/pricing/priceForDate";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
-import { jsonErr } from "@/lib/http/respond";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
@@ -62,10 +62,11 @@ function csvLine(values: unknown[]) {
 export async function GET(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid();
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
-  const { rid, scope } = a.ctx;
+  const { scope } = a.ctx;
 
   const denyRole = requireRoleOr403(a.ctx, "admin.invoices.csv", ["company_admin"]);
   if (denyRole) return denyRole;
@@ -74,49 +75,50 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = safeStr(scope.companyId);
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     // Period
     const url = new URL(req.url);
     const qFrom = url.searchParams.get("from");
     const qTo = url.searchParams.get("to");
+    const metaOnly = url.searchParams.get("meta") === "1";
 
     const def = defaultInvoiceWindowISO();
     const from = isIsoDate(qFrom) ? qFrom! : def.from;
     const to = isIsoDate(qTo) ? qTo! : def.to;
 
-    if (from >= to) return jsonErr(400, rid, "BAD_RANGE", "Ugyldig periode.", { from, to });
+    if (from >= to) return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
 
     const admin = supabaseAdmin();
 
     // Company
     const cRes = await admin.from("companies").select("id,name").eq("id", companyId).maybeSingle();
-    if (cRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firma.", asErrDetail(cRes.error));
+    if (cRes.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: asErrDetail(cRes.error) });
 
     const company = (cRes.data ?? null) as CompanyRow | null;
-    if (!company) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke firma.");
+    if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "NOT_FOUND");
 
     const companyName = safeStr(company.name) || "—";
 
     // Agreement (ONE truth): company_current_agreement
     const aRes = await admin.from("company_current_agreement").select("*").eq("company_id", companyId).maybeSingle();
-    if (aRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente avtale.", asErrDetail(aRes.error));
-    if (!aRes.data) return jsonErr(404, rid, "NO_AGREEMENT", "Ingen avtale funnet for firma.");
+    if (aRes.error) return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "DB_ERROR", detail: asErrDetail(aRes.error) });
+    if (!aRes.data) return jsonErr(rid, "Ingen avtale funnet for firma.", 404, "NO_AGREEMENT");
 
     const agreementRes = normalizeAgreement(aRes.data as AgreementRow);
     if (isAgreementInvalid(agreementRes)) {
-      return jsonErr(409, rid, "AGREEMENT_INVALID", "Avtalen er ugyldig eller mangler ukesplan.", {
+      return jsonErr(rid, "Avtalen er ugyldig eller mangler ukesplan.", 409, { code: "AGREEMENT_INVALID", detail: {
         code: (agreementRes as any).error,
         message: (agreementRes as any).message,
         detail: (agreementRes as any).detail ?? null,
-      });
+      } });
     }
     const agreement: AgreementNormalized = agreementRes as AgreementNormalized;
 
     // Locations (navn for CSV)
     const locRes = await admin.from("company_locations").select("id,name").eq("company_id", companyId);
-    if (locRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", asErrDetail(locRes.error));
+    if (locRes.error) return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: asErrDetail(locRes.error) });
 
     const locMap = new Map<string, string>();
     for (const l of locRes.data ?? []) locMap.set(String((l as any).id), safeStr((l as any).name));
@@ -130,7 +132,7 @@ export async function GET(req: NextRequest) {
       .lt("date", to)
       .eq("status", "ACTIVE");
 
-    if (oRes.error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ordre.", asErrDetail(oRes.error));
+    if (oRes.error) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: asErrDetail(oRes.error) });
 
     // Group: date + location + slot + tier
     const buckets = new Map<string, { date: string; location_id: string | null; slot: string | null; tier: PlanTier; unit: number; qty: number }>();
@@ -143,18 +145,18 @@ export async function GET(req: NextRequest) {
       try {
         tierRaw = resolveTierForDate(agreement, dateISO);
       } catch (e: any) {
-        return jsonErr(409, rid, "WEEKEND_NOT_SUPPORTED", "Helg støttes ikke i fakturagrunnlag (Man–Fre).", {
+        return jsonErr(rid, "Helg støttes ikke i fakturagrunnlag (Man–Fre).", 409, { code: "WEEKEND_NOT_SUPPORTED", detail: {
           date: dateISO,
           message: safeStr(e?.message ?? e),
-        });
+        } });
       }
 
       const tier = asPlanTier(tierRaw);
       if (!tier) {
-        return jsonErr(500, rid, "BAD_TIER", "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", {
+        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, { code: "BAD_TIER", detail: {
           date: dateISO,
           tier: tierRaw,
-        });
+        } });
       }
 
       const unit = Number(PRICE_PER_TIER[tier] ?? 0);
@@ -208,13 +210,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const csv = rows.join("\n");
     const filename = `invoice_lines_${companyId}_${from}_to_${to}.csv`;
+    const contentType = "text/csv; charset=utf-8";
+    const contentDisposition = `attachment; filename="${filename}"`;
+
+    if (metaOnly) {
+      return jsonOk(rid, {
+        filename,
+        contentType,
+        contentDisposition,
+        rows: lines.length,
+      }, 200);
+    }
+
+    const csv = rows.join("\n");
 
     const headers = {
       ...noStoreHeaders(),
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="${filename}"`,
+      "content-type": contentType,
+      "content-disposition": contentDisposition,
       "x-lp-rid": rid,
     } as Record<string, string>;
 
@@ -222,18 +236,6 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-
-    const headers = {
-      ...noStoreHeaders(),
-      "content-type": "application/json; charset=utf-8",
-      "x-lp-rid": rid,
-    } as Record<string, string>;
-
-    return new Response(JSON.stringify({ ok: false, rid, error: code, message: "Uventet feil.", detail: asErrDetail(e) }), {
-      status,
-      headers,
-    });
+    return jsonErr(rid, "Uventet feil.", status, { code, detail: asErrDetail(e) });
   }
 }
-
-

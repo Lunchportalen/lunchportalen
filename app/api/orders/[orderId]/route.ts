@@ -15,8 +15,26 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/ht
    Route-local jsonErr (beholder canAct:false for UI)
    - Ingen NextResponse
 ========================================================= */
-function jsonErr(ctx: { rid: string }, status: number, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid: ctx.rid, error, message, canAct: false, detail: detail ?? undefined };
+function jsonErr(rid: string, message: string, status = 400, error?: unknown) {
+  let errorVal: unknown = "ERROR";
+  let detail: unknown = undefined;
+
+  if (error !== undefined) {
+    if (typeof error === "object" && error && "code" in (error as any)) {
+      const code = (error as any).code;
+      errorVal = typeof code === "string" ? code : "ERROR";
+      if ("detail" in (error as any)) detail = (error as any).detail;
+    } else if (typeof error === "string") {
+      errorVal = error;
+    } else if (error instanceof Error) {
+      errorVal = error.message || "ERROR";
+    } else {
+      errorVal = error;
+    }
+  }
+
+  const body: any = { ok: false, rid, error: errorVal, message, canAct: false };
+  if (detail !== undefined) body.detail = detail;
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
@@ -72,7 +90,7 @@ export async function GET(
   if (denyScope) return denyScope;
 
   const orderId = safeStr(params?.orderId);
-  if (!orderId) return jsonErr(ctx, 400, "BAD_REQUEST", "Mangler orderId.");
+  if (!orderId) return jsonErr(ctx.rid, "Mangler orderId.", 400, "BAD_REQUEST");
 
   const companyId = safeStr(scope.companyId);
   const locationId = safeStr(scope.locationId);
@@ -80,7 +98,7 @@ export async function GET(
   const role = safeStr(scope.role).toLowerCase();
 
   if (!companyId || !locationId || !userId) {
-    return jsonErr(ctx, 403, "missing_scope", "Mangler firmatilknytning (company/location).");
+    return jsonErr(ctx.rid, "Mangler firmatilknytning (company/location).", 403, "missing_scope");
   }
 
   const sb = await supabaseServer();
@@ -101,20 +119,16 @@ export async function GET(
   const { data, error } = await q.maybeSingle<OrderRow>();
 
   if (error) {
-    return jsonErr(ctx, 500, "DB_ERROR", "Kunne ikke hente ordre.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: {
       message: error.message,
       code: (error as any).code ?? null,
       orderId,
-    });
+    } });
   }
 
   if (!data) {
-    return jsonErr(ctx, 404, "NOT_FOUND", "Ordre finnes ikke (eller du har ikke tilgang).", { orderId });
+    return jsonErr(ctx.rid, "Ordre finnes ikke (eller du har ikke tilgang).", 404, { code: "NOT_FOUND", detail: { orderId } });
   }
 
-  return jsonOk({
-    ok: true,
-    rid: ctx.rid,
-    order: data,
-  });
+  return jsonOk(ctx.rid, { order: data });
 }

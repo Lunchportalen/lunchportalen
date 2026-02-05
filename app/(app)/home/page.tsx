@@ -2,18 +2,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { supabaseServer } from "../../lib/supabase/server";
+import { supabaseServer } from "@/lib/supabase/server";
 
-import { osloTodayISODate } from "../../lib/date/oslo";
-import { weekRangeISO } from "../../lib/date/week";
-import { formatDateForDisplay } from "../../lib/date/format";
+import { osloTodayISODate } from "@/lib/date/oslo";
+import { weekRangeISO } from "@/lib/date/week";
+import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
 import {
   getActiveAnnouncement,
   getMenuForDate,
   getMenuForDates,
   type Announcement,
   type MenuContent,
-} from "../../lib/sanity/queries";
+} from "@/lib/sanity/queries";
 
 function severityCard(sev: Announcement["severity"]) {
   if (sev === "critical") return "bg-red-50 border-red-200 text-red-900";
@@ -28,9 +28,9 @@ function severityChip(sev: Announcement["severity"]) {
 }
 
 function dayNameNO(dateISO: string) {
-  const d = new Date(`${dateISO}T12:00:00+01:00`);
-  const names = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"] as const;
-  return names[d.getDay()];
+  const full = formatWeekdayNO(dateISO);
+  if (!full) return "";
+  return full.charAt(0).toUpperCase() + full.slice(1, 3);
 }
 
 // YYYY-MM-DD kan sammenlignes som string
@@ -53,7 +53,7 @@ function WeekListRow({ m, todayISO }: { m: MenuContent; todayISO: string }) {
     <div className="lp-weekRow">
       <div>
         <div className="lp-weekDate">
-          {dayNameNO(m.date)} • {formatDateForDisplay(m.date)}
+          {dayNameNO(m.date)} • {formatDateNO(m.date)}
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export default async function Page() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="lp-chip">{dayNameNO(today)}</span>
-              <span className="lp-chip">{formatDateForDisplay(today)}</span>
+              <span className="lp-chip">{formatDateNO(today)}</span>
               <span className="lp-chip">Cut-off 08:00</span>
               <span className="lp-chip">Man–Fre</span>
             </div>
@@ -199,25 +199,25 @@ export default async function Page() {
 
         {todayPublished ? (
           <div className="mt-5 pl-3">
-            <div className="text-2xl font-semibold text-zinc-900">
+            <div className="text-2xl font-semibold text-[rgb(var(--lp-fg))]">
               {todayMenu?.description || "—"}
             </div>
 
             <p className="mt-1 text-sm lp-muted">Oversikt fra ukemenyen.</p>
 
-            <div className="mt-2 text-sm text-zinc-600">
+            <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
               Allergener:{" "}
               {todayMenu?.allergens?.length ? todayMenu.allergens.join(", ") : "ingen"}
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              <Link href="/week" className="lp-btn-primary">
+              <Link href="/week" className="lp-btn">
                 Gå til ukeplan
               </Link>
             </div>
           </div>
         ) : (
-          <div className="mt-5 pl-3 text-sm text-zinc-600">
+          <div className="mt-5 pl-3 text-sm text-[rgb(var(--lp-muted))]">
             Meny er ikke publisert for i dag.
             <div className="mt-4">
               <Link href="/week" className="lp-btn">
@@ -247,7 +247,7 @@ export default async function Page() {
               ))}
             </div>
           ) : (
-            <div className="text-sm text-zinc-600">Meny ikke publisert for denne uken.</div>
+            <div className="text-sm text-[rgb(var(--lp-muted))]">Meny ikke publisert for denne uken.</div>
           )}
         </div>
       </section>
@@ -271,12 +271,12 @@ export default async function Page() {
               ))}
             </div>
           ) : (
-            <div className="text-sm text-zinc-600">Neste ukes meny publiseres på torsdag.</div>
+            <div className="text-sm text-[rgb(var(--lp-muted))]">Neste ukes meny publiseres på torsdag.</div>
           )}
         </div>
 
         <div className="mt-6">
-          <Link href="/week" className="lp-btn-primary">
+          <Link href="/week" className="lp-btn">
             Åpne ukeplan
           </Link>
         </div>
@@ -284,3 +284,9 @@ export default async function Page() {
     </main>
   );
 }
+
+
+
+
+
+

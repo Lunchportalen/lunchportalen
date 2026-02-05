@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Sparkline from "./Sparkline";
-import { supabaseServer } from "../../lib/supabase/server";
+import { supabaseServer } from "@/lib/supabase/server";
 
 type Metrics = {
   ok: boolean;

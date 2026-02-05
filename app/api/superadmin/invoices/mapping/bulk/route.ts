@@ -4,11 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
   return (
@@ -49,15 +45,14 @@ type Item = {
 };
 
 export async function POST(req: Request) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid();
   const guard = await requireSuperadmin();
-  if (!guard.ok) return jsonError(guard.status, "AUTH", guard.message);
+  if (!guard.ok) return jsonErr(rid, guard.message, guard.status ?? 400, "AUTH");
 
   const body = await req.json().catch(() => null);
 
   const items: Item[] = Array.isArray(body?.items) ? body.items : [];
-  if (!items.length) return jsonError(400, "BAD_REQUEST", "Ingen items mottatt");
+  if (!items.length) return jsonErr(rid, "Ingen items mottatt", 400, "BAD_REQUEST");
 
   const normalized: {
     company_id: string;
@@ -90,25 +85,22 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!normalized.length) return jsonError(400, "BAD_REQUEST", "Ingen gyldige linjer", { errors });
+  if (!normalized.length) return jsonErr(rid, "Ingen gyldige linjer", 400, { code: "BAD_REQUEST", detail: { errors } });
 
   const db = await adminDb();
-  if (!db?.from) return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig (mangler .from)");
+  if (!db?.from) return jsonErr(rid, "supabaseAdmin er ikke tilgjengelig (mangler .from)", 500, "ADMIN_CLIENT_MISSING");
 
   // Upsert i batch (idempotent)
   const { error } = await db
     .from("company_billing_accounts")
     .upsert(normalized, { onConflict: "company_id" });
 
-  if (error) return jsonError(500, "DB", "Kunne ikke bulk-lagre mapping", error);
+  if (error) return jsonErr(rid, "Kunne ikke bulk-lagre mapping", 500, { code: "DB", detail: error });
 
-  return NextResponse.json({
-    ok: true,
+  return jsonOk(rid, {
     received: items.length,
     upserted: normalized.length,
     failed: errors.length,
     errors,
   });
 }
-
-

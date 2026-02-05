@@ -35,10 +35,10 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const targetUserId = String(ctx?.params?.userId ?? "").trim();
-  if (!isUuid(targetUserId)) return jsonErr(400, rid, "INVALID_USER_ID", "Ugyldig userId.");
+  if (!isUuid(targetUserId)) return jsonErr(rid, "Ugyldig userId.", 400, "INVALID_USER_ID");
 
   const body = await readJson(req);
   const disabled = Boolean((body as any)?.disabled); // true => disable, false => enable
@@ -53,14 +53,14 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
       .eq("user_id", targetUserId)
       .maybeSingle();
 
-    if (terr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lese ansattprofil.", terr);
-    if (!target) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke ansatt.");
+    if (terr) return jsonErr(rid, "Kunne ikke lese ansattprofil.", 500, { code: "DB_ERROR", detail: terr });
+    if (!target) return jsonErr(rid, "Fant ikke ansatt.", 404, "NOT_FOUND");
 
     if (String((target as any).company_id ?? "") !== companyId) {
-      return jsonErr(403, rid, "FORBIDDEN", "Du har ikke tilgang til denne brukeren.");
+      return jsonErr(rid, "Du har ikke tilgang til denne brukeren.", 403, "FORBIDDEN");
     }
     if (String((target as any).role ?? "").toLowerCase() !== "employee") {
-      return jsonErr(403, rid, "FORBIDDEN_ROLE", "Kun ansatte (employee) kan deaktiveres.");
+      return jsonErr(rid, "Kun ansatte (employee) kan deaktiveres.", 403, "FORBIDDEN_ROLE");
     }
 
     // 2) update disabled_at
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
       .select("user_id, email, full_name, role, company_id, disabled_at")
       .maybeSingle();
 
-    if (uerr) return jsonErr(500, rid, "UPDATE_FAILED", "Kunne ikke oppdatere ansatt.", uerr);
+    if (uerr) return jsonErr(rid, "Kunne ikke oppdatere ansatt.", 500, { code: "UPDATE_FAILED", detail: uerr });
 
     // 3) audit (best effort)
     try {
@@ -92,10 +92,8 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
       // ignore
     }
 
-    return jsonOk({ ok: true, rid, employee: updated ?? null });
+    return jsonOk(rid, { employee: updated ?? null });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

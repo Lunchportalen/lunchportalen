@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const admin = supabaseAdmin();
@@ -38,11 +38,9 @@ export async function GET(req: NextRequest) {
       .in("role", ["employee"])
       .order("created_at", { ascending: false });
 
-    if (rowsErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ansatte.", { message: rowsErr.message });
+    if (rowsErr) return jsonErr(rid, "Kunne ikke hente ansatte.", 500, { code: "DB_ERROR", detail: { message: rowsErr.message } });
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       employees: (rows ?? []).map((r: any) => ({
         user_id: r.id, // profiles.id = auth.user.id
@@ -55,8 +53,6 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

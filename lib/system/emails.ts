@@ -7,11 +7,20 @@ export const DRIVER_ALIAS_EMAIL = "sjafor@lunchportalen.no";
 export const ORDER_EMAIL = "ordre@lunchportalen.no";
 export const SUPPORT_EMAIL = "post@lunchportalen.no";
 
+export const SYSTEM_EMAILS = {
+  SUPERADMIN: SUPERADMIN_EMAIL,
+  KITCHEN: KITCHEN_EMAIL,
+  DRIVER: DRIVER_EMAIL,
+  DRIVER_ALIAS: DRIVER_ALIAS_EMAIL,
+  ORDER: ORDER_EMAIL,
+  SUPPORT: SUPPORT_EMAIL,
+} as const;
+
 export const SYSTEM_EMAIL_ALLOWLIST = (() => {
   const raw = process.env.SYSTEM_EMAIL_ALLOWLIST;
   const list = (raw
     ? raw.split(",")
-    : [ORDER_EMAIL, "noreply@lunchportalen.no"]
+    : [SYSTEM_EMAILS.ORDER, "noreply@lunchportalen.no"]
   )
     .map((v) => String(v).trim().toLowerCase())
     .filter(Boolean);
@@ -30,24 +39,24 @@ export function normEmail(v: unknown): string {
 
 export function systemRoleByEmail(email: unknown): SystemRole | null {
   const e = normEmail(email);
-  if (e === SUPERADMIN_EMAIL) return "superadmin";
-  if (e === KITCHEN_EMAIL) return "kitchen";
-  if (e === DRIVER_EMAIL || e === DRIVER_ALIAS_EMAIL) return "driver";
+  if (e === SYSTEM_EMAILS.SUPERADMIN) return "superadmin";
+  if (e === SYSTEM_EMAILS.KITCHEN) return "kitchen";
+  if (e === SYSTEM_EMAILS.DRIVER || e === SYSTEM_EMAILS.DRIVER_ALIAS) return "driver";
   return null;
 }
 
 export function isSuperadminEmail(email: unknown): boolean {
-  return normEmail(email) === SUPERADMIN_EMAIL;
+  return normEmail(email) === SYSTEM_EMAILS.SUPERADMIN;
 }
 
 export function isSystemEmail(email: unknown): boolean {
   const e = normEmail(email);
   return (
-    e === SUPERADMIN_EMAIL ||
-    e === KITCHEN_EMAIL ||
-    e === DRIVER_EMAIL ||
-    e === DRIVER_ALIAS_EMAIL ||
-    e === ORDER_EMAIL ||
-    e === SUPPORT_EMAIL
+    e === SYSTEM_EMAILS.SUPERADMIN ||
+    e === SYSTEM_EMAILS.KITCHEN ||
+    e === SYSTEM_EMAILS.DRIVER ||
+    e === SYSTEM_EMAILS.DRIVER_ALIAS ||
+    e === SYSTEM_EMAILS.ORDER ||
+    e === SYSTEM_EMAILS.SUPPORT
   );
 }

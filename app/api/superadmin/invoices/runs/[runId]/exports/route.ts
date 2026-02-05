@@ -3,11 +3,7 @@ export const dynamic = "force-dynamic";
 
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
   return (
@@ -35,16 +31,15 @@ async function requireSuperadmin() {
 }
 
 export async function GET(_: Request, ctx: { params: { runId: string } }) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid();
   const guard = await requireSuperadmin();
-  if (!guard.ok) return jsonError(guard.status, "AUTH", guard.message);
+  if (!guard.ok) return jsonErr(rid, guard.message, guard.status ?? 400, "AUTH");
 
   const runId = ctx.params.runId;
-  if (!isUuid(runId)) return jsonError(400, "BAD_REQUEST", "Ugyldig runId");
+  if (!isUuid(runId)) return jsonErr(rid, "Ugyldig runId", 400, "BAD_REQUEST");
 
   const db = await adminDb();
-  if (!db?.from) return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig (mangler .from)");
+  if (!db?.from) return jsonErr(rid, "supabaseAdmin er ikke tilgjengelig (mangler .from)", 500, "ADMIN_CLIENT_MISSING");
 
   const { data, error } = await db
     .from("invoice_exports")
@@ -53,8 +48,7 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     .order("exported_at", { ascending: false })
     .limit(25);
 
-  if (error) return jsonError(500, "DB", "Kunne ikke hente eksportlogg", error);
+  if (error) return jsonErr(rid, "Kunne ikke hente eksportlogg", 500, { code: "DB", detail: error });
 
-  return NextResponse.json({ ok: true, exports: data ?? [] }, { status: 200 });
+  return jsonOk(rid, { exports: data ?? [] });
 }
-

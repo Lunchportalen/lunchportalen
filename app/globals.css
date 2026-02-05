@@ -2,694 +2,430 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =========================================================
-   LUNCHPORTALEN – WORLD CLASS UI SYSTEM (LOCKED)
-   - Logo-driven palette (Gold + Graphite + Warm Cream)
-   - Calm cards + soft shadows
-   - High clarity typography
-   - CTA polish (no neon)
-   ========================================================= */
+:root {
+  --lp-bg: 255 250 243;
+  --lp-surface: 255 255 255;
+  --lp-surface-alt: 248 244 238;
+  --lp-text: 26 26 26;
+  --lp-fg: 26 26 26;
+  --lp-muted: 82 82 91;
+  --lp-border: 231 226 218;
 
-/* ---------------------------------------------------------
-   Tokens
---------------------------------------------------------- */
+  --lp-gold: 176 139 87;
+  --lp-gold-hover: 156 120 74;
+  --lp-gold-soft: 244 235 221;
+  --lp-neon-pink: 330 100% 55%;
 
-:root{
-  /* =========================
-     Canvas (logo-friendly)
-     ========================= */
-  --lp-bg: 255 250 243;           /* warm cream */
-  --lp-surface: 255 255 255;      /* white */
-  --lp-text: 24 24 27;            /* graphite */
-  --lp-muted: 82 82 91;           /* zinc-600 */
-  --lp-border: 228 228 231;       /* zinc-200 */
-  --lp-divider: 244 244 245;      /* zinc-100 */
+  --lp-success: 31 122 77;
+  --lp-info: 33 87 213;
+  --lp-warning: 181 71 8;
+  --lp-danger: 180 35 24;
 
-  /* =========================
-     Brand (from logo)
-     ========================= */
-  --lp-gold: 176 139 87;          /* logo gold */
-  --lp-graphite: 24 24 27;        /* logo dark */
-  --lp-cta: 176 139 87;           /* CTA = gold */
-  --lp-accent: 176 139 87;        /* main accent */
-  --lp-accent-2: 15 118 110;      /* secondary accent (optional) */
-
-  /* Focus ring */
   --lp-ring: 176 139 87;
 
-  /* Status */
-  --lp-ok-bg: 236 253 245;
-  --lp-ok-bd: 167 243 208;
-  --lp-ok-tx: 6 78 59;
+  --lp-radius-card: 16px;
+  --lp-radius-btn: 12px;
+  --lp-radius-badge: 999px;
 
-  --lp-warn-bg: 255 251 235;
-  --lp-warn-bd: 253 230 138;
-  --lp-warn-tx: 120 53 15;
-
-  --lp-crit-bg: 254 242 242;
-  --lp-crit-bd: 254 202 202;
-  --lp-crit-tx: 127 29 29;
-
-  /* Motion */
-  --lp-ease: cubic-bezier(.2,.8,.2,1);
+  --lp-shadow-card: 0 6px 24px rgba(26, 26, 26, 0.06);
+  --lp-shadow-soft: 0 2px 8px rgba(26, 26, 26, 0.05);
+  --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* ---------------------------------------------------------
-   Base (Tailwind base runs first; we extend/lock here)
---------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html, body { height: 100%; }
+html,
+body {
+  height: 100%;
+}
 
-body{
+body {
   background: rgb(var(--lp-bg));
   color: rgb(var(--lp-text));
+  font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: geometricPrecision;
-
-  position: relative;
-  isolation: isolate;
 }
 
-/* Premium canvas glow (subtle, fixed) – uses brand gold */
-body::before{
-  content:"";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(1100px 620px at 18% 0%, rgba(176,139,87,.11), transparent 62%),
-    radial-gradient(980px 560px at 86% 6%, rgba(24,24,27,.06), transparent 60%),
-    radial-gradient(900px 520px at 60% 120%, rgba(176,139,87,.07), transparent 55%);
-  opacity: .95;
-}
-
-/* Put app content above the canvas glow */
-body > header,
-body > main,
-body > footer{
-  position: relative;
-  z-index: 1;
-}
-
-::selection{
-  background: rgba(var(--lp-gold), .22);
-}
-
-/* Links */
-a{
+a {
   color: inherit;
   text-decoration: none;
 }
-a:hover{
+
+a:hover {
   text-decoration: underline;
-  text-decoration-color: rgba(var(--lp-gold), .70);
+  text-decoration-color: rgba(var(--lp-gold), 0.6);
   text-underline-offset: 3px;
 }
 
-/* Focus ring (accessible) */
-:focus-visible{
-  outline: 2px solid rgba(var(--lp-ring), .65);
+::selection {
+  background: rgba(var(--lp-gold), 0.18);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(var(--lp-ring), 0.7);
   outline-offset: 3px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
-/* ---------------------------------------------------------
-   ✅ FIX: Copy/Select text must always work (admin UX)
-   - Use .lp-select-text on pages/components where copy matters
-   - Avoid putting user-select:none on wrappers
---------------------------------------------------------- */
-
-.lp-select-text,
-.lp-select-text *{
-  -webkit-user-select: text !important;
-  user-select: text !important;
-}
-
-/* Buttons should still not select text while clicking */
-button,
-.lp-btn,
-.lp-btn-primary{
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-/* Inputs should remain selectable/copyable */
-input,
-textarea{
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-/* ---------------------------------------------------------
-   ✅ NEW: Button + form controls polish (consistent)
-   - Remove iOS tap highlights
-   - Cursor consistency
-   - Disabled states readable
---------------------------------------------------------- */
-
-button,
-[role="button"],
-a,
-select,
-input[type="checkbox"],
-input[type="radio"]{
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:disabled,
-.lp-btn:disabled,
-.lp-btn-primary:disabled{
-  opacity: .55;
-  cursor: not-allowed;
-}
-
-input:disabled,
-textarea:disabled,
-select:disabled{
-  opacity: .65;
-  cursor: not-allowed;
-}
-
-button,
-.lp-btn,
-.lp-btn-primary{
-  cursor: pointer;
-}
-
-/* ---------------------------------------------------------
-   Helpers
---------------------------------------------------------- */
-
-.lp-container{
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 36px 24px 56px;
-}
-
-.lp-muted{ color: rgb(var(--lp-muted)); }
-
-/* ---------------------------------------------------------
-   Typography
---------------------------------------------------------- */
-
-.lp-h1{
-  font-size: clamp(34px, 4vw, 44px);
-  line-height: 1.05;
-  font-weight: 750;
-  letter-spacing: -0.035em;
-  background: linear-gradient(180deg, rgb(var(--lp-text)) 0%, rgb(39 39 42) 78%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.lp-sectionTitle{
-  font-size: 22px;
-  font-weight: 750;
-  letter-spacing: -0.02em;
-}
-
-.lp-listMeta{
-  font-size: 14px;
-  color: rgb(var(--lp-muted));
-}
-
-/* ---------------------------------------------------------
-   Cards
---------------------------------------------------------- */
-
-.lp-card{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(var(--lp-border), .95);
-  border-radius: 22px;
-  box-shadow:
-    0 1px 2px rgba(24,24,27,.06),
-    0 18px 44px rgba(24,24,27,.08);
-  backdrop-filter: blur(10px);
-}
-
-.lp-card-pad{ padding: 26px; }
-
-.lp-divider{
-  height: 1px;
-  background: rgb(var(--lp-divider));
-}
-
-.lp-softDivider{
-  border-top: 1px solid rgba(var(--lp-border), .55);
-}
-
-.lp-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-}
-
-/* ---------------------------------------------------------
-   Media card (image blocks) – clean, brand-consistent
---------------------------------------------------------- */
-
-.lp-mediaCard{
-  border-radius: 22px;
-  overflow: hidden;
-  border: 1px solid rgba(var(--lp-border), .95);
-  background: rgba(255,255,255,.92);
-  box-shadow:
-    0 1px 2px rgba(24,24,27,.06),
-    0 18px 44px rgba(24,24,27,.08);
-}
-
-.lp-mediaCardInner{
-  height: 100%;
-  width: 100%;
-  background: #fff;
-}
-
-/* Generic image fill helper */
-.lp-mediaImage{
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* ---------------------------------------------------------
-   Hero Image – CLEAN (no grading)
---------------------------------------------------------- */
-
-.lp-heroImage{
-  position: relative;
-  border-radius: 28px;
-  overflow: hidden;
-  background:
-    url("/matbilder/melhuscatering-lunsj-1018029.jpg") center/cover no-repeat;
-}
-
-/* Unified hero content */
-.lp-heroContent{
-  position: relative;
-  z-index: 1;
-  padding: 34px 36px 52px;
-  color: white;
-}
-.lp-heroContent .lp-h1{ color: white; background:none; }
-.lp-heroContent .lp-muted{ color: rgba(255,255,255,.86); }
-
-/* Overlap for first card */
-.lp-overlap{ margin-top: -28px; }
-
-/* Accent stripe (brand gold) */
-.lp-heroStripe{ position: relative; }
-.lp-heroStripe::before{
-  content:"";
-  position:absolute;
-  inset: 14px auto 14px 14px;
-  width: 5px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgb(var(--lp-gold)) 0%, rgba(var(--lp-gold), .55) 100%);
-}
-
-/* ---------------------------------------------------------
-   Feature Image (Real photo – Sustainability/Benefits block)
---------------------------------------------------------- */
-
-.lp-featureImage{
-  position: relative;
-  border-radius: 28px;
-  overflow: hidden;
-  min-height: 360px;
-
-  background: url("/forsidebilder/lunchportalen-mobil-bestillingsbilde.png") center/cover no-repeat;
-
-  border: 1px solid rgba(var(--lp-border), .95);
-  box-shadow:
-    0 1px 2px rgba(24,24,27,.06),
-    0 18px 44px rgba(24,24,27,.08);
-}
-
-/* If filename has spaces, use:
-   background: url("/forsidebilder/Lunchportalen%20mobil%20bestillingsbilde.png") center/cover no-repeat;
-*/
-
-/* ---------------------------------------------------------
-   Chips
---------------------------------------------------------- */
-
-.lp-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 750;
-  border: 1px solid rgba(var(--lp-border), .95);
-  background: rgba(255,255,255,.92);
-  color: rgb(var(--lp-text));
-}
-
-.lp-chip-ok{
-  background: rgba(var(--lp-ok-bg), .75);
-  border-color: rgba(var(--lp-ok-bd), .85);
-  color: rgb(var(--lp-ok-tx));
-}
-
-.lp-chip-warn{
-  background: rgba(var(--lp-warn-bg), .75);
-  border-color: rgba(var(--lp-warn-bd), .85);
-  color: rgb(var(--lp-warn-tx));
-}
-
-.lp-chip-crit{
-  background: rgba(var(--lp-crit-bg), .75);
-  border-color: rgba(var(--lp-crit-bd), .85);
-  color: rgb(var(--lp-crit-tx));
-}
-
-.lp-chip-neutral{
-  background: rgba(0,0,0,.06);
-  border-color: rgba(0,0,0,.12);
-  color: rgb(var(--lp-text));
-}
-
-/* ---------------------------------------------------------
-   Buttons (brand gold)
---------------------------------------------------------- */
-
-.lp-btn,
-.lp-btn-primary{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding: 11px 16px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1;
-  transition: transform .14s var(--lp-ease), box-shadow .14s var(--lp-ease), opacity .14s var(--lp-ease);
-  white-space: nowrap;
-}
-
-.lp-btn{
-  border: 1px solid rgba(var(--lp-border), .98);
-  background: rgba(255,255,255,.92);
-}
-.lp-btn:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(24,24,27,.10);
-}
-.lp-btn:active{
-  transform: translateY(0);
-  opacity: .95;
-}
-
-.lp-btn-primary{
-  border: 1px solid rgba(var(--lp-gold), .55);
-  color: rgb(var(--lp-graphite));
-  background: linear-gradient(180deg, rgba(var(--lp-gold), 1) 0%, rgba(156,118,74,1) 100%);
-  box-shadow: 0 18px 44px rgba(176,139,87,.22);
-}
-.lp-btn-primary:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 24px 58px rgba(176,139,87,.26);
-}
-.lp-btn-primary:active{
-  transform: translateY(0);
-  opacity: .96;
-}
-
-/* ---------------------------------------------------------
-   Inputs (enterprise calm)
---------------------------------------------------------- */
-
-.lp-input{
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(var(--lp-border), .95);
-  background: rgba(255,255,255,.92);
-  padding: 10px 12px;
-  font-size: 14px;
-  color: rgb(var(--lp-text));
-  outline: none;
-  transition: border-color .14s var(--lp-ease), box-shadow .14s var(--lp-ease);
-}
-
-.lp-input:focus{
-  border-color: rgba(var(--lp-gold), .55);
-  box-shadow: 0 0 0 4px rgba(var(--lp-gold), .16);
-}
-
-.lp-label{
-  font-size: 12px;
-  font-weight: 700;
-  color: rgb(var(--lp-muted));
-}
-
-/* ---------------------------------------------------------
-   Week list rhythm
---------------------------------------------------------- */
-
-.lp-weekRow{
-  display:grid;
-  grid-template-columns: 110px 1fr auto;
-  gap: 14px;
-  padding: 14px 0;
-}
-
-.lp-weekDate{
-  font-size: 12px;
-  font-weight: 750;
-  color: rgb(var(--lp-muted));
-}
-
-.lp-weekTitle{
-  font-size: 14px;
-  font-weight: 750;
-}
-
-.lp-weekSub{
-  font-size: 12px;
-  color: rgb(var(--lp-muted));
-  margin-top: 4px;
-}
-
-/* ---------------------------------------------------------
-   Modal (for confirmations like "Close company")
---------------------------------------------------------- */
-
-.lp-modalOverlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(24,24,27,.38);
-  backdrop-filter: blur(6px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 18px;
-  z-index: 50;
-}
-
-.lp-modal{
-  width: min(560px, 100%);
-  border-radius: 22px;
-  background: rgba(255,255,255,.96);
-  border: 1px solid rgba(var(--lp-border), .95);
-  box-shadow:
-    0 2px 6px rgba(24,24,27,.10),
-    0 32px 80px rgba(24,24,27,.22);
-}
-
-.lp-modalHeader{
-  padding: 18px 18px 0;
-}
-
-.lp-modalBody{
-  padding: 12px 18px 18px;
-  color: rgb(var(--lp-muted));
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.lp-modalActions{
-  display:flex;
-  gap: 10px;
-  padding: 0 18px 18px;
-  justify-content:flex-end;
-}
-
-/* ---------------------------------------------------------
-   Locked overlay (cutoff / paused)
---------------------------------------------------------- */
-
-.lp-lockedOverlay{
+.sr-only {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: rgba(255,255,255,.74);
-  backdrop-filter: blur(8px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding: 16px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
-.lp-lockedOverlayInner{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(var(--lp-border), .95);
-  padding: 10px 14px;
-  box-shadow: 0 12px 30px rgba(24,24,27,.10);
+/* Layout */
+
+.lp-page {
+  min-height: 100vh;
+  background: rgb(var(--lp-bg));
   color: rgb(var(--lp-text));
-  font-weight: 750;
-  font-size: 13px;
 }
 
-/* ---------------------------------------------------------
-   Tables (Superadmin/Operations/Kitchen) – clean & readable
---------------------------------------------------------- */
-
-.lp-table{
+.lp-container {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid rgba(var(--lp-border), .95);
-  background: rgba(255,255,255,.92);
-  box-shadow:
-    0 1px 2px rgba(24,24,27,.05),
-    0 12px 34px rgba(24,24,27,.07);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
-.lp-table thead th{
-  text-align: left;
-  font-size: 12px;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-  color: rgba(var(--lp-muted), .95);
-  background: rgba(var(--lp-divider), .72);
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(var(--lp-border), .75);
+@media (min-width: 768px) {
+  .lp-container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
-.lp-table tbody td{
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(var(--lp-border), .55);
-  font-size: 14px;
+.lp-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(var(--lp-surface), 0.92);
+  border-bottom: 1px solid rgba(var(--lp-border), 0.9);
+  backdrop-filter: blur(8px);
 }
 
-.lp-table tbody tr:last-child td{
-  border-bottom: 0;
+.lp-topbar-inner {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.lp-table tbody tr:hover td{
-  background: rgba(var(--lp-gold), .06);
+@media (min-width: 768px) {
+  .lp-topbar-inner {
+    min-height: 64px;
+  }
 }
 
-/* ---------------------------------------------------------
-   ✅ NEW: Subtle skeleton (loading)
---------------------------------------------------------- */
-
-.lp-skeleton{
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  background: rgba(0,0,0,.05);
-}
-.lp-skeleton::after{
-  content:"";
-  position:absolute;
-  inset:-40% -60%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
-  transform: translateX(-30%);
-  animation: lp-shimmer 1.25s var(--lp-ease) infinite;
-}
-@keyframes lp-shimmer{
-  0%{ transform: translateX(-30%); }
-  100%{ transform: translateX(30%); }
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* ---------------------------------------------------------
-   ✅ NEW: Toast (non-blocking notices)
---------------------------------------------------------- */
+.lp-logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(var(--lp-gold), 0.18);
+  border: 1px solid rgba(var(--lp-gold), 0.5);
+}
 
-.lp-toast{
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 60;
-  width: min(420px, calc(100% - 36px));
-  border-radius: 18px;
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(var(--lp-border), .95);
-  box-shadow:
-    0 2px 10px rgba(24,24,27,.12),
-    0 30px 80px rgba(24,24,27,.16);
-  backdrop-filter: blur(10px);
-  padding: 12px 14px;
+.lp-topbar-slot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
 }
-.lp-toastTitle{
-  font-size: 12px;
-  font-weight: 800;
+
+.lp-main {
+  padding: 24px 0 56px;
 }
-.lp-toastBody{
-  margin-top: 2px;
-  font-size: 13px;
+
+@media (max-width: 640px) {
+  .lp-main {
+    padding: 20px 0 44px;
+  }
+}
+
+.lp-auth-spotlight {
+  background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 60%),
+    rgb(var(--lp-bg));
+}
+
+/* Typography */
+
+h1 {
+  font-size: clamp(28px, 3vw, 30px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: var(--lp-font-display, var(--lp-font-body, "Segoe UI"));
+}
+
+h2 {
+  font-size: clamp(18px, 2vw, 20px);
+  line-height: 1.3;
+  font-weight: 600;
+  font-family: var(--lp-font-display, var(--lp-font-body, "Segoe UI"));
+}
+
+h3 {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.lp-text-muted {
   color: rgb(var(--lp-muted));
 }
 
-/* ---------------------------------------------------------
-   Scrollbar (optional, subtle)
---------------------------------------------------------- */
+/* Cards */
 
-@media (min-width: 768px){
-  *::-webkit-scrollbar{ width: 10px; height: 10px; }
-  *::-webkit-scrollbar-thumb{
-    background: rgba(24,24,27,.14);
+.lp-card {
+  background: rgb(var(--lp-surface));
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.lp-card--elevated {
+  box-shadow: var(--lp-shadow-card);
+}
+
+.lp-card-header {
+  padding: 20px 20px 0;
+}
+
+.lp-card-content {
+  padding: 20px;
+}
+
+/* Buttons */
+
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--lp-radius-btn);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background-color 0.15s var(--lp-ease),
+    color 0.15s var(--lp-ease),
+    border-color 0.15s var(--lp-ease),
+    box-shadow 0.15s var(--lp-ease),
+    transform 0.15s var(--lp-ease),
+    opacity 0.15s var(--lp-ease);
+}
+
+.lp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lp-btn--primary,
+.lp-btn-primary {
+  background: rgb(var(--lp-text));
+  color: #ffffff;
+  border-color: rgba(var(--lp-text), 0.9);
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.lp-btn--primary:hover {
+  background: rgba(var(--lp-text), 0.92);
+}
+
+.lp-btn--primary.lp-btn--stable:hover,
+.lp-btn--primary.lp-btn--stable:focus-visible,
+.lp-btn--primary.lp-btn--stable:active {
+  background: rgb(var(--lp-text));
+  color: #ffffff;
+  border-color: rgba(var(--lp-text), 0.9);
+}
+
+.lp-btn--secondary,
+.lp-btn-secondary {
+  background: rgb(var(--lp-surface-alt));
+  color: rgb(var(--lp-text));
+  border-color: rgba(var(--lp-border), 0.9);
+}
+
+.lp-btn--secondary:hover {
+  background: rgba(var(--lp-surface-alt), 0.7);
+}
+
+.lp-btn--ghost,
+.lp-btn-ghost {
+  background: transparent;
+  color: rgb(var(--lp-text));
+  border-color: transparent;
+}
+
+.lp-btn--ghost:hover {
+  background: rgba(var(--lp-surface-alt), 0.7);
+}
+
+.lp-btn--destructive,
+.lp-btn-danger {
+  background: rgb(var(--lp-danger));
+  color: #ffffff;
+  border-color: rgba(var(--lp-danger), 0.9);
+}
+
+.lp-btn--destructive:hover {
+  background: rgba(var(--lp-danger), 0.9);
+}
+
+.lp-btn--sm {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.lp-btn--lg {
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+.lp-btn--icon {
+  min-height: 44px;
+  width: 44px;
+  padding: 0;
+}
+
+/* Badges */
+
+.lp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--lp-radius-badge);
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lp-badge--basis {
+  background: rgb(var(--lp-surface-alt));
+  border-color: rgba(var(--lp-border), 0.9);
+  color: rgb(var(--lp-text));
+}
+
+.lp-badge--luxus {
+  background: rgb(var(--lp-gold-soft));
+  border-color: rgba(var(--lp-gold), 0.35);
+  color: rgb(var(--lp-gold));
+}
+
+.lp-badge--active {
+  background: rgba(var(--lp-success), 0.12);
+  border-color: rgba(var(--lp-success), 0.35);
+  color: rgb(var(--lp-success));
+}
+
+/* =========================================================
+   Admin utility locks
+========================================================= */
+.lp-panel {
+  background: rgb(var(--lp-surface));
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  border-radius: var(--lp-radius-card);
+}
+
+.lp-h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 600;
+  font-family: var(--lp-font-display, var(--lp-font-body, "Segoe UI"));
+}
+
+.lp-h2 {
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+  font-family: var(--lp-font-display, var(--lp-font-body, "Segoe UI"));
+}
+
+.lp-muted {
+  color: rgb(var(--lp-muted));
+  font-size: 13px;
+}
+
+.lp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--lp-radius-badge);
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lp-neon-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
+}
+
+.lp-neon-glow-hover:hover {
+  box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
+}
+
+.lp-badge--info {
+  background: rgba(var(--lp-info), 0.12);
+  border-color: rgba(var(--lp-info), 0.35);
+  color: rgb(var(--lp-info));
+}
+
+.lp-badge--warning {
+  background: rgba(var(--lp-warning), 0.12);
+  border-color: rgba(var(--lp-warning), 0.35);
+  color: rgb(var(--lp-warning));
+}
+
+.lp-badge--danger {
+  background: rgba(var(--lp-danger), 0.12);
+  border-color: rgba(var(--lp-danger), 0.35);
+  color: rgb(var(--lp-danger));
+}
+
+/* Scrollbar */
+
+@media (min-width: 768px) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(26, 26, 26, 0.18);
     border-radius: 999px;
-    border: 2px solid rgba(255,255,255,.70);
+    border: 2px solid rgba(255, 255, 255, 0.7);
   }
-  *::-webkit-scrollbar-track{ background: transparent; }
-}
-
-/* ---------------------------------------------------------
-   Print (Operations / Kitchen)
---------------------------------------------------------- */
-
-@media print{
-  header, nav, button, .no-print{ display: none !important; }
-
-  body{ background: #fff !important; }
-  body::before{ display: none !important; }
-
-  .lp-card, .lp-mediaCard{
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    border-color: #ddd !important;
+  *::-webkit-scrollbar-track {
+    background: transparent;
   }
-
-  main{ padding: 0 !important; }
 }
-
-/* ---------------------------------------------------------
-   Mobile tweaks
---------------------------------------------------------- */
-
-@media (max-width: 640px){
-  .lp-container{ padding: 28px 16px 44px; }
-  .lp-heroContent{ padding: 26px 20px 36px; }
-  .lp-weekRow{ grid-template-columns: 92px 1fr; }
-  .lp-featureImage{ min-height: 300px; }
-}
-
-/* ---------------------------------------------------------
-   VS Code note:
-   "Unknown at rule @tailwind" is editor lint noise.
---------------------------------------------------------- */

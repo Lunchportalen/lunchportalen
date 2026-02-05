@@ -1,10 +1,7 @@
 // app/superadmin/_guard.tsx
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 export default async function SuperadminGuard({ children }: { children: React.ReactNode }) {
   const supabase = await supabaseServer();
@@ -17,8 +14,7 @@ export default async function SuperadminGuard({ children }: { children: React.Re
   }
 
   // Hard superadmin-fasit
-  const email = normEmail(user.email);
-  if (email !== "superadmin@lunchportalen.no") {
+  if (!isSuperadminEmail(user.email)) {
     redirect("/"); // eller /week, men / er trygg "failsafe"
   }
 

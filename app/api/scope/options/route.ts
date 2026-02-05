@@ -4,8 +4,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function supabaseAdmin() {
   return createSupabaseClient(
@@ -16,14 +16,14 @@ function supabaseAdmin() {
 }
 
 export async function GET() {
-  
+  const rid = makeRid();
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes?.user ?? null;
 
-  if (!user) return NextResponse.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
+  if (!user) return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -33,11 +33,11 @@ export async function GET() {
 
   // Kun roller som faktisk kan bestille / sette scope
   if (!profile?.role || !["superadmin", "company_admin", "employee"].includes(profile.role)) {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ ok: false, error: "MISSING_SERVICE_ROLE_KEY" }, { status: 500 });
+    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
   }
 
   const admin = supabaseAdmin();
@@ -47,17 +47,16 @@ export async function GET() {
     .select("id,name")
     .order("name");
 
-  if (cErr) return NextResponse.json({ ok: false, error: cErr.message }, { status: 500 });
+  if (cErr) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANIES_FAILED", detail: cErr.message });
 
   const { data: locations, error: lErr } = await admin
     .from("company_locations")
     .select("id,company_id,name")
     .order("name");
 
-  if (lErr) return NextResponse.json({ ok: false, error: lErr.message }, { status: 500 });
+  if (lErr) return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "LOCATIONS_FAILED", detail: lErr.message });
 
-  return NextResponse.json({ ok: true, companies: companies ?? [], locations: locations ?? [] });
+  return jsonOk(rid, { ok: true, companies: companies ?? [], locations: locations ?? [] }, 200);
 }
-
 
 

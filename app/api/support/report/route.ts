@@ -5,7 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { systemRoleByEmail } from "@/lib/system/emails";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -13,11 +15,7 @@ function normEmail(v: any) {
   return String(v ?? "").trim().toLowerCase();
 }
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 function roleFromMetadata(user: any): Role {
   const raw = String(user?.user_metadata?.role ?? "employee").toLowerCase();
@@ -26,10 +24,6 @@ function roleFromMetadata(user: any): Role {
   if (raw === "kitchen") return "kitchen";
   if (raw === "driver") return "driver";
   return "employee";
-}
-
-function jsonError(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status });
 }
 
 export async function POST(req: NextRequest) {
@@ -42,13 +36,13 @@ export async function POST(req: NextRequest) {
     const { data } = await supabase.auth.getUser();
     const user = data.user;
 
-    if (!user) return jsonError(401, rid, "UNAUTHORIZED", "Du må være innlogget.");
+    if (!user) return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHORIZED");
 
     const byEmail = roleByEmail(user.email);
     const role = byEmail ?? roleFromMetadata(user);
 
     if (role !== "superadmin" && role !== "company_admin") {
-      return jsonError(403, rid, "FORBIDDEN", "Ingen tilgang.");
+      return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
     }
 
     const body = await req.json().catch(() => ({}));
@@ -56,6 +50,9 @@ export async function POST(req: NextRequest) {
     const path = String(body?.path ?? "").slice(0, 200);
     const company_id = String(body?.company_id ?? "") || null;
     const location_id = String(body?.location_id ?? "") || null;
+    const agreement_id = String(body?.agreement_id ?? "") || null;
+    const desired_change = String(body?.desired_change ?? "").slice(0, 2000) || null;
+    const extra = body?.extra ?? null;
 
     // audit_events: anta at dere har kolonner som i prosjektet (id, created_at, actor_*, action, entity_type, entity_id, summary, detail)
     const { error } = await supabase.from("audit_events").insert({
@@ -64,7 +61,7 @@ export async function POST(req: NextRequest) {
       actor_role: role,
       action: "support_report",
       entity_type: "admin",
-      entity_id: company_id ?? user.id,
+      entity_id: agreement_id ?? company_id ?? user.id,
       summary: "Supportrapport sendt fra Admin",
       detail: {
         rid,
@@ -72,19 +69,19 @@ export async function POST(req: NextRequest) {
         path,
         company_id,
         location_id,
+        agreement_id,
+        desired_change,
+        extra,
         email: user.email ?? null,
         ts: new Date().toISOString(),
         user_agent: req.headers.get("user-agent"),
       },
     });
 
-    if (error) return jsonError(500, rid, "DB_ERROR", "Kunne ikke logge supportrapport.", error);
+    if (error) return jsonErr(rid, "Kunne ikke logge supportrapport.", 500, { code: "DB_ERROR", detail: error });
 
-    return NextResponse.json({ ok: true, rid }, { status: 200 });
+    return jsonOk(rid, { stored: true }, 200);
   } catch (e: any) {
-    return jsonError(500, rid, "SERVER_ERROR", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-
-

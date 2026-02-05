@@ -4,9 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 function assertEnv(name: string, v: string | undefined) {
@@ -86,14 +86,13 @@ function buildMail(row: OutboxRow) {
 }
 
 export async function POST(req: Request) {
-  const rid = `outbox_retry_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     // Optional: protect with secret header if you want
     // const secret = process.env.CRON_SECRET;
     // if (secret) {
     //   const got = req.headers.get("x-cron-secret");
-    //   if (got !== secret) return NextResponse.json({ ok: false, rid, error: "FORBIDDEN" }, { status: 403 });
     // }
 
     const supa = supabaseService();
@@ -111,12 +110,12 @@ export async function POST(req: Request) {
       .limit(25);
 
     if (rErr) {
-      return NextResponse.json({ ok: false, rid, error: "READ_FAILED", detail: rErr.message }, { status: 500 });
+      return jsonErr(rid, "Kunne ikke lese outbox.", 500, { code: "READ_FAILED", detail: rErr.message });
     }
 
     const rows = (rowsRaw ?? []) as OutboxRow[];
     if (rows.length === 0) {
-      return NextResponse.json({ ok: true, rid, attempted: 0, sent: 0, failed: 0, message: "Nothing to retry." }, { status: 200 });
+      return jsonOk(rid, { ok: true, rid, attempted: 0, sent: 0, failed: 0, message: "Nothing to retry." }, 200);
     }
 
     let sent = 0;
@@ -166,17 +165,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json(
-      { ok: true, rid, attempted: rows.length, sent, failed },
-      { status: 200 }
-    );
+    return jsonOk(rid, { ok: true, rid, attempted: rows.length, sent, failed }, 200);
   } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, rid, error: "SERVER_ERROR", detail: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-
-
 

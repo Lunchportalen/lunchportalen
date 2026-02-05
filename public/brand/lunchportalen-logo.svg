@@ -1,0 +1,6 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lunchportalen">
+  <circle cx="60" cy="60" r="56" fill="#111111"/>
+  <circle cx="60" cy="60" r="52" fill="#FFFFFF"/>
+  <circle cx="60" cy="60" r="48" fill="#111111"/>
+  <text x="60" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">LP</text>
+</svg>

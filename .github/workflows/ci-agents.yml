@@ -1,0 +1,35 @@
+name: CI (AGENTS gate)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  agents_gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: AGENTS gate
+        run: npm run agents:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build enterprise
+        run: npm run build:enterprise

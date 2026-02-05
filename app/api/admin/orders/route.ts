@@ -70,18 +70,15 @@ export async function GET(req: NextRequest) {
 
     // superadmin: optional ?company_id= (tom => alle firma)
     // company_admin: låst til egen companyId via scope
-    const requestedCompanyId = safeStr(url.searchParams.get("company_id")) || null;
+    const isSuperadmin = String(scope.role ?? "").trim().toLowerCase() === "superadmin";
+    const denyScope = isSuperadmin
+      ? requireCompanyScopeOr403(a.ctx, { allowSuperadminGlobal: true })
+      : requireCompanyScopeOr403(a.ctx);
+    if (denyScope) return denyScope;
 
-    let companyId: string | null = null;
-
-    if (scope.role === "superadmin") {
-      companyId = requestedCompanyId; // null => alle
-    } else {
-      const denyScope = requireCompanyScopeOr403(a.ctx);
-      if (denyScope) return denyScope;
-      companyId = safeStr(scope.companyId) || null;
-      if (!companyId) return jsonErr(403, rid, "MISSING_COMPANY_SCOPE", "Mangler company scope.");
-    }
+    const companyIdQuery = safeStr(url.searchParams.get("company_id")) || null;
+    const companyId = isSuperadmin ? companyIdQuery : safeStr(scope.companyId) || null;
+    if (!companyId && !isSuperadmin) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
     const admin = supabaseAdmin();
 
@@ -125,13 +122,13 @@ export async function GET(req: NextRequest) {
     const { data: rows, error } = await q;
 
     if (error) {
-      return jsonErr(500, rid, "ORDERS_READ_FAILED", "Kunne ikke hente ordre.", {
+      return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "ORDERS_READ_FAILED", detail: {
         message: error.message,
         code: (error as any).code ?? null,
         date: dateISO,
         status,
         company_id: companyId,
-      });
+      } });
     }
 
     const orders = (rows ?? []).map((row: any) => {
@@ -156,19 +153,15 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return jsonOk({
-      ok: true as const,
-      rid,
+    return jsonOk(rid, {
       dateISO,
       dateNO,
-      company_id: companyId,
+      company_id: companyId ?? null,
       status,
       count: orders.length,
       orders,
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "admin/orders" });
+    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "admin/orders" } });
   }
 }
-
-

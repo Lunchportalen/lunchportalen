@@ -6,6 +6,7 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 type LoginBody = { email?: string; password?: string };
@@ -16,41 +17,26 @@ function isLocalhostHost(hostname: string) {
 
 // ✅ Gjør det mulig å åpne i nettleser (forklarer 405 pent)
 export async function GET(req: NextRequest) {
-  return NextResponse.json(
-    {
-      ok: false,
-      method: "GET",
-      message:
-        "Dette endepunktet må kalles med POST (JSON: { email, password }). Bruk curl/Postman/DevTools fetch.",
-      hint: {
-        curl_windows_powershell:
-          'curl -i -X POST http://localhost:3000/api/auth/login-debug -H "Content-Type: application/json" -d "{`"email`":`"test1@firma.no`",`"password`":`"PASSORD`"}"',
-      },
-      host: req.nextUrl.host,
-      proto: req.headers.get("x-forwarded-proto") || "http",
+  const rid = makeRid();
+  return jsonErr(rid, "Dette endepunktet må kalles med POST (JSON: { email, password }).", 405, { code: "method_not_allowed", detail: {
+    method: "GET",
+    hint: {
+      curl_windows_powershell:
+        'curl -i -X POST http://localhost:3000/api/auth/login-debug -H "Content-Type: application/json" -d "{`"email`":`"test1@firma.no`",`"password`":`"PASSORD`"}"',
     },
-    { status: 405, headers: { "Cache-Control": "no-store" } }
-  );
+    host: req.nextUrl.host,
+    proto: req.headers.get("x-forwarded-proto") || "http",
+  } });
 }
 
 export async function POST(req: NextRequest) {
-  const rid = `login_dbg_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const rid = makeRid();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(
-      {
-        ok: false,
-        rid,
-        error: "missing_env",
-        message: "Mangler Supabase ENV (URL/ANON_KEY).",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+    return jsonErr(rid, "Mangler Supabase ENV (URL/ANON_KEY).", 500, "missing_env");
   }
 
   const hostname = req.nextUrl.hostname;
@@ -68,27 +54,14 @@ export async function POST(req: NextRequest) {
   }> = [];
 
   // ✅ Sett cookies på responsen (slik som i login-route)
-  const response = NextResponse.json(
-    { ok: true, rid },
-    { status: 200, headers: { "Cache-Control": "no-store" } }
-  );
+  const response = jsonOk(rid, { ok: true, rid }, 200) as NextResponse;
 
   try {
     const body = (await req.json()) as LoginBody;
     const email = (body.email || "").trim().toLowerCase();
     const password = body.password || "";
 
-    if (!email || !password) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "missing_credentials",
-          message: "Fyll inn e-post og passord.",
-        },
-        { status: 400, headers: { "Cache-Control": "no-store" } }
-      );
-    }
+    if (!email || !password) return jsonErr(rid, "Fyll inn e-post og passord.", 400, "missing_credentials");
 
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -145,10 +118,7 @@ export async function POST(req: NextRequest) {
       requestCookieNames: req.cookies.getAll().map((c) => c.name),
     };
 
-    const res2 = NextResponse.json(out, {
-      status: 200,
-      headers: { "Cache-Control": "no-store" },
-    });
+    const res2 = jsonOk(rid, out, 200) as NextResponse;
 
     // ✅ Kopier set-cookie fra response -> res2
     response.cookies.getAll().forEach((c) => {
@@ -159,17 +129,8 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("[api/auth/login-debug]", err?.message || err, { rid, err });
 
-    return NextResponse.json(
-      {
-        ok: false,
-        rid,
-        error: "server_error",
-        message: "Debug-login feilet.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+    return jsonErr(rid, "Debug-login feilet.", 500, "server_error");
   }
 }
-
 
 

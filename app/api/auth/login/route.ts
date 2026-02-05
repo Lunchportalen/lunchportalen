@@ -5,21 +5,19 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 type LoginBody = { email?: string; password?: string };
 
 export async function POST(req: NextRequest) {
-  const rid = `login_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(
-      { ok: false, rid, error: "missing_env", message: "Mangler Supabase ENV." },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+    return jsonErr(rid, "Mangler Supabase ENV.", 500, "missing_env");
   }
 
   const hostname = req.nextUrl.hostname;
@@ -31,17 +29,11 @@ export async function POST(req: NextRequest) {
     const password = body.password || "";
 
     if (!email || !password) {
-      return NextResponse.json(
-        { ok: false, rid, error: "missing_credentials", message: "Fyll inn e-post og passord." },
-        { status: 400, headers: { "Cache-Control": "no-store" } }
-      );
+      return jsonErr(rid, "Fyll inn e-post og passord.", 400, "missing_credentials");
     }
 
     // ✅ ONE response to rule them all (cookies settes på denne)
-    const response = NextResponse.json(
-      { ok: true, rid },
-      { status: 200, headers: { "Cache-Control": "no-store" } }
-    );
+    const response = jsonOk(rid, { ok: true, rid }, 200) as NextResponse;
 
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
@@ -68,22 +60,15 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error || !data?.session || !data?.user) {
-      return NextResponse.json(
-        { ok: false, rid, error: "invalid_login", message: "Ugyldig e-post eller passord." },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
+      return jsonErr(rid, "Ugyldig e-post eller passord.", 401, "invalid_login");
     }
 
     // ✅ Returner samme response som har Set-Cookie
     return response;
   } catch (err: any) {
     console.error("[api/auth/login]", err?.message || err, { rid, err });
-    return NextResponse.json(
-      { ok: false, rid, error: "server_error", message: "Kunne ikke logge inn akkurat nå. Prøv igjen." },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+    return jsonErr(rid, "Kunne ikke logge inn akkurat nå. Prøv igjen.", 500, "server_error");
   }
 }
-
 
 

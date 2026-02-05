@@ -4,26 +4,25 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getScope } from "@/lib/auth/scope";
 import { buildEsgPdf } from "@/lib/esg/pdf";
+import { formatMonthYearLongNO } from "@/lib/date/format";
+import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
 }
-function pdfResponse(bytes: Uint8Array, filename: string) {
+function pdfResponse(bytes: Uint8Array, filename: string, rid: string) {
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
       ...noStore(),
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      "x-lp-rid": rid,
     },
   });
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
 }
 
 function isoMonthStart() {
@@ -46,23 +45,22 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
+  const rid = makeRid();
   const supabase = await supabaseServer();
 
   // ✅ scope fra request (robust: støtter både Scope og {ok:false})
   const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-  if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
+  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
+  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
 
   // ✅ superadmin-only (erstatter allowSuperadmin)
-  if (scope.role !== "superadmin") return jsonErr(403, rid, "FORBIDDEN", "Krever superadmin", { role: scope.role });
+  if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
   const url = new URL(req.url);
 
   const companyId = url.searchParams.get("company_id");
-  if (!companyId) return jsonErr(400, rid, "BAD_REQUEST", "company_id mangler");
+  if (!companyId) return jsonErr(rid, "company_id mangler", 400, "BAD_REQUEST");
 
   const modeRaw = (url.searchParams.get("mode") || "year").toLowerCase();
   const mode = modeRaw === "month" ? "month" : "year";
@@ -72,7 +70,7 @@ export async function GET(req: NextRequest) {
   const year = clampYear(Number(url.searchParams.get("year") ?? nowMonth01.slice(0, 4)));
 
   const month = url.searchParams.get("month") || nowMonth01; // YYYY-MM-01
-  if (!isIsoMonth01(month)) return jsonErr(400, rid, "BAD_REQUEST", "month må være YYYY-MM-01", { month });
+  if (!isIsoMonth01(month)) return jsonErr(rid, "month må være YYYY-MM-01", 400, { code: "BAD_REQUEST", detail: { month } });
 
   const toMonth = month;
 
@@ -92,7 +90,7 @@ export async function GET(req: NextRequest) {
     .lte("month", toMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente måneder", mErr);
+  if (mErr) return jsonErr(rid, "Kunne ikke hente måneder", 500, { code: "DB_ERROR", detail: mErr });
 
   const { data: yearly, error: yErr } = await supabase
     .from("esg_yearly_snapshots")
@@ -103,16 +101,16 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente år", yErr);
+  if (yErr) return jsonErr(rid, "Kunne ikke hente år", 500, { code: "DB_ERROR", detail: yErr });
 
   const { data: c, error: cErr } = await supabase.from("companies").select("name").eq("id", companyId).maybeSingle();
-  if (cErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmanavn", cErr);
+  if (cErr) return jsonErr(rid, "Kunne ikke hente firmanavn", 500, { code: "DB_ERROR", detail: cErr });
 
   const companyName = (c as any)?.name ?? null;
 
   const periodLabel =
     mode === "month"
-      ? `Måned: ${new Date(month + "T00:00:00Z").toLocaleDateString("nb-NO", { month: "long", year: "numeric" })}`
+      ? `Måned: ${formatMonthYearLongNO(`${month}-01`)}`
       : `År ${year}`;
 
   const bytes = await buildEsgPdf({
@@ -129,8 +127,6 @@ export async function GET(req: NextRequest) {
 
   const safeName = (companyName || "firma").replace(/[^\w\-]+/g, "_");
   const filename = `ESG_${safeName}_${mode === "month" ? month : year}.pdf`;
-  return pdfResponse(bytes, filename);
+  return pdfResponse(bytes, filename, rid);
 }
-
-
 

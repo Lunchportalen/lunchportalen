@@ -17,7 +17,7 @@ export default defineConfig({
     alias: {
       // ✅ FIKS: Vitest kjenner ikke "server-only" (Next.js helper)
       // Mapper til tom mock slik at tester ikke krasjer
-      "server-only": path.resolve(__dirname, "app/tests/_mocks/server-only.ts"),
+      "server-only": path.resolve(__dirname, "tests/_mocks/server-only.ts"),
     },
   },
   test: {

@@ -1,7 +1,10 @@
 "use client";
 
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 type Status =
   | { type: "idle" }
@@ -29,6 +32,8 @@ function safeNextPath(next: string | null) {
     next.startsWith("/login/") ||
     next === "/register" ||
     next.startsWith("/register/") ||
+    next === "/onboarding" ||
+    next.startsWith("/onboarding/") ||
     next === "/forgot-password" ||
     next.startsWith("/forgot-password/")
   ) {
@@ -46,6 +51,30 @@ async function sleep(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
 }
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function normEmail(v: unknown) {
+  return safeStr(v).toLowerCase();
+}
+
+function isProbablyEmail(v: string) {
+  // simple + safe (avoid being too strict)
+  return v.includes("@") && v.includes(".") && v.length >= 6;
+}
+
+/**
+ * Small safety to avoid leaving a pending abort timer around
+ */
+function safeClearTimeout(t: any) {
+  try {
+    clearTimeout(t);
+  } catch {
+    // ignore
+  }
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,10 +83,18 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<Status>({ type: "idle" });
 
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    // Prefill email from query param if present
+    const qpEmail = searchParams.get("email");
+    if (qpEmail) setEmail(qpEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -84,7 +121,10 @@ export default function LoginForm() {
 
       try {
         // ✅ FASIT: poll /api/profile (ikke /api/auth/profile)
-        const r = await fetch("/api/profile", { cache: "no-store", credentials: "same-origin" });
+        const r = await fetch("/api/profile", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
 
         // ✅ 202 = pending (trigger/profiles-latency) → vent med backoff
         if (r.status === 202) {
@@ -93,12 +133,39 @@ export default function LoginForm() {
           continue;
         }
 
-        const j = await r.json().catch(() => null);
-
         // 401 = ikke innlogget (cookies/session mangler)
         if (r.status === 401) {
           setStatus({ type: "error", message: "Du er ikke innlogget. Prøv igjen." });
           return;
+        }
+
+        const j = await r.json().catch(() => null);
+
+        if (r.status === 403 && j?.ok && j?.profile) {
+          const prof = j.profile;
+          if (prof.disabled_at) {
+            setStatus({
+              type: "error",
+              message: prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.",
+            });
+            return;
+          }
+          if (prof.is_active === false) {
+            setStatus({ type: "error", message: "Kontoen er ikke aktiv ennå. Kontakt administrator." });
+            return;
+          }
+        }
+
+        if (r.status === 200 && j?.ok && j?.pending === true && j?.company_status) {
+          const st = String(j.company_status ?? "").toLowerCase();
+          if (st === "pending") {
+            router.replace("/pending");
+            return;
+          }
+          if (st === "paused" || st === "closed") {
+            router.replace(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextPath)}`);
+            return;
+          }
         }
 
         if (r.status === 200 && j?.ok && j?.pending === false && j?.profile) {
@@ -121,7 +188,7 @@ export default function LoginForm() {
 
           // ✅ Cookies er på plass; la SSR/middleware oppdatere før navigasjon
           router.refresh();
-          router.replace(nextPath);
+          router.replace(`/api/auth/post-login?next=${encodeURIComponent(nextPath)}&dbg=login`);
           return;
         }
       } catch {
@@ -142,11 +209,15 @@ export default function LoginForm() {
     e.preventDefault();
     if (isLoading) return;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normEmail(email);
     const pwd = password;
 
     if (!normalizedEmail || !pwd) {
       setStatus({ type: "error", message: "Fyll inn e-post og passord." });
+      return;
+    }
+    if (!isProbablyEmail(normalizedEmail)) {
+      setStatus({ type: "error", message: "Skriv inn en gyldig e-postadresse." });
       return;
     }
 
@@ -177,6 +248,7 @@ export default function LoginForm() {
       }
 
       if (!res.ok || !data?.ok) {
+        // Prefer server message, but keep it safe/short
         throw new Error(data?.message || "Ugyldig e-post eller passord.");
       }
 
@@ -202,7 +274,7 @@ export default function LoginForm() {
 
       setStatus({ type: "error", message: msg });
     } finally {
-      clearTimeout(t);
+      safeClearTimeout(t);
     }
   }
 
@@ -210,8 +282,9 @@ export default function LoginForm() {
     <form data-section="LoginForm" onSubmit={onSubmit} className="space-y-4">
       {/* E-post */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-text">E-post</label>
-        <input
+        <Label htmlFor="email">E-post</Label>
+        <Input
+          id="email"
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -223,25 +296,35 @@ export default function LoginForm() {
           }}
           placeholder="navn@firma.no"
           disabled={isLoading}
-          className="h-12 w-full rounded-2xl border border-border bg-white px-4 text-text shadow-sm outline-none placeholder:text-muted/70 focus:border-[rgb(var(--lp-cta)/0.55)] focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)] disabled:cursor-not-allowed disabled:opacity-70"
         />
       </div>
 
       {/* Passord */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-text">Passord</label>
-        <input
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            clearNonSuccessStatus();
-          }}
-          placeholder="••••••••••"
-          disabled={isLoading}
-          className="h-12 w-full rounded-2xl border border-border bg-white px-4 text-text shadow-sm outline-none placeholder:text-muted/70 focus:border-[rgb(var(--lp-cta)/0.55)] focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)] disabled:cursor-not-allowed disabled:opacity-70"
-        />
+        <Label htmlFor="password">Passord</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearNonSuccessStatus();
+            }}
+            placeholder="••••••••••"
+            disabled={isLoading}
+            className="pr-12"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? "Skjul" : "Vis"}
+          </button>
+        </div>
       </div>
 
       {/* Status */}
@@ -252,32 +335,38 @@ export default function LoginForm() {
       )}
 
       {(status.type === "success" || status.type === "pending_profile") && (
-        <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div
+          role="status"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
           {status.type === "pending_profile" ? "Setter opp kontoen din…" : status.message}
           <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
         </div>
       )}
 
       {/* CTA */}
-      <button
+      <Button
         type="submit"
         disabled={isLoading}
-        className="h-12 w-full rounded-2xl bg-[rgb(var(--lp-cta)/1)] px-5 text-sm font-semibold text-white shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45)] ring-1 ring-black/5 transition hover:brightness-[1.03] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full"
       >
         {status.type === "pending_profile" ? "Setter opp…" : status.type === "loading" ? "Logger inn…" : "Logg inn"}
-      </button>
+      </Button>
 
       {/* Test-knapp (kun dev) */}
       {process.env.NODE_ENV !== "production" && (
-        <button
+        <Button
           type="button"
+          variant="secondary"
           onClick={() => alert("Dev: Opprett testbruker")}
           disabled={isLoading}
-          className="h-11 w-full rounded-2xl border border-border bg-white text-sm font-medium text-text shadow-sm hover:bg-[rgb(var(--lp-bg)/1)] disabled:opacity-70"
+          className="w-full"
         >
           Opprett bruker (test)
-        </button>
+        </Button>
       )}
     </form>
   );
 }
+
+

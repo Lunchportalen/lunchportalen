@@ -11,6 +11,7 @@ import type { CompanyStatus, FirmsSortKey, SortDir } from "@/lib/superadmin/type
 import FirmsTable from "@/components/superadmin/FirmsTable";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | null };
@@ -46,11 +47,8 @@ function safeInt(v: string, fallback: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
 }
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 export default async function SuperadminFirmsPage(props: { searchParams?: SP }) {

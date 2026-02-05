@@ -4,19 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { getScope } from "@/lib/auth/scope";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function osloYear() {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" });
@@ -31,9 +21,8 @@ function clampInt(n: number, min: number, max: number) {
 type CompanyMeta = { name: string | null; status: string | null };
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
+  const rid = makeRid();
 
   try {
     // ✅ await klienten
@@ -41,11 +30,11 @@ export async function GET(req: NextRequest) {
 
     // ✅ scope fra request (robust: støtter både Scope og { ok:false })
     const scope: any = await getScope(req);
-    if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-    if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
+    if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
+    if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
 
     // ✅ superadmin-only
-    if (scope.role !== "superadmin") return jsonErr(403, rid, "FORBIDDEN", "Krever superadmin", { role: scope.role });
+    if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
     const url = new URL(req.url);
     const year = clampInt(Number(url.searchParams.get("year") ?? osloYear()), 2000, 2100);
@@ -66,7 +55,7 @@ export async function GET(req: NextRequest) {
     if (score !== "ALL") yearlyQ = yearlyQ.eq("stability_score", score);
 
     const { data: rows, error: yErr } = await yearlyQ;
-    if (yErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ESG yearly", yErr);
+    if (yErr) return jsonErr(rid, "Kunne ikke hente ESG yearly", 500, { code: "DB_ERROR", detail: yErr });
 
     // 2) firmainfo (navn/status) for UI
     // - IKKE anta created_at finnes
@@ -81,10 +70,10 @@ export async function GET(req: NextRequest) {
       // Fallback uten status
       const tryWithoutStatus = await supabase.from("companies").select("id, name");
       if (tryWithoutStatus.error) {
-        return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente companies", {
+        return jsonErr(rid, "Kunne ikke hente companies", 500, { code: "DB_ERROR", detail: {
           withStatus: tryWithStatus.error,
           withoutStatus: tryWithoutStatus.error,
-        });
+        } });
       }
       companies = tryWithoutStatus.data ?? [];
     }
@@ -155,12 +144,11 @@ export async function GET(req: NextRequest) {
     const total = list.length;
     const pageItems = list.slice(offset, offset + limit);
 
-    return jsonOk({ ok: true, rid, year, total, page, limit, items: pageItems });
+    return jsonOk(rid, { year, total, page, limit, items: pageItems });
   } catch (e: any) {
     // ✅ aldri tom 500 igjen
-    return jsonErr(500, rid, "UNEXPECTED", "Uventet feil i ESG benchmark", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil i ESG benchmark", 500, { code: "UNEXPECTED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
 
 

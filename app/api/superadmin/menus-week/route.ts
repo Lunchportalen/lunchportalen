@@ -5,35 +5,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { MenuContent } from "@/lib/sanity/queries";
-import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type DayStatus = "published" | "unpublished" | "missing";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
-}
-
-function makeRid() {
-  return `rid_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-}
-
-function jsonOk(rid: string, data: any, init?: number) {
-  return NextResponse.json({ ok: true, rid, ...data }, { status: init ?? 200 });
-}
-
-function jsonErr(rid: string, status: number, error: string, message?: string, detail?: any) {
-  return NextResponse.json(
-    {
-      ok: false,
-      rid,
-      error,
-      message: message ?? error,
-      detail: detail ?? null,
-    },
-    { status }
-  );
 }
 
 function supabaseAdmin() {
@@ -78,7 +57,7 @@ export async function GET(req: Request) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { getMenuForDatesAdmin } = await import("@/lib/sanity/queries");
-  const rid = safeStr((req.headers as any)?.get?.("x-rid")) || makeRid();
+  const rid = makeRid();
 
   try {
     // 1) Auth + superadmin guard
@@ -87,7 +66,7 @@ export async function GET(req: Request) {
     const user = userRes?.user ?? null;
 
     if (!user || userErr) {
-      return jsonErr(rid, 401, "AUTH_REQUIRED", "Du må være innlogget for å bruke denne ruten.");
+      return jsonErr(rid, "Du må være innlogget for å bruke denne ruten.", 401, "AUTH_REQUIRED");
     }
 
     const { data: profile, error: profErr } = await supabase
@@ -97,11 +76,11 @@ export async function GET(req: Request) {
       .maybeSingle();
 
     if (profErr) {
-      return jsonErr(rid, 500, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", profErr.message);
+      return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "PROFILE_READ_FAILED", detail: profErr.message });
     }
 
     if (profile?.role !== "superadmin") {
-      return jsonErr(rid, 403, "FORBIDDEN", "Kun superadmin har tilgang.");
+      return jsonErr(rid, "Kun superadmin har tilgang.", 403, "FORBIDDEN");
     }
 
     // 2) Offset
@@ -132,7 +111,7 @@ export async function GET(req: Request) {
       admin = supabaseAdmin();
     } catch (e: any) {
       // Dette skal ikke stoppe bygg/CI – men vil stoppe ruten runtime hvis env mangler
-      return jsonErr(rid, 500, "MISSING_ENV", "Mangler nødvendige miljøvariabler for admin-lesing.", safeStr(e?.message));
+      return jsonErr(rid, "Mangler nødvendige miljøvariabler for admin-lesing.", 500, { code: "MISSING_ENV", detail: safeStr(e?.message) });
     }
 
     const { data: visRows, error: visErr } = await admin
@@ -141,7 +120,7 @@ export async function GET(req: Request) {
       .in("date", dates);
 
     if (visErr) {
-      return jsonErr(rid, 500, "VIS_READ_FAILED", "Kunne ikke lese publiseringsstatus.", visErr.message);
+      return jsonErr(rid, "Kunne ikke lese publiseringsstatus.", 500, { code: "VIS_READ_FAILED", detail: visErr.message });
     }
 
     const dbPublished = new Map<string, boolean>();
@@ -194,20 +173,13 @@ export async function GET(req: Request) {
     });
 
     // 7) OK
-    return jsonOk(
-      rid,
-      {
-        week: {
-          weekStart: monday,
-          days: payload,
-        },
+    return jsonOk(rid, {
+      week: {
+        weekStart: monday,
+        days: payload,
       },
-      200
-    );
+    });
   } catch (e: any) {
-    return jsonErr(rid, 500, "INTERNAL_ERROR", "Uventet feil i menus-week.", safeStr(e?.message ?? e));
+    return jsonErr(rid, "Uventet feil i menus-week.", 500, { code: "INTERNAL_ERROR", detail: safeStr(e?.message ?? e) });
   }
 }
-
-
-

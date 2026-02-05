@@ -8,6 +8,8 @@ import { redirect, notFound } from "next/navigation";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import ChangeCompanyAdmin from "./ChangeCompanyAdmin";
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -60,24 +62,11 @@ function normalizeStatus(v: any): CompanyStatus {
 }
 
 function fmtTs(ts: string) {
-  try {
-    return new Date(ts).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return ts;
-  }
+  return formatDateTimeNO(ts);
 }
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 export default async function FirmPage({ params }: PageProps) {
@@ -205,7 +194,7 @@ export default async function FirmPage({ params }: PageProps) {
             Ingen lokasjoner funnet for dette firmaet. Opprett minst én lokasjon før du kan sette firma-admin.
           </div>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-2xl bg-white ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="mt-4 rounded-2xl bg-white ring-1 ring-[rgb(var(--lp-border))]">
             <table className="w-full text-sm">
               <thead className="bg-white/70 text-left text-xs text-[rgb(var(--lp-muted))]">
                 <tr>

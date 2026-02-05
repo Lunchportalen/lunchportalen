@@ -1,51 +1,70 @@
-// app/superadmin/companies/[companyId]/page.tsx
+﻿// app/superadmin/companies/[companyId]/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { cookies, headers } from "next/headers";
+import { notFound } from "next/navigation";
+import { formatDateTimeNO } from "@/lib/date/format";
+import AuditCompanyPanel from "@/components/audit/AuditCompanyPanel";
+import ArchivePanel from "./ArchivePanel";
+import InvoiceBasisPanel from "./InvoiceBasisPanel";
+import EsgSummaryPanel from "./EsgSummaryPanel";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import Actions from "./Actions";
-import StatusBadge, { type CompanyStatus as UiCompanyStatus } from "./StatusBadge";
-import AuditFeed from "@/components/audit/AuditFeed";
+type CompanyStatus = "active" | "paused" | "closed" | "pending";
 
-/* =========================================================
-   Types
-========================================================= */
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type CompanyStatus = "pending" | "active" | "paused" | "closed";
-type PlanTier = "BASIS" | "LUXUS";
-
-type ProfileRow = { role: Role | null; disabled_at?: string | null };
-
-type CompanyRow = {
-  id: string;
-  name: string;
-  orgnr: string | null;
-  status: CompanyStatus | null;
-  created_at: string | null;
-  updated_at: string | null;
-  agreement_json?: any | null;
-  plan_tier?: string | null;
-  employee_count?: number | null;
+type CompanyDetails = {
+  company: {
+    id: string;
+    name: string | null;
+    orgnr: string | null;
+    status: CompanyStatus;
+    updated_at: string | null;
+    created_at: string | null;
+    deleted_at: string | null;
+  };
+  agreement: null | {
+    tier: "basis" | "luxus";
+    days: string[];
+    price_per_unit: number;
+    binding_start: string | null;
+    binding_end: string | null;
+  };
+  employees: Array<{
+    id: string;
+    name: string | null;
+    email: string | null;
+    role: string | null;
+    is_active: boolean | null;
+    deleted_at: string | null;
+    last_seen_at: string | null;
+  }>;
+  locations: Array<{
+    id: string;
+    name: string | null;
+    address_line: string | null;
+    postnr: string | null;
+    city: string | null;
+    slot: string | null;
+  }>;
+  kpi?: {
+    orders_30d: number;
+    delivered_30d: number;
+    cancel_30d: number;
+  };
 };
 
-type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-
-type DayView = {
-  key: DayKey;
-  label: string;
-  enabled: boolean;
-  tier: PlanTier | null;
-  price_ex_vat: number | null;
-  price_inc_vat: number | null;
+type ApiOk = { ok: true; rid: string; data: CompanyDetails };
+type ApiErr = {
+  ok: false;
+  rid?: string;
+  error: string;
+  message?: string;
+  status?: number;
+  detail?: any;
 };
 
-/* =========================================================
-   Helpers
-========================================================= */
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
@@ -55,349 +74,355 @@ function safeName(v: any) {
   return s.length ? s : "Ukjent firma";
 }
 
-function normalizeStatus(v: any): CompanyStatus {
-  const s = String(v ?? "pending").toLowerCase().trim();
-  if (s === "active") return "active";
-  if (s === "paused") return "paused";
-  if (s === "closed") return "closed";
-  return "pending";
+function statusLabel(status: CompanyStatus) {
+  if (status === "active") return "Aktiv";
+  if (status === "paused") return "Pauset";
+  if (status === "closed") return "Stengt";
+  return "Venter";
+}
+
+function statusPill(status: CompanyStatus) {
+  if (status === "active") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
+  if (status === "paused") return "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
+  if (status === "closed") return "bg-red-50 text-red-800 ring-1 ring-red-200";
+  return "bg-neutral-50 text-neutral-700 ring-1 ring-neutral-200";
 }
 
 function formatISO(iso: string | null | undefined) {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("nb-NO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeNO(iso);
   } catch {
     return String(iso);
   }
 }
 
-function n(v: any): number | null {
-  const x = Number(v);
-  return Number.isFinite(x) ? x : null;
-}
-
-function asTier(v: any): PlanTier | null {
-  const s = String(v ?? "").toUpperCase().trim();
-  if (s === "BASIS") return "BASIS";
-  if (s === "LUXUS" || s === "LUKSUS") return "LUXUS";
-  return null;
-}
-
-function buildDaysFromAgreement(agreement: any): DayView[] {
-  const map: Record<DayKey, string> = {
-    mon: "Mandag",
-    tue: "Tirsdag",
-    wed: "Onsdag",
-    thu: "Torsdag",
-    fri: "Fredag",
-  };
-
-  const keys: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-  const days = agreement?.plan?.days ?? agreement?.days ?? agreement?.agreement?.days ?? null;
-
-  return keys.map((k) => {
-    const raw = days?.[k] ?? null;
-    const enabled = !!raw?.enabled;
-    const tier = enabled ? (asTier(raw?.tier) ?? null) : null;
-
-    const price_ex_vat = enabled ? n(raw?.price_ex_vat) : null;
-    const price_inc_vat = enabled ? n(raw?.price_inc_vat) : null;
-
-    return {
-      key: k,
-      label: map[k],
-      enabled,
-      tier,
-      price_ex_vat,
-      price_inc_vat,
-    };
-  });
-}
-
-function formatNOK(v: number | null | undefined) {
-  if (v === null || v === undefined) return "—";
-  try {
-    return new Intl.NumberFormat("nb-NO", {
-      style: "currency",
-      currency: "NOK",
-      maximumFractionDigits: 0,
-    }).format(v);
-  } catch {
-    return `${v} NOK`;
-  }
-}
-
-function tierLabel(t: PlanTier | null) {
-  if (!t) return "—";
-  return t === "BASIS" ? "Basis" : "Luxus";
-}
-
-function tierPill(t: PlanTier | null) {
-  if (t === "LUXUS") return "bg-black text-white ring-1 ring-black";
-  if (t === "BASIS") return "bg-white text-black ring-1 ring-[rgb(var(--lp-border))]";
-  return "bg-white/60 text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))]";
-}
-
-function billingLabel(v: any) {
-  const s = String(v ?? "").toLowerCase().trim();
-  if (s === "every_14_days") return "Hver 14. dag";
-  if (s === "monthly") return "Månedlig";
-  if (s === "weekly") return "Ukentlig";
+function roleLabel(role: string | null) {
+  const s = safeStr(role).toLowerCase();
+  if (s === "employee") return "Ansatt";
+  if (s === "company_admin") return "Firma-admin";
+  if (s === "superadmin") return "Superadmin";
+  if (s === "driver") return "Sjåfør";
+  if (s === "kitchen") return "Kjøkken";
   return "—";
 }
 
-/**
- * Hard-fasit for superadmin.
- * (Kan være flere senere → utvid til allowlist når dere vil.)
- */
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+function employeeStatus(e: CompanyDetails["employees"][number]) {
+  if (e.deleted_at) return "Slettet";
+  if (e.is_active === false) return "Deaktivert";
+  return "Aktiv";
 }
 
-/* =========================================================
-   Error Surface
-========================================================= */
-function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-10 lp-select-text">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-xs font-bold text-[rgb(var(--lp-muted))]">SUPERADMIN</div>
-        <div className="mt-2 text-lg font-semibold">{props.title ?? "Firma"}</div>
-        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{props.message}</p>
-        {props.detail ? (
-          <pre className="mt-3 whitespace-pre-wrap text-xs text-rose-700">{props.detail}</pre>
-        ) : null}
-        <div className="mt-4 flex gap-2">
+async function getBaseUrl() {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+
+  const env = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "").replace(/\/$/, "");
+  if (!host) return env;
+
+  return `${proto}://${host}`.replace(/\/$/, "");
+}
+
+async function fetchCompanyDetails(companyId: string): Promise<ApiOk | ApiErr> {
+  const c = await cookies();
+  const base = await getBaseUrl();
+
+  const cookieHeader = c
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+
+  const res = await fetch(`${base}/api/superadmin/companies/${encodeURIComponent(companyId)}`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader,
+      "Cache-Control": "no-store",
+    },
+  }).catch(() => null);
+
+  if (!res) {
+    return {
+      ok: false,
+      error: "FETCH_FAILED",
+      message: "Kunne ikke kontakte API.",
+    };
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return {
+      ok: false,
+      error: "EMPTY_RESPONSE",
+      message: `Tom respons (HTTP ${res.status})`,
+      status: res.status,
+    };
+  }
+
+  let json: any = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return {
+      ok: false,
+      error: "INVALID_JSON",
+      message: `Ugyldig JSON (HTTP ${res.status})`,
+      status: res.status,
+    };
+  }
+
+  if (json?.ok === true) return json as ApiOk;
+
+  return {
+    ok: false,
+    rid: json?.rid,
+    error: json?.error || "HTTP_ERROR",
+    message: json?.message || `HTTP ${res.status}`,
+    status: res.status,
+    detail: json?.detail ?? null,
+  };
+}
+
+export default async function SuperadminCompanyDetailPage(props: {
+  params: { companyId: string } | Promise<{ companyId: string }>;
+}) {
+  const p = await props.params;
+  const companyId = safeStr(p?.companyId);
+  if (!companyId) notFound();
+
+  const res = await fetchCompanyDetails(companyId);
+
+  if (!res || (res as any).ok !== true) {
+    const err = res as ApiErr;
+    return (
+      <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">Firmadetaljer</h1>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente firmadata.</p>
+          </div>
           <Link
             href="/superadmin/companies"
-            className="rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+            className="inline-flex rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
           >
             Til firmaoversikt
           </Link>
-          <Link href="/superadmin" className="rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50">
-            Dashboard
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+        </header>
 
-/* =========================================================
-   Page (Next.js 15: params can be Promise)
-========================================================= */
-export default async function SuperadminCompanyPage(props: {
-  params: { companyId: string } | Promise<{ companyId: string }>;
-}) {
-  const params = await props.params;
-  const companyId = safeStr(params.companyId);
-  if (!companyId) notFound();
-
-  const supabase = await supabaseServer();
-
-  // 1) Auth
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  const user = userRes?.user ?? null;
-
-  if (userErr || !user) {
-    redirect(`/login?next=/superadmin/companies/${encodeURIComponent(companyId)}`);
+        <section className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-sm font-semibold text-red-700">Feil ved henting</div>
+          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+            {err.message || "Ukjent feil."} {err.rid ? <span className="ml-2 text-xs">rid: {err.rid}</span> : null}
+          </div>
+        </section>
+      </main>
+    );
   }
 
-  // 2) Role gate (FASET: profiles.id = auth.user.id)
-  const { data: profile, error: pErr } = await supabase
-    .from("profiles")
-    .select("role,disabled_at")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.disabled_at) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) redirect("/login?next=/superadmin");
-
-  // 3) Load company
-  const { data: c, error: cErr } = await supabase
-    .from("companies")
-    .select("id,name,orgnr,status,created_at,updated_at,agreement_json,plan_tier,employee_count")
-    .eq("id", companyId)
-    .maybeSingle<CompanyRow>();
-
-  if (cErr) return <ErrorSurface message="Kunne ikke hente firma." detail={safeStr(cErr.message)} />;
-  if (!c) notFound();
-
-  const status = normalizeStatus(c.status) as UiCompanyStatus;
-
-  const agreement = c.agreement_json ?? null;
-  const adminEmail = safeStr(agreement?.admin?.email) || "—";
-  const adminName = safeStr(agreement?.admin?.full_name) || "—";
-  const phone = safeStr(agreement?.admin?.phone) || "—";
-
-  const days = buildDaysFromAgreement(agreement);
-  const enabledDays = days.filter((d) => d.enabled);
-  const basisCount = enabledDays.filter((d) => d.tier === "BASIS").length;
-  const luxusCount = enabledDays.filter((d) => d.tier === "LUXUS").length;
-
-  const planSummary =
-    basisCount > 0 && luxusCount > 0
-      ? `Blandingsplan: ${basisCount} dager Basis / ${luxusCount} dager Luxus`
-      : luxusCount > 0
-      ? `Luxus (${luxusCount} dager)`
-      : basisCount > 0
-      ? `Basis (${basisCount} dager)`
-      : "—";
-
-  const employeeCount =
-    Number.isFinite(Number(c.employee_count)) ? Number(c.employee_count) : Number(agreement?.company?.employee_count ?? NaN);
-
-  const invoiceCadenceRaw = safeStr(agreement?.billing?.invoice_cadence) || "";
+  const ok = res as ApiOk;
+  const data = ok.data;
+  const company = data.company;
+  const employees = Array.isArray(data.employees) ? data.employees : [];
+  const locations = Array.isArray(data.locations) ? data.locations : [];
+  const employeesCount = employees.filter((e) => safeStr(e.role).toLowerCase() === "employee").length;
+  const adminsCount = employees.filter((e) => safeStr(e.role).toLowerCase() === "company_admin").length;
 
   return (
-    <div className="lp-select-text mx-auto max-w-5xl px-4 py-10">
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin / Firma</div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{safeName(c.name)}</h1>
-
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{safeName(company?.name)}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[rgb(var(--lp-muted))]">
             <span className="rounded-full bg-white/70 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Org.nr: {c.orgnr ?? "—"}
+              Org.nr: {company?.orgnr ?? "—"}
             </span>
-
-            {/* ✅ Live-updating status badge */}
-            <StatusBadge companyId={companyId} initialStatus={status} />
-          </div>
-
-          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{planSummary}</div>
-        </div>
-
-        <div className="text-xs text-[rgb(var(--lp-muted))]">
-          Sist endret: {formatISO(c.updated_at)} <br />
-          Opprettet: {formatISO(c.created_at)}
-        </div>
-      </div>
-
-      {/* Main cards */}
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
-        <div className="rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-sm font-semibold">Kontakt (fra avtale)</div>
-          <div className="mt-3 space-y-2 text-sm">
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Navn</div>
-              <div className="font-medium">{adminName}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">E-post</div>
-              <div className="font-medium">{adminEmail}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Telefon</div>
-              <div className="font-medium">{phone}</div>
-            </div>
+            <span className={["inline-flex rounded-full px-3 py-1 text-xs", statusPill(company.status)].join(" ")}>
+              {statusLabel(company.status)}
+            </span>
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-sm font-semibold">Avtale (kort)</div>
-          <div className="mt-3 space-y-2 text-sm">
+        <Link
+          href="/superadmin/companies"
+          className="inline-flex rounded-2xl border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+        >
+          Til firmaoversikt
+        </Link>
+      </header>
+
+      <section className="mt-6 grid gap-3 md:grid-cols-3">
+        <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte</div>
+          <div className="mt-2 text-2xl font-semibold">{employeesCount}</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Firma-admins: {adminsCount}</div>
+        </div>
+        <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Lokasjoner</div>
+          <div className="mt-2 text-2xl font-semibold">{locations.length}</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Aktive leveringspunkter</div>
+        </div>
+        <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Sist endret</div>
+          <div className="mt-2 text-lg font-semibold">{formatISO(company?.updated_at)}</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Opprettet: {formatISO(company?.created_at)}</div>
+        </div>
+      </section>
+
+      <nav className="mt-6 flex flex-wrap gap-2 text-sm">
+        <a href="#firma" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Firma
+        </a>
+        <a href="#okonomi" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Økonomi
+        </a>
+        <a href="#fakturagrunnlag" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Fakturagrunnlag
+        </a>
+        <a href="#esg" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          ESG
+        </a>
+        <a href="#ansatte" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Ansatte
+        </a>
+        <a href="#audit" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Audit
+        </a>
+      </nav>
+
+      <section id="firma" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">Firma</div>
+        <div className="mt-2 grid gap-3 text-sm md:grid-cols-2">
+          <div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Firmanavn</div>
+            <div className="font-medium">{safeName(company?.name)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Org.nr</div>
+            <div className="font-medium">{company?.orgnr ?? "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Status</div>
+            <div className="font-medium">{statusLabel(company.status)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Firma-ID</div>
+            <div className="font-mono text-xs">{company?.id}</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="okonomi" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">Økonomi</div>
+        {data.agreement ? (
+          <div className="mt-2 grid gap-3 text-sm md:grid-cols-2">
             <div>
               <div className="text-xs text-[rgb(var(--lp-muted))]">Plan</div>
-              <div className="font-medium">{planSummary}</div>
+              <div className="font-medium">{data.agreement.tier === "luxus" ? "Luxus" : "Basis"}</div>
             </div>
             <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Antall ansatte</div>
-              <div className="font-medium">{Number.isFinite(employeeCount) ? String(employeeCount) : "—"}</div>
+              <div className="text-xs text-[rgb(var(--lp-muted))]">Pris per enhet</div>
+              <div className="font-medium">{data.agreement.price_per_unit} NOK</div>
             </div>
             <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Fakturering</div>
-              <div className="font-medium">{billingLabel(invoiceCadenceRaw)}</div>
+              <div className="text-xs text-[rgb(var(--lp-muted))]">Binding start</div>
+              <div className="font-medium">{formatISO(data.agreement.binding_start)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-[rgb(var(--lp-muted))]">Binding slutt</div>
+              <div className="font-medium">{formatISO(data.agreement.binding_end)}</div>
             </div>
           </div>
-        </div>
-      </div>
+        ) : (
+          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen avtale funnet.</div>
+        )}
+      </section>
 
-      {/* Days breakdown */}
-      <div className="mt-6 overflow-hidden rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
-          <div className="text-sm font-semibold">Leveringsdager (faktisk avtale)</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-            Viser valgt tier og pris per dag. Dette er grunnlaget for fakturering og drift.
-          </div>
+      <section id="fakturagrunnlag" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">Fakturagrunnlag</div>
+        <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Historisk grunnlag (read-only).</div>
+        <div className="mt-4">
+          <InvoiceBasisPanel companyId={companyId} />
         </div>
+      </section>
 
-        <div className="overflow-x-auto">
+      <section id="esg" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">ESG</div>
+        <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Basert på faktisk ordredata.</div>
+        <div className="mt-4">
+          <EsgSummaryPanel companyId={companyId} />
+        </div>
+      </section>
+
+      <section id="ansatte" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">Ansatte</div>
+        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Total: {employees.length}</div>
+
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-white/70 text-xs text-[rgb(var(--lp-muted))]">
+            <thead className="text-xs text-[rgb(var(--lp-muted))]">
               <tr className="border-b border-[rgb(var(--lp-border))]">
-                <th className="px-5 py-3">Dag</th>
-                <th className="px-5 py-3">Tier</th>
-                <th className="px-5 py-3">Pris eks. mva</th>
-                <th className="px-5 py-3">Pris inkl. mva</th>
-                <th className="px-5 py-3">Status</th>
+                <th className="px-4 py-2">Navn</th>
+                <th className="px-4 py-2">Rolle</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Sist sett</th>
               </tr>
             </thead>
             <tbody>
-              {days.map((d, idx) => (
-                <tr
-                  key={d.key}
-                  className={[
-                    "border-b border-[rgb(var(--lp-border))] last:border-b-0",
-                    idx % 2 === 0 ? "bg-white/30" : "bg-white/10",
-                  ].join(" ")}
-                >
-                  <td className="px-5 py-4 font-medium">{d.label}</td>
-                  <td className="px-5 py-4">
-                    <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", tierPill(d.tier)].join(" ")}>
-                      {tierLabel(d.tier)}
-                    </span>
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-4 text-sm text-[rgb(var(--lp-muted))]">
+                    Ingen ansatte funnet.
                   </td>
-                  <td className="px-5 py-4">{formatNOK(d.price_ex_vat)}</td>
-                  <td className="px-5 py-4">{formatNOK(d.price_inc_vat)}</td>
-                  <td className="px-5 py-4 text-xs text-[rgb(var(--lp-muted))]">{d.enabled ? "Valgt" : "Ikke valgt"}</td>
                 </tr>
-              ))}
+              ) : (
+                employees.map((e, idx) => (
+                  <tr
+                    key={e.id}
+                    className={[
+                      "border-b border-[rgb(var(--lp-border))] last:border-b-0",
+                      idx % 2 === 0 ? "bg-white/30" : "bg-white/10",
+                    ].join(" ")}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{e.name ?? "—"}</div>
+                      <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{e.email ?? "—"}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{roleLabel(e.role)}</td>
+                    <td className="px-4 py-3 text-xs">{employeeStatus(e)}</td>
+                    <td className="px-4 py-3 text-xs text-[rgb(var(--lp-muted))]">{formatISO(e.last_seen_at)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* B4: Faktura & historikk (read-only)
-          - Vi holder dette read-only og bygger det som en separat modul (InvoicesCard)
-          - Hvis dere ikke har filen enda: opprett den før dere importerer her.
-      */}
-      {/*
-      <div className="mt-6">
-        <InvoicesCard companyId={companyId} />
-      </div>
-      */}
-
-      {/* Actions */}
-      <div className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-sm font-semibold">Behandle registrering</div>
-        <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-          Pending kan kun endres av superadmin: Aktiver eller Avslå.
-        </div>
-        <Actions companyId={companyId} status={status} />
-      </div>
-
-      {/* ✅ Audit (per firma) */}
-      <div className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-sm font-semibold">Audit for firma</div>
-        <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Hendelser for dette firmaet (klikk en rad for detaljer).</div>
-
+      <section id="audit" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="text-sm font-semibold">Audit</div>
         <div className="mt-4">
-          <AuditFeed companyId={companyId} initialLimit={200} title={undefined} />
+          <AuditCompanyPanel companyId={companyId} />
         </div>
-      </div>
-    </div>
+      </section>
+      <ArchivePanel
+        companyId={companyId}
+        companyName={company?.name ?? null}
+        companyOrgnr={company?.orgnr ?? null}
+        companyStatus={company?.status ?? null}
+        companyDeletedAt={company?.deleted_at ?? null}
+      />
+    </main>
   );
 }
+
+
+
+
+
+
+
+
+
+

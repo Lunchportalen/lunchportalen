@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { supabaseServer } from "@/lib/supabase/server";
 import SupportReportButton from "@/components/admin/SupportReportButton";
+import { systemRoleByEmail } from "@/lib/system/emails";
+import { formatDateNO } from "@/lib/date/format";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -40,16 +42,8 @@ type UsersApi = UsersResponseOk | UsersResponseErr;
 /* =========================================================
    Role helpers (samme prinsipp som middleware/admin)
 ========================================================= */
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function roleFromMetadata(user: any): Role {
@@ -76,12 +70,8 @@ function computeRole(user: any, profileRole?: any): Role {
 }
 
 function fmtDate(ts?: string | null) {
-  try {
-    if (!ts) return "—";
-    return new Date(ts).toLocaleDateString("nb-NO", { year: "numeric", month: "2-digit", day: "2-digit" });
-  } catch {
-    return "—";
-  }
+  if (!ts) return "—";
+  return formatDateNO(ts);
 }
 
 function safeText(v: any) {
@@ -230,7 +220,7 @@ export default async function AdminUsersPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="rounded-2xl ring-1 ring-[rgb(var(--lp-border))]">
             <table className="w-full text-left text-sm">
               <thead className="bg-[rgb(var(--lp-surface))] text-xs text-[rgb(var(--lp-muted))]">
                 <tr>

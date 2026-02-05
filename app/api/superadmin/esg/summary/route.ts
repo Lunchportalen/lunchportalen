@@ -4,19 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { getScope } from "@/lib/auth/scope";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isoMonthStart() {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -35,24 +25,23 @@ function addMonths(isoMonth01: string, delta: number) {
 }
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
+  const rid = makeRid();
 
   const supabase = await supabaseServer();
 
   // ✅ robust scope (støtter både Scope og { ok:false })
   const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-  if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
+  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
+  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
 
   if (scope.role !== "superadmin") {
-    return jsonErr(403, rid, "FORBIDDEN", "Krever superadmin", { role: scope.role ?? null });
+    return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role ?? null } });
   }
 
   const url = new URL(req.url);
   const companyId = url.searchParams.get("company_id");
-  if (!companyId) return jsonErr(400, rid, "BAD_REQUEST", "company_id mangler");
+  if (!companyId) return jsonErr(rid, "company_id mangler", 400, "BAD_REQUEST");
 
   const thisMonth = isoMonthStart();
   const fromMonth = addMonths(thisMonth, -11);
@@ -68,7 +57,7 @@ export async function GET(req: NextRequest) {
     .lte("month", thisMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente månedssnapshots", mErr);
+  if (mErr) return jsonErr(rid, "Kunne ikke hente månedssnapshots", 500, { code: "DB_ERROR", detail: mErr });
 
   const { data: yearly, error: yErr } = await supabase
     .from("esg_yearly_snapshots")
@@ -79,10 +68,9 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente årssnapshot", yErr);
+  if (yErr) return jsonErr(rid, "Kunne ikke hente årssnapshot", 500, { code: "DB_ERROR", detail: yErr });
 
-  return jsonOk({ ok: true, rid, company_id: companyId, year, months: months ?? [], yearly: yearly ?? null });
+  return jsonOk(rid, { company_id: companyId, year, months: months ?? [], yearly: yearly ?? null });
 }
-
 
 

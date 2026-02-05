@@ -2,18 +2,18 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 
-import PageShell from "./components/PageShell";
-import Hero from "./components/Hero";
-import Problem from "./components/Problem";
-import Solution from "./components/Solution";
-import HowItWorks from "./components/HowItWorks";
-import Sustainability from "./components/Sustainability";
-import Control from "./components/Control";
-import Pricing from "./components/Pricing";
-import FAQ from "./components/FAQ";
-import FinalCTA from "./components/FinalCTA";
+import PageShell from "@/components/PageShell";
+import Hero from "@/components/Hero";
+import Problem from "@/components/Problem";
+import Solution from "@/components/Solution";
+import HowItWorks from "@/components/HowItWorks";
+import Sustainability from "@/components/Sustainability";
+import Control from "@/components/Control";
+import Pricing from "@/components/Pricing";
+import FAQ from "@/components/FAQ";
+import FinalCTA from "@/components/FinalCTA";
 
-import { organizationJsonLd, websiteJsonLd } from "./lib/seo/jsonld";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Lunchportalen – firmalunsj med kontroll, mindre svinn og forutsigbarhet",

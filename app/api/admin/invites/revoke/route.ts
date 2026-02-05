@@ -7,8 +7,8 @@ import type { NextRequest } from "next/server";
 
 
 // ✅ Dag-10 helpers
+import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
-import { noStoreHeaders } from "@/lib/http/noStore";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -22,20 +22,6 @@ function errDetail(e: any) {
   } catch {
     return String(e);
   }
-}
-
-function jsonErr(ctx: { rid: string }, status: number, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid: ctx.rid, error, message, detail: detail ?? undefined };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
-function jsonOk(ctx: { rid: string }, body: any, status = 200) {
-  return new Response(JSON.stringify({ ...body, rid: ctx.rid }), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
 }
 
 function pickCodeFromReq(req: NextRequest) {
@@ -62,15 +48,11 @@ async function readBody(req: NextRequest): Promise<Record<string, any>> {
 
 async function handleRevoke(ctx: any, code: string) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const role = safeStr(ctx?.scope?.role);
   const ctxCompanyId = safeStr(ctx?.scope?.companyId);
 
-  // For company_admin: company scope må finnes
-  if (role !== "superadmin") {
-    const denyScope = requireCompanyScopeOr403(ctx);
-    if (denyScope) return denyScope;
-    if (!ctxCompanyId) return jsonErr(ctx, 403, "missing_company_scope", "Mangler company scope.");
-  }
+  const denyScope = requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
+  if (!ctxCompanyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const admin = supabaseAdmin();
 
@@ -81,20 +63,19 @@ async function handleRevoke(ctx: any, code: string) {
     .eq("code", code)
     .maybeSingle();
 
-  if (rErr) return jsonErr(ctx, 500, "db_error", "Kunne ikke slå opp invitasjon.", errDetail(rErr));
-  if (!row) return jsonErr(ctx, 404, "not_found", "Invitasjonslenken finnes ikke.", { code });
+  if (rErr) return jsonErr(ctx.rid, "Kunne ikke slå opp invitasjon.", 500, { code: "db_error", detail: errDetail(rErr) });
+  if (!row) return jsonErr(ctx.rid, "Invitasjonslenken finnes ikke.", 404, { code: "not_found", detail: { code } });
 
   const inviteCompanyId = safeStr((row as any).company_id);
 
   // company_admin kan bare revoke egen company
-  if (role !== "superadmin" && inviteCompanyId && ctxCompanyId && inviteCompanyId !== ctxCompanyId) {
-    return jsonErr(ctx, 403, "forbidden", "Du kan ikke tilbakekalle invitasjoner for andre firma.", { code });
+  if (inviteCompanyId && ctxCompanyId && inviteCompanyId !== ctxCompanyId) {
+    return jsonErr(ctx.rid, "Du kan ikke tilbakekalle invitasjoner for andre firma.", 403, { code: "forbidden", detail: { code } });
   }
 
   // Hvis allerede revoked: idempotent OK
   if ((row as any).revoked_at) {
-    return jsonOk(ctx, {
-      ok: true,
+    return jsonOk(ctx.rid, {
       code,
       company_id: inviteCompanyId || null,
       revoked_at: (row as any).revoked_at,
@@ -112,10 +93,9 @@ async function handleRevoke(ctx: any, code: string) {
     .select("code, company_id, revoked_at")
     .maybeSingle();
 
-  if (uErr) return jsonErr(ctx, 500, "db_error", "Kunne ikke tilbakekalle invitasjon.", errDetail(uErr));
+  if (uErr) return jsonErr(ctx.rid, "Kunne ikke tilbakekalle invitasjon.", 500, { code: "db_error", detail: errDetail(uErr) });
 
-  return jsonOk(ctx, {
-    ok: true,
+  return jsonOk(ctx.rid, {
     code: safeStr((upd as any)?.code) || code,
     company_id: safeStr((upd as any)?.company_id) || inviteCompanyId || null,
     revoked_at: (upd as any)?.revoked_at ?? now,
@@ -126,7 +106,7 @@ async function handleRevoke(ctx: any, code: string) {
 export async function POST(req: NextRequest) {
   // Auth scope (401)
   const s = await scopeOr401(req);
-  if (s instanceof Response) return s;
+  if (s.ok === false) return s.res;
   const ctx = s.ctx;
 
   // Role gate (403): superadmin OR company_admin (NY SIGNATUR)
@@ -136,7 +116,7 @@ export async function POST(req: NextRequest) {
   const body = await readBody(req);
   const code = safeStr(body.code ?? body.invite ?? pickCodeFromReq(req));
 
-  if (!code) return jsonErr(ctx, 400, "missing_code", "Mangler invitasjonskode (code).");
+  if (!code) return jsonErr(ctx.rid, "Mangler invitasjonskode (code).", 400, "missing_code");
 
   return handleRevoke(ctx, code);
 }
@@ -144,7 +124,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   // Auth scope (401)
   const s = await scopeOr401(req);
-  if (s instanceof Response) return s;
+  if (s.ok === false) return s.res;
   const ctx = s.ctx;
 
   // Role gate (403)
@@ -152,7 +132,7 @@ export async function GET(req: NextRequest) {
   if (denyRole) return denyRole;
 
   const code = pickCodeFromReq(req);
-  if (!code) return jsonErr(ctx, 400, "missing_code", "Mangler invitasjonskode (code).");
+  if (!code) return jsonErr(ctx.rid, "Mangler invitasjonskode (code).", 400, "missing_code");
 
   return handleRevoke(ctx, code);
 }

@@ -4,22 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { getScope } from "@/lib/auth/scope";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function rid() {
-  return crypto.randomBytes(8).toString("hex");
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 async function requireSuperadmin(req: NextRequest) {
   const scope = await getScope(req);
@@ -29,9 +16,8 @@ async function requireSuperadmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const r = rid();
+  const r = makeRid();
   try {
     await requireSuperadmin(req);
 
@@ -46,16 +32,15 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (error) return jsonErr(500, r, "DB_ERROR", "Kunne ikke hente audit-meta.", error);
+    if (error) return jsonErr(r, "Kunne ikke hente audit-meta.", 500, { code: "DB_ERROR", detail: error });
 
-    return jsonOk({ ok: true, rid: r, items: data ?? [] });
+    return jsonOk(r, { ok: true, rid: r, items: data ?? [] }, 200);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "NOT_AUTHENTICATED") return jsonErr(401, r, "UNAUTHENTICATED", "Du må være innlogget.");
-    if (msg === "FORBIDDEN") return jsonErr(403, r, "FORBIDDEN", "Kun superadmin har tilgang.");
-    return jsonErr(500, r, "SERVER_ERROR", "Ukjent feil ved henting av audit-meta.", { msg });
+    if (msg === "NOT_AUTHENTICATED") return jsonErr(r, "Du må være innlogget.", 401, "UNAUTHENTICATED");
+    if (msg === "FORBIDDEN") return jsonErr(r, "Kun superadmin har tilgang.", 403, "FORBIDDEN");
+    return jsonErr(r, "Ukjent feil ved henting av audit-meta.", 500, { code: "SERVER_ERROR", detail: { msg } });
   }
 }
-
 
 

@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
 import { buildEsgPdf } from "@/lib/esg/pdf";
+import { formatMonthYearLongNO } from "@/lib/date/format";
 
 /* =========================================================
    PDF response
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Role gate (company_admin)
@@ -88,12 +89,12 @@ export async function GET(req: NextRequest) {
 
   const year = Number(url.searchParams.get("year") || nowMonth01.slice(0, 4));
   if (!Number.isFinite(year) || year < 2000 || year > 2100) {
-    return jsonErr(400, ctx.rid, "bad_request", "year må være et gyldig år (2000–2100)");
+    return jsonErr(ctx.rid, "year må være et gyldig år (2000–2100)", 400, "bad_request");
   }
 
   const month = String(url.searchParams.get("month") || nowMonth01); // YYYY-MM-01
   if (!isIsoDate(month) || !month.endsWith("-01")) {
-    return jsonErr(400, ctx.rid, "bad_request", "month må være YYYY-MM-01");
+    return jsonErr(ctx.rid, "month må være YYYY-MM-01", 400, "bad_request");
   }
 
   const { fromMonth, toMonth } = toMonthRangeLast12(month);
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
     .lte("month", toMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente måneder.", { message: mErr.message });
+  if (mErr) return jsonErr(ctx.rid, "Kunne ikke hente måneder.", 500, { code: "db_error", detail: { message: mErr.message } });
 
   // Yearly (for signature + summary)
   const { data: yearly, error: yErr } = await supabase
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente år.", { message: yErr.message });
+  if (yErr) return jsonErr(ctx.rid, "Kunne ikke hente år.", 500, { code: "db_error", detail: { message: yErr.message } });
 
   // Company name (optional)
   const { data: cRow, error: cErr } = await supabase
@@ -133,14 +134,14 @@ export async function GET(req: NextRequest) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente firmanavn.", { message: cErr.message });
+  if (cErr) return jsonErr(ctx.rid, "Kunne ikke hente firmanavn.", 500, { code: "db_error", detail: { message: cErr.message } });
 
   const companyName = (cRow as any)?.name ?? null;
 
   // Period label
   const periodLabel =
     mode === "month"
-      ? `Måned: ${new Date(month + "T00:00:00Z").toLocaleDateString("nb-NO", { month: "long", year: "numeric" })}`
+      ? `Måned: ${formatMonthYearLongNO(`${month}-01`)}`
       : `År ${year}`;
 
   // 6) Build PDF
@@ -166,5 +167,3 @@ export async function GET(req: NextRequest) {
 
   return pdfResponse(bytes, filename, ctx.rid);
 }
-
-

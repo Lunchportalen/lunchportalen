@@ -7,8 +7,9 @@ export const revalidate = 0;
 import { NextResponse, type NextRequest } from "next/server";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { noStoreHeaders } from "@/lib/http/noStore";
-import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import { osloTodayISODate } from "@/lib/date/oslo";
 import { jsonErr } from "@/lib/http/respond";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 function csvEscape(v: any) {
   const s = String(v ?? "");
@@ -18,6 +19,9 @@ function csvEscape(v: any) {
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
+}
+function isIsoDate(v: any) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
 }
 
 function normalizeWindow(v: any) {
@@ -54,7 +58,7 @@ export async function GET(req: NextRequest) {
   const s = await scopeOr401(req);
   if ((s as any)?.ok === false) return (s as any).res;
 
-  const { rid } = (s as any).ctx;
+  const { rid, scope } = (s as any).ctx;
 
   // 0.1) Role gate (driver.csv)
   const roleBlock = requireRoleOr403((s as any).ctx, "driver.csv", ["driver", "superadmin"]);
@@ -63,38 +67,66 @@ export async function GET(req: NextRequest) {
   // 0.2) Confirm cookie-session (fail-closed)
   const sb = await supabaseServer();
   const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (authErr || !auth?.user) return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   // 0.3) Admin client (service role)
   let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.", { detail: safeStr(e?.message ?? e) });
+    return jsonErr(rid, "Service role mangler.", 500, { code: "CONFIG_ERROR", detail: { message: safeStr(e?.message ?? e) } });
   }
+
+  const userId = safeStr((s as any).ctx?.scope?.userId);
+  if (!userId) return jsonErr(rid, "Mangler bruker.", 403, "FORBIDDEN");
+
+  const { data: prof, error: profErr } = await loadProfileByUserId(
+    admin as any,
+    userId,
+    "company_id, location_id, disabled_at, is_active"
+  );
+
+  if (profErr || !prof) return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
+  if ((prof as any).disabled_at || (prof as any).is_active === false) {
+    return jsonErr(rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
+  }
+
+  const companyId = safeStr((prof as any).company_id);
+  const locationId = safeStr((prof as any).location_id);
+  if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
 
   // 1) Query params
   const url = new URL(req.url);
   const windowQ = normalizeWindow(url.searchParams.get("window"));
   const qDate = safeStr(url.searchParams.get("date"));
-  const date = qDate && isIsoDate(qDate) ? qDate : osloTodayISODate();
+  const today = osloTodayISODate();
+  const date = qDate && isIsoDate(qDate) ? qDate : today;
+  const role = safeStr(scope?.role).toLowerCase();
+  if (role === "driver" && date !== today) {
+    return jsonErr(rid, "Sjåfør kan kun hente CSV for i dag.", 403, { code: "FORBIDDEN_DATE", detail: { date, today } });
+  }
 
   if (!windowQ) {
-    return jsonErr(400, rid, "MISSING_WINDOW", "Missing window param.");
+    return jsonErr(rid, "Missing window param.", 400, "MISSING_WINDOW");
   }
 
   // 2) Hent ordregrunnlag (ACTIVE for dato + slot)
-  const { data: orders, error: oErr } = await admin
+  let ordersQ = admin
     .from("orders")
     .select("id, slot, note, company_id, location_id, user_id, date, status")
     .eq("date", date)
     .eq("status", "ACTIVE")
-    .eq("slot", windowQ);
+    .eq("slot", windowQ)
+    .eq("company_id", companyId);
+
+  if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
+
+  const { data: orders, error: oErr } = await ordersQ;
 
   if (oErr) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente orders.", {
-      message: oErr.message,
-      code: (oErr as any).code ?? null,
+    return jsonErr(rid, "Kunne ikke hente orders.", 500, {
+      code: "DB_ERROR",
+      detail: { message: oErr.message, code: (oErr as any).code ?? null },
     });
   }
 
@@ -135,11 +167,11 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (companiesRes.error)
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmaer.", { message: companiesRes.error.message });
+    return jsonErr(rid, "Kunne ikke hente firmaer.", 500, { code: "DB_ERROR", detail: { message: companiesRes.error.message } });
   if (locationsRes.error)
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", { message: locationsRes.error.message });
+    return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: { message: locationsRes.error.message } });
   if (profilesRes.error)
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", { message: profilesRes.error.message });
+    return jsonErr(rid, "Kunne ikke hente profiler.", 500, { code: "DB_ERROR", detail: { message: profilesRes.error.message } });
 
   const compMap = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
   const locMap = new Map((locationsRes.data ?? []).map((l: any) => [String(l.id), l]));
@@ -176,5 +208,3 @@ export async function GET(req: NextRequest) {
     },
   });
 }
-
-

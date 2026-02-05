@@ -1,8 +1,8 @@
-// app/week/WeekClient.tsx
+﻿// app/week/WeekClient.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { formatDateForDisplay } from "@/lib/date/format";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { formatDateNO, formatTimeNO } from "@/lib/date/format";
 
 /* =========================================================
    Types
@@ -17,11 +17,13 @@ type OrderDay = {
   weekday: DayKey;
   isLocked: boolean;
   isEnabled: boolean;
+  lockReason?: "CUTOFF" | "COMPANY" | null;
 
-  tier: Tier;
+  tier: Tier | null;
   allowedChoices: Choice[];
 
   wantsLunch: boolean;
+  orderStatus: "ACTIVE" | "CANCELLED" | null;
   selectedChoiceKey: string | null;
 
   menuTitle?: string | null;
@@ -29,12 +31,14 @@ type OrderDay = {
   allergens: string[];
 
   lastSavedAt?: string | null; // "HH:MM"
+  unit_price?: number | null;
 };
 
 type WindowResp = {
   ok: boolean;
   range: { from: string; to: string };
   company?: { name?: string; policy?: string };
+  agreement?: { status?: string; message?: string | null; delivery_days?: DayKey[] };
   days: OrderDay[];
   error?: string;
   detail?: string;
@@ -85,7 +89,8 @@ function weekdayLabel(w: DayKey) {
   return map[w];
 }
 
-function tierLabel(t: Tier) {
+function tierLabel(t: Tier | null) {
+  if (!t) return "Ikke tilgjengelig";
   return t === "BASIS" ? "Basis" : "Luxus";
 }
 
@@ -115,15 +120,44 @@ function safeUserMessage(raw: string) {
 
 function StatusChip({ day }: { day: OrderDay }) {
   if (!day.isEnabled) {
-    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">Ikke aktiv</span>;
+    return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke i avtalen</span>;
   }
-  if (day.isLocked) {
-    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">🔒 Låst</span>;
+  if (day.lockReason === "CUTOFF") {
+    return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Låst kl. 08:00</span>;
   }
-  if (day.wantsLunch) {
-    return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">✅ Registrert</span>;
+  if (day.lockReason === "COMPANY" || day.isLocked) {
+    return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Sperret</span>;
   }
-  return <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">⭕ Ikke registrert</span>;
+  const status = day.orderStatus ?? (day.wantsLunch ? "ACTIVE" : null);
+  if (status === "ACTIVE") {
+    return <span className="lp-chip lp-chip-ok lp-status-pill whitespace-nowrap">Bestilt</span>;
+  }
+  if (status === "CANCELLED") {
+    return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Avbestilt</span>;
+  }
+  return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke bestilt</span>;
+}
+
+function isoWeekNumber(dateISO: string) {
+  const d = new Date(`${dateISO}T12:00:00`);
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day + 3);
+  const firstThu = new Date(d.getFullYear(), 0, 4);
+  const firstThuDay = (firstThu.getDay() + 6) % 7;
+  firstThu.setDate(firstThu.getDate() - firstThuDay + 3);
+  const diff = d.getTime() - firstThu.getTime();
+  return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
+}
+
+function formatRangeShort(fromISO: string, toISO: string) {
+  const fmt = new Intl.DateTimeFormat("nb-NO", { day: "numeric", month: "short" });
+  const from = fmt.format(new Date(`${fromISO}T12:00:00`));
+  const to = fmt.format(new Date(`${toISO}T12:00:00`));
+  return `${from}–${to}`;
+}
+
+function cutoffChipClass(tone: "ok" | "warn") {
+  return tone === "warn" ? "lp-chip lp-chip-warn" : "lp-chip lp-chip-ok";
 }
 
 function defaultChoiceKey(day: OrderDay) {
@@ -136,18 +170,24 @@ function choiceLabel(day: OrderDay, key: string) {
 }
 
 function nowHHMM() {
-  return new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return formatTimeNO(new Date().toISOString());
 }
 
 function hhmmFromIso(iso: string | null | undefined) {
   if (!iso) return null;
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return null;
-  }
+  const t = formatTimeNO(iso);
+  return t || null;
+}
+
+function receiptText(day: OrderDay, saving: boolean) {
+  if (saving) return "Lagrer…";
+  if (!day.isEnabled) return "";
+  if (day.lockReason === "CUTOFF") return "Sperret etter cut-off kl. 08:00.";
+  if (day.lockReason === "COMPANY" || day.isLocked) return "Sperret.";
+  const status = day.orderStatus ?? (day.wantsLunch ? "ACTIVE" : null);
+  if (status === "ACTIVE") return day.lastSavedAt ? `Bestilt kl. ${day.lastSavedAt}` : "Bestilt";
+  if (status === "CANCELLED") return day.lastSavedAt ? `Avbestilt kl. ${day.lastSavedAt}` : "Avbestilt";
+  return "Ikke bestilt";
 }
 
 function clientRequestId() {
@@ -192,19 +232,19 @@ function TogglePill({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "h-10 w-16 rounded-full border px-1 transition",
+        "lp-toggle lp-week-toggle transition",
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
-        disabled ? "opacity-50 cursor-not-allowed" : "hover:brightness-[1.02] active:brightness-[0.98]",
+        disabled ? "opacity-50 cursor-not-allowed" : "hover:brightness-[1.01] active:brightness-[0.99]",
         active
-          ? "bg-emerald-600 border-emerald-700 focus:ring-emerald-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-          : "bg-rose-600 border-rose-700 focus:ring-rose-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+          ? "bg-[rgb(var(--lp-cta))] border-[rgb(var(--lp-accent-2))] focus:ring-[rgba(var(--lp-ring),0.35)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+          : "bg-[rgb(var(--lp-surface-2))] border-[rgb(var(--lp-border))] focus:ring-[rgba(var(--lp-ring),0.25)]",
       ].join(" ")}
       aria-pressed={active}
       title={title}
     >
       <span
         className={[
-          "block h-8 w-8 rounded-full bg-white transition shadow",
+          "lp-toggle-thumb",
           active ? "translate-x-6" : "translate-x-0",
         ].join(" ")}
       />
@@ -237,12 +277,6 @@ export default function WeekClient() {
 
   // abort inflight load
   const abortRef = useRef<AbortController | null>(null);
-
-  // iOS safe-area padding
-  const safeAreaStyle = useMemo(
-    () => ({ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" } as CSSProperties),
-    []
-  );
 
   function showToast(text: string) {
     setToast(text);
@@ -308,22 +342,38 @@ export default function WeekClient() {
   const daysNextWeek = useMemo(() => (data?.days ?? []).slice(5, 10), [data]);
   const visibleDays = weekIndex === 0 ? daysThisWeek : daysNextWeek;
 
-  const summary = useMemo(() => {
-    const enabled = visibleDays.filter((d) => d.isEnabled).length;
-    const ordered = visibleDays.filter((d) => d.wantsLunch).length;
-    const locked = visibleDays.filter((d) => d.isLocked).length;
-    return { enabled, ordered, locked };
-  }, [visibleDays]);
-
-  const headerTitle = useMemo(() => {
+  const companyLabel = useMemo(() => {
     const name = data?.company?.name?.trim();
-    return name ? `${name} – Planlegg lunsj` : "Planlegg lunsj";
+    return name ? name : null;
   }, [data?.company?.name]);
 
-  const rangeText = useMemo(() => {
-    if (!data?.range) return null;
-    return `${formatDateForDisplay(data.range.from)} – ${formatDateForDisplay(data.range.to)}`;
-  }, [data?.range]);
+  const agreementNotice = useMemo(() => {
+    const msg = data?.agreement?.message ?? null;
+    return msg && String(msg).trim().length ? String(msg).trim() : null;
+  }, [data?.agreement?.message]);
+
+  const visibleRange = useMemo(() => {
+    if (!visibleDays.length) return null;
+    return { from: visibleDays[0].date, to: visibleDays[visibleDays.length - 1].date };
+  }, [visibleDays]);
+
+  const weekLabel = useMemo(() => {
+    if (!visibleRange) return "Uke";
+    return `Uke ${isoWeekNumber(visibleRange.from)}`;
+  }, [visibleRange]);
+
+  const rangeLabel = useMemo(() => {
+    if (!visibleRange) return null;
+    return formatRangeShort(visibleRange.from, visibleRange.to);
+  }, [visibleRange]);
+
+  const cutoffInfo = useMemo(() => {
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const today = visibleDays.find((d) => d.date === todayISO);
+    if (today?.lockReason === "CUTOFF") return { label: "Låst kl. 08:00", tone: "warn" as const };
+    if (today?.isLocked) return { label: "Låst", tone: "warn" as const };
+    return { label: "Åpen", tone: "ok" as const };
+  }, [visibleDays]);
 
   const isAnySaving = useMemo(() => Object.values(savingByDate).some(Boolean), [savingByDate]);
 
@@ -372,15 +422,15 @@ export default function WeekClient() {
         return;
       }
 
-      const status = String((json as any).order?.status ?? "").toUpperCase();
-      const active = status === "ACTIVE";
+      const statusRaw = String((json as any).order?.status ?? "").toUpperCase();
+      const normalizedStatus = statusRaw === "ACTIVE" ? "ACTIVE" : statusRaw === "CANCELLED" ? "CANCELLED" : null;
+      const active = normalizedStatus === "ACTIVE";
 
       const serverHHMM =
         hhmmFromIso((json as any).order?.saved_at) ||
         hhmmFromIso((json as any).order?.updated_at) ||
         hhmmFromIso((json as any).order?.created_at) ||
         nowHHMM();
-
       setData((prev) => {
         if (!prev) return prev;
         return {
@@ -390,6 +440,7 @@ export default function WeekClient() {
               ? {
                   ...d,
                   wantsLunch: active,
+                  orderStatus: normalizedStatus,
                   selectedChoiceKey: active ? (pick ?? d.selectedChoiceKey) : null,
                   lastSavedAt: serverHHMM,
                 }
@@ -398,7 +449,7 @@ export default function WeekClient() {
         };
       });
 
-      showToast(`✅ ${active ? "Registrert" : "Avbestilt"} • ${formatDateForDisplay(date)} • ${serverHHMM}`);
+      showToast(`✅ ${active ? "Registrert" : "Avbestilt"} • ${formatDateNO(date)} • ${serverHHMM}`);
     } catch {
       const m = "Kunne ikke lagre. Prøv igjen.";
       setDayError(date, m);
@@ -453,6 +504,8 @@ export default function WeekClient() {
         hhmmFromIso((json as any).order?.updated_at) ||
         hhmmFromIso((json as any).order?.created_at) ||
         nowHHMM();
+      const statusRaw = String((json as any).order?.status ?? "").toUpperCase();
+      const normalizedStatus = statusRaw === "ACTIVE" ? "ACTIVE" : statusRaw === "CANCELLED" ? "CANCELLED" : null;
 
       setData((prev) => {
         if (!prev) return prev;
@@ -463,6 +516,7 @@ export default function WeekClient() {
               ? {
                   ...d,
                   selectedChoiceKey: key,
+                  orderStatus: normalizedStatus ?? d.orderStatus,
                   lastSavedAt: serverHHMM,
                 }
               : d
@@ -470,7 +524,7 @@ export default function WeekClient() {
         };
       });
 
-      showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateForDisplay(day.date)} • ${serverHHMM}`);
+      showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateNO(day.date)} • ${serverHHMM}`);
     } catch {
       const m = "Kunne ikke lagre menyvalg. Prøv igjen.";
       setDayError(day.date, m);
@@ -497,22 +551,28 @@ export default function WeekClient() {
   ========================================================= */
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-4" style={safeAreaStyle}>
-      {/* Toast */}
+    <section className="lp-card lp-card-pad lp-safe-bottom-pad">
       {toast ? (
-        <div className="mb-3 rounded-2xl border border-border bg-bg px-4 py-3 text-sm text-text" role="status" aria-live="polite">
+        <div
+          className="mb-3 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 px-4 py-3 text-sm text-[rgb(var(--lp-fg))]"
+          role="status"
+          aria-live="polite"
+        >
           {toast}
         </div>
       ) : null}
 
-      {/* Top */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-text">{headerTitle}</div>
-          <div className="text-sm text-muted">
-            Endringer låses kl. <span className="font-medium text-text">08:00</span> samme dag.
-            {data?.company?.policy ? <span className="ml-2 text-muted">• {data.company.policy}</span> : null}
+          {companyLabel ? <div className="text-xs text-[rgb(var(--lp-muted))]">{companyLabel}</div> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <div className="text-lg font-semibold text-[rgb(var(--lp-fg))]">
+              {weekLabel}
+              {rangeLabel ? ` · ${rangeLabel}` : ""}
+            </div>
+            <span className={cutoffChipClass(cutoffInfo.tone)}>{cutoffInfo.label}</span>
           </div>
+          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Endringer kan gjøres frem til 08:00 samme dag.</div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -520,8 +580,8 @@ export default function WeekClient() {
             type="button"
             onClick={() => setWeekIndex(0)}
             className={[
-              "min-h-[44px] rounded-xl border px-3 py-2 text-sm transition",
-              weekIndex === 0 ? "border-border bg-bg text-text" : "border-border/60 text-muted hover:bg-bg",
+              "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
+              weekIndex === 0 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
             ].join(" ")}
             aria-pressed={weekIndex === 0}
             disabled={isAnySaving}
@@ -532,8 +592,8 @@ export default function WeekClient() {
             type="button"
             onClick={() => setWeekIndex(1)}
             className={[
-              "min-h-[44px] rounded-xl border px-3 py-2 text-sm transition",
-              weekIndex === 1 ? "border-border bg-bg text-text" : "border-border/60 text-muted hover:bg-bg",
+              "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
+              weekIndex === 1 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
             ].join(" ")}
             aria-pressed={weekIndex === 1}
             disabled={isAnySaving}
@@ -543,7 +603,7 @@ export default function WeekClient() {
           <button
             type="button"
             onClick={loadWindow}
-            className="min-h-[44px] rounded-xl border border-border/40 px-3 py-2 text-sm text-muted hover:bg-bg transition"
+            className="lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white"
             disabled={loading || isAnySaving}
           >
             Oppdater
@@ -551,100 +611,113 @@ export default function WeekClient() {
         </div>
       </div>
 
-      {/* Range + small stats */}
-      <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="text-sm text-muted">
-          {rangeText ? (
-            <>
-              Periode: <span className="font-medium text-text">{rangeText}</span>
-            </>
-          ) : (
-            <>Periode</>
-          )}
-        </div>
+      {agreementNotice ? (
+        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">{agreementNotice}</div>
+      ) : null}
 
-        {!loading && !msg ? (
-          <div className="text-sm text-muted">
-            {summary.ordered} registrert • {summary.enabled} aktive • {summary.locked} låste
-            {isAnySaving ? <span className="ml-2">• Lagrer…</span> : null}
-          </div>
-        ) : (
-          <div className="text-sm text-muted">{isAnySaving ? "Lagrer…" : null}</div>
-        )}
-      </div>
-
-      {/* Body */}
       {loading ? (
-        <div className="mt-4 text-sm text-muted">Henter lunsjplan…</div>
+        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Henter lunsjplan …</div>
       ) : msg ? (
-        <div className="mt-4 rounded-2xl border border-border bg-bg p-4 text-sm text-muted">{msg}</div>
+        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
+          {msg}
+        </div>
+      ) : data?.agreement?.status !== "ACTIVE" ? (
+        <div className="mt-4 rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
+          <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
+            {agreementNotice || "Ingen aktiv avtale"}
+          </div>
+          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kontakt administrator for å aktivere avtale.</div>
+        </div>
       ) : (
         <>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             {visibleDays.map((day) => {
               const saving = Boolean(savingByDate[day.date]);
               const disabled = saving || day.isLocked || !day.isEnabled;
               const inlineErr = dayMsg[day.date] ?? null;
 
-              const unitPrice = day.tier === "BASIS" ? 90 : 130;
+              const unitPrice = typeof day.unit_price === "number" ? day.unit_price : null;
 
               return (
-                <div key={day.date} className={["rounded-2xl border border-border bg-surface p-4", saving ? "ring-1 ring-border" : ""].join(" ")}>
-                  {/* Header row */}
+                <div
+                  key={day.date}
+                  className="rounded-[var(--lp-radius)] bg-[rgb(var(--lp-surface))] p-4 shadow-[0_1px_2px_rgba(32,33,36,0.06)]"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-lg font-semibold tracking-tight text-text">
-                        {weekdayLabel(day.weekday)}{" "}
-                        <span className="text-sm font-normal text-muted">({formatDateForDisplay(day.date)})</span>
+                      <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
+                        {weekdayLabel(day.weekday)}
+                        <span className="ml-2 text-sm font-normal text-[rgb(var(--lp-muted))]">{formatDateNO(day.date)}</span>
                       </div>
 
-                      <div className="mt-1 text-sm text-muted">
-                        {day.menuTitle ? <span className="font-medium text-text">{day.menuTitle}</span> : <span className="font-medium text-text">Meny</span>}
-                        {day.menuDescription ? <span className="text-muted"> • {day.menuDescription}</span> : <span className="italic"> • Kommer</span>}
+                      <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+                        {day.menuTitle ? (
+                          <span className="font-medium text-[rgb(var(--lp-fg))]">{day.menuTitle}</span>
+                        ) : (
+                          <span className="font-medium text-[rgb(var(--lp-fg))]">Meny</span>
+                        )}
+                        {day.menuDescription ? (
+                          <span className="text-[rgb(var(--lp-muted))]"> · {day.menuDescription}</span>
+                        ) : (
+                          <span className="text-[rgb(var(--lp-muted))]"> · Kommer</span>
+                        )}
                       </div>
+
+                      {day.isEnabled && unitPrice ? (
+                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">{unitPrice} kr</div>
+                      ) : null}
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      <StatusChip day={day} />
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted">
-                          {tierLabel(day.tier)} • {unitPrice} kr
-                        </span>
-                        <TogglePill
-                          active={day.wantsLunch}
-                          disabled={disabled}
-                          onClick={() => onToggleLunch(day)}
-                          title={day.wantsLunch ? "Klikk for å avbestille" : "Klikk for å registrere"}
-                        />
-                      </div>
+                      <span
+                        className={[
+                          "inline-flex min-h-[24px] items-center justify-center rounded-full px-3 text-xs font-semibold",
+                          !day.isEnabled
+                            ? "bg-neutral-200 text-neutral-500"
+                            : day.tier === "LUXUS"
+                            ? "bg-amber-100 text-amber-900"
+                            : day.tier === "BASIS"
+                              ? "bg-slate-200 text-slate-900"
+                              : "bg-neutral-200 text-neutral-500",
+                        ].join(" ")}
+                      >
+                        {day.isEnabled && day.tier ? tierLabel(day.tier) : "Ikke i avtalen"}
+                      </span>
+                      {day.isEnabled ? <StatusChip day={day} /> : null}
+                      <TogglePill
+                        active={day.wantsLunch}
+                        disabled={disabled}
+                        onClick={() => onToggleLunch(day)}
+                        title={day.wantsLunch ? "Klikk for å avbestille" : "Klikk for å registrere"}
+                      />
                     </div>
                   </div>
 
-                  {/* Allergens */}
                   {day.allergens?.length ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {day.allergens.map((a) => (
-                        <span key={a} className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
+                        <span
+                          key={a}
+                          className="rounded-full bg-white/70 px-2 py-0.5 text-xs text-[rgb(var(--lp-muted))]"
+                        >
                           {a}
                         </span>
                       ))}
                     </div>
                   ) : null}
 
-                  {/* Inline error (minimal, ikke boks) */}
                   {inlineErr ? (
-                    <div className="mt-3 text-sm">
-                      <span className="text-muted">⚠️ </span>
-                      <span className="text-text">{inlineErr}</span>
+                    <div className="mt-3 text-sm text-[rgb(var(--lp-fg))]">
+                      <span className="text-[rgb(var(--lp-muted))]">⚠︎ </span>
+                      <span>{inlineErr}</span>
                     </div>
                   ) : null}
 
-                  {/* Choices (kun når registrert) */}
                   {day.wantsLunch ? (
                     <div className="mt-4">
-                      <div className="text-xs text-muted">
+                      <div className="text-xs text-[rgb(var(--lp-muted))]">
                         Menyvalg{day.isLocked ? " (låst)" : ""}:
-                        <span className="ml-2 text-text font-medium">
+                        <span className="ml-2 text-[rgb(var(--lp-fg))] font-medium">
                           {day.selectedChoiceKey ? choiceLabel(day, day.selectedChoiceKey) : "Ikke valgt"}
                         </span>
                       </div>
@@ -661,9 +734,11 @@ export default function WeekClient() {
                                 onClick={() => onSelectChoice(day, c.key)}
                                 className={[
                                   "min-h-[44px] rounded-full border px-4 py-2 text-sm transition",
-                                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(0,0,0,0.15)]",
-                                  disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-bg active:brightness-[0.99]",
-                                  active ? "bg-bg text-text font-medium border-border" : "border-border/60 bg-white text-text/80",
+                                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(var(--lp-ring),0.25)]",
+                                  disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white active:brightness-[0.99]",
+                                  active
+                                    ? "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-medium border-[rgb(var(--lp-border))]"
+                                    : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]",
                                 ].join(" ")}
                               >
                                 {c.label ?? c.key}
@@ -672,35 +747,28 @@ export default function WeekClient() {
                           })}
                         </div>
                       ) : (
-                        <div className="mt-2 text-sm text-muted">Ingen valg tilgjengelig i avtalen.</div>
+                        <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen valg tilgjengelig i avtalen.</div>
                       )}
                     </div>
-                  ) : (
-                    <div className="mt-4 text-sm text-muted">
-                      {day.isEnabled ? (day.isLocked ? "Låst etter 08:00." : "Ikke registrert.") : "Ikke aktiv i avtalen."}
-                    </div>
-                  )}
+                  ) : null}
 
-                  {/* Footer */}
-                  <div className="mt-4 flex items-center justify-between text-xs text-muted">
-                    <span>{saving ? "Lagrer…" : day.lastSavedAt ? `Sist lagret: ${day.lastSavedAt}` : ""}</span>
-                    <span className="opacity-80">Man–Fre</span>
-                  </div>
+                  {receiptText(day, saving) ? (
+                    <div className="mt-4 text-xs text-[rgb(var(--lp-muted))]">{receiptText(day, saving)}</div>
+                  ) : null}
                 </div>
               );
             })}
           </div>
 
-          {/* Weekend CTA (roligere) */}
-          <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-border bg-bg p-4">
-            <div className="text-sm font-medium text-text">Helgelevering (lørdag/søndag)</div>
-            <div className="text-sm text-muted">Levering i helg bestilles ikke i Lunchportalen.</div>
-            <div>
+          <div className="mt-6 border-t border-[rgb(var(--lp-divider))] pt-5">
+            <div className="text-sm font-medium text-[rgb(var(--lp-fg))]">Helgelevering (lørdag/søndag)</div>
+            <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Levering i helg bestilles ikke i Lunchportalen.</div>
+            <div className="mt-3">
               <a
                 href="https://melhuscatering.no/catering/bestill-her/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] items-center rounded-xl border border-border px-4 py-2 text-sm text-text hover:bg-surface"
+                className="lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-fg))]"
               >
                 Bestill helgelevering
               </a>

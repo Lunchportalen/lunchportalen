@@ -11,7 +11,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -34,13 +34,14 @@ export async function GET(req: NextRequest): Promise<Response> {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (error) return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente pending-firma.", error);
+    if (error) return jsonErr(ctx.rid, "Kunne ikke hente pending-firma.", 500, { code: "DB_ERROR", detail: error });
 
-    return jsonOk(ctx, { ok: true, rid: ctx.rid, companies: data ?? [] }, 200);
+    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, companies: data ?? [] }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente pending-firma.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente pending-firma.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
+
 

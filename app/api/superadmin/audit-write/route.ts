@@ -4,27 +4,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  };
-}
-
-function ok(body: any, status = 200) {
-  return NextResponse.json({ ok: true, ...body }, { status, headers: noStore() });
-}
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
+import { isSuperadminEmail } from "@/lib/system/emails";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
   return (
@@ -113,9 +94,8 @@ async function adminClient(): Promise<any> {
 }
 
 export async function POST(req: Request) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `sa_auditw_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     // 0) Cookie-session (for å identifisere actor)
@@ -124,25 +104,24 @@ export async function POST(req: Request) {
     const actor = userData?.user ?? null;
 
     if (userErr || !actor) {
-      return jsonError(401, "AUTH_REQUIRED", "Ikke innlogget.", { rid });
+      return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
     }
 
     // ✅ Hard superadmin-fasit på e-post (ikke metadata)
-    const actorEmail = normEmail(actor.email);
-    if (actorEmail !== "superadmin@lunchportalen.no") {
-      return jsonError(403, "FORBIDDEN", "Krever superadmin.", { rid });
+    if (!isSuperadminEmail(actor.email)) {
+      return jsonErr(rid, "Krever superadmin.", 403, "FORBIDDEN");
     }
 
     const body = (await req.json().catch(() => null)) as Body | null;
     if (!body || typeof body.action !== "string" || typeof body.entityId !== "string") {
-      return jsonError(400, "BAD_REQUEST", "Mangler action eller entityId.", { rid });
+      return jsonErr(rid, "Mangler action eller entityId.", 400, "BAD_REQUEST");
     }
 
     const action = body.action.trim().slice(0, 120);
     const entityId = body.entityId.trim();
 
-    if (!action.length) return jsonError(400, "BAD_REQUEST", "Ugyldig action.", { rid });
-    if (!isUuid(entityId)) return jsonError(400, "BAD_REQUEST", "Ugyldig entityId (uuid).", { rid });
+    if (!action.length) return jsonErr(rid, "Ugyldig action.", 400, "BAD_REQUEST");
+    if (!isUuid(entityId)) return jsonErr(rid, "Ugyldig entityId (uuid).", 400, "BAD_REQUEST");
 
     const summary =
       body.summary === undefined || body.summary === null ? null : String(body.summary).trim().slice(0, 500) || null;
@@ -154,10 +133,9 @@ export async function POST(req: Request) {
     try {
       sb = await adminClient();
     } catch (e: any) {
-      return jsonError(500, "SERVICE_ROLE_MISSING", "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", {
-        rid,
+      return jsonErr(rid, "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", 500, { code: "SERVICE_ROLE_MISSING", detail: {
         error: String(e?.message ?? e),
-      });
+      } });
     }
 
     const payload = {
@@ -176,19 +154,17 @@ export async function POST(req: Request) {
 
     if (ins.kind === "err") {
       if (ins.error === "audit_table_missing") {
-        return jsonError(500, "AUDIT_TABLE_MISSING", "Finner verken audit_events eller audit_log i databasen.", {
-          rid,
+        return jsonErr(rid, "Finner verken audit_events eller audit_log i databasen.", 500, { code: "AUDIT_TABLE_MISSING", detail: {
           hint: "Opprett audit-tabell (audit_events), eller endre route til eksisterende tabell.",
           detail: ins.detail,
-        });
+        } });
       }
 
-      return jsonError(500, "DB_ERROR", "Kunne ikke skrive audit.", { rid, detail: ins.detail });
+      return jsonErr(rid, "Kunne ikke skrive audit.", 500, { code: "DB_ERROR", detail: { detail: ins.detail } });
     }
 
-    return ok({ rid, storedIn: ins.table });
+    return jsonOk(rid, { ok: true, rid, storedIn: ins.table }, 200);
   } catch (e: any) {
-    return jsonError(500, "SERVER_ERROR", String(e?.message ?? "unknown"), { rid });
+    return jsonErr(rid, String(e?.message ?? "unknown"), 500, "SERVER_ERROR");
   }
 }
-

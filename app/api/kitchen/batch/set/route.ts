@@ -1,35 +1,27 @@
-// app/api/kitchen/batch/set/route.ts
+﻿// app/api/kitchen/batch/set/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
-
-import { jsonErr } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 /**
  * POST /api/kitchen/batch/set
- * - "smart" status setter (B6.4 MONOTONT):
- *   - QUEUED: ❌ forbudt (retur er ikke lov)
- *   - PACKED: setter packed_at hvis mangler
- *   - DELIVERED: setter packed_at hvis mangler, setter delivered_at
- *
- * Body:
- *  { date?: "YYYY-MM-DD", slot?: string, location_id: string, status: "PACKED"|"DELIVERED" }
- *
- * Table: kitchen_batch (ENTALL)
- * Unique: (delivery_date, delivery_window, company_location_id)
- *
- * MUST audit (fail-closed)
+ * - Status setter (kitchen-only)
+ * - Must NOT create batch; only update existing
+ * - Status flow: QUEUED -> PACKED (idempotent on PACKED)
  */
 
+function isIsoDate(v: any) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
+}
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
@@ -49,13 +41,9 @@ function nowIso() {
 function entityKey(date: string, slot: string, location_id: string) {
   return `${date}__${slot}__${location_id}`;
 }
-function rankStatus(s: BatchStatus) {
-  if (s === "DELIVERED") return 2;
-  if (s === "PACKED") return 1;
-  return 0;
-}
 
 type KitchenBatchRow = {
+  id?: string | null;
   delivery_date: string;
   delivery_window: string;
   company_location_id: string;
@@ -64,35 +52,42 @@ type KitchenBatchRow = {
   delivered_at: string | null;
 };
 
+function cutoffAllowed(dateISO: string) {
+  const status = cutoffStatusForDate0805(dateISO);
+  if (status === "TODAY_LOCKED") return { ok: true as const };
+  if (status === "PAST") return { ok: false as const, code: "DATE_LOCKED_PAST", message: "Datoen er passert og kan ikke endres." };
+  return { ok: false as const, code: "LOCKED_BEFORE_0805", message: "Statusendring er kun tillatt etter kl. 08:05 i dag." };
+}
+
 export async function POST(req: NextRequest) {
   
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  // ✅ Guard: scope + rid
+  // ? Guard: scope + rid
   const a = await scopeOr401(req);
   if ((a as any)?.ok === false) return (a as any).res;
 
   const { rid, scope } = (a as any).ctx;
 
-  // ✅ Role gate
-  const denyRole = requireRoleOr403((a as any).ctx, "kitchen.batch.set", ["kitchen", "superadmin"]);
+  // ? Role gate (kitchen only)
+  const denyRole = requireRoleOr403((a as any).ctx, "kitchen.batch.set", ["kitchen"]);
   if (denyRole) return denyRole;
 
-  // ✅ Confirm cookie-session (Avensia: fail closed)
+  // ? Confirm cookie-session (Avensia: fail closed)
   const sb = await supabaseServer();
   const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user) return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.");
+  if (authErr || !auth?.user) return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
-  // ✅ Service role for upsert
+  // ? Service role for update
   let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.", { detail: safeStr(e?.message ?? e) });
+    return jsonErr(rid, "Service role mangler.", 500, { code: "CONFIG_ERROR", detail: { detail: safeStr(e?.message ?? e) } });
   }
 
   try {
-    // ✅ Read body (kan returnere Response i ditt oppsett)
+    // ? Read body (kan returnere Response i ditt oppsett)
     const bodyOrRes = await readJson(req);
     if (bodyOrRes instanceof Response) return bodyOrRes;
     const body = bodyOrRes as any;
@@ -103,34 +98,65 @@ export async function POST(req: NextRequest) {
     const location_id = safeStr(body?.location_id);
     const wanted = normStatus(body?.status);
 
-    if (!date) return jsonErr(400, rid, "INVALID_DATE", "Ugyldig dato.", { date: dateRaw });
-    if (!location_id) return jsonErr(400, rid, "MISSING_LOCATION", "Mangler location_id.");
-    if (!wanted) return jsonErr(400, rid, "INVALID_STATUS", "Ugyldig status.", { status: body?.status });
+    if (!date) return jsonErr(rid, "Ugyldig dato.", 400, { code: "INVALID_DATE", detail: { date: dateRaw } });
+    if (date !== osloTodayISODate()) {
+      return jsonErr(rid, "Kjøkken kan kun endre dagens status.", 403, { code: "FORBIDDEN_DATE", detail: { date, today: osloTodayISODate() } });
+    }
+    if (!location_id) return jsonErr(rid, "Mangler location_id.", 400, "MISSING_LOCATION");
+    if (!wanted) return jsonErr(rid, "Ugyldig status.", 400, { code: "INVALID_STATUS", detail: { status: body?.status } });
 
-    // 🔒 B6.4: forby eksplisitt QUEUED i input
-    if (wanted === "QUEUED") {
-      return jsonErr(409, rid, "MONOTONIC_VIOLATION", "QUEUED er ikke tillatt. Status kan ikke settes tilbake.");
+    const cutoff = cutoffAllowed(date);
+    if (!cutoff.ok) {
+      return jsonErr(rid, cutoff.message, 412, { code: cutoff.code, detail: { date, cutoff: "08:05" } });
     }
 
-    // ✅ Fetch eksisterende row (for å bevare timestamps korrekt + monotonic check)
+    // ?? Kun PACKED er tillatt i dette endepunktet
+    if (wanted !== "PACKED") {
+      return jsonErr(rid, "Kjøkken kan kun sette status PACKED.", 422, "FORBIDDEN_STATUS");
+    }
+
+    const userId = safeStr(auth?.user?.id) || safeStr(scope?.userId);
+    const { data: prof, error: profErr } = await loadProfileByUserId(admin as any, userId, "company_id, location_id, disabled_at, is_active");
+
+    if (profErr) return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "DB_ERROR", detail: { message: profErr.message, code: (profErr as any).code ?? null } });
+    if (!prof) return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
+    if ((prof as any).disabled_at || (prof as any).is_active === false) {
+      return jsonErr(rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
+    }
+
+    const companyId = safeStr((prof as any).company_id);
+    const profileLocationId = safeStr((prof as any).location_id);
+    if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
+    if (profileLocationId && location_id !== profileLocationId) {
+      return jsonErr(rid, "Ugyldig lokasjon.", 403, "FORBIDDEN");
+    }
+
+    const { data: locRow, error: locErr } = await admin
+      .from("company_locations")
+      .select("id, company_id")
+      .eq("id", location_id)
+      .maybeSingle();
+
+    if (locErr || !locRow?.id || safeStr((locRow as any).company_id) !== companyId) {
+      return jsonErr(rid, "Lokasjon tilhører ikke firmaet.", 403, "FORBIDDEN");
+    }
+
     const { data: existing, error: exErr } = await admin
       .from("kitchen_batch")
-      .select("delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
+      .select("id,delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
       .eq("delivery_date", date)
       .eq("delivery_window", slot)
       .eq("company_location_id", location_id)
       .maybeSingle<KitchenBatchRow>();
 
     if (exErr) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lese eksisterende batch.", {
+      return jsonErr(rid, "Kunne ikke lese eksisterende batch.", 500, { code: "DB_ERROR", detail: {
         message: exErr.message,
         code: (exErr as any).code ?? null,
-      });
+      } });
     }
+    if (!existing) return jsonErr(rid, "Batch finnes ikke.", 404, { code: "NOT_FOUND", detail: { date, slot, location_id } });
 
-    // 🔒 B6.4: monotont løp
-    // - DELIVERED er endelig
-    // - Ingen tilbakegang (PACKED -> QUEUED allerede blokkert i input)
     const prevStatusRaw = safeStr(existing?.status).toUpperCase();
     const prevStatus: BatchStatus =
       prevStatusRaw === "DELIVERED" || prevStatusRaw === "PACKED" || prevStatusRaw === "QUEUED"
@@ -141,102 +167,94 @@ export async function POST(req: NextRequest) {
             ? "PACKED"
             : "QUEUED";
 
-    // Ikke tillat nedgradering
-    if (rankStatus(wanted) < rankStatus(prevStatus)) {
-      return jsonErr(409, rid, "MONOTONIC_VIOLATION", `Kan ikke gå fra ${prevStatus} til ${wanted}.`);
+    if (prevStatus === "DELIVERED") {
+      return jsonErr(rid, "DELIVERED er endelig. Kan ikke endres.", 409, "MONOTONIC_VIOLATION");
     }
 
-    // DELIVERED er endelig (selv om samme status settes igjen er ok / idempotent)
-    if (prevStatus === "DELIVERED" && wanted !== "DELIVERED") {
-      return jsonErr(409, rid, "MONOTONIC_VIOLATION", "DELIVERED er endelig. Kan ikke endres.");
+    // Idempotent: allerede PACKED
+    if (prevStatus === "PACKED") {
+      return jsonOk(rid, {
+          status: "PACKED",
+          batch: {
+            id: existing.id ?? null,
+            delivery_date: existing.delivery_date,
+            delivery_window: existing.delivery_window,
+            company_location_id: existing.company_location_id,
+            status: "PACKED",
+            packed_at: existing.packed_at ?? null,
+            delivered_at: existing.delivered_at ?? null,
+          },
+        }, 200);
+    }
+
+    if (prevStatus !== "QUEUED") {
+      return jsonErr(rid, "Batch kan ikke endres fra nåværende status.", 422, { code: "INVALID_STATUS", detail: { status: prevStatus } });
     }
 
     const ts = nowIso();
+    const packed_at = existing.packed_at ?? ts;
 
-    // Bevar eksisterende tidsstempler
-    let packed_at: string | null = existing?.packed_at ?? null;
-    let delivered_at: string | null = existing?.delivered_at ?? null;
-
-    // ✅ Smart + monotont:
-    // - PACKED: sett packed_at hvis mangler (ikke null noe)
-    // - DELIVERED: sett packed_at hvis mangler, sett delivered_at hvis mangler
-    if (wanted === "PACKED") {
-      if (!packed_at) packed_at = ts;
-      // delivered_at beholdes hvis den allerede finnes (idempotent)
-    } else if (wanted === "DELIVERED") {
-      if (!packed_at) packed_at = ts;
-      if (!delivered_at) delivered_at = ts;
-    }
-
-    const payload = {
-      delivery_date: date,
-      delivery_window: slot,
-      company_location_id: location_id,
-      status: wanted,
-      packed_at,
-      delivered_at,
-    };
-
-    // ✅ MUST audit (fail-closed) BEFORE write
+    // ? MUST audit (fail-closed) BEFORE write
     await auditWriteMust({
       rid,
       action: "kitchen_batch_set_status",
       entity_type: "order_batch",
       entity_id: entityKey(date, slot, location_id),
-      company_id: null,
+      company_id: companyId,
       location_id,
-      actor_user_id: safeStr(scope?.userId) || auth.user.id,
+      actor_user_id: userId,
       actor_email: scope?.email ?? null,
       actor_role: scope?.role ?? null,
-      summary: `Batch set ${wanted}`,
+      summary: "Batch set PACKED",
       detail: {
         route: "/api/kitchen/batch/set",
-        input: { date, slot, location_id, status: wanted },
-        before: existing
-          ? {
-              status: safeStr(existing.status).toUpperCase() || null,
-              packed_at: existing.packed_at ?? null,
-              delivered_at: existing.delivered_at ?? null,
-            }
-          : null,
+        input: { date, slot, location_id, status: "PACKED" },
+        before: {
+          status: safeStr(existing.status).toUpperCase() || null,
+          packed_at: existing.packed_at ?? null,
+          delivered_at: existing.delivered_at ?? null,
+        },
       },
     });
 
-    // ✅ Upsert (unique constraint)
-    const { data: saved, error: upErr } = await admin
+    let updateQ = admin
       .from("kitchen_batch")
-      .upsert(payload, { onConflict: "delivery_date,delivery_window,company_location_id" })
-      .select("delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
+      .update({ status: "PACKED", packed_at, delivered_at: existing.delivered_at ?? null })
+      .eq("delivery_date", date)
+      .eq("delivery_window", slot)
+      .eq("company_location_id", location_id);
+
+    updateQ = updateQ.eq("status", "QUEUED");
+
+    const { data: saved, error: upErr } = await updateQ
+      .select("id,delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
       .maybeSingle<KitchenBatchRow>();
 
-    if (upErr || !saved) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke lagre batch.", {
+    if (upErr) {
+      return jsonErr(rid, "Kunne ikke lagre batch.", 500, { code: "DB_ERROR", detail: {
         message: upErr?.message ?? null,
         code: (upErr as any)?.code ?? null,
-      });
+      } });
     }
 
-    const outStatus = safeStr(saved.status).toUpperCase() as BatchStatus;
+    if (!saved) {
+      return jsonErr(rid, "Batch-status ble endret av en annen prosess.", 409, "RACE_CONDITION");
+    }
 
-    // ✅ Testen forventer json.status (top-level)
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        status: outStatus,
+    return jsonOk(rid, {
+        status: "PACKED",
         batch: {
+          id: saved.id ?? null,
           delivery_date: saved.delivery_date,
           delivery_window: saved.delivery_window,
           company_location_id: saved.company_location_id,
-          status: outStatus,
+          status: "PACKED",
           packed_at: saved.packed_at ?? null,
           delivered_at: saved.delivered_at ?? null,
         },
-      },
-      { status: 200, headers: noStoreHeaders() }
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", safeStr(e?.message ?? e), { at: "kitchen/batch/set" });
+    return jsonErr(rid, safeStr(e?.message ?? e), 500, { code: "UNHANDLED", detail: { at: "kitchen/batch/set" } });
   }
 }
 

@@ -3,11 +3,7 @@ export const dynamic = "force-dynamic";
 
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
   return (
@@ -54,16 +50,15 @@ type InvoiceLine = {
 };
 
 export async function GET(_: Request, ctx: { params: { runId: string } }) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const rid = makeRid();
   const guard = await requireSuperadmin();
-  if (!guard.ok) return jsonError(guard.status, "AUTH", guard.message);
+  if (!guard.ok) return jsonErr(rid, guard.message, guard.status ?? 400, "AUTH");
 
   const runId = ctx.params.runId;
-  if (!isUuid(runId)) return jsonError(400, "BAD_REQUEST", "Ugyldig runId");
+  if (!isUuid(runId)) return jsonErr(rid, "Ugyldig runId", 400, "BAD_REQUEST");
 
   const db = await adminDb();
-  if (!db?.from) return jsonError(500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig (mangler .from)");
+  if (!db?.from) return jsonErr(rid, "supabaseAdmin er ikke tilgjengelig (mangler .from)", 500, "ADMIN_CLIENT_MISSING");
 
   // 1) run
   const runRes = await db
@@ -72,7 +67,7 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     .eq("id", runId)
     .single();
 
-  if (runRes.error) return jsonError(404, "NOT_FOUND", "Fant ikke invoice run", runRes.error);
+  if (runRes.error) return jsonErr(rid, "Fant ikke invoice run", 404, { code: "NOT_FOUND", detail: runRes.error });
 
   // 2) lines
   const linesRes = await db
@@ -83,14 +78,13 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     .eq("run_id", runId)
     .order("company_name", { ascending: true });
 
-  if (linesRes.error) return jsonError(500, "DB", "Kunne ikke hente invoice lines", linesRes.error);
+  if (linesRes.error) return jsonErr(rid, "Kunne ikke hente invoice lines", 500, { code: "DB", detail: linesRes.error });
 
   const lines = (linesRes.data ?? []) as InvoiceLine[];
 
   // Hvis ingen linjer, returner tom struktur (UI skal ikke knekke)
   if (!lines.length) {
-    return NextResponse.json({
-      ok: true,
+    return jsonOk(rid, {
       run: runRes.data,
       rows: [],
       totals: { companies: 0, billable: 0, amount: 0, missingCustomer: 0, missingPrice: 0 },
@@ -105,7 +99,7 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     .select("company_id, tripletex_customer_id, product_name, vat_code")
     .in("company_id", companyIds);
 
-  if (mapRes.error) return jsonError(500, "DB", "Kunne ikke hente billing mapping", mapRes.error);
+  if (mapRes.error) return jsonErr(rid, "Kunne ikke hente billing mapping", 500, { code: "DB", detail: mapRes.error });
 
   const map = new Map<string, any>();
   for (const m of mapRes.data ?? []) map.set(m.company_id, m);
@@ -140,6 +134,5 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     { companies: 0, billable: 0, amount: 0, missingCustomer: 0, missingPrice: 0 }
   );
 
-  return NextResponse.json({ ok: true, run: runRes.data, rows, totals });
+  return jsonOk(rid, { run: runRes.data, rows, totals });
 }
-

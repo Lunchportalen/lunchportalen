@@ -5,9 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type BatchStatus = "queued" | "packed" | "delivered";
 
@@ -44,13 +44,6 @@ function serviceSupabase() {
   );
 }
 
-function noStore(body: any, status = 200) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store" },
-  });
-}
-
 function isISODate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
@@ -80,15 +73,14 @@ function pickCompanyName(c: any): string {
  * Cursor er company_id (uuid) – stabilt og lett.
  */
 export async function GET(req: Request) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `kcomp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const rid = makeRid();
 
   try {
     // Auth gate (tilgang)
     const authClient = await supabaseServer();
     const { data: auth } = await authClient.auth.getUser();
-    if (!auth?.user) return noStore({ ok: false, rid, error: "unauthorized" }, 401);
+    if (!auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
 
     const url = new URL(req.url);
     const dateParam = url.searchParams.get("date");
@@ -105,6 +97,7 @@ export async function GET(req: Request) {
       .from("orders")
       .select("company_id", { head: false })
       .eq("date", date)
+      .eq("integrity_status", "ok")
       .not("company_id", "is", null)
       .order("company_id", { ascending: true })
       .limit(limit);
@@ -112,9 +105,7 @@ export async function GET(req: Request) {
     if (cursor) q = q.gt("company_id", cursor);
 
     const { data: companyRows, error: cidsErr } = await q;
-    if (cidsErr) {
-      return noStore({ ok: false, rid, error: "company_ids_failed", detail: cidsErr.message }, 500);
-    }
+    if (cidsErr) return jsonErr(rid, "Kunne ikke hente firma-IDer.", 500, { code: "company_ids_failed", detail: cidsErr.message });
 
     const companyIds = Array.from(
       new Set((companyRows ?? []).map((r: any) => String(r.company_id)).filter(Boolean))
@@ -129,7 +120,7 @@ export async function GET(req: Request) {
         companies: [],
         page: { cursor: cursor ?? null, nextCursor: null, limit },
       };
-      return noStore(out, 200);
+      return jsonOk(rid, out, 200);
     }
 
     const nextCursor = companyIds[companyIds.length - 1] ?? null;
@@ -140,9 +131,7 @@ export async function GET(req: Request) {
       .select("*")
       .in("id", companyIds);
 
-    if (compErr) {
-      return noStore({ ok: false, rid, error: "companies_failed", detail: compErr.message }, 500);
-    }
+    if (compErr) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "companies_failed", detail: compErr.message });
 
     const compMap = new Map<string, any>();
     (companies ?? []).forEach((c: any) => compMap.set(String(c.id), c));
@@ -152,11 +141,10 @@ export async function GET(req: Request) {
       .from("orders")
       .select("id, company_id, location_id")
       .eq("date", date)
+      .eq("integrity_status", "ok")
       .in("company_id", companyIds);
 
-    if (oErr) {
-      return noStore({ ok: false, rid, error: "orders_failed", detail: oErr.message }, 500);
-    }
+    if (oErr) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "orders_failed", detail: oErr.message });
 
     // 4) Batch-status (valgfritt): vi leser kitchen_batches hvis finnes, ellers null
     // Batch er per (delivery_date, company_location_id, delivery_window). Vi bruker window = Standard foreløpig.
@@ -236,12 +224,9 @@ export async function GET(req: Request) {
       page: { cursor: cursor ?? null, nextCursor, limit },
     };
 
-    return noStore(out, 200);
+    return jsonOk(rid, out, 200);
   } catch (e: any) {
-    return noStore(
-      { ok: false, error: "kitchen_companies_failed", detail: e?.message || String(e) },
-      500
-    );
+    return jsonErr(rid, "Kunne ikke hente kjøkken-oversikt.", 500, { code: "kitchen_companies_failed", detail: e?.message || String(e) });
   }
 }
 

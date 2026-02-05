@@ -1,4 +1,4 @@
-// app/api/admin/locations/route.ts
+﻿// app/api/admin/locations/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// âœ… Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
@@ -22,6 +22,15 @@ function pick(obj: any, keys: string[]) {
     const v = obj?.[k];
     if (v !== undefined && v !== null && String(v).trim() !== "") return v;
   }
+  return null;
+}
+
+function normStatus(row: any) {
+  const raw = pick(row, ["status", "location_status", "state"]);
+  if (raw) return String(raw).trim().toUpperCase();
+  const isActive = row?.is_active ?? row?.active ?? row?.enabled;
+  if (isActive === true) return "ACTIVE";
+  if (isActive === false) return "INACTIVE";
   return null;
 }
 
@@ -40,7 +49,7 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = String(scope.companyId ?? "").trim();
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler company_id i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const url = new URL(req.url);
@@ -60,7 +69,7 @@ export async function GET(req: NextRequest) {
       .range(from, to);
 
     if (error) {
-      return jsonErr(500, rid, "LOCATIONS_LIST_FAILED", "Kunne ikke hente lokasjoner.", { message: error.message });
+      return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "LOCATIONS_LIST_FAILED", detail: { message: error.message } });
     }
 
     const locations = (data ?? []).map((r: any) => ({
@@ -76,14 +85,15 @@ export async function GET(req: NextRequest) {
       window_to: pick(r, ["window_to", "to", "time_to", "vindu_til"]) ?? null,
 
       notes: pick(r, ["notes", "note", "comment", "notater"]) ?? null,
+      address: pick(r, ["address", "address_line1", "adresse"]) ?? null,
+      slot_policy: pick(r, ["slot_policy", "slotpolicy"]) ?? null,
+      status: normStatus(r),
 
       created_at: r.created_at ?? null,
       updated_at: r.updated_at ?? null,
     }));
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       page,
       limit,
@@ -92,8 +102,6 @@ export async function GET(req: NextRequest) {
       _info: { selected: "* (schema-safe mapper)", note: "Fallback mapping to avoid missing columns." },
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", String(e?.message ?? "Unknown error"), { at: "admin/locations" });
+    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "admin/locations" } });
   }
 }
-
-

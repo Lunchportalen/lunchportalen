@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/requireRole";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Body = {
   reportId: string;
@@ -8,18 +8,19 @@ type Body = {
 };
 
 export async function PATCH(req: Request) {
+  const rid = makeRid();
   const guard = await requireRole(["superadmin"]);
-  if (!guard.ok) return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
+  if (!guard.ok) return jsonErr(rid, "Ingen tilgang.", guard.status ?? 400, guard.error);
 
   const body = (await req.json().catch(() => null)) as Body | null;
-  if (!body?.reportId) return NextResponse.json({ ok: false, error: "Missing reportId" }, { status: 400 });
+  if (!body?.reportId) return jsonErr(rid, "reportId mangler.", 400, "Missing reportId");
 
   const patch: any = {};
   if (body.status) patch.status = body.status;
   if (typeof body.internalNote === "string") patch.internal_note = body.internalNote.trim();
 
   if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ ok: false, error: "No fields to update" }, { status: 400 });
+    return jsonErr(rid, "Ingen felter å oppdatere.", 400, "No fields to update");
   }
 
   const { data: updated, error: updErr } = await guard.supabase
@@ -29,7 +30,7 @@ export async function PATCH(req: Request) {
     .select("id,company_id,date,category,status,internal_note,updated_at")
     .single();
 
-  if (updErr) return NextResponse.json({ ok: false, error: "DB error", detail: updErr.message }, { status: 500 });
+  if (updErr) return jsonErr(rid, "Databasefeil.", 500, { code: "DB error", detail: updErr.message });
 
   const note = `status=${body.status || "-"} note=${(body.internalNote || "").slice(0, 160)}`;
   const { error: logErr } = await guard.supabase.from("superadmin_audit_log").insert({
@@ -41,5 +42,5 @@ export async function PATCH(req: Request) {
   });
   if (logErr) console.error("[superadmin_audit_log]", logErr.message);
 
-  return NextResponse.json({ ok: true, report: updated });
+  return jsonOk(rid, { ok: true, report: updated }, 200);
 }

@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
   const companyId = safeStr(scope.companyId);
   const userId = safeStr(scope.userId);
 
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
-  if (!userId) return jsonErr(401, rid, "UNAUTH", "Ikke innlogget.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  if (!userId) return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
 
   try {
     const admin = supabaseAdmin();
@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
     // Deaktivert konto? (service role: sjekk profiles.disabled_at)
     const { data: prof, error: profErr } = await admin.from("profiles").select("disabled_at").eq("id", userId).maybeSingle();
 
-    if (profErr) return jsonErr(500, rid, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", { message: profErr.message });
-    if (prof?.disabled_at) return jsonErr(403, rid, "ACCOUNT_DISABLED", "Kontoen er deaktivert.");
+    if (profErr) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "PROFILE_READ_FAILED", detail: { message: profErr.message } });
+    if (prof?.disabled_at) return jsonErr(rid, "Kontoen er deaktivert.", 403, "ACCOUNT_DISABLED");
 
     // Period (siste 14 dager, uten hull)
     const today = osloTodayISODate();
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       .gte("date", from)
       .lte("date", to);
 
-    if (ordersErr) return jsonErr(500, rid, "ORDERS_READ_FAILED", "Kunne ikke hente ordre.", { message: ordersErr.message });
+    if (ordersErr) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "ORDERS_READ_FAILED", detail: { message: ordersErr.message } });
 
     const byDay: Record<string, { active: number; cancelled: number }> = {};
 
@@ -119,9 +119,7 @@ export async function GET(req: NextRequest) {
     if (variationScore > 0.66) alerts.push("Stor variasjon i antall bestillinger siste 14 dager.");
     if (mean < 3) alerts.push("Få datapunkter – innsikt kan være mindre presis.");
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       range: { from, to: today },
       forecast: { expectedTomorrow: forecast, confidence: mean >= 8 ? "high" : mean >= 4 ? "medium" : "low" },
@@ -131,8 +129,6 @@ export async function GET(req: NextRequest) {
       alerts,
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

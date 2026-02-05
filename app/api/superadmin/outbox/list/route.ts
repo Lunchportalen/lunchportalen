@@ -12,7 +12,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 function safeStr(v: any) {
@@ -40,26 +40,23 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const allowed = new Set(["ALL", "PENDING", "FAILED", "SENT"]);
   if (!allowed.has(statusRaw)) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Ugyldig status.", { status: statusRaw });
+    return jsonErr(ctx.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: { status: statusRaw } });
   }
 
   try {
     const rows = await listOutbox({ status: statusRaw as any, q, limit });
     const counts = await outboxCounts();
 
-    return jsonOk(
-      ctx,
-      {
+    return jsonOk(ctx.rid, {
         ok: true,
         rid: ctx.rid,
         counts,
         rows,
-      },
-      200
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "OUTBOX_LIST_FAILED", "Kunne ikke hente outbox.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente outbox.", 500, { code: "OUTBOX_LIST_FAILED", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
+

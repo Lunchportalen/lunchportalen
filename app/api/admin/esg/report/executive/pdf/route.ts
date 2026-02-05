@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Role gate (company_admin)
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     .lte("month", thisMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente månedssnapshots.", { message: mErr.message });
+  if (mErr) return jsonErr(ctx.rid, "Kunne ikke hente månedssnapshots.", 500, { code: "db_error", detail: { message: mErr.message } });
 
   const { data: yearly, error: yErr } = await supabase
     .from("esg_yearly_snapshots")
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente årssnapshot.", { message: yErr.message });
+  if (yErr) return jsonErr(ctx.rid, "Kunne ikke hente årssnapshot.", 500, { code: "db_error", detail: { message: yErr.message } });
 
   const { data: cRow, error: cErr } = await supabase
     .from("companies")
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonErr(500, ctx.rid, "db_error", "Kunne ikke hente firmanavn.", { message: cErr.message });
+  if (cErr) return jsonErr(ctx.rid, "Kunne ikke hente firmanavn.", 500, { code: "db_error", detail: { message: cErr.message } });
 
   const companyName = (cRow as any)?.name ?? null;
 
@@ -137,5 +137,4 @@ export async function GET(req: NextRequest) {
   const safe = safeFilenamePart(companyName);
   return pdfResponse(bytes, `Executive_ESG_${safe}_${year}.pdf`, ctx.rid);
 }
-
 

@@ -6,6 +6,8 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import DriverClient from "./DriverClient";
+import PageSection from "@/components/layout/PageSection";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | string | null; disabled_at: string | null; is_active?: boolean | null };
@@ -13,20 +15,12 @@ type ProfileRow = { role: Role | string | null; disabled_at: string | null; is_a
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
-function normEmail(v: unknown) {
-  return safeStr(v).toLowerCase();
-}
-
 /**
  * Hard role override (kun for systemkonti).
  * NB: Dette er "first match" før profiles, slik at systembrukere alltid kommer inn.
  */
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (!e) return null;
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "driver@lunchportalen.no" || e === "sjafor@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function normalizeRole(v: unknown): Role {
@@ -62,7 +56,7 @@ export default async function DriverPage() {
     const { data: profile, error: pErr } = await supabase
       .from("profiles")
       .select("role, disabled_at, is_active")
-      .eq("user_id", user.id)
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
       .maybeSingle<ProfileRow>();
 
     // Fail-closed: hvis vi ikke klarer å lese profilen => ut
@@ -84,23 +78,12 @@ export default async function DriverPage() {
      ✅ PAGE
   ========================= */
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10 print:p-0">
-      <div className="mb-8 print:hidden">
-        <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Sjåfør</h1>
-              <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-                Dagens leveranser – gruppert per firma og lokasjon. Klar for ruteplanlegging.
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-                <span className="rounded-full bg-black/5 px-3 py-1">🚚 Leveranser</span>
-                <span className="rounded-full bg-black/5 px-3 py-1">🗺️ Lokasjoner</span>
-                <span className="rounded-full bg-black/5 px-3 py-1">☎️ Kontakt</span>
-              </div>
-            </div>
-
+    <>
+      <div className="print:hidden">
+        <PageSection
+          title="Sjåfør"
+          subtitle="Dagens leveranser – gruppert per firma og lokasjon. Klar for ruteplanlegging."
+          right={
             <aside className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block">
               <div className="font-semibold text-slate-900">Driftsnotat</div>
               <ul className="mt-2 space-y-1">
@@ -109,17 +92,26 @@ export default async function DriverPage() {
                 <li>• Ved avvik: noter og varsle drift</li>
               </ul>
             </aside>
+          }
+        >
+          <div className="flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
+            <span className="rounded-full bg-black/5 px-3 py-1">🚚 Leveranser</span>
+            <span className="rounded-full bg-black/5 px-3 py-1">🗺️ Lokasjoner</span>
+            <span className="rounded-full bg-black/5 px-3 py-1">☎️ Kontakt</span>
           </div>
-        </div>
+        </PageSection>
       </div>
 
-      {/* Print header (kun print) */}
       <div className="mb-4 hidden print:block">
         <div className="text-xl font-semibold">Sjåfør – leveranser</div>
         <div className="text-xs text-slate-600">Generert fra Lunchportalen</div>
       </div>
 
-      <DriverClient />
-    </main>
+      <div className="mt-6 print:mt-0">
+        <DriverClient />
+      </div>
+    </>
   );
 }
+
+

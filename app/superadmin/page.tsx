@@ -7,7 +7,10 @@ import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 
 import SuperadminClient from "./superadmin-client";
+import { normalizeSuperadminStats, nullSuperadminStats, type SuperadminStats } from "./types";
 import { supabaseServer } from "@/lib/supabase/server";
+import PageSection from "@/components/layout/PageSection";
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
@@ -21,17 +24,8 @@ type CompanyRow = {
   updated_at: string;
 };
 
-type Stats = {
-  companiesTotal: number;
-  companiesPending: number;
-  companiesActive: number;
-  companiesPaused: number;
-  companiesClosed: number;
-};
-
 type ProfileRow = { role: Role | null; disabled_at?: string | null };
 
-type LastEvent = { label: string; ts: string } | null;
 type SystemState = "NORMAL" | "DEGRADED";
 
 /* =========================
@@ -40,10 +34,6 @@ type SystemState = "NORMAL" | "DEGRADED";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
-}
-
-function normEmail(v: any) {
-  return safeStr(v).toLowerCase();
 }
 
 function safeName(v: any) {
@@ -61,49 +51,55 @@ function toCompanyStatus(v: any): CompanyStatus {
   return isCompanyStatus(s) ? (s as CompanyStatus) : "pending"; // 🔒 aldri "active" som fallback
 }
 
-function computeStats(list: CompanyRow[]): Stats {
-  return {
+function buildStatsFromList(list: CompanyRow[]): SuperadminStats {
+  return normalizeSuperadminStats({
     companiesTotal: list.length,
     companiesPending: list.filter((c) => c.status === "pending").length,
     companiesActive: list.filter((c) => c.status === "active").length,
     companiesPaused: list.filter((c) => c.status === "paused").length,
     companiesClosed: list.filter((c) => c.status === "closed").length,
-  };
+    updatedAt: list[0]?.updated_at ?? null,
+  });
 }
 
-function computeSystemState(stats: Stats): SystemState {
-  return stats.companiesPaused + stats.companiesClosed > 0 ? "DEGRADED" : "NORMAL";
+function mergeStats(primary: SuperadminStats, fallback: SuperadminStats): SuperadminStats {
+  return normalizeSuperadminStats({
+    companiesTotal: primary.companiesTotal ?? fallback.companiesTotal,
+    companiesPending: primary.companiesPending ?? fallback.companiesPending,
+    companiesActive: primary.companiesActive ?? fallback.companiesActive,
+    companiesPaused: primary.companiesPaused ?? fallback.companiesPaused,
+    companiesClosed: primary.companiesClosed ?? fallback.companiesClosed,
+    updatedAt: primary.updatedAt ?? fallback.updatedAt,
+  });
 }
 
-function buildLastEvent(list: CompanyRow[]): LastEvent {
-  const ts = list[0]?.updated_at ? safeStr(list[0].updated_at) : "";
-  return ts ? { label: "Last company change", ts } : null;
+function computeSystemState(stats: SuperadminStats): SystemState {
+  const paused = stats.companiesPaused ?? 0;
+  const closed = stats.companiesClosed ?? 0;
+  return paused + closed > 0 ? "DEGRADED" : "NORMAL";
 }
 
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 /** Minimal, enterprise-grade error surface (no leaks) */
 function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur">
+    <PageSection title={props.title ?? "Superadmin"} subtitle={props.message}>
+      <div className="lp-select-text space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-xs font-extrabold tracking-wide text-neutral-600">SUPERADMIN MODE</div>
           <div className="text-xs font-extrabold text-rose-700">SYSTEM: DEGRADED</div>
         </div>
 
-        <div className="mt-2 text-2xl font-black tracking-tight text-neutral-950">{props.title ?? "Superadmin"}</div>
-        <p className="mt-2 text-sm font-semibold text-[rgb(var(--lp-muted))]">{props.message}</p>
-
         {props.detail ? (
-          <pre className="mt-4 overflow-auto rounded-2xl bg-white p-3 text-xs font-semibold text-rose-700 ring-1 ring-neutral-200">
+          <pre className="overflow-auto rounded-2xl bg-white p-3 text-xs font-semibold text-rose-700 ring-1 ring-neutral-200">
             {props.detail}
           </pre>
         ) : null}
       </div>
-    </div>
+    </PageSection>
   );
 }
 
@@ -135,40 +131,50 @@ type DashboardApiOk = {
 };
 type DashboardApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
 
-async function fetchDashboardStats(): Promise<{ stats: Stats | null; degradedByFeed: boolean }> {
+function serializeCookies(cookieStore: Awaited<ReturnType<typeof cookies>>): string {
+  const all = cookieStore.getAll();
+  if (!all.length) return "";
+  return all.map((c) => `${c.name}=${c.value}`).join("; ");
+}
+
+async function fetchDashboardStats(
+  cookieHeader: string
+): Promise<{ stats: SuperadminStats; degradedByFeed: boolean; degradedRid: string | null }> {
+  const nullStats = nullSuperadminStats();
   try {
     const origin = await getOriginFromHeaders();
-    const cookieHeader = cookies().toString();
 
     const res = await fetch(`${origin}/api/superadmin/dashboard`, {
       method: "GET",
       cache: "no-store",
       headers: {
         "Cache-Control": "no-store",
-        cookie: cookieHeader,
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
       },
     });
 
     const json = await readJsonSafe<DashboardApiOk | DashboardApiErr>(res);
 
     if (!res.ok || !json || (json as any).ok !== true) {
-      return { stats: null, degradedByFeed: true };
+      const err = json as DashboardApiErr | null;
+      return { stats: nullStats, degradedByFeed: true, degradedRid: err?.rid ? safeStr(err.rid) : null };
     }
 
     const ok = json as DashboardApiOk;
     const c = ok.data.companies;
 
-    const stats: Stats = {
-      companiesTotal: Number(c.total ?? 0) || 0,
-      companiesPending: Number(c.pending ?? 0) || 0,
-      companiesActive: Number(c.active ?? 0) || 0,
-      companiesPaused: Number(c.paused ?? 0) || 0,
-      companiesClosed: Number(c.closed ?? 0) || 0,
-    };
+    const stats = normalizeSuperadminStats({
+      companiesTotal: c.total,
+      companiesPending: c.pending,
+      companiesActive: c.active,
+      companiesPaused: c.paused,
+      companiesClosed: c.closed,
+      updatedAt: new Date().toISOString(),
+    });
 
-    return { stats, degradedByFeed: false };
+    return { stats, degradedByFeed: false, degradedRid: null };
   } catch {
-    return { stats: null, degradedByFeed: true };
+    return { stats: nullStats, degradedByFeed: true, degradedRid: null };
   }
 }
 
@@ -178,6 +184,7 @@ async function fetchDashboardStats(): Promise<{ stats: Stats | null; degradedByF
 
 export default async function SuperadminPage() {
   const supabase = await supabaseServer();
+  const cookieStore = await cookies();
 
   // 1) Auth
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
@@ -239,21 +246,20 @@ export default async function SuperadminPage() {
     .filter(Boolean) as CompanyRow[];
 
   // 6) Stats + signals
-  const localStats = computeStats(list);
+  const localStats = buildStatsFromList(list);
+  const { stats: apiStats, degradedByFeed, degradedRid } = await fetchDashboardStats(serializeCookies(cookieStore));
+  const stats = mergeStats(apiStats, localStats);
 
-  const { stats: apiStats, degradedByFeed } = await fetchDashboardStats();
-  const stats = apiStats ?? localStats;
-
-  const systemState: SystemState = degradedByFeed ? "DEGRADED" : computeSystemState(stats);
-  const lastEvent = buildLastEvent(list);
+  const systemState: SystemState =
+    degradedByFeed || stats.companiesActive === null ? "DEGRADED" : computeSystemState(stats);
 
   // 7) Render
   return (
     <SuperadminClient
       initialCompanies={list}
       initialStats={stats}
+      degradedRid={degradedRid}
       systemState={systemState}
-      lastEvent={lastEvent}
     />
   );
 }

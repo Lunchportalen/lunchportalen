@@ -14,13 +14,7 @@ function pickResponse(x: any): Response {
   const r = x?.res ?? x?.response;
   if (r) return r as Response;
 
-  return jsonErr(
-    500,
-    "no_rid",
-    "guard_contract_mismatch",
-    "RouteGuard returnerte ingen Response.",
-    { keys: x ? Object.keys(x) : null }
-  ) as unknown as Response;
+  return jsonErr("no_rid", "RouteGuard returnerte ingen Response.", 500, { code: "guard_contract_mismatch", detail: { keys: x ? Object.keys(x) : null } }) as unknown as Response;
 }
 
 function hasCtx(x: any): x is { ctx: any } {
@@ -51,17 +45,17 @@ export async function GET(req: NextRequest) {
     if (typeof denied === "object" && "status" in (denied as any) && "headers" in (denied as any)) {
       return denied as Response;
     }
-    return jsonErr(500, s.ctx.rid, "guard_contract_mismatch", "Role-guard returnerte ukjent type.", {
+    return jsonErr(s.ctx.rid, "Role-guard returnerte ukjent type.", 500, { code: "guard_contract_mismatch", detail: {
       typeofDenied: typeof denied,
-    }) as unknown as Response;
+    } }) as unknown as Response;
   }
 
   try {
     const report = await runHealthChecks();
-    return jsonOk({ ok: true, rid: s.ctx.rid, report }, 200);
+    return jsonOk(s.ctx.rid, report, 200);
   } catch (e: any) {
-    return jsonErr(500, s.ctx.rid, "health_failed", "Health check feilet.", {
+    return jsonErr(s.ctx.rid, "Health check feilet.", 500, { code: "health_failed", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
   // 1) Scope (NY SIGNATUR: Response | { ok:true, ctx })
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Roles: superadmin OR company_admin (NY SIGNATUR)
@@ -49,26 +49,24 @@ export async function GET(req: NextRequest) {
   const limit = clampInt(url.searchParams.get("limit"), 1, 50, 10);
 
   if (!isUuid(locationId)) {
-    return jsonErr(ctx, "bad_request", "Mangler/ugyldig location_id.");
+    return jsonErr(ctx.rid, "Mangler/ugyldig location_id.", 400, "bad_request");
   }
 
-  // 3) Tenant lock for company_admin: location must belong to own company
-  if (ctx.scope.role !== "superadmin") {
-    const denyScope = requireCompanyScopeOr403(ctx);
-    if (denyScope) return denyScope;
+  // 3) Tenant lock: location must belong to own company
+  const denyScope = requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
 
-    const myCompanyId = safeStr(ctx.scope.companyId);
+  const myCompanyId = safeStr(ctx.scope.companyId);
 
-    const { data: loc, error: locErr } = await supabase
-      .from("company_locations")
-      .select("id,company_id")
-      .eq("id", locationId)
-      .maybeSingle();
+  const { data: loc, error: locErr } = await supabase
+    .from("company_locations")
+    .select("id,company_id")
+    .eq("id", locationId)
+    .maybeSingle();
 
-    if (locErr) return jsonErr(ctx, "db_error", "Databasefeil.", { message: locErr.message });
-    if (!loc) return jsonErr(ctx, "not_found", "Lokasjon finnes ikke.");
-    if (safeStr((loc as any).company_id) !== myCompanyId) return jsonErr(ctx, "forbidden", "Ingen tilgang.");
-  }
+  if (locErr) return jsonErr(ctx.rid, "Databasefeil.", 400, { code: "db_error", detail: { message: locErr.message } });
+  if (!loc) return jsonErr(ctx.rid, "Lokasjon finnes ikke.", 400, "not_found");
+  if (safeStr((loc as any).company_id) !== myCompanyId) return jsonErr(ctx.rid, "Ingen tilgang.", 400, "forbidden");
 
   // 4) Read audit
   if (mode === "list") {
@@ -79,9 +77,9 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (error) return jsonErr(ctx, "db_error", "Databasefeil.", { message: error.message });
+    if (error) return jsonErr(ctx.rid, "Databasefeil.", 400, { code: "db_error", detail: { message: error.message } });
 
-    return jsonOk(ctx, { ok: true, items: data ?? [] });
+    return jsonOk(ctx.rid, { ok: true, items: data ?? [] });
   }
 
   // default: latest
@@ -93,9 +91,7 @@ export async function GET(req: NextRequest) {
     .limit(1)
     .maybeSingle();
 
-  if (error) return jsonErr(ctx, "db_error", "Databasefeil.", { message: error.message });
+  if (error) return jsonErr(ctx.rid, "Databasefeil.", 400, { code: "db_error", detail: { message: error.message } });
 
-  return jsonOk(ctx, { ok: true, latest: row ?? null });
+  return jsonOk(ctx.rid, { ok: true, latest: row ?? null });
 }
-
-

@@ -6,6 +6,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import AuditClient from "./audit-client";
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -17,11 +18,8 @@ type ProfileRow = { role: Role | null; disabled_at?: string | null };
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-function normEmail(v: any) {
-  return safeStr(v).toLowerCase();
-}
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 /** Minimal, enterprise-grade error surface (no leaks) */

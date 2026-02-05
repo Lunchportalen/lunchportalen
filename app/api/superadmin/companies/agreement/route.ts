@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const companyId = safeStr(url.searchParams.get("companyId"));
-  if (!companyId) return jsonErr(400, g.ctx, "BAD_INPUT", "Mangler companyId.");
+  if (!companyId) return jsonErr(g.ctx.rid, "Mangler companyId.", 400, "BAD_INPUT");
 
   const admin = supabaseAdmin();
   const { data, error } = await admin
@@ -42,10 +42,10 @@ export async function GET(req: NextRequest) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (error) return jsonErr(500, g.ctx, "DB_ERROR", "Kunne ikke lese avtale.", error);
-  if (!data?.id) return jsonErr(404, g.ctx, "NOT_FOUND", "Firma ikke funnet.");
+  if (error) return jsonErr(g.ctx.rid, "Kunne ikke lese avtale.", 500, { code: "DB_ERROR", detail: error });
+  if (!data?.id) return jsonErr(g.ctx.rid, "Firma ikke funnet.", 404, "NOT_FOUND");
 
-  return jsonOk(g.ctx, { ok: true, data });
+  return jsonOk(g.ctx.rid, { ok: true, data });
 }
 
 export async function POST(req: NextRequest) {
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   const body = (await readJson(req)) as AgreementInput;
   const companyId = safeStr(body?.companyId);
-  if (!companyId) return jsonErr(400, g.ctx, "BAD_INPUT", "Mangler companyId.");
+  if (!companyId) return jsonErr(g.ctx.rid, "Mangler companyId.", 400, "BAD_INPUT");
 
   const admin = supabaseAdmin();
 
@@ -90,10 +90,10 @@ export async function POST(req: NextRequest) {
     .select("id, plan_tier, agreement_json, updated_at")
     .maybeSingle();
 
-  if (error) return jsonErr(500, g.ctx, "DB_ERROR", "Kunne ikke oppdatere avtale.", error);
-  if (!data?.id) return jsonErr(404, g.ctx, "NOT_FOUND", "Firma ikke funnet.");
+  if (error) return jsonErr(g.ctx.rid, "Kunne ikke oppdatere avtale.", 500, { code: "DB_ERROR", detail: error });
+  if (!data?.id) return jsonErr(g.ctx.rid, "Firma ikke funnet.", 404, "NOT_FOUND");
 
-  return jsonOk(g.ctx, { ok: true, data });
+  return jsonOk(g.ctx.rid, { ok: true, data });
 }
 
 

@@ -3,13 +3,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabaseBrowser } from "../lib/supabase/client";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Profile = {
   id: string;
-  role: Role | null;
+  role: string | null;
   company_id: string | null;
   location_id: string | null;
   is_active: boolean | null;
@@ -27,14 +25,6 @@ type ApiProfileRes = ApiProfileOk | ApiProfileErr;
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
-
-function landingForRole(role: Role | null | undefined) {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "company_admin") return "/admin";
-  if (role === "kitchen") return "/kitchen";
-  if (role === "driver") return "/driver";
-  return "/week"; // ✅ employee default
 }
 
 async function sleep(ms: number) {
@@ -60,6 +50,7 @@ export default function LoginClient() {
 
   const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>("");
   const [pendingProfile, setPendingProfile] = useState(false);
@@ -101,6 +92,33 @@ export default function LoginClient() {
         return;
       }
 
+      if (r.status === 403 && (data as any)?.ok && (data as any)?.profile) {
+        const prof = (data as any).profile as Profile;
+        if (prof?.disabled_at) {
+          setPendingProfile(false);
+          setMsg(prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
+          return;
+        }
+        if (prof?.is_active === false) {
+          setPendingProfile(false);
+          setMsg("Kontoen er ikke aktiv ennå. Kontakt administrator.");
+          return;
+        }
+      }
+
+      // ✅ Pending company status
+      if (r.status === 200 && data.ok === true && data.pending === true && (data as any).company_status) {
+        const st = String((data as any).company_status ?? "").toLowerCase();
+        if (st === "pending") {
+          router.replace("/pending");
+          return;
+        }
+        if (st === "paused" || st === "closed") {
+          router.replace(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextPath || "/week")}`);
+          return;
+        }
+      }
+
       // ✅ Klar
       if (r.status === 200 && data.ok === true && data.pending === false) {
         const prof = data.profile as Profile;
@@ -119,11 +137,8 @@ export default function LoginClient() {
           return;
         }
 
-        const dest = nextPath || landingForRole(prof?.role ?? null);
-
-        // Viktig: sikre at SSR/middleware ser cookies før redirect
         router.refresh();
-        router.replace(dest);
+        router.replace("/api/auth/post-login");
         return;
       }
 
@@ -216,7 +231,7 @@ export default function LoginClient() {
         <label className="text-sm">
           <div className="opacity-80">E-post</div>
           <input
-            className="mt-2 w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 outline-none"
+            className="mt-2 w-full min-h-[44px] rounded-lg border border-white/15 bg-transparent px-3 py-2 outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -228,20 +243,30 @@ export default function LoginClient() {
 
         <label className="text-sm">
           <div className="opacity-80">Passord</div>
-          <input
-            className="mt-2 w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 outline-none"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-            required
-            disabled={busy || pendingProfile}
-          />
+          <div className="relative">
+            <input
+              className="mt-2 w-full min-h-[44px] rounded-lg border border-white/15 bg-transparent px-3 py-2 pr-12 outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              disabled={busy || pendingProfile}
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-md px-3 text-xs font-semibold hover:bg-white/5"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "Skjul" : "Vis"}
+            </button>
+          </div>
         </label>
 
         <button
           disabled={busy || pendingProfile}
-          className={`mt-2 rounded-lg border px-4 py-2 ${
+          className={`mt-2 min-h-[48px] rounded-lg border px-4 py-2 ${
             busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="submit"
@@ -252,7 +277,7 @@ export default function LoginClient() {
         <button
           disabled={busy || pendingProfile}
           onClick={onRegister}
-          className={`rounded-lg border px-4 py-2 ${
+          className={`min-h-[48px] rounded-lg border px-4 py-2 ${
             busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="button"
@@ -265,3 +290,5 @@ export default function LoginClient() {
     </main>
   );
 }
+
+

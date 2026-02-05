@@ -207,7 +207,7 @@ export default function NextWeekOrderClient() {
           </div>
 
           {/* Rows */}
-          <div className="mt-4 overflow-hidden rounded-2xl border border-[rgb(var(--lp-border))] bg-white">
+          <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white">
             <div className="divide-y divide-[rgb(var(--lp-divider))]">
               {days.map((d) => {
                 const disabled = !d.isPublished || busy;

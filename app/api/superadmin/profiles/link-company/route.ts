@@ -5,10 +5,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
+function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
 function isUuid(v: any): v is string {
@@ -19,16 +21,16 @@ function isUuid(v: any): v is string {
 }
 
 export async function POST(req: NextRequest) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const sb = await supabaseServer();
 
   // Bekreft superadmin
   const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr) return jsonError(401, "auth_failed", "Kunne ikke lese innlogget bruker.", authErr);
+  if (authErr) return jsonError(rid, 401, "auth_failed", "Kunne ikke lese innlogget bruker.", authErr);
   const user = auth?.user;
-  if (!user) return jsonError(401, "not_signed_in", "Du må være innlogget.");
+  if (!user) return jsonError(rid, 401, "not_signed_in", "Du må være innlogget.");
 
   const { data: me, error: meErr } = await sb
     .from("profiles")
@@ -36,8 +38,8 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (meErr) return jsonError(500, "me_profile_failed", "Kunne ikke lese din profil.", meErr);
-  if (!me || me.role !== "superadmin") return jsonError(403, "forbidden", "Kun superadmin har tilgang.");
+  if (meErr) return jsonError(rid, 500, "me_profile_failed", "Kunne ikke lese din profil.", meErr);
+  if (!me || me.role !== "superadmin") return jsonError(rid, 403, "forbidden", "Kun superadmin har tilgang.");
 
   // Body
   const body = await req.json().catch(() => null);
@@ -45,9 +47,9 @@ export async function POST(req: NextRequest) {
   const companyId = body?.company_id;
   const locationId = body?.location_id ?? null;
 
-  if (!isUuid(targetUserId)) return jsonError(400, "bad_request", "Ugyldig user_id.");
-  if (!isUuid(companyId)) return jsonError(400, "bad_request", "Ugyldig company_id.");
-  if (locationId !== null && !isUuid(locationId)) return jsonError(400, "bad_request", "Ugyldig location_id.");
+  if (!isUuid(targetUserId)) return jsonError(rid, 400, "bad_request", "Ugyldig user_id.");
+  if (!isUuid(companyId)) return jsonError(rid, 400, "bad_request", "Ugyldig company_id.");
+  if (locationId !== null && !isUuid(locationId)) return jsonError(rid, 400, "bad_request", "Ugyldig location_id.");
 
   // Verifiser firma finnes
   const { data: company, error: cErr } = await sb
@@ -56,8 +58,8 @@ export async function POST(req: NextRequest) {
     .eq("id", companyId)
     .maybeSingle();
 
-  if (cErr) return jsonError(500, "company_read_failed", "Kunne ikke lese firma.", cErr);
-  if (!company) return jsonError(404, "not_found", "Firma finnes ikke.");
+  if (cErr) return jsonError(rid, 500, "company_read_failed", "Kunne ikke lese firma.", cErr);
+  if (!company) return jsonError(rid, 404, "not_found", "Firma finnes ikke.");
 
   // Oppdater target profile (bruk service role for å slippe RLS-trøbbel)
   const admin = supabaseAdmin();
@@ -73,8 +75,8 @@ export async function POST(req: NextRequest) {
     .select("user_id,email,role,company_id,location_id")
     .maybeSingle();
 
-  if (uErr) return jsonError(500, "profile_update_failed", "Kunne ikke knytte profil til firma.", uErr);
-  if (!updated) return jsonError(404, "not_found", "Profil finnes ikke.");
+  if (uErr) return jsonError(rid, 500, "profile_update_failed", "Kunne ikke knytte profil til firma.", uErr);
+  if (!updated) return jsonError(rid, 404, "not_found", "Profil finnes ikke.");
 
   // (Valgfritt, men anbefalt) Audit event hvis dere har tabellen
   // Prøver å skrive, men feiler ikke hele requesten hvis audit ikke finnes.
@@ -91,8 +93,6 @@ export async function POST(req: NextRequest) {
     });
   } catch {}
 
-  return NextResponse.json({ ok: true, company, profile: updated });
+  return jsonOk(rid, { ok: true, company, profile: updated }, 200);
 }
-
-
 

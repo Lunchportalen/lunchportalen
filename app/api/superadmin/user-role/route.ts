@@ -3,9 +3,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { writeAudit } from "@/lib/audit/log";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -20,7 +20,7 @@ function supabaseAdmin() {
 }
 
 export async function POST(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const body = await req.json().catch(() => ({}));
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const newRole = body?.role;
 
   if (!targetUserId || !isRole(newRole)) {
-    return NextResponse.json({ ok: false, error: "BAD_REQUEST" }, { status: 400 });
+    return jsonErr(rid, "Ugyldig input.", 400, "BAD_REQUEST");
   }
 
   // Session + superadmin guard
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   const { data: userRes } = await supabase.auth.getUser();
   const actor = userRes?.user ?? null;
 
-  if (!actor) return NextResponse.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
+  if (!actor) return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
 
   const { data: actorProfile } = await supabase
     .from("profiles")
@@ -45,11 +45,11 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (actorProfile?.role !== "superadmin") {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ ok: false, error: "MISSING_SERVICE_ROLE_KEY" }, { status: 500 });
+    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
   }
 
   const admin = supabaseAdmin();
@@ -62,23 +62,20 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (exErr) {
-    return NextResponse.json({ ok: false, error: "LOOKUP_FAILED", detail: exErr.message }, { status: 500 });
+    return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "LOOKUP_FAILED", detail: exErr.message });
   }
   if (!existing) {
-    return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+    return jsonErr(rid, "Fant ikke bruker.", 404, "NOT_FOUND");
   }
 
   const prevRole = (existing.role ?? "employee") as Role;
   if (prevRole === newRole) {
-    return NextResponse.json({ ok: true, note: "No change" }, { status: 200 });
+    return jsonOk(rid, { ok: true, note: "No change" }, 200);
   }
 
   // Optional safety: hindre at superadmin degraderer seg selv utilsiktet
   if (actor.id === targetUserId && newRole !== "superadmin") {
-    return NextResponse.json(
-      { ok: false, error: "SELF_DOWNGRADE_BLOCKED" },
-      { status: 400 }
-    );
+    return jsonErr(rid, "Kan ikke degradere egen superadmin-rolle.", 400, "SELF_DOWNGRADE_BLOCKED");
   }
 
   const { error: upErr } = await admin
@@ -87,7 +84,7 @@ export async function POST(req: Request) {
     .eq("user_id", targetUserId);
 
   if (upErr) {
-    return NextResponse.json({ ok: false, error: "UPDATE_FAILED", detail: upErr.message }, { status: 500 });
+    return jsonErr(rid, "Kunne ikke oppdatere rolle.", 500, { code: "UPDATE_FAILED", detail: upErr.message });
   }
 
   // Audit (fail-quiet)
@@ -107,8 +104,7 @@ export async function POST(req: Request) {
     });
   } catch {}
 
-  return NextResponse.json({ ok: true, prevRole, newRole }, { status: 200 });
+  return jsonOk(rid, { ok: true, prevRole, newRole }, 200);
 }
-
 
 

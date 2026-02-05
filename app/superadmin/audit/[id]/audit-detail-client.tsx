@@ -51,9 +51,6 @@ function isoNice(ts: string | null | undefined) {
   return s.replace("T", " ").slice(0, 19);
 }
 
-function monoStyle(size = 12): React.CSSProperties {
-  return { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: size };
-}
 
 function pickActorEmail(it: AuditItem) {
   return it.actor?.email ?? it.actor_email ?? "-";
@@ -91,11 +88,10 @@ function isCritical(it: AuditItem) {
   );
 }
 
-function toastBg(kind: "ok" | "err") {
-  return kind === "ok" ? "rgba(20, 160, 80, 0.10)" : "rgba(220, 0, 0, 0.08)";
-}
-function toastBorder(kind: "ok" | "err") {
-  return kind === "ok" ? "rgba(20, 160, 80, 0.30)" : "rgba(220, 0, 0, 0.25)";
+function toastClass(kind: "ok" | "err") {
+  return kind === "ok"
+    ? "border-[rgba(var(--lp-ok-bd),0.9)] bg-[rgba(var(--lp-ok-bg),0.92)] text-[rgb(var(--lp-ok-tx))]"
+    : "border-[rgba(var(--lp-crit-bd),0.9)] bg-[rgba(var(--lp-crit-bg),0.92)] text-[rgb(var(--lp-crit-tx))]";
 }
 
 async function copyText(text: string) {
@@ -235,22 +231,14 @@ export default function AuditClient() {
   const critCount = useMemo(() => viewItems.filter((x) => isCritical(x)).length, [viewItems]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
+    <div className="mx-auto max-w-[1100px] p-4">
       {/* Toast */}
       {toast ? (
         <div
-          style={{
-            position: "fixed",
-            right: 16,
-            bottom: 16,
-            zIndex: 50,
-            padding: "10px 12px",
-            borderRadius: 14,
-            border: `1px solid ${toastBorder(toast.kind)}`,
-            background: toastBg(toast.kind),
-            backdropFilter: "blur(8px)",
-            fontWeight: 800,
-          }}
+          className={[
+            "fixed right-4 bottom-4 z-50 rounded-xl border px-3 py-2 text-xs font-semibold backdrop-blur",
+            toastClass(toast.kind),
+          ].join(" ")}
           role="status"
           aria-live="polite"
         >
@@ -259,37 +247,24 @@ export default function AuditClient() {
       ) : null}
 
       {/* Sticky header */}
-      <div
-        style={{
-          position: "sticky",
-          top: 10,
-          zIndex: 10,
-          padding: 12,
-          borderRadius: 18,
-          border: "1px solid rgba(0,0,0,0.08)",
-          background: "rgba(255,255,255,0.85)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div className="sticky top-3 z-10 rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-[rgba(var(--lp-surface),0.85)] p-3 backdrop-blur">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900 }}>Audit</div>
-            <div style={{ opacity: 0.7, fontSize: 13 }}>
+            <div className="text-[22px] font-semibold">Audit</div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">
               {loading ? "Laster…" : `${viewItems.length} vist • ${critCount} kritiske (heuristikk)`}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setPreset("critical")}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: "1px solid rgba(0,0,0,0.15)",
-                background: preset === "critical" ? "white" : "transparent",
-                cursor: "pointer",
-                fontWeight: 900,
-              }}
+              className={[
+                "rounded-lg border px-3 py-2 text-xs font-semibold",
+                preset === "critical"
+                  ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))]"
+                  : "border-[rgba(var(--lp-border),0.6)] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface))]",
+              ].join(" ")}
               aria-label="Vis kritiske hendelser først"
             >
               Kritiske først
@@ -297,14 +272,12 @@ export default function AuditClient() {
 
             <button
               onClick={() => setPreset("all")}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: "1px solid rgba(0,0,0,0.15)",
-                background: preset === "all" ? "white" : "transparent",
-                cursor: "pointer",
-                fontWeight: 900,
-              }}
+              className={[
+                "rounded-lg border px-3 py-2 text-xs font-semibold",
+                preset === "all"
+                  ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))]"
+                  : "border-[rgba(var(--lp-border),0.6)] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface))]",
+              ].join(" ")}
               aria-label="Vis alle hendelser"
             >
               Alle
@@ -315,14 +288,7 @@ export default function AuditClient() {
                 setCursor(null);
                 load({ resetCursor: true, clearCursorBeforeFetch: true });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: "1px solid rgba(0,0,0,0.15)",
-                background: "white",
-                cursor: "pointer",
-                fontWeight: 900,
-              }}
+              className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
               aria-label="Oppdater audit"
             >
               Oppdater
@@ -330,35 +296,30 @@ export default function AuditClient() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
-          <div style={{ display: "grid", gap: 6 }}>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="grid gap-1">
             <input
               value={companyId}
               onChange={(e) => setCompanyId(e.target.value)}
               placeholder="companyId (uuid)"
-              style={{
-                padding: 10,
-                borderRadius: 12,
-                border: companyIdInvalid ? "1px solid rgba(220,0,0,0.45)" : "1px solid rgba(0,0,0,0.15)",
-                minWidth: 300,
-                background: "white",
-              }}
+              className={[
+                "min-w-[300px] rounded-lg border px-3 py-2 text-sm",
+                companyIdInvalid
+                  ? "border-[rgba(var(--lp-crit-bd),0.9)] bg-[rgba(var(--lp-crit-bg),0.6)]"
+                  : "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]",
+              ].join(" ")}
               aria-label="Filtrer på companyId"
             />
-            {companyIdInvalid ? <div style={{ fontSize: 12, color: "crimson" }}>Ugyldig UUID.</div> : null}
+            {companyIdInvalid ? (
+              <div className="text-xs text-[rgb(var(--lp-crit-tx))]">Ugyldig UUID.</div>
+            ) : null}
           </div>
 
           <input
             value={action}
             onChange={(e) => setAction(e.target.value)}
             placeholder="action (f.eks. company_)"
-            style={{
-              padding: 10,
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.15)",
-              minWidth: 220,
-              background: "white",
-            }}
+            className="min-w-[220px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
             aria-label="Filtrer på action"
           />
 
@@ -366,13 +327,7 @@ export default function AuditClient() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Søk (email, action, entity, summary)…"
-            style={{
-              padding: 10,
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.15)",
-              minWidth: 280,
-              background: "white",
-            }}
+            className="min-w-[280px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
             aria-label="Søk i audit"
           />
 
@@ -386,14 +341,7 @@ export default function AuditClient() {
               load({ resetCursor: true, clearCursorBeforeFetch: true });
               showToast("ok", "Filtre nullstilt");
             }}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.15)",
-              background: "white",
-              cursor: "pointer",
-              fontWeight: 900,
-            }}
+            className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
             aria-label="Nullstill filtre"
           >
             Nullstill
@@ -401,42 +349,26 @@ export default function AuditClient() {
         </div>
 
         {err ? (
-          <div
-            style={{
-              marginTop: 10,
-              padding: 12,
-              borderRadius: 14,
-              border: "1px solid rgba(220,0,0,0.25)",
-              background: "rgba(220,0,0,0.06)",
-              color: "crimson",
-              fontWeight: 800,
-            }}
-          >
+          <div className="mt-3 rounded-xl border border-[rgba(var(--lp-crit-bd),0.9)] bg-[rgba(var(--lp-crit-bg),0.9)] px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-crit-tx))]">
             {err}
           </div>
         ) : null}
       </div>
 
       {/* Table */}
-      <div style={{ marginTop: 12, border: "1px solid #eee", borderRadius: 14, overflow: "hidden" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "180px 220px 220px 1fr 90px",
-            padding: 12,
-            background: "#fafafa",
-            fontWeight: 700,
-          }}
-        >
+      <div className="mt-3 overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]">
+        <div className="grid grid-cols-[180px_220px_220px_1fr_90px] gap-2 border-b border-[rgba(var(--lp-border),0.7)] bg-[rgb(var(--lp-surface-2))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">
           <div>Tid</div>
           <div>Actor</div>
           <div>Action</div>
           <div>Entity / summary</div>
-          <div style={{ textAlign: "right" }}>Kopier</div>
+          <div className="text-right">Kopier</div>
         </div>
 
         {!loading && viewItems.length === 0 ? (
-          <div style={{ padding: 12, borderTop: "1px solid #eee", opacity: 0.75 }}>Ingen hendelser funnet.</div>
+          <div className="border-t border-[rgba(var(--lp-border),0.7)] px-3 py-2 text-sm text-[rgb(var(--lp-muted))]">
+            Ingen hendelser funnet.
+          </div>
         ) : null}
 
         {viewItems.map((it) => {
@@ -445,54 +377,37 @@ export default function AuditClient() {
           return (
             <div
               key={it.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 220px 220px 1fr 90px",
-                padding: 12,
-                borderTop: "1px solid #eee",
-                alignItems: "start",
-                gap: 8,
-                background: preset === "critical" && critical ? "#fff7f7" : "transparent",
-              }}
+              className={[
+                "grid grid-cols-[180px_220px_220px_1fr_90px] items-start gap-2 border-t border-[rgba(var(--lp-border),0.7)] px-3 py-2",
+                preset === "critical" && critical ? "bg-[rgba(var(--lp-crit-bg),0.7)]" : "",
+              ].join(" ")}
             >
-              <div style={monoStyle(12)}>{isoNice(it.created_at)}</div>
+              <div className="lp-mono text-xs">{isoNice(it.created_at)}</div>
 
-              <div style={{ fontSize: 13 }}>
-                <div style={{ fontWeight: 900 }}>{pickActorEmail(it)}</div>
-                <div style={{ opacity: 0.7 }}>{pickActorRole(it)}</div>
+              <div className="text-xs">
+                <div className="font-semibold text-[rgb(var(--lp-text))]">{pickActorEmail(it)}</div>
+                <div className="text-[rgb(var(--lp-muted))]">{pickActorRole(it)}</div>
               </div>
 
-              <div style={{ ...monoStyle(12), fontWeight: 800 }}>
+              <div className="lp-mono text-xs font-semibold text-[rgb(var(--lp-text))]">
                 {it.action ?? "-"}{" "}
                 {preset === "critical" && critical ? (
-                  <span
-                    style={{
-                      marginLeft: 8,
-                      padding: "2px 8px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(220,0,0,0.25)",
-                      background: "rgba(220,0,0,0.06)",
-                      fontSize: 11,
-                      fontWeight: 900,
-                      color: "crimson",
-                    }}
-                  >
+                  <span className="ml-2 inline-flex items-center rounded-full border border-[rgba(var(--lp-crit-bd),0.95)] bg-[rgba(var(--lp-crit-bg),0.85)] px-2 py-0.5 text-[10px] font-semibold text-[rgb(var(--lp-crit-tx))]">
                     KRITISK
                   </span>
                 ) : null}
               </div>
 
-              <div style={{ fontSize: 13 }}>
-                <div style={{ opacity: 0.85 }}>
-                  {pickEntityType(it)} /{" "}
-                  <span style={monoStyle(12)}>{pickEntityId(it)}</span>
+              <div className="text-xs">
+                <div className="text-[rgb(var(--lp-muted))]">
+                  {pickEntityType(it)} / <span className="lp-mono">{pickEntityId(it)}</span>
                 </div>
-                {it.summary ? <div style={{ marginTop: 4 }}>{it.summary}</div> : null}
+                {it.summary ? <div className="mt-1 text-[rgb(var(--lp-text))]">{it.summary}</div> : null}
 
-                <div style={{ marginTop: 8 }}>
+                <div className="mt-2">
                   <Link
                     href={`/superadmin/audit/${it.id}`}
-                    style={{ textDecoration: "none", fontWeight: 900, opacity: 0.9 }}
+                    className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
                     aria-label="Åpne audit-detalj"
                   >
                     Åpne detalj →
@@ -500,20 +415,13 @@ export default function AuditClient() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div className="flex justify-end">
                 <button
                   onClick={async () => {
                     const ok = await copyText(it.id);
                     showToast(ok ? "ok" : "err", ok ? "ID kopiert" : "Kunne ikke kopiere");
                   }}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(0,0,0,0.15)",
-                    background: "white",
-                    cursor: "pointer",
-                    fontWeight: 900,
-                  }}
+                  className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
                   aria-label="Kopier id"
                 >
                   ID
@@ -525,28 +433,25 @@ export default function AuditClient() {
       </div>
 
       {/* Pagination */}
-      <div style={{ display: "flex", gap: 10, marginTop: 12, alignItems: "center" }}>
+      <div className="mt-3 flex items-center gap-2">
         <button
           disabled={!nextCursor || loading}
           onClick={() => {
             if (!nextCursor) return;
             setCursor(nextCursor);
           }}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 12,
-            border: "1px solid rgba(0,0,0,0.15)",
-            cursor: nextCursor && !loading ? "pointer" : "not-allowed",
-            opacity: nextCursor && !loading ? 1 : 0.5,
-            background: "white",
-            fontWeight: 900,
-          }}
+          className={[
+            "rounded-lg border px-4 py-2 text-xs font-semibold",
+            nextCursor && !loading
+              ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
+              : "border-[rgba(var(--lp-border),0.6)] bg-[rgb(var(--lp-surface-2))] text-[rgb(var(--lp-muted))] opacity-70",
+          ].join(" ")}
           aria-label="Neste side"
         >
           Neste side
         </button>
 
-        <div style={{ fontSize: 12, opacity: 0.7 }}>
+        <div className="text-xs text-[rgb(var(--lp-muted))]">
           {items.length > 0 ? `Viser ${items.length} (limit ${limit})` : null}
           {cursor ? ` • cursor: ${isoNice(cursor)}` : null}
         </div>

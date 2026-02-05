@@ -4,7 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import nodemailer from "nodemailer";
 
 function backoffMinutes(attempts: number) {
@@ -21,7 +23,8 @@ function addMinutesISO(mins: number) {
   return new Date(Date.now() + mins * 60 * 1000).toISOString();
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const rid = makeRid();
   
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
@@ -29,7 +32,7 @@ export async function POST() {
   // 1) Auth + superadmin-sjekk (RLS-policy krever superadmin for select/update)
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth?.user) {
-    return NextResponse.json({ ok: false, error: "UNAUTH" }, { status: 401 });
+    return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
   }
 
   const { data: prof, error: pErr } = await supabase
@@ -39,7 +42,7 @@ export async function POST() {
     .maybeSingle();
 
   if (pErr || !prof?.role || prof.role !== "superadmin") {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    return jsonErr(rid, "Mangler rettigheter.", 403, "FORBIDDEN");
   }
 
   // 2) SMTP
@@ -65,11 +68,11 @@ export async function POST() {
     .limit(20);
 
   if (qErr) {
-    return NextResponse.json({ ok: false, error: "DB_READ_FAILED", detail: qErr.message }, { status: 500 });
+    return jsonErr(rid, "Kunne ikke hente outbox.", 500, { code: "DB_READ_FAILED", detail: { message: qErr.message } });
   }
 
   if (!rows || rows.length === 0) {
-    return NextResponse.json({ ok: true, processed: 0, message: "No pending emails." });
+    return jsonOk(rid, { processed: 0, message: "No pending emails." });
   }
 
   let sent = 0;
@@ -118,8 +121,10 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ ok: true, processed: rows.length, sent, failed });
+  return jsonOk(rid, { processed: rows.length, sent, failed });
 }
+
+
 
 
 

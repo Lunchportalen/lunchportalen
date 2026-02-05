@@ -10,6 +10,7 @@ import { redirect, notFound } from "next/navigation";
 
 import InvoiceRunDetailClient from "@/components/superadmin/InvoiceRunDetailClient";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isSuperadminEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | null };
@@ -18,11 +19,8 @@ function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function isHardSuperadmin(email: string | null | undefined) {
-  return normEmail(email) === "superadmin@lunchportalen.no";
+  return isSuperadminEmail(email);
 }
 
 async function getBaseUrl() {
@@ -40,11 +38,16 @@ async function getRun(runId: string) {
   const c = await cookies();
   const base = await getBaseUrl();
 
+  const cookieHeader = c
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+
   const res = await fetch(`${base}/api/superadmin/invoices/runs/${encodeURIComponent(runId)}`, {
     cache: "no-store",
     headers: {
       // ✅ viktig i Next 15 server fetch: viderefør cookies til API route
-      cookie: c.toString(),
+      cookie: cookieHeader,
     },
   }).catch(() => null);
 

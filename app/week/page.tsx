@@ -6,8 +6,12 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import WeekClient from "./WeekClient";
 import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import PageSection from "@/components/layout/PageSection";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
 
 /* =========================================================
    Role helpers (samme prinsipp som admin/middleware)
@@ -16,16 +20,8 @@ type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-function normEmail(v: any) {
-  return safeStr(v).toLowerCase();
-}
-
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function roleFromUser(user: any): Role {
@@ -35,6 +31,15 @@ function roleFromUser(user: any): Role {
   if (raw === "kitchen") return "kitchen";
   if (raw === "driver") return "driver";
   return "employee";
+}
+
+function normCompanyStatus(v: any): CompanyStatus {
+  const s = safeStr(v).toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PENDING") return "PENDING";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  return "UNKNOWN";
 }
 
 function computeRole(user: any, profileRole?: any): Role {
@@ -64,7 +69,7 @@ export default async function Page() {
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("role, company_id, location_id")
-    .eq("id", user.id)
+    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
     .maybeSingle();
 
   if (profileErr) {
@@ -84,28 +89,45 @@ export default async function Page() {
   // 5) Week krever firmatilknytning (employee)
   if (!profile?.company_id || !profile?.location_id) {
     return (
-      <main className="mx-auto max-w-3xl px-6 pb-10 pt-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">Mangler firmatilknytning</h1>
-        <p className="mt-2 text-sm text-muted">
-          Kontoen din er ikke knyttet til et firma eller en lokasjon. Ta kontakt med firmaets administrator.
-        </p>
-      </main>
+      <PageSection
+        title="Mangler firmatilknytning"
+        subtitle="Kontoen din er ikke knyttet til et firma eller en lokasjon. Ta kontakt med firmaets administrator."
+      />
     );
   }
 
+  const admin = supabaseAdmin();
+  const { data: company, error: compErr } = await admin
+    .from("companies")
+    .select("id,status")
+    .eq("id", profile.company_id)
+    .maybeSingle();
+
+  if (compErr || !company?.id) {
+    redirect("/login?next=/week");
+  }
+
+  const companyStatus = normCompanyStatus((company as any).status);
+  if (companyStatus === "PENDING") redirect("/pending");
+  if (companyStatus === "PAUSED" || companyStatus === "CLOSED") {
+    redirect(`/status?state=${encodeURIComponent(companyStatus.toLowerCase())}&next=${encodeURIComponent("/week")}`);
+  }
   // 6) Alt OK → vis ukeplanlegging
   // NB: Status/kvittering/e-post-backup implementeres i WeekClient + API (Dag 2 full pakke),
   //     men denne siden skal være stabil, cache-fri og riktig rutet.
   return (
-    <main className="mx-auto max-w-5xl px-6 pb-10 pt-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-semibold tracking-tight text-text">Planlegg lunsj</h1>
-        <p className="mt-2 text-sm text-muted">
+    <PageSection
+      title="Planlegg lunsj"
+      subtitle={
+        <>
           Endringer låses kl. <span className="font-medium text-text">08:00</span> samme dag.
-        </p>
-      </header>
-
+        </>
+      }
+    >
       <WeekClient />
-    </main>
+    </PageSection>
   );
 }
+
+
+

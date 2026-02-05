@@ -42,7 +42,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
@@ -57,14 +57,14 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const params = await Promise.resolve(ctx.params as any);
   const companyId = safeStr(params?.companyId);
-  if (!isUuid(companyId)) return jsonErr(400, a, "BAD_REQUEST", "Ugyldig companyId.");
+  if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = (await readJson(req)) ?? {};
   const sRaw = safeStr(body?.status ?? "").toUpperCase();
   const next = sRaw as Status;
 
   if (next !== "ACTIVE" && next !== "PAUSED" && next !== "CLOSED") {
-    return jsonErr(400, a, "BAD_REQUEST", "status må være ACTIVE/PAUSED/CLOSED.");
+    return jsonErr(a.rid, "status må være ACTIVE/PAUSED/CLOSED.", 400, "BAD_REQUEST");
   }
 
   const admin = supabaseAdmin();
@@ -80,11 +80,11 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (listErr) return jsonErr(500, a, "DB_ERROR", "Kunne ikke lese avtaler.", listErr);
+    if (listErr) return jsonErr(a.rid, "Kunne ikke lese avtaler.", 500, { code: "DB_ERROR", detail: listErr });
 
     const rows = (list ?? []) as any[];
     const current = rows.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? rows[0] ?? null;
-    if (!current?.id) return jsonErr(404, a, "NOT_FOUND", "Fant ingen avtale for firmaet.");
+    if (!current?.id) return jsonErr(a.rid, "Fant ingen avtale for firmaet.", 404, "NOT_FOUND");
 
     // Idempotent
     const prevStatus = String(current.status ?? "").toUpperCase();
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         .neq("id", current.id)
         .select("id");
 
-      if (pause.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke pause annen ACTIVE-avtale.", pause.error);
+      if (pause.error) return jsonErr(a.rid, "Kunne ikke pause annen ACTIVE-avtale.", 500, { code: "DB_ERROR", detail: pause.error });
       pausedOtherActiveIds = (pause.data ?? []).map((x: any) => String(x.id));
     }
 
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       .select("id, company_id, status, end_date, updated_at")
       .single();
 
-    if (upd.error) return jsonErr(500, a, "DB_ERROR", "Kunne ikke oppdatere status.", upd.error);
+    if (upd.error) return jsonErr(a.rid, "Kunne ikke oppdatere status.", 500, { code: "DB_ERROR", detail: upd.error });
 
     // Sync companies.status (lowercase)
     await admin
@@ -179,25 +179,25 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       200
     );
   } catch (e: any) {
-    return jsonErr(500, a, "SERVER_ERROR", "Kunne ikke oppdatere agreement status.", {
+    return jsonErr(a.rid, "Kunne ikke oppdatere agreement status.", 500, { code: "SERVER_ERROR", detail: {
       message: String(e?.message ?? e),
-    });
+    } });
   }
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
-  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
+  return jsonErr(s.ctx.rid, "Bruk POST.", 405, "METHOD_NOT_ALLOWED");
 }
 export async function PUT(req: NextRequest): Promise<Response> {
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
-  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
+  return jsonErr(s.ctx.rid, "Bruk POST.", 405, "METHOD_NOT_ALLOWED");
 }
 export async function DELETE(req: NextRequest): Promise<Response> {
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
-  return jsonErr(405, s.ctx, "METHOD_NOT_ALLOWED", "Bruk POST.");
+  return jsonErr(s.ctx.rid, "Bruk POST.", 405, "METHOD_NOT_ALLOWED");
 }
 

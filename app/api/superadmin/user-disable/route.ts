@@ -3,9 +3,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { writeAudit } from "@/lib/audit/log";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function supabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,7 +14,7 @@ function supabaseAdmin() {
 }
 
 export async function POST(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const body = await req.json().catch(() => ({}));
@@ -22,14 +22,14 @@ export async function POST(req: Request) {
   const disabled = Boolean(body?.disabled);
 
   if (!targetUserId) {
-    return NextResponse.json({ ok: false, error: "BAD_REQUEST" }, { status: 400 });
+    return jsonErr(rid, "Ugyldig input.", 400, "BAD_REQUEST");
   }
 
   const supabase = await supabaseServer();
   const { data: userRes } = await supabase.auth.getUser();
   const actor = userRes?.user ?? null;
 
-  if (!actor) return NextResponse.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
+  if (!actor) return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
 
   const { data: actorProfile } = await supabase
     .from("profiles")
@@ -38,11 +38,11 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (actorProfile?.role !== "superadmin") {
-    return NextResponse.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
+    return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ ok: false, error: "MISSING_SERVICE_ROLE_KEY" }, { status: 500 });
+    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
   }
 
   const admin = supabaseAdmin();
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     .eq("user_id", targetUserId)
     .maybeSingle();
 
-  if (!existing) return NextResponse.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+  if (!existing) return jsonErr(rid, "Fant ikke bruker.", 404, "NOT_FOUND");
 
   const prev = Boolean((existing as any).is_disabled);
 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     .update({ is_disabled: disabled })
     .eq("user_id", targetUserId);
 
-  if (upErr) return NextResponse.json({ ok: false, error: "UPDATE_FAILED", detail: upErr.message }, { status: 500 });
+  if (upErr) return jsonErr(rid, "Kunne ikke oppdatere.", 500, { code: "UPDATE_FAILED", detail: upErr.message });
 
   try {
     await writeAudit({
@@ -80,8 +80,7 @@ export async function POST(req: Request) {
     });
   } catch {}
 
-  return NextResponse.json({ ok: true, prevDisabled: prev, disabled }, { status: 200 });
+  return jsonOk(rid, { ok: true, prevDisabled: prev, disabled }, 200);
 }
-
 
 

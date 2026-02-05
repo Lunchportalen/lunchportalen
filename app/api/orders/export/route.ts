@@ -9,8 +9,7 @@ import type { NextRequest } from "next/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
-import { jsonErr } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 /* =========================================================
@@ -110,7 +109,7 @@ export async function GET(req: NextRequest) {
     if (companyId) q = q.eq("company_id", companyId);
 
     const { data: rows, error } = await q;
-    if (error) return jsonErr(500, rid, "ORDERS_READ_FAILED", "Kunne ikke hente ordre.", errDetail(error));
+    if (error) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "ORDERS_READ_FAILED", detail: errDetail(error) });
 
     const header = [
       "dateISO",
@@ -163,19 +162,16 @@ export async function GET(req: NextRequest) {
     const csv = lines.join("\n");
     const filename = `orders_${dateNO}_${status}${companyId ? `_company_${companyId}` : ""}.csv`;
 
-    const headers = {
-      ...noStoreHeaders(),
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="${filename}"`,
-      "x-lp-rid": rid,
-    } as Record<string, string>;
-
-    return new Response(csv, { status: 200, headers });
+    return jsonOk(rid, { csv, filename, contentType: "text/csv; charset=utf-8", contentDisposition: `attachment; filename="${filename}"` });
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e), errDetail(e));
+    return jsonErr(rid, String(e?.message ?? e), status, code);
   }
 }
+
+
+
+
 
 

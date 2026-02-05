@@ -43,29 +43,26 @@ export async function GET(req: NextRequest) {
     .toLowerCase(); // latest | list
   const limit = clampInt(url.searchParams.get("limit"), 1, 50, 10);
 
-  if (!isUuid(userId)) return jsonErr(400, rid, "BAD_REQUEST", "Mangler/ugyldig user_id.");
+  if (!isUuid(userId)) return jsonErr(rid, "Mangler/ugyldig user_id.", 400, "BAD_REQUEST");
 
   try {
     const sb = await supabaseServer();
 
-    // Tenant lock for company_admin: employee must belong to own company
-    if (scope.role !== "superadmin") {
-      const denyScope = requireCompanyScopeOr403(a.ctx);
-      if (denyScope) return denyScope;
+    const denyScope = requireCompanyScopeOr403(a.ctx);
+    if (denyScope) return denyScope;
 
-      const myCompanyId = String(scope.companyId ?? "").trim();
+    const myCompanyId = String(scope.companyId ?? "").trim();
 
-      const { data: prof, error: pErr } = await sb.from("profiles").select("user_id,company_id,role").eq("user_id", userId).maybeSingle();
+    const { data: prof, error: pErr } = await sb.from("profiles").select("user_id,company_id,role").eq("user_id", userId).maybeSingle();
 
-      if (pErr) return jsonErr(500, rid, "DB_ERROR", "Databasefeil.", pErr);
-      if (!prof) return jsonErr(404, rid, "NOT_FOUND", "Ansatt finnes ikke.");
+    if (pErr) return jsonErr(rid, "Databasefeil.", 500, { code: "DB_ERROR", detail: pErr });
+    if (!prof) return jsonErr(rid, "Ansatt finnes ikke.", 404, "NOT_FOUND");
 
-      if (String((prof as any).company_id ?? "") !== String(myCompanyId)) {
-        return jsonErr(403, rid, "FORBIDDEN", "Ingen tilgang.");
-      }
-      if (String((prof as any).role ?? "").toLowerCase() !== "employee") {
-        return jsonErr(403, rid, "FORBIDDEN", "Kun employee støttes her.");
-      }
+    if (String((prof as any).company_id ?? "") !== String(myCompanyId)) {
+      return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
+    }
+    if (String((prof as any).role ?? "").toLowerCase() !== "employee") {
+      return jsonErr(rid, "Kun employee støttes her.", 403, "FORBIDDEN");
     }
 
     const baseSelect = "id,employee_user_id,company_id,actor_email,actor_user_id,action,created_at,diff";
@@ -78,8 +75,8 @@ export async function GET(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(limit);
 
-      if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente audit.", error);
-      return jsonOk({ ok: true, rid, items: data ?? [] });
+      if (error) return jsonErr(rid, "Kunne ikke hente audit.", 500, { code: "DB_ERROR", detail: error });
+      return jsonOk(rid, { items: data ?? [] });
     }
 
     const { data: row, error } = await sb
@@ -90,12 +87,10 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente audit.", error);
+    if (error) return jsonErr(rid, "Kunne ikke hente audit.", 500, { code: "DB_ERROR", detail: error });
 
-    return jsonOk({ ok: true, rid, latest: row ?? null });
+    return jsonOk(rid, { latest: row ?? null });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

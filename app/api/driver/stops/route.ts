@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
-import { jsonOk, jsonErr, rid as makeRid } from "@/lib/http/respond";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
-
 import { osloTodayISODate, isIsoDate } from "@/lib/date/oslo";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 /* =========================================================
    Helpers
@@ -58,6 +58,12 @@ type Stop = {
   locationName: string | null;
 
   addressLine: string | null;
+  deliveryWhere: string | null;
+  deliveryWhenNote: string | null;
+  deliveryContactName: string | null;
+  deliveryContactPhone: string | null;
+  deliveryWindowFrom: string | null;
+  deliveryWindowTo: string | null;
 
   orderCount: number;
 
@@ -98,7 +104,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = new URL(req.url);
-    const date = safeStr(url.searchParams.get("date")) || osloTodayISODate();
+    const dateQ = safeStr(url.searchParams.get("date"));
+    const today = osloTodayISODate();
+    const date = dateQ || today;
 
     const isoOk =
       typeof isIsoDate === "function"
@@ -106,50 +114,69 @@ export async function GET(req: NextRequest) {
         : /^\d{4}-\d{2}-\d{2}$/.test(date);
 
     if (!isoOk) {
-      return jsonErr(400, ctx, "bad_request", "Invalid date. Use YYYY-MM-DD.", { date });
+      return jsonErr(ctx.rid, "Invalid date. Use YYYY-MM-DD.", 400, { code: "bad_request", detail: { date } });
     }
 
     // ✅ systemrolle → service role (RLS-bypass)
     const role = normRole(ctx?.scope?.role);
     const usingServiceRole = role === "driver" || role === "superadmin";
 
+    if (role === "driver" && date !== today) {
+      return jsonErr(ctx.rid, "Sjåfør kan kun se dagens stopp.", 403, { code: "FORBIDDEN_DATE", detail: { date, today } });
+    }
+
     // NOTE: supabaseAdmin() antas å returnere en klient direkte (ikke Promise)
     const sb = usingServiceRole ? supabaseAdmin() : await supabaseServer();
 
-    // ✅ Brutal sanity: kan vi lese orders i det hele tatt?
-    const { error: pingErr } = await sb.from("orders").select("id").limit(1);
-    if (pingErr) {
-      return jsonErr(500, ctx, "db_error", "Service role/DB read failed at orders ping.", {
-        where: "orders.ping",
-        role,
-        usingServiceRole,
-        message: dbMessage("orders.ping", pingErr),
-        ...errInfo(pingErr),
-      });
+    // 🔒 Tenant scope (profiles.company_id er fasit)
+    const userId = safeStr(ctx?.scope?.userId);
+    if (!userId) return jsonErr(ctx.rid, "Mangler bruker.", 403, "FORBIDDEN");
+
+    const { data: prof, error: profErr } = await loadProfileByUserId(
+      supabaseAdmin() as any,
+      userId,
+      "company_id, location_id, disabled_at, is_active"
+    );
+
+    if (profErr || !prof) {
+      return jsonErr(ctx.rid, "Mangler profil.", 403, { code: "FORBIDDEN", detail: { message: profErr?.message ?? null } });
+    }
+    if ((prof as any).disabled_at || (prof as any).is_active === false) {
+      return jsonErr(ctx.rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
     }
 
+    const companyId = safeStr((prof as any).company_id);
+    const locationId = safeStr((prof as any).location_id);
+    if (!companyId) return jsonErr(ctx.rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
+
     // 1) Orders (uten embed for å unngå FK/relasjon-feil)
-    const { data: orders, error: ordersErr } = await sb
+    let ordersQ = sb
       .from("orders")
       .select("id, date, slot, status, company_id, location_id")
       .eq("date", date)
-      .neq("status", "canceled");
+      .in("status", ["ACTIVE", "QUEUED", "PACKED", "DELIVERED"])
+      .eq("integrity_status", "ok")
+      .eq("company_id", companyId);
+
+    if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
+
+    const { data: orders, error: ordersErr } = await ordersQ;
 
     if (ordersErr) {
-      return jsonErr(500, ctx, "db_error", "Failed to load orders for driver stops.", {
+      return jsonErr(ctx.rid, "Failed to load orders for driver stops.", 500, { code: "db_error", detail: {
         where: "orders.select",
         role,
         usingServiceRole,
         message: dbMessage("orders.select", ordersErr),
         ...errInfo(ordersErr),
-      });
+      } });
     }
 
     const rows: OrderRow[] = (Array.isArray(orders) ? orders : []) as any[];
 
     // ✅ Tom dag er OK (ALLTID stops: [])
     if (rows.length === 0) {
-      return jsonOk(ctx, { date, stops: [] as Stop[] });
+      return jsonOk(ctx.rid, { date, stops: [] as Stop[] });
     }
 
     // 2) Hent company/location metadata via IN
@@ -167,7 +194,7 @@ export async function GET(req: NextRequest) {
       locationIds.length
         ? sb
             .from("company_locations")
-            .select("id, name, address_line1, address_line2, postal_code, city")
+            .select("*")
             .in("id", locationIds)
         : Promise.resolve({ data: [] as any[], error: null as any }),
     ]);
@@ -176,22 +203,22 @@ export async function GET(req: NextRequest) {
     const { data: locs, error: locErr } = locRes as any;
 
     if (compErr) {
-      return jsonErr(500, ctx, "db_error", "Failed to load companies.", {
+      return jsonErr(ctx.rid, "Failed to load companies.", 500, { code: "db_error", detail: {
         where: "companies.select",
         role,
         usingServiceRole,
         message: dbMessage("companies.select", compErr),
         ...errInfo(compErr),
-      });
+      } });
     }
     if (locErr) {
-      return jsonErr(500, ctx, "db_error", "Failed to load company locations.", {
+      return jsonErr(ctx.rid, "Failed to load company locations.", 500, { code: "db_error", detail: {
         where: "company_locations.select",
         role,
         usingServiceRole,
         message: dbMessage("company_locations.select", locErr),
         ...errInfo(locErr),
-      });
+      } });
     }
 
     const companyMap = new Map<string, { id: string; name: string | null }>();
@@ -201,22 +228,13 @@ export async function GET(req: NextRequest) {
       companyMap.set(id, { id, name: c?.name ? safeStr(c.name) : null });
     }
 
-    const locMap = new Map<
-      string,
-      {
-        id: string;
-        name: string | null;
-        address_line1?: string | null;
-        address_line2?: string | null;
-        postal_code?: string | null;
-        city?: string | null;
-      }
-    >();
+    const locMap = new Map<string, Record<string, any>>();
 
     for (const l of (locs ?? []) as any[]) {
       const id = safeStr(l?.id);
       if (!id) continue;
       locMap.set(id, {
+        ...(l as any),
         id,
         name: l?.name ? safeStr(l.name) : null,
         address_line1: l?.address_line1 ? safeStr(l.address_line1) : null,
@@ -227,19 +245,24 @@ export async function GET(req: NextRequest) {
     }
 
     // 3) Delivery confirmations
-    const { data: confs, error: confErr } = await sb
+    let confQ = sb
       .from("delivery_confirmations")
       .select("delivery_date, slot, company_id, location_id, confirmed_at, confirmed_by")
-      .eq("delivery_date", date);
+      .eq("delivery_date", date)
+      .eq("company_id", companyId);
+
+    if (locationId) confQ = confQ.eq("location_id", locationId);
+
+    const { data: confs, error: confErr } = await confQ;
 
     if (confErr) {
-      return jsonErr(500, ctx, "db_error", "Failed to load delivery confirmations.", {
+      return jsonErr(ctx.rid, "Failed to load delivery confirmations.", 500, { code: "db_error", detail: {
         where: "delivery_confirmations.select",
         role,
         usingServiceRole,
         message: dbMessage("delivery_confirmations.select", confErr),
         ...errInfo(confErr),
-      });
+      } });
     }
 
     const confKey = new Map<string, { at: string | null; by: string | null }>();
@@ -272,10 +295,61 @@ export async function GET(req: NextRequest) {
       const companyName = comp?.name ?? null;
       const locationName = loc?.name ?? null;
 
-      const a1 = loc?.address_line1 ? safeStr(loc.address_line1) : "";
-      const a2 = loc?.address_line2 ? safeStr(loc.address_line2) : "";
-      const pc = loc?.postal_code ? safeStr(loc.postal_code) : "";
-      const city = loc?.city ? safeStr(loc.city) : "";
+      const a1 =
+        safeStr((loc as any)?.address_line1) ||
+        safeStr((loc as any)?.address1) ||
+        safeStr((loc as any)?.address) ||
+        safeStr((loc as any)?.street_address) ||
+        "";
+      const a2 =
+        safeStr((loc as any)?.address_line2) ||
+        safeStr((loc as any)?.address2) ||
+        "";
+      const pc =
+        safeStr((loc as any)?.postal_code) ||
+        safeStr((loc as any)?.postcode) ||
+        safeStr((loc as any)?.zip) ||
+        safeStr((loc as any)?.postnummer) ||
+        "";
+      const city =
+        safeStr((loc as any)?.city) ||
+        safeStr((loc as any)?.town) ||
+        safeStr((loc as any)?.poststed) ||
+        "";
+
+      const deliveryJson = (loc as any)?.delivery_json ?? null;
+      const deliveryWhere =
+        safeStr((loc as any)?.delivery_where) ||
+        safeStr((loc as any)?.delivery_point) ||
+        safeStr((loc as any)?.delivery_location) ||
+        safeStr(deliveryJson?.where) ||
+        null;
+      const deliveryWhenNote =
+        safeStr((loc as any)?.delivery_when_note) ||
+        safeStr((loc as any)?.delivery_instructions) ||
+        safeStr((loc as any)?.delivery_note) ||
+        safeStr(deliveryJson?.when_note) ||
+        null;
+      const deliveryContactName =
+        safeStr((loc as any)?.delivery_contact_name) ||
+        safeStr((loc as any)?.contact_name) ||
+        safeStr(deliveryJson?.contact_name) ||
+        null;
+      const deliveryContactPhone =
+        safeStr((loc as any)?.delivery_contact_phone) ||
+        safeStr((loc as any)?.contact_phone) ||
+        safeStr(deliveryJson?.contact_phone) ||
+        null;
+      const deliveryWindowFrom =
+        safeStr((loc as any)?.delivery_window_from) ||
+        safeStr((loc as any)?.window_from) ||
+        safeStr(deliveryJson?.window_from) ||
+        null;
+      const deliveryWindowTo =
+        safeStr((loc as any)?.delivery_window_to) ||
+        safeStr((loc as any)?.window_to) ||
+        safeStr(deliveryJson?.window_to) ||
+        null;
 
       const addressLine =
         safeStr([a1, a2, [pc, city].filter(Boolean).join(" ")].filter(Boolean).join(", ")) ||
@@ -300,6 +374,12 @@ export async function GET(req: NextRequest) {
         locationId,
         locationName,
         addressLine,
+        deliveryWhere,
+        deliveryWhenNote,
+        deliveryContactName,
+        deliveryContactPhone,
+        deliveryWindowFrom,
+        deliveryWindowTo,
         orderCount: 1,
         delivered: Boolean(conf && (conf.at || conf.by)),
         deliveredAt: conf?.at ?? null,
@@ -319,13 +399,12 @@ export async function GET(req: NextRequest) {
     });
 
     // ✅ ALWAYS array
-    return jsonOk(ctx, { date, stops });
+    return jsonOk(ctx.rid, { date, stops });
   } catch (e: any) {
-    return jsonErr(500, ctx, "internal_error", "Unexpected error in driver stops route.", {
+    return jsonErr(ctx.rid, "Unexpected error in driver stops route.", 500, { code: "internal_error", detail: {
       where: "catch-all",
       ...errInfo(e),
-    });
+    } });
   }
 }
-
 

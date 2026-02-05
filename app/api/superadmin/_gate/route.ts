@@ -16,7 +16,7 @@ function denyResponse(s: any): Response {
     if ("res" in s && s.res instanceof Response) return s.res as Response;
   }
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -28,15 +28,12 @@ export async function GET(req: NextRequest): Promise<Response> {
   const deny = requireRoleOr403(ctx, ["superadmin"]);
   if (deny) return deny;
 
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       role: ctx.scope?.role ?? null,
       userId: ctx.scope?.userId ?? null,
       email: ctx.scope?.email ?? null,
-    },
-    200
-  );
+    }, 200);
 }
+

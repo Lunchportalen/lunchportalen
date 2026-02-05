@@ -7,25 +7,15 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
-function normEmail(v: unknown) {
-  return safeStr(v).toLowerCase();
-}
-
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (!e) return null;
-
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no" || e === "sjafor@lunchportalen.no") return "driver";
-
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function normalizeRole(v: unknown): Role {

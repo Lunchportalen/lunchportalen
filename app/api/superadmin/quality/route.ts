@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/requireRole";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export async function GET(req: Request) {
+  const rid = makeRid();
   const guard = await requireRole(["superadmin"]);
-  if (!guard.ok) return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
+  if (!guard.ok) return jsonErr(rid, "Ingen tilgang.", guard.status ?? 400, guard.error);
 
   const url = new URL(req.url);
   const status = url.searchParams.get("status"); // NEW|IN_PROGRESS|RESOLVED|null
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   if (status) q = q.eq("status", status);
 
   const { data, error } = await q;
-  if (error) return NextResponse.json({ ok: false, error: "DB error", detail: error.message }, { status: 500 });
+  if (error) return jsonErr(rid, "Databasefeil.", 500, { code: "DB error", detail: error.message });
 
-  return NextResponse.json({ ok: true, reports: data });
+  return jsonOk(rid, { ok: true, reports: data }, 200);
 }

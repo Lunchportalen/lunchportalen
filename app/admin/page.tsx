@@ -10,9 +10,16 @@ import {
   isAdminContextBlocked,
   type AdminContextBlocked,
 } from "@/lib/admin/loadAdminContext";
+import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
+import { formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
 
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import CommandCenterKpis from "@/components/admin/CommandCenterKpis";
+import PendingInvitesStat from "@/components/admin/PendingInvitesStat";
 
 /* =========================================================
    UI helpers
@@ -25,25 +32,18 @@ type Health = "ok" | "warn" | "bad";
 
 function HealthPill({ health }: { health: Health }) {
   const label = health === "ok" ? "Alt OK" : health === "warn" ? "Krever tiltak" : "Kritisk";
+  const dotClass = health === "ok" ? "bg-emerald-500" : health === "warn" ? "bg-amber-500" : "bg-rose-500";
+  const badgeClass =
+    health === "ok"
+      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+      : health === "warn"
+      ? "bg-amber-50 text-amber-900 border-amber-200"
+      : "bg-rose-50 text-rose-900 border-rose-200";
   return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1",
-        health === "ok" && "bg-emerald-50 text-emerald-800 ring-emerald-200",
-        health === "warn" && "bg-amber-50 text-amber-900 ring-amber-200",
-        health === "bad" && "bg-rose-50 text-rose-900 ring-rose-200"
-      )}
-    >
-      <span
-        className={cx(
-          "h-2 w-2 rounded-full",
-          health === "ok" && "bg-emerald-500",
-          health === "warn" && "bg-amber-500",
-          health === "bad" && "bg-rose-500"
-        )}
-      />
+    <Badge className={cx("gap-2", badgeClass)}>
+      <span className={cx("h-2 w-2 rounded-full", dotClass)} />
       {label}
-    </span>
+    </Badge>
   );
 }
 
@@ -59,49 +59,16 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+    <section className="lp-card lp-card--elevated p-6">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
-          {subtitle ? <p className="mt-1 text-sm text-neutral-600">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-1 text-sm lp-muted">{subtitle}</p> : null}
         </div>
         {right ? <div className="shrink-0">{right}</div> : null}
       </div>
       {children}
     </section>
-  );
-}
-
-function Kpi({
-  label,
-  value,
-  hint,
-  href,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  href?: string;
-}) {
-  const Inner = (
-    <div className="group rounded-2xl bg-neutral-50/70 p-5 ring-1 ring-black/5 transition hover:bg-white hover:shadow-[0_12px_38px_-30px_rgba(0,0,0,.45)]">
-      <div className="text-xs font-semibold tracking-wide text-neutral-600">{label}</div>
-      <div className="mt-2 text-2xl font-extrabold text-neutral-900">{value}</div>
-      {hint ? <div className="mt-2 text-sm text-neutral-600">{hint}</div> : null}
-      {href ? (
-        <div className="mt-4 text-sm font-semibold text-neutral-900 opacity-80 group-hover:opacity-100">
-          Se detaljer →
-        </div>
-      ) : null}
-    </div>
-  );
-
-  return href ? (
-    <Link href={href} className="block">
-      {Inner}
-    </Link>
-  ) : (
-    Inner
   );
 }
 
@@ -116,15 +83,38 @@ function GhostLink({ href, children }: { href: string; children: React.ReactNode
   );
 }
 
-function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
+function SecondaryButtonLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
-    >
-      {children}
-    </Link>
+    <Button variant="secondary" asChild>
+      <Link href={href}>{children}</Link>
+    </Button>
   );
+}
+
+function Divider() {
+  return <div className="my-6 h-px w-full bg-black/10" />;
+}
+
+function isWeekday(iso: string) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const day = d.getUTCDay();
+  return day >= 1 && day <= 5;
+}
+
+function nextDeliveryISO() {
+  let d = osloTodayISODate();
+  for (let i = 0; i < 7; i++) {
+    if (isWeekday(d)) return d;
+    d = addDaysISO(d, 1);
+  }
+  return d;
+}
+
+function formatShortDate(iso: string) {
+  const weekday = formatWeekdayNO(iso);
+  const short = formatDayMonthShortNO(iso);
+  if (!weekday || !short) return iso;
+  return `${weekday.slice(0, 3)} ${short}`;
 }
 
 /* =========================================================
@@ -161,36 +151,37 @@ export default async function AdminCommandCenterPage() {
   // Blocked / gated state
   if (isAdminContextBlocked(ctx)) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-          <BlockedState
-            level={blockedLevel(ctx)}
-            title={blockedTitle(ctx)}
-            body={blockedBody(ctx)}
-            nextSteps={ctx.nextSteps}
-            action={
-              <SupportReportButton
-                reason={ctx.support.reason}
-                companyId={ctx.support.companyId}
-                locationId={ctx.support.locationId}
-              />
-            }
-            meta={[
-              { label: "auth.user.id", value: ctx.dbg.authUserId },
-              { label: "auth.user.email", value: ctx.dbg.authEmail || "—" },
-              { label: "profile.company_id", value: ctx.companyId ?? "—" },
-              { label: "profile.location_id", value: ctx.profile?.location_id ?? "—" },
-              { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "—" },
-              { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
-              ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "—" }] : []),
-              ...(Object.entries(ctx.dbg.q_counts ?? {})
-                .filter(([, v]) => v)
-                .slice(0, 10)
-                .map(([k, v]) => ({ label: `count.${k}`, value: String(v) }))),
-            ]}
-          />
-        </div>
-      </main>
+      <div className="lp-container py-8">
+        <BlockedState
+          level={blockedLevel(ctx)}
+          title={blockedTitle(ctx)}
+          body={blockedBody(ctx)}
+          nextSteps={ctx.nextSteps}
+          action={
+            <SupportReportButton
+              reason={ctx.support.reason}
+              companyId={ctx.support.companyId}
+              locationId={ctx.support.locationId}
+              buttonClassName="lp-btn lp-btn--secondary"
+            />
+          }
+          meta={[
+            { label: "auth.user.id", value: ctx.dbg.authUserId },
+            { label: "auth.user.email", value: ctx.dbg.authEmail || "Ikke tilgjengelig" },
+            { label: "profile.company_id", value: ctx.companyId ?? "Ikke tilgjengelig" },
+            { label: "profile.location_id", value: ctx.profile?.location_id ?? "Ikke tilgjengelig" },
+            { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "Ikke tilgjengelig" },
+            { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
+            ...(ctx.dbg.q_company
+              ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "Ikke tilgjengelig" }]
+              : []),
+            ...(Object.entries(ctx.dbg.q_counts ?? {})
+              .filter(([, v]) => v)
+              .slice(0, 10)
+              .map(([k, v]) => ({ label: `count.${k}`, value: String(v) }))),
+          ]}
+        />
+      </div>
     );
   }
 
@@ -199,153 +190,181 @@ export default async function AdminCommandCenterPage() {
   const counts = ctx.counts;
 
   /**
-   * Health heuristics (rolig, ikke støy):
-   * - Hvis firma er ACTIVE (allerede gated), så er vi "ok".
-   * - Hvis ansatteDisabled er høyt, kan vi vurdere "warn" (valgfritt).
+   * 10/10 health:
+   * - ACTIVE er allerede gated
+   * - warn hvis deaktiverte ansatte finnes
    */
   const health: Health = counts.employeesDisabled > 0 ? "warn" : "ok";
 
-  // KPI placeholders (til du har API / data)
-  const nextDeliveryLabel = "I morgen";
-  const nextDeliveryOrders = "—"; // TODO: koble på /api/admin/orders/next
-  const costLabel = "Siste 14 dager";
-  const costAmount = "—"; // TODO: koble på /api/admin/invoices/summary
-  const sustainabilityValue = "—"; // TODO: koble på /api/admin/sustainability/summary
+  /**
+   * 10/10: ingen tomme KPI-er.
+   * Vi viser konkrete sannheter som finnes nå, uten å fake data.
+   */
+  const nextDelivery = nextDeliveryISO();
+  const nextDeliveryValue =
+    counts.employeesTotal > 0 ? `Neste levering · ${formatShortDate(nextDelivery)}` : "Ingen ansatte registrert ennå";
+
+  const nextDeliveryHint = "Cut-off: kl. 08:00 (Europe/Oslo).";
+
+  /**
+   * 10/10: ÉN primær handling.
+   * Her: Ordreoversikt (fordi det er den mest beslutningskritiske flaten for admin).
+   */
+  const primaryHref = "/admin/orders";
+  const primaryLabel = "Åpne ordreoversikt";
+  const neonHref = "/week";
+  const neonLabel = "Bestill lunsj";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        {/* Topbar */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {companyName} · {ctx.profile.location_id ? "Lokasjon valgt" : "Lokasjon ikke satt"}
-            </div>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Command Center</h1>
-            <p className="mt-2 text-neutral-600">Rask oversikt, tydelige rammer og kontroll — uten støy.</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <HealthPill health={health} />
-            <GhostLink href="/admin/agreement">Avtale</GhostLink>
-            <GhostLink href="/admin/people">Ansatte</GhostLink>
-            <GhostLink href="/admin/history">Historikk</GhostLink>
-            <GhostLink href="/admin/locations">Lokasjoner</GhostLink>
-            <PrimaryLink href="/admin/orders">Ordreoversikt</PrimaryLink>
-          </div>
+    <AdminPageShell
+      title="Command Center"
+      subtitle="Kontroll, status og rammer — uten støy."
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <HealthPill health={health} />
+          <GhostLink href="/admin/agreement">Avtale</GhostLink>
+          <GhostLink href="/admin/people">Ansatte</GhostLink>
+          <GhostLink href="/admin/insights">Insights</GhostLink>
+          <GhostLink href="/admin/history">Historikk</GhostLink>
+          <GhostLink href="/admin/locations">Lokasjoner</GhostLink>
         </div>
+      }
+    >
+      <div className="text-xs font-semibold tracking-wide lp-muted">
+        Admin · {companyName} · {ctx.profile.location_id ? "Lokasjon valgt" : "Lokasjon ikke satt"}
+      </div>
 
-        {/* Hero KPIs */}
+      <div className="mt-6">
         <Card
-          title="Oversikt"
-          subtitle="Dette er det eneste du trenger å se først."
+          title="Systemstatus"
+          subtitle="Dette er fasit akkurat nå. Én sannhetskilde, ingen manuelle unntak."
           right={
-            <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-black/10">
-              Firma: ACTIVE
-            </span>
+            <Badge>ACTIVE</Badge>
           }
         >
-          <div className="grid gap-4 md:grid-cols-3">
-            <Kpi
-              label="Neste levering"
-              value={`${nextDeliveryLabel} · ${nextDeliveryOrders} bestillinger`}
-              hint="Cut-off: kl. 08:00 (Europe/Oslo)"
-              href="/admin/orders"
-            />
-            <Kpi
-              label={`Kostnad (${costLabel})`}
-              value={costAmount}
-              hint="Basert på registrerte bestillinger (read-only)."
-              href="/admin/history"
-            />
-            <Kpi
-              label="Bærekraft"
-              value={sustainabilityValue}
-              hint="Matsvinn og kontroll (kommer)."
-              href="/admin/history"
-            />
-          </div>
+          <CommandCenterKpis
+            nextDeliveryLabel={nextDeliveryValue}
+            cutoffLabel={nextDeliveryHint}
+            employeesActive={counts.employeesActive}
+            employeesTotal={counts.employeesTotal}
+          />
 
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            <GhostLink href="/api/admin/invoices/csv">Last ned fakturagrunnlag (CSV)</GhostLink>
-            <GhostLink href="/admin/history">Eksport & historikk</GhostLink>
-            <GhostLink href="/admin/people">Administrer ansatte</GhostLink>
+          <Divider />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold text-neutral-900">Neste handling</div>
+              <div className="mt-1 text-sm lp-muted">
+                Åpne ordreoversikt for å se status på kommende leveranser og rammer.
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <SecondaryButtonLink href={primaryHref}>{primaryLabel}</SecondaryButtonLink>
+              <SecondaryButtonLink href="/admin/invite">Inviter ansatte</SecondaryButtonLink>
+              <GhostLink href="/api/admin/invoices/csv">Last ned fakturagrunnlag</GhostLink>
+            </div>
           </div>
         </Card>
+      </div>
 
-        {/* People summary */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card
-              title="Ansatte"
-              subtitle="Dette er admin-ansvar. Ansatte styrer bestilling/avbestilling selv."
-              right={
-                <div className="flex flex-wrap items-center gap-2">
-                  <GhostLink href="/admin/people">Åpne People</GhostLink>
-                  <PrimaryLink href="/admin/invite">Inviter</PrimaryLink>
-                </div>
-              }
-            >
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-                  <div className="text-xs font-semibold text-neutral-600">Totalt</div>
-                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesTotal}</div>
-                </div>
-                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-                  <div className="text-xs font-semibold text-neutral-600">Aktive</div>
-                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesActive}</div>
-                </div>
-                <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-                  <div className="text-xs font-semibold text-neutral-600">Deaktivert</div>
-                  <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesDisabled}</div>
-                </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card
+            title="Ansatte"
+            subtitle="Admin oppretter og vedlikeholder brukere. Ansatte bestiller/avbestiller selv innenfor rammer."
+            right={
+              <div className="flex flex-wrap items-center gap-2">
+                <GhostLink href="/admin/people">Åpne ansatte</GhostLink>
+                <SecondaryButtonLink href="/admin/invite">Inviter</SecondaryButtonLink>
+                <GhostLink href="/admin/invite">CSV bulk</GhostLink>
               </div>
-
-              {counts.employeesDisabled > 0 ? (
-                <div className="mt-5 rounded-2xl bg-amber-50/70 p-4 ring-1 ring-amber-200/60">
-                  <div className="text-sm font-semibold text-neutral-900">Anbefaling</div>
-                  <p className="mt-1 text-sm text-neutral-700">
-                    Du har deaktiverte ansatte. Hold listen ryddig for bedre kontroll og riktig tilgang.
-                  </p>
-                  <div className="mt-3">
-                    <GhostLink href="/admin/people">Se ansatte</GhostLink>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-5 rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
-                  <div className="text-sm font-semibold text-neutral-900">Alt ser ryddig ut</div>
-                  <p className="mt-1 text-sm text-neutral-600">Ingen deaktiverte ansatte akkurat nå.</p>
-                </div>
-              )}
-            </Card>
-          </div>
-
-          {/* Exports + Support */}
-          <div className="space-y-6">
-            <Card title="Fakturagrunnlag" subtitle="CSV for økonomi — ferdig formatert.">
-              <div className="flex flex-col gap-3">
-                <PrimaryLink href="/api/admin/invoices/csv">Last ned (siste 14 dager)</PrimaryLink>
-                <div className="text-sm text-neutral-600">
-                  Historikk er lesemodus. Cut-off og avtale kan ikke overstyres manuelt.
-                </div>
-              </div>
-            </Card>
-
-            <Card title="Support" subtitle="Hvis noe ikke stemmer, send en rapport med én gang.">
-              <div className="flex flex-col gap-3">
-                <SupportReportButton
-                  reason="COMPANY_ADMIN_COMMAND_CENTER_SUPPORT_REPORT"
-                  companyId={ctx.companyId}
-                  locationId={ctx.profile.location_id ?? null}
+            }
+          >
+            <div className="mb-4 grid gap-3 md:grid-cols-2">
+              <form action="/admin/people" method="get" className="flex items-center gap-2">
+                <input
+                  name="q"
+                  placeholder="Hurtig-søk navn, e-post"
+                  className="w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-black/10 focus:outline-none"
                 />
-                <div className="text-sm text-neutral-600">
-                  Rapporten inkluderer firma, lokasjon og tidspunkt — så drift kan handle raskt.
+                <button className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-black/10">
+                  Søk
+                </button>
+              </form>
+              <div className="flex items-center justify-end gap-3 text-xs text-neutral-600">
+                <PendingInvitesStat />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                <div className="text-xs font-semibold text-neutral-600">Totalt</div>
+                <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesTotal}</div>
+              </div>
+              <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                <div className="text-xs font-semibold text-neutral-600">Aktive</div>
+                <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesActive}</div>
+              </div>
+              <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                <div className="text-xs font-semibold text-neutral-600">Deaktivert</div>
+                <div className="mt-2 text-2xl font-extrabold text-neutral-900">{counts.employeesDisabled}</div>
+              </div>
+            </div>
+
+            {counts.employeesDisabled > 0 ? (
+              <div className="mt-5 rounded-2xl bg-amber-50/70 p-4 ring-1 ring-amber-200/60">
+                <div className="text-sm font-semibold text-neutral-900">Anbefaling</div>
+                <p className="mt-1 text-sm text-neutral-700">
+                  Du har deaktiverte ansatte. Hold listen ryddig for bedre kontroll og riktig tilgang.
+                </p>
+                <div className="mt-3">
+                  <GhostLink href="/admin/people">Se ansatte</GhostLink>
                 </div>
-                <details>
-                  <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
-                    Vis teknisk info (kun ved behov)
-                  </summary>
-                  <pre className="mt-3 max-h-64 overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs text-white/85 ring-1 ring-black/10">
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+                <div className="text-sm font-semibold text-neutral-900">Alt ser ryddig ut</div>
+                <p className="mt-1 text-sm lp-muted">Ingen deaktiverte ansatte akkurat nå.</p>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card title="Min lunsj" subtitle="Bestill for deg selv. Cut-off 08:00 (Europe/Oslo).">
+            <div className="flex flex-col gap-3">
+              <Button asChild className="lp-neon-focus lp-neon-glow-hover">
+                <Link href={neonHref}>{neonLabel}</Link>
+              </Button>
+              <div className="text-sm lp-muted">Avtalen styrer hvilke dager som er tilgjengelige.</div>
+            </div>
+          </Card>
+
+          <Card title="Fakturagrunnlag" subtitle="CSV for økonomi — ferdig formatert.">
+            <div className="flex flex-col gap-3">
+              <Badge variant="outline">🔒 Låst</Badge>
+              <SecondaryButtonLink href="/api/admin/invoices/csv">Last ned (CSV)</SecondaryButtonLink>
+              <div className="text-sm lp-muted">Historikk kan ikke endres.</div>
+            </div>
+          </Card>
+
+          <Card title="Support" subtitle="Hvis noe ikke stemmer, send en rapport med én gang.">
+            <div className="flex flex-col gap-3">
+              <SupportReportButton
+                reason="COMPANY_ADMIN_COMMAND_CENTER_SUPPORT_REPORT"
+                companyId={ctx.companyId}
+                locationId={ctx.profile.location_id ?? null}
+              />
+              <div className="text-sm lp-muted">
+                Rapporten inkluderer firma, lokasjon og tidspunkt — så drift kan handle raskt.
+              </div>
+
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
+                  Vis teknisk info (kun ved behov)
+                </summary>
+                <pre className="mt-3 max-h-64 overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs text-white/85 ring-1 ring-black/10">
 {JSON.stringify(
   {
     companyId: ctx.companyId,
@@ -357,21 +376,22 @@ export default async function AdminCommandCenterPage() {
   null,
   2
 )}
-                  </pre>
-                </details>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
-          <span>Command Center viser kun beslutningsverdi. Detaljer ligger på undersider.</span>
-          <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/week">
-            Til ansattvisning →
-          </Link>
+                </pre>
+              </details>
+            </div>
+          </Card>
         </div>
       </div>
-    </main>
+
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
+        <span>Command Center viser kun beslutningsverdi. Detaljer ligger på undersider.</span>
+        <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/week">
+          Til ansattvisning →
+        </Link>
+      </div>
+    </AdminPageShell>
   );
 }
+
+
+

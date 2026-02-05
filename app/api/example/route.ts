@@ -70,7 +70,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
 
   const rid = safeStr(s?.ctx?.rid) || "rid_missing";
-  return jsonErr(401, { rid }, "UNAUTHORIZED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHORIZED");
 }
 
 /* =========================================================
@@ -95,21 +95,17 @@ export async function GET(req: NextRequest): Promise<Response> {
   const limit = clampInt(qInt(req, "limit", 50), 1, 200);
 
   if (!action) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Mangler action i query (?action=...).");
+    return jsonErr(ctx.rid, "Mangler action i query (?action=...).", 400, "BAD_REQUEST");
   }
 
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       method: "GET",
       action,
       debug,
       limit,
-    },
-    200
-  );
+    }, 200);
 }
 
 /* =========================================================
@@ -133,17 +129,15 @@ export async function POST(req: NextRequest): Promise<Response> {
   const bodyIsObject = !!body && typeof body === "object" && !Array.isArray(body);
 
   if (!bodyIsObject) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Ugyldig body.", {
+    return jsonErr(ctx.rid, "Ugyldig body.", 400, { code: "BAD_REQUEST", detail: {
       bodyType: Array.isArray(body) ? "array" : typeof body,
-    });
+    } });
   }
 
   const action = safeStr((body as any)?.action);
-  if (!action) return jsonErr(400, ctx, "BAD_REQUEST", "Mangler action.");
+  if (!action) return jsonErr(ctx.rid, "Mangler action.", 400, "BAD_REQUEST");
 
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       method: "POST",
@@ -156,7 +150,6 @@ export async function POST(req: NextRequest): Promise<Response> {
         email: ctx.scope?.email ?? null,
       },
       receivedKeys: Object.keys(body as any),
-    },
-    200
-  );
+    }, 200);
 }
+

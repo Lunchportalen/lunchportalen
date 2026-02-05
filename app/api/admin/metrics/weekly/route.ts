@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   if (denyScope) return denyScope;
 
   const companyId = safeStr(scope.companyId);
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const sb = await supabaseServer();
@@ -63,11 +63,11 @@ export async function GET(req: NextRequest) {
     // Company active gate
     const { data: company, error: compErr } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
 
-    if (compErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: compErr.message });
-    if (!company) return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.");
+    if (compErr) return jsonErr(rid, "Kunne ikke lese firma.", 500, { code: "COMPANY_READ_FAILED", detail: { message: compErr.message } });
+    if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "COMPANY_NOT_FOUND");
 
     const cStatus = normCompanyStatus((company as any).status);
-    if (cStatus !== "ACTIVE") return jsonErr(403, rid, "COMPANY_NOT_ACTIVE", "Firma er ikke aktivt.", { status: cStatus });
+    if (cStatus !== "ACTIVE") return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: cStatus } });
 
     // weeks: default 8 (clamped 4..26). Optional: ?weeks=4/8/12/26
     const url = new URL(req.url);
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
       .gte("date", fromISO)
       .lt("date", toISO);
 
-    if (error) return jsonErr(500, rid, "QUERY_FAILED", "Kunne ikke hente ukeserie.", { message: error.message });
+    if (error) return jsonErr(rid, "Kunne ikke hente ukeserie.", 500, { code: "QUERY_FAILED", detail: { message: error.message } });
 
     // Init buckets
     const buckets = new Map<string, WeekPoint>();
@@ -122,9 +122,7 @@ export async function GET(req: NextRequest) {
       { orders: 0, cancelled: 0 }
     );
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       weeks,
       range: { from: fromISO, to: toISO },
@@ -133,8 +131,6 @@ export async function GET(req: NextRequest) {
       meta: { status_cancelled_value: "CANCELLED", weekStart: "Monday (Europe/Oslo)" },
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

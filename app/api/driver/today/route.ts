@@ -8,6 +8,7 @@ import { type NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 const allowedRoles = ["driver", "superadmin"] as const;
 
@@ -68,14 +69,37 @@ export async function GET(req: NextRequest) {
   // ?date=YYYY-MM-DD (valgfritt)
   const u = new URL(req.url);
   const qDate = asIsoDate(u.searchParams.get("date"));
-  const date = qDate ?? osloTodayISODate();
+  const today = osloTodayISODate();
+  const role = safeStr(scope?.role).toLowerCase();
+  if (role === "driver" && qDate && qDate !== today) {
+    return jsonErr(rid, "Sjåfør kan kun hente dagens leveranser.", 403, { code: "FORBIDDEN_DATE", detail: { date: qDate, today } });
+  }
+  const date = role === "driver" ? today : qDate ?? today;
 
   let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Service role mangler.", { detail: safeStr(e?.message ?? e) });
+    return jsonErr(rid, "Service role mangler.", 500, { code: "CONFIG_ERROR", detail: { detail: safeStr(e?.message ?? e) } });
   }
+
+  const userId = safeStr((s as any).ctx?.scope?.userId);
+  if (!userId) return jsonErr(rid, "Mangler bruker.", 403, "FORBIDDEN");
+
+  const { data: prof, error: profErr } = await loadProfileByUserId(
+    admin as any,
+    userId,
+    "company_id, location_id, disabled_at, is_active"
+  );
+
+  if (profErr || !prof) return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
+  if ((prof as any).disabled_at || (prof as any).is_active === false) {
+    return jsonErr(rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
+  }
+
+  const companyId = safeStr((prof as any).company_id);
+  const locationId = safeStr((prof as any).location_id);
+  if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
 
   // OBS: orders schema-fasit hos dere har ikke "tier".
   // Vi prøver "tier" (hvis dere har lagt det til), ellers bruker vi slot som fallback.
@@ -83,11 +107,17 @@ export async function GET(req: NextRequest) {
   // Derfor: prøv med tier først, og fallback til uten tier ved column-error.
   let orders: any[] = [];
   try {
-    const { data, error } = await admin
+    let q = admin
       .from("orders")
       .select("company_id,location_id,date,slot,tier,status")
       .eq("date", date)
-      .eq("status", "ACTIVE");
+      .eq("status", "ACTIVE")
+      .eq("integrity_status", "ok")
+      .eq("company_id", companyId);
+
+    if (locationId) q = q.eq("location_id", locationId);
+
+    const { data, error } = await q;
 
     if (error) {
       // fallback ved "column tier does not exist"
@@ -96,25 +126,31 @@ export async function GET(req: NextRequest) {
         msg.includes("column") && msg.includes("tier") && (msg.includes("does not exist") || msg.includes("not exist"));
 
       if (!maybeMissingTier) {
-        return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ordre for sjåførvisning.", {
+        return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: {
           message: (error as any).message,
           code: (error as any).code,
           detail: (error as any).details,
-        });
+        } });
       }
 
-      const { data: data2, error: error2 } = await admin
+      let q2 = admin
         .from("orders")
         .select("company_id,location_id,date,slot,status")
         .eq("date", date)
-        .eq("status", "ACTIVE");
+        .eq("status", "ACTIVE")
+        .eq("integrity_status", "ok")
+        .eq("company_id", companyId);
+
+      if (locationId) q2 = q2.eq("location_id", locationId);
+
+      const { data: data2, error: error2 } = await q2;
 
       if (error2) {
-        return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ordre for sjåførvisning.", {
+        return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: {
           message: (error2 as any).message,
           code: (error2 as any).code,
           detail: (error2 as any).details,
-        });
+        } });
       }
 
       orders = data2 ?? [];
@@ -122,7 +158,7 @@ export async function GET(req: NextRequest) {
       orders = data ?? [];
     }
   } catch (e: any) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ordre for sjåførvisning.", { detail: safeStr(e?.message ?? e) });
+    return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: { detail: safeStr(e?.message ?? e) } });
   }
 
   const rows = orders ?? [];
@@ -148,17 +184,17 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (companiesRes.error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firmaer.", {
+    return jsonErr(rid, "Kunne ikke hente firmaer.", 500, { code: "DB_ERROR", detail: {
       message: companiesRes.error.message,
       code: companiesRes.error.code,
-    });
+    } });
   }
 
   if (locationsRes.error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", {
+    return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: {
       message: locationsRes.error.message,
       code: locationsRes.error.code,
-    });
+    } });
   }
 
   const companies = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
@@ -217,7 +253,7 @@ export async function GET(req: NextRequest) {
     return a.locationName.localeCompare(b.locationName, "nb");
   });
 
-  return jsonOk({ ok: true, rid, date, deliveries } satisfies ApiOk, 200);
+  return jsonOk(rid, { date, deliveries } satisfies Omit<ApiOk, "ok" | "rid">);
 }
 
 

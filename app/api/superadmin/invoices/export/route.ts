@@ -5,10 +5,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-
-function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
 
 function isUuid(v: any) {
   return (
@@ -24,28 +22,28 @@ function csvEscape(v: any) {
 }
 
 export async function GET(req: Request) {
-  
+  const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
   const url = new URL(req.url);
   const runId = url.searchParams.get("runId");
   const format = (url.searchParams.get("format") ?? "json").toLowerCase();
 
   if (!runId || !isUuid(runId)) {
-    return jsonError(400, "BAD_RUN_ID", "runId må være en gyldig UUID");
+    return jsonErr(rid, "runId må være en gyldig UUID", 400, "BAD_RUN_ID");
   }
 
   const supabase = await supabaseServer();
 
   // Autentisering/rolle: superadmin
   const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(401, "NOT_AUTHENTICATED", "Ikke innlogget");
+  if (userErr || !userData.user) return jsonErr(rid, "Ikke innlogget", 401, "NOT_AUTHENTICATED");
 
   const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return jsonError(403, "FORBIDDEN", "Kun superadmin");
+  if (role !== "superadmin") return jsonErr(rid, "Kun superadmin", 403, "FORBIDDEN");
 
   // Hent eksport fra DB-funksjon
   const { data, error } = await supabase.rpc("tripletex_export_by_run", { p_run_id: runId });
-  if (error) return jsonError(500, "RPC_FAILED", "Kunne ikke hente eksportgrunnlag", error);
+  if (error) return jsonErr(rid, "Kunne ikke hente eksportgrunnlag", 500, { code: "RPC_FAILED", detail: error });
 
   const rows = (data ?? []) as Array<{
     run_id: string;
@@ -103,13 +101,12 @@ export async function GET(req: Request) {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="tripletex_export_${runId}.csv"`,
-        "Cache-Control": "no-store",
+        ...noStoreHeaders(),
+        "x-lp-rid": rid,
       },
     });
   }
 
-  return NextResponse.json({ ok: true, runId, rows }, { status: 200 });
+  return jsonOk(rid, { runId, rows });
 }
-
-
 

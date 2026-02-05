@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 1) Scope
   const a = await scopeOr401(req);
-  if (a instanceof Response) return a;
+  if (a.ok === false) return a.res;
   const ctx = a.ctx;
 
   // 2) Role gate (company_admin only)
@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
   const companyId = safeStr(ctx.scope.companyId);
   const actorId = safeStr(ctx.scope.userId);
 
-  if (!companyId) return jsonErr(ctx, "missing_company", "Mangler company_id i scope.");
-  if (!actorId) return jsonErr(ctx, "not_authenticated", "Ikke innlogget.");
+  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  if (!actorId) return jsonErr(ctx.rid, "Ikke innlogget.", 400, "not_authenticated");
 
   // 4) Body
   const body = await readJson(req);
@@ -70,12 +70,12 @@ export async function POST(req: NextRequest) {
   const email = normEmail(body?.email);
 
   if (!inviteId && !email) {
-    return jsonErr(ctx, "bad_request", "Mangler inviteId eller email.", {
+    return jsonErr(ctx.rid, "Mangler inviteId eller email.", 400, { code: "bad_request", detail: {
       required: ["inviteId OR email"],
-    });
+    } });
   }
   if (email && !isEmail(email)) {
-    return jsonErr(ctx, "bad_request", "Ugyldig e-post.", { email });
+    return jsonErr(ctx.rid, "Ugyldig e-post.", 400, { code: "bad_request", detail: { email } });
   }
 
   try {
@@ -96,13 +96,13 @@ export async function POST(req: NextRequest) {
     const { data: found, error: findErr } = await q.maybeSingle<InviteRow>();
 
     if (findErr) {
-      return jsonErr(ctx, "db_error", "Kunne ikke hente invitasjon.", { message: findErr.message });
+      return jsonErr(ctx.rid, "Kunne ikke hente invitasjon.", 400, { code: "db_error", detail: { message: findErr.message } });
     }
     if (!found) {
-      return jsonErr(ctx, "not_found", "Fant ingen aktiv invitasjon å sende på nytt.", {
+      return jsonErr(ctx.rid, "Fant ingen aktiv invitasjon å sende på nytt.", 400, { code: "not_found", detail: {
         inviteId: inviteId || null,
         email: email || null,
-      });
+      } });
     }
 
     // 6) Generate new token (we store token_hash; token returned to UI)
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       .is("used_at", null);
 
     if (updErr) {
-      return jsonErr(ctx, "db_error", "Kunne ikke oppdatere invitasjon.", { message: updErr.message });
+      return jsonErr(ctx.rid, "Kunne ikke oppdatere invitasjon.", 400, { code: "db_error", detail: { message: updErr.message } });
     }
 
     // 8) Build URL (UI can copy / or you can enqueue mail elsewhere)
@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
     // (Optional) If you have an outbox table, enqueue here. We don't assume it exists.
     // If you want mail-outbox, tell me which table + columns.
 
-    return jsonOk(ctx, {
+    return jsonOk(ctx.rid, {
       ok: true,
       companyId,
       invite: {
@@ -165,8 +165,6 @@ export async function POST(req: NextRequest) {
       note: "Invitasjonen er fornyet. Send lenken videre (eller koble på e-post-outbox).",
     });
   } catch (e: any) {
-    return jsonErr(ctx, "server_error", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(ctx.rid, "Uventet feil.", 400, { code: "server_error", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

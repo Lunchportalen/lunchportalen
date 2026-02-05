@@ -6,8 +6,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { rid as makeRid } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -23,19 +22,7 @@ function errDetail(e: any) {
   }
 }
 
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  const body = { ok: false, rid, error, message, detail: detail ?? undefined };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
-function jsonOk(rid: string, body: any, status = 200) {
-  return new Response(JSON.stringify({ ...body, rid }), {
-    status,
-    headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
-  });
-}
+ 
 
 export async function GET(req: NextRequest) {
   
@@ -45,7 +32,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const code = safeStr(url.searchParams.get("code"));
-    if (!code) return jsonErr(400, rid, "missing_code", "Mangler invitasjonskode.");
+    if (!code) return jsonErr(rid, "Mangler invitasjonskode.", 400, "missing_code");
 
     const admin = supabaseAdmin();
 
@@ -56,31 +43,28 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (error) {
-      return jsonErr(500, rid, "db_error", "Kunne ikke slå opp invitasjon.", errDetail(error));
+      return jsonErr(rid, "Kunne ikke slå opp invitasjon.", 500, { code: "db_error", detail: errDetail(error) });
     }
-    if (!row) return jsonErr(404, rid, "not_found", "Invitasjonslenken finnes ikke.");
-    if ((row as any).revoked_at) return jsonErr(410, rid, "revoked", "Invitasjonslenken er ikke lenger aktiv.");
+    if (!row) return jsonErr(rid, "Invitasjonslenken finnes ikke.", 404, "not_found");
+    if ((row as any).revoked_at) return jsonErr(rid, "Invitasjonslenken er ikke lenger aktiv.", 410, "revoked");
 
     const companyJoin = (row as any).companies;
     const companyObj = Array.isArray(companyJoin) ? companyJoin[0] : companyJoin;
 
-    if (!companyObj?.id) return jsonErr(404, rid, "company_missing", "Fant ikke firmaet bak lenken.");
+    if (!companyObj?.id) return jsonErr(rid, "Fant ikke firmaet bak lenken.", 404, "company_missing");
 
     // hard stop hvis firma ikke er ACTIVE
     const status = safeStr(companyObj.status).toLowerCase();
     if (status && status !== "active") {
-      return jsonErr(403, rid, "company_inactive", "Firmaet er ikke aktivt, og kan ikke ta imot ansatte nå.", {
+      return jsonErr(rid, "Firmaet er ikke aktivt, og kan ikke ta imot ansatte nå.", 403, { code: "company_inactive", detail: {
         status,
-      });
+      } });
     }
 
     return jsonOk(rid, {
-      ok: true,
       company: { id: companyObj.id, name: companyObj.name ?? null, status: companyObj.status ?? null },
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "server_error", "Uventet feil ved oppslag av invitasjon.", errDetail(e));
+    return jsonErr(rid, "Uventet feil ved oppslag av invitasjon.", 500, { code: "server_error", detail: errDetail(e) });
   }
 }
-
-

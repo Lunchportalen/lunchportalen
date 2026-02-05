@@ -46,7 +46,7 @@ function denyResponse(s: any): Response {
 
   const rid = safeStr(s?.ctx?.rid) || "rid_missing";
   // NB: jsonErr-signaturen deres brukes begge veier (ctx eller {rid})
-  return jsonErr(401, { rid }, "UNAUTHENTICATED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 /* =========================================================
@@ -97,10 +97,10 @@ export async function GET(req: NextRequest): Promise<Response> {
         .eq("status", st);
 
       if (error) {
-        return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke hente status-oversikt.", {
+        return jsonErr(ctx.rid, "Kunne ikke hente status-oversikt.", 500, { code: "DB_ERROR", detail: {
           status: st,
           error,
-        });
+        } });
       }
 
       counts[st] = Number(count ?? 0);
@@ -108,20 +108,16 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     const total = STATUSES.reduce((sum, st) => sum + counts[st], 0);
 
-    return jsonOk(
-      ctx,
-      {
+    return jsonOk(ctx.rid, {
         ok: true,
         rid: ctx.rid,
         total,
         counts,
-      },
-      200
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke hente status-oversikt.", {
+    return jsonErr(ctx.rid, "Kunne ikke hente status-oversikt.", 500, { code: "SERVER_ERROR", detail: {
       message: safeStr(e?.message ?? e),
-    });
+    } });
   }
 }
 
@@ -148,10 +144,10 @@ export async function POST(req: NextRequest): Promise<Response> {
     const statusRaw = safeStr(body?.status).toLowerCase();
 
     if (!companyId) {
-      return jsonErr(400, ctx, "BAD_INPUT", "Mangler companyId.");
+      return jsonErr(ctx.rid, "Mangler companyId.", 400, "BAD_INPUT");
     }
     if (!isCompanyStatus(statusRaw)) {
-      return jsonErr(400, ctx, "BAD_INPUT", "Ugyldig status.");
+      return jsonErr(ctx.rid, "Ugyldig status.", 400, "BAD_INPUT");
     }
 
     const admin = supabaseAdmin();
@@ -164,15 +160,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       .maybeSingle();
 
     if (error) {
-      return jsonErr(500, ctx, "DB_ERROR", "Kunne ikke oppdatere firmastatus.", { error });
+      return jsonErr(ctx.rid, "Kunne ikke oppdatere firmastatus.", 500, { code: "DB_ERROR", detail: { error } });
     }
     if (!data?.id) {
-      return jsonErr(404, ctx, "NOT_FOUND", "Firma ikke funnet.");
+      return jsonErr(ctx.rid, "Firma ikke funnet.", 404, "NOT_FOUND");
     }
 
-    return jsonOk(
-      ctx,
-      {
+    return jsonOk(ctx.rid, {
         ok: true,
         rid: ctx.rid,
         data: {
@@ -180,13 +174,12 @@ export async function POST(req: NextRequest): Promise<Response> {
           status: safeStr((data as any).status).toLowerCase(),
           updated_at: safeStr((data as any).updated_at),
         },
-      },
-      200
-    );
+      }, 200);
   } catch (e: any) {
-    return jsonErr(500, ctx, "SERVER_ERROR", "Kunne ikke oppdatere firmastatus.", {
+    return jsonErr(ctx.rid, "Kunne ikke oppdatere firmastatus.", 500, { code: "SERVER_ERROR", detail: {
       message: safeStr(e?.message ?? e),
-    });
+    } });
   }
 }
+
 

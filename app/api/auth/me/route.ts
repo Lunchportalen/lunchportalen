@@ -4,18 +4,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 const AUTH_TIMEOUT_MS = 1500;
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 export async function GET() {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `me_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const supabase = await supabaseServer();
@@ -29,12 +26,7 @@ export async function GET() {
 
     const user = userRes.data?.user;
 
-    if (!user) {
-      return NextResponse.json(
-        { ok: false, rid, error: "not_authenticated", user: null },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
-    }
+    if (!user) return jsonErr(rid, "Ikke innlogget.", 401, { code: "not_authenticated", detail: { user: null } });
 
     const profileRes = (await Promise.race([
       supabase
@@ -51,26 +43,19 @@ export async function GET() {
 
     const profile = profileRes?.data ?? null;
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        user: {
-          id: user.id,
-          email: user.email ?? null,
-          role: (profile?.role as Role) || "employee",
-          companyId: profile?.company_id ?? null,
-        },
+    return jsonOk(rid, {
+      ok: true,
+      rid,
+      user: {
+        id: user.id,
+        email: user.email ?? null,
+        role: (profile?.role as Role) || "employee",
+        companyId: profile?.company_id ?? null,
       },
-      { status: 200, headers: { "Cache-Control": "no-store" } }
-    );
+    }, 200);
   } catch {
-    return NextResponse.json(
-      { ok: false, rid, error: "auth_check_failed", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } }
-    );
+    return jsonErr(rid, "Kunne ikke verifisere innlogging.", 401, { code: "auth_check_failed", detail: { user: null } });
   }
 }
-
 
 

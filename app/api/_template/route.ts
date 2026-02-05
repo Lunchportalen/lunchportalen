@@ -45,7 +45,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
 
   const rid = safeStr(s?.ctx?.rid) || "rid_missing";
-  return jsonErr(401, { rid }, "UNAUTHORIZED", "Du må være innlogget.");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHORIZED");
 }
 
 /* =========================================================
@@ -72,16 +72,12 @@ export async function GET(req: NextRequest): Promise<Response> {
   const example = safeStr(q.get("example")) || null;
 
   // Standard OK-svar: eksplisitt ok+rid (ikke avhengig av jsonOk-injeksjon)
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       method: "GET",
       example,
-    },
-    200
-  );
+    }, 200);
 }
 
 /* =========================================================
@@ -108,19 +104,16 @@ export async function POST(req: NextRequest): Promise<Response> {
   const bodyIsObject = !!body && typeof body === "object" && !Array.isArray(body);
 
   if (!bodyIsObject) {
-    return jsonErr(400, ctx, "BAD_REQUEST", "Ugyldig body.", {
+    return jsonErr(ctx.rid, "Ugyldig body.", 400, { code: "BAD_REQUEST", detail: {
       bodyType: Array.isArray(body) ? "array" : typeof body,
-    });
+    } });
   }
 
-  return jsonOk(
-    ctx,
-    {
+  return jsonOk(ctx.rid, {
       ok: true,
       rid: ctx.rid,
       method: "POST",
       received: body,
-    },
-    200
-  );
+    }, 200);
 }
+

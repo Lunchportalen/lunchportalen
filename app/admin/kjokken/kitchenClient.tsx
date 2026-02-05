@@ -119,15 +119,6 @@ export default function KitchenClient(props: {
 
   return (
     <main className="p-6">
-      <style>{`
-        @media print{
-          .no-print{ display:none !important; }
-          body{ background:#fff !important; color:#000 !important; }
-          table{ width:100% !important; }
-          .card{ border:1px solid #ddd !important; }
-        }
-      `}</style>
-
       <div className="flex items-start justify-between gap-6 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Kjøkkenoversikt</h1>
@@ -207,7 +198,7 @@ export default function KitchenClient(props: {
         </div>
       </div>
 
-      <section className="mt-6 rounded-xl border border-white/15 p-4 card">
+      <section className="mt-6 rounded-xl border border-white/15 p-4 lp-kitchen-card">
         <div className="text-sm opacity-70">Dagens meny</div>
         <div className="mt-2 font-medium">{props.menuText}</div>
         {props.allergens?.length ? (
@@ -222,7 +213,7 @@ export default function KitchenClient(props: {
           )}.csv`;
 
           return (
-            <section key={g.key} className="rounded-xl border border-white/15 p-4 card">
+            <section key={g.key} className="rounded-xl border border-white/15 p-4 lp-kitchen-card">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="text-sm opacity-70">Leveringsvindu</div>

@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { isPublishWindowOslo, nowISO } from "@/lib/date/oslo";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -13,16 +13,9 @@ type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 /* =========================
    Response helpers
 ========================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-
 function jsonError(status: number, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
+  const r = String(detail?.rid ?? "") || makeRid();
+  return jsonErr(r, message, status, error);
 }
 
 /* =========================
@@ -133,7 +126,7 @@ export async function POST(req: Request) {
       })
       .commit({ autoGenerateArrayKeys: true });
 
-    return jsonOk({
+    return jsonOk(rid, {
       ok: true,
       rid,
       weekPlanId,
@@ -152,6 +145,4 @@ export async function POST(req: Request) {
 export async function GET() {
   return jsonError(405, "method_not_allowed", "Bruk POST for å publisere ukeplan.");
 }
-
-
 

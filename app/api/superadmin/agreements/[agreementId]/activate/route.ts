@@ -5,20 +5,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
-
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
-}
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Ctx = { params: { agreementId: string } | Promise<{ agreementId: string }> };
 
@@ -27,18 +18,17 @@ function onlyIds(rows: any[] | null | undefined) {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = `sa_activate_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const scope = await getScope(req);
     allowSuperadminOrCompanyAdmin(scope);
-    if (scope.role !== "superadmin") return jsonErr(403, rid, "FORBIDDEN", "Kun superadmin kan aktivere avtale.");
+    if (scope.role !== "superadmin") return jsonErr(rid, "Kun superadmin kan aktivere avtale.", 403, "FORBIDDEN");
 
     const params = await Promise.resolve(ctx.params);
     const agreementId = String((params as any)?.agreementId ?? "").trim();
-    if (!isUuid(agreementId)) return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig agreementId.");
+    if (!isUuid(agreementId)) return jsonErr(rid, "Ugyldig agreementId.", 400, "BAD_REQUEST");
 
     const admin = supabaseAdmin();
 
@@ -51,14 +41,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .eq("id", agreementId)
       .maybeSingle();
 
-    if (cur.error) return jsonErr(500, rid, "READ_FAILED", "Kunne ikke hente avtale.", cur.error);
-    if (!cur.data?.id) return jsonErr(404, rid, "NOT_FOUND", "Fant ikke avtale.");
+    if (cur.error) return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "READ_FAILED", detail: cur.error });
+    if (!cur.data?.id) return jsonErr(rid, "Fant ikke avtale.", 404, "NOT_FOUND");
 
     const companyId = String((cur.data as any).company_id);
 
     // Hent firma (for audit summary)
     const company = await admin.from("companies").select("id, name").eq("id", companyId).maybeSingle();
-    if (company.error) return jsonErr(500, rid, "COMPANY_LOOKUP_FAILED", "Kunne ikke hente firma.", company.error);
+    if (company.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
 
     // Snapshot: eksisterende ACTIVE før vi endrer
     const beforeActive = await admin
@@ -69,7 +59,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .eq("company_id", companyId)
       .eq("status", "ACTIVE");
 
-    if (beforeActive.error) return jsonErr(500, rid, "READ_FAILED", "Kunne ikke lese eksisterende ACTIVE.", beforeActive.error);
+    if (beforeActive.error) return jsonErr(rid, "Kunne ikke lese eksisterende ACTIVE.", 500, { code: "READ_FAILED", detail: beforeActive.error });
 
     // Pause eksisterende ACTIVE for firmaet (idempotent)
     const pause = await admin
@@ -79,7 +69,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .eq("status", "ACTIVE")
       .select("id");
 
-    if (pause.error) return jsonErr(500, rid, "PAUSE_ACTIVE_FAILED", "Kunne ikke pause eksisterende ACTIVE.", pause.error);
+    if (pause.error) return jsonErr(rid, "Kunne ikke pause eksisterende ACTIVE.", 500, { code: "PAUSE_ACTIVE_FAILED", detail: pause.error });
 
     // Aktiver valgt avtale
     const upd = await admin
@@ -91,7 +81,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       )
       .single();
 
-    if (upd.error) return jsonErr(500, rid, "ACTIVATE_FAILED", "Kunne ikke aktivere avtale.", upd.error);
+    if (upd.error) return jsonErr(rid, "Kunne ikke aktivere avtale.", 500, { code: "ACTIVATE_FAILED", detail: upd.error });
 
     // Audit (best-effort)
     const audit = await writeAuditEvent({
@@ -111,32 +101,31 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       },
     });
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       agreement: upd.data,
       audit_ok: audit.ok,
       audit_event: audit.ok ? (audit as any).audit : null,
       audit_error: audit.ok ? null : (audit as any).error,
-    });
+    }, 200);
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(status, rid, code, String(e?.message ?? e));
+    return jsonErr(rid, String(e?.message ?? e), status, code);
   }
 }
 
-export async function GET() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å aktivere avtale.");
+export async function GET(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function PUT() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å aktivere avtale.");
+export async function PUT(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function DELETE() {
-  return jsonErr(405, "method_not_allowed", "METHOD_NOT_ALLOWED", "Bruk POST for å aktivere avtale.");
+export async function DELETE(req: NextRequest) {
+  const rid = makeRid();
+  return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
-
-
 

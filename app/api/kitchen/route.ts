@@ -19,9 +19,7 @@ type KitchenRow = {
   tier?: "BASIS" | "LUXUS" | null;
 };
 
-type KitchenResp = {
-  ok: true;
-  rid: string;
+type KitchenData = {
   date: string;
   cutoff?: { isAfterCutoff: boolean; cutoffTime: string };
   summary: { orders: number; companies: number; people: number };
@@ -65,20 +63,18 @@ export async function GET(req: NextRequest) {
   const date = safeStr(u.searchParams.get("date"));
 
   if (!date || !isISODate(date)) {
-    return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig dato. Bruk YYYY-MM-DD.", { date });
+    return jsonErr(rid, "Ugyldig dato. Bruk YYYY-MM-DD.", 400, { code: "BAD_REQUEST", detail: { date } });
   }
 
   // Forventning i klient: Man–Fre er leveringsdager
   if (isWeekendISO(date)) {
-    const resp: KitchenResp = {
-      ok: true,
-      rid,
+    const resp: KitchenData = {
       date,
       summary: { orders: 0, companies: 0, people: 0 },
       rows: [],
       reason: "NOT_DELIVERY_DAY",
     };
-    return jsonOk(resp, 200);
+    return jsonOk(rid, resp, 200);
   }
 
   const admin = supabaseAdmin();
@@ -91,24 +87,22 @@ export async function GET(req: NextRequest) {
     .neq("status", "canceled");
 
   if (oErr) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente kjøkkenordre.", {
+    return jsonErr(rid, "Kunne ikke hente kjøkkenordre.", 500, { code: "DB_ERROR", detail: {
       code: oErr.code,
       message: oErr.message,
       detail: (oErr as any).details ?? (oErr as any).hint ?? null,
-    });
+    } });
   }
 
   const list = orders ?? [];
   if (list.length === 0) {
-    const resp: KitchenResp = {
-      ok: true,
-      rid,
+    const resp: KitchenData = {
       date,
       summary: { orders: 0, companies: 0, people: 0 },
       rows: [],
       reason: "NO_ORDERS",
     };
-    return jsonOk(resp, 200);
+    return jsonOk(rid, resp, 200);
   }
 
   const companyIds = Array.from(new Set(list.map((r: any) => safeStr(r.company_id)).filter((x) => isUuid(x))));
@@ -128,22 +122,22 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (companiesRes.error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firma-navn.", {
+    return jsonErr(rid, "Kunne ikke hente firma-navn.", 500, { code: "DB_ERROR", detail: {
       code: companiesRes.error.code,
       message: companiesRes.error.message,
-    });
+    } });
   }
   if (locationsRes.error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", {
+    return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: {
       code: locationsRes.error.code,
       message: locationsRes.error.message,
-    });
+    } });
   }
   if (profilesRes.error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", {
+    return jsonErr(rid, "Kunne ikke hente profiler.", 500, { code: "DB_ERROR", detail: {
       code: profilesRes.error.code,
       message: profilesRes.error.message,
-    });
+    } });
   }
 
   const companies = new Map((companiesRes.data ?? []).map((c: any) => [safeStr(c.id), c]));
@@ -179,9 +173,7 @@ export async function GET(req: NextRequest) {
   const uniqueCompanies = new Set(rows.map((r) => r.company));
   const uniquePeople = new Set(rows.map((r) => r.employeeName));
 
-  const resp: KitchenResp = {
-    ok: true,
-    rid,
+  const resp: KitchenData = {
     date,
     summary: {
       orders: rows.length,
@@ -191,7 +183,5 @@ export async function GET(req: NextRequest) {
     rows,
   };
 
-  return jsonOk(resp, 200);
+  return jsonOk(rid, resp, 200);
 }
-
-

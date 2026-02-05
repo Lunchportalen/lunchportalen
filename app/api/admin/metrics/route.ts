@@ -122,10 +122,10 @@ export async function GET(req: NextRequest) {
 
     return await passThrough(req, targetUrl);
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", {
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: {
       message: String(e?.message ?? e),
       hint: "Bruk ?mode=summary|daily|weekly|insight",
       today: osloTodayISODate(),
-    });
+    } });
   }
 }

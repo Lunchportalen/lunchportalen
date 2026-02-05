@@ -5,20 +5,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import crypto from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 /* =========================================================
-   Helpers (no-store + rid + safe)
+   Helpers (rid + safe)
 ========================================================= */
-
-function noStore() {
-  return {
-    "Cache-Control": "no-store, max-age=0",
-    Pragma: "no-cache",
-    Expires: "0",
-  } as const;
-}
 
 function ridFromReq(req: NextRequest) {
   const h = String(req.headers.get("x-rid") ?? "").trim();
@@ -53,17 +47,13 @@ function asDetailString(detail: unknown) {
   }
 }
 
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  const payload =
-    detail === undefined
-      ? ({ ok: false as const, rid, error, message } as const)
-      : ({ ok: false as const, rid, error, message, detail } as const);
-
-  return NextResponse.json(payload, { status, headers: noStore() });
+function err(status: number, rid: string, error: string, message: string, detail?: any) {
+  const err = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, err);
 }
 
-function jsonOk(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
+function ok(rid: string, body: any, status = 200) {
+  return jsonOk(rid, body, status);
 }
 
 function uniq(arr: string[]) {
@@ -85,6 +75,8 @@ type ProfileGateRow = {
   role: Role | null;
   disabled_at: string | null;
   is_active: boolean | null;
+  company_id?: string | null;
+  location_id?: string | null;
 };
 
 type OrderRow = {
@@ -171,7 +163,7 @@ export async function GET(req: NextRequest) {
     const user = userRes?.user;
 
     if (userErr || !user) {
-      return jsonErr(401, rid, "UNAUTHENTICATED", "Du må være innlogget.", {
+      return err(401, rid, "UNAUTHENTICATED", "Du må være innlogget.", {
         reason: userErr?.message ?? "no_user",
       });
     }
@@ -183,7 +175,7 @@ export async function GET(req: NextRequest) {
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
-      return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon.", {
+      return err(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon.", {
         detail: safeStr(e?.message ?? e),
       });
     }
@@ -192,14 +184,14 @@ export async function GET(req: NextRequest) {
        1) Role gate via ADMIN
        profiles.user_id = auth.users.id
     ========================= */
-    const { data: gate, error: gateErr } = await admin
-      .from("profiles")
-      .select("role, disabled_at, is_active")
-      .eq("user_id", user.id)
-      .maybeSingle<ProfileGateRow>();
+    const { data: gate, error: gateErr } = await loadProfileByUserId(
+      admin as any,
+      user.id,
+      "role, disabled_at, is_active, company_id, location_id"
+    );
 
     if (gateErr) {
-      return jsonErr(403, rid, "FORBIDDEN", "Forbudt.", {
+      return err(403, rid, "FORBIDDEN", "Forbudt.", {
         code: gateErr.code,
         msg: gateErr.message,
       });
@@ -209,24 +201,31 @@ export async function GET(req: NextRequest) {
     const disabledAt = gate?.disabled_at ?? null;
     const isActive = gate?.is_active;
 
-    if (disabledAt) return jsonErr(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { disabled_at: disabledAt });
-    if (isActive === false) return jsonErr(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { is_active: false });
-    if (role !== "kitchen" && role !== "superadmin") return jsonErr(403, rid, "FORBIDDEN", "Forbudt.", { role });
+    if (disabledAt) return err(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { disabled_at: disabledAt });
+    if (isActive === false) return err(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { is_active: false });
+    if (role !== "kitchen" && role !== "superadmin") return err(403, rid, "FORBIDDEN", "Forbudt.", { role });
+    const companyId = safeStr((gate as any)?.company_id);
+    const locationId = safeStr((gate as any)?.location_id);
+    if (!companyId) return err(403, rid, "MISSING_COMPANY", "Mangler firmatilknytning.");
 
     /* =========================
        2) Fetch ACTIVE orders for date (ADMIN)
        orders schema: id,user_id,date,status,note,created_at,company_id,location_id,slot
     ========================= */
-    const { data: orders, error: ordersErr } = await admin
+    let ordersQ = admin
       .from("orders")
       .select("id, created_at, date, slot, status, note, company_id, location_id, user_id")
       .eq("date", dateISO)
-      .in("status", ["ACTIVE", "active"]) // tolerer legacy
-      .order("slot", { ascending: true })
-      .order("created_at", { ascending: true });
+      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]) // tolerer legacy
+      .eq("integrity_status", "ok")
+      .eq("company_id", companyId);
+
+    if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
+
+    const { data: orders, error: ordersErr } = await ordersQ.order("slot", { ascending: true }).order("created_at", { ascending: true });
 
     if (ordersErr) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente ordre.", {
+      return err(500, rid, "DB_ERROR", "Kunne ikke hente ordre.", {
         code: ordersErr.code,
         msg: ordersErr.message,
         detail: asDetailString(ordersErr),
@@ -237,7 +236,7 @@ export async function GET(req: NextRequest) {
     const orderRows = (orders ?? []) as OrderRow[];
 
     if (orderRows.length === 0) {
-      return jsonOk({ ok: true as const, rid, date: dateISO, rows: [] as KitchenOrdersApiRow[] });
+      return ok(rid, { date: dateISO, rows: [] as KitchenOrdersApiRow[] });
     }
 
     const companyIds = uniq(orderRows.map((o) => o.company_id));
@@ -258,19 +257,19 @@ export async function GET(req: NextRequest) {
     ]);
 
     if (companiesRes.error) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente firma.", {
+      return err(500, rid, "DB_ERROR", "Kunne ikke hente firma.", {
         code: companiesRes.error.code,
         msg: companiesRes.error.message,
       });
     }
     if (locationsRes.error) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", {
+      return err(500, rid, "DB_ERROR", "Kunne ikke hente lokasjoner.", {
         code: locationsRes.error.code,
         msg: locationsRes.error.message,
       });
     }
     if (profilesRes.error) {
-      return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", {
+      return err(500, rid, "DB_ERROR", "Kunne ikke hente profiler.", {
         code: profilesRes.error.code,
         msg: profilesRes.error.message,
       });
@@ -373,12 +372,11 @@ export async function GET(req: NextRequest) {
       return A.localeCompare(B, "nb");
     });
 
-    return jsonOk({ ok: true as const, rid, date: dateISO, rows });
+    return ok(rid, { date: dateISO, rows });
   } catch (e: any) {
     const msg = e?.message ?? String(e);
     console.error(`[api/kitchen/orders] rid=${rid} (catch)`, msg, e);
-    return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig forespørsel.", { detail: msg });
+    return err(400, rid, "BAD_REQUEST", "Ugyldig forespørsel.", { detail: msg });
   }
 }
-
 

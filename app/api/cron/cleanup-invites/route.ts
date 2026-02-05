@@ -4,18 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
-
-/* =========================================================
-   Response helpers (no-store + consistent JSON)
-========================================================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
-}
-
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /* =========================================================
    Cron secret guard (optional but recommended)
@@ -44,10 +33,6 @@ function isoDaysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
 
-function makeRid(prefix = "inv_cleanup") {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function asDetailString(detail: unknown) {
   if (!detail) return null;
   if (typeof detail === "string") return detail;
@@ -62,7 +47,6 @@ function asDetailString(detail: unknown) {
    POST /api/cron/cleanup-invites
 ========================================================= */
 export async function POST(req: Request) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
 
@@ -90,7 +74,7 @@ export async function POST(req: Request) {
       .not("used_at", "is", null)
       .lt("used_at", usedCutoff);
 
-    return json({
+    return jsonOk(rid, {
       ok: true,
       rid,
       now: isoNow(),
@@ -105,14 +89,13 @@ export async function POST(req: Request) {
         deletedCount: usedOld.count ?? 0,
         error: usedOld.error ? asDetailString(usedOld.error) : null,
       },
-    });
+    }, 200);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
     if (msg === "forbidden" || e?.code === "forbidden") {
-      return json({ ok: false, rid, error: "forbidden" }, 403);
+      return jsonErr(rid, "Ugyldig cron secret.", 403, "forbidden");
     }
-    return json({ ok: false, rid, error: "server_error", detail: msg }, 500);
+    return jsonErr(rid, "Uventet feil.", 500, { code: "server_error", detail: msg });
   }
 }
-
 

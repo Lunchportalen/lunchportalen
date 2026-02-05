@@ -3,15 +3,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { normalizeAgreement, resolveTierForDate } from "@/lib/agreements/normalizeAgreement";
+import { normalizeAgreement } from "@/lib/agreements/normalizeAgreement";
+import { getCurrentAgreementState } from "@/lib/agreement/currentAgreement";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { formatTimeNO } from "@/lib/date/format";
 
 // ✅ Dag-3 standard guards (samme mønster som toggle/cancel)
 import { scopeOr401 } from "@/lib/http/routeGuard";
-import { noStoreHeaders } from "@/lib/http/noStore";
 
 // ✅ Oslo SSoT
 import { osloTodayISODate, addDaysISO, isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
@@ -27,6 +29,7 @@ type OrderRow = {
   status: string | null;
   note: string | null;
   updated_at: string | null;
+  created_at: string | null;
   slot: string | null;
   location_id: string | null;
 };
@@ -81,13 +84,8 @@ function parseChoiceFromNote(note: string | null): string | null {
 
 function hhmmFromIso(iso: string | null | undefined) {
   if (!iso) return null;
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return null;
-  }
+  const t = formatTimeNO(iso);
+  return t || null;
 }
 
 /* =========================
@@ -154,22 +152,6 @@ function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized }
 
 const PRICE_PER_TIER: Record<Tier, number> = { BASIS: 90, LUXUS: 130 };
 
-function extractTierAndPrice(res: any): { tier: Tier | null; unit_price: number | null } {
-  if (typeof res === "string") {
-    const t = res.toUpperCase().trim();
-    if (t === "BASIS" || t === "LUXUS") return { tier: t as Tier, unit_price: PRICE_PER_TIER[t as Tier] };
-    return { tier: null, unit_price: null };
-  }
-  if (res && typeof res === "object") {
-    const rawTier = String((res as any).tier ?? "").toUpperCase().trim();
-    const price = (res as any).price;
-    const tier = rawTier === "BASIS" || rawTier === "LUXUS" ? (rawTier as Tier) : null;
-    const unit_price = typeof price === "number" ? price : tier ? PRICE_PER_TIER[tier] : null;
-    return { tier, unit_price };
-  }
-  return { tier: null, unit_price: null };
-}
-
 function getChoicesForTier(agreement: any, tier: Tier): Choice[] {
   if (!agreement) return [];
   if (agreement.choicesByTier && Array.isArray(agreement.choicesByTier[tier])) return agreement.choicesByTier[tier] as Choice[];
@@ -229,10 +211,7 @@ export async function GET(req: NextRequest) {
 
   // Window gjelder kun ansatte/company_admin (kitchen/driver/superadmin skal ikke bruke denne)
   if (scope.role !== "employee" && scope.role !== "company_admin") {
-    return NextResponse.json(
-      { ok: false, rid, error: "FORBIDDEN_ROLE", message: "Ingen tilgang." },
-      { status: 403, headers: noStoreHeaders() }
-    );
+    return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN_ROLE");
   }
 
   const user_id = String(scope.userId ?? "").trim();
@@ -240,10 +219,7 @@ export async function GET(req: NextRequest) {
   const location_id = String(scope.locationId ?? "").trim();
 
   if (!company_id || !location_id) {
-    return NextResponse.json(
-      { ok: false, rid, error: "PROFILE_MISSING_SCOPE", message: "Fant ikke profil/scope." },
-      { status: 403, headers: noStoreHeaders() }
-    );
+    return jsonErr(rid, "Fant ikke profil/scope.", 403, "PROFILE_MISSING_SCOPE");
   }
 
   try {
@@ -259,10 +235,7 @@ export async function GET(req: NextRequest) {
     // Company policy
     const polRes = await getCompanyPolicy(admin as any, company_id);
     if (polRes.ok === false) {
-      return NextResponse.json(
-        { ok: false, rid, error: polRes.error, message: polRes.message, detail: polRes.detail },
-        { status: polRes.status, headers: noStoreHeaders() }
-      );
+      return jsonErr(rid, polRes.message, polRes.status ?? 400, polRes.error);
     }
 
     const policy = polRes.policy;
@@ -284,20 +257,6 @@ export async function GET(req: NextRequest) {
         : undefined,
     };
 
-    // Agreement (service role)
-    const { data: agreementRow, error: aErr } = await (admin as any)
-      .from("company_current_agreement")
-      .select("*")
-      .eq("company_id", company_id)
-      .maybeSingle();
-
-    if (aErr) {
-      return NextResponse.json(
-        { ok: false, rid, error: "AGREEMENT_FETCH_FAILED", message: "Kunne ikke hente avtale.", detail: aErr?.message },
-        { status: 500, headers: noStoreHeaders() }
-      );
-    }
-
     // Dates (10 arbeidsdager fra i dag)
     const today = osloTodayISODate();
     const dates = getNextWorkdays(today, 10);
@@ -313,17 +272,14 @@ export async function GET(req: NextRequest) {
     const sb = await supabaseServer();
     const { data: ordersRaw, error: oErr } = await (sb as any)
       .from("orders")
-      .select("date,status,note,updated_at,slot,location_id")
+      .select("date,status,note,updated_at,created_at,slot,location_id")
       .eq("user_id", user_id)
       .eq("company_id", company_id)
       .eq("location_id", location_id)
       .in("date", dates);
 
     if (oErr) {
-      return NextResponse.json(
-        { ok: false, rid, error: "ORDERS_FETCH_FAILED", message: "Kunne ikke hente bestilling.", detail: oErr.message },
-        { status: 500, headers: noStoreHeaders() }
-      );
+      return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
     }
 
     const byDate = new Map<string, OrderRow>();
@@ -333,19 +289,57 @@ export async function GET(req: NextRequest) {
       byDate.set(dISO, o);
     }
 
-    // Normalize agreement
-    const normRes = agreementRow ? normalizeAgreement(agreementRow) : null;
-    const unwrapped = unwrapAgreement(normRes);
-    const agreement = unwrapped.ok ? unwrapped.agreement : null;
+    const agreementState = await getCurrentAgreementState({ rid });
+    if (!agreementState.ok) {
+      const err = agreementState as { status: number; error: string; message: string };
+      return jsonErr(rid, err.message, err.status ?? 400, err.error);
+    }
+
+    if (agreementState.companyId !== company_id) {
+      return jsonErr(rid, "Avtale matcher ikke firmatilknytning.", 403, "AGREEMENT_SCOPE_MISMATCH");
+    }
+
+    const agreementUsable = agreementState.status === "ACTIVE";
+    const deliveryDays = agreementState.deliveryDays ?? [];
+    const dayTiers = agreementState.dayTiers ?? {};
+
+    let agreementMessage: string | null = null;
+    if (!agreementUsable) {
+      if (agreementState.statusReason === "MISSING_DAYMAP") agreementMessage = "Avtalen mangler dagoppsett.";
+      else if (agreementState.statusReason === "MISSING_DELIVERY_DAYS") agreementMessage = "Avtalen mangler gyldige leveringsdager.";
+      else agreementMessage = "Ingen aktiv avtale for firma.";
+    }
+
+    let agreementForChoices: any = null;
+    if (agreementUsable) {
+      const { data: agreementRow, error: aErr } = await (admin as any)
+        .from("company_current_agreement")
+        .select("*")
+        .eq("company_id", company_id)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+
+      if (aErr) {
+        return jsonErr(rid, "Kunne ikke hente avtale.", 500, "AGREEMENT_FETCH_FAILED");
+      }
+
+      try {
+        const normRes = agreementRow ? normalizeAgreement(agreementRow) : null;
+        const unwrapped = unwrapAgreement(normRes);
+        agreementForChoices = unwrapped.ok ? unwrapped.agreement : null;
+      } catch {
+        agreementForChoices = null;
+      }
+    }
 
     const days = dates.map((date) => {
       const menu = menuByDate.get(date);
 
-      const resolved = agreement ? resolveTierForDate(agreement, date) : null;
-      const { tier, unit_price } = extractTierAndPrice(resolved);
-
-      const isEnabled = !!tier;
-      const allowedChoices: Choice[] = tier ? getChoicesForTier(agreement, tier) : [];
+      const dayKey = weekdayKeyFromISO(date);
+      const isDeliveryDay = deliveryDays.includes(dayKey);
+      const tier: Tier | null = dayTiers[dayKey] ?? null;
+      const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
+      const allowedChoices: Choice[] = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
 
       const saved = byDate.get(date);
       const sNorm = statusNorm(saved?.status);
@@ -357,50 +351,51 @@ export async function GET(req: NextRequest) {
 
       const cutoff = cutoffStatusForDate(date);
       const dateLocked = cutoff === "PAST" || cutoff === "TODAY_LOCKED";
+      const lockReason = dateLocked ? "CUTOFF" : !company.canEditOrders ? "COMPANY" : null;
 
       return {
         date,
-        weekday: weekdayKeyFromISO(date),
+        weekday: dayKey,
 
         // ✅ dag-lås + firmalås
         isLocked: dateLocked || !company.canEditOrders,
         isEnabled,
+        lockReason,
 
-        // stabil default hvis !isEnabled
-        tier: (tier ?? "BASIS") as Tier,
+        tier,
         allowedChoices,
 
         wantsLunch,
+        orderStatus: sNorm === "ACTIVE" ? "ACTIVE" : sNorm === "CANCELLED" ? "CANCELLED" : null,
         selectedChoiceKey: wantsLunch ? safeSelected : null,
 
         menuTitle: menu?.title ?? null,
         menuDescription: menu?.description ?? null,
         allergens: (menu?.allergens ?? []) as string[],
 
-        lastSavedAt: hhmmFromIso(saved?.updated_at) ?? null,
+        lastSavedAt: hhmmFromIso(saved?.updated_at) ?? hhmmFromIso(saved?.created_at) ?? null,
 
-        // fremtidig bruk i UI
-        unit_price: unit_price ?? (tier ? PRICE_PER_TIER[tier] : null),
+        unit_price:
+          typeof agreementState.pricePerCuvertNok === "number"
+            ? agreementState.pricePerCuvertNok
+            : tier
+              ? PRICE_PER_TIER[tier]
+              : null,
       };
     });
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
+    return jsonOk(rid, {
         scope: { company_id, location_id, user_id },
         company,
+        agreement: {
+          status: agreementUsable ? "ACTIVE" : "MISSING",
+          message: agreementMessage,
+          delivery_days: deliveryDays,
+        },
         range: { from: fromISO, to: toISO },
         days,
-      },
-      { status: 200, headers: noStoreHeaders() }
-    );
+      }, 200);
   } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, rid, error: "SERVER_ERROR", detail: String(e?.message ?? e) },
-      { status: 500, headers: noStoreHeaders() }
-    );
+    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-
-

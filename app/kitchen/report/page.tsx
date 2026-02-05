@@ -6,28 +6,21 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import KitchenReportClient from "./KitchenReportClient";
 import { supabaseServer } from "@/lib/supabase/server";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
-function normEmail(v: unknown) {
-  return safeStr(v).toLowerCase();
-}
-
 /**
  * 🔒 NO-EXCEPTION RULE:
  * - systemkonto via epost er fasit
  * - ellers profiles.role (server truth)
  */
 function roleByEmailOrProfile(email: string | null | undefined, profileRole: any): Role | null {
-  const e = normEmail(email);
-  if (!e) return null;
-
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
+  const sys = systemRoleByEmail(email);
+  if (sys) return sys;
 
   const pr = safeStr(profileRole) as Role;
   if (pr === "kitchen" || pr === "superadmin" || pr === "company_admin" || pr === "employee" || pr === "driver") return pr;
@@ -51,7 +44,7 @@ export default async function KitchenReportPage() {
   const { data: me, error: meErr } = await sb
     .from("profiles")
     .select("user_id, role")
-    .eq("user_id", userId)
+    .or(`id.eq.${userId},user_id.eq.${userId}`)
     .maybeSingle();
 
   // Hvis profiles feiler, behandler vi som unauthorized (ingen unntak)

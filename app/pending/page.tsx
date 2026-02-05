@@ -1,5 +1,6 @@
 // app/pending/page.tsx
 import Link from "next/link";
+import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,8 +22,8 @@ export default async function PendingPage() {
           <p className="font-medium">Haster det?</p>
           <p className="mt-1 text-[rgb(var(--lp-muted))]">
             Send oss en e-post på{" "}
-            <a className="font-medium underline hover:no-underline" href="mailto:post@lunchportalen.no">
-              post@lunchportalen.no
+            <a className="font-medium underline hover:no-underline" href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}>
+              {SYSTEM_EMAILS.SUPPORT}
             </a>
             .
           </p>
@@ -33,7 +34,10 @@ export default async function PendingPage() {
         <Link href="/" className="rounded-xl border px-4 py-2">
           Til forsiden
         </Link>
-        <a href="mailto:post@lunchportalen.no" className="rounded-xl border px-4 py-2">
+        <a
+          href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}
+          className="rounded-xl border px-4 py-2"
+        >
           Kontakt oss
         </a>
         <Link href="/logout" className="rounded-xl border px-4 py-2">

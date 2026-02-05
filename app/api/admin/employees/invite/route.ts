@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
 
 function makeRidLocal() {
   try {
@@ -32,8 +33,7 @@ function safeText(v: unknown, max = 120) {
   return s ? s.slice(0, max) : null;
 }
 function isSystemEmail(email: string) {
-  const e = normEmail(email);
-  return e === "superadmin@lunchportalen.no" || e === "kjokken@lunchportalen.no" || e === "driver@lunchportalen.no";
+  return isSystemEmailCore(email);
 }
 
 function getAppUrl(req: NextRequest) {
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
   const actorEmail = scope.email ?? null;
   const actorUserId = String(scope.userId ?? "").trim() || null;
 
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler companyId i scope.");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const body = await readJson(req);
 
@@ -187,40 +187,40 @@ export async function POST(req: NextRequest) {
   const full_name = safeText((body as any)?.full_name ?? (body as any)?.fullName ?? (body as any)?.name, 120);
   const forceResend = String((body as any)?.forceResend ?? "false").toLowerCase() === "true";
 
-  if (!email || !isEmail(email)) return jsonErr(400, rid, "INVALID_EMAIL", "Ugyldig e-postadresse.");
-  if (isSystemEmail(email)) return jsonErr(400, rid, "FORBIDDEN_EMAIL", "Denne e-posten kan ikke inviteres som ansatt.");
+  if (!email || !isEmail(email)) return jsonErr(rid, "Ugyldig e-postadresse.", 400, "INVALID_EMAIL");
+  if (isSystemEmail(email)) return jsonErr(rid, "Denne e-posten kan ikke inviteres som ansatt.", 400, "FORBIDDEN_EMAIL");
 
   let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(500, rid, "CONFIG_ERROR", "Mangler service role konfigurasjon.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Mangler service role konfigurasjon.", 500, { code: "CONFIG_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 
   try {
     // default location (locked)
     const def = await getDefaultLocationId(admin, companyId);
-    if (!def.ok) return jsonErr(500, rid, "DEFAULT_LOCATION_LOOKUP_FAILED", "Kunne ikke hente standard-lokasjon.", def.error);
+    if (!def.ok) return jsonErr(rid, "Kunne ikke hente standard-lokasjon.", 500, { code: "DEFAULT_LOCATION_LOOKUP_FAILED", detail: def.error });
     if (!def.locationId) {
-      return jsonErr(409, rid, "MISSING_DEFAULT_LOCATION", "Firmaet mangler standard-lokasjon. Kontakt support/superadmin.", {
+      return jsonErr(rid, "Firmaet mangler standard-lokasjon. Kontakt support/superadmin.", 409, { code: "MISSING_DEFAULT_LOCATION", detail: {
         companyId,
         reason: def.reason ?? "missing_default_location",
-      });
+      } });
     }
     const location_id = def.locationId;
 
     // Hard block: already onboarded (profiles.company_id != null)
     const prof = await admin.from("profiles").select("id, company_id, role, disabled_at").eq("email", email).maybeSingle();
-    if (prof.error) return jsonErr(500, rid, "PROFILE_CHECK_FAILED", "Kunne ikke verifisere eksisterende profil.", prof.error);
-    if (prof.data?.company_id) return jsonErr(409, rid, "ALREADY_ONBOARDED", "E-posten er allerede registrert som bruker i et firma.");
+    if (prof.error) return jsonErr(rid, "Kunne ikke verifisere eksisterende profil.", 500, { code: "PROFILE_CHECK_FAILED", detail: prof.error });
+    if (prof.data?.company_id) return jsonErr(rid, "E-posten er allerede registrert som bruker i et firma.", 409, "ALREADY_ONBOARDED");
 
     await cleanupExpiredUnused(admin, companyId);
 
     const active = await findActiveInvite(admin, companyId, email);
-    if (!active.ok) return jsonErr(500, rid, "INVITE_CHECK_FAILED", "Kunne ikke sjekke eksisterende invitasjon.", active.error);
+    if (!active.ok) return jsonErr(rid, "Kunne ikke sjekke eksisterende invitasjon.", 500, { code: "INVITE_CHECK_FAILED", detail: active.error });
 
     if (active.invite?.id && !forceResend) {
-      return jsonOk({
+      return jsonOk(rid, {
         ok: true,
         rid,
         message: "Aktiv invitasjon finnes allerede.",
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
     // SEND FIRST (samme flyt som original)
     const sent = await sendInviteEmail(email, link);
     if (sent.ok === false) {
-      return jsonErr(500, rid, "EMAIL_SEND_FAILED", "Kunne ikke sende invitasjon på e-post.", { message: sent.error });
+      return jsonErr(rid, "Kunne ikke sende invitasjon på e-post.", 500, { code: "EMAIL_SEND_FAILED", detail: { message: sent.error } });
     }
 
     const nowIso = new Date().toISOString();
@@ -258,9 +258,9 @@ export async function POST(req: NextRequest) {
         .eq("company_id", companyId)
         .is("used_at", null);
 
-      if (upd.error) return jsonErr(500, rid, "INVITE_UPDATE_FAILED", "E-post sendt, men kunne ikke oppdatere invitasjon.", upd.error);
+      if (upd.error) return jsonErr(rid, "E-post sendt, men kunne ikke oppdatere invitasjon.", 500, { code: "INVITE_UPDATE_FAILED", detail: upd.error });
 
-      return jsonOk({ ok: true, rid, message: "Invitasjon sendt på nytt.", resent: true, inviteId: String(active.invite.id) });
+      return jsonOk(rid, { ok: true, rid, message: "Invitasjon sendt på nytt.", resent: true, inviteId: String(active.invite.id) });
     }
 
     const ins = await admin.from("employee_invites").insert({
@@ -276,17 +276,15 @@ export async function POST(req: NextRequest) {
       last_sent_at: nowIso,
     });
 
-    if (ins.error) return jsonErr(500, rid, "INVITE_STORE_FAILED", "E-post sendt, men kunne ikke lagre invitasjon.", ins.error);
+    if (ins.error) return jsonErr(rid, "E-post sendt, men kunne ikke lagre invitasjon.", 500, { code: "INVITE_STORE_FAILED", detail: ins.error });
 
-    return jsonOk({ ok: true, rid, message: "Invitasjon sendt." });
+    return jsonOk(rid, { ok: true, rid, message: "Invitasjon sendt." });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
 
 export async function GET() {
   const rid = makeRidLocal();
-  return jsonErr(405, rid, "METHOD_NOT_ALLOWED", "Bruk POST for å invitere ansatte.");
+  return jsonErr(rid, "Bruk POST for å invitere ansatte.", 405, "METHOD_NOT_ALLOWED");
 }
-
-

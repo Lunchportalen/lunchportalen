@@ -5,9 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type BatchStatus = "queued" | "packed" | "delivered";
 
@@ -44,13 +44,6 @@ function serviceSupabase() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false } }
   );
-}
-
-function noStore(body: any, status = 200) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store" },
-  });
 }
 
 function isISODate(s: string) {
@@ -96,19 +89,18 @@ function pickLocationName(l: any): string {
 }
 
 export async function GET(req: Request) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = `kcd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const rid = makeRid();
 
   try {
     // Auth gate
     const authClient = await supabaseServer();
     const { data: auth } = await authClient.auth.getUser();
-    if (!auth?.user) return noStore({ ok: false, rid, error: "unauthorized" }, 401);
+    if (!auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
 
     const url = new URL(req.url);
     const company_id = url.searchParams.get("company_id");
-    if (!company_id) return noStore({ ok: false, rid, error: "missing_company_id" }, 400);
+    if (!company_id) return jsonErr(rid, "company_id mangler.", 400, "missing_company_id");
 
     const dateParam = url.searchParams.get("date");
     const date = dateParam && isISODate(dateParam) ? dateParam : osloTodayISODate();
@@ -123,17 +115,18 @@ export async function GET(req: Request) {
       .eq("id", company_id)
       .maybeSingle();
 
-    if (cErr) return noStore({ ok: false, rid, error: "company_failed", detail: cErr.message }, 500);
+    if (cErr) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "company_failed", detail: cErr.message });
 
     // orders for company + date
     const { data: orders, error: oErr } = await supabase
       .from("orders")
       .select("id, user_id, location_id, note, created_at")
       .eq("date", date)
+      .eq("integrity_status", "ok")
       .eq("company_id", company_id)
       .order("created_at", { ascending: true });
 
-    if (oErr) return noStore({ ok: false, rid, error: "orders_failed", detail: oErr.message }, 500);
+    if (oErr) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "orders_failed", detail: oErr.message });
 
     const safeOrders = (orders ?? []).filter((o: any) => o?.location_id);
 
@@ -147,7 +140,7 @@ export async function GET(req: Request) {
         totals: { locations: 0, orders: 0 },
         locations: [],
       };
-      return noStore(out, 200);
+      return jsonOk(rid, out, 200);
     }
 
     const userIds = Array.from(new Set(safeOrders.map((o: any) => o.user_id).filter(Boolean)));
@@ -159,7 +152,7 @@ export async function GET(req: Request) {
       .select("*")
       .in("id", userIds);
 
-    if (pErr) return noStore({ ok: false, rid, error: "profiles_failed", detail: pErr.message }, 500);
+    if (pErr) return jsonErr(rid, "Kunne ikke hente profiler.", 500, { code: "profiles_failed", detail: pErr.message });
 
     const profMap = new Map<string, any>();
     (profiles ?? []).forEach((p: any) => profMap.set(String(p.id), p));
@@ -170,7 +163,7 @@ export async function GET(req: Request) {
       .select("*")
       .in("id", locIds);
 
-    if (lErr) return noStore({ ok: false, rid, error: "locations_failed", detail: lErr.message }, 500);
+    if (lErr) return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "locations_failed", detail: lErr.message });
 
     const locMap = new Map<string, any>();
     (locationsRaw ?? []).forEach((l: any) => locMap.set(String(l.id), l));
@@ -235,12 +228,9 @@ export async function GET(req: Request) {
       ),
     };
 
-    return noStore(out, 200);
+    return jsonOk(rid, out, 200);
   } catch (e: any) {
-    return noStore(
-      { ok: false, error: "kitchen_company_failed", detail: e?.message || String(e) },
-      500
-    );
+    return jsonErr(rid, "Kunne ikke hente kjøkken-data.", 500, { code: "kitchen_company_failed", detail: e?.message || String(e) });
   }
 }
 

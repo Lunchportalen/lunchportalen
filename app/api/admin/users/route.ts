@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
   const companyId = safeStr(scope.companyId);
   const userId = safeStr(scope.userId);
 
-  if (!userId) return jsonErr(401, rid, "UNAUTH", "Ikke innlogget.");
-  if (!companyId) return jsonErr(409, rid, "SCOPE_MISSING", "Mangler company_id i scope.");
+  if (!userId) return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
+  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   try {
     const sb = await supabaseServer();
@@ -54,12 +54,12 @@ export async function GET(req: NextRequest) {
     // status gate (firma må være ACTIVE)
     const { data: company, error: compErr } = await sb.from("companies").select("id,status").eq("id", companyId).maybeSingle();
 
-    if (compErr) return jsonErr(500, rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", { message: compErr.message });
-    if (!company) return jsonErr(404, rid, "COMPANY_NOT_FOUND", "Fant ikke firma.");
+    if (compErr) return jsonErr(rid, "Kunne ikke lese firma.", 500, { code: "COMPANY_READ_FAILED", detail: { message: compErr.message } });
+    if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "COMPANY_NOT_FOUND");
 
     const status = normCompanyStatus((company as any).status);
     if (status !== "ACTIVE") {
-      return jsonErr(403, rid, "COMPANY_NOT_ACTIVE", "Firma er ikke aktivt.", { status });
+      return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status } });
     }
 
     const url = new URL(req.url);
@@ -76,18 +76,14 @@ export async function GET(req: NextRequest) {
     if (q) query = query.ilike("full_name", `%${q}%`);
 
     const { data: rows, error } = await query;
-    if (error) return jsonErr(500, rid, "QUERY_FAILED", "Kunne ikke hente ansatte.", { message: error.message });
+    if (error) return jsonErr(rid, "Kunne ikke hente ansatte.", 500, { code: "QUERY_FAILED", detail: { message: error.message } });
 
-    return jsonOk({
-      ok: true,
-      rid,
+    return jsonOk(rid, {
       companyId,
       count: (rows ?? []).length,
       users: rows ?? [],
     });
   } catch (e: any) {
-    return jsonErr(500, rid, "UNHANDLED", "Uventet feil.", { message: String(e?.message ?? e) });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

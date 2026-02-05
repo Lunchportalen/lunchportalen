@@ -3,9 +3,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
-import { NextResponse } from "next/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /**
  * =========================================================
@@ -26,19 +25,6 @@ import { osloTodayISODate } from "@/lib/date/oslo";
  * - key=CRON_SECRET (legacy)
  * =========================================================
  */
-
-/* =========================================================
-   Response helpers
-========================================================= */
-function noStore() {
-  return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" } as const;
-}
-function json(body: any, status = 200) {
-  return NextResponse.json(body, { status, headers: noStore() });
-}
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return json({ ok: false, rid, error, message, detail: detail ?? undefined }, status);
-}
 
 /* =========================================================
    Helpers
@@ -135,16 +121,16 @@ async function logCronRun(
    GET /api/cron/forecast
 ========================================================= */
 export async function GET(req: Request) {
-  const rid = crypto.randomUUID?.() ?? `forecast_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   // Gate first
   try {
     requireCronSecret(req, true);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(500, rid, "misconfigured", "CRON_SECRET mangler i env");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(403, rid, "forbidden", "Ugyldig cron secret");
-    return jsonErr(500, rid, "server_error", "Uventet feil i cron-gate", { message: msg });
+    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i env", 500, "misconfigured");
+    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const today = osloTodayISODate();
@@ -183,13 +169,13 @@ export async function GET(req: Request) {
         meta,
       });
 
-      return jsonErr(500, rid, "rpc_error", "lp_generate_forecast_range feilet", {
+      return jsonErr(rid, "lp_generate_forecast_range feilet", 500, { code: "rpc_error", detail: {
         message: error.message,
         code: (error as any)?.code ?? null,
         hint: (error as any)?.hint ?? null,
         details: (error as any)?.details ?? null,
         ...meta,
-      });
+      } });
     }
 
     const upserts = data ?? 0;
@@ -203,7 +189,7 @@ export async function GET(req: Request) {
 
     log("forecast:done", { rid, upserts, ...meta });
 
-    return json({ ok: true, rid, ...meta, upserts }, 200);
+    return jsonOk(rid, { ok: true, rid, ...meta, upserts }, 200);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
 
@@ -213,6 +199,6 @@ export async function GET(req: Request) {
       await logCronRun(admin, { job: "forecast", status: "error", rid, detail: msg, meta });
     } catch {}
 
-    return jsonErr(500, rid, "server_error", "Forecast cron feilet", { message: msg, ...meta });
+    return jsonErr(rid, "Forecast cron feilet", 500, { code: "server_error", detail: { message: msg, ...meta } });
   }
 }

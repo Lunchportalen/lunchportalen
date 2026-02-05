@@ -3,19 +3,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 function ridFrom(req: NextRequest) {
   return safeStr(req.headers.get("x-rid")) || `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-function ok(rid: string, body: any, status = 200) {
-  return NextResponse.json({ ok: true, rid, ...body }, { status });
-}
-function err(rid: string, status: number, code: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error: code, message, detail: detail ?? null }, { status });
 }
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -30,32 +26,23 @@ function clamp(n: number, min: number, max: number) {
  * Runtime-only (Supabase/env)
  */
 export async function GET(req: NextRequest) {
-  const rid = ridFrom(req);
-
   try {
     // ✅ Late import – stopper env-evaluering under next build
     const { supabaseServer } = await import("@/lib/supabase/server");
     const sb = await supabaseServer();
 
-    // Auth
-    const { data: auth, error: authErr } = await sb.auth.getUser();
-    const user = auth?.user ?? null;
-    if (authErr || !user) return err(rid, 401, "UNAUTHENTICATED", "Du må være innlogget.");
+    const gate = await scopeOr401(req);
+    if (gate.ok === false) return gate.res;
+    const ctx = gate.ctx;
 
-    // Profile
-    const { data: prof, error: profErr } = await sb
-      .from("profiles")
-      .select("role, company_id")
-      .eq("id", user.id)
-      .maybeSingle();
+    const denyRole = requireRoleOr403(ctx, "admin.deliveries.read", ["company_admin", "superadmin"]);
+    if (denyRole) return denyRole;
 
-    if (profErr) return err(rid, 500, "PROFILE_READ_FAILED", "Kunne ikke lese profil.", { message: profErr.message });
+    const denyScope = requireCompanyScopeOr403(ctx);
+    if (denyScope) return denyScope;
 
-    const role = String((prof as any)?.role ?? "");
-    const companyId = safeStr((prof as any)?.company_id);
-
-    if (!["company_admin", "superadmin", "admin"].includes(role)) return err(rid, 403, "FORBIDDEN", "Ingen tilgang.");
-    if (role === "company_admin" && !companyId) return err(rid, 400, "MISSING_COMPANY", "Mangler company_id.");
+    const companyId = safeStr(ctx.scope.companyId);
+    if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
     const url = new URL(req.url);
     const date = safeStr(url.searchParams.get("date"));
@@ -72,18 +59,19 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (date) q = q.eq("date", date);
-    if (role === "company_admin") q = q.eq("company_id", companyId);
+    q = q.eq("company_id", companyId);
 
     const { data, error } = await q;
-    if (error) return err(rid, 500, "DB_ERROR", "Kunne ikke hente leveranser.", { message: error.message });
+    if (error) return jsonErr(ctx.rid, "Kunne ikke hente leveranser.", 400, { code: "DB_ERROR", detail: { message: error.message } });
 
-    return ok(rid, { deliveries: data ?? [] });
+    return jsonOk(ctx.rid, { deliveries: data ?? [] });
   } catch (e: any) {
-    return err(rid, 500, "UNHANDLED", "Uventet feil.", { message: safeStr(e?.message ?? e) });
+    const rid = ridFrom(req);
+    return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: safeStr(e?.message ?? e) } });
   }
 }
 
 export async function POST(req: NextRequest) {
   const rid = ridFrom(req);
-  return err(rid, 405, "method_not_allowed", "Bruk GET.", { method: "POST" });
+  return jsonErr(rid, "Bruk GET.", 405, { code: "method_not_allowed", detail: { method: "POST" } });
 }

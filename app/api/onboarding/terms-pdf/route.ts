@@ -2,8 +2,8 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import { jsonErr, makeRid } from "@/lib/http/respond";
 
 type Body = {
   title?: string;
@@ -17,6 +17,7 @@ function safeStr(v: unknown) {
 }
 
 export async function POST(req: Request) {
+  const rid = makeRid();
   try {
     const body = (await req.json().catch(() => null)) as Body | null;
 
@@ -67,12 +68,10 @@ export async function POST(req: Request) {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'inline; filename="terms.pdf"',
         "Cache-Control": "no-store",
+        "x-lp-rid": rid,
       },
     });
   } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: "SERVER_ERROR", detail: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    return jsonErr(rid, "Kunne ikke generere PDF.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }

@@ -6,7 +6,9 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { osloTodayISODate } from "@/lib/date/oslo";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 const allowedRoles = ["driver", "superadmin"] as const;
 
@@ -32,28 +34,53 @@ export async function GET(req: NextRequest) {
   const u = new URL(req.url);
   const date = asString(u.searchParams.get("date"));
   if (date && !isISODate(date)) {
-    return jsonErr(400, rid, "BAD_REQUEST", "Ugyldig dato.", { date });
+    return jsonErr(rid, "Ugyldig dato.", 400, { code: "BAD_REQUEST", detail: { date } });
+  }
+  const role = asString(scope?.role).toLowerCase();
+  const today = osloTodayISODate();
+  if (role === "driver" && date && date !== today) {
+    return jsonErr(rid, "Sjåfør kan kun hente dagens ordre.", 403, { code: "FORBIDDEN_DATE", detail: { date, today } });
   }
 
   const admin = supabaseAdmin();
 
+  const { data: profile, error: profErr } = await loadProfileByUserId(
+    admin as any,
+    String(scope.userId ?? ""),
+    "company_id, location_id, disabled_at, is_active"
+  );
+
+  if (profErr || !profile) {
+    return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
+  }
+  if ((profile as any).disabled_at || (profile as any).is_active === false) {
+    return jsonErr(rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
+  }
+
+  const companyId = asString((profile as any).company_id);
+  const locationId = asString((profile as any).location_id);
+  if (!companyId) {
+    return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
+  }
+
   let q = admin
     .from("orders")
     .select("id,date,slot,status,company_id,location_id")
+    .eq("company_id", companyId)
     .order("slot", { ascending: true })
     .order("created_at", { ascending: true });
 
-  if (date) q = q.eq("date", date);
+  if (locationId) q = q.eq("location_id", locationId);
+  if (role === "driver") q = q.eq("date", today);
+  if (date && role !== "driver") q = q.eq("date", date);
 
   const { data, error } = await q;
   if (error) {
-    return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente driver-ordre.", {
+    return jsonErr(rid, "Kunne ikke hente driver-ordre.", 500, { code: "DB_ERROR", detail: {
       code: error.code,
       message: error.message,
-    });
+    } });
   }
 
-  return jsonOk({ ok: true, rid, rows: data ?? [] }, 200);
+  return jsonOk(rid, { rows: data ?? [] }, 200);
 }
-
-

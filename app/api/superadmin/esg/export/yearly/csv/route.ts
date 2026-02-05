@@ -4,28 +4,25 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getScope } from "@/lib/auth/scope";
 import { toCsv } from "@/lib/esg/csv";
+import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
 }
 
-function csvResponse(csv: string, filename: string) {
+function csvResponse(csv: string, filename: string, rid: string) {
   return new NextResponse(csv, {
     status: 200,
     headers: {
       ...noStore(),
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      "x-lp-rid": rid,
     },
   });
-}
-
-function jsonErr(status: number, rid: string, error: string, message: string, detail?: any) {
-  return NextResponse.json({ ok: false, rid, error, message, detail: detail ?? undefined }, { status, headers: noStore() });
 }
 
 function osloYear() {
@@ -42,17 +39,16 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = crypto.randomUUID?.() ?? String(Date.now());
+  const rid = makeRid();
 
   const supabase = await supabaseServer();
 
   const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
-  if (!scope?.role) return jsonErr(401, rid, "UNAUTHORIZED", "Ikke innlogget", scope);
+  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
+  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
 
-  if (scope.role !== "superadmin") return jsonErr(403, rid, "FORBIDDEN", "Krever superadmin", { role: scope.role });
+  if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
   const url = new URL(req.url);
   const year = clampYear(Number(url.searchParams.get("year") ?? osloYear()));
@@ -65,7 +61,7 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .order("stability_score", { ascending: true });
 
-  if (error) return jsonErr(500, rid, "DB_ERROR", "Kunne ikke hente yearly snapshots", error);
+  if (error) return jsonErr(rid, "Kunne ikke hente yearly snapshots", 500, { code: "DB_ERROR", detail: error });
 
   const headers = [
     "company_id",
@@ -89,8 +85,7 @@ export async function GET(req: NextRequest) {
   ];
 
   const csv = toCsv((data ?? []) as any, headers);
-  return csvResponse(csv, `ESG_YEARLY_${year}.csv`);
+  return csvResponse(csv, `ESG_YEARLY_${year}.csv`, rid);
 }
-
 
 

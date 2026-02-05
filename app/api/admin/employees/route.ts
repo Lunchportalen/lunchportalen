@@ -11,19 +11,8 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
-type AllowedRole = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-const allowedRoles = ["company_admin", "superadmin"] as const satisfies readonly AllowedRole[];
-
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
-}
-
-function getQueryParam(url: string, key: string) {
-  try {
-    return new URL(url).searchParams.get(key);
-  } catch {
-    return null;
-  }
 }
 
 type AnyRow = Record<string, any>;
@@ -59,33 +48,20 @@ export async function GET(req: NextRequest) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // 🔐 401 (NY SIGNATUR: Response | { ok:true, ctx })
   const s = await scopeOr401(req);
-  if (s instanceof Response) return s;
+  if (s.ok === false) return s.res;
   const ctx = s.ctx;
 
   // 🔐 403 role gate (NY SIGNATUR)
   const denyRole = requireRoleOr403(ctx, "admin.employees.read", ["company_admin", "superadmin"]);
   if (denyRole) return denyRole;
 
-  // Company scope:
-  // - company_admin: låst til ctx.scope.companyId
-  // - superadmin: kan (valgfritt) sende ?companyId=... for å filtrere
-  const isSuper = safeStr(ctx.scope.role) === "superadmin";
-  const qCompanyId = safeStr(getQueryParam(req.url, "companyId")) || null;
+  // Company scope: låst til ctx.scope.companyId for alle roller
+  const denyScope = requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
 
-  let companyId: string | null = null;
-
-  if (isSuper) {
-    companyId = qCompanyId || safeStr(ctx.scope.companyId) || null;
-  } else {
-    const denyScope = requireCompanyScopeOr403(ctx);
-    if (denyScope) return denyScope;
-    companyId = safeStr(ctx.scope.companyId) || null;
-  }
-
+  const companyId = safeStr(ctx.scope.companyId) || null;
   if (!companyId) {
-    return jsonErr(ctx, "bad_request", "Mangler companyId i scope.", {
-      hint: "Company admin må ha companyId. Superadmin kan bruke ?companyId=...",
-    });
+    return jsonErr(ctx.rid, "Mangler firmascope.", 400, "bad_request");
   }
 
   try {
@@ -100,28 +76,28 @@ export async function GET(req: NextRequest) {
     const { data, error } = await q;
 
     if (error) {
-      return jsonErr(ctx, "db_error", "Kunne ikke hente ansatte.", {
+      return jsonErr(ctx.rid, "Kunne ikke hente ansatte.", 400, { code: "db_error", detail: {
         code: (error as any).code ?? null,
         message: (error as any).message ?? String(error),
         detail: (error as any).details ?? null,
         hint: (error as any).hint ?? null,
-      });
+      } });
     }
 
     const rows = Array.isArray(data) ? data : [];
     const items = rows.map(pickEmployee);
 
-    return jsonOk(ctx, { ok: true, companyId, items });
+    return jsonOk(ctx.rid, { ok: true, companyId, items });
   } catch (err: unknown) {
     const detail = err instanceof Error ? { name: err.name, message: err.message } : { err };
-    return jsonErr(ctx, "internal_error", "Uventet feil i employees-route.", detail);
+    return jsonErr(ctx.rid, "Uventet feil i employees-route.", 400, { code: "internal_error", detail: detail });
   }
 }
 
 export async function POST(req: NextRequest) {
   // 🔐 401
   const s = await scopeOr401(req);
-  if (s instanceof Response) return s;
+  if (s.ok === false) return s.res;
   const ctx = s.ctx;
 
   // 🔐 403
@@ -129,10 +105,8 @@ export async function POST(req: NextRequest) {
   if (denyRole) return denyRole;
 
   // 405 (låst)
-  return jsonErr(ctx, "method_not_allowed", "Bruk /admin/employees/invite, /resend eller /set-disabled.", {
+  return jsonErr(ctx.rid, "Bruk /admin/employees/invite, /resend eller /set-disabled.", 400, { code: "method_not_allowed", detail: {
     method: "POST",
     route: "/api/admin/employees",
-  });
+  } });
 }
-
-

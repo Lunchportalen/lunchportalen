@@ -4,11 +4,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 
 type Body = {
@@ -182,7 +182,7 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
 }
 
 export async function POST(req: Request) {
-  const rid = `cancel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const rid = makeRid();
 
   try {
     const body = (await req.json().catch(() => null)) as Partial<Body> | null;
@@ -190,54 +190,34 @@ export async function POST(req: Request) {
 
     // 0) Input validering
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return NextResponse.json(
-        { ok: false, rid, error: "BAD_DATE", message: "Ugyldig datoformat. Bruk YYYY-MM-DD." },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Ugyldig datoformat. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
     }
 
     // 1) Auth (cookie-basert)
     const user_id = await getAuthedUserId();
     if (!user_id) {
-      return NextResponse.json(
-        { ok: false, rid, error: "UNAUTH", message: "Ikke innlogget." },
-        { status: 401 }
-      );
+      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
     }
 
     // 2) Cutoff-lås
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "LOCKED",
-          message: "Dagen er låst etter 08:00.",
-          locked: true,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 423 }
-      );
+      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
+        locked: true,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 3) Ukedag (Man–Fri)
     try {
       weekdayKeyOslo(date);
     } catch {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "WEEKDAY_ONLY",
-          message: "Dato må være Man–Fre. Helg bestilles ikke i portalen.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 400 }
-      );
+      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 4) Service role for DB (ingen RLS)
@@ -254,69 +234,37 @@ export async function POST(req: Request) {
 
     if (pErr) {
       logApiError("POST /api/order/cancel profile failed", pErr, { rid, user_id, date });
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_LOOKUP_FAILED",
-          message: "Kunne ikke hente profil.",
-          detail: pErr.message,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 500 }
-      );
+      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
+        detail: pErr.message,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     if (!profile) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_NOT_FOUND",
-          message: "Fant ikke profil.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 403 }
-      );
+      return jsonErr(rid, "Fant ikke profil.", 403, { code: "PROFILE_NOT_FOUND", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     const company_id = profile.company_id;
     const location_id = profile.location_id;
 
     if (!company_id || !location_id) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: "PROFILE_MISSING_SCOPE",
-          message: "Profil mangler company_id/location_id.",
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: 403 }
-      );
+      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, { code: "PROFILE_MISSING_SCOPE", detail: {
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: false,
+      } });
     }
 
     // 6) ✅ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          rid,
-          error: gate.error,
-          message: gate.reason,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: false,
-        },
-        { status: gate.status }
-      );
+      return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
     }
 
     // 7) Finn eksisterende day_choice (idempotent)
@@ -339,56 +287,47 @@ export async function POST(req: Request) {
         user_id,
         date,
       });
-      return NextResponse.json(
-        { ok: false, rid, error: "READ_FAILED", message: "Kunne ikke lese eksisterende valg.", detail: eErr.message },
-        { status: 500 }
-      );
+      return jsonErr(rid, "Kunne ikke lese eksisterende valg.", 500, { code: "READ_FAILED", detail: eErr.message });
     }
 
     if (!existing) {
       // Idempotent: ingen rad å kansellere
-      return NextResponse.json(
-        {
-          ok: true,
-          rid,
-          cancelled: false,
-          alreadyCancelled: false,
-          message: "Ingen bestilling å avbestille for denne dagen.",
-          date,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: true,
-          scope: { company_id, location_id, user_id },
-        },
-        { status: 200 }
-      );
+      return jsonOk(rid, {
+        ok: true,
+        rid,
+        cancelled: false,
+        alreadyCancelled: false,
+        message: "Ingen bestilling å avbestille for denne dagen.",
+        date,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: true,
+        scope: { company_id, location_id, user_id },
+      }, 200);
     }
 
     const statusUpper = String(existing.status ?? "").toUpperCase();
     if (statusUpper === "CANCELLED") {
       // Idempotent: allerede kansellert
-      return NextResponse.json(
-        {
-          ok: true,
-          rid,
-          cancelled: false,
-          alreadyCancelled: true,
-          message: "Allerede avbestilt.",
+      return jsonOk(rid, {
+        ok: true,
+        rid,
+        cancelled: false,
+        alreadyCancelled: true,
+        message: "Allerede avbestilt.",
+        date,
+        receipt: {
+          orderId: existing.id,
+          status: "CANCELLED",
           date,
-          receipt: {
-            orderId: existing.id,
-            status: "CANCELLED",
-            date,
-            updatedAt: existing.updated_at ?? null,
-          },
-          updated_at: existing.updated_at ?? null,
-          locked: false,
-          cutoffTime: cutoff.cutoffTime,
-          canAct: true,
-          scope: { company_id, location_id, user_id },
+          updatedAt: existing.updated_at ?? null,
         },
-        { status: 200 }
-      );
+        updated_at: existing.updated_at ?? null,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: true,
+        scope: { company_id, location_id, user_id },
+      }, 200);
     }
 
     // 8) Marker som CANCELLED (behold rad)
@@ -401,42 +340,31 @@ export async function POST(req: Request) {
 
     if (uErr || !updatedRaw) {
       logApiError("POST /api/order/cancel update failed", uErr, { rid, existingId: existing.id });
-      return NextResponse.json(
-        { ok: false, rid, error: "CANCEL_FAILED", message: "Kunne ikke avbestille.", detail: uErr?.message },
-        { status: 500 }
-      );
+      return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "CANCEL_FAILED", detail: uErr?.message });
     }
 
-    return NextResponse.json(
-      {
-        ok: true,
-        rid,
-        cancelled: true,
-        alreadyCancelled: false,
-        date,
-        status: (updatedRaw as any).status,
-        receipt: {
-          orderId: (updatedRaw as any).id,
-          status: "CANCELLED",
-          date: (updatedRaw as any).date,
-          updatedAt: (updatedRaw as any).updated_at ?? null,
-        },
-        updated_at: (updatedRaw as any).updated_at ?? null,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: true,
-        scope: { company_id, location_id, user_id },
+    return jsonOk(rid, {
+      ok: true,
+      rid,
+      cancelled: true,
+      alreadyCancelled: false,
+      date,
+      status: (updatedRaw as any).status,
+      receipt: {
+        orderId: (updatedRaw as any).id,
+        status: "CANCELLED",
+        date: (updatedRaw as any).date,
+        updatedAt: (updatedRaw as any).updated_at ?? null,
       },
-      { status: 200 }
-    );
+      updated_at: (updatedRaw as any).updated_at ?? null,
+      locked: false,
+      cutoffTime: cutoff.cutoffTime,
+      canAct: true,
+      scope: { company_id, location_id, user_id },
+    }, 200);
   } catch (e: any) {
     logApiError("POST /api/order/cancel failed", e, { rid: "cancel_unknown" });
-    return NextResponse.json(
-      { ok: false, rid: "cancel_unknown", error: "SERVER_ERROR", message: "Uventet feil.", detail: String(e?.message ?? e) },
-      { status: 500 }
-    );
+    return jsonErr("cancel_unknown", "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-
-
 

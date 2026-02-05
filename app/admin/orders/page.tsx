@@ -8,22 +8,15 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import OrdersTable from "@/components/admin/OrdersTable";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 /* =========================================================
    Role helpers (samme prinsipp som middleware)
 ========================================================= */
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
-
 function roleByEmail(email: string | null | undefined): Role | null {
-  const e = normEmail(email);
-  if (e === "superadmin@lunchportalen.no") return "superadmin";
-  if (e === "kjokken@lunchportalen.no") return "kitchen";
-  if (e === "driver@lunchportalen.no") return "driver";
-  return null;
+  return systemRoleByEmail(email);
 }
 
 function roleFromMetadata(user: any): Role {

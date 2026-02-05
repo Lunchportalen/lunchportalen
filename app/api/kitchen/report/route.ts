@@ -6,8 +6,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { jsonOk, jsonErr, rid as makeRid } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 
@@ -138,10 +137,10 @@ export async function GET(req: NextRequest) {
       .from("orders")
       .select("id, date, status, company_id, location_id, slot, created_at")
       .in("date", dates)
-      .eq("status", "ACTIVE");
+      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]);
 
     if (oErr) {
-      return jsonErr(500, rid, "orders_query_failed", "Kunne ikke hente ordregrunnlag.", oErr);
+      return jsonErr(rid, "Kunne ikke hente ordregrunnlag.", 500, { code: "orders_query_failed", detail: oErr });
     }
 
     const rows = orders ?? [];
@@ -156,7 +155,7 @@ export async function GET(req: NextRequest) {
       : { data: [], error: null };
 
     if (cErr) {
-      return jsonErr(500, rid, "companies_query_failed", "Kunne ikke hente firmadata.", cErr);
+      return jsonErr(rid, "Kunne ikke hente firmadata.", 500, { code: "companies_query_failed", detail: cErr });
     }
 
     // 4) Hent location metadata
@@ -168,7 +167,7 @@ export async function GET(req: NextRequest) {
       : { data: [], error: null };
 
     if (lErr) {
-      return jsonErr(500, rid, "locations_query_failed", "Kunne ikke hente lokasjonsdata.", lErr);
+      return jsonErr(rid, "Kunne ikke hente lokasjonsdata.", 500, { code: "locations_query_failed", detail: lErr });
     }
 
     const companyById = new Map<string, { id: string; name: string }>();
@@ -286,10 +285,8 @@ export async function GET(req: NextRequest) {
       grandTotals: grand,
     };
 
-    return jsonOk(body, { headers: noStoreHeaders() });
+    return jsonOk(rid, body);
   } catch (e: any) {
-    return jsonErr(500, rid, "unexpected_error", "Uventet feil i kjøkkenrapport.", safeStr(e?.message || e));
+    return jsonErr(rid, "Uventet feil i kjøkkenrapport.", 500, { code: "unexpected_error", detail: safeStr(e?.message || e) });
   }
 }
-
-

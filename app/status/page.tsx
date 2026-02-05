@@ -70,14 +70,14 @@ export default function StatusPage({
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--lp-text))] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-[rgb(var(--lp-text))] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
             >
               Til innlogging
             </Link>
 
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-2.5 text-sm font-medium text-[rgb(var(--lp-text))] ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/70"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-white px-4 py-2.5 text-sm font-medium text-[rgb(var(--lp-text))] ring-1 ring-[rgb(var(--lp-border))] hover:bg-white/70"
             >
               Gå til forsiden
             </Link>
@@ -92,3 +92,4 @@ export default function StatusPage({
     </main>
   );
 }
+
