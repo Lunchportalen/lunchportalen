@@ -1,0 +1,27 @@
+name: postdeploy-gate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  postdeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm ci
+
+      - name: Run postdeploy gate
+        run: npm run postdeploy
+        shell: bash
+        env:
+          POSTDEPLOY_BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+          POSTDEPLOY_TIMEOUT_MS: "12000"
+          POSTDEPLOY_JSON_CHECKS: "0"

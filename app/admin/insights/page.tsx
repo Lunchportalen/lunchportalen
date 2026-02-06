@@ -1,4 +1,4 @@
-// app/admin/insights/page.tsx
+﻿// app/admin/insights/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -95,11 +95,11 @@ export default async function AdminInsightsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {ctx.company?.name ?? "Firma"} · Insights
+              Admin · {ctx.company?.name ?? "Firma"} · Rapporter
             </div>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Bærekraft & kontroll</h1>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">ROI & stabilitet</h1>
             <p className="mt-2 text-neutral-600">
-              Basert på faktiske bestillinger/avbestillinger – ingen estimat uten grunnlag.
+              Tallene under viser faktisk bruk og drift – uten estimater eller pynt.
             </p>
           </div>
 
@@ -115,4 +115,3 @@ export default async function AdminInsightsPage() {
     </main>
   );
 }
-

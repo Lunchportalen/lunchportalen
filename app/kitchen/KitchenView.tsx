@@ -1,4 +1,4 @@
-// app/kitchen/KitchenView.tsx
+﻿// app/kitchen/KitchenView.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +19,31 @@ type KitchenGroup = {
   company_id: string;
   location_id: string;
   orders: KitchenOrder[];
+};
+
+type LocationGroup = {
+  locationId: string;
+  location: string;
+  orders: KitchenOrder[];
+  total: number;
+};
+
+type CompanyGroup = {
+  companyId: string;
+  company: string;
+  locations: LocationGroup[];
+  total: number;
+};
+
+type WindowGroup = {
+  window: string;
+  companies: CompanyGroup[];
+  total: number;
+};
+
+type KitchenFetch = {
+  rid: string;
+  groups: KitchenGroup[];
 };
 
 const OSLO_TZ = "Europe/Oslo";
@@ -62,20 +87,58 @@ function formatDateForLocale(iso: string) {
   return iso;
 }
 
+function buildGroups(rows: KitchenGroup[] | null): WindowGroup[] {
+  if (!rows || rows.length === 0) return [];
+
+  const windows: WindowGroup[] = [];
+  const windowIndex = new Map<string, WindowGroup>();
+
+  for (const g of rows) {
+    const windowKey = g.delivery_window || "Standard";
+    let win = windowIndex.get(windowKey);
+    if (!win) {
+      win = { window: windowKey, companies: [], total: 0 };
+      windowIndex.set(windowKey, win);
+      windows.push(win);
+    }
+
+    let comp = win.companies.find((c) => c.companyId === g.company_id);
+    if (!comp) {
+      comp = { companyId: g.company_id, company: g.company, locations: [], total: 0 };
+      win.companies.push(comp);
+    }
+
+    let loc = comp.locations.find((l) => l.locationId === g.location_id);
+    if (!loc) {
+      loc = { locationId: g.location_id, location: g.location, orders: [], total: 0 };
+      comp.locations.push(loc);
+    }
+
+    const orderCount = g.orders?.length ?? 0;
+    loc.orders = [...loc.orders, ...g.orders];
+    loc.total += orderCount;
+    comp.total += orderCount;
+    win.total += orderCount;
+  }
+
+  return windows;
+}
+
 export default function KitchenView() {
   const [data, setData] = useState<KitchenGroup[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [hardErr, setHardErr] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [rid, setRid] = useState<string | null>(null);
 
   const [dateISO] = useState<string>(fmtOsloYMDNow());
 
-  async function fetchDayOnce(dISO: string): Promise<KitchenGroup[]> {
+  async function fetchDayOnce(dISO: string): Promise<KitchenFetch> {
     if (!isISODate(dISO)) throw new Error("Ugyldig dato");
-    const rid = `kitchen_day_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const requestRid = `kitchen_day_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const res = await fetch(`/api/kitchen/day?date=${encodeURIComponent(dISO)}`, {
       cache: "no-store",
-      headers: { "x-rid": rid },
+      headers: { "x-rid": requestRid },
     });
 
     const txt = await res.text();
@@ -88,9 +151,9 @@ export default function KitchenView() {
 
     const payload = (json as any)?.data ?? json;
     if (payload && Array.isArray(payload.groups)) {
-      return payload.groups as KitchenGroup[];
+      return { rid: requestRid, groups: payload.groups as KitchenGroup[] };
     }
-    if (Array.isArray(payload)) return payload as KitchenGroup[];
+    if (Array.isArray(payload)) return { rid: requestRid, groups: payload as KitchenGroup[] };
     if (json && typeof json === "object" && json.ok === false) {
       throw new Error(json?.message || json?.error || "Kunne ikke hente kjøkkenliste");
     }
@@ -99,10 +162,11 @@ export default function KitchenView() {
 
   async function load() {
     try {
-      const groups = await fetchDayOnce(dateISO);
-      setData(groups);
+      const res = await fetchDayOnce(dateISO);
+      setData(res.groups);
       setLastUpdated(fmtOsloHMNow());
       setHardErr(null);
+      setRid(res.rid);
     } catch (e: any) {
       setHardErr(e?.message || "Kunne ikke hente kjøkkenliste");
     } finally {
@@ -120,16 +184,20 @@ export default function KitchenView() {
   const frozen = useMemo(() => isAfterCutoff0800(dateISO), [dateISO]);
   const totalKuverter = useMemo(() => (data ?? []).reduce((sum, g) => sum + (g.orders?.length ?? 0), 0), [data]);
   const dateLabel = formatDateForLocale(dateISO);
+  const windows = useMemo(() => buildGroups(data), [data]);
 
   return (
-    <div className="lp-card lp-card-pad">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className="lp-card p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-sm text-[rgb(var(--lp-muted))]">Produksjon for {dateLabel}</div>
-          <div className="mt-1 text-2xl font-semibold text-[rgb(var(--lp-fg))]">Kjøkken</div>
+          <div className="text-sm text-[rgb(var(--lp-muted))]">Produksjonsdato</div>
+          <div className="mt-1 text-2xl font-semibold text-[rgb(var(--lp-fg))]">{dateLabel}</div>
+          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">ACTIVE / READY FOR PRODUCTION</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Dette er fasit. Ingen manuelle unntak.</div>
         </div>
         <div className="text-sm text-[rgb(var(--lp-muted))]">
-          Frosset kl. 08:00 · Sist oppdatert: {lastUpdated ?? "Ikke tilgjengelig"}
+          Cut-off 08:00 · Sist oppdatert: {lastUpdated ?? "Ikke tilgjengelig"}
+          {rid ? <div className="mt-1 text-xs">RID: {rid}</div> : null}
         </div>
       </div>
 
@@ -147,27 +215,52 @@ export default function KitchenView() {
             Totalt kuverter: <span className="font-semibold text-[rgb(var(--lp-fg))]">{totalKuverter}</span>
           </div>
 
-          <div className="mt-6 space-y-5">
-            {data.map((g) => (
-              <section key={`${g.delivery_date}:${g.delivery_window}:${g.company_id}:${g.location_id}`} className="rounded-[var(--lp-radius)] bg-[rgb(var(--lp-surface))] p-5">
+          <div className="mt-6 space-y-6">
+            {windows.map((w) => (
+              <section key={w.window} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
-                      {g.delivery_window} · {g.company}
-                    </div>
-                    <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{g.location}</div>
-                  </div>
+                  <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">Leveringsvindu: {w.window}</div>
                   <div className="text-sm text-[rgb(var(--lp-muted))]">
-                    Kuverter: <span className="font-semibold text-[rgb(var(--lp-fg))]">{g.orders.length}</span>
+                    Totalt: <span className="font-semibold text-[rgb(var(--lp-fg))]">{w.total}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-2">
-                  {g.orders.map((o) => (
-                    <div key={o.id} className="rounded-2xl bg-white/70 px-4 py-3">
-                      <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">{o.full_name}</div>
-                      {o.department ? <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{o.department}</div> : null}
-                      {o.note ? <div className="mt-2 text-sm text-[rgb(var(--lp-fg))]">{o.note}</div> : null}
+                <div className="mt-4 space-y-4">
+                  {w.companies.map((c) => (
+                    <div key={c.companyId} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">{c.company}</div>
+                        <div className="text-sm text-[rgb(var(--lp-muted))]">
+                          Totalt firma: <span className="font-semibold text-[rgb(var(--lp-fg))]">{c.total}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 space-y-3">
+                        {c.locations.map((l) => (
+                          <div key={`${c.companyId}:${l.locationId}`} className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="font-medium text-[rgb(var(--lp-fg))]">{l.location}</div>
+                              <div className="text-sm text-[rgb(var(--lp-muted))]">
+                                Totalt lokasjon: <span className="font-semibold text-[rgb(var(--lp-fg))]">{l.total}</span>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 space-y-2">
+                              {l.orders.map((o) => (
+                                <div key={o.id} className="rounded-xl bg-white px-4 py-3">
+                                  <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">{o.full_name}</div>
+                                  {o.department ? (
+                                    <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{o.department}</div>
+                                  ) : null}
+                                  {o.note ? (
+                                    <div className="mt-2 text-sm text-[rgb(var(--lp-fg))] lp-wrap-anywhere">{o.note}</div>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -178,7 +271,9 @@ export default function KitchenView() {
       )}
 
       {!frozen.after && (
-        <div className="mt-5 text-xs text-[rgb(var(--lp-muted))]">Endringer kan forekomme frem til 08:00.</div>
+        <div className="mt-5 text-xs text-[rgb(var(--lp-muted))]">
+          Ordrene under er klare for produksjon. Endringer etter cut-off registreres som avvik.
+        </div>
       )}
     </div>
   );

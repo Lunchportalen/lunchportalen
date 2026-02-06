@@ -19,7 +19,9 @@ function safeNextPath(next: string | null | undefined) {
     next === "/registrering" ||
     next.startsWith("/registrering/") ||
     next === "/forgot-password" ||
-    next.startsWith("/forgot-password/")
+    next.startsWith("/forgot-password/") ||
+    next === "/reset-password" ||
+    next.startsWith("/reset-password/")
   ) {
     return null;
   }

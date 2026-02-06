@@ -1,4 +1,4 @@
-// app/kitchen/page.tsx
+﻿// app/kitchen/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -101,25 +101,18 @@ export default async function Page() {
       <div className="print:hidden">
         <PageSection
           title="Kjøkken"
-          subtitle="Dagens produksjonsliste – sortert per leveringsvindu, firma, lokasjon og ansatt. Klar for utskrift."
+          subtitle="Dagens produksjonsliste. Ordrene er gruppert per leveringsvindu, firma og lokasjon. Dette er fasit."
           right={
             <aside className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block">
               <div className="font-semibold text-slate-900">Driftsnotat</div>
               <ul className="mt-2 space-y-1">
-                <li>• Bruk datovelger for å hente riktig produksjon</li>
-                <li>• Utskrift: bruk nettleserens print</li>
-                <li>• Superadmin kan også se kjøkkenvisning</li>
+                <li>Dato følger dagens Oslo-tid.</li>
+                <li>Utskrift: bruk nettleserens print.</li>
+                <li>Endringer etter cut-off registreres som avvik.</li>
               </ul>
             </aside>
           }
-        >
-          <div className="flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-            <span className="rounded-full bg-black/5 px-3 py-1">📅 Dato & leveringsdag</span>
-            <span className="rounded-full bg-black/5 px-3 py-1">⌛ Hurtigvalg</span>
-            <span className="rounded-full bg-black/5 px-3 py-1">🖨️ Print</span>
-            <span className="rounded-full bg-black/5 px-3 py-1">📦 Samlevolum</span>
-          </div>
-        </PageSection>
+        />
       </div>
 
       <div className="mb-4 hidden print:block">
@@ -133,5 +126,3 @@ export default async function Page() {
     </>
   );
 }
-
-

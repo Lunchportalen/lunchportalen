@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatDateNO } from "@/lib/date/format";
 
@@ -34,6 +35,7 @@ function isActive(order: MyOrder | null) {
 }
 
 export default function MyLunchCard() {
+  const router = useRouter();
   const [data, setData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -54,20 +56,24 @@ export default function MyLunchCard() {
   }, []);
 
   async function place() {
+    if (busy) return;
     setBusy(true);
     try {
       await fetch("/api/orders/my", { method: "POST", cache: "no-store" });
       await load();
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
 
   async function cancel() {
+    if (busy) return;
     setBusy(true);
     try {
       await fetch("/api/orders/my", { method: "DELETE", cache: "no-store" });
       await load();
+      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -112,11 +118,10 @@ export default function MyLunchCard() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="relative z-10 flex flex-wrap gap-2">
         <Button
           onClick={place}
           disabled={!allowed || active || busy}
-          className="lp-neon-focus lp-neon-glow-hover"
         >
           Bestill lunsj
         </Button>

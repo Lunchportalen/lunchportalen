@@ -579,3 +579,95 @@ Do not simplify.
 Build something competitors envy.
 Build something that feels inevitable.
 
+
+### 🔒 MOBILE + BRAND + SEO/CRO IMMUTABLE RULES (PRODUCTION)
+- Mobile must NEVER allow horizontal scrolling.
+- All content must be full width on mobile.
+- No element may render outside viewport on mobile.
+- Logout and primary actions must always be visible.
+- Login must redirect instantly without refresh.
+- Buttons must maintain readable contrast in all states.
+- Hero image and logo must be mobile-safe and non-overflowing.
+- Copy must follow calm, warm, professional Melhuscatering-style.
+- SEO and CRO must remain 10/10, especially the front page.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 ONBOARDING & REGISTRATION CRO IMMUTABLE RULES
+- Onboarding must be mobile-first and distraction-free.
+- One primary action per screen.
+- Copy must be calm, warm and professional.
+- Expectations must be clear before registration is completed.
+- No sidewise scroll or offscreen elements are allowed.
+- Conversion clarity is more important than feature explanation.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 KITCHEN & OPERATIONS IMMUTABLE RULES
+- Kitchen view is read-only and represents system truth.
+- No manual overrides or exceptions are allowed.
+- Orders are grouped deterministically by date, slot, company and location.
+- Totals must always be visible and correct.
+- UI must be scannable under time pressure.
+- Mobile and desktop must both be production-safe.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 DRIVER & DELIVERY IMMUTABLE RULES
+- Driver view is mobile-first and must never allow horizontal scroll.
+- Stops are grouped and ordered deterministically (date → slot → company → location).
+- Each stop must show address, window/slot, contact and contents summary.
+- Delivery actions (if present) must be explicit, traceable and idempotent.
+- No manual exceptions or hidden overrides.
+- UI must be scannable under time pressure with one-hand use.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 ADMIN INSIGHTS & ROI IMMUTABLE RULES
+- Reports must show real, traceable numbers only.
+- No vanity metrics or decorative charts.
+- Insights must be understandable in under 10 seconds.
+- Calm, enterprise tone is mandatory.
+- Mobile and desktop must both be readable without zoom.
+- Reports are read-only and reflect system truth.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 TYPOGRAPHY IMMUTABLE RULES (PRODUCTION)
+- Headings (H1–H4 and title/heading classes) must use Inter for enterprise clarity.
+- Decorative or character-heavy display fonts are forbidden for headings.
+- Letterforms (especially F and J) must remain neutral, readable, and professional.
+- Body text font must remain unchanged unless explicitly approved as a separate change.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 COMMERCIAL & SALES IMMUTABLE RULES
+- Lunchportalen selges på kontroll, forutsigbarhet og mindre administrasjon.
+- Ingen hype, buzzwords eller urealistiske løfter er tillatt.
+- Salgsbudskap skal alltid reflektere faktisk systematferd.
+- Tone skal være rolig, varm og profesjonell.
+- Beslutningstakere skal forstå verdien på under 10 sekunder.
+- Endringer som bryter disse reglene er BLOCKING DEFECTS.
+
+### 🔒 PASSWORD RESET IMMUTABLE RULES
+- Passord tilbakestilles kun via «Glemt passord».
+- Ingen admin-resetter eller manuelle inngrep er tillatt.
+- Reset skjer via tidsbegrenset engangslenke (mål: 30 minutter).
+- Samme bekreftelsestekst vises uansett om e-post finnes (ingen brukerenumerering).
+- Lenker skal være single-use (ny forespørsel erstatter gammel).
+- Systemet er én sannhetskilde. Brudd på dette er en BLOCKING DEFECT.
+
+### 🔒 BRAND ASSET IMMUTABLE RULES
+- Official Lunchportalen logo must be rendered from /public/brand.
+- Placeholder text-only logos are forbidden in production header.
+- Favicon + app icons must be wired via app/layout.tsx metadata (or Next icon convention) and must not regress.
+- Brand assets must never introduce layout shift or horizontal scroll.
+- Any change violating these rules is a BLOCKING DEFECT.
+
+### 🔒 LOGO IMMUTABLE RULE (PRODUCTION)
+- Lunchportalen logo must be rendered as an image in the header on all pages.
+- Text-only branding in production headers is forbidden.
+- Logo must use /public/brand assets and must never cause overflow or layout shift.
+- Any change violating this is a BLOCKING DEFECT.
+
+### 🔒 HEADER LOGO IMMUTABLE RULES
+- Header must contain exactly ONE brand element: the logo image.
+- Text-based logos are forbidden in production.
+- Logo asset must be /public/brand/LP-logo-uten-bakgrunn.png.
+- Logo height is locked to 64px (mobile) and 120px (desktop).
+- Logo must always link to "/" (home).
+- Any change violating these rules is a BLOCKING DEFECT.

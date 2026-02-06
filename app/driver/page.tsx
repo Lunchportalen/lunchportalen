@@ -1,4 +1,4 @@
-// app/driver/page.tsx
+﻿// app/driver/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -82,20 +82,20 @@ export default async function DriverPage() {
       <div className="print:hidden">
         <PageSection
           title="Sjåfør"
-          subtitle="Dagens leveranser – gruppert per firma og lokasjon. Klar for ruteplanlegging."
+          subtitle="Dagens leveringer er gruppert per tidsvindu, firma og lokasjon. Dette er fasit."
           right={
             <aside className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block">
               <div className="font-semibold text-slate-900">Driftsnotat</div>
               <ul className="mt-2 space-y-1">
-                <li>• Bruk datovelger for å se en annen dag</li>
-                <li>• Superadmin kan også se sjåførvisning</li>
-                <li>• Ved avvik: noter og varsle drift</li>
+                <li>Dagens stopp følger Oslo-tid.</li>
+                <li>Følg tidsvinduene for hver lokasjon.</li>
+                <li>Eventuelle avvik registreres etter levering.</li>
               </ul>
             </aside>
           }
         >
           <div className="flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-            <span className="rounded-full bg-black/5 px-3 py-1">🚚 Leveranser</span>
+            <span className="rounded-full bg-black/5 px-3 py-1">🚚 Dagens stopp</span>
             <span className="rounded-full bg-black/5 px-3 py-1">🗺️ Lokasjoner</span>
             <span className="rounded-full bg-black/5 px-3 py-1">☎️ Kontakt</span>
           </div>
@@ -113,5 +113,3 @@ export default async function DriverPage() {
     </>
   );
 }
-
-

@@ -75,7 +75,9 @@ function safeNextPath(next: string | null) {
     next === "/register" ||
     next.startsWith("/register/") ||
     next === "/forgot-password" ||
-    next.startsWith("/forgot-password/")
+    next.startsWith("/forgot-password/") ||
+    next === "/reset-password" ||
+    next.startsWith("/reset-password/")
   ) {
     return FALLBACK;
   }

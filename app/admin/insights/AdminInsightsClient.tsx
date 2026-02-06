@@ -1,8 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
-type RangeKey = "7d" | "30d";
+type RangeKey = "7d" | "14d" | "30d";
+
+type DaySummary = {
+  date: string;
+  orders: number;
+  cancelled_before_cutoff: number;
+  cancelled_after_cutoff: number;
+};
 
 type ApiOk = {
   ok: true;
@@ -10,11 +17,17 @@ type ApiOk = {
   data: {
     range: RangeKey;
     window: { from: string; to: string };
+    deliveries: { total_orders: number; active_days: number; avg_orders_per_day: number | null };
     cancellations_before_cutoff: { count: number; total_cancelled: number; rate: number | null };
-    saved_meals_proxy: { count: number };
-    waste_reduced_proxy: { meals: number };
-    adoption: { active_users_14d: number; total_employees: number; rate_14d: number | null };
-    delivery_stability: { available: boolean; message?: string };
+    cancellations_after_cutoff: { count: number };
+    daily_summary: DaySummary[];
+    delivery_stability: {
+      available: boolean;
+      days_with_no_deviations?: number;
+      days_with_deviations?: number;
+      note?: string;
+      message?: string;
+    };
   };
 };
 
@@ -106,11 +119,7 @@ export default function AdminInsightsClient() {
     };
   }, [range]);
 
-  const adoptionText = useMemo(() => {
-    if (!data) return "—";
-    const rate = data.adoption.rate_14d;
-    return rate === null ? "Ikke tilgjengelig" : fmtPercent(rate, 1);
-  }, [data]);
+  const summaryRows = useMemo(() => data?.daily_summary ?? [], [data]);
 
   if (loading) {
     return (
@@ -141,7 +150,7 @@ export default function AdminInsightsClient() {
     <div className="space-y-6">
       <SectionCard
         title="Periode"
-        subtitle={`Viser ${data.window.from} – ${data.window.to}`}
+        subtitle={`Viser ${data.window.from} – ${data.window.to}. Tallene under viser faktisk bruk, ikke estimater.`}
         right={
           <div className="flex items-center gap-2">
             <button
@@ -153,6 +162,16 @@ export default function AdminInsightsClient() {
               }`}
             >
               7d
+            </button>
+            <button
+              onClick={() => setRange("14d")}
+              className={`rounded-2xl px-4 py-2 text-sm font-semibold ring-1 ${
+                range === "14d"
+                  ? "bg-black text-white ring-black"
+                  : "bg-white text-neutral-900 ring-black/10 hover:bg-white"
+              }`}
+            >
+              14d
             </button>
             <button
               onClick={() => setRange("30d")}
@@ -167,37 +186,81 @@ export default function AdminInsightsClient() {
           </div>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <Kpi
-            label="Avbestillinger før 08:00"
+            label="Totalt antall leveringer"
+            value={fmtNum(data.deliveries.total_orders)}
+            hint="Basert på registrerte bestillinger i perioden."
+          />
+          <Kpi
+            label="Aktive leveringsdager"
+            value={fmtNum(data.deliveries.active_days)}
+            hint="Dager med registrerte bestillinger."
+          />
+          <Kpi
+            label="Gjennomsnittlig ordre per dag"
+            value={fmtNum(data.deliveries.avg_orders_per_day, 1)}
+            hint="Beregnet fra aktive leveringsdager."
+          />
+          <Kpi
+            label="Avbestillinger før cut-off"
             value={fmtNum(data.cancellations_before_cutoff.count)}
-            hint={`Rate: ${fmtPercent(data.cancellations_before_cutoff.rate, 1)}`}
+            hint="Avbestillinger før cut-off reduserer matsvinn og kost."
           />
           <Kpi
-            label="Estimert porsjoner spart"
-            value={fmtNum(data.saved_meals_proxy.count)}
-            hint="Proxy: avbestillinger før cutoff"
-          />
-          <Kpi
-            label="Estimert matsvinn redusert"
-            value={fmtNum(data.waste_reduced_proxy.meals)}
-            hint="Proxy: 1 avbestilling ≈ 1 porsjon spart"
-          />
-          <Kpi
-            label="Adopsjon (14d)"
-            value={adoptionText}
-            hint={`${fmtNum(data.adoption.active_users_14d)} av ${fmtNum(data.adoption.total_employees)} aktive ansatte`}
+            label="Avvik etter cut-off"
+            value={fmtNum(data.cancellations_after_cutoff.count)}
+            hint="Registrerte endringer etter 08:00."
           />
         </div>
         {rid ? <div className="mt-3 text-xs text-neutral-500">RID: {rid}</div> : null}
+        <div className="mt-3 text-xs text-neutral-600">Systemet er én sannhetskilde. Avvik logges automatisk med RID.</div>
       </SectionCard>
 
-      <SectionCard title="Leveringsstabilitet" subtitle="Avvik registreres av drift.">
-        <div className="text-sm text-neutral-600">
-          {data.delivery_stability.available ? "OK" : data.delivery_stability.message ?? "Ikke tilgjengelig."}
+      <SectionCard
+        title="Stabilitet og forutsigbarhet"
+        subtitle="Dette gir oversikt – ikke støy."
+      >
+        {data.delivery_stability.available ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+              <div className="text-xs font-semibold text-neutral-600">Dager uten avvik</div>
+              <div className="mt-2 text-2xl font-extrabold text-neutral-900">
+                {fmtNum(data.delivery_stability.days_with_no_deviations ?? 0)}
+              </div>
+              <div className="mt-1 text-xs text-neutral-600">Dager med null registrerte endringer etter cut-off.</div>
+            </div>
+            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+              <div className="text-xs font-semibold text-neutral-600">Dager med avvik</div>
+              <div className="mt-2 text-2xl font-extrabold text-neutral-900">
+                {fmtNum(data.delivery_stability.days_with_deviations ?? 0)}
+              </div>
+              <div className="mt-1 text-xs text-neutral-600">Registrerte endringer etter cut-off.</div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-neutral-600">
+            {data.delivery_stability.message ?? "Ikke tilgjengelig."}
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Historikk" subtitle="Siste dager i perioden."
+      >
+        <div className="grid gap-2">
+          {summaryRows.map((row) => (
+            <div key={row.date} className="rounded-2xl bg-white/70 px-4 py-3 ring-1 ring-black/5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div className="font-semibold text-neutral-900">{row.date}</div>
+                <div className="text-neutral-700">{fmtNum(row.orders)} ordre</div>
+              </div>
+              <div className="mt-1 text-xs text-neutral-600">
+                Før cut-off: {fmtNum(row.cancelled_before_cutoff)} · Etter cut-off: {fmtNum(row.cancelled_after_cutoff)}
+              </div>
+            </div>
+          ))}
         </div>
       </SectionCard>
     </div>
   );
 }
-

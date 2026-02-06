@@ -53,9 +53,9 @@ export default function AdminHeader({ role, userEmail }: AdminHeaderProps) {
                 <Image
                   src={ADMIN_LOGO_SRC}
                   alt="Lunchportalen"
-                  width={28}
-                  height={28}
-                  className="h-7 w-7"
+                  width={160}
+                  height={32}
+                  className="h-6 w-auto max-h-8 object-contain md:h-8"
                   onError={() => setLogoOk(false)}
                   priority
                 />
@@ -64,7 +64,6 @@ export default function AdminHeader({ role, userEmail }: AdminHeaderProps) {
                   LP
                 </span>
               )}
-              <span>Lunchportalen Admin</span>
             </Link>
           </div>
 

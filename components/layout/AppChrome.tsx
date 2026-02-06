@@ -11,7 +11,9 @@ function isPublicPath(pathname: string) {
     pathname === "/register" ||
     pathname.startsWith("/register/") ||
     pathname === "/forgot-password" ||
-    pathname.startsWith("/forgot-password/")
+    pathname.startsWith("/forgot-password/") ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/")
   );
 }
 
@@ -32,14 +34,14 @@ export default async function AppChrome({ children }: { children: React.ReactNod
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:gap-4">
           <Link href="/" className="flex items-center">
             <Image
-              src="/LunchPortalen_Enterprise_Logo_Pack/LP-logo-uten-bakgrunn.png"
+              src="/brand/LP-logo-uten-bakgrunn.png"
               alt="Lunchportalen"
-              width={220}
-              height={44}
+              width={160}
+              height={32}
+              sizes="(max-width: 768px) 120px, 160px"
               priority
-              className="h-auto w-[170px] md:w-[210px]"
+              className="h-6 w-auto max-h-8 object-contain md:h-8"
             />
-            <span className="sr-only">Lunchportalen</span>
           </Link>
 
           <nav className="flex flex-nowrap items-center gap-3">

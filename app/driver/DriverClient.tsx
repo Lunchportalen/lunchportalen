@@ -1,4 +1,4 @@
-// app/driver/DriverClient.tsx
+﻿// app/driver/DriverClient.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
@@ -52,6 +52,35 @@ type ApiWrapped<T> = {
   error?: string;
   message?: string;
   detail?: any;
+};
+
+type LocationGroup = {
+  locationKey: string;
+  locationName: string;
+  addressLine: string;
+  deliveryWhere: string;
+  deliveryWhenNote: string;
+  deliveryContact: string;
+  deliveryWindow: string;
+  orderCount: number;
+  delivered: boolean;
+  deliveredAt: string | null;
+  deliveredBy: string | null;
+  stop: Stop;
+};
+
+type CompanyGroup = {
+  companyKey: string;
+  companyName: string;
+  locations: LocationGroup[];
+  totalOrders: number;
+};
+
+type SlotGroup = {
+  slotKey: string;
+  slotLabel: string;
+  companies: CompanyGroup[];
+  totalOrders: number;
 };
 
 /* =========================================================
@@ -133,6 +162,101 @@ function prettyDetail(d: any) {
   } catch {
     return String(d);
   }
+}
+
+function slotSortKey(slot: string) {
+  const s = safeStr(slot).toLowerCase();
+  const m = s.match(/(\d{1,2}):(\d{2})/);
+  if (m) {
+    const hh = Number(m[1]);
+    const mm = Number(m[2]);
+    return hh * 60 + mm;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function normalizedName(v: string) {
+  return safeStr(v).toLowerCase();
+}
+
+function buildGroups(stops: Stop[]): SlotGroup[] {
+  const slotMap = new Map<string, SlotGroup>();
+  const slots: SlotGroup[] = [];
+
+  for (const s of stops) {
+    const slotLabel = safeStr(s.slot) || "Standard";
+    let slot = slotMap.get(slotLabel);
+    if (!slot) {
+      slot = { slotKey: slotLabel, slotLabel, companies: [], totalOrders: 0 };
+      slotMap.set(slotLabel, slot);
+      slots.push(slot);
+    }
+
+    const companyName = safeStr(s.companyName) || s.companyId;
+    let company = slot.companies.find((c) => c.companyKey === s.companyId);
+    if (!company) {
+      company = { companyKey: s.companyId, companyName, locations: [], totalOrders: 0 };
+      slot.companies.push(company);
+    }
+
+    const locationName = safeStr(s.locationName) || s.locationId;
+    const locationKey = `${s.companyId}:${s.locationId}`;
+    const addressLine = safeStr(s.addressLine) || "Adresse: —";
+
+    const deliveryWindow =
+      safeStr(s.deliveryWindowFrom) && safeStr(s.deliveryWindowTo)
+        ? `${safeStr(s.deliveryWindowFrom)}–${safeStr(s.deliveryWindowTo)}`
+        : safeStr(s.deliveryWindowFrom) || safeStr(s.deliveryWindowTo) || "";
+
+    const deliveryContact =
+      safeStr(s.deliveryContactName) || safeStr(s.deliveryContactPhone)
+        ? [safeStr(s.deliveryContactName), safeStr(s.deliveryContactPhone)].filter(Boolean).join(" • ")
+        : "";
+
+    const loc: LocationGroup = {
+      locationKey,
+      locationName,
+      addressLine,
+      deliveryWhere: safeStr(s.deliveryWhere),
+      deliveryWhenNote: safeStr(s.deliveryWhenNote),
+      deliveryContact,
+      deliveryWindow,
+      orderCount: Number(s.orderCount ?? 0) || 0,
+      delivered: !!s.delivered,
+      deliveredAt: s.deliveredAt ?? null,
+      deliveredBy: s.deliveredBy ?? null,
+      stop: s,
+    };
+
+    company.locations.push(loc);
+    company.totalOrders += loc.orderCount;
+    slot.totalOrders += loc.orderCount;
+  }
+
+  // deterministic ordering
+  const ordered = slots
+    .sort((a, b) => {
+      const ka = slotSortKey(a.slotLabel);
+      const kb = slotSortKey(b.slotLabel);
+      if (ka !== kb) return ka - kb;
+      return normalizedName(a.slotLabel).localeCompare(normalizedName(b.slotLabel), "nb");
+    })
+    .map((slot) => ({
+      ...slot,
+      companies: slot.companies
+        .sort((a, b) => normalizedName(a.companyName).localeCompare(normalizedName(b.companyName), "nb"))
+        .map((c) => ({
+          ...c,
+          locations: c.locations.sort((a, b) => {
+            const aName = normalizedName(a.locationName);
+            const bName = normalizedName(b.locationName);
+            if (aName !== bName) return aName.localeCompare(bName, "nb");
+            return normalizedName(a.addressLine).localeCompare(normalizedName(b.addressLine), "nb");
+          }),
+        })),
+    }));
+
+  return ordered;
 }
 
 /**
@@ -334,6 +458,8 @@ export default function DriverClient() {
 
   const shownDate = data?.date ?? date;
   const shownDateSafe = isISODate(shownDate) ? shownDate : date;
+
+  const groups = useMemo(() => buildGroups(stops), [stops]);
 
   async function load(nextDate: string) {
     const d = safeStr(nextDate) || todayISO();
@@ -546,17 +672,16 @@ export default function DriverClient() {
       ].join(" ")}
     >
       {/* Sticky Topbar */}
-      <div
-        className={["sticky top-0 z-40 lp-safe-top", "backdrop-blur-xl", "bg-white/60", "ring-1 ring-black/5"].join(" ")}
-      >
+      <div className={"sticky top-0 z-40 lp-safe-top backdrop-blur-xl bg-white/60 ring-1 ring-black/5"}>
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
             <div className="min-w-0">
-              <div className="text-lg sm:text-xl font-semibold text-slate-900">Sjåfør</div>
+              <div className="text-lg sm:text-xl font-semibold text-slate-900">Dagens leveringer</div>
               <div className="mt-1 text-sm text-slate-700">
                 {fmtDateLong(shownDateSafe)} • <span className="font-semibold text-slate-900">{count}</span> stopp •{" "}
                 <span className="font-semibold text-slate-900">{deliveredCount}</span> levert
               </div>
+              <div className="mt-1 text-xs text-slate-600">ACTIVE / READY FOR DELIVERY</div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -618,8 +743,8 @@ export default function DriverClient() {
                 {showTech ? (
                   <div className="mt-3 space-y-2">
                     <div className="text-xs text-slate-600">
-                      <b>Status:</b> {lastApiErr.status ?? "—"} &nbsp;•&nbsp; <b>RID:</b> {lastApiErr.rid ?? "—"}{" "}
-                      &nbsp;•&nbsp; <b>Error:</b> {lastApiErr.error ?? "—"}
+                      <b>Status:</b> {lastApiErr.status ?? "—"} &nbsp;•&nbsp; <b>RID:</b> {lastApiErr.rid ?? "—"} &nbsp;•&nbsp;{" "}
+                      <b>Error:</b> {lastApiErr.error ?? "—"}
                     </div>
 
                     {techDetail ? (
@@ -652,86 +777,96 @@ export default function DriverClient() {
         ) : null}
 
         {!loading && !err && count > 0 ? (
-          <div className="mt-6 space-y-4">
-            {stops.map((s) => {
-              const title = `${safeStr(s.companyName) || s.companyId} • ${safeStr(s.locationName) || s.locationId}`;
-              const deliveryWindow =
-                safeStr(s.deliveryWindowFrom) && safeStr(s.deliveryWindowTo)
-                  ? `${safeStr(s.deliveryWindowFrom)}–${safeStr(s.deliveryWindowTo)}`
-                  : safeStr(s.deliveryWindowFrom) || safeStr(s.deliveryWindowTo) || null;
-              const deliveryContact =
-                safeStr(s.deliveryContactName) || safeStr(s.deliveryContactPhone)
-                  ? [safeStr(s.deliveryContactName), safeStr(s.deliveryContactPhone)].filter(Boolean).join(" • ")
-                  : null;
-
-              return (
-                <div key={s.key} className="rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-slate-900">{title}</div>
-                      <div className="mt-1 text-sm text-slate-600">{safeStr(s.addressLine) || "Adresse: —"}</div>
-
-                      {(s.deliveryWhere || s.deliveryWhenNote || deliveryWindow || deliveryContact) && (
-                        <div className="mt-2 rounded-2xl bg-white/70 px-3 py-2 text-xs text-slate-700 ring-1 ring-black/5">
-                          {s.deliveryWhere ? <div>Levering: {s.deliveryWhere}</div> : null}
-                          {s.deliveryWhenNote ? <div>Instruks: {s.deliveryWhenNote}</div> : null}
-                          {deliveryWindow ? <div>Vindu: {deliveryWindow}</div> : null}
-                          {deliveryContact ? <div>Kontakt: {deliveryContact}</div> : null}
-                        </div>
-                      )}
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-slate-900/5 px-3 py-1 text-xs text-slate-800">
-                          Slot: <b>{safeStr(s.slot) || "—"}</b>
-                        </span>
-                        <span className="rounded-full bg-slate-900/5 px-3 py-1 text-xs text-slate-800">
-                          Antall: <b>{s.orderCount ?? 0}</b>
-                        </span>
-
-                        {s.delivered ? (
-                          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-900">
-                            ✅ Levert <b>{fmtTS(s.deliveredAt)}</b>
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-900">
-                            ⏳ Ikke levert
-                          </span>
-                        )}
-                      </div>
-
-                      {s.deliveredBy ? (
-                        <div className="mt-3 text-sm text-slate-700">
-                          Levert av: <span className="font-semibold text-slate-900">{s.deliveredBy}</span>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="flex w-full flex-col gap-2 sm:w-[260px] sm:items-end">
-                      <button
-                        onClick={() => void confirmStop(s)}
-                        disabled={pending || s.delivered}
-                        className={[
-                          "w-full rounded-2xl px-4 py-3 text-sm font-semibold",
-                          s.delivered ? "bg-slate-900/10 text-slate-700" : "bg-slate-900 text-white hover:opacity-95",
-                          "disabled:opacity-60",
-                        ].join(" ")}
-                        type="button"
-                      >
-                        {s.delivered ? "Levert" : "Markér levert"}
-                      </button>
-
-                      <button
-                        onClick={() => void copyStop(s)}
-                        className="w-full rounded-2xl bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/5 hover:bg-white"
-                        type="button"
-                      >
-                        Kopiér stopp
-                      </button>
-                    </div>
+          <div className="mt-6 space-y-5">
+            {groups.map((slot) => (
+              <section key={slot.slotKey} className="rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-base font-semibold text-slate-900">Leveringsvindu: {slot.slotLabel}</div>
+                  <div className="text-sm text-slate-700">
+                    Totalt: <b>{slot.totalOrders}</b>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="mt-4 space-y-4">
+                  {slot.companies.map((c) => (
+                    <div key={c.companyKey} className="rounded-2xl border border-black/5 bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-base font-semibold text-slate-900">{c.companyName}</div>
+                        <div className="text-sm text-slate-700">
+                          Totalt firma: <b>{c.totalOrders}</b>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 space-y-3">
+                        {c.locations.map((l) => (
+                          <div key={l.locationKey} className="rounded-2xl bg-[rgb(var(--lp-surface-2))] p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="text-sm font-semibold text-slate-900">{l.locationName}</div>
+                              <div className="text-sm text-slate-700">
+                                Totalt lokasjon: <b>{l.orderCount}</b>
+                              </div>
+                            </div>
+
+                            <div className="mt-2 text-sm text-slate-700 lp-wrap-anywhere">{l.addressLine}</div>
+
+                            <div className="mt-2 grid gap-1 text-xs text-slate-700">
+                              {l.deliveryWindow ? <div>Tidsvindu: {l.deliveryWindow}</div> : null}
+                              {l.deliveryWhere ? <div>Levering: {l.deliveryWhere}</div> : null}
+                              {l.deliveryWhenNote ? <div>Notater: {l.deliveryWhenNote}</div> : null}
+                              {l.deliveryContact ? <div>Kontakt: {l.deliveryContact}</div> : null}
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                              <span className="rounded-full bg-slate-900/5 px-3 py-1 text-slate-800">
+                                Innhold: <b>{l.orderCount}</b> ordre
+                              </span>
+                              {l.delivered ? (
+                                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-900">
+                                  Levert <b>{fmtTS(l.deliveredAt)}</b>
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-amber-500/10 px-3 py-1 text-amber-900">
+                                  Ikke levert
+                                </span>
+                              )}
+                            </div>
+
+                            {l.deliveredBy ? (
+                              <div className="mt-2 text-sm text-slate-700">
+                                Levert av: <span className="font-semibold text-slate-900">{l.deliveredBy}</span>
+                              </div>
+                            ) : null}
+
+                            <div className="mt-4 flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+                              <button
+                                onClick={() => void confirmStop(l.stop)}
+                                disabled={pending || l.delivered}
+                                className={[
+                                  "w-full sm:w-auto rounded-2xl px-4 py-3 text-sm font-semibold",
+                                  l.delivered ? "bg-slate-900/10 text-slate-700" : "bg-slate-900 text-white hover:opacity-95",
+                                  "disabled:opacity-60",
+                                ].join(" ")}
+                                type="button"
+                              >
+                                {l.delivered ? "Levert" : "Markér levert"}
+                              </button>
+
+                              <button
+                                onClick={() => void copyStop(l.stop)}
+                                className="w-full sm:w-auto rounded-2xl bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/5 hover:bg-white"
+                                type="button"
+                              >
+                                Kopiér stopp
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : null}
       </div>
@@ -803,6 +938,3 @@ export default function DriverClient() {
     </div>
   );
 }
-
-
-

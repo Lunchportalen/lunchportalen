@@ -1,4 +1,4 @@
-// app/api/admin/insights/route.ts
+﻿// app/api/admin/insights/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,11 +9,19 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q } from "@/lib
 import { addDaysISO, osloTodayISODate, OSLO_TZ } from "@/lib/date/oslo";
 import { auditAdmin } from "@/lib/audit/actions";
 
-type RangeKey = "7d" | "30d";
+type RangeKey = "7d" | "14d" | "30d";
+
+type DaySummary = {
+  date: string;
+  orders: number;
+  cancelled_before_cutoff: number;
+  cancelled_after_cutoff: number;
+};
 
 function parseRange(v: string | null): { key: RangeKey; days: number } {
   const s = String(v ?? "").trim().toLowerCase();
   if (s === "30d") return { key: "30d", days: 30 };
+  if (s === "14d") return { key: "14d", days: 14 };
   return { key: "7d", days: 7 };
 }
 
@@ -53,8 +61,18 @@ function toStartOfDayUtc(isoDate: string) {
   return new Date(`${isoDate}T00:00:00.000Z`).toISOString();
 }
 
+function listDatesISO(from: string, to: string) {
+  const out: string[] = [];
+  let cur = from;
+  for (let i = 0; i < 366; i += 1) {
+    out.push(cur);
+    if (cur === to) break;
+    cur = addDaysISO(cur, 1);
+  }
+  return out;
+}
+
 export async function GET(req: NextRequest) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
@@ -108,6 +126,32 @@ export async function GET(req: NextRequest) {
     const cancelledTotal = cancelled.length;
     const cancelledBeforeCount = cancelledBefore.length;
     const cancelledBeforeRate = cancelledTotal > 0 ? cancelledBeforeCount / cancelledTotal : null;
+    const cancelledAfterCount = Math.max(0, cancelledTotal - cancelledBeforeCount);
+
+    const dayMap = new Map<string, DaySummary>();
+    for (const d of listDatesISO(from, to)) {
+      dayMap.set(d, { date: d, orders: 0, cancelled_before_cutoff: 0, cancelled_after_cutoff: 0 });
+    }
+
+    for (const o of orders) {
+      const entry = dayMap.get(o.date) ?? { date: o.date, orders: 0, cancelled_before_cutoff: 0, cancelled_after_cutoff: 0 };
+      entry.orders += 1;
+
+      if (String(o.status ?? "").toUpperCase() === "CANCELLED") {
+        const before = isCancelledBeforeCutoff(o.date, o.updated_at ?? o.created_at);
+        if (before) entry.cancelled_before_cutoff += 1;
+        else entry.cancelled_after_cutoff += 1;
+      }
+
+      dayMap.set(o.date, entry);
+    }
+
+    const dailySummary = Array.from(dayMap.values());
+    const totalOrders = orders.length;
+    const activeDays = dailySummary.filter((d) => d.orders > 0).length;
+    const avgOrdersPerDay = activeDays > 0 ? totalOrders / activeDays : null;
+    const daysWithDeviations = dailySummary.filter((d) => d.orders > 0 && d.cancelled_after_cutoff > 0).length;
+    const daysWithNoDeviations = Math.max(0, activeDays - daysWithDeviations);
 
     const start14 = addDaysISO(today, -13);
     const start14Ts = toStartOfDayUtc(start14);
@@ -144,11 +188,20 @@ export async function GET(req: NextRequest) {
     const data = {
       range: range.key,
       window: { from, to },
+      deliveries: {
+        total_orders: totalOrders,
+        active_days: activeDays,
+        avg_orders_per_day: avgOrdersPerDay,
+      },
       cancellations_before_cutoff: {
         count: cancelledBeforeCount,
         total_cancelled: cancelledTotal,
         rate: cancelledBeforeRate,
       },
+      cancellations_after_cutoff: {
+        count: cancelledAfterCount,
+      },
+      daily_summary: dailySummary,
       saved_meals_proxy: {
         count: cancelledBeforeCount,
       },
@@ -161,8 +214,10 @@ export async function GET(req: NextRequest) {
         rate_14d: adoptionRate,
       },
       delivery_stability: {
-        available: false,
-        message: "Ikke tilgjengelig (ingen avviksdata).",
+        available: true,
+        days_with_no_deviations: daysWithNoDeviations,
+        days_with_deviations: daysWithDeviations,
+        note: "Avvik målt som kanselleringer etter cut-off.",
       },
     };
 
@@ -179,6 +234,9 @@ export async function GET(req: NextRequest) {
         to,
         cancelled_before_cutoff: cancelledBeforeCount,
         cancelled_total: cancelledTotal,
+        cancelled_after_cutoff: cancelledAfterCount,
+        deliveries_total_orders: totalOrders,
+        deliveries_active_days: activeDays,
         adoption_active_users_14d: activeUserIds.size,
         adoption_total_employees: employeesActiveTotal,
       },

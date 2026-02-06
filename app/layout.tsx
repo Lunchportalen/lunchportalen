@@ -1,12 +1,14 @@
-import "./globals.css";
+﻿import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Fraunces, Inter, Manrope } from "next/font/google";
 import { headers } from "next/headers";
 import AppHeader from "@/components/AppHeader";
+import DevOverflowGuard from "@/components/DevOverflowGuard";
 
 const fontBody = Manrope({ subsets: ["latin"], variable: "--lp-font-body", display: "swap" });
 const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--lp-font-display", display: "swap" });
+const fontHeading = Inter({ subsets: ["latin"], variable: "--lp-font-heading", display: "swap", weight: ["600", "700"] });
 
 export const metadata: Metadata = {
   title: {
@@ -15,6 +17,15 @@ export const metadata: Metadata = {
   },
   description: "Enterprise lunch portal.",
   applicationName: "Lunchportalen",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    other: [{ rel: "manifest", url: "/site.webmanifest" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -63,6 +74,8 @@ function isAuthPath(pathname: string) {
     pathname.startsWith("/registrering/") ||
     pathname === "/forgot-password" ||
     pathname.startsWith("/forgot-password/") ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/") ||
     pathname === "/logout" ||
     pathname.startsWith("/logout/") ||
     pathname === "/accept-invite" ||
@@ -75,9 +88,7 @@ function isAuthPath(pathname: string) {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = await resolvePathname();
   const authRoute = pathname ? isAuthPath(pathname) : false;
-  const isAdminArea = pathname
-    ? pathname.startsWith("/admin") || pathname.startsWith("/superadmin")
-    : false;
+  const isAdminArea = pathname ? pathname.startsWith("/admin") || pathname.startsWith("/superadmin") : false;
 
   const areaLabel = (() => {
     if (!pathname) return "Lunchportalen";
@@ -107,8 +118,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   })();
 
   return (
-    <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} h-full`}>
+    <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
       <body className="min-h-full">
+        {process.env.NODE_ENV !== "production" ? <DevOverflowGuard /> : null}
         {authRoute ? (
           children
         ) : (

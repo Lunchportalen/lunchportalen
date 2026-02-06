@@ -1,91 +1,89 @@
-// components/marketing/Hero.tsx
+﻿import Image from "next/image";
 import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-10 pt-12 md:pt-16">
-      <div className="grid items-start gap-10 md:grid-cols-2">
+    <section className="mx-auto w-full max-w-6xl px-4 pb-12 pt-10 md:pt-14">
+      <div className="grid items-start gap-8 md:grid-cols-[1.1fr_0.9fr] md:gap-12">
         {/* Left: Copy */}
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))]">
-            Cut-off kl. 08:00 • Mindre matsvinn • Mindre admin
-          </div>
-
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">
-            Firmalunsj som gir{" "}
-            <span className="text-[rgb(var(--lp-cta))]">kontroll</span> – hver dag
+        <div className="min-w-0 lp-prose">
+          <h1 className="text-3xl font-semibold tracking-tight text-[rgb(var(--lp-text))] sm:text-4xl md:text-5xl">
+            Firmalunsj med kontroll – uten støy
           </h1>
 
           <p className="mt-4 text-base leading-relaxed text-[rgb(var(--lp-muted))] md:text-lg">
-            Bedriften setter rammene. Ansatte bestiller selv innenfor avtalen. Du
-            får forutsigbar kostnad, mindre mas og en løsning som faktisk tåler
-            drift.
+            Lunchportalen gir bedrifter full oversikt over lunsjlevering, faste rammer og én sannhetskilde. Mindre
+            administrasjon. Mer forutsigbarhet.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/registrering"
-              className="rounded-2xl bg-[rgb(var(--lp-cta))] px-5 py-3 text-center text-sm font-semibold text-white shadow-sm hover:opacity-95 active:opacity-90"
-            >
-              Registrer firma
+            <Link href="/register" className="lp-btn lp-btn--primary">
+              Be om demo
             </Link>
-
-            <Link
-              href="#how"
-              className="rounded-2xl bg-white/70 px-5 py-3 text-center text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))] hover:bg-white"
-            >
+            <Link href="#how" className="lp-btn lp-btn--ghost">
               Se hvordan det fungerer
             </Link>
           </div>
 
-          {/* Risk reversal + trust */}
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-            <span className="rounded-full bg-white/60 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Bedriften er admin (ikke ansatte)
-            </span>
-            <span className="rounded-full bg-white/60 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Ingen unntakskaos
-            </span>
-            <span className="rounded-full bg-white/60 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Bekreftelse kun ved lagret data
-            </span>
-          </div>
-
-          {/* Mini-benefits */}
-          <div className="mt-6 grid gap-3 text-sm text-[rgb(var(--lp-muted))] sm:grid-cols-2">
-            <div className="rounded-2xl bg-white/60 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-              <div className="font-semibold text-[rgb(var(--lp-text))]">
-                Mindre administrasjon
-              </div>
-              <div className="mt-1">
-                Ansatte bestiller/avbestiller selv – innenfor rammer.
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-white/60 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-              <div className="font-semibold text-[rgb(var(--lp-text))]">
-                Mindre matsvinn
-              </div>
-              <div className="mt-1">
-                Cut-off kl. 08:00 gir presisjon i produksjon og levering.
-              </div>
-            </div>
+          <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
+            Én sannhetskilde · Cut-off kl. 08:00 · Ingen manuelle unntak
           </div>
         </div>
 
         {/* Right: Image */}
-        <div className="md:pt-1">
-          <div className="lp-heroImage h-[360px] w-full rounded-[28px] ring-1 ring-[rgba(226,232,240,.85)] md:h-[430px]" />
-
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-            <span className="rounded-full bg-white/60 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Deling • Varmmat • Salatbar
-            </span>
-            <span className="rounded-full bg-white/60 px-3 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-              Levering til kontor
-            </span>
+        <div className="w-full">
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] ring-1 ring-[rgba(226,232,240,.85)] md:aspect-[5/4]">
+            <Image
+              src="/forsidebilder/lunchportalen-mobil-bestilling.png"
+              alt="Mobilbestilling av firmalunsj i Lunchportalen"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
+      </div>
+
+      {/* Value Sections */}
+      <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
+          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Dette løser Lunchportalen</h2>
+          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
+            <li>Uforutsigbar lunsjbestilling</li>
+            <li>Manuell oppfølging og avvik</li>
+            <li>Manglende oversikt for admin og drift</li>
+          </ul>
+        </section>
+
+        <section id="how" className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
+          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Slik fungerer det</h2>
+          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
+            <li>Bedriften settes opp med faste rammer</li>
+            <li>Ansatte bestiller selv innenfor avtalen</li>
+            <li>Cut-off kl. 08:00 sikrer produksjon og levering</li>
+            <li>Kjøkken, sjåfør og admin ser samme fasit</li>
+          </ul>
+        </section>
+
+        <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
+          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Hva ledelsen får</h2>
+          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
+            <li>Mindre administrasjon</li>
+            <li>Forutsigbar kost</li>
+            <li>Dokumentert bruk og historikk</li>
+            <li>Ingen individuelle unntak</li>
+          </ul>
+        </section>
+      </div>
+
+      {/* Trust Block */}
+      <div className="mt-8 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-6">
+        <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Bygget for drift – ikke presentasjon</h2>
+        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+          Lunchportalen er utviklet for daglig bruk i kjøkken, levering og administrasjon. Systemet viser alltid fasit
+          og logger avvik automatisk. Det gir trygghet – både operativt og økonomisk.
+        </p>
       </div>
     </section>
   );

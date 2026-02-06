@@ -33,7 +33,9 @@ function safeNextPath(next: string | null | undefined): string | null {
     n === "/registrering" ||
     n.startsWith("/registrering/") ||
     n === "/forgot-password" ||
-    n.startsWith("/forgot-password/")
+    n.startsWith("/forgot-password/") ||
+    n === "/reset-password" ||
+    n.startsWith("/reset-password/")
   ) {
     return null;
   }

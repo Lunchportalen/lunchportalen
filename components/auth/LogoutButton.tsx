@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -78,16 +78,16 @@ export default function LogoutButton({ variant = "ghost", className = "" }: Prop
      Styling
   ========================= */
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70";
+    "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-70";
 
   const ghost =
-    "border border-border bg-white px-4 py-2 text-text shadow-sm hover:bg-[rgb(var(--lp-bg)/1)]";
+    "border border-border bg-white px-4 py-2 text-text shadow-sm hover:bg-[rgb(var(--lp-bg)/1)] active:bg-[rgb(var(--lp-surface-2))]";
 
   const solid =
     "bg-[rgb(var(--lp-cta)/1)] px-4 py-2 text-white shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45)] ring-1 ring-black/5 hover:brightness-[1.03] active:brightness-95";
 
   const pill =
-    "border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-white";
+    "border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-white";
 
   return (
     <button

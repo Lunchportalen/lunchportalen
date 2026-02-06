@@ -1,4 +1,4 @@
-// app/onboarding/OnboardingForm.tsx
+﻿// app/onboarding/OnboardingForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -242,13 +242,13 @@ export default function OnboardingForm() {
       const json = await resp.json().catch(() => null);
 
       if (!resp.ok || !json?.ok) {
-        throw new Error(json?.message || json?.error || "Ukjent feil ved registrering.");
+        throw new Error(json?.message || json?.error || "Noe gikk galt. Ingen data er lagret. Prøv igjen om litt.");
       }
 
       router.push(`/onboarding/thanks?status=${encodeURIComponent(json.status ?? "pending")}`);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message || "Noe gikk galt.");
+      setError(err?.message || "Noe gikk galt. Ingen data er lagret. Prøv igjen om litt.");
     } finally {
       setLoading(false);
     }
@@ -267,22 +267,23 @@ export default function OnboardingForm() {
           {/* FIRMA */}
           <section className="grid gap-3">
             <h2 className="text-lg font-semibold">Firma</h2>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3">
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Firmanavn *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.companyName}
                   onChange={(e) => set("companyName", e.target.value)}
                   autoComplete="organization"
                   required
                 />
+                <span className="text-xs text-slate-500">Dette brukes til å sette riktige rammer for bedriften.</span>
               </label>
 
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Org.nr *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.orgnr}
                   onChange={(e) => set("orgnr", e.target.value)}
                   inputMode="numeric"
@@ -291,10 +292,10 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Hvor mange ansatte? *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.employeesCount}
                   onChange={(e) => set("employeesCount", e.target.value)}
                   type="number"
@@ -305,7 +306,7 @@ export default function OnboardingForm() {
                   placeholder="Minst 20"
                   required
                 />
-                <span className="text-xs text-slate-500">Minimum 20 ansatte for å registrere firma i Lunchportalen.</span>
+                <span className="text-xs text-slate-500">Brukes kun for å tilpasse avtalen – kan endres senere.</span>
               </label>
             </div>
           </section>
@@ -313,11 +314,11 @@ export default function OnboardingForm() {
           {/* FIRMA-ADMIN */}
           <section className="grid gap-3">
             <h2 className="text-lg font-semibold">Firma-admin</h2>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3">
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Navn *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.adminName}
                   onChange={(e) => set("adminName", e.target.value)}
                   autoComplete="name"
@@ -328,7 +329,7 @@ export default function OnboardingForm() {
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">E-post *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.adminEmail}
                   onChange={(e) => set("adminEmail", e.target.value)}
                   type="email"
@@ -336,12 +337,15 @@ export default function OnboardingForm() {
                   inputMode="email"
                   required
                 />
+                <span className="text-xs text-slate-500">
+                  Vi bruker e-posten kun til innlogging og viktig systeminformasjon.
+                </span>
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Telefon *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.adminPhone}
                   onChange={(e) => set("adminPhone", e.target.value)}
                   type="tel"
@@ -351,7 +355,7 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Passord *</span>
                 <div className="relative">
                   <input
@@ -375,7 +379,7 @@ export default function OnboardingForm() {
                 <span className="text-xs text-slate-500">Minimum 8 tegn.</span>
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Bekreft passord *</span>
                 <div className="relative">
                   <input
@@ -405,11 +409,11 @@ export default function OnboardingForm() {
           <section className="grid gap-3">
             <h2 className="text-lg font-semibold">Levering</h2>
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="grid gap-1 md:col-span-2">
+            <div className="grid gap-3">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Leveringspunkt *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.deliveryWhere}
                   onChange={(e) => set("deliveryWhere", e.target.value)}
                   placeholder="F.eks. resepsjon, varemottak, bakinngang, etasje"
@@ -418,10 +422,10 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Leveringsinstruksjon *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.deliveryWhenNote}
                   onChange={(e) => set("deliveryWhenNote", e.target.value)}
                   placeholder="F.eks. ring ved ankomst, bruk porttelefon, kontakt resepsjon"
@@ -433,7 +437,7 @@ export default function OnboardingForm() {
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Kontaktperson *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.deliveryContactName}
                   onChange={(e) => set("deliveryContactName", e.target.value)}
                   autoComplete="name"
@@ -444,7 +448,7 @@ export default function OnboardingForm() {
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Telefon ved levering *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.deliveryContactPhone}
                   onChange={(e) => set("deliveryContactPhone", e.target.value)}
                   type="tel"
@@ -454,10 +458,10 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Lokasjon (navn) *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.locationName}
                   onChange={(e) => set("locationName", e.target.value)}
                   autoComplete="organization"
@@ -465,10 +469,10 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <label className="grid gap-1 md:col-span-2">
+              <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Adresse *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.address}
                   onChange={(e) => set("address", e.target.value)}
                   autoComplete="street-address"
@@ -479,7 +483,7 @@ export default function OnboardingForm() {
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Postnummer *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.postalCode}
                   onChange={(e) => set("postalCode", e.target.value)}
                   inputMode="numeric"
@@ -491,7 +495,7 @@ export default function OnboardingForm() {
               <label className="grid gap-1">
                 <span className="text-sm text-slate-600">Poststed *</span>
                 <input
-                  className="rounded-xl border p-3"
+                  className="w-full rounded-xl border p-3"
                   value={form.city}
                   onChange={(e) => set("city", e.target.value)}
                   autoComplete="address-level2"
@@ -499,37 +503,31 @@ export default function OnboardingForm() {
                 />
               </label>
 
-              <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-600">Leveringsvindu fra *</span>
-                  <input
-                    className="rounded-xl border p-3"
-                    value={form.deliveryWindow.from}
-                    onChange={(e) =>
-                      set("deliveryWindow", { ...form.deliveryWindow, from: e.target.value })
-                    }
-                    type="time"
-                    placeholder="08:30"
-                    autoComplete="off"
-                    required
-                  />
-                </label>
+              <label className="grid gap-1">
+                <span className="text-sm text-slate-600">Leveringsvindu fra *</span>
+                <input
+                  className="w-full rounded-xl border p-3"
+                  value={form.deliveryWindow.from}
+                  onChange={(e) => set("deliveryWindow", { ...form.deliveryWindow, from: e.target.value })}
+                  type="time"
+                  placeholder="08:30"
+                  autoComplete="off"
+                  required
+                />
+              </label>
 
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-600">Leveringsvindu til *</span>
-                  <input
-                    className="rounded-xl border p-3"
-                    value={form.deliveryWindow.to}
-                    onChange={(e) =>
-                      set("deliveryWindow", { ...form.deliveryWindow, to: e.target.value })
-                    }
-                    type="time"
-                    placeholder="10:00"
-                    autoComplete="off"
-                    required
-                  />
-                </label>
-              </div>
+              <label className="grid gap-1">
+                <span className="text-sm text-slate-600">Leveringsvindu til *</span>
+                <input
+                  className="w-full rounded-xl border p-3"
+                  value={form.deliveryWindow.to}
+                  onChange={(e) => set("deliveryWindow", { ...form.deliveryWindow, to: e.target.value })}
+                  type="time"
+                  placeholder="10:00"
+                  autoComplete="off"
+                  required
+                />
+              </label>
             </div>
           </section>
 
@@ -557,7 +555,7 @@ export default function OnboardingForm() {
                         <span className="font-medium">{dayLabel(d)}</span>
                       </label>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           disabled={!dp.enabled}
@@ -579,7 +577,7 @@ export default function OnboardingForm() {
                           Luxus
                         </button>
 
-                        <label className="ml-2 flex min-h-[44px] items-center gap-2 text-sm">
+                        <label className="flex min-h-[44px] items-center gap-2 text-sm">
                           <span className="text-slate-600">Pris *</span>
                           <input
                             disabled={!dp.enabled}
@@ -598,6 +596,17 @@ export default function OnboardingForm() {
                 );
               })}
             </div>
+          </section>
+
+          {/* EXPECTATION SETTING */}
+          <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm">
+            <div className="font-semibold">Hva skjer etter registrering?</div>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-[rgb(var(--lp-muted))]">
+              <li>Bedriften opprettes med faste rammer</li>
+              <li>Du får tilgang som admin</li>
+              <li>Ansatte kan legges til når du er klar</li>
+              <li>Lunsj bestilles med cut-off kl. 08:00</li>
+            </ul>
           </section>
 
           {/* TERMS + CREDIT CONSENT */}
@@ -638,17 +647,14 @@ export default function OnboardingForm() {
             </p>
           </section>
 
-          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
-            <button
-              disabled={loading}
-              className="min-h-[48px] rounded-xl bg-black px-5 py-3 text-white disabled:opacity-60"
-            >
-              {loading ? "Registrerer..." : "Opprett firmakonto"}
+          <div className="flex flex-col items-stretch gap-3">
+            <button disabled={loading} className="min-h-[48px] rounded-xl bg-black px-5 py-3 text-white disabled:opacity-60">
+              {loading ? "Oppretter konto …" : "Opprett bedrift"}
             </button>
 
-            <a className="min-h-[44px] text-sm underline opacity-80" href="/login">
-              Har du konto? Logg inn
-            </a>
+            <p className="text-xs text-[rgb(var(--lp-muted))]">
+              Én sannhetskilde. Ingen manuelle unntak. Full sporbarhet.
+            </p>
           </div>
         </div>
       </form>
@@ -726,6 +732,3 @@ export default function OnboardingForm() {
     </>
   );
 }
-
-
-

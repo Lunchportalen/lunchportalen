@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,9 @@ function safeNextPath(next: string | null) {
     next === "/onboarding" ||
     next.startsWith("/onboarding/") ||
     next === "/forgot-password" ||
-    next.startsWith("/forgot-password/")
+    next.startsWith("/forgot-password/") ||
+    next === "/reset-password" ||
+    next.startsWith("/reset-password/")
   ) {
     return FALLBACK;
   }
@@ -186,9 +189,10 @@ export default function LoginForm() {
             return;
           }
 
-          // ✅ Cookies er på plass; la SSR/middleware oppdatere før navigasjon
+          // ✅ Cookies er på plass; gå til post-login og refresh
+          const target = `/api/auth/post-login?next=${encodeURIComponent(nextPath)}&dbg=login`;
+          router.replace(target);
           router.refresh();
-          router.replace(`/api/auth/post-login?next=${encodeURIComponent(nextPath)}&dbg=login`);
           return;
         }
       } catch {
@@ -345,13 +349,15 @@ export default function LoginForm() {
       )}
 
       {/* CTA */}
-      <Button
-        type="submit"
-        disabled={isLoading}
-        className="w-full"
-      >
+      <Button type="submit" disabled={isLoading} className="w-full">
         {status.type === "pending_profile" ? "Setter opp…" : status.type === "loading" ? "Logger inn…" : "Logg inn"}
       </Button>
+
+      <div className="text-sm text-[rgb(var(--lp-muted))]">
+        <Link href="/forgot-password" className="underline underline-offset-4">
+          Glemt passord?
+        </Link>
+      </div>
 
       {/* Test-knapp (kun dev) */}
       {process.env.NODE_ENV !== "production" && (
@@ -368,5 +374,3 @@ export default function LoginForm() {
     </form>
   );
 }
-
-

@@ -1,4 +1,4 @@
-// components/superadmin/OperationsToday.tsx
+﻿// components/superadmin/OperationsToday.tsx
 import { osloTodayISODate } from "@/lib/date/oslo";
 import {
   listDeliveriesForDate,
@@ -152,10 +152,10 @@ export default async function OperationsToday() {
       <div className="flex flex-col gap-2 rounded-2xl border bg-surface p-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-sm text-muted">Dagens produksjon</div>
-          <div className="mt-1 text-xl font-semibold">
-            {todayISO} • {totalPortions} porsjoner
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+          <div className="mt-1 text-xl font-semibold">{todayISO} • {totalPortions} porsjoner</div>
+          <div className="mt-1 text-sm text-muted">ACTIVE / READY FOR PRODUCTION</div>
+          <div className="mt-1 text-xs text-muted">Dette er fasit. Ingen manuelle unntak.</div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
             <span>
               Kilde: <span className="font-medium">public.deliveries</span> (én sannhet)
             </span>
@@ -178,7 +178,7 @@ export default async function OperationsToday() {
             <div key={c.companyId} className="rounded-2xl border bg-surface p-4">
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div className="text-lg font-semibold">{c.companyName}</div>
-                <div className="text-sm text-muted">{c.portions} porsjoner</div>
+                <div className="text-sm text-muted">Totalt firma: {c.portions} porsjoner</div>
               </div>
 
               <div className="mt-3 space-y-3">
@@ -189,7 +189,7 @@ export default async function OperationsToday() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{l.locationName}</div>
-                      <div className="text-sm text-muted">{l.portions} porsjoner</div>
+                      <div className="text-sm text-muted">Totalt lokasjon: {l.portions} porsjoner</div>
                     </div>
 
                     <div className="mt-3 space-y-2">
@@ -238,13 +238,13 @@ export default async function OperationsToday() {
                                 <span className={signalChipClass(worst.severity)}>
                                   {worst.signal_type.replaceAll("_", " ")}
                                 </span>
-                                <div className="text-muted">{worst.message}</div>
+                                <div className="text-muted lp-wrap-anywhere">{worst.message}</div>
                               </div>
                             ) : null}
 
                             {/* Notes */}
                             {uniqueNotes.length > 0 && (
-                              <div className="mt-2 text-xs text-muted">
+                              <div className="mt-2 text-xs text-muted lp-wrap-anywhere">
                                 <span className="font-medium">Notater:</span> {uniqueNotes.join(" • ")}
                               </div>
                             )}

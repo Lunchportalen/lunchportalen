@@ -1,30 +1,22 @@
-// app/page.tsx
+﻿// app/page.tsx
 import type { Metadata } from "next";
 import Script from "next/script";
 
 import PageShell from "@/components/PageShell";
 import Hero from "@/components/Hero";
-import Problem from "@/components/Problem";
-import Solution from "@/components/Solution";
-import HowItWorks from "@/components/HowItWorks";
-import Sustainability from "@/components/Sustainability";
-import Control from "@/components/Control";
-import Pricing from "@/components/Pricing";
-import FAQ from "@/components/FAQ";
-import FinalCTA from "@/components/FinalCTA";
 
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Lunchportalen – firmalunsj med kontroll, mindre svinn og forutsigbarhet",
+  title: "Lunchportalen – firmalunsj med kontroll og forutsigbarhet",
   description:
-    "Lunchportalen er en digital lunsjløsning for bedrifter: dere setter rammene, ansatte bestiller selv innenfor avtalen, med cut-off kl. 08:00. Mindre matsvinn, mindre administrasjon, full oversikt.",
+    "Bestill og administrer firmalunsj med faste rammer, cut-off kl. 08:00 og full oversikt. Lunchportalen gir bedrifter kontroll – uten støy.",
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Lunchportalen – firmalunsj med kontroll",
+    title: "Lunchportalen – firmalunsj med kontroll og forutsigbarhet",
     description:
-      "Mindre matsvinn. Mindre administrasjon. Full forutsigbarhet. En lunsjløsning utviklet for bedrifter.",
+      "Bestill og administrer firmalunsj med faste rammer, cut-off kl. 08:00 og full oversikt. Lunchportalen gir bedrifter kontroll – uten støy.",
     type: "website",
     url: "https://lunchportalen.no/",
   },
@@ -44,14 +36,6 @@ export default function MarketingHome() {
 
       <PageShell>
         <Hero />
-        <Problem />
-        <Solution />
-        <HowItWorks />
-        <Sustainability />
-        <Control />
-        <Pricing />
-        <FAQ />
-        <FinalCTA />
       </PageShell>
     </>
   );

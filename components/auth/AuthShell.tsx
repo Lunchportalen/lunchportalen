@@ -10,7 +10,7 @@ type AuthShellProps = {
 
 export default function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <main className="min-h-screen w-screen flex items-center justify-center lp-auth-spotlight text-[rgb(var(--lp-text))]">
+    <main className="min-h-screen w-full flex items-center justify-center lp-auth-spotlight text-[rgb(var(--lp-text))]">
       <div className="w-full max-w-[520px]">
         <div className="mx-4 rounded-[var(--lp-radius-card)] border border-[rgb(var(--lp-border))] bg-white p-6 shadow-[var(--lp-shadow-soft)]">
           <AuthBrand />

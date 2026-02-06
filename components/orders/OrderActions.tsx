@@ -1,7 +1,8 @@
-// components/orders/OrderActions.tsx
+﻿// components/orders/OrderActions.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type OrderApiResponse = {
   ok: boolean;
@@ -36,6 +37,7 @@ function isActiveOrder(res: OrderApiResponse | null) {
 }
 
 export default function OrderActions() {
+  const router = useRouter();
   const [state, setState] = useState<UiState>("loading");
   const [res, setRes] = useState<OrderApiResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -75,6 +77,7 @@ export default function OrderActions() {
   }
 
   async function placeOrder() {
+    if (isBusy) return;
     setState("posting");
     setErr(null);
 
@@ -96,6 +99,7 @@ export default function OrderActions() {
 
       // Synk UI mot status-endpoint (idempotent, DB er fasit)
       await load("silent");
+      router.refresh();
     } catch (e: any) {
       setErr(e?.message ?? "Kunne ikke registrere bestilling.");
     } finally {
@@ -104,6 +108,7 @@ export default function OrderActions() {
   }
 
   async function cancelOrder() {
+    if (isBusy) return;
     setState("deleting");
     setErr(null);
 
@@ -122,6 +127,7 @@ export default function OrderActions() {
       }
 
       await load("silent");
+      router.refresh();
     } catch (e: any) {
       setErr(e?.message ?? "Kunne ikke avbestille.");
     } finally {
@@ -190,7 +196,7 @@ export default function OrderActions() {
 
       {/* Actions */}
       {!locked ? (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="relative z-10 mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={placeOrder}
