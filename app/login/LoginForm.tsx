@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -13,31 +13,6 @@ type Status =
   | { type: "error"; message: string; rid?: string };
 
 const LOGIN_TIMEOUT_MS = 8000;
-
-function safeNextPath(next: string | null) {
-  const FALLBACK = "/week"; // ✅ ansatt-default i denne fasen
-  if (!next) return FALLBACK;
-  if (!next.startsWith("/")) return FALLBACK;
-  if (next.startsWith("//")) return FALLBACK;
-
-  // unngå loop
-  if (
-    next === "/login" ||
-    next.startsWith("/login/") ||
-    next === "/register" ||
-    next.startsWith("/register/") ||
-    next === "/onboarding" ||
-    next.startsWith("/onboarding/") ||
-    next === "/forgot-password" ||
-    next.startsWith("/forgot-password/") ||
-    next === "/reset-password" ||
-    next.startsWith("/reset-password/")
-  ) {
-    return FALLBACK;
-  }
-
-  return next;
-}
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -70,8 +45,6 @@ function unwrapPayload(j: any) {
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
-
-  const safeNext = useMemo(() => safeNextPath(searchParams.get("next")), [searchParams]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -159,8 +132,9 @@ export default function LoginForm() {
 
       if (!mountedRef.current) return;
 
-      const target = safeNext;
-      window.location.assign(target);
+      const next = searchParams.get("next");
+      const target = next && next.startsWith("/") ? next : "/week";
+      window.location.replace(target);
       return;
     } catch (err: any) {
       if (!mountedRef.current) return;
