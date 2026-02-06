@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -103,7 +103,7 @@ export default function LoginForm() {
       if (!mountedRef.current) return;
       setStatus({
         type: "error",
-        message: `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`,
+        message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
         rid,
       });
     }, LOGIN_TIMEOUT_MS);
@@ -133,7 +133,8 @@ export default function LoginForm() {
       if (!mountedRef.current) return;
 
       const next = searchParams.get("next");
-      const target = next && next.startsWith("/") ? next : "/week";
+      const rawTarget = next && next.startsWith("/") ? next : "/week";
+      const target = rawTarget === "/orders" ? "/week" : rawTarget;
       window.location.replace(target);
       return;
     } catch (err: any) {
@@ -141,8 +142,8 @@ export default function LoginForm() {
 
       const msg =
         err?.name === "AbortError"
-          ? `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`
-          : err?.message || "Kunne ikke logge inn. PrÃ¸v igjen.";
+          ? `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`
+          : err?.message || "Kunne ikke logge inn. Prøv igjen.";
 
       setStatus({ type: "error", message: msg, rid });
     } finally {
@@ -184,7 +185,7 @@ export default function LoginForm() {
               setPassword(e.target.value);
               clearNonSuccessStatus();
             }}
-            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+            placeholder="••••••••••"
             disabled={isLoading}
             className="pr-12"
           />
@@ -211,14 +212,14 @@ export default function LoginForm() {
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          Logger inn â€¦
-          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et Ã¸yeblikk.</div>
+          Logger inn …
+          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
         </div>
       )}
 
       {/* CTA */}
       <Button type="submit" disabled={isLoading} className="w-full text-white hover:text-white disabled:text-white">
-        {status.type === "loading" ? "Logger inn â€¦" : "Logg inn"}
+        {status.type === "loading" ? "Logger inn …" : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -233,7 +234,7 @@ export default function LoginForm() {
           onClick={() => setStatus({ type: "idle" })}
           className="w-full min-h-[44px] rounded-2xl border border-[rgb(var(--lp-border))] text-sm"
         >
-          PrÃ¸v igjen
+          Prøv igjen
         </button>
       ) : null}
 
@@ -252,3 +253,4 @@ export default function LoginForm() {
     </form>
   );
 }
+
