@@ -1,27 +1,55 @@
 name: postdeploy-gate
 
 on:
+  workflow_run:
+    workflows: ["CI (AGENTS gate)"]
+    types: [completed]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   postdeploy:
+    if: >
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.head_branch == 'main')
+      }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - name: Checkout
+      - name: Checkout (workflow_run commit)
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
+          cache: "npm"
 
       - name: Install
         run: npm ci
 
-      - name: Run postdeploy gate
-        run: npm run postdeploy
+      - name: Load POSTDEPLOY_BASE_URL
         shell: bash
         env:
           POSTDEPLOY_BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${POSTDEPLOY_BASE_URL:-}" ]]; then
+            echo "::error::Missing secret POSTDEPLOY_BASE_URL (GitHub Actions → Secrets)."
+            exit 1
+          fi
+          echo "POSTDEPLOY_BASE_URL=${POSTDEPLOY_BASE_URL}" >> "$GITHUB_ENV"
+
+      - name: Run postdeploy gate
+        shell: bash
+        env:
           POSTDEPLOY_TIMEOUT_MS: "12000"
           POSTDEPLOY_JSON_CHECKS: "0"
+        run: npm run postdeploy
