@@ -32,7 +32,7 @@ export default function Hero() {
 
         {/* Right: Image */}
         <div className="w-full">
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] ring-1 ring-[rgba(226,232,240,.85)] md:aspect-[5/4]">
+          <div className="relative aspect-[4/3] w-full overflow-clip rounded-[28px] ring-1 ring-[rgba(226,232,240,.85)] md:aspect-[5/4]">
             <Image
               src="/forsidebilder/lunchportalen-mobil-bestilling.png"
               alt="Mobilbestilling av firmalunsj i Lunchportalen"
@@ -88,3 +88,4 @@ export default function Hero() {
     </section>
   );
 }
+
