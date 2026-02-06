@@ -37,27 +37,29 @@ function safeClearTimeout(t: any) {
 }
 
 async function readApiError(res: Response): Promise<string> {
+  const clone = res.clone();
+
   try {
-    const data = await res.json();
+    const data: any = await clone.json();
 
-    if (typeof data?.message === "string") return data.message;
-    if (typeof data?.error === "string") return data.error;
+    if (typeof data?.message === "string" && data.message.trim()) return data.message;
+    if (typeof data?.error === "string" && data.error.trim()) return data.error;
 
-    if (typeof data?.error === "object" && data.error !== null) {
+    if (data?.error && typeof data.error === "object") {
       const msg =
         data.error.message ||
         data.error.error_description ||
         data.error.details ||
         data.error.hint;
-      if (typeof msg === "string") return msg;
+      if (typeof msg === "string" && msg.trim()) return msg;
     }
 
     return `Innlogging feilet (HTTP ${res.status})`;
   } catch {
     try {
-      const text = await res.text();
-      if (text?.trim()) return text.trim();
-    } catch {}
+      const text = (await res.text()).trim();
+      if (text) return text;
+    } catch { }
 
     return `Innlogging feilet (HTTP ${res.status})`;
   }
@@ -70,6 +72,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<Status>({ type: "idle" });
+  const [errorText, setErrorText] = useState("");
 
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
@@ -88,11 +91,12 @@ export default function LoginForm() {
     };
   }, []);
 
-  const isLoading = status.type === "loading";
+  const isLoading = status.type === "loading" && !errorText;
 
   function clearNonSuccessStatus() {
     // Keep it simple: typing resets error state
     if (status.type !== "idle") setStatus({ type: "idle" });
+    if (errorText) setErrorText("");
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -103,15 +107,18 @@ export default function LoginForm() {
     const pwd = password;
 
     if (!normalizedEmail || !pwd) {
+      setErrorText("Fyll inn e-post og passord.");
       setStatus({ type: "error", message: "Fyll inn e-post og passord." });
       return;
     }
     if (!isProbablyEmail(normalizedEmail)) {
+      setErrorText("Skriv inn en gyldig e-postadresse.");
       setStatus({ type: "error", message: "Skriv inn en gyldig e-postadresse." });
       return;
     }
 
     const rid = `login_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    setErrorText("");
     setStatus({ type: "loading", rid });
 
     // Abort previous attempt
@@ -127,6 +134,7 @@ export default function LoginForm() {
         message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
         rid,
       });
+      setErrorText(`Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`);
     }, LOGIN_TIMEOUT_MS);
 
     try {
@@ -139,24 +147,22 @@ export default function LoginForm() {
         cache: "no-store",
       });
 
+      if (!mountedRef.current) return;
+
       if (!res.ok) {
         const msg = await readApiError(res);
-        if (!mountedRef.current) return;
-        setStatus({ type: "error", message: msg, rid });
+        setErrorText(msg);
         return;
       }
 
-      const payload = await res.json().catch(() => null);
+      const payload: any = await res.json().catch(() => null);
 
       if (payload?.ok === false) {
-        const msg = await readApiError(
-          new Response(JSON.stringify(payload), {
-            status: res.status,
-            headers: { "Content-Type": "application/json" },
-          })
-        );
-        if (!mountedRef.current) return;
-        setStatus({ type: "error", message: msg, rid });
+        const msg =
+          (typeof payload.message === "string" && payload.message.trim() && payload.message) ||
+          (typeof payload.error === "string" && payload.error.trim() && payload.error) ||
+          "Innlogging feilet.";
+        setErrorText(msg);
         return;
       }
 
@@ -178,6 +184,7 @@ export default function LoginForm() {
           ? `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`
           : err?.message || "Kunne ikke logge inn. Prøv igjen.";
 
+      setErrorText(msg);
       setStatus({ type: "error", message: msg, rid });
     } finally {
       safeClearTimeout(t);
@@ -234,13 +241,13 @@ export default function LoginForm() {
       </div>
 
       {/* Status */}
-      {status.type === "error" && (
+      {errorText && (
         <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-          {status.message}
+          {errorText}
         </div>
       )}
 
-      {status.type === "loading" && (
+      {isLoading && (
         <div
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
@@ -256,7 +263,7 @@ export default function LoginForm() {
         disabled={isLoading}
         className="w-full bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white disabled:bg-zinc-900 disabled:text-white disabled:opacity-60"
       >
-        {status.type === "loading" ? "Logger inn…" : "Logg inn"}
+        {isLoading ? "Logger inn…" : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -265,10 +272,13 @@ export default function LoginForm() {
         </Link>
       </div>
 
-      {status.type === "error" ? (
+      {errorText ? (
         <button
           type="button"
-          onClick={() => setStatus({ type: "idle" })}
+          onClick={() => {
+            setStatus({ type: "idle" });
+            setErrorText("");
+          }}
           className="w-full min-h-[44px] rounded-2xl border border-[rgb(var(--lp-border))] text-sm"
         >
           Prøv igjen
