@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,6 @@ function unwrapPayload(j: any) {
 export default function LoginForm() {
   const searchParams = useSearchParams();
 
-  const router = useRouter();
   const safeNext = useMemo(() => safeNextPath(searchParams.get("next")), [searchParams]);
 
   const [email, setEmail] = useState("");
@@ -160,9 +159,9 @@ export default function LoginForm() {
 
       if (!mountedRef.current) return;
 
-      // ✅ Cookies er på plass; client-nav + refresh for å sync server components
-      router.replace(safeNext);
-      router.refresh();
+      const target = safeNext;
+      window.location.assign(target);
+      return;
     } catch (err: any) {
       if (!mountedRef.current) return;
 
