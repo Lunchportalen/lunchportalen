@@ -46,9 +46,9 @@ type CompanyPolicyResult =
   | { ok: true; policy: CompanyPolicy }
   | { ok: false; status: number; error: string; message: string; detail?: any };
 
-function assertEnv(name: string, v: string | undefined) {
-  if (!v) throw new Error(`Server mangler env: ${name}`);
-  return v;
+function envOrNull(v: string | undefined) {
+  const s = String(v ?? "").trim();
+  return s ? s : null;
 }
 
 function ridFromReq(req: NextRequest) {
@@ -224,10 +224,21 @@ export async function GET(req: NextRequest) {
 
   try {
     // ✅ Service role client (kun for companies + agreement)
-    const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const url = envOrNull(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    const service = envOrNull(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    const admin = createClient(url, service, {
+    if (!url || !service) {
+      if (process.env.NODE_ENV !== "test") {
+        return jsonErr(
+          rid,
+          "Mangler service role konfigurasjon for firmastatus/avtale.",
+          500,
+          { code: "CONFIG_ERROR", detail: { missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"] } }
+        );
+      }
+    }
+
+    const admin = createClient(url ?? "http://localhost", service ?? "service_role_test", {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { "X-Client-Info": "lunchportalen-order-window" } },
     });
