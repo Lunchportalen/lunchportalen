@@ -81,6 +81,54 @@ function parsePrice(v: any): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
+const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
+const DEFAULT_BASIS_CHOICES = [{ key: "varmmat", label: "Varmmat" }];
+const DEFAULT_LUXUS_CHOICES = [
+  { key: "varmmat", label: "Varmmat" },
+  { key: "salatbar", label: "Salatbar" },
+];
+
+function normalizeDeliveryDaysInput(input: any): DayKey[] {
+  if (!input) return [];
+  const arr = Array.isArray(input) ? input : [input];
+  const out: DayKey[] = [];
+  for (const raw of arr) {
+    const s = String(raw ?? "").trim().toLowerCase();
+    if (s === "mon" || s === "tue" || s === "wed" || s === "thu" || s === "fri") out.push(s as DayKey);
+  }
+  return Array.from(new Set(out));
+}
+
+function buildWeekTier(deliveryDays: DayKey[], planTier: PlanTier) {
+  const out: Record<DayKey, PlanTier> = {} as Record<DayKey, PlanTier>;
+  for (const d of deliveryDays) out[d] = planTier;
+  return out;
+}
+
+function buildAgreementJsonDefaults(planTier: PlanTier, pricePerCuvert: number) {
+  const schedule = DAY_KEYS.reduce((acc, d) => {
+    acc[d] = { tier: planTier, price: pricePerCuvert };
+    return acc;
+  }, {} as Record<DayKey, { tier: PlanTier; price: number }>);
+
+  return {
+    version: 1,
+    timezone: "Europe/Oslo",
+    cutoff: { time: "08:00" },
+    commercial: { bindingMonths: 12, noticeMonths: 3 },
+    tiers: {
+      BASIS: { label: "Basis", price: 90 },
+      LUXUS: { label: "Luxus", price: 130 },
+    },
+    schedule,
+    week_pattern: DAY_KEYS.reduce((acc, d) => {
+      acc[d] = planTier;
+      return acc;
+    }, {} as Record<DayKey, PlanTier>),
+    prices: { BASIS: 90, LUXUS: 130 },
+  };
+}
+
 /** supabaseAdmin kan være client eller factory */
 async function adminClient(): Promise<any> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -288,7 +336,11 @@ async function waitForProfileRow(SB: any, userId: string) {
   const sleepMs = 200;
 
   for (let i = 0; i < maxRetries; i++) {
-    const { data, error } = await SB.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
+    const { data, error } = await SB
+      .from("profiles")
+      .select("id, user_id, company_id, location_id")
+      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .maybeSingle();
     if (!error && data?.id) return { ok: true as const, data };
     await new Promise((r) => setTimeout(r, sleepMs));
   }
@@ -296,7 +348,15 @@ async function waitForProfileRow(SB: any, userId: string) {
   return { ok: false as const, error: { message: "PROFILE_NOT_CREATED" } };
 }
 
-async function syncProfileSafe(SB: any, userId: string, display_name: string, phone: string) {
+async function syncProfileSafe(
+  SB: any,
+  userId: string,
+  display_name: string,
+  phone: string,
+  email: string,
+  companyId: string,
+  locationId: string | null
+) {
   const waited = await waitForProfileRow(SB, userId);
   if (!waited.ok) return { data: null, error: waited.error };
 
@@ -305,15 +365,22 @@ async function syncProfileSafe(SB: any, userId: string, display_name: string, ph
     is_active: true,
     disabled_at: null,
     disabled_reason: null,
+    email,
+    company_id: companyId,
+    location_id: locationId,
+    role: "company_admin",
   };
 
   // ✅ prefer-const fix
-  const u1 = await SB.from("profiles").update({ ...patch, full_name: display_name }).eq("id", userId);
+  const u1 = await SB
+    .from("profiles")
+    .update({ ...patch, full_name: display_name })
+    .or(`id.eq.${userId},user_id.eq.${userId}`);
   if (!u1.error) return u1;
 
   const msg = String(u1.error?.message ?? "");
   if (msg.includes("full_name") || msg.toLowerCase().includes("schema cache") || msg.toLowerCase().includes("column")) {
-    return SB.from("profiles").update({ ...patch, name: display_name }).eq("id", userId);
+    return SB.from("profiles").update({ ...patch, name: display_name }).or(`id.eq.${userId},user_id.eq.${userId}`);
   }
 
   return u1;
@@ -502,6 +569,8 @@ export async function POST(req: NextRequest) {
   const location = body?.location ?? null;
   const agreement = body?.agreement ?? null;
   const terms = body?.terms ?? null;
+  const planTierInput = normalizeTier(body?.plan_tier ?? body?.planTier ?? body?.plan);
+  const deliveryDaysInput = normalizeDeliveryDaysInput(body?.delivery_days ?? body?.deliveryDays);
 
   if (!isNonEmpty(company_name, 2)) return jsonError(rid, 400, "VALIDATION", "Firmanavn er påkrevd");
   if (orgnr.length !== 9) return jsonError(rid, 400, "VALIDATION", "Org.nr må være 9 siffer");
@@ -634,7 +703,7 @@ export async function POST(req: NextRequest) {
     if (!userId) return await fail(new Error("AUTH_CREATE_NO_USER_ID"));
 
     // 3) profiles — IKKE insert. Vent på trigger + oppdater trygge felter.
-    const prof = await syncProfileSafe(SB, userId, full_name, phone);
+    const prof = await syncProfileSafe(SB, userId, full_name, phone, email, companyId, null);
     if (prof.error) return await fail(prof.error);
 
     // 4) company_locations (all fields + hard NOT NULL)

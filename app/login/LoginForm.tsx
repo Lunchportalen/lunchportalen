@@ -2,22 +2,17 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 type Status =
   | { type: "idle" }
-  | { type: "loading" }
-  | { type: "pending_profile" }
-  | { type: "error"; message: string }
-  | { type: "success"; message: string };
+  | { type: "loading"; rid: string }
+  | { type: "error"; message: string; rid?: string };
 
 const LOGIN_TIMEOUT_MS = 8000;
-
-// Ny fasit: maks 2 retries, kun ved nettverksfeil
-const PROFILE_NETWORK_RETRY_DELAYS_MS = [400, 900];
 
 function safeNextPath(next: string | null) {
   const FALLBACK = "/week"; // ✅ ansatt-default i denne fasen
@@ -42,14 +37,6 @@ function safeNextPath(next: string | null) {
   }
 
   return next;
-}
-
-function clearMessage(s: Status) {
-  return s.type === "success" ? s : ({ type: "idle" } as const);
-}
-
-async function sleep(ms: number) {
-  await new Promise((r) => setTimeout(r, ms));
 }
 
 function safeStr(v: unknown) {
@@ -84,11 +71,8 @@ function unwrapPayload(j: any) {
 export default function LoginForm() {
   const searchParams = useSearchParams();
 
+  const router = useRouter();
   const safeNext = useMemo(() => safeNextPath(searchParams.get("next")), [searchParams]);
-  const nextPath = useMemo(
-    () => `/api/auth/post-login?next=${encodeURIComponent(safeNext)}&dbg=login`,
-    [safeNext]
-  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,113 +96,10 @@ export default function LoginForm() {
     };
   }, []);
 
-  const isLoading = status.type === "loading" || status.type === "pending_profile";
+  const isLoading = status.type === "loading";
 
   function clearNonSuccessStatus() {
-    setStatus((s) => clearMessage(s));
-  }
-
-  async function pollProfileThenRedirect() {
-    if (!mountedRef.current) return;
-
-    setStatus({ type: "pending_profile" });
-    let retryIndex = 0;
-
-    // RC: bounded profile polling (max 2 retries on network failures)
-    for (;;) {
-      if (!mountedRef.current) return;
-
-      try {
-        // ✅ FASIT: poll /api/profile (ikke /api/auth/profile)
-        const r = await fetch("/api/profile", {
-          cache: "no-store",
-          credentials: "same-origin",
-        });
-
-        const j = await r.json().catch(() => null);
-        const payload = unwrapPayload(j);
-
-        // 401 = ikke innlogget (cookies/session mangler)
-        if (r.status === 401) {
-          setStatus({ type: "error", message: "Du er ikke innlogget. Prøv igjen." });
-          return; // stop polling
-        }
-
-        if (j?.ok === false || payload?.ok === false) {
-          const message = payload?.message || j?.message || "Kunne ikke hente profil. Prøv igjen.";
-          setStatus({ type: "error", message });
-          return; // terminal error: stop polling
-        }
-
-        if (!payload) {
-          setStatus({ type: "error", message: "Uventet svar fra serveren. Prøv igjen." });
-          return; // stop polling
-        }
-
-        if (r.status === 403 && payload?.profile) {
-          const prof = payload.profile;
-          if (prof.disabled_at) {
-            setStatus({
-              type: "error",
-              message: prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.",
-            });
-            return; // stop polling
-          }
-          if (prof.is_active === false) {
-            setStatus({ type: "error", message: "Kontoen er ikke aktiv ennå. Kontakt administrator." });
-            return; // stop polling
-          }
-        }
-
-        if (r.status === 200 && payload?.pending === true && payload?.company_status) {
-          const st = String(payload.company_status ?? "").toLowerCase();
-          if (st === "pending") {
-            window.location.assign("/pending");
-            return; // stop polling
-          }
-          if (st === "paused" || st === "closed") {
-            window.location.assign(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(safeNext)}`);
-            return; // stop polling
-          }
-        }
-
-        if (r.status === 200 && payload?.pending === false && payload?.profile) {
-          const prof = payload.profile;
-
-          // Sperre: deaktivert
-          if (prof.disabled_at) {
-            setStatus({
-              type: "error",
-              message: prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.",
-            });
-            return; // stop polling
-          }
-
-          // Sperre: ikke aktiv
-          if (prof.is_active === false) {
-            setStatus({ type: "error", message: "Kontoen er ikke aktiv ennå. Kontakt administrator." });
-            return; // stop polling
-          }
-
-          // ✅ Cookies er på plass; hard redirect til post-login resolver
-          window.location.assign(nextPath);
-          return; // stop polling
-        }
-
-        setStatus({ type: "error", message: "Kontoen er ikke klar ennå. Kontakt firma-admin." });
-        return; // stop polling
-      } catch {
-        // Kun nettverksfeil får retry (maks 2)
-        if (retryIndex < PROFILE_NETWORK_RETRY_DELAYS_MS.length) {
-          const delay = PROFILE_NETWORK_RETRY_DELAYS_MS[retryIndex];
-          retryIndex += 1;
-          await sleep(delay);
-          continue;
-        }
-        setStatus({ type: "error", message: "Kunne ikke kontakte serveren. Prøv igjen." });
-        return; // stop polling
-      }
-    }
+    setStatus({ type: "idle" });
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -237,14 +118,23 @@ export default function LoginForm() {
       return;
     }
 
-    setStatus({ type: "loading" });
+    const rid = `login_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    setStatus({ type: "loading", rid });
 
     // Abort previous attempt
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const t = setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
+    const t = setTimeout(() => {
+      controller.abort();
+      if (!mountedRef.current) return;
+      setStatus({
+        type: "error",
+        message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
+        rid,
+      });
+    }, LOGIN_TIMEOUT_MS);
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -270,25 +160,18 @@ export default function LoginForm() {
 
       if (!mountedRef.current) return;
 
-      setStatus({
-        type: "success",
-        message: "Innlogging bekreftet. Setter opp kontoen din…",
-      });
-
-      // ✅ La cookies “lande” hos middleware/server først
-      await sleep(200);
-
-      // ✅ Vent til profilen er klar (202 pending håndteres)
-      await pollProfileThenRedirect();
+      // ✅ Cookies er på plass; client-nav + refresh for å sync server components
+      router.replace(safeNext);
+      router.refresh();
     } catch (err: any) {
       if (!mountedRef.current) return;
 
       const msg =
         err?.name === "AbortError"
-          ? "Innloggingen tok for lang tid. Prøv igjen."
+          ? `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`
           : err?.message || "Kunne ikke logge inn. Prøv igjen.";
 
-      setStatus({ type: "error", message: msg });
+      setStatus({ type: "error", message: msg, rid });
     } finally {
       safeClearTimeout(t);
     }
@@ -350,25 +233,19 @@ export default function LoginForm() {
         </div>
       )}
 
-      {(status.type === "success" || status.type === "pending_profile") && (
+      {status.type === "loading" && (
         <div
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          {status.type === "pending_profile" ? "Setter opp kontoen din…" : status.message}
+          Logger inn …
           <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
         </div>
       )}
 
       {/* CTA */}
-      <Button type="submit" disabled={isLoading} className="w-full">
-        {status.type === "pending_profile"
-          ? "Setter opp…"
-          : status.type === "loading"
-          ? "Logger inn…"
-          : status.type === "error"
-          ? "Prøv igjen"
-          : "Logg inn"}
+      <Button type="submit" disabled={isLoading} className="w-full text-white hover:text-white disabled:text-white">
+        {status.type === "loading" ? "Logger inn …" : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -376,6 +253,16 @@ export default function LoginForm() {
           Glemt passord?
         </Link>
       </div>
+
+      {status.type === "error" ? (
+        <button
+          type="button"
+          onClick={() => setStatus({ type: "idle" })}
+          className="w-full min-h-[44px] rounded-2xl border border-[rgb(var(--lp-border))] text-sm"
+        >
+          Prøv igjen
+        </button>
+      ) : null}
 
       {/* Test-knapp (kun dev) */}
       {process.env.NODE_ENV !== "production" && (
