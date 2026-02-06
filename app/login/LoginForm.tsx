@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -82,10 +82,13 @@ function unwrapPayload(j: any) {
 }
 
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const nextPath = useMemo(() => safeNextPath(searchParams.get("next")), [searchParams]);
+  const safeNext = useMemo(() => safeNextPath(searchParams.get("next")), [searchParams]);
+  const nextPath = useMemo(
+    () => `/api/auth/post-login?next=${encodeURIComponent(safeNext)}&dbg=login`,
+    [safeNext]
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -121,7 +124,8 @@ export default function LoginForm() {
     setStatus({ type: "pending_profile" });
     let retryIndex = 0;
 
-    while (true) {
+    // RC: bounded profile polling (max 2 retries on network failures)
+    for (;;) {
       if (!mountedRef.current) return;
 
       try {
@@ -169,11 +173,11 @@ export default function LoginForm() {
         if (r.status === 200 && payload?.pending === true && payload?.company_status) {
           const st = String(payload.company_status ?? "").toLowerCase();
           if (st === "pending") {
-            router.replace("/pending");
+            window.location.assign("/pending");
             return; // stop polling
           }
           if (st === "paused" || st === "closed") {
-            router.replace(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextPath)}`);
+            window.location.assign(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(safeNext)}`);
             return; // stop polling
           }
         }
@@ -196,10 +200,8 @@ export default function LoginForm() {
             return; // stop polling
           }
 
-          // ✅ Cookies er på plass; gå til post-login og refresh
-          const target = `/api/auth/post-login?next=${encodeURIComponent(nextPath)}&dbg=login`;
-          router.replace(target);
-          router.refresh();
+          // ✅ Cookies er på plass; hard redirect til post-login resolver
+          window.location.assign(nextPath);
           return; // stop polling
         }
 

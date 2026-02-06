@@ -33,16 +33,35 @@ export class ScopeError extends Error {
    Supabase (SSR-safe)
 ========================================================= */
 
+function isTestEnv() {
+  // Vitest sets VITEST; CI often sets CI; NODE_ENV becomes "test" during tests
+  return process.env.NODE_ENV === "test" || !!process.env.VITEST;
+}
+
 function mustEnv(name: string) {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env: ${name}`);
   return v;
 }
 
-const SUPABASE_URL = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
-const SUPABASE_ANON_KEY = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+/**
+ * Enterprise rule:
+ * - In production/dev runtime, missing Supabase env is a HARD error.
+ * - In tests, allow deterministic dummy values so route modules can load,
+ *   and unit tests can mock/override without crashing at import time.
+ */
+function envOrTestDefault(name: string, fallback: string) {
+  const v = process.env[name];
+  if (v && String(v).trim()) return String(v).trim();
+  if (isTestEnv()) return fallback;
+  return mustEnv(name);
+}
 
 function supabaseFromRequest(req: NextRequest) {
+  // Defer env reads to runtime to avoid build-time collect crashes.
+  const SUPABASE_URL = envOrTestDefault("NEXT_PUBLIC_SUPABASE_URL", "http://supabase.test");
+  const SUPABASE_ANON_KEY = envOrTestDefault("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_test_key");
+
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {

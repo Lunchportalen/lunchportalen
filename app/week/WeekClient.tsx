@@ -12,6 +12,8 @@ type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type Tier = "BASIS" | "LUXUS";
 type Choice = { key: string; label?: string };
 
+type AgreementStatus = "ACTIVE" | "PENDING_COMPANY" | "NOT_READY" | "STARTS_LATER" | "MISSING" | string;
+
 type OrderDay = {
   date: string;
   weekday: DayKey;
@@ -38,7 +40,7 @@ type WindowResp = {
   ok: boolean;
   range: { from: string; to: string };
   company?: { name?: string; policy?: string };
-  agreement?: { status?: string; message?: string | null; delivery_days?: DayKey[] };
+  agreement?: { status?: AgreementStatus; message?: string | null; delivery_days?: DayKey[]; start_date?: string | null };
   days: OrderDay[];
   error?: string;
   detail?: string;
@@ -352,6 +354,29 @@ export default function WeekClient() {
     return msg && String(msg).trim().length ? String(msg).trim() : null;
   }, [data?.agreement?.message]);
 
+  const agreementStatus = useMemo(() => (data?.agreement?.status ?? null) as AgreementStatus | null, [data?.agreement?.status]);
+  const agreementStartDate = useMemo(() => data?.agreement?.start_date ?? null, [data?.agreement?.start_date]);
+
+  // RC: status mapping for agreement messaging (no dead-end "Ingen aktiv avtale")
+  const agreementStatusMessage = useMemo(() => {
+    if (!agreementStatus || agreementStatus === "ACTIVE") return null;
+    if (agreementStatus === "STARTS_LATER") {
+      if (agreementStartDate) return `Avtalen starter ${formatDateNO(agreementStartDate)}.`;
+      return "Avtalen starter senere.";
+    }
+    if (agreementStatus === "PENDING_COMPANY" || agreementStatus === "NOT_READY") {
+      return "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
+    }
+    return agreementNotice || "Ingen aktiv avtale";
+  }, [agreementStatus, agreementStartDate, agreementNotice]);
+
+  const showAgreementNotice = useMemo(
+    () => (agreementNotice && agreementStatus === "ACTIVE" ? agreementNotice : null),
+    [agreementNotice, agreementStatus]
+  );
+
+  const isAgreementActive = agreementStatus === "ACTIVE";
+
   const visibleRange = useMemo(() => {
     if (!visibleDays.length) return null;
     return { from: visibleDays[0].date, to: visibleDays[visibleDays.length - 1].date };
@@ -611,8 +636,8 @@ export default function WeekClient() {
         </div>
       </div>
 
-      {agreementNotice ? (
-        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">{agreementNotice}</div>
+      {showAgreementNotice ? (
+        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">{showAgreementNotice}</div>
       ) : null}
 
       {loading ? (
@@ -621,12 +646,14 @@ export default function WeekClient() {
         <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
           {msg}
         </div>
-      ) : data?.agreement?.status !== "ACTIVE" ? (
+      ) : !isAgreementActive ? (
         <div className="mt-4 rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
           <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
-            {agreementNotice || "Ingen aktiv avtale"}
+            {agreementStatusMessage || "Ingen aktiv avtale"}
           </div>
-          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kontakt administrator for å aktivere avtale.</div>
+          {!agreementStatusMessage ? (
+            <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kontakt administrator for å aktivere avtale.</div>
+          ) : null}
         </div>
       ) : (
         <>

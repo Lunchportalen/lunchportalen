@@ -1,4 +1,4 @@
-// app/api/order/window/route.ts
+﻿// app/api/order/window/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -299,15 +299,26 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Avtale matcher ikke firmatilknytning.", 403, "AGREEMENT_SCOPE_MISMATCH");
     }
 
-    const agreementUsable = agreementState.status === "ACTIVE";
+    const startDateISO = asDateISO(agreementState.startDate);
+    const startsLater = Boolean(startDateISO && isIsoDate(startDateISO) && startDateISO > today);
+
+    // RC: deterministic agreement status for /week messaging
+    const agreementStatus =
+      policy.status === "PENDING"
+        ? "PENDING_COMPANY"
+        : startsLater
+          ? "STARTS_LATER"
+          : agreementState.status === "ACTIVE"
+            ? "ACTIVE"
+            : "NOT_READY";
+
+    const agreementUsable = agreementStatus === "ACTIVE";
     const deliveryDays = agreementState.deliveryDays ?? [];
     const dayTiers = agreementState.dayTiers ?? {};
 
     let agreementMessage: string | null = null;
-    if (!agreementUsable) {
-      if (agreementState.statusReason === "MISSING_DAYMAP") agreementMessage = "Avtalen mangler dagoppsett.";
-      else if (agreementState.statusReason === "MISSING_DELIVERY_DAYS") agreementMessage = "Avtalen mangler gyldige leveringsdager.";
-      else agreementMessage = "Ingen aktiv avtale for firma.";
+    if (agreementStatus === "PENDING_COMPANY" || agreementStatus === "NOT_READY") {
+      agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
     }
 
     let agreementForChoices: any = null;
@@ -388,8 +399,9 @@ export async function GET(req: NextRequest) {
         scope: { company_id, location_id, user_id },
         company,
         agreement: {
-          status: agreementUsable ? "ACTIVE" : "MISSING",
+          status: agreementStatus,
           message: agreementMessage,
+          start_date: startDateISO,
           delivery_days: deliveryDays,
         },
         range: { from: fromISO, to: toISO },
