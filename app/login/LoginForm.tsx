@@ -27,20 +27,13 @@ function isProbablyEmail(v: string) {
   return v.includes("@") && v.includes(".") && v.length >= 6;
 }
 
-/**
- * Small safety to avoid leaving a pending abort timer around
- */
+/** Small safety to avoid leaving a pending abort timer around */
 function safeClearTimeout(t: any) {
   try {
     clearTimeout(t);
   } catch {
     // ignore
   }
-}
-
-function unwrapPayload(j: any) {
-  if (j && typeof j === "object" && j.data && typeof j.data === "object") return j.data;
-  return j;
 }
 
 export default function LoginForm() {
@@ -71,7 +64,8 @@ export default function LoginForm() {
   const isLoading = status.type === "loading";
 
   function clearNonSuccessStatus() {
-    setStatus({ type: "idle" });
+    // Keep it simple: typing resets error state
+    if (status.type !== "idle") setStatus({ type: "idle" });
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -103,7 +97,7 @@ export default function LoginForm() {
       if (!mountedRef.current) return;
       setStatus({
         type: "error",
-        message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
+        message: `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`,
         rid,
       });
     }, LOGIN_TIMEOUT_MS);
@@ -122,7 +116,7 @@ export default function LoginForm() {
       try {
         data = await res.json();
       } catch {
-        // ok
+        // ignore JSON parse errors
       }
 
       if (!res.ok || !data?.ok) {
@@ -132,9 +126,12 @@ export default function LoginForm() {
 
       if (!mountedRef.current) return;
 
+      // âœ… Hard redirect: avoid App Router/session race and stop any post-success UI logic
       const next = searchParams.get("next");
       const rawTarget = next && next.startsWith("/") ? next : "/week";
-      const target = rawTarget === "/orders" ? "/week" : rawTarget;
+      const blocked = new Set(["/orders"]);
+      const target = blocked.has(rawTarget) ? "/week" : rawTarget;
+
       window.location.replace(target);
       return;
     } catch (err: any) {
@@ -142,8 +139,8 @@ export default function LoginForm() {
 
       const msg =
         err?.name === "AbortError"
-          ? `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`
-          : err?.message || "Kunne ikke logge inn. Prøv igjen.";
+          ? `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`
+          : err?.message || "Kunne ikke logge inn. PrÃ¸v igjen.";
 
       setStatus({ type: "error", message: msg, rid });
     } finally {
@@ -185,7 +182,7 @@ export default function LoginForm() {
               setPassword(e.target.value);
               clearNonSuccessStatus();
             }}
-            placeholder="••••••••••"
+            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
             disabled={isLoading}
             className="pr-12"
           />
@@ -212,14 +209,18 @@ export default function LoginForm() {
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          Logger inn …
-          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
+          Logger innâ€¦
+          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et Ã¸yeblikk.</div>
         </div>
       )}
 
       {/* CTA */}
-      <Button type="submit" disabled={isLoading} className="w-full text-white hover:text-white disabled:text-white">
-        {status.type === "loading" ? "Logger inn …" : "Logg inn"}
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="w-full bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white disabled:bg-zinc-900 disabled:text-white disabled:opacity-60"
+      >
+        {status.type === "loading" ? "Logger innâ€¦" : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -234,7 +235,7 @@ export default function LoginForm() {
           onClick={() => setStatus({ type: "idle" })}
           className="w-full min-h-[44px] rounded-2xl border border-[rgb(var(--lp-border))] text-sm"
         >
-          Prøv igjen
+          PrÃ¸v igjen
         </button>
       ) : null}
 
@@ -253,4 +254,3 @@ export default function LoginForm() {
     </form>
   );
 }
-
