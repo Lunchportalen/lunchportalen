@@ -12,7 +12,39 @@ type Status =
   | { type: "loading"; rid: string }
   | { type: "error"; message: string; rid?: string };
 
+type Role = "employee" | "company_admin" | "superadmin" | "driver" | "kitchen";
+
+type Profile = {
+  id: string;
+  role: string | null;
+  company_id: string | null;
+  location_id: string | null;
+  is_active: boolean | null;
+  disabled_at: string | null;
+  disabled_reason: string | null;
+};
+
+type ApiProfileOk =
+  | {
+      ok: true;
+      pending: true;
+      reason?: string;
+      company_status?: string;
+      rid?: string;
+    }
+  | {
+      ok: true;
+      pending: false;
+      profile: Profile;
+      profileExists?: boolean;
+      rid?: string;
+    };
+
+type ApiProfileErr = { ok: false; error?: string; message?: string; rid?: string };
+type ApiProfileRes = ApiProfileOk | ApiProfileErr;
+
 const LOGIN_TIMEOUT_MS = 8000;
+const PROFILE_TIMEOUT_MS = 5000;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -25,6 +57,53 @@ function normEmail(v: unknown) {
 function isProbablyEmail(v: string) {
   // simple + safe (avoid being too strict)
   return v.includes("@") && v.includes(".") && v.length >= 6;
+}
+
+function normRole(v: unknown): Role | null {
+  const r = safeStr(v).toLowerCase();
+  if (r === "superadmin" || r === "company_admin" || r === "employee" || r === "driver" || r === "kitchen") return r;
+  return null;
+}
+
+function safeNextPath(next: string | null | undefined) {
+  if (!next) return null;
+  const n = safeStr(next);
+  if (!n.startsWith("/")) return null;
+  if (n.startsWith("//")) return null;
+  if (n.startsWith("/api/")) return null;
+  if (
+    n === "/login" ||
+    n.startsWith("/login/") ||
+    n === "/register" ||
+    n.startsWith("/register/") ||
+    n === "/registrering" ||
+    n.startsWith("/registrering/") ||
+    n === "/forgot-password" ||
+    n.startsWith("/forgot-password/") ||
+    n === "/reset-password" ||
+    n.startsWith("/reset-password/")
+  ) {
+    return null;
+  }
+  return n;
+}
+
+function fallbackPathForRole(role: Role): string {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "driver") return "/driver";
+  if (role === "kitchen") return "/kitchen";
+  return "/week";
+}
+
+function allowNextForRole(role: Role, nextPath: string | null): string | null {
+  if (!nextPath) return null;
+  if (role === "superadmin") return nextPath.startsWith("/superadmin") ? nextPath : null;
+  if (role === "company_admin") return nextPath.startsWith("/admin") ? nextPath : null;
+  if (role === "driver") return nextPath.startsWith("/driver") ? nextPath : null;
+  if (role === "kitchen") return nextPath.startsWith("/kitchen") ? nextPath : null;
+  if (nextPath.startsWith("/orders") || nextPath.startsWith("/week") || nextPath.startsWith("/min-side")) return nextPath;
+  return null;
 }
 
 /** Small safety to avoid leaving a pending abort timer around */
@@ -137,6 +216,124 @@ export default function LoginForm() {
       setErrorText(`Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`);
     }, LOGIN_TIMEOUT_MS);
 
+    function hardFailToLogin(reason: string) {
+      const to = `/login?error=${encodeURIComponent(reason)}`;
+      window.location.assign(to);
+    }
+
+    function redirectToOnboarding(reason: string) {
+      const base = "/onboarding";
+      const nextSafe = safeNextPath(searchParams.get("next"));
+      const url = new URL(base, window.location.origin);
+      url.searchParams.set("reason", reason);
+      if (nextSafe) url.searchParams.set("next", nextSafe);
+      window.location.assign(url.toString());
+    }
+
+    async function resolvePostLogin(nextParam: string | null) {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), PROFILE_TIMEOUT_MS);
+
+      try {
+        const res = await fetch("/api/profile", {
+          cache: "no-store",
+          credentials: "same-origin",
+          signal: ctrl.signal,
+        });
+        const data = (await res.json().catch(() => null)) as ApiProfileRes | null;
+
+        const authOk =
+          res.status !== 401 &&
+          !(data && data.ok === false && String(data.error || "").toUpperCase() === "AUTH_REQUIRED");
+
+        if (!authOk || !data) {
+          hardFailToLogin("profile_incomplete");
+          return;
+        }
+
+        if (data.ok === false) {
+          const code = safeStr(data.error).toUpperCase();
+          if (code === "PROFILE_NOT_FOUND" || code === "PROFILE_NOT_READY") {
+            redirectToOnboarding(code.toLowerCase());
+            return;
+          }
+          if (code === "ROLE_FORBIDDEN") {
+            const msg = data.message || "Ingen tilgang for denne rollen.";
+            setStatus({ type: "error", message: msg, rid: data.rid });
+            setErrorText(msg);
+            return;
+          }
+          hardFailToLogin("profile_incomplete");
+          return;
+        }
+
+        if (data.pending === true) {
+          const st = safeStr((data as any).company_status).toLowerCase();
+          if (st === "pending") {
+            window.location.assign("/pending");
+            return;
+          }
+          if (st === "paused" || st === "closed") {
+            const nextSafe = safeNextPath(nextParam) || "/week";
+            window.location.assign(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextSafe)}`);
+            return;
+          }
+          hardFailToLogin("profile_incomplete");
+          return;
+        }
+
+        const prof = (data as Extract<ApiProfileOk, { pending: false }>).profile;
+        const role = normRole(prof?.role);
+
+        const authState = true;
+        const profileExists = Boolean(prof?.id);
+        const profileReady =
+          Boolean(prof?.id) &&
+          Boolean(role) &&
+          (role === "superadmin" || role === "driver" || role === "kitchen" || Boolean(prof?.company_id)) &&
+          (role !== "employee" || Boolean(prof?.location_id));
+        const roleAllowed = Boolean(role);
+
+        if (!authState) {
+          hardFailToLogin("profile_incomplete");
+          return;
+        }
+        if (!profileExists || !profileReady || !roleAllowed) {
+          redirectToOnboarding("profile_incomplete");
+          return;
+        }
+
+        if (prof?.disabled_at) {
+          const msg = prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.";
+          setStatus({ type: "error", message: msg, rid: (data as any).rid });
+          setErrorText(msg);
+          return;
+        }
+        if (prof?.is_active === false) {
+          const msg = "Kontoen er ikke aktiv ennå. Kontakt administrator.";
+          setStatus({ type: "error", message: msg, rid: (data as any).rid });
+          setErrorText(msg);
+          return;
+        }
+
+        const allowedNext = allowNextForRole(role as Role, safeNextPath(nextParam));
+        const fallback = fallbackPathForRole(role as Role);
+        const target = allowedNext ?? fallback;
+        const postLoginUrl = `/api/auth/post-login?next=${encodeURIComponent(target)}`;
+        window.location.assign(postLoginUrl);
+      } catch (err: any) {
+        if (err?.name === "AbortError") {
+          hardFailToLogin("profile_incomplete");
+          return;
+        }
+        const msg = err?.message || "Kunne ikke fullføre innlogging.";
+        setStatus({ type: "error", message: msg, rid: "profile_lookup_failed" });
+        setErrorText(msg);
+      } finally {
+        safeClearTimeout(timeout);
+      }
+    }
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -171,12 +368,8 @@ export default function LoginForm() {
       if (!mountedRef.current) return;
 
       // ✅ Hard redirect: avoid App Router/session race and stop any post-success UI logic
-      const next = searchParams.get("next");
-      const rawTarget = next && next.startsWith("/") ? next : "/week";
-      const blocked = new Set(["/orders"]);
-      const target = blocked.has(rawTarget) ? "/week" : rawTarget;
-
-      window.location.replace(target);
+      const next = safeNextPath(searchParams.get("next"));
+      await resolvePostLogin(next);
       return;
     } catch (err: any) {
       if (!mountedRef.current) return;
