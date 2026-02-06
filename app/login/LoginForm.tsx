@@ -16,10 +16,8 @@ type Status =
 
 const LOGIN_TIMEOUT_MS = 8000;
 
-// Ny fasit: rolig polling med backoff og maks forsøk
-const PROFILE_POLL_MAX_TRIES = 10;
-const PROFILE_POLL_START_DELAY_MS = 450;
-const PROFILE_POLL_MAX_DELAY_MS = 1500;
+// Ny fasit: maks 2 retries, kun ved nettverksfeil
+const PROFILE_NETWORK_RETRY_DELAYS_MS = [400, 900];
 
 function safeNextPath(next: string | null) {
   const FALLBACK = "/week"; // ✅ ansatt-default i denne fasen
@@ -78,6 +76,11 @@ function safeClearTimeout(t: any) {
   }
 }
 
+function unwrapPayload(j: any) {
+  if (j && typeof j === "object" && j.data && typeof j.data === "object") return j.data;
+  return j;
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,10 +119,9 @@ export default function LoginForm() {
     if (!mountedRef.current) return;
 
     setStatus({ type: "pending_profile" });
+    let retryIndex = 0;
 
-    let delay = PROFILE_POLL_START_DELAY_MS;
-
-    for (let i = 0; i < PROFILE_POLL_MAX_TRIES; i++) {
+    while (true) {
       if (!mountedRef.current) return;
 
       try {
@@ -129,50 +131,55 @@ export default function LoginForm() {
           credentials: "same-origin",
         });
 
-        // ✅ 202 = pending (trigger/profiles-latency) → vent med backoff
-        if (r.status === 202) {
-          await sleep(delay);
-          delay = Math.min(PROFILE_POLL_MAX_DELAY_MS, Math.floor(delay * 1.4));
-          continue;
-        }
+        const j = await r.json().catch(() => null);
+        const payload = unwrapPayload(j);
 
         // 401 = ikke innlogget (cookies/session mangler)
         if (r.status === 401) {
           setStatus({ type: "error", message: "Du er ikke innlogget. Prøv igjen." });
-          return;
+          return; // stop polling
         }
 
-        const j = await r.json().catch(() => null);
+        if (j?.ok === false || payload?.ok === false) {
+          const message = payload?.message || j?.message || "Kunne ikke hente profil. Prøv igjen.";
+          setStatus({ type: "error", message });
+          return; // terminal error: stop polling
+        }
 
-        if (r.status === 403 && j?.ok && j?.profile) {
-          const prof = j.profile;
+        if (!payload) {
+          setStatus({ type: "error", message: "Uventet svar fra serveren. Prøv igjen." });
+          return; // stop polling
+        }
+
+        if (r.status === 403 && payload?.profile) {
+          const prof = payload.profile;
           if (prof.disabled_at) {
             setStatus({
               type: "error",
               message: prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.",
             });
-            return;
+            return; // stop polling
           }
           if (prof.is_active === false) {
             setStatus({ type: "error", message: "Kontoen er ikke aktiv ennå. Kontakt administrator." });
-            return;
+            return; // stop polling
           }
         }
 
-        if (r.status === 200 && j?.ok && j?.pending === true && j?.company_status) {
-          const st = String(j.company_status ?? "").toLowerCase();
+        if (r.status === 200 && payload?.pending === true && payload?.company_status) {
+          const st = String(payload.company_status ?? "").toLowerCase();
           if (st === "pending") {
             router.replace("/pending");
-            return;
+            return; // stop polling
           }
           if (st === "paused" || st === "closed") {
             router.replace(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextPath)}`);
-            return;
+            return; // stop polling
           }
         }
 
-        if (r.status === 200 && j?.ok && j?.pending === false && j?.profile) {
-          const prof = j.profile;
+        if (r.status === 200 && payload?.pending === false && payload?.profile) {
+          const prof = payload.profile;
 
           // Sperre: deaktivert
           if (prof.disabled_at) {
@@ -180,33 +187,36 @@ export default function LoginForm() {
               type: "error",
               message: prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.",
             });
-            return;
+            return; // stop polling
           }
 
           // Sperre: ikke aktiv
           if (prof.is_active === false) {
             setStatus({ type: "error", message: "Kontoen er ikke aktiv ennå. Kontakt administrator." });
-            return;
+            return; // stop polling
           }
 
           // ✅ Cookies er på plass; gå til post-login og refresh
           const target = `/api/auth/post-login?next=${encodeURIComponent(nextPath)}&dbg=login`;
           router.replace(target);
           router.refresh();
-          return;
+          return; // stop polling
         }
+
+        setStatus({ type: "error", message: "Kontoen er ikke klar ennå. Kontakt firma-admin." });
+        return; // stop polling
       } catch {
-        // ignorer og prøv igjen
+        // Kun nettverksfeil får retry (maks 2)
+        if (retryIndex < PROFILE_NETWORK_RETRY_DELAYS_MS.length) {
+          const delay = PROFILE_NETWORK_RETRY_DELAYS_MS[retryIndex];
+          retryIndex += 1;
+          await sleep(delay);
+          continue;
+        }
+        setStatus({ type: "error", message: "Kunne ikke kontakte serveren. Prøv igjen." });
+        return; // stop polling
       }
-
-      await sleep(delay);
-      delay = Math.min(PROFILE_POLL_MAX_DELAY_MS, Math.floor(delay * 1.4));
     }
-
-    setStatus({
-      type: "error",
-      message: "Vi setter opp kontoen din. Vent litt og prøv igjen hvis du ikke kommer videre.",
-    });
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -350,7 +360,13 @@ export default function LoginForm() {
 
       {/* CTA */}
       <Button type="submit" disabled={isLoading} className="w-full">
-        {status.type === "pending_profile" ? "Setter opp…" : status.type === "loading" ? "Logger inn…" : "Logg inn"}
+        {status.type === "pending_profile"
+          ? "Setter opp…"
+          : status.type === "loading"
+          ? "Logger inn…"
+          : status.type === "error"
+          ? "Prøv igjen"
+          : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">

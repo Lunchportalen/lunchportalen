@@ -1,15 +1,15 @@
-// app/api/auth/profile/route.ts
+﻿// app/api/auth/profile/route.ts
 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
+const ALLOWED_ROLES: Role[] = ["employee", "company_admin", "superadmin", "kitchen", "driver"];
 
 function safeRole(v: any): Role {
   const r = String(v ?? "employee");
@@ -49,10 +49,17 @@ export async function GET() {
   }
 
   if (!profile?.id) {
-    // gammel endpoint brukte profileExists=false
-    const res = jsonOk(rid, { ok: true, rid, profileExists: false }, 202) as NextResponse;
-    res.headers.set("Retry-After", "1");
-    return res;
+    return jsonErr(
+      rid,
+      "Brukerprofil finnes ikke. Be firma-admin legge deg til som ansatt.",
+      404,
+      "PROFILE_NOT_FOUND" // terminal: profile missing
+    );
+  }
+
+  const rawRole = String(profile.role ?? "").trim().toLowerCase();
+  if (rawRole && !ALLOWED_ROLES.includes(rawRole as Role)) {
+    return jsonErr(rid, "Ingen tilgang for denne rollen.", 403, "ROLE_FORBIDDEN" /* terminal: forbidden role */);
   }
 
   // Disabled / inactive → hard stop
@@ -90,11 +97,24 @@ export async function GET() {
     }, 403);
   }
 
-  // Pending til company_id finnes
-  if (!profile.company_id) {
-    const res = jsonOk(rid, { ok: true, rid, profileExists: false }, 202) as NextResponse;
-    res.headers.set("Retry-After", "1");
-    return res;
+  const role = safeRole(profile.role);
+
+  // Required linkage for employee/company_admin
+  if ((role === "employee" || role === "company_admin") && !profile.company_id) {
+    return jsonErr(
+      rid,
+      "Kontoen er ikke koblet til firma/lokasjon. Kontakt firma-admin.",
+      409,
+      "PROFILE_NOT_READY" // terminal: missing company linkage
+    );
+  }
+  if (role === "employee" && !profile.location_id) {
+    return jsonErr(
+      rid,
+      "Kontoen er ikke koblet til firma/lokasjon. Kontakt firma-admin.",
+      409,
+      "PROFILE_NOT_READY" // terminal: missing location linkage
+    );
   }
 
   // Company status gate (fail-closed)
