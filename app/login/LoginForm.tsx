@@ -151,6 +151,7 @@ export default function LoginForm() {
 
       if (!res.ok) {
         const msg = await readApiError(res);
+        setStatus({ type: "error", message: msg, rid });
         setErrorText(msg);
         return;
       }
@@ -161,7 +162,8 @@ export default function LoginForm() {
         const msg =
           (typeof payload.message === "string" && payload.message.trim() && payload.message) ||
           (typeof payload.error === "string" && payload.error.trim() && payload.error) ||
-          "Innlogging feilet.";
+          `Innlogging feilet (HTTP ${res.status})`;
+        setStatus({ type: "error", message: msg, rid });
         setErrorText(msg);
         return;
       }
