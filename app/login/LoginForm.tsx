@@ -36,6 +36,33 @@ function safeClearTimeout(t: any) {
   }
 }
 
+async function readApiError(res: Response): Promise<string> {
+  try {
+    const data = await res.json();
+
+    if (typeof data?.message === "string") return data.message;
+    if (typeof data?.error === "string") return data.error;
+
+    if (typeof data?.error === "object" && data.error !== null) {
+      const msg =
+        data.error.message ||
+        data.error.error_description ||
+        data.error.details ||
+        data.error.hint;
+      if (typeof msg === "string") return msg;
+    }
+
+    return `Innlogging feilet (HTTP ${res.status})`;
+  } catch {
+    try {
+      const text = await res.text();
+      if (text?.trim()) return text.trim();
+    } catch {}
+
+    return `Innlogging feilet (HTTP ${res.status})`;
+  }
+}
+
 export default function LoginForm() {
   const searchParams = useSearchParams();
 
@@ -112,16 +139,25 @@ export default function LoginForm() {
         cache: "no-store",
       });
 
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {
-        // ignore JSON parse errors
+      if (!res.ok) {
+        const msg = await readApiError(res);
+        if (!mountedRef.current) return;
+        setStatus({ type: "error", message: msg, rid });
+        return;
       }
 
-      if (!res.ok || !data?.ok) {
-        // Prefer server message, but keep it safe/short
-        throw new Error(data?.message || "Ugyldig e-post eller passord.");
+      const payload = await res.json().catch(() => null);
+
+      if (payload?.ok === false) {
+        const msg = await readApiError(
+          new Response(JSON.stringify(payload), {
+            status: res.status,
+            headers: { "Content-Type": "application/json" },
+          })
+        );
+        if (!mountedRef.current) return;
+        setStatus({ type: "error", message: msg, rid });
+        return;
       }
 
       if (!mountedRef.current) return;
