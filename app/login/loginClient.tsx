@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Profile = {
@@ -32,10 +32,9 @@ async function sleep(ms: number) {
 }
 
 export default function LoginClient() {
-  const router = useRouter();
   const sp = useSearchParams();
 
-  // ✅ Support: /login?next=/week
+  // âœ… Support: /login?next=/week
   const nextPath = useMemo(() => {
     const n = sp.get("next");
     if (!n || !n.startsWith("/")) return "";
@@ -53,102 +52,108 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>("");
+  const [msgTone, setMsgTone] = useState<"info" | "error">("info");
   const [pendingProfile, setPendingProfile] = useState(false);
 
   useEffect(() => {
     if (okParam === "invite_accepted") {
-      setMsg("Kontoen er opprettet. Logg inn for å komme i gang.");
+      setMsgTone("info");
+      setMsg("Kontoen er opprettet. Logg inn for Ã¥ komme i gang.");
     }
   }, [okParam]);
 
-  async function pollProfileAndRedirect() {
+  function setInfo(message: string) {
+    setMsgTone("info");
+    setMsg(message);
+  }
+
+  function setError(message: string) {
+    setMsgTone("error");
+    setMsg(message);
+  }
+
+  async function postLoginReadiness(next: string) {
     setPendingProfile(true);
+    setMsg("");
 
-    const maxAttempts = 10;
-    let delay = 450;
+    const MAX_ATTEMPTS = 4; // initial + 3 retries
+    const retryDelays = [200, 500, 900];
+    let lastState: "pending" | "auth_delay" | "technical" | "unknown" = "unknown";
 
-    for (let i = 0; i < maxAttempts; i++) {
-      const r = await fetch("/api/profile", { cache: "no-store" });
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      let r: Response | null = null;
+      let data: ApiProfileRes | null = null;
 
-      // ✅ 202 = pending (profil/trigger-latency)
-      if (r.status === 202) {
-        await sleep(delay);
-        delay = Math.min(1500, Math.floor(delay * 1.4));
-        continue;
+      try {
+        r = await fetch("/api/profile", { cache: "no-store" });
+        data = (await r.json().catch(() => null)) as ApiProfileRes | null;
+      } catch {
+        lastState = "technical";
       }
 
-      const data = (await r.json().catch(() => null)) as ApiProfileRes | null;
+      if (r) {
+        if (r.status === 401 || r.status === 403) {
+          lastState = "auth_delay";
+        } else if (r.status === 202) {
+          lastState = "pending";
+        } else if (r.status >= 500) {
+          lastState = "technical";
+        } else if (data && data.ok === false && data.error === "AUTH_REQUIRED") {
+          lastState = "auth_delay";
+        } else if (data && data.ok === true && data.pending === true) {
+          const st = String((data as any).company_status ?? "").toLowerCase();
+          if (st === "pending") {
+            window.location.assign("/pending");
+            return;
+          }
+          if (st === "paused" || st === "closed") {
+            window.location.assign(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(next || "/week")}`);
+            return;
+          }
+          lastState = "pending";
+        } else if (data && data.ok === true && data.pending === false) {
+          const prof = data.profile as Profile;
 
-      if (!data) {
-        await sleep(delay);
-        delay = Math.min(1500, Math.floor(delay * 1.4));
-        continue;
+          if (prof?.disabled_at) {
+            setPendingProfile(false);
+            setInfo(prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
+            return;
+          }
+
+          if (prof?.is_active === false) {
+            setPendingProfile(false);
+            setInfo("Kontoen er ikke aktiv ennÃ¥. Kontakt administrator.");
+            return;
+          }
+
+          const nextUrl = next || "/week";
+          const postLoginUrl = `/api/auth/post-login?next=${encodeURIComponent(nextUrl)}`;
+          // Hard redirect avoids SPA session/profile race that previously required manual refresh.
+          window.location.assign(postLoginUrl);
+          return;
+        } else {
+          lastState = "technical";
+        }
       }
 
-      // Ikke innlogget lenger / cookies ikke satt
-      if (r.status === 401 || (data && "ok" in data && data.ok === false && data.error === "AUTH_REQUIRED")) {
-        setPendingProfile(false);
-        setMsg("Du er ikke innlogget. Prøv igjen.");
-        return;
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await sleep(retryDelays[attempt]);
       }
-
-      if (r.status === 403 && (data as any)?.ok && (data as any)?.profile) {
-        const prof = (data as any).profile as Profile;
-        if (prof?.disabled_at) {
-          setPendingProfile(false);
-          setMsg(prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
-          return;
-        }
-        if (prof?.is_active === false) {
-          setPendingProfile(false);
-          setMsg("Kontoen er ikke aktiv ennå. Kontakt administrator.");
-          return;
-        }
-      }
-
-      // ✅ Pending company status
-      if (r.status === 200 && data.ok === true && data.pending === true && (data as any).company_status) {
-        const st = String((data as any).company_status ?? "").toLowerCase();
-        if (st === "pending") {
-          router.replace("/pending");
-          return;
-        }
-        if (st === "paused" || st === "closed") {
-          router.replace(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(nextPath || "/week")}`);
-          return;
-        }
-      }
-
-      // ✅ Klar
-      if (r.status === 200 && data.ok === true && data.pending === false) {
-        const prof = data.profile as Profile;
-
-        // Sperre: deaktivert
-        if (prof?.disabled_at) {
-          setPendingProfile(false);
-          setMsg(prof.disabled_reason || "Kontoen er deaktivert. Kontakt administrator.");
-          return;
-        }
-
-        // Sperre: ikke aktiv
-        if (prof?.is_active === false) {
-          setPendingProfile(false);
-          setMsg("Kontoen er ikke aktiv ennå. Kontakt administrator.");
-          return;
-        }
-
-        router.refresh();
-        router.replace("/api/auth/post-login");
-        return;
-      }
-
-      // Alt annet → vent litt og prøv igjen
-      await sleep(delay);
-      delay = Math.min(1500, Math.floor(delay * 1.4));
     }
 
     setPendingProfile(false);
-    setMsg("Vi setter opp kontoen din. Vent litt og prøv å logge inn på nytt hvis du ikke kommer videre.");
+
+    if (lastState === "pending") {
+      setInfo("Vi setter opp kontoen din. Vent litt og prÃ¸v igjen hvis du ikke kommer videre.");
+      return;
+    }
+
+    if (lastState === "auth_delay") {
+      setInfo("Innloggingen bruker litt tid. Vent litt og prÃ¸v igjen.");
+      return;
+    }
+
+    setError("Teknisk feil. Vent litt og prÃ¸v igjen.");
   }
 
   async function onLogin(e: React.FormEvent) {
@@ -156,13 +161,14 @@ export default function LoginClient() {
     if (busy || pendingProfile) return;
 
     setMsg("");
+    setMsgTone("info");
     setBusy(true);
 
     const eMail = email.trim().toLowerCase();
 
     if (!isEmail(eMail)) {
       setBusy(false);
-      setMsg("Skriv inn en gyldig e-postadresse.");
+      setInfo("Skriv inn en gyldig e-postadresse.");
       return;
     }
 
@@ -174,29 +180,27 @@ export default function LoginClient() {
     setBusy(false);
 
     if (error) {
-      setMsg("Feil e-post eller passord.");
+      setError("Feil e-post eller passord.");
       return;
     }
 
-    // Viktig: sørg for at SSR/middleware får oppdatert cookies før vi går videre
-    router.refresh();
-
-    await pollProfileAndRedirect();
+    await postLoginReadiness(nextPath || "/week");
   }
 
-  // ⚠️ KUN for test/dev. Ikke bruk i prod.
+  // âš ï¸ KUN for test/dev. Ikke bruk i prod.
   async function onRegister(e: React.MouseEvent) {
     e.preventDefault();
     if (busy || pendingProfile) return;
 
     setMsg("");
+    setMsgTone("info");
     setBusy(true);
 
     const eMail = email.trim().toLowerCase();
 
     if (!isEmail(eMail)) {
       setBusy(false);
-      setMsg("Skriv inn en gyldig e-postadresse.");
+      setInfo("Skriv inn en gyldig e-postadresse.");
       return;
     }
 
@@ -208,22 +212,22 @@ export default function LoginClient() {
     setBusy(false);
 
     if (error) {
-      setMsg(`Kunne ikke opprette bruker: ${error.message}`);
+      setInfo(`Kunne ikke opprette bruker: ${error.message}`);
       return;
     }
 
-    setMsg("Bruker opprettet. Du kan nå logge inn.");
+    setInfo("Bruker opprettet. Du kan nÃ¥ logge inn.");
   }
 
   return (
     <main className="mx-auto max-w-md p-6">
       <h1 className="text-2xl font-bold">Logg inn</h1>
-      <p className="mt-2 text-sm opacity-80">Logg inn for å bestille eller avbestille lunsj.</p>
+      <p className="mt-2 text-sm opacity-80">Logg inn for Ã¥ bestille eller avbestille lunsj.</p>
 
-      {pendingProfile ? (
+      {busy || pendingProfile ? (
         <div className="mt-4 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm">
-          <div className="font-semibold">Setter opp kontoen din…</div>
-          <div className="mt-1 opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
+          <div className="font-semibold">Logger deg trygt inn…</div>
+          <div className="mt-1 opacity-80">Dette tar vanligvis bare et Ã¸yeblikk.</div>
         </div>
       ) : null}
 
@@ -271,7 +275,7 @@ export default function LoginClient() {
           }`}
           type="submit"
         >
-          {pendingProfile ? "Setter opp…" : busy ? "Logger inn…" : "Logg inn"}
+          {pendingProfile ? "Logger deg trygt inn…" : busy ? "Logger deg trygt inn…" : "Logg inn"}
         </button>
 
         <button
@@ -285,10 +289,10 @@ export default function LoginClient() {
           Opprett bruker (test)
         </button>
 
-        {msg ? <div className="mt-2 text-sm">{msg}</div> : null}
+        {msg ? (
+          <div className={`mt-2 text-sm${msgTone === "error" ? " text-red-500" : ""}`}>{msg}</div>
+        ) : null}
       </form>
     </main>
   );
 }
-
-
