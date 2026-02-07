@@ -164,6 +164,27 @@ export default function LoginForm() {
   }, []);
 
   useEffect(() => {
+    const errParam = searchParams.get("error") || searchParams.get("e");
+    if (!errParam) return;
+    if (errorText) return;
+
+    const code = safeStr(errParam).toLowerCase();
+    let msg = "Kunne ikke fullføre innlogging. Prøv igjen.";
+    if (code === "profile_missing" || code === "profile_not_found") {
+      msg = "Brukerprofil mangler. Kontakt firma-admin.";
+    } else if (code === "profile_incomplete") {
+      msg = "Kunne ikke fullføre innlogging. Prøv igjen.";
+    } else if (code === "role_forbidden") {
+      msg = "Ingen tilgang for denne rollen.";
+    } else if (code === "no_session") {
+      msg = "Økten din er utløpt. Logg inn på nytt.";
+    }
+
+    setStatus({ type: "error", message: msg });
+    setErrorText(msg);
+  }, [searchParams, errorText]);
+
+  useEffect(() => {
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
