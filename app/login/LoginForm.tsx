@@ -12,27 +12,37 @@ type Status =
   | { type: "loading"; rid: string }
   | { type: "error"; message: string; rid?: string };
 
-type Role = "employee" | "company_admin" | "superadmin" | "driver" | "kitchen";
-
-type ApiScopeOk = {
-  ok: true;
-  rid: string;
-  data: {
-    role: string;
-    company_id: string | null;
-  };
+type ApiProfile = {
+  id: string;
+  role: string;
+  company_id: string | null;
+  location_id: string | null;
+  is_active: boolean | null;
+  disabled_at: string | null;
+  disabled_reason: string | null;
 };
 
-type ApiScopeErr = {
+type ApiProfileOk = {
+  ok: true;
+  rid: string;
+  pending?: boolean;
+  reason?: string;
+  company_status?: string;
+  profileExists?: boolean;
+  profile?: ApiProfile;
+};
+
+type ApiProfileErr = {
   ok: false;
   rid?: string;
   error: string;
   message?: string;
 };
-type ApiScopeRes = ApiScopeOk | ApiScopeErr;
+
+type ApiProfileRes = ApiProfileOk | ApiProfileErr;
 
 const LOGIN_TIMEOUT_MS = 8000;
-const SCOPE_TIMEOUT_MS = 5000;
+const PROFILE_TIMEOUT_MS = 8000;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -46,15 +56,13 @@ function isProbablyEmail(v: string) {
   return v.includes("@") && v.includes(".") && v.length >= 6;
 }
 
-function safeNextPath(next: string | null | undefined) {
-  if (!next) return null;
-  const n = safeStr(next);
-  if (!n.startsWith("/")) return null;
-  if (n.startsWith("//")) return null;
-  if (n.startsWith("/api/")) return null;
+function resolveNext(rawNext: string | null | undefined) {
+  const n = safeStr(rawNext);
+  if (!n || n === "/" || n === "/login") return "/week";
+  if (!n.startsWith("/")) return "/week";
+  if (n.startsWith("//")) return "/week";
+  if (n.startsWith("/api/")) return "/week";
   if (
-    n === "/login" ||
-    n.startsWith("/login/") ||
     n === "/register" ||
     n.startsWith("/register/") ||
     n === "/registrering" ||
@@ -64,9 +72,20 @@ function safeNextPath(next: string | null | undefined) {
     n === "/reset-password" ||
     n.startsWith("/reset-password/")
   ) {
-    return null;
+    return "/week";
   }
-  return n;
+  if (n === "/orders") return "/week";
+
+  const allowed = new Set([
+    "/week",
+    "/bestillinger",
+    "/min-side",
+    "/admin",
+    "/superadmin",
+    "/kitchen",
+    "/driver",
+  ]);
+  return allowed.has(n) ? n : "/week";
 }
 
 function safeClearTimeout(t: any) {
@@ -126,9 +145,12 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [errorText, setErrorText] = useState("");
+  const [loadingLabel, setLoadingLabel] = useState("Logger inn…");
 
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
+  const didRedirectRef = useRef(false);
+  const profileFetchedRef = useRef(false);
 
   useEffect(() => {
     const qpEmail = searchParams.get("email");
@@ -161,30 +183,32 @@ export default function LoginForm() {
     if (errorText) setErrorText("");
   }
 
-  async function resolveScopeAndRedirect(nextParam: string | null) {
+  async function checkProfileAndRedirect(nextParam: string | null) {
+    if (profileFetchedRef.current || didRedirectRef.current) return;
+    profileFetchedRef.current = true;
+
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), SCOPE_TIMEOUT_MS);
+    const timeout = setTimeout(() => ctrl.abort(), PROFILE_TIMEOUT_MS);
 
     try {
-      const res = await fetch("/api/auth/scope", {
+      const res = await fetch("/api/profile", {
         cache: "no-store",
         credentials: "same-origin",
         signal: ctrl.signal,
       });
-      const data = (await res.json()) as ApiScopeRes;
+      const data = (await res.json().catch(() => null)) as ApiProfileRes | null;
 
-      let errorMsg: string | null = null;
-      let code = "";
-
-      if (data.ok === false) {
-        const m = typeof data.message === "string" ? data.message.trim() : "";
-        errorMsg = m ? data.message! : data.error;
-        code = safeStr(data.error);
+      if (!data) {
+        const msg = "Kunne ikke hente profil. Prøv igjen.";
+        setStatus({ type: "error", message: msg, rid: "profile_empty" });
+        setErrorText(msg);
+        return;
       }
 
-      if (!res.ok || data.ok === false) {
+      if (data.ok === false) {
+        const code = safeStr(data.error);
         const msg =
-          (errorMsg && errorMsg.trim() && errorMsg) ||
+          (typeof data.message === "string" && data.message.trim() && data.message) ||
           errorMessageForCode(code) ||
           "Kunne ikke fullføre innlogging.";
         setStatus({ type: "error", message: msg, rid: data.rid });
@@ -192,18 +216,54 @@ export default function LoginForm() {
         return;
       }
 
-      const nextSafe = safeNextPath(nextParam);
-      const postLoginUrl = `/api/auth/post-login${nextSafe ? `?next=${encodeURIComponent(nextSafe)}` : ""}`;
-      window.location.assign(postLoginUrl);
+      if (data.pending === true) {
+        const st = safeStr(data.company_status).toUpperCase();
+        const msg =
+          st === "PENDING"
+            ? "Firmaet er under opprettelse. Du får tilgang så snart det er klart."
+            : "Firmaet er ikke aktivt akkurat nå. Kontakt firma-admin.";
+        setStatus({ type: "error", message: msg, rid: data.rid });
+        setErrorText(msg);
+        return;
+      }
+
+      const prof = data.profile;
+      if (!prof?.id || !prof?.role) {
+        const msg = "Brukerprofil mangler. Kontakt firma-admin.";
+        setStatus({ type: "error", message: msg, rid: data.rid });
+        setErrorText(msg);
+        return;
+      }
+
+      if (prof.disabled_at || prof.is_active === false) {
+        const msg = "Kontoen er deaktivert. Kontakt administrator.";
+        setStatus({ type: "error", message: msg, rid: data.rid });
+        setErrorText(msg);
+        return;
+      }
+
+      if (!res.ok) {
+        const msg = "Kunne ikke fullføre innlogging.";
+        setStatus({ type: "error", message: msg, rid: data.rid });
+        setErrorText(msg);
+        return;
+      }
+
+      const nextSafe = resolveNext(nextParam);
+      if (!didRedirectRef.current) {
+        didRedirectRef.current = true;
+        const postLoginUrl = "/api/auth/post-login?next=" + encodeURIComponent(nextSafe);
+        window.location.assign(postLoginUrl);
+      }
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        const msg = "Innloggingen tok for lang tid. Prøv igjen.";
-        setStatus({ type: "error", message: msg, rid: "scope_timeout" });
+        const msg = "Setter opp kontoen tok for lang tid. Prøv igjen.";
+        setStatus({ type: "error", message: msg, rid: "profile_timeout" });
         setErrorText(msg);
         return;
       }
       const msg = err?.message || "Kunne ikke fullføre innlogging.";
-      setStatus({ type: "error", message: msg, rid: "scope_failed" });
+      setStatus({ type: "error", message: msg, rid: "profile_failed" });
       setErrorText(msg);
     } finally {
       safeClearTimeout(timeout);
@@ -231,6 +291,9 @@ export default function LoginForm() {
     const rid = `login_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     setErrorText("");
     setStatus({ type: "loading", rid });
+    setLoadingLabel("Logger inn…");
+    didRedirectRef.current = false;
+    profileFetchedRef.current = false;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -280,8 +343,9 @@ export default function LoginForm() {
 
       if (!mountedRef.current) return;
 
-      const next = safeNextPath(searchParams.get("next"));
-      await resolveScopeAndRedirect(next);
+      const next = searchParams.get("next");
+      setLoadingLabel("Setter opp kontoen din…");
+      await checkProfileAndRedirect(next);
       return;
     } catch (err: any) {
       if (!mountedRef.current) return;
@@ -402,8 +466,4 @@ export default function LoginForm() {
     </form>
   );
 }
-
-
-
-
 
