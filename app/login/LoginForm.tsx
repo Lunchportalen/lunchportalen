@@ -83,8 +83,8 @@ function errorMessageForCode(code: string): string | null {
   if (c === "NO_COMPANY") return "Kontoen mangler firmatilknytning. Kontakt firma-admin.";
   if (c === "NO_AGREEMENT") return "Firma mangler aktiv avtale. Kontakt firma-admin.";
   if (c === "INACTIVE" || c === "ACCOUNT_DISABLED") return "Kontoen er deaktivert. Kontakt administrator.";
-  if (c === "UNAUTHORIZED" || c === "NO_SESSION") return "Økten din er utløpt. Logg inn på nytt.";
-  if (c === "PROFILE_INCOMPLETE") return "Kunne ikke fullføre innlogging. Prøv igjen.";
+  if (c === "UNAUTHORIZED" || c === "NO_SESSION") return "Ã˜kten din er utlÃ¸pt. Logg inn pÃ¥ nytt.";
+  if (c === "PROFILE_INCOMPLETE") return "Kunne ikke fullfÃ¸re innlogging. PrÃ¸v igjen.";
   if (c === "ROLE_FORBIDDEN") return "Ingen tilgang for denne rollen.";
   return null;
 }
@@ -141,7 +141,7 @@ export default function LoginForm() {
     if (!errParam) return;
     if (errorText) return;
 
-    const msg = errorMessageForCode(errParam) || "Kunne ikke fullføre innlogging. Prøv igjen.";
+    const msg = errorMessageForCode(errParam) || "Kunne ikke fullfÃ¸re innlogging. PrÃ¸v igjen.";
 
     setStatus({ type: "error", message: msg });
     setErrorText(msg);
@@ -171,20 +171,23 @@ export default function LoginForm() {
         credentials: "same-origin",
         signal: ctrl.signal,
       });
-      const data = (await res.json().catch(() => null)) as ApiScopeRes | null;
+      const data = (await res.json()) as ApiScopeRes;
 
       let errorMsg: string | null = null;
-      if (data && !data.ok) {
-        errorMsg = data.message || data.error;
+      let code = "";
+
+      if (data.ok === false) {
+        const m = typeof data.message === "string" ? data.message.trim() : "";
+        errorMsg = m ? data.message! : data.error;
+        code = safeStr(data.error);
       }
 
-      if (!res.ok || !data || data.ok === false) {
-        const code = safeStr(data && !data.ok ? data.error : "");
+      if (!res.ok || data.ok === false) {
         const msg =
           (errorMsg && errorMsg.trim() && errorMsg) ||
           errorMessageForCode(code) ||
-          "Kunne ikke fullføre innlogging.";
-        setStatus({ type: "error", message: msg, rid: data?.rid });
+          "Kunne ikke fullfÃ¸re innlogging.";
+        setStatus({ type: "error", message: msg, rid: data.rid });
         setErrorText(msg);
         return;
       }
@@ -194,12 +197,12 @@ export default function LoginForm() {
       window.location.assign(postLoginUrl);
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        const msg = "Innloggingen tok for lang tid. Prøv igjen.";
+        const msg = "Innloggingen tok for lang tid. PrÃ¸v igjen.";
         setStatus({ type: "error", message: msg, rid: "scope_timeout" });
         setErrorText(msg);
         return;
       }
-      const msg = err?.message || "Kunne ikke fullføre innlogging.";
+      const msg = err?.message || "Kunne ikke fullfÃ¸re innlogging.";
       setStatus({ type: "error", message: msg, rid: "scope_failed" });
       setErrorText(msg);
     } finally {
@@ -238,10 +241,10 @@ export default function LoginForm() {
       if (!mountedRef.current) return;
       setStatus({
         type: "error",
-        message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
+        message: `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`,
         rid,
       });
-      setErrorText(`Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`);
+      setErrorText(`Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`);
     }, LOGIN_TIMEOUT_MS);
 
     try {
@@ -285,8 +288,8 @@ export default function LoginForm() {
 
       const msg =
         err?.name === "AbortError"
-          ? `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`
-          : err?.message || "Kunne ikke logge inn. Prøv igjen.";
+          ? `Innloggingen tok for lang tid. PrÃ¸v igjen. (rid: ${rid})`
+          : err?.message || "Kunne ikke logge inn. PrÃ¸v igjen.";
 
       setErrorText(msg);
       setStatus({ type: "error", message: msg, rid });
@@ -327,7 +330,7 @@ export default function LoginForm() {
               setPassword(e.target.value);
               clearNonSuccessStatus();
             }}
-            placeholder="••••••••••"
+            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
             disabled={isLoading}
             className="pr-12"
           />
@@ -353,8 +356,8 @@ export default function LoginForm() {
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          Logger inn…
-          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
+          Logger innâ€¦
+          <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et Ã¸yeblikk.</div>
         </div>
       )}
 
@@ -363,7 +366,7 @@ export default function LoginForm() {
         disabled={isLoading}
         className="w-full bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white disabled:bg-zinc-900 disabled:text-white disabled:opacity-60"
       >
-        {isLoading ? "Logger inn…" : "Logg inn"}
+        {isLoading ? "Logger innâ€¦" : "Logg inn"}
       </Button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
@@ -381,7 +384,7 @@ export default function LoginForm() {
           }}
           className="w-full min-h-[44px] rounded-2xl border border-[rgb(var(--lp-border))] text-sm"
         >
-          Prøv igjen
+          PrÃ¸v igjen
         </button>
       ) : null}
 
@@ -399,5 +402,8 @@ export default function LoginForm() {
     </form>
   );
 }
+
+
+
 
 
