@@ -1,14 +1,45 @@
 // app/min-side/page.tsx
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { getScope, ScopeError } from "@/lib/auth/scope";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const runtime = "nodejs";
+
+/**
+ * Min side er kun en smart redirect:
+ * - Ikke innlogget            → /login?next=/week
+ * - Innlogget, men ikke aktiv → /status
+ * - Aktiv bruker              → /week
+ *
+ * Ingen UI rendres her med vilje.
+ */
 export default async function MinSidePage() {
-  const supabase = await supabaseServer();
-  const { data } = await supabase.auth.getUser();
+  try {
+    // Bruk samme sannhetskilde som API og admin/UI
+    const scope = await getScope({ headers: headers() } as any);
 
-  // Ikke innlogget → til login
-  if (!data.user) redirect("/login?next=%2Fweek");
+    // Konto og firma er aktiv → ansattvisning
+    redirect("/week");
+  } catch (e: any) {
+    if (e instanceof ScopeError) {
+      // Ikke innlogget
+      if (e.code === "UNAUTHENTICATED") {
+        redirect("/login?next=/week");
+      }
 
-  // Innlogget → Min side peker på dashboardet ditt
-  redirect("/week");
+      // Registrert, men ikke aktiv / firma ikke aktivt
+      if (
+        e.code === "ACCOUNT_INACTIVE" ||
+        e.code === "COMPANY_NOT_ACTIVE" ||
+        e.code === "COMPANY_MISSING"
+      ) {
+        redirect("/status?state=pending&next=/week");
+      }
+    }
+
+    // Fallback → status (sikker standard)
+    redirect("/status");
+  }
 }

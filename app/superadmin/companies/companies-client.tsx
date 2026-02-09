@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDateTimeNO } from "@/lib/date/format";
+import { buildCleanQuery } from "@/lib/url/qs";
 
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 type SortKey = "updated_at" | "created_at" | "name";
@@ -36,6 +37,15 @@ type AgreementSnapshot = {
   updatedAt: string | null;
 };
 
+type DetailEmployee = {
+  id: string;
+  email: string | null;
+  role: string | null;
+  is_active: boolean | null;
+  company_id: string | null;
+  location_id: string | null;
+};
+
 type CompanyDetail = {
   company: {
     id: string;
@@ -44,17 +54,22 @@ type CompanyDetail = {
     status: CompanyStatus | string | null;
     created_at?: string | null;
     updated_at?: string | null;
+    deleted_at?: string | null;
   };
-  counts: {
+  counts?: {
     employeesCount: number;
     adminsCount: number;
-  };
+  } | null;
   agreement: AgreementSnapshot | null;
-  source?: {
-    companies?: string;
-    profiles?: string;
-    agreement?: string;
-  };
+  employees: DetailEmployee[];
+  locations?: Array<{
+    id: string;
+    name: string | null;
+    address_line: string | null;
+    postnr: string | null;
+    city: string | null;
+    slot: string | null;
+  }>;
 };
 
 type ApiOk = {
@@ -66,11 +81,7 @@ type ApiOk = {
     limit: number;
     total: number;
     totalPages: number;
-    source?: {
-      companies?: string;
-      profiles?: string;
-      agreement?: string;
-    };
+    source?: { companies?: string; profiles?: string; agreement?: string };
     filters?: {
       q?: string | null;
       status?: string | null;
@@ -81,7 +92,15 @@ type ApiOk = {
   };
 };
 
-type ApiErr = { ok: false; rid?: string; error: string; message?: string; status?: number; detail?: any };
+type ApiErr = {
+  ok: false;
+  rid?: string;
+  error: string;
+  message?: string;
+  status?: number;
+  detail?: any;
+};
+
 type ApiRes = ApiOk | ApiErr;
 
 function safeStr(v: any) {
@@ -137,28 +156,6 @@ function isSortDir(v: any): v is SortDir {
   return v === "asc" || v === "desc";
 }
 
-function buildQueryString(q: {
-  q: string;
-  status: "" | CompanyStatus;
-  include_closed: boolean;
-  page: number;
-  limit: number;
-  sort: SortKey;
-  dir: SortDir;
-  view: CompanyView;
-}) {
-  const sp = new URLSearchParams();
-  if (q.view === "archived") sp.set("view", "archived");
-  if (q.q) sp.set("q", q.q);
-  if (q.status) sp.set("status", q.status);
-  if (q.include_closed) sp.set("include_closed", "1");
-  sp.set("page", String(q.page));
-  sp.set("limit", String(q.limit));
-  sp.set("sort", q.sort);
-  sp.set("dir", q.dir);
-  return sp.toString();
-}
-
 async function readJsonSafe(res: Response): Promise<any | null> {
   const t = await res.text();
   if (!t) return null;
@@ -169,15 +166,24 @@ async function readJsonSafe(res: Response): Promise<any | null> {
   }
 }
 
+function isAbort(err: any) {
+  return err?.name === "AbortError" || String(err?.message || "").toLowerCase().includes("aborted");
+}
+
+function isDefined<T>(v: T | null | undefined): v is T {
+  return v !== null && v !== undefined;
+}
+
 /**
  * API-endepunkt
  * - /api/superadmin/companies
  */
-async function fetchCompanies(qs: string, signal?: AbortSignal): Promise<ApiRes> {
-  const r = await fetch(`/api/superadmin/companies?${qs}`, {
+async function fetchCompanies(qsWithLeadingQ: string, signal?: AbortSignal): Promise<ApiRes> {
+  const r = await fetch(`/api/superadmin/companies${qsWithLeadingQ}`, {
     cache: "no-store",
     signal,
     headers: { "Cache-Control": "no-store" },
+    credentials: "same-origin",
   });
   const body = await readJsonSafe(r);
 
@@ -193,30 +199,15 @@ async function fetchCompanies(qs: string, signal?: AbortSignal): Promise<ApiRes>
   } as ApiErr;
 }
 
-async function fetchArchivedCompanies(qs: string, signal?: AbortSignal): Promise<ApiRes> {
-  const r = await fetch(`/api/superadmin/companies?${qs}`, {
-    cache: "no-store",
-    signal,
-    headers: { "Cache-Control": "no-store" },
-  });
-  const body = await readJsonSafe(r);
-
-  if (r.ok && body) return body as ApiRes;
-
-  return {
-    ok: false,
-    rid: body?.rid,
-    error: body?.error || "HTTP_ERROR",
-    message: body?.message || `HTTP ${r.status}`,
-    status: r.status,
-    detail: body?.detail ?? body,
-  } as ApiErr;
-}
-async function fetchCompanyDetail(companyId: string, signal?: AbortSignal): Promise<{ ok: true; rid: string; data: CompanyDetail } | ApiErr> {
+async function fetchCompanyDetail(
+  companyId: string,
+  signal?: AbortSignal
+): Promise<{ ok: true; rid: string; data: CompanyDetail } | ApiErr> {
   const r = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}`, {
     cache: "no-store",
     signal,
     headers: { "Cache-Control": "no-store" },
+    credentials: "same-origin",
   });
   const body = await readJsonSafe(r);
 
@@ -242,6 +233,7 @@ async function postCompanyStatus(companyId: string, status: CompanyStatus): Prom
     const r = await fetch(url, {
       method: "POST",
       cache: "no-store",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       body: JSON.stringify({ companyId, status }),
     });
@@ -280,29 +272,97 @@ async function postCompanyStatus(companyId: string, status: CompanyStatus): Prom
   return e1;
 }
 
+async function postAssignProfileToCompany(payload: { email: string; companyId: string; role: "employee" | "company_admin" }) {
+  const r = await fetch("/api/superadmin/profiles/assign", {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify(payload),
+  });
+  const body = await readJsonSafe(r);
+  if (r.ok && body?.ok === true) return { ok: true as const };
+  return { ok: false as const, message: body?.message || `HTTP ${r.status}` };
+}
+
+async function postUpdateProfile(payload: { profileId: string; role?: "employee" | "company_admin"; is_active?: boolean }) {
+  const r = await fetch("/api/superadmin/profiles/update", {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify(payload),
+  });
+  const body = await readJsonSafe(r);
+  if (r.ok && body?.ok === true) return { ok: true as const };
+  return { ok: false as const, message: body?.message || `HTTP ${r.status}` };
+}
+
+async function postRemoveProfile(payload: { profileId: string }) {
+  const r = await fetch("/api/superadmin/profiles/remove", {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify(payload),
+  });
+  const body = await readJsonSafe(r);
+  if (r.ok && body?.ok === true) return { ok: true as const };
+  return { ok: false as const, message: body?.message || `HTTP ${r.status}` };
+}
+
+function normalizeRow(x: any): CompanyRow | null {
+  const id = safeStr(x?.id);
+  if (!id) return null;
+
+  const employees =
+    Number.isFinite(Number(x?.employeesCount)) ? Number(x?.employeesCount)
+    : Number.isFinite(Number(x?.employees_count)) ? Number(x?.employees_count)
+    : Number.isFinite(Number(x?.employees_total)) ? Number(x?.employees_total)
+    : null;
+
+  const admins =
+    Number.isFinite(Number(x?.adminsCount)) ? Number(x?.adminsCount)
+    : Number.isFinite(Number(x?.admins_count)) ? Number(x?.admins_count)
+    : null;
+
+  return {
+    id,
+    name: safeStr(x?.name) || "Ukjent firma",
+    orgnr: x?.orgnr ?? null,
+    status: normStatus(x?.status ?? x?.company_status ?? x?.companyStatus),
+    planLabel: x?.planLabel ?? x?.plan ?? null,
+    employeesCount: employees,
+    adminsCount: admins,
+    createdAt: x?.createdAt ?? x?.created_at ?? null,
+    updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
+    archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
+  };
+}
+
 export default function CompaniesClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // ---- Read initial state from URL
   const initial = useMemo(() => {
     const q = safeStr(searchParams.get("q"));
     const statusRaw = safeStr(searchParams.get("status")).toLowerCase();
     const viewRaw = safeStr(searchParams.get("view")).toLowerCase();
     const archivedRaw = safeStr(searchParams.get("archived"));
     const tabRaw = safeStr(searchParams.get("tab")).toLowerCase();
+
     const status: "" | CompanyStatus =
       statusRaw === "pending" || statusRaw === "active" || statusRaw === "paused" || statusRaw === "closed"
         ? (statusRaw as CompanyStatus)
         : "";
+
     const view: CompanyView =
       archivedRaw === "1" || archivedRaw === "true" || tabRaw === "archived" || viewRaw === "archived"
         ? "archived"
         : "active";
 
     const include_closed = safeStr(searchParams.get("include_closed")) === "1";
-
     const page = clampInt(searchParams.get("page"), 1, 1, 9999);
     const limit = normalizeLimit(searchParams.get("limit"));
 
@@ -323,67 +383,55 @@ export default function CompaniesClient() {
   const [sort, setSort] = useState<SortKey>(initial.sort);
   const [dir, setDir] = useState<SortDir>(initial.dir);
 
-  // Data state
   const [rows, setRows] = useState<CompanyRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [pages, setPages] = useState<number | null>(null);
-  const [systemTruth, setSystemTruth] = useState<{
-    rid?: string;
-    source?: { companies?: string; profiles?: string; agreement?: string };
-    filters?: { q?: string | null; status?: string | null; includeClosed?: boolean; sort?: string | null; dir?: string | null };
-  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<ApiErr | null>(null);
 
-  // Status change UI
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
   const [statusErr, setStatusErr] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmPayload = useRef<{ id: string; name: string; next: CompanyStatus } | null>(null);
 
-  // Detail panel
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailErr, setDetailErr] = useState<ApiErr | null>(null);
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
-  const [detailRid, setDetailRid] = useState<string | null>(null);
+
+  const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addRole, setAddRole] = useState<"employee" | "company_admin">("employee");
+  const [addBusy, setAddBusy] = useState(false);
+  const [addErr, setAddErr] = useState<string | null>(null);
+
+  const [empBusyId, setEmpBusyId] = useState<string | null>(null);
+  const [empErr, setEmpErr] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const reqSeq = useRef(0);
   const detailAbortRef = useRef<AbortController | null>(null);
 
-  // Debounce søk
   useEffect(() => {
-    const t = setTimeout(() => {
-      setPage(1);
-    }, 350);
+    const t = setTimeout(() => setPage(1), 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qText]);
 
-  // URL sync (uten å spamme historikk)
   const qs = useMemo(() => {
-    return buildQueryString({
-      q: safeStr(qText),
-      status,
-      include_closed: includeClosed,
-      page,
-      limit,
-      sort,
-      dir,
-      view,
-    });
+    return buildCleanQuery(
+      { view, q: safeStr(qText), status, include_closed: includeClosed, page, limit, sort, dir },
+      { view: "active", q: "", status: "", include_closed: false, page: 1, limit: 25, sort: "updated_at", dir: "desc" }
+    );
   }, [qText, status, includeClosed, page, limit, sort, dir, view]);
 
   useEffect(() => {
     const current = searchParams.toString();
-    if (current === qs) return;
-    startTransition(() => {
-      router.replace(`/superadmin/companies?${qs}`);
-    });
+    const next = qs.startsWith("?") ? qs.slice(1) : qs;
+    if (current === next) return;
+    startTransition(() => router.replace(`/superadmin/companies${qs}`));
   }, [qs, router, startTransition, searchParams]);
 
-  // Data fetch
   useEffect(() => {
     const seq = ++reqSeq.current;
     abortRef.current?.abort();
@@ -394,59 +442,32 @@ export default function CompaniesClient() {
     setErr(null);
     setStatusErr(null);
 
-    const fetcher = view === "archived" ? fetchArchivedCompanies : fetchCompanies;
-
-    fetcher(qs, ac.signal)
+    fetchCompanies(qs, ac.signal)
       .then((res) => {
         if (ac.signal.aborted) return;
         if (seq !== reqSeq.current) return;
 
         if (!res || (res as any).ok !== true) {
-          setRows([]);
           setTotal(null);
           setPages(null);
-          setSystemTruth(null);
           setErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
           return;
         }
 
         const ok = res as ApiOk;
         const list = Array.isArray(ok.data?.items) ? ok.data.items : [];
-        const normalized: CompanyRow[] = list
-          .map((x: any) => ({
-            id: safeStr(x?.id),
-            name: safeStr(x?.name) || "Ukjent firma",
-            orgnr: x?.orgnr ?? null,
-            status: normStatus(x?.status),
-            planLabel: x?.planLabel ?? x?.plan ?? null,
-            employeesCount: Number.isFinite(Number(x?.employeesCount))
-              ? Number(x?.employeesCount)
-              : Number.isFinite(Number(x?.employees_count))
-              ? Number(x?.employees_count)
-              : null,
-            adminsCount: Number.isFinite(Number(x?.adminsCount)) ? Number(x?.adminsCount) : null,
-            createdAt: x?.createdAt ?? x?.created_at ?? null,
-            updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
-            archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
-          }))
-          .filter((x: CompanyRow) => !!x.id);
+        const normalized: CompanyRow[] = list.map(normalizeRow).filter(isDefined);
 
         setRows(normalized);
         setTotal(Number.isFinite(Number(ok.data?.total)) ? Number(ok.data.total) : null);
         setPages(Number.isFinite(Number(ok.data?.totalPages)) ? Number(ok.data.totalPages) : null);
-        setSystemTruth({
-          rid: ok.rid,
-          source: ok.data?.source,
-          filters: ok.data?.filters,
-        });
         setErr(null);
       })
       .catch((e) => {
         if (ac.signal.aborted) return;
-        setRows([]);
+        if (isAbort(e)) return;
         setTotal(null);
         setPages(null);
-        setSystemTruth(null);
         setErr({ ok: false, error: "FETCH_FAILED", message: e?.message || "Fetch feilet", detail: e });
       })
       .finally(() => {
@@ -455,10 +476,11 @@ export default function CompaniesClient() {
       });
 
     return () => ac.abort();
-  }, [qs, view]);
+  }, [qs]);
 
   useEffect(() => {
     if (!detailId) return;
+
     detailAbortRef.current?.abort();
     const ac = new AbortController();
     detailAbortRef.current = ac;
@@ -471,18 +493,16 @@ export default function CompaniesClient() {
         if (ac.signal.aborted) return;
         if (!res || (res as any).ok !== true) {
           setDetail(null);
-          setDetailRid((res as any)?.rid ?? null);
           setDetailErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
           return;
         }
         const ok = res as { ok: true; rid: string; data: CompanyDetail };
         setDetail(ok.data);
-        setDetailRid(ok.rid ?? null);
       })
       .catch((e) => {
         if (ac.signal.aborted) return;
+        if (isAbort(e)) return;
         setDetail(null);
-        setDetailRid(null);
         setDetailErr({ ok: false, error: "FETCH_FAILED", message: e?.message || "Kunne ikke hente detaljer", detail: e });
       })
       .finally(() => {
@@ -495,6 +515,11 @@ export default function CompaniesClient() {
 
   const canPrev = page > 1;
   const canNext = pages ? page < pages : rows.length === limit;
+
+  const visibleRows = useMemo(() => (rows ?? []).filter(isDefined).filter((r) => safeStr(r.id).length > 0), [rows]);
+
+  const detailEmployees = detail?.counts?.employeesCount ?? 0;
+  const detailAdmins = detail?.counts?.adminsCount ?? 0;
 
   function openConfirm(row: CompanyRow, next: CompanyStatus) {
     confirmPayload.current = { id: row.id, name: row.name, next };
@@ -515,11 +540,16 @@ export default function CompaniesClient() {
     setDetailId(null);
     setDetail(null);
     setDetailErr(null);
-    setDetailRid(null);
+    setAddEmployeeOpen(false);
+    setAddEmail("");
+    setAddRole("employee");
+    setAddErr(null);
+    setEmpBusyId(null);
+    setEmpErr(null);
   }
 
   function applyLocalStatus(id: string, next: CompanyStatus) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: next } : r)));
+    setRows((prev) => (prev ?? []).map((r) => (r.id === id ? { ...r, status: next } : r)));
   }
 
   function doChangeStatus() {
@@ -537,11 +567,85 @@ export default function CompaniesClient() {
         setStatusBusyId(null);
         return;
       }
-
       applyLocalStatus(p.id, p.next);
       setStatusBusyId(null);
       closeConfirm();
     });
+  }
+
+  async function refreshDetailHard(id: string) {
+    setDetail(null);
+    setDetailErr(null);
+
+    detailAbortRef.current?.abort();
+    const ac = new AbortController();
+    detailAbortRef.current = ac;
+
+    setDetailLoading(true);
+    try {
+      const res = await fetchCompanyDetail(id, ac.signal);
+      if ((res as any).ok === true) setDetail((res as any).data as CompanyDetail);
+      else setDetailErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
+    } finally {
+      if (!ac.signal.aborted) setDetailLoading(false);
+    }
+  }
+
+  async function submitAddEmployee() {
+    if (!detailId) return;
+    const email = safeStr(addEmail).toLowerCase();
+    if (!email || !email.includes("@")) {
+      setAddErr("Skriv inn en gyldig e-postadresse.");
+      return;
+    }
+
+    setAddBusy(true);
+    setAddErr(null);
+
+    const res = await postAssignProfileToCompany({ email, companyId: detailId, role: addRole });
+
+    if (!res.ok) {
+      setAddErr(res.message || "Kunne ikke legge til ansatt.");
+      setAddBusy(false);
+      return;
+    }
+
+    setAddBusy(false);
+    setAddEmployeeOpen(false);
+    setAddEmail("");
+    setAddRole("employee");
+    await refreshDetailHard(detailId);
+  }
+
+  async function onChangeRole(profileId: string, nextRole: "employee" | "company_admin") {
+    if (!detailId) return;
+    setEmpErr(null);
+    setEmpBusyId(profileId);
+    const res = await postUpdateProfile({ profileId, role: nextRole });
+    if (!res.ok) setEmpErr(res.message || "Kunne ikke oppdatere rolle.");
+    await refreshDetailHard(detailId);
+    setEmpBusyId(null);
+  }
+
+  async function onToggleActive(profileId: string, nextActive: boolean) {
+    if (!detailId) return;
+    setEmpErr(null);
+    setEmpBusyId(profileId);
+    const res = await postUpdateProfile({ profileId, is_active: nextActive });
+    if (!res.ok) setEmpErr(res.message || "Kunne ikke oppdatere aktiv-status.");
+    await refreshDetailHard(detailId);
+    setEmpBusyId(null);
+  }
+
+  async function onRemove(profileId: string, email?: string | null) {
+    if (!detailId) return;
+    if (!confirm(`Fjerne ${email || "ansatt"}? (deaktiveres)`)) return;
+    setEmpErr(null);
+    setEmpBusyId(profileId);
+    const res = await postRemoveProfile({ profileId });
+    if (!res.ok) setEmpErr(res.message || "Kunne ikke fjerne ansatt.");
+    await refreshDetailHard(detailId);
+    setEmpBusyId(null);
   }
 
   return (
@@ -549,27 +653,19 @@ export default function CompaniesClient() {
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="mt-2 text-xl font-semibold tracking-tight md:text-2xl">Firmaoversikt</h2>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Søk, filtrer og åpne firma for avtale, status, ansatte og audit.
-          </p>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Søk, filtrer og åpne firma for avtale, status, ansatte og audit.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/superadmin"
-            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-          >
+          <Link href="/superadmin" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
             Dashboard
           </Link>
-          <Link
-            href="/superadmin/system"
-            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-          >
+          <Link href="/superadmin/system" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
             System
           </Link>
 
           <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-            {loading ? "Laster…" : `Viser ${rows.length}${typeof total === "number" ? ` av ${total}` : ""}`}
+            {loading ? "Laster…" : `Viser ${visibleRows.length}${typeof total === "number" ? ` av ${total}` : ""}`}
           </span>
           <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
             Side {page}
@@ -585,13 +681,11 @@ export default function CompaniesClient() {
             setView("active");
             setPage(1);
           }}
-          className={[
-            "rounded-full border px-3 py-1 text-xs",
-            view === "active" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50",
-          ].join(" ")}
+          className={["rounded-full border px-3 py-1 text-xs", view === "active" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50"].join(" ")}
         >
           Aktive
         </button>
+
         <button
           type="button"
           onClick={() => {
@@ -600,10 +694,7 @@ export default function CompaniesClient() {
             setIncludeClosed(false);
             setPage(1);
           }}
-          className={[
-            "rounded-full border px-3 py-1 text-xs",
-            view === "archived" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50",
-          ].join(" ")}
+          className={["rounded-full border px-3 py-1 text-xs", view === "archived" ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-50"].join(" ")}
         >
           Slettet (Arkiv)
         </button>
@@ -709,52 +800,13 @@ export default function CompaniesClient() {
             {isPending ? <span className="ml-3 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer…</span> : null}
           </div>
         </div>
-
       </section>
 
       {/* Error */}
       {err ? (
         <section className="mt-4 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-sm font-semibold text-red-700">Kunne ikke hente firmaoversikt</div>
-          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-            {err.message || "Ukjent feil."}{" "}
-            {err.rid ? <span className="ml-2 text-xs">rid: {err.rid}</span> : null}
-          </div>
-          {err.detail ? (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm">Tekniske detaljer</summary>
-              <pre className="mt-2 whitespace-pre-wrap text-xs">{JSON.stringify(err.detail, null, 2)}</pre>
-            </details>
-          ) : null}
-        </section>
-      ) : null}
-
-      {!err && !loading && typeof total === "number" && total === 0 ? (
-        <section className="mt-4 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">System truth</div>
-          <div className="mt-1 text-sm font-semibold text-[rgb(var(--lp-text))]">0 firma i kilde</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-            {systemTruth?.rid ? `rid: ${systemTruth.rid}` : "rid: (mangler)"}
-          </div>
-          <div className="mt-3 grid gap-2 text-xs text-[rgb(var(--lp-muted))] md:grid-cols-2">
-            <div>
-              <div className="font-semibold text-[rgb(var(--lp-text))]">Kilde</div>
-              <div>companies: {systemTruth?.source?.companies ?? "companies"}</div>
-              <div>profiles: {systemTruth?.source?.profiles ?? "profiles"}</div>
-              <div>agreement: {systemTruth?.source?.agreement ?? "company_current_agreement"}</div>
-            </div>
-            <div>
-              <div className="font-semibold text-[rgb(var(--lp-text))]">Filtre</div>
-              <div>q: {systemTruth?.filters?.q ?? "—"}</div>
-              <div>status: {systemTruth?.filters?.status ?? "all"}</div>
-              <div>includeClosed: {String(systemTruth?.filters?.includeClosed ?? false)}</div>
-              <div>sort: {systemTruth?.filters?.sort ?? "updated_at"} / {systemTruth?.filters?.dir ?? "desc"}</div>
-            </div>
-          </div>
-          <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
-            Vurdering: Ingen firma i databasen for valgt kilde og filter. Hvis du forventer data, er det sannsynlig feil
-            datakilde eller tomt miljø.
-          </div>
+          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{err.message || "Ukjent feil."}</div>
         </section>
       ) : null}
 
@@ -762,7 +814,7 @@ export default function CompaniesClient() {
       {confirmOpen && typeof document !== "undefined"
         ? createPortal(
             <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4 backdrop-blur-sm">
-              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200 transition-[transform,opacity] duration-150 ease-out">
+              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200">
                 <div className="text-xs font-bold text-neutral-500">Bekreft</div>
                 <div className="mt-1 text-lg font-semibold text-neutral-950">Endre firmastatus</div>
 
@@ -773,29 +825,76 @@ export default function CompaniesClient() {
                 </p>
 
                 {statusErr ? (
-                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
-                    {statusErr}
-                  </div>
+                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{statusErr}</div>
                 ) : null}
 
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                className="rounded-full border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
-                onClick={closeConfirm}
-                disabled={!!statusBusyId}
-              >
-                Avbryt
-              </button>
-              <button
-                className="rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60"
-                onClick={doChangeStatus}
-                disabled={!!statusBusyId}
-              >
-                {statusBusyId ? "Oppdaterer…" : "Bekreft"}
-              </button>
-            </div>
-          </div>
-        </div>,
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button className="rounded-full border bg-white px-4 py-2 text-sm hover:bg-neutral-50" onClick={closeConfirm} disabled={!!statusBusyId}>
+                    Avbryt
+                  </button>
+                  <button
+                    className="rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60"
+                    onClick={doChangeStatus}
+                    disabled={!!statusBusyId}
+                  >
+                    {statusBusyId ? "Oppdaterer…" : "Bekreft"}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+
+      {/* Add employee modal */}
+      {addEmployeeOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4 backdrop-blur-sm">
+              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200">
+                <div className="text-xs font-bold text-neutral-500">Legg til ansatt</div>
+                <div className="mt-1 text-lg font-semibold text-neutral-950">Knytt e-post til firma</div>
+
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-xs text-[rgb(var(--lp-muted))]">E-post</label>
+                    <input
+                      value={addEmail}
+                      onChange={(e) => setAddEmail(e.target.value)}
+                      placeholder="thomas.johansen87@gmail.com"
+                      className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[rgb(var(--lp-muted))]">Rolle</label>
+                    <select value={addRole} onChange={(e) => setAddRole(e.target.value as any)} className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm">
+                      <option value="employee">Ansatt</option>
+                      <option value="company_admin">Company admin</option>
+                    </select>
+                  </div>
+
+                  {addErr ? (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{addErr}</div>
+                  ) : null}
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    className="rounded-full border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+                    onClick={() => {
+                      setAddEmployeeOpen(false);
+                      setAddErr(null);
+                    }}
+                    disabled={addBusy}
+                  >
+                    Avbryt
+                  </button>
+                  <button className="rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60" onClick={submitAddEmployee} disabled={addBusy}>
+                    {addBusy ? "Lagrer…" : "Legg til"}
+                  </button>
+                </div>
+              </div>
+            </div>,
             document.body
           )
         : null}
@@ -803,20 +902,12 @@ export default function CompaniesClient() {
       {/* Detail drawer */}
       {detailId ? (
         <div className="fixed inset-0 z-40">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/20"
-            onClick={closeDetail}
-            aria-label="Lukk detaljer"
-          />
+          <button type="button" className="absolute inset-0 bg-black/20" onClick={closeDetail} aria-label="Lukk detaljer" />
           <div className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl ring-1 ring-neutral-200">
             <div className="flex items-start justify-between border-b border-[rgb(var(--lp-border))] px-5 py-4">
               <div>
                 <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Firma</div>
-                <div className="mt-1 text-lg font-semibold text-[rgb(var(--lp-text))]">
-                  {detail?.company?.name ?? "Laster..."}
-                </div>
-                {detailRid ? <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">rid: {detailRid}</div> : null}
+                <div className="mt-1 text-lg font-semibold text-[rgb(var(--lp-text))]">{detail?.company?.name ?? "Laster..."}</div>
               </div>
               <button className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50" onClick={closeDetail}>
                 Lukk
@@ -824,37 +915,102 @@ export default function CompaniesClient() {
             </div>
 
             <div className="h-[calc(100%-64px)] overflow-y-auto px-5 py-4">
-                  {detailLoading ? (
-                    <div className="text-sm text-[rgb(var(--lp-muted))]">Laster detaljer...</div>
-                  ) : detailErr ? (
+              {detailLoading ? (
+                <div className="text-sm text-[rgb(var(--lp-muted))]">Laster detaljer...</div>
+              ) : detailErr ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                   <div className="font-semibold">Kunne ikke hente detaljer</div>
-                  <div className="mt-1 text-xs">
-                    {detailErr.message || "Ukjent feil."} {detailErr.rid ? `rid: ${detailErr.rid}` : ""}
-                  </div>
+                  <div className="mt-1 text-xs">{detailErr.message || "Ukjent feil."}</div>
                 </div>
               ) : detail ? (
                 <div className="space-y-4">
-                  <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Firma</div>
-                    <div className="mt-1 text-sm font-semibold text-[rgb(var(--lp-text))]">{detail.company.name}</div>
-                    <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                      Org.nr: {detail.company.orgnr ?? "—"} • Status: {statusLabel(normStatus(detail.company.status))}
-                    </div>
-                    <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">ID: {detail.company.id}</div>
-                  </section>
-
                   <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
                     <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Tellinger</div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <div className="rounded-2xl border bg-white px-3 py-2">
                         <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte</div>
-                        <div className="text-base font-semibold">{detail.counts.employeesCount}</div>
+                        <div className="text-base font-semibold">{detailEmployees}</div>
                       </div>
                       <div className="rounded-2xl border bg-white px-3 py-2">
                         <div className="text-xs text-[rgb(var(--lp-muted))]">Company admins</div>
-                        <div className="text-base font-semibold">{detail.counts.adminsCount}</div>
+                        <div className="text-base font-semibold">{detailAdmins}</div>
                       </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Ansatte</div>
+                      <button
+                        type="button"
+                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
+                        onClick={() => {
+                          setAddEmployeeOpen(true);
+                          setAddErr(null);
+                        }}
+                      >
+                        Legg til
+                      </button>
+                    </div>
+
+                    {empErr ? (
+                      <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{empErr}</div>
+                    ) : null}
+
+                    <div className="mt-3 space-y-2">
+                      {detail.employees?.length ? (
+                        detail.employees
+                          .slice()
+                          .sort((a, b) => safeStr(a.email).localeCompare(safeStr(b.email), "nb"))
+                          .map((p) => {
+                            const busy = empBusyId === p.id;
+                            const active = p.is_active !== false;
+                            const role = (p.role === "company_admin" ? "company_admin" : "employee") as "employee" | "company_admin";
+
+                            return (
+                              <div key={p.id} className="rounded-2xl border bg-white px-3 py-2 text-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <div className="font-semibold">{p.email ?? "—"}</div>
+                                    <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
+                                      Rolle: {role} • Aktiv: {active ? "Ja" : "Nei"}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      className="rounded-xl border px-2 py-1 text-xs disabled:opacity-50"
+                                      value={role}
+                                      disabled={busy}
+                                      onChange={(e) => onChangeRole(p.id, e.target.value as any)}
+                                    >
+                                      <option value="employee">Ansatt</option>
+                                      <option value="company_admin">Company admin</option>
+                                    </select>
+
+                                    <button
+                                      className="rounded-xl border px-2 py-1 text-xs disabled:opacity-50"
+                                      disabled={busy}
+                                      onClick={() => onToggleActive(p.id, !active)}
+                                    >
+                                      {active ? "Deaktiver" : "Aktiver"}
+                                    </button>
+
+                                    <button
+                                      className="rounded-xl border px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                      disabled={busy}
+                                      onClick={() => onRemove(p.id, p.email)}
+                                    >
+                                      Fjern
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen ansatte registrert på firma.</div>
+                      )}
                     </div>
                   </section>
 
@@ -887,16 +1043,8 @@ export default function CompaniesClient() {
         <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
           <div className="text-sm font-semibold">Firma</div>
           <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og avtale.</div>
-          {statusBusyId ? (
-            <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div>
-          ) : null}
+          {statusBusyId ? <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
         </div>
-
-        {statusErr && !confirmOpen ? (
-          <div className="border-b border-[rgb(var(--lp-border))] px-5 py-3 text-sm font-semibold text-red-700">
-            {statusErr}
-          </div>
-        ) : null}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1040px] text-left text-sm">
@@ -907,28 +1055,29 @@ export default function CompaniesClient() {
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Plan</th>
                 <th className="px-5 py-3">Ansatte</th>
-                <th className="px-5 py-3">{view === "archived" ? "Arkivert" : "Sist endret"}</th>
+                <th className="px-5 py-3">Sist endret</th>
                 <th className="px-5 py-3 text-right">Handling</th>
               </tr>
             </thead>
 
             <tbody>
-              {loading ? (
+              {loading && visibleRows.length === 0 ? (
                 <tr>
                   <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
                     Laster…
                   </td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : visibleRows.length === 0 ? (
                 <tr>
                   <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
                     Ingen treff.
                   </td>
                 </tr>
               ) : (
-                rows.map((c, idx) => {
-                  const st = normStatus(c.status);
-                  const busy = statusBusyId === c.id;
+                visibleRows.map((c, idx) => {
+                  const st = normStatus(c?.status);
+                  const busy = statusBusyId === c?.id;
+                  const employeesCount = Number.isFinite(Number(c?.employeesCount)) ? Number(c?.employeesCount) : 0;
 
                   return (
                     <tr
@@ -940,70 +1089,52 @@ export default function CompaniesClient() {
                       onClick={() => openDetail(c)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openDetail(c);
-                        }
-                      }}
-                      aria-label={`Åpne ${c.name}`}
                     >
-                  <td className="px-5 py-4">
-                    <div className="font-medium">{c.name}</div>
-                    <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
-                  </td>
-                  <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
-                  <td className="px-5 py-4">
-                    <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", badgeClass(st)].join(" ")}>
-                      {statusLabel(st)}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">{safeStr(c.planLabel) || "—"}</td>
-                  <td className="px-5 py-4">
-                    {Number.isFinite(Number(c.employeesCount)) ? String(c.employeesCount) : "—"}
-                  </td>
-                      <td className="px-5 py-4">{fmtTs(view === "archived" ? c.archivedAt ?? c.updatedAt : c.updatedAt)}</td>
-
+                      <td className="px-5 py-4">
+                        <div className="font-medium">{c.name}</div>
+                        <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
+                      </td>
+                      <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
+                      <td className="px-5 py-4">
+                        <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", badgeClass(st)].join(" ")}>
+                          {statusLabel(st)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">{safeStr(c.planLabel) || "—"}</td>
+                      <td className="px-5 py-4">{employeesCount}</td>
+                      <td className="px-5 py-4">{fmtTs(c.updatedAt)}</td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
-                          {view === "active" ? (
-                            <>
-                              <button
-                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                                disabled={busy}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openConfirm(c, "active");
-                                }}
-                                title="Sett firma aktivt"
-                              >
-                                Aktivér
-                              </button>
-                              <button
-                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                                disabled={busy}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openConfirm(c, "paused");
-                                }}
-                                title="Sett firma på pause"
-                              >
-                                Pause
-                              </button>
-                              <button
-                                className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                                disabled={busy}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openConfirm(c, "closed");
-                                }}
-                                title="Steng firma"
-                              >
-                                Steng
-                              </button>
-                            </>
-                          ) : null}
-
+                          <button
+                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                            disabled={busy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openConfirm(c, "active");
+                            }}
+                          >
+                            Aktivér
+                          </button>
+                          <button
+                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                            disabled={busy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openConfirm(c, "paused");
+                            }}
+                          >
+                            Pause
+                          </button>
+                          <button
+                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                            disabled={busy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openConfirm(c, "closed");
+                            }}
+                          >
+                            Steng
+                          </button>
                           <Link
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
                             href={`/superadmin/companies/${c.id}`}
@@ -1026,11 +1157,7 @@ export default function CompaniesClient() {
           <div className="text-xs text-[rgb(var(--lp-muted))]">{typeof total === "number" ? `Totalt: ${total}` : " "}</div>
 
           <div className="flex items-center gap-2">
-            <button
-              className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40"
-              disabled={!canPrev || loading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
+            <button className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40" disabled={!canPrev || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>
               Forrige
             </button>
 
@@ -1039,11 +1166,7 @@ export default function CompaniesClient() {
               {pages ? ` / ${pages}` : ""}
             </span>
 
-            <button
-              className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40"
-              disabled={!canNext || loading}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <button className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40" disabled={!canNext || loading} onClick={() => setPage((p) => p + 1)}>
               Neste
             </button>
           </div>
@@ -1052,12 +1175,3 @@ export default function CompaniesClient() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

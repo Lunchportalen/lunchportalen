@@ -1,13 +1,14 @@
 # LUNCHPORTALEN — AGENTS.md
+**“THIS FILE IS LOCKED. EDIT ONLY BY EXPLICIT OWNER INSTRUCTION.”**
 Enterprise Command System · Commercial Excellence · System Truth
 
-You are working on **Lunchportalen.no**  
+You are working on **Lunchportalen.no**
 (Stack: Next.js App Router · Supabase · Sanity)
 
-This system is **LIVE (RC)**.  
+This system is **LIVE (RC)**.
 All work is **enterprise-hardening, system integrity, and commercial dominance**.
 
-If something is only “correct”, it is **NOT DONE**.  
+If something is only “correct”, it is **NOT DONE**.
 It must be **correct, resilient, elegant, and inevitable**.
 
 ---
@@ -24,8 +25,8 @@ Before changing ANY code:
    - `lint`
    - `build:enterprise`
    - `sanity:live`
-5) If gates are already PASS → **DO NOT propose changes**  
-   - No “confirm?” prompts  
+5) If gates are already PASS → **DO NOT propose changes**
+   - No “confirm?” prompts
    - No “optional improvements”
 
 **Violation → INVALID CHANGESET**
@@ -85,10 +86,10 @@ A flow is **FROZEN** when it passes:
 
 ### Freeze rules
 Frozen code may ONLY be changed if:
-1) required to fix regression or security  
-2) change is minimal and localized  
-3) non-regression checklist is provided  
-4) impact on adjacent flows is explicitly verified  
+1) required to fix regression or security
+2) change is minimal and localized
+3) non-regression checklist is provided
+4) impact on adjacent flows is explicitly verified
 
 ### Current frozen flows (update only by explicit instruction)
 
@@ -138,6 +139,30 @@ Frozen code may ONLY be changed if:
 
 Violation → **STOP**
 
+#### A1.5 Frozen: Onboarding / Registration (NORWAY)
+- `/onboarding`
+- `POST /api/onboarding/complete` (or equivalent)
+- **Norwegian phone UX is LOCKED**
+  - Users enter **8 digits** (with or without spaces)
+  - **No requirement** to type `+47` in UI
+  - System must normalize (digits-only) deterministically
+- **Validation behavior is LOCKED**
+  - Phone validation errors must return **422** with clear message/field
+  - Validation errors must **never** return 500
+  - No partial writes: **all-or-nothing**
+- **No scope creep**
+  - No new fields
+  - No new business rules
+  - No refactors
+- Allowed after freeze:
+  - **TEXT ONLY** / **UI ONLY** improvements
+- Forbidden after freeze:
+  - changing onboarding data contracts
+  - altering auth/role flow
+  - changing DB schema without explicit instruction
+
+Violation → **STOP**
+
 ---
 
 # B) WOW REVIEW (LOCKED)
@@ -152,8 +177,8 @@ UI must feel:
 - years ahead
 - self-explanatory
 
-If UI needs explanation → **FAIL**  
-If system guesses → **FAIL**  
+If UI needs explanation → **FAIL**
+If system guesses → **FAIL**
 If data can leak → **FAIL**
 
 ### 1–3–1 RULE (LOCKED)
@@ -319,10 +344,11 @@ True centering:
 const pill = "rounded-full border px-3 py-1 text-sm";
 Email pill uses pill
 Logout uses pill (exact same size)
-
 Mobile law
 < md: tabs hidden, hamburger visible
+
 Dropdown closes on select / outside / Escape
+
 Touch targets ≥ 44px
 
 Header behavior (LOCKED)
@@ -364,9 +390,12 @@ Violation → INVALID
 
 J) CHANGE CONTROL (LOCKED)
 J10) CHANGE CONTROL — “10 BACK · 10 FORWARD”
-Before implementing
+Before implementing:
+
 Map existing architecture & contracts
+
 Identify affected flows/modules
+
 Verify no breakage of:
 
 role model
@@ -379,11 +408,16 @@ date truth
 
 UI law
 
-After implementing
+After implementing:
+
 Scales
+
 Reusable
+
 Future-ready
+
 No hacks
+
 Signals correctness
 
 Do NOT break frozen flows.
@@ -430,9 +464,13 @@ If all PASS and goal is satisfied → STOP (no changes).
 L) DEBUGGING STANDARD (LOCKED)
 L12) DEBUGGING STANDARD
 Capture server logs
+
 Capture full URL chain (incl. next)
+
 Identify redirect source: middleware vs server vs client
+
 Eliminate client-side auth redirects first
+
 Normalize .map() targets:
 
 Array.isArray(x) ? x : []
@@ -464,6 +502,19 @@ explicit reasoning
 non-regression checklist
 
 proof of no impact on frozen flows
+
+Shared normalization utilities (LOCKED)
+lib/phone/no.ts is the single place for Norwegian phone normalization.
+
+No duplicate phone logic in random components/routes.
+
+If phone behavior changes, it must be:
+
+explicitly instructed
+
+minimal
+
+verified across onboarding + any other phone usage
 
 N) RUNTIME / ENV TRUTH (LOCKED)
 N14) RUNTIME ENV LAW
@@ -579,95 +630,154 @@ Do not simplify.
 Build something competitors envy.
 Build something that feels inevitable.
 
+S) IMMUTABLE PRODUCTION RULES (HARD LOCK)
+S1) MOBILE + BRAND + SEO/CRO IMMUTABLE RULES (PRODUCTION)
+Mobile must NEVER allow horizontal scrolling.
 
-### 🔒 MOBILE + BRAND + SEO/CRO IMMUTABLE RULES (PRODUCTION)
-- Mobile must NEVER allow horizontal scrolling.
-- All content must be full width on mobile.
-- No element may render outside viewport on mobile.
-- Logout and primary actions must always be visible.
-- Login must redirect instantly without refresh.
-- Buttons must maintain readable contrast in all states.
-- Hero image and logo must be mobile-safe and non-overflowing.
-- Copy must follow calm, warm, professional Melhuscatering-style.
-- SEO and CRO must remain 10/10, especially the front page.
-- Any change violating these rules is a BLOCKING DEFECT.
+All content must be full width on mobile.
 
-### 🔒 ONBOARDING & REGISTRATION CRO IMMUTABLE RULES
-- Onboarding must be mobile-first and distraction-free.
-- One primary action per screen.
-- Copy must be calm, warm and professional.
-- Expectations must be clear before registration is completed.
-- No sidewise scroll or offscreen elements are allowed.
-- Conversion clarity is more important than feature explanation.
-- Any change violating these rules is a BLOCKING DEFECT.
+No element may render outside viewport on mobile.
 
-### 🔒 KITCHEN & OPERATIONS IMMUTABLE RULES
-- Kitchen view is read-only and represents system truth.
-- No manual overrides or exceptions are allowed.
-- Orders are grouped deterministically by date, slot, company and location.
-- Totals must always be visible and correct.
-- UI must be scannable under time pressure.
-- Mobile and desktop must both be production-safe.
-- Any change violating these rules is a BLOCKING DEFECT.
+Logout and primary actions must always be visible.
 
-### 🔒 DRIVER & DELIVERY IMMUTABLE RULES
-- Driver view is mobile-first and must never allow horizontal scroll.
-- Stops are grouped and ordered deterministically (date → slot → company → location).
-- Each stop must show address, window/slot, contact and contents summary.
-- Delivery actions (if present) must be explicit, traceable and idempotent.
-- No manual exceptions or hidden overrides.
-- UI must be scannable under time pressure with one-hand use.
-- Any change violating these rules is a BLOCKING DEFECT.
+Login must redirect instantly without refresh.
 
-### 🔒 ADMIN INSIGHTS & ROI IMMUTABLE RULES
-- Reports must show real, traceable numbers only.
-- No vanity metrics or decorative charts.
-- Insights must be understandable in under 10 seconds.
-- Calm, enterprise tone is mandatory.
-- Mobile and desktop must both be readable without zoom.
-- Reports are read-only and reflect system truth.
-- Any change violating these rules is a BLOCKING DEFECT.
+Buttons must maintain readable contrast in all states.
 
-### 🔒 TYPOGRAPHY IMMUTABLE RULES (PRODUCTION)
-- Headings (H1–H4 and title/heading classes) must use Inter for enterprise clarity.
-- Decorative or character-heavy display fonts are forbidden for headings.
-- Letterforms (especially F and J) must remain neutral, readable, and professional.
-- Body text font must remain unchanged unless explicitly approved as a separate change.
-- Any change violating these rules is a BLOCKING DEFECT.
+Hero image and logo must be mobile-safe and non-overflowing.
 
-### 🔒 COMMERCIAL & SALES IMMUTABLE RULES
-- Lunchportalen selges på kontroll, forutsigbarhet og mindre administrasjon.
-- Ingen hype, buzzwords eller urealistiske løfter er tillatt.
-- Salgsbudskap skal alltid reflektere faktisk systematferd.
-- Tone skal være rolig, varm og profesjonell.
-- Beslutningstakere skal forstå verdien på under 10 sekunder.
-- Endringer som bryter disse reglene er BLOCKING DEFECTS.
+Copy must follow calm, warm, professional Melhuscatering-style.
 
-### 🔒 PASSWORD RESET IMMUTABLE RULES
-- Passord tilbakestilles kun via «Glemt passord».
-- Ingen admin-resetter eller manuelle inngrep er tillatt.
-- Reset skjer via tidsbegrenset engangslenke (mål: 30 minutter).
-- Samme bekreftelsestekst vises uansett om e-post finnes (ingen brukerenumerering).
-- Lenker skal være single-use (ny forespørsel erstatter gammel).
-- Systemet er én sannhetskilde. Brudd på dette er en BLOCKING DEFECT.
+SEO and CRO must remain 10/10, especially the front page.
 
-### 🔒 BRAND ASSET IMMUTABLE RULES
-- Official Lunchportalen logo must be rendered from /public/brand.
-- Placeholder text-only logos are forbidden in production header.
-- Favicon + app icons must be wired via app/layout.tsx metadata (or Next icon convention) and must not regress.
-- Brand assets must never introduce layout shift or horizontal scroll.
-- Any change violating these rules is a BLOCKING DEFECT.
+Any change violating these rules is a BLOCKING DEFECT.
 
-### 🔒 LOGO IMMUTABLE RULE (PRODUCTION)
-- Lunchportalen logo must be rendered as an image in the header on all pages.
-- Text-only branding in production headers is forbidden.
-- Logo must use /public/brand assets and must never cause overflow or layout shift.
-- Any change violating this is a BLOCKING DEFECT.
+S2) ONBOARDING & REGISTRATION CRO IMMUTABLE RULES
+Onboarding must be mobile-first and distraction-free.
 
-### 🔒 HEADER LOGO IMMUTABLE RULES
-- Header must contain exactly ONE brand element: the logo image.
-- Text-based logos are forbidden in production.
-- Logo asset must be /public/brand/LP-logo-uten-bakgrunn.png.
-- Logo height is locked to 64px (mobile) and 120px (desktop).
-- Logo must always link to "/" (home).
-- Any change violating these rules is a BLOCKING DEFECT.
+One primary action per screen.
+
+Copy must be calm, warm and professional.
+
+Expectations must be clear before registration is completed.
+
+No sidewise scroll or offscreen elements are allowed.
+
+Conversion clarity is more important than feature explanation.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S3) KITCHEN & OPERATIONS IMMUTABLE RULES
+Kitchen view is read-only and represents system truth.
+
+No manual overrides or exceptions are allowed.
+
+Orders are grouped deterministically by date, slot, company and location.
+
+Totals must always be visible and correct.
+
+UI must be scannable under time pressure.
+
+Mobile and desktop must both be production-safe.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S4) DRIVER & DELIVERY IMMUTABLE RULES
+Driver view is mobile-first and must never allow horizontal scroll.
+
+Stops are grouped and ordered deterministically (date → slot → company → location).
+
+Each stop must show address, window/slot, contact and contents summary.
+
+Delivery actions (if present) must be explicit, traceable and idempotent.
+
+No manual exceptions or hidden overrides.
+
+UI must be scannable under time pressure with one-hand use.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S5) ADMIN INSIGHTS & ROI IMMUTABLE RULES
+Reports must show real, traceable numbers only.
+
+No vanity metrics or decorative charts.
+
+Insights must be understandable in under 10 seconds.
+
+Calm, enterprise tone is mandatory.
+
+Mobile and desktop must both be readable without zoom.
+
+Reports are read-only and reflect system truth.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S6) TYPOGRAPHY IMMUTABLE RULES (PRODUCTION)
+Headings (H1–H4 and title/heading classes) must use Inter for enterprise clarity.
+
+Decorative or character-heavy display fonts are forbidden for headings.
+
+Letterforms (especially F and J) must remain neutral, readable, and professional.
+
+Body text font must remain unchanged unless explicitly approved as a separate change.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S7) COMMERCIAL & SALES IMMUTABLE RULES
+Lunchportalen selges på kontroll, forutsigbarhet og mindre administrasjon.
+
+Ingen hype, buzzwords eller urealistiske løfter er tillatt.
+
+Salgsbudskap skal alltid reflektere faktisk systematferd.
+
+Tone skal være rolig, varm og profesjonell.
+
+Beslutningstakere skal forstå verdien på under 10 sekunder.
+
+Endringer som bryter disse reglene er BLOCKING DEFECTS.
+
+S8) PASSWORD RESET IMMUTABLE RULES
+Passord tilbakestilles kun via «Glemt passord».
+
+Ingen admin-resetter eller manuelle inngrep er tillatt.
+
+Reset skjer via tidsbegrenset engangslenke (mål: 30 minutter).
+
+Samme bekreftelsestekst vises uansett om e-post finnes (ingen brukerenumerering).
+
+Lenker skal være single-use (ny forespørsel erstatter gammel).
+
+Systemet er én sannhetskilde. Brudd på dette er en BLOCKING DEFECT.
+
+S9) BRAND ASSET IMMUTABLE RULES
+Official Lunchportalen logo must be rendered from /public/brand.
+
+Placeholder text-only logos are forbidden in production header.
+
+Favicon + app icons must be wired via app/layout.tsx metadata (or Next icon convention) and must not regress.
+
+Brand assets must never introduce layout shift or horizontal scroll.
+
+Any change violating these rules is a BLOCKING DEFECT.
+
+S10) LOGO IMMUTABLE RULE (PRODUCTION)
+Lunchportalen logo must be rendered as an image in the header on all pages.
+
+Text-only branding in production headers is forbidden.
+
+Logo must use /public/brand assets and must never cause overflow or layout shift.
+
+Any change violating this is a BLOCKING DEFECT.
+
+S11) HEADER LOGO IMMUTABLE RULES
+Header must contain exactly ONE brand element: the logo image.
+
+Text-based logos are forbidden in production.
+
+Logo asset must be /public/brand/LP-logo-uten-bakgrunn.png.
+
+Logo height is locked to 64px (mobile) and 120px (desktop).
+
+Logo must always link to "/" (home).
+
+Any change violating these rules is a BLOCKING DEFECT.

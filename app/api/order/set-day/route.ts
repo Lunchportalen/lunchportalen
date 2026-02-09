@@ -1,31 +1,34 @@
 // app/api/order/set-day/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Tier = "BASIS" | "PREMIUM";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type Choice = { key: string; label?: string };
 
 type Body = {
-  date: string;
-  wantsLunch: boolean;
-  choice_key: string | null;
+  date: string; // YYYY-MM-DD
+  wants_lunch?: boolean; // WeekClient
+  wantsLunch?: boolean; // fallback
+  choice_key?: string | null;
+  note?: string | null; // for Salatbar/Påsmurt variants
 };
+
+type ProfileRow = { user_id: string; company_id: string | null; location_id: string | null };
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
   return v;
 }
 
+/** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -36,45 +39,38 @@ function osloNowParts() {
     minute: "2-digit",
     hour12: false,
   });
+
   const parts = fmt.formatToParts(new Date());
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-  return { dateISO: `${get("year")}-${get("month")}-${get("day")}`, timeHM: `${get("hour")}:${get("minute")}` };
+
+  return {
+    dateISO: `${get("year")}-${get("month")}-${get("day")}`, // YYYY-MM-DD
+    timeHM: `${get("hour")}:${get("minute")}`, // HH:MM
+  };
 }
 
-function isLocked(dateISO: string) {
+/** Lås etter 08:00 Europe/Oslo samme dag */
+function cutoffState(dateISO: string) {
   const now = osloNowParts();
-  if (dateISO < now.dateISO) return true;
-  if (dateISO > now.dateISO) return false;
-  return now.timeHM >= "08:00";
+  const cutoffTime = "08:00";
+  const locked =
+    dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
+  return { locked, cutoffTime };
 }
 
 function weekdayKeyOslo(dateISO: string): DayKey {
   const d = new Date(`${dateISO}T12:00:00Z`);
   const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
   const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
-  const key = map[wd as keyof typeof map];
+  const key = map[wd];
   if (!key) throw new Error("Dato må være Man–Fre.");
   return key;
 }
 
-async function getAuthedUserId() {
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const anon = assertEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  const cookieStore = await cookies();
-  const supa = createServerClient(url, anon, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set() {},
-      remove() {},
-    },
-  });
-
-  const { data, error } = await supa.auth.getUser();
-  if (error || !data?.user?.id) return null;
-  return data.user.id;
+function cleanNote(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim() : "";
+  if (!s) return null;
+  return s.length > 280 ? s.slice(0, 280) : s;
 }
 
 /** ✅ Premium inkluderer alltid Basis (union uten duplikater) */
@@ -94,123 +90,232 @@ function mergeChoices(basis: Choice[] = [], premium: Choice[] = []) {
   return out;
 }
 
+function requiresVariant(choiceKey: string | null) {
+  const k = String(choiceKey ?? "").trim().toLowerCase();
+  return k === "salatbar" || k === "paasmurt";
+}
+
+function parseVariantTypeFromNote(note: string | null): "salatbar" | "paasmurt" | null {
+  const n = String(note ?? "").trim();
+  if (!n) return null;
+
+  // accept:
+  // - "variant||Påsmurt: Roastbiff"
+  // - "Påsmurt: Roastbiff"
+  const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
+  const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
+
+  const m = /^(Salatbar|Påsmurt)\s*:\s*(.+)$/i.exec(payload);
+  if (!m?.[2]) return null;
+
+  const t = String(m[1]).trim().toLowerCase();
+  const value = String(m[2]).trim();
+  if (!value) return null;
+
+  return t === "salatbar" ? "salatbar" : t === "påsmurt" || t === "paasmurt" ? "paasmurt" : null;
+}
+
+async function getAuthedUserId() {
+  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const anon = assertEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+  const cookieStore = await cookies();
+
+  const supa = createServerClient(url, anon, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set() {},
+      remove() {},
+    },
+  });
+
+  const { data, error } = await supa.auth.getUser();
+  if (error || !data?.user?.id) return null;
+  return data.user.id;
+}
+
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 
   try {
-    const body = (await req.json().catch(() => ({}))) as Partial<Body>;
+    const body = (await req.json().catch(() => null)) as Partial<Body> | null;
 
     const date = String(body?.date ?? "").trim();
-    const wantsLunch = !!body?.wantsLunch;
+    const wantsLunch = Boolean(body?.wants_lunch ?? body?.wantsLunch ?? false);
     const choiceKeyIn = body?.choice_key === null ? null : String(body?.choice_key ?? "").trim() || null;
+    const note = cleanNote(body?.note);
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return jsonErr(rid, "Ugyldig datoformat (YYYY-MM-DD).", 400, "BAD_DATE");
     }
 
     const user_id = await getAuthedUserId();
-    if (!user_id) {
-      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
-    }
+    if (!user_id) return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
 
-    if (isLocked(date)) {
-      return jsonErr(rid, "Dagen er l�st etter 08:00.", 423, "LOCKED");
+    const cutoff = cutoffState(date);
+    if (cutoff.locked) {
+      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
+        code: "LOCKED",
+        detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     let dayKey: DayKey;
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato m� v�re Man�Fre.", 400, "WEEKDAY_ONLY");
+      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, "WEEKDAY_ONLY");
     }
 
     const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
     const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const supa = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 
-    // Scope
-    const { data: profile, error: pErr } = await supa
+    const supa = createClient(url, service, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { "X-Client-Info": "lunchportalen-order-set-day" } },
+    });
+
+    // scope
+    const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
-      .select("company_id, location_id")
+      .select("user_id, company_id, location_id")
       .eq("user_id", user_id)
-      .single();
+      .maybeSingle();
+
+    const profile = (profileRaw ?? null) as ProfileRow | null;
 
     if (pErr || !profile?.company_id || !profile?.location_id) {
       return jsonErr(rid, "Fant ikke profil/scope.", 403, "PROFILE_MISSING_SCOPE");
     }
 
-    const { company_id, location_id } = profile;
+    const company_id = profile.company_id;
+    const location_id = profile.location_id;
 
-    // Contract: tier-plan + choices
-    const { data: company, error: cErr } = await supa
+    // contract -> day tier + allowed choices
+    const { data: companyRaw, error: cErr } = await (supa as any)
       .from("companies")
       .select("contract_week_tier, contract_basis_choices, contract_premium_choices")
       .eq("id", company_id)
       .single();
 
-    if (cErr || !company) {
+    if (cErr || !companyRaw) {
       return jsonErr(rid, "Fant ikke kontrakt.", 403, "COMPANY_CONTRACT_NOT_FOUND");
     }
 
-    const weekTier = (company.contract_week_tier as Record<string, Tier>) ?? {};
+    const weekTier = ((companyRaw as any).contract_week_tier as Record<string, Tier>) ?? {};
     const tier = weekTier[dayKey];
     if (!tier) {
       return jsonErr(rid, "Denne dagen er ikke aktiv i avtalen.", 403, "DAY_NOT_ENABLED");
     }
 
-    const basisChoices = ((company as any).contract_basis_choices as Choice[]) ?? [];
-    const premiumRaw = ((company as any).contract_premium_choices as Choice[]) ?? [];
+    const basisChoices = (((companyRaw as any).contract_basis_choices as Choice[]) ?? []).filter((x) => x?.key);
+    const premiumRaw = (((companyRaw as any).contract_premium_choices as Choice[]) ?? []).filter((x) => x?.key);
     const premiumChoices = mergeChoices(basisChoices, premiumRaw);
     const allowed = tier === "BASIS" ? basisChoices : premiumChoices;
 
-    // ✅ Hard guarantee: avbestilling => choice_key null
-    const cleanedChoiceKey = wantsLunch ? choiceKeyIn : null;
-
-    // Hvis bestilling: choice_key må være tillatt (eller vi auto-setter default)
-    let finalChoiceKey = cleanedChoiceKey;
+    // decide choice key
+    let finalChoiceKey: string | null = wantsLunch ? choiceKeyIn : null;
 
     if (wantsLunch) {
       const ok = finalChoiceKey && allowed.some((c) => c.key === finalChoiceKey);
       if (!ok) {
-        // Default: varmmat hvis finnes, ellers første i listen
         const fallback = allowed.find((c) => c.key === "varmmat")?.key ?? allowed[0]?.key ?? null;
         finalChoiceKey = fallback;
-
-        if (!finalChoiceKey) {
-          return jsonErr(rid, "Firmaavtalen mangler menyvalg.", 400, "NO_CHOICES");
-        }
+        if (!finalChoiceKey) return jsonErr(rid, "Firmaavtalen mangler menyvalg.", 400, "NO_CHOICES");
       }
     }
 
-    const { data: up, error: uErr } = await supa
-      .from("day_orders")
-      .upsert(
-        {
-          company_id,
-          location_id,
-          user_id,
-          date,
-          wants_lunch: wantsLunch,
-          choice_key: finalChoiceKey,
-          status: "ACTIVE",
-        },
-        { onConflict: "company_id,location_id,user_id,date" }
-      )
-      .select("id, updated_at")
-      .single();
-
-    if (uErr || !up) {
-      return jsonErr(rid, "Kunne ikke lagre.", 500, { code: "SAVE_FAILED", detail: uErr?.message ?? null });
+    // ✅ Variant gate (driftsikkert): salatbar/paasmurt krever note med riktig type
+    if (wantsLunch && requiresVariant(finalChoiceKey)) {
+      const t = parseVariantTypeFromNote(note);
+      const ck = String(finalChoiceKey ?? "").toLowerCase();
+      if (!t || t !== ck) {
+        const label = ck === "salatbar" ? "Salatbar" : "Påsmurt";
+        return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
+      }
     }
 
-    return jsonOk(rid, { orderId: up.id, savedAt: up.updated_at });
+    // orders upsert (canonical order status)
+    const statusDb = wantsLunch ? "active" : "canceled";
+
+    // legacy note keeps supporting old clients + still lets window derive choice if day_choices missing
+    const legacyNote = wantsLunch && finalChoiceKey ? `choice:${finalChoiceKey}` : null;
+
+    const { data: savedOrder, error: oErr } = await (supa as any)
+      .from("orders")
+      .upsert(
+        {
+          user_id,
+          company_id,
+          location_id,
+          date,
+          slot: "lunch",
+          status: statusDb,
+          note: legacyNote,
+        },
+        { onConflict: "user_id,date,slot" }
+      )
+      .select("id,date,status,updated_at,created_at")
+      .single();
+
+    if (oErr || !savedOrder) {
+      return jsonErr(rid, "Kunne ikke lagre.", 500, { code: "SAVE_FAILED", detail: oErr?.message ?? null });
+    }
+
+    // keep day_choices aligned
+    if (wantsLunch && finalChoiceKey) {
+      const { error: dcErr } = await (supa as any)
+        .from("day_choices")
+        .upsert(
+          {
+            company_id,
+            location_id,
+            user_id,
+            date,
+            choice_key: finalChoiceKey,
+            note: note ?? null,
+            status: "ACTIVE",
+          },
+          { onConflict: "company_id,location_id,user_id,date" }
+        );
+
+      if (dcErr) {
+        return jsonErr(rid, "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen.", 500, {
+          code: "DAY_CHOICE_SAVE_FAILED",
+          detail: dcErr?.message ?? null,
+        });
+      }
+    }
+
+    const updatedAt = (savedOrder as any).updated_at ?? (savedOrder as any).created_at ?? null;
+
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        rid,
+        receipt: {
+          orderId: (savedOrder as any).id,
+          status: wantsLunch ? "ACTIVE" : "CANCELLED",
+          date: (savedOrder as any).date,
+          updatedAt,
+        },
+        date: (savedOrder as any).date,
+        status: wantsLunch ? "ACTIVE" : "CANCELLED",
+        wants_lunch: wantsLunch,
+        choice_key: wantsLunch ? finalChoiceKey : null,
+        note: wantsLunch ? (note ?? null) : null,
+        pricing: { tier, unit_price: tier === "BASIS" ? 90 : 130 },
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: true,
+        scope: { company_id, location_id, user_id },
+      },
+      200
+    );
   } catch (e: any) {
-    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-
-
-
-
-
-

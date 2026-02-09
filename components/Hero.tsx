@@ -17,10 +17,10 @@ export default function Hero() {
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/register" className="lp-btn lp-btn--primary">
-              Be om demo
+            <Link href="/registrering" className="lp-btn lp-btn--primary">
+              Registrer firma
             </Link>
-            <Link href="#how" className="lp-btn lp-btn--ghost">
+            <Link href="/hvordan-det-fungerer" className="lp-btn lp-btn--ghost">
               Se hvordan det fungerer
             </Link>
           </div>
@@ -88,4 +88,3 @@ export default function Hero() {
     </section>
   );
 }
-

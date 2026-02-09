@@ -79,11 +79,16 @@ function isMissingColumn(err: any) {
   return err?.code === "42703" || msg.includes("column") || msg.includes("schema cache");
 }
 
+function isMissingRelation(err: any) {
+  const msg = errMessage(err).toLowerCase();
+  return err?.code === "42P01" || msg.includes("does not exist") || msg.includes("relation");
+}
+
 function computePlanLabel(planTier: any, deliveryDays: any) {
   const base = safeStr(planTier).toUpperCase() || null;
   const raw = JSON.stringify(deliveryDays ?? {});
-  if (raw.includes("LUXUS")) return "LUXUS";
-  if (raw.includes("BASIS")) return "BASIS";
+  if (raw.toUpperCase().includes("LUXUS")) return "LUXUS";
+  if (raw.toUpperCase().includes("BASIS")) return "BASIS";
   return base || null;
 }
 
@@ -114,7 +119,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     const statusRaw = safeStr(url.searchParams.get("status") ?? "");
     const status = statusRaw && statusRaw !== "all" ? normStatus(statusRaw) : null;
 
-    const includeClosed = pickBool(req, "includeClosed", false) || pickBool(req, "include_closed", false);
+    // ✅ accept both include_closed and includeClosed
+    const includeClosed =
+      pickBool(req, "includeClosed", false) ||
+      pickBool(req, "include_closed", false);
 
     const archived =
       pickBool(req, "archived", false) ||
@@ -126,18 +134,18 @@ export async function GET(req: NextRequest): Promise<Response> {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const sortRaw = String(url.searchParams.get("sort") ?? "created_at").trim().toLowerCase();
+    const sortRaw = String(url.searchParams.get("sort") ?? "updated_at").trim().toLowerCase();
     const dirRaw = String(url.searchParams.get("dir") ?? "desc").trim().toLowerCase();
     const allowedSorts = ["created_at", "updated_at", "name", "status", "orgnr", "deleted_at"] as const;
     const sort: (typeof allowedSorts)[number] = (allowedSorts as readonly string[]).includes(sortRaw)
       ? (sortRaw as (typeof allowedSorts)[number])
-      : "created_at";
+      : "updated_at";
     const dir: "asc" | "desc" = dirRaw === "asc" ? "asc" : "desc";
 
     const admin = supabaseAdmin();
 
     const selectFull = "id,name,orgnr,status,created_at,updated_at,deleted_at";
-    const selectNoUpdated = "id,name,orgnr,status,created_at,deleted_at";
+    const selectFallback = "id,name,orgnr,status,created_at,deleted_at";
 
     const buildQuery = (selectCols: string, sortCol: string) => {
       let query = admin
@@ -158,6 +166,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       if (q) {
         const esc = q.replace(/%/g, "\\%").replace(/_/g, "\\_");
         const like = `%${esc}%`;
+
         if (isUuid(q)) {
           query = query.or(`id.eq.${q},name.ilike.${like},orgnr.ilike.${like}`);
         } else {
@@ -174,13 +183,10 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     ({ data, error, count } = await buildQuery(selectFull, sort));
 
+    // fallback if missing updated_at
     if (error && isMissingColumn(error)) {
-      const msg = errMessage(error).toLowerCase();
-      if (msg.includes("deleted_at")) {
-        return jsonErr(ctx.rid, error.message, 500, "DB_ERROR");
-      }
       const fallbackSort = sort === "updated_at" ? "created_at" : sort;
-      ({ data, error, count } = await buildQuery(selectNoUpdated, fallbackSort));
+      ({ data, error, count } = await buildQuery(selectFallback, fallbackSort));
     }
 
     if (error) {
@@ -194,68 +200,83 @@ export async function GET(req: NextRequest): Promise<Response> {
       orgnr: string | null;
       status: CompanyStatus | string;
       created_at: string;
-      updated_at?: string;
+      updated_at?: string | null;
       deleted_at?: string | null;
     }>;
+
     const total = count ?? companies.length;
     const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
-
     const ids = companies.map((c) => c.id).filter(Boolean);
 
-    // 2) Counts (profiles)
+    /* ---------------------------------------------------------
+       2) Counts (profiles)
+       profiles schema hos deg: id,user_id,email,role,is_active,company_id,location_id
+    --------------------------------------------------------- */
     const countsByCompany = new Map<string, { employeesCount: number; adminsCount: number }>();
+
     if (ids.length) {
       const { data: profData, error: profError } = await admin
         .from("profiles")
         .select("company_id, role, is_active")
-        .in("company_id", ids);
+        .in("company_id", ids)
+        .eq("is_active", true);
+
       if (profError) {
-        console.error("SUPABASE companies profiles query failed", profError);
+        console.error("SUPABASE profiles query failed", profError);
         return jsonErr(ctx.rid, profError.message, 500, "DB_ERROR");
       }
 
       for (const row of (profData ?? []) as any[]) {
         const cid = safeStr(row?.company_id);
         if (!cid) continue;
-        if (row?.is_active === false) continue;
-        const role = safeStr(row?.role).toLowerCase() || "employee";
 
-        const current = countsByCompany.get(cid) ?? { employeesCount: 0, adminsCount: 0 };
-        if (role === "company_admin") current.adminsCount += 1;
-        if (role === "employee") current.employeesCount += 1;
-        countsByCompany.set(cid, current);
+        const role = safeStr(row?.role).toLowerCase();
+        const cur = countsByCompany.get(cid) ?? { employeesCount: 0, adminsCount: 0 };
+
+        if (role === "company_admin") cur.adminsCount += 1;
+        else cur.employeesCount += 1; // default -> employee
+
+        countsByCompany.set(cid, cur);
       }
     }
 
-    // 3) Agreement snapshot (company_current_agreement)
+    /* ---------------------------------------------------------
+       3) Agreement snapshot (best-effort)
+       If relation/view missing => ignore, never block list
+    --------------------------------------------------------- */
     const agreementByCompany = new Map<string, any>();
+
     if (ids.length) {
       const { data: agrData, error: agrError } = await admin
         .from("company_current_agreement")
         .select("id,company_id,status,plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at")
         .in("company_id", ids);
-      if (agrError) {
-        console.error("SUPABASE companies agreement query failed", agrError);
-        return jsonErr(ctx.rid, agrError.message, 500, "DB_ERROR");
-      }
 
-      const rank = (r: any) => {
-        const st = safeStr(r?.status).toUpperCase();
-        const w = st === "ACTIVE" ? 2 : st === "PAUSED" ? 1 : 0;
-        const ts = r?.updated_at ? Date.parse(String(r.updated_at)) : 0;
-        return w * 1_000_000_000_000 + ts;
-      };
+      if (!agrError) {
+        const rank = (r: any) => {
+          const st = safeStr(r?.status).toUpperCase();
+          const w = st === "ACTIVE" ? 2 : st === "PAUSED" ? 1 : 0;
+          const ts = r?.updated_at ? Date.parse(String(r.updated_at)) : 0;
+          return w * 1_000_000_000_000 + ts;
+        };
 
-      for (const r of agrData ?? []) {
-        const cid = safeStr((r as any).company_id);
-        if (!cid) continue;
-        const cur = agreementByCompany.get(cid);
-        if (!cur || rank(r) > rank(cur)) agreementByCompany.set(cid, r);
+        for (const r of agrData ?? []) {
+          const cid = safeStr((r as any).company_id);
+          if (!cid) continue;
+          const cur = agreementByCompany.get(cid);
+          if (!cur || rank(r) > rank(cur)) agreementByCompany.set(cid, r);
+        }
+      } else {
+        // only fail hard if it's a real DB error (not missing view/column)
+        if (!isMissingRelation(agrError) && !isMissingColumn(agrError)) {
+          console.error("SUPABASE companies agreement query failed", agrError);
+          return jsonErr(ctx.rid, agrError.message, 500, "DB_ERROR");
+        }
       }
     }
 
     const items = companies.map((c) => {
-      const s = normStatus(c.status) ?? "pending";
+      const st = normStatus(c.status) ?? "pending";
       const counts = countsByCompany.get(c.id) ?? { employeesCount: 0, adminsCount: 0 };
       const agr = agreementByCompany.get(c.id) ?? null;
       const planLabel = computePlanLabel(agr?.plan_tier ?? null, agr?.delivery_days ?? null);
@@ -264,7 +285,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         id: c.id,
         name: c.name,
         orgnr: c.orgnr ?? null,
-        status: s,
+        status: st,
         planLabel: planLabel ?? "—",
         employeesCount: counts.employeesCount,
         adminsCount: counts.adminsCount,
@@ -299,7 +320,10 @@ export async function GET(req: NextRequest): Promise<Response> {
       200
     );
   } catch (e: any) {
-    return jsonErr(ctx.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
+    return jsonErr(ctx.rid, "Uventet feil.", 500, {
+      code: "SERVER_ERROR",
+      detail: { message: String(e?.message ?? e) },
+    });
   }
 }
 
@@ -351,14 +375,11 @@ export async function POST(req: NextRequest): Promise<Response> {
       created_at: new Date().toISOString(),
     });
 
-    return jsonOk(
-      ctx.rid,
-      {
-        company: insData,
-      },
-      201
-    );
+    return jsonOk(ctx.rid, { company: insData }, 201);
   } catch (e: any) {
-    return jsonErr(ctx.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
+    return jsonErr(ctx.rid, "Uventet feil.", 500, {
+      code: "SERVER_ERROR",
+      detail: { message: String(e?.message ?? e) },
+    });
   }
 }

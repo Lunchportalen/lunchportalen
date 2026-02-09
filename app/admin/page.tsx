@@ -3,7 +3,11 @@ export const revalidate = 0;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+import React from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { getScope, ScopeError } from "@/lib/auth/scope";
 
 import {
   loadAdminContext,
@@ -142,13 +146,37 @@ function blockedLevel(b: AdminContextBlocked): "followup" | "critical" {
    Page
 ========================================================= */
 export default async function AdminCommandCenterPage() {
+  // ✅ UI-gate (FASIT):
+  // - Ikke innlogget -> /login
+  // - Konto ikke aktivert / firma ikke aktiv -> /status
+  try {
+    const scope = await getScope({} as any);
+
+    // Admin-side skal kun nås av superadmin/company_admin.
+    // Superadmin håndteres av egne sider (/superadmin), men vi tillater at de lander her hvis ønskelig.
+    if (!(scope.role === "company_admin" || scope.role === "superadmin")) {
+      redirect("/status?state=paused&next=/admin");
+    }
+  } catch (e: any) {
+    if (e instanceof ScopeError) {
+      if (e.code === "UNAUTHENTICATED") {
+        redirect("/login?next=/admin");
+      }
+      if (e.code === "ACCOUNT_INACTIVE" || e.code === "COMPANY_NOT_ACTIVE" || e.code === "COMPANY_MISSING") {
+        redirect("/status?state=pending&next=/admin");
+      }
+      redirect("/status?state=paused&next=/admin");
+    }
+    redirect("/status?state=paused&next=/admin");
+  }
+
   const ctx = await loadAdminContext({
     nextPath: "/admin",
     enforceCompanyAdmin: true,
     returnBlockedState: true,
   });
 
-  // Blocked / gated state
+  // Blocked / gated state (domain-specific)
   if (isAdminContextBlocked(ctx)) {
     return (
       <div className="lp-container py-8">
@@ -238,9 +266,7 @@ export default async function AdminCommandCenterPage() {
         <Card
           title="Systemstatus"
           subtitle="Dette er fasit akkurat nå. Én sannhetskilde, ingen manuelle unntak."
-          right={
-            <Badge>ACTIVE</Badge>
-          }
+          right={<Badge>ACTIVE</Badge>}
         >
           <CommandCenterKpis
             nextDeliveryLabel={nextDeliveryValue}
@@ -392,6 +418,3 @@ export default async function AdminCommandCenterPage() {
     </AdminPageShell>
   );
 }
-
-
-

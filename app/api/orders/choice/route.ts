@@ -1,5 +1,4 @@
 // app/api/orders/choice/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,26 +6,14 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { backupOrderEvent } from "@/lib/orderBackup";
-
-// ✅ Dag-10 standard helpers (Response + no-store + rid via ctx)
 import { jsonOk } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
-import {
-  scopeOr401,
-  requireRoleOr403,
-  requireCompanyScopeOr403,
-  readJson,
-} from "@/lib/http/routeGuard";
-
-// ✅ Oslo single source of truth
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
 
 /* =========================================================
    Route-local jsonErr (beholder canAct:false for UI)
-   - Ingen NextResponse
-   - Bruker noStoreHeaders()
-   - Bruker rid fra ctx (samme som scopeOr401)
 ========================================================= */
 function jsonErr(rid: string, message: string, status = 400, error?: unknown) {
   let errorVal: unknown = "ERROR";
@@ -48,6 +35,7 @@ function jsonErr(rid: string, message: string, status = 400, error?: unknown) {
 
   const body: any = { ok: false, rid, error: errorVal, message, status, canAct: false };
   if (detail !== undefined) body.detail = detail;
+
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8" },
@@ -59,7 +47,7 @@ function nowIso() {
 }
 
 /* =========================================================
-   Validators / helpers
+   Helpers
 ========================================================= */
 
 function safeText(v: any) {
@@ -68,6 +56,17 @@ function safeText(v: any) {
 }
 function safeStr(v: any) {
   return String(v ?? "").trim();
+}
+
+function normalizeScope(scope: any) {
+  const sc: any = scope ?? {};
+  return {
+    userId: String(sc.user_id ?? sc.userId ?? sc.userID ?? "").trim(),
+    email: sc.email ?? null,
+    companyId: String(sc.company_id ?? sc.companyId ?? sc.companyID ?? "").trim(),
+    locationId: String(sc.location_id ?? sc.locationId ?? sc.locationID ?? "").trim(),
+    role: String(sc.role ?? "").trim(),
+  };
 }
 
 function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
@@ -87,15 +86,70 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   }
 }
 
-// Note-format: "choice:<key>" (kan ligge sammen med andre linjer)
-function setChoiceInNote(note: string | null | undefined, choiceKey: string) {
-  const lines = String(note ?? "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+function normalizeChoiceKey(choiceKey: string) {
+  const raw = String(choiceKey || "").trim();
+  if (!raw) return "";
+  const lower = raw.toLowerCase();
+  if (lower.startsWith("choice:")) return lower.slice("choice:".length).trim();
+  return lower;
+}
 
-  const rest = lines.filter((l) => !l.toLowerCase().startsWith("choice:"));
-  return [`choice:${choiceKey}`, ...rest].join("\n");
+/**
+ * NOTE storage (BACKWARDS COMPAT + VARIANT SUPPORT)
+ *
+ * Old behaviour: note == "<choice_key>"
+ * New behaviour: note == "<choice_key>||<human_note>"
+ *
+ * - The first segment is ALWAYS the system-stable choice key.
+ * - The suffix is optional and can be a human-readable variant (e.g. "Påsmurt: Vegan").
+ * - If client does not send note:
+ *    - preserve suffix only when choice key stays the same
+ *    - otherwise clear suffix (avoid stale variant)
+ */
+
+const NOTE_SEP = "||";
+
+function splitNote(note: string | null | undefined): { choiceKey: string; suffix: string | null } {
+  const n = String(note ?? "").trim();
+  if (!n) return { choiceKey: "", suffix: null };
+  const idx = n.indexOf(NOTE_SEP);
+  if (idx === -1) return { choiceKey: n, suffix: null };
+  const head = n.slice(0, idx).trim();
+  const tail = n.slice(idx + NOTE_SEP.length).trim();
+  return { choiceKey: head, suffix: tail.length ? tail : null };
+}
+
+function sanitizeSuffix(s: string) {
+  // Avoid separator injection, cap length (UI/kitchen safe)
+  const trimmed = String(s ?? "").trim();
+  if (!trimmed) return null;
+  const cleaned = trimmed.split(NOTE_SEP).join(" ").replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  return cleaned.length > 180 ? cleaned.slice(0, 180).trim() : cleaned;
+}
+
+function composeNote(choiceKey: string, suffix: string | null) {
+  const ck = normalizeChoiceKey(choiceKey);
+  const sf = sanitizeSuffix(suffix ?? "");
+  return sf ? `${ck}${NOTE_SEP}${sf}` : ck;
+}
+
+function setChoiceInNote(existingNote: string | null | undefined, nextChoiceKey: string, clientNote: string | null) {
+  const existing = splitNote(existingNote);
+
+  // If client sends note, it wins as suffix (but we ALWAYS keep choiceKey first)
+  const clientSuffix = sanitizeSuffix(clientNote ?? "");
+  if (clientSuffix) return composeNote(nextChoiceKey, clientSuffix);
+
+  // If no client note: preserve suffix only if same choiceKey
+  const prevChoice = normalizeChoiceKey(existing.choiceKey);
+  const nextChoice = normalizeChoiceKey(nextChoiceKey);
+  if (prevChoice && prevChoice === nextChoice && existing.suffix) {
+    return composeNote(nextChoiceKey, existing.suffix);
+  }
+
+  // Otherwise: just choice key (no stale suffix)
+  return composeNote(nextChoiceKey, null);
 }
 
 function eventKeyForChoice(input: {
@@ -123,7 +177,7 @@ type CompanyRow = {
 type OrderRow = {
   id: string;
   date: string;
-  status: string | null;
+  status: string | null; // active | canceled
   note: string | null;
   slot: string | null;
   user_id: string;
@@ -131,183 +185,215 @@ type OrderRow = {
   location_id: string | null;
 };
 
+type UpdatedRow = {
+  id: string;
+  date: string;
+  status: string | null;
+  note: string | null;
+  slot: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+};
+
 /* =========================================================
    Route
 ========================================================= */
 
 export async function POST(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
-  // ✅ scope gate – rid må være samme som scopeOr401
+
+  // ✅ scope gate
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
   const ctx = a.ctx;
-  const { rid, scope } = ctx;
+  const { rid } = ctx;
+
+  // ✅ role gate
+  const denyRole = requireRoleOr403(ctx, "orders.choice", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  // ✅ normalize scope ONCE
+  const norm = normalizeScope(ctx.scope);
+  if (!norm.userId || !norm.companyId || !norm.locationId) {
+    return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "missing_scope");
+  }
+
+  // ✅ service role admin for company-status + rules
   let admin: any = null;
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     admin = supabaseAdmin();
   } catch {
-    return jsonErr(ctx.rid, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
-  }
-
-  // ✅ role gate (NY SIGNATUR)
-  const denyRole = requireRoleOr403(ctx, "orders.choice", ["employee", "company_admin"]);
-  if (denyRole) return denyRole;
-
-  // ✅ company scope gate (NY SIGNATUR)
-  const denyScope = requireCompanyScopeOr403(ctx);
-  if (denyScope) return denyScope;
-
-  const userId = String(scope.userId ?? "").trim();
-  const userEmail = scope.email ?? null;
-  const companyId = String(scope.companyId ?? "").trim();
-  const locationId = String(scope.locationId ?? "").trim();
-
-  if (!companyId || !locationId || !userId) {
-    return jsonErr(ctx.rid, "Mangler firmatilknytning (company/location).", 403, "missing_scope");
+    return jsonErr(rid, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
   }
 
   const sb = await supabaseServer();
 
-  // Body (safe JSON)
+  // Body
   const body = await readJson(req);
 
   const date = safeText(body?.date);
-  const choice_key = safeText(body?.choice_key);
+  const choice_key_raw = safeText(body?.choice_key);
   const client_request_id = safeText(body?.client_request_id);
 
-  if (!date || !isIsoDate(date)) return jsonErr(ctx.rid, "Ugyldig dato.", 400, { code: "bad_date", detail: { date } });
-  if (!choice_key) return jsonErr(ctx.rid, "Mangler choice_key.", 400, { code: "bad_choice", detail: { choice_key } });
+  // ✅ NEW: optional note (variant)
+  const client_note_raw = safeText(body?.note); // may be null
+  const client_note = client_note_raw ? sanitizeSuffix(client_note_raw) : null;
 
-  // ✅ Cutoff / past-lock (per dato)
+  if (!date || !isIsoDate(date)) return jsonErr(rid, "Ugyldig dato.", 400, { code: "bad_date", detail: { date } });
+  if (!choice_key_raw)
+    return jsonErr(rid, "Mangler choice_key.", 400, { code: "bad_choice", detail: { choice_key: choice_key_raw } });
+
+  const choice_key = normalizeChoiceKey(choice_key_raw);
+  if (!choice_key)
+    return jsonErr(rid, "Ugyldig choice_key.", 400, { code: "bad_choice", detail: { choice_key: choice_key_raw } });
+
+  // Cutoff / past-lock
   const cutoff = cutoffStatusForDate(date);
   if (cutoff === "PAST") {
-    return jsonErr(ctx.rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date } });
+    return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date } });
   }
   if (cutoff === "TODAY_LOCKED") {
-    return jsonErr(ctx.rid, "Endringer er låst etter kl. 08:00 i dag.", 409, { code: "LOCKED_AFTER_0800", detail: {
-      date,
-      cutoff: "08:00",
-    } });
-  }
-
-  // ✅ Company status gate (ACTIVE-only) – deterministisk via service role
-  const { data: company, error: cErr } = await admin
-    .from("companies")
-    .select("id,status")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (cErr) return jsonErr(ctx.rid, "Kunne ikke hente firmastatus.", 500, { code: "db_company", detail: { message: cErr.message } });
-  if (!company) return jsonErr(ctx.rid, "Firma finnes ikke.", 403, { code: "forbidden", detail: { companyId } });
-
-  const companyStatus = String(company.status ?? "").toLowerCase().trim();
-  if (companyStatus && companyStatus !== "active") {
-    return jsonErr(ctx.rid, "Firma er ikke aktivt.", 403, { code: "company_blocked", detail: { companyStatus } });
-  }
-
-  const dayKey = weekdayKeyOslo(date);
-  if (!dayKey) return jsonErr(ctx.rid, "Ugyldig ukedag.", 400, { code: "bad_date", detail: { date } });
-
-  const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
-  if (!ruleRes.ok) {
-    const err = ruleRes as { status: number; error: string; message: string };
-    return jsonErr(ctx.rid, err.message, err.status ?? 400, err.error);
-  }
-
-  // Finn dagens order for bruker+dato
-  const { data: order, error: ordErr } = await sb
-    .from("orders")
-    .select("id,date,status,note,slot,user_id,company_id,location_id")
-    .eq("user_id", userId)
-    .eq("company_id", companyId)
-    .eq("location_id", locationId)
-    .eq("date", date)
-    .maybeSingle<OrderRow>();
-
-  if (ordErr) return jsonErr(ctx.rid, "Kunne ikke hente bestilling.", 500, { code: "db_order", detail: { message: ordErr.message } });
-  if (!order) return jsonErr(ctx.rid, "Du må bestille lunsj før du kan velge meny.", 409, { code: "no_order", detail: { date } });
-
-  // Belt & suspenders
-  if (order.user_id !== userId) {
-    return jsonErr(ctx.rid, "Du kan kun endre menyvalg på egen ordre.", 403, { code: "forbidden", detail: { orderUserId: order.user_id } });
-  }
-  if (String(order.company_id ?? "") !== companyId || String(order.location_id ?? "") !== locationId) {
-    return jsonErr(ctx.rid, "Du har ikke tilgang til denne ordren.", 403, { code: "forbidden", detail: {
-      orderCompanyId: order.company_id,
-      orderLocationId: order.location_id,
-      companyId,
-      locationId,
-    } });
-  }
-
-  const status = String(order.status ?? "").toUpperCase();
-  if (status !== "ACTIVE") {
-    return jsonErr(ctx.rid, "Du må ha aktiv bestilling for å endre menyvalg.", 409, { code: "not_active", detail: { status } });
-  }
-
-  const nextNote = setChoiceInNote(order.note, choice_key);
-
-  // ✅ Idempotens: hvis note allerede er lik -> no-op (ingen backup)
-  if (String(order.note ?? "") === String(nextNote)) {
-    return jsonOk(ctx.rid, {
-      changed: false,
-      canAct: true,
-      order: {
-        id: order.id,
-        date: order.date,
-        status: "ACTIVE",
-        note: order.note,
-        slot: order.slot ?? null,
-        updated_at: null,
-        saved_at: null,
-      },
+    return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 409, {
+      code: "LOCKED_AFTER_0800",
+      detail: { date, cutoff: "08:00" },
     });
   }
 
-  // ✅ Race-safe update: match id + tenant + user + status
+  // Company status gate
+  const { data: company, error: cErr } = (await admin
+    .from("companies")
+    .select("id,status")
+    .eq("id", norm.companyId)
+    .maybeSingle()) as { data: CompanyRow | null; error: any };
+
+  if (cErr) return jsonErr(rid, "Kunne ikke hente firmastatus.", 500, { code: "db_company", detail: { message: cErr.message } });
+  if (!company) return jsonErr(rid, "Firma finnes ikke.", 403, { code: "forbidden", detail: { companyId: norm.companyId } });
+
+  const companyStatus = String(company.status ?? "").toLowerCase().trim();
+  if (companyStatus && companyStatus !== "active") {
+    return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "company_blocked", detail: { companyStatus } });
+  }
+
+  // Agreement rule gate — ✅ FAIL SOFT (only hard-stop on explicit FORBIDDEN/403)
+  const dayKey = weekdayKeyOslo(date);
+  if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "bad_date", detail: { date } });
+
+  try {
+    const ruleRes = await requireRule({ sb: admin as any, companyId: norm.companyId, dayKey, slot: "lunch", rid });
+
+    // If rule explicitly forbids, stop. Otherwise ignore errors.
+    if (ruleRes && (ruleRes as any).ok === false && Number((ruleRes as any).status) === 403) {
+      const err = ruleRes as { status: number; error: string; message: string };
+      return jsonErr(rid, err.message, err.status, err.error);
+    }
+  } catch {
+    // ignore (fail-soft)
+  }
+
+  // ✅ Find current order (tenant-safe)
+  const { data: order, error: ordErr } = (await sb
+    .from("orders")
+    .select("id,date,status,note,slot,user_id,company_id,location_id")
+    .eq("user_id", norm.userId)
+    .eq("company_id", norm.companyId)
+    .eq("location_id", norm.locationId)
+    .eq("date", date)
+    .eq("slot", "lunch")
+    .maybeSingle()) as { data: OrderRow | null; error: any };
+
+  if (ordErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, { code: "db_order", detail: { message: ordErr.message } });
+
   const savedAt = nowIso();
-  const { data: updated, error: updErr } = await sb
+
+  // ✅ NOTE: keep choice key first, optionally store variant suffix
+  const nextNote = setChoiceInNote(order?.note ?? null, choice_key, client_note);
+
+  // ✅ Ensure order exists + is ACTIVE (“choose-first” compatible)
+  let orderId = order?.id ?? null;
+
+  if (!orderId) {
+    const ins = await sb
+      .from("orders")
+      .insert({
+        user_id: norm.userId,
+        company_id: norm.companyId,
+        location_id: norm.locationId,
+        date,
+        slot: "lunch",
+        status: "active",
+        note: nextNote,
+        created_at: savedAt,
+        updated_at: savedAt,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (ins.error || !ins.data?.id) {
+      return jsonErr(rid, "Kunne ikke opprette bestilling.", 500, {
+        code: "ORDER_CREATE_FAILED",
+        detail: { message: ins.error?.message ?? "insert_failed" },
+      });
+    }
+
+    orderId = ins.data.id;
+
+    const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: "active" });
+    if (rpc?.error) {
+      return jsonErr(rid, "Kunne ikke aktivere bestilling.", 500, {
+        code: "ORDER_STATUS_FAILED",
+        detail: { message: rpc.error?.message ?? "rpc_failed" },
+      });
+    }
+  } else {
+    const st = String(order?.status ?? "").toLowerCase().trim();
+    if (st !== "active") {
+      const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: "active" });
+      if (rpc?.error) {
+        return jsonErr(rid, "Kunne ikke aktivere bestilling.", 500, {
+          code: "ORDER_STATUS_FAILED",
+          detail: { message: rpc.error?.message ?? "rpc_failed" },
+        });
+      }
+    }
+  }
+
+  // ✅ Update note (choice + optional variant suffix) on order (race-safe)
+  const { data: updated, error: updErr } = (await sb
     .from("orders")
     .update({ note: nextNote, updated_at: savedAt })
-    .eq("id", order.id)
-    .eq("company_id", companyId)
-    .eq("location_id", locationId)
-    .eq("user_id", userId)
-    .eq("status", "ACTIVE")
+    .eq("id", orderId)
+    .eq("company_id", norm.companyId)
+    .eq("location_id", norm.locationId)
+    .eq("user_id", norm.userId)
     .select("id,date,status,note,slot,updated_at,created_at")
-    .maybeSingle<{
-      id: string;
-      date: string;
-      status: string | null;
-      note: string | null;
-      slot: string | null;
-      updated_at: string | null;
-      created_at: string | null;
-    }>();
+    .maybeSingle()) as { data: UpdatedRow | null; error: any };
 
-  if (updErr) return jsonErr(ctx.rid, "Kunne ikke lagre menyvalg.", 500, { code: "db_update", detail: { message: updErr.message } });
-  if (!updated) return jsonErr(ctx.rid, "Kunne ikke lagre menyvalg (ordre endret/ikke aktiv).", 409, "conflict");
+  if (updErr || !updated) {
+    return jsonErr(rid, "Kunne ikke lagre menyvalg.", 500, {
+      code: "ORDER_UPDATE_FAILED",
+      detail: { message: updErr?.message ?? "update_failed" },
+    });
+  }
 
-  // ✅ E-post-backup (kun etter verifisert lagring) – best effort
+  // Backup (best effort)
   try {
     await backupOrderEvent({
       eventType: "CHOICE_SET",
       rid,
       eventKey: eventKeyForChoice({
-        companyId,
-        locationId,
-        userId,
+        companyId: norm.companyId,
+        locationId: norm.locationId,
+        userId: norm.userId,
         date,
         choiceKey: choice_key,
         clientRequestId: client_request_id,
       }),
-      userId,
-      userEmail,
-      companyId,
-      locationId,
+      userId: norm.userId,
+      userEmail: norm.email,
+      companyId: norm.companyId,
+      locationId: norm.locationId,
       date,
       status: "ACTIVE",
       choiceKey: choice_key,
@@ -318,7 +404,7 @@ export async function POST(req: NextRequest) {
     // ignore
   }
 
-  return jsonOk(ctx.rid, {
+  return jsonOk(rid, {
     changed: true,
     canAct: true,
     order: {
@@ -326,7 +412,7 @@ export async function POST(req: NextRequest) {
       date: updated.date,
       status: String(updated.status ?? "").toUpperCase(),
       note: updated.note,
-      slot: updated.slot ?? null,
+      slot: updated.slot ?? "lunch",
       updated_at: updated.updated_at,
       saved_at: savedAt,
       created_at: updated.created_at,

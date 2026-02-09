@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type PlanTier = "BASIS" | "LUXUS";
@@ -60,6 +61,10 @@ const TERMS_UPDATED_AT = "2026-01-16";
 
 function formatCurrencyNOK(value: number) {
   return `${Math.round(value)} kr`;
+}
+
+function priceForTier(tier: PlanTier) {
+  return tier === "BASIS" ? 90 : 130;
 }
 
 export default function OnboardingForm() {
@@ -161,7 +166,8 @@ export default function OnboardingForm() {
 
     for (const d of enabledDays) {
       const dp = form.days[d];
-      if (!dp.priceExVat || dp.priceExVat <= 0) {
+      const price = priceForTier(dp.tier);
+      if (price <= 0) {
         return `Avtale: Pris pr kuvert må være > 0 for ${dayLabel(d)}.`;
       }
     }
@@ -183,11 +189,29 @@ export default function OnboardingForm() {
       return;
     }
 
+    const adminPhone = normalizeNoPhone(form.adminPhone);
+    const deliveryPhone = normalizeNoPhone(form.deliveryContactPhone);
+
+    if (!isValidNoPhone(adminPhone)) {
+      setError("Telefon må være 8 siffer.");
+      return;
+    }
+
+    if (!isValidNoPhone(deliveryPhone)) {
+      setError("Telefon ved levering må være 8 siffer.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const nowISO = new Date().toISOString();
       const employee_count = Number(String(form.employeesCount || "").trim());
+      const daysForPayload = (Object.keys(form.days) as DayKey[]).reduce((acc, day) => {
+        const dp = form.days[day];
+        acc[day] = { ...dp, priceExVat: priceForTier(dp.tier) };
+        return acc;
+      }, {} as Record<DayKey, DayPlan>);
 
       // ✅ Atomisk onboarding på server (inkl. auth-opprettelse)
       const resp = await fetch("/api/onboarding/complete", {
@@ -201,7 +225,7 @@ export default function OnboardingForm() {
 
           full_name: form.adminName.trim(),
           email: form.adminEmail.trim(),
-          phone: form.adminPhone.trim(),
+          phone: adminPhone,
 
           password: form.password,
           password_confirm: form.passwordConfirm,
@@ -217,13 +241,13 @@ export default function OnboardingForm() {
             where: form.deliveryWhere.trim(),
             when_note: form.deliveryWhenNote.trim(),
             contact_name: form.deliveryContactName.trim(),
-            contact_phone: form.deliveryContactPhone.trim(),
+            contact_phone: deliveryPhone,
             window_from: form.deliveryWindow.from,
             window_to: form.deliveryWindow.to,
           },
 
           agreement: {
-            days: form.days,
+            days: daysForPayload,
             billing_prices_include_vat: true,
           },
 
@@ -240,6 +264,11 @@ export default function OnboardingForm() {
       });
 
       const json = await resp.json().catch(() => null);
+
+      if (resp.status === 422 && json?.message) {
+        setError(json.message);
+        return;
+      }
 
       if (!resp.ok || !json?.ok) {
         throw new Error(json?.message || json?.error || "Noe gikk galt. Ingen data er lagret. Prøv igjen om litt.");
@@ -585,8 +614,8 @@ export default function OnboardingForm() {
                             type="number"
                             min={1}
                             inputMode="numeric"
-                            value={dp.priceExVat}
-                            onChange={(e) => setDay(d, { priceExVat: Number(e.target.value || 0) })}
+                            value={priceForTier(dp.tier)}
+                            readOnly
                           />
                           <span className="text-slate-600">kr/kuvert inkl. mva</span>
                         </label>

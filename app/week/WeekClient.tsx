@@ -1,8 +1,12 @@
 ﻿// app/week/WeekClient.tsx
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDateNO, formatTimeNO } from "@/lib/date/format";
+import { canSeeNextWeek, canSeeThisWeek } from "@/lib/week/availability";
+
+const API_BASE = "/api/order";
 
 /* =========================================================
    Types
@@ -12,7 +16,15 @@ type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type Tier = "BASIS" | "LUXUS";
 type Choice = { key: string; label?: string };
 
-type AgreementStatus = "ACTIVE" | "PENDING_COMPANY" | "NOT_READY" | "STARTS_LATER" | "MISSING" | string;
+type AgreementStatus =
+  | "ACTIVE"
+  | "PENDING_COMPANY"
+  | "NOT_READY"
+  | "STARTS_LATER"
+  | "MISSING"
+  | string;
+
+type OrderStatus = "ACTIVE" | "CANCELLED" | null;
 
 type OrderDay = {
   date: string;
@@ -25,7 +37,7 @@ type OrderDay = {
   allowedChoices: Choice[];
 
   wantsLunch: boolean;
-  orderStatus: "ACTIVE" | "CANCELLED" | null;
+  orderStatus: OrderStatus;
   selectedChoiceKey: string | null;
 
   menuTitle?: string | null;
@@ -34,57 +46,188 @@ type OrderDay = {
 
   lastSavedAt?: string | null; // "HH:MM"
   unit_price?: number | null;
+
+  note?: string | null;
 };
 
 type WindowResp = {
   ok: boolean;
   range: { from: string; to: string };
   company?: { name?: string; policy?: string };
-  agreement?: { status?: AgreementStatus; message?: string | null; delivery_days?: DayKey[]; start_date?: string | null };
+  agreement?: {
+    status?: AgreementStatus;
+    message?: string | null;
+    delivery_days?: DayKey[];
+    start_date?: string | null;
+  };
   days: OrderDay[];
   error?: string;
   detail?: string;
   rid?: string;
 };
 
-type ToggleResp =
-  | {
-      ok: true;
-      rid?: string;
-      order: {
-        id?: string;
-        date: string;
-        status: "ACTIVE" | "CANCELLED" | string;
-        note?: string | null;
-        slot?: string | null;
-        updated_at?: string | null;
-        saved_at?: string | null;
-        created_at?: string | null;
-      };
-      pricing: { tier: "BASIS" | "LUXUS"; unit_price: number };
-    }
-  | { ok: false; rid?: string; error: string; message: string; detail?: any };
+type WindowWrapped =
+  | { ok: true; rid?: string; data: WindowResp }
+  | ({ ok: true; rid?: string } & WindowResp)
+  | { ok: false; rid?: string; error?: string; detail?: string; message?: string };
 
-type ChoiceSaveResp =
+type SetChoiceResp =
   | {
       ok: true;
       rid?: string;
-      order: {
-        id?: string;
-        date: string;
-        status: string;
-        note?: string | null;
-        slot?: string | null;
-        updated_at?: string | null;
-        saved_at?: string | null;
-        created_at?: string | null;
-      };
+      receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
+      date: string;
+      choice_key: string;
+      note: string | null;
+      updated_at?: string | null;
     }
-  | { ok: false; rid?: string; error: string; message: string; detail?: any };
+  | { ok: false; rid?: string; error?: string; message?: string; detail?: any };
+
+type SetDayResp =
+  | {
+      ok: true;
+      rid?: string;
+      receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
+      date: string;
+      status?: string;
+      wants_lunch?: boolean;
+      choice_key?: string | null;
+      note?: string | null;
+      pricing?: { tier?: string; unit_price?: number };
+      updated_at?: string | null;
+    }
+  | { ok: false; rid?: string; error?: string; message?: string; detail?: any };
 
 /* =========================================================
-   Helpers
+   Fixed choices + variants
 ========================================================= */
+
+const FIXED_CHOICES: Record<Tier, Choice[]> = {
+  BASIS: [
+    { key: "salatbar", label: "Salatbar" },
+    { key: "paasmurt", label: "Påsmurt" },
+    { key: "varmmat", label: "Varmmat" },
+  ],
+  LUXUS: [
+    { key: "salatbar", label: "Salatbar" },
+    { key: "paasmurt", label: "Påsmurt" },
+    { key: "varmmat", label: "Varmmat" },
+    { key: "sushi", label: "Sushi" },
+    { key: "pokebowl", label: "Pokébowl" },
+    { key: "thaimat", label: "Thaimat" },
+  ],
+};
+
+const SUBCHOICES: Record<"salatbar" | "paasmurt", string[]> = {
+  salatbar: ["Skinke", "Kylling", "Vegan"],
+  paasmurt: ["Ost/Skinke", "Kylling karri", "Roastbiff", "Laks/Eggerøre", "Vegan"],
+};
+
+const NOTE_SEP = "||";
+
+/* =========================================================
+   Helpers (strict, TS-safe)
+========================================================= */
+
+function asOrderStatus(v: unknown): OrderStatus {
+  const raw = String(v ?? "").trim();
+  const up = raw.toUpperCase();
+  if (up === "ACTIVE") return "ACTIVE";
+  if (up === "CANCELLED" || up === "CANCELED") return "CANCELLED";
+
+  const s = raw.toLowerCase();
+  if (s === "active" || s === "a" || s === "1") return "ACTIVE";
+  if (s === "cancelled" || s === "canceled" || s === "c" || s === "0") return "CANCELLED";
+  return null;
+}
+
+function mapDay(d: any): OrderDay {
+  const date = String(d?.date ?? "").trim();
+
+  const status = asOrderStatus(d?.orderStatus ?? d?.status);
+  const wantsFromApi =
+    typeof d?.wantsLunch === "boolean"
+      ? Boolean(d.wantsLunch)
+      : typeof d?.wants_lunch === "boolean"
+        ? Boolean(d.wants_lunch)
+        : false;
+
+  const wants = status === "ACTIVE" ? true : status === "CANCELLED" ? false : wantsFromApi;
+
+  return {
+    date,
+    weekday: d?.weekday as DayKey,
+    isLocked: Boolean(d?.isLocked),
+    isEnabled: Boolean(d?.isEnabled),
+    lockReason: (d?.lockReason ?? null) as any,
+
+    tier: (d?.tier ?? null) as any,
+    allowedChoices: Array.isArray(d?.allowedChoices) ? d.allowedChoices : [],
+
+    wantsLunch: wants,
+    orderStatus: status ?? (wants ? "ACTIVE" : null),
+    selectedChoiceKey: wants ? (d?.selectedChoiceKey ?? null) : null,
+
+    menuTitle: d?.menuTitle ?? null,
+    menuDescription: d?.menuDescription ?? null,
+    allergens: Array.isArray(d?.allergens) ? d.allergens : [],
+
+    lastSavedAt: d?.lastSavedAt ?? null,
+    unit_price: typeof d?.unit_price === "number" ? d.unit_price : null,
+
+    note: d?.note ?? null,
+  };
+}
+
+function needsVariant(choiceKey: string | null | undefined): choiceKey is "salatbar" | "paasmurt" {
+  const k = String(choiceKey ?? "").toLowerCase();
+  return k === "salatbar" || k === "paasmurt";
+}
+
+function titleForChoiceKey(choiceKey: string) {
+  const k = String(choiceKey ?? "").toLowerCase();
+  if (k === "salatbar") return "Salatbar";
+  if (k === "paasmurt") return "Påsmurt";
+  return choiceKey;
+}
+
+function buildVariantNote(choiceKey: string, variant: string) {
+  return `${titleForChoiceKey(choiceKey)}: ${String(variant ?? "").trim()}`;
+}
+
+function noteSuffixFromStoredNote(note: string | null | undefined) {
+  const n = String(note ?? "").trim();
+  if (!n) return "";
+  const idx = n.indexOf(NOTE_SEP);
+  if (idx === -1) return n;
+  return n.slice(idx + NOTE_SEP.length).trim();
+}
+
+function extractVariantFromNote(choiceKey: string, note: string | null | undefined): string | null {
+  const suffix = noteSuffixFromStoredNote(note);
+  if (!suffix) return null;
+
+  const keyTitle = titleForChoiceKey(choiceKey);
+  const prefix = `${keyTitle}:`;
+  if (suffix.toLowerCase().startsWith(prefix.toLowerCase())) {
+    const v = suffix.slice(prefix.length).trim();
+    return v || null;
+  }
+
+  const k = String(choiceKey ?? "").toLowerCase();
+  if (needsVariant(k)) {
+    const opt = SUBCHOICES[k].find((x) => x.toLowerCase() === suffix.toLowerCase());
+    return opt ?? null;
+  }
+
+  return null;
+}
+
+function variantValueForDisplay(day: OrderDay): string | null {
+  const ck = String(day.selectedChoiceKey ?? "").toLowerCase();
+  if (!needsVariant(ck)) return null;
+  return extractVariantFromNote(ck, day.note ?? null);
+}
 
 function weekdayLabel(w: DayKey) {
   const map: Record<DayKey, string> = { mon: "Man", tue: "Tir", wed: "Ons", thu: "Tor", fri: "Fre" };
@@ -100,61 +243,42 @@ function canAct(day: OrderDay) {
   return day.isEnabled && !day.isLocked;
 }
 
+function effectiveChoices(day: OrderDay): Choice[] {
+  const api = Array.isArray(day.allowedChoices)
+    ? day.allowedChoices.filter((c) => c && String((c as any).key || "").trim().length)
+    : [];
+  if (api.length) return api;
+  if (day.tier === "BASIS" || day.tier === "LUXUS") return FIXED_CHOICES[day.tier];
+  return [];
+}
+
 function safeUserMessage(raw: string) {
   const s = (raw || "").toLowerCase();
-
-  // error codes / patterns
-  if (s.includes("cutoff_locked") || s.includes("etter kl. 08") || s.includes("låst etter")) return "Dagen er låst etter 08:00.";
+  if (s.includes("locked_after_0800") || s.includes("etter 08") || s.includes("låst etter")) return "Dagen er låst etter 08:00.";
   if (s.includes("date_locked_past") || s.includes("passert")) return "Datoen er passert og kan ikke endres.";
   if (s.includes("company_paused") || s.includes("pauset")) return "Bestilling/avbestilling er midlertidig pauset for firma.";
   if (s.includes("company_closed") || s.includes("stengt")) return "Firma er stengt. Bestilling/avbestilling er låst.";
-  if (s.includes("not_active") || s.includes("ikke aktivt")) return "Firma er ikke aktivt. Bestilling/avbestilling er låst.";
-
   if (s.includes("unauth") || s.includes("innlogget")) return "Du er ikke innlogget.";
-  if (s.includes("no_choices") || s.includes("mangler menyvalg")) return "Firmaavtalen mangler menyvalg.";
-  if (s.includes("ikke aktiv") || s.includes("not enabled")) return "Denne dagen er ikke aktiv i avtalen.";
-  if (s.includes("weekend") || s.includes("helg")) return "Helg støttes ikke i portalen (Man–Fre).";
-  if (s.includes("no_order") || s.includes("må bestille")) return "Du må registrere lunsj før du kan velge meny.";
-  if (s.includes("aktiv bestilling")) return "Du må ha aktiv bestilling for å endre menyvalg.";
-
+  if (s.includes("missing_choice_key") || s.includes("velg meny")) return "Velg meny for å bestille.";
+  if (s.includes("missing_variant") || s.includes("velg variant")) return "Velg variant først.";
   return raw || "Noe gikk galt. Prøv igjen.";
 }
 
-function StatusChip({ day }: { day: OrderDay }) {
-  if (!day.isEnabled) {
-    return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke i avtalen</span>;
-  }
-  if (day.lockReason === "CUTOFF") {
-    return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Låst kl. 08:00</span>;
-  }
-  if (day.lockReason === "COMPANY" || day.isLocked) {
-    return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Sperret</span>;
-  }
-  const status = day.orderStatus ?? (day.wantsLunch ? "ACTIVE" : null);
-  if (status === "ACTIVE") {
-    return <span className="lp-chip lp-chip-ok lp-status-pill whitespace-nowrap">Bestilt</span>;
-  }
-  if (status === "CANCELLED") {
-    return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Avbestilt</span>;
-  }
-  return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke bestilt</span>;
-}
-
 function isoWeekNumber(dateISO: string) {
-  const d = new Date(`${dateISO}T12:00:00`);
-  const day = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - day + 3);
-  const firstThu = new Date(d.getFullYear(), 0, 4);
-  const firstThuDay = (firstThu.getDay() + 6) % 7;
-  firstThu.setDate(firstThu.getDate() - firstThuDay + 3);
+  const d = new Date(`${dateISO}T12:00:00Z`);
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const firstThuDay = (firstThu.getUTCDay() + 6) % 7;
+  firstThu.setUTCDate(firstThu.getUTCDate() - firstThuDay + 3);
   const diff = d.getTime() - firstThu.getTime();
   return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
 }
 
 function formatRangeShort(fromISO: string, toISO: string) {
   const fmt = new Intl.DateTimeFormat("nb-NO", { day: "numeric", month: "short" });
-  const from = fmt.format(new Date(`${fromISO}T12:00:00`));
-  const to = fmt.format(new Date(`${toISO}T12:00:00`));
+  const from = fmt.format(new Date(`${fromISO}T12:00:00Z`));
+  const to = fmt.format(new Date(`${toISO}T12:00:00Z`));
   return `${from}–${to}`;
 }
 
@@ -163,12 +287,14 @@ function cutoffChipClass(tone: "ok" | "warn") {
 }
 
 function defaultChoiceKey(day: OrderDay) {
-  const varm = day.allowedChoices?.find((c) => c.key === "varmmat")?.key;
-  return varm ?? day.allowedChoices?.[0]?.key ?? null;
+  const choices = effectiveChoices(day);
+  const varm = choices.find((c) => String(c.key).toLowerCase() === "varmmat")?.key;
+  return varm ?? choices?.[0]?.key ?? null;
 }
 
 function choiceLabel(day: OrderDay, key: string) {
-  return day.allowedChoices.find((c) => c.key === key)?.label ?? key;
+  const choices = effectiveChoices(day);
+  return choices.find((c) => c.key === key)?.label ?? key;
 }
 
 function nowHHMM() {
@@ -179,6 +305,11 @@ function hhmmFromIso(iso: string | null | undefined) {
   if (!iso) return null;
   const t = formatTimeNO(iso);
   return t || null;
+}
+
+function hhmmFromUpdatedAt(updatedAt: string | null | undefined) {
+  if (!updatedAt) return null;
+  return hhmmFromIso(updatedAt);
 }
 
 function receiptText(day: OrderDay, saving: boolean) {
@@ -200,9 +331,11 @@ function clientRequestId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-/**
- * Forhindrer racing toasts.
- */
+function normAgreementStatus(v: unknown): AgreementStatus | null {
+  const s = String(v ?? "").trim().toUpperCase();
+  return s ? s : null;
+}
+
 function useTimeoutRef() {
   const t = useRef<number | null>(null);
   const clear = () => {
@@ -217,39 +350,42 @@ function useTimeoutRef() {
   return { set, clear };
 }
 
-function TogglePill({
-  active,
-  disabled,
+function StatusChip({ day }: { day: OrderDay }) {
+  if (!day.isEnabled) return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke i avtalen</span>;
+  if (day.lockReason === "CUTOFF") return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Låst kl. 08:00</span>;
+  if (day.lockReason === "COMPANY" || day.isLocked) return <span className="lp-chip lp-chip-warn lp-status-pill whitespace-nowrap">Sperret</span>;
+  const status = day.orderStatus ?? (day.wantsLunch ? "ACTIVE" : null);
+  if (status === "ACTIVE") return <span className="lp-chip lp-chip-ok lp-status-pill whitespace-nowrap">Bestilt</span>;
+  if (status === "CANCELLED") return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Avbestilt</span>;
+  return <span className="lp-chip lp-chip-neutral lp-status-pill whitespace-nowrap">Ikke bestilt</span>;
+}
+
+function LpButton({
+  children,
   onClick,
+  disabled,
+  variant,
   title,
 }: {
-  active: boolean;
-  disabled: boolean;
+  children: ReactNode;
   onClick: () => void;
-  title: string;
+  disabled?: boolean;
+  variant: "primary" | "secondary";
+  title?: string;
 }) {
+  const base =
+    "lp-btn min-h-[44px] border border-[rgb(var(--lp-border))] transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(var(--lp-ring),0.25)]";
+  const primary = "bg-[rgb(var(--lp-fg))] text-white hover:brightness-[1.02] active:brightness-[0.98]";
+  const secondary = "bg-white/80 text-[rgb(var(--lp-fg))] hover:bg-white";
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={[
-        "lp-toggle lp-week-toggle transition",
-        "focus:outline-none focus:ring-2 focus:ring-offset-2",
-        disabled ? "opacity-50 cursor-not-allowed" : "hover:brightness-[1.01] active:brightness-[0.99]",
-        active
-          ? "bg-[rgb(var(--lp-cta))] border-[rgb(var(--lp-accent-2))] focus:ring-[rgba(var(--lp-ring),0.35)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-          : "bg-[rgb(var(--lp-surface-2))] border-[rgb(var(--lp-border))] focus:ring-[rgba(var(--lp-ring),0.25)]",
-      ].join(" ")}
-      aria-pressed={active}
       title={title}
+      className={[base, variant === "primary" ? primary : secondary].join(" ")}
     >
-      <span
-        className={[
-          "lp-toggle-thumb",
-          active ? "translate-x-6" : "translate-x-0",
-        ].join(" ")}
-      />
+      {children}
     </button>
   );
 }
@@ -264,21 +400,90 @@ export default function WeekClient() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<WindowResp | null>(null);
 
-  // global: feil ved lasting av window
   const [msg, setMsg] = useState<string | null>(null);
-
-  // per-day feil (ingen stille feil)
   const [dayMsg, setDayMsg] = useState<Record<string, string | null>>({});
-
-  // per-day saving (ingen optimistic UI)
   const [savingByDate, setSavingByDate] = useState<Record<string, boolean>>({});
 
-  // toast
   const [toast, setToast] = useState<string | null>(null);
   const toastT = useTimeoutRef();
 
-  // abort inflight load
+  // ✅ Minute tick represented as a stable Date (removes exhaustive-deps warning)
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
   const abortRef = useRef<AbortController | null>(null);
+  const didLoadRef = useRef(false);
+
+  // Variant state (ref is sync -> no “choose twice”)
+  const [variantByDate, setVariantByDate] = useState<Record<string, string>>({});
+  const variantByDateRef = useRef<Record<string, string>>({});
+
+  function getVariant(date: string) {
+    return variantByDateRef.current[String(date).trim()] ?? "";
+  }
+  function setVariant(date: string, v: string) {
+    const k = String(date).trim();
+    variantByDateRef.current[k] = v;
+    setVariantByDate((prev) => ({ ...prev, [k]: v }));
+  }
+
+  const [openVariantForDate, setOpenVariantForDate] = useState<Record<string, "salatbar" | "paasmurt" | null>>({});
+  const [pendingChoiceByDate, setPendingChoiceByDate] = useState<Record<string, string | null>>({}); // 👈 fixes “must tap twice”
+
+  function clearPending(dateKey: string) {
+    setPendingChoiceByDate((prev) => ({ ...prev, [dateKey]: null }));
+  }
+
+  // Per-date queue
+  type PendingAction =
+    | { kind: "setLunch"; date: string; wantsLunch: boolean; preferredChoiceKey?: string | null; note?: string | null }
+    | { kind: "choice"; date: string; choiceKey: string; note?: string | null };
+
+  const pendingRef = useRef<Record<string, PendingAction | null>>({});
+  const runningRef = useRef<Record<string, boolean>>({});
+
+  const toastSeqRef = useRef<Record<string, number>>({});
+  function nextToastSeq(date: string) {
+    const k = String(date).trim();
+    const n = (toastSeqRef.current[k] ?? 0) + 1;
+    toastSeqRef.current[k] = n;
+    return n;
+  }
+  function isToastSeqCurrent(date: string, seq: number) {
+    return (toastSeqRef.current[String(date).trim()] ?? 0) === seq;
+  }
+
+  function enqueue(action: PendingAction) {
+    const k = String(action.date).trim();
+    pendingRef.current[k] = { ...action, date: k };
+    void runQueue(k);
+  }
+
+  async function runQueue(date: string) {
+    const k = String(date).trim();
+    if (runningRef.current[k]) return;
+    runningRef.current[k] = true;
+
+    try {
+      while (true) {
+        const action = pendingRef.current[k];
+        if (!action) break;
+        pendingRef.current[k] = null;
+
+        if (action.kind === "setLunch") {
+          await setLunchForDay(action.date, action.wantsLunch, action.preferredChoiceKey ?? null, action.note ?? null);
+        } else {
+          const d = data?.days?.find((x) => String(x.date).trim() === k);
+          if (d) await saveChoice(d, action.choiceKey, action.note ?? null);
+        }
+      }
+    } finally {
+      runningRef.current[k] = false;
+    }
+  }
 
   function showToast(text: string) {
     setToast(text);
@@ -286,11 +491,25 @@ export default function WeekClient() {
   }
 
   function setDayError(date: string, text: string | null) {
-    setDayMsg((prev) => ({ ...prev, [date]: text }));
+    const k = String(date).trim();
+    setDayMsg((prev) => ({ ...prev, [k]: text }));
   }
 
   function setSaving(date: string, v: boolean) {
-    setSavingByDate((prev) => ({ ...prev, [date]: v }));
+    const k = String(date).trim();
+    setSavingByDate((prev) => ({ ...prev, [k]: v }));
+  }
+
+  function openVariantIfNeeded(dateKey: string, choiceKey: string | null) {
+    const k = String(choiceKey ?? "").toLowerCase();
+    if (k === "salatbar" || k === "paasmurt") {
+      setOpenVariantForDate((prev) => ({ ...prev, [dateKey]: k as any }));
+      setPendingChoiceByDate((prev) => ({ ...prev, [dateKey]: k }));
+    }
+  }
+
+  function buildNote(choiceKey: "salatbar" | "paasmurt", variant: string) {
+    return `variant${NOTE_SEP}${buildVariantNote(choiceKey, variant)}`;
   }
 
   async function loadWindow() {
@@ -302,29 +521,55 @@ export default function WeekClient() {
     setMsg(null);
 
     try {
-      const res = await fetch("/api/order/window?weeks=2", { cache: "no-store", signal: ac.signal });
-      const json = (await res.json().catch(() => null)) as WindowResp | null;
+      const res = await fetch(`${API_BASE}/window?weeks=2`, { cache: "no-store", signal: ac.signal });
+      const raw = (await res.json().catch(() => null)) as WindowWrapped | null;
 
-      if (!res.ok || !json || !json.ok) {
-        const errText = safeUserMessage(json?.error || json?.detail || "Kunne ikke hente lunsjplanen.");
+      const payload =
+        raw && typeof raw === "object" && (raw as any).ok === true && "data" in raw && (raw as any).data
+          ? ((raw as any).data as WindowResp)
+          : raw && typeof raw === "object" && (raw as any).ok === true && "days" in raw
+            ? (raw as any as WindowResp)
+            : null;
+
+      if (!res.ok || !raw || (raw as any).ok !== true || !payload) {
+        const errText = safeUserMessage(
+          (payload as any)?.error ||
+            (payload as any)?.detail ||
+            (raw as any)?.error ||
+            (raw as any)?.detail ||
+            (raw as any)?.message ||
+            "Kunne ikke hente lunsjplanen."
+        );
         setMsg(errText);
         setData(null);
         return;
       }
 
-      const days = Array.isArray(json.days) ? json.days.slice(0, 10) : [];
+      const daysRaw = Array.isArray(payload.days) ? payload.days.slice(0, 10) : [];
+      const days = daysRaw.map(mapDay);
 
-      // reset per-day errors for current days
+      // prefill variant from note
+      for (const d of days) {
+        const dk = String(d.date).trim();
+        const ck = String(d.selectedChoiceKey ?? "").toLowerCase();
+        if (d.wantsLunch && needsVariant(ck)) {
+          const vFromNote = extractVariantFromNote(ck, d.note ?? null);
+          if (vFromNote) setVariant(dk, vFromNote);
+        }
+      }
+
+      // reset per-day errors (but keep saving flags)
       const nextDayMsg: Record<string, string | null> = {};
       const nextSaving: Record<string, boolean> = {};
       for (const d of days) {
-        nextDayMsg[d.date] = null;
-        nextSaving[d.date] = Boolean(savingByDate[d.date]); // behold evt. pågående (sjeldent)
+        const k = String(d.date).trim();
+        nextDayMsg[k] = null;
+        nextSaving[k] = Boolean(savingByDate[k]);
       }
       setDayMsg(nextDayMsg);
       setSavingByDate(nextSaving);
 
-      setData({ ...json, days });
+      setData({ ...payload, ok: true, days });
     } catch (e: any) {
       if (e?.name === "AbortError") return;
       setMsg("Kunne ikke hente lunsjplanen. Prøv igjen.");
@@ -335,31 +580,55 @@ export default function WeekClient() {
   }
 
   useEffect(() => {
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
     void loadWindow();
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const availability = useMemo(() => {
+    return { showThisWeek: canSeeThisWeek(now), openNextWeek: canSeeNextWeek(now) };
+  }, [now]);
+
   const daysThisWeek = useMemo(() => (data?.days ?? []).slice(0, 5), [data]);
   const daysNextWeek = useMemo(() => (data?.days ?? []).slice(5, 10), [data]);
-  const visibleDays = weekIndex === 0 ? daysThisWeek : daysNextWeek;
 
-  const companyLabel = useMemo(() => {
-    const name = data?.company?.name?.trim();
-    return name ? name : null;
-  }, [data?.company?.name]);
+  useEffect(() => {
+    if (weekIndex === 0 && !availability.showThisWeek && availability.openNextWeek) {
+      setWeekIndex(1);
+      showToast("↪︎ Ukeplanen er oppdatert til neste uke.");
+      return;
+    }
+    if (weekIndex === 1 && !availability.openNextWeek) {
+      setWeekIndex(0);
+      return;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekIndex, availability.showThisWeek, availability.openNextWeek]);
+
+  const visibleDays = useMemo(() => {
+    if (weekIndex === 0) return availability.showThisWeek ? daysThisWeek : [];
+    return availability.openNextWeek ? daysNextWeek : [];
+  }, [weekIndex, availability.showThisWeek, availability.openNextWeek, daysThisWeek, daysNextWeek]);
+
+  const companyLabel = useMemo(() => data?.company?.name?.trim() || null, [data?.company?.name]);
 
   const agreementNotice = useMemo(() => {
-    const msg = data?.agreement?.message ?? null;
-    return msg && String(msg).trim().length ? String(msg).trim() : null;
+    const m = data?.agreement?.message ?? null;
+    return m && String(m).trim().length ? String(m).trim() : null;
   }, [data?.agreement?.message]);
 
-  const agreementStatus = useMemo(() => (data?.agreement?.status ?? null) as AgreementStatus | null, [data?.agreement?.status]);
+  const agreementStatus = useMemo(() => normAgreementStatus(data?.agreement?.status), [data?.agreement?.status]);
   const agreementStartDate = useMemo(() => data?.agreement?.start_date ?? null, [data?.agreement?.start_date]);
 
-  // RC: status mapping for agreement messaging (no dead-end "Ingen aktiv avtale")
+  const hasEnabledDays = useMemo(() => (data?.days ?? []).some((d) => d.isEnabled), [data?.days]);
+  const isAgreementActive = agreementStatus === "ACTIVE" || hasEnabledDays;
+
   const agreementStatusMessage = useMemo(() => {
+    if (hasEnabledDays) return null;
     if (!agreementStatus || agreementStatus === "ACTIVE") return null;
+
     if (agreementStatus === "STARTS_LATER") {
       if (agreementStartDate) return `Avtalen starter ${formatDateNO(agreementStartDate)}.`;
       return "Avtalen starter senere.";
@@ -368,14 +637,12 @@ export default function WeekClient() {
       return "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
     }
     return agreementNotice || "Ingen aktiv avtale";
-  }, [agreementStatus, agreementStartDate, agreementNotice]);
+  }, [agreementStatus, agreementStartDate, agreementNotice, hasEnabledDays]);
 
   const showAgreementNotice = useMemo(
     () => (agreementNotice && agreementStatus === "ACTIVE" ? agreementNotice : null),
     [agreementNotice, agreementStatus]
   );
-
-  const isAgreementActive = agreementStatus === "ACTIVE";
 
   const visibleRange = useMemo(() => {
     if (!visibleDays.length) return null;
@@ -402,174 +669,305 @@ export default function WeekClient() {
 
   const isAnySaving = useMemo(() => Object.values(savingByDate).some(Boolean), [savingByDate]);
 
-  /* =========================================================
-     Actions (server-verifisert, ingen optimistic UI)
-  ========================================================= */
+  function lockLabel(day: OrderDay) {
+    if (!day.isEnabled) return "Ikke i avtalen";
+    if (day.lockReason === "CUTOFF") return "Låst etter 08:00";
+    if (day.lockReason === "COMPANY" || day.isLocked) return "Sperret";
+    return "";
+  }
 
-  async function toggleOrder(date: string, nextWantsLunch: boolean) {
+  function currentIsActive(day: OrderDay) {
+    const current = day.orderStatus ?? (day.wantsLunch ? "ACTIVE" : null);
+    return current === "ACTIVE";
+  }
+
+  async function setLunchForDay(date: string, wantsLunch: boolean, preferredChoiceKey: string | null, note: string | null) {
+    const dateKey = String(date).trim();
+    const toastSeq = nextToastSeq(dateKey);
+
     if (!data?.days?.length) return;
+    if (savingByDate[dateKey]) return;
 
-    if (savingByDate[date]) return;
-    setSaving(date, true);
+    const daySnapshot = data.days.find((d) => String(d.date).trim() === dateKey);
+    if (!daySnapshot) return;
+    if (!daySnapshot.isEnabled) return;
+    if (daySnapshot.isLocked) return;
+
+    const choices = effectiveChoices(daySnapshot);
+
+    setSaving(dateKey, true);
     setMsg(null);
-    setDayError(date, null);
+    setDayError(dateKey, null);
 
-    const daySnapshot = data.days.find((d) => d.date === date);
     const pick =
-      nextWantsLunch && daySnapshot
-        ? daySnapshot.selectedChoiceKey && daySnapshot.allowedChoices.some((c) => c.key === daySnapshot.selectedChoiceKey)
-          ? daySnapshot.selectedChoiceKey
-          : defaultChoiceKey(daySnapshot)
+      wantsLunch
+        ? preferredChoiceKey && choices.some((c) => c.key === preferredChoiceKey)
+          ? preferredChoiceKey
+          : daySnapshot.selectedChoiceKey && choices.some((c) => c.key === daySnapshot.selectedChoiceKey)
+            ? daySnapshot.selectedChoiceKey
+            : defaultChoiceKey(daySnapshot)
         : null;
 
+    if (wantsLunch && !pick) {
+      const m = "Velg meny for å bestille.";
+      setDayError(dateKey, m);
+      if (isToastSeqCurrent(dateKey, toastSeq)) showToast(`⚠️ ${m}`);
+      setSaving(dateKey, false);
+      return;
+    }
+
     const rid = clientRequestId();
+    const optimisticStatus: OrderStatus = wantsLunch ? "ACTIVE" : "CANCELLED";
+
+    // Optimistic
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        days: prev.days.map((d) => {
+          if (String(d.date).trim() !== dateKey) return d;
+          return {
+            ...d,
+            wantsLunch,
+            orderStatus: optimisticStatus,
+            selectedChoiceKey: wantsLunch ? (pick ?? d.selectedChoiceKey ?? null) : null,
+            lastSavedAt: nowHHMM(),
+            note: wantsLunch ? (note ?? d.note ?? null) : d.note ?? null,
+          };
+        }),
+      };
+    });
 
     try {
-      const res = await fetch("/api/orders/toggle", {
+      const res = await fetch(`${API_BASE}/set-day`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-rid": rid },
         cache: "no-store",
         body: JSON.stringify({
-          date,
-          wants_lunch: nextWantsLunch,
-          client_request_id: rid,
-          choice_key: nextWantsLunch ? pick : null,
+          date: dateKey,
+          wants_lunch: Boolean(wantsLunch),
+          choice_key: wantsLunch ? pick : null,
+          note: wantsLunch ? (note ?? null) : null,
         }),
       });
 
-      const json = (await res.json().catch(() => null)) as ToggleResp | null;
+      const json = (await res.json().catch(() => null)) as SetDayResp | null;
 
       if (!res.ok || !json || (json as any).ok === false) {
-        const m = safeUserMessage((json as any)?.message || (json as any)?.error || "Kunne ikke lagre. Prøv igjen.");
-        setDayError(date, m);
-        showToast(`⚠️ ${m}`);
-        await loadWindow(); // refresh locks/status
+        const m = safeUserMessage((json as any)?.message || (json as any)?.error || "Kunne ikke lagre.");
+        setDayError(dateKey, m);
+        if (m.toLowerCase().includes("variant")) openVariantIfNeeded(dateKey, pick);
+        if (isToastSeqCurrent(dateKey, toastSeq)) showToast(`⚠️ ${m}`);
         return;
       }
 
-      const statusRaw = String((json as any).order?.status ?? "").toUpperCase();
-      const normalizedStatus = statusRaw === "ACTIVE" ? "ACTIVE" : statusRaw === "CANCELLED" ? "CANCELLED" : null;
-      const active = normalizedStatus === "ACTIVE";
+      const serverDate = String((json as any).date ?? (json as any).receipt?.date ?? dateKey).trim();
+      const normalizedStatus: OrderStatus = (() => {
+        const n = asOrderStatus((json as any).status ?? (json as any).receipt?.status);
+        return n ?? optimisticStatus;
+      })();
 
-      const serverHHMM =
-        hhmmFromIso((json as any).order?.saved_at) ||
-        hhmmFromIso((json as any).order?.updated_at) ||
-        hhmmFromIso((json as any).order?.created_at) ||
-        nowHHMM();
+      const active = normalizedStatus === "ACTIVE";
+      const serverHHMM = hhmmFromUpdatedAt((json as any).updated_at ?? (json as any).receipt?.updatedAt) || nowHHMM();
+      const pricingUnit =
+        typeof (json as any)?.pricing?.unit_price === "number" ? Number((json as any).pricing.unit_price) : null;
+      const serverNote = (json as any)?.note ?? (active ? note : null);
+
       setData((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          days: prev.days.map((d) =>
-            d.date === date
-              ? {
-                  ...d,
-                  wantsLunch: active,
-                  orderStatus: normalizedStatus,
-                  selectedChoiceKey: active ? (pick ?? d.selectedChoiceKey) : null,
-                  lastSavedAt: serverHHMM,
-                }
-              : d
-          ),
+          days: prev.days.map((d) => {
+            if (String(d.date).trim() !== serverDate) return d;
+            return {
+              ...d,
+              wantsLunch: active,
+              orderStatus: normalizedStatus,
+              selectedChoiceKey: active ? (pick ?? d.selectedChoiceKey ?? null) : null,
+              lastSavedAt: serverHHMM,
+              unit_price: pricingUnit ?? d.unit_price ?? null,
+              note: serverNote ?? d.note ?? null,
+            };
+          }),
         };
       });
 
-      showToast(`✅ ${active ? "Registrert" : "Avbestilt"} • ${formatDateNO(date)} • ${serverHHMM}`);
+      // ✅ clear pending once server confirms
+      clearPending(serverDate);
+
+      if (active && needsVariant(String(pick ?? ""))) setOpenVariantForDate((prev) => ({ ...prev, [serverDate]: null }));
+
+      if (active && isToastSeqCurrent(serverDate, toastSeq)) showToast(`✅ Registrert • ${formatDateNO(serverDate)} • ${serverHHMM}`);
+      if (!active && isToastSeqCurrent(serverDate, toastSeq)) showToast(`✅ Avbestilt • ${formatDateNO(serverDate)} • ${serverHHMM}`);
     } catch {
-      const m = "Kunne ikke lagre. Prøv igjen.";
-      setDayError(date, m);
-      showToast("⚠️ Kunne ikke lagre. Prøv igjen.");
-      await loadWindow();
+      setDayError(dateKey, "Kunne ikke lagre. Prøv igjen.");
+      if (isToastSeqCurrent(dateKey, toastSeq)) showToast("⚠️ Kunne ikke lagre. Prøv igjen.");
     } finally {
-      setSaving(date, false);
+      setSaving(dateKey, false);
     }
   }
 
-  async function saveChoice(day: OrderDay, key: string) {
+  async function saveChoice(day: OrderDay, key: string, note: string | null) {
+    const dateKey = String(day.date).trim();
+    const toastSeq = nextToastSeq(dateKey);
+
     if (!data?.days?.length) return;
     if (!canAct(day)) return;
-    if (savingByDate[day.date]) return;
+    if (savingByDate[dateKey]) return;
 
-    if (!day.wantsLunch) {
-      showToast("ℹ️ Registrer lunsj først for å velge meny.");
+    if (!currentIsActive(day)) {
+      enqueue({ kind: "setLunch", date: dateKey, wantsLunch: true, preferredChoiceKey: key, note: note ?? null });
       return;
     }
-    if (!day.allowedChoices.some((c) => c.key === key)) return;
 
-    setSaving(day.date, true);
+    setSaving(dateKey, true);
     setMsg(null);
-    setDayError(day.date, null);
+    setDayError(dateKey, null);
+
+    // Optimistic
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        days: prev.days.map((d) => {
+          if (String(d.date).trim() !== dateKey) return d;
+          return {
+            ...d,
+            selectedChoiceKey: key,
+            wantsLunch: true,
+            orderStatus: "ACTIVE",
+            lastSavedAt: nowHHMM(),
+            note: note ?? d.note ?? null,
+          };
+        }),
+      };
+    });
 
     const rid = clientRequestId();
 
     try {
-      const res = await fetch("/api/orders/choice", {
+      const res = await fetch(`${API_BASE}/set-choice`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-rid": rid },
         cache: "no-store",
-        body: JSON.stringify({
-          date: day.date,
-          choice_key: key,
-          client_request_id: rid,
-        }),
+        body: JSON.stringify({ date: dateKey, choice_key: key, note: note ?? null }),
       });
 
-      const json = (await res.json().catch(() => null)) as ChoiceSaveResp | null;
+      const json = (await res.json().catch(() => null)) as SetChoiceResp | null;
 
       if (!res.ok || !json || (json as any).ok === false) {
         const m = safeUserMessage((json as any)?.message || (json as any)?.error || "Kunne ikke lagre menyvalg.");
-        setDayError(day.date, m);
-        showToast(`⚠️ ${m}`);
-        await loadWindow();
+        setDayError(dateKey, m);
+        if (m.toLowerCase().includes("variant")) openVariantIfNeeded(dateKey, key);
+        if (isToastSeqCurrent(dateKey, toastSeq)) showToast(`⚠️ ${m}`);
         return;
       }
 
-      const serverHHMM =
-        hhmmFromIso((json as any).order?.saved_at) ||
-        hhmmFromIso((json as any).order?.updated_at) ||
-        hhmmFromIso((json as any).order?.created_at) ||
-        nowHHMM();
-      const statusRaw = String((json as any).order?.status ?? "").toUpperCase();
-      const normalizedStatus = statusRaw === "ACTIVE" ? "ACTIVE" : statusRaw === "CANCELLED" ? "CANCELLED" : null;
+      const serverDate = String((json as any).date ?? (json as any).receipt?.date ?? dateKey).trim();
+      const serverHHMM = hhmmFromUpdatedAt((json as any).updated_at ?? (json as any).receipt?.updatedAt) || nowHHMM();
 
       setData((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          days: prev.days.map((d) =>
-            d.date === day.date
-              ? {
-                  ...d,
-                  selectedChoiceKey: key,
-                  orderStatus: normalizedStatus ?? d.orderStatus,
-                  lastSavedAt: serverHHMM,
-                }
-              : d
-          ),
+          days: prev.days.map((d) => {
+            if (String(d.date).trim() !== serverDate) return d;
+            return {
+              ...d,
+              selectedChoiceKey: (json as any).choice_key ?? key,
+              orderStatus: "ACTIVE",
+              wantsLunch: true,
+              lastSavedAt: serverHHMM,
+              note: (json as any).note ?? note ?? d.note ?? null,
+            };
+          }),
         };
       });
 
-      showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateNO(day.date)} • ${serverHHMM}`);
+      // ✅ clear pending once server confirms
+      clearPending(serverDate);
+
+      if (needsVariant(String(key))) setOpenVariantForDate((prev) => ({ ...prev, [serverDate]: null }));
+      if (isToastSeqCurrent(serverDate, toastSeq)) showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateNO(serverDate)} • ${serverHHMM}`);
     } catch {
-      const m = "Kunne ikke lagre menyvalg. Prøv igjen.";
-      setDayError(day.date, m);
-      showToast("⚠️ Kunne ikke lagre menyvalg. Prøv igjen.");
-      await loadWindow();
+      setDayError(dateKey, "Kunne ikke lagre menyvalg. Prøv igjen.");
+      if (isToastSeqCurrent(dateKey, toastSeq)) showToast("⚠️ Kunne ikke lagre menyvalg. Prøv igjen.");
     } finally {
-      setSaving(day.date, false);
+      setSaving(dateKey, false);
     }
   }
 
-  function onToggleLunch(day: OrderDay) {
-    if (!canAct(day)) return;
-    void toggleOrder(day.date, !day.wantsLunch);
+  function onClickAvbestill(day: OrderDay) {
+    const dateKey = String(day.date).trim();
+    if (savingByDate[dateKey]) return;
+    if (!day.isEnabled) return;
+    if (day.isLocked) return;
+    if (!currentIsActive(day)) return;
+    clearPending(dateKey);
+    enqueue({ kind: "setLunch", date: dateKey, wantsLunch: false });
   }
 
   function onSelectChoice(day: OrderDay, key: string) {
-    if (!canAct(day)) return;
-    if (day.selectedChoiceKey === key) return;
-    void saveChoice(day, key);
+    const dateKey = String(day.date).trim();
+    if (savingByDate[dateKey]) return;
+    if (!day.isEnabled) return;
+    if (day.isLocked) return;
+
+    const lowerKey = String(key).toLowerCase();
+
+    // ✅ Variant choices: one tap opens correct picker immediately (no second tap needed)
+    if (needsVariant(lowerKey)) {
+      setOpenVariantForDate((prev) => ({ ...prev, [dateKey]: lowerKey as any }));
+      setPendingChoiceByDate((prev) => ({ ...prev, [dateKey]: lowerKey }));
+      setDayError(dateKey, `Velg variant for ${titleForChoiceKey(lowerKey)}.`);
+      showToast(`⚠️ Velg variant for ${titleForChoiceKey(lowerKey)}.`);
+      return;
+    }
+
+    // Non-variant choices: commit immediately
+    clearPending(dateKey);
+    enqueue({ kind: "choice", date: dateKey, choiceKey: key });
   }
+
+  // ✅ Auto-save variant
+  function onVariantSelected(day: OrderDay, choiceKey: "salatbar" | "paasmurt", variantValue: string) {
+    const dateKey = String(day.date).trim();
+    if (savingByDate[dateKey]) return;
+    if (!day.isEnabled) return;
+    if (day.isLocked) return;
+
+    const v = String(variantValue ?? "").trim();
+    setVariant(dateKey, v);
+    setDayError(dateKey, null);
+
+    if (!v) {
+      setDayError(dateKey, `Velg variant for ${titleForChoiceKey(choiceKey)}.`);
+      return;
+    }
+
+    const note = buildNote(choiceKey, v);
+
+    // close picker immediately for snappy UX
+    setOpenVariantForDate((prev) => ({ ...prev, [dateKey]: null }));
+
+    // If not ordered yet -> set-day with choice+variant
+    if (!currentIsActive(day)) {
+      enqueue({ kind: "setLunch", date: dateKey, wantsLunch: true, preferredChoiceKey: choiceKey, note });
+      return;
+    }
+
+    // Ordered -> set-choice with choice+variant
+    enqueue({ kind: "choice", date: dateKey, choiceKey, note });
+  }
+
+  /* =========================================================
+     UI helpers
+  ========================================================= */
+
+  const availabilityText = useMemo(() => {
+    if (!availability.openNextWeek) return "Neste uke åpner torsdag kl. 08:00.";
+    return null;
+  }, [availability.openNextWeek]);
 
   /* =========================================================
      Render
@@ -598,21 +996,25 @@ export default function WeekClient() {
             <span className={cutoffChipClass(cutoffInfo.tone)}>{cutoffInfo.label}</span>
           </div>
           <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Endringer kan gjøres frem til 08:00 samme dag.</div>
+          {availabilityText ? <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{availabilityText}</div> : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setWeekIndex(0)}
-            className={[
-              "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
-              weekIndex === 0 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
-            ].join(" ")}
-            aria-pressed={weekIndex === 0}
-            disabled={isAnySaving}
-          >
-            Denne uke
-          </button>
+          {availability.showThisWeek ? (
+            <button
+              type="button"
+              onClick={() => setWeekIndex(0)}
+              className={[
+                "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
+                weekIndex === 0 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
+              ].join(" ")}
+              aria-pressed={weekIndex === 0}
+              disabled={isAnySaving}
+            >
+              Denne uke
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => setWeekIndex(1)}
@@ -621,10 +1023,12 @@ export default function WeekClient() {
               weekIndex === 1 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
             ].join(" ")}
             aria-pressed={weekIndex === 1}
-            disabled={isAnySaving}
+            disabled={isAnySaving || !availability.openNextWeek}
+            title={!availability.openNextWeek ? "Neste uke åpner torsdag kl. 08:00." : ""}
           >
             Neste uke
           </button>
+
           <button
             type="button"
             onClick={loadWindow}
@@ -648,33 +1052,53 @@ export default function WeekClient() {
         </div>
       ) : !isAgreementActive ? (
         <div className="mt-4 rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
-          <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
-            {agreementStatusMessage || "Ingen aktiv avtale"}
-          </div>
-          {!agreementStatusMessage ? (
-            <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kontakt administrator for å aktivere avtale.</div>
-          ) : null}
+          <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">{agreementStatusMessage || "Ingen aktiv avtale"}</div>
+        </div>
+      ) : !visibleDays.length ? (
+        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
+          Ingen uke er tilgjengelig akkurat nå.
         </div>
       ) : (
         <>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {visibleDays.map((day) => {
-              const saving = Boolean(savingByDate[day.date]);
+              const dateKey = String(day.date).trim();
+              const saving = Boolean(savingByDate[dateKey]);
               const disabled = saving || day.isLocked || !day.isEnabled;
-              const inlineErr = dayMsg[day.date] ?? null;
+              const inlineErr = dayMsg[dateKey] ?? null;
 
-              const unitPrice = typeof day.unit_price === "number" ? day.unit_price : null;
+              const choices = effectiveChoices(day);
+              const active = currentIsActive(day);
+
+              const orderedKey = active ? (day.selectedChoiceKey ?? null) : null;
+              const orderedLower = String(orderedKey ?? "").toLowerCase();
+              const pendingKey = pendingChoiceByDate[dateKey] ?? null;
+
+              const lock = disabled ? `🔒 ${lockLabel(day)}` : "";
+
+              // Which variant picker to show
+              const openKey = openVariantForDate[dateKey] ?? null;
+              const variantKey: "salatbar" | "paasmurt" | null = openKey ? openKey : null;
+              const showVariant = Boolean(variantKey) && !disabled;
+              const currentVariantValue = variantKey ? getVariant(dateKey) : "";
+
+              // Display “bestilt” text (very clear)
+              const orderedLabel = orderedKey ? choiceLabel(day, orderedKey) : null;
+              const orderedVariant = active ? variantValueForDisplay(day) : null;
 
               return (
                 <div
-                  key={day.date}
-                  className="rounded-[var(--lp-radius)] bg-[rgb(var(--lp-surface))] p-4 shadow-[0_1px_2px_rgba(32,33,36,0.06)]"
+                  key={dateKey}
+                  className={[
+                    "rounded-[18px] bg-[rgb(var(--lp-surface))] p-4 shadow-[0_1px_2px_rgba(32,33,36,0.06)]",
+                    saving ? "opacity-90" : "",
+                  ].join(" ")}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
                         {weekdayLabel(day.weekday)}
-                        <span className="ml-2 text-sm font-normal text-[rgb(var(--lp-muted))]">{formatDateNO(day.date)}</span>
+                        <span className="ml-2 text-sm font-normal text-[rgb(var(--lp-muted))]">{formatDateNO(dateKey)}</span>
                       </div>
 
                       <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
@@ -690,9 +1114,17 @@ export default function WeekClient() {
                         )}
                       </div>
 
-                      {day.isEnabled && unitPrice ? (
-                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">{unitPrice} kr</div>
-                      ) : null}
+                      {/* ✅ Very clear: what is actually ordered */}
+                      <div className="mt-2 text-sm">
+                        {active && orderedLabel ? (
+                          <span className="text-[rgb(var(--lp-fg))] font-semibold">
+                            ✅ Bestilt: {orderedLabel}
+                            {orderedVariant ? <span className="font-normal text-[rgb(var(--lp-muted))]"> ({orderedVariant})</span> : null}
+                          </span>
+                        ) : (
+                          <span className="text-[rgb(var(--lp-muted))]">Ikke bestilt</span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
@@ -702,36 +1134,35 @@ export default function WeekClient() {
                           !day.isEnabled
                             ? "bg-neutral-200 text-neutral-500"
                             : day.tier === "LUXUS"
-                            ? "bg-amber-100 text-amber-900"
-                            : day.tier === "BASIS"
-                              ? "bg-slate-200 text-slate-900"
-                              : "bg-neutral-200 text-neutral-500",
+                              ? "bg-amber-100 text-amber-900"
+                              : day.tier === "BASIS"
+                                ? "bg-slate-200 text-slate-900"
+                                : "bg-neutral-200 text-neutral-500",
                         ].join(" ")}
                       >
                         {day.isEnabled && day.tier ? tierLabel(day.tier) : "Ikke i avtalen"}
                       </span>
+
                       {day.isEnabled ? <StatusChip day={day} /> : null}
-                      <TogglePill
-                        active={day.wantsLunch}
-                        disabled={disabled}
-                        onClick={() => onToggleLunch(day)}
-                        title={day.wantsLunch ? "Klikk for å avbestille" : "Klikk for å registrere"}
-                      />
+
+                      <div className="flex items-center gap-2">
+                        {active ? (
+                          <LpButton
+                            variant="secondary"
+                            disabled={disabled}
+                            onClick={() => onClickAvbestill(day)}
+                            title={disabled ? lockLabel(day) : "Avbestill lunsj"}
+                          >
+                            Avbestill
+                          </LpButton>
+                        ) : null}
+
+                        <span className="text-sm text-[rgb(var(--lp-muted))] whitespace-nowrap">
+                          {saving ? "Lagrer…" : disabled ? lock : active ? "Bestilt" : "Velg meny for å bestille"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  {day.allergens?.length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {day.allergens.map((a) => (
-                        <span
-                          key={a}
-                          className="rounded-full bg-white/70 px-2 py-0.5 text-xs text-[rgb(var(--lp-muted))]"
-                        >
-                          {a}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
 
                   {inlineErr ? (
                     <div className="mt-3 text-sm text-[rgb(var(--lp-fg))]">
@@ -740,44 +1171,89 @@ export default function WeekClient() {
                     </div>
                   ) : null}
 
-                  {day.wantsLunch ? (
-                    <div className="mt-4">
-                      <div className="text-xs text-[rgb(var(--lp-muted))]">
-                        Menyvalg{day.isLocked ? " (låst)" : ""}:
-                        <span className="ml-2 text-[rgb(var(--lp-fg))] font-medium">
-                          {day.selectedChoiceKey ? choiceLabel(day, day.selectedChoiceKey) : "Ikke valgt"}
-                        </span>
-                      </div>
-
-                      {day.allowedChoices?.length ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {day.allowedChoices.map((c) => {
-                            const active = day.selectedChoiceKey === c.key;
-                            return (
-                              <button
-                                key={c.key}
-                                type="button"
-                                disabled={disabled}
-                                onClick={() => onSelectChoice(day, c.key)}
-                                className={[
-                                  "min-h-[44px] rounded-full border px-4 py-2 text-sm transition",
-                                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(var(--lp-ring),0.25)]",
-                                  disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white active:brightness-[0.99]",
-                                  active
-                                    ? "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-medium border-[rgb(var(--lp-border))]"
-                                    : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]",
-                                ].join(" ")}
-                              >
-                                {c.label ?? c.key}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen valg tilgjengelig i avtalen.</div>
-                      )}
+                  <div className="mt-4">
+                    <div className="text-xs text-[rgb(var(--lp-muted))]">
+                      Menyvalg{day.isLocked ? " (låst)" : ""}:
+                      <span className="ml-2 text-[rgb(var(--lp-fg))] font-medium">
+                        {active && orderedLabel ? orderedLabel : "Velg meny"}
+                      </span>
                     </div>
-                  ) : null}
+
+                    {choices.length ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {choices.map((c) => {
+                          const keyLower = String(c.key).toLowerCase();
+                          const isOrdered = Boolean(orderedKey && orderedKey === c.key);
+                          const isPending = Boolean(pendingKey && pendingKey === keyLower && !isOrdered);
+
+                          return (
+                            <button
+                              key={c.key}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => onSelectChoice(day, c.key)}
+                              className={[
+                                "min-h-[44px] rounded-full border px-4 py-2 text-sm transition whitespace-nowrap",
+                                "focus:outline-none focus:ring-2 focus:ring-offset-2",
+                                disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white active:brightness-[0.99]",
+                                isOrdered
+                                  ? [
+                                      "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-semibold",
+                                      "border-transparent",
+                                      "ring-2 ring-[#ff007f]",
+                                      "shadow-[0_0_0_2px_rgba(255,0,127,0.60),0_0_26px_rgba(255,0,127,0.35)]",
+                                    ].join(" ")
+                                  : isPending
+                                    ? ["bg-white/90 text-[rgb(var(--lp-fg))]", "border-transparent", "ring-2 ring-[#2563eb]"].join(" ")
+                                    : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]",
+                              ].join(" ")}
+                              title={
+                                disabled
+                                  ? lockLabel(day)
+                                  : isOrdered
+                                    ? "Bestilt"
+                                    : needsVariant(keyLower)
+                                      ? "Trykk og velg variant"
+                                      : active
+                                        ? "Klikk for å endre"
+                                        : "Klikk for å bestille"
+                              }
+                            >
+                              {isOrdered ? `✓ ${c.label ?? c.key}` : c.label ?? c.key}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+
+                    {/* ✅ Variant picker (auto-save). Always opens correctly on first tap */}
+                    {showVariant && variantKey ? (
+                      <div className="mt-3 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-3">
+                        <div className="text-xs text-[rgb(var(--lp-muted))] mb-2">
+                          Velg variant for{" "}
+                          <span className="font-semibold text-[rgb(var(--lp-fg))]">{titleForChoiceKey(variantKey)}</span>
+                        </div>
+
+                        <select
+                          value={currentVariantValue}
+                          onChange={(e) => onVariantSelected(day, variantKey, e.target.value)}
+                          className="min-h-[48px] w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm text-[rgb(var(--lp-fg))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+                          disabled={disabled}
+                        >
+                          <option value="">{`Velg ${titleForChoiceKey(variantKey).toLowerCase()}-variant`}</option>
+                          {SUBCHOICES[variantKey].map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
+                          Velges og registreres automatisk.
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
 
                   {receiptText(day, saving) ? (
                     <div className="mt-4 text-xs text-[rgb(var(--lp-muted))]">{receiptText(day, saving)}</div>
@@ -785,21 +1261,6 @@ export default function WeekClient() {
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-6 border-t border-[rgb(var(--lp-divider))] pt-5">
-            <div className="text-sm font-medium text-[rgb(var(--lp-fg))]">Helgelevering (lørdag/søndag)</div>
-            <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Levering i helg bestilles ikke i Lunchportalen.</div>
-            <div className="mt-3">
-              <a
-                href="https://melhuscatering.no/catering/bestill-her/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-fg))]"
-              >
-                Bestill helgelevering
-              </a>
-            </div>
           </div>
         </>
       )}

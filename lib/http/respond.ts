@@ -1,7 +1,6 @@
 // lib/http/respond.ts
 import "server-only";
 
-import { NextResponse } from "next/server";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { opsLog } from "@/lib/ops/log";
 
@@ -16,50 +15,109 @@ export function makeRid(): string {
   return genRid();
 }
 
-function normalizeError(err: unknown) {
-  if (err === undefined) return "ERROR";
-  if (typeof err === "string") return err;
-  if (err instanceof Error) return err.message || "ERROR";
+function normalizeError(err: unknown): string {
+  if (err === undefined || err === null) return "ERROR";
+  if (typeof err === "string") return err || "ERROR";
+  if (err instanceof Error) return err.name || err.message || "ERROR";
   if (err && typeof err === "object") {
-    const code = (err as { code?: unknown }).code;
-    if (typeof code === "string" && code) return code;
-    const error = (err as { error?: unknown }).error;
-    if (typeof error === "string" && error) return error;
+    const e = err as any;
+    if (typeof e.code === "string" && e.code) return e.code;
+    if (typeof e.error === "string" && e.error) return e.error;
+    if (typeof e.name === "string" && e.name) return e.name;
+    if (typeof e.message === "string" && e.message) return e.message;
   }
-  return err;
+  return "ERROR";
 }
 
-export function jsonOk<T>(rid: string, data: T, status: number = 200): Response {
+function buildJsonHeaders(extra?: HeadersInit): Headers {
+  const h = new Headers();
+
+  // ✅ Fasit: no-store
+  const base = noStoreHeaders() as Record<string, string>;
+  for (const [k, v] of Object.entries(base)) {
+    if (typeof v === "string" && v.length) h.set(k, v);
+  }
+
+  // ✅ Fasit: UTF-8 JSON
+  h.set("content-type", "application/json; charset=utf-8");
+
+  // Optional extras (still safe)
+  if (extra) {
+    const eh = new Headers(extra);
+    eh.forEach((v, k) => {
+      if (typeof v === "string") h.set(k, v);
+    });
+  }
+
+  return h;
+}
+
+function jsonResponse(body: unknown, status: number, extraHeaders?: HeadersInit): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: buildJsonHeaders(extraHeaders),
+  });
+}
+
+export function jsonOk<T>(rid: string, data: T, status = 200): Response {
   try {
-    return NextResponse.json({ ok: true as const, rid, data: data ?? null }, { status, headers: noStoreHeaders() });
-  } catch {
-    return NextResponse.json(
-      { ok: false as const, rid: makeRid(), message: "Kunne ikke generere respons.", status: 500, error: "RESPOND_FAILED" },
-      { status: 500, headers: noStoreHeaders() }
+    return jsonResponse({ ok: true as const, rid, data: data ?? null }, status);
+  } catch (e) {
+    const rid2 = makeRid();
+    const errorOut = normalizeError(e);
+
+    try {
+      opsLog("incident", {
+        rid: rid2,
+        status: 500,
+        message: "RESPOND_FAILED",
+        error: errorOut,
+        meta: { originalRid: rid },
+      });
+    } catch {
+      // ignore
+    }
+
+    return jsonResponse(
+      { ok: false as const, rid: rid2, message: "Kunne ikke generere respons.", status: 500, error: "RESPOND_FAILED" },
+      500
     );
   }
 }
 
-export function jsonErr(rid: string, message: string, status: number = 400, error?: unknown): Response {
+export function jsonErr(rid: string, message: string, status = 400, error?: unknown): Response {
   try {
     const errorOut = normalizeError(error);
-    const payload = {
-      ok: false as const,
-      rid,
-      message,
-      status,
-      error: errorOut,
-    };
+    const payload = { ok: false as const, rid, message, status, error: errorOut };
 
     if (status >= 500) {
-      opsLog("incident", { rid, status, message, error: errorOut });
+      try {
+        opsLog("incident", { rid, status, message, error: errorOut });
+      } catch {
+        // ignore
+      }
     }
 
-    return NextResponse.json(payload, { status, headers: noStoreHeaders() });
-  } catch {
-    return NextResponse.json(
-      { ok: false as const, rid: makeRid(), message: "Kunne ikke generere feilrespons.", status: 500, error: "RESPOND_FAILED" },
-      { status: 500, headers: noStoreHeaders() }
+    return jsonResponse(payload, status);
+  } catch (e) {
+    const rid2 = makeRid();
+    const errorOut = normalizeError(e);
+
+    try {
+      opsLog("incident", {
+        rid: rid2,
+        status: 500,
+        message: "RESPOND_FAILED",
+        error: errorOut,
+        meta: { originalRid: rid, originalStatus: status },
+      });
+    } catch {
+      // ignore
+    }
+
+    return jsonResponse(
+      { ok: false as const, rid: rid2, message: "Kunne ikke generere feilrespons.", status: 500, error: "RESPOND_FAILED" },
+      500
     );
   }
 }

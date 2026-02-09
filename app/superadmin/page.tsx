@@ -12,6 +12,17 @@ import { supabaseServer } from "@/lib/supabase/server";
 import PageSection from "@/components/layout/PageSection";
 import { isSuperadminEmail } from "@/lib/system/emails";
 
+// ✅ Oslo single source of truth (for display in superadmin)
+import {
+  OSLO_TZ,
+  osloNowParts,
+  osloNowISO,
+  osloTodayISODate,
+  osloTodayNODate,
+  isAfterCutoff0800,
+  isAfterCutoff0805,
+} from "@/lib/date/oslo";
+
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 
@@ -186,6 +197,12 @@ export default async function SuperadminPage() {
   const supabase = await supabaseServer();
   const cookieStore = await cookies();
 
+  // ✅ Oslo time snapshot (server-side, no fetch, no refetch)
+  const oslo = osloNowParts();
+  const systemTimeLine = `${osloTodayNODate()} · ${String(oslo.hh).padStart(2, "0")}:${String(oslo.mi).padStart(2, "0")}`;
+  const cutoffLine = isAfterCutoff0800() ? "Cutoff: LÅST (08:00)" : "Cutoff: ÅPEN (til 08:00)";
+  const cutoff0805Line = isAfterCutoff0805() ? "· 08:05: LÅST" : "· 08:05: ÅPEN";
+
   // 1) Auth
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
   const user = userRes?.user ?? null;
@@ -199,12 +216,12 @@ export default async function SuperadminPage() {
     redirect("/login?next=/superadmin");
   }
 
-  // 3) Profile read
-  const { data: profile, error: pErr } = await supabase
+  // 3) Profile read (TS-safe: no generics on maybeSingle)
+  const { data: profile, error: pErr } = (await supabase
     .from("profiles")
     .select("role,disabled_at")
     .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
+    .maybeSingle()) as { data: ProfileRow | null; error: any };
 
   if (pErr) {
     return <ErrorSurface message="Kunne ikke verifisere superadmin-profil." detail={safeStr(pErr.message)} />;
@@ -255,11 +272,26 @@ export default async function SuperadminPage() {
 
   // 7) Render
   return (
-    <SuperadminClient
-      initialCompanies={list}
-      initialStats={stats}
-      degradedRid={degradedRid}
-      systemState={systemState}
-    />
+    <>
+      {/* ✅ Oslo time / cutoff banner (server truth) */}
+      <div className="mx-auto w-full max-w-[1400px] px-4 pt-4">
+        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">
+          <span className="font-semibold text-[rgb(var(--lp-fg))]">Systemtid (Oslo):</span>{" "}
+          <span className="text-[rgb(var(--lp-fg))]">{systemTimeLine}</span>{" "}
+          <span className="ml-2">{cutoffLine}</span>{" "}
+          <span className="opacity-80">{cutoff0805Line}</span>
+          <span className="ml-2 opacity-70">({OSLO_TZ})</span>
+          <span className="ml-3 opacity-60">· {osloNowISO()}</span>
+          <span className="ml-2 opacity-60">· i dag ISO: {osloTodayISODate()}</span>
+        </div>
+      </div>
+
+      <SuperadminClient
+        initialCompanies={list}
+        initialStats={stats}
+        degradedRid={degradedRid}
+        systemState={systemState}
+      />
+    </>
   );
 }

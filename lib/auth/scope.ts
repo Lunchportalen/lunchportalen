@@ -1,4 +1,6 @@
 // lib/auth/scope.ts
+import "server-only";
+
 import { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { systemRoleByEmail } from "@/lib/system/emails";
@@ -34,7 +36,6 @@ export class ScopeError extends Error {
 ========================================================= */
 
 function isTestEnv() {
-  // Vitest sets VITEST; CI often sets CI; NODE_ENV becomes "test" during tests
   return process.env.NODE_ENV === "test" || !!process.env.VITEST;
 }
 
@@ -44,12 +45,6 @@ function mustEnv(name: string) {
   return v;
 }
 
-/**
- * Enterprise rule:
- * - In production/dev runtime, missing Supabase env is a HARD error.
- * - In tests, allow deterministic dummy values so route modules can load,
- *   and unit tests can mock/override without crashing at import time.
- */
 function envOrTestDefault(name: string, fallback: string) {
   const v = process.env[name];
   if (v && String(v).trim()) return String(v).trim();
@@ -57,8 +52,14 @@ function envOrTestDefault(name: string, fallback: string) {
   return mustEnv(name);
 }
 
+/**
+ * Minimal SSR client. We only need it for:
+ * - auth.getUser()
+ * - from("profiles") / from("companies")
+ *
+ * NOTE: we keep types safe (avoid "untyped function calls" TS2347)
+ */
 function supabaseFromRequest(req: NextRequest) {
-  // Defer env reads to runtime to avoid build-time collect crashes.
   const SUPABASE_URL = envOrTestDefault("NEXT_PUBLIC_SUPABASE_URL", "http://supabase.test");
   const SUPABASE_ANON_KEY = envOrTestDefault("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_test_key");
 
@@ -120,6 +121,50 @@ type ProfileRow = {
   is_active: boolean | null;
 };
 
+function normalizeCompanyStatus(v: unknown) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return "unknown";
+  if (s === "active") return "active";
+  if (s === "pending") return "pending";
+  if (s === "paused") return "paused";
+  if (s === "closed") return "closed";
+  return s;
+}
+
+/**
+ * ENTERPRISE GATE (Blueprint):
+ * - Tenant roles MUST be blocked unless company.status === "active"
+ * - Enforced centrally here so all route guards inherit it.
+ *
+ * ✅ IMPORTANT:
+ * - System roles (superadmin/kitchen/driver) MUST NEVER be blocked by company status.
+ */
+async function enforceCompanyActive(
+  supabase: ReturnType<typeof supabaseFromRequest>,
+  role: Role,
+  company_id: string | null
+) {
+  if (!(role === "company_admin" || role === "employee")) return;
+  if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
+
+  const res = await (supabase as any)
+    .from("companies")
+    .select("id,status")
+    .eq("id", company_id)
+    .maybeSingle();
+
+  const error = res?.error as any;
+  const data = res?.data as any;
+
+  if (error) throw new ScopeError("Kunne ikke verifisere firmastatus", 503, "COMPANY_STATUS_CHECK_FAILED");
+  if (!data?.id) throw new ScopeError("Firma finnes ikke", 403, "COMPANY_NOT_FOUND");
+
+  const st = normalizeCompanyStatus(data.status);
+  if (st !== "active") {
+    throw new ScopeError("Firma er ikke aktivert ennå", 403, "COMPANY_NOT_ACTIVE");
+  }
+}
+
 export async function getScope(req: NextRequest): Promise<Scope> {
   const supabase = supabaseFromRequest(req);
 
@@ -133,17 +178,33 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // 2) Hent profile (tenant-roller bruker profile; systemroller kan leve uten)
-  const { data: profile, error: profErr } = await supabase
+  // ✅ NO-EXCEPTION RULE: systemroller vinner alltid og bypasser profile/company gating
+  const sys = roleByEmail(user.email ?? null);
+  if (sys === "superadmin" || sys === "kitchen" || sys === "driver") {
+    return {
+      user_id: user.id,
+      email: user.email ?? null,
+      role: sys,
+      company_id: null,
+      location_id: null,
+      is_active: true,
+    };
+  }
+
+  // 2) Profile (tenant-roller bruker profile; systemroller kan leve uten)
+  const profRes = await (supabase as any)
     .from("profiles")
     .select("id,user_id,email,role,company_id,location_id,is_active")
     .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-    .maybeSingle<ProfileRow>();
+    .maybeSingle();
+
+  const profile = (profRes?.data ?? null) as ProfileRow | null;
+  const profErr = profRes?.error as any;
 
   // 3) Rolle: profilrolle har førsteprioritet hvis den finnes og er gyldig
   let role: Role;
+  const profileRoleRaw = String(profile?.role ?? "").trim();
 
-  const profileRoleRaw = (profile?.role ?? "").toString().trim();
   if (profileRoleRaw && isValidRole(profileRoleRaw)) {
     role = profileRoleRaw as Role;
   } else {
@@ -151,32 +212,26 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   }
 
   // 4) Hvis profile mangler:
-  //    - superadmin/kitchen/driver kan leve uten profile (systemroller)
   //    - company_admin/employee MÅ ha profile
   if (!profile || profErr) {
-    if (role === "superadmin" || role === "kitchen" || role === "driver") {
-      return {
-        user_id: user.id,
-        email: user.email ?? null,
-        role,
-        company_id: null,
-        location_id: null,
-        is_active: true,
-      };
-    }
     throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
   }
 
-  // 5) Aktivitetsstatus (håndheves når profile finnes)
-  const is_active = profile.is_active !== false;
-  if (!is_active) {
-    throw new ScopeError("Konto deaktivert", 403, "ACCOUNT_DISABLED");
+  // 5) Aktivitetsstatus (tenant-only)
+  // ✅ FASIT: onboarding oppretter company_admin med is_active=false til aktivering.
+  const is_active = profile.is_active === true;
+
+  if ((role === "company_admin" || role === "employee") && !is_active) {
+    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
   }
 
   // 6) Tenant binding: tenant-roller må ha company_id
   if ((role === "company_admin" || role === "employee") && !profile.company_id) {
     throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
   }
+
+  // 7) Enterprise gate: company must be active (tenant-only)
+  await enforceCompanyActive(supabase, role, profile.company_id ?? null);
 
   return {
     user_id: user.id,

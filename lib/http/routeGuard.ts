@@ -200,9 +200,9 @@ export async function scopeOr401(req: NextRequest): Promise<ScopeOr401Result> {
       const r = jsonErr(ctx.rid, "Ikke innlogget.", 401, {
         code: "UNAUTHORIZED",
         detail: {
-        path: ctx.route,
-        role: ctx.scope.role,
-        companyIdPresent: Boolean(ctx.scope.companyId),
+          path: ctx.route,
+          role: ctx.scope.role,
+          companyIdPresent: Boolean(ctx.scope.companyId),
         },
       });
       return { ok: false as const, res: r, response: r, ctx };
@@ -244,12 +244,10 @@ export function requireRoleOr403(...args: any[]): Response | null {
       const role = normRole(args[1]);
       const allowed = normalizeAllowed(Array.isArray(args[2]) ? args[2] : []);
 
-      if (!allowed.length)
-        return jsonErr(r, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!role) return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role: null, companyIdPresent: false } });
-      if (!allowed.includes(role)) {
-        return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role, allowed } });
-      }
+      if (!allowed.length) return jsonErr(r, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!role) return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role: null } });
+      if (!allowed.includes(role)) return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role, allowed } });
+
       return null;
     }
 
@@ -260,28 +258,9 @@ export function requireRoleOr403(...args: any[]): Response | null {
     // D) (ctx, allowed)
     if (args.length === 2 && Array.isArray(args[1])) {
       const allowed = normalizeAllowed(args[1]);
-      if (!allowed.length)
-        return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!ctxRole)
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            path: ctx.route,
-            role: null,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-          },
-        });
-      if (!allowed.includes(ctxRole)) {
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            path: ctx.route,
-            role: ctxRole,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-            allowed,
-          },
-        });
-      }
+      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!ctxRole) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
+      if (!allowed.includes(ctxRole)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: ctxRole, allowed } });
       return null;
     }
 
@@ -290,33 +269,10 @@ export function requireRoleOr403(...args: any[]): Response | null {
       const action = safeStr(args[1]) || null;
       const allowed = normalizeAllowed(args[2]);
 
-      if (!allowed.length)
-        return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, {
-          code: "MISCONFIGURED_ROUTE",
-          detail: { action },
-        });
-      if (!ctxRole)
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            action,
-            path: ctx.route,
-            role: null,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-          },
-        });
-      if (!allowed.includes(ctxRole)) {
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            action,
-            path: ctx.route,
-            role: ctxRole,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-            allowed,
-          },
-        });
-      }
+      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, { code: "MISCONFIGURED_ROUTE", detail: { action } });
+      if (!ctxRole) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { action, path: ctx.route, role: null } });
+      if (!allowed.includes(ctxRole)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { action, path: ctx.route, role: ctxRole, allowed } });
+
       return null;
     }
 
@@ -325,28 +281,10 @@ export function requireRoleOr403(...args: any[]): Response | null {
       const role = normRole(args[1]);
       const allowed = normalizeAllowed(args[2]);
 
-      if (!allowed.length)
-        return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!role)
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            path: ctx.route,
-            role: null,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-          },
-        });
-      if (!allowed.includes(role)) {
-        return jsonErr(ctxRidVal, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: {
-            path: ctx.route,
-            role,
-            companyIdPresent: Boolean(ctx?.scope?.companyId),
-            allowed,
-          },
-        });
-      }
+      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!role) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
+      if (!allowed.includes(role)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role, allowed } });
+
       return null;
     }
 
@@ -361,18 +299,9 @@ export function requireRoleOr403(...args: any[]): Response | null {
 /* =========================================================
    Company scope gate (403)
 ========================================================= */
-export function requireCompanyScopeOr403(
-  rid: string,
-  companyId: string | null | undefined
-): Response | null;
-export function requireCompanyScopeOr403(
-  ctx: AuthedCtx,
-  companyId: string | null | undefined
-): Response | null;
-export function requireCompanyScopeOr403(
-  ctx: AuthedCtx,
-  opts: { allowSuperadminGlobal?: boolean }
-): Response | null;
+export function requireCompanyScopeOr403(rid: string, companyId: string | null | undefined): Response | null;
+export function requireCompanyScopeOr403(ctx: AuthedCtx, companyId: string | null | undefined): Response | null;
+export function requireCompanyScopeOr403(ctx: AuthedCtx, opts: { allowSuperadminGlobal?: boolean }): Response | null;
 export function requireCompanyScopeOr403(ctx: AuthedCtx): Response | null;
 export function requireCompanyScopeOr403(...args: any[]): Response | null {
   try {
@@ -384,9 +313,7 @@ export function requireCompanyScopeOr403(...args: any[]): Response | null {
     if (typeof args[0] === "string") {
       const r = safeStr(args[0]) || ridFallback();
       const cid = safeStr(args[1]);
-      if (!cid) {
-        return jsonErr(r, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { companyIdPresent: false } });
-      }
+      if (!cid) return jsonErr(r, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE" });
       return null;
     }
 
@@ -394,66 +321,38 @@ export function requireCompanyScopeOr403(...args: any[]): Response | null {
     const role = normRole(ctx?.scope?.role);
     const cid = safeStr(ctx?.scope?.companyId);
 
-    // C) (ctx)
+    // D) (ctx)
     if (args.length === 1) {
-      if (!role) {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: { path: ctx.route, role: null, companyIdPresent: Boolean(cid) },
-        });
-      }
+      if (!role) return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
 
       if (role !== "company_admin" && role !== "superadmin") {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: { path: ctx.route, role, companyIdPresent: Boolean(cid) },
-        });
+        return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role } });
       }
 
-      if (!cid) {
-        return jsonErr(ctx.rid, "Mangler firmascope.", 403, {
-          code: "MISSING_COMPANY_SCOPE",
-          detail: { path: ctx.route, role, companyIdPresent: false },
-        });
-      }
+      if (!cid) return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
       return null;
     }
 
-    // B) (ctx, companyId)
+    // C) (ctx, opts)
     if (args.length === 2 && typeof args[1] === "object") {
       const opts = normOpts(args[1]);
 
-      if (!role) {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: { path: ctx.route, role: null, companyIdPresent: Boolean(cid) },
-        });
-      }
+      if (!role) return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
 
       if (role !== "company_admin" && role !== "superadmin") {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, {
-          code: "FORBIDDEN",
-          detail: { path: ctx.route, role, companyIdPresent: Boolean(cid) },
-        });
+        return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role } });
       }
 
       if (role === "superadmin" && opts.allowSuperadminGlobal) return null;
 
-      if (!cid) {
-        return jsonErr(ctx.rid, "Mangler firmascope.", 403, {
-          code: "MISSING_COMPANY_SCOPE",
-          detail: { path: ctx.route, role, companyIdPresent: false },
-        });
-      }
+      if (!cid) return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
       return null;
     }
 
+    // B) (ctx, companyId)
     const cidOverride = safeStr(args[1]);
     if (!cidOverride) {
-      return jsonErr(ctx.rid, "Mangler firmascope.", 403, {
-        code: "MISSING_COMPANY_SCOPE",
-        detail: { path: ctx.route, role, companyIdPresent: false },
-      });
+      return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
     }
     return null;
   } catch {

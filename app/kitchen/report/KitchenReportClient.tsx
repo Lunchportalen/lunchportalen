@@ -4,8 +4,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 type Mode = "day" | "week";
-
 type Totals = { basis: number; luxus: number; total: number };
+
+type ChoiceBreakdown = {
+  key: string;
+  label: string;
+  total: number;
+  variants?: { name: string; count: number }[];
+};
 
 type LocationOut = {
   locationId: string;
@@ -18,6 +24,9 @@ type LocationOut = {
 
   totals: Totals;
   notes?: string | null;
+
+  // ✅ what customers want
+  choices: ChoiceBreakdown[];
 
   flags: string[];
 };
@@ -46,7 +55,6 @@ function safeStr(v: any) {
 }
 
 function todayISOClient() {
-  // Kun UI convenience – server (API) er sannheten (osloTodayISODate)
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -64,6 +72,10 @@ function flagLabel(f: string) {
       return "Mangler leveringsvindu";
     case "unknown_tier":
       return "Ukjent nivå (Basis/Luxus)";
+    case "missing_choice":
+      return "Mangler menyvalg (day_choices)";
+    case "missing_variant":
+      return "Mangler variant (Salatbar/Påsmurt)";
     default:
       return f;
   }
@@ -130,7 +142,7 @@ export default function KitchenReportClient() {
         <div className="lp-row">
           <div>
             <h1 className="lp-h1">Kjøkkenrapport</h1>
-            <div className="lp-muted">Read-only · firma → lokasjon · totaler + avvik · utskriftsklar</div>
+            <div className="lp-muted">Read-only · firma → lokasjon · totaler + kundebehov · utskriftsklar</div>
           </div>
 
           <div className="lp-row items-end">
@@ -238,6 +250,42 @@ export default function KitchenReportClient() {
                           <div className="lp-badge">Luxus: {loc.totals.luxus}</div>
                           <div className="lp-badge">Totalt: {loc.totals.total}</div>
                         </div>
+                      </div>
+
+                      {/* ✅ What customers want */}
+                      <div className="lp-notes" style={{ marginTop: 10 }}>
+                        <strong>Kundene ønsker:</strong>
+                        {loc.choices?.length ? (
+                          <div style={{ marginTop: 8 }}>
+                            {loc.choices.map((ch) => (
+                              <div key={ch.key} style={{ marginBottom: 8 }}>
+                                <div className="lp-row" style={{ justifyContent: "space-between" }}>
+                                  <div>
+                                    <span style={{ fontWeight: 600 }}>{ch.label}</span>
+                                  </div>
+                                  <div style={{ fontWeight: 700 }}>{ch.total}</div>
+                                </div>
+
+                                {ch.variants?.length ? (
+                                  <div style={{ marginTop: 4, paddingLeft: 14 }}>
+                                    {ch.variants.map((v) => (
+                                      <div key={v.name} className="lp-row" style={{ justifyContent: "space-between" }}>
+                                        <div className="lp-muted">– {v.name}</div>
+                                        <div className="lp-muted" style={{ fontWeight: 700 }}>
+                                          {v.count}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="lp-muted" style={{ marginTop: 6 }}>
+                            (Ingen menyvalg registrert)
+                          </div>
+                        )}
                       </div>
 
                       {loc.flags?.length ? (

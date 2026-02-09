@@ -4,25 +4,28 @@ import "server-only";
 /**
  * Standard no-store headers for ALL API responses
  * ------------------------------------------------
- * Brukes konsekvent for å hindre:
- * - edge / CDN caching
- * - browser back/forward cache
- * - mellomliggende proxy-cache
+ * Fasit: hindrer caching i:
+ * - nettleser
+ * - mellomliggende proxy
+ * - CDN/edge (Vercel/Cloudflare)
  *
- * Dette er fasit for Lunchportalen (Dag 10).
+ * Brukes av jsonOk/jsonErr via respond.ts
  */
 export function noStoreHeaders() {
   return {
     // HTTP/1.1
-    "Cache-Control": "no-store, max-age=0",
+    "cache-control": "no-store, max-age=0",
 
     // HTTP/1.0 (eldre proxyer)
-    Pragma: "no-cache",
+    pragma: "no-cache",
 
     // Proxies / klienter som respekterer Expires
-    Expires: "0",
+    expires: "0",
 
-    // Ekstra forsikring mot transformering/caching i mellomledd
-    "Surrogate-Control": "no-store",
+    // CDNs / surrogate caches
+    "surrogate-control": "no-store",
+
+    // Bonus: hindrer at noen mellomledd prøver å "optimalisere"/transformere
+    "x-content-type-options": "nosniff",
   } as const;
 }

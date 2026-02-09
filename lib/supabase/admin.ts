@@ -2,19 +2,20 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Supabase admin-klient (SERVICE ROLE)
- * --------------------------------------------------
+ * Supabase ADMIN client (SERVICE ROLE)
+ * ====================================
  * Brukes KUN server-side til:
- * - superadmin-handlinger (activate / reject / purge)
+ * - superadmin-endepunkter
  * - eksplisitt omgåelse av RLS
  *
- * ⚠️ Skal ALDRI brukes i client components
- * ⚠️ Skal ALDRI eksponeres til browser
+ * ⚠️ ALDRI bruk i client components
+ * ⚠️ ALDRI eksponer service role til browser
  *
- * Designvalg:
- * - Kaster eksplisitt feil hvis env mangler (fail fast)
+ * Design:
+ * - Singleton per runtime
+ * - Fail-fast hvis env mangler
  * - Ingen session / cookies
- * - Stabil X-Client-Info for logging/debug
+ * - Stabil client-info for logging
  */
 
 let _admin: SupabaseClient | null = null;
@@ -22,23 +23,23 @@ let _admin: SupabaseClient | null = null;
 function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v || !String(v).trim()) {
-    throw new Error(`Missing env: ${name}`);
+    throw new Error(`Missing required env: ${name}`);
   }
   return String(v).trim();
 }
 
 export function supabaseAdmin(): SupabaseClient {
-  // Singleton per runtime (unngår unødige klienter)
+  // Reuse client within same runtime
   if (_admin) return _admin;
 
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-  _admin = createClient(url, serviceKey, {
+  _admin = createClient(url, serviceRoleKey, {
     auth: {
-      persistSession: false,      // ingen cookies
-      autoRefreshToken: false,    // ingen refresh
-      detectSessionInUrl: false,  // ingen URL-lekkasje
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
     },
     global: {
       headers: {

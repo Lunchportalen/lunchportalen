@@ -1,425 +1,262 @@
 // app/api/orders/toggle/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-
-
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
-
-// ✅ Oslo single source of truth
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
-import { type Tier } from "@/lib/agreements/normalize";
-import { requireRule } from "@/lib/agreement/requireRule";
-
-// ✅ Backup mail (failsafe)
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
-import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
-import { osloNowISO } from "@/lib/date/oslo";
-
-// ✅ MUST audit (lukket sirkel)
-import { auditWriteMust } from "@/lib/audit/auditWrite";
-import { auditSafe } from "@/lib/ops/auditSafe";
-
-/* =========================================================
-   Input normalization
-========================================================= */
-
-type ToggleAction = "place" | "cancel";
-
-function safeStr(v: unknown) {
-  return String(v ?? "").trim();
-}
-
-function normAction(v: any): ToggleAction | null {
-  const s = safeStr(v).toLowerCase();
-  if (s === "cancel" || s === "canceled") return "cancel";
-  if (s === "place" || s === "active" || s === "order") return "place";
-  return null;
-}
-
-function wantsLunchFromBody(body: any): boolean | null {
-  if (typeof body?.wants_lunch === "boolean") return body.wants_lunch;
-  if (typeof body?.wantsLunch === "boolean") return body.wantsLunch;
-
-  if (typeof body?.wants_lunch === "string") {
-    const s = safeStr(body.wants_lunch).toLowerCase();
-    if (s === "true") return true;
-    if (s === "false") return false;
-  }
-  if (typeof body?.wantsLunch === "string") {
-    const s = safeStr(body.wantsLunch).toLowerCase();
-    if (s === "true") return true;
-    if (s === "false") return false;
-  }
-  return null;
-}
-
-function isoWeekday(isoDate: string): number | null {
-  try {
-    const d = new Date(`${isoDate}T12:00:00.000Z`);
-    if (Number.isNaN(d.getTime())) return null;
-    const day = d.getUTCDay(); // 0=Sun..6=Sat
-    if (day === 0) return 7;
-    return day;
-  } catch {
-    return null;
-  }
-}
-
-function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
-  try {
-    const d = new Date(`${isoDate}T12:00:00Z`);
-    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
-    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
-      Mon: "mon",
-      Tue: "tue",
-      Wed: "wed",
-      Thu: "thu",
-      Fri: "fri",
-    };
-    return map[wd] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function normSlot(v: any): string {
-  const s = safeStr(v).toLowerCase();
-  return s || "lunch";
-}
-
-function normNote(v: any): string | null {
-  const s = safeStr(v);
-  return s ? s : null;
-}
 
 /**
- * Midlertidig: pricing må finnes i respons for UI-kvittering.
- * (Fasit senere: server pricing lookup per company/date)
+ * Toggle order ACTIVE/CANCELLED for a given date.
+ * Enterprise rules:
+ * - Tenant-safe (user + company + location + date + slot)
+ * - Cutoff enforced (08:00 Oslo)
+ * - wants_lunch=true requires choice_key
+ * - NOTE storage supports variants without breaking legacy:
+ *     note = "<choice_key>||<human_suffix>"   (suffix optional)
+ *   Legacy readers can still take the first segment as choice key.
  */
-function pricingFallback(isoDate: string, body: any): { tier: "BASIS" | "LUXUS"; unit_price: number } {
-  const bodyTier = safeStr(body?.tier ?? body?.pricing_tier ?? body?.pricing?.tier ?? "").toUpperCase();
 
-  if (bodyTier === "LUXUS") return { tier: "LUXUS", unit_price: 130 };
-  if (bodyTier === "BASIS") return { tier: "BASIS", unit_price: 90 };
+type OrderStatus = "active" | "canceled";
 
-  const wd = isoWeekday(isoDate);
-  if (wd === 5) return { tier: "LUXUS", unit_price: 130 }; // fredag
-  return { tier: "BASIS", unit_price: 90 };
+function safeStr(v: unknown) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+function safeLower(v: unknown) {
+  return safeStr(v).toLowerCase();
 }
 
-/* =========================================================
-   Company lifecycle (fail-closed)
-========================================================= */
-
-type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
-function normCompanyStatus(v: any): CompanyLifecycle {
-  const s = safeStr(v).toUpperCase();
-  if (s === "ACTIVE") return "ACTIVE";
-  if (s === "PAUSED") return "PAUSED";
-  if (s === "CLOSED") return "CLOSED";
-  if (s === "PENDING") return "PENDING";
-  return "UNKNOWN";
+function wantsLunchFromBody(body: any): boolean {
+  if (typeof body?.wants_lunch === "boolean") return body.wants_lunch;
+  if (typeof body?.wantsLunch === "boolean") return body.wantsLunch;
+  if (typeof body?.wants_lunch === "string") return body.wants_lunch === "true";
+  if (typeof body?.wantsLunch === "string") return body.wantsLunch === "true";
+  return false;
 }
 
-async function adminClientOrNull() {
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  try {
-    return supabaseAdmin();
-  } catch {
-    return null;
+// Accepts "varmmat" or "choice:varmmat"
+function normalizeChoiceKey(v: unknown): string | null {
+  const raw = safeLower(v);
+  if (!raw) return null;
+  if (raw.startsWith("choice:")) {
+    const k = raw.slice("choice:".length).trim();
+    return k || null;
   }
+  return raw;
+}
+
+function normalizeExistingStatus(v: unknown): OrderStatus | null {
+  const s = safeLower(v);
+  if (s === "active") return "active";
+  if (s === "canceled" || s === "cancelled") return "canceled";
+  return null;
 }
 
 /* =========================================================
-   Orders schema notes (fasit)
-   orders columns: id, user_id, date, status, note, created_at, updated_at,
-                   company_id, location_id, slot
+   NOTE (choice + optional variant suffix)
 ========================================================= */
 
-type OrderStatus = "ACTIVE" | "CANCELLED";
+const NOTE_SEP = "||";
 
-function normOrderStatus(v: any): OrderStatus {
-  const s = safeStr(v).toUpperCase();
-  if (s === "ACTIVE") return "ACTIVE";
-  return "CANCELLED";
+function sanitizeSuffix(s: unknown) {
+  const trimmed = safeStr(s);
+  if (!trimmed) return null;
+  const cleaned = trimmed.split(NOTE_SEP).join(" ").replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  return cleaned.length > 180 ? cleaned.slice(0, 180).trim() : cleaned;
 }
 
-function mkEntityKey(company_id: string, location_id: string, user_id: string, isoDate: string, slot: string) {
-  return `${company_id}:${location_id}:${user_id}:${isoDate}:${slot}`;
+function splitNote(note: unknown): { choiceKey: string; suffix: string | null } {
+  const n = safeStr(note);
+  if (!n) return { choiceKey: "", suffix: null };
+  const idx = n.indexOf(NOTE_SEP);
+  if (idx === -1) return { choiceKey: n, suffix: null };
+  const head = n.slice(0, idx).trim();
+  const tail = n.slice(idx + NOTE_SEP.length).trim();
+  return { choiceKey: head, suffix: tail.length ? tail : null };
 }
 
-function isMissingColumnError(err: any, column: string) {
-  const msg = String(err?.message ?? "").toLowerCase();
-  return msg.includes("column") && msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("not exist"));
+function composeNote(choiceKey: string, suffix: string | null) {
+  const ck = normalizeChoiceKey(choiceKey) ?? "";
+  const sf = sanitizeSuffix(suffix);
+  return sf ? `${ck}${NOTE_SEP}${sf}` : ck;
+}
+
+function setChoiceInNote(existingNote: unknown, nextChoiceKey: string, clientNote: unknown) {
+  const existing = splitNote(existingNote);
+  const nextChoice = normalizeChoiceKey(nextChoiceKey) ?? "";
+
+  // If client provides note -> use as suffix
+  const clientSuffix = sanitizeSuffix(clientNote);
+  if (clientSuffix) return composeNote(nextChoice, clientSuffix);
+
+  // Otherwise: preserve suffix ONLY if choice key stays same (avoid stale variants)
+  const prevChoice = normalizeChoiceKey(existing.choiceKey) ?? "";
+  if (prevChoice && prevChoice === nextChoice && existing.suffix) {
+    return composeNote(nextChoice, existing.suffix);
+  }
+
+  return composeNote(nextChoice, null);
 }
 
 /* =========================================================
    Route
 ========================================================= */
+
 export async function POST(req: NextRequest) {
-  
-  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
   const { rid, scope } = a.ctx;
 
-  const denyRole = requireRoleOr403(a.ctx, "orders.toggle", ["employee", "company_admin"]);
-  if (denyRole) return denyRole;
+  const deny = requireRoleOr403(a.ctx, "orders.toggle", ["employee", "company_admin"]);
+  if (deny) return deny;
 
-  const user_id = safeStr(scope.userId);
-  const company_id = safeStr(scope.companyId);
-  const location_id = safeStr(scope.locationId);
+  const sc: any = scope as any;
+  const user_id = safeStr(sc.user_id ?? sc.userId ?? sc.userID);
+  const company_id = safeStr(sc.company_id ?? sc.companyId ?? sc.companyID);
+  const location_id = safeStr(sc.location_id ?? sc.locationId ?? sc.locationID);
 
-  if (!user_id || !company_id) return jsonErr(rid, "Mangler scope (user/company).", 409, "SCOPE_MISSING");
-  if (!location_id) return jsonErr(rid, "Mangler lokasjonstilknytning (location_id).", 409, "LOCATION_MISSING");
+  if (!user_id || !company_id || !location_id) {
+    return jsonErr(rid, "Mangler scope.", 403, "SCOPE_MISSING");
+  }
 
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
 
   try {
     const body = await readJson(req);
 
-    const isoDate = safeStr(body?.date ?? body?.isoDate ?? body?.day ?? "");
-    const slot = normSlot(body?.slot);
-    const note = normNote(body?.note);
+    const date = safeStr(body?.date);
+    const slot = "lunch";
 
-    const wants = wantsLunchFromBody(body);
-    const action: ToggleAction | null =
-      normAction(body?.action ?? body?.intent ?? body?.status) ??
-      (typeof wants === "boolean" ? (wants ? "place" : "cancel") : null);
+    if (!isIsoDate(date)) return jsonErr(rid, "Ugyldig dato.", 400, "INVALID_DATE");
 
-    if (!isIsoDate(isoDate)) return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
+    const cutoff = cutoffStatusForDate(date);
+    if (cutoff === "PAST") return jsonErr(rid, "Dato er passert.", 403, "DATE_PAST");
+    if (cutoff === "TODAY_LOCKED") return jsonErr(rid, "Låst etter 08:00.", 403, "CUTOFF");
 
-    if (!action) {
-      return jsonErr(rid, "Mangler eller ugyldig action.", 409, { code: "BAD_REQUEST", detail: {
-        hint: "action=place|cancel eller wantsLunch=true|false",
-      } });
+    const wantsLunch = Boolean(wantsLunchFromBody(body));
+    const nextStatus: OrderStatus = wantsLunch ? "active" : "canceled";
+
+    const choiceKey = normalizeChoiceKey(body?.choice_key);
+
+    // ✅ HARD RULE: if wants_lunch=true then choice_key must be present
+    if (wantsLunch && !choiceKey) {
+      return jsonErr(rid, "Velg meny før du bestiller.", 400, "MISSING_CHOICE_KEY");
     }
 
-    // ✅ Firmastatus (service role)
-    const admin = await adminClientOrNull();
-    if (!admin) {
-      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, { code: "CONFIG_ERROR", detail: {
-        missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
-      } });
-    }
+    // ✅ Optional variant note from client (e.g. "Påsmurt: Vegan")
+    const clientNote = sanitizeSuffix(body?.note);
 
-    const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
-    if (cRes.error || !cRes.data) {
-      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: {
-        error: cRes.error?.message ?? null,
-      } });
-    }
+    const now = new Date().toISOString();
 
-    const companyStatus = normCompanyStatus((cRes.data as any).status);
+    // ✅ Tenant-safe lookup
+    const { data: existing, error: findErr } = await sb
+      .from("orders")
+      .select("id,status,note")
+      .eq("user_id", user_id)
+      .eq("company_id", company_id)
+      .eq("location_id", location_id)
+      .eq("date", date)
+      .eq("slot", slot)
+      .maybeSingle();
 
-    // ✅ Company lifecycle:
-    // - place/cancel blocked hvis ikke ACTIVE
-    if (companyStatus !== "ACTIVE") {
-      const reason =
-        companyStatus === "PAUSED"
-          ? "COMPANY_PAUSED"
-          : companyStatus === "CLOSED"
-          ? "COMPANY_CLOSED"
-          : companyStatus === "PENDING"
-          ? "COMPANY_PENDING"
-          : "COMPANY_NOT_ACTIVE";
+    if (findErr && (findErr as any).code !== "PGRST116") throw findErr;
 
-      await auditSafe(async () => {
-        await auditWriteMust({
-          rid,
-          action: "ENFORCEMENT_BLOCK",
-          entity_type: "order",
-          entity_id: mkEntityKey(company_id, location_id, user_id, isoDate, slot),
+    let orderId: string;
+
+    // Determine next note:
+    // - if wantsLunch: store choice key (+ optional suffix)
+    // - if cancel: keep note as-is? We choose to KEEP note for history (safe), but you can null it if you want.
+    //   (Keeping is useful for audit/kitchen; status determines active anyway.)
+    const nextNote = wantsLunch
+      ? setChoiceInNote((existing as any)?.note ?? null, choiceKey as string, clientNote)
+      : ((existing as any)?.note ?? null);
+
+    if (!existing?.id) {
+      // Create
+      const ins = await sb
+        .from("orders")
+        .insert({
+          user_id,
           company_id,
           location_id,
-          actor_user_id: user_id,
-          actor_email: scope.email ?? null,
-          actor_role: scope.role ?? null,
-          summary: reason,
-          detail: {
-            route: "/api/orders/toggle",
-            intent: action.toUpperCase(),
-            date: isoDate,
-            slot,
-            company_status: companyStatus,
-          },
-        });
-      }, rid);
+          date,
+          slot,
+          status: nextStatus,
+          note: wantsLunch ? nextNote : null, // if cancelling a non-existent order, no need to create canceled record with note
+          created_at: now,
+          updated_at: now,
+        })
+        .select("id")
+        .maybeSingle();
 
-      return jsonErr(rid, "Handling er låst pga firmastatus.", 403, reason);
-    }
+      if (ins.error || !ins.data?.id) throw ins.error ?? new Error("Insert failed");
+      orderId = ins.data.id;
 
-    // ✅ Cutoff enforcement (Oslo)
-    const cutoff = cutoffStatusForDate(isoDate);
-    if (cutoff === "PAST") {
-      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, "DATE_LOCKED_PAST");
-    }
-    if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, "CUTOFF_LOCKED");
-    }
-    // ✅ Agreement rules gate (fail-closed)
-    const dayKey = weekdayKeyOslo(isoDate);
-    if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: isoDate } });
+      const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: nextStatus });
+      if (rpc?.error) throw rpc.error;
 
-    const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot, rid });
-    if (!ruleRes.ok) {
-      const err = ruleRes as { status: number; error: string; message: string };
-      return jsonErr(rid, err.message, err.status ?? 400, err.error);
-    }
-
-    const ruleTier = ruleRes.rule.tier as Tier;
-
-    // ✅ Upsert-mål:
-    // - Primær: (user_id, location_id, date, slot)
-    // - Fallback: (company_id, user_id, date, slot)
-    const nextStatus: OrderStatus = action === "place" ? "ACTIVE" : "CANCELLED";
-    const savedAt = new Date().toISOString();
-    const pricing = pricingFallback(isoDate, body);
-
-    const payload = {
-      user_id,
-      company_id,
-      location_id,
-      date: isoDate,
-      slot,
-      note,
-      status: nextStatus,
-      updated_at: savedAt,
-      ...(ruleTier ? { tier: ruleTier } : {}),
-    };
-
-    async function upsertOrder(payloadObj: any, onConflict: string) {
-      const r = await sb.from("orders").upsert(payloadObj, { onConflict }).select("id,date,status,note,slot,created_at,updated_at").maybeSingle();
-      if (payloadObj?.tier && r.error && isMissingColumnError(r.error, "tier")) {
-        const { tier, ...noTier } = payloadObj;
-        return await sb.from("orders").upsert(noTier, { onConflict }).select("id,date,status,note,slot,created_at,updated_at").maybeSingle();
+      // Ensure note stored for active orders
+      if (wantsLunch) {
+        const upd = await sb
+          .from("orders")
+          .update({ note: nextNote, updated_at: now })
+          .eq("id", orderId)
+          .eq("company_id", company_id)
+          .eq("location_id", location_id)
+          .eq("user_id", user_id);
+        if (upd.error) throw upd.error;
       }
-      return r;
-    }
-
-    let saved:
-      | {
-          id: string;
-          date: string;
-          status: any;
-          note: string | null;
-          slot: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        }
-      | null = null;
-
-    const r1 = await upsertOrder(payload, "user_id,location_id,date,slot");
-
-    if (!r1.error && r1.data) {
-      saved = r1.data as any;
     } else {
-      const r2 = await upsertOrder(payload, "company_id,user_id,date,slot");
+      orderId = existing.id;
 
-      if (r2.error || !r2.data) {
-        return jsonErr(rid, "Kunne ikke lagre.", 500, { code: "DB_ERROR", detail: {
-          error: r2.error?.message ?? r1.error?.message ?? "Unknown DB error",
-          hint: "Sjekk at det finnes unik constraint på onConflict-kolonnene.",
-        } });
+      const existingStatus = normalizeExistingStatus((existing as any).status);
+      if (existingStatus !== nextStatus) {
+        const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: nextStatus });
+        if (rpc?.error) throw rpc.error;
       }
-      saved = r2.data as any;
+
+      // Update note (only meaningful for active)
+      const upd = await sb
+        .from("orders")
+        .update({ note: wantsLunch ? nextNote : (existing as any)?.note ?? null, updated_at: now })
+        .eq("id", orderId)
+        .eq("company_id", company_id)
+        .eq("location_id", location_id)
+        .eq("user_id", user_id);
+      if (upd.error) throw upd.error;
     }
-
-    await auditSafe(async () => {
-      await auditWriteMust({
-        rid,
-        action: action === "place" ? "ORDER_PLACED" : "ORDER_CANCELLED",
-        entity_type: "order",
-        entity_id: saved.id,
-        company_id,
-        location_id,
-        actor_user_id: user_id,
-        actor_email: scope.email ?? null,
-        actor_role: scope.role ?? null,
-        summary: action === "place" ? "Order placed" : "Order cancelled",
-        detail: {
-          route: "/api/orders/toggle",
-          date: isoDate,
-          slot,
-          nextStatus,
-          note: saved.note ?? note ?? null,
-          pricing,
-        },
-      });
-    }, rid);
-
-    // Backup mail (failsafe – må ikke stoppe user flow)
-    const backupTs = osloNowISO();
-    let backupNames: { company_name: string | null; location_name: string | null } = { company_name: null, location_name: null };
-    try {
-      backupNames = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
-    } catch {
-      // ignore
-    }
-
-    const backup = await sendOrderBackup({
-      rid,
-      action: action === "place" ? "PLACE" : "CANCEL",
-      status: nextStatus,
-      orderId: saved.id,
-      date: isoDate,
-      slot,
-      user_id,
-      company_id,
-      location_id,
-      company_name: backupNames.company_name ?? null,
-      location_name: backupNames.location_name ?? null,
-      actor_email: scope.email ?? null,
-      actor_role: scope.role ?? null,
-      note: saved.note ?? note ?? null,
-      timestamp_oslo: backupTs,
-      extra: { route: "/api/orders/toggle", pricing },
-    });
-
-    await auditSafe(async () => {
-      await auditWriteMust({
-        rid,
-        action: backup.ok ? "ORDER_BACKUP_SENT" : "ORDER_BACKUP_FAILED",
-        entity_type: "order",
-        entity_id: saved.id,
-        company_id,
-        location_id,
-        actor_user_id: user_id,
-        actor_email: scope.email ?? null,
-        actor_role: scope.role ?? null,
-        summary: backup.ok ? "Backup email sent" : "Backup email failed",
-        detail: {
-          route: "/api/orders/toggle",
-          date: isoDate,
-          slot,
-          nextStatus,
-          backup,
-        },
-      });
-    }, rid);
 
     return jsonOk(rid, {
+      ok: true,
       order: {
-        id: saved.id,
-        date: saved.date,
-        status: normOrderStatus(saved.status),
-        note: saved.note ?? null,
-        slot: saved.slot ?? slot ?? null,
-        created_at: saved.created_at ?? null,
-        updated_at: saved.updated_at ?? null,
-        saved_at: savedAt,
+        id: orderId,
+        date,
+        status: nextStatus,
+        note: wantsLunch ? nextNote : (existing as any)?.note ?? null,
+        slot,
+        saved_at: now,
       },
-      pricing,
-      backup,
     });
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "orders/toggle" } });
+    console.error("[orders.toggle] ERROR", {
+      rid,
+      message: String(e?.message ?? e),
+      code: e?.code ?? null,
+      details: e?.details ?? null,
+      hint: e?.hint ?? null,
+    });
+
+    return jsonErr(
+      rid,
+      process.env.NODE_ENV === "production" ? "Kunne ikke lagre." : `Kunne ikke lagre: ${String(e?.message ?? e)}`,
+      500,
+      "DB_ERROR"
+    );
   }
 }

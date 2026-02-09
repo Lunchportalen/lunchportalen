@@ -29,6 +29,7 @@ type ApiProfileOk = {
   reason?: string;
   company_status?: string;
   profileExists?: boolean;
+  userId?: string;
   profile?: ApiProfile;
 };
 
@@ -41,27 +42,46 @@ type ApiProfileErr = {
 
 type ApiProfileRes = ApiProfileOk | ApiProfileErr;
 
+type ApiLoginOk = {
+  ok: true;
+  rid?: string;
+};
+
+type ApiLoginErr = {
+  ok: false;
+  rid?: string;
+  error?: string;
+  message?: string;
+};
+
+type ApiLoginRes = ApiLoginOk | ApiLoginErr;
+
 const LOGIN_TIMEOUT_MS = 8000;
 const PROFILE_TIMEOUT_MS = 8000;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
-
 function normEmail(v: unknown) {
   return safeStr(v).toLowerCase();
 }
-
 function isProbablyEmail(v: string) {
+  // simple + safe (avoid being too strict)
   return v.includes("@") && v.includes(".") && v.length >= 6;
 }
 
 function resolveNext(rawNext: string | null | undefined) {
   const n = safeStr(rawNext);
+
+  // ✅ default always /week
   if (!n || n === "/" || n === "/login") return "/week";
+
+  // ✅ basic open-redirect hardening
   if (!n.startsWith("/")) return "/week";
   if (n.startsWith("//")) return "/week";
   if (n.startsWith("/api/")) return "/week";
+
+  // ✅ never bounce back into onboarding/auth flows
   if (
     n === "/register" ||
     n.startsWith("/register/") ||
@@ -70,12 +90,13 @@ function resolveNext(rawNext: string | null | undefined) {
     n === "/forgot-password" ||
     n.startsWith("/forgot-password/") ||
     n === "/reset-password" ||
-    n.startsWith("/reset-password/")
+    n.startsWith("/reset-password/") ||
+    n === "/orders"
   ) {
     return "/week";
   }
-  if (n === "/orders") return "/week";
 
+  // ✅ allowlist only
   const allowed = new Set([
     "/week",
     "/bestillinger",
@@ -85,6 +106,7 @@ function resolveNext(rawNext: string | null | undefined) {
     "/kitchen",
     "/driver",
   ]);
+
   return allowed.has(n) ? n : "/week";
 }
 
@@ -98,25 +120,43 @@ function safeClearTimeout(t: any) {
 
 function errorMessageForCode(code: string): string | null {
   const c = safeStr(code).toUpperCase();
-  if (c === "PROFILE_MISSING" || c === "PROFILE_NOT_FOUND") return "Brukerprofil mangler. Kontakt firma-admin.";
-  if (c === "NO_COMPANY") return "Kontoen mangler firmatilknytning. Kontakt firma-admin.";
+
+  // profile/system
+  if (c === "PROFILE_MISSING" || c === "PROFILE_NOT_FOUND")
+    return "Brukerprofil mangler. Kontakt firma-admin.";
+  if (c === "NO_COMPANY" || c === "COMPANY_MISSING")
+    return "Kontoen mangler firmatilknytning. Kontakt firma-admin.";
   if (c === "NO_AGREEMENT") return "Firma mangler aktiv avtale. Kontakt firma-admin.";
-  if (c === "INACTIVE" || c === "ACCOUNT_DISABLED") return "Kontoen er deaktivert. Kontakt administrator.";
-  if (c === "UNAUTHORIZED" || c === "NO_SESSION") return "Økten din er utløpt. Logg inn på nytt.";
-  if (c === "PROFILE_INCOMPLETE") return "Kunne ikke fullføre innlogging. Prøv igjen.";
-  if (c === "ROLE_FORBIDDEN") return "Ingen tilgang for denne rollen.";
+
+  // access
+  if (c === "INACTIVE" || c === "ACCOUNT_DISABLED" || c === "ACCOUNT_INACTIVE")
+    return "Kontoen er ikke aktivert ennå. Du får tilgang når firmaet er aktivert.";
+  if (c === "UNAUTHORIZED" || c === "NO_SESSION" || c === "UNAUTHENTICATED")
+    return "Økten din er utløpt. Logg inn på nytt.";
+  if (c === "ROLE_FORBIDDEN" || c === "FORBIDDEN_ROLE")
+    return "Ingen tilgang for denne rollen.";
+
+  // pending/company
+  if (c === "PROFILE_NOT_READY")
+    return "Kontoen er ikke klar. Kontakt firma-admin.";
+  if (c === "COMPANY_PENDING")
+    return "Firmaet er under opprettelse. Du får tilgang så snart det er klart.";
+  if (c === "COMPANY_NOT_ACTIVE")
+    return "Firmaet er ikke aktivert ennå. Du får tilgang når alt er klart.";
+
+  // misc
+  if (c === "PROFILE_INCOMPLETE")
+    return "Kunne ikke fullføre innlogging. Prøv igjen.";
+
   return null;
 }
 
 async function readApiError(res: Response): Promise<string> {
   const clone = res.clone();
-
   try {
     const data: any = await clone.json();
-
     if (typeof data?.message === "string" && data.message.trim()) return data.message;
     if (typeof data?.error === "string" && data.error.trim()) return data.error;
-
     if (data?.error && typeof data.error === "object") {
       const msg =
         data.error.message ||
@@ -125,16 +165,35 @@ async function readApiError(res: Response): Promise<string> {
         data.error.hint;
       if (typeof msg === "string" && msg.trim()) return msg;
     }
-
     return `Innlogging feilet (HTTP ${res.status})`;
   } catch {
     try {
       const text = (await res.text()).trim();
       if (text) return text;
-    } catch {}
-
+    } catch {
+      // ignore
+    }
     return `Innlogging feilet (HTTP ${res.status})`;
   }
+}
+
+/**
+ * Decide post-login destination based on profile result.
+ * IMPORTANT: This must NEVER block a successful auth login for system roles.
+ */
+function destinationForProfile(nextParam: string | null, prof?: ApiProfile) {
+  // Default safe
+  const nextSafe = resolveNext(nextParam);
+
+  const role = safeStr(prof?.role).toLowerCase();
+  if (role === "superadmin") return "/superadmin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  if (role === "company_admin") return "/admin";
+  if (role === "employee") return nextSafe;
+
+  // Unknown role: safest is /week (will be gated server-side if not allowed)
+  return nextSafe;
 }
 
 export default function LoginForm() {
@@ -143,6 +202,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [errorText, setErrorText] = useState("");
   const [loadingLabel, setLoadingLabel] = useState("Logger inn…");
@@ -164,7 +224,6 @@ export default function LoginForm() {
     if (errorText) return;
 
     const msg = errorMessageForCode(errParam) || "Kunne ikke fullføre innlogging. Prøv igjen.";
-
     setStatus({ type: "error", message: msg });
     setErrorText(msg);
   }, [searchParams, errorText]);
@@ -183,6 +242,15 @@ export default function LoginForm() {
     if (errorText) setErrorText("");
   }
 
+  /**
+   * ✅ Post-login step:
+   * We fetch /api/auth/profile to route correctly.
+   *
+   * CRITICAL enterprise safety:
+   * - Never "fail login" just because profile is pending/inactive.
+   * - Instead: redirect to /status with correct state.
+   * - Superadmin must ALWAYS be able to route to /superadmin.
+   */
   async function checkProfileAndRedirect(nextParam: string | null) {
     if (profileFetchedRef.current || didRedirectRef.current) return;
     profileFetchedRef.current = true;
@@ -191,104 +259,170 @@ export default function LoginForm() {
     const timeout = setTimeout(() => ctrl.abort(), PROFILE_TIMEOUT_MS);
 
     try {
-      const res = await fetch("/api/profile", {
+      const res = await fetch("/api/auth/profile", {
         cache: "no-store",
         credentials: "same-origin",
         signal: ctrl.signal,
       });
+
       const data = (await res.json().catch(() => null)) as ApiProfileRes | null;
+      if (!mountedRef.current) return;
 
+      // If profile endpoint is down, still don't "break login". Route to a safe place.
       if (!data) {
-        const msg = "Kunne ikke hente profil. Prøv igjen.";
-        setStatus({ type: "error", message: msg, rid: "profile_empty" });
-        setErrorText(msg);
+        if (!didRedirectRef.current) {
+          didRedirectRef.current = true;
+          window.location.assign("/status?state=paused&next=" + encodeURIComponent(resolveNext(nextParam)));
+        }
         return;
       }
 
-      if (data.ok === false) {
-        const code = safeStr(data.error);
+      if ((data as any).ok === false) {
+        const err = data as ApiProfileErr;
+        const code = safeStr(err.error);
+
+        // Route to status for known gating reasons, instead of showing "login failed"
+        const mapped = errorMessageForCode(code);
+        if (!didRedirectRef.current) {
+          didRedirectRef.current = true;
+
+          const state =
+            code.toUpperCase() === "ACCOUNT_INACTIVE" || code.toUpperCase() === "COMPANY_NOT_ACTIVE"
+              ? "pending"
+              : "paused";
+
+          window.location.assign(
+            "/status?state=" +
+              encodeURIComponent(state) +
+              "&next=" +
+              encodeURIComponent(resolveNext(nextParam)) +
+              (err.rid ? "&rid=" + encodeURIComponent(err.rid) : "") +
+              "&code=" +
+              encodeURIComponent(code || "PROFILE_ERROR")
+          );
+        }
+
+        // Also surface a readable message briefly (in case redirect blocked)
         const msg =
-          (typeof data.message === "string" && data.message.trim() && data.message) ||
-          errorMessageForCode(code) ||
+          (typeof err.message === "string" && err.message.trim() && err.message) ||
+          mapped ||
           "Kunne ikke fullføre innlogging.";
-        setStatus({ type: "error", message: msg, rid: data.rid });
+        setStatus({ type: "error", message: msg, rid: err.rid });
         setErrorText(msg);
         return;
       }
 
-      if (data.pending === true) {
-        const st = safeStr(data.company_status).toUpperCase();
-        const msg =
-          st === "PENDING"
-            ? "Firmaet er under opprettelse. Du får tilgang så snart det er klart."
-            : "Firmaet er ikke aktivt akkurat nå. Kontakt firma-admin.";
-        setStatus({ type: "error", message: msg, rid: data.rid });
-        setErrorText(msg);
+      const ok = data as ApiProfileOk;
+
+      // pending gate: do NOT treat as login failure -> go to status
+      if (ok.pending === true) {
+        if (!didRedirectRef.current) {
+          didRedirectRef.current = true;
+
+          const st = safeStr(ok.company_status).toLowerCase();
+          const state = st === "closed" || st === "paused" ? st : "pending";
+
+          window.location.assign(
+            "/status?state=" +
+              encodeURIComponent(state) +
+              "&next=" +
+              encodeURIComponent(resolveNext(nextParam)) +
+              "&rid=" +
+              encodeURIComponent(ok.rid) +
+              (ok.reason ? "&code=" + encodeURIComponent(ok.reason) : "")
+          );
+        }
         return;
       }
 
-      const prof = data.profile;
+      const prof = ok.profile;
+
+      // Profile missing -> status (not login failure)
       if (!prof?.id || !prof?.role) {
-        const msg = "Brukerprofil mangler. Kontakt firma-admin.";
-        setStatus({ type: "error", message: msg, rid: data.rid });
-        setErrorText(msg);
+        if (!didRedirectRef.current) {
+          didRedirectRef.current = true;
+          window.location.assign(
+            "/status?state=pending&next=" +
+              encodeURIComponent(resolveNext(nextParam)) +
+              "&rid=" +
+              encodeURIComponent(ok.rid) +
+              "&code=PROFILE_MISSING"
+          );
+        }
         return;
       }
 
+      // disabled/inactive -> status
       if (prof.disabled_at || prof.is_active === false) {
-        const msg = "Kontoen er deaktivert. Kontakt administrator.";
-        setStatus({ type: "error", message: msg, rid: data.rid });
-        setErrorText(msg);
+        if (!didRedirectRef.current) {
+          didRedirectRef.current = true;
+          window.location.assign(
+            "/status?state=pending&next=" +
+              encodeURIComponent(resolveNext(nextParam)) +
+              "&rid=" +
+              encodeURIComponent(ok.rid) +
+              "&code=ACCOUNT_INACTIVE"
+          );
+        }
         return;
       }
 
-      if (!res.ok) {
-        const msg = "Kunne ikke fullføre innlogging.";
-        setStatus({ type: "error", message: msg, rid: data.rid });
-        setErrorText(msg);
-        return;
-      }
+      // ✅ success: route by role + allowlisted next
+      const destination = destinationForProfile(nextParam, prof);
 
-      const nextSafe = resolveNext(nextParam);
       if (!didRedirectRef.current) {
         didRedirectRef.current = true;
-        const postLoginUrl = "/api/auth/post-login?next=" + encodeURIComponent(nextSafe);
-        window.location.assign(postLoginUrl);
+        // keep your existing post-login endpoint (sets cookies/redirect server-side)
+        window.location.assign("/api/auth/post-login?next=" + encodeURIComponent(destination));
       }
     } catch (err: any) {
-      if (err?.name === "AbortError") {
-        const msg = "Setter opp kontoen tok for lang tid. Prøv igjen.";
-        setStatus({ type: "error", message: msg, rid: "profile_timeout" });
-        setErrorText(msg);
-        return;
+      if (!mountedRef.current) return;
+
+      // Timeout/profile issues: do NOT break login; route to status
+      if (!didRedirectRef.current) {
+        didRedirectRef.current = true;
+        const nextSafe = resolveNext(nextParam);
+        window.location.assign("/status?state=paused&next=" + encodeURIComponent(nextSafe) + "&code=PROFILE_TIMEOUT");
       }
-      const msg = err?.message || "Kunne ikke fullføre innlogging.";
+
+      const msg =
+        err?.name === "AbortError"
+          ? "Setter opp kontoen tok for lang tid. Prøv igjen."
+          : err?.message || "Kunne ikke fullføre innlogging.";
+
       setStatus({ type: "error", message: msg, rid: "profile_failed" });
       setErrorText(msg);
     } finally {
       safeClearTimeout(timeout);
+      try {
+        ctrl.abort();
+      } catch {
+        // ignore
+      }
     }
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin() {
     if (isLoading) return;
 
     const normalizedEmail = normEmail(email);
     const pwd = password;
 
     if (!normalizedEmail || !pwd) {
-      setErrorText("Fyll inn e-post og passord.");
-      setStatus({ type: "error", message: "Fyll inn e-post og passord." });
+      const msg = "Fyll inn e-post og passord.";
+      setErrorText(msg);
+      setStatus({ type: "error", message: msg });
       return;
     }
     if (!isProbablyEmail(normalizedEmail)) {
-      setErrorText("Skriv inn en gyldig e-postadresse.");
-      setStatus({ type: "error", message: "Skriv inn en gyldig e-postadresse." });
+      const msg = "Skriv inn en gyldig e-postadresse.";
+      setErrorText(msg);
+      setStatus({ type: "error", message: msg });
       return;
     }
 
     const rid = `login_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
     setErrorText("");
     setStatus({ type: "loading", rid });
     setLoadingLabel("Logger inn…");
@@ -302,12 +436,9 @@ export default function LoginForm() {
     const t = setTimeout(() => {
       controller.abort();
       if (!mountedRef.current) return;
-      setStatus({
-        type: "error",
-        message: `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`,
-        rid,
-      });
-      setErrorText(`Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`);
+      const msg = `Innloggingen tok for lang tid. Prøv igjen. (rid: ${rid})`;
+      setStatus({ type: "error", message: msg, rid });
+      setErrorText(msg);
     }, LOGIN_TIMEOUT_MS);
 
     try {
@@ -329,24 +460,26 @@ export default function LoginForm() {
         return;
       }
 
-      const payload: any = await res.json().catch(() => null);
+      const payload = (await res.json().catch(() => null)) as ApiLoginRes | null;
 
-      if (payload?.ok === false) {
+      // If API returns structured error
+      if (payload && (payload as any).ok === false) {
+        const p = payload as ApiLoginErr;
         const msg =
-          (typeof payload.message === "string" && payload.message.trim() && payload.message) ||
-          (typeof payload.error === "string" && payload.error.trim() && payload.error) ||
-          `Innlogging feilet (HTTP ${res.status})`;
-        setStatus({ type: "error", message: msg, rid });
+          (typeof p.message === "string" && p.message.trim() && p.message) ||
+          (typeof p.error === "string" && p.error.trim() && p.error) ||
+          "Kunne ikke logge inn. Prøv igjen.";
+        setStatus({ type: "error", message: msg, rid: p.rid || rid });
         setErrorText(msg);
         return;
       }
 
-      if (!mountedRef.current) return;
-
+      // ✅ important: ensure login always lands on /week (unless allowlisted)
       const next = searchParams.get("next");
       setLoadingLabel("Setter opp kontoen din…");
+
+      // Critical: do not throw; this function handles safe routing even if profile is pending.
       await checkProfileAndRedirect(next);
-      return;
     } catch (err: any) {
       if (!mountedRef.current) return;
 
@@ -362,8 +495,11 @@ export default function LoginForm() {
     }
   }
 
+  const showTestSignup =
+    process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SHOW_TEST_SIGNUP === "true";
+
   return (
-    <form data-section="LoginForm" onSubmit={onSubmit} className="space-y-4">
+    <div data-section="LoginForm" className="space-y-4">
       <div>
         <Label htmlFor="email">E-post</Label>
         <Input
@@ -394,6 +530,12 @@ export default function LoginForm() {
               setPassword(e.target.value);
               clearNonSuccessStatus();
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleLogin();
+              }
+            }}
             placeholder="••••••••••"
             disabled={isLoading}
             className="pr-12"
@@ -420,18 +562,24 @@ export default function LoginForm() {
           role="status"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
         >
-          Logger inn…
+          {loadingLabel}
           <div className="mt-1 text-xs opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
         </div>
       )}
 
-      <Button
-        type="submit"
+      {/* ✅ Native button (event-safe) */}
+      <button
+        type="button"
         disabled={isLoading}
-        className="w-full bg-zinc-900 text-white hover:bg-zinc-900 hover:text-white disabled:bg-zinc-900 disabled:text-white disabled:opacity-60"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void handleLogin();
+        }}
+        className="w-full min-h-[44px] rounded-2xl bg-zinc-900 text-white hover:bg-zinc-900 disabled:opacity-60"
       >
         {isLoading ? "Logger inn…" : "Logg inn"}
-      </Button>
+      </button>
 
       <div className="text-sm text-[rgb(var(--lp-muted))]">
         <Link href="/forgot-password" className="underline underline-offset-4">
@@ -452,7 +600,7 @@ export default function LoginForm() {
         </button>
       ) : null}
 
-      {process.env.NODE_ENV !== "production" && (
+      {showTestSignup ? (
         <Button
           type="button"
           variant="secondary"
@@ -462,8 +610,7 @@ export default function LoginForm() {
         >
           Opprett bruker (test)
         </Button>
-      )}
-    </form>
+      ) : null}
+    </div>
   );
 }
-

@@ -2,6 +2,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+/**
+ * Middleware goals (RC-safe):
+ * - Never touch /api (handled server-side with route guards)
+ * - Protect sensitive pages from anonymous access
+ * - Preserve Supabase auth cookies (SSR)
+ * - Add lightweight debug headers (x-lp-mw*)
+ *
+ * NOTE:
+ * - We do NOT enforce company.status/is_active here (that belongs to scope.ts + route guards),
+ *   because middleware should stay minimal and avoid DB queries on every request.
+ */
+
 function isBypassPath(pathname: string) {
   return (
     pathname.startsWith("/_next/") ||
@@ -10,7 +22,7 @@ function isBypassPath(pathname: string) {
     pathname === "/sitemap.xml" ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/assets/") ||
-    pathname.startsWith("/api/") ||
+    pathname.startsWith("/api/") || // ✅ API handled by route guards
     pathname === "/login" ||
     pathname.startsWith("/login/")
   );
@@ -21,8 +33,17 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/superadmin") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/orders") ||
-    pathname.startsWith("/driver")
+    pathname.startsWith("/driver") ||
+    pathname.startsWith("/kitchen")
   );
+}
+
+/**
+ * Optional: these are allowed without login even if protected routes exist
+ * (kept minimal to avoid surprises)
+ */
+function isExplicitlyPublicProtectedSubpath(_pathname: string) {
+  return false;
 }
 
 function buildNextParam(pathname: string, searchParams: URLSearchParams) {
@@ -30,22 +51,34 @@ function buildNextParam(pathname: string, searchParams: URLSearchParams) {
   return pathname + (qs ? `?${qs}` : "");
 }
 
+function mustEnv(name: string) {
+  const v = process.env[name];
+  return v && String(v).trim() ? String(v).trim() : null;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
+  // Prepare response early so cookie writes work
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-url", req.nextUrl.href);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 
-  if (isBypassPath(pathname)) return res;
+  // Always set middleware marker header for diagnostics
+  res.headers.set("x-lp-mw", "1");
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (isBypassPath(pathname)) {
+    res.headers.set("x-lp-mw-bypass", "1");
+    return res;
+  }
+
+  const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anon = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
   if (!url || !anon) {
-    res.headers.set("x-lp-mw", "1");
+    // In RC: don't hard fail middleware; just mark env missing.
     res.headers.set("x-lp-mw-env", "missing");
     return res;
   }
@@ -63,13 +96,19 @@ export async function middleware(req: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user ?? null;
+  // Auth check (cookie-based). Keep it fast; no DB queries here.
+  let user: any = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data?.user ?? null;
+  } catch {
+    user = null;
+  }
 
-  res.headers.set("x-lp-mw", "1");
   res.headers.set("x-lp-mw-user", user ? "1" : "0");
 
-  if (isProtectedPath(pathname)) {
+  // Gate protected routes
+  if (isProtectedPath(pathname) && !isExplicitlyPublicProtectedSubpath(pathname)) {
     if (!user) {
       const u = req.nextUrl.clone();
       u.pathname = "/login";

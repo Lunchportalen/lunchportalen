@@ -1,5 +1,4 @@
 // app/api/order/set-choice/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,11 +9,10 @@ import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-
 type Body = {
   date: string; // YYYY-MM-DD
   choice_key: string; // f.eks. "salatbar", "varmmat"
-  note?: string; // valgfri
+  note?: string | null; // variant note / valgfri for andre valg
 };
 
 type Choice = { key: string; label?: string };
@@ -48,7 +46,7 @@ type DayChoiceUpsert = {
   date: string; // YYYY-MM-DD
   choice_key: string;
   note: string | null;
-  status: string; // "ACTIVE"
+  status: "ACTIVE";
 };
 
 type DayChoiceSelect = {
@@ -99,8 +97,7 @@ function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
 
-  const locked =
-    dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
+  const locked = dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
 
   return { locked, cutoffTime, now: `${now.dateISO}T${now.timeHM}` };
 }
@@ -130,6 +127,39 @@ function cleanNote(v: unknown): string | null {
   const s = typeof v === "string" ? v.trim() : "";
   if (!s) return null;
   return s.length > 280 ? s.slice(0, 280) : s;
+}
+
+/* =========================
+   Variant gate (driftsikkert)
+   - Salatbar/Påsmurt krever variant note med riktig type
+   - Godtar:
+     - "variant||Påsmurt: Roastbiff"
+     - "Påsmurt: Roastbiff"
+========================= */
+
+function requiresVariant(choiceKey: string) {
+  const k = String(choiceKey ?? "").trim().toLowerCase();
+  return k === "salatbar" || k === "paasmurt";
+}
+
+function parseVariantTypeFromNote(note: string | null): "salatbar" | "paasmurt" | null {
+  const n = String(note ?? "").trim();
+  if (!n) return null;
+
+  const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
+  const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
+
+  const m = /^(Salatbar|Påsmurt)\s*:\s*(.+)$/i.exec(payload);
+  if (!m?.[2]) return null;
+
+  const typeRaw = String(m[1]).trim().toLowerCase();
+  const value = String(m[2]).trim();
+  if (!value) return null;
+
+  // normalize "påsmurt" -> "paasmurt"
+  if (typeRaw === "salatbar") return "salatbar";
+  if (typeRaw === "påsmurt" || typeRaw === "paasmurt") return "paasmurt";
+  return null;
 }
 
 async function getAuthedUserId() {
@@ -172,7 +202,6 @@ function supabaseService() {
 
 /* =========================
    Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
 ========================= */
 async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
   const { data, error } = await (supa as any)
@@ -213,14 +242,34 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
   return { ok: true as const };
 }
 
+/* =========================
+   Tier choice helpers
+   - PREMIUM inkluderer BASIS (union)
+========================= */
+function mergeChoices(basis: Choice[] = [], premium: Choice[] = []) {
+  const seen = new Set<string>();
+  const out: Choice[] = [];
+  for (const c of basis) {
+    if (!c?.key || seen.has(c.key)) continue;
+    seen.add(c.key);
+    out.push(c);
+  }
+  for (const c of premium) {
+    if (!c?.key || seen.has(c.key)) continue;
+    seen.add(c.key);
+    out.push(c);
+  }
+  return out;
+}
+
 export async function POST(req: Request) {
   const rid = makeRid();
 
   try {
     const body = (await req.json().catch(() => null)) as Partial<Body> | null;
 
-    const date = (body?.date ?? "").trim();
-    const choice_key = (body?.choice_key ?? "").trim();
+    const date = String(body?.date ?? "").trim();
+    const choice_key = String(body?.choice_key ?? "").trim();
     const note = cleanNote(body?.note);
 
     // 0) Input validering
@@ -240,11 +289,10 @@ export async function POST(req: Request) {
     // 2) Cutoff-lås
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
-        locked: true,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
+        code: "LOCKED",
+        detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     // 3) Ukedag (Man–Fri)
@@ -252,11 +300,10 @@ export async function POST(req: Request) {
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, {
+        code: "WEEKDAY_ONLY",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     // 4) Service role for DB (ingen RLS)
@@ -273,34 +320,30 @@ export async function POST(req: Request) {
 
     if (pErr) {
       logApiError("POST /api/order/set-choice profile failed", pErr, { rid, user_id, date });
-      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
-        detail: pErr.message,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Kunne ikke hente profil.", 500, {
+        code: "PROFILE_LOOKUP_FAILED",
+        detail: { detail: pErr.message, locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     if (!profile) {
-      return jsonErr(rid, "Fant ikke profil.", 403, { code: "PROFILE_NOT_FOUND", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Fant ikke profil.", 403, {
+        code: "PROFILE_NOT_FOUND",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     const company_id = profile.company_id;
     const location_id = profile.location_id;
 
     if (!company_id || !location_id) {
-      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, { code: "PROFILE_MISSING_SCOPE", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, {
+        code: "PROFILE_MISSING_SCOPE",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
-    // 6) ✅ Company status gate (PAUSED/CLOSED)
+    // 6) Company status gate
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
       return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
@@ -317,47 +360,56 @@ export async function POST(req: Request) {
 
     if (cErr || !company) {
       logApiError("POST /api/order/set-choice company failed", cErr, { rid, company_id });
-      return jsonErr(rid, "Fant ikke firma/kontrakt.", 403, { code: "COMPANY_CONTRACT_NOT_FOUND", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Fant ikke firma/kontrakt.", 403, {
+        code: "COMPANY_CONTRACT_NOT_FOUND",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     const weekTier = company.contract_week_tier;
     if (!weekTier) {
-      return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, { code: "CONTRACT_MISSING_WEEK_TIER", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, {
+        code: "CONTRACT_MISSING_WEEK_TIER",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     const tier = weekTier[dayKey];
     if (!tier) {
-      return jsonErr(rid, "Kontrakt mangler tier-plan for denne dagen.", 400, { code: "CONTRACT_MISSING_DAY_TIER", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Kontrakt mangler tier-plan for denne dagen.", 400, {
+        code: "CONTRACT_MISSING_DAY_TIER",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
-    const allowed = tier === "BASIS" ? company.contract_basis_choices : company.contract_premium_choices;
+    // ✅ PREMIUM inkluderer BASIS (driftsikkert)
+    const basis = Array.isArray(company.contract_basis_choices) ? company.contract_basis_choices : [];
+    const premiumRaw = Array.isArray(company.contract_premium_choices) ? company.contract_premium_choices : [];
+    const premium = mergeChoices(basis, premiumRaw);
+    const allowed = tier === "BASIS" ? basis : premium;
 
     if (!Array.isArray(allowed) || allowed.length === 0) {
-      return jsonErr(rid, "Kontrakt mangler menyvalg.", 400, { code: "CONTRACT_MISSING_CHOICES", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, "Kontrakt mangler menyvalg.", 400, {
+        code: "CONTRACT_MISSING_CHOICES",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
     }
 
     if (!allowed.some((x) => x?.key === choice_key)) {
-      return jsonErr(rid, `Ugyldig valg for ${tier}-dag.`, 400, { code: "INVALID_CHOICE", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonErr(rid, `Ugyldig valg for ${tier}-dag.`, 400, {
+        code: "INVALID_CHOICE",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      });
+    }
+
+    // 7.1) ✅ Variant gate (server-fasit)
+    if (requiresVariant(choice_key)) {
+      const t = parseVariantTypeFromNote(note);
+      const ck = String(choice_key).toLowerCase();
+      if (!t || t !== ck) {
+        const label = ck === "salatbar" ? "Salatbar" : "Påsmurt";
+        return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
+      }
     }
 
     // 8) Upsert til day_choices (idempotent) + receipt
@@ -392,31 +444,33 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Kunne ikke lagre valg.", 500, { code: "SAVE_FAILED", detail: uErr?.message });
     }
 
-    return jsonOk(rid, {
-      ok: true,
+    return jsonOk(
       rid,
+      {
+        ok: true,
+        rid,
 
-      // ✅ Kvittering 
-      receipt: {
-        orderId: saved.id,
-        status: "ACTIVE",
+        receipt: {
+          orderId: saved.id,
+          status: "ACTIVE",
+          date: saved.date,
+          updatedAt: saved.updated_at ?? null,
+        },
+
         date: saved.date,
-        updatedAt: saved.updated_at ?? null,
+        choice_key: saved.choice_key,
+        note: saved.note ?? null,
+        tier,
+        updated_at: saved.updated_at ?? null,
+        locked: false,
+        cutoffTime: cutoff.cutoffTime,
+        canAct: true,
+        scope: { company_id, location_id, user_id },
       },
-
-      date: saved.date,
-      choice_key: saved.choice_key,
-      note: saved.note ?? null,
-      tier,
-      updated_at: saved.updated_at ?? null,
-      locked: false,
-      cutoffTime: cutoff.cutoffTime,
-      canAct: true,
-      scope: { company_id, location_id, user_id },
-    }, 200);
+      200
+    );
   } catch (e: any) {
-    logApiError("POST /api/order/set-choice failed", e, { rid: "setchoice_unknown" });
-    return jsonErr("setchoice_unknown", "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
+    logApiError("POST /api/order/set-choice failed", e, { rid });
+    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-

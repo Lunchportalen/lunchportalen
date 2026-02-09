@@ -3,9 +3,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { opsLog } from "@/lib/ops/log";
 
 export type KitchenOrder = {
-  id: string;
+  id: string; // order id
   full_name: string;
   department: string | null;
+
+  /**
+   * ✅ Kitchen note (what to make)
+   * - Prefer day_choices.choice_key + variant from day_choices.note
+   * - Fallback to legacy orders.note ("choice:varmmat") if day_choices missing
+   */
   note: string | null;
 };
 
@@ -31,8 +37,19 @@ type OrderRow = {
   date: string | null;
   note: string | null;
   created_at: string | null;
-  status: string | null;
-  slot: string | null;
+  status: string | null; // expected: "active" | "canceled"
+  slot: string | null; // expected: "lunch"
+};
+
+type DayChoiceRow = {
+  company_id: string;
+  location_id: string;
+  user_id: string;
+  date: string;
+  choice_key: string;
+  note: string | null;
+  status: string | null; // expected: "ACTIVE" | "CANCELLED" (or null)
+  updated_at: string | null;
 };
 
 function safeStr(v: any) {
@@ -51,7 +68,13 @@ function pickString(...vals: any[]): string | null {
 }
 
 function pickProfileName(p: any): string {
-  const full = pickString(p?.full_name, p?.name, p?.display_name, p?.displayName, p?.fullName);
+  const full = pickString(
+    p?.full_name,
+    p?.name,
+    p?.display_name,
+    p?.displayName,
+    p?.fullName
+  );
   if (full) return full;
   const first = pickString(p?.first_name, p?.firstName) || "";
   const last = pickString(p?.last_name, p?.lastName) || "";
@@ -112,6 +135,66 @@ function logOpsSummary(payload: {
   opsLog("kitchen.day.summary", payload);
 }
 
+/**
+ * Legacy parsing:
+ * - orders.note might be "choice:varmmat" or "varmmat"
+ */
+function parseChoiceKeyFromLegacyNote(note: string | null): string | null {
+  const n = safeStr(note).toLowerCase();
+  if (!n) return null;
+  const m = /(?:^|\s)choice:([a-z0-9_\-]+)/i.exec(n);
+  if (m?.[1]) return m[1].toLowerCase();
+  if (/^[a-z0-9_\-]{2,}$/.test(n)) return n;
+  return null;
+}
+
+/**
+ * Variant parsing:
+ * Accept:
+ * - "variant||Salatbar: Skinke"
+ * - "Salatbar: Skinke"
+ */
+function parseVariantFromNote(choiceKey: string, note: string | null): string | null {
+  const n = safeStr(note);
+  if (!n) return null;
+
+  const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
+  const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
+
+  const ck = safeStr(choiceKey).toLowerCase();
+  const label = ck === "salatbar" ? "Salatbar" : ck === "paasmurt" ? "Påsmurt" : null;
+  if (!label) return null;
+
+  const re = new RegExp(`^${label}\\s*:\\s*(.+)$`, "i");
+  const m = re.exec(payload);
+  const v = m?.[1] ? String(m[1]).trim() : "";
+  return v || null;
+}
+
+function prettyChoice(choiceKey: string) {
+  const k = safeStr(choiceKey).toLowerCase();
+  if (k === "salatbar") return "Salatbar";
+  if (k === "paasmurt") return "Påsmurt";
+  if (k === "varmmat") return "Varmmat";
+  if (k === "sushi") return "Sushi";
+  if (k === "pokebowl") return "Pokébowl";
+  if (k === "thaimat") return "Thaimat";
+  return choiceKey;
+}
+
+function buildKitchenNote(choiceKey: string | null, note: string | null): string | null {
+  const ck = safeStr(choiceKey).toLowerCase();
+  if (!ck) return null;
+
+  const base = prettyChoice(ck);
+  if (ck === "salatbar" || ck === "paasmurt") {
+    const v = parseVariantFromNote(ck, note);
+    if (v) return `${base} (${v})`;
+    return base;
+  }
+  return base;
+}
+
 export async function fetchKitchenDayData(args: {
   admin: SupabaseClient;
   dateISO: string;
@@ -124,19 +207,27 @@ export async function fetchKitchenDayData(args: {
 }) {
   const { admin, dateISO, companyId, locationId, slot, rid, cutoffAtUTCISO, afterCutoff } = args;
 
+  // =========================================================
+  // 1) Orders = SANNHET for hvem som har bestilt
+  //    IMPORTANT: Do NOT query non-existent columns (e.g. integrity_status)
+  // =========================================================
   let q = admin
     .from("orders")
     .select("id, user_id, company_id, location_id, date, note, created_at, status, slot")
     .eq("date", dateISO)
-    .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"])
-    .eq("integrity_status", "ok")
-    .eq("company_id", companyId);
+    .eq("company_id", companyId)
+    // only active orders for kitchen list
+    .in("status", ["active", "ACTIVE"])
+    // default slot filter (kitchen is lunch unless explicitly asked)
+    .eq("slot", slot ? slot : "lunch");
 
   if (locationId) q = q.eq("location_id", locationId);
-  if (slot) q = q.eq("slot", slot);
+
+  // Cutoff snapshot: show only orders created before cutoff instant (UTC ISO)
   if (afterCutoff && cutoffAtUTCISO) q = q.lte("created_at", cutoffAtUTCISO);
 
   q = q.order("slot", { ascending: true }).order("created_at", { ascending: true });
+
   const { data: orders, error: oErr } = await q;
   if (oErr) throw oErr;
 
@@ -147,7 +238,8 @@ export async function fetchKitchenDayData(args: {
     orders_missing_location_id: 0,
     orders_missing_slot: 0,
     orders_missing_date: 0,
-    employees_missing_company_id: 0,
+    profiles_missing: 0,
+    day_choices_missing: 0,
   };
   const anomalyIds: string[] = [];
 
@@ -188,6 +280,9 @@ export async function fetchKitchenDayData(args: {
   const locationIds = uniq(orderRows.map((o) => safeStr(o.location_id)).filter(Boolean));
   const userIds = uniq(orderRows.map((o) => safeStr(o.user_id)).filter(Boolean));
 
+  // =========================================================
+  // 2) Profiles / locations / companies
+  // =========================================================
   const [profilesRes, locationsRes, companiesRes] = await Promise.all([
     userIds.length
       ? admin
@@ -208,19 +303,18 @@ export async function fetchKitchenDayData(args: {
   if (locationsRes.error) throw locationsRes.error;
   if (companiesRes.error) throw companiesRes.error;
 
-  const profMap = new Map<string, { full_name: string; department: string | null; company_id: string | null }>();
+  const profMap = new Map<string, { full_name: string; department: string | null }>();
   (profilesRes.data ?? []).forEach((p: any) => {
     profMap.set(String(p.user_id), {
       full_name: pickProfileName(p),
       department: (p?.department ?? null) as string | null,
-      company_id: (p?.company_id ?? null) as string | null,
     });
   });
 
   if (userIds.length) {
     const missingProfiles = userIds.filter((uid) => !profMap.has(uid));
-    anomalies.employees_missing_company_id = missingProfiles.length;
-    anomalyIds.push(...missingProfiles);
+    anomalies.profiles_missing = missingProfiles.length;
+    anomalyIds.push(...missingProfiles.slice(0, 20));
   }
 
   const locMap = new Map<string, { name: string }>();
@@ -233,23 +327,70 @@ export async function fetchKitchenDayData(args: {
     compMap.set(String(c.id), { name: pickCompanyName(c) });
   });
 
+  // =========================================================
+  // 3) day_choices = hva de vil ha (choice + variant note)
+  //    Merge in code (robust)
+  // =========================================================
+  const dcMap = new Map<string, DayChoiceRow>(); // ✅ prefer-const
+
+  if (userIds.length) {
+    const { data: dayChoices, error: dcErr } = await (admin as any)
+      .from("day_choices")
+      .select("company_id, location_id, user_id, date, choice_key, note, status, updated_at")
+      .eq("company_id", companyId)
+      .in("user_id", userIds)
+      .eq("date", dateISO);
+
+    if (dcErr) {
+      // fail-soft: kitchen list still works, but notes might be legacy
+      opsLog("kitchen.day.day_choices_failed", {
+        rid,
+        date: dateISO,
+        company_id: companyId,
+        detail: String(dcErr?.message ?? dcErr),
+      });
+    } else {
+      for (const r of (dayChoices ?? []) as DayChoiceRow[]) {
+        const key = `${safeStr(r.company_id)}|${safeStr(r.location_id)}|${safeStr(r.user_id)}|${safeStr(r.date)}`;
+        const prev = dcMap.get(key);
+        const prevT = prev?.updated_at ? new Date(prev.updated_at).getTime() : 0;
+        const nextT = r?.updated_at ? new Date(r.updated_at).getTime() : 0;
+        if (!prev || nextT >= prevT) dcMap.set(key, r);
+      }
+    }
+  }
+
+  // count missing day_choices for active orders (not fatal)
+  for (const o of orderRows) {
+    const k = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
+    if (!dcMap.has(k)) anomalies.day_choices_missing += 1;
+  }
+
+  // =========================================================
+  // 4) Kitchen batch status (optional)
+  // =========================================================
   const windows = uniq(orderRows.map((o) => normSlot(o.slot)).filter(Boolean));
   const batchMap = new Map<string, any>();
 
   if (locationIds.length && windows.length) {
-    const { data: batches } = await admin
+    const { data: batches, error: bErr } = await (admin as any)
       .from("kitchen_batch")
       .select("delivery_date, delivery_window, company_location_id, status, packed_at, delivered_at")
       .eq("delivery_date", dateISO)
       .in("company_location_id", locationIds)
       .in("delivery_window", windows);
 
-    (batches ?? []).forEach((b: any) => {
-      const key = `${b.delivery_date}|${safeStr(b.delivery_window).toLowerCase()}|${b.company_location_id}`;
-      batchMap.set(key, b);
-    });
+    if (!bErr) {
+      (batches ?? []).forEach((b: any) => {
+        const key = `${b.delivery_date}|${safeStr(b.delivery_window).toLowerCase()}|${b.company_location_id}`;
+        batchMap.set(key, b);
+      });
+    }
   }
 
+  // =========================================================
+  // 5) Group + build final orders list
+  // =========================================================
   const groups = new Map<string, KitchenGroup>();
 
   for (const o of orderRows) {
@@ -258,14 +399,14 @@ export async function fetchKitchenDayData(args: {
     const compId = safeStr(o.company_id);
     if (!locId || !compId) continue;
 
-    const key = `${dateISO}|${window}|${compId}|${locId}`;
-    if (!groups.has(key)) {
+    const groupKey = `${dateISO}|${window}|${compId}|${locId}`;
+    if (!groups.has(groupKey)) {
       const loc = locMap.get(locId);
       const comp = compMap.get(compId);
       const bKey = `${dateISO}|${window}|${locId}`;
       const br = batchMap.get(bKey);
 
-      groups.set(key, {
+      groups.set(groupKey, {
         delivery_date: dateISO,
         delivery_window: window,
         company: comp?.name ?? "Ukjent firma",
@@ -281,11 +422,19 @@ export async function fetchKitchenDayData(args: {
     }
 
     const prof = profMap.get(String(o.user_id));
-    groups.get(key)!.orders.push({
+
+    // Prefer day_choices for kitchen note
+    const dcKey = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
+    const dc = dcMap.get(dcKey);
+
+    const choiceKey = dc?.choice_key ?? parseChoiceKeyFromLegacyNote(o.note ?? null);
+    const kitchenNote = buildKitchenNote(choiceKey, dc?.note ?? null);
+
+    groups.get(groupKey)!.orders.push({
       id: String(o.id),
       full_name: prof?.full_name ?? "Ukjent",
       department: prof?.department ?? null,
-      note: o.note ?? null,
+      note: kitchenNote ?? o.note ?? null,
     });
   }
 
@@ -314,4 +463,3 @@ export async function fetchKitchenDayData(args: {
 
   return { groups: out };
 }
-

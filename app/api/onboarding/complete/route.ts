@@ -1,12 +1,11 @@
 // app/api/onboarding/complete/route.ts
-
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 
 /* =========================================================
    Types
@@ -17,9 +16,10 @@ type PlanTier = "BASIS" | "LUXUS";
 type AgreementDay = {
   enabled: boolean;
   tier: PlanTier;
-  price_ex_vat: number;
+  price_ex_vat: number; // ✅ FASIT: 90/130 (eks mva)
   price_inc_vat: number;
 };
+
 type AgreementDays = Record<DayKey, AgreementDay>;
 
 type LocInput = {
@@ -57,6 +57,8 @@ function jsonError(rid: string, status: number, error: string, message: string, 
   return jsonErr(rid, message, status, err);
 }
 
+const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
+
 const cleanEmail = (v: any) => String(v ?? "").trim().toLowerCase();
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const digitsOnly = (v: any) => String(v ?? "").replace(/\D/g, "");
@@ -70,63 +72,27 @@ function normalizeTier(v: any): PlanTier | null {
   return null;
 }
 
-function parsePrice(v: any): number {
-  if (typeof v === "number") return v;
+// ✅ FASIT: 90/130 er EKS MVA
+function priceExVatForTier(tier: PlanTier): number {
+  return tier === "BASIS" ? 90 : 130;
+}
+
+function roundNok(n: number) {
+  return Math.round(Number(n) || 0);
+}
+
+function pickString(v: any) {
   const s = String(v ?? "").trim();
-  if (!s) return NaN;
-  let t = s.replace(",", ".").replace(/[^0-9.]/g, "");
-  const i = t.indexOf(".");
-  if (i !== -1) t = t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, "");
-  const n = Number(t);
-  return Number.isFinite(n) ? n : NaN;
+  return s.length ? s : null;
 }
 
-const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-const DEFAULT_BASIS_CHOICES = [{ key: "varmmat", label: "Varmmat" }];
-const DEFAULT_LUXUS_CHOICES = [
-  { key: "varmmat", label: "Varmmat" },
-  { key: "salatbar", label: "Salatbar" },
-];
-
-function normalizeDeliveryDaysInput(input: any): DayKey[] {
-  if (!input) return [];
-  const arr = Array.isArray(input) ? input : [input];
-  const out: DayKey[] = [];
-  for (const raw of arr) {
-    const s = String(raw ?? "").trim().toLowerCase();
-    if (s === "mon" || s === "tue" || s === "wed" || s === "thu" || s === "fri") out.push(s as DayKey);
-  }
-  return Array.from(new Set(out));
+function pickBool(v: any) {
+  return typeof v === "boolean" ? v : !!v;
 }
 
-function buildWeekTier(deliveryDays: DayKey[], planTier: PlanTier) {
-  const out: Record<DayKey, PlanTier> = {} as Record<DayKey, PlanTier>;
-  for (const d of deliveryDays) out[d] = planTier;
-  return out;
-}
-
-function buildAgreementJsonDefaults(planTier: PlanTier, pricePerCuvert: number) {
-  const schedule = DAY_KEYS.reduce((acc, d) => {
-    acc[d] = { tier: planTier, price: pricePerCuvert };
-    return acc;
-  }, {} as Record<DayKey, { tier: PlanTier; price: number }>);
-
-  return {
-    version: 1,
-    timezone: "Europe/Oslo",
-    cutoff: { time: "08:00" },
-    commercial: { bindingMonths: 12, noticeMonths: 3 },
-    tiers: {
-      BASIS: { label: "Basis", price: 90 },
-      LUXUS: { label: "Luxus", price: 130 },
-    },
-    schedule,
-    week_pattern: DAY_KEYS.reduce((acc, d) => {
-      acc[d] = planTier;
-      return acc;
-    }, {} as Record<DayKey, PlanTier>),
-    prices: { BASIS: 90, LUXUS: 130 },
-  };
+function isTableMissingError(err: any) {
+  const msg = String(err?.message ?? err ?? "");
+  return msg.toLowerCase().includes("could not find the table") && msg.toLowerCase().includes("schema cache");
 }
 
 /** supabaseAdmin kan være client eller factory */
@@ -148,17 +114,64 @@ async function findAuthUserIdByEmail(SB: any, email: string): Promise<string | n
   return hit?.id ?? null;
 }
 
-function isTableMissingError(err: any) {
-  const msg = String(err?.message ?? err ?? "");
-  return msg.toLowerCase().includes("could not find the table") && msg.toLowerCase().includes("schema cache");
+/* =========================================================
+   Agreement days (UI → AgreementDays)
+========================================================= */
+function buildDefaultDays(): AgreementDays {
+  const make = (): AgreementDay => ({ enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 });
+  return { mon: make(), tue: make(), wed: make(), thu: make(), fri: make() };
 }
 
-function pickString(v: any) {
-  const s = String(v ?? "").trim();
-  return s.length ? s : null;
+function getDayObj(input: any, k: DayKey) {
+  if (!input || typeof input !== "object") return null;
+  const map: Record<DayKey, string[]> = {
+    mon: ["mon", "monday", "mandag"],
+    tue: ["tue", "tuesday", "tirsdag"],
+    wed: ["wed", "wednesday", "onsdag"],
+    thu: ["thu", "thursday", "torsdag"],
+    fri: ["fri", "friday", "fredag"],
+  };
+  for (const key of map[k]) {
+    const v = (input as any)[key];
+    if (v && typeof v === "object") return v;
+  }
+  return null;
 }
-function pickBool(v: any) {
-  return typeof v === "boolean" ? v : !!v;
+
+/**
+ * ✅ 90/130 = eks mva
+ * inc mva beregnes fra vat_rate (default 0.25)
+ */
+function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasAnyEnabled: boolean } | null {
+  const out = buildDefaultDays();
+  if (!input || typeof input !== "object") return { days: out, hasAnyEnabled: false };
+
+  let anyEnabled = false;
+
+  for (const k of DAY_KEYS) {
+    const d = getDayObj(input, k);
+    if (!d) continue;
+
+    const enabled = !!(d.enabled ?? d.selected ?? d.active);
+    const tier = normalizeTier(d.tier ?? d.plan_tier ?? d.level ?? d.plan) ?? out[k].tier;
+
+    let price_ex_vat = 0;
+    let price_inc_vat = 0;
+
+    if (enabled) {
+      anyEnabled = true;
+
+      // ✅ FASIT
+      price_ex_vat = priceExVatForTier(tier);
+      price_inc_vat = roundNok(price_ex_vat * (1 + vat_rate));
+
+      if (price_ex_vat <= 0 || price_inc_vat <= 0) return null;
+    }
+
+    out[k] = { enabled, tier, price_ex_vat, price_inc_vat };
+  }
+
+  return { days: out, hasAnyEnabled: anyEnabled };
 }
 
 /* =========================================================
@@ -176,7 +189,7 @@ function buildAgreementJsonSafe(params: {
 
   dominantTier: PlanTier;
   vatRate: number;
-  daysNorm: any;
+  daysNorm: AgreementDays;
 
   delivery: any;
   location: any;
@@ -189,7 +202,7 @@ function buildAgreementJsonSafe(params: {
     employee_count,
     full_name,
     email,
-    phone,
+    phone: admin_phone,
     dominantTier,
     vatRate,
     daysNorm,
@@ -203,6 +216,7 @@ function buildAgreementJsonSafe(params: {
   return {
     version: 1,
     created_at: nowISO,
+    timezone: "Europe/Oslo",
 
     company: {
       name: company_name,
@@ -213,7 +227,7 @@ function buildAgreementJsonSafe(params: {
     admin: {
       full_name,
       email,
-      phone,
+      phone: admin_phone, // ✅ TS-fix: ingen shorthand på ukjent "phone"
     },
 
     delivery: {
@@ -246,7 +260,8 @@ function buildAgreementJsonSafe(params: {
     },
 
     billing: {
-      prices_include_vat: true,
+      // ✅ FASIT: prisene er eks mva (90/130)
+      prices_include_vat: false,
       vat_rate: vatRate,
       currency: "NOK",
       invoice_cadence: "every_14_days",
@@ -255,77 +270,9 @@ function buildAgreementJsonSafe(params: {
     plan: {
       dominant_tier: dominantTier,
       days: daysNorm,
+      prices_ex_vat: { BASIS: 90, LUXUS: 130 },
     },
   };
-}
-
-/* =========================================================
-   Agreement days
-========================================================= */
-function buildDefaultDays(): AgreementDays {
-  const make = (): AgreementDay => ({ enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 });
-  return { mon: make(), tue: make(), wed: make(), thu: make(), fri: make() };
-}
-
-function getDayObj(input: any, k: DayKey) {
-  if (!input || typeof input !== "object") return null;
-  const map: Record<DayKey, string[]> = {
-    mon: ["mon", "monday", "mandag"],
-    tue: ["tue", "tuesday", "tirsdag"],
-    wed: ["wed", "wednesday", "onsdag"],
-    thu: ["thu", "thursday", "torsdag"],
-    fri: ["fri", "friday", "fredag"],
-  };
-  for (const key of map[k]) {
-    const v = input[key];
-    if (v && typeof v === "object") return v;
-  }
-  return null;
-}
-
-function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasAnyEnabled: boolean } | null {
-  const keys: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-  const out = buildDefaultDays();
-  if (!input || typeof input !== "object") return { days: out, hasAnyEnabled: false };
-
-  let anyEnabled = false;
-
-  for (const k of keys) {
-    const d = getDayObj(input, k);
-    if (!d) continue;
-
-    const enabled = !!(d.enabled ?? d.selected ?? d.active);
-    const tier = normalizeTier(d.tier ?? d.plan_tier ?? d.level ?? d.plan) ?? out[k].tier;
-
-    const exRaw = parsePrice(d.priceExVat ?? d.price_ex_vat);
-    const incRaw = parsePrice(d.priceIncVat ?? d.priceInclVat ?? d.price_incl_vat ?? d.price);
-
-    let price_ex_vat = 0;
-    let price_inc_vat = 0;
-
-    if (enabled) {
-      anyEnabled = true;
-      const hasEx = Number.isFinite(exRaw) && exRaw > 0;
-      const hasInc = Number.isFinite(incRaw) && incRaw > 0;
-      if (!hasEx && !hasInc) return null;
-
-      if (hasEx && hasInc) {
-        price_ex_vat = Math.round(exRaw);
-        price_inc_vat = Math.round(incRaw);
-      } else if (hasEx) {
-        price_ex_vat = Math.round(exRaw);
-        price_inc_vat = Math.round(exRaw * (1 + vat_rate));
-      } else {
-        price_inc_vat = Math.round(incRaw);
-        price_ex_vat = Math.round(incRaw / (1 + vat_rate));
-      }
-      if (price_ex_vat <= 0 || price_inc_vat <= 0) return null;
-    }
-
-    out[k] = { enabled, tier, price_ex_vat, price_inc_vat };
-  }
-
-  return { days: out, hasAnyEnabled: anyEnabled };
 }
 
 /* =========================================================
@@ -336,11 +283,7 @@ async function waitForProfileRow(SB: any, userId: string) {
   const sleepMs = 200;
 
   for (let i = 0; i < maxRetries; i++) {
-    const { data, error } = await SB
-      .from("profiles")
-      .select("id, user_id, company_id, location_id")
-      .or(`id.eq.${userId},user_id.eq.${userId}`)
-      .maybeSingle();
+    const { data, error } = await SB.from("profiles").select("id, user_id, company_id, location_id").or(`id.eq.${userId},user_id.eq.${userId}`).maybeSingle();
     if (!error && data?.id) return { ok: true as const, data };
     await new Promise((r) => setTimeout(r, sleepMs));
   }
@@ -360,9 +303,10 @@ async function syncProfileSafe(
   const waited = await waitForProfileRow(SB, userId);
   if (!waited.ok) return { data: null, error: waited.error };
 
+  // ✅ Viktig: firma er "pending" → konto skal ikke være aktiv før superadmin aktiverer
   const patch: any = {
     phone,
-    is_active: true,
+    is_active: false,
     disabled_at: null,
     disabled_reason: null,
     email,
@@ -371,11 +315,7 @@ async function syncProfileSafe(
     role: "company_admin",
   };
 
-  // ✅ prefer-const fix
-  const u1 = await SB
-    .from("profiles")
-    .update({ ...patch, full_name: display_name })
-    .or(`id.eq.${userId},user_id.eq.${userId}`);
+  const u1 = await SB.from("profiles").update({ ...patch, full_name: display_name }).or(`id.eq.${userId},user_id.eq.${userId}`);
   if (!u1.error) return u1;
 
   const msg = String(u1.error?.message ?? "");
@@ -411,23 +351,11 @@ function candidateMap(loc: LocInput) {
       { adresse: loc.address },
     ],
 
-    postal_code: [
-      { postal_code: loc.postal_code },
-      { postcode: loc.postal_code },
-      { zip: loc.postal_code },
-      { postnummer: loc.postal_code },
-      { Postnummer: loc.postal_code },
-    ],
+    postal_code: [{ postal_code: loc.postal_code }, { postcode: loc.postal_code }, { zip: loc.postal_code }, { postnummer: loc.postal_code }, { Postnummer: loc.postal_code }],
 
     city: [{ city: loc.city }, { poststed: loc.city }, { Poststed: loc.city }, { town: loc.city }],
 
-    delivery_where: [
-      { delivery_where: loc.delivery_where },
-      { delivery_point: loc.delivery_where },
-      { delivery_location: loc.delivery_where },
-      { leveringspunkt: loc.delivery_where },
-      { Leveringspunkt: loc.delivery_where },
-    ],
+    delivery_where: [{ delivery_where: loc.delivery_where }, { delivery_point: loc.delivery_where }, { delivery_location: loc.delivery_where }, { leveringspunkt: loc.delivery_where }, { Leveringspunkt: loc.delivery_where }],
 
     delivery_when_note: [
       { delivery_when_note: loc.delivery_when_note },
@@ -460,29 +388,12 @@ function candidateMap(loc: LocInput) {
     delivery_contact_country: [{ delivery_contact_country: loc.delivery_contact_country }],
     delivery_json: [{ delivery_json: loc.delivery_json }],
 
-    delivery_window_from: [
-      { delivery_window_from: loc.delivery_window_from },
-      { window_from: loc.delivery_window_from },
-      { from_time: loc.delivery_window_from },
-      { leveringsvindu_fra: loc.delivery_window_from },
-      { LeveringsvinduFra: loc.delivery_window_from },
-    ],
+    delivery_window_from: [{ delivery_window_from: loc.delivery_window_from }, { window_from: loc.delivery_window_from }, { from_time: loc.delivery_window_from }, { leveringsvindu_fra: loc.delivery_window_from }, { LeveringsvinduFra: loc.delivery_window_from }],
 
-    delivery_window_to: [
-      { delivery_window_to: loc.delivery_window_to },
-      { window_to: loc.delivery_window_to },
-      { to_time: loc.delivery_window_to },
-      { leveringsvindu_til: loc.delivery_window_to },
-      { LeveringsvinduTil: loc.delivery_window_to },
-    ],
+    delivery_window_to: [{ delivery_window_to: loc.delivery_window_to }, { window_to: loc.delivery_window_to }, { to_time: loc.delivery_window_to }, { leveringsvindu_til: loc.delivery_window_to }, { LeveringsvinduTil: loc.delivery_window_to }],
 
     delivery_contact_email: loc.delivery_contact_email
-      ? [
-          { delivery_contact_email: loc.delivery_contact_email },
-          { contact_email: loc.delivery_contact_email },
-          { email: loc.delivery_contact_email },
-          { epost: loc.delivery_contact_email },
-        ]
+      ? [{ delivery_contact_email: loc.delivery_contact_email }, { contact_email: loc.delivery_contact_email }, { email: loc.delivery_contact_email }, { epost: loc.delivery_contact_email }]
       : [],
   } as const;
 }
@@ -505,6 +416,7 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
       row = { ...row, ...variants[idx] };
     }
 
+    // hard NOT NULL
     row.delivery_contact_country = loc.delivery_contact_country || "NO";
     row.delivery_json = loc.delivery_json ?? {};
 
@@ -513,29 +425,31 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
 
     const msg = String(res.error?.message ?? "");
 
+    // Hard fails: stop trying
     if (msg.toLowerCase().includes("violates not-null constraint")) return res;
     if (msg.toLowerCase().includes("violates foreign key")) return res;
 
     const missing = extractMissingColumn(msg);
     if (!missing) return res;
 
-    let matchedField: string | null = null;
+    // find which logical field produced missing column, then rotate that field's variant
+    let matchedLogical: string | null = null;
     for (const logical of Object.keys(cmap)) {
       const variants = (cmap as any)[logical] as Array<Record<string, any>>;
       const idx = pickIndex[logical] ?? 0;
       if (!variants || idx >= variants.length) continue;
       const keys = Object.keys(variants[idx] ?? {});
       if (keys.includes(missing)) {
-        matchedField = logical;
+        matchedLogical = logical;
         break;
       }
     }
-    if (!matchedField) return res;
+    if (!matchedLogical) return res;
 
-    const variants = (cmap as any)[matchedField] as Array<Record<string, any>>;
-    const next = (pickIndex[matchedField] ?? 0) + 1;
-    if (next < variants.length) pickIndex[matchedField] = next;
-    else pickIndex[matchedField] = variants.length;
+    const variants = (cmap as any)[matchedLogical] as Array<Record<string, any>>;
+    const next = (pickIndex[matchedLogical] ?? 0) + 1;
+    if (next < variants.length) pickIndex[matchedLogical] = next;
+    else pickIndex[matchedLogical] = variants.length;
   }
 
   return { data: null, error: { message: "location_insert_failed_after_many_attempts" } };
@@ -545,11 +459,12 @@ async function insertLocationAllFieldsSmart(SB: any, loc: LocInput) {
    POST
 ========================================================= */
 export async function POST(req: NextRequest) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = makeRid();
+
   const SB = await adminClient();
-  if (!SB?.from || !SB?.auth?.admin) return jsonError(rid, 500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
+  if (!SB?.from || !SB?.auth?.admin) {
+    return jsonError(rid, 500, "ADMIN_CLIENT_MISSING", "supabaseAdmin er ikke tilgjengelig");
+  }
 
   const body = await req.json().catch(() => null);
   if (!body) return jsonError(rid, 400, "BAD_REQUEST", "Ugyldig JSON");
@@ -560,36 +475,43 @@ export async function POST(req: NextRequest) {
 
   const full_name = String(body?.full_name ?? "").trim();
   const email = cleanEmail(body?.email);
-  const phone = digitsOnly(body?.phone);
+  const adminPhone = normalizeNoPhone(body?.phone);
 
   const password = String(body?.password ?? "");
   const password_confirm = String(body?.password_confirm ?? "");
 
-  const delivery = body?.delivery ?? null;
+  const deliveryRaw = body?.delivery ?? null;
+  const deliveryPhone = normalizeNoPhone(deliveryRaw?.contact_phone);
+  const delivery = deliveryRaw ? { ...deliveryRaw, contact_phone: deliveryPhone } : null;
+
   const location = body?.location ?? null;
   const agreement = body?.agreement ?? null;
   const terms = body?.terms ?? null;
-  const planTierInput = normalizeTier(body?.plan_tier ?? body?.planTier ?? body?.plan);
-  const deliveryDaysInput = normalizeDeliveryDaysInput(body?.delivery_days ?? body?.deliveryDays);
 
+  // Company/admin validation
   if (!isNonEmpty(company_name, 2)) return jsonError(rid, 400, "VALIDATION", "Firmanavn er påkrevd");
   if (orgnr.length !== 9) return jsonError(rid, 400, "VALIDATION", "Org.nr må være 9 siffer");
-  if (!Number.isFinite(employee_count) || employee_count < 20)
-    return jsonError(rid, 400, "VALIDATION", "Firma må ha minimum 20 ansatte");
+  if (!Number.isFinite(employee_count) || employee_count < 20) return jsonError(rid, 400, "VALIDATION", "Firma må ha minimum 20 ansatte");
 
   if (!isNonEmpty(full_name, 2)) return jsonError(rid, 400, "VALIDATION", "Navn er påkrevd");
   if (!isEmail(email)) return jsonError(rid, 400, "VALIDATION", "Ugyldig e-postadresse");
-  if (phone.length < 6) return jsonError(rid, 400, "VALIDATION", "Telefon er påkrevd");
+  if (!isValidNoPhone(adminPhone)) return jsonErr(rid, "Telefon må være 8 siffer.", 422, "ADMIN_PHONE_INVALID");
   if (password.length < 10) return jsonError(rid, 400, "VALIDATION", "Passord må være minimum 10 tegn");
   if (password !== password_confirm) return jsonError(rid, 400, "VALIDATION", "Passordene er ikke like");
 
+  // Terms validation (UI viser * på begge)
+  if (!terms || typeof terms !== "object") return jsonError(rid, 400, "VALIDATION", "Du må bekrefte vilkårene før du kan fortsette");
+  if (!pickBool(terms?.accepted_terms)) return jsonError(rid, 400, "VALIDATION", "Du må akseptere avtalevilkårene");
+  if (!pickBool(terms?.accepted_credit_check)) return jsonError(rid, 400, "VALIDATION", "Du må samtykke til kredittvurdering for å opprette bedrift");
+
+  // Delivery/location validation
   if (!delivery) return jsonError(rid, 400, "VALIDATION", "Leveringsinfo mangler");
   if (!location) return jsonError(rid, 400, "VALIDATION", "Lokasjon mangler");
 
   if (!isNonEmpty(delivery?.where, 2)) return jsonError(rid, 400, "VALIDATION", "Leveringspunkt er påkrevd");
   if (!isNonEmpty(delivery?.when_note, 2)) return jsonError(rid, 400, "VALIDATION", "Leveringsinstruksjon er påkrevd");
   if (!isNonEmpty(delivery?.contact_name, 2)) return jsonError(rid, 400, "VALIDATION", "Kontaktperson er påkrevd");
-  if (!isNonEmpty(delivery?.contact_phone, 2)) return jsonError(rid, 400, "VALIDATION", "Telefon ved levering er påkrevd");
+  if (!isValidNoPhone(deliveryPhone)) return jsonErr(rid, "Telefon ved levering må være 8 siffer.", 422, "DELIVERY_PHONE_INVALID");
   if (!isValidTimeHHMM(String(delivery?.window_from ?? "")) || !isValidTimeHHMM(String(delivery?.window_to ?? ""))) {
     return jsonError(rid, 400, "VALIDATION", "Leveringsvindu må være på format HH:MM");
   }
@@ -599,12 +521,13 @@ export async function POST(req: NextRequest) {
   if (!isNonEmpty(location?.postal_code, 2)) return jsonError(rid, 400, "VALIDATION", "Postnummer er påkrevd");
   if (!isNonEmpty(location?.city, 2)) return jsonError(rid, 400, "VALIDATION", "Poststed er påkrevd");
 
+  // Agreement days validation
   const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : 0.25;
   const daysParsed = normalizeDays(agreement?.days, vatRate);
-  if (!daysParsed) return jsonError(rid, 400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå/pris.");
+  if (!daysParsed) return jsonError(rid, 400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå.");
   if (!daysParsed.hasAnyEnabled) return jsonError(rid, 400, "VALIDATION", "Velg minst én leveringsdag (man–fre).");
 
-  // Preflight
+  // Preflight checks
   try {
     const existing = await findAuthUserIdByEmail(SB, email);
     if (existing) return jsonError(rid, 409, "EMAIL_EXISTS", "E-post er allerede registrert. Bruk innlogging eller en annen e-post.");
@@ -618,6 +541,7 @@ export async function POST(req: NextRequest) {
 
   const nowISO = new Date().toISOString();
   const daysNorm = daysParsed.days;
+
   const dominantTier: PlanTier = Object.values(daysNorm).some((d) => d.enabled && d.tier === "LUXUS") ? "LUXUS" : "BASIS";
 
   const agreement_json = buildAgreementJsonSafe({
@@ -627,7 +551,7 @@ export async function POST(req: NextRequest) {
     employee_count,
     full_name,
     email,
-    phone,
+    phone: adminPhone,
     dominantTier,
     vatRate,
     daysNorm,
@@ -640,18 +564,21 @@ export async function POST(req: NextRequest) {
   let userId: string | null = null;
   let locationId: string | null = null;
 
-  const fail = async (e: any) => {
-    // rollback best effort
+  const rollback = async () => {
     try {
-      const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
-      if (delTerms?.error && !isTableMissingError(delTerms.error)) {
-        // ignore
+      if (companyId) {
+        const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
+        if (delTerms?.error && !isTableMissingError(delTerms.error)) {
+          // ignore
+        }
       }
     } catch {}
     try {
-      const delAgr = await SB.from("company_agreements").delete().eq("company_id", companyId);
-      if (delAgr?.error && !isTableMissingError(delAgr.error)) {
-        // ignore
+      if (companyId) {
+        const delAgr = await SB.from("company_agreements").delete().eq("company_id", companyId);
+        if (delAgr?.error && !isTableMissingError(delAgr.error)) {
+          // ignore
+        }
       }
     } catch {}
     try {
@@ -663,12 +590,15 @@ export async function POST(req: NextRequest) {
     try {
       if (companyId) await SB.from("companies").delete().eq("id", companyId);
     } catch {}
+  };
 
-    return jsonErr(rid, "Registrering feilet â€“ ingen data er lagret.", 500, { code: "ONBOARDING_FAILED", detail: e?.message ?? e });
+  const fail = async (e: any) => {
+    await rollback();
+    return jsonError(rid, 500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
   };
 
   try {
-    // 1) company
+    // 1) company (PENDING)
     const insCompany = await SB.from("companies")
       .insert({
         name: company_name,
@@ -684,7 +614,7 @@ export async function POST(req: NextRequest) {
     if (insCompany.error) return await fail(insCompany.error);
     companyId = insCompany.data.id;
 
-    // 2) auth user (company_admin)
+    // 2) auth user (company_admin) — created but NOT ACTIVE until superadmin activates company/profile
     const { data: created, error: createErr } = await SB.auth.admin.createUser({
       email,
       password,
@@ -694,7 +624,7 @@ export async function POST(req: NextRequest) {
         company_id: companyId,
         full_name,
         name: full_name,
-        phone,
+        phone: adminPhone,
       },
     });
     if (createErr) return await fail(createErr);
@@ -703,7 +633,7 @@ export async function POST(req: NextRequest) {
     if (!userId) return await fail(new Error("AUTH_CREATE_NO_USER_ID"));
 
     // 3) profiles — IKKE insert. Vent på trigger + oppdater trygge felter.
-    const prof = await syncProfileSafe(SB, userId, full_name, phone, email, companyId, null);
+    const prof = await syncProfileSafe(SB, userId, full_name, adminPhone, email, companyId, null);
     if (prof.error) return await fail(prof.error);
 
     // 4) company_locations (all fields + hard NOT NULL)
@@ -713,7 +643,7 @@ export async function POST(req: NextRequest) {
       where: String(delivery.where).trim(),
       when_note: String(delivery.when_note).trim(),
       contact_name: String(delivery.contact_name).trim(),
-      contact_phone: digitsOnly(delivery.contact_phone),
+      contact_phone: deliveryPhone,
       contact_country: deliveryCountry,
       window_from: String(delivery.window_from).trim(),
       window_to: String(delivery.window_to).trim(),
@@ -729,7 +659,7 @@ export async function POST(req: NextRequest) {
       delivery_where: String(delivery.where).trim(),
       delivery_when_note: String(delivery.when_note).trim(),
       delivery_contact_name: String(delivery.contact_name).trim(),
-      delivery_contact_phone: digitsOnly(delivery.contact_phone),
+      delivery_contact_phone: deliveryPhone,
       delivery_window_from: String(delivery.window_from).trim(),
       delivery_window_to: String(delivery.window_to).trim(),
       delivery_contact_country: deliveryCountry,
@@ -740,7 +670,7 @@ export async function POST(req: NextRequest) {
     if (locRes.error) return await fail(locRes.error);
     locationId = locRes.data?.id ?? null;
 
-    // (valgfritt) Oppdater profile med location_id (trygt felt) etter at location finnes
+    // Optional: profile gets location_id if present
     if (locationId) {
       const updLoc = await SB.from("profiles").update({ location_id: locationId }).eq("id", userId);
       if (updLoc.error) return await fail(updLoc.error);
@@ -751,7 +681,7 @@ export async function POST(req: NextRequest) {
       company_id: companyId,
       location_id: locationId,
       days_json: daysNorm,
-      billing_prices_include_vat: true,
+      billing_prices_include_vat: false,
     });
     if (insAgr.error && !isTableMissingError(insAgr.error)) return await fail(insAgr.error);
 
@@ -760,7 +690,7 @@ export async function POST(req: NextRequest) {
         company_id: companyId,
         version: String(terms.version),
         accepted_at: terms?.accepted_at ?? nowISO,
-        credit_consent_at: terms?.credit_consent_at ?? (terms?.accepted_credit_check ? nowISO : null),
+        credit_consent_at: terms?.credit_consent_at ?? nowISO,
         credit_check_system: terms?.credit_check_system ?? "tripletex",
         binding_months: Number(terms?.binding_months ?? 12),
         notice_months: Number(terms?.notice_months ?? 3),
@@ -768,31 +698,17 @@ export async function POST(req: NextRequest) {
       if (insTerms.error && !isTableMissingError(insTerms.error)) return await fail(insTerms.error);
     }
 
-    return jsonOk(rid, { ok: true, status: "pending", companyId, userId, locationId }, 200);
+    return jsonOk(
+      rid,
+      {
+        status: "pending",
+        companyId,
+        userId,
+        locationId,
+      },
+      200
+    );
   } catch (e: any) {
-    // rollback best effort
-    try {
-      const delTerms = await SB.from("company_terms_acceptance").delete().eq("company_id", companyId);
-      if (delTerms?.error && !isTableMissingError(delTerms.error)) {
-        // ignore
-      }
-    } catch {}
-    try {
-      const delAgr = await SB.from("company_agreements").delete().eq("company_id", companyId);
-      if (delAgr?.error && !isTableMissingError(delAgr.error)) {
-        // ignore
-      }
-    } catch {}
-    try {
-      if (locationId) await SB.from("company_locations").delete().eq("id", locationId);
-    } catch {}
-    try {
-      if (userId) await SB.auth.admin.deleteUser(userId);
-    } catch {}
-    try {
-      if (companyId) await SB.from("companies").delete().eq("id", companyId);
-    } catch {}
-
-    return jsonError(rid, 500, "ONBOARDING_FAILED", "Registrering feilet – ingen data er lagret.", e?.message ?? e);
+    return await fail(e);
   }
 }

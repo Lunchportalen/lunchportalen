@@ -2,15 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   LUNCHPORTALEN — globals.css (100% COMPLETE / FASIT)
+   - Beholder all eksisterende stil
+   - Legger til manglende WeekClient-klasser (chips/toggle)
+   - Toggle: grønn/rød + locked feel (disabled stripes)
+   - Lint: vendor-only forklaring for smoothing
+========================================================= */
+
 :root {
   --lp-bg: 255 250 243;
   --lp-surface: 255 255 255;
   --lp-surface-alt: 248 244 238;
   --lp-surface-2: 252 248 243;
+
   --lp-text: 26 26 26;
   --lp-fg: 26 26 26;
   --lp-muted: 82 82 91;
   --lp-border: 231 226 218;
+  --lp-divider: 231 226 218;
 
   --lp-gold: 176 139 87;
   --lp-gold-hover: 156 120 74;
@@ -33,8 +43,13 @@
   --lp-shadow-sm: 0 1px 3px rgba(26, 26, 26, 0.06), 0 4px 12px rgba(26, 26, 26, 0.05);
   --lp-shadow-md: 0 14px 40px rgba(26, 26, 26, 0.16);
   --lp-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
   --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* =========================================================
+   Base / Reset
+========================================================= */
 
 *,
 *::before,
@@ -55,8 +70,11 @@ body {
   font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   font-size: 15px;
   line-height: 1.5;
+
+  /* Vendor-only properties (no standard CSS equivalent) */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
   overflow-x: hidden;
 }
 
@@ -121,7 +139,9 @@ canvas {
   overflow: hidden;
 }
 
-/* Layout */
+/* =========================================================
+   Layout
+========================================================= */
 
 .lp-page {
   min-height: 100vh;
@@ -259,7 +279,9 @@ canvas {
     rgb(var(--lp-bg));
 }
 
-/* Typography */
+/* =========================================================
+   Typography
+========================================================= */
 
 h1,
 h2,
@@ -314,7 +336,9 @@ h4 {
   }
 }
 
-/* Cards */
+/* =========================================================
+   Cards
+========================================================= */
 
 .lp-card {
   background: rgb(var(--lp-surface));
@@ -348,7 +372,23 @@ h4 {
   }
 }
 
-/* Buttons */
+/* Used by WeekClient */
+.lp-card-pad {
+  padding: 18px;
+}
+@media (min-width: 1024px) {
+  .lp-card-pad {
+    padding: 22px;
+  }
+}
+
+.lp-safe-bottom-pad {
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+/* =========================================================
+   Buttons (kept as-is)
+========================================================= */
 
 .lp-btn {
   display: inline-flex;
@@ -362,12 +402,8 @@ h4 {
   font-weight: 600;
   border: 1px solid transparent;
   letter-spacing: -0.01em;
-  transition: background-color 0.15s var(--lp-ease),
-    color 0.15s var(--lp-ease),
-    border-color 0.15s var(--lp-ease),
-    box-shadow 0.15s var(--lp-ease),
-    transform 0.15s var(--lp-ease),
-    opacity 0.15s var(--lp-ease);
+  transition: background-color 0.15s var(--lp-ease), color 0.15s var(--lp-ease), border-color 0.15s var(--lp-ease),
+    box-shadow 0.15s var(--lp-ease), transform 0.15s var(--lp-ease), opacity 0.15s var(--lp-ease);
 }
 
 .lp-btn:focus-visible {
@@ -473,7 +509,9 @@ h4 {
   padding: 0;
 }
 
-/* Badges */
+/* =========================================================
+   Badges (kept as-is)
+========================================================= */
 
 .lp-badge {
   display: inline-flex;
@@ -506,9 +544,132 @@ h4 {
   color: rgb(var(--lp-success));
 }
 
+.lp-badge--info {
+  background: rgba(var(--lp-info), 0.12);
+  border-color: rgba(var(--lp-info), 0.35);
+  color: rgb(var(--lp-info));
+}
+
+.lp-badge--warning {
+  background: rgba(var(--lp-warning), 0.12);
+  border-color: rgba(var(--lp-warning), 0.35);
+  color: rgb(var(--lp-warning));
+}
+
+.lp-badge--danger {
+  background: rgba(var(--lp-danger), 0.12);
+  border-color: rgba(var(--lp-danger), 0.35);
+  color: rgb(var(--lp-danger));
+}
+
 /* =========================================================
-   Admin utility locks
+   Chips (WeekClient)
 ========================================================= */
+
+.lp-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lp-chip-ok {
+  background: rgba(var(--lp-success), 0.12);
+  border-color: rgba(var(--lp-success), 0.35);
+  color: rgb(var(--lp-success));
+}
+
+.lp-chip-warn {
+  background: rgba(var(--lp-warning), 0.12);
+  border-color: rgba(var(--lp-warning), 0.35);
+  color: rgb(var(--lp-warning));
+}
+
+.lp-chip-neutral {
+  background: rgba(var(--lp-muted), 0.08);
+  border-color: rgba(var(--lp-border), 0.9);
+  color: rgb(var(--lp-muted));
+}
+
+.lp-status-pill {
+  line-height: 1;
+}
+
+/* =========================================================
+   Week Toggle (Order slider) — GRØNN/RØD + LOCKED FEEL
+========================================================= */
+
+.lp-toggle.lp-week-toggle {
+  width: 56px;
+  height: 30px;
+  border-radius: 9999px;
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+
+  transition: background-color 160ms var(--lp-ease), border-color 160ms var(--lp-ease), opacity 160ms var(--lp-ease),
+    filter 160ms var(--lp-ease), transform 160ms var(--lp-ease);
+}
+
+.lp-toggle.lp-week-toggle:hover:not(:disabled) {
+  filter: brightness(1.02);
+}
+
+.lp-toggle.lp-week-toggle:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+.lp-toggle-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.18);
+  display: block;
+  transition: transform 180ms var(--lp-ease);
+}
+
+/* ON (Bestilt) */
+.lp-toggle.lp-week-toggle[aria-pressed="true"] {
+  background: rgb(var(--lp-success));
+  border-color: rgba(var(--lp-success), 0.9);
+}
+
+/* OFF (Ikke bestilt) */
+.lp-toggle.lp-week-toggle[aria-pressed="false"] {
+  background: rgb(var(--lp-danger));
+  border-color: rgba(var(--lp-danger), 0.9);
+}
+
+/* Disabled: striped overlay */
+.lp-toggle.lp-week-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.18) 6px,
+    rgba(0, 0, 0, 0.06) 6px,
+    rgba(0, 0, 0, 0.06) 12px
+  );
+  background-blend-mode: overlay;
+}
+
+/* =========================================================
+   Admin utility locks (kept as-is)
+========================================================= */
+
 .lp-panel {
   background: rgb(var(--lp-surface));
   border: 1px solid rgba(var(--lp-border), 0.9);
@@ -539,19 +700,6 @@ h4 {
   font-size: 13px;
 }
 
-.lp-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--lp-radius-badge);
-  border: 1px solid transparent;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .lp-neon-focus:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
@@ -561,25 +709,9 @@ h4 {
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
 }
 
-.lp-badge--info {
-  background: rgba(var(--lp-info), 0.12);
-  border-color: rgba(var(--lp-info), 0.35);
-  color: rgb(var(--lp-info));
-}
-
-.lp-badge--warning {
-  background: rgba(var(--lp-warning), 0.12);
-  border-color: rgba(var(--lp-warning), 0.35);
-  color: rgb(var(--lp-warning));
-}
-
-.lp-badge--danger {
-  background: rgba(var(--lp-danger), 0.12);
-  border-color: rgba(var(--lp-danger), 0.35);
-  color: rgb(var(--lp-danger));
-}
-
-/* Scrollbar */
+/* =========================================================
+   Scrollbar
+========================================================= */
 
 @media (min-width: 768px) {
   *::-webkit-scrollbar {

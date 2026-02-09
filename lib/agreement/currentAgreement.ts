@@ -1,4 +1,5 @@
 // lib/agreement/currentAgreement.ts
+import { createClient } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase/server";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
@@ -31,17 +32,28 @@ export type AgreementStateError = {
   status: number;
 };
 
-type AgreementRow = {
-  id?: string | null;
-  company_id?: string | null;
-  status?: string | null;
-  plan_tier?: string | null;
-  price_per_cuvert_nok?: number | null;
-  delivery_days?: any;
-  start_date?: string | null;
-  end_date?: string | null;
-  updated_at?: string | null;
+type AgreementsRow = {
+  id: string;
+  company_id: string;
+  status: string | null;
+  tier: string | null;
+  price_ex_vat: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  updated_at: string | null;
 };
+
+type DayRow = {
+  company_id: string;
+  day_key: string;
+  tier: string;
+  updated_at: string | null;
+};
+
+function envOrNull(v: string | undefined) {
+  const s = String(v ?? "").trim();
+  return s ? s : null;
+}
 
 function rid(prefix = "agreement_state") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -125,57 +137,26 @@ function logDeliveryDaysWarning(args: {
   });
 }
 
-function parseDayTiers(rows: any[], ctx: { rid: string; companyId: string; agreementId?: string | null }) {
+/**
+ * Parse day tiers from company_current_agreement_days (authoritative in this project).
+ */
+function parseDayTiersFromDaysTable(rows: DayRow[], ctx: { rid: string; companyId: string; agreementId?: string | null }) {
   const unknown_days: string[] = [];
   const unknown_tiers: string[] = [];
   const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
 
-  const first = rows?.[0] ?? null;
-  const daymapRaw = first && typeof first === "object" ? (first as any).day_tiers ?? null : null;
-
-  if (daymapRaw) {
-    let obj: any = null;
-    if (typeof daymapRaw === "string") {
-      try {
-        obj = JSON.parse(daymapRaw);
-      } catch {
-        obj = null;
-      }
-    } else if (typeof daymapRaw === "object") {
-      obj = daymapRaw;
+  for (const row of rows ?? []) {
+    const dayKey = normDayKey((row as any)?.day_key);
+    const tier = normTier((row as any)?.tier);
+    if (!dayKey) {
+      if ((row as any)?.day_key != null) unknown_days.push(String((row as any).day_key));
+      continue;
     }
-
-    if (obj && typeof obj === "object") {
-      for (const [k, v] of Object.entries(obj)) {
-        const dayKey = normDayKey(k);
-        const tier = normTier(v);
-        if (!dayKey) {
-          unknown_days.push(String(k));
-          continue;
-        }
-        if (!tier) {
-          unknown_tiers.push(String(v ?? ""));
-          continue;
-        }
-        dayTiers[dayKey] = tier;
-      }
+    if (!tier) {
+      if ((row as any)?.tier != null) unknown_tiers.push(String((row as any).tier));
+      continue;
     }
-  } else {
-    for (const row of rows ?? []) {
-      const dayKey = normDayKey((row as any)?.day_key ?? (row as any)?.day ?? (row as any)?.weekday ?? null);
-      const tier = normTier((row as any)?.tier ?? (row as any)?.plan_tier ?? (row as any)?.level ?? null);
-      if (!dayKey) {
-        const rawDay = (row as any)?.day_key ?? (row as any)?.day ?? (row as any)?.weekday ?? null;
-        if (rawDay != null) unknown_days.push(String(rawDay));
-        continue;
-      }
-      if (!tier) {
-        const rawTier = (row as any)?.tier ?? (row as any)?.plan_tier ?? (row as any)?.level ?? null;
-        if (rawTier != null) unknown_tiers.push(String(rawTier));
-        continue;
-      }
-      dayTiers[dayKey] = tier;
-    }
+    dayTiers[dayKey] = tier;
   }
 
   logDaymapWarning({
@@ -190,6 +171,21 @@ function parseDayTiers(rows: any[], ctx: { rid: string; companyId: string; agree
   return dayTiers;
 }
 
+function isActiveStatus(v: any) {
+  return String(v ?? "").trim().toLowerCase() === "active";
+}
+
+function dayKeySort(a: DayKey, b: DayKey) {
+  return DAY_KEYS.indexOf(a) - DAY_KEYS.indexOf(b);
+}
+
+/**
+ * Agreement source of truth:
+ * - Pricing/period/status: public.agreements (FK -> companies)
+ * - Day mapping: public.company_current_agreement_days (company_id, day_key, tier)
+ *
+ * This function MUST output dayTiers + deliveryDays so /week can be ACTIVE.
+ */
 export async function getCurrentAgreementState(opts?: { rid?: string }): Promise<AgreementState | AgreementStateError> {
   const ridVal = opts?.rid ?? rid();
 
@@ -199,7 +195,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     return { ok: false, rid: ridVal, error: "UNAUTHENTICATED", message: "Ikke innlogget.", status: 401 };
   }
 
-  const { data: profile, error: pErr } = await sb
+  const { data: profile, error: pErr } = await (sb as any)
     .from("profiles")
     .select("id, user_id, company_id, location_id")
     .or(`id.eq.${auth.user.id},user_id.eq.${auth.user.id}`)
@@ -222,32 +218,153 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
-  const { data: agreementRow, error: aErr } = await sb
-    .from("company_current_agreement")
-    .select("id,company_id,status,plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at")
-    .eq("company_id", companyId)
-    .eq("status", "ACTIVE")
-    .maybeSingle();
+  // Prefer service-role for agreement/daymap reads (avoid RLS surprises).
+  const url = envOrNull(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const service = envOrNull(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  if (aErr) {
-    return { ok: false, rid: ridVal, error: "AGREEMENT_LOOKUP_FAILED", message: "Kunne ikke hente avtale.", status: 500 };
+  const admin =
+    url && service
+      ? createClient(url, service, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: { headers: { "X-Client-Info": "lunchportalen-current-agreement" } },
+        })
+      : null;
+
+  const client: any = admin ?? sb;
+
+  // 1) Latest agreement row (status/pricing/period). Do NOT require ACTIVE here.
+  let agreement: AgreementsRow | null = null;
+  try {
+    const { data, error } = await client
+      .from("agreements")
+      .select("id,company_id,status,tier,price_ex_vat,start_date,end_date,updated_at,created_at")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return { ok: false, rid: ridVal, error: "AGREEMENT_LOOKUP_FAILED", message: "Kunne ikke hente avtale.", status: 500 };
+    }
+    agreement = (data ?? null) as AgreementsRow | null;
+  } catch (e: any) {
+    return {
+      ok: false,
+      rid: ridVal,
+      error: "AGREEMENT_LOOKUP_FAILED",
+      message: "Kunne ikke hente avtale.",
+      status: 500,
+    };
   }
 
-  const agreement = (agreementRow ?? null) as AgreementRow | null;
-  if (!agreement?.company_id) {
+  const agreementId = agreement?.id ? String(agreement.id) : null;
+
+  // 2) Day mapping from company_current_agreement_days (authoritative)
+  let dayRows: DayRow[] = [];
+  try {
+    const { data, error } = await client
+      .from("company_current_agreement_days")
+      .select("company_id,day_key,tier,updated_at")
+      .eq("company_id", companyId);
+
+    if (error) {
+      return { ok: false, rid: ridVal, error: "DAYMAP_LOOKUP_FAILED", message: "Kunne ikke hente dagoppsett.", status: 500 };
+    }
+    dayRows = (Array.isArray(data) ? data : []) as DayRow[];
+  } catch {
+    return { ok: false, rid: ridVal, error: "DAYMAP_LOOKUP_FAILED", message: "Kunne ikke hente dagoppsett.", status: 500 };
+  }
+
+  const dayTiers = parseDayTiersFromDaysTable(dayRows, { rid: ridVal, companyId, agreementId });
+
+  const deliveryDaysRaw = Object.keys(dayTiers) as DayKey[];
+  deliveryDaysRaw.sort(dayKeySort);
+
+  const deliveryNorm = normalizeDeliveryDaysStrict(deliveryDaysRaw);
+  logDeliveryDaysWarning({
+    rid: ridVal,
+    company_id: companyId,
+    agreement_id: agreementId,
+    raw: deliveryDaysRaw,
+    unknown: deliveryNorm.unknown,
+    days: deliveryNorm.days,
+  });
+
+  const basisDays = Object.values(dayTiers).filter((t) => t === "BASIS").length;
+  const luxusDays = Object.values(dayTiers).filter((t) => t === "LUXUS").length;
+
+  const hasDaymap = Object.keys(dayTiers).length > 0;
+  const hasDeliveryDays = deliveryNorm.days.length > 0;
+
+  // 3) Determine final state
+  // If we have a daymap, we consider the agreement usable even if pricing row is missing,
+  // but we still surface statusReason for ops.
+  const agreementRowActive = isActiveStatus(agreement?.status);
+
+  if (!hasDaymap) {
     return {
       ok: true,
       companyId,
       locationId,
       status: "MISSING",
+      statusReason: "MISSING_DAYMAP",
+      planTier: agreement?.tier ?? null,
+      pricePerCuvertNok: agreement?.price_ex_vat ?? null,
+      deliveryDays: [],
+      slot: "lunch",
+      dayTiers,
+      basisDays,
+      luxusDays,
+      startDate: agreement?.start_date ?? null,
+      endDate: agreement?.end_date ?? null,
+      updatedAt: agreement?.updated_at ?? null,
+      agreementId,
+    };
+  }
+
+  if (!hasDeliveryDays) {
+    return {
+      ok: true,
+      companyId,
+      locationId,
+      status: "MISSING",
+      statusReason: "MISSING_DELIVERY_DAYS",
+      planTier: agreement?.tier ?? null,
+      pricePerCuvertNok: agreement?.price_ex_vat ?? null,
+      deliveryDays: [],
+      slot: "lunch",
+      dayTiers,
+      basisDays,
+      luxusDays,
+      startDate: agreement?.start_date ?? null,
+      endDate: agreement?.end_date ?? null,
+      updatedAt: agreement?.updated_at ?? null,
+      agreementId,
+    };
+  }
+
+  // If agreement row is missing, we still allow ACTIVE based on daymap (your "both!" requirement),
+  // but we mark statusReason for observability.
+  if (!agreement?.company_id) {
+    opsLog("agreement.missing.pricing_row", {
+      rid: ridVal,
+      company_id: companyId,
+      note: "No row in agreements; daymap present => ACTIVE by daymap.",
+    });
+
+    return {
+      ok: true,
+      companyId,
+      locationId,
+      status: "ACTIVE",
       statusReason: "NO_ACTIVE_AGREEMENT",
       planTier: null,
       pricePerCuvertNok: null,
-      deliveryDays: [],
+      deliveryDays: deliveryNorm.days,
       slot: "lunch",
-      dayTiers: {} as Record<DayKey, Tier>,
-      basisDays: 0,
-      luxusDays: 0,
+      dayTiers,
+      basisDays,
+      luxusDays,
       startDate: null,
       endDate: null,
       updatedAt: null,
@@ -255,71 +372,34 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
-  const agreementId = String(agreement?.id ?? "").trim() || null;
+  // Agreement row exists:
+  // Treat as ACTIVE if status is active (case-insensitive). If not, we still keep ACTIVE if daymap exists,
+  // but surface NO_ACTIVE_AGREEMENT (this prevents /week dead-ends while still observable).
+  if (!agreementRowActive) {
+    opsLog("agreement.pricing_row.not_active", {
+      rid: ridVal,
+      company_id: companyId,
+      agreement_id: agreementId,
+      status: String(agreement?.status ?? null),
+      note: "Pricing row not active; daymap present => ACTIVE by daymap (no dead-end).",
+    });
 
-  const deliveryNorm = normalizeDeliveryDaysStrict(agreement?.delivery_days);
-  logDeliveryDaysWarning({
-    rid: ridVal,
-    company_id: companyId,
-    agreement_id: agreementId,
-    raw: agreement?.delivery_days ?? null,
-    unknown: deliveryNorm.unknown,
-    days: deliveryNorm.days,
-  });
-
-  const { data: daymapRows, error: dmErr } = await sb
-    .from("v_company_current_agreement_daymap")
-    .select("*")
-    .eq("company_id", companyId)
-    .eq("slot", "lunch");
-
-  if (dmErr) {
-    return { ok: false, rid: ridVal, error: "DAYMAP_LOOKUP_FAILED", message: "Kunne ikke hente dagoppsett.", status: 500 };
-  }
-
-  const dayTiers = parseDayTiers(daymapRows ?? [], { rid: ridVal, companyId, agreementId });
-
-  const basisDays = Object.values(dayTiers).filter((t) => t === "BASIS").length;
-  const luxusDays = Object.values(dayTiers).filter((t) => t === "LUXUS").length;
-
-  if (!deliveryNorm.days.length) {
     return {
       ok: true,
       companyId,
       locationId,
-      status: "MISSING",
-      statusReason: "MISSING_DELIVERY_DAYS",
-      planTier: agreement.plan_tier ?? null,
-      pricePerCuvertNok: agreement.price_per_cuvert_nok ?? null,
-      deliveryDays: [],
-      slot: "lunch",
-      dayTiers,
-      basisDays,
-      luxusDays,
-      startDate: agreement.start_date ?? null,
-      endDate: agreement.end_date ?? null,
-      updatedAt: agreement.updated_at ?? null,
-      agreementId,
-    };
-  }
-
-  if (!Object.keys(dayTiers).length) {
-    return {
-      ok: true,
-      companyId,
-      locationId,
-      status: "MISSING",
-      statusReason: "MISSING_DAYMAP",
-      planTier: agreement.plan_tier ?? null,
-      pricePerCuvertNok: agreement.price_per_cuvert_nok ?? null,
+      status: "ACTIVE",
+      statusReason: "NO_ACTIVE_AGREEMENT",
+      planTier: agreement?.tier ?? null,
+      pricePerCuvertNok: agreement?.price_ex_vat ?? null,
       deliveryDays: deliveryNorm.days,
       slot: "lunch",
       dayTiers,
       basisDays,
       luxusDays,
-      startDate: agreement.start_date ?? null,
-      endDate: agreement.end_date ?? null,
-      updatedAt: agreement.updated_at ?? null,
+      startDate: agreement?.start_date ?? null,
+      endDate: agreement?.end_date ?? null,
+      updatedAt: agreement?.updated_at ?? null,
       agreementId,
     };
   }
@@ -329,16 +409,16 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     companyId,
     locationId,
     status: "ACTIVE",
-    planTier: agreement.plan_tier ?? null,
-    pricePerCuvertNok: agreement.price_per_cuvert_nok ?? null,
+    planTier: agreement?.tier ?? null,
+    pricePerCuvertNok: agreement?.price_ex_vat ?? null,
     deliveryDays: deliveryNorm.days,
     slot: "lunch",
     dayTiers,
     basisDays,
     luxusDays,
-    startDate: agreement.start_date ?? null,
-    endDate: agreement.end_date ?? null,
-    updatedAt: agreement.updated_at ?? null,
+    startDate: agreement?.start_date ?? null,
+    endDate: agreement?.end_date ?? null,
+    updatedAt: agreement?.updated_at ?? null,
     agreementId,
   };
 }
