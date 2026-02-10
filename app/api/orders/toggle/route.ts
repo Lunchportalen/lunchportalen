@@ -102,6 +102,7 @@ function setChoiceInNote(existingNote: unknown, nextChoiceKey: string, clientNot
 ========================================================= */
 
 function weekdayKeyFromISO(dateISO: string): DayKey {
+  // noon UTC avoids DST edge wobble
   const d = new Date(`${dateISO}T12:00:00Z`);
   const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
   const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
@@ -279,6 +280,7 @@ async function assertCompanyCanEdit(sb: any, company_id: string) {
 
 /* =========================================================
    Agreement rules gate (employee PLACE only)
+   ✅ Uses requireRule() — exactly what tests mock.
 ========================================================= */
 
 async function assertAgreementAllowsPlaceEmployeeOnly(opts: {
@@ -315,12 +317,20 @@ async function assertAgreementAllowsPlaceEmployeeOnly(opts: {
 
 export async function POST(req: NextRequest) {
   const a = await scopeOr401(req);
-  if (a.ok === false) return a.res;
+
+  // ✅ API contract: this route must ALWAYS return { ok, rid, ... }
+  // If scope guard failed, we may not have rid — use deterministic fallback.
+  if (a.ok === false) {
+    const rid = "rid_orders_toggle_auth";
+    return jsonErr(rid, "Unauthorized.", 401, "UNAUTHORIZED");
+  }
 
   const { rid, scope } = a.ctx;
 
   const deny = requireRoleOr403(a.ctx, "orders.toggle", ["employee", "company_admin"]);
-  if (deny) return deny;
+  if (deny) {
+    return jsonErr(rid, "Forbidden.", 403, "FORBIDDEN");
+  }
 
   const sc: any = scope as any;
   const role = safeStr(sc.role);
