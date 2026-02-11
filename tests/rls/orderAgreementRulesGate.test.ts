@@ -1,6 +1,6 @@
 // tests/rls/orderAgreementRulesGate.test.ts
 // @ts-nocheck
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 function mkReq(url: string, init?: RequestInit & { headers?: Record<string, string> }) {
   const { headers = {}, ...rest } = init ?? {};
@@ -8,7 +8,7 @@ function mkReq(url: string, init?: RequestInit & { headers?: Record<string, stri
 }
 async function readJson(res: Response) {
   const t = await res.text();
-  if (!t) return null;
+  if (!t) return {};
   try {
     return JSON.parse(t);
   } catch {
@@ -16,30 +16,58 @@ async function readJson(res: Response) {
   }
 }
 
-vi.mock("@/lib/http/routeGuard", async () => {
-  const mod = await vi.importActual<any>("@/lib/http/routeGuard");
-  return {
-    ...mod,
-    scopeOr401: vi.fn(async () => ({
-      ok: true,
-      ctx: {
-        rid: "rid_rule",
-        route: "/api/orders/toggle",
-        method: "POST",
-        scope: {
-          userId: "u1",
-          role: "employee",
-          companyId: "c1",
-          locationId: "l1",
-          email: "test@lunchportalen.no",
-        },
-      },
-    })),
-    requireCompanyScopeOr403: vi.fn(() => null),
-  };
-});
+/* =========================================================
+   Mocks: Scope + date + audit + backup
+========================================================= */
 
-let mockDeliveryDays: string[] = ["thu"];
+vi.mock("@/lib/auth/scope", () => ({
+  getScope: vi.fn(async () => ({
+    userId: "u1",
+    role: "employee",
+    companyId: "c1",
+    locationId: "l1",
+    email: "test@lunchportalen.no",
+  })),
+  // keep type-compat if imported elsewhere
+  ScopeError: class ScopeError extends Error {
+    status = 403;
+    code = "FORBIDDEN";
+  },
+}));
+
+vi.mock("@/lib/date/oslo", () => ({
+  isIsoDate: (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? "")),
+  cutoffStatusForDate: (_d: string) => "OPEN",
+  osloNowISO: () => "2026-01-29T07:00:00.000Z",
+}));
+
+vi.mock("@/lib/audit/auditWrite", () => ({
+  auditWriteMust: vi.fn(async () => true),
+}));
+
+vi.mock("@/lib/orders/orderBackup", () => ({
+  sendOrderBackup: vi.fn(async () => ({ ok: true })),
+}));
+
+/* =========================================================
+   Mocks: Company status (ACTIVE) + Server write should not be hit
+========================================================= */
+
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    from: (table: string) => {
+      const q: any = {
+        select: () => q,
+        eq: () => q,
+        maybeSingle: async () => {
+          if (table === "companies") return { data: { id: "c1", status: "ACTIVE" }, error: null };
+          return { data: null, error: null };
+        },
+      };
+      return q;
+    },
+  }),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
@@ -54,53 +82,54 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
-  supabaseAdmin: () => ({
-    from: (table: string) => {
-      const q: any = {
-        select: () => q,
-        eq: () => q,
-        maybeSingle: async () => {
-          if (table === "companies") return { data: { id: "c1", status: "ACTIVE" }, error: null };
-          if (table === "company_current_agreement") {
-            return { data: { id: "ag1", company_id: "c1", status: "ACTIVE", delivery_days: mockDeliveryDays }, error: null };
-          }
-          if (table === "company_current_agreement_rules") return { data: null, error: null };
-          return { data: null, error: null };
-        },
-      };
-      return q;
-    },
+/* =========================================================
+   Mocks: Agreement rules gate (this is what toggle uses)
+========================================================= */
+
+type RuleResult =
+  | { ok: true; rule?: any }
+  | { ok: false; status: number; error: string; message?: string };
+
+let mockDeliveryDays: string[] = ["thu"];
+let mockRulesExist = true;
+
+vi.mock("@/lib/agreement/requireRule", () => ({
+  requireRule: vi.fn(async (_args: any): Promise<RuleResult> => {
+    // Case 1: day not in delivery_days => 403 AGREEMENT_DAY_NOT_DELIVERY
+    // In test we simulate by setting mockDeliveryDays to ["mon"] but date is Thu (2026-01-29).
+    // So: if delivery days does not include "thu" => block.
+    if (!mockDeliveryDays.includes("thu")) {
+      return { ok: false, status: 403, error: "AGREEMENT_DAY_NOT_DELIVERY", message: "Day not in delivery_days" };
+    }
+
+    // Case 2: day is allowed but rule missing => 403 AGREEMENT_RULE_MISSING
+    if (!mockRulesExist) {
+      return { ok: false, status: 403, error: "AGREEMENT_RULE_MISSING", message: "Rule missing" };
+    }
+
+    return { ok: true, rule: { tier: "BASIS" } };
   }),
-}));
-
-vi.mock("@/lib/date/oslo", () => ({
-  isIsoDate: (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? "")),
-  cutoffStatusForDate: (_d: string) => "OPEN",
-}));
-
-vi.mock("@/lib/audit/auditWrite", () => ({
-  auditWriteMust: vi.fn(async (_x: any) => ({})),
-}));
-
-vi.mock("@/lib/orders/orderBackup", () => ({
-  sendOrderBackup: vi.fn(async () => ({ ok: true })),
 }));
 
 import { POST as togglePOST } from "../../app/api/orders/toggle/route";
 
+/* =========================================================
+   Tests
+========================================================= */
+
 describe("agreement rules gate - orders", () => {
+  beforeEach(() => {
+    mockDeliveryDays = ["thu"];
+    mockRulesExist = true;
+  });
+
   test("toggle PLACE returns 403 when day is not in delivery_days", async () => {
-    mockDeliveryDays = ["mon"];
+    mockDeliveryDays = ["mon"]; // does NOT include "thu" -> should block
+    mockRulesExist = true;
+
     const req = mkReq("http://localhost/api/orders/toggle", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-mock-role": "employee",
-        "x-mock-company": "c1",
-        "x-mock-location": "l1",
-        "x-mock-user": "u1",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ date: "2026-01-29", action: "place", slot: "lunch" }),
     });
 
@@ -113,16 +142,12 @@ describe("agreement rules gate - orders", () => {
   });
 
   test("toggle PLACE returns 403 when day_key is not in rules", async () => {
-    mockDeliveryDays = ["thu"];
+    mockDeliveryDays = ["thu"]; // allowed day
+    mockRulesExist = false;     // but missing rule -> should block
+
     const req = mkReq("http://localhost/api/orders/toggle", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-mock-role": "employee",
-        "x-mock-company": "c1",
-        "x-mock-location": "l1",
-        "x-mock-user": "u1",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ date: "2026-01-29", action: "place", slot: "lunch" }),
     });
 

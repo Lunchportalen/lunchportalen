@@ -1,7 +1,7 @@
 // lib/auth/scope.ts
 import "server-only";
 
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { systemRoleByEmail } from "@/lib/system/emails";
 
@@ -32,7 +32,7 @@ export class ScopeError extends Error {
 }
 
 /* =========================================================
-   Supabase (SSR-safe)
+   Env helpers
 ========================================================= */
 
 function isTestEnv() {
@@ -52,6 +52,62 @@ function envOrTestDefault(name: string, fallback: string) {
   return mustEnv(name);
 }
 
+/* =========================================================
+   Cookie helpers (TEST-SAFE)
+========================================================= */
+
+function parseCookieHeader(raw: string): Array<{ name: string; value: string }> {
+  const out: Array<{ name: string; value: string }> = [];
+  if (!raw) return out;
+
+  for (const part of String(raw).split(";")) {
+    const p = part.trim();
+    if (!p) continue;
+    const idx = p.indexOf("=");
+    if (idx === -1) continue;
+    const name = p.slice(0, idx).trim();
+    const value = p.slice(idx + 1).trim();
+    if (!name) continue;
+    out.push({ name, value });
+  }
+  return out;
+}
+
+/**
+ * NextRequest has req.cookies.getAll(), but plain Request in vitest does not.
+ * We support both:
+ * - Prefer req.cookies.getAll()
+ * - Fallback to Cookie header parsing
+ */
+function getCookiesAll(req: NextRequest): Array<{ name: string; value: string }> {
+  const anyReq: any = req as any;
+
+  // 1) NextRequest cookies API
+  const cookiesApi = anyReq?.cookies;
+  if (cookiesApi && typeof cookiesApi.getAll === "function") {
+    try {
+      return cookiesApi.getAll().map((c: any) => ({ name: c.name, value: c.value }));
+    } catch {
+      return [];
+    }
+  }
+
+  // 2) Fallback: Cookie header
+  try {
+    const h = anyReq?.headers;
+    const raw =
+      (h && typeof h.get === "function" ? h.get("cookie") : null) ??
+      (typeof h?.cookie === "string" ? h.cookie : "");
+    return parseCookieHeader(raw ?? "");
+  } catch {
+    return [];
+  }
+}
+
+/* =========================================================
+   Supabase (SSR-safe)
+========================================================= */
+
 /**
  * Minimal SSR client. We only need it for:
  * - auth.getUser()
@@ -66,10 +122,12 @@ function supabaseFromRequest(req: NextRequest) {
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
-        return req.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
+        // ✅ TEST-SAFE
+        return getCookiesAll(req);
       },
       setAll() {
         // no-op (API routes should not mutate auth cookies)
+        return;
       },
     },
   });
@@ -147,11 +205,7 @@ async function enforceCompanyActive(
   if (!(role === "company_admin" || role === "employee")) return;
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
-  const res = await (supabase as any)
-    .from("companies")
-    .select("id,status")
-    .eq("id", company_id)
-    .maybeSingle();
+  const res = await (supabase as any).from("companies").select("id,status").eq("id", company_id).maybeSingle();
 
   const error = res?.error as any;
   const data = res?.data as any;
@@ -212,13 +266,11 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   }
 
   // 4) Hvis profile mangler:
-  //    - company_admin/employee MÅ ha profile
   if (!profile || profErr) {
     throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
   }
 
   // 5) Aktivitetsstatus (tenant-only)
-  // ✅ FASIT: onboarding oppretter company_admin med is_active=false til aktivering.
   const is_active = profile.is_active === true;
 
   if ((role === "company_admin" || role === "employee") && !is_active) {
@@ -289,12 +341,6 @@ export function mustCompanyId(scope: Scope): string {
   return scope.company_id;
 }
 
-/**
- * For superadmin:
- *  - can optionally target another company
- * For tenant roles:
- *  - always locked to own company
- */
 export function effectiveCompanyId(scope: Scope, requestedCompanyId?: string | null) {
   if (scope.role === "superadmin") {
     return requestedCompanyId ?? null;
