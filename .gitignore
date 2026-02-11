@@ -19,3 +19,8 @@ pnpm-debug.log*
 
 # Build artifacts
 tsconfig.tsbuildinfo
+
+# TS build info
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
