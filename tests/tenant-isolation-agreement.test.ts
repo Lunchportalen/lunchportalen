@@ -20,7 +20,7 @@ async function readJson(res: Response) {
 }
 
 /* =========================================================
-   Mocks: scope + sanity + agreement state
+   Mocks: route scope + sanity + agreement state
 ========================================================= */
 vi.mock("@/lib/http/routeGuard", async () => {
   const mod = await vi.importActual<any>("@/lib/http/routeGuard");
@@ -83,8 +83,84 @@ vi.mock("@/lib/date/oslo", () => ({
 }));
 
 /* =========================================================
+   ✅ CRITICAL: Mock supabaseAdmin() to avoid CONFIG_ERROR in CI
+   ("Mangler service role konfigurasjon.")
+========================================================= */
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    from: (table: string) => {
+      const q: any = {
+        select: () => q,
+        eq: () => q,
+        gte: () => q,
+        lt: () => q,
+        in: () => q,
+        order: () => q,
+        limit: () => q,
+        maybeSingle: async () => {
+          if (table === "companies") {
+            return { data: { id: "cA", status: "ACTIVE", name: "Company A" }, error: null };
+          }
+          if (table === "agreements") {
+            return {
+              data: {
+                id: "ag_a",
+                company_id: "cA",
+                status: "ACTIVE",
+                company_location_id: "lA",
+                tier: "BASIS",
+                price_ex_vat: 90,
+                start_date: "2026-01-01",
+                end_date: null,
+                weekplan: {
+                  mon: { enabled: true, tier: "BASIS" },
+                  tue: { enabled: false, tier: "BASIS" },
+                  wed: { enabled: true, tier: "LUXUS" },
+                  thu: { enabled: false, tier: "BASIS" },
+                  fri: { enabled: false, tier: "BASIS" },
+                },
+                updated_at: "2026-01-31T12:00:00Z",
+              },
+              error: null,
+            };
+          }
+          if (table === "company_current_agreement") {
+            return {
+              data: {
+                id: "ag_a",
+                company_id: "cA",
+                status: "ACTIVE",
+                company_location_id: "lA",
+                weekplan: {
+                  mon: { enabled: true, tier: "BASIS" },
+                  wed: { enabled: true, tier: "LUXUS" },
+                },
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        },
+        then: (resolve: any) => resolve({ data: [], error: null }),
+      };
+
+      // minimal list queries used by some admin helpers
+      if (table === "company_locations") {
+        q.then = (resolve: any) => resolve({ data: [{ id: "lA", name: "Loc A" }], error: null });
+      }
+
+      if (table === "orders") {
+        q.then = (resolve: any) => resolve({ data: [], error: null });
+      }
+
+      return q;
+    },
+  }),
+}));
+
+/* =========================================================
    Supabase mocks (service + server)
-   NOTE: Must support order()/limit() because production code uses it.
+   NOTE: Keep these for routes that still import createClient/supabaseServer.
 ========================================================= */
 function makeServiceClient() {
   return {
@@ -101,11 +177,9 @@ function makeServiceClient() {
           if (table === "companies") {
             return { data: { id: "cA", status: "ACTIVE" }, error: null };
           }
-          // Legacy view
           if (table === "company_current_agreement") {
             return { data: { id: "ag_a", company_id: "cA", status: "ACTIVE" }, error: null };
           }
-          // New preferred truth
           if (table === "agreements") {
             return {
               data: {
@@ -129,7 +203,6 @@ function makeServiceClient() {
               error: null,
             };
           }
-
           return { data: null, error: null };
         },
       };
