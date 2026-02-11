@@ -4,10 +4,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
 import type { NextRequest } from "next/server";
 
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
-import { normalizeAgreement, isAgreementInvalid, resolveTierForDate, type AgreementNormalized } from "@/lib/agreements/normalizeAgreement";
+import {
+  normalizeAgreement,
+  isAgreementInvalid,
+  resolveTierForDate,
+  type AgreementNormalized,
+} from "@/lib/agreements/normalizeAgreement";
 import { PRICE_PER_TIER, type PlanTier } from "@/lib/pricing/priceForDate";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
@@ -16,7 +22,7 @@ import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
 type CompanyRow = { id: string; name: string | null };
-type AgreementRow = any;
+type AgreementRow = Record<string, any>;
 
 type InvoiceLine = {
   date: string;
@@ -54,19 +60,58 @@ function csvEscape(v: unknown) {
   if (/[,"\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
-
 function csvLine(values: unknown[]) {
   return values.map(csvEscape).join(",");
 }
 
+/**
+ * Agreement lookup strategy:
+ * 1) Prefer ACTIVE row in agreements (direct truth; resilient to stale views / legacy profiles)
+ * 2) Fallback to company_current_agreement view if no ACTIVE row exists
+ */
+async function loadAgreementRow(admin: any, companyId: string) {
+  // 1) Prefer agreements table
+  const aTbl = await admin
+    .from("agreements")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("status", "ACTIVE")
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (aTbl.error) {
+    return { ok: false as const, src: "agreements" as const, error: aTbl.error, data: null };
+  }
+  if (aTbl.data) {
+    return { ok: true as const, src: "agreements" as const, error: null, data: aTbl.data as AgreementRow };
+  }
+
+  // 2) Fallback view
+  const aView = await admin
+    .from("company_current_agreement")
+    .select("*")
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (aView.error) {
+    return { ok: false as const, src: "company_current_agreement" as const, error: aView.error, data: null };
+  }
+
+  return {
+    ok: true as const,
+    src: "company_current_agreement" as const,
+    error: null,
+    data: (aView.data ?? null) as AgreementRow | null,
+  };
+}
+
 export async function GET(req: NextRequest) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+
   const rid = makeRid();
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
-
-  const { scope } = a.ctx;
 
   const denyRole = requireRoleOr403(a.ctx, "admin.invoices.csv", ["company_admin"]);
   if (denyRole) return denyRole;
@@ -74,6 +119,7 @@ export async function GET(req: NextRequest) {
   const denyScope = requireCompanyScopeOr403(a.ctx);
   if (denyScope) return denyScope;
 
+  const { scope } = a.ctx;
   const companyId = safeStr(scope.companyId);
   if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
@@ -88,37 +134,53 @@ export async function GET(req: NextRequest) {
     const from = isIsoDate(qFrom) ? qFrom! : def.from;
     const to = isIsoDate(qTo) ? qTo! : def.to;
 
-    if (from >= to) return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
+    if (from >= to) {
+      return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
+    }
 
     const admin = supabaseAdmin();
 
     // Company
     const cRes = await admin.from("companies").select("id,name").eq("id", companyId).maybeSingle();
-    if (cRes.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: asErrDetail(cRes.error) });
+    if (cRes.error) {
+      return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: asErrDetail(cRes.error) });
+    }
 
     const company = (cRes.data ?? null) as CompanyRow | null;
     if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "NOT_FOUND");
 
     const companyName = safeStr(company.name) || "—";
 
-    // Agreement (ONE truth): company_current_agreement
-    const aRes = await admin.from("company_current_agreement").select("*").eq("company_id", companyId).maybeSingle();
-    if (aRes.error) return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "DB_ERROR", detail: asErrDetail(aRes.error) });
-    if (!aRes.data) return jsonErr(rid, "Ingen avtale funnet for firma.", 404, "NO_AGREEMENT");
+    // Agreement (robust)
+    const ag = await loadAgreementRow(admin, companyId);
+    if (ag.ok === false) {
+      return jsonErr(rid, "Kunne ikke hente avtale.", 500, {
+        code: "DB_ERROR",
+        detail: { source: ag.src, error: asErrDetail(ag.error) },
+      });
+    }
+    if (!ag.data) return jsonErr(rid, "Ingen avtale funnet for firma.", 404, "NO_AGREEMENT");
 
-    const agreementRes = normalizeAgreement(aRes.data as AgreementRow);
+    const agreementRes = normalizeAgreement(ag.data as AgreementRow);
     if (isAgreementInvalid(agreementRes)) {
-      return jsonErr(rid, "Avtalen er ugyldig eller mangler ukesplan.", 409, { code: "AGREEMENT_INVALID", detail: {
-        code: (agreementRes as any).error,
-        message: (agreementRes as any).message,
-        detail: (agreementRes as any).detail ?? null,
-      } });
+      return jsonErr(rid, "Avtalen er ugyldig eller mangler ukesplan.", 409, {
+        code: "AGREEMENT_INVALID",
+        detail: {
+          source: ag.src,
+          code: (agreementRes as any).error,
+          message: (agreementRes as any).message,
+          detail: (agreementRes as any).detail ?? null,
+          keys: Object.keys(ag.data ?? {}),
+        },
+      });
     }
     const agreement: AgreementNormalized = agreementRes as AgreementNormalized;
 
-    // Locations (navn for CSV)
+    // Locations (navn for CSV) — expects orders.location_id == company_locations.id
     const locRes = await admin.from("company_locations").select("id,name").eq("company_id", companyId);
-    if (locRes.error) return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: asErrDetail(locRes.error) });
+    if (locRes.error) {
+      return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: asErrDetail(locRes.error) });
+    }
 
     const locMap = new Map<string, string>();
     for (const l of locRes.data ?? []) locMap.set(String((l as any).id), safeStr((l as any).name));
@@ -132,10 +194,15 @@ export async function GET(req: NextRequest) {
       .lt("date", to)
       .eq("status", "ACTIVE");
 
-    if (oRes.error) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: asErrDetail(oRes.error) });
+    if (oRes.error) {
+      return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: asErrDetail(oRes.error) });
+    }
 
     // Group: date + location + slot + tier
-    const buckets = new Map<string, { date: string; location_id: string | null; slot: string | null; tier: PlanTier; unit: number; qty: number }>();
+    const buckets = new Map<
+      string,
+      { date: string; location_id: string | null; slot: string | null; tier: PlanTier; unit: number; qty: number }
+    >();
 
     for (const o of oRes.data ?? []) {
       const dateISO = safeStr((o as any).date);
@@ -145,18 +212,18 @@ export async function GET(req: NextRequest) {
       try {
         tierRaw = resolveTierForDate(agreement, dateISO);
       } catch (e: any) {
-        return jsonErr(rid, "Helg støttes ikke i fakturagrunnlag (Man–Fre).", 409, { code: "WEEKEND_NOT_SUPPORTED", detail: {
-          date: dateISO,
-          message: safeStr(e?.message ?? e),
-        } });
+        return jsonErr(rid, "Helg støttes ikke i fakturagrunnlag (Man–Fre).", 409, {
+          code: "WEEKEND_NOT_SUPPORTED",
+          detail: { date: dateISO, message: safeStr(e?.message ?? e) },
+        });
       }
 
       const tier = asPlanTier(tierRaw);
       if (!tier) {
-        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, { code: "BAD_TIER", detail: {
-          date: dateISO,
-          tier: tierRaw,
-        } });
+        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, {
+          code: "BAD_TIER",
+          detail: { date: dateISO, tier: tierRaw },
+        });
       }
 
       const unit = Number(PRICE_PER_TIER[tier] ?? 0);
@@ -187,7 +254,34 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    const header = ["company_id", "company_name", "from", "to_exclusive", "date", "location_id", "location_name", "slot", "plan_tier", "qty", "unit_price_nok", "amount_nok"];
+    const header = [
+      "company_id",
+      "company_name",
+      "from",
+      "to_exclusive",
+      "date",
+      "location_id",
+      "location_name",
+      "slot",
+      "plan_tier",
+      "qty",
+      "unit_price_nok",
+      "amount_nok",
+    ];
+
+    if (metaOnly) {
+      return jsonOk(
+        rid,
+        {
+          filename: `invoice_lines_${companyId}_${from}_to_${to}.csv`,
+          contentType: "text/csv; charset=utf-8",
+          rows: lines.length,
+          agreement_source: (await loadAgreementRow(admin, companyId)).src,
+        },
+        200
+      );
+    }
+
     const rows: string[] = [];
     rows.push(header.join(","));
 
@@ -213,15 +307,6 @@ export async function GET(req: NextRequest) {
     const filename = `invoice_lines_${companyId}_${from}_to_${to}.csv`;
     const contentType = "text/csv; charset=utf-8";
     const contentDisposition = `attachment; filename="${filename}"`;
-
-    if (metaOnly) {
-      return jsonOk(rid, {
-        filename,
-        contentType,
-        contentDisposition,
-        rows: lines.length,
-      }, 200);
-    }
 
     const csv = rows.join("\n");
 
