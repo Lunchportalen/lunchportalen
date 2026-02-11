@@ -84,6 +84,7 @@ vi.mock("@/lib/date/oslo", () => ({
 
 /* =========================================================
    Supabase mocks (service + server)
+   NOTE: Must support order()/limit() because production code uses it.
 ========================================================= */
 function makeServiceClient() {
   return {
@@ -91,13 +92,44 @@ function makeServiceClient() {
       const q: any = {
         select: () => q,
         eq: () => q,
+        gte: () => q,
+        lt: () => q,
+        in: () => q,
+        order: () => q,
+        limit: () => q,
         maybeSingle: async () => {
           if (table === "companies") {
             return { data: { id: "cA", status: "ACTIVE" }, error: null };
           }
+          // Legacy view
           if (table === "company_current_agreement") {
             return { data: { id: "ag_a", company_id: "cA", status: "ACTIVE" }, error: null };
           }
+          // New preferred truth
+          if (table === "agreements") {
+            return {
+              data: {
+                id: "ag_a",
+                company_id: "cA",
+                status: "ACTIVE",
+                company_location_id: "lA",
+                tier: "BASIS",
+                price_ex_vat: 90,
+                start_date: "2026-01-01",
+                end_date: null,
+                weekplan: {
+                  mon: { enabled: true, tier: "BASIS" },
+                  tue: { enabled: true, tier: "BASIS" },
+                  wed: { enabled: true, tier: "LUXUS" },
+                  thu: { enabled: false, tier: "BASIS" },
+                  fri: { enabled: false, tier: "BASIS" },
+                },
+                updated_at: "2026-01-31T12:00:00Z",
+              },
+              error: null,
+            };
+          }
+
           return { data: null, error: null };
         },
       };
@@ -298,7 +330,7 @@ describe("tenant isolation – kitchen output", () => {
       rid: "rid_kitchen",
     });
 
-    const companies = new Set(groups.map((g) => g.company_id));
+    const companies = new Set(groups.map((g: any) => g.company_id));
     expect(companies.size).toBe(1);
     expect(companies.has("cA")).toBe(true);
   });
