@@ -14,7 +14,14 @@ function pickResponse(x: any): Response {
   const r = x?.res ?? x?.response;
   if (r) return r as Response;
 
-  return jsonErr("no_rid", "RouteGuard returnerte ingen Response.", 500, { code: "guard_contract_mismatch", detail: { keys: x ? Object.keys(x) : null } }) as unknown as Response;
+  // ✅ Use error code + detail (detail only visible in RC/dev)
+  return jsonErr(
+    "no_rid",
+    "RouteGuard returnerte ingen Response.",
+    500,
+    "guard_contract_mismatch",
+    { keys: x ? Object.keys(x) : null }
+  ) as unknown as Response;
 }
 
 function hasCtx(x: any): x is { ctx: any } {
@@ -31,7 +38,7 @@ export async function GET(req: NextRequest) {
   }
 
   // 🔐 role gate (Dag-3)
-  // ✅ SIGNATUR HOS DERE (vist av TS-feilen): ctx først, action som nr. 2
+  // ✅ SIGNATUR HOS DERE: ctx først, action som nr. 2
   const denied = requireRoleOr403(s.ctx, "system.health", allowedRoles);
 
   // Guard kan returnere:
@@ -45,17 +52,25 @@ export async function GET(req: NextRequest) {
     if (typeof denied === "object" && "status" in (denied as any) && "headers" in (denied as any)) {
       return denied as Response;
     }
-    return jsonErr(s.ctx.rid, "Role-guard returnerte ukjent type.", 500, { code: "guard_contract_mismatch", detail: {
-      typeofDenied: typeof denied,
-    } }) as unknown as Response;
+    return jsonErr(
+      s.ctx.rid,
+      "Role-guard returnerte ukjent type.",
+      500,
+      "guard_contract_mismatch",
+      { typeofDenied: typeof denied }
+    ) as unknown as Response;
   }
 
   try {
     const report = await runHealthChecks();
     return jsonOk(s.ctx.rid, report, 200);
   } catch (e: any) {
-    return jsonErr(s.ctx.rid, "Health check feilet.", 500, { code: "health_failed", detail: {
-      message: String(e?.message ?? e),
-    } });
+    return jsonErr(
+      s.ctx.rid,
+      "Health check feilet.",
+      500,
+      "health_failed",
+      { message: String(e?.message ?? e) }
+    );
   }
 }

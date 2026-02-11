@@ -24,7 +24,9 @@ type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type Tier = "BASIS" | "LUXUS";
 type Choice = { key: string; label?: string };
 
-type AgreementStatusOut = "ACTIVE" | "PENDING_COMPANY" | "STARTS_LATER" | "NOT_READY";
+// ✅ Keep existing normalized statuses (do not break clients),
+// and ALSO expose raw_status for richer UI/contracts.
+type AgreementStatusOut = "ACTIVE" | "PENDING_COMPANY" | "STARTS_LATER" | "NOT_READY" | "MISSING";
 type CompanyStatusNorm = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
 
 type OrderRow = {
@@ -314,6 +316,7 @@ export async function GET(req: NextRequest) {
   const { scope } = a.ctx;
   const sc = normalizeScopeIds(scope);
 
+  // ✅ role gate (employee + company_admin)
   if (sc.role !== "employee" && sc.role !== "company_admin") {
     return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN_ROLE");
   }
@@ -415,7 +418,6 @@ export async function GET(req: NextRequest) {
 
     // day choices (service role) — MUST NOT take endpoint down in tests
     const dayChoicesByDate = new Map<string, DayChoiceRow>();
-
     try {
       const dcBase = (admin as any)
         .from("day_choices")
@@ -424,7 +426,6 @@ export async function GET(req: NextRequest) {
         .eq("company_id", sc.company_id)
         .eq("location_id", sc.location_id);
 
-      // ✅ Only run if `.in()` exists (prod). Mocks may only support eq/maybeSingle.
       if (typeof (dcBase as any).in === "function") {
         const { data: dcRaw0, error: dcErr } = await (dcBase as any).in("date", dates);
         if (dcErr) {
@@ -442,7 +443,6 @@ export async function GET(req: NextRequest) {
           if (!prev || nextT >= prevT) dayChoicesByDate.set(dISO, r);
         }
       } else {
-        // ✅ Deterministic: silently skip in unit tests/mocks
         opsLog("window.day_choices.skipped", { rid, reason: "query_builder_missing_in()", company_id: sc.company_id });
       }
     } catch (e: any) {
@@ -456,6 +456,7 @@ export async function GET(req: NextRequest) {
 
     let agreementMessage: string | null = null;
     let agreementStatus: AgreementStatusOut = "NOT_READY";
+    let agreementRawStatus: string | null = null;
 
     // Tenant-scope rules: mismatch MUST be 403 (never 500)
     try {
@@ -467,7 +468,7 @@ export async function GET(req: NextRequest) {
         role: sc.role,
       } as any);
 
-      // If agreement layer explicitly returns scope mismatch -> map to 403 deterministically
+      // Explicit missing agreement -> normalize to MISSING (do not 500)
       if ((agreementState as any)?.ok === false) {
         const st = Number((agreementState as any)?.status ?? 0);
         const er = String((agreementState as any)?.error ?? "");
@@ -475,9 +476,11 @@ export async function GET(req: NextRequest) {
         if (st === 403 && er === "AGREEMENT_SCOPE_MISMATCH") {
           return jsonErr(rid, msg, 403, "AGREEMENT_SCOPE_MISMATCH");
         }
+        // Anything else “not ok” from agreement layer is treated as MISSING/NOT_READY (fail-closed)
+        agreementStatus = "MISSING";
+        agreementMessage = msg || "Ingen aktiv avtale.";
       }
 
-      // If mock includes company_id and it differs -> 403 (never 500)
       const stateCompanyId = String((agreementState as any)?.company_id ?? (agreementState as any)?.companyId ?? "").trim();
       if (stateCompanyId && stateCompanyId !== sc.company_id) {
         return jsonErr(rid, "Avtalen tilhører et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
@@ -508,12 +511,11 @@ export async function GET(req: NextRequest) {
           dayTiers = {} as any;
         }
 
-        // Derive deliveryDays from dayTiers if missing
         if (!deliveryDays.length && Object.keys(dayTiers).length) {
           deliveryDays = Object.keys(dayTiers) as DayKey[];
         }
 
-        const statusRaw = String((agreementState as any).status ?? "").trim().toUpperCase();
+        agreementRawStatus = String((agreementState as any).status ?? "").trim().toUpperCase() || null;
         const startsLater = Boolean(startDateISO && isIsoDate(startDateISO) && startDateISO > today);
 
         if (policy.status === "PENDING") {
@@ -521,14 +523,19 @@ export async function GET(req: NextRequest) {
           agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
         } else if (startsLater) {
           agreementStatus = "STARTS_LATER";
-        } else if (statusRaw === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {
+        } else if (agreementRawStatus === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {
           agreementStatus = "ACTIVE";
         } else {
+          // agreement exists but not usable
           agreementStatus = "NOT_READY";
+          agreementMessage = agreementMessage ?? "Ingen aktiv avtale.";
         }
       }
     } catch (e: any) {
       opsLog("window.agreement.primary_failed", { rid, company_id: sc.company_id, detail: String(e?.stack || e?.message || e) });
+      // fail-closed
+      agreementStatus = agreementStatus === "ACTIVE" ? "ACTIVE" : "NOT_READY";
+      agreementMessage = agreementMessage ?? "Ingen aktiv avtale.";
     }
 
     // fallback days (service role)
@@ -549,6 +556,7 @@ export async function GET(req: NextRequest) {
             const tr = normTierStrict((r as any).tier);
             if (!dk || !tr) continue;
             next[dk] = tr;
+            if (!agreementRawStatus) agreementRawStatus = "ACTIVE"; // best-effort
           }
           dayTiers = next;
           deliveryDays = Object.keys(next) as DayKey[];
@@ -565,12 +573,7 @@ export async function GET(req: NextRequest) {
     let agreementForChoices: any = null;
     if (agreementUsable) {
       try {
-        const q = (admin as any)
-          .from("company_current_agreement")
-          .select("*")
-          .eq("company_id", sc.company_id);
-
-        // Some mocks may not support `.in()` either; avoid taking the route down.
+        const q = (admin as any).from("company_current_agreement").select("*").eq("company_id", sc.company_id);
         let agreementRow: any = null;
 
         if (typeof (q as any).in === "function") {
@@ -597,7 +600,7 @@ export async function GET(req: NextRequest) {
       const tier: Tier | null = (dayTiers as any)[dayKey] ?? null;
       const isDeliveryDay = Array.isArray(deliveryDays) ? deliveryDays.includes(dayKey) : false;
 
-      // ✅ "day_tiers gate": enabled only when agreement usable and day has tier + is delivery day
+      // ✅ enabled only when agreement usable + delivery day + tier exists
       const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
 
       const agreementChoices = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
@@ -625,7 +628,13 @@ export async function GET(req: NextRequest) {
 
       const cutoff = cutoffStatusForDate(date);
       const dateLocked = cutoff === "PAST" || cutoff === "TODAY_LOCKED";
-      const lockReason = dateLocked ? "CUTOFF" : !company.canEditOrders ? "COMPANY" : null;
+
+      // lockReason: cutoff has priority, then company policy, then agreement availability
+      const lockReason =
+        dateLocked ? "CUTOFF" :
+        !company.canEditOrders ? "COMPANY" :
+        !agreementUsable ? "COMPANY" :
+        null;
 
       const menu = menuByDate.get(date) ?? null;
       const picked = pickMenuForChoice(menu, safeSelected);
@@ -634,7 +643,7 @@ export async function GET(req: NextRequest) {
         date,
         weekday: dayKey,
 
-        isLocked: dateLocked || !company.canEditOrders,
+        isLocked: dateLocked || !company.canEditOrders || !agreementUsable,
         isEnabled,
         lockReason,
 
@@ -665,15 +674,34 @@ export async function GET(req: NextRequest) {
       rid,
       {
         ok: true,
+        rid,
+        // ✅ keep deterministic scope for clients
         scope: { company_id: sc.company_id, location_id: sc.location_id, user_id: sc.user_id },
+
         company,
+
+        // ✅ normalized agreement status + raw_status for richer UIs (does not break older clients)
         agreement: {
           status: agreementStatus,
+          raw_status: agreementRawStatus,
           message: agreementMessage,
           start_date: startDateISO,
           delivery_days: deliveryDays,
         },
+
         range: { from: fromISO, to: toISO },
+
+        // ✅ server time label (web/app can show “Systemtid” consistently)
+        serverNow: now.toISOString(),
+        serverTimeLabel: `${formatTimeNO(now.toISOString())} (Oslo)`,
+
+        // ✅ week visibility hint (client can show Thu/Fri rules deterministically)
+        week: {
+          thisWeekStart: thisWeekStartISO,
+          nextWeekStart: nextWeekStartISO,
+          canSeeNextWeek: openNextWeek,
+        },
+
         days,
       },
       200

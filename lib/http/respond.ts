@@ -59,6 +59,13 @@ function jsonResponse(body: unknown, status: number, extraHeaders?: HeadersInit)
   });
 }
 
+function allowDetail(): boolean {
+  // ✅ Enterprise: details only in RC/dev (never leak internals in prod by default)
+  if (process.env.RC_MODE === "true") return true;
+  if (process.env.NODE_ENV && process.env.NODE_ENV !== "production") return true;
+  return false;
+}
+
 export function jsonOk<T>(rid: string, data: T, status = 200): Response {
   try {
     return jsonResponse({ ok: true as const, rid, data: data ?? null }, status);
@@ -85,14 +92,25 @@ export function jsonOk<T>(rid: string, data: T, status = 200): Response {
   }
 }
 
-export function jsonErr(rid: string, message: string, status = 400, error?: unknown): Response {
+// ✅ Backwards compatible: added optional `detail` param (5th)
+// Existing calls with 4 args continue to work unchanged.
+export function jsonErr(rid: string, message: string, status = 400, error?: unknown, detail?: unknown): Response {
   try {
     const errorOut = normalizeError(error);
-    const payload = { ok: false as const, rid, message, status, error: errorOut };
+    const payload: any = { ok: false as const, rid, message, status, error: errorOut };
+
+    const withDetail = allowDetail() && detail !== undefined;
+    if (withDetail) payload.detail = detail;
 
     if (status >= 500) {
       try {
-        opsLog("incident", { rid, status, message, error: errorOut });
+        opsLog("incident", {
+          rid,
+          status,
+          message,
+          error: errorOut,
+          ...(withDetail ? { detail } : {}),
+        });
       } catch {
         // ignore
       }

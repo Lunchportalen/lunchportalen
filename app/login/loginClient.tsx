@@ -1,9 +1,8 @@
 // app/login/login-client.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Profile = {
   id: string;
@@ -16,12 +15,16 @@ type Profile = {
 };
 
 type ApiProfileOk =
-  | { ok: true; pending: true; reason?: string; retryAfterMs?: number }
-  | { ok: true; pending: false; profile: Profile };
+  | { ok: true; pending: true; reason?: string; retryAfterMs?: number; company_status?: string }
+  | { ok: true; pending: false; profile: Profile; company_status?: string };
 
 type ApiProfileErr = { ok: false; error: string; message?: string };
 
 type ApiProfileRes = ApiProfileOk | ApiProfileErr;
+
+type ApiLoginOk = { ok: true; rid: string; data: { user_id: string } };
+type ApiLoginErr = { ok: false; rid: string; error: string; message: string; status: number };
+type ApiLoginRes = ApiLoginOk | ApiLoginErr;
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -31,25 +34,29 @@ async function sleep(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
 }
 
+function safeNextPath(n: string | null): string {
+  if (!n) return "";
+  if (!n.startsWith("/")) return "";
+  if (n.startsWith("//")) return "";
+  // Avoid redirecting back into login loop
+  if (n.startsWith("/login")) return "/week";
+  return n;
+}
+
 export default function LoginClient() {
   const sp = useSearchParams();
+  const router = useRouter();
 
-  // âœ… Support: /login?next=/week
-  const nextPath = useMemo(() => {
-    const n = sp.get("next");
-    if (!n || !n.startsWith("/")) return "";
-    if (n.startsWith("//")) return "";
-    return n;
-  }, [sp]);
+  // ✅ Support: /login?next=/week
+  const nextPath = useMemo(() => safeNextPath(sp.get("next")), [sp]);
 
   const okParam = sp.get("ok");
   const prefillEmail = sp.get("email") ?? "";
 
-  const supabase = supabaseBrowser();
-
   const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>("");
   const [msgTone, setMsgTone] = useState<"info" | "error">("info");
@@ -58,7 +65,7 @@ export default function LoginClient() {
   useEffect(() => {
     if (okParam === "invite_accepted") {
       setMsgTone("info");
-      setMsg("Kontoen er opprettet. Logg inn for Ã¥ komme i gang.");
+      setMsg("Kontoen er opprettet. Logg inn for å komme i gang.");
     }
   }, [okParam]);
 
@@ -76,8 +83,9 @@ export default function LoginClient() {
     setPendingProfile(true);
     setMsg("");
 
-    const MAX_ATTEMPTS = 4; // initial + 3 retries
-    const retryDelays = [200, 500, 900];
+    const MAX_ATTEMPTS = 5; // initial + retries
+    const retryDelays = [120, 220, 400, 700];
+
     let lastState: "pending" | "auth_delay" | "technical" | "unknown" = "unknown";
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -93,6 +101,7 @@ export default function LoginClient() {
 
       if (r) {
         if (r.status === 401 || r.status === 403) {
+          // cookies may not be read yet by the next server pass
           lastState = "auth_delay";
         } else if (r.status === 202) {
           lastState = "pending";
@@ -103,11 +112,16 @@ export default function LoginClient() {
         } else if (data && data.ok === true && data.pending === true) {
           const st = String((data as any).company_status ?? "").toLowerCase();
           if (st === "pending") {
-            window.location.assign("/pending");
+            setPendingProfile(false);
+            router.replace("/pending");
+            router.refresh();
             return;
           }
           if (st === "paused" || st === "closed") {
-            window.location.assign(`/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(next || "/week")}`);
+            setPendingProfile(false);
+            const to = `/status?state=${encodeURIComponent(st)}&next=${encodeURIComponent(next || "/week")}`;
+            router.replace(to);
+            router.refresh();
             return;
           }
           lastState = "pending";
@@ -122,14 +136,16 @@ export default function LoginClient() {
 
           if (prof?.is_active === false) {
             setPendingProfile(false);
-            setInfo("Kontoen er ikke aktiv ennÃ¥. Kontakt administrator.");
+            setInfo("Kontoen er ikke aktiv ennå. Kontakt administrator.");
             return;
           }
 
+          // ✅ IMPORTANT: use SPA navigation + refresh (no more “must reload”).
+          setPendingProfile(false);
+
           const nextUrl = next || "/week";
-          const postLoginUrl = `/api/auth/post-login?next=${encodeURIComponent(nextUrl)}`;
-          // Hard redirect avoids SPA session/profile race that previously required manual refresh.
-          window.location.assign(postLoginUrl);
+          router.replace(nextUrl);
+          router.refresh();
           return;
         } else {
           lastState = "technical";
@@ -137,23 +153,23 @@ export default function LoginClient() {
       }
 
       if (attempt < MAX_ATTEMPTS - 1) {
-        await sleep(retryDelays[attempt]);
+        await sleep(retryDelays[Math.min(attempt, retryDelays.length - 1)]);
       }
     }
 
     setPendingProfile(false);
 
     if (lastState === "pending") {
-      setInfo("Vi setter opp kontoen din. Vent litt og prÃ¸v igjen hvis du ikke kommer videre.");
+      setInfo("Vi setter opp kontoen din. Vent litt og prøv igjen hvis du ikke kommer videre.");
       return;
     }
 
     if (lastState === "auth_delay") {
-      setInfo("Innloggingen bruker litt tid. Vent litt og prÃ¸v igjen.");
+      setInfo("Innloggingen bruker litt tid. Vent litt og prøv igjen.");
       return;
     }
 
-    setError("Teknisk feil. Vent litt og prÃ¸v igjen.");
+    setError("Teknisk feil. Vent litt og prøv igjen.");
   }
 
   async function onLogin(e: React.FormEvent) {
@@ -172,62 +188,55 @@ export default function LoginClient() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: eMail,
-      password,
-    });
+    // ✅ Enterprise-correct: client calls server login route (SSR cookies), no supabase browser client.
+    let res: Response | null = null;
+    let data: ApiLoginRes | null = null;
 
-    setBusy(false);
+    try {
+      res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ email: eMail, password }),
+      });
 
-    if (error) {
-      setError("Feil e-post eller passord.");
+      data = (await res.json().catch(() => null)) as ApiLoginRes | null;
+    } catch {
+      setBusy(false);
+      setError("Teknisk feil. Prøv igjen.");
       return;
     }
 
+    setBusy(false);
+
+    if (!res || !res.ok || !data || (data as any).ok !== true) {
+      setError((data as any)?.message || "Feil e-post eller passord.");
+      return;
+    }
+
+    // ✅ Immediately start readiness checks (profile/role gating)
     await postLoginReadiness(nextPath || "/week");
   }
 
-  // âš ï¸ KUN for test/dev. Ikke bruk i prod.
+  // ⚠️ KUN for test/dev. Ikke bruk i prod.
+  // In this SSR/cookie model, registration should also be server-driven.
+  // We keep the button but make it deterministic and safe.
   async function onRegister(e: React.MouseEvent) {
     e.preventDefault();
-    if (busy || pendingProfile) return;
-
-    setMsg("");
-    setMsgTone("info");
-    setBusy(true);
-
-    const eMail = email.trim().toLowerCase();
-
-    if (!isEmail(eMail)) {
-      setBusy(false);
-      setInfo("Skriv inn en gyldig e-postadresse.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email: eMail,
-      password,
-    });
-
-    setBusy(false);
-
-    if (error) {
-      setInfo(`Kunne ikke opprette bruker: ${error.message}`);
-      return;
-    }
-
-    setInfo("Bruker opprettet. Du kan nÃ¥ logge inn.");
+    setInfo("Registrering er deaktivert i produksjon. Kontakt firma-admin.");
   }
+
+  const isBusy = busy || pendingProfile;
 
   return (
     <main className="mx-auto max-w-md p-6">
       <h1 className="text-2xl font-bold">Logg inn</h1>
-      <p className="mt-2 text-sm opacity-80">Logg inn for Ã¥ bestille eller avbestille lunsj.</p>
+      <p className="mt-2 text-sm opacity-80">Tilgang for ansatte og administrator.</p>
 
-      {busy || pendingProfile ? (
+      {isBusy ? (
         <div className="mt-4 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm">
           <div className="font-semibold">Logger deg trygt inn…</div>
-          <div className="mt-1 opacity-80">Dette tar vanligvis bare et Ã¸yeblikk.</div>
+          <div className="mt-1 opacity-80">Dette tar vanligvis bare et øyeblikk.</div>
         </div>
       ) : null}
 
@@ -241,7 +250,7 @@ export default function LoginClient() {
             type="email"
             autoComplete="email"
             required
-            disabled={busy || pendingProfile}
+            disabled={isBusy}
           />
         </label>
 
@@ -255,13 +264,14 @@ export default function LoginClient() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
-              disabled={busy || pendingProfile}
+              disabled={isBusy}
             />
             <button
               type="button"
               className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-md px-3 text-xs font-semibold hover:bg-white/5"
               onClick={() => setShowPassword((v) => !v)}
               aria-pressed={showPassword}
+              disabled={isBusy}
             >
               {showPassword ? "Skjul" : "Vis"}
             </button>
@@ -269,20 +279,20 @@ export default function LoginClient() {
         </label>
 
         <button
-          disabled={busy || pendingProfile}
+          disabled={isBusy}
           className={`mt-2 min-h-[48px] rounded-lg border px-4 py-2 ${
-            busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
+            isBusy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="submit"
         >
-          {pendingProfile ? "Logger deg trygt inn…" : busy ? "Logger deg trygt inn…" : "Logg inn"}
+          {isBusy ? "Logger deg trygt inn…" : "Logg inn"}
         </button>
 
         <button
-          disabled={busy || pendingProfile}
+          disabled={isBusy}
           onClick={onRegister}
           className={`min-h-[48px] rounded-lg border px-4 py-2 ${
-            busy || pendingProfile ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
+            isBusy ? "border-white/10 opacity-60" : "border-white/20 hover:bg-white/5"
           }`}
           type="button"
         >
@@ -292,6 +302,10 @@ export default function LoginClient() {
         {msg ? (
           <div className={`mt-2 text-sm${msgTone === "error" ? " text-red-500" : ""}`}>{msg}</div>
         ) : null}
+
+        <a className="mt-2 text-sm underline opacity-80 hover:opacity-100" href="/forgot-password">
+          Glemt passord?
+        </a>
       </form>
     </main>
   );
