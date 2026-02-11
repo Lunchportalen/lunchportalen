@@ -16,7 +16,6 @@ import {
 } from "@/lib/agreements/normalizeAgreement";
 import { PRICE_PER_TIER, type PlanTier } from "@/lib/pricing/priceForDate";
 
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
@@ -64,15 +63,6 @@ function csvLine(values: unknown[]) {
   return values.map(csvEscape).join(",");
 }
 
-/**
- * Agreement lookup strategy:
- * 0) If scope.locationId is present, try ACTIVE agreement for that company_location_id
- * 1) Prefer latest ACTIVE row in agreements (direct truth)
- * 2) Fallback to company_current_agreement view (legacy)
- *
- * NOTE: robust in both production and tests:
- * - Swallows missing chain methods or missing view in mocks
- */
 async function loadAgreementRow(admin: any, companyId: string, companyLocationHint?: string | null) {
   // 0) Try match by company_location_id (if provided)
   if (companyLocationHint) {
@@ -87,22 +77,15 @@ async function loadAgreementRow(admin: any, companyId: string, companyLocationHi
         .limit(1)
         .maybeSingle();
 
-      if (aLoc?.error) {
-        // ignore and continue
-      } else if (aLoc?.data) {
-        return {
-          ok: true as const,
-          src: "agreements(company_location_id)" as const,
-          error: null,
-          data: aLoc.data as AgreementRow,
-        };
+      if (aLoc?.data) {
+        return { ok: true as const, src: "agreements(company_location_id)" as const, error: null, data: aLoc.data as AgreementRow };
       }
     } catch {
       // swallow
     }
   }
 
-  // 1) Prefer agreements table
+  // 1) Prefer agreements
   try {
     const aTbl = await admin
       .from("agreements")
@@ -113,14 +96,10 @@ async function loadAgreementRow(admin: any, companyId: string, companyLocationHi
       .limit(1)
       .maybeSingle();
 
-    if (aTbl?.error) {
-      return { ok: false as const, src: "agreements" as const, error: aTbl.error, data: null };
-    }
-    if (aTbl?.data) {
-      return { ok: true as const, src: "agreements" as const, error: null, data: aTbl.data as AgreementRow };
-    }
+    if (aTbl?.error) return { ok: false as const, src: "agreements" as const, error: aTbl.error, data: null };
+    if (aTbl?.data) return { ok: true as const, src: "agreements" as const, error: null, data: aTbl.data as AgreementRow };
   } catch {
-    // swallow and fallback
+    // swallow
   }
 
   // 2) Fallback view (legacy)
@@ -131,24 +110,10 @@ async function loadAgreementRow(admin: any, companyId: string, companyLocationHi
       .eq("company_id", companyId)
       .maybeSingle();
 
-    if (aView?.error) {
-      return { ok: false as const, src: "company_current_agreement" as const, error: aView.error, data: null };
-    }
-
-    return {
-      ok: true as const,
-      src: "company_current_agreement" as const,
-      error: null,
-      data: (aView?.data ?? null) as AgreementRow | null,
-    };
-  } catch (e: any) {
-    // If view doesn't exist or mocks don't support it, return null (handled by NO_AGREEMENT)
-    return {
-      ok: true as const,
-      src: "company_current_agreement" as const,
-      error: null,
-      data: null,
-    };
+    if (aView?.error) return { ok: false as const, src: "company_current_agreement" as const, error: aView.error, data: null };
+    return { ok: true as const, src: "company_current_agreement" as const, error: null, data: (aView?.data ?? null) as AgreementRow | null };
+  } catch {
+    return { ok: true as const, src: "company_current_agreement" as const, error: null, data: null };
   }
 }
 
@@ -159,12 +124,11 @@ function summarizeAgreementRow(row: AgreementRow | null) {
     id: (row as any).id ?? null,
     company_id: (row as any).company_id ?? null,
     status: (row as any).status ?? null,
-    start_date: (row as any).start_date ?? null,
-    end_date: (row as any).end_date ?? null,
     company_location_id: (row as any).company_location_id ?? null,
     location_id: (row as any).location_id ?? null,
     tier: (row as any).tier ?? null,
-    price_ex_vat: (row as any).price_ex_vat ?? null,
+    start_date: (row as any).start_date ?? null,
+    end_date: (row as any).end_date ?? null,
     has_weekplan: !!weekplan,
     weekplan_keys: weekplan && typeof weekplan === "object" ? Object.keys(weekplan) : null,
   };
@@ -187,54 +151,72 @@ export async function GET(req: NextRequest) {
   const companyId = safeStr(scope.companyId);
   if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
+  const url = new URL(req.url);
+  const metaOnly = url.searchParams.get("meta") === "1";
+  const ts = safeStr(url.searchParams.get("ts")); // cache-bypass helper
+
+  // Period
+  const qFrom = url.searchParams.get("from");
+  const qTo = url.searchParams.get("to");
+  const def = defaultInvoiceWindowISO();
+  const from = isIsoDate(qFrom) ? qFrom! : def.from;
+  const to = isIsoDate(qTo) ? qTo! : def.to;
+
+  if (from >= to) {
+    return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
+  }
+
   try {
-    // Period
-    const url = new URL(req.url);
-    const qFrom = url.searchParams.get("from");
-    const qTo = url.searchParams.get("to");
-    const metaOnly = url.searchParams.get("meta") === "1";
-
-    const def = defaultInvoiceWindowISO();
-    const from = isIsoDate(qFrom) ? qFrom! : def.from;
-    const to = isIsoDate(qTo) ? qTo! : def.to;
-
-    if (from >= to) {
-      return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
-    }
-
     const admin = supabaseAdmin();
+    const companyLocationHint = safeStr((scope as any).locationId) || null;
 
-    // --- Optional diagnostics for meta=1 (helps prove service-role visibility) ---
+    // ---------- META DIAGNOSTICS (ALWAYS) ----------
+    // We run a lightweight visibility check BEFORE agreement lookup.
+    const vis = await admin
+      .from("agreements")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("status", "ACTIVE");
+
+    const diag = {
+      buildTag: "CSV_ROUTE_DIAG_V1",
+      rid,
+      ts: ts || null,
+      scope: { companyId, locationId: companyLocationHint, role: (scope as any).role ?? null },
+      hasServiceRoleEnv: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      agreementsVisibleCount: (vis as any).count ?? null,
+      agreementsVisibleError: vis.error ? asErrDetail(vis.error) : null,
+      range: { from, to },
+    };
+
+    // Company (for meta)
+    const cRes = await admin.from("companies").select("id,name").eq("id", companyId).maybeSingle();
+    const company = (cRes.data ?? null) as CompanyRow | null;
+
+    // Agreement lookup
+    const ag = await loadAgreementRow(admin, companyId, companyLocationHint);
+
     if (metaOnly) {
-      const diag = await admin
-        .from("agreements")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("status", "ACTIVE");
-
-      // Still continue normally below; but include diag in meta response later
-      // (we store it in closure variables)
-      (globalThis as any).__lp_diag = {
-        hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        agreementsCount: (diag as any).count ?? null,
-        agreementsHeadError: diag.error ? asErrDetail(diag.error) : null,
-      };
+      // Return diagnostics even if agreement is missing/invalid.
+      return jsonOk(
+        rid,
+        {
+          ...diag,
+          company: company ? { id: company.id, name: safeStr(company.name) || "—" } : null,
+          agreement_source: ag.src,
+          agreement_row: summarizeAgreementRow(ag.data ?? null),
+          agreement_lookup_error: ag.ok === false ? asErrDetail(ag.error) : null,
+        },
+        200
+      );
     }
 
-    // Company
-    const cRes = await admin.from("companies").select("id,name").eq("id", companyId).maybeSingle();
+    // Normal CSV behavior below (non-meta)
+
     if (cRes.error) {
       return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: asErrDetail(cRes.error) });
     }
-
-    const company = (cRes.data ?? null) as CompanyRow | null;
     if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "NOT_FOUND");
-
-    const companyName = safeStr(company.name) || "—";
-
-    // Agreement
-    const companyLocationHint = safeStr((scope as any).locationId) || null;
-    const ag = await loadAgreementRow(admin, companyId, companyLocationHint);
 
     if (ag.ok === false) {
       return jsonErr(rid, "Kunne ikke hente avtale.", 500, {
@@ -254,25 +236,20 @@ export async function GET(req: NextRequest) {
           normalized_message: (agreementRes as any).message,
           normalized_detail: (agreementRes as any).detail ?? null,
           received_agreement: summarizeAgreementRow(ag.data),
-          received_keys: Object.keys(ag.data ?? {}),
         },
       });
     }
     const agreement: AgreementNormalized = agreementRes as AgreementNormalized;
 
-    // Locations (navn for CSV) — expects orders.location_id == company_locations.id
+    // Locations map (company_locations)
     const locRes = await admin.from("company_locations").select("id,name").eq("company_id", companyId);
     if (locRes.error) {
-      return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, {
-        code: "DB_ERROR",
-        detail: asErrDetail(locRes.error),
-      });
+      return jsonErr(rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: asErrDetail(locRes.error) });
     }
-
     const locMap = new Map<string, string>();
     for (const l of locRes.data ?? []) locMap.set(String((l as any).id), safeStr((l as any).name));
 
-    // Orders in window (ACTIVE)
+    // Orders window (ACTIVE)
     const oRes = await admin
       .from("orders")
       .select("date,location_id,slot,status")
@@ -285,7 +262,6 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: asErrDetail(oRes.error) });
     }
 
-    // Group: date + location + slot + tier
     const buckets = new Map<
       string,
       { date: string; location_id: string | null; slot: string | null; tier: PlanTier; unit: number; qty: number }
@@ -314,7 +290,6 @@ export async function GET(req: NextRequest) {
       }
 
       const unit = Number(PRICE_PER_TIER[tier] ?? 0);
-
       const location_id = (o as any).location_id ? safeStr((o as any).location_id) : null;
       const slot = (o as any).slot ? safeStr((o as any).slot) : null;
 
@@ -356,31 +331,13 @@ export async function GET(req: NextRequest) {
       "amount_nok",
     ];
 
-    if (metaOnly) {
-      const diag = (globalThis as any).__lp_diag ?? null;
-      return jsonOk(
-        rid,
-        {
-          filename: `invoice_lines_${companyId}_${from}_to_${to}.csv`,
-          contentType: "text/csv; charset=utf-8",
-          rows: lines.length,
-          agreement_source: ag.src,
-          scope: { companyId, locationId: companyLocationHint },
-          agreement_row: summarizeAgreementRow(ag.data),
-          diag,
-        },
-        200
-      );
-    }
-
     const rows: string[] = [];
     rows.push(header.join(","));
-
     for (const r of lines) {
       rows.push(
         csvLine([
           companyId,
-          companyName,
+          safeStr(company.name) || "—",
           from,
           to,
           r.date,
@@ -399,8 +356,6 @@ export async function GET(req: NextRequest) {
     const contentType = "text/csv; charset=utf-8";
     const contentDisposition = `attachment; filename="${filename}"`;
 
-    const csv = rows.join("\n");
-
     const headers = {
       ...noStoreHeaders(),
       "content-type": contentType,
@@ -408,7 +363,7 @@ export async function GET(req: NextRequest) {
       "x-lp-rid": rid,
     } as Record<string, string>;
 
-    return new Response(csv, { status: 200, headers });
+    return new Response(rows.join("\n"), { status: 200, headers });
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
