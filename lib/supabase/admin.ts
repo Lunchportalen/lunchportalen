@@ -1,39 +1,48 @@
 // lib/supabase/admin.ts
+import "server-only";
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Supabase ADMIN client (SERVICE ROLE)
  * ====================================
  * Brukes KUN server-side til:
- * - superadmin-endepunkter
+ * - admin/superadmin-endepunkter
  * - eksplisitt omgåelse av RLS
  *
- * ⚠️ ALDRI bruk i client components
- * ⚠️ ALDRI eksponer service role til browser
+ * Krav:
+ * - Fail-closed hvis env mangler
+ * - Ingen cookies / session
+ * - Stabil X-Client-Info for logging
  *
- * Design:
- * - Singleton per runtime
- * - Fail-fast hvis env mangler
- * - Ingen session / cookies
- * - Stabil client-info for logging
+ * NOTE:
+ * - Bruker server-var først (SUPABASE_URL), fallback til NEXT_PUBLIC_SUPABASE_URL for legacy.
+ * - Bruker kun SUPABASE_SERVICE_ROLE_KEY (service role).
  */
 
 let _admin: SupabaseClient | null = null;
 
-function requireEnv(name: string): string {
+function envStr(name: string): string | null {
   const v = process.env[name];
-  if (!v || !String(v).trim()) {
-    throw new Error(`Missing required env: ${name}`);
-  }
-  return String(v).trim();
+  const s = String(v ?? "").trim();
+  return s ? s : null;
+}
+
+function configError(message: string) {
+  const e: any = new Error(message);
+  e.code = "CONFIG_ERROR";
+  e.status = 500;
+  return e;
 }
 
 export function supabaseAdmin(): SupabaseClient {
-  // Reuse client within same runtime
   if (_admin) return _admin;
 
-  const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const url = envStr("SUPABASE_URL") ?? envStr("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = envStr("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!url) throw configError("Mangler SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) i server-miljø.");
+  if (!serviceRoleKey) throw configError("Mangler SUPABASE_SERVICE_ROLE_KEY i server-miljø.");
 
   _admin = createClient(url, serviceRoleKey, {
     auth: {
