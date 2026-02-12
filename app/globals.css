@@ -446,17 +446,19 @@ h4 {
   box-shadow: var(--lp-shadow-sm);
 }
 
+/* ✅ IMPORTANT: force readable hover (light bg + dark text) */
 .lp-btn--primary:hover,
 .lp-btn-primary:hover {
-  background: rgba(var(--lp-text), 0.92);
-  color: #ffffff; /* ✅ explicit */
+  background: rgb(var(--lp-surface)) !important;
+  color: rgb(var(--lp-text)) !important;
+  border-color: rgba(var(--lp-text), 0.22) !important;
   box-shadow: var(--lp-shadow-card);
 }
 
 .lp-btn--primary:active,
 .lp-btn-primary:active {
   background: rgb(var(--lp-text));
-  color: #ffffff; /* ✅ explicit */
+  color: #ffffff;
   border-color: rgba(var(--lp-text), 0.9);
 }
 
@@ -467,7 +469,7 @@ h4 {
 .lp-btn-primary.lp-btn--stable:focus-visible,
 .lp-btn-primary.lp-btn--stable:active {
   background: rgb(var(--lp-text));
-  color: #ffffff; /* ✅ explicit */
+  color: #ffffff;
   border-color: rgba(var(--lp-text), 0.9);
 }
 
@@ -482,15 +484,15 @@ h4 {
 
 .lp-btn--secondary:hover,
 .lp-btn-secondary:hover {
-  background: rgba(var(--lp-surface-alt), 0.7);
-  color: rgb(var(--lp-text)); /* ✅ explicit */
+  background: rgb(var(--lp-surface)) !important;
+  color: rgb(var(--lp-text)) !important;
   box-shadow: var(--lp-shadow-sm);
 }
 
 .lp-btn--secondary:active,
 .lp-btn-secondary:active {
   background: rgba(var(--lp-surface-alt), 0.9);
-  color: rgb(var(--lp-text)); /* ✅ explicit */
+  color: rgb(var(--lp-text));
 }
 
 /* GHOST */
@@ -504,14 +506,14 @@ h4 {
 .lp-btn--ghost:hover,
 .lp-btn-ghost:hover {
   background: rgba(var(--lp-surface-alt), 0.7);
-  color: rgb(var(--lp-text)); /* ✅ explicit */
+  color: rgb(var(--lp-text));
   border-color: rgba(var(--lp-border), 0.7);
 }
 
 .lp-btn--ghost:active,
 .lp-btn-ghost:active {
   background: rgba(var(--lp-surface-alt), 0.9);
-  color: rgb(var(--lp-text)); /* ✅ explicit */
+  color: rgb(var(--lp-text));
 }
 
 /* DESTRUCTIVE */
@@ -526,14 +528,14 @@ h4 {
 .lp-btn--destructive:hover,
 .lp-btn-danger:hover {
   background: rgba(var(--lp-danger), 0.9);
-  color: #ffffff; /* ✅ explicit */
+  color: #ffffff;
   box-shadow: var(--lp-shadow-sm);
 }
 
 .lp-btn--destructive:active,
 .lp-btn-danger:active {
   background: rgb(var(--lp-danger));
-  color: #ffffff; /* ✅ explicit */
+  color: #ffffff;
 }
 
 .lp-btn--sm {
@@ -556,7 +558,7 @@ h4 {
 
 /* ✅ Global failsafe:
    Prevent white text becoming invisible on light hover backgrounds
-   (common: text-white + hover:bg-white/neutral-50/etc.) */
+   (Tailwind patterns like: text-white + hover:bg-white / hover:bg-neutral-*) */
 button.text-white:hover,
 a.text-white:hover,
 [role="button"].text-white:hover,
@@ -566,7 +568,7 @@ a[class*="text-white"]:hover,
   color: rgb(var(--lp-text)) !important;
 }
 
-/* Also ensure common shadcn/utility variants that go light on hover remain readable */
+/* If the element itself declares a light hover background, force dark text on hover */
 button:hover[class*="hover:bg-white"],
 a:hover[class*="hover:bg-white"],
 [role="button"]:hover[class*="hover:bg-white"],
@@ -575,12 +577,18 @@ a:hover[class*="hover:bg-neutral-"],
 [role="button"]:hover[class*="hover:bg-neutral-"],
 button:hover[class*="hover:bg-slate-"],
 a:hover[class*="hover:bg-slate-"],
-[role="button"]:hover[class*="hover:bg-slate-"] {
+[role="button"]:hover[class*="hover:bg-slate-"],
+button:hover[class*="hover:bg-zinc-"],
+a:hover[class*="hover:bg-zinc-"],
+[role="button"]:hover[class*="hover:bg-zinc-"],
+button:hover[class*="hover:bg-gray-"],
+a:hover[class*="hover:bg-gray-"],
+[role="button"]:hover[class*="hover:bg-gray-"] {
   color: rgb(var(--lp-text)) !important;
 }
 
 /* =========================================================
-   Badges (kept as-is)
+   Badges
 ========================================================= */
 
 .lp-badge {
