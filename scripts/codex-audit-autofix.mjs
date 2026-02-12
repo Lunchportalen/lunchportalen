@@ -6,6 +6,7 @@ Enterprise-safe autofix motor (NO CLI):
 - Forventer unified diff (git apply kompatibelt)
 - Skriver codex.patch og forsøker å apply patchen
 - Hvis modellen ikke gir diff: NO-OP (grønn workflow), lagrer codex.raw.txt
+- Hvis patch ikke kan apply'es: FAIL-SOFT (grønn workflow), lagrer codex.patch + codex.raw.txt
 ------------------------------------------------------------ */
 
 import fs from "node:fs";
@@ -76,6 +77,16 @@ function runQuiet(cmd) {
   execSync(cmd, { stdio: "ignore" });
 }
 
+function boolEnv(name, def = false) {
+  const v = String(process.env[name] ?? "").trim().toLowerCase();
+  if (!v) return def;
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+function safeStr(v) {
+  return String(v ?? "").trim();
+}
+
 /**
  * Hard guard: aldri tillat CLI-instruksjoner å snike seg inn i output.
  */
@@ -83,7 +94,28 @@ function guardNoCliArtifacts(rawText) {
   const t = String(rawText ?? "");
   if (/\bcodex\b/i.test(t) || /--system\b/i.test(t) || /--prompt\b/i.test(t)) {
     throw new Error(
-      "Model output contained CLI artifacts (codex/--system/--prompt). Refusing to apply. Saved raw output to codex.raw.txt"
+      "Model output contained CLI artifacts (codex/--system/--prompt). Refusing to apply."
+    );
+  }
+}
+
+/**
+ * Guard: blokker endringer i dependency-filer (enterprise policy).
+ * Default: true (blokker package.json + package-lock.json)
+ * Overstyr: ALLOW_DEP_CHANGES=1
+ */
+function guardNoDependencyFilesTouched(diffText) {
+  const allow = boolEnv("ALLOW_DEP_CHANGES", false);
+  if (allow) return;
+
+  const t = String(diffText ?? "");
+  const hits = [];
+  if (t.includes("diff --git a/package.json b/package.json")) hits.push("package.json");
+  if (t.includes("diff --git a/package-lock.json b/package-lock.json")) hits.push("package-lock.json");
+
+  if (hits.length) {
+    throw new Error(
+      `Patch touches forbidden dependency files: ${hits.join(", ")}. Refusing to apply.`
     );
   }
 }
@@ -102,7 +134,6 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
         role: "system",
         content: [
           {
-            // ✅ Responses API krever "input_text"
             type: "input_text",
             text: [
               "Du er LUNCHPORTALEN AUTOFIX BOT.",
@@ -113,6 +144,7 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
               "- Ikke svekk auth/role-gates eller RLS/tenant isolation.",
               "- Cut-off 08:00 Europe/Oslo og no-exception rule skal aldri brytes.",
               "- Bevar API-shapes. Ikke endre response-formater.",
+              "- IKKE endre package.json eller package-lock.json (ingen nye deps).",
               "- Output KUN unified git diff (git apply kompatibel).",
               "- Hvis du ikke kan foreslå en trygg minimal patch, returner INGEN diff (tomt svar).",
               "- Ingen forklaringer. Kun diff.",
@@ -177,6 +209,28 @@ async function openaiUnifiedDiff({ apiKey, model, inputText }) {
 }
 
 /* =========================================================
+   Patch apply (enterprise-safe)
+========================================================= */
+
+function tryGitApplyCheck(patchFile) {
+  try {
+    run(`git apply --check "${patchFile}"`);
+    return { ok: true, error: "" };
+  } catch (e) {
+    return { ok: false, error: safeStr(e?.message || e) };
+  }
+}
+
+function tryGitApply(patchFile) {
+  try {
+    runQuiet(`git apply "${patchFile}"`);
+    return { ok: true, error: "" };
+  } catch (e) {
+    return { ok: false, error: safeStr(e?.message || e) };
+  }
+}
+
+/* =========================================================
    Main
 ========================================================= */
 
@@ -193,6 +247,12 @@ async function main() {
       "critical.log is missing or empty. The workflow must generate it before running autofix."
     );
   }
+
+  // Policy knobs:
+  // - FAIL_SOFT_APPLY (default true): patch apply-feil => grønn NO-OP
+  // - STRICT_FAIL_AFTER_APPLY (default false): hvis patch faktisk ble applisert, og du vil hard-fail når post-check feiler (vanligvis håndteres i workflow)
+  const FAIL_SOFT_APPLY = boolEnv("FAIL_SOFT_APPLY", true);
+  const STRICT_FAIL_AFTER_APPLY = boolEnv("STRICT_FAIL_AFTER_APPLY", false);
 
   // Ren arbeidsflate: unngå halvt appliserte patches
   try {
@@ -217,7 +277,8 @@ async function main() {
 
   // Rens output til ren diff
   let cleaned = stripCodeFences(rawNorm);
-  cleaned = extractFirstUnifiedDiffBlock(cleaned).trimEnd() + "\n";
+  cleaned = extractFirstUnifiedDiffBlock(cleaned).trimEnd();
+  if (cleaned) cleaned += "\n";
 
   // ✅ Kontrollert NO-OP hvis modellen ikke ga diff
   if (!isUnifiedDiff(cleaned)) {
@@ -235,23 +296,64 @@ async function main() {
     return;
   }
 
+  // Guard: ikke tillat deps-filer (default)
+  try {
+    guardNoDependencyFilesTouched(cleaned);
+  } catch (e) {
+    safeWrite("codex.patch", cleaned);
+    safeWrite("codex.raw.txt", rawNorm);
+    if (FAIL_SOFT_APPLY) {
+      process.stdout.write(
+        `⚠️ Patch refused by policy guard. Saved codex.patch + codex.raw.txt. NO-OP (green).\n`
+      );
+      return;
+    }
+    throw e;
+  }
+
   safeWrite("codex.patch", cleaned);
 
   // Dry-run: valider patch før apply
-  try {
-    run("git apply --check codex.patch");
-  } catch (e) {
+  const chk = tryGitApplyCheck("codex.patch");
+  if (!chk.ok) {
     safeWrite("codex.raw.txt", rawNorm);
-    const msg = String(e?.message || e);
+
+    // FAIL-SOFT: Ikke blokker nightly på patch mismatch
+    if (FAIL_SOFT_APPLY) {
+      process.stdout.write(
+        "⚠️ Patch does not apply cleanly (git apply --check failed). Saved codex.patch + codex.raw.txt. NO-OP (green).\n"
+      );
+      return;
+    }
+
     throw new Error(
-      `git apply --check failed. Patch saved to codex.patch. Raw saved to codex.raw.txt. ${msg}`
+      `git apply --check failed. Patch saved to codex.patch. Raw saved to codex.raw.txt. ${chk.error}`
     );
   }
 
   // Apply patch
-  runQuiet("git apply codex.patch");
+  const ap = tryGitApply("codex.patch");
+  if (!ap.ok) {
+    safeWrite("codex.raw.txt", rawNorm);
+
+    if (FAIL_SOFT_APPLY) {
+      process.stdout.write(
+        "⚠️ git apply failed. Saved codex.patch + codex.raw.txt. NO-OP (green).\n"
+      );
+      return;
+    }
+
+    throw new Error(`git apply failed. ${ap.error}`);
+  }
 
   process.stdout.write("✅ Patch applied successfully (codex.patch)\n");
+
+  // Optional strict behavior: hard-fail after apply if desired (normally handled in workflow)
+  if (STRICT_FAIL_AFTER_APPLY) {
+    // Her kan dere eventuelt kjøre en rask sanity-check, men vanligvis er ci:critical rerun i workflow fasit.
+    // Vi lar det være en no-op for nå.
+    process.stdout.write("ℹ️ STRICT_FAIL_AFTER_APPLY enabled, but no post-check is run here.\n");
+  }
 }
 
 main().catch((err) => {
