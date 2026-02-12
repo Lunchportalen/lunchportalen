@@ -17,7 +17,7 @@ import { systemRoleByEmail as systemRoleByEmailCore } from "@/lib/system/emails"
  * - readJson(req) -> safe parse, never throws
  *
  * Viktig:
- * - Return types er Response (ikke NextResponse) for å unngå TS-mismatch (cookies).
+ * - Return types er Response (ikke NextResponse).
  */
 
 export type AllowedRole = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
@@ -44,18 +44,21 @@ export type ScopeOr401Result =
 /* =========================================================
    Small utils
 ========================================================= */
+
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function normRole(v: unknown) {
+function normRole(v: unknown): AllowedRole | string | null {
   const s = safeStr(v).toLowerCase();
-  if (s === "admin" || s === "companyadmin") return "company_admin";
-  return s || null;
+  if (!s) return null;
+  if (s === "admin" || s === "companyadmin" || s === "company-admin") return "company_admin";
+  return s;
 }
 
 function normEmail(v: unknown) {
-  return safeStr(v).toLowerCase();
+  const s = safeStr(v).toLowerCase();
+  return s || null;
 }
 
 /**
@@ -63,15 +66,15 @@ function normEmail(v: unknown) {
  * Systemroller er fasit og skal alltid vinne over profiles.role.
  */
 function systemRoleByEmail(email: string | null | undefined): AllowedRole | null {
-  return systemRoleByEmailCore(email);
+  return systemRoleByEmailCore(email ?? null);
 }
 
 function normalizeAllowed(allowed: ReadonlyArray<string>) {
-  const allowedSet = new Set(["employee", "company_admin", "superadmin", "kitchen", "driver"]);
+  const allowedSet = new Set<AllowedRole>(["employee", "company_admin", "superadmin", "kitchen", "driver"]);
   return allowed
     .map((x) => safeStr(x).toLowerCase())
     .filter(Boolean)
-    .filter((r) => allowedSet.has(r));
+    .filter((r) => allowedSet.has(r as AllowedRole)) as AllowedRole[];
 }
 
 function ridFallback() {
@@ -79,7 +82,6 @@ function ridFallback() {
 }
 
 function ridFromReq(req: NextRequest) {
-  // Prefer explicit headers first
   try {
     const a = safeStr(req.headers.get("x-rid"));
     if (a) return a;
@@ -108,7 +110,8 @@ function mapScope(raw: any): ScopeLike {
   const userId = safeStr(raw?.user_id ?? raw?.userId) || null;
   const companyId = safeStr(raw?.company_id ?? raw?.companyId) || null;
   const locationId = safeStr(raw?.location_id ?? raw?.locationId) || null;
-  const email = safeStr(raw?.email) || null;
+
+  const email = normEmail(raw?.email);
   const role = normRole(raw?.role);
 
   return { userId, role, companyId, locationId, email };
@@ -118,7 +121,7 @@ function mapScope(raw: any): ScopeLike {
  * ✅ Fallback: hent auth fra Supabase cookie-session dersom getScope mangler felt.
  * Dette er avgjørende for system-roller dersom getScope() ikke leverer email/role.
  */
-async function enrichScopeFromSupabase(scope: ScopeLike) {
+async function enrichScopeFromSupabase(scope: ScopeLike): Promise<ScopeLike> {
   try {
     const sb = await supabaseServer();
     const { data, error } = await sb.auth.getUser();
@@ -126,9 +129,8 @@ async function enrichScopeFromSupabase(scope: ScopeLike) {
 
     const u = data.user;
 
-    // userId/email kan mangle fra getScope i enkelte flows
     if (!scope.userId) scope.userId = safeStr(u.id) || null;
-    if (!scope.email) scope.email = safeStr(u.email) || null;
+    if (!scope.email) scope.email = normEmail(u.email);
 
     return scope;
   } catch {
@@ -136,17 +138,26 @@ async function enrichScopeFromSupabase(scope: ScopeLike) {
   }
 }
 
+function buildEmptyCtx(req: NextRequest, rid: string): AuthedCtx {
+  return {
+    rid,
+    route: safeStr(req?.nextUrl?.pathname) || null,
+    method: safeStr(req?.method) || null,
+    scope: { userId: null, role: null, companyId: null, locationId: null, email: null },
+  };
+}
+
 /* =========================================================
    Safe JSON (never throws)
 ========================================================= */
+
 export async function readJson(req: NextRequest): Promise<any> {
   try {
     const t = await req.text();
     if (!t) return {};
     try {
       const j = JSON.parse(t);
-      if (j && typeof j === "object") return j;
-      return {};
+      return j && typeof j === "object" ? j : {};
     } catch {
       return {};
     }
@@ -158,32 +169,25 @@ export async function readJson(req: NextRequest): Promise<any> {
 /* =========================================================
    Scope gate
 ========================================================= */
+
 export async function scopeOr401(req: NextRequest): Promise<ScopeOr401Result> {
   const rid = ridFromReq(req);
-
-  // default ctx i tilfelle alt feiler
-  const emptyCtx: AuthedCtx = {
-    rid,
-    route: safeStr(req?.nextUrl?.pathname) || null,
-    method: safeStr(req?.method) || null,
-    scope: { userId: null, role: null, companyId: null, locationId: null, email: null },
-  };
+  const emptyCtx = buildEmptyCtx(req, rid);
 
   try {
-    // getScope(req) er deres interne helper (krever req)
     const raw = await getScope(req);
     let scope = mapScope(raw);
 
-    // ✅ Fallback: hvis getScope ikke gir email/role/userId, hent fra Supabase-cookie auth
+    // Fallback: hent userId/email fra Supabase dersom mangler
     if (!scope.userId || !scope.email) {
       scope = await enrichScopeFromSupabase(scope);
     }
 
-    // ✅ SYSTEM ROLE OVERRIDE (driver/kjøkken/superadmin)
+    // SYSTEM ROLE OVERRIDE (driver/kjøkken/superadmin etc.)
     const sys = systemRoleByEmail(scope.email);
     if (sys) {
       scope.role = sys;
-      // system-roller skal ikke trenge company/location scope
+      // systemroller er globale – nuller tenant scope
       scope.companyId = null;
       scope.locationId = null;
     }
@@ -195,175 +199,205 @@ export async function scopeOr401(req: NextRequest): Promise<ScopeOr401Result> {
       scope,
     };
 
-    // Minimum: userId må finnes for å regne som autentisert
     if (!scope.userId) {
-      const r = jsonErr(ctx.rid, "Ikke innlogget.", 401, {
-        code: "UNAUTHORIZED",
-        detail: {
+      const res = jsonErr(
+        ctx.rid,
+        "Ikke innlogget.",
+        401,
+        "UNAUTHORIZED",
+        {
           path: ctx.route,
           role: ctx.scope.role,
           companyIdPresent: Boolean(ctx.scope.companyId),
-        },
-      });
-      return { ok: false as const, res: r, response: r, ctx };
+        }
+      );
+      return { ok: false, res, response: res, ctx };
     }
 
-    return { ok: true as const, ctx };
+    return { ok: true, ctx };
   } catch (e: any) {
-    const r = jsonErr(emptyCtx.rid, "Ikke innlogget.", 401, {
-      code: "UNAUTHORIZED",
-      detail: {
+    const res = jsonErr(
+      emptyCtx.rid,
+      "Ikke innlogget.",
+      401,
+      "UNAUTHORIZED",
+      {
         path: emptyCtx.route,
         message: safeStr(e?.message ?? e),
-      },
-    });
-    return { ok: false as const, res: r, response: r, ctx: emptyCtx };
+      }
+    );
+    return { ok: false, res, response: res, ctx: emptyCtx };
   }
 }
 
 /* =========================================================
    Role gate (403)
 ========================================================= */
+
 export function requireRoleOr403(
   rid: string,
   role: string | null | undefined,
   allowed: ReadonlyArray<string>
 ): Response | null;
+
+export function requireRoleOr403(
+  ctx: AuthedCtx,
+  allowed: ReadonlyArray<string>
+): Response | null;
+
+export function requireRoleOr403(
+  ctx: AuthedCtx,
+  action: string,
+  allowed: ReadonlyArray<string>
+): Response | null;
+
 export function requireRoleOr403(
   ctx: AuthedCtx,
   role: string | null | undefined,
   allowed: ReadonlyArray<string>
 ): Response | null;
-export function requireRoleOr403(ctx: AuthedCtx, action: string, allowed: ReadonlyArray<string>): Response | null;
-export function requireRoleOr403(ctx: AuthedCtx, allowed: ReadonlyArray<string>): Response | null;
+
 export function requireRoleOr403(...args: any[]): Response | null {
   try {
-    // A) (rid, role, allowed)
+    // (rid, role, allowed)
     if (typeof args[0] === "string") {
-      const r = safeStr(args[0]) || ridFallback();
+      const rid = safeStr(args[0]) || ridFallback();
       const role = normRole(args[1]);
       const allowed = normalizeAllowed(Array.isArray(args[2]) ? args[2] : []);
 
-      if (!allowed.length) return jsonErr(r, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!role) return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role: null } });
-      if (!allowed.includes(role)) return jsonErr(r, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { role, allowed } });
+      if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { role: null });
+      if (!allowed.includes(role as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { role, allowed });
 
       return null;
     }
 
     const ctx = args[0] as AuthedCtx;
+    const rid = safeStr(ctx?.rid) || ridFallback();
     const ctxRole = normRole(ctx?.scope?.role);
-    const ctxRidVal = safeStr(ctx?.rid) || ridFallback();
 
-    // D) (ctx, allowed)
+    // (ctx, allowed)
     if (args.length === 2 && Array.isArray(args[1])) {
       const allowed = normalizeAllowed(args[1]);
-      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!ctxRole) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
-      if (!allowed.includes(ctxRole)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: ctxRole, allowed } });
+      if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
+      if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: ctxRole, allowed });
       return null;
     }
 
-    // C) (ctx, action, allowed)
+    // (ctx, action, allowed)
     if (args.length === 3 && typeof args[1] === "string" && Array.isArray(args[2])) {
       const action = safeStr(args[1]) || null;
       const allowed = normalizeAllowed(args[2]);
 
-      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, { code: "MISCONFIGURED_ROUTE", detail: { action } });
-      if (!ctxRole) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { action, path: ctx.route, role: null } });
-      if (!allowed.includes(ctxRole)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { action, path: ctx.route, role: ctxRole, allowed } });
+      if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE", { action });
+      if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: null });
+      if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: ctxRole, allowed });
 
       return null;
     }
 
-    // B) (ctx, role, allowed)
+    // (ctx, role, allowed)
     if (args.length === 3 && Array.isArray(args[2])) {
       const role = normRole(args[1]);
       const allowed = normalizeAllowed(args[2]);
 
-      if (!allowed.length) return jsonErr(ctxRidVal, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!role) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
-      if (!allowed.includes(role)) return jsonErr(ctxRidVal, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role, allowed } });
+      if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
+      if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
+      if (!allowed.includes(role as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role, allowed });
 
       return null;
     }
 
-    // Feil bruk / ukjent signatur
-    return jsonErr(ctxRidVal, "Ugyldig bruk av requireRoleOr403().", 500, "MISCONFIGURED_ROUTE");
+    return jsonErr(rid, "Ugyldig bruk av requireRoleOr403().", 500, "MISCONFIGURED_ROUTE");
   } catch {
-    const r = ridFallback();
-    return jsonErr(r, "requireRoleOr403 feilet uventet.", 500, "MISCONFIGURED_ROUTE");
+    const rid = ridFallback();
+    return jsonErr(rid, "requireRoleOr403 feilet uventet.", 500, "MISCONFIGURED_ROUTE");
   }
 }
 
 /* =========================================================
    Company scope gate (403)
 ========================================================= */
-export function requireCompanyScopeOr403(rid: string, companyId: string | null | undefined): Response | null;
-export function requireCompanyScopeOr403(ctx: AuthedCtx, companyId: string | null | undefined): Response | null;
-export function requireCompanyScopeOr403(ctx: AuthedCtx, opts: { allowSuperadminGlobal?: boolean }): Response | null;
+
+export function requireCompanyScopeOr403(
+  rid: string,
+  companyId: string | null | undefined
+): Response | null;
+
+export function requireCompanyScopeOr403(
+  ctx: AuthedCtx,
+  companyId: string | null | undefined
+): Response | null;
+
+export function requireCompanyScopeOr403(
+  ctx: AuthedCtx,
+  opts: { allowSuperadminGlobal?: boolean }
+): Response | null;
+
 export function requireCompanyScopeOr403(ctx: AuthedCtx): Response | null;
+
 export function requireCompanyScopeOr403(...args: any[]): Response | null {
   try {
     const normOpts = (v: any) => ({
       allowSuperadminGlobal: Boolean(v?.allowSuperadminGlobal),
     });
 
-    // A) (rid, companyId)
+    // (rid, companyId)
     if (typeof args[0] === "string") {
-      const r = safeStr(args[0]) || ridFallback();
+      const rid = safeStr(args[0]) || ridFallback();
       const cid = safeStr(args[1]);
-      if (!cid) return jsonErr(r, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE" });
+      if (!cid) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
       return null;
     }
 
     const ctx = args[0] as AuthedCtx;
+    const rid = safeStr(ctx?.rid) || ridFallback();
     const role = normRole(ctx?.scope?.role);
-    const cid = safeStr(ctx?.scope?.companyId);
+    const cidFromCtx = safeStr(ctx?.scope?.companyId);
 
-    // D) (ctx)
+    // (ctx)
     if (args.length === 1) {
-      if (!role) return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
+      if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
 
       if (role !== "company_admin" && role !== "superadmin") {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role } });
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role });
       }
 
-      if (!cid) return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
+      if (!cidFromCtx) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
       return null;
     }
 
-    // C) (ctx, opts)
+    // (ctx, opts)
     if (args.length === 2 && typeof args[1] === "object") {
       const opts = normOpts(args[1]);
 
-      if (!role) return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role: null } });
+      if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
 
       if (role !== "company_admin" && role !== "superadmin") {
-        return jsonErr(ctx.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { path: ctx.route, role } });
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role });
       }
 
       if (role === "superadmin" && opts.allowSuperadminGlobal) return null;
 
-      if (!cid) return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
+      if (!cidFromCtx) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
       return null;
     }
 
-    // B) (ctx, companyId)
+    // (ctx, companyIdOverride)
     const cidOverride = safeStr(args[1]);
-    if (!cidOverride) {
-      return jsonErr(ctx.rid, "Mangler firmascope.", 403, { code: "MISSING_COMPANY_SCOPE", detail: { path: ctx.route, role } });
-    }
+    if (!cidOverride) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
     return null;
   } catch {
-    const r = ridFallback();
-    return jsonErr(r, "requireCompanyScopeOr403 feilet uventet.", 500, "MISCONFIGURED_ROUTE");
+    const rid = ridFallback();
+    return jsonErr(rid, "requireCompanyScopeOr403 feilet uventet.", 500, "MISCONFIGURED_ROUTE");
   }
 }
 
 /* =========================================================
    Optional helpers
 ========================================================= */
+
 export function q(req: NextRequest, key: string): string | null {
   try {
     const v = req.nextUrl?.searchParams?.get(key);

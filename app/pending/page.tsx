@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function PendingPage() {
@@ -22,7 +21,10 @@ export default async function PendingPage() {
           <p className="font-medium">Haster det?</p>
           <p className="mt-1 text-[rgb(var(--lp-muted))]">
             Send oss en e-post på{" "}
-            <a className="font-medium underline hover:no-underline" href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}>
+            <a
+              className="font-medium underline hover:no-underline"
+              href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}
+            >
               {SYSTEM_EMAILS.SUPPORT}
             </a>
             .

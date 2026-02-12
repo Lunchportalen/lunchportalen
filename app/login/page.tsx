@@ -1,5 +1,4 @@
 // app/login/page.tsx
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -13,6 +12,7 @@ function safeNextPath(next: string | null | undefined) {
   if (!next.startsWith("/")) return null;
   if (next.startsWith("//")) return null;
   if (next.startsWith("/login")) return null;
+
   if (
     next === "/register" ||
     next.startsWith("/register/") ||
@@ -25,15 +25,18 @@ function safeNextPath(next: string | null | undefined) {
   ) {
     return null;
   }
+
   return next;
 }
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams:
+    | Record<string, string | string[] | undefined>
+    | Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const sp = await searchParams;
+  const sp = await Promise.resolve(searchParams);
   const nextRaw = Array.isArray(sp.next) ? sp.next[0] : sp.next ?? null;
   const nextSafe = safeNextPath(nextRaw);
 
@@ -42,7 +45,9 @@ export default async function LoginPage({
   const user = data?.user ?? null;
 
   if (!error && user) {
-    const to = `/api/auth/post-login${nextSafe ? `?next=${encodeURIComponent(nextSafe)}` : ""}`;
+    const to = `/api/auth/post-login${
+      nextSafe ? `?next=${encodeURIComponent(nextSafe)}` : ""
+    }`;
     redirect(to);
   }
 

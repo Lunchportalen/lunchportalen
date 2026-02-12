@@ -5,7 +5,6 @@ import { getScope, ScopeError } from "@/lib/auth/scope";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const runtime = "nodejs";
 
 /**
  * Min side er kun en smart redirect:
@@ -18,7 +17,7 @@ export const runtime = "nodejs";
 export default async function MinSidePage() {
   try {
     // Bruk samme sannhetskilde som API og admin/UI
-    const scope = await getScope({ headers: headers() } as any);
+    await getScope({ headers: headers() } as any);
 
     // Konto og firma er aktiv → ansattvisning
     redirect("/week");

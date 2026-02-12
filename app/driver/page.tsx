@@ -1,5 +1,4 @@
 ﻿// app/driver/page.tsx
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -10,7 +9,11 @@ import PageSection from "@/components/layout/PageSection";
 import { systemRoleByEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | string | null; disabled_at: string | null; is_active?: boolean | null };
+type ProfileRow = {
+  role: Role | string | null;
+  disabled_at: string | null;
+  is_active?: boolean | null;
+};
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -25,7 +28,8 @@ function roleByEmail(email: string | null | undefined): Role | null {
 
 function normalizeRole(v: unknown): Role {
   const s = safeStr(v).toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "company_admin" || s === "companyadmin" || s === "admin")
+    return "company_admin";
   if (s === "superadmin") return "superadmin";
   if (s === "kitchen" || s === "kjokken") return "kitchen";
   if (s === "driver" || s === "sjafor") return "driver";
@@ -95,16 +99,24 @@ export default async function DriverPage() {
           }
         >
           <div className="flex flex-wrap gap-2 text-xs text-[rgb(var(--lp-muted))]">
-            <span className="rounded-full bg-black/5 px-3 py-1">🚚 Dagens stopp</span>
-            <span className="rounded-full bg-black/5 px-3 py-1">🗺️ Lokasjoner</span>
-            <span className="rounded-full bg-black/5 px-3 py-1">☎️ Kontakt</span>
+            <span className="rounded-full bg-black/5 px-3 py-1">
+              🚚 Dagens stopp
+            </span>
+            <span className="rounded-full bg-black/5 px-3 py-1">
+              🗺️ Lokasjoner
+            </span>
+            <span className="rounded-full bg-black/5 px-3 py-1">
+              ☎️ Kontakt
+            </span>
           </div>
         </PageSection>
       </div>
 
       <div className="mb-4 hidden print:block">
         <div className="text-xl font-semibold">Sjåfør – leveranser</div>
-        <div className="text-xs text-slate-600">Generert fra Lunchportalen</div>
+        <div className="text-xs text-slate-600">
+          Generert fra Lunchportalen
+        </div>
       </div>
 
       <div className="mt-6 print:mt-0">

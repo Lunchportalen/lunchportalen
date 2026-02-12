@@ -1,5 +1,4 @@
 // app/driver/layout.tsx
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -20,7 +19,8 @@ function roleByEmail(email: string | null | undefined): Role | null {
 
 function normalizeRole(v: unknown): Role {
   const s = safeStr(v).toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "company_admin" || s === "companyadmin" || s === "admin")
+    return "company_admin";
   if (s === "superadmin") return "superadmin";
   if (s === "kitchen" || s === "kjokken") return "kitchen";
   if (s === "driver" || s === "sjafor") return "driver";

@@ -1,14 +1,19 @@
 // app/week/layout.tsx
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type Role =
+  | "employee"
+  | "company_admin"
+  | "superadmin"
+  | "kitchen"
+  | "driver";
 
 function roleByEmail(email: string | null | undefined): Role | null {
   return systemRoleByEmail(email);
@@ -16,7 +21,8 @@ function roleByEmail(email: string | null | undefined): Role | null {
 
 function normalizeRole(v: unknown): Role {
   const s = String(v ?? "").trim().toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "company_admin" || s === "companyadmin" || s === "admin")
+    return "company_admin";
   if (s === "superadmin") return "superadmin";
   if (s === "kitchen") return "kitchen";
   if (s === "driver") return "driver";
@@ -44,7 +50,7 @@ function homeForRole(role: Role) {
 
 async function currentPathFromHeaders(fallback: string) {
   try {
-    const h = await headers();
+    const h = await headers(); // ✅ Må await i din Next-versjon
     const url = h.get("x-url") || h.get("referer") || "";
     if (url) {
       const u = new URL(url);
@@ -54,13 +60,19 @@ async function currentPathFromHeaders(fallback: string) {
   return fallback;
 }
 
-export default async function WeekLayout({ children }: { children: ReactNode }) {
+export default async function WeekLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const sb = await supabaseServer();
   const { data, error } = await sb.auth.getUser();
   const user = data?.user ?? null;
 
   if (error || !user) {
-    const next = encodeURIComponent(await currentPathFromHeaders("/week"));
+    const next = encodeURIComponent(
+      await currentPathFromHeaders("/week")
+    );
     redirect(`/login?next=${next}`);
   }
 
@@ -72,6 +84,5 @@ export default async function WeekLayout({ children }: { children: ReactNode }) 
   }
 
   // Employee + company_admin + superadmin får tilgang
-  // (company_admin må kunne bestille lunsj)
   return <>{children}</>;
 }

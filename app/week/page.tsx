@@ -1,5 +1,4 @@
 // app/week/page.tsx
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -12,34 +11,39 @@ import { getScope, ScopeError } from "@/lib/auth/scope";
 
 /**
  * Week (ansattvisning) — enterprise routing-fasit:
- * - Ikke innlogget                 -> /login?next=/week
+ * - Ikke innlogget                   -> /login?next=/week
  * - Konto inaktiv / firma ikke aktiv -> /status?state=pending&next=/week
- * - Superadmin/kitchen/driver      -> egne flater
- * - Company admin                  -> /admin
- * - Employee uten company/location -> forklaringsside
- * - Employee OK                    -> WeekClient
+ * - Superadmin/kitchen/driver        -> egne flater
+ * - Company admin                    -> /admin
+ * - Employee uten company/location   -> forklaringsside
+ * - Employee OK                      -> WeekClient
  *
  * Viktig:
- * - Vi bruker getScope() som sannhetskilde (samme som API),
- *   så pending/inactive stoppes konsistent overalt.
- * - Ingen DB-queries i middleware; dette er server-side page guard.
+ * - getScope() er sannhetskilde (samme som API)
+ * - Ingen DB-queries i middleware
+ * - Server-side page guard
  */
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type Role =
+  | "employee"
+  | "company_admin"
+  | "superadmin"
+  | "kitchen"
+  | "driver";
 
 export default async function Page() {
   let scope: Awaited<ReturnType<typeof getScope>>;
 
   try {
     scope = await getScope({ headers: headers() } as any);
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (e instanceof ScopeError) {
-      // Ikke innlogget -> login
+      // Ikke innlogget
       if (e.code === "UNAUTHENTICATED") {
         redirect("/login?next=/week");
       }
 
-      // Registrert men ikke aktiv / firma ikke aktiv -> status (venterom)
+      // Konto eller firma ikke aktiv
       if (
         e.code === "ACCOUNT_INACTIVE" ||
         e.code === "COMPANY_NOT_ACTIVE" ||
@@ -49,19 +53,25 @@ export default async function Page() {
       }
     }
 
-    // Fallback
+    // Fail-closed fallback
     redirect("/status?state=paused&next=/week");
   }
 
   const role = scope.role as Role;
 
-  // Absolutt routing (systemroller)
-  if (role === "superadmin") redirect("/superadmin");
-  if (role === "kitchen") redirect("/kitchen");
-  if (role === "driver") redirect("/driver");
-  if (role === "company_admin") redirect("/admin");
+  // Absolutt routing for systemroller
+  switch (role) {
+    case "superadmin":
+      redirect("/superadmin");
+    case "kitchen":
+      redirect("/kitchen");
+    case "driver":
+      redirect("/driver");
+    case "company_admin":
+      redirect("/admin");
+  }
 
-  // Employee: krever firmatilknytning + lokasjon
+  // Employee må ha firmatilknytning + lokasjon
   if (!scope.company_id || !scope.location_id) {
     return (
       <PageSection
