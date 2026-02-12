@@ -8,7 +8,7 @@
    - Legger til manglende WeekClient-klasser (chips/toggle)
    - Toggle: grønn/rød + locked feel (disabled stripes)
    - Viktig: tillater markering/kopiering (auth-sider)
-   - Fix: hover-kontrast på knapper (ingen hvit-på-hvit)
+   - Fix: hover-kontrast på knapper (ingen hvit-på-hvit) + global failsafe
    - Lint: line-clamp + vendor-only forklaring for smoothing
 ========================================================= */
 
@@ -408,7 +408,7 @@ h4 {
 }
 
 /* =========================================================
-   Buttons (enterprise-safe hover contrast)
+   Buttons (enterprise-safe hover contrast + global failsafe)
 ========================================================= */
 
 .lp-btn {
@@ -554,10 +554,29 @@ h4 {
   padding: 0;
 }
 
-/* Safety: if any button has text-white but hover makes background light, force readable text */
-.lp-btn:hover .text-white,
-.lp-btn:focus-visible .text-white {
-  color: inherit;
+/* ✅ Global failsafe:
+   Prevent white text becoming invisible on light hover backgrounds
+   (common: text-white + hover:bg-white/neutral-50/etc.) */
+button.text-white:hover,
+a.text-white:hover,
+[role="button"].text-white:hover,
+button[class*="text-white"]:hover,
+a[class*="text-white"]:hover,
+[role="button"][class*="text-white"]:hover {
+  color: rgb(var(--lp-text)) !important;
+}
+
+/* Also ensure common shadcn/utility variants that go light on hover remain readable */
+button:hover[class*="hover:bg-white"],
+a:hover[class*="hover:bg-white"],
+[role="button"]:hover[class*="hover:bg-white"],
+button:hover[class*="hover:bg-neutral-"],
+a:hover[class*="hover:bg-neutral-"],
+[role="button"]:hover[class*="hover:bg-neutral-"],
+button:hover[class*="hover:bg-slate-"],
+a:hover[class*="hover:bg-slate-"],
+[role="button"]:hover[class*="hover:bg-slate-"] {
+  color: rgb(var(--lp-text)) !important;
 }
 
 /* =========================================================
