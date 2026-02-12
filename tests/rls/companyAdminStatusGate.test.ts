@@ -34,23 +34,23 @@ const SCOPE = {
 
 /* =========================================================
    Mocks (status-gate focus)
-   Goal: this test verifies ONLY that PAUSED/CLOSED are blocked (403),
-         and that ACTIVE is NOT blocked by the status gate.
-         It does NOT assert full write success (because that belongs in other tests).
+   - Goal: verify PAUSED/CLOSED => 403, ACTIVE => not blocked by 401/403.
+   - We avoid requiring full write-path success (200), which belongs elsewhere.
 ========================================================= */
 
-// Some routes pull scope via @/lib/auth/scope
+// ✅ Some routes pull scope via @/lib/auth/scope
 vi.mock("@/lib/auth/scope", () => ({
   getScope: vi.fn(async () => ({ ...SCOPE })),
 }));
 
-// Toggle route typically uses routeGuard helpers
+// ✅ Toggle route typically uses routeGuard helpers
 vi.mock("@/lib/http/routeGuard", () => ({
+  // Hybrid object to satisfy multiple internal access patterns
   scopeOr401: vi.fn(async () => ({
     ok: true,
     rid: "rid_test",
     scope: { ...SCOPE },
-    ...SCOPE, // hybrid shape: supports both access patterns
+    ...SCOPE,
   })),
   requireRoleOr403: vi.fn(async () => ({ ok: true })),
   readJson: vi.fn(async (req: any) => {
@@ -67,7 +67,7 @@ vi.mock("@/lib/http/routeGuard", () => ({
   }),
 }));
 
-// Company status lookup (this is what we are testing)
+// ✅ Company status lookup (this is what we are testing)
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
     from: (table: string) => {
@@ -87,7 +87,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
-// Keep these harmless if route touches them; they should never cause 401/403 in ACTIVE case.
+// ✅ Keep these harmless if route touches them
 vi.mock("@/lib/date/oslo", () => ({
   isIsoDate: () => true,
   cutoffStatusForDate: () => "OPEN",
@@ -117,8 +117,15 @@ vi.mock("@/lib/ops/auditSafe", () => ({
   auditSafe: vi.fn(async () => true),
 }));
 
+// ✅ CRITICAL: Next cookies store must implement getAll/setAll for Supabase SSR
 vi.mock("next/headers", () => ({
-  cookies: () => ({ get: () => undefined, set: () => undefined }),
+  cookies: () => ({
+    get: () => undefined,
+    set: () => undefined,
+    getAll: () => [],
+    setAll: () => undefined,
+    delete: () => undefined,
+  }),
 }));
 
 /* =========================================================
@@ -127,7 +134,7 @@ vi.mock("next/headers", () => ({
 describe("RLS: company_admin status gate (active/paused/closed)", () => {
   beforeEach(() => {
     companyStatus = "ACTIVE";
-    vi.resetModules(); // critical: ensure route is imported AFTER mocks
+    vi.resetModules(); // ensure route import happens AFTER mocks each test
   });
 
   async function callToggle(body: any) {
@@ -146,7 +153,7 @@ describe("RLS: company_admin status gate (active/paused/closed)", () => {
     const res = await callToggle({
       date: "2026-01-29",
       slot: "lunch",
-      // send BOTH variants to be compatible with different toggle contracts
+      // send BOTH variants to match different toggle contracts
       wantsLunch: true,
       action: "place",
       choice_key: "standard",
@@ -155,12 +162,10 @@ describe("RLS: company_admin status gate (active/paused/closed)", () => {
 
     const body = await readBodySafe(res);
 
-    // This test only verifies company-status gating:
-    // ACTIVE must NOT be blocked by auth (401) or company-status gate (403).
+    // ACTIVE must not be blocked by auth or status gate
     expect([401, 403]).not.toContain(res.status);
 
-    // Optional sanity: if it succeeded, ok/order may be present. If it failed later, it may be 500.
-    // We do not assert write success here—other tests cover full lifecycle.
+    // Optional sanity if success
     if (res.status === 200 && body?.order?.status) {
       expect(String(body.order.status)).toBe("ACTIVE");
     }
