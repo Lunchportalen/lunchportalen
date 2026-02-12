@@ -70,16 +70,6 @@ jobs:
           set -euo pipefail
           : "${OPENAI_API_KEY:?Missing OPENAI_API_KEY secret (Repo → Settings → Actions → Secrets)}"
 
-      - name: Create autofix branch
-        if: steps.critical.outputs.exitcode != '0'
-        id: branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          BR="bot/codex-autofix-$(date +%Y%m%d-%H%M%S)"
-          echo "branch=$BR" >> "$GITHUB_OUTPUT"
-          git checkout -b "$BR"
-
       # -------------------------
       # Run SDK-based autofix (NO codex CLI)
       # -------------------------
@@ -239,27 +229,19 @@ jobs:
 
           echo "body_path=pr_body.md" >> "$GITHUB_OUTPUT"
 
-      - name: Commit changes
-        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git add -A
-          git commit -m "fix(critical): automated patch" || exit 0
-
-      - name: Push branch
-        if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git push --set-upstream origin "${{ steps.branch.outputs.branch }}"
-
-      - name: Open pull request
+      # -------------------------
+      # Create PR (handles commit + branch + push) — robust
+      # -------------------------
+      - name: Create pull request (commit + push + PR)
         if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: ${{ steps.branch.outputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: bot/codex-autofix
+          delete-branch: false
           title: "fix(critical): automated patch"
+          commit-message: "fix(critical): automated patch"
           body-path: ${{ steps.report.outputs.body_path }}
           labels: |
             autofix
