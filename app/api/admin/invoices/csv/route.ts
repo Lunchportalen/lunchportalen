@@ -63,60 +63,6 @@ function csvLine(values: unknown[]) {
   return values.map(csvEscape).join(",");
 }
 
-async function loadAgreementRow(admin: any, companyId: string, companyLocationHint?: string | null) {
-  // 0) Try match by company_location_id (if provided)
-  if (companyLocationHint) {
-    try {
-      const aLoc = await admin
-        .from("agreements")
-        .select("*")
-        .eq("company_id", companyId)
-        .eq("status", "ACTIVE")
-        .eq("company_location_id", companyLocationHint)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (aLoc?.data) {
-        return { ok: true as const, src: "agreements(company_location_id)" as const, error: null, data: aLoc.data as AgreementRow };
-      }
-    } catch {
-      // swallow
-    }
-  }
-
-  // 1) Prefer agreements
-  try {
-    const aTbl = await admin
-      .from("agreements")
-      .select("*")
-      .eq("company_id", companyId)
-      .eq("status", "ACTIVE")
-      .order("start_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (aTbl?.error) return { ok: false as const, src: "agreements" as const, error: aTbl.error, data: null };
-    if (aTbl?.data) return { ok: true as const, src: "agreements" as const, error: null, data: aTbl.data as AgreementRow };
-  } catch {
-    // swallow
-  }
-
-  // 2) Fallback view (legacy)
-  try {
-    const aView = await admin
-      .from("company_current_agreement")
-      .select("*")
-      .eq("company_id", companyId)
-      .maybeSingle();
-
-    if (aView?.error) return { ok: false as const, src: "company_current_agreement" as const, error: aView.error, data: null };
-    return { ok: true as const, src: "company_current_agreement" as const, error: null, data: (aView?.data ?? null) as AgreementRow | null };
-  } catch {
-    return { ok: true as const, src: "company_current_agreement" as const, error: null, data: null };
-  }
-}
-
 function summarizeAgreementRow(row: AgreementRow | null) {
   if (!row) return null;
   const weekplan = (row as any).weekplan ?? null;
@@ -132,6 +78,32 @@ function summarizeAgreementRow(row: AgreementRow | null) {
     has_weekplan: !!weekplan,
     weekplan_keys: weekplan && typeof weekplan === "object" ? Object.keys(weekplan) : null,
   };
+}
+
+/**
+ * ✅ Definitive agreement lookup:
+ * - Use agreements table ONLY (direct truth)
+ * - No dependency on company_current_agreement (stale/missing in prod)
+ */
+async function loadAgreementRow(admin: any, companyId: string) {
+  try {
+    const a = await admin
+      .from("agreements")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("status", "ACTIVE")
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (a?.error) {
+      return { ok: false as const, src: "agreements" as const, error: a.error, data: null };
+    }
+
+    return { ok: true as const, src: "agreements" as const, error: null, data: (a?.data ?? null) as AgreementRow | null };
+  } catch (e: any) {
+    return { ok: false as const, src: "agreements" as const, error: e, data: null };
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -153,7 +125,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const metaOnly = url.searchParams.get("meta") === "1";
-  const ts = safeStr(url.searchParams.get("ts")); // cache-bypass helper
+  const ts = safeStr(url.searchParams.get("ts"));
 
   // Period
   const qFrom = url.searchParams.get("from");
@@ -168,10 +140,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const admin = supabaseAdmin();
-    const companyLocationHint = safeStr((scope as any).locationId) || null;
+    const companyLocationId = safeStr((scope as any).locationId) || null;
 
-    // ---------- META DIAGNOSTICS (ALWAYS) ----------
-    // We run a lightweight visibility check BEFORE agreement lookup.
+    // Visibility check (meta diagnostics)
     const vis = await admin
       .from("agreements")
       .select("id", { count: "exact", head: true })
@@ -179,25 +150,25 @@ export async function GET(req: NextRequest) {
       .eq("status", "ACTIVE");
 
     const diag = {
-      buildTag: "CSV_ROUTE_DIAG_V1",
+      buildTag: "CSV_ROUTE_DIAG_V2",
       rid,
       ts: ts || null,
-      scope: { companyId, locationId: companyLocationHint, role: (scope as any).role ?? null },
+      scope: { companyId, locationId: companyLocationId, role: (scope as any).role ?? null },
       hasServiceRoleEnv: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       agreementsVisibleCount: (vis as any).count ?? null,
       agreementsVisibleError: vis.error ? asErrDetail(vis.error) : null,
       range: { from, to },
+      supabaseUrl: process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
     };
 
-    // Company (for meta)
+    // Company (for meta + csv)
     const cRes = await admin.from("companies").select("id,name").eq("id", companyId).maybeSingle();
     const company = (cRes.data ?? null) as CompanyRow | null;
 
-    // Agreement lookup
-    const ag = await loadAgreementRow(admin, companyId, companyLocationHint);
+    // Agreement
+    const ag = await loadAgreementRow(admin, companyId);
 
     if (metaOnly) {
-      // Return diagnostics even if agreement is missing/invalid.
       return jsonOk(
         rid,
         {
@@ -211,18 +182,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Normal CSV behavior below (non-meta)
-
     if (cRes.error) {
       return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: asErrDetail(cRes.error) });
     }
     if (!company) return jsonErr(rid, "Fant ikke firma.", 404, "NOT_FOUND");
 
     if (ag.ok === false) {
-      return jsonErr(rid, "Kunne ikke hente avtale.", 500, {
-        code: "DB_ERROR",
-        detail: { source: ag.src, error: asErrDetail(ag.error) },
-      });
+      return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "DB_ERROR", detail: asErrDetail(ag.error) });
     }
     if (!ag.data) return jsonErr(rid, "Ingen avtale funnet for firma.", 404, "NO_AGREEMENT");
 
@@ -231,7 +197,6 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Avtalen er ugyldig eller mangler ukesplan.", 409, {
         code: "AGREEMENT_INVALID",
         detail: {
-          source: ag.src,
           normalized_error: (agreementRes as any).error,
           normalized_message: (agreementRes as any).message,
           normalized_detail: (agreementRes as any).detail ?? null,
