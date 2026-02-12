@@ -816,3 +816,85 @@ a:hover[class*="hover:bg-gray-"],
     background: transparent;
   }
 }
+/* =========================================================
+   BUTTON OVERRIDES (FINAL FIX)
+   - Works for <a> and <button>
+   - Hover is always readable
+   - Disabled never becomes "blank"
+========================================================= */
+
+/* Base: ensure primary is dark with white text */
+.lp-btn.lp-btn--primary,
+.lp-btn.lp-btn-primary,
+a.lp-btn.lp-btn--primary,
+a.lp-btn.lp-btn-primary,
+button.lp-btn.lp-btn--primary,
+button.lp-btn.lp-btn-primary {
+  background: rgb(var(--lp-text)) !important;
+  color: #fff !important;
+  border-color: rgba(var(--lp-text), 0.9) !important;
+}
+
+/* Hover: light background + dark text */
+.lp-btn.lp-btn--primary:hover,
+.lp-btn.lp-btn-primary:hover,
+a.lp-btn.lp-btn--primary:hover,
+a.lp-btn.lp-btn-primary:hover,
+button.lp-btn.lp-btn--primary:hover,
+button.lp-btn.lp-btn-primary:hover {
+  background: rgb(var(--lp-surface)) !important;
+  color: rgb(var(--lp-text)) !important;
+  border-color: rgba(var(--lp-text), 0.22) !important;
+  box-shadow: var(--lp-shadow-card);
+}
+
+/* Active: keep strong */
+.lp-btn.lp-btn--primary:active,
+.lp-btn.lp-btn-primary:active,
+a.lp-btn.lp-btn--primary:active,
+a.lp-btn.lp-btn-primary:active,
+button.lp-btn.lp-btn--primary:active,
+button.lp-btn.lp-btn-primary:active {
+  background: rgb(var(--lp-text)) !important;
+  color: #fff !important;
+}
+
+/* Disabled: if element is actually disabled, keep text visible */
+button.lp-btn:disabled,
+button.lp-btn[disabled] {
+  background: rgba(var(--lp-text), 0.12) !important;
+  color: rgb(var(--lp-text)) !important; /* ✅ visible text */
+  border-color: rgba(var(--lp-text), 0.18) !important;
+  opacity: 1 !important; /* prevent "washed out to invisible" */
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+/* If you are using aria-disabled (links), mimic disabled safely */
+.lp-btn[aria-disabled="true"] {
+  background: rgba(var(--lp-text), 0.12) !important;
+  color: rgb(var(--lp-text)) !important;
+  border-color: rgba(var(--lp-text), 0.18) !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Global failsafe: any element with text-white that hovers to light bg -> force dark text */
+button:hover[class*="hover:bg-white"],
+a:hover[class*="hover:bg-white"],
+[role="button"]:hover[class*="hover:bg-white"],
+button:hover[class*="hover:bg-neutral-"],
+a:hover[class*="hover:bg-neutral-"],
+[role="button"]:hover[class*="hover:bg-neutral-"],
+button:hover[class*="hover:bg-slate-"],
+a:hover[class*="hover:bg-slate-"],
+[role="button"]:hover[class*="hover:bg-slate-"],
+button:hover[class*="hover:bg-zinc-"],
+a:hover[class*="hover:bg-zinc-"],
+[role="button"]:hover[class*="hover:bg-zinc-"],
+button:hover[class*="hover:bg-gray-"],
+a:hover[class*="hover:bg-gray-"],
+[role="button"]:hover[class*="hover:bg-gray-"] {
+  color: rgb(var(--lp-text)) !important;
+}
