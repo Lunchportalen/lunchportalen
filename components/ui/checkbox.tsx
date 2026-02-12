@@ -6,13 +6,12 @@ function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
 }
 
-export interface CheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
+export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   label?: React.ReactNode;
 }
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
-  { className, label, id, ...props },
+  { className, label, id, disabled, ...props },
   ref
 ) {
   const autoId = React.useId();
@@ -21,16 +20,19 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(functi
   return (
     <label
       htmlFor={inputId}
+      aria-disabled={disabled ? "true" : undefined}
       className={cn(
-        "inline-flex items-center gap-3 select-none",
-        props.disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+        "inline-flex items-center gap-3",
+        disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"
       )}
     >
-      <span className="relative inline-flex">
+      {/* Only the control should be non-selectable */}
+      <span className="relative inline-flex select-none">
         <input
           ref={ref}
           id={inputId}
           type="checkbox"
+          disabled={disabled}
           className={cn(
             "peer h-5 w-5 appearance-none rounded-md",
             "bg-[color:var(--lp-surface)]",
@@ -66,7 +68,8 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(functi
       </span>
 
       {label ? (
-        <span className="text-sm text-[color:var(--lp-fg)]">{label}</span>
+        // Label text must be selectable/copyable
+        <span className="text-sm text-[color:var(--lp-fg)] select-text">{label}</span>
       ) : null}
     </label>
   );
