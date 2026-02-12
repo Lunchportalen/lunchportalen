@@ -898,3 +898,45 @@ a:hover[class*="hover:bg-gray-"],
 [role="button"]:hover[class*="hover:bg-gray-"] {
   color: rgb(var(--lp-text)) !important;
 }
+/* =========================================================
+   FINAL BUTTON OVERRIDE (wins everything)
+   - Forces readable hover on primary buttons
+   - Ensures overlay/pseudo elements can't hide text
+========================================================= */
+
+.lp-btn.lp-btn--primary,
+a.lp-btn.lp-btn--primary,
+button.lp-btn.lp-btn--primary {
+  position: relative !important;
+  isolation: isolate !important; /* creates a stacking context */
+  background: rgb(var(--lp-text)) !important;
+  color: #fff !important;
+  border-color: rgba(var(--lp-text), 0.9) !important;
+}
+
+.lp-btn.lp-btn--primary:hover,
+a.lp-btn.lp-btn--primary:hover,
+button.lp-btn.lp-btn--primary:hover {
+  background: rgb(var(--lp-surface)) !important;
+  color: rgb(var(--lp-text)) !important;
+  border-color: rgba(var(--lp-text), 0.22) !important;
+}
+
+/* If the button uses overlay stripes via pseudo elements, keep them behind text */
+.lp-btn.lp-btn--primary::before,
+.lp-btn.lp-btn--primary::after,
+a.lp-btn.lp-btn--primary::before,
+a.lp-btn.lp-btn--primary::after,
+button.lp-btn.lp-btn--primary::before,
+button.lp-btn.lp-btn--primary::after {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure text/content sits above overlays */
+.lp-btn.lp-btn--primary > *,
+a.lp-btn.lp-btn--primary > *,
+button.lp-btn.lp-btn--primary > * {
+  position: relative;
+  z-index: 1;
+}
