@@ -126,7 +126,7 @@ const SUBCHOICES: Record<"salatbar" | "paasmurt", string[]> = {
 const NOTE_SEP = "||";
 
 /* =========================================================
-   Helpers (strict, TS-safe)
+   Helpers
 ========================================================= */
 
 function asOrderStatus(v: unknown): OrderStatus {
@@ -143,14 +143,14 @@ function asOrderStatus(v: unknown): OrderStatus {
 
 function mapDay(d: any): OrderDay {
   const date = String(d?.date ?? "").trim();
-
   const status = asOrderStatus(d?.orderStatus ?? d?.status);
+
   const wantsFromApi =
     typeof d?.wantsLunch === "boolean"
       ? Boolean(d.wantsLunch)
       : typeof d?.wants_lunch === "boolean"
-        ? Boolean(d.wants_lunch)
-        : false;
+      ? Boolean(d.wants_lunch)
+      : false;
 
   const wants = status === "ACTIVE" ? true : status === "CANCELLED" ? false : wantsFromApi;
 
@@ -219,7 +219,6 @@ function extractVariantFromNote(choiceKey: string, note: string | null | undefin
     const opt = SUBCHOICES[k].find((x) => x.toLowerCase() === suffix.toLowerCase());
     return opt ?? null;
   }
-
   return null;
 }
 
@@ -373,10 +372,9 @@ function LpButton({
   variant: "primary" | "secondary";
   title?: string;
 }) {
-  const base =
-    "lp-btn min-h-[44px] border border-[rgb(var(--lp-border))] transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgba(var(--lp-ring),0.25)]";
-  const primary = "bg-[rgb(var(--lp-fg))] text-white hover:brightness-[1.02] active:brightness-[0.98]";
-  const secondary = "bg-white/80 text-[rgb(var(--lp-fg))] hover:bg-white";
+  const base = "lp-btn min-h-[44px] border border-[rgb(var(--lp-border))] transition";
+  const primary = "lp-btn--primary";
+  const secondary = "lp-btn--secondary";
   return (
     <button
       type="button"
@@ -407,7 +405,6 @@ export default function WeekClient() {
   const [toast, setToast] = useState<string | null>(null);
   const toastT = useTimeoutRef();
 
-  // ✅ Minute tick represented as a stable Date (removes exhaustive-deps warning)
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
     const t = window.setInterval(() => setNow(new Date()), 60_000);
@@ -417,7 +414,6 @@ export default function WeekClient() {
   const abortRef = useRef<AbortController | null>(null);
   const didLoadRef = useRef(false);
 
-  // Variant state (ref is sync -> no “choose twice”)
   const [variantByDate, setVariantByDate] = useState<Record<string, string>>({});
   const variantByDateRef = useRef<Record<string, string>>({});
 
@@ -431,13 +427,12 @@ export default function WeekClient() {
   }
 
   const [openVariantForDate, setOpenVariantForDate] = useState<Record<string, "salatbar" | "paasmurt" | null>>({});
-  const [pendingChoiceByDate, setPendingChoiceByDate] = useState<Record<string, string | null>>({}); // 👈 fixes “must tap twice”
+  const [pendingChoiceByDate, setPendingChoiceByDate] = useState<Record<string, string | null>>({});
 
   function clearPending(dateKey: string) {
     setPendingChoiceByDate((prev) => ({ ...prev, [dateKey]: null }));
   }
 
-  // Per-date queue
   type PendingAction =
     | { kind: "setLunch"; date: string; wantsLunch: boolean; preferredChoiceKey?: string | null; note?: string | null }
     | { kind: "choice"; date: string; choiceKey: string; note?: string | null };
@@ -528,8 +523,8 @@ export default function WeekClient() {
         raw && typeof raw === "object" && (raw as any).ok === true && "data" in raw && (raw as any).data
           ? ((raw as any).data as WindowResp)
           : raw && typeof raw === "object" && (raw as any).ok === true && "days" in raw
-            ? (raw as any as WindowResp)
-            : null;
+          ? (raw as any as WindowResp)
+          : null;
 
       if (!res.ok || !raw || (raw as any).ok !== true || !payload) {
         const errText = safeUserMessage(
@@ -704,8 +699,8 @@ export default function WeekClient() {
         ? preferredChoiceKey && choices.some((c) => c.key === preferredChoiceKey)
           ? preferredChoiceKey
           : daySnapshot.selectedChoiceKey && choices.some((c) => c.key === daySnapshot.selectedChoiceKey)
-            ? daySnapshot.selectedChoiceKey
-            : defaultChoiceKey(daySnapshot)
+          ? daySnapshot.selectedChoiceKey
+          : defaultChoiceKey(daySnapshot)
         : null;
 
     if (wantsLunch && !pick) {
@@ -792,7 +787,6 @@ export default function WeekClient() {
         };
       });
 
-      // ✅ clear pending once server confirms
       clearPending(serverDate);
 
       if (active && needsVariant(String(pick ?? ""))) setOpenVariantForDate((prev) => ({ ...prev, [serverDate]: null }));
@@ -884,11 +878,11 @@ export default function WeekClient() {
         };
       });
 
-      // ✅ clear pending once server confirms
       clearPending(serverDate);
 
       if (needsVariant(String(key))) setOpenVariantForDate((prev) => ({ ...prev, [serverDate]: null }));
-      if (isToastSeqCurrent(serverDate, toastSeq)) showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateNO(serverDate)} • ${serverHHMM}`);
+      if (isToastSeqCurrent(serverDate, toastSeq))
+        showToast(`✅ Lagret: ${choiceLabel(day, key)} • ${formatDateNO(serverDate)} • ${serverHHMM}`);
     } catch {
       setDayError(dateKey, "Kunne ikke lagre menyvalg. Prøv igjen.");
       if (isToastSeqCurrent(dateKey, toastSeq)) showToast("⚠️ Kunne ikke lagre menyvalg. Prøv igjen.");
@@ -915,7 +909,6 @@ export default function WeekClient() {
 
     const lowerKey = String(key).toLowerCase();
 
-    // ✅ Variant choices: one tap opens correct picker immediately (no second tap needed)
     if (needsVariant(lowerKey)) {
       setOpenVariantForDate((prev) => ({ ...prev, [dateKey]: lowerKey as any }));
       setPendingChoiceByDate((prev) => ({ ...prev, [dateKey]: lowerKey }));
@@ -924,12 +917,10 @@ export default function WeekClient() {
       return;
     }
 
-    // Non-variant choices: commit immediately
     clearPending(dateKey);
     enqueue({ kind: "choice", date: dateKey, choiceKey: key });
   }
 
-  // ✅ Auto-save variant
   function onVariantSelected(day: OrderDay, choiceKey: "salatbar" | "paasmurt", variantValue: string) {
     const dateKey = String(day.date).trim();
     if (savingByDate[dateKey]) return;
@@ -947,31 +938,20 @@ export default function WeekClient() {
 
     const note = buildNote(choiceKey, v);
 
-    // close picker immediately for snappy UX
     setOpenVariantForDate((prev) => ({ ...prev, [dateKey]: null }));
 
-    // If not ordered yet -> set-day with choice+variant
     if (!currentIsActive(day)) {
       enqueue({ kind: "setLunch", date: dateKey, wantsLunch: true, preferredChoiceKey: choiceKey, note });
       return;
     }
 
-    // Ordered -> set-choice with choice+variant
     enqueue({ kind: "choice", date: dateKey, choiceKey, note });
   }
-
-  /* =========================================================
-     UI helpers
-  ========================================================= */
 
   const availabilityText = useMemo(() => {
     if (!availability.openNextWeek) return "Neste uke åpner torsdag kl. 08:00.";
     return null;
   }, [availability.openNextWeek]);
-
-  /* =========================================================
-     Render
-  ========================================================= */
 
   return (
     <section className="lp-card lp-card-pad lp-safe-bottom-pad">
@@ -1004,10 +984,7 @@ export default function WeekClient() {
             <button
               type="button"
               onClick={() => setWeekIndex(0)}
-              className={[
-                "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
-                weekIndex === 0 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
-              ].join(" ")}
+              className={cx("lp-btn lp-btn--secondary min-h-[44px]", weekIndex === 0 ? "lp-active-ring" : "")}
               aria-pressed={weekIndex === 0}
               disabled={isAnySaving}
             >
@@ -1018,10 +995,7 @@ export default function WeekClient() {
           <button
             type="button"
             onClick={() => setWeekIndex(1)}
-            className={[
-              "lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white",
-              weekIndex === 1 ? "text-[rgb(var(--lp-fg))] bg-[rgb(var(--lp-surface))]" : "",
-            ].join(" ")}
+            className={cx("lp-btn lp-btn--secondary min-h-[44px]", weekIndex === 1 ? "lp-active-ring" : "")}
             aria-pressed={weekIndex === 1}
             disabled={isAnySaving || !availability.openNextWeek}
             title={!availability.openNextWeek ? "Neste uke åpner torsdag kl. 08:00." : ""}
@@ -1032,7 +1006,7 @@ export default function WeekClient() {
           <button
             type="button"
             onClick={loadWindow}
-            className="lp-btn min-h-[44px] border-[rgb(var(--lp-border))] bg-white/70 text-[rgb(var(--lp-muted))] hover:bg-white"
+            className="lp-btn lp-btn--ghost min-h-[44px]"
             disabled={loading || isAnySaving}
           >
             Oppdater
@@ -1071,28 +1045,23 @@ export default function WeekClient() {
               const active = currentIsActive(day);
 
               const orderedKey = active ? (day.selectedChoiceKey ?? null) : null;
-              const orderedLower = String(orderedKey ?? "").toLowerCase();
               const pendingKey = pendingChoiceByDate[dateKey] ?? null;
 
-              const lock = disabled ? `🔒 ${lockLabel(day)}` : "";
-
-              // Which variant picker to show
               const openKey = openVariantForDate[dateKey] ?? null;
               const variantKey: "salatbar" | "paasmurt" | null = openKey ? openKey : null;
               const showVariant = Boolean(variantKey) && !disabled;
               const currentVariantValue = variantKey ? getVariant(dateKey) : "";
 
-              // Display “bestilt” text (very clear)
               const orderedLabel = orderedKey ? choiceLabel(day, orderedKey) : null;
               const orderedVariant = active ? variantValueForDisplay(day) : null;
 
               return (
                 <div
                   key={dateKey}
-                  className={[
+                  className={cx(
                     "rounded-[18px] bg-[rgb(var(--lp-surface))] p-4 shadow-[0_1px_2px_rgba(32,33,36,0.06)]",
-                    saving ? "opacity-90" : "",
-                  ].join(" ")}
+                    saving ? "opacity-90" : ""
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -1102,24 +1071,20 @@ export default function WeekClient() {
                       </div>
 
                       <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-                        {day.menuTitle ? (
-                          <span className="font-medium text-[rgb(var(--lp-fg))]">{day.menuTitle}</span>
-                        ) : (
-                          <span className="font-medium text-[rgb(var(--lp-fg))]">Meny</span>
-                        )}
-                        {day.menuDescription ? (
-                          <span className="text-[rgb(var(--lp-muted))]"> · {day.menuDescription}</span>
-                        ) : (
-                          <span className="text-[rgb(var(--lp-muted))]"> · Kommer</span>
-                        )}
+                        <span className="font-medium text-[rgb(var(--lp-fg))]">{day.menuTitle ?? "Meny"}</span>
+                        <span className="text-[rgb(var(--lp-muted))]">
+                          {" "}
+                          · {day.menuDescription ? day.menuDescription : "Kommer"}
+                        </span>
                       </div>
 
-                      {/* ✅ Very clear: what is actually ordered */}
                       <div className="mt-2 text-sm">
                         {active && orderedLabel ? (
                           <span className="text-[rgb(var(--lp-fg))] font-semibold">
                             ✅ Bestilt: {orderedLabel}
-                            {orderedVariant ? <span className="font-normal text-[rgb(var(--lp-muted))]"> ({orderedVariant})</span> : null}
+                            {orderedVariant ? (
+                              <span className="font-normal text-[rgb(var(--lp-muted))]"> ({orderedVariant})</span>
+                            ) : null}
                           </span>
                         ) : (
                           <span className="text-[rgb(var(--lp-muted))]">Ikke bestilt</span>
@@ -1129,16 +1094,16 @@ export default function WeekClient() {
 
                     <div className="flex flex-col items-end gap-2">
                       <span
-                        className={[
+                        className={cx(
                           "inline-flex min-h-[24px] items-center justify-center rounded-full px-3 text-xs font-semibold",
                           !day.isEnabled
                             ? "bg-neutral-200 text-neutral-500"
                             : day.tier === "LUXUS"
-                              ? "bg-amber-100 text-amber-900"
-                              : day.tier === "BASIS"
-                                ? "bg-slate-200 text-slate-900"
-                                : "bg-neutral-200 text-neutral-500",
-                        ].join(" ")}
+                            ? "bg-amber-100 text-amber-900"
+                            : day.tier === "BASIS"
+                            ? "bg-slate-200 text-slate-900"
+                            : "bg-neutral-200 text-neutral-500"
+                        )}
                       >
                         {day.isEnabled && day.tier ? tierLabel(day.tier) : "Ikke i avtalen"}
                       </span>
@@ -1158,7 +1123,13 @@ export default function WeekClient() {
                         ) : null}
 
                         <span className="text-sm text-[rgb(var(--lp-muted))] whitespace-nowrap">
-                          {saving ? "Lagrer…" : disabled ? lock : active ? "Bestilt" : "Velg meny for å bestille"}
+                          {saving
+                            ? "Lagrer…"
+                            : disabled
+                            ? `🔒 ${lockLabel(day)}`
+                            : active
+                            ? "Bestilt"
+                            : "Velg meny for å bestille"}
                         </span>
                       </div>
                     </div>
@@ -1172,13 +1143,6 @@ export default function WeekClient() {
                   ) : null}
 
                   <div className="mt-4">
-                    <div className="text-xs text-[rgb(var(--lp-muted))]">
-                      Menyvalg{day.isLocked ? " (låst)" : ""}:
-                      <span className="ml-2 text-[rgb(var(--lp-fg))] font-medium">
-                        {active && orderedLabel ? orderedLabel : "Velg meny"}
-                      </span>
-                    </div>
-
                     {choices.length ? (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {choices.map((c) => {
@@ -1192,31 +1156,26 @@ export default function WeekClient() {
                               type="button"
                               disabled={disabled}
                               onClick={() => onSelectChoice(day, c.key)}
-                              className={[
+                              className={cx(
                                 "min-h-[44px] rounded-full border px-4 py-2 text-sm transition whitespace-nowrap",
                                 "focus:outline-none focus:ring-2 focus:ring-offset-2",
                                 disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white active:brightness-[0.99]",
                                 isOrdered
-                                  ? [
-                                      "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-semibold",
-                                      "border-transparent",
-                                      "ring-2 ring-[#ff007f]",
-                                      "shadow-[0_0_0_2px_rgba(255,0,127,0.60),0_0_26px_rgba(255,0,127,0.35)]",
-                                    ].join(" ")
+                                  ? "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-semibold border-transparent lp-active-ring"
                                   : isPending
-                                    ? ["bg-white/90 text-[rgb(var(--lp-fg))]", "border-transparent", "ring-2 ring-[#2563eb]"].join(" ")
-                                    : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]",
-                              ].join(" ")}
+                                  ? "bg-white/90 text-[rgb(var(--lp-fg))] border-transparent ring-2 ring-[#2563eb]"
+                                  : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]"
+                              )}
                               title={
                                 disabled
                                   ? lockLabel(day)
                                   : isOrdered
-                                    ? "Bestilt"
-                                    : needsVariant(keyLower)
-                                      ? "Trykk og velg variant"
-                                      : active
-                                        ? "Klikk for å endre"
-                                        : "Klikk for å bestille"
+                                  ? "Bestilt"
+                                  : needsVariant(keyLower)
+                                  ? "Trykk og velg variant"
+                                  : active
+                                  ? "Klikk for å endre"
+                                  : "Klikk for å bestille"
                               }
                             >
                               {isOrdered ? `✓ ${c.label ?? c.key}` : c.label ?? c.key}
@@ -1226,7 +1185,6 @@ export default function WeekClient() {
                       </div>
                     ) : null}
 
-                    {/* ✅ Variant picker (auto-save). Always opens correctly on first tap */}
                     {showVariant && variantKey ? (
                       <div className="mt-3 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-3">
                         <div className="text-xs text-[rgb(var(--lp-muted))] mb-2">
@@ -1248,9 +1206,7 @@ export default function WeekClient() {
                           ))}
                         </select>
 
-                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
-                          Velges og registreres automatisk.
-                        </div>
+                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Velges og registreres automatisk.</div>
                       </div>
                     ) : null}
                   </div>
@@ -1266,4 +1222,8 @@ export default function WeekClient() {
       )}
     </section>
   );
+}
+
+function cx(...s: Array<string | false | null | undefined>) {
+  return s.filter(Boolean).join(" ");
 }

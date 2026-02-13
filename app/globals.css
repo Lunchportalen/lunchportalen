@@ -10,6 +10,10 @@
    - Ingen breaking changes (kun additive klasser)
 ========================================================= */
 
+/* =========================================================
+   Root tokens
+========================================================= */
+
 :root {
   --lp-bg: 255 250 243;
   --lp-surface: 255 255 255;
@@ -26,7 +30,7 @@
   --lp-gold-hover: 156 120 74;
   --lp-gold-soft: 244 235 221;
 
-  /* ✅ hot pink neon */
+  /* ✅ hot pink neon (HSL triplet stored for hsl(var(...)/alpha) usage) */
   --lp-neon-pink: 330 100% 55%;
 
   --lp-success: 31 122 77;
@@ -88,7 +92,8 @@ textarea,
 body {
   background: rgb(var(--lp-bg));
   color: rgb(var(--lp-text));
-  font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans",
+    sans-serif;
   font-size: 15px;
   line-height: 1.5;
 
@@ -851,6 +856,7 @@ a:hover[class*="hover:bg-gray-"],
   font-size: 13px;
 }
 
+/* ✅ Correct + consistent neon focus utilities */
 .lp-neon-focus:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
@@ -893,11 +899,17 @@ a:hover[class*="hover:bg-gray-"],
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
 }
 
+/* Optional: active text emphasis without changing layout */
+.lp-nav-item[aria-current="page"],
+.lp-nav-item.is-active,
+.lp-nav-item--active {
+  font-weight: 700;
+}
+
 /* =========================================================
    ✅ NEW: Cookie Consent Scroll Lock — no layout shift
-   - Works with your JS approach
-   - Also supports a cleaner approach using --lp-scrollbar-comp
    - Add/remove class 'noScroll' on <html>
+   - Set --lp-scrollbar-comp from JS (px)
 ========================================================= */
 
 html.noScroll,
@@ -905,14 +917,16 @@ html.noScroll body {
   overflow: hidden;
 }
 
-/* Option A (recommended): keep width stable via padding-right */
+/* Recommended: keep width stable via padding-right */
 html.noScroll body {
   padding-right: var(--lp-scrollbar-comp);
 }
 
-/* Option B (compatible with your existing script that sets width):
-   If you are currently injecting width: calc(100vw - Xpx) via JS,
-   you can keep that—this CSS does not conflict. */
+/* Optional: stop overscroll chain on iOS */
+html.noScroll body {
+  overscroll-behavior: none;
+  touch-action: none;
+}
 
 /* =========================================================
    Scrollbar

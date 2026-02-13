@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type StatusState = "paused" | "closed" | "pending" | "inactive";
+type SP = Record<string, string | string[] | undefined>;
 
 function safeState(v: string | null): StatusState {
   const s = String(v ?? "").trim().toLowerCase();
@@ -27,12 +28,31 @@ function safeDecode(v: string) {
   }
 }
 
-export default function StatusPage({
+function normalizePath(p: string | null): string | null {
+  if (!p) return null;
+  const s = safeDecode(p).trim();
+  if (!s) return null;
+  if (!s.startsWith("/")) return null;
+  if (s.startsWith("//")) return null; // prevent protocol-relative
+  if (/[\r\n\t]/.test(s)) return null; // prevent control chars
+  return s;
+}
+
+/** Never show /superadmin as next for non-superadmin UX (status page is public). */
+function sanitizeNextForDisplay(nextPath: string | null): string | null {
+  if (!nextPath) return null;
+  if (nextPath.startsWith("/superadmin")) return "/admin";
+  return nextPath;
+}
+
+export default async function StatusPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: SP | Promise<SP>;
 }) {
-  const sp = searchParams ?? {};
+  // ✅ Next 15: searchParams may be a Promise → must await
+  const sp = await Promise.resolve(searchParams ?? {});
+
   const stateRaw = first(sp.state);
   const nextRaw = first(sp.next);
   const ridRaw = first(sp.rid);
@@ -40,13 +60,9 @@ export default function StatusPage({
 
   const state = safeState(stateRaw ? safeDecode(stateRaw) : null);
 
-  // Vi viser "hvor de prøvde å gå" bare som støtteinfo, ikke som CTA
-  const nextPath =
-    typeof nextRaw === "string" &&
-    safeDecode(nextRaw).startsWith("/") &&
-    !safeDecode(nextRaw).startsWith("//")
-      ? safeDecode(nextRaw)
-      : null;
+  // Support info only (NOT CTA)
+  const nextPathRaw = normalizePath(nextRaw);
+  const nextPath = sanitizeNextForDisplay(nextPathRaw);
 
   const title =
     state === "closed"
@@ -66,7 +82,7 @@ export default function StatusPage({
       ? "Kontoen din er registrert, men er ikke aktivert ennå. Når firmaet er aktivert, åpnes tilgangen automatisk."
       : "Tilgangen er satt på pause på firmanivå. Firmaets administrator kan reaktivere tilgangen når alt er i orden.";
 
-  const chip =
+  const chipClass =
     state === "closed"
       ? "lp-chip lp-chip-neutral"
       : state === "pending" || state === "inactive"
@@ -85,33 +101,32 @@ export default function StatusPage({
   const rid = ridRaw ? safeDecode(ridRaw) : null;
   const code = codeRaw ? safeDecode(codeRaw) : null;
 
+  // ✅ CTA: never push to /superadmin; login gets safe next (admin)
+  const loginHref = nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+
   return (
     <main className="min-h-[100svh] bg-[rgb(var(--lp-bg))]">
       <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
         <div className="rounded-3xl bg-white/70 p-7 ring-1 ring-[rgb(var(--lp-border))] shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
-            <span className={chip}>{chipLabel}</span>
+            <span className={chipClass}>{chipLabel}</span>
             <h1 className="text-xl font-semibold tracking-tight text-[rgb(var(--lp-text))] md:text-2xl">
               {title}
             </h1>
           </div>
 
-          <p className="mt-3 text-sm leading-6 text-[rgb(var(--lp-muted))]">
-            {message}
-          </p>
+          <p className="mt-3 text-sm leading-6 text-[rgb(var(--lp-muted))]">{message}</p>
 
           {nextPath ? (
             <div className="mt-4 rounded-2xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
               <div className="text-xs font-medium text-[rgb(var(--lp-muted))]">
                 Du forsøkte å gå til:
               </div>
-              <div className="mt-1 break-all text-sm text-[rgb(var(--lp-text))]">
-                {nextPath}
-              </div>
+              <div className="mt-1 break-all text-sm text-[rgb(var(--lp-text))]">{nextPath}</div>
             </div>
           ) : null}
 
-          {(code || rid) ? (
+          {code || rid ? (
             <div className="mt-4 text-xs text-[rgb(var(--lp-muted))]">
               {code ? (
                 <span>
@@ -129,7 +144,7 @@ export default function StatusPage({
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
-              href="/login"
+              href={loginHref}
               className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-[rgb(var(--lp-text))] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
             >
               Til innlogging
@@ -144,8 +159,7 @@ export default function StatusPage({
           </div>
 
           <div className="mt-6 text-xs text-[rgb(var(--lp-muted))]">
-            Hvis du mener dette er feil, kontakt firmaets administrator eller
-            support.
+            Hvis du mener dette er feil, kontakt firmaets administrator eller support.
           </div>
         </div>
       </div>

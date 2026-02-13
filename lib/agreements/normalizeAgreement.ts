@@ -44,10 +44,6 @@ function isPlainObject(v: any): v is Record<string, any> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
-function isTimeHHMM(v: any): v is string {
-  return typeof v === "string" && /^\d{2}:\d{2}$/.test(v);
-}
-
 /** Accept HH:MM or HH:MM:SS -> return HH:MM */
 function normalizeCutoffTime(v: any): string {
   const s = String(v ?? "").trim();
@@ -322,7 +318,6 @@ export function resolveTierForDate(agreement: AgreementNormalized, dateISO: stri
   }
 
   const row = agreement.schedule[day];
-  // Defensive (should never happen if normalized)
   if (!row || !row.tier) {
     throw new Error(`Agreement schedule missing for ${day}.`);
   }

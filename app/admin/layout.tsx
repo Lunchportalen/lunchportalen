@@ -151,6 +151,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect(homeForRole(roleNoDb));
   }
 
+  const adminNav = [
+    { label: "Dashboard", href: "/admin" },
+    { label: "Avtale", href: "/admin/agreement" },
+    { label: "Ordre", href: "/admin/orders" },
+    { label: "Ansatte", href: "/admin/people" },
+  ];
+
   /**
    * ✅ Enterprise-safe:
    * - superadmin: allow (no profile requirement here)
@@ -159,18 +166,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
    */
   if (roleNoDb === "superadmin") {
     return (
-      <div className="min-h-screen bg-[rgb(var(--lp-bg))]">
-        <AppHeader
-          areaLabel="Admin"
-          nav={[
-            { label: "Dashboard", href: "/admin" },
-            { label: "Avtale", href: "/admin/agreement" },
-            { label: "Ordre", href: "/admin/orders" },
-            { label: "Ansatte", href: "/admin/people" },
-          ]}
-        />
+      <div className="lp-page">
+        <AppHeader areaLabel="Admin" nav={adminNav} />
         <NeonGuard />
-        {children}
+        <main className="lp-main">
+          <div className="lp-container">{children}</div>
+        </main>
         <AdminFooter />
       </div>
     );
@@ -209,23 +210,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   // Must have company_id to use admin (enterprise requirement)
   if (!profile.company_id) {
-    // Send to week (or a dedicated blocked page if you have one)
     redirect("/week");
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--lp-bg))]">
-      <AppHeader
-        areaLabel="Admin"
-        nav={[
-          { label: "Dashboard", href: "/admin" },
-          { label: "Avtale", href: "/admin/agreement" },
-          { label: "Ordre", href: "/admin/orders" },
-          { label: "Ansatte", href: "/admin/people" },
-        ]}
-      />
+    <div className="lp-page">
+      <AppHeader areaLabel="Admin" nav={adminNav} />
       <NeonGuard />
-      {children}
+      <main className="lp-main">
+        <div className="lp-container">{children}</div>
+      </main>
       <AdminFooter />
     </div>
   );

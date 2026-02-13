@@ -9,9 +9,9 @@ import { createServerClient } from "@supabase/ssr";
  * - Preserve Supabase auth cookies (SSR)
  * - Add lightweight debug headers (x-lp-mw*)
  *
- * NOTE:
- * - We do NOT enforce company.status/is_active here (that belongs to scope.ts + route guards),
- *   because middleware should stay minimal and avoid DB queries on every request.
+ * RC PERF LAW:
+ * - DO NOT call supabase.auth.getUser() on public pages.
+ * - Only auth-check for protected routes.
  */
 
 function isBypassPath(pathname: string) {
@@ -24,7 +24,9 @@ function isBypassPath(pathname: string) {
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/api/") || // ✅ API handled by route guards
     pathname === "/login" ||
-    pathname.startsWith("/login/")
+    pathname.startsWith("/login/") ||
+    pathname === "/status" ||
+    pathname.startsWith("/status/")
   );
 }
 
@@ -38,10 +40,6 @@ function isProtectedPath(pathname: string) {
   );
 }
 
-/**
- * Optional: these are allowed without login even if protected routes exist
- * (kept minimal to avoid surprises)
- */
 function isExplicitlyPublicProtectedSubpath(_pathname: string) {
   return false;
 }
@@ -56,6 +54,33 @@ function mustEnv(name: string) {
   return v && String(v).trim() ? String(v).trim() : null;
 }
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function extractRoleFromUser(user: any): string {
+  const r1 = safeStr(user?.app_metadata?.role);
+  if (r1) return r1;
+  const r2 = safeStr(user?.user_metadata?.role);
+  if (r2) return r2;
+  const arr = user?.app_metadata?.roles ?? user?.user_metadata?.roles;
+  if (Array.isArray(arr) && arr.length) return safeStr(arr[0]);
+  return "";
+}
+
+function copyCookies(from: NextResponse, to: NextResponse) {
+  try {
+    const all = from.cookies.getAll();
+    for (const c of all) to.cookies.set(c.name, c.value);
+  } catch {}
+}
+
+function copyDebugHeaders(from: NextResponse, to: NextResponse) {
+  for (const [k, v] of from.headers.entries()) {
+    if (k.toLowerCase().startsWith("x-lp-mw")) to.headers.set(k, v);
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
@@ -65,20 +90,27 @@ export async function middleware(req: NextRequest) {
   requestHeaders.set("x-url", req.nextUrl.href);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
-
-  // Always set middleware marker header for diagnostics
   res.headers.set("x-lp-mw", "1");
 
+  // 1) Bypass assets/public endpoints
   if (isBypassPath(pathname)) {
     res.headers.set("x-lp-mw-bypass", "1");
     return res;
   }
 
+  // 2) RC PERF: If route is NOT protected, do NOT touch Supabase at all
+  const needsAuth = isProtectedPath(pathname) && !isExplicitlyPublicProtectedSubpath(pathname);
+  if (!needsAuth) {
+    res.headers.set("x-lp-mw-skip-auth", "1");
+    return res;
+  }
+
+  // 3) Only now: Supabase SSR client + auth check
   const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
   const anon = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
   if (!url || !anon) {
-    // In RC: don't hard fail middleware; just mark env missing.
+    // In RC: don't hard fail; just mark env missing.
     res.headers.set("x-lp-mw-env", "missing");
     return res;
   }
@@ -96,7 +128,6 @@ export async function middleware(req: NextRequest) {
     },
   });
 
-  // Auth check (cookie-based). Keep it fast; no DB queries here.
   let user: any = null;
   try {
     const { data, error } = await supabase.auth.getUser();
@@ -107,17 +138,39 @@ export async function middleware(req: NextRequest) {
 
   res.headers.set("x-lp-mw-user", user ? "1" : "0");
 
-  // Gate protected routes
-  if (isProtectedPath(pathname) && !isExplicitlyPublicProtectedSubpath(pathname)) {
-    if (!user) {
+  // 4) If not logged in -> redirect to login with next
+  if (!user) {
+    const u = req.nextUrl.clone();
+    u.pathname = "/login";
+    u.search = "";
+    u.searchParams.set("next", buildNextParam(pathname, searchParams));
+
+    const redir = NextResponse.redirect(u, { status: 303 });
+    copyCookies(res, redir);
+    copyDebugHeaders(res, redir);
+    redir.headers.set("x-lp-mw-redirect", "login");
+    return redir;
+  }
+
+  // 5) Superadmin hard gate (NO EXCEPTIONS)
+  if (pathname.startsWith("/superadmin")) {
+    const role = extractRoleFromUser(user);
+    if (role) res.headers.set("x-lp-mw-role", role);
+
+    if (role !== "superadmin") {
       const u = req.nextUrl.clone();
-      u.pathname = "/login";
+      u.pathname = "/admin";
       u.search = "";
-      u.searchParams.set("next", buildNextParam(pathname, searchParams));
-      return NextResponse.redirect(u, { status: 303 });
+
+      const redir = NextResponse.redirect(u, { status: 303 });
+      copyCookies(res, redir);
+      copyDebugHeaders(res, redir);
+      redir.headers.set("x-lp-mw-superadmin-block", role ? "role" : "missing-role");
+      return redir;
     }
   }
 
+  // 6) allow
   return res;
 }
 

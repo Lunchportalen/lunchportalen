@@ -4,19 +4,32 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { opsLog } from "@/lib/ops/log";
 
+/* =========================================================
+   Types
+========================================================= */
+
 export type AgreementState = {
   ok: true;
   companyId: string;
   locationId: string | null;
+
+  // NOTE:
+  // - status is "system view" for the app (week + order window)
+  // - ACTIVE is allowed if daymap exists (even if agreement snapshot isn't ACTIVE),
+  //   because daymap = operational truth in your system
   status: "ACTIVE" | "PAUSED" | "CLOSED" | "MISSING";
   statusReason?: "NO_ACTIVE_AGREEMENT" | "MISSING_DAYMAP" | "MISSING_DELIVERY_DAYS";
+
   planTier?: string | null;
   pricePerCuvertNok?: number | null;
+
   deliveryDays: DayKey[];
   slot: "lunch";
+
   dayTiers: Record<DayKey, Tier>;
   basisDays: number;
   luxusDays: number;
+
   startDate?: string | null;
   endDate?: string | null;
   updatedAt?: string | null;
@@ -30,6 +43,10 @@ export type AgreementStateError = {
   message: string;
   status: number;
 };
+
+/* =========================================================
+   Small utils
+========================================================= */
 
 function rid(prefix = "agreement_state") {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -56,29 +73,45 @@ function isActiveStatus(v: any) {
   return String(v ?? "").trim().toUpperCase() === "ACTIVE";
 }
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function pickAnyUserId(u: any): string {
+  // supabase auth user id is normally auth.user.id
+  // tests/mocks may return other shapes but should include an id
+  const id = safeStr(u?.id ?? u?.user_id ?? u?.userId);
+  return id;
+}
+
+/* =========================================================
+   Main: Current agreement state (server truth)
+========================================================= */
+
 export async function getCurrentAgreementState(opts?: { rid?: string }): Promise<AgreementState | AgreementStateError> {
   const ridVal = opts?.rid ?? rid();
   const sb: any = await supabaseServer();
 
-  // Auth (mock returns u1)
+  // Auth
   const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user?.id) {
+  const authUserId = pickAnyUserId(auth?.user);
+  if (authErr || !authUserId) {
     return { ok: false, rid: ridVal, error: "UNAUTHENTICATED", message: "Ikke innlogget.", status: 401 };
   }
 
-  // Profile (mock expects .or + maybeSingle and returns cA/lA)
+  // Profile (support both id and user_id for robustness)
   const { data: profile, error: pErr } = await sb
     .from("profiles")
     .select("company_id,location_id")
-    .or(`id.eq.${auth.user.id},user_id.eq.${auth.user.id}`)
+    .or(`id.eq.${authUserId},user_id.eq.${authUserId}`)
     .maybeSingle();
 
   if (pErr) {
     return { ok: false, rid: ridVal, error: "PROFILE_LOOKUP_FAILED", message: "Kunne ikke hente profil.", status: 500 };
   }
 
-  const companyId = String(profile?.company_id ?? "").trim();
-  const locationId = profile?.location_id ? String(profile.location_id) : null;
+  const companyId = safeStr(profile?.company_id);
+  const locationId = profile?.location_id ? safeStr(profile.location_id) : null;
 
   if (!companyId) {
     return {
@@ -90,12 +123,10 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
-  // ✅ Agreement snapshot MUST be from "company_current_agreement" (per mock)
+  // Agreement snapshot MUST be from "company_current_agreement"
   const { data: agreement, error: aErr } = await sb
     .from("company_current_agreement")
-    .select(
-      "id,company_id,status,delivery_days,plan_tier,price_per_cuvert_nok,start_date,end_date,updated_at"
-    )
+    .select("id,company_id,status,delivery_days,plan_tier,price_per_cuvert_nok,start_date,end_date,updated_at")
     .eq("company_id", companyId)
     .maybeSingle();
 
@@ -103,8 +134,8 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     return { ok: false, rid: ridVal, error: "AGREEMENT_LOOKUP_FAILED", message: "Kunne ikke hente avtale.", status: 500 };
   }
 
-  // ✅ Daymap MUST be from "v_company_current_agreement_daymap" (per test)
-  // Mock returns list via thenable, so await works.
+  // Daymap MUST be from "v_company_current_agreement_daymap"
+  // (mock may return thenable; await works)
   const daymapRes = await sb
     .from("v_company_current_agreement_daymap")
     .select("company_id,day_key,tier,slot,updated_at")
@@ -137,7 +168,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const endDate = agreement?.end_date ?? null;
   const updatedAt = agreement?.updated_at ?? null;
 
-  // Status resolution:
+  // Status resolution
   if (!hasDaymap) {
     return {
       ok: true,
@@ -180,7 +211,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
-  // If agreement missing or not ACTIVE, keep ACTIVE by daymap but mark reason (your earlier requirement)
+  // If agreement missing or not ACTIVE, keep ACTIVE by daymap but mark reason
   const active = isActiveStatus(agreement?.status);
   if (!agreement?.company_id || !active) {
     opsLog("agreement.current.not_active", {
@@ -210,6 +241,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
+  // ACTIVE
   return {
     ok: true,
     companyId,

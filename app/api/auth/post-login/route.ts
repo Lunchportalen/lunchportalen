@@ -3,24 +3,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getRoleForUser } from "@/lib/auth/getRoleForUser";
+import { computeRole, homeForRole, allowNextForRole, type Role } from "@/lib/auth/roles";
 
-type Role = "superadmin" | "company_admin" | "employee" | "driver" | "kitchen";
-
-/**
- * ✅ Canonical landing per role
- * - IMPORTANT: employee MUST land on /week (not /orders)
- */
-function pathForRole(role: Role): string {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "company_admin") return "/admin";
-  if (role === "driver") return "/driver";
-  if (role === "kitchen") return "/kitchen";
-  // employee (default)
-  return "/week";
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
 }
 
 /**
@@ -28,10 +20,11 @@ function pathForRole(role: Role): string {
  * - Only internal paths
  * - No /api/*
  * - No auth/onboarding loops
+ * - Blocks legacy employee landing (/orders)
  */
 function safeNextPath(next: string | null | undefined): string | null {
   if (!next) return null;
-  const n = String(next).trim();
+  const n = safeStr(next);
   if (!n) return null;
   if (!n.startsWith("/")) return null;
   if (n.startsWith("//")) return null;
@@ -60,71 +53,66 @@ function safeNextPath(next: string | null | undefined): string | null {
 }
 
 /**
- * ✅ Role-based allowlist for next
- * - superadmin: only /superadmin*
- * - company_admin: only /admin*
- * - driver: only /driver*
- * - kitchen: only /kitchen*
- * - employee: /week*, /min-side* (and optionally other employee routes you allow)
+ * ✅ Build redirect response using your jsonOk + Location header
+ * - We always set Location
+ * - We use 303 for safe redirect after auth
  */
-function allowNextForRole(role: Role, nextPath: string | null): string | null {
-  if (!nextPath) return null;
+function redirect303(rid: string, req: NextRequest, targetPathOrUrl: string, extra?: Record<string, any>) {
+  const origin = req.nextUrl.origin;
+  const to = targetPathOrUrl.startsWith("http") ? new URL(targetPathOrUrl) : new URL(targetPathOrUrl, origin);
 
-  if (role === "superadmin") return nextPath.startsWith("/superadmin") ? nextPath : null;
-  if (role === "company_admin") return nextPath.startsWith("/admin") ? nextPath : null;
-  if (role === "driver") return nextPath.startsWith("/driver") ? nextPath : null;
-  if (role === "kitchen") return nextPath.startsWith("/kitchen") ? nextPath : null;
-
-  // employee
-  if (nextPath.startsWith("/week") || nextPath.startsWith("/min-side")) return nextPath;
-
-  // Block everything else by default for employee
-  return null;
+  const res = jsonOk(rid, { ok: true, target: to.toString(), ...(extra ?? {}) }, 303);
+  res.headers.set("Location", to.toString());
+  res.headers.set("x-lp-postlogin", "1");
+  res.headers.set("x-lp-rid", rid);
+  return res;
 }
 
 export async function GET(req: NextRequest) {
   const rid = makeRid();
 
   try {
-    const sb = await supabaseServer();
-    const { data, error } = await sb.auth.getUser();
-    const user = data?.user ?? null;
-
     const url = new URL(req.url);
     const nextRaw = url.searchParams.get("next");
     const nextSafe = safeNextPath(nextRaw);
+
+    const sb = await supabaseServer();
+
+    // ✅ Must use cookie-bound SSR client, otherwise you get redirect loops
+    const { data, error } = await sb.auth.getUser();
+    const user = data?.user ?? null;
 
     // No session → back to login (preserve safe next)
     if (error || !user) {
       const to = new URL("/login", req.nextUrl.origin);
       if (nextSafe) to.searchParams.set("next", nextSafe);
-      to.searchParams.set("e", "no_session");
+      to.searchParams.set("code", "NO_SESSION");
+      to.searchParams.set("rid", rid);
 
-      const res = jsonOk(rid, { ok: true, target: to.toString() }, 303);
-      res.headers.set("Location", to.toString());
-      return res;
+      return redirect303(rid, req, to.toString(), { state: "no_session" });
     }
 
-    const roleRaw = await getRoleForUser(user.id);
-    const role = (roleRaw as Role | null) ?? null;
-
-    // Missing role → route to employee default (/week) with error code
-    if (!role) {
-      const to = new URL("/week", req.nextUrl.origin);
-      to.searchParams.set("e", "missing_role");
-
-      const res = jsonOk(rid, { ok: true, target: to.toString() }, 303);
-      res.headers.set("Location", to.toString());
-      return res;
+    // profileRole (DB) is authoritative; roles.ts will fall back to metadata/email
+    let profileRole: any = null;
+    try {
+      profileRole = await getRoleForUser(user.id);
+    } catch {
+      profileRole = null;
     }
 
+    const role: Role = computeRole(user, profileRole);
+
+    // Role-based next allowlist
     const allowedNext = allowNextForRole(role, nextSafe);
-    const targetPath = allowedNext ?? pathForRole(role);
 
-    const to = new URL(targetPath, req.nextUrl.origin);
-    const res = jsonOk(rid, { ok: true, target: to.toString() }, 303);
-    res.headers.set("Location", to.toString());
-    return res;
+    // If next is not allowed, use canonical role landing
+    const targetPath = allowedNext ?? homeForRole(role);
+
+    return redirect303(rid, req, targetPath, {
+      role,
+      nextRequested: nextSafe ?? null,
+      nextAllowed: allowedNext ?? null,
+    });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e ?? "Ukjent feil");
     return jsonErr(rid, "Kunne ikke fullføre redirect.", 500, {
