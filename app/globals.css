@@ -5,12 +5,9 @@
 /* =========================================================
    LUNCHPORTALEN — globals.css (100% COMPLETE / FASIT)
    - Beholder all eksisterende stil
-   - Legger til manglende WeekClient-klasser (chips/toggle)
-   - Toggle: grønn/rød + locked feel (disabled stripes)
-   - Viktig: tillater markering/kopiering (auth-sider)
-   - Fix: hover-kontrast på knapper (ingen hvit-på-hvit) + global failsafe
-   - Lint: line-clamp + vendor-only forklaring for smoothing
-   - FINAL: én konsistent knapp-oppskrift (ikke duplikater)
+   - Legger til cookie-consent scroll lock (no layout shift)
+   - Legger til enterprise "active" styles (hot pink neon ring)
+   - Ingen breaking changes (kun additive klasser)
 ========================================================= */
 
 :root {
@@ -28,6 +25,8 @@
   --lp-gold: 176 139 87;
   --lp-gold-hover: 156 120 74;
   --lp-gold-soft: 244 235 221;
+
+  /* ✅ hot pink neon */
   --lp-neon-pink: 330 100% 55%;
 
   --lp-success: 31 122 77;
@@ -35,6 +34,7 @@
   --lp-warning: 181 71 8;
   --lp-danger: 180 35 24;
 
+  /* NOTE: rgba(var(--lp-ring), 0.6) expects comma-separated RGB */
   --lp-ring: 176, 139, 87;
 
   --lp-radius-card: 18px;
@@ -48,6 +48,10 @@
   --lp-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
   --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ✅ Cookie-consent / scroll lock compensation
+     JS can set this to measured scrollbar width (px) */
+  --lp-scrollbar-comp: 0px;
 }
 
 /* =========================================================
@@ -410,11 +414,6 @@ h4 {
 
 /* =========================================================
    Buttons (ENTERPRISE SAFE + FINAL, NO DUPLICATES)
-   - One single truth for lp-btn + variants
-   - Primary hover: light background + dark text (always readable)
-   - Works for <button> and <a> (asChild)
-   - Overlay-safe (pseudo elements cannot hide text)
-   - Disabled cannot "blank out"
 ========================================================= */
 
 .lp-btn {
@@ -433,13 +432,11 @@ h4 {
     box-shadow 0.15s var(--lp-ease), transform 0.15s var(--lp-ease), opacity 0.15s var(--lp-ease);
 }
 
-/* Focus ring (matches system) */
 .lp-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
 }
 
-/* Sizes */
 .lp-btn--sm {
   min-height: 44px;
   padding: 0 14px;
@@ -458,10 +455,7 @@ h4 {
   padding: 0;
 }
 
-/* -------------------------
-   PRIMARY (dark -> hover light)
--------------------------- */
-
+/* PRIMARY */
 .lp-btn.lp-btn--primary,
 .lp-btn.lp-btn-primary,
 a.lp-btn.lp-btn--primary,
@@ -469,7 +463,7 @@ a.lp-btn.lp-btn-primary,
 button.lp-btn.lp-btn--primary,
 button.lp-btn.lp-btn-primary {
   position: relative;
-  isolation: isolate; /* stacking context for overlays */
+  isolation: isolate;
   background: rgb(var(--lp-text));
   color: #ffffff;
   border-color: rgba(var(--lp-text), 0.9);
@@ -488,7 +482,6 @@ button.lp-btn.lp-btn-primary:hover {
   box-shadow: var(--lp-shadow-card);
 }
 
-/* Ensure nested spans/icons follow hover text color */
 .lp-btn.lp-btn--primary:hover *,
 .lp-btn.lp-btn-primary:hover *,
 a.lp-btn.lp-btn--primary:hover *,
@@ -498,7 +491,6 @@ button.lp-btn.lp-btn-primary:hover * {
   color: rgb(var(--lp-text)) !important;
 }
 
-/* Active stays strong */
 .lp-btn.lp-btn--primary:active,
 .lp-btn.lp-btn-primary:active,
 a.lp-btn.lp-btn--primary:active,
@@ -510,7 +502,6 @@ button.lp-btn.lp-btn-primary:active {
   border-color: rgba(var(--lp-text), 0.9);
 }
 
-/* Stable (no hover change) */
 .lp-btn--primary.lp-btn--stable:hover,
 .lp-btn--primary.lp-btn--stable:focus-visible,
 .lp-btn--primary.lp-btn--stable:active,
@@ -522,7 +513,6 @@ button.lp-btn.lp-btn-primary:active {
   border-color: rgba(var(--lp-text), 0.9);
 }
 
-/* Overlay/pseudo elements must not hide text */
 .lp-btn.lp-btn--primary::before,
 .lp-btn.lp-btn--primary::after,
 a.lp-btn.lp-btn--primary::before,
@@ -549,7 +539,6 @@ button.lp-btn.lp-btn-primary > * {
   z-index: 1;
 }
 
-/* Disabled (button) */
 button.lp-btn:disabled,
 button.lp-btn[disabled] {
   background: rgba(var(--lp-text), 0.12) !important;
@@ -560,7 +549,6 @@ button.lp-btn[disabled] {
   box-shadow: none !important;
 }
 
-/* Disabled (link / aria-disabled) */
 .lp-btn[aria-disabled="true"] {
   background: rgba(var(--lp-text), 0.12) !important;
   color: rgb(var(--lp-text)) !important;
@@ -570,10 +558,7 @@ button.lp-btn[disabled] {
   pointer-events: none;
 }
 
-/* -------------------------
-   SECONDARY
--------------------------- */
-
+/* SECONDARY */
 .lp-btn--secondary,
 .lp-btn-secondary {
   background: rgb(var(--lp-surface-alt));
@@ -595,10 +580,7 @@ button.lp-btn[disabled] {
   color: rgb(var(--lp-text));
 }
 
-/* -------------------------
-   GHOST
--------------------------- */
-
+/* GHOST */
 .lp-btn--ghost,
 .lp-btn-ghost {
   background: transparent;
@@ -619,10 +601,7 @@ button.lp-btn[disabled] {
   color: rgb(var(--lp-text));
 }
 
-/* -------------------------
-   DESTRUCTIVE
--------------------------- */
-
+/* DESTRUCTIVE */
 .lp-btn--destructive,
 .lp-btn--danger,
 .lp-btn-danger {
@@ -647,12 +626,7 @@ button.lp-btn[disabled] {
   color: #ffffff;
 }
 
-/* =========================================================
-   Global failsafe:
-   - If an element uses Tailwind hover:bg-white / hover:bg-neutral-*
-     ensure text becomes dark on hover
-========================================================= */
-
+/* Global failsafe hover text */
 button.text-white:hover,
 a.text-white:hover,
 [role="button"].text-white:hover,
@@ -788,7 +762,6 @@ a:hover[class*="hover:bg-gray-"],
   position: relative;
   cursor: pointer;
 
-  /* Only the toggle should avoid text selection */
   -webkit-user-select: none;
   user-select: none;
 
@@ -886,6 +859,60 @@ a:hover[class*="hover:bg-gray-"],
 .lp-neon-glow-hover:hover {
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
 }
+
+/* =========================================================
+   ✅ NEW: Enterprise Active States (tabs/nav/selected)
+   Use these anywhere you need “active menu” hot pink neon.
+========================================================= */
+
+.lp-active-ring {
+  box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
+}
+
+.lp-active-pill {
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
+}
+
+/* Safe “active nav item” base */
+.lp-nav-item {
+  border-radius: 999px;
+  padding: 8px 12px;
+  transition: box-shadow 180ms var(--lp-ease), background-color 180ms var(--lp-ease);
+}
+
+.lp-nav-item:hover {
+  background: rgba(var(--lp-text), 0.04);
+}
+
+/* Active state: hot pink neon ring */
+.lp-nav-item[aria-current="page"],
+.lp-nav-item.is-active,
+.lp-nav-item--active {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.55), 0 0 18px hsl(var(--lp-neon-pink) / 0.85);
+}
+
+/* =========================================================
+   ✅ NEW: Cookie Consent Scroll Lock — no layout shift
+   - Works with your JS approach
+   - Also supports a cleaner approach using --lp-scrollbar-comp
+   - Add/remove class 'noScroll' on <html>
+========================================================= */
+
+html.noScroll,
+html.noScroll body {
+  overflow: hidden;
+}
+
+/* Option A (recommended): keep width stable via padding-right */
+html.noScroll body {
+  padding-right: var(--lp-scrollbar-comp);
+}
+
+/* Option B (compatible with your existing script that sets width):
+   If you are currently injecting width: calc(100vw - Xpx) via JS,
+   you can keep that—this CSS does not conflict. */
 
 /* =========================================================
    Scrollbar
