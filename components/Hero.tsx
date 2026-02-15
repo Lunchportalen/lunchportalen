@@ -1,89 +1,65 @@
-﻿import Image from "next/image";
+﻿// components/Hero.tsx
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 pb-12 pt-10 md:pt-14">
-      <div className="grid items-start gap-8 md:grid-cols-[1.1fr_0.9fr] md:gap-12">
-        {/* Left: Copy */}
-        <div className="min-w-0 lp-prose">
-          <h1 className="text-3xl font-semibold tracking-tight text-[rgb(var(--lp-text))] sm:text-4xl md:text-5xl">
-            Firmalunsj med kontroll – uten støy
+    <section className="w-full pb-7 pt-7 md:pb-9 md:pt-9">
+      <div className="grid items-start gap-7 md:grid-cols-[1.15fr_0.85fr] md:gap-10">
+        {/* Left */}
+        <div className="min-w-0">
+          <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl md:leading-[1.05]">
+            Firmalunsj med kontroll.
+            <span className="block text-white/90">Ingen unntak.</span>
           </h1>
 
-          <p className="mt-4 text-base leading-relaxed text-[rgb(var(--lp-muted))] md:text-lg">
-            Lunchportalen gir bedrifter full oversikt over lunsjlevering, faste rammer og én sannhetskilde. Mindre
-            administrasjon. Mer forutsigbarhet.
+          <p className="mt-3 text-base leading-relaxed text-white/85 drop-shadow-[0_2px_16px_rgba(0,0,0,0.45)] md:mt-4 md:text-lg">
+            Én sannhetskilde for lunsjlevering, avtaler og historikk.
+            Cut-off kl. 08:00 gir forutsigbar drift – uten administrativ støy.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/registrering" className="lp-btn lp-btn--primary">
-              Registrer firma
-            </Link>
-            <Link href="/hvordan-det-fungerer" className="lp-btn lp-btn--ghost">
+          <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center">
+            <Link href="/hvordan" className="lp-btn lp-btn-primary lp-neon">
               Se hvordan det fungerer
+            </Link>
+
+            <Link
+              href="/registrering"
+              className="lp-btn lp-btn-ghost"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                borderColor: "rgba(255,255,255,0.26)",
+                color: "rgba(255,255,255,0.95)",
+              }}
+            >
+              Registrer firma →
             </Link>
           </div>
 
-          <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
+          <div className="mt-2 text-xs text-white/80">
             Én sannhetskilde · Cut-off kl. 08:00 · Ingen manuelle unntak
           </div>
         </div>
 
-        {/* Right: Image */}
-        <div className="w-full">
-          <div className="relative aspect-[4/3] w-full overflow-clip rounded-[28px] ring-1 ring-[rgba(226,232,240,.85)] md:aspect-[5/4]">
-            <Image
-              src="/forsidebilder/lunchportalen-mobil-bestilling.png"
-              alt="Mobilbestilling av firmalunsj i Lunchportalen"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
+        {/* Right */}
+        <div className="w-full md:flex md:justify-end">
+          <div className="relative w-full max-w-[520px] md:max-w-[480px]">
+            <div className="relative aspect-[16/11] w-full rounded-[22px] ring-1 ring-white/20">
+              <div className="absolute inset-0 rounded-[22px] overflow-clip">
+                <Image
+                  src="/forsidebilder/lunchportalen-mobil-bestilling.png"
+                  alt="Mobilbestilling av firmalunsj i Lunchportalen"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 520px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute -inset-3 -z-10 rounded-[26px] bg-black/10 blur-xl" />
           </div>
         </div>
-      </div>
-
-      {/* Value Sections */}
-      <div className="mt-10 grid gap-6 md:grid-cols-3">
-        <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
-          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Dette løser Lunchportalen</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
-            <li>Uforutsigbar lunsjbestilling</li>
-            <li>Manuell oppfølging og avvik</li>
-            <li>Manglende oversikt for admin og drift</li>
-          </ul>
-        </section>
-
-        <section id="how" className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
-          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Slik fungerer det</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
-            <li>Bedriften settes opp med faste rammer</li>
-            <li>Ansatte bestiller selv innenfor avtalen</li>
-            <li>Cut-off kl. 08:00 sikrer produksjon og levering</li>
-            <li>Kjøkken, sjåfør og admin ser samme fasit</li>
-          </ul>
-        </section>
-
-        <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-5">
-          <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Hva ledelsen får</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
-            <li>Mindre administrasjon</li>
-            <li>Forutsigbar kost</li>
-            <li>Dokumentert bruk og historikk</li>
-            <li>Ingen individuelle unntak</li>
-          </ul>
-        </section>
-      </div>
-
-      {/* Trust Block */}
-      <div className="mt-8 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-6">
-        <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">Bygget for drift – ikke presentasjon</h2>
-        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-          Lunchportalen er utviklet for daglig bruk i kjøkken, levering og administrasjon. Systemet viser alltid fasit
-          og logger avvik automatisk. Det gir trygghet – både operativt og økonomisk.
-        </p>
       </div>
     </section>
   );
