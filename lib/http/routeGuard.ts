@@ -1,4 +1,4 @@
-// lib/http/routeGuard.ts
+﻿// lib/http/routeGuard.ts
 import "server-only";
 
 import type { NextRequest } from "next/server";
@@ -62,7 +62,7 @@ function normEmail(v: unknown) {
 }
 
 /**
- * 🔒 NO-EXCEPTION RULE (system accounts):
+ * ðŸ”’ NO-EXCEPTION RULE (system accounts):
  * Systemroller er fasit og skal alltid vinne over profiles.role.
  */
 function systemRoleByEmail(email: string | null | undefined): AllowedRole | null {
@@ -106,7 +106,7 @@ function ridFromReq(req: NextRequest) {
 }
 
 function mapScope(raw: any): ScopeLike {
-  // støtt både snake_case og camelCase
+  // stÃ¸tt bÃ¥de snake_case og camelCase
   const userId = safeStr(raw?.user_id ?? raw?.userId) || null;
   const companyId = safeStr(raw?.company_id ?? raw?.companyId) || null;
   const locationId = safeStr(raw?.location_id ?? raw?.locationId) || null;
@@ -118,8 +118,8 @@ function mapScope(raw: any): ScopeLike {
 }
 
 /**
- * ✅ Fallback: hent auth fra Supabase cookie-session dersom getScope mangler felt.
- * Dette er avgjørende for system-roller dersom getScope() ikke leverer email/role.
+ * âœ… Fallback: hent auth fra Supabase cookie-session dersom getScope mangler felt.
+ * Dette er avgjÃ¸rende for system-roller dersom getScope() ikke leverer email/role.
  */
 async function enrichScopeFromSupabase(scope: ScopeLike): Promise<ScopeLike> {
   try {
@@ -145,6 +145,26 @@ function buildEmptyCtx(req: NextRequest, rid: string): AuthedCtx {
     method: safeStr(req?.method) || null,
     scope: { userId: null, role: null, companyId: null, locationId: null, email: null },
   };
+}
+
+function requireKitchenDriverScopeOr403(ctx: AuthedCtx, role: AllowedRole | string | null): Response | null {
+  const r = normRole(role);
+  if (r !== "kitchen" && r !== "driver") return null;
+
+  const rid = safeStr(ctx?.rid) || ridFallback();
+  const companyId = safeStr(ctx?.scope?.companyId);
+  const locationId = safeStr(ctx?.scope?.locationId);
+
+  if (!companyId || !locationId) {
+    return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED", {
+      path: ctx?.route ?? null,
+      role: r,
+      companyIdPresent: Boolean(companyId),
+      locationIdPresent: Boolean(locationId),
+    });
+  }
+
+  return null;
 }
 
 /* =========================================================
@@ -183,13 +203,10 @@ export async function scopeOr401(req: NextRequest): Promise<ScopeOr401Result> {
       scope = await enrichScopeFromSupabase(scope);
     }
 
-    // SYSTEM ROLE OVERRIDE (driver/kjøkken/superadmin etc.)
+    // SYSTEM ROLE OVERRIDE (kun superadmin global)
     const sys = systemRoleByEmail(scope.email);
-    if (sys) {
+    if (sys === "superadmin") {
       scope.role = sys;
-      // systemroller er globale – nuller tenant scope
-      scope.companyId = null;
-      scope.locationId = null;
     }
 
     const ctx: AuthedCtx = {
@@ -216,11 +233,15 @@ export async function scopeOr401(req: NextRequest): Promise<ScopeOr401Result> {
 
     return { ok: true, ctx };
   } catch (e: any) {
+    const statusRaw = Number((e as any)?.status);
+    const status = Number.isFinite(statusRaw) && statusRaw >= 400 && statusRaw <= 599 ? statusRaw : 401;
+    const code = safeStr((e as any)?.code) || (status === 401 ? "UNAUTHORIZED" : "FORBIDDEN");
+    const message = status === 401 ? "Ikke innlogget." : "Ingen tilgang.";
     const res = jsonErr(
       emptyCtx.rid,
-      "Ikke innlogget.",
-      401,
-      "UNAUTHORIZED",
+      message,
+      status,
+      code,
       {
         path: emptyCtx.route,
         message: safeStr(e?.message ?? e),
@@ -282,6 +303,8 @@ export function requireRoleOr403(...args: any[]): Response | null {
       if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
       if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
       if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: ctxRole, allowed });
+      const scopeDeny = requireKitchenDriverScopeOr403(ctx, ctxRole);
+      if (scopeDeny) return scopeDeny;
       return null;
     }
 
@@ -293,6 +316,8 @@ export function requireRoleOr403(...args: any[]): Response | null {
       if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE", { action });
       if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: null });
       if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: ctxRole, allowed });
+      const scopeDeny = requireKitchenDriverScopeOr403(ctx, ctxRole);
+      if (scopeDeny) return scopeDeny;
 
       return null;
     }
@@ -305,6 +330,8 @@ export function requireRoleOr403(...args: any[]): Response | null {
       if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
       if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
       if (!allowed.includes(role as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role, allowed });
+      const scopeDeny = requireKitchenDriverScopeOr403(ctx, role);
+      if (scopeDeny) return scopeDeny;
 
       return null;
     }
@@ -442,3 +469,4 @@ export function ctxSnapshot(ctx: AuthedCtx) {
     email: safeStr(ctx?.scope?.email) || null,
   };
 }
+

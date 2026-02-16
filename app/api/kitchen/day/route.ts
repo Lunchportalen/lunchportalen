@@ -50,10 +50,15 @@ export async function GET(req: NextRequest) {
     const role = normalizeRole((profile as any).role);
     if (role !== "kitchen" && role !== "superadmin") return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
 
-    // 4) Scope (company/location)
+    // 4) Scope (company/location) - fail-closed
     const companyId = safeStr((profile as any).company_id);
     const locationId = safeStr((profile as any).location_id);
-    if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
+    if (!companyId || !locationId) {
+      return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED", {
+        companyIdPresent: Boolean(companyId),
+        locationIdPresent: Boolean(locationId),
+      });
+    }
 
     // 5) Params
     const url = new URL(req.url);
@@ -73,7 +78,7 @@ export async function GET(req: NextRequest) {
       admin,
       dateISO,
       companyId,
-      locationId: locationId || null,
+      locationId,
       slot,
       rid,
       cutoffAtUTCISO: cutoff.cutoffAt,

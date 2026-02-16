@@ -48,8 +48,8 @@ function asDetailString(detail: unknown) {
 }
 
 function err(status: number, rid: string, error: string, message: string, detail?: any) {
-  const err = detail !== undefined ? { code: error, detail } : error;
-  return jsonErr(rid, message, status, err);
+  const payload = detail !== undefined ? { code: error, detail } : error;
+  return jsonErr(rid, message, status, payload);
 }
 
 function ok(rid: string, body: any, status = 200) {
@@ -140,12 +140,11 @@ type BatchRow = {
    Route (ADMIN fetch, USER gate)
    - Auth session via supabaseServer (cookie)
    - Role gate via ADMIN (profiles.user_id)
-   - Orders via ADMIN
-   - Batch merge via kitchen_batch (ENTALL)
+   - Orders via ADMIN (strict scope)
+   - Batch merge via kitchen_batch (best effort)
 ========================================================= */
 
 export async function GET(req: NextRequest) {
-  
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const rid = ridFromReq(req);
@@ -197,32 +196,45 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const role = (gate?.role ?? null) as Role | null;
-    const disabledAt = gate?.disabled_at ?? null;
-    const isActive = gate?.is_active;
+    const gateRow = (gate ?? null) as ProfileGateRow | null;
+    const role = (gateRow?.role ?? null) as Role | null;
+    const disabledAt = gateRow?.disabled_at ?? null;
+    const isActive = gateRow?.is_active;
 
     if (disabledAt) return err(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { disabled_at: disabledAt });
     if (isActive === false) return err(403, rid, "FORBIDDEN", "Bruker er deaktivert.", { is_active: false });
-    if (role !== "kitchen" && role !== "superadmin") return err(403, rid, "FORBIDDEN", "Forbudt.", { role });
-    const companyId = safeStr((gate as any)?.company_id);
-    const locationId = safeStr((gate as any)?.location_id);
-    if (!companyId) return err(403, rid, "MISSING_COMPANY", "Mangler firmatilknytning.");
+
+    // kitchen endpoint: kitchen + superadmin only (role gate)
+    if (role !== "kitchen" && role !== "superadmin") {
+      return err(403, rid, "FORBIDDEN", "Forbudt.", { role });
+    }
+
+    const companyId = safeStr((gateRow as any)?.company_id);
+    const locationId = safeStr((gateRow as any)?.location_id);
+
+    // TENANT-BOUND: kitchen route requires explicit company + location scope for EVERY caller.
+    // Superadmin should use separate superadmin endpoints for global views, not kitchen routes.
+    if (!companyId || !locationId) {
+      return err(403, rid, "SCOPE_NOT_ASSIGNED", "Scope er ikke tilordnet.", {
+        companyIdPresent: Boolean(companyId),
+        locationIdPresent: Boolean(locationId),
+      });
+    }
 
     /* =========================
-       2) Fetch ACTIVE orders for date (ADMIN)
-       orders schema: id,user_id,date,status,note,created_at,company_id,location_id,slot
+       2) Fetch orders for date (ADMIN)
+       - Strict scope: company_id + location_id always applied
     ========================= */
-    let ordersQ = admin
+    const { data: orders, error: ordersErr } = await admin
       .from("orders")
       .select("id, created_at, date, slot, status, note, company_id, location_id, user_id")
       .eq("date", dateISO)
-      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]) // tolerer legacy
+      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]) // tolerate legacy
       .eq("integrity_status", "ok")
-      .eq("company_id", companyId);
-
-    if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
-
-    const { data: orders, error: ordersErr } = await ordersQ.order("slot", { ascending: true }).order("created_at", { ascending: true });
+      .eq("company_id", companyId)
+      .eq("location_id", locationId)
+      .order("slot", { ascending: true })
+      .order("created_at", { ascending: true });
 
     if (ordersErr) {
       return err(500, rid, "DB_ERROR", "Kunne ikke hente ordre.", {
@@ -247,7 +259,9 @@ export async function GET(req: NextRequest) {
        3) Lookup companies/locations/profiles (ADMIN)
     ========================= */
     const [companiesRes, locationsRes, profilesRes] = await Promise.all([
-      companyIds.length ? admin.from("companies").select("id, name").in("id", companyIds) : Promise.resolve({ data: [], error: null } as any),
+      companyIds.length
+        ? admin.from("companies").select("id, name").in("id", companyIds)
+        : Promise.resolve({ data: [], error: null } as any),
       locationIds.length
         ? admin.from("company_locations").select("id, name").in("id", locationIds)
         : Promise.resolve({ data: [], error: null } as any),
@@ -289,7 +303,7 @@ export async function GET(req: NextRequest) {
     for (const p of profiles) profileByUserId.set(String(p.user_id), p);
 
     /* =========================
-       4) Batch merge (ADMIN) from kitchen_batch (ENTALL)
+       4) Batch merge (ADMIN) from kitchen_batch (best effort)
        key: delivery_date__delivery_window__company_location_id
     ========================= */
     const batchMap = new Map<string, BatchRow>();
@@ -317,8 +331,6 @@ export async function GET(req: NextRequest) {
 
     /* =========================
        5) Map rows + merge batch status
-       - Default status = queued
-       - If batch exists: use batch status + timestamps
     ========================= */
     const rows: KitchenOrdersApiRow[] = orderRows.map((o) => {
       const c = companyMap.get(String(o.company_id));
@@ -326,7 +338,6 @@ export async function GET(req: NextRequest) {
       const p = profileByUserId.get(String(o.user_id));
 
       const deliverySlot = normSlot(o.slot);
-
       const employeeName = safeStr(p?.full_name) || safeStr(p?.name) || "—";
 
       const base: KitchenOrdersApiRow = {
@@ -365,7 +376,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Deterministisk sortering
+    // Deterministic sort
     rows.sort((a, b) => {
       const A = `${a.delivery_slot}|${a.company_name}|${a.location_name}|${a.employee_name}|${a.created_at}`;
       const B = `${b.delivery_slot}|${b.company_name}|${b.location_name}|${b.employee_name}|${b.created_at}`;
@@ -379,4 +390,3 @@ export async function GET(req: NextRequest) {
     return err(400, rid, "BAD_REQUEST", "Ugyldig forespørsel.", { detail: msg });
   }
 }
-

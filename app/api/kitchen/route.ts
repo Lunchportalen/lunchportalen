@@ -78,13 +78,29 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = supabaseAdmin();
+  const role = safeStr(scope?.role).toLowerCase();
+  const scopeCompanyId = safeStr(scope?.companyId);
+  const scopeLocationId = safeStr(scope?.locationId);
+
+  if (role === "kitchen" && (!scopeCompanyId || !scopeLocationId)) {
+    return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED", {
+      companyIdPresent: Boolean(scopeCompanyId),
+      locationIdPresent: Boolean(scopeLocationId),
+    });
+  }
 
   // Hent dagens ordre (utelater cancelled)
-  const { data: orders, error: oErr } = await admin
+  let ordersQ = admin
     .from("orders")
     .select("id,user_id,company_id,location_id,note,status")
     .eq("date", date)
     .neq("status", "canceled");
+
+  if (role === "kitchen") {
+    ordersQ = ordersQ.eq("company_id", scopeCompanyId).eq("location_id", scopeLocationId);
+  }
+
+  const { data: orders, error: oErr } = await ordersQ;
 
   if (oErr) {
     return jsonErr(rid, "Kunne ikke hente kjøkkenordre.", 500, { code: "DB_ERROR", detail: {

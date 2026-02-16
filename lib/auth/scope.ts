@@ -1,4 +1,4 @@
-// lib/auth/scope.ts
+﻿// lib/auth/scope.ts
 import "server-only";
 
 import type { NextRequest } from "next/server";
@@ -14,6 +14,24 @@ export type Scope = {
   company_id: string | null;
   location_id: string | null;
   is_active: boolean;
+
+  /**
+   * Billing/Agreement (enterprise gate)
+   * - agreement_status: status i company_billing_accounts (active/paused/closed)
+   * - billing_hold: true => write lock (UI read-only, API blocks POST/DELETE)
+   * - can_act: derived = !billing_hold
+   */
+  agreement_status?: "active" | "paused" | "closed" | "unknown";
+  billing_hold?: boolean;
+  billing_hold_reason?: string | null;
+  can_act?: boolean;
+
+  /**
+   * Agreement location truth (for employee mismatch detection)
+   * - Read from public.agreements (ACTIVE if available)
+   * - Used by post-login/status routing (LOCATION_MISMATCH)
+   */
+  agreement_location_id?: string | null;
 };
 
 /* =========================================================
@@ -75,14 +93,10 @@ function parseCookieHeader(raw: string): Array<{ name: string; value: string }> 
 
 /**
  * NextRequest has req.cookies.getAll(), but plain Request in vitest does not.
- * We support both:
- * - Prefer req.cookies.getAll()
- * - Fallback to Cookie header parsing
  */
 function getCookiesAll(req: NextRequest): Array<{ name: string; value: string }> {
   const anyReq: any = req as any;
 
-  // 1) NextRequest cookies API
   const cookiesApi = anyReq?.cookies;
   if (cookiesApi && typeof cookiesApi.getAll === "function") {
     try {
@@ -92,7 +106,6 @@ function getCookiesAll(req: NextRequest): Array<{ name: string; value: string }>
     }
   }
 
-  // 2) Fallback: Cookie header
   try {
     const h = anyReq?.headers;
     const raw =
@@ -108,13 +121,6 @@ function getCookiesAll(req: NextRequest): Array<{ name: string; value: string }>
    Supabase (SSR-safe)
 ========================================================= */
 
-/**
- * Minimal SSR client. We only need it for:
- * - auth.getUser()
- * - from("profiles") / from("companies")
- *
- * NOTE: we keep types safe (avoid "untyped function calls" TS2347)
- */
 function supabaseFromRequest(req: NextRequest) {
   const SUPABASE_URL = envOrTestDefault("NEXT_PUBLIC_SUPABASE_URL", "http://supabase.test");
   const SUPABASE_ANON_KEY = envOrTestDefault("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_test_key");
@@ -122,11 +128,9 @@ function supabaseFromRequest(req: NextRequest) {
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
-        // ✅ TEST-SAFE
         return getCookiesAll(req);
       },
       setAll() {
-        // no-op (API routes should not mutate auth cookies)
         return;
       },
     },
@@ -171,7 +175,7 @@ function computeRoleNoDb(user: any): Role {
 
 type ProfileRow = {
   id: string | null;
-  user_id?: string | null;
+  user_id: string | null;
   email: string | null;
   role: string | null;
   company_id: string | null;
@@ -179,7 +183,7 @@ type ProfileRow = {
   is_active: boolean | null;
 };
 
-function normalizeCompanyStatus(v: unknown) {
+function normalizeStatus(v: unknown) {
   const s = String(v ?? "").trim().toLowerCase();
   if (!s) return "unknown";
   if (s === "active") return "active";
@@ -190,19 +194,16 @@ function normalizeCompanyStatus(v: unknown) {
 }
 
 /**
- * ENTERPRISE GATE (Blueprint):
- * - Tenant roles MUST be blocked unless company.status === "active"
- * - Enforced centrally here so all route guards inherit it.
- *
- * ✅ IMPORTANT:
- * - System roles (superadmin/kitchen/driver) MUST NEVER be blocked by company status.
+ * ENTERPRISE GATE:
+ * - Tenant roles blocked unless companies.status === "active"
+ * - System roles bypass
  */
 async function enforceCompanyActive(
   supabase: ReturnType<typeof supabaseFromRequest>,
   role: Role,
   company_id: string | null
 ) {
-  if (!(role === "company_admin" || role === "employee")) return;
+  if (role === "superadmin") return;
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
   const res = await (supabase as any).from("companies").select("id,status").eq("id", company_id).maybeSingle();
@@ -213,10 +214,90 @@ async function enforceCompanyActive(
   if (error) throw new ScopeError("Kunne ikke verifisere firmastatus", 503, "COMPANY_STATUS_CHECK_FAILED");
   if (!data?.id) throw new ScopeError("Firma finnes ikke", 403, "COMPANY_NOT_FOUND");
 
-  const st = normalizeCompanyStatus(data.status);
+  const st = normalizeStatus(data.status);
   if (st !== "active") {
-    throw new ScopeError("Firma er ikke aktivert ennå", 403, "COMPANY_NOT_ACTIVE");
+    throw new ScopeError("Firma er ikke aktivert ennÃ¥", 403, "COMPANY_NOT_ACTIVE");
   }
+}
+
+type BillingRow = {
+  company_id: string;
+  status: string | null;
+  billing_hold: boolean | null;
+  billing_hold_reason: string | null;
+};
+
+/**
+ * AGREEMENT/BILLING GATE (fasit hos dere):
+ * - Tenant roles require company_billing_accounts row
+ * - company_billing_accounts.status must be "active"
+ * - billing_hold => scope.can_act=false (UI read-only)
+ */
+async function enforceAgreementAndBilling(
+  supabase: ReturnType<typeof supabaseFromRequest>,
+  role: Role,
+  company_id: string | null
+): Promise<Pick<Scope, "agreement_status" | "billing_hold" | "billing_hold_reason" | "can_act">> {
+  if (!(role === "company_admin" || role === "employee")) {
+    return { agreement_status: "unknown", billing_hold: false, billing_hold_reason: null, can_act: true };
+  }
+  if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
+
+  const res = await (supabase as any)
+    .from("company_billing_accounts")
+    .select("company_id,status,billing_hold,billing_hold_reason")
+    .eq("company_id", company_id)
+    .maybeSingle();
+
+  const error = res?.error as any;
+  const data = (res?.data ?? null) as BillingRow | null;
+
+  if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
+  if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
+
+  const st = normalizeStatus(data.status);
+  if (st !== "active") {
+    if (st === "paused") throw new ScopeError("Firmaet er midlertidig pauset", 403, "AGREEMENT_PAUSED");
+    if (st === "closed") throw new ScopeError("Firmaet er stengt", 403, "AGREEMENT_CLOSED");
+    throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
+  }
+
+  const hold = data.billing_hold === true;
+  return {
+    agreement_status: "active",
+    billing_hold: hold,
+    billing_hold_reason: data.billing_hold_reason ?? null,
+    can_act: !hold,
+  };
+}
+
+/**
+ * Agreement location truth for mismatch detection.
+ * Reads from public.agreements (ACTIVE if present, else newest).
+ * If table missing / no rows -> null (fail-closed handled elsewhere).
+ */
+async function getAgreementLocationId(
+  supabase: ReturnType<typeof supabaseFromRequest>,
+  company_id: string | null
+): Promise<string | null> {
+  if (!company_id) return null;
+
+  const res = await (supabase as any)
+    .from("agreements")
+    .select("company_id,status,location_id,updated_at")
+    .eq("company_id", company_id)
+    .order("updated_at", { ascending: false })
+    .limit(10);
+
+  const error = res?.error as any;
+  const rows = (res?.data ?? null) as Array<any> | null;
+
+  if (error || !Array.isArray(rows) || rows.length === 0) return null;
+
+  const active = rows.find((r) => normalizeStatus(r?.status) === "active");
+  const row = active ?? rows[0];
+  const loc = String(row?.location_id ?? "").trim();
+  return loc || null;
 }
 
 export async function getScope(req: NextRequest): Promise<Scope> {
@@ -232,9 +313,9 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // ✅ NO-EXCEPTION RULE: systemroller vinner alltid og bypasser profile/company gating
+  // Kun superadmin bypasser tenant gates
   const sys = roleByEmail(user.email ?? null);
-  if (sys === "superadmin" || sys === "kitchen" || sys === "driver") {
+  if (sys === "superadmin") {
     return {
       user_id: user.id,
       email: user.email ?? null,
@@ -242,48 +323,63 @@ export async function getScope(req: NextRequest): Promise<Scope> {
       company_id: null,
       location_id: null,
       is_active: true,
+      agreement_status: "unknown",
+      billing_hold: false,
+      billing_hold_reason: null,
+      can_act: true,
+      agreement_location_id: null,
     };
   }
 
-  // 2) Profile (tenant-roller bruker profile; systemroller kan leve uten)
+  // 2) Profile (DETERMINISTIC: profiles.user_id === auth.users.id)
   const profRes = await (supabase as any)
     .from("profiles")
     .select("id,user_id,email,role,company_id,location_id,is_active")
-    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   const profile = (profRes?.data ?? null) as ProfileRow | null;
   const profErr = profRes?.error as any;
 
-  // 3) Rolle: profilrolle har førsteprioritet hvis den finnes og er gyldig
-  let role: Role;
-  const profileRoleRaw = String(profile?.role ?? "").trim();
+  if (profErr) {
+    throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
+  }
+  if (!profile) {
+    // For employees this should later map to EMPLOYEE_NOT_ASSIGNED in post-login/status UX.
+    throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
+  }
 
+  // 3) Role
+  let role: Role;
+  const profileRoleRaw = String(profile.role ?? "").trim();
   if (profileRoleRaw && isValidRole(profileRoleRaw)) {
     role = profileRoleRaw as Role;
   } else {
     role = computeRoleNoDb(user);
   }
 
-  // 4) Hvis profile mangler:
-  if (!profile || profErr) {
-    throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
-  }
-
-  // 5) Aktivitetsstatus (tenant-only)
+  // 4) Account active (tenant-only)
   const is_active = profile.is_active === true;
-
-  if ((role === "company_admin" || role === "employee") && !is_active) {
-    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
+  if (role !== "superadmin" && !is_active) {
+    throw new ScopeError("Konto er ikke aktivert ennÃ¥", 403, "ACCOUNT_INACTIVE");
   }
 
-  // 6) Tenant binding: tenant-roller må ha company_id
+  // 5) Tenant binding
   if ((role === "company_admin" || role === "employee") && !profile.company_id) {
     throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
   }
+  if ((role === "kitchen" || role === "driver") && (!profile.company_id || !profile.location_id)) {
+    throw new ScopeError("Scope er ikke tilordnet", 403, "SCOPE_NOT_ASSIGNED");
+  }
 
-  // 7) Enterprise gate: company must be active (tenant-only)
+  // 6) Company gate
   await enforceCompanyActive(supabase, role, profile.company_id ?? null);
+
+  // 7) Agreement/Billing gate (NY)
+  const billing = await enforceAgreementAndBilling(supabase, role, profile.company_id ?? null);
+
+  // 8) Agreement location truth (for LOCATION_MISMATCH)
+  const agreement_location_id = await getAgreementLocationId(supabase, profile.company_id ?? null);
 
   return {
     user_id: user.id,
@@ -292,6 +388,13 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     company_id: profile.company_id ?? null,
     location_id: profile.location_id ?? null,
     is_active,
+
+    agreement_status: billing.agreement_status,
+    billing_hold: billing.billing_hold,
+    billing_hold_reason: billing.billing_hold_reason,
+    can_act: billing.can_act,
+
+    agreement_location_id,
   };
 }
 
@@ -347,3 +450,4 @@ export function effectiveCompanyId(scope: Scope, requestedCompanyId?: string | n
   }
   return mustCompanyId(scope);
 }
+
