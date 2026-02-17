@@ -22,7 +22,7 @@ using (
     from public.profiles p
     where p.user_id = auth.uid()
       and p.role in ('kitchen', 'driver')
-      and p.is_active = true
+      and p.active = true
       and p.company_id is not null
       and p.location_id is not null
       and p.company_id = orders.company_id
