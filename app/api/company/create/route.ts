@@ -6,9 +6,9 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Tier = "BASIS" | "LUXUS";
 type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday";
@@ -70,25 +70,25 @@ function validatePayload(body: any) {
   const delivery_from = safeStr(body?.delivery_from);
   const delivery_to = safeStr(body?.delivery_to);
 
-  if (!company_name) return { ok: false as const, message: "Bedriftsnavn må fylles ut.", code: "VALIDATION" };
+  if (!company_name) return { ok: false as const, message: "Bedriftsnavn mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
 
   if (!Number.isFinite(employee_count) || employee_count < 20) {
-    return { ok: false as const, message: "Antall ansatte må være minst 20.", code: "VALIDATION" };
+    return { ok: false as const, message: "Antall ansatte mÃƒÂ¥ vÃƒÂ¦re minst 20.", code: "VALIDATION" };
   }
 
-  if (!address) return { ok: false as const, message: "Adresse må fylles ut.", code: "VALIDATION" };
+  if (!address) return { ok: false as const, message: "Adresse mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
   if (!/^[0-9]{4}$/.test(postal_code)) {
-    return { ok: false as const, message: "Postnummer må være 4 siffer.", code: "VALIDATION" };
+    return { ok: false as const, message: "Postnummer mÃƒÂ¥ vÃƒÂ¦re 4 siffer.", code: "VALIDATION" };
   }
-  if (!city) return { ok: false as const, message: "Poststed må fylles ut.", code: "VALIDATION" };
+  if (!city) return { ok: false as const, message: "Poststed mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
 
   if (!delivery_from || !delivery_to || delivery_from >= delivery_to) {
-    return { ok: false as const, message: "Leveringsvindu er ugyldig (fra må være før til).", code: "VALIDATION" };
+    return { ok: false as const, message: "Leveringsvindu er ugyldig (fra mÃƒÂ¥ vÃƒÂ¦re fÃƒÂ¸r til).", code: "VALIDATION" };
   }
 
   // lightweight orgnr check (optional)
   if (orgnr && !/^[0-9]{9}$/.test(orgnr)) {
-    return { ok: false as const, message: "Organisasjonsnummer må være 9 siffer (eller tomt).", code: "VALIDATION" };
+    return { ok: false as const, message: "Organisasjonsnummer mÃƒÂ¥ vÃƒÂ¦re 9 siffer (eller tomt).", code: "VALIDATION" };
   }
 
   return {
@@ -107,7 +107,7 @@ function validatePayload(body: any) {
 function validateAgreement(agreement: Record<string, any>) {
   const enabledDays = Object.keys(agreement);
   if (enabledDays.length === 0) {
-    return { ok: false as const, message: "Velg minst én leveringsdag.", code: "AGREEMENT_VALIDATION" };
+    return { ok: false as const, message: "Velg minst ÃƒÂ©n leveringsdag.", code: "AGREEMENT_VALIDATION" };
   }
 
   for (const day of enabledDays) {
@@ -116,7 +116,7 @@ function validateAgreement(agreement: Record<string, any>) {
     const price = Number(row?.price);
 
     if (!(tier === "BASIS" || tier === "LUXUS")) {
-      return { ok: false as const, message: `Ugyldig nivå for ${day}.`, code: "AGREEMENT_VALIDATION" };
+      return { ok: false as const, message: `Ugyldig nivÃƒÂ¥ for ${day}.`, code: "AGREEMENT_VALIDATION" };
     }
     if (!Number.isFinite(price) || price <= 0) {
       return { ok: false as const, message: `Ugyldig pris for ${day}.`, code: "AGREEMENT_VALIDATION" };
@@ -130,20 +130,21 @@ export async function POST(req: NextRequest) {
   const rid = makeRid();
 
   try {
-    // Guard: required envs
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    let supabase: ReturnType<typeof supabaseAdmin>;
+    try {
+      supabase = supabaseAdmin();
+    } catch (e: any) {
       return jsonErr(rid, "Serverkonfigurasjon mangler.", 500, {
         code: "MISSING_ENV",
         detail: {
-          hasUrl: !!process.env.SUPABASE_URL,
-          hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          message: String(e?.message ?? e),
         },
       });
     }
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return jsonErr(rid, "Ugyldig forespørsel.", 400, { code: "BAD_JSON" });
+      return jsonErr(rid, "Ugyldig forespÃƒÂ¸rsel.", 400, { code: "BAD_JSON" });
     }
 
     const v = validatePayload(body);
@@ -156,11 +157,6 @@ export async function POST(req: NextRequest) {
     if (!av.ok) {
       return jsonErr(rid, av.message, 400, { code: av.code });
     }
-
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { "x-rid": rid } },
-    });
 
     // 1) Atomic create via RPC
     const { data, error } = await supabase.rpc("lp_create_company_with_location", {

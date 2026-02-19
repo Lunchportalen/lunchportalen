@@ -4,11 +4,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 
 type Body = {
@@ -47,7 +49,7 @@ function assertEnv(name: string, v: string | undefined) {
   return v;
 }
 
-/** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
+/** Europe/Oslo "nÃƒÂ¥" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -68,7 +70,7 @@ function osloNowParts() {
   };
 }
 
-/** Lås etter 08:00 Europe/Oslo samme dag */
+/** LÃƒÂ¥s etter 08:00 Europe/Oslo samme dag */
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
@@ -95,7 +97,7 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   };
 
   const key = map[wd];
-  if (!key) throw new Error("Dato må være Man–Fre.");
+  if (!key) throw new Error("Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre.");
   return key;
 }
 
@@ -120,26 +122,14 @@ async function getAuthedUserId() {
   return data.user.id;
 }
 
-// ✅ Service role client (cachet)
-let _svc: ReturnType<typeof createClient> | null = null;
 function supabaseService() {
-  if (_svc) return _svc;
-
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  _svc = createClient(url, service, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "X-Client-Info": "lunchportalen-order-cancel" } },
-  });
-
-  return _svc;
+  return supabaseAdmin();
 }
 
 /* =========================
    Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
-   - For cancel: vi blokkerer også for PAUSED/CLOSED (enterprise-stramt).
+   - Bruk SupabaseClient<any, any, any> for ÃƒÂ¥ unngÃƒÂ¥ TS "public vs never"
+   - For cancel: vi blokkerer ogsÃƒÂ¥ for PAUSED/CLOSED (enterprise-stramt).
      Hvis dere vil tillate cancel under PAUSED, endre status === "paused" -> ok.
 ========================= */
 async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
@@ -199,21 +189,21 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
     }
 
-    // 2) Cutoff-lås
+    // 2) Cutoff-lÃƒÂ¥s
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
+      return jsonErr(rid, "Dagen er lÃƒÂ¥st etter 08:00.", 423, { code: "LOCKED", detail: {
         locked: true,
         cutoffTime: cutoff.cutoffTime,
         canAct: false,
       } });
     }
 
-    // 3) Ukedag (Man–Fri)
+    // 3) Ukedag (ManÃ¢â‚¬â€œFri)
     try {
       weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
+      return jsonErr(rid, "Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
         locked: false,
         cutoffTime: cutoff.cutoffTime,
         canAct: false,
@@ -261,7 +251,7 @@ export async function POST(req: Request) {
       } });
     }
 
-    // 6) ✅ Company status gate (PAUSED/CLOSED)
+    // 6) Ã¢Å“â€¦ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
       return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
@@ -291,13 +281,13 @@ export async function POST(req: Request) {
     }
 
     if (!existing) {
-      // Idempotent: ingen rad å kansellere
+      // Idempotent: ingen rad ÃƒÂ¥ kansellere
       return jsonOk(rid, {
         ok: true,
         rid,
         cancelled: false,
         alreadyCancelled: false,
-        message: "Ingen bestilling å avbestille for denne dagen.",
+        message: "Ingen bestilling ÃƒÂ¥ avbestille for denne dagen.",
         date,
         locked: false,
         cutoffTime: cutoff.cutoffTime,
@@ -367,4 +357,3 @@ export async function POST(req: Request) {
     return jsonErr("cancel_unknown", "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-

@@ -5,7 +5,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { MenuContent } from "@/lib/sanity/queries";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import "server-only";
+
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
@@ -13,16 +15,6 @@ type DayStatus = "published" | "unpublished" | "missing";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
-}
-
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url) throw new Error("MISSING_NEXT_PUBLIC_SUPABASE_URL");
-  if (!key) throw new Error("MISSING_SUPABASE_SERVICE_ROLE_KEY");
-
-  return createSupabaseClient(url, key, { auth: { persistSession: false } });
 }
 
 function weekdayNoShortByIndex(i: number) {
@@ -42,9 +34,9 @@ function hasAllergens(arr: unknown) {
 }
 
 /**
- * ✅ Superadmin Menyoversikt – uke (Man–Fre)
+ * Ã¢Å“â€¦ Superadmin Menyoversikt Ã¢â‚¬â€œ uke (ManÃ¢â‚¬â€œFre)
  * - Guard: session + profiles.role === superadmin
- * - offset: uke +/- n (0 = inneværende uke)
+ * - offset: uke +/- n (0 = innevÃƒÂ¦rende uke)
  * - Innhold: Sanity (admin) via getMenuForDatesAdmin (inkl upublisert, ekskl drafts)
  * - Publisering: DB mirror menu_visibility_days (is_published)
  * - Status:
@@ -53,8 +45,6 @@ function hasAllergens(arr: unknown) {
  *    unpublished => komplett + ikke publisert
  */
 export async function GET(req: Request) {
-  
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const { getMenuForDatesAdmin } = await import("@/lib/sanity/queries");
   const rid = makeRid();
@@ -66,7 +56,7 @@ export async function GET(req: Request) {
     const user = userRes?.user ?? null;
 
     if (!user || userErr) {
-      return jsonErr(rid, "Du må være innlogget for å bruke denne ruten.", 401, "AUTH_REQUIRED");
+      return jsonErr(rid, "Du mÃƒÂ¥ vÃƒÂ¦re innlogget for ÃƒÂ¥ bruke denne ruten.", 401, "AUTH_REQUIRED");
     }
 
     const { data: profile, error: profErr } = await supabase
@@ -89,7 +79,7 @@ export async function GET(req: Request) {
     const offset = Number(offsetRaw ?? 0);
     const safeOffset = Number.isFinite(offset) ? clamp(offset, -52, 104) : 0;
 
-    // 3) Week dates (Mon–Fri)
+    // 3) Week dates (MonÃ¢â‚¬â€œFri)
     const todayISO = osloTodayISODate();
     const weekStart = startOfWeekISO(todayISO);
     const monday = addDaysISO(weekStart, safeOffset * 7);
@@ -105,13 +95,13 @@ export async function GET(req: Request) {
     const byDate = new Map<string, MenuContent>();
     for (const m of sanityRows) byDate.set(m.date, m);
 
-    // 5) Visibility mirror (DB) – service role
+    // 5) Visibility mirror (DB) Ã¢â‚¬â€œ service role
     let admin;
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
-      // Dette skal ikke stoppe bygg/CI – men vil stoppe ruten runtime hvis env mangler
-      return jsonErr(rid, "Mangler nødvendige miljøvariabler for admin-lesing.", 500, { code: "MISSING_ENV", detail: safeStr(e?.message) });
+      // Dette skal ikke stoppe bygg/CI Ã¢â‚¬â€œ men vil stoppe ruten runtime hvis env mangler
+      return jsonErr(rid, "Mangler nÃƒÂ¸dvendige miljÃƒÂ¸variabler for admin-lesing.", 500, { code: "MISSING_ENV", detail: safeStr(e?.message) });
     }
 
     const { data: visRows, error: visErr } = await admin
@@ -143,7 +133,7 @@ export async function GET(req: Request) {
 
       const missing = !menu || !hasText(title) || !hasText(description) || !hasAllergens(allergens);
 
-      // “Published” = DB mirror (styrer hva kundene ser) – fallback til menu.isPublished
+      // Ã¢â‚¬Å“PublishedÃ¢â‚¬Â = DB mirror (styrer hva kundene ser) Ã¢â‚¬â€œ fallback til menu.isPublished
       const published = (dbPublished.get(d.date) ?? false) || Boolean((menu as any)?.isPublished ?? false);
 
       const status: DayStatus = missing ? "missing" : published ? "published" : "unpublished";
@@ -183,3 +173,5 @@ export async function GET(req: Request) {
     return jsonErr(rid, "Uventet feil i menus-week.", 500, { code: "INTERNAL_ERROR", detail: safeStr(e?.message ?? e) });
   }
 }
+
+

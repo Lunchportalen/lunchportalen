@@ -44,6 +44,14 @@ async function getSupabaseAdmin() {
   return supabaseAdmin();
 }
 
+async function getSupabaseAdminOrNull() {
+  try {
+    return await getSupabaseAdmin();
+  } catch {
+    return null;
+  }
+}
+
 async function patchVisibilityForRange(opts: {
   fromISO: string;
   toISO: string;
@@ -112,9 +120,8 @@ async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean;
 }
 
 async function mirrorToDb(opts: { dateISO: string; visible: boolean; actorId?: string | null }) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { mirrored: false, skipped: "MISSING_SERVICE_ROLE_KEY" };
-
-  const admin = await getSupabaseAdmin();
+  const admin = await getSupabaseAdminOrNull();
+  if (!admin) return { mirrored: false, skipped: "MISSING_SERVICE_ROLE_CLIENT" };
   const { error } = await admin
     .from("menu_visibility_days")
     .upsert(
@@ -132,7 +139,8 @@ async function mirrorToDb(opts: { dateISO: string; visible: boolean; actorId?: s
 }
 
 async function mirrorRangeToDb(opts: { fromISO: string; toISOExclusive: string; visible: boolean; actorId?: string | null }) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { mirrored: false, count: 0, skipped: "MISSING_SERVICE_ROLE_KEY" };
+  const admin = await getSupabaseAdminOrNull();
+  if (!admin) return { mirrored: false, count: 0, skipped: "MISSING_SERVICE_ROLE_CLIENT" };
 
   const dates: string[] = [];
   let cur = opts.fromISO;
@@ -141,7 +149,6 @@ async function mirrorRangeToDb(opts: { fromISO: string; toISOExclusive: string; 
     cur = addDaysISO(cur, 1);
   }
 
-  const admin = await getSupabaseAdmin();
   const now = new Date().toISOString();
   const rows = dates.map((d) => ({
     date: d,

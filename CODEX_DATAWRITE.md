@@ -1,22 +1,22 @@
-# 🛡 LUNCHPORTALEN CODEX
+# Ã°Å¸â€ºÂ¡ LUNCHPORTALEN CODEX
 ## Datawrite, Service-Role og Kritisk Forretningslogikk
 
 Dette dokumentet er en bindende teknisk kontrakt for hvordan data kan skrives i Lunchportalen.
 
-Formålet er å sikre:
+FormÃƒÂ¥let er ÃƒÂ¥ sikre:
 
-- Én sannhetskilde
+- Ãƒâ€°n sannhetskilde
 - Ingen manuelle unntak
 - Fail-closed atferd
 - Determinisme
 - Sporbarhet
-- Ingen skjulte bakdører
+- Ingen skjulte bakdÃƒÂ¸rer
 
 Dette dokumentet gjelder hele repoet.
 
 ---
 
-# 1️⃣ GRUNNPRINSIPP
+# 1Ã¯Â¸ÂÃ¢Æ’Â£ GRUNNPRINSIPP
 
 > Ingen direkte writes til kritiske tabeller uten eksplisitt godkjent RPC og rolle-/scope-validering.
 
@@ -26,46 +26,46 @@ Kritiske tabeller inkluderer:
 - `agreements`
 - `companies`
 - `profiles`
-- Alle tabeller som påvirker produksjon, levering eller økonomi
+- Alle tabeller som pÃƒÂ¥virker produksjon, levering eller ÃƒÂ¸konomi
 
 ---
 
-# 2️⃣ ORDERS – ABSOLUTT REGEL
+# 2Ã¯Â¸ÂÃ¢Æ’Â£ ORDERS Ã¢â‚¬â€œ ABSOLUTT REGEL
 
 ## 2.1 Tillatt skrivevei
 
-Følgende RPC-er er eneste tillatte måte å endre bestillinger:
+FÃƒÂ¸lgende RPC-er er eneste tillatte mÃƒÂ¥te ÃƒÂ¥ endre bestillinger:
 
 - `lp_order_set`
 - `lp_order_cancel`
 
-Disse håndhever:
+Disse hÃƒÂ¥ndhever:
 
 - Cut-off 08:00 (Europe/Oslo)
 - ACTIVE agreement
 - ACTIVE company
 - Rollevalidering
-- Tenant-lås (company/location)
+- Tenant-lÃƒÂ¥s (company/location)
 - Idempotens (UNIQUE user_id + date)
 
 ---
 
 ## 2.2 Strengt forbudt
 
-Følgende er ikke tillatt i produksjonskode:
+FÃƒÂ¸lgende er ikke tillatt i produksjonskode:
 
 ```ts
-supabase.from("orders").insert(...)
-supabase.from("orders").update(...)
-supabase.from("orders").upsert(...)
-supabase.from("orders").delete(...)
+supabase.from("orders").<write>(...)
+supabase.from("orders").<write>(...)
+supabase.from("orders").<write>(...)
+supabase.from("orders").<write>(...)
 Unntak:
 
 tests/**
 
 supabase/migrations/**
 
-3️⃣ SERVICE ROLE POLICY
+3Ã¯Â¸ÂÃ¢Æ’Â£ SERVICE ROLE POLICY
 3.1 Tillatt bruk av SUPABASE_SERVICE_ROLE_KEY
 
 Kun i:
@@ -94,9 +94,9 @@ app/api/driver/**
 
 klientkode
 
-4️⃣ ADMIN & SUPERADMIN
+4Ã¯Â¸ÂÃ¢Æ’Â£ ADMIN & SUPERADMIN
 
-Administrative endringer (agreements, company status, etc.) må:
+Administrative endringer (agreements, company status, etc.) mÃƒÂ¥:
 
 skje via server-RPC
 
@@ -106,23 +106,23 @@ validere scope
 
 logges i ops_events
 
-være deterministiske
+vÃƒÂ¦re deterministiske
 
 Direkte .update() via service role uten RPC er ikke tillatt.
 
-5️⃣ KJØKKEN & DRIVER
+5Ã¯Â¸ÂÃ¢Æ’Â£ KJÃƒËœKKEN & DRIVER
 
-Kjøkken og driver:
+KjÃƒÂ¸kken og driver:
 
 kan kun lese innenfor definert scope
 
 kan ikke skrive direkte til orders
 
-kan kun gjøre endringer via dedikert RPC med scope-validering
+kan kun gjÃƒÂ¸re endringer via dedikert RPC med scope-validering
 
-6️⃣ LOGGING & SPORBARHET
+6Ã¯Â¸ÂÃ¢Æ’Â£ LOGGING & SPORBARHET
 
-Alle kritiske endringer må:
+Alle kritiske endringer mÃƒÂ¥:
 
 logges til ops_events
 
@@ -136,9 +136,9 @@ inneholde payload
 
 Ingen skjulte system-endringer er tillatt.
 
-7️⃣ FEILKODER & KONTRAKT
+7Ã¯Â¸ÂÃ¢Æ’Â£ FEILKODER & KONTRAKT
 
-Alle RPC-er må returnere strukturert respons:
+Alle RPC-er mÃƒÂ¥ returnere strukturert respons:
 
 {
   "code": "ERROR_CODE",
@@ -151,7 +151,7 @@ Alle RPC-er må returnere strukturert respons:
 Ingen stille feil.
 Ingen "implicit ok".
 
-8️⃣ CI-GATE (AUTOMATISK HÅNDHEVING)
+8Ã¯Â¸ÂÃ¢Æ’Â£ CI-GATE (AUTOMATISK HÃƒâ€¦NDHEVING)
 
 Repoet inneholder en CI-guard som stopper:
 
@@ -159,13 +159,13 @@ Service role utenfor allowlist
 
 Direkte writes til orders
 
-Nye bakdører
+Nye bakdÃƒÂ¸rer
 
 Build skal feile ved brudd.
 
-9️⃣ NO-EXCEPTION RULE
+9Ã¯Â¸ÂÃ¢Æ’Â£ NO-EXCEPTION RULE
 
-Lunchportalen følger:
+Lunchportalen fÃƒÂ¸lger:
 
 Ingen individuelle unntak
 
@@ -173,11 +173,11 @@ Ingen manuelle overstyringer
 
 Ingen midlertidige bypass
 
-Ingen “bare denne ene gangen”
+Ingen Ã¢â‚¬Å“bare denne ene gangenÃ¢â‚¬Â
 
-Systemet er én sannhetskilde.
+Systemet er ÃƒÂ©n sannhetskilde.
 
-🔟 VEDLIKEHOLD
+Ã°Å¸â€Å¸ VEDLIKEHOLD
 
 Enhver ny API-rute som:
 
@@ -185,24 +185,24 @@ skriver til kritiske tabeller
 
 bruker service role
 
-påvirker avtaler/bestillinger
+pÃƒÂ¥virker avtaler/bestillinger
 
-må:
+mÃƒÂ¥:
 
 Dokumenteres her
 
 Vurderes mot AGENTS.md
 
-Bestå CI-guard
+BestÃƒÂ¥ CI-guard
 
-🧾 SLUTTORD
+Ã°Å¸Â§Â¾ SLUTTORD
 
-Dette dokumentet eksisterer for å sikre at:
+Dette dokumentet eksisterer for ÃƒÂ¥ sikre at:
 
 Lunchportalen er enterprise-grade
 
-Systemet ikke får teknisk gjeld som undergraver modellen
+Systemet ikke fÃƒÂ¥r teknisk gjeld som undergraver modellen
 
-Ingen fremtidig utvikler kan utilsiktet åpne en bakdør
+Ingen fremtidig utvikler kan utilsiktet ÃƒÂ¥pne en bakdÃƒÂ¸r
 
-Hvis noe bryter denne Codexen, skal det anses som feil — ikke som et valg.
+Hvis noe bryter denne Codexen, skal det anses som feil Ã¢â‚¬â€ ikke som et valg.

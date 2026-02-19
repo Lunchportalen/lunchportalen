@@ -1,5 +1,5 @@
 // lib/audit/log.ts
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Types
@@ -28,22 +28,13 @@ export type AuditWriteInput = {
    Supabase (service role)
 ========================================================= */
 
-let _admin: SupabaseClient | null = null;
-
-function getSupabaseAdmin(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  // Fail-quiet: audit skal aldri knekke drift
-  if (!url || !key) return null;
-
-  if (_admin) return _admin;
-
-  _admin = createClient(url, key, {
-    auth: { persistSession: false },
-  });
-
-  return _admin;
+function getSupabaseAdmin() {
+  try {
+    return supabaseAdmin();
+  } catch {
+    // Fail-quiet: audit skal aldri knekke drift
+    return null;
+  }
 }
 
 /* =========================================================

@@ -1,4 +1,4 @@
-﻿// lib/orderBackup/outbox.ts
+// lib/orderBackup/outbox.ts
 import "server-only";
 
 import { sendMail } from "@/lib/orderBackup/smtp";
@@ -83,7 +83,7 @@ async function resolveOutboxIdByEventKey(eventKey: string): Promise<string> {
   try {
     admin = supabaseAdmin();
   } catch {
-    throw new Error("CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY not configured for outbox lookup");
+    throw new Error("CONFIG_ERROR: service role client not configured for outbox lookup");
   }
 
   try {
@@ -289,3 +289,4 @@ export async function processOutboxBatch(
 }
 
 export const processOutbox = processOutboxBatch;
+

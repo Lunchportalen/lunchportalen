@@ -1,10 +1,11 @@
-﻿// app/api/order/window/route.ts
+// app/api/order/window/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import { type NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { normalizeAgreement } from "@/lib/agreements/normalizeAgreement";
@@ -15,6 +16,7 @@ import { formatTimeNO } from "@/lib/date/format";
 import { osloTodayISODate, addDaysISO, isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { opsLog } from "@/lib/ops/log";
 import { canSeeNextWeek, weekStartMon } from "@/lib/week/availability";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Types
@@ -64,11 +66,6 @@ type CompanyPolicyResult =
    Small utils
 ========================================================= */
 
-function envOrNull(v: string | undefined) {
-  const s = String(v ?? "").trim();
-  return s ? s : null;
-}
-
 function ridFromReq(req: NextRequest) {
   const h = String(req.headers.get("x-rid") ?? "").trim();
   if (h) return h;
@@ -90,12 +87,12 @@ function weekdayKeyFromISO(dateISO: string): DayKey {
   const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
   const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
   const key = map[wd];
-  if (!key) throw new Error(`Ugyldig weekday for ${dateISO} (${wd}). Kun Man–Fre er gyldig.`);
+  if (!key) throw new Error(`Ugyldig weekday for ${dateISO} (${wd}). Kun Manâ€“Fre er gyldig.`);
   return key;
 }
 
 /**
- * ✅ Note parsing:
+ * âœ… Note parsing:
  * - legacy: "choice:varmmat"
  * - legacy: "varmmat"
  */
@@ -230,15 +227,15 @@ const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130 };
 const FIXED_CHOICES_BY_TIER: Record<Tier, Choice[]> = {
   BASIS: [
     { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "Påsmurt" },
+    { key: "paasmurt", label: "PÃ¥smurt" },
     { key: "varmmat", label: "Varmmat" },
   ],
   LUXUS: [
     { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "Påsmurt" },
+    { key: "paasmurt", label: "PÃ¥smurt" },
     { key: "varmmat", label: "Varmmat" },
     { key: "sushi", label: "Sushi" },
-    { key: "pokebowl", label: "Pokébowl" },
+    { key: "pokebowl", label: "PokÃ©bowl" },
     { key: "thaimat", label: "Thaimat" },
   ],
 };
@@ -323,17 +320,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // service role client
-    const url = envOrNull(process.env.NEXT_PUBLIC_SUPABASE_URL) ?? envOrNull(process.env.SUPABASE_URL);
-    const service = envOrNull(process.env.SUPABASE_SERVICE_ROLE_KEY);
-    if (!url || !service) {
-      return jsonErr(rid, "Mangler service role konfigurasjon.", 500, "CONFIG_ERROR");
-    }
-
-    const admin = createClient(url, service, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { "X-Client-Info": "lunchportalen-order-window" } },
-    });
+    const admin = supabaseAdmin();
 
     // company policy
     const polRes = await getCompanyPolicy(admin as any, sc.company_id);
@@ -352,8 +339,8 @@ export async function GET(req: NextRequest) {
         ? policy.lockReason === "PAUSED"
           ? "Bestilling/avbestilling er midlertidig pauset."
           : policy.lockReason === "CLOSED"
-          ? "Firma er stengt. Bestilling/avbestilling er låst."
-          : "Firma er ikke aktivt. Bestilling/avbestilling er låst."
+          ? "Firma er stengt. Bestilling/avbestilling er lÃ¥st."
+          : "Firma er ikke aktivt. Bestilling/avbestilling er lÃ¥st."
         : undefined,
     };
 
@@ -411,7 +398,7 @@ export async function GET(req: NextRequest) {
       ordersByDate.set(dISO, o);
     }
 
-    // day choices (service role) — best effort
+    // day choices (service role) â€” best effort
     const dayChoicesByDate = new Map<string, DayChoiceRow>();
     try {
       const dcBase = (admin as any)
@@ -476,10 +463,10 @@ export async function GET(req: NextRequest) {
         const stateLocationId = state.locationId ? String(state.locationId).trim() : "";
 
         if (stateCompanyId && stateCompanyId !== sc.company_id) {
-          return jsonErr(rid, "Avtalen tilhører et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
+          return jsonErr(rid, "Avtalen tilhÃ¸rer et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
         }
         if (sc.location_id && stateLocationId && stateLocationId !== sc.location_id) {
-          return jsonErr(rid, "Avtalen tilhører en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH");
+          return jsonErr(rid, "Avtalen tilhÃ¸rer en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH");
         }
 
         startDateISO = state.startDate ? String(state.startDate).slice(0, 10) : null;
@@ -492,7 +479,7 @@ export async function GET(req: NextRequest) {
 
         if (policy.status === "PENDING") {
           agreementStatus = "PENDING_COMPANY";
-          agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
+          agreementMessage = "Firmaet er ikke aktivert ennÃ¥. Kontakt firma-admin.";
         } else if (startsLater) {
           agreementStatus = "STARTS_LATER";
         } else if (agreementRawStatus === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {
@@ -653,3 +640,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Uventet feil.", 500, "SERVER_ERROR");
   }
 }
+
+

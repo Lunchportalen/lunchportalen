@@ -1,6 +1,6 @@
 // lib/outbox/orderBackup.ts
-import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
@@ -8,13 +8,7 @@ function assertEnv(name: string, v: string | undefined) {
 }
 
 function supabaseService() {
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  return createClient(url, service, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "X-Client-Info": "lunchportalen-outbox" } },
-  });
+  return supabaseAdmin();
 }
 
 function mailer() {
@@ -37,9 +31,9 @@ type BackupEvent = {
   company_id: string;
   location_id: string;
   user_id: string;
-  date?: string;     // YYYY-MM-DD
-  dates?: string[];  // bulk
-  payload: any;      // hele API-resultatet du vil logge
+  date?: string; // YYYY-MM-DD
+  dates?: string[]; // bulk
+  payload: any; // hele API-resultatet du vil logge
 };
 
 export async function enqueueAndSendOrderBackup(evt: BackupEvent) {
@@ -63,7 +57,7 @@ export async function enqueueAndSendOrderBackup(evt: BackupEvent) {
     .single();
 
   if (insErr || !row?.id) {
-    // Ikke blokkér ordre – outbox er "best effort"
+    // Ikke blokker ordre - outbox er "best effort"
     console.error("[outbox] insert failed", insErr?.message);
     return { ok: false as const, stage: "insert", error: insErr?.message ?? "insert failed" };
   }
@@ -108,7 +102,7 @@ export async function enqueueAndSendOrderBackup(evt: BackupEvent) {
       .update({ status: "FAILED", attempts: 1, last_error: msg })
       .eq("id", outboxId);
 
-    // Ikke blokkér ordre – bare logg
+    // Ikke blokker ordre - bare logg
     console.error("[outbox] send failed", msg);
     return { ok: false as const, outboxId, stage: "send", error: msg };
   }

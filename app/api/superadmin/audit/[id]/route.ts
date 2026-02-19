@@ -1,13 +1,14 @@
 // app/api/superadmin/audit/[id]/route.ts
 
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+
 import { isSuperadminEmail } from "@/lib/system/emails";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Ctx = {
   params: { id: string } | Promise<{ id: string }>;
@@ -19,18 +20,7 @@ function isUuid(v: string) {
   );
 }
 
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-  return createClient(url, key, { auth: { persistSession: false } });
-}
-
 export async function GET(_req: Request, ctx: Ctx) {
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
 
@@ -41,7 +31,6 @@ export async function GET(_req: Request, ctx: Ctx) {
     return jsonErr(rid, "Ugyldig audit-id", 400, "invalid_id");
   }
 
-  // ✅ VIKTIG: await
   const supabase = await supabaseServer();
 
   // --- auth ---
@@ -54,17 +43,17 @@ export async function GET(_req: Request, ctx: Ctx) {
     return jsonErr(rid, "Ikke innlogget", 401, "unauthorized");
   }
 
-  // ✅ Hard superadmin-fasit (unngå metadata-triksing)
+  // Hard superadmin-fasit (unnga metadata-triksing)
   if (!isSuperadminEmail(user.email)) {
     return jsonErr(rid, "Kun superadmin har tilgang", 403, "forbidden");
   }
 
   // --- fetch audit ---
-  let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
+  let admin: ReturnType<typeof supabaseAdmin>;
   try {
     admin = supabaseAdmin();
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? e), 500, "missing_service_role_key");
+    return jsonErr(rid, String(e?.message ?? e), 500, "missing_service_role_client");
   }
 
   // Velg kun felt vi faktisk trenger (stabil API-kontrakt)
@@ -82,21 +71,24 @@ export async function GET(_req: Request, ctx: Ctx) {
     return jsonErr(rid, "Audit-hendelse finnes ikke", 404, "not_found");
   }
 
-  return jsonOk(rid, {
-    ok: true,
+  return jsonOk(
     rid,
-    audit: {
-      id: data.id,
-      created_at: data.created_at,
-      actor_user_id: data.actor_user_id ?? null,
-      actor_email: data.actor_email ?? null,
-      actor_role: data.actor_role ?? null,
-      action: data.action,
-      entity_type: data.entity_type,
-      entity_id: data.entity_id,
-      summary: data.summary ?? null,
-      detail: data.detail ?? null,
+    {
+      ok: true,
+      rid,
+      audit: {
+        id: data.id,
+        created_at: data.created_at,
+        actor_user_id: data.actor_user_id ?? null,
+        actor_email: data.actor_email ?? null,
+        actor_role: data.actor_role ?? null,
+        action: data.action,
+        entity_type: data.entity_type,
+        entity_id: data.entity_id,
+        summary: data.summary ?? null,
+        detail: data.detail ?? null,
+      },
     },
-  }, 200);
+    200
+  );
 }
-

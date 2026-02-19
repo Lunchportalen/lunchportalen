@@ -1,4 +1,4 @@
-# 👨‍💻 LUNCHPORTALEN – DEVELOPER ONBOARDING GUIDE
+# Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸â€™Â» LUNCHPORTALEN Ã¢â‚¬â€œ DEVELOPER ONBOARDING GUIDE
 
 Velkommen til Lunchportalen.
 
@@ -7,11 +7,11 @@ Dette dokumentet er din inngang til systemet.
 Lunchportalen er ikke en vanlig webapp.
 Det er et deterministisk driftssystem med strenge arkitekturregler.
 
-Les dette før du skriver én linje kode.
+Les dette fÃƒÂ¸r du skriver ÃƒÂ©n linje kode.
 
 ---
 
-# 1️⃣ FØR DU STARTER
+# 1Ã¯Â¸ÂÃ¢Æ’Â£ FÃƒËœR DU STARTER
 
 ## 1.1 Installer
 
@@ -30,14 +30,14 @@ npm run dev
 RC-mode:
 
 npm run dev:rc
-2️⃣ PROSJEKTETS FILOSOFI
-Lunchportalen er bygget på:
+2Ã¯Â¸ÂÃ¢Æ’Â£ PROSJEKTETS FILOSOFI
+Lunchportalen er bygget pÃƒÂ¥:
 
 Database-first enforcement
 
 Fail-closed prinsipp
 
-Én sannhetskilde
+Ãƒâ€°n sannhetskilde
 
 No-exception rule
 
@@ -45,9 +45,9 @@ RPC-only writes
 
 Multi-tenant isolasjon
 
-Du må forstå dette før du endrer noe.
+Du mÃƒÂ¥ forstÃƒÂ¥ dette fÃƒÂ¸r du endrer noe.
 
-3️⃣ KRITISKE REGLER
+3Ã¯Â¸ÂÃ¢Æ’Â£ KRITISKE REGLER
 3.1 Aldri skriv direkte til orders
 Kun via:
 
@@ -57,7 +57,7 @@ lp_order_cancel
 
 Direkte:
 
-supabase.from("orders").insert(...)
+supabase.from("orders").<write>(...)
 er forbudt i produksjonskode.
 
 CI stopper deg.
@@ -72,7 +72,7 @@ app/api/superadmin/system/**
 Aldri i order-ruter.
 
 3.3 RLS er hellig
-RLS håndhever:
+RLS hÃƒÂ¥ndhever:
 
 Tenant-isolasjon
 
@@ -84,23 +84,23 @@ Ikke deaktiver.
 Ikke bypass.
 Ikke lag midlertidige unntak.
 
-4️⃣ PROSJEKTSTRUKTUR (OVERSIKT)
-/app/ → Next.js App Router
+4Ã¯Â¸ÂÃ¢Æ’Â£ PROSJEKTSTRUKTUR (OVERSIKT)
+/app/ Ã¢â€ â€™ Next.js App Router
 
-/app/api/ → API routes
+/app/api/ Ã¢â€ â€™ API routes
 
-/lib/ → Supabase, auth, guards
+/lib/ Ã¢â€ â€™ Supabase, auth, guards
 
-/supabase/ → SQL migrations
+/supabase/ Ã¢â€ â€™ SQL migrations
 
-/scripts/ → CI og audits
+/scripts/ Ã¢â€ â€™ CI og audits
 
-/tests/ → Tenant og sikkerhetstester
+/tests/ Ã¢â€ â€™ Tenant og sikkerhetstester
 
-Dokumentasjon → *.md
+Dokumentasjon Ã¢â€ â€™ *.md
 
-5️⃣ KODEENDRINGER
-Før du lager feature:
+5Ã¯Â¸ÂÃ¢Æ’Â£ KODEENDRINGER
+FÃƒÂ¸r du lager feature:
 Les:
 
 SECURITY_ARCHITECTURE.md
@@ -109,21 +109,21 @@ CODEX_DATAWRITE.md
 
 ARCHITECTURE_DECISIONS.md
 
-Bestå Avensia-beslutningstesten:
+BestÃƒÂ¥ Avensia-beslutningstesten:
 
 Bryter dette determinisme?
 
 Introduserer dette unntak?
 
-Skaper dette admin-støy?
+Skaper dette admin-stÃƒÂ¸y?
 
-Hvis svaret er ja → stopp.
+Hvis svaret er ja Ã¢â€ â€™ stopp.
 
-6️⃣ MERGE-KRAV
-Før merge:
+6Ã¯Â¸ÂÃ¢Æ’Â£ MERGE-KRAV
+FÃƒÂ¸r merge:
 
 npm run preflight
-Dette kjører:
+Dette kjÃƒÂ¸rer:
 
 ci:guard
 
@@ -137,9 +137,9 @@ lint
 
 audit
 
-Ingen merge uten grønt.
+Ingen merge uten grÃƒÂ¸nt.
 
-7️⃣ FEILSØKING
+7Ã¯Â¸ÂÃ¢Æ’Â£ FEILSÃƒËœKING
 Hvis noe feiler:
 
 Ikke patch i produksjon
@@ -154,29 +154,29 @@ Sjekk ops_events
 
 Dokumenter
 
-8️⃣ TYPISKE FEIL NYE UTVIKLERE GJØR
-❌ Skriver direkte til DB
-❌ Lager alternativ write-path
-❌ Glemmer cut-off enforcement
-❌ Introduserer feature-flag som omgår gates
-❌ Endrer rollelogikk i frontend
-❌ Ignorerer tenant-isolasjon
+8Ã¯Â¸ÂÃ¢Æ’Â£ TYPISKE FEIL NYE UTVIKLERE GJÃƒËœR
+Ã¢ÂÅ’ Skriver direkte til DB
+Ã¢ÂÅ’ Lager alternativ write-path
+Ã¢ÂÅ’ Glemmer cut-off enforcement
+Ã¢ÂÅ’ Introduserer feature-flag som omgÃƒÂ¥r gates
+Ã¢ÂÅ’ Endrer rollelogikk i frontend
+Ã¢ÂÅ’ Ignorerer tenant-isolasjon
 
 Dette skal ikke skje.
 
-9️⃣ HVA DU SKAL FØLE
+9Ã¯Â¸ÂÃ¢Æ’Â£ HVA DU SKAL FÃƒËœLE
 Du skal:
 
-Føle at arkitekturen er streng
+FÃƒÂ¸le at arkitekturen er streng
 
-Føle at det er vanskelig å gjøre feil
+FÃƒÂ¸le at det er vanskelig ÃƒÂ¥ gjÃƒÂ¸re feil
 
-Føle at systemet beskytter seg selv
+FÃƒÂ¸le at systemet beskytter seg selv
 
-Hvis det føles “for fleksibelt”, er noe galt.
+Hvis det fÃƒÂ¸les Ã¢â‚¬Å“for fleksibeltÃ¢â‚¬Â, er noe galt.
 
-🔟 HVORDAN TENKE
-Når du lager noe nytt, spør:
+Ã°Å¸â€Å¸ HVORDAN TENKE
+NÃƒÂ¥r du lager noe nytt, spÃƒÂ¸r:
 
 Hvem kan skrive?
 
@@ -190,21 +190,21 @@ Hva skjer ved pause/close?
 
 Hva skjer i multi-tenant?
 
-Systemet skal alltid være forutsigbart.
+Systemet skal alltid vÃƒÂ¦re forutsigbart.
 
-1️⃣1️⃣ HVEM SPØR DU?
+1Ã¯Â¸ÂÃ¢Æ’Â£1Ã¯Â¸ÂÃ¢Æ’Â£ HVEM SPÃƒËœR DU?
 Ved tvil:
 
-Spør teknisk ansvarlig
+SpÃƒÂ¸r teknisk ansvarlig
 
 Les ADR
 
 Ikke improviser
 
-🏁 KONKLUSJON
+Ã°Å¸ÂÂ KONKLUSJON
 Lunchportalen er ikke bygget for kreativ frihet.
 Den er bygget for kontroll.
 
-Din jobb er å forsterke arkitekturen – ikke svekke den.
+Din jobb er ÃƒÂ¥ forsterke arkitekturen Ã¢â‚¬â€œ ikke svekke den.
 
 Velkommen til teamet.

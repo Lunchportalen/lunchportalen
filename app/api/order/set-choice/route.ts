@@ -3,11 +3,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Body = {
   date: string; // YYYY-MM-DD
@@ -19,7 +21,7 @@ type Choice = { key: string; label?: string };
 type CompanyStatus = "active" | "paused" | "closed";
 
 /* =========================
-   DB-typer lokalt (for å stoppe TS "never")
+   DB-typer lokalt (for ÃƒÂ¥ stoppe TS "never")
 ========================= */
 type ProfileRow = {
   user_id: string;
@@ -71,7 +73,7 @@ function assertEnv(name: string, v: string | undefined) {
   return v;
 }
 
-/** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
+/** Europe/Oslo "nÃƒÂ¥" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -92,7 +94,7 @@ function osloNowParts() {
   };
 }
 
-/** Lås etter 08:00 Europe/Oslo samme dag */
+/** LÃƒÂ¥s etter 08:00 Europe/Oslo samme dag */
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
@@ -119,7 +121,7 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   };
 
   const key = map[wd];
-  if (!key) throw new Error("Dato må være Man–Fre.");
+  if (!key) throw new Error("Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre.");
   return key;
 }
 
@@ -131,10 +133,10 @@ function cleanNote(v: unknown): string | null {
 
 /* =========================
    Variant gate (driftsikkert)
-   - Salatbar/Påsmurt krever variant note med riktig type
+   - Salatbar/PÃƒÂ¥smurt krever variant note med riktig type
    - Godtar:
-     - "variant||Påsmurt: Roastbiff"
-     - "Påsmurt: Roastbiff"
+     - "variant||PÃƒÂ¥smurt: Roastbiff"
+     - "PÃƒÂ¥smurt: Roastbiff"
 ========================= */
 
 function requiresVariant(choiceKey: string) {
@@ -149,16 +151,16 @@ function parseVariantTypeFromNote(note: string | null): "salatbar" | "paasmurt" 
   const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
   const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
 
-  const m = /^(Salatbar|Påsmurt)\s*:\s*(.+)$/i.exec(payload);
+  const m = /^(Salatbar|PÃƒÂ¥smurt)\s*:\s*(.+)$/i.exec(payload);
   if (!m?.[2]) return null;
 
   const typeRaw = String(m[1]).trim().toLowerCase();
   const value = String(m[2]).trim();
   if (!value) return null;
 
-  // normalize "påsmurt" -> "paasmurt"
+  // normalize "pÃƒÂ¥smurt" -> "paasmurt"
   if (typeRaw === "salatbar") return "salatbar";
-  if (typeRaw === "påsmurt" || typeRaw === "paasmurt") return "paasmurt";
+  if (typeRaw === "pÃƒÂ¥smurt" || typeRaw === "paasmurt") return "paasmurt";
   return null;
 }
 
@@ -173,7 +175,7 @@ async function getAuthedUserId() {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      // Route handlers trenger normalt ikke å sette cookies
+      // Route handlers trenger normalt ikke ÃƒÂ¥ sette cookies
       set() {},
       remove() {},
     },
@@ -184,20 +186,8 @@ async function getAuthedUserId() {
   return data.user.id;
 }
 
-// ✅ Service role client (cachet)
-let _svc: ReturnType<typeof createClient> | null = null;
 function supabaseService() {
-  if (_svc) return _svc;
-
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  _svc = createClient(url, service, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "X-Client-Info": "lunchportalen-order-set-choice" } },
-  });
-
-  return _svc;
+  return supabaseAdmin();
 }
 
 /* =========================
@@ -286,21 +276,21 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
     }
 
-    // 2) Cutoff-lås
+    // 2) Cutoff-lÃƒÂ¥s
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
+      return jsonErr(rid, "Dagen er lÃƒÂ¥st etter 08:00.", 423, {
         code: "LOCKED",
         detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
       });
     }
 
-    // 3) Ukedag (Man–Fri)
+    // 3) Ukedag (ManÃ¢â‚¬â€œFri)
     let dayKey: "mon" | "tue" | "wed" | "thu" | "fri";
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, {
+      return jsonErr(rid, "Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre. Helg bestilles ikke i portalen.", 400, {
         code: "WEEKDAY_ONLY",
         detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
       });
@@ -382,7 +372,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // ✅ PREMIUM inkluderer BASIS (driftsikkert)
+    // Ã¢Å“â€¦ PREMIUM inkluderer BASIS (driftsikkert)
     const basis = Array.isArray(company.contract_basis_choices) ? company.contract_basis_choices : [];
     const premiumRaw = Array.isArray(company.contract_premium_choices) ? company.contract_premium_choices : [];
     const premium = mergeChoices(basis, premiumRaw);
@@ -402,12 +392,12 @@ export async function POST(req: Request) {
       });
     }
 
-    // 7.1) ✅ Variant gate (server-fasit)
+    // 7.1) Ã¢Å“â€¦ Variant gate (server-fasit)
     if (requiresVariant(choice_key)) {
       const t = parseVariantTypeFromNote(note);
       const ck = String(choice_key).toLowerCase();
       if (!t || t !== ck) {
-        const label = ck === "salatbar" ? "Salatbar" : "Påsmurt";
+        const label = ck === "salatbar" ? "Salatbar" : "PÃƒÂ¥smurt";
         return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
       }
     }

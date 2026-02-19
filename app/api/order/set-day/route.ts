@@ -3,12 +3,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Tier = "BASIS" | "PREMIUM";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -19,7 +21,7 @@ type Body = {
   wants_lunch?: boolean; // WeekClient
   wantsLunch?: boolean; // fallback
   choice_key?: string | null;
-  note?: string | null; // for Salatbar/PÃ¥smurt variants
+  note?: string | null; // for Salatbar/PÃƒÆ’Ã‚Â¥smurt variants
 };
 
 type ProfileRow = { user_id: string; company_id: string | null; location_id: string | null };
@@ -29,7 +31,7 @@ function assertEnv(name: string, v: string | undefined) {
   return v;
 }
 
-/** Europe/Oslo "nÃ¥" -> (YYYY-MM-DD, HH:MM) */
+/** Europe/Oslo "nÃƒÆ’Ã‚Â¥" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -50,7 +52,7 @@ function osloNowParts() {
   };
 }
 
-/** LÃ¥s etter 08:00 Europe/Oslo samme dag */
+/** LÃƒÆ’Ã‚Â¥s etter 08:00 Europe/Oslo samme dag */
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
@@ -64,7 +66,7 @@ function weekdayKeyOslo(dateISO: string): DayKey {
   const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
   const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
   const key = map[wd];
-  if (!key) throw new Error("Dato mÃ¥ vÃ¦re Manâ€“Fre.");
+  if (!key) throw new Error("Dato mÃƒÆ’Ã‚Â¥ vÃƒÆ’Ã‚Â¦re ManÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Fre.");
   return key;
 }
 
@@ -74,7 +76,7 @@ function cleanNote(v: unknown): string | null {
   return s.length > 280 ? s.slice(0, 280) : s;
 }
 
-/** âœ… Premium inkluderer alltid Basis (union uten duplikater) */
+/** ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Premium inkluderer alltid Basis (union uten duplikater) */
 function mergeChoices(basis: Choice[] = [], premium: Choice[] = []) {
   const seen = new Set<string>();
   const out: Choice[] = [];
@@ -101,19 +103,19 @@ function parseVariantTypeFromNote(note: string | null): "salatbar" | "paasmurt" 
   if (!n) return null;
 
   // accept:
-  // - "variant||PÃ¥smurt: Roastbiff"
-  // - "PÃ¥smurt: Roastbiff"
+  // - "variant||PÃƒÆ’Ã‚Â¥smurt: Roastbiff"
+  // - "PÃƒÆ’Ã‚Â¥smurt: Roastbiff"
   const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
   const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
 
-  const m = /^(Salatbar|PÃ¥smurt)\s*:\s*(.+)$/i.exec(payload);
+  const m = /^(Salatbar|PÃƒÆ’Ã‚Â¥smurt)\s*:\s*(.+)$/i.exec(payload);
   if (!m?.[2]) return null;
 
   const t = String(m[1]).trim().toLowerCase();
   const value = String(m[2]).trim();
   if (!value) return null;
 
-  return t === "salatbar" ? "salatbar" : t === "pÃ¥smurt" || t === "paasmurt" ? "paasmurt" : null;
+  return t === "salatbar" ? "salatbar" : t === "pÃƒÆ’Ã‚Â¥smurt" || t === "paasmurt" ? "paasmurt" : null;
 }
 
 async function getAuthedUserId() {
@@ -157,7 +159,7 @@ export async function POST(req: NextRequest) {
 
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er lÃ¥st etter 08:00.", 423, {
+      return jsonErr(rid, "Dagen er lÃƒÆ’Ã‚Â¥st etter 08:00.", 423, {
         code: "LOCKED",
         detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
       });
@@ -167,16 +169,10 @@ export async function POST(req: NextRequest) {
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato mÃ¥ vÃ¦re Manâ€“Fre. Helg bestilles ikke i portalen.", 400, "WEEKDAY_ONLY");
+      return jsonErr(rid, "Dato mÃƒÆ’Ã‚Â¥ vÃƒÆ’Ã‚Â¦re ManÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Fre. Helg bestilles ikke i portalen.", 400, "WEEKDAY_ONLY");
     }
 
-    const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    const supa = createClient(url, service, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { "X-Client-Info": "lunchportalen-order-set-day" } },
-    });
+    const supa = supabaseAdmin();
 
     // scope
     const { data: profileRaw, error: pErr } = await (supa as any)
@@ -228,12 +224,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // âœ… Variant gate (driftsikkert): salatbar/paasmurt krever note med riktig type
+    // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Variant gate (driftsikkert): salatbar/paasmurt krever note med riktig type
     if (wantsLunch && requiresVariant(finalChoiceKey)) {
       const t = parseVariantTypeFromNote(note);
       const ck = String(finalChoiceKey ?? "").toLowerCase();
       if (!t || t !== ck) {
-        const label = ck === "salatbar" ? "Salatbar" : "PÃ¥smurt";
+        const label = ck === "salatbar" ? "Salatbar" : "PÃƒÆ’Ã‚Â¥smurt";
         return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
       }
     }
@@ -284,7 +280,7 @@ export async function POST(req: NextRequest) {
         );
 
       if (dcErr) {
-        return jsonErr(rid, "Bestilling lagret, men menyvalg kunne ikke lagres. PrÃ¸v igjen.", 500, {
+        return jsonErr(rid, "Bestilling lagret, men menyvalg kunne ikke lagres. PrÃƒÆ’Ã‚Â¸v igjen.", 500, {
           code: "DAY_CHOICE_SAVE_FAILED",
           detail: dcErr?.message ?? null,
         });

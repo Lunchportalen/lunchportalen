@@ -41,7 +41,7 @@ type Body = {
 };
 
 function clampDetail(input: any) {
-  // ✅ prefer-const fix (binding reassignes aldri)
+  // Ã¢Å“â€¦ prefer-const fix (binding reassignes aldri)
   const detail: any = input ?? null;
 
   try {
@@ -54,7 +54,7 @@ function clampDetail(input: any) {
 }
 
 /**
- * ✅ TS-bombesikkert:
+ * Ã¢Å“â€¦ TS-bombesikkert:
  * Vi returnerer "kind" som discriminant i stedet for ok/error,
  * da forsvinner VSCode/tsserver-problemene du ser i bildet.
  */
@@ -63,7 +63,7 @@ type InsertAuditResult =
   | { kind: "err"; error: "audit_table_missing" | "db_error"; detail: any };
 
 async function insertAudit(sb: any, payload: any): Promise<InsertAuditResult> {
-  // 1) Prøv audit_events (primær)
+  // 1) PrÃƒÂ¸v audit_events (primÃƒÂ¦r)
   const a = await sb.from("audit_events").insert(payload);
   if (!a.error) return { kind: "ok", table: "audit_events" };
 
@@ -86,7 +86,7 @@ async function insertAudit(sb: any, payload: any): Promise<InsertAuditResult> {
   return { kind: "err", error: "db_error", detail: a.error };
 }
 
-/** supabaseAdmin kan være client eller factory */
+/** supabaseAdmin kan vÃƒÂ¦re client eller factory */
 async function adminClient(): Promise<any> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = supabaseAdmin as any;
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   const rid = makeRid();
 
   try {
-    // 0) Cookie-session (for å identifisere actor)
+    // 0) Cookie-session (for ÃƒÂ¥ identifisere actor)
     const supabase = await supabaseServer();
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     const actor = userData?.user ?? null;
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
     }
 
-    // ✅ Hard superadmin-fasit på e-post (ikke metadata)
+    // Ã¢Å“â€¦ Hard superadmin-fasit pÃƒÂ¥ e-post (ikke metadata)
     if (!isSuperadminEmail(actor.email)) {
       return jsonErr(rid, "Krever superadmin.", 403, "FORBIDDEN");
     }
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
     try {
       sb = await adminClient();
     } catch (e: any) {
-      return jsonErr(rid, "Mangler SUPABASE_SERVICE_ROLE_KEY i env.", 500, { code: "SERVICE_ROLE_MISSING", detail: {
+      return jsonErr(rid, "Mangler admin-konfigurasjon.", 500, { code: "SERVICE_ROLE_MISSING", detail: {
         error: String(e?.message ?? e),
       } });
     }
@@ -168,3 +168,4 @@ export async function POST(req: Request) {
     return jsonErr(rid, String(e?.message ?? "unknown"), 500, "SERVER_ERROR");
   }
 }
+

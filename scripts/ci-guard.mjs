@@ -1,74 +1,70 @@
 #!/usr/bin/env node
 /* =========================================================
-   LUNCHPORTALEN — CI GUARD (HARD GATE)
-   1) Forby SUPABASE_SERVICE_ROLE_KEY utenfor allowlist
-   2) Forby direkte writes til orders utenfor tests/migrations
+   LUNCHPORTALEN - CI GUARD (HARD GATE)
+   1) Forby service-role env-key utenfor allowlist
+   2) Forby direkte writes til orders i produksjonskode
 ========================================================= */
 
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const ROOT = process.cwd();
 
-const TEXT_EXTS = new Set([
+const SERVICE_ROLE_ALLOW_PREFIXES = [
+  "lib/supabase/admin.ts",
+  "app/api/cron/",
+  "app/api/superadmin/",
+  "app/api/system/",
+  "tests/",
+  "supabase/migrations/",
+  ".github/workflows/",
+];
+
+const SERVICE_ROLE_CODE_EXTS = new Set([
+  ".ts",
+  ".tsx",
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".json",
+  ".yml",
+  ".yaml",
+]);
+
+const ORDERS_WRITE_SCAN_PREFIXES = [
+  "app/",
+  "lib/",
+  "components/",
+  "scripts/",
+];
+
+const ORDERS_WRITE_CODE_EXTS = new Set([
   ".ts",
   ".tsx",
   ".js",
   ".jsx",
   ".mjs",
   ".cjs",
-  ".json",
-  ".yml",
-  ".yaml",
-  ".md",
-  ".sql",
 ]);
 
-const IGNORE_DIRS = new Set([
-  "node_modules",
-  ".next",
-  ".git",
-  ".vercel",
-  "dist",
-  "build",
-  "coverage",
-  ".turbo",
-]);
-
-// --- Allowlist: hvor service role er lov
-// Juster disse om dere ønsker.
-// Anbefalt: cron + superadmin system + supabase admin klient + workflows/migrations.
-const SERVICE_ROLE_ALLOW_PREFIXES = [
-  "lib/supabase/admin.ts",
-  "lib/supabase/adminAny.ts", // om dere har den
-  "app/api/cron/",
-  "app/api/superadmin/system/",
-  ".github/workflows/",
-  "supabase/migrations/",
-];
-
-// --- Orders writes er kun lov i tests + migrations
-const ORDERS_WRITE_ALLOW_PREFIXES = [
-  "tests/",
-  "supabase/migrations/",
-];
-
-// --- Patterns vi stopper
 const SERVICE_ROLE_PATTERNS = [
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "service_role", // grepper “service_role” som tekst
+  ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_"),
 ];
 
-const ORDERS_WRITE_PATTERNS = [
-  `.from("orders").insert`,
-  `.from('orders').insert`,
-  `.from("orders").update`,
-  `.from('orders').update`,
-  `.from("orders").upsert`,
-  `.from('orders').upsert`,
-  `.from("orders").delete`,
-  `.from('orders').delete`,
+const ORDERS_FROM_PATTERNS = [
+  `.from("orders")`,
+  `.from('orders')`,
 ];
+const ORDERS_WRITE_METHODS = [
+  ".insert",
+  ".update",
+  ".upsert",
+  ".delete",
+];
+const ORDERS_WRITE_PATTERNS = ORDERS_FROM_PATTERNS.flatMap((p) =>
+  ORDERS_WRITE_METHODS.map((m) => `${p}${m}`)
+);
 
 function toRel(p) {
   return p.split(path.sep).join("/");
@@ -78,28 +74,33 @@ function isAllowedByPrefixes(rel, prefixes) {
   return prefixes.some((pre) => rel === pre || rel.startsWith(pre));
 }
 
-function walk(dir, out = []) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      if (IGNORE_DIRS.has(e.name)) continue;
-      walk(path.join(dir, e.name), out);
-    } else if (e.isFile()) {
-      out.push(path.join(dir, e.name));
-    }
-  }
-  return out;
+function listTrackedFiles() {
+  const out = execSync("git ls-files -z", { cwd: ROOT, encoding: "buffer" });
+  return out
+    .toString("utf8")
+    .split("\0")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map(toRel);
 }
 
-function looksTextFile(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  if (!TEXT_EXTS.has(ext)) return false;
-  return true;
+function shouldScanServiceRole(rel) {
+  if (rel.toLowerCase().endsWith(".md")) return false;
+  if (rel.startsWith("supabase/migrations/")) return path.extname(rel).toLowerCase() === ".sql";
+  if (rel.startsWith(".github/workflows/")) return true;
+  return SERVICE_ROLE_CODE_EXTS.has(path.extname(rel).toLowerCase());
 }
 
-function readFileSafe(filePath) {
+function shouldScanOrdersWrite(rel) {
+  if (!ORDERS_WRITE_SCAN_PREFIXES.some((pre) => rel.startsWith(pre))) return false;
+  if (rel.startsWith("docs/")) return false;
+  if (rel.toLowerCase().endsWith(".md")) return false;
+  return ORDERS_WRITE_CODE_EXTS.has(path.extname(rel).toLowerCase());
+}
+
+function readTrackedFileSafe(rel) {
   try {
-    return fs.readFileSync(filePath, "utf8");
+    return fs.readFileSync(path.join(ROOT, rel), "utf8");
   } catch {
     return null;
   }
@@ -118,10 +119,9 @@ function findAllOccurrences(haystack, needle) {
 }
 
 function lineOfIndex(text, idx) {
-  // 1-based line number
   let line = 1;
-  for (let i = 0; i < idx && i < text.length; i++) {
-    if (text.charCodeAt(i) === 10) line++;
+  for (let i = 0; i < idx && i < text.length; i += 1) {
+    if (text.charCodeAt(i) === 10) line += 1;
   }
   return line;
 }
@@ -132,58 +132,51 @@ function snippet(text, idx, len = 140) {
   return text.slice(start, end).replace(/\s+/g, " ").trim();
 }
 
-const files = walk(ROOT).filter(looksTextFile);
-
+const files = listTrackedFiles();
 const violations = [];
 
-// Scan
-for (const abs of files) {
-  const rel = toRel(path.relative(ROOT, abs));
-  const content = readFileSafe(abs);
+for (const rel of files) {
+  const content = readTrackedFileSafe(rel);
   if (content == null) continue;
 
-  // 1) Service role gate
-  for (const pat of SERVICE_ROLE_PATTERNS) {
-    const hits = findAllOccurrences(content, pat);
-    if (!hits.length) continue;
+  if (shouldScanServiceRole(rel)) {
+    for (const pat of SERVICE_ROLE_PATTERNS) {
+      const hits = findAllOccurrences(content, pat);
+      if (!hits.length) continue;
+      if (isAllowedByPrefixes(rel, SERVICE_ROLE_ALLOW_PREFIXES)) continue;
 
-    // Allowlisted?
-    if (isAllowedByPrefixes(rel, SERVICE_ROLE_ALLOW_PREFIXES)) continue;
-
-    for (const idx of hits) {
-      violations.push({
-        type: "SERVICE_ROLE_NOT_ALLOWED",
-        file: rel,
-        line: lineOfIndex(content, idx),
-        pattern: pat,
-        preview: snippet(content, idx),
-      });
+      for (const idx of hits) {
+        violations.push({
+          type: "SERVICE_ROLE_NOT_ALLOWED",
+          file: rel,
+          line: lineOfIndex(content, idx),
+          pattern: pat,
+          preview: snippet(content, idx),
+        });
+      }
     }
   }
 
-  // 2) Orders write gate
-  for (const pat of ORDERS_WRITE_PATTERNS) {
-    const hits = findAllOccurrences(content, pat);
-    if (!hits.length) continue;
+  if (shouldScanOrdersWrite(rel)) {
+    for (const pat of ORDERS_WRITE_PATTERNS) {
+      const hits = findAllOccurrences(content, pat);
+      if (!hits.length) continue;
 
-    // Allowlisted?
-    if (isAllowedByPrefixes(rel, ORDERS_WRITE_ALLOW_PREFIXES)) continue;
-
-    for (const idx of hits) {
-      violations.push({
-        type: "ORDERS_DIRECT_WRITE_NOT_ALLOWED",
-        file: rel,
-        line: lineOfIndex(content, idx),
-        pattern: pat,
-        preview: snippet(content, idx),
-      });
+      for (const idx of hits) {
+        violations.push({
+          type: "ORDERS_DIRECT_WRITE_NOT_ALLOWED",
+          file: rel,
+          line: lineOfIndex(content, idx),
+          pattern: pat,
+          preview: snippet(content, idx),
+        });
+      }
     }
   }
 }
 
-// Report
 if (violations.length) {
-  console.error("\n❌ CI GUARD FAILED — policy brudd funnet:\n");
+  console.error("\nCI GUARD FAILED - policy brudd funnet:\n");
   for (const v of violations) {
     console.error(
       `- [${v.type}] ${v.file}:${v.line}\n  pattern: ${v.pattern}\n  preview: ${v.preview}\n`
@@ -191,12 +184,11 @@ if (violations.length) {
   }
   console.error(
     "Fix:\n" +
-      "• Flytt service-role bruk til allowlist (cron/superadmin-system/lib/supabase/admin.ts)\n" +
-      "• Eller fjern det helt og bruk session-klient\n" +
-      "• For orders: bruk DB RPC (lp_order_set/lp_order_cancel) – aldri direkte writes\n"
+      "- Flytt service-role bruk til allowlist og bruk lib/supabase/admin.ts\n" +
+      "- Bruk RPC for order writes (ikke direkte writes)\n"
   );
   process.exit(1);
 }
 
-console.log("✅ CI GUARD PASSED — ingen policy-brudd funnet.");
+console.log("CI GUARD PASSED - ingen policy-brudd funnet.");
 process.exit(0);

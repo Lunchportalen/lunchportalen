@@ -5,7 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
@@ -36,14 +38,6 @@ type ApiResp = {
   page: { cursor: string | null; nextCursor: string | null; limit: number };
 };
 
-function serviceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
-
 function isISODate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
@@ -70,7 +64,7 @@ function pickCompanyName(c: any): string {
 
 /**
  * GET /api/kitchen/companies?date=YYYY-MM-DD&cursor=<company_id>&limit=50&window=Standard
- * Cursor er company_id (uuid) – stabilt og lett.
+ * Cursor er company_id (uuid) Ã¢â‚¬â€œ stabilt og lett.
  */
 export async function GET(req: Request) {
   const { supabaseServer } = await import("@/lib/supabase/server");
@@ -90,9 +84,9 @@ export async function GET(req: Request) {
     const limit = clampInt(url.searchParams.get("limit"), 50, 10, 200);
     const window = url.searchParams.get("window") || "Standard";
 
-    const supabase = serviceSupabase();
+    const supabase = supabaseAdmin();
 
-    // 1) Finn company_id som har orders denne dagen (paginert på company_id)
+    // 1) Finn company_id som har orders denne dagen (paginert pÃƒÂ¥ company_id)
     let q = supabase
       .from("orders")
       .select("company_id", { head: false })
@@ -147,7 +141,7 @@ export async function GET(req: Request) {
     if (oErr) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "orders_failed", detail: oErr.message });
 
     // 4) Batch-status (valgfritt): vi leser kitchen_batches hvis finnes, ellers null
-    // Batch er per (delivery_date, company_location_id, delivery_window). Vi bruker window = Standard foreløpig.
+    // Batch er per (delivery_date, company_location_id, delivery_window). Vi bruker window = Standard forelÃƒÂ¸pig.
     let batches: any[] = [];
     try {
       const locIds = Array.from(new Set((orders ?? []).map((o: any) => o.location_id).filter(Boolean)));
@@ -210,7 +204,7 @@ export async function GET(req: Request) {
       };
     });
 
-    // summary for denne “siden” (ikke global for alle 5000)
+    // summary for denne Ã¢â‚¬Å“sidenÃ¢â‚¬Â (ikke global for alle 5000)
     const sumCompanies = companiesOut.length;
     const sumOrders = companiesOut.reduce((a, c) => a + (c.totals.orders || 0), 0);
     const sumLocations = companiesOut.reduce((a, c) => a + (c.totals.locations || 0), 0);
@@ -226,9 +220,11 @@ export async function GET(req: Request) {
 
     return jsonOk(rid, out, 200);
   } catch (e: any) {
-    return jsonErr(rid, "Kunne ikke hente kjøkken-oversikt.", 500, { code: "kitchen_companies_failed", detail: e?.message || String(e) });
+    return jsonErr(rid, "Kunne ikke hente kjÃƒÂ¸kken-oversikt.", 500, { code: "kitchen_companies_failed", detail: e?.message || String(e) });
   }
 }
+
+
 
 
 

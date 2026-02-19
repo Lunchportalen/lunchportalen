@@ -1,21 +1,17 @@
+// app/api/superadmin/user-disable/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+
 import { writeAudit } from "@/lib/audit/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key, { auth: { persistSession: false } });
-}
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   const rid = makeRid();
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const body = await req.json().catch(() => ({}));
   const targetUserId = (body?.userId ?? "").toString().trim();
@@ -41,11 +37,12 @@ export async function POST(req: Request) {
     return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
+  let admin: ReturnType<typeof supabaseAdmin>;
+  try {
+    admin = supabaseAdmin();
+  } catch {
+    return jsonErr(rid, "Mangler service role-klient.", 500, "MISSING_SERVICE_ROLE_CLIENT");
   }
-
-  const admin = supabaseAdmin();
 
   const { data: existing } = await admin
     .from("profiles")
@@ -82,5 +79,3 @@ export async function POST(req: Request) {
 
   return jsonOk(rid, { ok: true, prevDisabled: prev, disabled }, 200);
 }
-
-

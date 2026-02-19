@@ -4,10 +4,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+
 import nodemailer from "nodemailer";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
@@ -15,13 +16,7 @@ function assertEnv(name: string, v: string | undefined) {
 }
 
 function supabaseService() {
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const key = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "X-Client-Info": "lunchportalen-outbox-retry" } },
-  });
+  return supabaseAdmin();
 }
 
 function mailer() {
@@ -85,7 +80,7 @@ function buildMail(row: OutboxRow) {
   return { from, to, subject, text };
 }
 
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   const rid = makeRid();
 
   try {
@@ -170,4 +165,3 @@ export async function POST(req: Request) {
     return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }
-

@@ -6,11 +6,11 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 import { isSuperadminEmail } from "@/lib/system/emails";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
    Utils
@@ -35,24 +35,8 @@ function isIsoTs(v: any) {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v));
 }
 function escapeForIlike(v: string) {
-  // best-effort: nøytraliser wildcard-tegn
+  // best-effort: nÃƒÂ¸ytraliser wildcard-tegn
   return v.replace(/[%_]/g, (m) => `\\${m}`);
-}
-
-/* =========================================================
-   Supabase admin (service role)
-========================================================= */
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)");
-  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "Cache-Control": "no-store" } },
-  });
 }
 
 /* =========================================================
@@ -112,15 +96,15 @@ export async function GET(req: NextRequest) {
 
   try {
     /* =========================
-       Auth (cookie) — fail-closed
+       Auth (cookie) Ã¢â‚¬â€ fail-closed
     ========================= */
     const sb = await supabaseServer();
     const { data: userRes, error: authErr } = await sb.auth.getUser();
     const user = userRes?.user ?? null;
 
-    if (authErr || !user) return jsonErr(rid, "Du må være innlogget.", 401, "AUTH_REQUIRED");
+    if (authErr || !user) return jsonErr(rid, "Du mÃƒÂ¥ vÃƒÂ¦re innlogget.", 401, "AUTH_REQUIRED");
 
-    // ✅ Hard superadmin gate by email
+    // Ã¢Å“â€¦ Hard superadmin gate by email
     if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ikke tilgang.", 403, "FORBIDDEN");
 
     /* =========================
@@ -270,3 +254,5 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, err.message || "Server error", 500, err);
   }
 }
+
+

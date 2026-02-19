@@ -1,11 +1,14 @@
+// app/api/superadmin/user-role/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+
 import { writeAudit } from "@/lib/audit/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -13,16 +16,10 @@ function isRole(x: any): x is Role {
   return x === "employee" || x === "company_admin" || x === "superadmin" || x === "kitchen" || x === "driver";
 }
 
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key, { auth: { persistSession: false } });
-}
-
 export async function POST(req: Request) {
   const rid = makeRid();
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
+
   const body = await req.json().catch(() => ({}));
   const targetUserId = (body?.userId ?? "").toString().trim();
   const newRole = body?.role;
@@ -48,11 +45,12 @@ export async function POST(req: Request) {
     return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
+  let admin: ReturnType<typeof supabaseAdmin>;
+  try {
+    admin = supabaseAdmin();
+  } catch {
+    return jsonErr(rid, "Mangler service role-klient.", 500, "MISSING_SERVICE_ROLE_CLIENT");
   }
-
-  const admin = supabaseAdmin();
 
   // Hent eksisterende (for audit)
   const { data: existing, error: exErr } = await admin
@@ -106,5 +104,3 @@ export async function POST(req: Request) {
 
   return jsonOk(rid, { ok: true, prevRole, newRole }, 200);
 }
-
-

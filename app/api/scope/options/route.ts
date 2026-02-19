@@ -4,20 +4,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import "server-only";
 
-function supabaseAdmin() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET() {
   const rid = makeRid();
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
   const { data: userRes } = await supabase.auth.getUser();
@@ -36,11 +29,12 @@ export async function GET() {
     return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return jsonErr(rid, "Mangler service role key.", 500, "MISSING_SERVICE_ROLE_KEY");
+  let admin: ReturnType<typeof supabaseAdmin>;
+  try {
+    admin = supabaseAdmin();
+  } catch {
+    return jsonErr(rid, "Mangler service role-klient.", 500, "MISSING_SERVICE_ROLE_CLIENT");
   }
-
-  const admin = supabaseAdmin();
 
   const { data: companies, error: cErr } = await admin
     .from("companies")
@@ -58,5 +52,3 @@ export async function GET() {
 
   return jsonOk(rid, { ok: true, companies: companies ?? [], locations: locations ?? [] }, 200);
 }
-
-
