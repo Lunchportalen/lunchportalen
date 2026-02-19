@@ -1,12 +1,17 @@
 ﻿// app/superadmin/companies/companies-client.tsx
 "use client";
 
+import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
+
 import { formatDateTimeNO } from "@/lib/date/format";
 import { buildCleanQuery } from "@/lib/url/qs";
+
+/* =========================================================
+   Types
+========================================================= */
 
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 type SortKey = "updated_at" | "created_at" | "name";
@@ -72,25 +77,20 @@ type CompanyDetail = {
   }>;
 };
 
-type ApiOk = {
+/** API response: GET /api/superadmin/companies */
+type ApiListOk = {
   ok: true;
   rid: string;
   data: {
-    items: CompanyRow[];
+    items: any[];
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-    source?: { companies?: string; profiles?: string; agreement?: string };
-    filters?: {
-      q?: string | null;
-      status?: string | null;
-      includeClosed?: boolean;
-      sort?: SortKey | string | null;
-      dir?: SortDir | string | null;
-    };
   };
 };
+
+type ApiDetailOk = { ok: true; rid: string; data: CompanyDetail };
 
 type ApiErr = {
   ok: false;
@@ -101,10 +101,19 @@ type ApiErr = {
   detail?: any;
 };
 
-type ApiRes = ApiOk | ApiErr;
+/* =========================================================
+   Utils
+========================================================= */
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
+}
+
+function isUuid(v: any) {
+  return (
+    typeof v === "string" &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
+  );
 }
 
 const ALLOWED_LIMITS = [10, 25, 50, 100] as const;
@@ -116,18 +125,18 @@ function normalizeLimit(v: any) {
   return ALLOWED_LIMITS.includes(i as AllowedLimit) ? i : 25;
 }
 
+function clampInt(v: any, fallback: number, min: number, max: number) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
 function normStatus(v: any): CompanyStatus {
   const s = String(v ?? "pending").toLowerCase().trim();
   if (s === "active") return "active";
   if (s === "paused") return "paused";
   if (s === "closed") return "closed";
   return "pending";
-}
-
-function clampInt(v: any, fallback: number, min: number, max: number) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, Math.floor(n)));
 }
 
 function fmtTs(ts?: string | null) {
@@ -174,11 +183,41 @@ function isDefined<T>(v: T | null | undefined): v is T {
   return v !== null && v !== undefined;
 }
 
-/**
- * API-endepunkt
- * - /api/superadmin/companies
- */
-async function fetchCompanies(qsWithLeadingQ: string, signal?: AbortSignal): Promise<ApiRes> {
+function normalizeRow(x: any): CompanyRow | null {
+  const id = safeStr(x?.id);
+  if (!id) return null;
+
+  const employees =
+    Number.isFinite(Number(x?.employeesCount)) ? Number(x?.employeesCount)
+    : Number.isFinite(Number(x?.employees_count)) ? Number(x?.employees_count)
+    : Number.isFinite(Number(x?.employees_total)) ? Number(x?.employees_total)
+    : null;
+
+  const admins =
+    Number.isFinite(Number(x?.adminsCount)) ? Number(x?.adminsCount)
+    : Number.isFinite(Number(x?.admins_count)) ? Number(x?.admins_count)
+    : null;
+
+  return {
+    id,
+    name: safeStr(x?.name) || "Ukjent firma",
+    orgnr: x?.orgnr ?? null,
+    status: normStatus(x?.status ?? x?.company_status ?? x?.companyStatus),
+    planLabel: x?.planLabel ?? x?.plan ?? null,
+    employeesCount: employees,
+    adminsCount: admins,
+    createdAt: x?.createdAt ?? x?.created_at ?? null,
+    updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
+    archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
+  };
+}
+
+/* =========================================================
+   API wrappers
+========================================================= */
+
+/** GET /api/superadmin/companies?.... */
+async function fetchCompanies(qsWithLeadingQ: string, signal?: AbortSignal): Promise<ApiListOk | ApiErr> {
   const r = await fetch(`/api/superadmin/companies${qsWithLeadingQ}`, {
     cache: "no-store",
     signal,
@@ -187,7 +226,7 @@ async function fetchCompanies(qsWithLeadingQ: string, signal?: AbortSignal): Pro
   });
   const body = await readJsonSafe(r);
 
-  if (r.ok && body) return body as ApiRes;
+  if (r.ok && body?.ok === true) return body as ApiListOk;
 
   return {
     ok: false,
@@ -199,10 +238,8 @@ async function fetchCompanies(qsWithLeadingQ: string, signal?: AbortSignal): Pro
   } as ApiErr;
 }
 
-async function fetchCompanyDetail(
-  companyId: string,
-  signal?: AbortSignal
-): Promise<{ ok: true; rid: string; data: CompanyDetail } | ApiErr> {
+/** GET /api/superadmin/companies/:id */
+async function fetchCompanyDetail(companyId: string, signal?: AbortSignal): Promise<ApiDetailOk | ApiErr> {
   const r = await fetch(`/api/superadmin/companies/${encodeURIComponent(companyId)}`, {
     cache: "no-store",
     signal,
@@ -211,7 +248,7 @@ async function fetchCompanyDetail(
   });
   const body = await readJsonSafe(r);
 
-  if (r.ok && body?.ok === true) return body as { ok: true; rid: string; data: CompanyDetail };
+  if (r.ok && body?.ok === true) return body as ApiDetailOk;
 
   return {
     ok: false,
@@ -223,55 +260,30 @@ async function fetchCompanyDetail(
   } as ApiErr;
 }
 
-/**
- * Status-endepunkt
- * - primær: POST /api/superadmin/companies/status
- * - fallback: POST /api/superadmin/firms/status
- */
+/** ✅ ONLY source of truth: POST /api/superadmin/companies/set-status */
 async function postCompanyStatus(companyId: string, status: CompanyStatus): Promise<{ ok: true } | ApiErr> {
-  const tryPost = async (url: string) => {
-    const r = await fetch(url, {
-      method: "POST",
-      cache: "no-store",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      body: JSON.stringify({ companyId, status }),
-    });
-    const body = await readJsonSafe(r);
+  const r = await fetch("/api/superadmin/companies/set-status", {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify({ companyId, status }),
+  });
+  const body = await readJsonSafe(r);
 
-    if (r.ok && body && body.ok === true) return { ok: true as const };
+  if (r.ok && body?.ok === true) return { ok: true as const };
 
-    if (r.status === 404) return { ok: false, error: "NOT_FOUND", message: "404", detail: { url } } as ApiErr;
-
-    return {
-      ok: false,
-      rid: body?.rid,
-      error: body?.error || "HTTP_ERROR",
-      message: body?.message || `HTTP ${r.status}`,
-      detail: body?.detail ?? body,
-    } as ApiErr;
-  };
-
-  const primary = await tryPost("/api/superadmin/companies/status");
-  if ((primary as any).ok === true) return { ok: true };
-
-  const e1 = primary as ApiErr;
-  if (e1?.error === "NOT_FOUND") {
-    const fallback = await tryPost("/api/superadmin/firms/status");
-    if ((fallback as any).ok === true) return { ok: true };
-
-    const e2 = fallback as ApiErr;
-    return {
-      ok: false,
-      error: "API_MISSING",
-      message: "Fant ikke API-endepunkt for statusendring.",
-      detail: { primary: e1?.detail, fallback: e2?.detail },
-    };
-  }
-
-  return e1;
+  return {
+    ok: false,
+    rid: body?.rid,
+    error: body?.error || "HTTP_ERROR",
+    message: body?.message || `HTTP ${r.status}`,
+    status: r.status,
+    detail: body?.detail ?? body,
+  } as ApiErr;
 }
 
+/* Optional employee admin routes (only if they exist in your repo) */
 async function postAssignProfileToCompany(payload: { email: string; companyId: string; role: "employee" | "company_admin" }) {
   const r = await fetch("/api/superadmin/profiles/assign", {
     method: "POST",
@@ -311,34 +323,18 @@ async function postRemoveProfile(payload: { profileId: string }) {
   return { ok: false as const, message: body?.message || `HTTP ${r.status}` };
 }
 
-function normalizeRow(x: any): CompanyRow | null {
-  const id = safeStr(x?.id);
-  if (!id) return null;
+/* =========================================================
+   UI helpers
+========================================================= */
 
-  const employees =
-    Number.isFinite(Number(x?.employeesCount)) ? Number(x?.employeesCount)
-    : Number.isFinite(Number(x?.employees_count)) ? Number(x?.employees_count)
-    : Number.isFinite(Number(x?.employees_total)) ? Number(x?.employees_total)
-    : null;
-
-  const admins =
-    Number.isFinite(Number(x?.adminsCount)) ? Number(x?.adminsCount)
-    : Number.isFinite(Number(x?.admins_count)) ? Number(x?.admins_count)
-    : null;
-
-  return {
-    id,
-    name: safeStr(x?.name) || "Ukjent firma",
-    orgnr: x?.orgnr ?? null,
-    status: normStatus(x?.status ?? x?.company_status ?? x?.companyStatus),
-    planLabel: x?.planLabel ?? x?.plan ?? null,
-    employeesCount: employees,
-    adminsCount: admins,
-    createdAt: x?.createdAt ?? x?.created_at ?? null,
-    updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
-    archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
-  };
+function stop(e: React.SyntheticEvent) {
+  e.preventDefault();
+  e.stopPropagation();
 }
+
+/* =========================================================
+   Component
+========================================================= */
 
 export default function CompaniesClient() {
   const router = useRouter();
@@ -412,6 +408,7 @@ export default function CompaniesClient() {
   const reqSeq = useRef(0);
   const detailAbortRef = useRef<AbortController | null>(null);
 
+  // Reset page on typing
   useEffect(() => {
     const t = setTimeout(() => setPage(1), 350);
     return () => clearTimeout(t);
@@ -425,6 +422,7 @@ export default function CompaniesClient() {
     );
   }, [qText, status, includeClosed, page, limit, sort, dir, view]);
 
+  // Sync URL
   useEffect(() => {
     const current = searchParams.toString();
     const next = qs.startsWith("?") ? qs.slice(1) : qs;
@@ -432,6 +430,7 @@ export default function CompaniesClient() {
     startTransition(() => router.replace(`/superadmin/companies${qs}`));
   }, [qs, router, startTransition, searchParams]);
 
+  // Fetch list
   useEffect(() => {
     const seq = ++reqSeq.current;
     abortRef.current?.abort();
@@ -451,10 +450,11 @@ export default function CompaniesClient() {
           setTotal(null);
           setPages(null);
           setErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
+          setRows([]);
           return;
         }
 
-        const ok = res as ApiOk;
+        const ok = res as ApiListOk;
         const list = Array.isArray(ok.data?.items) ? ok.data.items : [];
         const normalized: CompanyRow[] = list.map(normalizeRow).filter(isDefined);
 
@@ -469,6 +469,7 @@ export default function CompaniesClient() {
         setTotal(null);
         setPages(null);
         setErr({ ok: false, error: "FETCH_FAILED", message: e?.message || "Fetch feilet", detail: e });
+        setRows([]);
       })
       .finally(() => {
         if (ac.signal.aborted) return;
@@ -478,6 +479,7 @@ export default function CompaniesClient() {
     return () => ac.abort();
   }, [qs]);
 
+  // Fetch detail
   useEffect(() => {
     if (!detailId) return;
 
@@ -496,7 +498,7 @@ export default function CompaniesClient() {
           setDetailErr((res as ApiErr) ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" });
           return;
         }
-        const ok = res as { ok: true; rid: string; data: CompanyDetail };
+        const ok = res as ApiDetailOk;
         setDetail(ok.data);
       })
       .catch((e) => {
@@ -517,9 +519,6 @@ export default function CompaniesClient() {
   const canNext = pages ? page < pages : rows.length === limit;
 
   const visibleRows = useMemo(() => (rows ?? []).filter(isDefined).filter((r) => safeStr(r.id).length > 0), [rows]);
-
-  const detailEmployees = detail?.counts?.employeesCount ?? 0;
-  const detailAdmins = detail?.counts?.adminsCount ?? 0;
 
   function openConfirm(row: CompanyRow, next: CompanyStatus) {
     confirmPayload.current = { id: row.id, name: row.name, next };
@@ -550,6 +549,9 @@ export default function CompaniesClient() {
 
   function applyLocalStatus(id: string, next: CompanyStatus) {
     setRows((prev) => (prev ?? []).map((r) => (r.id === id ? { ...r, status: next } : r)));
+    if (detail?.company?.id === id) {
+      setDetail((p) => (p ? { ...p, company: { ...p.company, status: next } } : p));
+    }
   }
 
   function doChangeStatus() {
@@ -648,22 +650,21 @@ export default function CompaniesClient() {
     setEmpBusyId(null);
   }
 
+  // UI
   return (
-    <div className="mt-6">
+    <div className="mt-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight md:text-2xl">Firmaoversikt</h2>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Søk, filtrer og åpne firma for avtale, status, ansatte og audit.</p>
+          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">Firmaoversikt</h2>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+            Søk, filtrer og åpne firma for avtale, status, ansatte og audit.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/superadmin" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
-            Dashboard
+          <Link href="/superadmin/audit" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
+            Audit
           </Link>
-          <Link href="/superadmin/system" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
-            System
-          </Link>
-
           <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
             {loading ? "Laster…" : `Viser ${visibleRows.length}${typeof total === "number" ? ` av ${total}` : ""}`}
           </span>
@@ -802,7 +803,6 @@ export default function CompaniesClient() {
         </div>
       </section>
 
-      {/* Error */}
       {err ? (
         <section className="mt-4 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-sm font-semibold text-red-700">Kunne ikke hente firmaoversikt</div>
@@ -810,11 +810,17 @@ export default function CompaniesClient() {
         </section>
       ) : null}
 
-      {/* Status confirm modal */}
+      {/* Confirm modal */}
       {confirmOpen && typeof document !== "undefined"
         ? createPortal(
-            <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4 backdrop-blur-sm">
-              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200">
+            <div className="fixed inset-0 z-50 grid place-items-center p-4">
+              <button
+                type="button"
+                className="absolute inset-0 bg-black/25 backdrop-blur-sm"
+                onClick={closeConfirm}
+                aria-label="Lukk bekreftelsesdialog"
+              />
+              <div className="relative w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200">
                 <div className="text-xs font-bold text-neutral-500">Bekreft</div>
                 <div className="mt-1 text-lg font-semibold text-neutral-950">Endre firmastatus</div>
 
@@ -846,75 +852,25 @@ export default function CompaniesClient() {
           )
         : null}
 
-      {/* Add employee modal */}
-      {addEmployeeOpen && typeof document !== "undefined"
-        ? createPortal(
-            <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4 backdrop-blur-sm">
-              <div className="w-[min(92vw,520px)] rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.18)] ring-1 ring-neutral-200">
-                <div className="text-xs font-bold text-neutral-500">Legg til ansatt</div>
-                <div className="mt-1 text-lg font-semibold text-neutral-950">Knytt e-post til firma</div>
-
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <label className="block text-xs text-[rgb(var(--lp-muted))]">E-post</label>
-                    <input
-                      value={addEmail}
-                      onChange={(e) => setAddEmail(e.target.value)}
-                      placeholder="thomas.johansen87@gmail.com"
-                      className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-[rgb(var(--lp-muted))]">Rolle</label>
-                    <select value={addRole} onChange={(e) => setAddRole(e.target.value as any)} className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm">
-                      <option value="employee">Ansatt</option>
-                      <option value="company_admin">Company admin</option>
-                    </select>
-                  </div>
-
-                  {addErr ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{addErr}</div>
-                  ) : null}
-                </div>
-
-                <div className="mt-5 flex items-center justify-end gap-2">
-                  <button
-                    className="rounded-full border bg-white px-4 py-2 text-sm hover:bg-neutral-50"
-                    onClick={() => {
-                      setAddEmployeeOpen(false);
-                      setAddErr(null);
-                    }}
-                    disabled={addBusy}
-                  >
-                    Avbryt
-                  </button>
-                  <button className="rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-60" onClick={submitAddEmployee} disabled={addBusy}>
-                    {addBusy ? "Lagrer…" : "Legg til"}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
-
       {/* Detail drawer */}
       {detailId ? (
         <div className="fixed inset-0 z-40">
           <button type="button" className="absolute inset-0 bg-black/20" onClick={closeDetail} aria-label="Lukk detaljer" />
           <div className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl ring-1 ring-neutral-200">
             <div className="flex items-start justify-between border-b border-[rgb(var(--lp-border))] px-5 py-4">
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Firma</div>
-                <div className="mt-1 text-lg font-semibold text-[rgb(var(--lp-text))]">{detail?.company?.name ?? "Laster..."}</div>
+                <div className="mt-1 truncate text-lg font-semibold text-[rgb(var(--lp-text))]">
+                  {detail?.company?.name ?? "Laster..."}
+                </div>
+                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))] font-mono">{detailId}</div>
               </div>
               <button className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50" onClick={closeDetail}>
                 Lukk
               </button>
             </div>
 
-            <div className="h-[calc(100%-64px)] overflow-y-auto px-5 py-4">
+            <div className="h-[calc(100%-76px)] overflow-y-auto px-5 py-4">
               {detailLoading ? (
                 <div className="text-sm text-[rgb(var(--lp-muted))]">Laster detaljer...</div>
               ) : detailErr ? (
@@ -925,53 +881,47 @@ export default function CompaniesClient() {
               ) : detail ? (
                 <div className="space-y-4">
                   <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Tellinger</div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                      <div className="rounded-2xl border bg-white px-3 py-2">
-                        <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte</div>
-                        <div className="text-base font-semibold">{detailEmployees}</div>
-                      </div>
-                      <div className="rounded-2xl border bg-white px-3 py-2">
-                        <div className="text-xs text-[rgb(var(--lp-muted))]">Company admins</div>
-                        <div className="text-base font-semibold">{detailAdmins}</div>
-                      </div>
+                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Status</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                        disabled={!!statusBusyId}
+                        onClick={() => openConfirm({ id: detail.company.id, name: detail.company.name } as any, "active")}
+                      >
+                        Aktivér
+                      </button>
+                      <button
+                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                        disabled={!!statusBusyId}
+                        onClick={() => openConfirm({ id: detail.company.id, name: detail.company.name } as any, "paused")}
+                      >
+                        Pause
+                      </button>
+                      <button
+                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
+                        disabled={!!statusBusyId}
+                        onClick={() => openConfirm({ id: detail.company.id, name: detail.company.name } as any, "closed")}
+                      >
+                        Steng
+                      </button>
                     </div>
                   </section>
 
                   <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Ansatte</div>
-                      <button
-                        type="button"
-                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-                        onClick={() => {
-                          setAddEmployeeOpen(true);
-                          setAddErr(null);
-                        }}
-                      >
-                        Legg til
-                      </button>
-                    </div>
-
-                    {empErr ? (
-                      <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{empErr}</div>
-                    ) : null}
-
-                    <div className="mt-3 space-y-2">
+                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Ansatte</div>
+                    <div className="mt-2 text-sm">
                       {detail.employees?.length ? (
-                        detail.employees
-                          .slice()
-                          .sort((a, b) => safeStr(a.email).localeCompare(safeStr(b.email), "nb"))
-                          .map((p) => {
+                        <div className="space-y-2">
+                          {detail.employees.map((p) => {
                             const busy = empBusyId === p.id;
                             const active = p.is_active !== false;
                             const role = (p.role === "company_admin" ? "company_admin" : "employee") as "employee" | "company_admin";
 
                             return (
-                              <div key={p.id} className="rounded-2xl border bg-white px-3 py-2 text-sm">
+                              <div key={p.id} className="rounded-2xl border bg-white px-3 py-2">
                                 <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <div className="font-semibold">{p.email ?? "—"}</div>
+                                  <div className="min-w-0">
+                                    <div className="truncate font-semibold">{p.email ?? "—"}</div>
                                     <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
                                       Rolle: {role} • Aktiv: {active ? "Ja" : "Nei"}
                                     </div>
@@ -1007,27 +957,81 @@ export default function CompaniesClient() {
                                 </div>
                               </div>
                             );
-                          })
+                          })}
+                        </div>
                       ) : (
-                        <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen ansatte registrert på firma.</div>
+                        <div className="text-[rgb(var(--lp-muted))]">Ingen ansatte registrert.</div>
                       )}
                     </div>
+
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
+                        onClick={() => {
+                          setAddEmployeeOpen(true);
+                          setAddErr(null);
+                        }}
+                      >
+                        Legg til
+                      </button>
+                    </div>
+
+                    {addEmployeeOpen ? (
+                      <div className="mt-3 rounded-2xl border bg-white p-3">
+                        <div className="grid gap-2">
+                          <input
+                            value={addEmail}
+                            onChange={(e) => setAddEmail(e.target.value)}
+                            placeholder="epost@firma.no"
+                            className="rounded-xl border px-3 py-2 text-sm"
+                          />
+                          <select
+                            value={addRole}
+                            onChange={(e) => setAddRole(e.target.value as any)}
+                            className="rounded-xl border px-3 py-2 text-sm"
+                          >
+                            <option value="employee">Ansatt</option>
+                            <option value="company_admin">Company admin</option>
+                          </select>
+
+                          {addErr ? <div className="text-xs font-semibold text-red-700">{addErr}</div> : null}
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="rounded-xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-50"
+                              disabled={addBusy}
+                              onClick={() => {
+                                setAddEmployeeOpen(false);
+                                setAddErr(null);
+                              }}
+                            >
+                              Avbryt
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                              disabled={addBusy}
+                              onClick={submitAddEmployee}
+                            >
+                              {addBusy ? "Lagrer…" : "Legg til"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {empErr ? <div className="mt-3 text-xs font-semibold text-red-700">{empErr}</div> : null}
                   </section>
 
                   <section className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-                    <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Avtale</div>
-                    {detail.agreement ? (
-                      <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">
-                        <div>Plan: {detail.agreement.planLabel ?? "—"}</div>
-                        <div>Plan-tier: {detail.agreement.planTier ?? "—"}</div>
-                        <div>Status: {detail.agreement.status ?? "—"}</div>
-                        <div>Start: {detail.agreement.startDate ?? "—"}</div>
-                        <div>Slutt: {detail.agreement.endDate ?? "—"}</div>
-                        <div>Sist oppdatert: {detail.agreement.updatedAt ?? "—"}</div>
-                      </div>
-                    ) : (
-                      <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen aktiv avtale.</div>
-                    )}
+                    <Link
+                      href={`/superadmin/audit?entity_id=${encodeURIComponent(detail.company.id)}`}
+                      className="inline-flex w-full items-center justify-center rounded-2xl border bg-white px-3 py-2 text-sm font-semibold hover:bg-neutral-50"
+                    >
+                      Åpne audit for dette firmaet →
+                    </Link>
                   </section>
                 </div>
               ) : (
@@ -1042,7 +1046,7 @@ export default function CompaniesClient() {
       <section className="mt-6 rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
           <div className="text-sm font-semibold">Firma</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og avtale.</div>
+          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og status.</div>
           {statusBusyId ? <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
         </div>
 
@@ -1089,6 +1093,12 @@ export default function CompaniesClient() {
                       onClick={() => openDetail(c)}
                       role="button"
                       tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openDetail(c);
+                        }
+                      }}
                     >
                       <td className="px-5 py-4">
                         <div className="font-medium">{c.name}</div>
@@ -1109,7 +1119,7 @@ export default function CompaniesClient() {
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
                             disabled={busy}
                             onClick={(e) => {
-                              e.stopPropagation();
+                              stop(e);
                               openConfirm(c, "active");
                             }}
                           >
@@ -1119,7 +1129,7 @@ export default function CompaniesClient() {
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
                             disabled={busy}
                             onClick={(e) => {
-                              e.stopPropagation();
+                              stop(e);
                               openConfirm(c, "paused");
                             }}
                           >
@@ -1129,7 +1139,7 @@ export default function CompaniesClient() {
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
                             disabled={busy}
                             onClick={(e) => {
-                              e.stopPropagation();
+                              stop(e);
                               openConfirm(c, "closed");
                             }}
                           >
@@ -1137,10 +1147,10 @@ export default function CompaniesClient() {
                           </button>
                           <Link
                             className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-                            href={`/superadmin/companies/${c.id}`}
-                            onClick={(e) => e.stopPropagation()}
+                            href={`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`}
+                            onClick={(e) => stop(e as any)}
                           >
-                            Åpne
+                            Audit
                           </Link>
                         </div>
                       </td>
@@ -1157,7 +1167,11 @@ export default function CompaniesClient() {
           <div className="text-xs text-[rgb(var(--lp-muted))]">{typeof total === "number" ? `Totalt: ${total}` : " "}</div>
 
           <div className="flex items-center gap-2">
-            <button className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40" disabled={!canPrev || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            <button
+              className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40"
+              disabled={!canPrev || loading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
               Forrige
             </button>
 
@@ -1166,7 +1180,11 @@ export default function CompaniesClient() {
               {pages ? ` / ${pages}` : ""}
             </span>
 
-            <button className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40" disabled={!canNext || loading} onClick={() => setPage((p) => p + 1)}>
+            <button
+              className="rounded-2xl border bg-white px-3 py-2 text-xs disabled:opacity-40"
+              disabled={!canNext || loading}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Neste
             </button>
           </div>
@@ -1175,3 +1193,5 @@ export default function CompaniesClient() {
     </div>
   );
 }
+
+

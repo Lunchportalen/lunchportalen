@@ -125,6 +125,8 @@ function Divider() {
 }
 
 function isWeekday(iso: string) {
+  // osloTodayISODate() is YYYY-MM-DD already Oslo-safe in your lib.
+  // Use UTC noon to avoid DST edge weirdness.
   const d = new Date(`${iso}T12:00:00Z`);
   const day = d.getUTCDay();
   return day >= 1 && day <= 5;
@@ -153,6 +155,7 @@ function blockedTitle(b: AdminContextBlocked) {
   if (b.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
   if (b.blocked === "MISSING_COMPANY_ID") return "Mangler firmatilknytning";
   if (b.blocked === "COMPANY_INACTIVE") return "Firma er ikke aktivt";
+  if (b.blocked === "COUNTS_FAILED") return "Kunne ikke hente nøkkeltall";
   return "Systemfeil";
 }
 
@@ -160,6 +163,7 @@ function blockedBody(b: AdminContextBlocked) {
   if (b.blocked === "ACCOUNT_DISABLED") return "Kontoen er deaktivert og har ikke tilgang til administrasjon.";
   if (b.blocked === "MISSING_COMPANY_ID") return "Kontoen er registrert som company_admin, men mangler company_id.";
   if (b.blocked === "COMPANY_INACTIVE") return "Tilgang er begrenset fordi firma ikke er aktivt.";
+  if (b.blocked === "COUNTS_FAILED") return "Vi klarte ikke å hente nøkkeltall akkurat nå. Prøv igjen om litt.";
   return "Vi klarte ikke å hente nødvendig oversikt akkurat nå.";
 }
 
@@ -171,14 +175,15 @@ function blockedLevel(b: AdminContextBlocked): "followup" | "critical" {
    Page
 ========================================================= */
 export default async function AdminCommandCenterPage() {
-  // ✅ Gate: must be logged in + must be company_admin or superadmin
+  // ✅ Hard gate: must be logged in + must be company_admin or superadmin
   {
     const sb = await supabaseServer();
     const { data, error } = await sb.auth.getUser();
     const user = data?.user ?? null;
 
     if (error || !user) {
-      redirect("/login?next=/admin");
+      // IMPORTANT: route via post-login eventually, but on SSR we send to login with next
+      redirect("/login?next=/admin&code=NO_SESSION");
     }
 
     let profileRole: any = null;
@@ -191,10 +196,12 @@ export default async function AdminCommandCenterPage() {
     const role: Role = computeRole(user, profileRole);
 
     if (!hasRole(role, ["company_admin", "superadmin"])) {
-      redirect("/status?state=paused&next=/admin");
+      // Fail-closed: do not show admin surface
+      redirect("/status?state=blocked&next=/admin&code=ROLE_FORBIDDEN");
     }
   }
 
+  // ✅ Load admin context (fail-closed / blocked-state supported)
   const ctx = await loadAdminContext({
     nextPath: "/admin",
     enforceCompanyAdmin: true,
@@ -224,7 +231,9 @@ export default async function AdminCommandCenterPage() {
             { label: "profile.location_id", value: ctx.profile?.location_id ?? "Ikke tilgjengelig" },
             { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "Ikke tilgjengelig" },
             { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
-            ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "Ikke tilgjengelig" }] : []),
+            ...(ctx.dbg.q_company
+              ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "Ikke tilgjengelig" }]
+              : []),
             ...(Object.entries(ctx.dbg.q_counts ?? {})
               .filter(([, v]) => v)
               .slice(0, 10)
@@ -235,25 +244,27 @@ export default async function AdminCommandCenterPage() {
     );
   }
 
+  // ✅ Safe computed values
   const companyName = ctx.company?.name ?? "Firma";
-  const counts = ctx.counts ?? ({} as any);
+  const counts: any = ctx.counts ?? {};
 
   const employeesTotal = Number(counts.employeesTotal ?? 0);
   const employeesActive = Number(counts.employeesActive ?? 0);
   const employeesDisabled = Number(counts.employeesDisabled ?? 0);
 
+  // Health is conservative (fail-closed mindset)
   const health: Health = employeesDisabled > 0 ? "warn" : "ok";
 
+  // Next delivery
   const nextDelivery = nextDeliveryISO();
   const nextDeliveryLabel = employeesTotal > 0 ? formatShortDate(nextDelivery) : "—";
   const nextDeliveryHint =
     employeesTotal > 0 ? "Cut-off: kl. 08:00 (Europe/Oslo)." : "Legg inn ansatte for å aktivere drift.";
 
-  // ÉN primær handling (Dashboard 2.0 fasit)
+  // Primary action (ONE)
   const primaryHref = "/admin/orders";
   const primaryLabel = "Åpne ordreoversikt";
 
-  // Secondary (ikke CTA-støy)
   const quickLinks = [
     { label: "Avtale", href: "/admin/agreement" },
     { label: "Ansatte", href: "/admin/people" },
@@ -262,6 +273,8 @@ export default async function AdminCommandCenterPage() {
     { label: "Insights", href: "/admin/insights" },
   ] as const;
 
+  const companyStatus = String(ctx.companyStatus || ctx.company?.status || "ACTIVE").toUpperCase();
+
   return (
     <AdminPageShell
       title="Oversikt"
@@ -269,7 +282,7 @@ export default async function AdminCommandCenterPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <HealthPill health={health} />
-          <StatusPill label={String(ctx.companyStatus || "ACTIVE")} />
+          <StatusPill label={companyStatus} />
         </div>
       }
     >
@@ -298,12 +311,12 @@ export default async function AdminCommandCenterPage() {
           value={`${employeesActive} aktive`}
           hint={`${employeesTotal} totalt • ${employeesDisabled} deaktivert`}
         />
-        <KpiCard label="Neste leveringsvindu" value={nextDeliveryLabel} hint="Leveringsvindu styres av avtalen per lokasjon." />
         <KpiCard
-          label="Avtale"
-          value={ctx.companyStatus ? String(ctx.companyStatus).toUpperCase() : "ACTIVE"}
-          hint="Avtalen er fasit. Ingen manuelle unntak."
+          label="Neste leveringsvindu"
+          value={nextDeliveryLabel}
+          hint="Leveringsvindu styres av avtalen per lokasjon."
         />
+        <KpiCard label="Avtale" value={companyStatus} hint="Avtalen er fasit. Ingen manuelle unntak." />
       </div>
 
       {/* Row 3 — Main (8) + Side (4) */}
@@ -358,7 +371,7 @@ export default async function AdminCommandCenterPage() {
               <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
                 <div className="text-xs font-semibold text-neutral-600">Firma-status</div>
                 <div className="mt-2">
-                  <StatusPill label={String(ctx.companyStatus || "ACTIVE")} />
+                  <StatusPill label={companyStatus} />
                 </div>
                 <div className="mt-2 text-sm lp-muted">Styrer tilgang og drift uten unntak.</div>
               </div>

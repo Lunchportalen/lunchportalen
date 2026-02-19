@@ -122,6 +122,16 @@ export async function getMenuForDate(date: string): Promise<MenuContent | null> 
   );
 }
 
+/**
+ * Canonical published-menu helper used by order APIs.
+ * Returns null when menu is not published/visible for date.
+ */
+export async function getPublishedMenuForDate(date: string): Promise<MenuContent | null> {
+  const menu = await getMenuForDate(date);
+  if (!menu || menu.isPublished !== true) return null;
+  return menu;
+}
+
 /* =========================================================
    Menu - list of dates (customer-visible)
 ========================================================= */

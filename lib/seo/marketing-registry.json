@@ -1,0 +1,351 @@
+{
+  "/": {
+    "path": "/",
+    "title": "Lunchportalen – firmalunsj med kontroll og forutsigbarhet",
+    "description": "Firmalunsj for bedrifter med tydelige rammer, cut-off kl. 08:00 og mindre administrasjon i hverdagen.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 1,
+    "changefreq": "daily",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/definitiv-guide-firmalunsj", "label": "Definitiv guide til firmalunsj" },
+      { "href": "/priser", "label": "Priser for firmalunsj" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" }
+    ],
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  },
+  "/lunsjordning": {
+    "path": "/lunsjordning",
+    "title": "Lunsjordning for bedrifter med kontroll og forutsigbarhet",
+    "description": "Lunsjordning for bedrifter med tydelige rammer, cut-off kl. 08:00 og én plattform for stabil drift.",
+    "pageType": "website",
+    "ogImage": "/og/og-lunsjordning-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.95,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Lunsjordning", "item": "/lunsjordning" }
+    ],
+    "intentLinks": [
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/definitiv-guide-firmalunsj", "label": "Definitiv guide til firmalunsj" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunsjordning-trondheim", "label": "Lunsjordning i Trondheim" },
+      { "href": "/priser", "label": "Priser for firmalunsj" },
+      { "href": "/sikkerhet", "label": "Sikkerhet og datagrunnmur" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" }
+    ],
+    "faqKey": "/lunsjordning",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/hva-er-lunsjordning": {
+    "path": "/hva-er-lunsjordning",
+    "title": "Hva er lunsjordning? Definisjon for bedrifter",
+    "description": "En tydelig definisjon av lunsjordning for bedrifter: roller, frister og en forutsigbar lunsjhverdag.",
+    "pageType": "article",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.9,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Hva er lunsjordning", "item": "/hva-er-lunsjordning" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/definitiv-guide-firmalunsj", "label": "Definitiv guide til firmalunsj" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunsjordning-trondheim", "label": "Lunsjordning i Trondheim" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/hva-er-lunsjordning",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/definitiv-guide-firmalunsj": {
+    "path": "/definitiv-guide-firmalunsj",
+    "title": "Den definitive guiden til firmalunsj i Norge",
+    "description": "En komplett guide for bedrifter som vil innføre firmalunsj med tydelige rammer og stabil drift.",
+    "pageType": "article",
+    "ogImage": "/og/og-firmalunsj-guide-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.9,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Definitiv guide til firmalunsj", "item": "/definitiv-guide-firmalunsj" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunsjordning-trondheim", "label": "Lunsjordning i Trondheim" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/definitiv-guide-firmalunsj",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/system-for-lunsjbestilling": {
+    "path": "/system-for-lunsjbestilling",
+    "title": "System for lunsjbestilling til bedrift",
+    "description": "Et system for lunsjbestilling med tydelige regler, cut-off kl. 08:00 og mindre administrasjon.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.88,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "System for lunsjbestilling", "item": "/system-for-lunsjbestilling" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/definitiv-guide-firmalunsj", "label": "Definitiv guide til firmalunsj" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/system-for-lunsjbestilling",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/kontakt": {
+    "path": "/kontakt",
+    "title": "Kontakt Lunchportalen | Firmalunsj for bedrifter",
+    "description": "Kontakt Lunchportalen for en trygg oppstart med firmalunsj og tydelige rammer.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.7,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Kontakt", "item": "/kontakt" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/priser", "label": "Priser for firmalunsj" }
+    ],
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  },
+  "/priser": {
+    "path": "/priser",
+    "title": "Priser for firmalunsj | Lunchportalen",
+    "description": "Prisnivå for firmalunsj med tydelige rammer og forutsigbar drift.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.7,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Priser", "item": "/priser" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" }
+    ],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  },
+  "/lunch-levering-bergen": {
+    "path": "/lunch-levering-bergen",
+    "title": "Lunsjordning i Bergen for bedrifter",
+    "description": "Lunsjordning i Bergen med tydelig modell, frist kl. 08:00 og mindre intern støy.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.82,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Lunsjordning i Bergen", "item": "/lunch-levering-bergen" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunsjordning-trondheim", "label": "Lunsjordning i Trondheim" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/priser", "label": "Priser for firmalunsj" }
+    ],
+    "faqKey": "/lunch-levering-bergen",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/hvordan": {
+    "path": "/hvordan",
+    "title": "Slik fungerer Lunchportalen for firmalunsj",
+    "description": "Se hvordan firmalunsj settes opp med klare rammer, frister og en trygg driftshverdag.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.85,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Slik fungerer det", "item": "/hvordan" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/definitiv-guide-firmalunsj", "label": "Definitiv guide til firmalunsj" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/hvordan",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/alternativ-til-kantine": {
+    "path": "/alternativ-til-kantine",
+    "title": "Alternativ til kantine for bedrifter",
+    "description": "Et alternativ til kantine med tydelige rammer og mindre administrasjon i hverdagen.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.84,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Alternativ til kantine", "item": "/alternativ-til-kantine" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/hva-er-lunsjordning", "label": "Hva er lunsjordning" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/priser", "label": "Priser for firmalunsj" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/alternativ-til-kantine",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/lunsj-levering-oslo": {
+    "path": "/lunsj-levering-oslo",
+    "title": "Lunsjordning i Oslo for bedrifter",
+    "description": "Lunsjordning i Oslo med tydelig oppsett, frist kl. 08:00 og stabil hverdag.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.82,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Lunsjordning i Oslo", "item": "/lunsj-levering-oslo" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/priser", "label": "Priser for firmalunsj" },
+      { "href": "/lunsjordning-trondheim", "label": "Lunsjordning i Trondheim" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/lunsj-levering-oslo",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/lunsjordning-trondheim": {
+    "path": "/lunsjordning-trondheim",
+    "title": "Lunsjordning i Trondheim for bedrifter",
+    "description": "Lunsjordning i Trondheim med forutsigbar leveranse og mindre administrasjon.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.82,
+    "changefreq": "weekly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Lunsjordning i Trondheim", "item": "/lunsjordning-trondheim" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/alternativ-til-kantine", "label": "Alternativ til kantine" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/priser", "label": "Priser for firmalunsj" },
+      { "href": "/lunsj-levering-oslo", "label": "Lunsjordning i Oslo" },
+      { "href": "/lunch-levering-bergen", "label": "Lunsjordning i Bergen" }
+    ],
+    "faqKey": "/lunsjordning-trondheim",
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/sikkerhet": {
+    "path": "/sikkerhet",
+    "title": "Sikkerhet og datagrunnmur | Lunchportalen",
+    "description": "Sikkerhet og datagrunnmur for firmalunsj med tydelige regler og stabil drift.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.6,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Sikkerhet", "item": "/sikkerhet" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" }
+    ],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  }
+}
+

@@ -1,4 +1,4 @@
-﻿// tests/tenant-isolation-driver.test.ts
+// tests/tenant-isolation-driver.test.ts
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
@@ -27,8 +27,8 @@ vi.mock("@/lib/http/routeGuard", async () => {
         scope: {
           userId: "u1",
           role: "driver",
-          companyId: null,
-          locationId: null,
+          companyId: "cA",
+          locationId: "l1",
           email: "driver.test@lunchportalen.no",
         },
       },
@@ -136,7 +136,7 @@ beforeEach(() => {
   adminConfig = {};
 });
 
-describe("tenant isolation – driver stops", () => {
+describe("tenant isolation � driver stops", () => {
   test("orders and confirmations are filtered by company_id", async () => {
     const req = mkReq("http://localhost/api/driver/stops?date=2026-02-02", { method: "GET" });
     const res = await driverStopsGET(req);
@@ -150,7 +150,7 @@ describe("tenant isolation – driver stops", () => {
   });
 });
 
-describe("driver isolation – confirm/csv/bulk-set", () => {
+describe("driver isolation � confirm/csv/bulk-set", () => {
   test("driver cannot mark other company stop", async () => {
     const req = mkReq("http://localhost/api/driver/confirm", {
       method: "POST",
@@ -199,4 +199,5 @@ describe("driver isolation – confirm/csv/bulk-set", () => {
     expect(res.status).toBe(403);
   });
 });
+
 

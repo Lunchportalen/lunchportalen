@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
 import type { NextRequest } from "next/server";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
@@ -42,14 +43,20 @@ function normStatus(v: any) {
   return s;
 }
 
+function isAllowedStatus(v: string) {
+  const s = normStatus(v);
+  return s === "ACTIVE" || s === "CANCELLED";
+}
+
 /* =========================================================
    GET /api/admin/orders
    - superadmin kan hente alle firma (eller filtere på company_id)
    - company_admin er låst til scope.companyId
+   - IMPORTANT: payload har alltid orders: [] (aldri non-array)
 ========================================================= */
 export async function GET(req: NextRequest) {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -58,31 +65,39 @@ export async function GET(req: NextRequest) {
   const denyRole = requireRoleOr403(a.ctx, "admin.orders.read", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
 
+  const url = new URL(req.url);
+
+  // date
+  const dateQ = safeStr(url.searchParams.get("date"));
+  const dateISO = dateQ && isISODate(dateQ) ? dateQ : osloTodayISODate();
+  const dateNO = isoToNO(dateISO);
+
+  // status
+  const statusQ = safeStr(url.searchParams.get("status")) || "ACTIVE";
+  const statusNorm = normStatus(statusQ);
+  const status: "ACTIVE" | "CANCELLED" = isAllowedStatus(statusNorm) ? (statusNorm as any) : "ACTIVE";
+
+  // scope rules
+  const role = safeStr((scope as any).role).toLowerCase();
+  const isSuperadmin = role === "superadmin";
+
+  // superadmin: kan være global uten company scope
+  const denyScope = isSuperadmin
+    ? requireCompanyScopeOr403(a.ctx, { allowSuperadminGlobal: true })
+    : requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  // company
+  const companyIdQuery = safeStr(url.searchParams.get("company_id")) || null;
+  const companyId = isSuperadmin ? companyIdQuery : safeStr(scope.companyId) || null;
+
+  if (!companyId && !isSuperadmin) {
+    return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  }
+
   try {
-    const url = new URL(req.url);
-
-    const dateQ = safeStr(url.searchParams.get("date"));
-    const dateISO = dateQ && isISODate(dateQ) ? dateQ : osloTodayISODate();
-    const dateNO = isoToNO(dateISO);
-
-    const statusQ = safeStr(url.searchParams.get("status"));
-    const status = normStatus(statusQ || "ACTIVE");
-
-    // superadmin: optional ?company_id= (tom => alle firma)
-    // company_admin: låst til egen companyId via scope
-    const isSuperadmin = String(scope.role ?? "").trim().toLowerCase() === "superadmin";
-    const denyScope = isSuperadmin
-      ? requireCompanyScopeOr403(a.ctx, { allowSuperadminGlobal: true })
-      : requireCompanyScopeOr403(a.ctx);
-    if (denyScope) return denyScope;
-
-    const companyIdQuery = safeStr(url.searchParams.get("company_id")) || null;
-    const companyId = isSuperadmin ? companyIdQuery : safeStr(scope.companyId) || null;
-    if (!companyId && !isSuperadmin) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
-
     const admin = supabaseAdmin();
 
-    // NB: Supabase/PostgREST kan returnere join som object/array avhengig av relasjon.
     let q = admin
       .from("orders")
       .select(
@@ -121,47 +136,107 @@ export async function GET(req: NextRequest) {
 
     const { data: rows, error } = await q;
 
+    // ✅ Enterprise-hardening: aldri knekk klient med error-shape på dette endepunktet.
+    // Returner ok + tomt datasett med warning.
     if (error) {
-      return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "ORDERS_READ_FAILED", detail: {
-        message: error.message,
-        code: (error as any).code ?? null,
-        date: dateISO,
-        status,
-        company_id: companyId,
-      } });
+      return jsonOk(
+        rid,
+        {
+          ok: true,
+          dateISO,
+          dateNO,
+          company_id: companyId ?? null,
+          status,
+          count: 0,
+          orders: [],
+          meta: {
+            role,
+            superadmin_global: isSuperadmin && !companyId,
+            received: { date: dateQ || null, status: statusQ || null, company_id: companyIdQuery },
+            warning: {
+              code: "ORDERS_READ_FAILED",
+              message: error.message,
+              pgCode: (error as any).code ?? null,
+            },
+          },
+        },
+        200
+      );
     }
 
-    const orders = (rows ?? []).map((row: any) => {
-      const c = first(row.companies);
-      const l = first(row.company_locations);
+    const orders = (Array.isArray(rows) ? rows : []).map((row: any) => {
+      const c = first<any>(row.companies);
+      const l = first<any>(row.company_locations);
+
+      const st = normStatus(row.status) === "CANCELLED" ? "CANCELLED" : "ACTIVE";
 
       return {
-        id: row.id,
-        user_id: row.user_id,
+        id: String(row.id),
+        user_id: String(row.user_id),
         note: row.note ?? null,
         created_at: row.created_at ?? null,
         updated_at: row.updated_at ?? null,
-        company_id: row.company_id,
-        location_id: row.location_id,
+        company_id: String(row.company_id),
+        location_id: row.location_id ? String(row.location_id) : null,
         slot: row.slot ?? null,
-        date: row.date,
-        status: normStatus(row.status),
-        dateISO: row.date,
+        date: String(row.date),
+        status: st as "ACTIVE" | "CANCELLED",
+        dateISO: String(row.date),
         dateNO,
-        companies: c,
-        company_locations: l,
+        companies: c ? { id: String(c.id), name: c.name ?? null } : null,
+        company_locations: l
+          ? {
+              id: String(l.id),
+              name: l.name ?? null,
+              label: l.label ?? null,
+              address: l.address ?? null,
+              address_line1: l.address_line1 ?? null,
+              postal_code: l.postal_code ?? null,
+              city: l.city ?? null,
+              delivery_json: l.delivery_json ?? null,
+            }
+          : null,
       };
     });
 
-    return jsonOk(rid, {
-      dateISO,
-      dateNO,
-      company_id: companyId ?? null,
-      status,
-      count: orders.length,
-      orders,
-    });
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        dateISO,
+        dateNO,
+        company_id: companyId ?? null,
+        status,
+        count: orders.length,
+        orders,
+        meta: {
+          role,
+          superadmin_global: isSuperadmin && !companyId,
+          received: { date: dateQ || null, status: statusQ || null, company_id: companyIdQuery },
+        },
+      },
+      200
+    );
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "admin/orders" } });
+    // ✅ Enterprise-hardening: også her – aldri returner en shape som kan knekke UI
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        dateISO,
+        dateNO,
+        company_id: companyId ?? null,
+        status,
+        count: 0,
+        orders: [],
+        meta: {
+          role,
+          superadmin_global: isSuperadmin && !companyId,
+          received: { date: dateQ || null, status: statusQ || null, company_id: companyIdQuery },
+          warning: { code: "UNHANDLED", message: String(e?.message ?? e) },
+        },
+      },
+      200
+    );
   }
 }

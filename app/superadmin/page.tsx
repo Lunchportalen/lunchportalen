@@ -1,7 +1,9 @@
-// app/superadmin/page.tsx
+﻿// app/superadmin/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+import "server-only";
 
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
@@ -10,9 +12,10 @@ import SuperadminClient from "./superadmin-client";
 import { normalizeSuperadminStats, nullSuperadminStats, type SuperadminStats } from "./types";
 import { supabaseServer } from "@/lib/supabase/server";
 import PageSection from "@/components/layout/PageSection";
-import { isSuperadminEmail } from "@/lib/system/emails";
+import BlockedAccess from "@/components/auth/BlockedAccess";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
 
-// ✅ Oslo single source of truth (for display in superadmin)
+// âœ… Oslo single source of truth (for display in superadmin)
 import {
   OSLO_TZ,
   osloNowParts,
@@ -23,7 +26,6 @@ import {
   isAfterCutoff0805,
 } from "@/lib/date/oslo";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 
 type CompanyRow = {
@@ -34,8 +36,6 @@ type CompanyRow = {
   created_at: string;
   updated_at: string;
 };
-
-type ProfileRow = { role: Role | null; disabled_at?: string | null };
 
 type SystemState = "NORMAL" | "DEGRADED";
 
@@ -59,7 +59,7 @@ function isCompanyStatus(x: any): x is CompanyStatus {
 
 function toCompanyStatus(v: any): CompanyStatus {
   const s = safeStr(v).toLowerCase();
-  return isCompanyStatus(s) ? (s as CompanyStatus) : "pending"; // 🔒 aldri "active" som fallback
+  return isCompanyStatus(s) ? (s as CompanyStatus) : "pending"; // ðŸ”’ aldri "active" som fallback
 }
 
 function buildStatsFromList(list: CompanyRow[]): SuperadminStats {
@@ -90,10 +90,6 @@ function computeSystemState(stats: SuperadminStats): SystemState {
   return paused + closed > 0 ? "DEGRADED" : "NORMAL";
 }
 
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
-
 /** Minimal, enterprise-grade error surface (no leaks) */
 function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
   return (
@@ -115,7 +111,7 @@ function ErrorSurface(props: { title?: string; message: string; detail?: string 
 }
 
 async function getOriginFromHeaders(): Promise<string> {
-  const h = await headers(); // ✅ din Next krever await her
+  const h = await headers(); // âœ… Next: may require await in your setup
   const proto = safeStr(h.get("x-forwarded-proto")) || "http";
   const host = safeStr(h.get("x-forwarded-host")) || safeStr(h.get("host"));
   return host ? `${proto}://${host}` : "http://localhost:3000";
@@ -197,55 +193,40 @@ export default async function SuperadminPage() {
   const supabase = await supabaseServer();
   const cookieStore = await cookies();
 
-  // ✅ Oslo time snapshot (server-side, no fetch, no refetch)
+  // âœ… Oslo time snapshot (server-side, no fetch, no refetch)
   const oslo = osloNowParts();
-  const systemTimeLine = `${osloTodayNODate()} · ${String(oslo.hh).padStart(2, "0")}:${String(oslo.mi).padStart(2, "0")}`;
-  const cutoffLine = isAfterCutoff0800() ? "Cutoff: LÅST (08:00)" : "Cutoff: ÅPEN (til 08:00)";
-  const cutoff0805Line = isAfterCutoff0805() ? "· 08:05: LÅST" : "· 08:05: ÅPEN";
+  const systemTimeLine = `${osloTodayNODate()} Â· ${String(oslo.hh).padStart(2, "0")}:${String(oslo.mi).padStart(
+    2,
+    "0"
+  )}`;
+  const cutoffLine = isAfterCutoff0800() ? "Cutoff: LÃ…ST (08:00)" : "Cutoff: Ã…PEN (til 08:00)";
+  const cutoff0805Line = isAfterCutoff0805() ? "Â· 08:05: LÃ…ST" : "Â· 08:05: Ã…PEN";
 
   // 1) Auth
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  const user = userRes?.user ?? null;
+  const auth = await getAuthContext();
 
-  if (userErr || !user) {
-    redirect("/login?next=/superadmin");
+  if (!auth.ok) {
+    if (auth.reason === "UNAUTHENTICATED") {
+      redirect("/login?next=/superadmin&code=NO_SESSION");
+    }
+    return <BlockedAccess reason={auth.reason} />;
   }
 
-  // 2) Hard gate (email først)
-  if (!isHardSuperadmin(user.email)) {
-    redirect("/login?next=/superadmin");
+  if (auth.role !== "superadmin") {
+    redirect("/login?next=/superadmin&code=ROLE_FORBIDDEN");
   }
 
-  // 3) Profile read (TS-safe: no generics on maybeSingle)
-  const { data: profile, error: pErr } = (await supabase
-    .from("profiles")
-    .select("role,disabled_at")
-    .eq("id", user.id)
-    .maybeSingle()) as { data: ProfileRow | null; error: any };
-
-  if (pErr) {
-    return <ErrorSurface message="Kunne ikke verifisere superadmin-profil." detail={safeStr(pErr.message)} />;
-  }
-
-  if (profile?.disabled_at) {
-    redirect("/login?next=/superadmin");
-  }
-
-  if (profile?.role && profile.role !== "superadmin") {
-    redirect("/login?next=/superadmin");
-  }
-
-  // 4) Companies (seed)
+  // 2) Companies (seed list)
   const { data: companies, error: cErr } = await supabase
     .from("companies")
     .select("id,name,orgnr,status,created_at,updated_at")
     .order("updated_at", { ascending: false });
 
   if (cErr) {
-    return <ErrorSurface message="Klarte ikke å hente firmalisten." detail={safeStr(cErr.message)} />;
+    return <ErrorSurface message="Klarte ikke Ã¥ hente firmalisten." detail={safeStr(cErr.message)} />;
   }
 
-  // 5) Normalize
+  // 4) Normalize
   const list: CompanyRow[] = (companies ?? [])
     .map((c: any) => {
       const id = safeStr(c.id);
@@ -262,7 +243,7 @@ export default async function SuperadminPage() {
     })
     .filter(Boolean) as CompanyRow[];
 
-  // 6) Stats + signals
+  // 5) Stats + signals
   const localStats = buildStatsFromList(list);
   const { stats: apiStats, degradedByFeed, degradedRid } = await fetchDashboardStats(serializeCookies(cookieStore));
   const stats = mergeStats(apiStats, localStats);
@@ -270,10 +251,10 @@ export default async function SuperadminPage() {
   const systemState: SystemState =
     degradedByFeed || stats.companiesActive === null ? "DEGRADED" : computeSystemState(stats);
 
-  // 7) Render
+  // 6) Render
   return (
     <>
-      {/* ✅ Oslo time / cutoff banner (server truth) */}
+      {/* âœ… Oslo time / cutoff banner (server truth) */}
       <div className="mx-auto w-full max-w-[1400px] px-4 pt-4">
         <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">
           <span className="font-semibold text-[rgb(var(--lp-fg))]">Systemtid (Oslo):</span>{" "}
@@ -281,8 +262,8 @@ export default async function SuperadminPage() {
           <span className="ml-2">{cutoffLine}</span>{" "}
           <span className="opacity-80">{cutoff0805Line}</span>
           <span className="ml-2 opacity-70">({OSLO_TZ})</span>
-          <span className="ml-3 opacity-60">· {osloNowISO()}</span>
-          <span className="ml-2 opacity-60">· i dag ISO: {osloTodayISODate()}</span>
+          <span className="ml-3 opacity-60">Â· {osloNowISO()}</span>
+          <span className="ml-2 opacity-60">Â· i dag ISO: {osloTodayISODate()}</span>
         </div>
       </div>
 
@@ -295,3 +276,5 @@ export default async function SuperadminPage() {
     </>
   );
 }
+
+

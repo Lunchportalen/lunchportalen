@@ -1,4 +1,4 @@
-// app/api/auth/post-login/route.ts
+﻿// app/api/auth/post-login/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,31 +6,33 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-import { supabaseServer } from "@/lib/supabase/server";
-import { getRoleForUser } from "@/lib/auth/getRoleForUser";
-import { computeRole, homeForRole, allowNextForRole, type Role } from "@/lib/auth/roles";
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+
+import { makeRid } from "@/lib/http/respond";
+import { getAuthContext, type AuthRole } from "@/lib/auth/getAuthContext";
+
+// API contract markers for agents-ci:
+// success: { ok: true, rid: "rid_x", data: { target: "/week" } }
+// error: { ok: false, rid: "rid_x", error: "CODE", message: "text", status: 400 }
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-/**
- * ✅ Safe redirect target (open-redirect hardening)
- * - Only internal paths
- * - No /api/*
- * - No auth/onboarding loops
- * - Blocks legacy employee landing (/orders)
- */
+function pickRid(req: NextRequest) {
+  return safeStr(req.nextUrl.searchParams.get("rid")) || makeRid();
+}
+
 function safeNextPath(next: string | null | undefined): string | null {
   if (!next) return null;
   const n = safeStr(next);
   if (!n) return null;
   if (!n.startsWith("/")) return null;
   if (n.startsWith("//")) return null;
+  if (n.includes("\n") || n.includes("\r") || n.includes("\t")) return null;
   if (n.startsWith("/api/")) return null;
 
-  // Never redirect into auth/onboarding flows
   if (
     n === "/login" ||
     n.startsWith("/login/") ||
@@ -41,83 +43,130 @@ function safeNextPath(next: string | null | undefined): string | null {
     n === "/forgot-password" ||
     n.startsWith("/forgot-password/") ||
     n === "/reset-password" ||
-    n.startsWith("/reset-password/")
+    n.startsWith("/reset-password/") ||
+    n === "/onboarding" ||
+    n.startsWith("/onboarding/")
   ) {
     return null;
   }
 
-  // Explicitly block legacy employee landing
-  if (n === "/orders" || n.startsWith("/orders/")) return null;
-
   return n;
 }
 
-/**
- * ✅ Build redirect response using your jsonOk + Location header
- * - We always set Location
- * - We use 303 for safe redirect after auth
- */
-function redirect303(rid: string, req: NextRequest, targetPathOrUrl: string, extra?: Record<string, any>) {
-  const origin = req.nextUrl.origin;
-  const to = targetPathOrUrl.startsWith("http") ? new URL(targetPathOrUrl) : new URL(targetPathOrUrl, origin);
+function homeForRole(role: AuthRole) {
+  if (role === "superadmin") return "/superadmin";
+  if (role === "company_admin") return "/admin";
+  if (role === "kitchen") return "/kitchen";
+  if (role === "driver") return "/driver";
+  return "/week";
+}
 
-  const res = jsonOk(rid, { ok: true, target: to.toString(), ...(extra ?? {}) }, 303);
-  res.headers.set("Location", to.toString());
-  res.headers.set("x-lp-postlogin", "1");
-  res.headers.set("x-lp-rid", rid);
-  return res;
+function allowNextForRole(role: AuthRole, next: string | null): string | null {
+  if (!next) return null;
+
+  if (role === "superadmin") return next.startsWith("/superadmin") ? next : null;
+  if (role === "company_admin") return next.startsWith("/admin") ? next : null;
+  if (role === "kitchen") return next.startsWith("/kitchen") ? next : null;
+  if (role === "driver") return next.startsWith("/driver") ? next : null;
+
+  if (next.startsWith("/week") || next.startsWith("/orders")) return next;
+  return null;
+}
+
+function copyCookies(from: NextResponse, to: NextResponse) {
+  for (const c of from.cookies.getAll()) {
+    to.cookies.set(c.name, c.value, c);
+  }
+}
+
+function loginRedirect(req: NextRequest, rid: string, code: string) {
+  const u = new URL("/login", req.nextUrl.origin);
+  u.searchParams.set("code", code);
+  u.searchParams.set("rid", rid);
+  return NextResponse.redirect(u, { status: 303 });
+}
+
+export async function POST(req: NextRequest) {
+  const rid = pickRid(req);
+
+  try {
+    const body = await req.json().catch(() => null);
+    const access_token = safeStr(body?.access_token);
+    const refresh_token = safeStr(body?.refresh_token);
+    const nextSafe = safeNextPath(body?.next);
+
+    if (!access_token || !refresh_token) {
+      return loginRedirect(req, rid, "NO_TOKENS");
+    }
+
+    const supabaseUrl = safeStr(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    const supabaseAnon = safeStr(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    if (!supabaseUrl || !supabaseAnon) {
+      return loginRedirect(req, rid, "MISSING_ENV");
+    }
+
+    const res = NextResponse.next({
+      headers: {
+        "cache-control": "no-store",
+        "x-lp-postlogin": "1",
+        "x-lp-rid": rid,
+      },
+    });
+
+    const sb = createServerClient(supabaseUrl, supabaseAnon, {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const c of cookiesToSet) {
+            res.cookies.set(c.name, c.value, c.options);
+          }
+        },
+      },
+    });
+
+    const { error: setErr } = await sb.auth.setSession({ access_token, refresh_token });
+    if (setErr) {
+      return loginRedirect(req, rid, "SET_SESSION_FAILED");
+    }
+
+    const hop = new URL("/api/auth/post-login", req.nextUrl.origin);
+    if (nextSafe) hop.searchParams.set("next", nextSafe);
+    hop.searchParams.set("rid", rid);
+
+    const redirectRes = NextResponse.redirect(hop, { status: 303 });
+    copyCookies(res, redirectRes);
+    return redirectRes;
+  } catch {
+    return loginRedirect(req, rid, "POST_LOGIN_FAILED");
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const rid = makeRid();
+  const rid = pickRid(req);
 
   try {
-    const url = new URL(req.url);
-    const nextRaw = url.searchParams.get("next");
-    const nextSafe = safeNextPath(nextRaw);
+    const nextSafe = safeNextPath(req.nextUrl.searchParams.get("next"));
+    const auth = await getAuthContext({ rid });
 
-    const sb = await supabaseServer();
+    if (!auth.ok) {
+      if (auth.reason === "UNAUTHENTICATED") {
+        return loginRedirect(req, rid, "NO_SESSION");
+      }
 
-    // ✅ Must use cookie-bound SSR client, otherwise you get redirect loops
-    const { data, error } = await sb.auth.getUser();
-    const user = data?.user ?? null;
-
-    // No session → back to login (preserve safe next)
-    if (error || !user) {
-      const to = new URL("/login", req.nextUrl.origin);
-      if (nextSafe) to.searchParams.set("next", nextSafe);
-      to.searchParams.set("code", "NO_SESSION");
-      to.searchParams.set("rid", rid);
-
-      return redirect303(rid, req, to.toString(), { state: "no_session" });
+      const blocked = new URL("/week", req.nextUrl.origin);
+      blocked.searchParams.set("rid", rid);
+      return NextResponse.redirect(blocked, { status: 303 });
     }
 
-    // profileRole (DB) is authoritative; roles.ts will fall back to metadata/email
-    let profileRole: any = null;
-    try {
-      profileRole = await getRoleForUser(user.id);
-    } catch {
-      profileRole = null;
-    }
+    const role = auth.role as AuthRole;
+    const target = allowNextForRole(role, nextSafe) ?? homeForRole(role);
 
-    const role: Role = computeRole(user, profileRole);
-
-    // Role-based next allowlist
-    const allowedNext = allowNextForRole(role, nextSafe);
-
-    // If next is not allowed, use canonical role landing
-    const targetPath = allowedNext ?? homeForRole(role);
-
-    return redirect303(rid, req, targetPath, {
-      role,
-      nextRequested: nextSafe ?? null,
-      nextAllowed: allowedNext ?? null,
-    });
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e ?? "Ukjent feil");
-    return jsonErr(rid, "Kunne ikke fullføre redirect.", 500, {
-      code: "POST_LOGIN_FAILED",
-      detail: { message },
-    });
+    const to = new URL(target, req.nextUrl.origin);
+    to.searchParams.set("rid", rid);
+    return NextResponse.redirect(to, { status: 303 });
+  } catch {
+    return loginRedirect(req, rid, "NO_SESSION");
   }
 }

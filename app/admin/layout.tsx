@@ -1,74 +1,31 @@
-// app/admin/layout.tsx
+﻿// app/admin/layout.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/server";
-import { systemRoleByEmail } from "@/lib/system/emails";
-import AppHeader from "@/components/AppHeader";
+
 import AdminFooter from "@/components/admin/AdminFooter";
 import NeonGuard from "@/components/admin/NeonGuard";
+import BlockedAccess from "@/components/auth/BlockedAccess";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { roleHome } from "@/lib/auth/roleHome";
 
-/* =========================
-   Helpers (låst)
-========================= */
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function roleByEmail(email: string | null | undefined): Role | null {
-  return systemRoleByEmail(email);
-}
-
-function normalizeRole(v: unknown): Role {
-  const s = safeStr(v).toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  return "employee";
-}
-
-/**
- * NO DB role pre-check:
- * - email hard role
- * - then app_metadata.role
- * - then user_metadata.role
- *
- * NOTE:
- * - For company_admin we still verify profile row exists (fail-closed).
- */
-function computeRoleNoDb(user: any): Role {
-  const emailRole = roleByEmail(user?.email);
-  if (emailRole) return emailRole;
-
-  const appRole = normalizeRole(user?.app_metadata?.role);
-  if (appRole !== "employee") return appRole;
-
-  const metaRole = normalizeRole(user?.user_metadata?.role);
-  return metaRole;
-}
-
-function homeForRole(role: Role) {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "company_admin") return "/admin";
-  if (role === "kitchen") return "/kitchen";
-  if (role === "driver") return "/driver";
-  return "/week";
-}
-
 function safeNextPath(next: string | null) {
-  const FALLBACK = "/admin";
-  if (!next) return FALLBACK;
-  if (!next.startsWith("/")) return FALLBACK;
-  if (next.startsWith("//")) return FALLBACK;
+  const fallback = "/admin";
+  if (!next) return fallback;
+  if (!next.startsWith("/")) return fallback;
+  if (next.startsWith("//")) return fallback;
 
-  // never loop focus flows from layout
   if (
     next === "/login" ||
     next.startsWith("/login/") ||
@@ -79,8 +36,9 @@ function safeNextPath(next: string | null) {
     next === "/reset-password" ||
     next.startsWith("/reset-password/")
   ) {
-    return FALLBACK;
+    return fallback;
   }
+
   return next;
 }
 
@@ -88,22 +46,22 @@ async function currentPathFromHeaders(fallback: string) {
   try {
     const h = await headers();
 
-    // best: middleware provides pathname
     const p = h.get("x-pathname");
     if (p) return safeNextPath(p);
 
-    // next-url sometimes includes query
     const nextUrl = h.get("next-url");
     if (nextUrl) {
       try {
-        if (nextUrl.startsWith("http")) return safeNextPath(new URL(nextUrl).pathname + new URL(nextUrl).search);
+        if (nextUrl.startsWith("http")) {
+          const u = new URL(nextUrl);
+          return safeNextPath(u.pathname + (u.search || ""));
+        }
         return safeNextPath(nextUrl);
       } catch {
         return safeNextPath(nextUrl.split("?")[0] || fallback);
       }
     }
 
-    // fallback variants
     const url = h.get("x-url") || h.get("x-forwarded-uri") || h.get("x-original-url") || "";
     if (url) {
       try {
@@ -114,7 +72,6 @@ async function currentPathFromHeaders(fallback: string) {
       }
     }
 
-    // last resort: referer
     const ref = h.get("referer");
     if (ref) {
       try {
@@ -125,102 +82,49 @@ async function currentPathFromHeaders(fallback: string) {
       }
     }
   } catch {
-    // ignore
+    return fallback;
   }
+
   return fallback;
 }
 
-/* =========================
-   Layout
-========================= */
-export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const sb = await supabaseServer();
-  const { data, error } = await sb.auth.getUser();
-  const user = data?.user ?? null;
-
-  // Ikke innlogget → login
-  if (error || !user) {
-    const next = encodeURIComponent(await currentPathFromHeaders("/admin"));
-    redirect(`/login?next=${next}`);
-  }
-
-  const roleNoDb = computeRoleNoDb(user);
-
-  // Kjøkken/driver skal aldri inn i admin
-  if (roleNoDb === "kitchen" || roleNoDb === "driver") {
-    redirect(homeForRole(roleNoDb));
-  }
-
-  const adminNav = [
-    { label: "Dashboard", href: "/admin" },
-    { label: "Avtale", href: "/admin/agreement" },
-    { label: "Ordre", href: "/admin/orders" },
-    { label: "Ansatte", href: "/admin/people" },
-  ];
-
-  /**
-   * ✅ Enterprise-safe:
-   * - superadmin: allow (no profile requirement here)
-   * - company_admin: must have active profile row (fail-closed)
-   * - others: redirect
-   */
-  if (roleNoDb === "superadmin") {
-    return (
-      <div className="lp-page">
-        <AppHeader areaLabel="Admin" nav={adminNav} />
-        <NeonGuard />
-        <main className="lp-main">
-          <div className="lp-container">{children}</div>
-        </main>
-        <AdminFooter />
-      </div>
-    );
-  }
-
-  if (roleNoDb !== "company_admin") {
-    redirect(homeForRole(roleNoDb));
-  }
-
-  // company_admin -> verify profile row exists and is active (server truth)
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role, disabled_at, is_active, company_id")
-    .eq("user_id", user.id)
-    .maybeSingle<{
-      role: string | null;
-      disabled_at: string | null;
-      is_active: boolean | null;
-      company_id: string | null;
-    }>();
-
-  // Fail-closed
-  if (pErr || !profile) {
-    const next = encodeURIComponent(await currentPathFromHeaders("/admin"));
-    redirect(`/login?next=${next}`);
-  }
-
-  if (profile.disabled_at) redirect(homeForRole("employee"));
-  if (profile.is_active === false) redirect(homeForRole("employee"));
-
-  // Ensure role really is company_admin on server truth
-  const role = normalizeRole(profile.role);
-  if (role !== "company_admin") {
-    redirect(homeForRole(role));
-  }
-
-  // Must have company_id to use admin (enterprise requirement)
-  if (!profile.company_id) {
-    redirect("/week");
-  }
-
+function shell(children: ReactNode) {
   return (
-    <div className="lp-page">
-      <AppHeader areaLabel="Admin" nav={adminNav} />
+    <div className="w-full">
       <NeonGuard />
-      <main className="lp-main">
-        <div className="lp-container">{children}</div>
-      </main>
+      <main className="w-full">{children}</main>
       <AdminFooter />
     </div>
   );
+}
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const auth = await getAuthContext();
+
+  if (!auth.ok) {
+    if (auth.reason === "UNAUTHENTICATED") {
+      const next = encodeURIComponent(await currentPathFromHeaders("/admin"));
+      redirect(`/login?next=${next}`);
+    }
+    return <BlockedAccess reason={auth.reason} />;
+  }
+
+  const role = safeStr(auth.role);
+  if (!role) {
+    return <BlockedAccess reason="BLOCKED" />;
+  }
+
+  if (role === "superadmin") {
+    return shell(children);
+  }
+
+  if (role !== "company_admin") {
+    redirect(roleHome(role));
+  }
+
+  if (!auth.company_id) {
+    return <BlockedAccess reason="BLOCKED" />;
+  }
+
+  return shell(children);
 }

@@ -1,4 +1,4 @@
-﻿// tests/kitchen-print.test.ts
+// tests/kitchen-print.test.ts
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
@@ -28,8 +28,8 @@ vi.mock("@/lib/http/routeGuard", async () => {
         scope: {
           userId: "u1",
           role: mockRole,
-          companyId: null,
-          locationId: null,
+          companyId: "cA",
+          locationId: "l1",
           email: "superadmin.test@lunchportalen.no",
         },
       },
@@ -162,7 +162,7 @@ beforeEach(() => {
     kitchen_batch: [{ id: "b1", delivery_date: "2026-02-02", delivery_window: SLOT, company_location_id: LOCATION_ID, status: "PACKED", packed_at: "t", delivered_at: null }],
     orders: [
       { id: "o1", slot: SLOT, location_id: LOCATION_ID, company_id: COMPANY_ID, user_id: "u1", date: "2026-02-02", status: "ACTIVE", integrity_status: "ok", created_at: "2026-02-02T07:00:00Z", note: null },
-      { id: "o2", slot: SLOT, location_id: LOCATION_ID, company_id: COMPANY_ID, user_id: "u2", date: "2026-02-02", status: "ACTIVE", integrity_status: "ok", created_at: "2026-02-02T07:05:00Z", note: "uten nøtter" },
+      { id: "o2", slot: SLOT, location_id: LOCATION_ID, company_id: COMPANY_ID, user_id: "u2", date: "2026-02-02", status: "ACTIVE", integrity_status: "ok", created_at: "2026-02-02T07:05:00Z", note: "uten n�tter" },
     ],
     profiles: [
       { user_id: "u1", full_name: "Ansatt 1", department: "Salg", company_id: COMPANY_ID },
@@ -173,7 +173,7 @@ beforeEach(() => {
 });
 
 describe("kitchen-print cron", () => {
-  test("print f�r 08:05 -> avvist", async () => {
+  test("print f?r 08:05 -> avvist", async () => {
     mockCutoff = "TODAY_OPEN";
     const req = mkReq(`http://localhost/api/cron/kitchen-print?date=2026-02-02&slot=${SLOT}&location_id=${LOCATION_ID}`, {
       method: "GET",
@@ -247,4 +247,5 @@ describe("kitchen-print cron", () => {
     expect(res.status).toBe(403);
   });
 });
+
 

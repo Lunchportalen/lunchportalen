@@ -1,127 +1,64 @@
-// app/superadmin/firms/[companyId]/actions.ts
 "use server";
+import "server-only";
 
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
+export type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING";
 
-function isCompanyStatus(v: any): v is CompanyStatus {
-  return v === "ACTIVE" || v === "PAUSED" || v === "CLOSED";
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
 }
 
-function severityFor(status: CompanyStatus) {
-  if (status === "CLOSED") return "critical";
-  if (status === "PAUSED") return "warning";
-  return "info";
+function normalizeStatus(v: unknown): CompanyStatus {
+  const s = safeStr(v).toUpperCase();
+  if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED" || s === "PENDING") return s;
+  return "PENDING";
 }
 
-export async function setCompanyStatus(companyId: string, nextStatus: CompanyStatus) {
-  if (!companyId) throw new Error("companyId mangler");
-  if (!isCompanyStatus(nextStatus)) throw new Error("Ugyldig status");
+/**
+ * setCompanyStatus
+ * - Superadmin action: oppdaterer companies.status
+ * - Returnerer standard jsonOk/jsonErr med rid
+ *
+ * NB: RLS/rolle-sjekk håndteres av eksisterende supabaseServer() + policies.
+ */
+export async function setCompanyStatus(companyId: string, status: CompanyStatus) {
+  const rid = makeRid();
 
-  const supabase = await supabaseServer();
-
-  // ✅ actor (auth)
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) throw new Error("Ikke innlogget");
-
-  const actor_user_id = user.id;
-  const actor_email = user.email ?? null;
-
-  // ✅ enterprise: hent rolle fra profiles (kilde til sannhet)
-  const prof = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", actor_user_id) // ✅ FASIT: profiles PK er user_id
-    .single();
-
-  if (prof.error) throw new Error(prof.error.message);
-
-  const actor_role = String(prof.data?.role ?? "");
-  if (actor_role !== "superadmin") {
-    throw new Error("Mangler tilgang (superadmin kreves)");
+  const company_id = safeStr(companyId);
+  if (!company_id) {
+    return jsonErr(rid, "Ugyldig companyId.", 400, { code: "BAD_COMPANY_ID" });
   }
 
-  // ✅ hent nåværende firma (status + navn)
-  const cur = await supabase
-    .from("companies")
-    .select("id,name,status")
-    .eq("id", companyId)
-    .single();
+  const nextStatus = normalizeStatus(status);
 
-  if (cur.error) throw new Error(cur.error.message);
+  try {
+    const sb = await supabaseServer();
 
-  const companyName = cur.data?.name ?? "Ukjent firma";
-  const currentStatus = cur.data?.status as CompanyStatus | undefined;
-  if (!currentStatus) throw new Error("Mangler status på firma");
+    const { data, error } = await sb
+      .from("companies")
+      .update({ status: nextStatus })
+      .eq("id", company_id)
+      .select("id,status")
+      .maybeSingle();
 
-  // ✅ idempotens: samme status -> ingen audit
-  if (currentStatus === nextStatus) {
-    return { ok: true as const, changed: false as const, status: currentStatus };
-  }
-
-  // ✅ status-update (kjernehandling) – returner oppdatert row
-  const upd = await supabase
-    .from("companies")
-    .update({ status: nextStatus })
-    .eq("id", companyId)
-    .select("id,status")
-    .single();
-
-  if (upd.error) throw new Error(upd.error.message);
-
-  // ✅ audit_log insert
-  const before = { status: currentStatus };
-  const after = { status: nextStatus };
-
-  const auditPayload = {
-    actor_user_id,
-    actor_role,
-    actor_email,
-    action: "company.status_changed",
-    severity: severityFor(nextStatus),
-
-    company_id: companyId,
-    target_type: "company",
-    target_id: companyId, // text i din tabell
-    target_label: companyName,
-
-    before,
-    after,
-
-    meta: {
-      source: "superadmin_ui",
-      ui: "CompanyStatusControls",
-    },
-  };
-
-  // Enterprise valg:
-  // A) Hard fail hvis audit feiler (streng compliance)
-  // B) Best effort (status endres uansett, men vi logger error)
-  const HARD_FAIL_ON_AUDIT = true;
-
-  const ins = await supabase.from("audit_log").insert(auditPayload);
-
-  if (ins.error) {
-    if (HARD_FAIL_ON_AUDIT) {
-      // Rollback-strategi: prøv å sette status tilbake (best effort),
-      // siden vi ikke har transaksjon her.
-      await supabase.from("companies").update({ status: currentStatus }).eq("id", companyId);
-      throw new Error(`Audit feilet, endringen ble rullet tilbake: ${ins.error.message}`);
-    } else {
-      console.error("[audit_log insert failed]", ins.error.message, auditPayload);
+    if (error) {
+      return jsonErr(rid, "Kunne ikke oppdatere firmastatus.", 500, {
+        code: "COMPANY_STATUS_UPDATE_FAILED",
+        detail: { message: String((error as any)?.message ?? error) },
+      });
     }
-  }
 
-  return {
-    ok: true as const,
-    changed: true as const,
-    from: currentStatus,
-    to: nextStatus,
-    status: upd.data?.status ?? nextStatus,
-  };
+    if (!data?.id) {
+      return jsonErr(rid, "Firma ikke funnet.", 404, { code: "COMPANY_NOT_FOUND" });
+    }
+
+    return jsonOk(rid, { ok: true, rid, company: data }, 200);
+  } catch (e: any) {
+    return jsonErr(rid, "Uventet feil.", 500, {
+      code: "COMPANY_STATUS_EXCEPTION",
+      detail: { message: String(e?.message ?? e) },
+    });
+  }
 }

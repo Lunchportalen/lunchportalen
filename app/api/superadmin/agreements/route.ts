@@ -1,231 +1,170 @@
-// app/api/superadmin/agreements/route.ts
-
-
-export const runtime = "nodejs";
+﻿export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest } from "next/server";
-import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
-import {
-  type AgreementStatus,
-  type Tier,
-  normalizeStatus,
-  normalizeTier,
-  isUuid,
-  intOr,
-  isoDateOrToday,
-  safeText,
-  isISODate,
-} from "@/lib/agreements/normalize";
+import "server-only";
+
+import type { NextRequest } from "next/server";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
-import { writeAuditEvent } from "@/lib/audit/write";
-import { opsLog } from "@/lib/ops/log";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { isIsoDate } from "@/lib/date/oslo";
 
-function asISODateOrNull(v: any) {
-  const s = safeText(v);
-  if (!s) return null;
-  return isISODate(s) ? s : null;
-}
-
-type CreateBody = {
-  company_id: string;
-  plan_tier: Tier;
-  status?: AgreementStatus; // default DRAFT
-  price_per_cuvert_nok?: number;
-  delivery_days?: any;
-  binding_months?: number;
-  notice_months?: number;
-  start_date?: string; // YYYY-MM-DD
-  end_date?: string | null; // YYYY-MM-DD | null
-  notes?: string | null;
+type CreateAgreementBody = {
+  company_id?: unknown;
+  location_id?: unknown;
+  tier?: unknown;
+  delivery_days?: unknown;
+  starts_at?: unknown;
+  slot_start?: unknown;
+  slot_end?: unknown;
+  binding_months?: unknown;
+  notice_months?: unknown;
+  price_per_employee?: unknown;
 };
 
-function clampNonNegInt(v: any, fallback: number) {
-  const n = intOr(v, fallback);
-  return Math.max(0, n);
+type CreateRpcOut = {
+  agreement_id?: unknown;
+  company_id?: unknown;
+  status?: unknown;
+} | null;
+
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function isUuid(v: unknown) {
+  const s = safeStr(v);
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(s);
+}
+
+function normalizeTier(v: unknown): "BASIS" | "LUXUS" | null {
+  const s = safeStr(v).toUpperCase();
+  if (s === "BASIS" || s === "LUXUS") return s;
+  return null;
+}
+
+function isHHMM(v: unknown) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(safeStr(v));
+}
+
+function asInt(v: unknown, fallback: number) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : fallback;
+}
+
+function asPrice(v: unknown) {
+  const n = Number(String(v ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function mapRpcError(messageRaw: unknown) {
+  const m = safeStr(messageRaw).toUpperCase();
+
+  if (m.includes("COMPANY_NOT_FOUND")) {
+    return { status: 404, code: "COMPANY_NOT_FOUND", message: "Fant ikke firma." };
+  }
+  if (m.includes("LOCATION_REQUIRED")) {
+    return { status: 409, code: "LOCATION_REQUIRED", message: "Firmaet mangler lokasjon." };
+  }
+  if (m.includes("LOCATION_INVALID")) {
+    return { status: 409, code: "LOCATION_INVALID", message: "Lokasjon er ikke gyldig for firmaet." };
+  }
+  if (
+    m.includes("TIER_INVALID") ||
+    m.includes("STARTS_AT_REQUIRED") ||
+    m.includes("SLOT_RANGE_INVALID") ||
+    m.includes("BINDING_MONTHS_INVALID") ||
+    m.includes("NOTICE_MONTHS_INVALID") ||
+    m.includes("PRICE_PER_EMPLOYEE_INVALID") ||
+    m.includes("DELIVERY_DAYS_INVALID") ||
+    m.includes("DELIVERY_DAYS_REQUIRED")
+  ) {
+    return { status: 400, code: "BAD_INPUT", message: "Ugyldige avtaleverdier." };
+  }
+
+  return { status: 500, code: "AGREEMENT_CREATE_FAILED", message: "Kunne ikke opprette avtale." };
 }
 
 export async function POST(req: NextRequest) {
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const rid = makeRid();
+  const g = await scopeOr401(req);
+  if (g.ok === false) return g.response;
+
+  const deny = requireRoleOr403(g.ctx, "superadmin.agreements.create", ["superadmin"]);
+  if (deny) return deny;
+
+  const rid = g.ctx.rid;
 
   try {
-    const scope = await getScope(req);
-    allowSuperadminOrCompanyAdmin(scope);
+    const body = (await readJson(req)) as CreateAgreementBody;
 
-    // ✅ Hard rule
-    if (scope.role !== "superadmin") {
-      return jsonErr(rid, "Kun superadmin kan opprette avtale.", 403, "FORBIDDEN");
-    }
+    const companyId = safeStr(body.company_id);
+    const locationId = safeStr(body.location_id) || null;
+    const tier = normalizeTier(body.tier);
+    const startsAt = safeStr(body.starts_at);
+    const slotStart = safeStr(body.slot_start);
+    const slotEnd = safeStr(body.slot_end);
+    const bindingMonths = asInt(body.binding_months, 12);
+    const noticeMonths = asInt(body.notice_months, 3);
+    const pricePerEmployee = asPrice(body.price_per_employee);
 
-    const body = (await req.json().catch(() => null)) as Partial<CreateBody> | null;
-    if (!body) return jsonErr(rid, "Mangler JSON body.", 400, "BAD_REQUEST");
-
-    const company_id = String(body.company_id ?? "").trim();
-    if (!isUuid(company_id)) return jsonErr(rid, "Ugyldig company_id.", 400, "BAD_REQUEST");
-
-    const plan_tier: Tier = normalizeTier(body.plan_tier);
-    const status: AgreementStatus = normalizeStatus(body.status ?? "DRAFT");
-
-    // Pris: default 90/130 hvis ikke sendt, men må alltid være > 0
-    const defaultPrice = plan_tier === "LUXUS" ? 130 : 90;
-    const price_per_cuvert_nok =
-      Number.isFinite(Number(body.price_per_cuvert_nok)) ? intOr(body.price_per_cuvert_nok, defaultPrice) : defaultPrice;
-
-    if (!Number.isFinite(price_per_cuvert_nok) || price_per_cuvert_nok <= 0) {
-      return jsonErr(rid, "price_per_cuvert_nok må være > 0.", 400, "BAD_REQUEST");
+    if (!isUuid(companyId)) return jsonErr(rid, "Ugyldig firma.", 400, "BAD_INPUT");
+    if (locationId && !isUuid(locationId)) return jsonErr(rid, "Ugyldig lokasjon.", 400, "BAD_INPUT");
+    if (!tier) return jsonErr(rid, "Ugyldig avtalenivå.", 400, "BAD_INPUT");
+    if (!startsAt || !isIsoDate(startsAt)) return jsonErr(rid, "Ugyldig startdato.", 400, "BAD_INPUT");
+    if (!isHHMM(slotStart) || !isHHMM(slotEnd)) return jsonErr(rid, "Ugyldig leveringsvindu.", 400, "BAD_INPUT");
+    if (!Number.isFinite(pricePerEmployee) || pricePerEmployee <= 0) {
+      return jsonErr(rid, "Pris per ansatt må være større enn 0.", 400, "BAD_INPUT");
     }
 
     const deliveryNorm = normalizeDeliveryDaysStrict(body.delivery_days);
-    if (deliveryNorm.unknown.length || deliveryNorm.days.length === 0) {
-      opsLog("agreement.delivery_days.warning", {
-        rid,
-        company_id,
-        agreement_id: null,
-        unknown: deliveryNorm.unknown,
-        days: deliveryNorm.days,
-        raw: deliveryNorm.raw ?? null,
-      });
-      return jsonErr(rid, "Ugyldige leveringsdager.", 400, { code: "BAD_REQUEST", detail: {
-        unknown: deliveryNorm.unknown,
-        days: deliveryNorm.days,
-      } });
+    if (deliveryNorm.days.length === 0 || deliveryNorm.unknown.length > 0) {
+      return jsonErr(rid, "Ugyldige leveringsdager.", 400, "BAD_INPUT");
     }
-    const delivery_days = deliveryNorm.days;
-    const binding_months = clampNonNegInt(body.binding_months, 12);
-    const notice_months = clampNonNegInt(body.notice_months, 3);
-    const start_date = isoDateOrToday(body.start_date);
-
-    const end_date_raw = body.end_date ?? null;
-    const end_date = end_date_raw === null ? null : asISODateOrNull(end_date_raw);
-    if (end_date_raw != null && end_date == null) {
-      return jsonErr(rid, "end_date må være YYYY-MM-DD eller null.", 400, "BAD_REQUEST");
-    }
-
-    // (valgfritt) sanity: end_date kan ikke være før start_date
-    if (end_date && isISODate(start_date) && end_date < start_date) {
-      return jsonErr(rid, "end_date kan ikke være før start_date.", 400, { code: "BAD_REQUEST", detail: { start_date, end_date } });
-    }
-
-    const notes = safeText(body.notes) ?? null;
 
     const admin = supabaseAdmin();
-
-    // Sikre at company finnes (bedre feilmelding enn FK)
-    const company = await admin.from("companies").select("id, name, status").eq("id", company_id).maybeSingle();
-    if (company.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
-    if (!company.data?.id) return jsonErr(rid, "Fant ikke firma.", 404, "NOT_FOUND");
-
-    // Snapshot: eksisterende ACTIVE før vi evt pauser (for audit)
-    const beforeActive = await admin
-      .from("company_agreements")
-      .select("id, status, plan_tier, price_per_cuvert_nok, delivery_days, start_date, end_date, notes, updated_at")
-      .eq("company_id", company_id)
-      .eq("status", "ACTIVE");
-
-    if (beforeActive.error) return jsonErr(rid, "Kunne ikke lese eksisterende ACTIVE.", 500, { code: "AGREEMENT_READ_FAILED", detail: beforeActive.error });
-
-    // Hvis status=ACTIVE: pause eksisterende ACTIVE først (kontrollert)
-    let pausedActiveIds: string[] = [];
-    if (status === "ACTIVE") {
-      const pause = await admin
-        .from("company_agreements")
-        .update({ status: "PAUSED", updated_at: new Date().toISOString(), updated_by: scope.user_id ?? null } as any)
-        .eq("company_id", company_id)
-        .eq("status", "ACTIVE")
-        .select("id");
-
-      if (pause.error) return jsonErr(rid, "Kunne ikke pause eksisterende ACTIVE.", 500, { code: "PAUSE_ACTIVE_FAILED", detail: pause.error });
-      pausedActiveIds = (pause.data ?? []).map((r: any) => String(r.id));
-    }
-
-    // Opprett ny avtale
-    const ins = await admin
-      .from("company_agreements")
-      .insert({
-        company_id,
-        status,
-        plan_tier,
-        price_per_cuvert_nok,
-        delivery_days,
-        binding_months,
-        notice_months,
-        start_date,
-        end_date,
-        notes,
-        created_by: scope.user_id ?? null,
-        updated_by: scope.user_id ?? null,
-      } as any)
-      .select(
-        "id, company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, end_date, notes, created_at, updated_at"
-      )
-      .single();
-
-    if (ins.error) {
-      return jsonErr(rid, "Kunne ikke opprette avtale.", 500, { code: "INSERT_FAILED", detail: ins.error });
-    }
-
-    // Hvis avtalen er ACTIVE: (valgfritt men anbefalt) hold companies.status i sync
-    // (ikke kritisk hvis dere allerede har annen mekanikk)
-    if (status === "ACTIVE" || status === "PAUSED" || status === "CLOSED") {
-      const nextCompanyStatus = status === "ACTIVE" ? "ACTIVE" : status === "PAUSED" ? "PAUSED" : "CLOSED";
-      await admin.from("companies").update({ status: nextCompanyStatus, updated_at: new Date().toISOString() } as any).eq("id", company_id);
-    }
-
-    // Audit (best-effort)
-    const audit = await writeAuditEvent({
-      scope,
-      action: "agreement.create",
-      entity_type: "company_agreement",
-      entity_id: String((ins.data as any)?.id),
-      summary: `Opprettet avtale (${status}) for ${company.data?.name ?? "company"} (${company_id})`,
-      detail: {
-        rid,
-        company_id,
-        company_name: company.data?.name ?? null,
-        created: ins.data,
-        paused_previous_active_ids: pausedActiveIds,
-        before_active: beforeActive.data ?? [],
-        request: {
-          plan_tier,
-          status,
-          price_per_cuvert_nok,
-          delivery_days,
-          binding_months,
-          notice_months,
-          start_date,
-          end_date,
-          notes,
-        },
-      },
+    const { data, error } = await admin.rpc("lp_agreement_create_pending", {
+      p_company_id: companyId,
+      p_location_id: locationId,
+      p_tier: tier,
+      p_delivery_days: deliveryNorm.days,
+      p_slot_start: slotStart,
+      p_slot_end: slotEnd,
+      p_starts_at: startsAt,
+      p_binding_months: bindingMonths,
+      p_notice_months: noticeMonths,
+      p_price_per_employee: pricePerEmployee,
     });
 
-    return jsonOk(rid, {
-      agreement: ins.data,
-      audit_ok: (audit as any)?.ok === true,
-      audit_event: (audit as any)?.ok ? (audit as any).audit : null,
-      audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
-    }, 200);
-  } catch (e: any) {
-    const status = typeof e?.status === "number" ? e.status : 500;
-    const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
-    return jsonErr(rid, String(e?.message ?? e), status, code);
+    if (error) {
+      const mapped = mapRpcError(error.message);
+      return jsonErr(rid, mapped.message, mapped.status, mapped.code);
+    }
+
+    const out = (data ?? null) as CreateRpcOut;
+    const agreementId = safeStr(out?.agreement_id);
+    const status = safeStr(out?.status).toUpperCase() || "PENDING";
+
+    if (!agreementId) {
+      return jsonErr(rid, "Kunne ikke opprette avtale.", 500, "AGREEMENT_CREATE_BAD_RESPONSE");
+    }
+
+    return jsonOk(
+      rid,
+      {
+        agreementId,
+        status,
+        message: "Avtale opprettet som Venter.",
+      },
+      200
+    );
+  } catch {
+    return jsonErr(rid, "Kunne ikke opprette avtale.", 500, "AGREEMENT_CREATE_UNEXPECTED");
   }
 }
 
 export async function GET(req: NextRequest) {
-  const rid = makeRid();
-  return jsonErr(rid, "Bruk POST for å opprette avtale.", 405, "METHOD_NOT_ALLOWED");
-}
-
-export async function PUT(req: NextRequest) {
-  const rid = makeRid();
-  return jsonErr(rid, "Bruk POST for å opprette avtale.", 405, "METHOD_NOT_ALLOWED");
-}
-
-export async function DELETE(req: NextRequest) {
-  const rid = makeRid();
-  return jsonErr(rid, "Bruk POST for å opprette avtale.", 405, "METHOD_NOT_ALLOWED");
+  const rid = req.headers.get("x-rid") || "rid_missing";
+  return jsonErr(rid, "Bruk POST.", 405, "METHOD_NOT_ALLOWED");
 }

@@ -7,9 +7,8 @@ import { type NextRequest } from "next/server";
 import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { requireRule } from "@/lib/agreement/requireRule";
 import { immutabilityStatusForDate } from "@/lib/orders/immutability";
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
-import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
-import { cutoffStatusForDate, osloNowISO } from "@/lib/date/oslo";
+import { cutoffStatusForDate } from "@/lib/date/oslo";
+import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Response helpers (fasit)
@@ -52,7 +51,7 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 type ToggleBody = {
-  // ✅ Idempotent: klienten sender ønsket slutt-tilstand
+  // Ã¢Å“â€¦ Idempotent: klienten sender ÃƒÂ¸nsket slutt-tilstand
   wantsLunch?: boolean;
   // (valgfritt) hvis dere vil tillate note her
   note?: string | null;
@@ -112,7 +111,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     const body = (await readJson(req)) as ToggleBody;
     if (typeof body.wantsLunch !== "boolean") {
-      return jsonErr(r, "Mangler wantsLunch (boolean). Send ønsket slutt-tilstand (idempotent).", 400, { code: "bad_request", detail: { received: body } });
+      return jsonErr(r, "Mangler wantsLunch (boolean). Send ÃƒÂ¸nsket slutt-tilstand (idempotent).", 400, { code: "bad_request", detail: { received: body } });
     }
 
     const desiredStatus = body.wantsLunch ? "ACTIVE" : "CANCELLED";
@@ -138,12 +137,12 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
 
     const role = profile.role ?? null;
     if (role !== "employee" && role !== "company_admin") {
-      return jsonErr(r, "Ingen tilgang til å endre bestillinger med denne rollen.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Ingen tilgang til ÃƒÂ¥ endre bestillinger med denne rollen.", 403, { code: "forbidden", detail: { role } });
     }
 
     const companyId = String(profile.company_id ?? "").trim();
     if (!companyId) {
-      return jsonErr(r, "Mangler company_id på profil.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Mangler company_id pÃƒÂ¥ profil.", 403, { code: "forbidden", detail: { role } });
     }
 
     // -----------------------------
@@ -197,7 +196,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       return jsonErr(r, "Datoen er passert og kan ikke endres.", 403, "DATE_LOCKED_PAST");
     }
     if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(r, "Endringer er låst etter kl. 08:00 i dag.", 403, "LOCKED_AFTER_0800");
+      return jsonErr(r, "Endringer er lÃƒÂ¥st etter kl. 08:00 i dag.", 403, "LOCKED_AFTER_0800");
     }
 
     const imm = immutabilityStatusForDate(existing.date);
@@ -205,7 +204,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       const msg =
         imm.lockCode === "DATE_LOCKED_PAST"
           ? "Datoen er passert og kan ikke endres."
-          : "Endringer er låst etter kl. 08:05 i dag.";
+          : "Endringer er lÃƒÂ¥st etter kl. 08:05 i dag.";
       return jsonErr(r, msg, 423, imm.lockCode ?? "LOCKED");
     }
 
@@ -246,47 +245,27 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       });
     }
 
+    const rpcRes = desiredStatus === "ACTIVE"
+      ? await lpOrderSet(sb as any, { p_date: existing.date, p_slot: slotVal, p_note: nextNote ?? null })
+      : await lpOrderCancel(sb as any, { p_date: existing.date });
+
+    if (!rpcRes.ok) {
+      return jsonErr(r, "Kunne ikke oppdatere ordre.", 500, {
+        code: rpcRes.code ?? "ORDER_RPC_FAILED",
+        detail: { upErr: rpcRes.error?.message ?? "rpc_failed" },
+      });
+    }
+
     const { data: updated, error: upErr } = await sb
       .from("orders")
-      .update({ status: desiredStatus, note: nextNote })
+      .select("id,date,status,note,updated_at")
       .eq("id", existing.id)
       .eq("company_id", companyId)
       .eq("user_id", auth.user.id)
-      .select("id,date,status,note,updated_at")
       .maybeSingle<{ id: string; date: string; status: string | null; note: string | null; updated_at: string | null }>();
 
-    if (upErr) {
-      return jsonErr(r, "Kunne ikke oppdatere ordre.", 500, { code: "db_error", detail: { upErr: upErr.message } });
-    }
-    if (!updated) {
+    if (upErr || !updated) {
       return jsonErr(r, "Ordre kunne ikke oppdateres (race/tilgang).", 409, "conflict");
-    }
-
-    const backupTs = osloNowISO();
-    const locId = String(existing.location_id ?? profile.location_id ?? "").trim();
-    try {
-      if (!locId) throw new Error("missing_location");
-      const names = await fetchCompanyLocationNames({ admin, companyId, locationId: locId });
-      await sendOrderBackup({
-        rid: r,
-        action: desiredStatus === "ACTIVE" ? "PLACE" : "CANCEL",
-        status: desiredStatus,
-        orderId: updated.id,
-        date: updated.date,
-        slot: existing.slot ?? null,
-        user_id: auth.user.id,
-        company_id: companyId,
-        location_id: locId,
-        company_name: names.company_name ?? null,
-        location_name: names.location_name ?? null,
-        actor_email: null,
-        actor_role: profile.role ?? null,
-        note: updated.note ?? null,
-        timestamp_oslo: backupTs,
-        extra: { route: "/api/orders/[orderId]/toggle" },
-      });
-    } catch {
-      // best effort
     }
 
     return jsonOk(r, {
@@ -303,3 +282,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     return jsonErr(r, "Uventet feil i toggle.", 500, { code: "unexpected", detail: { message: e?.message ?? String(e) } });
   }
 }
+
+
+
+

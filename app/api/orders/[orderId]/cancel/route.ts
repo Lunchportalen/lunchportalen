@@ -7,10 +7,9 @@ import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { requireRule } from "@/lib/agreement/requireRule";
 
-import { osloNowISO, osloTodayISODate } from "@/lib/date/oslo";
+import { osloTodayISODate } from "@/lib/date/oslo";
 import { assertBeforeCutoffForDeliveryDate } from "@/lib/cutoff";
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
-import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
+import { lpOrderCancel } from "@/lib/orders/rpcWrite";
 
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -33,7 +32,7 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   }
 }
 
-// ✅ Konsistent logging + kontekst
+// Ã¢Å“â€¦ Konsistent logging + kontekst
 function logApiError(scope: string, err: any, extra?: Record<string, any>) {
   try {
     console.error(`[${scope}]`, err?.message || err, { ...extra, err });
@@ -74,7 +73,7 @@ type OrderRow = {
    PATCH: /api/orders/[orderId]/cancel
    - Idempotent: hvis allerede kansellert -> ok, changed:false
    - Eierskap: kun egen ordre
-   - Firma gate: company må være active
+   - Firma gate: company mÃƒÂ¥ vÃƒÂ¦re active
    - Cutoff: assertBeforeCutoffForDeliveryDate
 ========================================================= */
 
@@ -121,12 +120,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
 
     const role = profile.role ?? null;
     if (role !== "employee" && role !== "company_admin") {
-      return jsonErr(r, "Ingen tilgang til å avbestille med denne rollen.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Ingen tilgang til ÃƒÂ¥ avbestille med denne rollen.", 403, { code: "forbidden", detail: { role } });
     }
 
     const companyId = String(profile.company_id ?? "").trim();
     if (!companyId) {
-      return jsonErr(r, "Mangler company_id på profil.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Mangler company_id pÃƒÂ¥ profil.", 403, { code: "forbidden", detail: { role } });
     }
 
     // -----------------------------
@@ -168,7 +167,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       return jsonErr(r, "Ordre ikke funnet.", 404, { code: "not_found", detail: { orderId } });
     }
 
-    // ✅ Firmasjekk (ordre må tilhøre samme firma som profilen)
+    // Ã¢Å“â€¦ Firmasjekk (ordre mÃƒÂ¥ tilhÃƒÂ¸re samme firma som profilen)
     if (String(order.company_id ?? "") !== companyId) {
       return jsonErr(r, "Du har ikke tilgang til denne ordren.", 403, { code: "forbidden", detail: {
         orderCompanyId: order.company_id,
@@ -176,7 +175,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       } });
     }
 
-    // ✅ Eier-sjekk (ansatt/admin kan kun avbestille egen ordre)
+    // Ã¢Å“â€¦ Eier-sjekk (ansatt/admin kan kun avbestille egen ordre)
     if (order.user_id !== auth.user.id) {
       return jsonErr(r, "Du kan kun avbestille egen ordre.", 403, { code: "forbidden", detail: { orderUserId: order.user_id } });
     }
@@ -202,7 +201,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
 
     // -----------------------------
     // Idempotens: allerede kansellert
-    // (støtter både ny og legacy status)
+    // (stÃƒÂ¸tter bÃƒÂ¥de ny og legacy status)
     // -----------------------------
     const curr = String(order.status ?? "").toUpperCase();
     const isCancelled = curr === "CANCELLED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED"; // safe
@@ -227,49 +226,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
     // Cancel = UPDATE status (ikke DELETE)
     // Fasit: ACTIVE/CANCELLED
     // -----------------------------
-    const { data: updated, error: uErr } = await sb
+    const cancelRes = await lpOrderCancel(sb as any, { p_date: order.date });
+    if (!cancelRes.ok) {
+      logApiError("PATCH /api/orders/[id]/cancel rpc failed", cancelRes.error, { rid: r, orderId, date: order.date });
+      return jsonErr(r, "Kunne ikke avbestille ordre.", 500, {
+        code: cancelRes.code ?? "ORDER_RPC_FAILED",
+        detail: { uErr: cancelRes.error?.message ?? "rpc_failed" },
+      });
+    }
+
+    const { data: updated, error: readErr } = await sb
       .from("orders")
-      .update({ status: "CANCELLED" })
+      .select("id,date,status,updated_at")
       .eq("id", order.id)
       .eq("company_id", companyId)
       .eq("user_id", auth.user.id)
-      .select("id,date,status,updated_at")
       .maybeSingle<{ id: string; date: string; status: string | null; updated_at: string | null }>();
 
-    if (uErr) {
-      logApiError("PATCH /api/orders/[id]/cancel update failed", uErr, { rid: r, orderId, date: order.date });
-      return jsonErr(r, "Kunne ikke avbestille ordre.", 500, { code: "db_error", detail: { uErr: uErr.message } });
-    }
-    if (!updated) {
-      return jsonErr(r, "Ordre kunne ikke oppdateres (race/tilgang).", 409, "conflict");
-    }
-
-    const backupTs = osloNowISO();
-    try {
-      const locId = String(order.location_id ?? "").trim();
-      if (locId) {
-        const names = await fetchCompanyLocationNames({ admin, companyId, locationId: locId });
-        await sendOrderBackup({
-          rid: r,
-          action: "CANCEL",
-          status: "CANCELLED",
-          orderId: updated.id,
-          date: updated.date,
-          slot: order.slot ?? null,
-          user_id: auth.user.id,
-          company_id: companyId,
-          location_id: locId,
-          company_name: names.company_name ?? null,
-          location_name: names.location_name ?? null,
-          actor_email: null,
-          actor_role: profile.role ?? null,
-          note: null,
-          timestamp_oslo: backupTs,
-          extra: { route: "/api/orders/[orderId]/cancel" },
-        });
-      }
-    } catch {
-      // best effort
+    if (readErr || !updated) {
+      return jsonErr(r, "Ordre kunne ikke leses etter avbestilling.", 409, "conflict");
     }
 
     return jsonOk(r, {
@@ -285,7 +260,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       },
     }, 200);
   } catch (err: any) {
-    // 🎯 Cutoff-feil (forretningsregel)
+    // Ã°Å¸Å½Â¯ Cutoff-feil (forretningsregel)
     if (err?.code === "CUTOFF") {
       return jsonErr(r, err.message, 409, { code: "LOCKED_AFTER_0800", detail: {
         date: osloTodayISODate(),
@@ -297,3 +272,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
     return jsonErr(r, err?.message || String(err), 500, { code: "server_error", detail: { orderId: params?.orderId } });
   }
 }
+
+
+
+

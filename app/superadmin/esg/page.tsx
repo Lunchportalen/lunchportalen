@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import SuperadminEsgBenchmarkClient from "./SuperadminEsgBenchmarkClient";
+import LatestMonthlyCompanyList from "./LatestMonthlyCompanyList";
 
 export default async function SuperadminEsgPage() {
   return (
@@ -21,6 +22,10 @@ export default async function SuperadminEsgPage() {
           ESG-oversikt lastes under. Hvis datafeil oppstÃ¥r, vises feilmelding i listen.
         </div>
       </section>
+
+      <div className="mt-6">
+        <LatestMonthlyCompanyList />
+      </div>
 
       <div className="mt-6">
         <SuperadminEsgBenchmarkClient />

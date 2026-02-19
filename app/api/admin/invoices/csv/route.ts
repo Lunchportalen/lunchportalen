@@ -80,6 +80,56 @@ function summarizeAgreementRow(row: AgreementRow | null) {
   };
 }
 
+const CSV_HEADER = [
+  "company_id",
+  "company_name",
+  "from",
+  "to_exclusive",
+  "date",
+  "location_id",
+  "location_name",
+  "slot",
+  "plan_tier",
+  "qty",
+  "unit_price_nok",
+  "amount_nok",
+] as const;
+
+function buildFilename(companyId: string, from: string, to: string) {
+  return `invoice_lines_${companyId}_${from}_to_${to}.csv`;
+}
+
+/**
+ * Always-OK CSV response for "no data / not ready / unsupported" situations.
+ * This eliminates 409 noise for CSV downloads and keeps clients simple.
+ */
+function emptyCsvResponse(opts: {
+  rid: string;
+  filename: string;
+  reason: string;
+  detail?: any;
+}) {
+  const headers: Record<string, string> = {
+    ...noStoreHeaders(),
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": `attachment; filename="${opts.filename}"`,
+    "x-lp-rid": opts.rid,
+    "x-lp-empty-reason": opts.reason,
+  };
+
+  // Optional: add compact, safe diagnostic detail (kept short to avoid huge headers)
+  if (opts.detail !== undefined) {
+    try {
+      const raw = JSON.stringify(opts.detail);
+      headers["x-lp-empty-detail"] = encodeURIComponent(raw).slice(0, 1500);
+    } catch {
+      // ignore
+    }
+  }
+
+  return new Response(CSV_HEADER.join(",") + "\n", { status: 200, headers });
+}
+
 /**
  * ✅ Definitive agreement lookup:
  * - Use agreements table ONLY (direct truth)
@@ -100,7 +150,12 @@ async function loadAgreementRow(admin: any, companyId: string) {
       return { ok: false as const, src: "agreements" as const, error: a.error, data: null };
     }
 
-    return { ok: true as const, src: "agreements" as const, error: null, data: (a?.data ?? null) as AgreementRow | null };
+    return {
+      ok: true as const,
+      src: "agreements" as const,
+      error: null,
+      data: (a?.data ?? null) as AgreementRow | null,
+    };
   } catch (e: any) {
     return { ok: false as const, src: "agreements" as const, error: e, data: null };
   }
@@ -138,6 +193,8 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Ugyldig periode.", 400, { code: "BAD_RANGE", detail: { from, to } });
   }
 
+  const filename = buildFilename(companyId, from, to);
+
   try {
     const admin = supabaseAdmin();
     const companyLocationId = safeStr((scope as any).locationId) || null;
@@ -150,7 +207,7 @@ export async function GET(req: NextRequest) {
       .eq("status", "ACTIVE");
 
     const diag = {
-      buildTag: "CSV_ROUTE_DIAG_V2",
+      buildTag: "CSV_ROUTE_DIAG_V3_ALWAYS200_EMPTY",
       rid,
       ts: ts || null,
       scope: { companyId, locationId: companyLocationId, role: (scope as any).role ?? null },
@@ -190,20 +247,35 @@ export async function GET(req: NextRequest) {
     if (ag.ok === false) {
       return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "DB_ERROR", detail: asErrDetail(ag.error) });
     }
-    if (!ag.data) return jsonErr(rid, "Ingen avtale funnet for firma.", 404, "NO_AGREEMENT");
+
+    // ✅ CSV should not error when agreement is missing: return empty CSV
+    if (!ag.data) {
+      return emptyCsvResponse({
+        rid,
+        filename,
+        reason: "NO_AGREEMENT",
+        detail: { companyId, range: { from, to } },
+      });
+    }
 
     const agreementRes = normalizeAgreement(ag.data as AgreementRow);
+
+    // ✅ CSV should not error when agreement invalid: return empty CSV
     if (isAgreementInvalid(agreementRes)) {
-      return jsonErr(rid, "Avtalen er ugyldig eller mangler ukesplan.", 409, {
-        code: "AGREEMENT_INVALID",
+      return emptyCsvResponse({
+        rid,
+        filename,
+        reason: "AGREEMENT_INVALID",
         detail: {
           normalized_error: (agreementRes as any).error,
           normalized_message: (agreementRes as any).message,
           normalized_detail: (agreementRes as any).detail ?? null,
           received_agreement: summarizeAgreementRow(ag.data),
+          range: { from, to },
         },
       });
     }
+
     const agreement: AgreementNormalized = agreementRes as AgreementNormalized;
 
     // Locations map (company_locations)
@@ -237,17 +309,17 @@ export async function GET(req: NextRequest) {
       if (!dateISO) continue;
 
       let tierRaw: any = null;
+
       try {
         tierRaw = resolveTierForDate(agreement, dateISO);
-      } catch (e: any) {
-        return jsonErr(rid, "Helg støttes ikke i fakturagrunnlag (Man–Fre).", 409, {
-          code: "WEEKEND_NOT_SUPPORTED",
-          detail: { date: dateISO, message: safeStr(e?.message ?? e) },
-        });
+      } catch {
+        // ✅ Weekend/unsupported dates should not fail CSV export. We simply ignore them.
+        continue;
       }
 
       const tier = asPlanTier(tierRaw);
       if (!tier) {
+        // This is a true data/config error: keep as 500.
         return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, {
           code: "BAD_TIER",
           detail: { date: dateISO, tier: tierRaw },
@@ -262,6 +334,20 @@ export async function GET(req: NextRequest) {
       const cur = buckets.get(key);
       if (cur) cur.qty += 1;
       else buckets.set(key, { date: dateISO, location_id, slot, tier, unit, qty: 1 });
+    }
+
+    // ✅ No invoice lines => return empty CSV (still 200)
+    if (buckets.size === 0) {
+      return emptyCsvResponse({
+        rid,
+        filename,
+        reason: "NO_LINES",
+        detail: {
+          companyId,
+          range: { from, to },
+          ordersActiveCount: (oRes.data ?? []).length,
+        },
+      });
     }
 
     const lines: InvoiceLine[] = Array.from(buckets.values())
@@ -281,23 +367,8 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    const header = [
-      "company_id",
-      "company_name",
-      "from",
-      "to_exclusive",
-      "date",
-      "location_id",
-      "location_name",
-      "slot",
-      "plan_tier",
-      "qty",
-      "unit_price_nok",
-      "amount_nok",
-    ];
-
     const rows: string[] = [];
-    rows.push(header.join(","));
+    rows.push(CSV_HEADER.join(","));
     for (const r of lines) {
       rows.push(
         csvLine([
@@ -317,18 +388,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const filename = `invoice_lines_${companyId}_${from}_to_${to}.csv`;
-    const contentType = "text/csv; charset=utf-8";
-    const contentDisposition = `attachment; filename="${filename}"`;
-
     const headers = {
       ...noStoreHeaders(),
-      "content-type": contentType,
-      "content-disposition": contentDisposition,
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="${filename}"`,
       "x-lp-rid": rid,
     } as Record<string, string>;
 
-    return new Response(rows.join("\n"), { status: 200, headers });
+    return new Response(rows.join("\n") + "\n", { status: 200, headers });
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");

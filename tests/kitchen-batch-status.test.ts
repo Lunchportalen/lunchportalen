@@ -29,8 +29,8 @@ vi.mock("@/lib/http/routeGuard", async () => {
         scope: {
           userId: "u1",
           role: mockRole,
-          companyId: null,
-          locationId: null,
+          companyId: "cA",
+          locationId: "l1",
           email: "kitchen@lunchportalen.no",
         },
       },
@@ -219,3 +219,4 @@ describe("kitchen batch/status", () => {
     expect(res.status).toBe(409);
   });
 });
+

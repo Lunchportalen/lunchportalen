@@ -3,14 +3,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 
 /**
  * ✅ FASIT
- * - companies.status er ENESTE sannhetskilde (lowercase): pending|active|paused|closed
- * - CLOSED skjules som default (include_closed=1 for å vise)
+ * - companies.status er ENESTE sannhetskilde (enum): PENDING|ACTIVE|PAUSED|CLOSED
+ * - CLOSED skjules som default (include_closed=1 / includeClosed=1 for å vise)
  * - Superadmin-only
  */
 
@@ -21,13 +23,24 @@ function denyResponse(s: any): Response {
   return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
-const ALLOWED = new Set(["pending", "active", "paused", "closed"] as const);
+type CompanyStatusEnum = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
 type CompanyStatus = "pending" | "active" | "paused" | "closed";
 
-function normStatus(v: any): CompanyStatus | null {
-  const s = String(v ?? "").trim().toLowerCase();
-  if (!ALLOWED.has(s as any)) return null;
-  return s as CompanyStatus;
+function normalizeCompanyStatus(raw: string | null): CompanyStatusEnum | null {
+  const s = safeStr(raw).toUpperCase();
+  if (s === "PENDING") return "PENDING";
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PAUSED") return "PAUSED";
+  if (s === "CLOSED") return "CLOSED";
+  return null;
+}
+
+function toClientCompanyStatus(raw: unknown): CompanyStatus {
+  const s = normalizeCompanyStatus(raw == null ? null : String(raw));
+  if (s === "ACTIVE") return "active";
+  if (s === "PAUSED") return "paused";
+  if (s === "CLOSED") return "closed";
+  return "pending";
 }
 
 function safeText(v: any, max = 200) {
@@ -81,7 +94,7 @@ function isMissingColumn(err: any) {
 
 function isMissingRelation(err: any) {
   const msg = errMessage(err).toLowerCase();
-  return err?.code === "42P01" || msg.includes("does not exist") || msg.includes("relation");
+  return err?.code === "42p01" || msg.includes("does not exist") || msg.includes("relation");
 }
 
 function computePlanLabel(planTier: any, deliveryDays: any) {
@@ -96,15 +109,24 @@ async function bestEffortAudit(admin: any, row: any) {
   try {
     await admin.from("audit_events").insert(row);
   } catch {
-    // best effort
+    // best effort only
   }
 }
 
 /**
  * GET /api/superadmin/companies
+ *
+ * Query:
+ * - q
+ * - status=pending|active|paused|closed|all (case-insensitive)
+ * - include_closed=1 (or includeClosed=1)
+ * - page, limit (10/25/50/100)
+ * - sort=created_at|updated_at|name|status|orgnr
+ * - dir=asc|desc
  */
 export async function GET(req: NextRequest): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -116,18 +138,17 @@ export async function GET(req: NextRequest): Promise<Response> {
     const url = new URL(req.url);
 
     const q = safeText(url.searchParams.get("q"), 80) ?? "";
-    const statusRaw = safeStr(url.searchParams.get("status") ?? "");
-    const status = statusRaw && statusRaw !== "all" ? normStatus(statusRaw) : null;
+    const statusRaw = url.searchParams.get("status");
+    const statusRawSafe = safeStr(statusRaw);
+    const hasStatusFilter = statusRawSafe.length > 0 && statusRawSafe.toLowerCase() !== "all";
+    const statusEnum = hasStatusFilter ? normalizeCompanyStatus(statusRaw) : null;
+
+    if (hasStatusFilter && !statusEnum) {
+      return jsonErr(ctx.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: { status: statusRaw } });
+    }
 
     // ✅ accept both include_closed and includeClosed
-    const includeClosed =
-      pickBool(req, "includeClosed", false) ||
-      pickBool(req, "include_closed", false);
-
-    const archived =
-      pickBool(req, "archived", false) ||
-      safeStr(url.searchParams.get("tab")).toLowerCase() === "archived" ||
-      safeStr(url.searchParams.get("view")).toLowerCase() === "archived";
+    const includeClosed = pickBool(req, "includeClosed", false) || pickBool(req, "include_closed", false);
 
     const page = clamp(asInt(url.searchParams.get("page"), 1) || 1, 1, 1_000_000);
     const limit = normalizeLimit(url.searchParams.get("limit"), 25);
@@ -136,7 +157,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     const sortRaw = String(url.searchParams.get("sort") ?? "updated_at").trim().toLowerCase();
     const dirRaw = String(url.searchParams.get("dir") ?? "desc").trim().toLowerCase();
-    const allowedSorts = ["created_at", "updated_at", "name", "status", "orgnr", "deleted_at"] as const;
+    const allowedSorts = ["created_at", "updated_at", "name", "status", "orgnr"] as const;
     const sort: (typeof allowedSorts)[number] = (allowedSorts as readonly string[]).includes(sortRaw)
       ? (sortRaw as (typeof allowedSorts)[number])
       : "updated_at";
@@ -144,54 +165,36 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     const admin = supabaseAdmin();
 
-    const selectFull = "id,name,orgnr,status,created_at,updated_at,deleted_at";
-    const selectFallback = "id,name,orgnr,status,created_at,deleted_at";
+    // Production columns are fixed for companies table.
+    const selectCols = "id,name,orgnr,status,created_at,updated_at";
 
-    const buildQuery = (selectCols: string, sortCol: string) => {
+    const buildQuery = (sortCol: string) => {
       let query = admin
         .from("companies")
         .select(selectCols, { count: "exact" })
         .order(sortCol, { ascending: dir === "asc" })
         .range(from, to);
 
-      if (archived) {
-        query = query.not("deleted_at", "is", null);
-      } else {
-        query = query.is("deleted_at", null);
-      }
-
-      if (!archived && !includeClosed) query = query.neq("status", "closed");
-      if (status) query = query.eq("status", status);
+      // closed hidden by default
+      if (!includeClosed) query = query.neq("status", "CLOSED");
+      if (statusEnum) query = query.eq("status", statusEnum);
 
       if (q) {
         const esc = q.replace(/%/g, "\\%").replace(/_/g, "\\_");
         const like = `%${esc}%`;
 
-        if (isUuid(q)) {
-          query = query.or(`id.eq.${q},name.ilike.${like},orgnr.ilike.${like}`);
-        } else {
-          query = query.or(`name.ilike.${like},orgnr.ilike.${like}`);
-        }
+        if (isUuid(q)) query = query.or(`id.eq.${q},name.ilike.${like},orgnr.ilike.${like}`);
+        else query = query.or(`name.ilike.${like},orgnr.ilike.${like}`);
       }
 
       return query;
     };
 
-    let data: any[] | null | undefined;
-    let error: any;
-    let count: number | null | undefined;
-
-    ({ data, error, count } = await buildQuery(selectFull, sort));
-
-    // fallback if missing updated_at
-    if (error && isMissingColumn(error)) {
-      const fallbackSort = sort === "updated_at" ? "created_at" : sort;
-      ({ data, error, count } = await buildQuery(selectFallback, fallbackSort));
-    }
+    const { data, error, count } = await buildQuery(sort);
 
     if (error) {
       console.error("SUPABASE companies query failed", error);
-      return jsonErr(ctx.rid, error.message, 500, "DB_ERROR");
+      return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
     }
 
     const companies = (data ?? []) as Array<{
@@ -201,29 +204,27 @@ export async function GET(req: NextRequest): Promise<Response> {
       status: CompanyStatus | string;
       created_at: string;
       updated_at?: string | null;
-      deleted_at?: string | null;
     }>;
 
-    const total = count ?? companies.length;
+    const total = typeof count === "number" ? count : companies.length;
     const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
     const ids = companies.map((c) => c.id).filter(Boolean);
 
     /* ---------------------------------------------------------
        2) Counts (profiles)
-       profiles schema hos deg: id,user_id,email,role,is_active,company_id,location_id
+       profiles schema: id,user_id,email,role,company_id,location_id
     --------------------------------------------------------- */
     const countsByCompany = new Map<string, { employeesCount: number; adminsCount: number }>();
 
     if (ids.length) {
       const { data: profData, error: profError } = await admin
         .from("profiles")
-        .select("company_id, role, is_active")
-        .in("company_id", ids)
-        .eq("is_active", true);
+        .select("company_id, role")
+        .in("company_id", ids);
 
       if (profError) {
         console.error("SUPABASE profiles query failed", profError);
-        return jsonErr(ctx.rid, profError.message, 500, "DB_ERROR");
+        return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
       }
 
       for (const row of (profData ?? []) as any[]) {
@@ -234,7 +235,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         const cur = countsByCompany.get(cid) ?? { employeesCount: 0, adminsCount: 0 };
 
         if (role === "company_admin") cur.adminsCount += 1;
-        else cur.employeesCount += 1; // default -> employee
+        else cur.employeesCount += 1;
 
         countsByCompany.set(cid, cur);
       }
@@ -242,7 +243,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     /* ---------------------------------------------------------
        3) Agreement snapshot (best-effort)
-       If relation/view missing => ignore, never block list
+       - Optional view/table: company_current_agreement
+       - Never blocks list if missing
     --------------------------------------------------------- */
     const agreementByCompany = new Map<string, any>();
 
@@ -267,16 +269,15 @@ export async function GET(req: NextRequest): Promise<Response> {
           if (!cur || rank(r) > rank(cur)) agreementByCompany.set(cid, r);
         }
       } else {
-        // only fail hard if it's a real DB error (not missing view/column)
         if (!isMissingRelation(agrError) && !isMissingColumn(agrError)) {
-          console.error("SUPABASE companies agreement query failed", agrError);
-          return jsonErr(ctx.rid, agrError.message, 500, "DB_ERROR");
+          console.error("SUPABASE agreement snapshot query failed", agrError);
+          return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
         }
       }
     }
 
     const items = companies.map((c) => {
-      const st = normStatus(c.status) ?? "pending";
+      const st = toClientCompanyStatus(c.status);
       const counts = countsByCompany.get(c.id) ?? { employeesCount: 0, adminsCount: 0 };
       const agr = agreementByCompany.get(c.id) ?? null;
       const planLabel = computePlanLabel(agr?.plan_tier ?? null, agr?.delivery_days ?? null);
@@ -286,12 +287,12 @@ export async function GET(req: NextRequest): Promise<Response> {
         name: c.name,
         orgnr: c.orgnr ?? null,
         status: st,
-        planLabel: planLabel ?? "—",
+        planLabel: planLabel ?? null,
         employeesCount: counts.employeesCount,
         adminsCount: counts.adminsCount,
         createdAt: c.created_at ?? null,
-        updatedAt: c.updated_at ?? null,
-        archivedAt: c.deleted_at ?? null,
+        updatedAt: (c as any).updated_at ?? null,
+        archivedAt: null,
       };
     });
 
@@ -310,11 +311,11 @@ export async function GET(req: NextRequest): Promise<Response> {
         },
         filters: {
           q: q || null,
-          status: status || "all",
+          status: statusEnum ? statusEnum.toLowerCase() : null,
           includeClosed,
-          archived,
           sort,
           dir,
+          view: includeClosed ? "all" : "active",
         },
       },
       200
@@ -334,6 +335,7 @@ export async function GET(req: NextRequest): Promise<Response> {
  */
 export async function POST(req: NextRequest): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -346,9 +348,11 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     const name = safeText(body?.name, 120);
     const orgnr = safeText(body?.orgnr, 40);
-    const status = normStatus(body?.status) ?? "pending";
+    const statusRaw = body?.status == null ? null : safeStr(body?.status);
+    const status = statusRaw ? normalizeCompanyStatus(statusRaw) : "PENDING";
 
     if (!name) return jsonErr(ctx.rid, "Mangler name.", 400, "BAD_REQUEST");
+    if (!status) return jsonErr(ctx.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: { status: statusRaw } });
 
     const admin = supabaseAdmin();
 
@@ -359,7 +363,10 @@ export async function POST(req: NextRequest): Promise<Response> {
       .single();
 
     if (insError || !insData) {
-      return jsonErr(ctx.rid, insError?.message ?? "Ukjent feil.", 500, { code: "DB_ERROR", detail: insError });
+      return jsonErr(ctx.rid, insError?.message ?? "Ukjent feil.", 500, {
+        code: "DB_ERROR",
+        detail: insError,
+      });
     }
 
     await bestEffortAudit(admin, {

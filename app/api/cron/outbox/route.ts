@@ -5,53 +5,66 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
-import { noStoreHeaders } from "@/lib/http/noStore";
+import { requireCronAuth } from "@/lib/http/cronAuth";
+import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 
-function safeStr(v: any) {
-  return String(v ?? "").trim();
+function clampInt(v: unknown, min: number, max: number, fallback: number) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(n)));
 }
 
-/**
- * CRON endpoint (uten auth/cookies).
- * Krever header: x-cron-secret: <CRON_SECRET>
- */
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 
-  const secret = safeStr(process.env.CRON_SECRET);
-  if (!secret) {
-    // jsonErr-signaturen deres: jsonErr(rid, message, status?, error?)
-    // Her bruker vi ctx-like { rid } for å matche resten av prosjektet.
-    return jsonErr(rid, "CRON_SECRET er ikke satt i environment.", 400, "cron_secret_missing");
-  }
+  try {
+    requireCronAuth(req);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const code = String(e?.code ?? "").trim();
 
-  const got = safeStr(req.headers.get("x-cron-secret"));
-  if (!got || got !== secret) {
-    return jsonErr(rid, "Ugyldig eller manglende x-cron-secret.", 400, "cron_forbidden");
+    if (msg === "cron_secret_missing" || code === "cron_secret_missing") {
+      return jsonErr(rid, "CRON_SECRET er ikke satt i environment.", 500, "misconfigured");
+    }
+    if (msg === "forbidden" || code === "forbidden") {
+      return jsonErr(rid, "Ugyldig eller manglende cron secret.", 403, "forbidden");
+    }
+    return jsonErr(rid, "Uventet feil i cron-gate.", 500, { code: "server_error", detail: { message: msg } });
   }
 
   try {
-    const batchSize = 25;
-    const res = await processOutboxBatch(batchSize);
+    const batchSize = clampInt(process.env.OUTBOX_BATCH_SIZE, 1, 200, 25);
+    const timeBudgetMs = clampInt(process.env.OUTBOX_TIME_BUDGET_MS, 500, 60000, 20000);
+    const staleMinutes = clampInt(process.env.OUTBOX_STALE_MINUTES, 1, 120, 10);
 
-    // Sikre no-store selv om jsonOk allerede gjør det hos dere (belt & suspenders)
-    const body = { ...(res ?? {}), ok: true, rid, batchSize };
-    return new Response(JSON.stringify(body), {
-      status: 200,
-      headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8", "x-lp-rid": rid },
+    const result = await processOutboxBatch(batchSize, {
+      rid,
+      worker: `cron-outbox:${rid}`,
+      staleMinutes,
+      timeBudgetMs,
     });
-  } catch (e: any) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        rid,
-        error: "outbox_failed",
-        message: "Outbox processing feilet.",
-        detail: { message: String(e?.message ?? e) },
-      }),
-      { status: 500, headers: { ...noStoreHeaders(), "content-type": "application/json; charset=utf-8", "x-lp-rid": rid } }
+
+    return jsonOk(
+      rid,
+      {
+        batchSize,
+        timeBudgetMs,
+        staleMinutes,
+        processed: result.processed,
+        sent: result.sent,
+        failed: result.failed,
+        failedPermanent: result.failedPermanent,
+        timedOut: result.timedOut,
+        resetStale: result.resetStale,
+        maxAttempts: result.maxAttempts,
+      },
+      200
     );
+  } catch (e: any) {
+    return jsonErr(rid, "Outbox processing feilet.", 500, {
+      code: "outbox_failed",
+      detail: { message: String(e?.message ?? e) },
+    });
   }
 }

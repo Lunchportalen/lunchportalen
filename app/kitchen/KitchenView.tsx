@@ -1,280 +1,310 @@
-﻿// app/kitchen/KitchenView.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { isAfterCutoff0800 } from "@/lib/kitchen/cutoff";
+import React from "react";
 
-type KitchenOrder = {
-  id: string;
-  full_name: string;
+type Mode = "day" | "week";
+
+type Totals = {
+  basis: number;
+  luxus: number;
+  total: number;
+};
+
+type Employee = {
+  user_id: string;
+  name: string;
   department: string | null;
   note: string | null;
 };
 
-type KitchenGroup = {
-  delivery_date: string;
-  delivery_window: string;
-  company: string;
-  location: string;
-  company_id: string;
-  location_id: string;
-  orders: KitchenOrder[];
-};
-
 type LocationGroup = {
-  locationId: string;
-  location: string;
-  orders: KitchenOrder[];
-  total: number;
+  location_id: string;
+  location_name: string;
+  employees: Employee[];
 };
 
 type CompanyGroup = {
-  companyId: string;
-  company: string;
+  company_id: string;
+  company_name: string;
   locations: LocationGroup[];
-  total: number;
 };
 
-type WindowGroup = {
-  window: string;
+type SlotGroup = {
+  slot: string;
+  totals: Totals;
   companies: CompanyGroup[];
-  total: number;
 };
 
-type KitchenFetch = {
-  rid: string;
-  groups: KitchenGroup[];
+type DayGroup = {
+  date: string;
+  totals: Totals;
+  slots: SlotGroup[];
 };
 
-const OSLO_TZ = "Europe/Oslo";
+type Report = {
+  mode: Mode;
+  date: string;
+  period: { weekStart: string; weekEnd: string };
+  totals: Totals;
+  days: DayGroup[];
+  excluded: Array<{
+    order_id: string;
+    company_id: string;
+    location_id: string;
+    date: string;
+    reason: "MISSING_ACTIVE_AGREEMENT" | "INVALID_TIER";
+  }>;
+};
 
-function safeJsonParse<T>(txt: string): T | null {
-  try {
-    return JSON.parse(txt) as T;
-  } catch {
-    return null;
-  }
+function safeStr(v: unknown): string {
+  return String(v ?? "").trim();
 }
 
-function isISODate(d: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
+function todayIso(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
-function fmtOsloYMDNow() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: OSLO_TZ }).format(new Date());
+function mondayIso(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const diff = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - diff);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function fmtOsloHMNow() {
-  try {
-    return new Intl.DateTimeFormat("nb-NO", {
-      timeZone: OSLO_TZ,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date());
-  } catch {
-    return "";
-  }
+function isIsoDate(v: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
-function formatDateForLocale(iso: string) {
-  if (!iso || !isISODate(iso)) return iso;
-  const loc = typeof navigator !== "undefined" && navigator.language ? navigator.language.toLowerCase() : "en";
-  if (loc.startsWith("nb-no") || loc.startsWith("nn-no")) {
-    const [y, m, d] = iso.split("-");
-    return `${d}.${m}.${y}`;
-  }
-  return iso;
-}
-
-function buildGroups(rows: KitchenGroup[] | null): WindowGroup[] {
-  if (!rows || rows.length === 0) return [];
-
-  const windows: WindowGroup[] = [];
-  const windowIndex = new Map<string, WindowGroup>();
-
-  for (const g of rows) {
-    const windowKey = g.delivery_window || "Standard";
-    let win = windowIndex.get(windowKey);
-    if (!win) {
-      win = { window: windowKey, companies: [], total: 0 };
-      windowIndex.set(windowKey, win);
-      windows.push(win);
-    }
-
-    let comp = win.companies.find((c) => c.companyId === g.company_id);
-    if (!comp) {
-      comp = { companyId: g.company_id, company: g.company, locations: [], total: 0 };
-      win.companies.push(comp);
-    }
-
-    let loc = comp.locations.find((l) => l.locationId === g.location_id);
-    if (!loc) {
-      loc = { locationId: g.location_id, location: g.location, orders: [], total: 0 };
-      comp.locations.push(loc);
-    }
-
-    const orderCount = g.orders?.length ?? 0;
-    loc.orders = [...loc.orders, ...g.orders];
-    loc.total += orderCount;
-    comp.total += orderCount;
-    win.total += orderCount;
-  }
-
-  return windows;
+function apiMessage(error: any): string {
+  const detail = safeStr(error?.message || error?.error);
+  return detail || "Kunne ikke hente kjøkkenrapport.";
 }
 
 export default function KitchenView() {
-  const [data, setData] = useState<KitchenGroup[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hardErr, setHardErr] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [rid, setRid] = useState<string | null>(null);
+  const defaultDate = React.useMemo(() => todayIso(), []);
+  const [mode, setMode] = React.useState<Mode>("day");
+  const [date, setDate] = React.useState<string>(defaultDate);
+  const [weekStart, setWeekStart] = React.useState<string>(mondayIso(defaultDate));
 
-  const [dateISO] = useState<string>(fmtOsloYMDNow());
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [report, setReport] = React.useState<Report | null>(null);
 
-  async function fetchDayOnce(dISO: string): Promise<KitchenFetch> {
-    if (!isISODate(dISO)) throw new Error("Ugyldig dato");
-    const requestRid = `kitchen_day_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-    const res = await fetch(`/api/kitchen/day?date=${encodeURIComponent(dISO)}`, {
-      cache: "no-store",
-      headers: { "x-rid": requestRid },
-    });
+  const csvHref = React.useMemo(() => {
+    const params = new URLSearchParams({ mode });
+    if (mode === "day") params.set("date", date);
+    if (mode === "week") params.set("weekStart", weekStart);
+    return `/api/kitchen/report.csv?${params.toString()}`;
+  }, [mode, date, weekStart]);
 
-    const txt = await res.text();
-    const json = safeJsonParse<any>(txt);
-
-    if (!res.ok) {
-      const detail = typeof json?.detail === "string" ? json.detail : json?.detail ? JSON.stringify(json.detail) : null;
-      throw new Error(detail || json?.message || json?.error || txt || "Kunne ikke hente kjøkkenliste");
+  const load = React.useCallback(async () => {
+    if (mode === "day" && !isIsoDate(date)) {
+      setError("Dato må være YYYY-MM-DD.");
+      setReport(null);
+      setLoading(false);
+      return;
     }
 
-    const payload = (json as any)?.data ?? json;
-    if (payload && Array.isArray(payload.groups)) {
-      return { rid: requestRid, groups: payload.groups as KitchenGroup[] };
+    if (mode === "week" && !isIsoDate(weekStart)) {
+      setError("Uke-start må være YYYY-MM-DD.");
+      setReport(null);
+      setLoading(false);
+      return;
     }
-    if (Array.isArray(payload)) return { rid: requestRid, groups: payload as KitchenGroup[] };
-    if (json && typeof json === "object" && json.ok === false) {
-      throw new Error(json?.message || json?.error || "Kunne ikke hente kjøkkenliste");
-    }
-    throw new Error("Ugyldig respons fra server");
-  }
 
-  async function load() {
+    setLoading(true);
+    setError(null);
+
     try {
-      const res = await fetchDayOnce(dateISO);
-      setData(res.groups);
-      setLastUpdated(fmtOsloHMNow());
-      setHardErr(null);
-      setRid(res.rid);
-    } catch (e: any) {
-      setHardErr(e?.message || "Kunne ikke hente kjøkkenliste");
+      const params = new URLSearchParams({ mode });
+      if (mode === "day") params.set("date", date);
+      if (mode === "week") params.set("weekStart", weekStart);
+
+      const response = await fetch(`/api/kitchen/report?${params.toString()}`, {
+        cache: "no-store",
+        headers: { accept: "application/json" },
+      });
+
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body || body.ok !== true) {
+        throw body || { message: `HTTP ${response.status}` };
+      }
+
+      const data = body.data as Report;
+      setReport(data);
+    } catch (err: any) {
+      setError(apiMessage(err));
+      setReport(null);
     } finally {
       setLoading(false);
     }
-  }
+  }, [mode, date, weekStart]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     void load();
-    const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateISO]);
-
-  const frozen = useMemo(() => isAfterCutoff0800(dateISO), [dateISO]);
-  const totalKuverter = useMemo(() => (data ?? []).reduce((sum, g) => sum + (g.orders?.length ?? 0), 0), [data]);
-  const dateLabel = formatDateForLocale(dateISO);
-  const windows = useMemo(() => buildGroups(data), [data]);
+  }, [load]);
 
   return (
-    <div className="lp-card p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="text-sm text-[rgb(var(--lp-muted))]">Produksjonsdato</div>
-          <div className="mt-1 text-2xl font-semibold text-[rgb(var(--lp-fg))]">{dateLabel}</div>
-          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">ACTIVE / READY FOR PRODUCTION</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Dette er fasit. Ingen manuelle unntak.</div>
-        </div>
-        <div className="text-sm text-[rgb(var(--lp-muted))]">
-          Cut-off 08:00 · Sist oppdatert: {lastUpdated ?? "Ikke tilgjengelig"}
-          {rid ? <div className="mt-1 text-xs">RID: {rid}</div> : null}
+    <section className="w-full">
+      <div className="print:hidden rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
+        <div className="flex flex-wrap gap-3">
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-900">
+            Visning
+            <select
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
+              value={mode}
+              onChange={(event) => setMode(event.target.value === "week" ? "week" : "day")}
+            >
+              <option value="day">Dag</option>
+              <option value="week">Uke</option>
+            </select>
+          </label>
+
+          {mode === "day" ? (
+            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-900">
+              Dato
+              <input
+                className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              />
+            </label>
+          ) : (
+            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-900">
+              Uke-start (mandag)
+              <input
+                className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
+                type="date"
+                value={weekStart}
+                onChange={(event) => setWeekStart(event.target.value)}
+              />
+            </label>
+          )}
+
+          <div className="ml-auto flex flex-wrap items-end gap-2">
+            <button
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold"
+              onClick={() => void load()}
+              type="button"
+            >
+              Oppdater
+            </button>
+            <a
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold"
+              href={csvHref}
+            >
+              Last ned CSV
+            </a>
+            <button
+              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold"
+              onClick={() => window.print()}
+              type="button"
+            >
+              Skriv ut
+            </button>
+          </div>
         </div>
       </div>
 
-      {hardErr && (!data || data.length === 0) && (
-        <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">{hardErr}</div>
-      )}
+      {loading ? (
+        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
+          Laster kjøkkenrapport ...
+        </div>
+      ) : null}
 
-      {!loading && (!data || data.length === 0) && !hardErr && (
-        <div className="mt-6 text-sm text-[rgb(var(--lp-muted))]">Ingen aktive bestillinger for valgt dato.</div>
-      )}
+      {error && !loading ? (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-900">
+          {error}
+        </div>
+      ) : null}
 
-      {data && data.length > 0 && (
+      {report && !loading ? (
         <>
-          <div className="mt-6 text-sm text-[rgb(var(--lp-muted))]">
-            Totalt kuverter: <span className="font-semibold text-[rgb(var(--lp-fg))]">{totalKuverter}</span>
+          <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
+            <h2 className="text-lg font-extrabold text-slate-900">Oppsummering</h2>
+            <div className="mt-2 flex flex-wrap gap-2 text-sm">
+              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Basis: {report.totals.basis}</span>
+              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Luxus: {report.totals.luxus}</span>
+              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Totalt: {report.totals.total}</span>
+            </div>
+            {report.mode === "week" ? (
+              <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+                Uke {report.period.weekStart} til {report.period.weekEnd}
+              </p>
+            ) : null}
           </div>
 
-          <div className="mt-6 space-y-6">
-            {windows.map((w) => (
-              <section key={w.window} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">Leveringsvindu: {w.window}</div>
-                  <div className="text-sm text-[rgb(var(--lp-muted))]">
-                    Totalt: <span className="font-semibold text-[rgb(var(--lp-fg))]">{w.total}</span>
-                  </div>
-                </div>
+          {report.excluded.length > 0 ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              {report.excluded.length} bestillinger manglet aktiv avtale og er ikke med i listen.
+            </div>
+          ) : null}
 
-                <div className="mt-4 space-y-4">
-                  {w.companies.map((c) => (
-                    <div key={c.companyId} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4">
+          <div className="mt-4 space-y-4">
+            {report.days.map((day) => (
+              <article key={day.date} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
+                <header className="border-b border-[rgb(var(--lp-divider))] pb-2">
+                  <h3 className="text-base font-extrabold text-slate-900">{day.date}</h3>
+                  <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+                    Basis {day.totals.basis} - Luxus {day.totals.luxus} - Totalt {day.totals.total}
+                  </p>
+                </header>
+
+                <div className="mt-3 space-y-3">
+                  {day.slots.map((slot) => (
+                    <section key={`${day.date}:${slot.slot}`} className="rounded-2xl border border-[rgb(var(--lp-border))] p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">{c.company}</div>
-                        <div className="text-sm text-[rgb(var(--lp-muted))]">
-                          Totalt firma: <span className="font-semibold text-[rgb(var(--lp-fg))]">{c.total}</span>
+                        <h4 className="text-sm font-extrabold text-slate-900">{slot.slot}</h4>
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">
+                          Basis {slot.totals.basis} - Luxus {slot.totals.luxus} - Totalt {slot.totals.total}
                         </div>
                       </div>
 
                       <div className="mt-3 space-y-3">
-                        {c.locations.map((l) => (
-                          <div key={`${c.companyId}:${l.locationId}`} className="rounded-xl bg-[rgb(var(--lp-surface-2))] p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="font-medium text-[rgb(var(--lp-fg))]">{l.location}</div>
-                              <div className="text-sm text-[rgb(var(--lp-muted))]">
-                                Totalt lokasjon: <span className="font-semibold text-[rgb(var(--lp-fg))]">{l.total}</span>
-                              </div>
-                            </div>
+                        {slot.companies.map((company) => (
+                          <div key={`${slot.slot}:${company.company_id}`} className="rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-3">
+                            <h5 className="text-sm font-semibold text-slate-900">{company.company_name}</h5>
 
-                            <div className="mt-3 space-y-2">
-                              {l.orders.map((o) => (
-                                <div key={o.id} className="rounded-xl bg-white px-4 py-3">
-                                  <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">{o.full_name}</div>
-                                  {o.department ? (
-                                    <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{o.department}</div>
-                                  ) : null}
-                                  {o.note ? (
-                                    <div className="mt-2 text-sm text-[rgb(var(--lp-fg))] lp-wrap-anywhere">{o.note}</div>
-                                  ) : null}
+                            <div className="mt-2 space-y-2">
+                              {company.locations.map((location) => (
+                                <div key={`${company.company_id}:${location.location_id}`} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white p-3">
+                                  <div className="text-xs font-semibold text-slate-900">{location.location_name}</div>
+                                  <ul className="mt-2 space-y-2">
+                                    {location.employees.map((employee) => (
+                                      <li key={`${location.location_id}:${employee.user_id}`} className="rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-2 text-sm">
+                                        <div className="font-semibold text-slate-900">{employee.name}</div>
+                                        {employee.department ? (
+                                          <div className="text-xs text-[rgb(var(--lp-muted))]">{employee.department}</div>
+                                        ) : null}
+                                        {employee.note ? (
+                                          <div className="mt-1 text-xs text-slate-700">{employee.note}</div>
+                                        ) : null}
+                                      </li>
+                                    ))}
+                                  </ul>
                                 </div>
                               ))}
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </section>
                   ))}
                 </div>
-              </section>
+              </article>
             ))}
           </div>
         </>
-      )}
-
-      {!frozen.after && (
-        <div className="mt-5 text-xs text-[rgb(var(--lp-muted))]">
-          Ordrene under er klare for produksjon. Endringer etter cut-off registreres som avvik.
-        </div>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }
+

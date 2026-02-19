@@ -1,8 +1,8 @@
+// app/superadmin/audit/audit-client.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
 
 type AuditItem = {
   id: string;
@@ -27,8 +27,16 @@ type AuditItem = {
 type ApiOk = {
   ok: true;
   rid: string;
-  meta: { limit: number; nextCursor: string | null; source: string; filters?: any };
-  items: AuditItem[];
+  meta?: { limit: number; nextCursor: string | null; source: string; filters?: any };
+  items?: AuditItem[];
+  data?: {
+    items: AuditItem[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    filters?: any;
+  };
 };
 
 type ApiErr = {
@@ -49,10 +57,8 @@ function isUuid(v: any) {
 function isoNice(ts: string | null | undefined) {
   if (!ts) return "-";
   const s = String(ts);
-  // YYYY-MM-DD HH:MM:SS
   return s.replace("T", " ").slice(0, 19);
 }
-
 
 function pickActorEmail(it: AuditItem) {
   return it.actor?.email ?? it.actor_email ?? "-";
@@ -115,31 +121,66 @@ async function readJsonSafe(res: Response) {
   }
 }
 
+function isAbort(e: any) {
+  return e?.name === "AbortError" || String(e?.message || "").toLowerCase().includes("aborted");
+}
+
+/* =========================
+   ✅ Discriminated union (TS-safe)
+========================= */
+type NormOk = { ok: true; items: AuditItem[]; nextCursor: string | null; limit: number };
+type NormErr = { ok: false; message: string };
+type Norm = NormOk | NormErr;
+
+function normalizeApi(j: ApiOk | ApiErr | null): Norm {
+  if (!j || (j as any).ok !== true) {
+    const e = (j ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" }) as ApiErr;
+    return { ok: false as const, message: e.message || e.error || "Ukjent feil" };
+  }
+
+  const ok = j as ApiOk;
+
+  if (Array.isArray(ok.items)) {
+    return {
+      ok: true as const,
+      items: ok.items,
+      nextCursor: ok.meta?.nextCursor ?? null,
+      limit: ok.meta?.limit ?? 100,
+    };
+  }
+
+  if (ok.data && Array.isArray(ok.data.items)) {
+    return {
+      ok: true as const,
+      items: ok.data.items,
+      nextCursor: null,
+      limit: ok.data.limit ?? 100,
+    };
+  }
+
+  return { ok: true as const, items: [], nextCursor: null, limit: 100 };
+}
+
 export default function AuditClient() {
   const [items, setItems] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  // Preset
   const [preset, setPreset] = useState<"critical" | "all">("critical");
 
-  // Filters
   const [companyId, setCompanyId] = useState("");
   const [action, setAction] = useState("");
   const [q, setQ] = useState("");
 
-  // Pagination cursor
   const [cursor, setCursor] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  // Debounce input
   const [companyIdDeb, setCompanyIdDeb] = useState("");
   const [actionDeb, setActionDeb] = useState("");
   const [qDeb, setQDeb] = useState("");
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // Toast
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -172,8 +213,10 @@ export default function AuditClient() {
     const p = new URLSearchParams();
     p.set("limit", String(limit));
 
-    // ✅ ikke send invalid UUID til API
-    if (companyIdDeb && isUuid(companyIdDeb)) p.set("companyId", companyIdDeb);
+    if (companyIdDeb && isUuid(companyIdDeb)) {
+      p.set("companyId", companyIdDeb); // if API supports
+      p.set("entity_id", companyIdDeb); // harmless if ignored
+    }
 
     if (actionDeb) p.set("action", actionDeb);
     if (qDeb) p.set("q", qDeb);
@@ -198,7 +241,10 @@ export default function AuditClient() {
       if (resetCursor && opts?.clearCursorBeforeFetch) {
         const p = new URLSearchParams();
         p.set("limit", String(limit));
-        if (companyIdDeb && isUuid(companyIdDeb)) p.set("companyId", companyIdDeb);
+        if (companyIdDeb && isUuid(companyIdDeb)) {
+          p.set("companyId", companyIdDeb);
+          p.set("entity_id", companyIdDeb);
+        }
         if (actionDeb) p.set("action", actionDeb);
         if (qDeb) p.set("q", qDeb);
         url += "?" + p.toString();
@@ -206,30 +252,34 @@ export default function AuditClient() {
         url += "?" + qs;
       }
 
-      const r = await fetch(url, { cache: "no-store", signal: ac.signal });
-      const j = (await readJsonSafe(r)) as ApiOk | ApiErr | null;
+      const r = await fetch(url, {
+        cache: "no-store",
+        signal: ac.signal,
+        headers: { "Cache-Control": "no-store" },
+      });
 
-      if (!j || (j as any).ok !== true) {
-        const je = (j ?? { ok: false, error: "UNKNOWN", message: "Ukjent feil" }) as ApiErr;
-        throw new Error(je?.message || je?.error || "Ukjent feil");
+      const j = (await readJsonSafe(r)) as ApiOk | ApiErr | null;
+      const norm = normalizeApi(j);
+
+      // ✅ TS-safe narrowing (no negation)
+      if (norm.ok === false) {
+        throw new Error(norm.message);
       }
 
-      const ok = j as ApiOk;
-      setItems(ok.items ?? []);
-      setNextCursor(ok.meta?.nextCursor ?? null);
+      setItems(norm.items ?? []);
+      setNextCursor(norm.nextCursor ?? null);
 
       if (resetCursor) setCursor(null);
     } catch (e: any) {
-      if (e?.name === "AbortError") return;
+      if (isAbort(e)) return;
       setErr(String(e?.message ?? e));
       setItems([]);
       setNextCursor(null);
     } finally {
-      setLoading(false);
+      if (!ac.signal.aborted) setLoading(false);
     }
   }
 
-  // initial + whenever qs changes
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,10 +299,8 @@ export default function AuditClient() {
 
   const critCount = useMemo(() => viewItems.filter((x) => isCritical(x)).length, [viewItems]);
 
-  // Keyboard selection
   const [selectedIdx, setSelectedIdx] = useState<number>(-1);
 
-  // keep selection sane when data changes
   useEffect(() => {
     if (viewItems.length === 0) {
       setSelectedIdx(-1);
@@ -293,6 +341,9 @@ export default function AuditClient() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedIdx, viewItems]);
 
+  const navBtn =
+    "rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]";
+
   return (
     <div className="mx-auto max-w-[1100px] p-4">
       {/* Toast */}
@@ -322,6 +373,16 @@ export default function AuditClient() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Link href="/superadmin" className={navBtn}>
+              Dashboard
+            </Link>
+            <Link href="/superadmin/companies" className={navBtn}>
+              Firma
+            </Link>
+            <Link href="/superadmin/system" className={navBtn}>
+              System
+            </Link>
+
             <button
               onClick={() => setPreset("critical")}
               className={[
@@ -330,7 +391,6 @@ export default function AuditClient() {
                   ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))]"
                   : "border-[rgba(var(--lp-border),0.6)] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface))]",
               ].join(" ")}
-              aria-label="Vis kritiske hendelser først"
             >
               Kritiske først
             </button>
@@ -343,7 +403,6 @@ export default function AuditClient() {
                   ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))]"
                   : "border-[rgba(var(--lp-border),0.6)] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface))]",
               ].join(" ")}
-              aria-label="Vis alle hendelser"
             >
               Alle
             </button>
@@ -353,8 +412,7 @@ export default function AuditClient() {
                 setCursor(null);
                 load({ resetCursor: true, clearCursorBeforeFetch: true });
               }}
-              className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-              aria-label="Oppdater audit"
+              className={navBtn}
             >
               Oppdater
             </button>
@@ -373,19 +431,15 @@ export default function AuditClient() {
                   ? "border-[rgba(var(--lp-crit-bd),0.9)] bg-[rgba(var(--lp-crit-bg),0.6)]"
                   : "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]",
               ].join(" ")}
-              aria-label="Filtrer på companyId"
             />
-            {companyIdInvalid ? (
-              <div className="text-xs text-[rgb(var(--lp-crit-tx))]">Ugyldig UUID.</div>
-            ) : null}
+            {companyIdInvalid ? <div className="text-xs text-[rgb(var(--lp-crit-tx))]">Ugyldig UUID.</div> : null}
           </div>
 
           <input
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            placeholder="action (f.eks. orders.batch_)"
+            placeholder="action (f.eks. COMPANY_CREATED)"
             className="min-w-[220px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
-            aria-label="Filtrer på action"
           />
 
           <input
@@ -393,7 +447,6 @@ export default function AuditClient() {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Søk (email, action, entity, summary)…"
             className="min-w-[280px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
-            aria-label="Søk i audit"
           />
 
           <button
@@ -407,8 +460,7 @@ export default function AuditClient() {
               load({ resetCursor: true, clearCursorBeforeFetch: true });
               showToast("ok", "Filtre nullstilt");
             }}
-            className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-            aria-label="Nullstill filtre"
+            className={navBtn}
           >
             Nullstill
           </button>
@@ -470,7 +522,6 @@ export default function AuditClient() {
                     showToast(ok ? "ok" : "err", ok ? "E-post kopiert" : "Kunne ikke kopiere");
                   }}
                   className="text-left text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                  aria-label="Kopier actor e-post"
                 >
                   {pickActorEmail(it)}
                 </button>
@@ -498,7 +549,6 @@ export default function AuditClient() {
                       showToast(ok ? "ok" : "err", ok ? "Entity-id kopiert" : "Kunne ikke kopiere");
                     }}
                     className="lp-mono text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                    aria-label="Kopier entity id"
                   >
                     {pickEntityId(it)}
                   </button>
@@ -510,7 +560,6 @@ export default function AuditClient() {
                   <Link
                     href={`/superadmin/audit/${it.id}`}
                     className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                    aria-label="Åpne audit-detalj"
                     onClick={(e) => e.stopPropagation()}
                   >
                     Åpne detalj →
@@ -522,7 +571,6 @@ export default function AuditClient() {
                 <button
                   onClick={() => setSelectedIdx(idx)}
                   className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-                  aria-label="Marker rad"
                 >
                   Marker
                 </button>
@@ -534,7 +582,6 @@ export default function AuditClient() {
                     showToast(ok ? "ok" : "err", ok ? "ID kopiert" : "Kunne ikke kopiere");
                   }}
                   className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-                  aria-label="Kopier id"
                 >
                   ID
                 </button>
@@ -559,7 +606,6 @@ export default function AuditClient() {
               ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
               : "border-[rgba(var(--lp-border),0.6)] bg-[rgb(var(--lp-surface-2))] text-[rgb(var(--lp-muted))] opacity-70",
           ].join(" ")}
-          aria-label="Neste side"
         >
           Neste side
         </button>

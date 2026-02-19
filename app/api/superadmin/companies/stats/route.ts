@@ -27,34 +27,47 @@ export async function GET(req: NextRequest): Promise<Response> {
   try {
     const admin = supabaseAdmin();
 
-    const [total, pending, active, paused, closed] = await Promise.all([
+    const [totalRes, pendingRes, activeRes, pausedRes, closedRes] = await Promise.all([
       admin.from("companies").select("id", { count: "exact", head: true }),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "PENDING"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "PAUSED"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "CLOSED"),
     ]);
 
-    if (total.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: total.error });
-    if (pending.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: pending.error });
-    if (active.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: active.error });
-    if (paused.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: paused.error });
-    if (closed.error) return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "DB_ERROR", detail: closed.error });
+    if (totalRes.error) console.error("[superadmin.companies.stats] totalRes.error", totalRes.error);
+    if (pendingRes.error) console.error("[superadmin.companies.stats] pendingRes.error", pendingRes.error);
+    if (activeRes.error) console.error("[superadmin.companies.stats] activeRes.error", activeRes.error);
+    if (pausedRes.error) console.error("[superadmin.companies.stats] pausedRes.error", pausedRes.error);
+    if (closedRes.error) console.error("[superadmin.companies.stats] closedRes.error", closedRes.error);
 
-    return jsonOk(ctx.rid, {
-        ok: true,
-        rid: ctx.rid,
-        stats: {
-          companiesTotal: Number(total.count ?? 0),
-          companiesPending: Number(pending.count ?? 0),
-          companiesActive: Number(active.count ?? 0),
-          companiesPaused: Number(paused.count ?? 0),
-          companiesClosed: Number(closed.count ?? 0),
+    if (totalRes.error || pendingRes.error || activeRes.error || pausedRes.error || closedRes.error) {
+      return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, {
+        code: "DB_ERROR",
+        detail: {
+          total: totalRes.error ?? null,
+          pending: pendingRes.error ?? null,
+          active: activeRes.error ?? null,
+          paused: pausedRes.error ?? null,
+          closed: closedRes.error ?? null,
         },
-      }, 200);
+      });
+    }
+
+    return jsonOk(
+      ctx.rid,
+      {
+        stats: {
+          companiesTotal: Number(totalRes.count ?? 0),
+          companiesPending: Number(pendingRes.count ?? 0),
+          companiesActive: Number(activeRes.count ?? 0),
+          companiesPaused: Number(pausedRes.count ?? 0),
+          companiesClosed: Number(closedRes.count ?? 0),
+        },
+      },
+      200
+    );
   } catch (e: any) {
-    return jsonErr(ctx.rid, "Kunne ikke hente stats.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
+    return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, { code: "SERVER_ERROR", detail: { message: String(e?.message ?? e) } });
   }
 }
-
-

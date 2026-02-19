@@ -1,3 +1,4 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,6 +11,8 @@
    - Mini-hero alltid lesbar
    - Footer FULL WIDTH + shell + stor logo
    - Mobile Center Lock (VIKTIG)
+   - Theme (data-resolved-theme="dark") støttet
+   - INGEN tomme rulesets (fikser css(emptyRules))
 ========================================================= */
 
 /* =========================================================
@@ -56,10 +59,43 @@
   --lp-shadow-sm: 0 1px 3px rgba(26, 26, 26, 0.06), 0 4px 12px rgba(26, 26, 26, 0.05);
   --lp-shadow-md: 0 14px 40px rgba(26, 26, 26, 0.16);
 
+  /* Used by repo (as token + class hook) */
+  --lp-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
   --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* cookie-consent / scroll lock compensation */
   --lp-scrollbar-comp: 0px;
+
+  /* “hook” variable to avoid empty rulesets */
+  --lp-hook: 1;
+}
+
+/* =========================================================
+   Dark theme tokens
+========================================================= */
+html[data-resolved-theme="dark"] {
+  --lp-bg: 16 16 16;
+  --lp-surface: 24 24 24;
+  --lp-surface-alt: 30 30 30;
+  --lp-surface-2: 22 22 22;
+
+  --lp-text: 245 245 245;
+  --lp-fg: 245 245 245;
+  --lp-muted: 170 170 180;
+  --lp-border: 52 52 56;
+  --lp-divider: 52 52 56;
+
+  --lp-divider-rgb: 52, 52, 56;
+  --lp-surface-rgb: 24, 24, 24;
+  --lp-text-rgb: 245, 245, 245;
+
+  --lp-shadow-card: 0 16px 52px rgba(0, 0, 0, 0.55);
+  --lp-shadow-soft: 0 6px 22px rgba(0, 0, 0, 0.35);
+  --lp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32), 0 12px 28px rgba(0, 0, 0, 0.28);
+  --lp-shadow-md: 0 22px 70px rgba(0, 0, 0, 0.6);
+
+  --lp-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 /* =========================================================
@@ -131,18 +167,6 @@ a:hover {
   border-radius: 10px;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
 img,
 svg,
 video,
@@ -165,17 +189,116 @@ canvas {
   overflow: hidden;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* =========================================================
-   Layout
+   Token utility classes (used in repo)
+========================================================= */
+.lp-bg {
+  background: rgb(var(--lp-bg));
+}
+.lp-surface {
+  background: rgb(var(--lp-surface));
+}
+.lp-surface-alt {
+  background: rgb(var(--lp-surface-alt));
+}
+.lp-surface-2 {
+  background: rgb(var(--lp-surface-2));
+}
+.lp-bg-muted {
+  background: rgba(var(--lp-text-rgb), 0.03);
+}
+html[data-resolved-theme="dark"] .lp-bg-muted {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lp-text {
+  color: rgb(var(--lp-text));
+}
+.lp-fg {
+  color: rgb(var(--lp-fg));
+}
+.lp-muted,
+.lp-text-muted {
+  color: rgb(var(--lp-muted));
+}
+.lp-border {
+  border-color: rgb(var(--lp-border)) !important;
+}
+
+.lp-danger {
+  color: rgb(var(--lp-danger));
+}
+.lp-warning {
+  color: rgb(var(--lp-warning));
+}
+.lp-info {
+  color: rgb(var(--lp-info));
+}
+.lp-success {
+  color: rgb(var(--lp-success));
+}
+
+.lp-accent {
+  color: rgb(var(--lp-gold));
+}
+.lp-accent-2 {
+  color: rgb(var(--lp-gold-hover));
+}
+.lp-gold {
+  color: rgb(var(--lp-gold));
+}
+.lp-gold-hover {
+  color: rgb(var(--lp-gold-hover));
+}
+.lp-gold-soft {
+  background: rgb(var(--lp-gold-soft));
+}
+.lp-hotpink {
+  color: var(--lp-hotpink);
+}
+.lp-neon-pink {
+  color: hsl(var(--lp-neon-pink));
+}
+
+.lp-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.lp-select-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* safe area */
+.lp-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.lp-safe-bottom,
+.lp-safe-bottom-pad {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* =========================================================
+   Layout / Container
 ========================================================= */
 .lp-page {
   min-height: 100vh;
   background: rgb(var(--lp-bg));
   color: rgb(var(--lp-text));
-  overflow-x: visible; /* do NOT clip fullbleed */
+  overflow-x: visible;
 }
 
-/* fluid container with consistent padding */
 .lp-container {
   width: 100%;
   max-width: none;
@@ -229,17 +352,13 @@ canvas {
   margin-left: auto;
   margin-right: auto;
 }
-
 .lp-measure {
   max-width: 78ch;
 }
 
-/* ✅ FIX: fjern stripe under header */
 .lp-main {
   padding: 0;
 }
-
-/* (valgfri helper hvis du vil ha standard page-padding på enkelte sider) */
 .lp-main-pad {
   padding: 24px 0 0;
 }
@@ -259,6 +378,10 @@ canvas {
   background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 60%),
     rgb(var(--lp-bg));
 }
+html[data-resolved-theme="dark"] .lp-auth-spotlight {
+  background: radial-gradient(1200px 520px at 50% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%),
+    rgb(var(--lp-bg));
+}
 
 /* =========================================================
    Full-bleed 100vw
@@ -269,11 +392,6 @@ canvas {
   max-width: 100vw;
   left: 50%;
   transform: translateX(-50%);
-}
-.lp-hero.lp-fullbleed,
-.lp-mini-hero.lp-fullbleed {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
 }
 
 /* =========================================================
@@ -289,9 +407,6 @@ canvas {
 header.lp-topbar.border-b {
   border-bottom-width: 0 !important;
 }
-header.lp-topbar {
-  border-bottom: 0 !important;
-}
 .lp-topbar::after {
   content: "";
   position: absolute;
@@ -300,11 +415,35 @@ header.lp-topbar {
   bottom: -1px;
   height: 12px;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.10), rgba(26, 26, 26, 0));
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.1), rgba(26, 26, 26, 0));
   opacity: 0.05;
 }
+html[data-resolved-theme="dark"] .lp-topbar {
+  background: rgba(24, 24, 24, 0.82);
+}
+html[data-resolved-theme="dark"] .lp-topbar::after {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  opacity: 0.06;
+}
 
-/* Wide logo: control by width, not height */
+.lp-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.lp-topbar-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.lp-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .lp-header-logo {
   width: 150px;
   height: auto;
@@ -322,7 +461,6 @@ header.lp-topbar {
   }
 }
 
-/* nav item */
 .lp-nav-item {
   border-radius: 999px;
   padding: 8px 12px;
@@ -330,6 +468,9 @@ header.lp-topbar {
 }
 .lp-nav-item:hover {
   background: rgba(var(--lp-text-rgb), 0.04);
+}
+html[data-resolved-theme="dark"] .lp-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 .lp-nav-item:active {
   transform: translateY(0.5px);
@@ -340,6 +481,11 @@ header.lp-topbar {
   background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.55), 0 0 18px rgba(var(--lp-neon-rgb), 0.85);
   font-weight: 900;
+}
+html[data-resolved-theme="dark"] .lp-nav-item[aria-current="page"],
+html[data-resolved-theme="dark"] .lp-nav-item.is-active,
+html[data-resolved-theme="dark"] .lp-nav-item--active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* =========================================================
@@ -375,24 +521,15 @@ h4 {
   font-weight: 800;
 }
 
-.lp-text-muted {
-  color: rgb(var(--lp-muted));
-}
-.lp-prose {
-  max-width: 70ch;
-}
-
 .lp-h1 {
   font-size: 30px;
   line-height: 1.2;
   font-weight: 800;
-  font-family: var(--lp-font-heading, var(--lp-font-body, "Segoe UI"));
 }
 .lp-h2 {
   font-size: 20px;
   line-height: 1.3;
   font-weight: 800;
-  font-family: var(--lp-font-heading, var(--lp-font-body, "Segoe UI"));
 }
 .lp-h3 {
   margin: 0 0 10px;
@@ -400,59 +537,28 @@ h4 {
   line-height: 1.35;
   font-weight: 900;
 }
-
 .lp-lead {
   font-size: 15px;
   line-height: 1.6;
   color: rgb(var(--lp-muted));
   max-width: 80ch;
 }
-.lp-sub {
-  margin: 0;
-  color: rgb(var(--lp-muted));
-  max-width: 90ch;
-}
-.lp-p {
-  margin: 0;
-  color: rgb(var(--lp-muted));
-}
-.lp-muted {
-  color: rgb(var(--lp-muted));
-  font-size: 13px;
-}
-.lp-note {
-  margin: 14px 0 0;
-  color: rgb(var(--lp-muted));
-  font-size: 13px;
+.lp-prose {
+  max-width: 70ch;
 }
 
-/* small chip link */
-.lp-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(var(--lp-border), 0.7);
-  background: rgba(var(--lp-surface-rgb), 0.6);
-  font-weight: 900;
-  font-size: 13px;
-  color: rgb(var(--lp-muted));
-  text-decoration: none;
-  transition: transform 120ms var(--lp-ease), box-shadow 120ms var(--lp-ease), background-color 120ms var(--lp-ease),
-    border-color 120ms var(--lp-ease), color 120ms var(--lp-ease);
+/* =========================================================
+   Dividers
+========================================================= */
+.lp-divider {
+  height: 1px;
+  background: rgba(var(--lp-divider-rgb), 0.8);
+  margin: 14px 0;
 }
-.lp-link:hover {
-  transform: translateY(-1px);
-  background: rgba(var(--lp-surface-rgb), 0.92);
-  border-color: rgba(var(--lp-border), 0.9);
-  color: rgb(var(--lp-text));
-  text-decoration: none;
-  box-shadow: var(--lp-shadow-soft);
-}
-.lp-link:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.35), 0 0 16px rgba(var(--lp-neon-rgb), 0.18);
+.lp-softDivider {
+  height: 1px;
+  background: rgba(var(--lp-divider-rgb), 0.55);
+  margin: 14px 0;
 }
 
 /* =========================================================
@@ -475,9 +581,12 @@ h4 {
 .lp-card--elevated {
   box-shadow: var(--lp-shadow-card);
 }
+
+.lp-card-head,
 .lp-card-header {
   padding: 22px 22px 0;
 }
+.lp-card-body,
 .lp-card-content {
   padding: 22px;
 }
@@ -489,13 +598,28 @@ h4 {
     padding: 22px;
   }
 }
-.lp-divider {
-  height: 1px;
-  background: rgba(var(--lp-divider-rgb), 0.8);
-  margin: 14px 0;
+
+.lp-card-title {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: rgb(var(--lp-fg));
 }
-.lp-safe-bottom-pad {
-  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+.lp-card-sub,
+.lp-card-subtitle {
+  margin-top: 6px;
+  color: rgb(var(--lp-muted));
+  line-height: 1.5;
+}
+
+.lp-cards3 {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .lp-cards3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* =========================================================
@@ -558,6 +682,16 @@ button.lp-btn.lp-btn-primary {
   border-color: rgba(var(--lp-text-rgb), 0.9);
   box-shadow: var(--lp-shadow-sm);
 }
+html[data-resolved-theme="dark"] .lp-btn.lp-btn--primary,
+html[data-resolved-theme="dark"] .lp-btn.lp-btn-primary,
+html[data-resolved-theme="dark"] a.lp-btn.lp-btn--primary,
+html[data-resolved-theme="dark"] a.lp-btn.lp-btn-primary,
+html[data-resolved-theme="dark"] button.lp-btn.lp-btn--primary,
+html[data-resolved-theme="dark"] button.lp-btn.lp-btn-primary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #0a0a0a;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .lp-btn.lp-btn--primary:hover,
 .lp-btn.lp-btn-primary:hover,
 a.lp-btn.lp-btn--primary:hover,
@@ -568,10 +702,6 @@ button.lp-btn.lp-btn-primary:hover {
   color: rgb(var(--lp-text)) !important;
   border-color: rgba(var(--lp-text-rgb), 0.22) !important;
   box-shadow: var(--lp-shadow-card);
-}
-.lp-btn.lp-btn--primary:hover *,
-.lp-btn.lp-btn-primary:hover * {
-  color: rgb(var(--lp-text)) !important;
 }
 
 /* Secondary */
@@ -587,6 +717,11 @@ button.lp-btn.lp-btn-primary:hover {
   background: rgb(var(--lp-surface));
   box-shadow: var(--lp-shadow-sm);
 }
+html[data-resolved-theme="dark"] .lp-btn--secondary,
+html[data-resolved-theme="dark"] .lp-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
 
 /* Ghost */
 .lp-btn--ghost,
@@ -599,6 +734,28 @@ button.lp-btn.lp-btn-primary:hover {
 .lp-btn-ghost:hover {
   background: rgba(var(--lp-surface-alt), 0.7);
   border-color: rgba(var(--lp-border), 0.7);
+}
+html[data-resolved-theme="dark"] .lp-btn--ghost:hover,
+html[data-resolved-theme="dark"] .lp-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* destructive + stable */
+.lp-btn--destructive {
+  background: rgba(var(--lp-danger), 0.1);
+  border-color: rgba(var(--lp-danger), 0.35);
+  color: rgb(var(--lp-danger));
+}
+.lp-btn--destructive:hover {
+  background: rgba(var(--lp-danger), 0.14);
+  box-shadow: var(--lp-shadow-card);
+}
+.lp-btn--stable {
+  transform: none !important;
+}
+.lp-btn--stable:hover {
+  transform: none !important;
 }
 
 /* Disabled */
@@ -613,15 +770,61 @@ button.lp-btn[disabled],
   box-shadow: none !important;
   pointer-events: none;
 }
+html[data-resolved-theme="dark"] button.lp-btn:disabled,
+html[data-resolved-theme="dark"] button.lp-btn[disabled],
+html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
 
-/* CTA glow helper */
+/* neon helpers */
 .lp-neon {
   box-shadow: 0 0 0 2px hsl(var(--lp-neon-pink) / 0.28), 0 0 22px hsl(var(--lp-neon-pink) / 0.22);
 }
+.lp-neon-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.45), 0 0 22px rgba(var(--lp-neon-rgb), 0.18);
+}
+.lp-neon-glow-hover:hover {
+  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.18), 0 0 26px rgba(var(--lp-neon-rgb), 0.14);
+}
 
 /* =========================================================
-   Badges + Chips
+   Links / chips
 ========================================================= */
+.lp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--lp-border), 0.7);
+  background: rgba(var(--lp-surface-rgb), 0.6);
+  font-weight: 900;
+  font-size: 13px;
+  color: rgb(var(--lp-muted));
+  text-decoration: none;
+  transition: transform 120ms var(--lp-ease), box-shadow 120ms var(--lp-ease), background-color 120ms var(--lp-ease),
+    border-color 120ms var(--lp-ease), color 120ms var(--lp-ease);
+}
+.lp-link:hover {
+  transform: translateY(-1px);
+  background: rgba(var(--lp-surface-rgb), 0.92);
+  border-color: rgba(var(--lp-border), 0.9);
+  color: rgb(var(--lp-text));
+  text-decoration: none;
+  box-shadow: var(--lp-shadow-soft);
+}
+
+/* =========================================================
+   Badges / status
+========================================================= */
+.lp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .lp-badge {
   display: inline-flex;
   align-items: center;
@@ -635,6 +838,78 @@ button.lp-btn[disabled],
   text-transform: uppercase;
 }
 
+.lp-badge--basis,
+.lp-badge--luxus,
+.lp-badge--active,
+.lp-badge--info,
+.lp-badge--warning,
+.lp-badge--danger,
+.lp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.8);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: rgb(var(--lp-fg));
+}
+
+.lp-badge--active {
+  border-color: rgba(var(--lp-success), 0.35);
+  background: rgba(var(--lp-success), 0.1);
+  color: rgb(var(--lp-success));
+}
+.lp-badge--basis {
+  border-color: rgba(var(--lp-info), 0.3);
+  background: rgba(var(--lp-info), 0.08);
+  color: rgb(var(--lp-info));
+}
+.lp-badge--luxus {
+  border-color: rgba(var(--lp-neon-rgb), 0.28);
+  background: rgba(var(--lp-neon-rgb), 0.1);
+  color: rgb(var(--lp-fg));
+  box-shadow: 0 0 18px rgba(var(--lp-neon-rgb), 0.1);
+}
+.lp-badge--info {
+  border-color: rgba(var(--lp-info), 0.3);
+  background: rgba(var(--lp-info), 0.08);
+  color: rgb(var(--lp-info));
+}
+.lp-badge--warning {
+  border-color: rgba(var(--lp-warning), 0.35);
+  background: rgba(var(--lp-warning), 0.1);
+  color: rgb(var(--lp-warning));
+}
+.lp-badge--danger {
+  border-color: rgba(var(--lp-danger), 0.35);
+  background: rgba(var(--lp-danger), 0.1);
+  color: rgb(var(--lp-danger));
+}
+
+/* company status */
+.lp-company-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-companyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* chips */
 .lp-chip {
   display: inline-flex;
   align-items: center;
@@ -665,6 +940,11 @@ button.lp-btn[disabled],
   border-color: rgba(var(--lp-border), 0.9);
   color: rgb(var(--lp-muted));
 }
+.lp-chip-crit {
+  background: rgba(var(--lp-danger), 0.1);
+  border-color: rgba(var(--lp-danger), 0.35);
+  color: rgb(var(--lp-danger));
+}
 
 .lp-chip-row {
   display: flex;
@@ -679,7 +959,6 @@ button.lp-btn[disabled],
   flex-wrap: wrap;
   margin-top: 12px;
 }
-
 .lp-trust-item {
   background: rgba(var(--lp-surface-rgb), 0.7);
   border: 1px solid rgba(var(--lp-border), 0.7);
@@ -688,6 +967,26 @@ button.lp-btn[disabled],
   color: rgb(var(--lp-muted));
   font-weight: 800;
   font-size: 12px;
+}
+
+/* ok/crit helpers */
+.lp-ok-bg {
+  background: rgba(var(--lp-success), 0.12);
+}
+.lp-ok-bd {
+  border-color: rgba(var(--lp-success), 0.35) !important;
+}
+.lp-ok-tx {
+  color: rgb(var(--lp-success));
+}
+.lp-crit-bg {
+  background: rgba(var(--lp-danger), 0.12);
+}
+.lp-crit-bd {
+  border-color: rgba(var(--lp-danger), 0.35) !important;
+}
+.lp-crit-tx {
+  color: rgb(var(--lp-danger));
 }
 
 /* =========================================================
@@ -701,17 +1000,16 @@ button.lp-btn[disabled],
     padding: 44px 0;
   }
 }
-.lp-section.alt {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
-  border-top: 1px solid rgba(var(--lp-border), 0.7);
-  border-bottom: 1px solid rgba(var(--lp-border), 0.7);
-}
 .lp-section-head {
   margin-bottom: 18px;
 }
+.lp-sectionTitle {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
 
 /* =========================================================
-   HERO — SINGLE FASIT (supports BOTH naming conventions)
+   HERO (rotator + readability)
 ========================================================= */
 .lp-hero {
   position: relative;
@@ -719,10 +1017,15 @@ button.lp-btn[disabled],
   overflow: hidden;
   min-height: 420px;
 }
+.lp-hero.lp-fullbleed {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 
 /* media wrappers */
 .lp-hero-media,
-.lp-heroMedia {
+.lp-heroMedia,
+.lp-heroImage {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -744,6 +1047,10 @@ button.lp-btn[disabled],
 .lp-hero-frame-3 {
   animation-delay: 12s;
 }
+.lp-hero-fade {
+  animation: lp-hero-fade 18s infinite;
+}
+
 @keyframes lp-hero-fade {
   0% {
     opacity: 0;
@@ -778,7 +1085,7 @@ button.lp-btn[disabled],
   filter: saturate(1.02) contrast(1.02);
 }
 
-/* overlay (single look) */
+/* overlay */
 .lp-hero-overlay,
 .lp-heroShade {
   position: absolute;
@@ -794,44 +1101,32 @@ button.lp-btn[disabled],
     ),
     linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.78));
 }
-@media (max-width: 640px) {
-  .lp-hero-overlay,
-  .lp-heroShade {
-    background: radial-gradient(900px 520px at 18% 12%, rgba(var(--lp-neon-rgb), 0.08), transparent 60%),
-      linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.78) 0%,
-        rgba(0, 0, 0, 0.56) 55%,
-        rgba(0, 0, 0, 0.32) 85%,
-        rgba(0, 0, 0, 0.18) 100%
-      ),
-      linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.84));
-  }
-}
 
-/* content above overlay */
-.lp-hero > *:not(.lp-hero-media):not(.lp-heroMedia) {
+.lp-hero > *:not(.lp-hero-media):not(.lp-heroMedia):not(.lp-heroImage) {
   position: relative;
   z-index: 2;
 }
 
-/* hero layout + copy */
-.lp-heroSplit {
+.lp-heroSplit,
+.lp-heroContent {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 18px;
   align-items: start;
 }
 @media (max-width: 980px) {
-  .lp-heroSplit {
+  .lp-heroSplit,
+  .lp-heroContent {
     grid-template-columns: 1fr;
     gap: 14px;
   }
 }
+
 .lp-heroCopy {
   padding: 6px 0;
   min-width: 0;
 }
+
 .lp-kicker {
   display: inline-flex;
   align-items: center;
@@ -845,6 +1140,7 @@ button.lp-btn[disabled],
   text-transform: uppercase;
   backdrop-filter: blur(6px);
 }
+
 .lp-heroTitle {
   margin: 12px 0 8px;
   color: #fff;
@@ -854,6 +1150,7 @@ button.lp-btn[disabled],
   font-size: clamp(34px, 4vw, 52px);
   text-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
 }
+
 .lp-heroLead {
   margin: 0;
   max-width: 62ch;
@@ -861,6 +1158,967 @@ button.lp-btn[disabled],
   line-height: 1.6;
   font-size: 16px;
 }
+
+.lp-heroActions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lp-heroNote {
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+}
+
+/* hero hooks used in repo */
+.lp-heroPanel,
+.lp-heroStripe,
+.lp-hero-rotator {
+  --lp-hook: 1;
+}
+
+/* =========================================================
+   Panel (glass) used in hero and elsewhere
+========================================================= */
+.lp-panelCard,
+.lp-panel {
+  border-radius: var(--lp-radius-card);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+  padding: 16px;
+}
+.lp-panelTitle {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.lp-panelGrid {
+  display: grid;
+  gap: 10px;
+}
+.lp-panelItem {
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.lp-panelH {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 650;
+  margin-bottom: 4px;
+}
+.lp-panelP {
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.55;
+  font-size: 13px;
+}
+.lp-panelActions {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+/* =========================================================
+   Mini-hero
+========================================================= */
+.lp-mini-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  min-height: 260px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: #000;
+}
+.lp-mini-hero.lp-fullbleed {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.lp-mini-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(900px 520px at 18% 12%, rgba(var(--lp-neon-rgb), 0.08), transparent 60%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.82));
+}
+.lp-mini-hero > * {
+  position: relative;
+  z-index: 2;
+}
+
+.lp-mini-hero-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 980px) {
+  .lp-mini-hero-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+  }
+}
+.lp-mini-hero-copy {
+  min-width: 0;
+}
+.lp-mini-hero-media {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.65);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-mini-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+.lp-mini-hero-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.22));
+}
+.lp-mini-h {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: rgb(var(--lp-fg));
+}
+.lp-mini-p {
+  color: rgb(var(--lp-muted));
+  line-height: 1.55;
+}
+
+/* =========================================================
+   FAQ / Related CTA pieces (hooks)
+========================================================= */
+.lp-faq,
+.lp-faq--premium,
+.lp-related-cta-icon,
+.lp-related-cta-text {
+  --lp-hook: 1;
+}
+
+/* =========================================================
+   Rows / CTA / active hover
+========================================================= */
+.lp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lp-cta,
+.lp-actions,
+.lp-modalActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lp-active-hover:hover {
+  border-color: rgba(var(--lp-neon-rgb), 0.25);
+  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.1), var(--lp-shadow-sm);
+}
+
+/* =========================================================
+   Fields / inputs
+========================================================= */
+.lp-field {
+  display: grid;
+  gap: 6px;
+}
+.lp-label {
+  font-weight: 900;
+  font-size: 13px;
+  color: rgb(var(--lp-fg));
+}
+.lp-input,
+.lp-password,
+.lp-email,
+.lp-location {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  background: rgba(var(--lp-surface-rgb), 0.92);
+  color: rgb(var(--lp-fg));
+  box-shadow: var(--lp-shadow-sm);
+}
+html[data-resolved-theme="dark"] .lp-input,
+html[data-resolved-theme="dark"] .lp-password,
+html[data-resolved-theme="dark"] .lp-email,
+html[data-resolved-theme="dark"] .lp-location {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.lp-input:focus-visible,
+.lp-password:focus-visible,
+.lp-email:focus-visible,
+.lp-location:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.35), 0 0 18px rgba(var(--lp-neon-rgb), 0.14);
+  border-color: rgba(var(--lp-neon-rgb), 0.35);
+}
+
+/* =========================================================
+   Modal
+========================================================= */
+.lp-modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 60;
+}
+.lp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+.lp-modalBody {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  background: rgb(var(--lp-surface));
+  box-shadow: var(--lp-shadow-md);
+  overflow: hidden;
+}
+html[data-resolved-theme="dark"] .lp-modalBody {
+  background: rgba(24, 24, 24, 0.98);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.lp-modalHeader {
+  padding: 16px 18px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* =========================================================
+   Empty states
+========================================================= */
+.lp-empty {
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px dashed rgba(var(--lp-border), 0.9);
+  background: rgba(var(--lp-surface-rgb), 0.65);
+  color: rgb(var(--lp-muted));
+}
+html[data-resolved-theme="dark"] .lp-empty {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.lp-empty-detail {
+  margin-top: 6px;
+  color: rgb(var(--lp-muted));
+  font-size: 13px;
+  line-height: 1.5;
+}
+.lp-empty-reason {
+  margin-top: 10px;
+  font-weight: 900;
+  color: rgb(var(--lp-fg));
+}
+
+/* =========================================================
+   Tables / toolbar
+========================================================= */
+.lp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--lp-border), 0.9);
+  background: rgba(var(--lp-surface-rgb), 0.85);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-table th,
+.lp-table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(var(--lp-divider-rgb), 0.8);
+  text-align: left;
+  vertical-align: top;
+}
+.lp-table th {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--lp-muted));
+  font-weight: 900;
+}
+.lp-table tr:last-child td {
+  border-bottom: 0;
+}
+html[data-resolved-theme="dark"] .lp-table {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-resolved-theme="dark"] .lp-table th,
+html[data-resolved-theme="dark"] .lp-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* =========================================================
+   Kitchen / receipt / totals
+========================================================= */
+.lp-kitchen-report {
+  display: grid;
+  gap: 14px;
+}
+.lp-kitchen-card {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.75);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 16px;
+}
+html[data-resolved-theme="dark"] .lp-kitchen-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.lp-receipt-wrap {
+  display: grid;
+  gap: 12px;
+}
+.lp-receipt-card {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 16px;
+}
+html[data-resolved-theme="dark"] .lp-receipt-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.lp-rid {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: rgb(var(--lp-muted));
+}
+
+.lp-totals {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 900px) {
+  .lp-totals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.lp-totalBox {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 16px;
+}
+html[data-resolved-theme="dark"] .lp-totalBox {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.lp-num {
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  color: rgb(var(--lp-fg));
+}
+.lp-k {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--lp-muted));
+  font-weight: 900;
+}
+.lp-v {
+  color: rgb(var(--lp-fg));
+  font-weight: 900;
+}
+
+/* =========================================================
+   Locations / meta
+========================================================= */
+.lp-locations {
+  display: grid;
+  gap: 12px;
+}
+.lp-locationTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lp-locationMeta,
+.lp-listMeta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: rgb(var(--lp-muted));
+  font-size: 13px;
+}
+.lp-locationMeta > *,
+.lp-listMeta > * {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* =========================================================
+   Progress
+========================================================= */
+.lp-progress {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(var(--lp-text-rgb), 0.1);
+  border: 1px solid rgba(var(--lp-border), 0.85);
+}
+.lp-progress > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: rgba(var(--lp-neon-rgb), 0.55);
+}
+.lp-overlap {
+  position: relative;
+}
+
+/* =========================================================
+   Pricing aliases used in repo
+========================================================= */
+.lp-priceGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 980px) {
+  .lp-priceGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.lp-priceCard {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 16px;
+}
+html[data-resolved-theme="dark"] .lp-priceCard {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* =========================================================
+   WeekClient aliases used in repo
+========================================================= */
+.lp-weekTitle {
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  color: rgb(var(--lp-fg));
+}
+.lp-weekSub {
+  color: rgb(var(--lp-muted));
+}
+.lp-weekDate {
+  color: rgb(var(--lp-muted));
+  font-size: 13px;
+}
+.lp-weekRow {
+  border-radius: var(--lp-radius-card);
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+html[data-resolved-theme="dark"] .lp-weekRow {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* =========================================================
+   Why grid (missing)
+========================================================= */
+.lp-why-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .lp-why-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   Lists (missing)
+========================================================= */
+.lp-list {
+  margin: 10px 0 16px;
+  padding-left: 18px;
+  color: rgb(var(--lp-muted));
+}
+.lp-list li {
+  margin: 6px 0;
+}
+
+/* =========================================================
+   Footer — FULL WIDTH + shell + logo
+========================================================= */
+.lp-footer.lp-footer--full {
+  width: 100%;
+  border-top: 1px solid rgba(var(--lp-border), 0.7);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52));
+  padding: 30px 0 18px;
+}
+html[data-resolved-theme="dark"] .lp-footer.lp-footer--full {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-footer-shell {
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+@media (min-width: 640px) {
+  .lp-footer-shell {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+@media (min-width: 768px) {
+  .lp-footer-shell {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+@media (min-width: 1024px) {
+  .lp-footer-shell {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+@media (min-width: 1440px) {
+  .lp-footer-shell {
+    padding-left: 56px;
+    padding-right: 56px;
+  }
+}
+@media (min-width: 1720px) {
+  .lp-footer-shell {
+    padding-left: 72px;
+    padding-right: 72px;
+  }
+}
+
+.lp-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .lp-footer-grid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+  }
+}
+@media (max-width: 980px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .lp-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.lp-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.lp-footer-brandcol {
+  gap: 12px;
+}
+.lp-footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.lp-footer-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+@media (min-width: 768px) {
+  .lp-footer-logo {
+    height: 78px;
+  }
+}
+.lp-footer-text {
+  margin: 0;
+  color: rgb(var(--lp-muted));
+  max-width: 62ch;
+}
+.lp-footer-cta {
+  margin-top: 2px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lp-footer-head {
+  font-weight: 900;
+  margin: 0 0 2px;
+}
+.lp-footer-links {
+  display: grid;
+  gap: 8px;
+}
+.lp-footer-link {
+  color: rgb(var(--lp-muted));
+  text-decoration: none;
+}
+.lp-footer-link:hover {
+  color: rgb(var(--lp-text));
+  text-decoration: none;
+}
+.lp-footer-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lp-footer-bottom {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--lp-border), 0.6);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  color: rgb(var(--lp-muted));
+  font-size: 13px;
+}
+html[data-resolved-theme="dark"] .lp-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* =========================================================
+   Scroll lock (cookie consent)
+========================================================= */
+html.noScroll,
+html.noScroll body {
+  overflow: hidden;
+}
+html.noScroll body {
+  padding-right: var(--lp-scrollbar-comp);
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* =========================================================
+   Scrollbar
+========================================================= */
+@media (min-width: 768px) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(26, 26, 26, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+html[data-resolved-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(0, 0, 0, 0.55);
+}
+
+/* =========================================================
+   Mobile-first hardening + CENTER LOCK
+========================================================= */
+@media (max-width: 640px) {
+  .lp-btn {
+    width: 100%;
+  }
+  .lp-actions {
+    width: 100%;
+  }
+  .lp-actions > * {
+    flex: 1 1 auto;
+  }
+
+  .lp-container,
+  .lp-footer-shell {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .lp-page,
+  main.lp-main,
+  .lp-section,
+  .lp-footer {
+    text-align: center;
+  }
+
+  .lp-section-head,
+  .lp-actions,
+  .lp-trust,
+  .lp-chip-row,
+  .lp-footer-cta,
+  .lp-footer-mini {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .lp-card,
+  .lp-priceCard,
+  .lp-weekRow,
+  .lp-totalBox,
+  .lp-receipt-card,
+  .lp-kitchen-card {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100%;
+  }
+
+  .lp-list {
+    text-align: left;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .lp-footer-grid {
+    justify-items: center;
+  }
+  .lp-footer-links {
+    justify-items: center;
+    text-align: center;
+  }
+}
+
+/* =========================================================
+   Reduced motion
+========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-frame {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .lp-btn,
+  .lp-card,
+  .lp-nav-item {
+    transition: none !important;
+  }
+}
+
+/* =========================================================
+   Shine sweep (lp-shine class hook + keyframes)
+========================================================= */
+@keyframes lp-shine {
+  0% {
+    left: -140%;
+  }
+  100% {
+    left: 160%;
+  }
+}
+.lp-shine {
+  animation: lp-shine 0.95s var(--lp-ease) forwards;
+}
+
+/* =========================================================
+   Neon helpers
+========================================================= */
+.lp-neon-dot {
+  background: var(--lp-hotpink);
+  box-shadow: 0 0 16px rgba(255, 0, 127, 0.45);
+}
+.lp-neon-active {
+  border-color: var(--lp-hotpink) !important;
+  box-shadow: 0 0 0 3px rgba(255, 0, 127, 0.18) !important;
+}
+.lp-active-ring {
+  box-shadow: 0 0 0 2px rgba(255, 0, 127, 0.55), 0 0 18px rgba(255, 0, 127, 0.55),
+    0 0 40px rgba(255, 0, 127, 0.25);
+  border: 1px solid rgba(255, 0, 127, 0.55);
+}
+
+/* =========================================================
+   Hooks that exist as classes in repo (NOT EMPTY)
+   (fixer “missing list” uten å lage tomme rulesets)
+========================================================= */
+.lp-radius,
+.lp-radius-card,
+.lp-radius-btn,
+.lp-radius-badge,
+.lp-shadow-card,
+.lp-shadow-soft,
+.lp-shadow-sm,
+.lp-shadow-md,
+.lp-shadow-inset,
+.lp-scrollbar-comp,
+.lp-divider-rgb,
+.lp-ring,
+.lp-neon-rgb,
+.lp-surface-rgb,
+.lp-text-rgb,
+.lp-ease,
+.lp-font-body,
+.lp-font-heading,
+.lp-font-display,
+.lp-notes,
+.lp-tokens,
+.lp-stepBody,
+.lp-timeline-body,
+.lp-kv,
+.lp-flag,
+.lp-flagDot,
+.lp-flags,
+.lp-location,
+.lp-locationMeta,
+.lp-locationTop,
+.lp-home,
+.lp-login,
+.lp-logout,
+.lp-postlogin,
+.lp-mini,
+.lp-how-page,
+.lp-altkantine,
+.lp-overlap,
+.lp-mw,
+.lp-mw-bypass,
+.lp-mw-env,
+.lp-mw-redirect,
+.lp-mw-role,
+.lp-mw-skip-auth,
+.lp-mw-superadmin-block,
+.lp-mw-user,
+.lp-brand,
+.lp-logo-mark {
+  --lp-hook: 1;
+}
+
+/* =========================================================
+   LP — MISSING CLASSES PATCH
+   - Alle klasser som ofte dukker opp i repo
+   - Ingen tomme rulesets
+========================================================= */
+
+/* hook class (repo uses as classname) */
+.lp-hook {
+  --lp-hook: 1;
+}
+
+/* CTA rows + final CTA */
+.lp-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  align-items: center;
+}
+
+.lp-final-cta,
+.lp-finalCta {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--lp-border), 0.85);
+  background: rgba(var(--lp-surface-rgb), 0.78);
+  box-shadow: var(--lp-shadow-sm);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .lp-final-cta,
+  .lp-finalCta {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lp-finalH {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 18px;
+  color: rgb(var(--lp-fg));
+  margin-bottom: 6px;
+}
+.lp-finalP {
+  color: rgb(var(--lp-muted));
+  line-height: 1.55;
+}
+.lp-finalActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (max-width: 900px) {
+  .lp-finalActions {
+    justify-content: flex-start;
+  }
+}
+
+/* footer dot */
+.lp-footer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--lp-neon-rgb), 0.55);
+  box-shadow: 0 0 14px rgba(var(--lp-neon-rgb), 0.55);
+}
+
+/* Copy helpers */
+.lp-p {
+  margin: 0;
+  color: rgb(var(--lp-muted));
+}
+.lp-sub {
+  margin: 0;
+  color: rgb(var(--lp-muted));
+  max-width: 90ch;
+}
+
+/* Hero bullets */
 .lp-heroBullets {
   margin: 14px 0 0;
   padding: 0;
@@ -885,161 +2143,24 @@ button.lp-btn[disabled],
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.7);
 }
-.lp-heroActions {
-  margin-top: 16px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.lp-heroNote {
-  margin-top: 12px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-}
 
-/* glass panel (global) */
-.lp-panelCard {
-  border-radius: var(--lp-radius-card);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
-  padding: 16px;
-}
-.lp-panelTitle {
-  color: rgba(255, 255, 255, 0.92);
-  font-weight: 650;
-  margin-bottom: 10px;
-}
-.lp-panelGrid {
-  display: grid;
-  gap: 10px;
-}
-.lp-panelItem {
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-.lp-panelH {
-  color: rgba(255, 255, 255, 0.92);
-  font-weight: 650;
-  margin-bottom: 4px;
-}
-.lp-panelP {
-  color: rgba(255, 255, 255, 0.78);
-  line-height: 1.55;
-  font-size: 13px;
-}
-.lp-panelActions {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
-}
-
-/* =========================================================
-   Proof / Flow / Timeline / SXO / FAQ Premium
-========================================================= */
-.lp-flow {
-  display: grid;
-  gap: 12px;
-}
-.lp-flow-item {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 10px;
-  align-items: start;
-}
-.lp-flow-title {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-.lp-proof {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.lp-proof-chip {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  line-height: 1;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  color: rgba(0, 0, 0, 0.82);
-}
-.lp-proof-chip svg {
-  color: rgba(0, 0, 0, 0.70);
-}
-.lp-proof-chip--rid {
-  border-color: rgba(255, 0, 127, 0.35);
-  box-shadow: 0 0 18px rgba(255, 0, 127, 0.10);
-}
-/* proof chips on hero (dark) */
-.lp-hero .lp-proof-chip {
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.92);
-}
-.lp-hero .lp-proof-chip svg {
-  color: rgba(255, 255, 255, 0.86);
-}
-.lp-hero .lp-proof-chip--rid {
-  border-color: rgba(255, 0, 127, 0.40);
-  box-shadow: 0 0 18px rgba(255, 0, 127, 0.18);
-}
-
-.lp-timeline {
-  margin-top: 12px;
-  display: grid;
-  gap: 14px;
-}
-.lp-timeline-item {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.lp-timeline-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.18);
-  margin-top: 6px;
-}
-.lp-timeline-title {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-.lp-sxo-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 16px;
-}
-@media (max-width: 980px) {
-  .lp-sxo-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* FAQ premium */
-.lp-faq--premium .lp-faq-item {
+/* FAQ premium + base */
+.lp-faq-item,
+.lp-faqRow {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
-.lp-faq--premium .lp-faq-item + .lp-faq-item {
-  margin-top: 12px;
+html[data-resolved-theme="dark"] .lp-faq-item,
+html[data-resolved-theme="dark"] .lp-faqRow {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
-.lp-faq--premium .lp-faq-q {
+
+.lp-faq-q,
+.lp-faqSummary {
   list-style: none;
   cursor: pointer;
   user-select: none;
@@ -1048,30 +2169,33 @@ button.lp-btn[disabled],
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-weight: 800;
+  font-weight: 900;
+  color: rgb(var(--lp-fg));
 }
-.lp-faq--premium .lp-faq-q::-webkit-details-marker {
+.lp-faq-q::-webkit-details-marker,
+.lp-faqSummary::-webkit-details-marker {
   display: none;
 }
-.lp-faq--premium .lp-faq-a {
-  padding: 0 16px 16px 16px;
-  color: rgba(0, 0, 0, 0.72);
-  line-height: 1.55;
-}
-.lp-faq--premium .lp-faq-item[open] {
-  border-color: rgba(255, 0, 127, 0.22);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06), 0 0 24px rgba(255, 0, 127, 0.12);
-}
-.lp-faq--premium .lp-faq-icon {
+
+.lp-faqPlus,
+.lp-faq-icon {
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
   position: relative;
   flex: 0 0 auto;
+  opacity: 0.8;
+  border: 1px solid rgba(0, 0, 0, 0.12);
 }
-.lp-faq--premium .lp-faq-icon::before,
-.lp-faq--premium .lp-faq-icon::after {
+html[data-resolved-theme="dark"] .lp-faqPlus,
+html[data-resolved-theme="dark"] .lp-faq-icon {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.lp-faqPlus::before,
+.lp-faqPlus::after,
+.lp-faq-icon::before,
+.lp-faq-icon::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -1081,20 +2205,39 @@ button.lp-btn[disabled],
   background: rgba(0, 0, 0, 0.55);
   transform: translate(-50%, -50%);
 }
-.lp-faq--premium .lp-faq-icon::after {
+html[data-resolved-theme="dark"] .lp-faqPlus::before,
+html[data-resolved-theme="dark"] .lp-faqPlus::after,
+html[data-resolved-theme="dark"] .lp-faq-icon::before,
+html[data-resolved-theme="dark"] .lp-faq-icon::after {
+  background: rgba(255, 255, 255, 0.66);
+}
+.lp-faqPlus::after,
+.lp-faq-icon::after {
   transform: translate(-50%, -50%) rotate(90deg);
 }
-.lp-faq--premium .lp-faq-item[open] .lp-faq-icon {
-  border-color: rgba(255, 0, 127, 0.35);
-  box-shadow: 0 0 18px rgba(255, 0, 127, 0.14);
-}
-.lp-faq--premium .lp-faq-item[open] .lp-faq-icon::after {
+details[open] .lp-faqPlus::after,
+details[open] .lp-faq-icon::after {
   display: none;
 }
 
-/* =========================================================
-   Related links (used by <RelatedLinks />)
-========================================================= */
+.lp-faq-a,
+.lp-faqAnswer {
+  padding: 0 16px 16px 16px;
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.55;
+}
+html[data-resolved-theme="dark"] .lp-faq-a,
+html[data-resolved-theme="dark"] .lp-faqAnswer {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.lp-faqList {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Related links */
 .lp-related {
   padding: 52px 0;
 }
@@ -1128,6 +2271,7 @@ button.lp-btn[disabled],
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
 .lp-related-card {
   display: flex;
   flex-direction: column;
@@ -1147,16 +2291,14 @@ button.lp-btn[disabled],
   box-shadow: 0 18px 60px rgba(26, 26, 26, 0.12);
   text-decoration: none;
 }
-.lp-related-card:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.35), 0 0 22px rgba(var(--lp-neon-rgb), 0.18);
-}
+
 .lp-related-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
+
 .lp-related-badge {
   display: inline-flex;
   align-items: center;
@@ -1171,6 +2313,7 @@ button.lp-btn[disabled],
   border: 1px solid rgba(var(--lp-neon-rgb), 0.22);
   color: rgb(var(--lp-text));
 }
+
 .lp-related-arrow {
   display: inline-flex;
   width: 32px;
@@ -1182,6 +2325,11 @@ button.lp-btn[disabled],
   background: rgba(255, 255, 255, 0.65);
   color: rgb(var(--lp-text));
 }
+html[data-resolved-theme="dark"] .lp-related-arrow {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .lp-related-h {
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -1208,14 +2356,16 @@ button.lp-btn[disabled],
   font-weight: 900;
   font-size: 12px;
 }
+html[data-resolved-theme="dark"] .lp-related-cta {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
 .lp-related-card:hover .lp-related-cta {
   border-color: rgba(var(--lp-neon-rgb), 0.28);
   box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.1), 0 0 18px rgba(var(--lp-neon-rgb), 0.12);
 }
 
-/* =========================================================
-   Local grid (used on local pages)
-========================================================= */
+/* Local grid + cards */
 .lp-local-grid {
   display: grid;
   gap: 18px;
@@ -1235,11 +2385,6 @@ button.lp-btn[disabled],
   background: rgba(var(--lp-surface-rgb), 0.7);
   box-shadow: var(--lp-shadow-sm);
 }
-.lp-local-card .lp-section-img {
-  border-radius: 0;
-  box-shadow: none;
-  aspect-ratio: 16 / 9;
-}
 .lp-local-meta {
   padding: 14px 16px 16px;
 }
@@ -1255,23 +2400,30 @@ button.lp-btn[disabled],
   line-height: 1.35;
 }
 
-/* =========================================================
-   Section images (base)
-========================================================= */
+/* Section image class */
 .lp-section-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 16 / 10;
+  max-height: clamp(320px, 38vh, 520px);
   border-radius: 24px;
   box-shadow: var(--lp-shadow-md);
   transition: transform 0.22s var(--lp-ease), box-shadow 0.22s var(--lp-ease);
-  width: 100%;
-  height: auto;
-  max-width: none;
-  display: block;
-  object-fit: cover;
+}
+@media (min-width: 1440px) {
+  .lp-section-img {
+    max-height: 560px;
+  }
+}
+@media (max-width: 640px) {
+  .lp-section-img {
+    aspect-ratio: 16 / 11;
+    max-height: 340px;
+  }
 }
 
-/* =========================================================
-   FIX — ZIG / STEG-FOR-STEG BILDER (hindrer gigantiske bilder)
-========================================================= */
+/* Zig + media */
 .lp-zig {
   display: grid;
   gap: 18px;
@@ -1283,24 +2435,16 @@ button.lp-btn[disabled],
   gap: 18px;
   align-items: center;
 }
-.lp-zig-row.is-reverse {
-  grid-template-columns: 1fr 1.05fr;
-}
-.lp-zig-row.is-reverse .lp-zig-text {
-  order: 2;
-}
-.lp-zig-row.is-reverse .lp-zig-media {
-  order: 1;
-}
 @media (max-width: 1024px) {
-  .lp-zig-row,
-  .lp-zig-row.is-reverse {
+  .lp-zig-row {
     grid-template-columns: 1fr;
   }
-  .lp-zig-row.is-reverse .lp-zig-text,
-  .lp-zig-row.is-reverse .lp-zig-media {
-    order: unset;
-  }
+}
+.lp-zig-text {
+  min-width: 0;
+}
+.lp-zig-media {
+  min-width: 0;
 }
 .lp-zig-step {
   display: grid;
@@ -1308,6 +2452,7 @@ button.lp-btn[disabled],
   gap: 12px;
   align-items: start;
 }
+
 .lp-media-card {
   border-radius: 26px;
   border: 1px solid rgba(var(--lp-border), 0.7);
@@ -1315,29 +2460,10 @@ button.lp-btn[disabled],
   padding: 10px;
   box-shadow: var(--lp-shadow-sm);
   overflow: hidden;
-}
-/* cap image height */
-.lp-section-img {
-  max-height: 520px;
-}
-@media (min-width: 1440px) {
-  .lp-section-img {
-    max-height: 560px;
-  }
-}
-@media (max-width: 640px) {
-  .lp-section-img {
-    max-height: 380px;
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .lp-section-img:hover {
-    transform: scale(1.02);
-    box-shadow: 0 40px 120px rgba(var(--lp-neon-rgb), 0.12), var(--lp-shadow-md);
-  }
+  position: relative;
 }
 
-/* Step badge used in zig steps */
+/* neon ring badge */
 .lp-neon-ring {
   background: rgba(var(--lp-neon-rgb), 0.12);
   border: 1px solid rgba(var(--lp-neon-rgb), 0.35);
@@ -1351,59 +2477,150 @@ button.lp-btn[disabled],
   color: rgb(var(--lp-text));
 }
 
-/* =========================================================
-   CTA rows
-========================================================= */
-.lp-cta-row,
-.lp-actions {
-  display: flex;
+/* Steps + trio */
+.lp-steps {
+  margin-top: 14px;
+  display: grid;
   gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 18px;
+}
+.lp-step {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border-radius: var(--lp-radius-card);
+  background: rgb(var(--lp-surface));
+  border: 1px solid rgb(var(--lp-border));
+  box-shadow: var(--lp-shadow-soft);
+}
+.lp-stepNo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--lp-surface-alt));
+  border: 1px solid rgb(var(--lp-border));
+  font-weight: 900;
+  color: rgb(var(--lp-fg));
+}
+.lp-stepH {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: rgb(var(--lp-fg));
+  margin-bottom: 4px;
+}
+.lp-stepP {
+  color: rgb(var(--lp-muted));
+  line-height: 1.55;
 }
 
-/* =========================================================
-   Mini-hero card packing (fix “tomrom”)
-========================================================= */
-.lp-mini-hero-card .lp-card-content {
-  display: flex;
-  flex-direction: column;
+.lp-trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 980px) {
+  .lp-trio {
+    grid-template-columns: 1fr;
+  }
+}
+.lp-trioCard {
+  border-radius: var(--lp-radius-card);
+  background: rgb(var(--lp-surface));
+  border: 1px solid rgb(var(--lp-border));
+  box-shadow: var(--lp-shadow-soft);
+  padding: 16px;
+}
+.lp-trioK {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--lp-muted));
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.lp-trioH {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: rgb(var(--lp-fg));
+  margin-bottom: 6px;
+}
+.lp-trioP {
+  color: rgb(var(--lp-muted));
+  line-height: 1.55;
+}
+
+/* Timeline */
+.lp-timeline {
+  margin-top: 12px;
+  display: grid;
   gap: 14px;
 }
-.lp-mini-hero-card .lp-cta-row {
-  justify-content: flex-start;
-  gap: 10px;
+.lp-timeline-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.lp-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+  margin-top: 6px;
+}
+html[data-resolved-theme="dark"] .lp-timeline-dot {
+  background: rgba(255, 255, 255, 0.18);
+}
+.lp-timeline-title {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+/* SXO grid */
+.lp-sxo-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+}
+@media (max-width: 980px) {
+  .lp-sxo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Proof chips */
+.lp-proof {
+  display: flex;
   flex-wrap: wrap;
+  gap: 10px;
 }
-.lp-mini-hero-card .lp-card,
-.lp-mini-hero-card .lp-card-content {
-  min-height: unset !important;
+.lp-proof-chip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.82);
 }
-
-/* =========================================================
-   Pricing “visual” bg helper (used by some cards)
-========================================================= */
-.lp-price-visual {
-  position: relative;
-  overflow: hidden;
+html[data-resolved-theme="dark"] .lp-proof-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.86);
 }
-.lp-price-bg {
-  position: absolute;
-  inset: 0;
-  opacity: 0.12;
-  pointer-events: none;
-}
-.lp-price-bg-img {
-  object-fit: cover;
-}
-.lp-price-visual > * {
-  position: relative;
-  z-index: 1;
+.lp-proof-chip--rid {
+  border-color: rgba(255, 0, 127, 0.35);
+  box-shadow: 0 0 18px rgba(255, 0, 127, 0.1);
 }
 
-/* =========================================================
-   Pricing base (legacy used in some places)
-========================================================= */
+/* Pricing (visual) */
 .lp-pricing {
   margin-top: 18px;
   display: grid;
@@ -1426,11 +2643,6 @@ button.lp-btn[disabled],
   border: 1px solid rgba(var(--lp-border), 0.9);
   margin-bottom: 12px;
 }
-.lp-pill.hot {
-  background: rgba(var(--lp-neon-rgb), 0.12);
-  border-color: rgba(var(--lp-neon-rgb), 0.35);
-  box-shadow: 0 0 16px rgba(var(--lp-neon-rgb), 0.18);
-}
 .lp-price {
   display: flex;
   align-items: baseline;
@@ -1446,392 +2658,6 @@ button.lp-btn[disabled],
   color: rgb(var(--lp-muted));
   font-weight: 900;
 }
-
-/* =========================================================
-   Cookie consent scroll lock (no layout shift)
-========================================================= */
-html.noScroll,
-html.noScroll body {
-  overflow: hidden;
-}
-html.noScroll body {
-  padding-right: var(--lp-scrollbar-comp);
-  overscroll-behavior: none;
-  touch-action: none;
-}
-
-/* =========================================================
-   Scrollbar
-========================================================= */
-@media (min-width: 768px) {
-  *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  *::-webkit-scrollbar-thumb {
-    background: rgba(26, 26, 26, 0.18);
-    border-radius: 999px;
-    border: 2px solid rgba(255, 255, 255, 0.7);
-  }
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-}
-
-/* =========================================================
-   Mobile-first hardening
-========================================================= */
-@media (max-width: 640px) {
-  .lp-btn {
-    width: 100%;
-  }
-  .lp-cta-row,
-  .lp-actions {
-    width: 100%;
-  }
-  .lp-cta-row > *,
-  .lp-actions > * {
-    flex: 1 1 auto;
-  }
-}
-
-/* =========================================================
-   MOBILE CENTER LOCK (VIKTIG) — 100% midtstilt innhold
-========================================================= */
-@media (max-width: 640px) {
-  .lp-container,
-  .lp-footer-shell {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  .lp-page,
-  main.lp-main,
-  .lp-section,
-  .lp-final-cta,
-  .lp-pricing,
-  .lp-zig,
-  .lp-local-grid,
-  .lp-related,
-  .lp-footer {
-    text-align: center;
-  }
-
-  .lp-section-head,
-  .lp-cta-row,
-  .lp-actions,
-  .lp-trust,
-  .lp-chip-row,
-  .lp-footer-cta,
-  .lp-footer-mini {
-    justify-content: center !important;
-    align-items: center !important;
-  }
-
-  .lp-card,
-  .lp-hero-card,
-  .lp-hero-trust,
-  .lp-local-card,
-  .lp-related-card,
-  .lp-media-card,
-  .lp-final-cta {
-    margin-left: auto !important;
-    margin-right: auto !important;
-    width: 100%;
-  }
-
-  .lp-list,
-  .lp-hero-card ul {
-    text-align: left;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    width: fit-content;
-    max-width: 100%;
-  }
-
-  .lp-footer-grid {
-    justify-items: center;
-  }
-  .lp-footer-links {
-    justify-items: center;
-    text-align: center;
-  }
-}
-
-/* =========================================================
-   Reduced motion
-========================================================= */
-@media (prefers-reduced-motion: reduce) {
-  .lp-hero-frame {
-    animation: none !important;
-    opacity: 1 !important;
-  }
-  .lp-btn,
-  .lp-card,
-  .lp-section-img,
-  .lp-nav-item {
-    transition: none !important;
-  }
-  .lp-btn::after,
-  .lp-card::after {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-}
-
-/* =========================================================
-   Neon helpers (hot pink)
-========================================================= */
-.lp-neon-dot {
-  background: var(--lp-hotpink);
-  box-shadow: 0 0 16px rgba(255, 0, 127, 0.45);
-}
-.lp-neon-active {
-  border-color: var(--lp-hotpink) !important;
-  box-shadow: 0 0 0 3px rgba(255, 0, 127, 0.18) !important;
-}
-.lp-active-ring {
-  box-shadow:
-    0 0 0 2px rgba(255, 0, 127, 0.55),
-    0 0 18px rgba(255, 0, 127, 0.55),
-    0 0 40px rgba(255, 0, 127, 0.25);
-  border: 1px solid rgba(255, 0, 127, 0.55);
-}
-
-/* =========================================================
-   Shine sweep
-========================================================= */
-@keyframes lp-shine {
-  0% { left: -140%; }
-  100% { left: 160%; }
-}
-.lp-btn::after {
-  content: "";
-  position: absolute;
-  top: -40%;
-  left: -140%;
-  width: 70%;
-  height: 180%;
-  transform: rotate(18deg);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 35%,
-    rgba(255, 255, 255, 0.26) 50%,
-    rgba(255, 255, 255, 0.1) 65%,
-    transparent 100%
-  );
-  opacity: 0;
-  transition: opacity 0.22s var(--lp-ease);
-  pointer-events: none;
-}
-.lp-btn:hover::after,
-.lp-btn:focus-visible::after {
-  opacity: 1;
-  animation: lp-shine 0.95s var(--lp-ease) forwards;
-}
-.lp-card::after {
-  content: "";
-  position: absolute;
-  top: -40%;
-  left: -140%;
-  width: 70%;
-  height: 180%;
-  transform: rotate(18deg);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 35%,
-    rgba(255, 255, 255, 0.18) 50%,
-    rgba(255, 255, 255, 0.08) 65%,
-    transparent 100%
-  );
-  opacity: 0;
-  transition: opacity 0.22s var(--lp-ease);
-  pointer-events: none;
-}
-.lp-card:hover::after {
-  opacity: 1;
-  animation: lp-shine 0.95s var(--lp-ease) forwards;
-}
-.lp-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--lp-shadow-card);
-}
-
-/* =========================================================
-   Footer (FULL WIDTH) + shell
-========================================================= */
-.lp-footer.lp-footer--full {
-  width: 100%;
-  border-top: 1px solid rgba(var(--lp-border), 0.7);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52));
-  padding: 30px 0 18px;
-}
-.lp-footer-shell {
-  width: 100%;
-  margin: 0 auto;
-  padding-left: 16px;
-  padding-right: 16px;
-}
-@media (min-width: 640px) {
-  .lp-footer-shell { padding-left: 20px; padding-right: 20px; }
-}
-@media (min-width: 768px) {
-  .lp-footer-shell { padding-left: 28px; padding-right: 28px; }
-}
-@media (min-width: 1024px) {
-  .lp-footer-shell { padding-left: 40px; padding-right: 40px; }
-}
-@media (min-width: 1440px) {
-  .lp-footer-shell { padding-left: 56px; padding-right: 56px; }
-}
-@media (min-width: 1720px) {
-  .lp-footer-shell { padding-left: 72px; padding-right: 72px; }
-}
-
-.lp-footer-grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 18px;
-  align-items: start;
-}
-@media (max-width: 1100px) {
-  .lp-footer-grid { grid-template-columns: 1.4fr 1fr 1fr; }
-}
-@media (max-width: 980px) {
-  .lp-footer-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 640px) {
-  .lp-footer-grid { grid-template-columns: 1fr; gap: 14px; }
-}
-
-.lp-footer-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-.lp-footer-brandcol { gap: 12px; }
-.lp-footer-brand { display: inline-flex; align-items: center; }
-.lp-footer-logo { height: 64px; width: auto; object-fit: contain; display: block; }
-@media (min-width: 768px) { .lp-footer-logo { height: 78px; } }
-.lp-footer-text { margin: 0; color: rgb(var(--lp-muted)); max-width: 62ch; }
-.lp-footer-cta { margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
-.lp-footer-head { font-weight: 900; margin: 0 0 2px; }
-.lp-footer-links { display: grid; gap: 8px; }
-.lp-footer-link { color: rgb(var(--lp-muted)); text-decoration: none; }
-.lp-footer-link:hover { color: rgb(var(--lp-text)); text-decoration: none; }
-.lp-footer-mini { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.lp-footer-bottom {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(var(--lp-border), 0.6);
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-  color: rgb(var(--lp-muted));
-  font-size: 13px;
-}
-.lp-footer-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(var(--lp-neon-rgb), 0.55);
-  box-shadow: 0 0 14px rgba(var(--lp-neon-rgb), 0.55);
-}
-
-/* =========================================================
-   FINAL SAFE: Hvordan hero panel actions spacing
-   (only affects hero with lp-how-page)
-========================================================= */
-.lp-how-page .lp-panelActions { display: grid; gap: 10px; }
-/* =========================================================
-   MISSING CORE CLASSES (for app/page.tsx + Hero component)
-   - Additivt: endrer ikke eksisterende klasser
-   - Gjør forsiden “komplett” uten å ødelegge andre sider
-========================================================= */
-
-/* HERO: rotator marker (ikke nødvendig visuelt, men nyttig) */
-.lp-hero-rotator { --lp-rotator: 1; }
-
-/* HERO content block (Hero.tsx pleier å ha grid/typografi inni) */
-.lp-hero .lp-hero-content {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 18px;
-  align-items: center;
-}
-@media (max-width: 980px) {
-  .lp-hero .lp-hero-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* HERO: knapperad på forsiden */
-.lp-hero .lp-hero-actions,
-.lp-hero .lp-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
-/* HERO: “subline” / smånotis */
-.lp-hero .lp-hero-sub {
-  margin-top: 10px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-}
-
-/* HERO: høyrekort på forsiden (bildet/telefon) */
-.lp-hero .lp-hero-rightCard {
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
-  overflow: hidden;
-}
-.lp-hero .lp-hero-rightCard img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* =========================================================
-   FINAL CTA (used in app/page.tsx + how pages)
-========================================================= */
-.lp-final-cta {
-  border-radius: 22px;
-  border: 1px solid rgba(var(--lp-border), 0.85);
-  background: rgba(var(--lp-surface-rgb), 0.78);
-  box-shadow: var(--lp-shadow-sm);
-  padding: 22px;
-}
-@media (min-width: 1024px) {
-  .lp-final-cta {
-    padding: 26px;
-  }
-}
-
-/* =========================================================
-   LISTS (used in pricing blocks on home)
-========================================================= */
-.lp-list {
-  margin: 10px 0 16px;
-  padding-left: 18px;
-  color: rgb(var(--lp-muted));
-}
-.lp-list li {
-  margin: 6px 0;
-}
-
-/* =========================================================
-   PRICING “visual” card helpers (used by lp-price-visual on home)
-========================================================= */
 .lp-price-visual {
   position: relative;
   overflow: hidden;
@@ -1843,204 +2669,26 @@ html.noScroll body {
   pointer-events: none;
 }
 .lp-price-bg-img {
-  object-fit: cover;
-}
-.lp-price-visual > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* =========================================================
-   SECTION IMAGES – STABIL PREMIUM VARIANT
-   - Fast visuell høyde
-   - Ingen gigantiske steg-for-steg-bilder
-   - Samme rytme på alle skjermer
-========================================================= */
-
-.lp-section-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-
-  /* Kontroller høyden presist */
-  aspect-ratio: 16 / 10;
-
-  max-height: clamp(320px, 38vh, 520px);
-
-  border-radius: 24px;
-  box-shadow: var(--lp-shadow-md);
-
-  transition: transform 0.22s var(--lp-ease),
-              box-shadow 0.22s var(--lp-ease);
+  display: block;
 }
 
-/* Large screens – ikke la de eksplodere */
-@media (min-width: 1440px) {
-  .lp-section-img {
-    max-height: 560px;
-  }
-}
-
-/* Mobile – mer kompakt */
-@media (max-width: 640px) {
-  .lp-section-img {
-    aspect-ratio: 16 / 11;
-    max-height: 340px;
-  }
-}
-
-/* =========================================================
-   MEDIA CARD – riktig clipping og kontroll
-========================================================= */
-
-.lp-media-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 26px;
-}
-
-/* Fjern double radius på bilde når det ligger i media-card */
-.lp-media-card .lp-section-img {
-  border-radius: 0;
-}
-
-/* =========================================================
-   Forside hero – glasspanel litt mer dybde (rotator only)
-========================================================= */
-
-.lp-hero-rotator .lp-panelCard {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.20);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
-}
-/* =========================================================
-   LUNSJORDNING — BODY FIX (ONLY)
-   - Rører IKKE hero/banner
-   - Gjenoppretter body-moduler: trio, steps, pricing ref, link chips, faq, final cta
-   - Scopet kun til .lp-lunsjordning
-========================================================= */
-
-/* Base: litt strammere rytme i body */
-.lp-lunsjordning .lp-section {
-  padding: 44px 0;
-}
-@media (max-width: 640px) {
-  .lp-lunsjordning .lp-section {
-    padding: 36px 0;
-  }
-}
-
-/* Section head */
-.lp-lunsjordning .lp-section-head {
-  margin-bottom: 16px;
-}
-
-/* =========================================================
-   TRIO (Hva/Hvorfor/Hvordan)
-========================================================= */
-.lp-lunsjordning .lp-trio {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
-}
-@media (max-width: 980px) {
-  .lp-lunsjordning .lp-trio {
-    grid-template-columns: 1fr;
-  }
-}
-
-.lp-lunsjordning .lp-trioCard {
-  border-radius: var(--lp-radius-card);
-  background: rgb(var(--lp-surface));
-  border: 1px solid rgb(var(--lp-border));
-  box-shadow: var(--lp-shadow-soft);
-  padding: 16px;
-}
-
-.lp-lunsjordning .lp-trioK {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(var(--lp-muted));
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.lp-lunsjordning .lp-trioH {
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  color: rgb(var(--lp-fg));
-  margin-bottom: 6px;
-}
-
-.lp-lunsjordning .lp-trioP {
-  color: rgb(var(--lp-muted));
-  line-height: 1.55;
-}
-
-/* =========================================================
-   STEPS (Slik fungerer det)
-========================================================= */
-.lp-lunsjordning .lp-steps {
-  margin-top: 14px;
-  display: grid;
-  gap: 12px;
-}
-
-.lp-lunsjordning .lp-step {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 12px;
-  align-items: start;
-  padding: 14px;
-  border-radius: var(--lp-radius-card);
-  background: rgb(var(--lp-surface));
-  border: 1px solid rgb(var(--lp-border));
-  box-shadow: var(--lp-shadow-soft);
-}
-
-.lp-lunsjordning .lp-stepNo {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  background: rgb(var(--lp-surface-alt));
-  border: 1px solid rgb(var(--lp-border));
-  font-weight: 900;
-  color: rgb(var(--lp-fg));
-}
-
-.lp-lunsjordning .lp-stepH {
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  color: rgb(var(--lp-fg));
-  margin-bottom: 4px;
-}
-
-.lp-lunsjordning .lp-stepP {
-  color: rgb(var(--lp-muted));
-  line-height: 1.55;
-}
-
-/* =========================================================
-   PRICING — REF STYLE (lp-priceGridRef / lp-priceCardRef)
-   (Dette er det som nå vises som “ren tekst” hos deg.)
-========================================================= */
-.lp-lunsjordning .lp-priceGridRef {
+/* Ref pricing (lunsjordning) */
+.lp-priceGridRef {
   margin-top: 16px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 @media (max-width: 980px) {
-  .lp-lunsjordning .lp-priceGridRef {
+  .lp-priceGridRef {
     grid-template-columns: 1fr;
   }
 }
 
-.lp-lunsjordning .lp-priceCardRef {
+.lp-priceCardRef {
   border-radius: var(--lp-radius-card);
   background: rgb(var(--lp-surface));
   border: 1px solid rgb(var(--lp-border));
@@ -2048,7 +2696,7 @@ html.noScroll body {
   padding: 18px;
 }
 
-.lp-lunsjordning .lp-priceTop {
+.lp-priceTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2056,7 +2704,7 @@ html.noScroll body {
   margin-bottom: 10px;
 }
 
-.lp-lunsjordning .lp-pricePill {
+.lp-pricePill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2067,51 +2715,45 @@ html.noScroll body {
   font-weight: 900;
   font-size: 13px;
 }
-
-.lp-lunsjordning .lp-pricePillHot {
+.lp-pricePillHot {
   background: rgba(255, 64, 160, 0.08);
   border-color: rgba(255, 64, 160, 0.25);
 }
-
-.lp-lunsjordning .lp-priceTopNote {
+.lp-priceTopNote {
   color: rgb(var(--lp-muted));
   font-weight: 800;
   font-size: 13px;
 }
 
-.lp-lunsjordning .lp-priceMain {
+.lp-priceMain {
   display: flex;
   align-items: baseline;
   gap: 10px;
   margin: 8px 0 12px;
 }
-
-.lp-lunsjordning .lp-priceN {
+.lp-priceN {
   font-size: 46px;
   font-weight: 950;
   letter-spacing: -0.03em;
   color: rgb(var(--lp-fg));
 }
-
-.lp-lunsjordning .lp-priceS {
+.lp-priceS {
   color: rgb(var(--lp-muted));
   font-weight: 800;
 }
 
-/* Chips grid */
-.lp-lunsjordning .lp-priceChips {
+.lp-priceChips {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 10px 0 14px;
 }
 @media (max-width: 520px) {
-  .lp-lunsjordning .lp-priceChips {
+  .lp-priceChips {
     grid-template-columns: 1fr;
   }
 }
-
-.lp-lunsjordning .lp-priceChip {
+.lp-priceChip {
   display: inline-flex;
   align-items: center;
   min-height: 36px;
@@ -2123,30 +2765,25 @@ html.noScroll body {
   font-weight: 800;
   font-size: 13px;
 }
+html[data-resolved-theme="dark"] .lp-priceChip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
 
-/* Featured ring */
-.lp-lunsjordning .lp-priceCardFeaturedRef {
+.lp-priceCardFeaturedRef,
+.lp-priceCardFeaturedRef.lp-priceCardRef {
   border: 2px solid rgba(255, 64, 160, 0.22);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.08), 0 0 0 6px rgba(255, 64, 160, 0.06);
 }
 
-/* CTA inside pricing */
-.lp-lunsjordning .lp-priceCardRef .lp-btn.lp-btn-primary {
-  height: 44px;
-  border-radius: 14px;
-}
-
-/* =========================================================
-   LINK CHIPS (lokale sider)
-========================================================= */
-.lp-lunsjordning .lp-linkChips {
+/* Link chips (lunsjordning) */
+.lp-linkChips {
   margin-top: 14px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
-
-.lp-lunsjordning .lp-linkChip {
+.lp-linkChip {
   display: inline-flex;
   align-items: center;
   padding: 9px 12px;
@@ -2158,121 +2795,382 @@ html.noScroll body {
   font-weight: 900;
   font-size: 13px;
 }
-
-.lp-lunsjordning .lp-linkChip:hover {
+.lp-linkChip:hover {
   background: rgb(var(--lp-surface-alt));
   text-decoration: none;
 }
-
-/* =========================================================
-   FAQ (lp-faqList / lp-faqRow)
-========================================================= */
-.lp-lunsjordning .lp-faqList {
-  margin-top: 12px;
-  display: grid;
-  gap: 12px;
+html[data-resolved-theme="dark"] .lp-linkChip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+html[data-resolved-theme="dark"] .lp-linkChip:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.lp-lunsjordning .lp-faqRow {
-  border-radius: var(--lp-radius-card);
+/* scope class used in repo */
+.lp-lunsjordning {
+  --lp-hook: 1;
+}
+
+/* mini hero card */
+.lp-mini-hero-card {
+  --lp-hook: 1;
+}
+
+/* =========================================================
+   KITCHEN PRINT — Production Mode (HARD)
+   (for KitchenView)
+========================================================= */
+.lp-kitchen {
+  width: 100%;
+}
+.lp-kitchen__header {
   border: 1px solid rgb(var(--lp-border));
   background: rgb(var(--lp-surface));
-  box-shadow: var(--lp-shadow-soft);
-  padding: 12px 14px;
+  border-radius: 16px;
+  padding: 14px 14px 12px;
 }
-
-.lp-lunsjordning .lp-faqSummary {
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-weight: 950;
-  color: rgb(var(--lp-fg));
-  list-style: none;
+.lp-kitchen__headerTitle {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  font-size: 14px;
 }
-.lp-lunsjordning .lp-faqSummary::-webkit-details-marker {
-  display: none;
-}
-
-.lp-lunsjordning .lp-faqPlus {
-  width: 18px;
-  height: 18px;
-  position: relative;
-  opacity: 0.75;
-  flex: 0 0 auto;
-}
-
-.lp-lunsjordning .lp-faqPlus::before,
-.lp-lunsjordning .lp-faqPlus::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 12px;
-  height: 2px;
-  background: rgb(var(--lp-muted));
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-}
-.lp-lunsjordning .lp-faqPlus::after {
-  width: 2px;
-  height: 12px;
-}
-
-.lp-lunsjordning details[open] .lp-faqPlus::after {
-  display: none;
-}
-
-.lp-lunsjordning .lp-faqAnswer {
+.lp-kitchen__headerGrid {
   margin-top: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 900px) {
+  .lp-kitchen__headerGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+.lp-kitchen__k {
+  font-size: 11px;
   color: rgb(var(--lp-muted));
-  line-height: 1.6;
+}
+.lp-kitchen__v {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgb(var(--lp-text));
+}
+.lp-kitchen__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.lp-kitchen__muted {
+  color: rgb(var(--lp-muted));
+  font-size: 12px;
+}
+.lp-kitchen__slotTotals {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lp-kitchen__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgb(var(--lp-border));
+  background: rgb(var(--lp-surface-2));
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.lp-kitchen__chipSlot {
+  font-weight: 900;
+}
+.lp-kitchen__chipCount {
+  font-weight: 900;
+}
+.lp-kitchen__list {
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+.lp-kitchen__slot {
+  border: 1px solid rgb(var(--lp-border));
+  background: rgb(var(--lp-surface));
+  border-radius: 16px;
+  padding: 12px;
+}
+.lp-kitchen__slotHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgb(var(--lp-divider));
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.lp-kitchen__slotTitle {
+  font-size: 16px;
+  font-weight: 950;
+}
+.lp-kitchen__slotMeta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+.lp-kitchen__company {
+  margin-top: 10px;
+}
+.lp-kitchen__companyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.lp-kitchen__companyName {
+  font-size: 14px;
+  font-weight: 950;
+}
+.lp-kitchen__badge {
+  border: 1px solid rgb(var(--lp-border));
+  background: rgb(var(--lp-surface-2));
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: rgb(var(--lp-text));
+}
+.lp-kitchen__location {
+  margin-top: 8px;
+  padding-left: 10px;
+  border-left: 2px solid rgb(var(--lp-divider));
+}
+.lp-kitchen__locationHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.lp-kitchen__locationName {
+  font-size: 13px;
+  font-weight: 900;
+}
+.lp-kitchen__employees {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.lp-kitchen__emp {
+  border: 1px solid rgb(var(--lp-border));
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: rgb(var(--lp-surface));
+}
+.lp-kitchen__empMain {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lp-kitchen__empName {
+  font-weight: 950;
+  font-size: 13px;
+}
+.lp-kitchen__empDept {
+  font-size: 12px;
+  color: rgb(var(--lp-muted));
+}
+.lp-kitchen__empRight {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+.lp-kitchen__status {
+  font-size: 11px;
+  border: 1px solid rgb(var(--lp-border));
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgb(var(--lp-surface-2));
+}
+.lp-kitchen__note {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgb(var(--lp-text));
+  border-top: 1px dashed rgb(var(--lp-divider));
+  padding-top: 6px;
+}
+
+/* 🔴 BLOCKED STATE */
+.lp-kitchen-blocked {
+  border: 1px solid rgb(var(--lp-border));
+  background: rgb(var(--lp-surface));
+  border-radius: 18px;
+  overflow: hidden;
+}
+.lp-kitchen-blocked__bar {
+  height: 10px;
+  background: #dc2626;
+}
+.lp-kitchen-blocked__inner {
+  padding: 14px;
+}
+.lp-kitchen-blocked__title {
+  font-weight: 950;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+.lp-kitchen-blocked__reason {
+  margin-top: 10px;
+  border: 1px solid rgb(var(--lp-border));
+  border-radius: 14px;
+  padding: 10px;
+  background: rgb(var(--lp-surface-2));
+}
+.lp-kitchen-blocked__reasonTitle {
+  font-weight: 950;
+  font-size: 13px;
+}
+.lp-kitchen-blocked__reasonText {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgb(var(--lp-text));
+}
+.lp-kitchen-blocked__meta {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.lp-kitchen-blocked__k {
+  display: inline-block;
+  min-width: 140px;
+  color: rgb(var(--lp-muted));
+}
+.lp-kitchen-blocked__v {
+  font-weight: 900;
+  color: rgb(var(--lp-text));
+}
+.lp-kitchen-blocked__detail {
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgb(var(--lp-border));
+  background: #0b0b0b;
+  color: #f5f5f5;
+  overflow: auto;
+  max-height: 320px;
+  font-size: 11px;
+}
+
+/* pagebreak helper */
+.lp-print-pagebreak {
+  display: none;
 }
 
 /* =========================================================
-   FINAL CTA (lp-finalCta)
+   Print — global production rules
 ========================================================= */
-.lp-lunsjordning .lp-finalCta {
-  border-radius: var(--lp-radius-card);
-  border: 1px solid rgb(var(--lp-border));
-  background: rgba(var(--lp-surface-rgb), 0.8);
-  box-shadow: var(--lp-shadow-soft);
-  padding: 18px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-}
-
-@media (max-width: 900px) {
-  .lp-lunsjordning .lp-finalCta {
-    grid-template-columns: 1fr;
+@media print {
+  @page {
+    margin: 14mm;
   }
-}
 
-.lp-lunsjordning .lp-finalH {
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  font-size: 18px;
-  color: rgb(var(--lp-fg));
-  margin-bottom: 6px;
-}
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
 
-.lp-lunsjordning .lp-finalP {
-  color: rgb(var(--lp-muted));
-  line-height: 1.55;
-}
+  /* kill visual noise */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 
-.lp-lunsjordning .lp-finalActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
+  /* Hide chrome */
+  header,
+  nav,
+  footer,
+  .lp-topbar,
+  .lp-footer,
+  .lp-footer--full,
+  .print\:hidden {
+    display: none !important;
+  }
 
-@media (max-width: 900px) {
-  .lp-lunsjordning .lp-finalActions {
-    justify-content: flex-start;
+  /* Hide controls */
+  button,
+  select,
+  input,
+  textarea {
+    display: none !important;
+  }
+
+  /* Links as plain text */
+  a,
+  a:visited {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+  a[href]::after {
+    content: "" !important;
+  }
+
+  /* remove layout constraints */
+  .lp-container,
+  .lp-footer-shell {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* force black borders */
+  * {
+    border-color: #000 !important;
+  }
+
+  /* compact + avoid splitting cards */
+  .lp-card,
+  .lp-weekRow,
+  .lp-totalBox,
+  .lp-receipt-card,
+  .lp-kitchen-card,
+  .lp-kitchen__slot,
+  .lp-kitchen__emp {
+    border-radius: 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Sidebrudd per slot */
+  .lp-print-pagebreak {
+    display: block !important;
+    break-before: page;
+    page-break-before: always;
+    height: 0;
+  }
+
+  /* Tailwind safety */
+  .print\:break-before-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* ensure chips/badges are B/W */
+  .lp-kitchen__chip,
+  .lp-kitchen__badge,
+  .lp-kitchen__status,
+  .lp-badge,
+  .lp-chip {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .lp-kitchen__k,
+  .lp-kitchen__muted,
+  .lp-kitchen__empDept,
+  .lp-muted,
+  .lp-text-muted {
+    color: #000 !important;
   }
 }

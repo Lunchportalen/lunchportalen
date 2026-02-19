@@ -2,27 +2,21 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
+import React from "react";
 import { Fraunces, Inter, Manrope } from "next/font/google";
 import { headers } from "next/headers";
-import AppHeader from "@/components/AppHeader";
+import Link from "next/link";
+
+import PublicHeader from "@/components/site/PublicHeader";
+import AdminHeader from "@/components/site/AdminHeader";
+import AppFooter from "@/components/AppFooter";
 import DevOverflowGuard from "@/components/DevOverflowGuard";
 
 /* =========================================================
    Fonts
 ========================================================= */
-
-const fontBody = Manrope({
-  subsets: ["latin"],
-  variable: "--lp-font-body",
-  display: "swap",
-});
-
-const fontDisplay = Fraunces({
-  subsets: ["latin"],
-  variable: "--lp-font-display",
-  display: "swap",
-});
-
+const fontBody = Manrope({ subsets: ["latin"], variable: "--lp-font-body", display: "swap" });
+const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--lp-font-display", display: "swap" });
 const fontHeading = Inter({
   subsets: ["latin"],
   variable: "--lp-font-heading",
@@ -31,17 +25,15 @@ const fontHeading = Inter({
 });
 
 /* =========================================================
-   Metadata (Favicon korrekt konfigurert)
+   Metadata (inkl. metadataBase for å fjerne warning)
 ========================================================= */
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lunchportalen.no";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Lunchportalen",
-    template: "%s | Lunchportalen",
-  },
-  description: "Enterprise lunch portal.",
+  metadataBase: new URL(siteUrl),
+  title: { default: "Lunchportalen", template: "%s | Lunchportalen" },
+  description: "Bedriftslunsj uten matsvinn og administrasjon. Fast ramme, cut-off 08:00 og full kontroll for admin.",
   applicationName: "Lunchportalen",
-
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -49,6 +41,21 @@ export const metadata: Metadata = {
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/favicon.ico" }],
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Lunchportalen",
+    title: "Lunchportalen",
+    description:
+      "Bedriftslunsj uten matsvinn og administrasjon. Fast ramme, cut-off 08:00 og full kontroll for admin.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Lunchportalen",
+    description:
+      "Bedriftslunsj uten matsvinn og administrasjon. Fast ramme, cut-off 08:00 og full kontroll for admin.",
   },
 };
 
@@ -61,40 +68,47 @@ export const viewport: Viewport = {
 /* =========================================================
    Pathname resolution (server-safe)
 ========================================================= */
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+function firstPathSegment(pathname: string) {
+  const p = safeStr(pathname);
+  if (!p || p === "/") return "/";
+  const q = p.indexOf("?");
+  const h = p.indexOf("#");
+  const cut = Math.min(q === -1 ? p.length : q, h === -1 ? p.length : h);
+  const clean = p.slice(0, cut);
+  return clean || "/";
+}
 
 async function resolvePathname(): Promise<string> {
   const h = await headers();
 
-  const pathname = h.get("x-pathname");
-  if (pathname) return pathname;
+  const fromMw = safeStr(h.get("x-pathname"));
+  if (fromMw) return firstPathSegment(fromMw);
 
-  const nextUrl = h.get("next-url") || "";
+  const nextUrl = safeStr(h.get("next-url"));
   if (nextUrl) {
     try {
-      const url = nextUrl.startsWith("http")
-        ? new URL(nextUrl)
-        : new URL(nextUrl, "http://local");
-      return url.pathname || "";
+      const url = nextUrl.startsWith("http") ? new URL(nextUrl) : new URL(nextUrl, "http://local");
+      return firstPathSegment(url.pathname || "");
     } catch {
-      return nextUrl.split("?")[0] || "";
+      return firstPathSegment(nextUrl.split("?")[0] || "");
     }
   }
 
   try {
     const raw =
-      h.get("x-url") ||
-      h.get("x-forwarded-uri") ||
-      h.get("x-original-url") ||
-      h.get("referer") ||
+      safeStr(h.get("x-url")) ||
+      safeStr(h.get("x-forwarded-uri")) ||
+      safeStr(h.get("x-original-url")) ||
+      safeStr(h.get("referer")) ||
       "";
 
     if (!raw) return "";
-
-    const url = raw.startsWith("http")
-      ? new URL(raw)
-      : new URL(raw, "http://local");
-
-    return url.pathname || "";
+    const url = raw.startsWith("http") ? new URL(raw) : new URL(raw, "http://local");
+    return firstPathSegment(url.pathname || "");
   } catch {
     return "";
   }
@@ -103,7 +117,6 @@ async function resolvePathname(): Promise<string> {
 /* =========================================================
    Route classification
 ========================================================= */
-
 function isAuthPath(pathname: string) {
   return (
     pathname === "/login" ||
@@ -125,88 +138,114 @@ function isAuthPath(pathname: string) {
   );
 }
 
-function isAdminShellPath(pathname: string) {
+function isAdminPath(pathname: string) {
   return (
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname === "/superadmin" ||
-    pathname.startsWith("/superadmin/")
+    pathname.startsWith("/superadmin/") ||
+    pathname === "/system" ||
+    pathname.startsWith("/system/") ||
+    pathname === "/kitchen" ||
+    pathname.startsWith("/kitchen/") ||
+    pathname === "/driver" ||
+    pathname.startsWith("/driver/")
   );
 }
 
-function areaLabelFor(pathname: string) {
-  if (!pathname) return "Lunchportalen";
-
-  if (
-    pathname.startsWith("/week") ||
-    pathname.startsWith("/orders") ||
-    pathname.startsWith("/min-side")
-  )
-    return "Ansatt";
-
-  if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken"))
-    return "Kjøkken";
-
-  if (pathname.startsWith("/driver")) return "Sjåfør";
-  if (pathname.startsWith("/system")) return "System";
-
-  return "Lunchportalen";
+function isSuperadminPath(pathname: string) {
+  return pathname === "/superadmin" || pathname.startsWith("/superadmin/");
 }
 
-function navFor(pathname: string) {
-  if (!pathname) return [];
+/* =========================================================
+   Nav
+========================================================= */
+type NavItem = { label: string; href: string };
 
-  if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken"))
+function navForAdmin(pathname: string): NavItem[] {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return [
+      { label: "Dashboard", href: "/admin" },
+      { label: "Avtale", href: "/admin/agreement" },
+      { label: "Ordre", href: "/admin/orders" },
+      { label: "Ansatte", href: "/admin/employees" },
+    ];
+  }
+
+  if (pathname === "/superadmin" || pathname.startsWith("/superadmin/")) {
+    return [
+      { label: "Oversikt", href: "/superadmin" },
+      { label: "Firma", href: "/superadmin/companies" },
+      { label: "Avtaler", href: "/superadmin/agreements" },
+      { label: "System", href: "/system" },
+    ];
+  }
+
+  if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken")) {
     return [{ label: "Rapport", href: "/kitchen" }];
-
-  if (pathname.startsWith("/driver"))
+  }
+  if (pathname.startsWith("/driver")) {
     return [{ label: "Ruter", href: "/driver" }];
-
-  if (pathname.startsWith("/system"))
+  }
+  if (pathname.startsWith("/system")) {
     return [{ label: "Status", href: "/system" }];
+  }
 
-  return [
-    { label: "Ukeplan", href: "/week" },
-    { label: "Bestillinger", href: "/orders" },
-    { label: "Min side", href: "/min-side" },
-  ];
+  return [];
 }
+
+/* ✅ Public navigation */
+const PUBLIC_NAV: NavItem[] = [
+  { label: "Forside", href: "/" },
+  { label: "Hvordan", href: "/hvordan" },
+  { label: "Lunsjordning", href: "/lunsjordning" },
+  { label: "Alternativ til kantine", href: "/alternativ-til-kantine" },
+];
 
 /* =========================================================
    Root Layout
 ========================================================= */
-
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = await resolvePathname();
 
   const authRoute = pathname ? isAuthPath(pathname) : false;
-  const adminShell = pathname ? isAdminShellPath(pathname) : false;
-
-  const areaLabel = areaLabelFor(pathname);
-  const nav = navFor(pathname);
+  const adminRoute = pathname ? isAdminPath(pathname) : false;
+  const adminNav = adminRoute ? navForAdmin(pathname) : [];
 
   return (
-    <html
-      lang="no"
-      className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}
-    >
-      <body className="min-h-full">
-        {process.env.NODE_ENV !== "production" ? (
-          <DevOverflowGuard />
-        ) : null}
+    <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
+      <body className="min-h-full antialiased">
+        {process.env.NODE_ENV !== "production" ? <DevOverflowGuard /> : null}
 
-        {authRoute || adminShell ? (
+        {/* ✅ Auth pages: no header/footer */}
+        {authRoute ? (
           children
         ) : (
           <div className="lp-page">
-            <AppHeader areaLabel={areaLabel} nav={nav} />
+            {/* ✅ Header selection */}
+            {adminRoute ? (
+              <AdminHeader nav={adminNav} title={isSuperadminPath(pathname) ? "Superadmin" : "Admin"} />
+            ) : (
+              <PublicHeader
+                nav={PUBLIC_NAV}
+                rightSlot={
+                  <>
+                    <span className="hidden sm:inline-flex rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))]">
+                      Ikke innlogget
+                    </span>
+                    <Link href="/login" className="lp-btn lp-btn-ghost lp-btn--sm">
+                      Til login
+                    </Link>
+                  </>
+                }
+              />
+            )}
+
             <main className="lp-main">
-              <div className="lp-container">{children}</div>
+              <div className="w-full">{children}</div>
             </main>
+
+            <AppFooter containerMode="full" />
           </div>
         )}
       </body>

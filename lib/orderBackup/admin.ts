@@ -29,7 +29,7 @@ export async function listOutbox(input: {
   const limit = Math.max(1, Math.min(200, Number(input.limit ?? 50) || 50));
 
   let query = admin
-    .from("order_email_outbox")
+    .from("outbox")
     .select("event_key,status,attempts,created_at,sent_at,last_error,payload")
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -47,13 +47,13 @@ export async function outboxCounts() {
   const admin = supabaseAdmin();
 
   // PostgREST: bruk separate counts for enkel robusthet
-  const statuses: Array<OutboxStatus> = ["PENDING", "FAILED", "SENT"];
+  const statuses: Array<OutboxStatus> = ["PENDING", "PROCESSING", "FAILED", "FAILED_PERMANENT", "SENT"];
 
-  const res: Record<string, number> = { PENDING: 0, FAILED: 0, SENT: 0 };
+  const res: Record<string, number> = { PENDING: 0, PROCESSING: 0, FAILED: 0, FAILED_PERMANENT: 0, SENT: 0 };
 
   for (const s of statuses) {
     const { count, error } = await admin
-      .from("order_email_outbox")
+      .from("outbox")
       .select("event_key", { count: "exact", head: true })
       .eq("status", s);
 
@@ -61,5 +61,5 @@ export async function outboxCounts() {
     res[s] = Number(count ?? 0);
   }
 
-  return res as { PENDING: number; FAILED: number; SENT: number };
+  return res as { PENDING: number; PROCESSING: number; FAILED: number; FAILED_PERMANENT: number; SENT: number };
 }

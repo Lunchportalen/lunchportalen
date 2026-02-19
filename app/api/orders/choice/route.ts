@@ -5,12 +5,12 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { backupOrderEvent } from "@/lib/orderBackup";
 import { jsonOk } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
+import { lpOrderSet } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Route-local jsonErr (beholder canAct:false for UI)
@@ -101,7 +101,7 @@ function normalizeChoiceKey(choiceKey: string) {
  * New behaviour: note == "<choice_key>||<human_note>"
  *
  * - The first segment is ALWAYS the system-stable choice key.
- * - The suffix is optional and can be a human-readable variant (e.g. "Påsmurt: Vegan").
+ * - The suffix is optional and can be a human-readable variant (e.g. "PÃƒÂ¥smurt: Vegan").
  * - If client does not send note:
  *    - preserve suffix only when choice key stays the same
  *    - otherwise clear suffix (avoid stale variant)
@@ -202,24 +202,24 @@ type UpdatedRow = {
 export async function POST(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
 
-  // ✅ scope gate
+  // Ã¢Å“â€¦ scope gate
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
   const ctx = a.ctx;
   const { rid } = ctx;
 
-  // ✅ role gate
+  // Ã¢Å“â€¦ role gate
   const denyRole = requireRoleOr403(ctx, "orders.choice", ["employee", "company_admin"]);
   if (denyRole) return denyRole;
 
-  // ✅ normalize scope ONCE
+  // Ã¢Å“â€¦ normalize scope ONCE
   const norm = normalizeScope(ctx.scope);
   if (!norm.userId || !norm.companyId || !norm.locationId) {
     return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "missing_scope");
   }
 
-  // ✅ service role admin for company-status + rules
+  // Ã¢Å“â€¦ service role admin for company-status + rules
   let admin: any = null;
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
   const choice_key_raw = safeText(body?.choice_key);
   const client_request_id = safeText(body?.client_request_id);
 
-  // ✅ NEW: optional note (variant)
+  // Ã¢Å“â€¦ NEW: optional note (variant)
   const client_note_raw = safeText(body?.note); // may be null
   const client_note = client_note_raw ? sanitizeSuffix(client_note_raw) : null;
 
@@ -255,7 +255,7 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date } });
   }
   if (cutoff === "TODAY_LOCKED") {
-    return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 409, {
+    return jsonErr(rid, "Endringer er lÃƒÂ¥st etter kl. 08:00 i dag.", 409, {
       code: "LOCKED_AFTER_0800",
       detail: { date, cutoff: "08:00" },
     });
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "company_blocked", detail: { companyStatus } });
   }
 
-  // Agreement rule gate — ✅ FAIL SOFT (only hard-stop on explicit FORBIDDEN/403)
+  // Agreement rule gate Ã¢â‚¬â€ Ã¢Å“â€¦ FAIL SOFT (only hard-stop on explicit FORBIDDEN/403)
   const dayKey = weekdayKeyOslo(date);
   if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "bad_date", detail: { date } });
 
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
     // ignore (fail-soft)
   }
 
-  // ✅ Find current order (tenant-safe)
+  // Ã¢Å“â€¦ Find current order (tenant-safe)
   const { data: order, error: ordErr } = (await sb
     .from("orders")
     .select("id,date,status,note,slot,user_id,company_id,location_id")
@@ -307,102 +307,42 @@ export async function POST(req: NextRequest) {
 
   const savedAt = nowIso();
 
-  // ✅ NOTE: keep choice key first, optionally store variant suffix
+  // Ã¢Å“â€¦ NOTE: keep choice key first, optionally store variant suffix
   const nextNote = setChoiceInNote(order?.note ?? null, choice_key, client_note);
 
-  // ✅ Ensure order exists + is ACTIVE (“choose-first” compatible)
-  let orderId = order?.id ?? null;
+  const setRes = await lpOrderSet(sb as any, {
+    p_date: date,
+    p_slot: "lunch",
+    p_note: nextNote,
+  });
 
-  if (!orderId) {
-    const ins = await sb
-      .from("orders")
-      .insert({
-        user_id: norm.userId,
-        company_id: norm.companyId,
-        location_id: norm.locationId,
-        date,
-        slot: "lunch",
-        status: "active",
-        note: nextNote,
-        created_at: savedAt,
-        updated_at: savedAt,
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (ins.error || !ins.data?.id) {
-      return jsonErr(rid, "Kunne ikke opprette bestilling.", 500, {
-        code: "ORDER_CREATE_FAILED",
-        detail: { message: ins.error?.message ?? "insert_failed" },
-      });
-    }
-
-    orderId = ins.data.id;
-
-    const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: "active" });
-    if (rpc?.error) {
-      return jsonErr(rid, "Kunne ikke aktivere bestilling.", 500, {
-        code: "ORDER_STATUS_FAILED",
-        detail: { message: rpc.error?.message ?? "rpc_failed" },
-      });
-    }
-  } else {
-    const st = String(order?.status ?? "").toLowerCase().trim();
-    if (st !== "active") {
-      const rpc = await (sb as any).rpc("orders_set_status", { order_id: orderId, status: "active" });
-      if (rpc?.error) {
-        return jsonErr(rid, "Kunne ikke aktivere bestilling.", 500, {
-          code: "ORDER_STATUS_FAILED",
-          detail: { message: rpc.error?.message ?? "rpc_failed" },
-        });
-      }
-    }
+  if (!setRes.ok) {
+    return jsonErr(rid, "Kunne ikke aktivere bestilling.", 500, {
+      code: setRes.code ?? "ORDER_RPC_FAILED",
+      detail: { message: setRes.error?.message ?? "rpc_failed" },
+    });
   }
 
-  // ✅ Update note (choice + optional variant suffix) on order (race-safe)
   const { data: updated, error: updErr } = (await sb
     .from("orders")
-    .update({ note: nextNote, updated_at: savedAt })
-    .eq("id", orderId)
+    .select("id,date,status,note,slot,updated_at,created_at")
+    .eq("user_id", norm.userId)
     .eq("company_id", norm.companyId)
     .eq("location_id", norm.locationId)
-    .eq("user_id", norm.userId)
-    .select("id,date,status,note,slot,updated_at,created_at")
+    .eq("date", date)
+    .eq("slot", "lunch")
     .maybeSingle()) as { data: UpdatedRow | null; error: any };
 
   if (updErr || !updated) {
-    return jsonErr(rid, "Kunne ikke lagre menyvalg.", 500, {
-      code: "ORDER_UPDATE_FAILED",
-      detail: { message: updErr?.message ?? "update_failed" },
+    return jsonErr(rid, "Kunne ikke lese bestilling etter lagring.", 500, {
+      code: "ORDER_READ_FAILED",
+      detail: { message: updErr?.message ?? "read_failed" },
     });
   }
 
+  const orderId = updated.id;
+
   // Backup (best effort)
-  try {
-    await backupOrderEvent({
-      eventType: "CHOICE_SET",
-      rid,
-      eventKey: eventKeyForChoice({
-        companyId: norm.companyId,
-        locationId: norm.locationId,
-        userId: norm.userId,
-        date,
-        choiceKey: choice_key,
-        clientRequestId: client_request_id,
-      }),
-      userId: norm.userId,
-      userEmail: norm.email,
-      companyId: norm.companyId,
-      locationId: norm.locationId,
-      date,
-      status: "ACTIVE",
-      choiceKey: choice_key,
-      orderId: updated.id,
-      timestampISO: savedAt,
-    });
-  } catch {
-    // ignore
-  }
 
   return jsonOk(rid, {
     changed: true,
@@ -419,3 +359,7 @@ export async function POST(req: NextRequest) {
     },
   });
 }
+
+
+
+

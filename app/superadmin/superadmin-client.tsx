@@ -56,7 +56,10 @@ type CompaniesListResp = CompaniesListOk | ApiErr;
 type CompaniesStatsOk = {
   ok: true;
   rid?: string;
-  stats: Partial<SuperadminStats>;
+  stats?: Partial<SuperadminStats>;
+  data?: {
+    stats?: Partial<SuperadminStats>;
+  };
 };
 type CompaniesStatsResp = CompaniesStatsOk | ApiErr;
 
@@ -279,6 +282,30 @@ export default function SuperadminClient({
     }
   }
 
+  function readStatsShape(json: CompaniesStatsResp | null): Partial<SuperadminStats> | null {
+    if (!json || typeof json !== "object" || (json as any).ok !== true) return null;
+    const direct = (json as any).stats;
+    if (direct && typeof direct === "object") return direct as Partial<SuperadminStats>;
+    const nested = (json as any).data?.stats;
+    if (nested && typeof nested === "object") return nested as Partial<SuperadminStats>;
+    return null;
+  }
+
+  function logStatsShapeDev(status: number, json: CompaniesStatsResp | null) {
+    if (process.env.NODE_ENV === "production") return;
+    const keys = json && typeof json === "object" ? Object.keys(json as Record<string, unknown>) : [];
+    const bodyStats = (json as any)?.stats;
+    const dataStats = (json as any)?.data?.stats;
+    // eslint-disable-next-line no-console
+    console.info("[superadmin.stats.shape]", {
+      status,
+      keys,
+      hasBodyStats: Boolean(bodyStats && typeof bodyStats === "object"),
+      hasDataStats: Boolean(dataStats && typeof dataStats === "object"),
+      rid: (json as any)?.rid ? String((json as any).rid) : null,
+    });
+  }
+
   function apiErrorMessage(res: Response, json: any, fallback: string) {
     const server =
       (json?.message ? String(json.message) : "") ||
@@ -340,16 +367,24 @@ export default function SuperadminClient({
       });
 
       const json = (await readJsonSafe<CompaniesStatsResp>(res)) as CompaniesStatsResp | null;
+      logStatsShapeDev(res.status, json);
+      const statsShape = readStatsShape(json);
+      const rid = (json as any)?.rid ?? null;
 
-      if (res.ok && json && (json as any).ok === true) {
-        const j = json as CompaniesStatsOk;
+      if (res.status === 200 && statsShape) {
         clearDegraded();
-        setStats(normalizeSuperadminStats(j.stats));
+        setStats(normalizeSuperadminStats(statsShape));
         return;
       }
 
-      const rid = (json as any)?.rid ?? null;
       markDegraded(rid);
+      if (res.status === 200) {
+        toastErr(
+          rid
+            ? `Statistikk ikke tilgjengelig. Data ble ikke returnert fra stats-endpointen. RID: ${String(rid)}`
+            : "Statistikk ikke tilgjengelig. Data ble ikke returnert fra stats-endpointen."
+        );
+      }
       if (!res.ok) toastErr(apiErrorMessage(res, json, "Kunne ikke hente stats."));
     } catch (err) {
       if (!isAbort(err)) {
@@ -524,7 +559,7 @@ export default function SuperadminClient({
       <KPIStrip
         title="Nøkkelindikatorer"
         items={
-          statsUnavailable
+          showKpiEmpty
             ? []
             : [
                 { label: "Active firms", value: metricValue(stats.companiesActive, statsLoading) },

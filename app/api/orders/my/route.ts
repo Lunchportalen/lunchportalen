@@ -8,6 +8,7 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate, osloTodayISODate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
+import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
 
 type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
 
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
       tierToday = ruleRes.rule.tier;
     }
   } else {
-    reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er låst etter 08:00.";
+    reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er lÃ¥st etter 08:00.";
   }
 
   const sb = await supabaseServer();
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
 
   const cutoff = cutoffState(dateISO);
   if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+    return jsonErr(rid, "Endringer er lÃ¥st etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
   }
 
   const dayKey = weekdayKeyOslo(dateISO);
@@ -170,25 +171,21 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = await supabaseServer();
-  const payload = {
-    user_id: userId,
-    company_id: companyId,
-    location_id: locationId,
-    date: dateISO,
-    slot: "lunch",
-    status: "ACTIVE",
-    updated_at: new Date().toISOString(),
-  };
 
-  const { data, error } = await sb
-    .from("orders")
-    .upsert(payload, { onConflict: "user_id,location_id,date,slot" })
-    .select("id,status,date,created_at,updated_at,note,slot")
-    .maybeSingle();
+  const setRes = await lpOrderSet(sb as any, {
+    p_date: dateISO,
+    p_slot: "lunch",
+    p_note: null,
+  });
 
-  if (error || !data) {
-    return jsonErr(rid, "Kunne ikke bestille lunsj.", 500, { code: "ORDER_UPSERT_FAILED", detail: { message: error?.message ?? null } });
+  if (!setRes.ok) {
+    return jsonErr(rid, "Kunne ikke bestille lunsj.", 500, {
+      code: setRes.code ?? "ORDER_RPC_FAILED",
+      detail: { message: setRes.error?.message ?? null },
+    });
   }
+
+  const data = await getOrder(sb, companyId, locationId, userId, dateISO);
 
   return jsonOk(rid, {
       allowed: true,
@@ -229,24 +226,19 @@ export async function DELETE(req: NextRequest) {
 
   const cutoff = cutoffState(dateISO);
   if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+    return jsonErr(rid, "Endringer er lÃ¥st etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
   }
 
   const sb = await supabaseServer();
-  const { data, error } = await sb
-    .from("orders")
-    .update({ status: "CANCELLED", updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .eq("company_id", companyId)
-    .eq("location_id", locationId)
-    .eq("date", dateISO)
-    .eq("slot", "lunch")
-    .select("id,status,date,created_at,updated_at,note,slot")
-    .maybeSingle();
-
-  if (error) {
-    return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "ORDER_CANCEL_FAILED", detail: { message: error.message } });
+  const cancelRes = await lpOrderCancel(sb as any, { p_date: dateISO });
+  if (!cancelRes.ok) {
+    return jsonErr(rid, "Kunne ikke avbestille.", 500, {
+      code: cancelRes.code ?? "ORDER_RPC_FAILED",
+      detail: { message: cancelRes.error?.message ?? null },
+    });
   }
+
+  const data = await getOrder(sb, companyId, locationId, userId, dateISO);
 
   return jsonOk(rid, {
       allowed: true,
@@ -256,3 +248,4 @@ export async function DELETE(req: NextRequest) {
       myOrder: data ?? null,
     }, 200);
 }
+

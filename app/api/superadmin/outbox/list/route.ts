@@ -38,7 +38,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const q = safeStr(url.searchParams.get("q") || "");
   const limit = clampInt(Number(url.searchParams.get("limit") || "50"), 1, 200, 50);
 
-  const allowed = new Set(["ALL", "PENDING", "FAILED", "SENT"]);
+  const allowed = new Set(["ALL", "PENDING", "PROCESSING", "FAILED", "FAILED_PERMANENT", "SENT"]);
   if (!allowed.has(statusRaw)) {
     return jsonErr(ctx.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: { status: statusRaw } });
   }

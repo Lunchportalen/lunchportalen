@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
 import type { NextRequest } from "next/server";
 
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -13,6 +14,10 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 import { osloTodayISODate, OSLO_TZ } from "@/lib/date/oslo";
 import type { AgreementPageData, AgreementStatus, AgreementPageCompany } from "@/lib/admin/agreement/types";
+
+/* =========================================================
+   Helpers
+========================================================= */
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -106,44 +111,6 @@ function planReason(status: AgreementStatus, hasRule: boolean): string | null {
   return null;
 }
 
-function logDeliveryDaysWarning(args: {
-  rid: string;
-  company_id: string;
-  agreement_id?: string | null;
-  raw: any;
-  unknown: string[];
-  days: string[];
-}) {
-  if (!args.unknown.length) return;
-  opsLog("agreement.delivery_days.warning", {
-    rid: args.rid,
-    company_id: args.company_id,
-    agreement_id: args.agreement_id ?? null,
-    unknown: args.unknown,
-    days: args.days,
-    raw: args.raw ?? null,
-  });
-}
-
-function logDaymapWarning(args: {
-  rid: string;
-  company_id: string;
-  agreement_id?: string | null;
-  unknown_days: string[];
-  unknown_tiers: string[];
-  raw: any;
-}) {
-  if (!args.unknown_days.length && !args.unknown_tiers.length) return;
-  opsLog("agreement.daymap.warning", {
-    rid: args.rid,
-    company_id: args.company_id,
-    agreement_id: args.agreement_id ?? null,
-    unknown_days: args.unknown_days,
-    unknown_tiers: args.unknown_tiers,
-    raw: args.raw ?? null,
-  });
-}
-
 async function countExact(builder: any): Promise<number | null> {
   try {
     const { count, error } = await builder;
@@ -153,6 +120,49 @@ async function countExact(builder: any): Promise<number | null> {
     return null;
   }
 }
+
+function labels(): Record<DayKey, "Man" | "Tir" | "Ons" | "Tor" | "Fre"> {
+  return { mon: "Man", tue: "Tir", wed: "Ons", thu: "Tor", fri: "Fre" };
+}
+
+function buildWeekPlan(status: AgreementStatus, deliveryDays: string[], rulesByDay: Map<DayKey, { tier: Tier }>) {
+  const lab = labels();
+  return DAY_KEYS.map((dayKey) => {
+    const rule = rulesByDay.get(dayKey) ?? null;
+    const hasDelivery = deliveryDays.includes(dayKey);
+    const hasTier = Boolean(rule?.tier);
+    const hasRule = hasDelivery && hasTier;
+    const active = status === "ACTIVE" && hasRule;
+    const reason = active
+      ? null
+      : hasDelivery && !hasTier
+      ? "Mangler dagoppsett"
+      : planReason(status as AgreementStatus, hasRule);
+
+    return {
+      dayKey,
+      label: lab[dayKey],
+      active,
+      tier: hasRule ? rule?.tier ?? null : null,
+      reasonIfInactive: reason,
+    };
+  });
+}
+
+function buildCompanies(companyId: string, companyRow: any | null, locationName: string | null): AgreementPageCompany[] {
+  return [
+    {
+      id: String(companyRow?.id ?? companyId),
+      name: companyRow?.name ?? null,
+      orgnr: companyRow?.orgnr ?? null,
+      locationName,
+    },
+  ];
+}
+
+/* =========================================================
+   GET
+========================================================= */
 
 export async function GET(req: NextRequest) {
   const gate = await scopeOr401(req);
@@ -179,148 +189,173 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = supabaseAdmin();
+  const todayISO = osloTodayISODate();
 
-  const { data: companyRow, error: companyErr } = await admin
-    .from("companies")
-    .select("id,name,orgnr,status")
-    .eq("id", companyId)
-    .maybeSingle();
+  // ---------------------------------------------------------
+  // Company (FAIL-SOFT)
+  // ---------------------------------------------------------
+  let companyRow: any | null = null;
+  let companyStatus: ReturnType<typeof normCompanyStatus> = "UNKNOWN";
 
-  if (companyErr) return jsonErr(ctx.rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_READ_FAILED", detail: companyErr });
-  if (!companyRow) return jsonErr(ctx.rid, "Fant ikke firma.", 404, "COMPANY_NOT_FOUND");
+  try {
+    const c = await admin
+      .from("companies")
+      .select("id,name,orgnr,status")
+      .eq("id", companyId)
+      .maybeSingle();
 
-  const companyStatus = normCompanyStatus((companyRow as any).status);
-
-  const { data: agreementRow, error: agreementErr } = await admin
-    .from("company_current_agreement")
-    .select("id,company_id,status,plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at")
-    .eq("company_id", companyId)
-    .maybeSingle();
-
-  if (agreementErr) {
-    return jsonErr(ctx.rid, "Kunne ikke hente avtale.", 500, { code: "AGREEMENT_READ_FAILED", detail: agreementErr });
+    if (c.error) {
+      opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.company", companyId, error: c.error });
+    } else {
+      companyRow = c.data ?? null;
+      companyStatus = normCompanyStatus(companyRow?.status);
+    }
+  } catch (e: any) {
+    opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.company.throw", companyId, error: String(e?.message ?? e) });
   }
 
-  let agreementStatus: AgreementStatus | null = null;
+  // Location name (best effort)
+  const locationId = safeStr(ctx.scope.locationId);
+  let locationName: string | null = null;
+  if (locationId) {
+    try {
+      const locRes = await admin
+        .from("company_locations")
+        .select("id,name,company_id")
+        .eq("id", locationId)
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (!locRes.error && locRes.data) {
+        locationName = String((locRes.data as any).name ?? "") || null;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Agreement (FAIL-SOFT)
+  // Try company_current_agreement first, fallback to agreements table
+  // ---------------------------------------------------------
+  let agreementRow: any | null = null;
+  let agreementStatus: AgreementStatus = "MISSING_AGREEMENT";
+
+  try {
+    const a = await admin
+      .from("company_current_agreement")
+      .select("id,company_id,status,plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at")
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (a.error) {
+      opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.cc_agreement", companyId, error: a.error });
+
+      // Fallback: agreements table
+      const fb = await admin
+        .from("agreements")
+        .select("id,company_id,status,tier as plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at,weekplan")
+        .eq("company_id", companyId)
+        .order("start_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fb.error) {
+        opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.fallback_agreements", companyId, error: fb.error });
+      } else {
+        agreementRow = fb.data ?? null;
+      }
+    } else {
+      agreementRow = a.data ?? null;
+    }
+  } catch (e: any) {
+    opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.agreement.throw", companyId, error: String(e?.message ?? e) });
+  }
+
   if (companyStatus !== "ACTIVE") {
     agreementStatus = "COMPANY_DISABLED";
   } else if (!agreementRow) {
     agreementStatus = "MISSING_AGREEMENT";
   } else {
-    agreementStatus = normAgreementStatus((agreementRow as any)?.status) ?? "PAUSED";
+    agreementStatus = (normAgreementStatus(agreementRow?.status) ?? "PAUSED") as AgreementStatus;
   }
 
-  const deliveryNorm = normalizeDeliveryDaysStrict((agreementRow as any)?.delivery_days);
-  logDeliveryDaysWarning({
-    rid: ctx.rid,
-    company_id: companyId,
-    agreement_id: (agreementRow as any)?.id ?? null,
-    raw: (agreementRow as any)?.delivery_days ?? null,
-    unknown: deliveryNorm.unknown,
-    days: deliveryNorm.days,
-  });
-
-  const { data: daymapRows, error: rulesErr } = await admin
-    .from("v_company_current_agreement_daymap")
-    .select("day_key,tier,slot,company_id")
-    .eq("company_id", companyId)
-    .eq("slot", "lunch");
-
-  if (rulesErr) {
-    return jsonErr(ctx.rid, "Kunne ikke hente avtalerregler.", 500, { code: "AGREEMENT_RULES_READ_FAILED", detail: rulesErr });
+  // delivery days normalize (safe)
+  const deliveryNorm = normalizeDeliveryDaysStrict(agreementRow?.delivery_days);
+  if (deliveryNorm.unknown?.length) {
+    opsLog("agreement.delivery_days.warning", {
+      rid: ctx.rid,
+      company_id: companyId,
+      agreement_id: agreementRow?.id ?? null,
+      unknown: deliveryNorm.unknown,
+      days: deliveryNorm.days,
+      raw: agreementRow?.delivery_days ?? null,
+    });
   }
 
-  const unknown_days: string[] = [];
-  const unknown_tiers: string[] = [];
+  // ---------------------------------------------------------
+  // Daymap rules (FAIL-SOFT)
+  // ---------------------------------------------------------
   const rulesByDay = new Map<DayKey, { tier: Tier }>();
-  for (const r of daymapRows ?? []) {
-    const dayKey = normDayKey((r as any)?.day_key);
-    const tier = normTier((r as any)?.tier);
-    if (!dayKey) {
-      const rawDay = (r as any)?.day_key;
-      if (rawDay != null) unknown_days.push(String(rawDay));
-      continue;
+  try {
+    const rulesRes = await admin
+      .from("v_company_current_agreement_daymap")
+      .select("day_key,tier,slot,company_id")
+      .eq("company_id", companyId)
+      .eq("slot", "lunch");
+
+    if (rulesRes.error) {
+      opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.daymap", companyId, error: rulesRes.error });
+    } else {
+      const unknown_days: string[] = [];
+      const unknown_tiers: string[] = [];
+
+      for (const r of rulesRes.data ?? []) {
+        const dayKey = normDayKey((r as any)?.day_key);
+        const tier = normTier((r as any)?.tier);
+        if (!dayKey) {
+          const rawDay = (r as any)?.day_key;
+          if (rawDay != null) unknown_days.push(String(rawDay));
+          continue;
+        }
+        if (!tier) {
+          const rawTier = (r as any)?.tier;
+          if (rawTier != null) unknown_tiers.push(String(rawTier));
+          continue;
+        }
+        rulesByDay.set(dayKey, { tier });
+      }
+
+      if (unknown_days.length || unknown_tiers.length) {
+        opsLog("agreement.daymap.warning", {
+          rid: ctx.rid,
+          company_id: companyId,
+          agreement_id: agreementRow?.id ?? null,
+          unknown_days,
+          unknown_tiers,
+          raw: rulesRes.data ?? null,
+        });
+      }
     }
-    if (!tier) {
-      const rawTier = (r as any)?.tier;
-      if (rawTier != null) unknown_tiers.push(String(rawTier));
-      continue;
-    }
-    rulesByDay.set(dayKey, { tier });
+  } catch (e: any) {
+    opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.daymap.throw", companyId, error: String(e?.message ?? e) });
   }
 
-  logDaymapWarning({
-    rid: ctx.rid,
-    company_id: companyId,
-    agreement_id: (agreementRow as any)?.id ?? null,
-    unknown_days,
-    unknown_tiers,
-    raw: daymapRows ?? null,
-  });
+  const weekPlan = buildWeekPlan(agreementStatus, deliveryNorm.days, rulesByDay);
 
-  const labels: Record<DayKey, "Man" | "Tir" | "Ons" | "Tor" | "Fre"> = {
-    mon: "Man",
-    tue: "Tir",
-    wed: "Ons",
-    thu: "Tor",
-    fri: "Fre",
-  };
-
-  const weekPlan = DAY_KEYS.map((dayKey) => {
-    const rule = rulesByDay.get(dayKey) ?? null;
-    const hasDelivery = deliveryNorm.days.includes(dayKey);
-    const hasTier = Boolean(rule?.tier);
-    const hasRule = hasDelivery && hasTier;
-    const active = agreementStatus === "ACTIVE" && hasRule;
-    const reason = active
-      ? null
-      : hasDelivery && !hasTier
-      ? "Mangler dagoppsett"
-      : planReason(agreementStatus as AgreementStatus, hasRule);
-    return {
-      dayKey,
-      label: labels[dayKey],
-      active,
-      tier: hasRule ? rule?.tier ?? null : null,
-      reasonIfInactive: reason,
-    };
-  });
-
-  const todayISO = osloTodayISODate();
-
+  // ---------------------------------------------------------
+  // Metrics (best effort)
+  // ---------------------------------------------------------
   const employeesTotal = await countExact(
-    admin
-      .from("profiles")
-      .select("user_id", { count: "exact", head: true })
-      .eq("company_id", companyId)
-      .eq("role", "employee")
+    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
   );
-
   const employeesActive = await countExact(
-    admin
-      .from("profiles")
-      .select("user_id", { count: "exact", head: true })
-      .eq("company_id", companyId)
-      .eq("role", "employee")
-      .is("disabled_at", null)
+    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").is("disabled_at", null)
   );
-
   const employeesDeactivated = await countExact(
-    admin
-      .from("profiles")
-      .select("user_id", { count: "exact", head: true })
-      .eq("company_id", companyId)
-      .eq("role", "employee")
-      .not("disabled_at", "is", null)
+    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").not("disabled_at", "is", null)
   );
-
   const ordersToday = await countExact(
-    admin
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", companyId)
-      .eq("date", todayISO)
-      .eq("status", "ACTIVE")
+    admin.from("orders").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("date", todayISO).eq("status", "ACTIVE")
   );
 
   let cancelsBeforeCutoff7d: number | null = null;
@@ -354,28 +389,7 @@ export async function GET(req: NextRequest) {
     cancelsBeforeCutoff7d = null;
   }
 
-  const locationId = safeStr(ctx.scope.locationId);
-  let locationName: string | null = null;
-  if (locationId) {
-    const locRes = await admin
-      .from("company_locations")
-      .select("id,name,company_id")
-      .eq("id", locationId)
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (!locRes.error && locRes.data) {
-      locationName = String((locRes.data as any).name ?? "") || null;
-    }
-  }
-
-  const companies: AgreementPageCompany[] = [
-    {
-      id: String((companyRow as any).id ?? companyId),
-      name: (companyRow as any).name ?? null,
-      orgnr: (companyRow as any).orgnr ?? null,
-      locationName,
-    },
-  ];
+  const companies = buildCompanies(companyId, companyRow, locationName);
 
   const data: AgreementPageData = {
     rid: ctx.rid,
@@ -384,17 +398,14 @@ export async function GET(req: NextRequest) {
     role,
     status: agreementStatus as AgreementStatus,
     pricing: {
-      planTier: normTier((agreementRow as any)?.plan_tier ?? null),
-      pricePerCuvertNok: normPriceNok((agreementRow as any)?.price_per_cuvert_nok ?? null),
+      planTier: normTier(agreementRow?.plan_tier ?? null),
+      pricePerCuvertNok: normPriceNok(agreementRow?.price_per_cuvert_nok ?? null),
       currency: "NOK",
     },
     binding: {
-      startDate: (agreementRow as any)?.start_date ?? null,
-      endDate: (agreementRow as any)?.end_date ?? null,
-      remainingDays:
-        (agreementRow as any)?.end_date && osloTodayISODate()
-          ? remainingDays(todayISO, String((agreementRow as any).end_date))
-          : null,
+      startDate: agreementRow?.start_date ?? null,
+      endDate: agreementRow?.end_date ?? null,
+      remainingDays: agreementRow?.end_date ? remainingDays(todayISO, String(agreementRow.end_date)) : null,
     },
     weekPlan,
     metrics: {
@@ -404,14 +415,15 @@ export async function GET(req: NextRequest) {
       cancelsBeforeCutoff7d,
       ordersToday,
     },
-    updatedAt: (agreementRow as any)?.updated_at ?? null,
+    updatedAt: agreementRow?.updated_at ?? null,
     cutoff: { time: "08:00", timezone: "Europe/Oslo" },
     sourceOfTruth: {
       companyId,
-      agreementId: (agreementRow as any)?.id ?? null,
-      updatedAt: (agreementRow as any)?.updated_at ?? null,
+      agreementId: agreementRow?.id ?? null,
+      updatedAt: agreementRow?.updated_at ?? null,
     },
   };
 
-  return jsonOk(ctx.rid, data);
+  // ✅ ALWAYS OK for admin UI
+  return jsonOk(ctx.rid, data, 200);
 }

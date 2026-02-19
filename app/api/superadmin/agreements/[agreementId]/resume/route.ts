@@ -1,14 +1,16 @@
 // app/api/superadmin/agreements/[agreementId]/resume/route.ts
 
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+import "server-only";
 
 import { type NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
+import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Ctx = { params: { agreementId: string } | Promise<{ agreementId: string }> };
@@ -35,7 +37,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     // Before snapshot (for audit + idempotency)
     const before = await admin
       .from("company_agreements")
-      .select("id, company_id, status, end_date, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, notes, created_at, updated_at")
+      .select(
+        "id, company_id, status, end_date, plan_tier, price_per_cuvert_nok, delivery_days, binding_months, notice_months, start_date, notes, created_at, updated_at"
+      )
       .eq("id", agreementId)
       .maybeSingle();
 
@@ -44,18 +48,26 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     const companyId = String((before.data as any).company_id ?? "").trim();
     if (!isUuid(companyId)) {
-      return jsonErr(rid, "Avtalen har ugyldig company_id.", 500, { code: "DATA_INVALID", detail: { company_id: (before.data as any).company_id } });
+      return jsonErr(rid, "Avtalen har ugyldig company_id.", 500, {
+        code: "DATA_INVALID",
+        detail: { company_id: (before.data as any).company_id },
+      });
     }
 
     // Idempotency: already active
     if (String((before.data as any).status) === "ACTIVE") {
-      // ensure company status sync best-effort
-      await admin.from("companies").update({ status: "ACTIVE", updated_at: new Date().toISOString() } as any).eq("id", companyId);
+      // ✅ B-LOCK: DO NOT update companies.status here
+      opsLog("agreement.resume.idempotent", {
+        rid,
+        agreement_id: agreementId,
+        company_id: companyId,
+        note: "Already ACTIVE. B-LOCK: companies.status not modified here.",
+      });
+
       return jsonOk(rid, { ok: true, rid, agreement: before.data, idempotent: true }, 200);
     }
 
     // If there is another ACTIVE agreement for this company, pause it first to keep invariant.
-    // (This avoids having multiple ACTIVE if old data exists.)
     const otherActive = await admin
       .from("company_agreements")
       .select("id")
@@ -63,7 +75,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       .eq("status", "ACTIVE")
       .neq("id", agreementId);
 
-    if (otherActive.error) return jsonErr(rid, "Kunne ikke lese eksisterende ACTIVE.", 500, { code: "READ_ACTIVE_FAILED", detail: otherActive.error });
+    if (otherActive.error) {
+      return jsonErr(rid, "Kunne ikke lese eksisterende ACTIVE.", 500, { code: "READ_ACTIVE_FAILED", detail: otherActive.error });
+    }
 
     let pausedOtherActiveIds: string[] = [];
     if ((otherActive.data ?? []).length > 0) {
@@ -75,7 +89,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         .neq("id", agreementId)
         .select("id");
 
-      if (pause.error) return jsonErr(rid, "Kunne ikke pause annen ACTIVE-avtale.", 500, { code: "PAUSE_OTHER_ACTIVE_FAILED", detail: pause.error });
+      if (pause.error) {
+        return jsonErr(rid, "Kunne ikke pause annen ACTIVE-avtale.", 500, { code: "PAUSE_OTHER_ACTIVE_FAILED", detail: pause.error });
+      }
       pausedOtherActiveIds = (pause.data ?? []).map((r: any) => String(r.id));
     }
 
@@ -100,8 +116,20 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     if (upd.error) return jsonErr(rid, "Kunne ikke aktivere avtale.", 500, { code: "RESUME_FAILED", detail: upd.error });
 
-    // Keep companies.status in sync
-    await admin.from("companies").update({ status: "ACTIVE", updated_at: new Date().toISOString() } as any).eq("id", companyId);
+    /**
+     * ✅ B-LOCK
+     * companies.status skal IKKE settes her.
+     * Én sannhetskilde for company status:
+     * - app/api/company/create -> pending
+     * - app/api/superadmin/companies/set-status -> pending|active|paused|closed
+     */
+    opsLog("agreement.resume.company_status_not_modified", {
+      rid,
+      agreement_id: agreementId,
+      company_id: companyId,
+      paused_other_active_ids: pausedOtherActiveIds,
+      note: "B-LOCK: companies.status is managed only by company/create and companies/set-status.",
+    });
 
     // Audit (best-effort)
     const audit = await writeAuditEvent({
@@ -120,13 +148,17 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       },
     });
 
-    return jsonOk(rid, {
-      agreement: upd.data,
-      paused_other_active_ids: pausedOtherActiveIds,
-      audit_ok: (audit as any)?.ok === true,
-      audit_event: (audit as any)?.ok ? (audit as any).audit : null,
-      audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
-    }, 200);
+    return jsonOk(
+      rid,
+      {
+        agreement: upd.data,
+        paused_other_active_ids: pausedOtherActiveIds,
+        audit_ok: (audit as any)?.ok === true,
+        audit_event: (audit as any)?.ok ? (audit as any).audit : null,
+        audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
+      },
+      200
+    );
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
@@ -134,18 +166,17 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å aktivere avtale.", 405, "METHOD_NOT_ALLOWED");
 }
-

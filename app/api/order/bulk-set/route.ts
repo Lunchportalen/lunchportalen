@@ -3,29 +3,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import "server-only";
+
+import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { getScope, ScopeError } from "@/lib/auth/scope";
+
+/* =========================================================
+   Types
+========================================================= */
 
 type Body = {
-  // hvis tier settes, gjelder det bare dager med denne tier
   tier?: "BASIS" | "LUXUS";
-  // hvis weekIndex settes: 0 = første uke (5 dager), 1 = andre uke (5 dager)
   weekIndex?: 0 | 1;
   choice_key: string;
 };
 
 type Choice = { key: string; label?: string };
-type CompanyStatus = "active" | "paused" | "closed";
-
-type ProfileRow = {
-  company_id: string | null;
-  location_id: string | null;
-  role?: string | null;
-};
+type CompanyStatus = "active" | "paused" | "closed" | string;
 
 type CompanyRow = {
   id: string;
@@ -45,6 +43,10 @@ type ReceiptRow = {
   choice_key: string | null;
 };
 
+/* =========================================================
+   Utils
+========================================================= */
+
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
   return v;
@@ -52,10 +54,17 @@ function assertEnv(name: string, v: string | undefined) {
 
 function logApiError(scope: string, err: any, extra?: Record<string, any>) {
   try {
+    // eslint-disable-next-line no-console
     console.error(`[${scope}]`, err?.message || err, { ...extra, err });
   } catch {
+    // eslint-disable-next-line no-console
     console.error(`[${scope}]`, err?.message || err);
   }
+}
+
+function normStatus(v: any): CompanyStatus {
+  const s = String(v ?? "").trim().toLowerCase();
+  return s || "active";
 }
 
 /** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
@@ -83,17 +92,13 @@ function osloNowParts() {
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
-
   const locked = dateISO < now.dateISO ? true : dateISO > now.dateISO ? false : now.timeHM >= cutoffTime;
   return { locked, cutoffTime, now: `${now.dateISO}T${now.timeHM}` };
 }
 
 function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" {
   const d = new Date(`${dateISO}T12:00:00Z`);
-  const wd = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Oslo",
-    weekday: "short",
-  }).format(d);
+  const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
 
   const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
     Mon: "mon",
@@ -111,8 +116,6 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 /** Finn 10 neste hverdager fra startISO (inkl start hvis den er hverdag) */
 function getNextWeekdays(startISO: string, days: number) {
   const out: string[] = [];
-
-  // ✅ prefer-const: binding reassignes ikke (Date-objektet muteres)
   const d = new Date(`${startISO}T00:00:00Z`);
 
   while (out.length < days) {
@@ -122,26 +125,6 @@ function getNextWeekdays(startISO: string, days: number) {
   }
 
   return out;
-}
-
-async function getAuthedUserId() {
-  const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const anon = assertEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  const cookieStore = await cookies();
-  const supa = createServerClient(url, anon, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set() {},
-      remove() {},
-    },
-  });
-
-  const { data, error } = await supa.auth.getUser();
-  if (error || !data?.user?.id) return null;
-  return data.user.id;
 }
 
 /* =========================
@@ -163,7 +146,7 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
     };
   }
 
-  const status = (data.status ?? "active") as CompanyStatus;
+  const status = normStatus(data.status);
 
   if (status === "paused") {
     return {
@@ -186,26 +169,41 @@ async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyI
   return { ok: true as const };
 }
 
-export async function POST(req: Request) {
+/* =========================================================
+   Handler
+========================================================= */
+
+export async function POST(req: NextRequest) {
   const rid = makeRid();
 
   try {
-    const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    const user_id = await getAuthedUserId();
-    if (!user_id) {
-      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
+    // ✅ Tenant scope (single source of truth)
+    let scope: any;
+    try {
+      scope = await getScope(req);
+    } catch (e: any) {
+      if (e instanceof ScopeError) {
+        return jsonErr(rid, e.message ?? "Forbidden.", e.status ?? 403, e.code ?? "FORBIDDEN");
+      }
+      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHENTICATED");
     }
 
+    const company_id = String(scope?.company_id ?? scope?.companyId ?? "").trim();
+    const location_id = String(scope?.location_id ?? scope?.locationId ?? "").trim();
+    const user_id = String(scope?.user_id ?? scope?.userId ?? "").trim();
+    const role = String(scope?.role ?? "").trim();
+
+    if (!company_id || !location_id || !user_id) {
+      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, "SCOPE_MISSING");
+    }
+
+    // Body
     const body = (await req.json().catch(() => null)) as Partial<Body> | null;
-    const choice_key = (body?.choice_key ?? "").trim();
+    const choice_key = String(body?.choice_key ?? "").trim();
     const tierFilter = body?.tier;
     const weekIndex = body?.weekIndex;
 
-    if (!choice_key) {
-      return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
-    }
+    if (!choice_key) return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
     if (tierFilter && tierFilter !== "BASIS" && tierFilter !== "LUXUS") {
       return jsonErr(rid, "Ugyldig tier.", 400, "BAD_TIER");
     }
@@ -213,44 +211,20 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ugyldig weekIndex.", 400, "BAD_WEEK_INDEX");
     }
 
-    // Service role client (ingen RLS)
+    // Service role client (ingen RLS) – dere har valgt dette mønsteret
+    const url = assertEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    const service = assertEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
+
     const supa = createClient(url, service, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { "X-Client-Info": "lunchportalen-order-bulk-set" } },
     });
 
-    // ✅ profiles.id === auth.users.id (IKKE user_id)
-    const { data: profileRaw, error: pErr } = await (supa as any)
-      .from("profiles")
-      .select("company_id, location_id, role")
-      .eq("id", user_id)
-      .maybeSingle();
-
-    const profile = (profileRaw ?? null) as ProfileRow | null;
-
-    if (pErr) {
-      logApiError("POST /api/order/bulk-set profile failed", pErr, { rid, user_id });
-      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: pErr.message });
-    }
-
-    if (!profile) {
-      return jsonErr(rid, "Fant ikke profil.", 403, "PROFILE_NOT_FOUND");
-    }
-
-    const company_id = profile.company_id;
-    const location_id = profile.location_id;
-
-    if (!company_id || !location_id) {
-      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, "PROFILE_MISSING_SCOPE");
-    }
-
     // ✅ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
-    if (!gate.ok) {
-      return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
-    }
+    if (!gate.ok) return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
 
-    // kontrakt
+    // Kontrakt
     const { data: companyRaw, error: cErr } = await (supa as any)
       .from("companies")
       .select("id, contract_week_tier, contract_basis_choices, contract_luxus_choices")
@@ -272,7 +246,7 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, "CONTRACT_MISSING_WEEK_TIER");
     }
 
-    // bygg 2 uker (10 hverdager) og filtrer på uke hvis ønsket
+    // Bygg 2 uker (10 hverdager) og filtrer på uke hvis ønsket
     const today = osloNowParts().dateISO;
     const datesAll = getNextWeekdays(today, 10);
     const dates = weekIndex === undefined ? datesAll : datesAll.slice(weekIndex * 5, weekIndex * 5 + 5);
@@ -319,24 +293,29 @@ export async function POST(req: Request) {
     }
 
     if (targets.length === 0) {
-      return jsonOk(rid, {
-        ok: true,
+      return jsonOk(
         rid,
-        updated: 0,
-        dates: [],
-        receipts: [],
-        skippedLocked,
-        skippedTierMismatch,
-        skippedNotAllowed,
-        message: "Ingen dager å oppdatere (enten låst eller ikke tillatt).",
-      }, 200);
+        {
+          ok: true,
+          rid,
+          updated: 0,
+          dates: [],
+          receipts: [],
+          skippedLocked,
+          skippedTierMismatch,
+          skippedNotAllowed,
+          message: "Ingen dager å oppdatere (enten låst eller ikke tillatt).",
+          actor: { role, user_id, company_id, location_id },
+        },
+        200
+      );
     }
 
-    // upsert batch
+    // Upsert batch (day_choices)
     const rows = targets.map((date) => ({
       company_id,
       location_id,
-      user_id, // day_choices.user_id = auth.users.id (bruker-id)
+      user_id, // day_choices.user_id = auth.users.id
       date,
       choice_key,
       note: null,
@@ -365,19 +344,24 @@ export async function POST(req: Request) {
     const receiptByDate = new Map(receipts.map((r) => [r.date, r]));
     const receiptsOrdered = targets.map((d) => receiptByDate.get(d)).filter(Boolean);
 
-    return jsonOk(rid, {
-      ok: true,
+    return jsonOk(
       rid,
-      updated: targets.length,
-      dates: targets,
-      choice_key,
-      receiptMode: "MULTI",
-      receipts: receiptsOrdered,
-      filters: { tier: tierFilter ?? null, weekIndex: weekIndex ?? null },
-      skippedLocked,
-      skippedTierMismatch,
-      skippedNotAllowed,
-    }, 200);
+      {
+        ok: true,
+        rid,
+        updated: targets.length,
+        dates: targets,
+        choice_key,
+        receiptMode: "MULTI",
+        receipts: receiptsOrdered,
+        filters: { tier: tierFilter ?? null, weekIndex: weekIndex ?? null },
+        skippedLocked,
+        skippedTierMismatch,
+        skippedNotAllowed,
+        actor: { role, user_id, company_id, location_id },
+      },
+      200
+    );
   } catch (e: any) {
     logApiError("POST /api/order/bulk-set failed", e, { rid });
     return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });

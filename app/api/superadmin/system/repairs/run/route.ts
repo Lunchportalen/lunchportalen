@@ -1,4 +1,4 @@
-﻿export const runtime = "nodejs";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -58,7 +58,7 @@ const JOB_ORDER_DEDUPE = "order.dedupe";
 const JOB_ORDER_NORMALIZE = "order.normalize_status";
 const JOB_ORDER_QUARANTINE = "order.quarantine";
 
-const OUTBOX_TABLE = "order_email_outbox";
+const OUTBOX_TABLE = "outbox";
 const ORDER_CANONICAL = new Set(["ACTIVE", "CANCELED", "DELIVERED"]);
 
 function denyResponse(s: any): Response {
@@ -966,12 +966,7 @@ async function runOrderDedupe(admin: any, job: RepairJobRow, rid: string) {
   const losers = rows.slice(1).map((r) => r.id).filter(Boolean);
 
   if (losers.length) {
-    const { error: updErr } = await admin
-      .from("orders")
-      .update({ status: "CANCELED", integrity_status: "ok", integrity_reason: null, integrity_rid: null, updated_at: nowIso() })
-      .in("id", losers);
-
-    if (updErr) throw updErr;
+    throw new Error("ORDER_WRITE_BLOCKED: dedupe write path is disabled; use canonical RPC-only model.");
   }
 
   await writeOpsEvent(admin, {
@@ -994,12 +989,7 @@ async function runOrderNormalizeStatus(admin: any, job: RepairJobRow, rid: strin
   const orderIds = Array.isArray(job?.payload?.order_ids) ? job.payload.order_ids.map((x: any) => safeStr(x)).filter(Boolean) : [];
   if (!target || !ORDER_CANONICAL.has(target) || orderIds.length === 0) throw new Error("missing_normalize_params");
 
-  const { error } = await admin
-    .from("orders")
-    .update({ status: target, integrity_status: "ok", integrity_reason: null, integrity_rid: null, updated_at: nowIso() })
-    .in("id", orderIds);
-
-  if (error) throw error;
+  throw new Error("ORDER_WRITE_BLOCKED: normalize write path is disabled; use canonical RPC-only model.");
 
   await writeOpsEvent(admin, {
     level: "info",
@@ -1021,12 +1011,7 @@ async function runOrderQuarantine(admin: any, job: RepairJobRow, rid: string) {
   const orderIds = Array.isArray(job?.payload?.order_ids) ? job.payload.order_ids.map((x: any) => safeStr(x)).filter(Boolean) : [];
   if (!reason || orderIds.length === 0) throw new Error("missing_quarantine_params");
 
-  const { error } = await admin
-    .from("orders")
-    .update({ integrity_status: "quarantined", integrity_reason: reason, integrity_rid: rid, updated_at: nowIso() })
-    .in("id", orderIds);
-
-  if (error) throw error;
+  throw new Error("ORDER_WRITE_BLOCKED: quarantine write path is disabled; use canonical RPC-only model.");
 
   await writeOpsEvent(admin, {
     level: "warn",
@@ -1167,5 +1152,6 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
   }
 }
+
 
 

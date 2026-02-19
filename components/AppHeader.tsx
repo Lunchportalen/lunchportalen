@@ -14,16 +14,15 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
+function cx(...s: Array<string | false | null | undefined>) {
+  return s.filter(Boolean).join(" ");
+}
+
 function isActive(current: string, href: string) {
   if (href === "/") return current === "/";
   return current === href || current.startsWith(href + "/");
 }
 
-/**
- * RC PERF LAW:
- * - Do NOT call getSessionUser() on public pages.
- * - Only call on protected areas.
- */
 function isProtectedPath(pathname: string) {
   return (
     pathname.startsWith("/admin") ||
@@ -37,28 +36,45 @@ function isProtectedPath(pathname: string) {
 }
 
 async function currentPath(): Promise<string> {
-  // ✅ In your project, headers() is typed as Promise<ReadonlyHeaders>
   const h = await headers();
-  return safeStr(h.get("x-pathname")) || "/";
+  const p = safeStr(h.get("x-pathname")) || "/";
+  // strip query/hash if a proxy ever injects it
+  return p.split("?")[0].split("#")[0] || "/";
+}
+
+function formatEmail(email: string | null) {
+  const e = safeStr(email);
+  if (!e) return null;
+  return e;
+}
+
+function areaLabelForPath(pathname: string): string | null {
+  if (!pathname) return null;
+  if (pathname.startsWith("/superadmin")) return "Superadmin";
+  if (pathname.startsWith("/admin")) return "Admin";
+  if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken")) return "Kjøkken";
+  if (pathname.startsWith("/driver")) return "Sjåfør";
+  if (pathname.startsWith("/system")) return "System";
+  if (pathname === "/" || pathname === "/hvordan") return "Markedsføring";
+  if (pathname.startsWith("/lunsj-") || pathname.startsWith("/lunsjordning") || pathname.startsWith("/alternativ-"))
+    return "SXO";
+  return null;
 }
 
 export default async function AppHeader({
-  areaLabel,
   nav,
   authMode = "auto",
+  containerMode = "container",
+  areaLabel,
 }: {
-  areaLabel: string;
   nav: NavItem[];
-  /**
-   * auto: only fetch session on protected paths
-   * required: always fetch session (use sparingly)
-   * none: never fetch session (always show not logged in)
-   */
   authMode?: "auto" | "required" | "none";
+  containerMode?: "container" | "full";
+  /** Optional: shown subtly on desktop (overrides auto label) */
+  areaLabel?: string;
 }) {
   const pathname = await currentPath();
 
-  // ✅ Fast path: avoid auth fetch on public pages
   const shouldFetchSession =
     authMode === "required" ? true : authMode === "none" ? false : isProtectedPath(pathname);
 
@@ -73,71 +89,49 @@ export default async function AppHeader({
     }
   }
 
+  const emailLabel = formatEmail(email);
+  const computedArea = areaLabel ?? areaLabelForPath(pathname);
+
+  // ✅ Admin/superadmin can render full-width with enterprise padding
+  const innerClass = containerMode === "full" ? "w-full px-5 sm:px-6 lg:px-10" : "lp-container";
+
   return (
-    <header className="lp-topbar">
-      <div className="lp-container lp-topbar-inner">
-        {/* LEFT: Logo + area label */}
-        <div className="flex min-w-0 items-center gap-4">
+    <header
+      className="lp-topbar border-b border-[rgb(var(--lp-border))] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75"
+      role="banner"
+    >
+      {/* =====================================================
+          TOP ROW
+          - Left: Logo (+ optional area label)
+          - Center: Desktop nav
+          - Right: User chip + logout/login
+      ====================================================== */}
+      <div className={cx(innerClass, "flex items-center justify-between gap-4 h-20 md:h-24")}>
+        {/* LEFT */}
+        <div className="flex min-w-0 items-center gap-3">
           <Link href="/" aria-label="Gå til forsiden" className="inline-flex items-center focus:outline-none">
             <Image
               src="/brand/LP-logo-uten-bakgrunn.png"
               alt="Lunchportalen"
-              width={240}
+              width={320}
               height={120}
-              sizes="(max-width: 640px) 160px, 240px"
-              className="h-14 md:h-[100px] w-auto max-h-[100px] object-contain"
+              sizes="(max-width: 640px) 180px, 320px"
+              className="h-12 md:h-16 w-auto object-contain"
               priority
             />
           </Link>
 
-          <span className="hidden md:inline-block text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
-            {areaLabel}
-          </span>
+          {/* Optional subtle area label (desktop only) */}
+          {computedArea ? (
+            <span className="hidden lg:inline-flex items-center rounded-full border border-[rgb(var(--lp-border))] bg-white/60 px-3 py-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
+              {computedArea}
+            </span>
+          ) : null}
         </div>
 
-        {/* CENTER: Navigation (desktop) */}
-        <nav className="lp-topbar-nav hidden md:flex items-center gap-2 text-sm" aria-label="Hovedmeny">
-          {nav.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`lp-nav-item ${active ? "lp-nav-item--active" : ""}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* RIGHT: User / actions */}
-        <div className="lp-topbar-slot">
-          {email ? (
-            <span className="lp-pill-email rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] lp-wrap-anywhere">
-              {email}
-            </span>
-          ) : (
-            <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))]">
-              Ikke innlogget
-            </span>
-          )}
-
-          {email ? (
-            <LogoutButton variant="ghost" />
-          ) : (
-            <Link href="/login" className="lp-btn lp-btn--ghost lp-btn--sm">
-              Til login
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* MOBILE NAV (under header) */}
-      {nav.length > 0 ? (
-        <div className="md:hidden border-t border-[rgb(var(--lp-border))] bg-white/80 backdrop-blur">
-          <div className="lp-container py-2 flex gap-2 overflow-x-auto">
+        {/* CENTER (desktop nav) */}
+        {nav.length > 0 ? (
+          <nav className="hidden md:flex items-center gap-2 text-sm" aria-label="Hovedmeny">
             {nav.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -145,7 +139,67 @@ export default async function AppHeader({
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`lp-nav-item whitespace-nowrap ${active ? "lp-nav-item--active" : ""}`}
+                  className={cx(
+                    "lp-nav-item transition-all duration-150",
+                    active ? "lp-nav-item--active lp-neon-glow-hover" : "hover:bg-black/5"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        ) : (
+          <div className="hidden md:block" />
+        )}
+
+        {/* RIGHT */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {emailLabel ? (
+            <>
+              <span
+                className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] max-w-[220px] sm:max-w-[260px] truncate"
+                title={emailLabel}
+              >
+                {emailLabel}
+              </span>
+
+              {/* LogoutButton må håndtere variant="ghost" (som du bruker) */}
+              <LogoutButton variant="ghost" />
+            </>
+          ) : (
+            <>
+              <span className="hidden sm:inline-flex rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))]">
+                Ikke innlogget
+              </span>
+              <Link href="/login" className="lp-btn lp-btn--ghost lp-btn--sm">
+                Til login
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* =====================================================
+          MOBILE NAV ROW
+          - No JS / no dropdown bugs
+          - Horizontal scroll (stable)
+          - Active shows neon ring
+      ====================================================== */}
+      {nav.length > 0 ? (
+        <div className="md:hidden border-t border-[rgb(var(--lp-border))] bg-white/90 backdrop-blur">
+          <div className={cx(innerClass, "py-2 flex gap-2 overflow-x-auto")}>
+            {nav.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cx(
+                    "lp-nav-item whitespace-nowrap",
+                    active ? "lp-nav-item--active lp-neon-glow-hover" : "hover:bg-black/5"
+                  )}
                 >
                   {item.label}
                 </Link>

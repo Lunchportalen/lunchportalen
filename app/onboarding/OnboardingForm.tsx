@@ -1,763 +1,614 @@
-// app/onboarding/OnboardingForm.tsx
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
-import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-type PlanTier = "BASIS" | "LUXUS";
 
-type DayPlan = {
+type Tier = "BASIS" | "LUXUS";
+
+type DayRow = {
+  key: DayKey;
+  label: string;
   enabled: boolean;
-  tier: PlanTier;
-  priceExVat: number; // UI-tekst viser inkl mva, men vi lagrer tallet som "inkl mva" flag i payload
+  tier: Tier;
+  price: number; // eks mva
 };
 
-type DeliveryWindow = {
-  from: string;
-  to: string;
-};
+const DAYS: Array<{ key: DayKey; label: string; defaultTier: Tier; defaultPrice: number }> = [
+  { key: "mon", label: "Mandag", defaultTier: "BASIS", defaultPrice: 90 },
+  { key: "tue", label: "Tirsdag", defaultTier: "BASIS", defaultPrice: 90 },
+  { key: "wed", label: "Onsdag", defaultTier: "BASIS", defaultPrice: 90 },
+  { key: "thu", label: "Torsdag", defaultTier: "BASIS", defaultPrice: 90 },
+  { key: "fri", label: "Fredag", defaultTier: "LUXUS", defaultPrice: 130 },
+];
 
-type FormState = {
-  // Firma
-  companyName: string;
-  orgnr: string;
-  employeesCount: string; // ✅ nytt felt
-
-  // Firma-admin
-  adminName: string;
-  adminEmail: string;
-  adminPhone: string;
-  password: string;
-  passwordConfirm: string;
-
-  // Levering
-  deliveryWhere: string;
-  deliveryWhenNote: string;
-  deliveryContactName: string;
-  deliveryContactPhone: string;
-
-  locationName: string;
-  address: string;
-  postalCode: string;
-  city: string;
-
-  deliveryWindow: DeliveryWindow;
-  days: Record<DayKey, DayPlan>;
-};
-
-function isValidTimeHHMM(v: string) {
-  return /^\d{2}:\d{2}$/.test(v);
+function onlyDigits(s: string) {
+  return s.replace(/[^\d]/g, "");
 }
 
-function dayLabel(day: DayKey) {
-  return { mon: "Mandag", tue: "Tirsdag", wed: "Onsdag", thu: "Torsdag", fri: "Fredag" }[day];
-}
-
-// ===== Avtalevilkår (versioned) =====
-const TERMS_VERSION = "v1.0";
-const TERMS_UPDATED_AT = "2026-01-16";
-
-function formatCurrencyNOK(value: number) {
-  return `${Math.round(value)} kr`;
-}
-
-function priceForTier(tier: PlanTier) {
-  return tier === "BASIS" ? 90 : 130;
+function clampInt(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
 }
 
 export default function OnboardingForm() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setSubmitting] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
 
-  // Terms / consent
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acceptedCreditConsent, setAcceptedCreditConsent] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  // Firma
+  const [companyName, setCompanyName] = React.useState("");
+  const [orgnr, setOrgnr] = React.useState("");
+  const [employeeCount, setEmployeeCount] = React.useState("");
 
-  const [form, setForm] = useState<FormState>({
-    companyName: "",
-    orgnr: "",
-    employeesCount: "",
+  // Firma-admin
+  const [adminName, setAdminName] = React.useState("");
+  const [adminEmail, setAdminEmail] = React.useState("");
+  const [adminPhone, setAdminPhone] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [password2, setPassword2] = React.useState("");
 
-    adminName: "",
-    adminEmail: "",
-    adminPhone: "",
-    password: "",
-    passwordConfirm: "",
+  const [showPw, setShowPw] = React.useState(false);
+  const [showPw2, setShowPw2] = React.useState(false);
 
-    deliveryWhere: "",
-    deliveryWhenNote: "",
-    deliveryContactName: "",
-    deliveryContactPhone: "",
+  // Levering
+  const [deliveryPoint, setDeliveryPoint] = React.useState("");
+  const [deliveryInstruction, setDeliveryInstruction] = React.useState("");
+  const [deliveryContact, setDeliveryContact] = React.useState("");
+  const [deliveryPhone, setDeliveryPhone] = React.useState("");
+  const [locationName, setLocationName] = React.useState("Hovedkontor");
+  const [address, setAddress] = React.useState("");
+  const [postalCode, setPostalCode] = React.useState("");
+  const [postalPlace, setPostalPlace] = React.useState("");
+  const [windowFrom, setWindowFrom] = React.useState("08:30");
+  const [windowTo, setWindowTo] = React.useState("10:00");
 
-    locationName: "Hovedkontor",
-    address: "",
-    postalCode: "",
-    city: "",
+  // Avtale per dag
+  const [days, setDays] = React.useState<DayRow[]>(
+    DAYS.map((d) => ({
+      key: d.key,
+      label: d.label,
+      enabled: true,
+      tier: d.defaultTier,
+      price: d.defaultPrice,
+    }))
+  );
 
-    deliveryWindow: { from: "08:30", to: "10:00" },
+  // Vilkår
+  const [acceptTerms, setAcceptTerms] = React.useState(false);
+  const [acceptCredit, setAcceptCredit] = React.useState(false);
 
-    days: {
-      mon: { enabled: true, tier: "BASIS", priceExVat: 90 },
-      tue: { enabled: true, tier: "BASIS", priceExVat: 90 },
-      wed: { enabled: true, tier: "BASIS", priceExVat: 90 },
-      thu: { enabled: true, tier: "BASIS", priceExVat: 90 },
-      fri: { enabled: true, tier: "LUXUS", priceExVat: 130 },
-    },
-  });
-
-  function set<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((p) => ({ ...p, [key]: value }));
-  }
-
-  function setDay(day: DayKey, patch: Partial<DayPlan>) {
-    setForm((p) => ({
-      ...p,
-      days: {
-        ...p.days,
-        [day]: { ...p.days[day], ...patch },
-      },
-    }));
+  function setDay<K extends keyof DayRow>(key: DayKey, patch: Pick<DayRow, K>) {
+    setDays((prev) =>
+      prev.map((r) => (r.key === key ? ({ ...r, ...(patch as any) } as DayRow) : r))
+    );
   }
 
   function validate(): string | null {
-    // Firma
-    if (!form.companyName.trim()) return "Firmanavn er obligatorisk.";
-    if (!form.orgnr.trim()) return "Org.nr er obligatorisk.";
+    const emp = Number(onlyDigits(employeeCount || "0") || 0);
 
-    const employees = Number(String(form.employeesCount || "").trim());
-    if (!Number.isFinite(employees) || employees < 20) return "Firma må ha minimum 20 ansatte.";
+    if (!companyName.trim()) return "Firmanavn må fylles ut.";
+    if (!orgnr.trim() || onlyDigits(orgnr).length < 9) return "Org.nr må fylles ut (9 siffer).";
+    if (!emp || Number.isNaN(emp)) return "Antall ansatte må fylles ut.";
+    if (emp < 20) return "Minimum 20 ansatte for registrering.";
 
-    // Admin
-    if (!form.adminName.trim()) return "Firma-admin: Navn er obligatorisk.";
-    if (!form.adminEmail.trim()) return "Firma-admin: E-post er obligatorisk.";
-    if (!form.adminPhone.trim()) return "Firma-admin: Telefon er obligatorisk.";
+    if (!adminName.trim()) return "Navn (firma-admin) må fylles ut.";
+    if (!adminEmail.trim() || !adminEmail.includes("@")) return "E-post (firma-admin) må være gyldig.";
+    if (!adminPhone.trim()) return "Telefon (firma-admin) må fylles ut.";
 
-    if (!form.password) return "Passord er obligatorisk.";
-    if (form.password.length < 8) return "Passord må være minimum 8 tegn.";
-    if (!form.passwordConfirm) return "Bekreft passord er obligatorisk.";
-    if (form.password !== form.passwordConfirm) return "Passordene må være nøyaktig like.";
+    if (!password || password.length < 8) return "Passord må være minimum 8 tegn.";
+    if (password2 !== password) return "Bekreft passord må være identisk med passordet.";
 
-    // Levering
-    if (!form.deliveryWhere.trim()) return "Levering: Leveringspunkt er obligatorisk.";
-    if (!form.deliveryWhenNote.trim()) return "Levering: Leveringsinstruksjon er obligatorisk.";
-    if (!form.deliveryContactName.trim()) return "Levering: Kontaktperson er obligatorisk.";
-    if (!form.deliveryContactPhone.trim()) return "Levering: Telefon ved levering er obligatorisk.";
-    if (!form.address.trim()) return "Levering: Adresse er obligatorisk.";
-    if (!form.postalCode.trim()) return "Levering: Postnummer er obligatorisk.";
-    if (!form.city.trim()) return "Levering: Poststed er obligatorisk.";
+    if (!deliveryPoint.trim()) return "Leveringspunkt må fylles ut.";
+    if (!deliveryInstruction.trim()) return "Leveringsinstruksjon må fylles ut.";
+    if (!deliveryContact.trim()) return "Kontaktperson må fylles ut.";
+    if (!deliveryPhone.trim()) return "Telefon ved levering må fylles ut.";
+    if (!locationName.trim()) return "Lokasjon (navn) må fylles ut.";
+    if (!address.trim()) return "Adresse må fylles ut.";
+    if (!postalCode.trim()) return "Postnummer må fylles ut.";
+    if (!postalPlace.trim()) return "Poststed må fylles ut.";
 
-    if (!form.deliveryWindow.from || !form.deliveryWindow.to) {
-      return "Levering: Leveringsvindu (fra/til) er obligatorisk.";
-    }
-    if (!isValidTimeHHMM(form.deliveryWindow.from) || !isValidTimeHHMM(form.deliveryWindow.to)) {
-      return "Levering: Leveringsvindu må være på format HH:MM (f.eks. 08:30).";
-    }
-
-    // Avtale: minst 1 dag aktiv + pris > 0
-    const enabledDays = (Object.keys(form.days) as DayKey[]).filter((d) => form.days[d].enabled);
-    if (enabledDays.length === 0) return "Avtale: Velg minst én leveringsdag.";
+    const enabledDays = days.filter((d) => d.enabled);
+    if (enabledDays.length === 0) return "Velg minst én leveringsdag.";
 
     for (const d of enabledDays) {
-      const dp = form.days[d];
-      const price = priceForTier(dp.tier);
-      if (price <= 0) {
-        return `Avtale: Pris pr kuvert må være > 0 for ${dayLabel(d)}.`;
+      if (!d.price || Number.isNaN(d.price) || d.price <= 0) {
+        return `Pris må være > 0 for ${d.label}.`;
       }
     }
 
-    // Terms / consent
-    if (!acceptedTerms) return "Du må akseptere avtalevilkårene for å fortsette.";
-    if (!acceptedCreditConsent) return "Du må samtykke til kredittvurdering for å inngå avtalen.";
+    if (!acceptTerms) return "Du må akseptere avtalevilkårene.";
+    if (!acceptCredit) return "Du må samtykke til kredittvurdering.";
 
     return null;
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setFormError(null);
 
     const v = validate();
     if (v) {
-      setError(v);
+      setFormError(v);
       return;
     }
 
-    const adminPhone = normalizeNoPhone(form.adminPhone);
-    const deliveryPhone = normalizeNoPhone(form.deliveryContactPhone);
+    const emp = Number(onlyDigits(employeeCount || "0") || 0);
 
-    if (!isValidNoPhone(adminPhone)) {
-      setError("Telefon må være 8 siffer.");
-      return;
-    }
-
-    if (!isValidNoPhone(deliveryPhone)) {
-      setError("Telefon ved levering må være 8 siffer.");
-      return;
-    }
-
-    setLoading(true);
+    const payload = {
+      company: {
+        name: companyName.trim(),
+        orgnr: onlyDigits(orgnr),
+        employee_count: emp,
+      },
+      admin: {
+        name: adminName.trim(),
+        email: adminEmail.trim().toLowerCase(),
+        phone: adminPhone.trim(),
+        password,
+      },
+      delivery: {
+        delivery_point: deliveryPoint.trim(),
+        delivery_instruction: deliveryInstruction.trim(),
+        contact_name: deliveryContact.trim(),
+        contact_phone: deliveryPhone.trim(),
+        location_name: locationName.trim(),
+        address: address.trim(),
+        postal_code: postalCode.trim(),
+        postal_place: postalPlace.trim(),
+        window_from: windowFrom,
+        window_to: windowTo,
+      },
+      agreement: {
+        // eks mva
+        days: days
+          .filter((d) => d.enabled)
+          .map((d) => ({
+            day: d.key,
+            tier: d.tier,
+            price_ex_vat: Number(d.price),
+          })),
+        terms_accepted: true,
+        credit_check_accepted: true,
+        // locked terms
+        binding_months: 12,
+        notice_months_before_end: 3,
+        prices_are_ex_vat: true,
+      },
+    };
 
     try {
-      const nowISO = new Date().toISOString();
-      const employee_count = Number(String(form.employeesCount || "").trim());
-      const daysForPayload = (Object.keys(form.days) as DayKey[]).reduce((acc, day) => {
-        const dp = form.days[day];
-        acc[day] = { ...dp, priceExVat: priceForTier(dp.tier) };
-        return acc;
-      }, {} as Record<DayKey, DayPlan>);
+      setSubmitting(true);
 
-      // ✅ Atomisk onboarding på server (inkl. auth-opprettelse)
-      const resp = await fetch("/api/onboarding/complete", {
+      const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({
-          company_name: form.companyName.trim(),
-          orgnr: form.orgnr.trim(),
-          employee_count,
-
-          full_name: form.adminName.trim(),
-          email: form.adminEmail.trim(),
-          phone: adminPhone,
-
-          password: form.password,
-          password_confirm: form.passwordConfirm,
-
-          location: {
-            name: form.locationName.trim(),
-            address: form.address.trim(),
-            postal_code: form.postalCode.trim(),
-            city: form.city.trim(),
-          },
-
-          delivery: {
-            where: form.deliveryWhere.trim(),
-            when_note: form.deliveryWhenNote.trim(),
-            contact_name: form.deliveryContactName.trim(),
-            contact_phone: deliveryPhone,
-            window_from: form.deliveryWindow.from,
-            window_to: form.deliveryWindow.to,
-          },
-
-          agreement: {
-            days: daysForPayload,
-            billing_prices_include_vat: true,
-          },
-
-          terms: {
-            version: TERMS_VERSION,
-            updated_at: TERMS_UPDATED_AT,
-            accepted_at: nowISO,
-            credit_consent_at: nowISO,
-            credit_check_system: "Tripletex",
-            binding_months: 12,
-            notice_months: 3,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const json = await resp.json().catch(() => null);
+      const data = await res.json().catch(() => ({}));
 
-      if (resp.status === 422 && json?.message) {
-        setError(json.message);
+      if (!res.ok) {
+        const msg =
+          (data?.error as string) ||
+          (data?.message as string) ||
+          "Noe gikk galt ved innsending. Prøv igjen.";
+        setFormError(msg);
         return;
       }
 
-      if (!resp.ok || !json?.ok) {
-        throw new Error(json?.message || json?.error || "Noe gikk galt. Ingen data er lagret. Prøv igjen om litt.");
-      }
-
-      router.push(`/onboarding/thanks?status=${encodeURIComponent(json.status ?? "pending")}`);
-      router.refresh();
+      // optional redirect from API, else go to /pending
+      const redirectTo = (data?.redirectTo as string) || "/pending";
+      router.push(redirectTo);
     } catch (err: any) {
-      setError(err?.message || "Noe gikk galt. Ingen data er lagret. Prøv igjen om litt.");
+      setFormError("Nettverksfeil. Prøv igjen.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
   return (
-    <>
-      <form onSubmit={onSubmit} className="rounded-3xl border bg-white p-6 shadow-sm">
-        <div className="grid gap-6">
-          {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-              {error}
-            </div>
-          ) : null}
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Form error */}
+      {formError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <div className="font-medium">Sjekk registreringen</div>
+          <div className="mt-1">{formError}</div>
+        </div>
+      ) : null}
 
-          {/* FIRMA */}
-          <section className="grid gap-3">
-            <h2 className="text-lg font-semibold">Firma</h2>
-            <div className="grid gap-3">
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Firmanavn *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.companyName}
-                  onChange={(e) => set("companyName", e.target.value)}
-                  autoComplete="organization"
-                  required
-                />
-                <span className="text-xs text-slate-500">Dette brukes til å sette riktige rammer for bedriften.</span>
-              </label>
+      {/* Firma */}
+      <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+        <h2 className="text-lg font-semibold">Firma</h2>
 
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Org.nr *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.orgnr}
-                  onChange={(e) => set("orgnr", e.target.value)}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Hvor mange ansatte? *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.employeesCount}
-                  onChange={(e) => set("employeesCount", e.target.value)}
-                  type="number"
-                  inputMode="numeric"
-                  min={20}
-                  step={1}
-                  autoComplete="off"
-                  placeholder="Minst 20"
-                  required
-                />
-                <span className="text-xs text-slate-500">Brukes kun for å tilpasse avtalen – kan endres senere.</span>
-              </label>
-            </div>
-          </section>
-
-          {/* FIRMA-ADMIN */}
-          <section className="grid gap-3">
-            <h2 className="text-lg font-semibold">Firma-admin</h2>
-            <div className="grid gap-3">
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Navn *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.adminName}
-                  onChange={(e) => set("adminName", e.target.value)}
-                  autoComplete="name"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">E-post *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.adminEmail}
-                  onChange={(e) => set("adminEmail", e.target.value)}
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  required
-                />
-                <span className="text-xs text-slate-500">
-                  Vi bruker e-posten kun til innlogging og viktig systeminformasjon.
-                </span>
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Telefon *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.adminPhone}
-                  onChange={(e) => set("adminPhone", e.target.value)}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Passord *</span>
-                <div className="relative">
-                  <input
-                    className="w-full rounded-xl border p-3 pr-12"
-                    value={form.password}
-                    onChange={(e) => set("password", e.target.value)}
-                    type={showPassword ? "text" : "password"}
-                    minLength={8}
-                    autoComplete="new-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-pressed={showPassword}
-                  >
-                    {showPassword ? "Skjul" : "Vis"}
-                  </button>
-                </div>
-                <span className="text-xs text-slate-500">Minimum 8 tegn.</span>
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Bekreft passord *</span>
-                <div className="relative">
-                  <input
-                    className="w-full rounded-xl border p-3 pr-12"
-                    value={form.passwordConfirm}
-                    onChange={(e) => set("passwordConfirm", e.target.value)}
-                    type={showPasswordConfirm ? "text" : "password"}
-                    minLength={8}
-                    autoComplete="new-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-2 top-1/2 min-h-[44px] -translate-y-1/2 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                    onClick={() => setShowPasswordConfirm((v) => !v)}
-                    aria-pressed={showPasswordConfirm}
-                  >
-                    {showPasswordConfirm ? "Skjul" : "Vis"}
-                  </button>
-                </div>
-                <span className="text-xs text-slate-500">Må være identisk med passordet.</span>
-              </label>
-            </div>
-          </section>
-
-          {/* LEVERING */}
-          <section className="grid gap-3">
-            <h2 className="text-lg font-semibold">Levering</h2>
-
-            <div className="grid gap-3">
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Leveringspunkt *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryWhere}
-                  onChange={(e) => set("deliveryWhere", e.target.value)}
-                  placeholder="F.eks. resepsjon, varemottak, bakinngang, etasje"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Leveringsinstruksjon *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryWhenNote}
-                  onChange={(e) => set("deliveryWhenNote", e.target.value)}
-                  placeholder="F.eks. ring ved ankomst, bruk porttelefon, kontakt resepsjon"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Kontaktperson *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryContactName}
-                  onChange={(e) => set("deliveryContactName", e.target.value)}
-                  autoComplete="name"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Telefon ved levering *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryContactPhone}
-                  onChange={(e) => set("deliveryContactPhone", e.target.value)}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Lokasjon (navn) *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.locationName}
-                  onChange={(e) => set("locationName", e.target.value)}
-                  autoComplete="organization"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Adresse *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.address}
-                  onChange={(e) => set("address", e.target.value)}
-                  autoComplete="street-address"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Postnummer *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.postalCode}
-                  onChange={(e) => set("postalCode", e.target.value)}
-                  inputMode="numeric"
-                  autoComplete="postal-code"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Poststed *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.city}
-                  onChange={(e) => set("city", e.target.value)}
-                  autoComplete="address-level2"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Leveringsvindu fra *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryWindow.from}
-                  onChange={(e) => set("deliveryWindow", { ...form.deliveryWindow, from: e.target.value })}
-                  type="time"
-                  placeholder="08:30"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-600">Leveringsvindu til *</span>
-                <input
-                  className="w-full rounded-xl border p-3"
-                  value={form.deliveryWindow.to}
-                  onChange={(e) => set("deliveryWindow", { ...form.deliveryWindow, to: e.target.value })}
-                  type="time"
-                  placeholder="10:00"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-            </div>
-          </section>
-
-          {/* AVTALE */}
-          <section className="grid gap-3">
-            <h2 className="text-lg font-semibold">Avtale (velg nivå per dag)</h2>
-            <p className="text-sm text-slate-600">
-              Velg hvilke dager dere ønsker levering, og om dagen er Basis eller Luxus. Pris pr kuvert er{" "}
-              <strong>inkl. mva</strong>.
-            </p>
-
-            <div className="grid gap-3">
-              {(Object.keys(form.days) as DayKey[]).map((d) => {
-                const dp = form.days[d];
-                return (
-                  <div key={d} className="rounded-2xl border p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <label className="flex min-h-[44px] items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="h-5 w-5"
-                          checked={dp.enabled}
-                          onChange={(e) => setDay(d, { enabled: e.target.checked })}
-                        />
-                        <span className="font-medium">{dayLabel(d)}</span>
-                      </label>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          disabled={!dp.enabled}
-                          onClick={() => setDay(d, { tier: "BASIS", priceExVat: 90 })}
-                          className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-sm disabled:opacity-50 ${
-                            dp.tier === "BASIS" ? "bg-black text-white" : "bg-white"
-                          }`}
-                        >
-                          Basis
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!dp.enabled}
-                          onClick={() => setDay(d, { tier: "LUXUS", priceExVat: 130 })}
-                          className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-sm disabled:opacity-50 ${
-                            dp.tier === "LUXUS" ? "bg-black text-white" : "bg-white"
-                          }`}
-                        >
-                          Luxus
-                        </button>
-
-                        <label className="flex min-h-[44px] items-center gap-2 text-sm">
-                          <span className="text-slate-600">Pris *</span>
-                          <input
-                            disabled={!dp.enabled}
-                            className="w-28 rounded-xl border p-2 disabled:opacity-50"
-                            type="number"
-                            min={1}
-                            inputMode="numeric"
-                            value={priceForTier(dp.tier)}
-                            readOnly
-                          />
-                          <span className="text-slate-600">kr/kuvert inkl. mva</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* EXPECTATION SETTING */}
-          <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm">
-            <div className="font-semibold">Hva skjer etter registrering?</div>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-[rgb(var(--lp-muted))]">
-              <li>Bedriften opprettes med faste rammer</li>
-              <li>Du får tilgang som admin</li>
-              <li>Ansatte kan legges til når du er klar</li>
-              <li>Lunsj bestilles med cut-off kl. 08:00</li>
-            </ul>
-          </section>
-
-          {/* TERMS + CREDIT CONSENT */}
-          <section className="grid gap-2">
-            <label className="flex min-h-[44px] items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                className="h-5 w-5"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-              />
-              <span>
-                Jeg har lest og aksepterer{" "}
-                <button
-                  type="button"
-                  className="min-h-[44px] underline opacity-90"
-                  onClick={() => setShowTermsModal(true)}
-                >
-                  avtalevilkårene
-                </button>{" "}
-                *
-              </span>
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium">
+              Firmanavn <span className="text-red-600">*</span>
             </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              autoComplete="organization"
+            />
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Dette brukes til å sette riktige rammer for bedriften.</div>
+          </div>
 
-            <label className="flex min-h-[44px] items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                className="h-5 w-5"
-                checked={acceptedCreditConsent}
-                onChange={(e) => setAcceptedCreditConsent(e.target.checked)}
-              />
-              <span>Jeg samtykker til kredittvurdering av firmaet (utføres i Tripletex) *</span>
+          <div>
+            <label className="text-sm font-medium">
+              Org.nr <span className="text-red-600">*</span>
             </label>
+            <input
+              inputMode="numeric"
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={orgnr}
+              onChange={(e) => setOrgnr(onlyDigits(e.target.value))}
+              placeholder="9 siffer"
+            />
+          </div>
 
-            <p className="text-xs opacity-70">
-              Avtalen har <strong>12 måneders bindingstid</strong>. Oppsigelse: <strong>3 måneder</strong> etter
-              bindingstid. Alle priser faktureres <strong>inkl. mva</strong>.
-            </p>
-          </section>
-
-          <div className="flex flex-col items-stretch gap-3">
-            <button disabled={loading} className="min-h-[48px] rounded-xl bg-black px-5 py-3 text-white disabled:opacity-60">
-              {loading ? "Oppretter konto …" : "Opprett bedrift"}
-            </button>
-
-            <p className="text-xs text-[rgb(var(--lp-muted))]">
-              Én sannhetskilde. Ingen manuelle unntak. Full sporbarhet.
-            </p>
+          <div>
+            <label className="text-sm font-medium">
+              Hvor mange ansatte? <span className="text-red-600">*</span>
+            </label>
+            <input
+              inputMode="numeric"
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={employeeCount}
+              onChange={(e) => setEmployeeCount(onlyDigits(e.target.value))}
+              placeholder="Minst 20"
+            />
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Brukes kun for å tilpasse avtalen – kan endres senere.</div>
           </div>
         </div>
-      </form>
+      </section>
 
-      {/* Terms Modal */}
-      {showTermsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 border-b p-5">
-              <div>
-                <h2 className="text-lg font-semibold">Avtalevilkår</h2>
-                <p className="text-sm opacity-70">
-                  Versjon: <strong>{TERMS_VERSION}</strong> • Sist oppdatert: <strong>{TERMS_UPDATED_AT}</strong>
-                </p>
-              </div>
+      {/* Firma-admin */}
+      <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+        <h2 className="text-lg font-semibold">Firma-admin</h2>
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium">
+              Navn <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={adminName}
+              onChange={(e) => setAdminName(e.target.value)}
+              autoComplete="name"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">
+              E-post <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="email"
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              autoComplete="email"
+            />
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Vi bruker e-post kun til innlogging og viktig systeminformasjon.</div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">
+              Telefon <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={adminPhone}
+              onChange={(e) => setAdminPhone(e.target.value)}
+              autoComplete="tel"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">
+              Passord <span className="text-red-600">*</span>
+            </label>
+            <div className="mt-2 flex overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
+              <input
+                type={showPw ? "text" : "password"}
+                className="w-full px-3 py-2 outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
               <button
                 type="button"
-                className="min-h-[44px] rounded-xl border px-4 py-2 text-sm"
-                onClick={() => setShowTermsModal(false)}
+                className="px-3 text-sm font-semibold text-[rgb(var(--lp-muted))]"
+                onClick={() => setShowPw((v) => !v)}
               >
-                Lukk
+                Vis
               </button>
             </div>
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Minimum 8 tegn.</div>
+          </div>
 
-            <div className="max-h-[70vh] overflow-auto p-5 text-sm leading-6">
-              <h3 className="font-semibold">1. Parter</h3>
-              <p>Avtalen inngås mellom Lunchportalen (Leverandøren) og Kunden (juridisk enhet som registrerer avtalen).</p>
+          <div>
+            <label className="text-sm font-medium">
+              Bekreft passord <span className="text-red-600">*</span>
+            </label>
+            <div className="mt-2 flex overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
+              <input
+                type={showPw2 ? "text" : "password"}
+                className="w-full px-3 py-2 outline-none"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="px-3 text-sm font-semibold text-[rgb(var(--lp-muted))]"
+                onClick={() => setShowPw2((v) => !v)}
+              >
+                Vis
+              </button>
+            </div>
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Må være identisk med passordet.</div>
+          </div>
+        </div>
+      </section>
 
-              <h3 className="mt-4 font-semibold">2. Avtaleomfang</h3>
-              <p>Leverandøren leverer tilgang til Lunchportalen og tilhørende tjenester i henhold til valgt avtale.</p>
+      {/* Levering */}
+      <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+        <h2 className="text-lg font-semibold">Levering</h2>
 
-              <h3 className="mt-4 font-semibold">3. Avtaleperiode og bindingstid</h3>
-              <p>
-                Avtalen har <strong>12 (tolv) måneders bindingstid</strong>. Etter endt bindingstid løper avtalen videre med{" "}
-                <strong>3 (tre) måneders oppsigelsestid</strong>.
-              </p>
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium">
+              Leveringspunkt <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={deliveryPoint}
+              onChange={(e) => setDeliveryPoint(e.target.value)}
+              placeholder="F.eks. resepsjon, varemottak, bakinngang, etasje"
+            />
+          </div>
 
-              <h3 className="mt-4 font-semibold">4. Priser og fakturering</h3>
-              <p>
-                Pris per kuvert følger avtalen slik den er registrert i systemet. <strong>Alle priser faktureres inkl. mva</strong>.
-              </p>
+          <div>
+            <label className="text-sm font-medium">
+              Leveringsinstruksjon <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={deliveryInstruction}
+              onChange={(e) => setDeliveryInstruction(e.target.value)}
+              placeholder="F.eks. ring ved ankomst, bruk porttelefon, kontakt resepsjon"
+            />
+          </div>
 
-              <h3 className="mt-4 font-semibold">6. Kredittvurdering (Tripletex)</h3>
-              <p>
-                Kunden samtykker til at Leverandøren kan gjennomføre kredittvurdering av virksomheten. Kredittvurderingen utføres i{" "}
-                <strong>Tripletex</strong>.
-              </p>
+          <div>
+            <label className="text-sm font-medium">
+              Kontaktperson <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={deliveryContact}
+              onChange={(e) => setDeliveryContact(e.target.value)}
+            />
+          </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  className="min-h-[44px] rounded-xl border px-4 py-2 text-sm"
-                  href={`/api/onboarding/terms-pdf?version=${encodeURIComponent(TERMS_VERSION)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Åpne PDF-versjon
-                </a>
+          <div>
+            <label className="text-sm font-medium">
+              Telefon ved levering <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={deliveryPhone}
+              onChange={(e) => setDeliveryPhone(e.target.value)}
+            />
+          </div>
 
-                <button
-                  type="button"
-                  className="min-h-[44px] rounded-xl bg-black px-4 py-2 text-sm text-white"
-                  onClick={() => setShowTermsModal(false)}
-                >
-                  Jeg forstår
-                </button>
-              </div>
+          <div>
+            <label className="text-sm font-medium">
+              Lokasjon (navn) <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={locationName}
+              onChange={(e) => setLocationName(e.target.value)}
+            />
+          </div>
 
-              <p className="mt-4 text-xs opacity-70">
-                (Visning: {TERMS_VERSION}) • Eksempelpris: Basis {formatCurrencyNOK(90)} / Luxus {formatCurrencyNOK(130)}.
-              </p>
+          <div>
+            <label className="text-sm font-medium">
+              Adresse <span className="text-red-600">*</span>
+            </label>
+            <input
+              className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium">
+                Postnummer <span className="text-red-600">*</span>
+              </label>
+              <input
+                inputMode="numeric"
+                className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+                value={postalCode}
+                onChange={(e) => setPostalCode(onlyDigits(e.target.value))}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">
+                Poststed <span className="text-red-600">*</span>
+              </label>
+              <input
+                className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.25)]"
+                value={postalPlace}
+                onChange={(e) => setPostalPlace(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium">
+                Leveringsvindu fra <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="time"
+                className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none"
+                value={windowFrom}
+                onChange={(e) => setWindowFrom(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">
+                Leveringsvindu til <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="time"
+                className="mt-2 w-full rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 outline-none"
+                value={windowTo}
+                onChange={(e) => setWindowTo(e.target.value)}
+              />
             </div>
           </div>
         </div>
-      )}
-    </>
+      </section>
+
+      {/* Avtale per dag */}
+      <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+        <h2 className="text-lg font-semibold">Avtale (velg nivå per dag)</h2>
+        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+          Velg hvilke dager dere ønsker levering, og om dagen er Basis eller Luxus. Pris per kuvert er eks. mva.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {days.map((d) => (
+            <div
+              key={d.key}
+              className="flex flex-col gap-3 rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-white px-4 py-3 md:flex-row md:items-center md:justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={d.enabled}
+                  onChange={(e) => setDay(d.key, { enabled: e.target.checked } as any)}
+                  className="h-5 w-5"
+                />
+                <div className="font-medium">{d.label}</div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDay(d.key, { tier: "BASIS", price: d.price || 90 } as any)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    d.tier === "BASIS"
+                      ? "border-transparent bg-black text-white"
+                      : "border-[rgba(var(--lp-border),0.9)] bg-white text-[rgb(var(--lp-text))]"
+                  }`}
+                  aria-pressed={d.tier === "BASIS"}
+                  disabled={!d.enabled}
+                >
+                  Basis
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDay(d.key, { tier: "LUXUS", price: d.price || 130 } as any)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    d.tier === "LUXUS"
+                      ? "border-transparent bg-black text-white"
+                      : "border-[rgba(var(--lp-border),0.9)] bg-white text-[rgb(var(--lp-text))]"
+                  }`}
+                  aria-pressed={d.tier === "LUXUS"}
+                  disabled={!d.enabled}
+                >
+                  Luxus
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-[rgb(var(--lp-muted))]">Pris *</span>
+                  <input
+                    inputMode="numeric"
+                    value={String(d.price)}
+                    onChange={(e) => {
+                      const n = Number(onlyDigits(e.target.value || "0") || 0);
+                      setDay(d.key, { price: clampInt(n, 0, 9999) } as any);
+                    }}
+                    disabled={!d.enabled}
+                    className="w-24 rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-sm outline-none"
+                  />
+                  <span className="text-sm text-[rgb(var(--lp-muted))]">kr/kuvert eks. mva</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-[rgba(var(--lp-surface-rgb),0.65)] p-4 text-sm">
+          <div className="font-medium">Hva skjer etter registrering?</div>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[rgb(var(--lp-muted))]">
+            <li>Bedriften opprettes med faste rammer</li>
+            <li>Du får tilgang som admin</li>
+            <li>Ansatte kan legges til når du er klar</li>
+            <li>Lunsj bestilles med cut-off kl. 08:00</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* Vilkår / samtykke */}
+      <section className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5">
+        <div className="space-y-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="mt-1 h-5 w-5"
+            />
+            <span className="text-sm">
+              Jeg har lest og aksepterer <a className="underline" href="/vilkar">avtalevilkårene</a> <span className="text-red-600">*</span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={acceptCredit}
+              onChange={(e) => setAcceptCredit(e.target.checked)}
+              className="mt-1 h-5 w-5"
+            />
+            <span className="text-sm">
+              Jeg samtykker til kredittvurdering av firmaet (utføres i Tripletex) <span className="text-red-600">*</span>
+            </span>
+          </label>
+
+          {/* ✅ Correct contract + VAT */}
+          <div className="text-xs text-[rgb(var(--lp-muted))]">
+            Avtalen har 12 måneders bindingstid. Oppsigelse: 3 mnd før utløpt bindingstid. Alle priser faktureres eks. mva.
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="lp-btn lp-btn-primary lp-btn-block lp-neon"
+          >
+            {isSubmitting ? "Oppretter..." : "Opprett bedrift"}
+          </button>
+
+          <div className="text-xs text-[rgb(var(--lp-muted))]">
+            Én sannhetskilde. Ingen manuelle unntak. Full sporbarhet.
+          </div>
+        </div>
+      </section>
+    </form>
   );
 }

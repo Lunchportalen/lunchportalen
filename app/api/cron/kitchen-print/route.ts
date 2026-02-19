@@ -5,28 +5,40 @@ export const revalidate = 0;
 
 import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
-import { jsonOk, jsonErr } from "@/lib/http/respond";
+
+import { requireCronAuth as requireCronAuthShared } from "@/lib/http/cronAuth";
+import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+
 import { cutoffStatusForDate0805, isIsoDate, osloNowISO, osloTodayISODate } from "@/lib/date/oslo";
 import { opsLog } from "@/lib/ops/log";
 import { buildBatchSummary } from "@/lib/kitchen/batchSummary";
 import { fetchKitchenDayData } from "@/lib/kitchen/dayData";
 import { cutoffAtUTCISO0805 } from "@/lib/kitchen/cutoff";
 
-function safeStr(v: any) {
+/* =========================================================
+   Helpers
+========================================================= */
+function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function rid() {
-  return `cron_kitchen_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+function clampStr(v: unknown, max = 120) {
+  const s = safeStr(v);
+  return s.length ? s.slice(0, max) : "";
 }
 
+function requireCronAuth(req: NextRequest) {
+  requireCronAuthShared(req);
+  return { mode: "cron" as const, actor_id: null as string | null };
+}
 function cutoffAllowed(dateISO: string) {
   const status = cutoffStatusForDate0805(dateISO);
   if (status === "TODAY_LOCKED") return { ok: true as const };
   if (status === "PAST") return { ok: true as const };
-  if (status === "FUTURE_OPEN") return { ok: false as const, code: "DATE_IN_FUTURE", status: 409 as const, message: "Datoen er i fremtiden." };
+  if (status === "FUTURE_OPEN")
+    return { ok: false as const, code: "DATE_IN_FUTURE", status: 409 as const, message: "Datoen er i fremtiden." };
   return { ok: false as const, code: "CUTOFF_NOT_REACHED", status: 425 as const, message: "Cut-off er ikke passert." };
 }
 
@@ -37,16 +49,29 @@ type BatchSummarySlot = {
   batch: { id: string | null; status: string; packed_at: string | null; delivered_at: string | null } | null;
 };
 
-async function authOrCron(req: NextRequest) {
-  const cronSecret = safeStr(process.env.CRON_SECRET);
-  const headerSecret = safeStr(req.headers.get("x-cron-secret"));
-  const url = new URL(req.url);
-  const querySecret = safeStr(url.searchParams.get("key"));
+/**
+ * Auth model:
+ * - Cron: Authorization Bearer or x-cron-secret
+ * - Superadmin fallback: session scope + role
+ *
+ * NOTE: Query-string secrets are intentionally not supported.
+ */
+async function authOrCron(req: NextRequest, rid: string) {
+  try {
+    const cron = requireCronAuth(req);
+    return { ok: true as const, actor_id: cron.actor_id, mode: cron.mode };
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const code = String(e?.code ?? "").trim();
 
-  if (cronSecret && ((headerSecret && headerSecret === cronSecret) || (querySecret && querySecret === cronSecret))) {
-    return { ok: true as const, actor_id: null as string | null, mode: "cron" as const };
+    // If CRON_SECRET missing -> hard fail for cron mode, but allow superadmin session fallback (useful in local).
+    // In staging/prod, CRON_SECRET MUST be set anyway (CODEX STOP THE LINE).
+    if (msg !== "cron_secret_missing" && code !== "cron_secret_missing" && msg !== "forbidden" && code !== "forbidden") {
+      return { ok: false as const, res: jsonErr(rid, "Uventet feil i cron-gate.", 500, { code: "CRON_GATE_ERROR", detail: { message: msg } }) };
+    }
   }
 
+  // Session fallback (superadmin)
   const a = await scopeOr401(req);
   if (a.ok === false) return { ok: false as const, res: a.res };
 
@@ -56,45 +81,52 @@ async function authOrCron(req: NextRequest) {
   return { ok: true as const, actor_id: a.ctx.scope.userId ?? null, mode: "superadmin" as const };
 }
 
+/* =========================================================
+   GET /api/cron/kitchen-print?date=YYYY-MM-DD&slot=...&location_id=...
+========================================================= */
 export async function GET(req: NextRequest) {
-  const r = rid();
+  const rid = makeRid();
 
-  const auth = await authOrCron(req);
+  const auth = await authOrCron(req, rid);
   if (auth.ok === false) return auth.res;
 
   const admin = supabaseAdmin();
   const url = new URL(req.url);
-  const dateParam = safeStr(url.searchParams.get("date"));
-  const slotParam = safeStr(url.searchParams.get("slot"));
-  const locationParam = safeStr(url.searchParams.get("location_id"));
+
+  const dateParam = clampStr(url.searchParams.get("date"), 20);
+  const slotParam = clampStr(url.searchParams.get("slot"), 40);
+  const locationParam = clampStr(url.searchParams.get("location_id"), 80);
 
   const dateISO = dateParam && isIsoDate(dateParam) ? dateParam : osloTodayISODate();
   const slot = slotParam ? slotParam : "";
   const locationId = locationParam;
 
-  if (!isIsoDate(dateISO)) return jsonErr(r, "Ugyldig dato.", 400, { code: "INVALID_DATE", detail: { date: dateParam } });
-  if (!locationId) return jsonErr(r, "location_id er påkrevd.", 400, "MISSING_LOCATION");
-  if (!slot) return jsonErr(r, "slot er påkrevd.", 400, "MISSING_SLOT");
+  if (!isIsoDate(dateISO)) {
+    return jsonErr(rid, "Ugyldig dato.", 400, { code: "INVALID_DATE", detail: { date: dateParam } });
+  }
+  if (!locationId) return jsonErr(rid, "location_id er påkrevd.", 400, "MISSING_LOCATION");
+  if (!slot) return jsonErr(rid, "slot er påkrevd.", 400, "MISSING_SLOT");
 
   const cutoff = cutoffAllowed(dateISO);
-  if (!cutoff.ok) {
-    return jsonErr(r, cutoff.message, cutoff.status ?? 400, cutoff.code);
-  }
+  if (!cutoff.ok) return jsonErr(rid, cutoff.message, cutoff.status ?? 400, cutoff.code);
 
-  const summary = await buildBatchSummary({ admin, dateISO, locationId, slot, rid: r });
+  const summary = await buildBatchSummary({ admin, dateISO, locationId, slot, rid });
   if (!summary.ok) {
     const err = summary as { status: number; code: string; message: string; detail?: any };
-    return jsonErr(r, err.message, err.status ?? 400, err.code);
+    return jsonErr(rid, err.message, err.status ?? 400, err.code);
   }
 
   const slotRow = (summary.data.slot_locations as BatchSummarySlot[]).find((s) => s.slot === slot) ?? null;
   if (!slotRow?.batch) {
-    return jsonErr(r, "Batch finnes ikke.", 404, { code: "NOT_FOUND", detail: { date: dateISO, location_id: locationId, slot } });
+    return jsonErr(rid, "Batch finnes ikke.", 404, {
+      code: "NOT_FOUND",
+      detail: { date: dateISO, location_id: locationId, slot },
+    });
   }
 
   const batchStatus = safeStr(slotRow.batch.status).toUpperCase();
   if (batchStatus !== "PACKED" && batchStatus !== "DELIVERED") {
-    return jsonErr(r, "Batch er ikke klar for print.", 409, { code: "BATCH_NOT_READY", detail: { status: batchStatus || null } });
+    return jsonErr(rid, "Batch er ikke klar for print.", 409, { code: "BATCH_NOT_READY", detail: { status: batchStatus || null } });
   }
 
   let dayData: { groups: any[] };
@@ -106,14 +138,15 @@ export async function GET(req: NextRequest) {
       companyId: summary.data.company_id,
       locationId,
       slot,
-      rid: r,
+      rid,
       cutoffAtUTCISO: cutoffAt,
       afterCutoff: true,
     });
   } catch (e: any) {
-    return jsonErr(r, "Kunne ikke hente grunnlag for print.", 500, { code: "KITCHEN_DAYDATA_FAILED", detail: {
-      message: String(e?.message ?? e ?? "unknown"),
-    } });
+    return jsonErr(rid, "Kunne ikke hente grunnlag for print.", 500, {
+      code: "KITCHEN_DAYDATA_FAILED",
+      detail: { message: String(e?.message ?? e ?? "unknown") },
+    });
   }
 
   const payload = {
@@ -129,8 +162,8 @@ export async function GET(req: NextRequest) {
     },
     counts: summary.data.counts,
     lines: summary.data.slot_locations
-      .filter((l) => l.slot === slot)
-      .map((l) => ({
+      .filter((l: any) => l.slot === slot)
+      .map((l: any) => ({
         company_id: summary.data.company_id,
         location_id: summary.data.location_id,
         slot: l.slot,
@@ -144,7 +177,7 @@ export async function GET(req: NextRequest) {
   const status = ifNoneMatch && ifNoneMatch === payloadHash ? "already_generated" : "generated";
 
   opsLog("cron.kitchen.print", {
-    rid: r,
+    rid,
     date: dateISO,
     company_id: summary.data.company_id,
     location_id: summary.data.location_id,
@@ -155,12 +188,23 @@ export async function GET(req: NextRequest) {
     mode: auth.mode,
   });
 
-  return jsonOk(r, {
+  // jsonOk already sets no-store in your stack; still deterministic payload.
+  // NOTE: If you want true ETag support, add header `etag: "<hash>"`.
+  return jsonOk(
+    rid,
+    {
+      ok: true,
+      rid,
       status,
       generated_at: osloNowISO(),
       payload_hash: payloadHash,
       payload,
-    }, 200);
+    },
+    200
+  );
 }
+
+
+
 
 

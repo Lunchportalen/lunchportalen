@@ -1,13 +1,16 @@
 // app/api/superadmin/audit/route.ts
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest } from "next/server";
+import "server-only";
+
+import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
 import { isSuperadminEmail } from "@/lib/system/emails";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { supabaseServer } from "@/lib/supabase/server";
 
 /* =========================================================
    Utils
@@ -29,7 +32,7 @@ function isUuid(v: any) {
   );
 }
 function isIsoTs(v: any) {
-  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && !isNaN(Date.parse(v));
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v));
 }
 function escapeForIlike(v: string) {
   // best-effort: nøytraliser wildcard-tegn
@@ -40,13 +43,16 @@ function escapeForIlike(v: string) {
    Supabase admin (service role)
 ========================================================= */
 function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
+  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)");
   if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
 
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { "Cache-Control": "no-store" } },
+  });
 }
 
 /* =========================================================
@@ -60,9 +66,9 @@ type AuditItem = {
   actor_email: string | null;
   actor_role: string | null;
 
-  action: string;
-  entity_type: string;
-  entity_id: string;
+  action: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
 
   summary: string | null;
   detail: any | null;
@@ -91,31 +97,30 @@ type ApiErr = { ok: false; rid: string; error: string; message?: string; detail?
 
 /* =========================================================
    GET /api/superadmin/audit
+
    Query:
     - limit=1..500 (default 300)
     - cursor=<created_at ISO> (pagination; fetch older than cursor)
-    - companyId=<uuid> (optional filter; matches company_id in audit_events)
-    - entityType=<string> (optional exact/ilike)
+    - companyId=<uuid> (optional filter; matches company_id in audit_events)   (best-effort)
+    - entityType=<string> (optional ilike)
     - entityId=<uuid> (optional exact)
-    - action=<string> (optional filter, ilike)
+    - action=<string> (optional ilike)
     - q=<string> (optional search; actor_email/action/entity_type/summary/rid)
 ========================================================= */
 export async function GET(req: NextRequest) {
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
 
   try {
     /* =========================
-       Auth (cookie)
+       Auth (cookie) — fail-closed
     ========================= */
-    const supabase = await supabaseServer();
-    const { data, error: authErr } = await supabase.auth.getUser();
-    const user = data?.user ?? null;
+    const sb = await supabaseServer();
+    const { data: userRes, error: authErr } = await sb.auth.getUser();
+    const user = userRes?.user ?? null;
 
     if (authErr || !user) return jsonErr(rid, "Du må være innlogget.", 401, "AUTH_REQUIRED");
 
-    // ✅ Superadmin gate (hard-fasit epost)
+    // ✅ Hard superadmin gate by email
     if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ikke tilgang.", 403, "FORBIDDEN");
 
     /* =========================
@@ -126,15 +131,30 @@ export async function GET(req: NextRequest) {
     const limit = clampInt(u.searchParams.get("limit") ?? "300", 1, 500, 300);
 
     const cursor = safeText(u.searchParams.get("cursor"), 60);
-    if (cursor && !isIsoTs(cursor)) return jsonErr(rid, "Ugyldig cursor (ISO timestamp).", 400, { code: "BAD_REQUEST", detail: { cursor } });
+    if (cursor && !isIsoTs(cursor)) {
+      return jsonErr(rid, "Ugyldig cursor (ISO timestamp).", 400, {
+        code: "BAD_REQUEST",
+        detail: { cursor },
+      });
+    }
 
     const companyId = safeText(u.searchParams.get("companyId"), 80);
-    if (companyId && !isUuid(companyId)) return jsonErr(rid, "Ugyldig companyId (uuid).", 400, { code: "BAD_REQUEST", detail: { companyId } });
+    if (companyId && !isUuid(companyId)) {
+      return jsonErr(rid, "Ugyldig companyId (uuid).", 400, {
+        code: "BAD_REQUEST",
+        detail: { companyId },
+      });
+    }
 
-    const entityId = safeText(u.searchParams.get("entityId"), 80);
-    if (entityId && !isUuid(entityId)) return jsonErr(rid, "Ugyldig entityId (uuid).", 400, { code: "BAD_REQUEST", detail: { entityId } });
+    const entityId = safeText(u.searchParams.get("entityId") || u.searchParams.get("entity_id"), 80);
+    if (entityId && !isUuid(entityId)) {
+      return jsonErr(rid, "Ugyldig entityId (uuid).", 400, {
+        code: "BAD_REQUEST",
+        detail: { entityId },
+      });
+    }
 
-    const entityTypeRaw = safeText(u.searchParams.get("entityType"), 60);
+    const entityTypeRaw = safeText(u.searchParams.get("entityType") || u.searchParams.get("entity_type"), 60);
     const actionRaw = safeText(u.searchParams.get("action"), 120);
     const qRaw = safeText(u.searchParams.get("q"), 120);
 
@@ -145,7 +165,7 @@ export async function GET(req: NextRequest) {
     /* =========================
        Service role client
     ========================= */
-    let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
+    let admin: ReturnType<typeof supabaseAdmin>;
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
@@ -156,23 +176,30 @@ export async function GET(req: NextRequest) {
 
     /* =========================
        Query build
+       - Prefer audit_events (view/table). If you only have ops_events, create a view named audit_events.
     ========================= */
     let qb = admin
-      .from("audit_events")
-      .select(
-        "id,created_at,rid,actor_user_id,actor_email,actor_role,action,entity_type,entity_id,company_id,location_id,summary,detail"
-      )
+      .from(source)
+      .select("id,created_at,rid,actor_user_id,actor_email,actor_role,action,entity_type,entity_id,summary,detail")
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    // Cursor pagination: only older than cursor
     if (cursor) qb = qb.lt("created_at", cursor);
 
-    if (companyId) qb = qb.eq("company_id", companyId);
+    // Best-effort company filter:
+    // If your audit table has company_id column it can be added to select+filters,
+    // but we keep this safe: we try entity_id match (most important), plus companyId param as entity_id.
+    if (companyId) {
+      // If your logs use entity_id for company, this works immediately:
+      qb = qb.or(`entity_id.eq.${companyId},detail->>company_id.eq.${companyId}`);
+    }
+
     if (entityId) qb = qb.eq("entity_id", entityId);
     if (entityType) qb = qb.ilike("entity_type", `%${entityType}%`);
     if (actionFilter) qb = qb.ilike("action", `%${actionFilter}%`);
 
-    // 🔎 Søk (OR over flere felt)
+    // Search (OR over multiple columns)
     if (qSearch) {
       const like = `%${qSearch}%`;
       qb = qb.or(
@@ -186,17 +213,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: items, error } = await qb;
+    const { data: rows, error } = await qb;
 
     if (error) {
-      return jsonErr(rid, error.message, 500, { code: "READ_FAILED", detail: {
-        code: error.code,
-        details: (error as any).details,
-        hint: (error as any).hint,
-      } });
+      return jsonErr(rid, error.message, 500, {
+        code: "READ_FAILED",
+        detail: {
+          code: (error as any).code,
+          details: (error as any).details,
+          hint: (error as any).hint,
+        },
+      });
     }
 
-    const safeItems: AuditItem[] = (items ?? []).map((x: any) => ({
+    const items: AuditItem[] = (rows ?? []).map((x: any) => ({
       id: String(x.id),
       created_at: String(x.created_at),
 
@@ -204,15 +234,15 @@ export async function GET(req: NextRequest) {
       actor_email: x.actor_email ? String(x.actor_email) : null,
       actor_role: x.actor_role ? String(x.actor_role) : null,
 
-      action: String(x.action),
-      entity_type: String(x.entity_type),
-      entity_id: String(x.entity_id),
+      action: x.action != null ? String(x.action) : null,
+      entity_type: x.entity_type != null ? String(x.entity_type) : null,
+      entity_id: x.entity_id != null ? String(x.entity_id) : null,
 
       summary: x.summary ? String(x.summary) : null,
       detail: x.detail ?? null,
     }));
 
-    const nextCursor = safeItems.length ? safeItems[safeItems.length - 1].created_at : null;
+    const nextCursor = items.length ? items[items.length - 1].created_at : null;
 
     const ok: ApiOk = {
       ok: true,
@@ -230,11 +260,13 @@ export async function GET(req: NextRequest) {
           ...(qRaw ? { q: qRaw } : {}),
         },
       },
-      items: safeItems,
+      items,
     };
 
     return jsonOk(rid, ok, 200);
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? "unknown"), 500, "SERVER_ERROR");
+    const msg = String(e?.message ?? "unknown");
+    const err: ApiErr = { ok: false, rid, error: "SERVER_ERROR", message: msg };
+    return jsonErr(rid, err.message || "Server error", 500, err);
   }
 }

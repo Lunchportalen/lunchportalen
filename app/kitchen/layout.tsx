@@ -1,46 +1,15 @@
-// app/kitchen/layout.tsx
+﻿// app/kitchen/layout.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/server";
-import { systemRoleByEmail } from "@/lib/system/emails";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+import BlockedAccess from "@/components/auth/BlockedAccess";
 
-function roleByEmail(email: string | null | undefined): Role | null {
-  return systemRoleByEmail(email);
-}
-
-function normalizeRole(v: unknown): Role {
-  const s = String(v ?? "").trim().toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  return "employee";
-}
-
-function computeRoleNoDb(user: any): Role {
-  const emailRole = roleByEmail(user?.email);
-  if (emailRole) return emailRole;
-
-  const appRole = normalizeRole(user?.app_metadata?.role);
-  if (appRole !== "employee") return appRole;
-
-  const metaRole = normalizeRole(user?.user_metadata?.role);
-  return metaRole;
-}
-
-function homeForRole(role: Role) {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "company_admin") return "/admin";
-  if (role === "kitchen") return "/kitchen";
-  if (role === "driver") return "/driver";
-  return "/week";
-}
+import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { roleHome } from "@/lib/auth/roleHome";
 
 async function currentPathFromHeaders(fallback: string) {
   try {
@@ -50,25 +19,25 @@ async function currentPathFromHeaders(fallback: string) {
       const u = new URL(url);
       return u.pathname + (u.search || "");
     }
-  } catch {}
+  } catch {
+    return fallback;
+  }
   return fallback;
 }
 
 export default async function KitchenLayout({ children }: { children: ReactNode }) {
-  const sb = await supabaseServer();
-  const { data, error } = await sb.auth.getUser();
-  const user = data?.user ?? null;
+  const auth = await getAuthContext();
 
-  if (error || !user) {
-    const next = encodeURIComponent(await currentPathFromHeaders("/kitchen"));
-    redirect(`/login?next=${next}`);
+  if (!auth.ok) {
+    if (auth.reason === "UNAUTHENTICATED") {
+      const next = encodeURIComponent(await currentPathFromHeaders("/kitchen"));
+      redirect(`/login?next=${next}`);
+    }
+    return <BlockedAccess reason={auth.reason} />;
   }
 
-  const role = computeRoleNoDb(user);
-
-  // Kjøkken + Superadmin har tilgang (1A)
-  if (role !== "kitchen" && role !== "superadmin") {
-    redirect(homeForRole(role));
+  if (auth.role !== "kitchen" && auth.role !== "superadmin") {
+    redirect(roleHome(auth.role));
   }
 
   return <>{children}</>;

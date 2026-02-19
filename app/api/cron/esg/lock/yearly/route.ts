@@ -1,35 +1,12 @@
-// app/api/cron/esg/yearly/route.ts
+// app/api/cron/esg/lock/yearly/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
+import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-/* =========================================================
-   Cron secret gate (fail-closed)
-   - Header: x-cron-secret
-   - Authorization: Bearer
-========================================================= */
-function requireCronSecret(req: NextRequest) {
-  const expected = (process.env.CRON_SECRET ?? "").trim();
-  if (!expected) throw new Error("cron_secret_missing");
-
-  const hdr = (req.headers.get("x-cron-secret") ?? "").trim();
-  const auth = (req.headers.get("authorization") ?? "").trim();
-  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  const got = hdr || bearer;
-
-  if (!got || got !== expected) {
-    const err = new Error("forbidden");
-    (err as any).code = "forbidden";
-    throw err;
-  }
-}
-
-/* =========================================================
-   Date helpers (Oslo)
-========================================================= */
 function osloYear() {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" });
   return Number(fmt.format(new Date()));
@@ -43,36 +20,27 @@ function clampYear(n: number) {
   return y;
 }
 
-/* =========================================================
-   Supabase admin client
-   - supports both factory and instance variants
-========================================================= */
 async function getAdminClient() {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const anyAdmin: any = supabaseAdmin as any;
   return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
 }
 
-/* =========================================================
-   POST /api/cron/esg/yearly?year=YYYY&force=1
-   Default: locks previous year (Oslo)
-========================================================= */
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 
-  // Gate FIRST (no side effects before secret validated)
   try {
-    requireCronSecret(req);
+    requireCronAuth(req);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler", 500, "misconfigured");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    const code = String(e?.code ?? "").trim();
+    if (msg === "cron_secret_missing" || code === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler", 500, "misconfigured");
+    if (msg === "forbidden" || code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
     return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const url = new URL(req.url);
 
-  // Default: lock previous year
   const currentYear = osloYear();
   const yearRaw = url.searchParams.get("year");
   const year = clampYear(Number(yearRaw ?? (currentYear - 1)));

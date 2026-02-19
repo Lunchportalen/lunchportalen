@@ -1,0 +1,240 @@
+{
+  "/lunsjordning": [
+    {
+      "q": "Hva er en lunsjordning for bedrift?",
+      "a": "En lunsjordning er en fast modell for lunsj til ansatte, med tydelige rammer, klare frister og enkel oppfølging."
+    },
+    {
+      "q": "Hvorfor er cut-off kl. 08:00 viktig?",
+      "a": "Fristen gjør at dagens grunnlag blir tydelig. Det gir roligere drift og mindre avklaringer i løpet av dagen."
+    },
+    {
+      "q": "Hvem setter rammene i ordningen?",
+      "a": "Bedriften setter rammene, og ansatte bestiller innenfor disse. Det gir lik praksis for alle."
+    },
+    {
+      "q": "Kan ansatte avbestille samme dag?",
+      "a": "Ja, innen cut-off kl. 08:00. Etter fristen låses dagen for å sikre forutsigbar levering."
+    },
+    {
+      "q": "Hvordan reduserer ordningen intern administrasjon?",
+      "a": "Når regler og frister er tydelige, blir det færre manuelle avklaringer for admin i hverdagen."
+    },
+    {
+      "q": "Passer lunsjordning for bedrifter med flere lokasjoner?",
+      "a": "Ja. Samme modell kan brukes på tvers av lokasjoner, med tydelige rammer per sted ved behov."
+    },
+    {
+      "q": "Hva betyr én sannhetskilde i praksis?",
+      "a": "Det betyr at gyldig status finnes ett sted, slik at alle jobber ut fra samme informasjon."
+    },
+    {
+      "q": "Hva får ledelsen ut av en tydelig modell?",
+      "a": "Ledelsen får bedre oversikt, lavere risiko for avvik og en mer forutsigbar hverdag."
+    },
+    {
+      "q": "Hvordan kommer vi raskt i gang?",
+      "a": "Start med klare roller, tydelige frister og en enkel oppstart uten spesialunntak."
+    },
+    {
+      "q": "Hva er viktigst for stabil drift over tid?",
+      "a": "Konsekvent bruk av samme regler. Det skaper forutsigbarhet for både ansatte og admin."
+    }
+  ],
+  "/hvordan": [
+    {
+      "q": "Hvordan fungerer Lunchportalen i praksis?",
+      "a": "Bedriften setter rammene, ansatte bestiller selv, og dagen låses ved cut-off kl. 08:00."
+    },
+    {
+      "q": "Hvem administrerer ansatte i løsningen?",
+      "a": "Firmaadmin oppretter og følger opp ansatte i én samlet løsning."
+    },
+    {
+      "q": "Hvorfor gir modellen mindre støy?",
+      "a": "Fordi roller og frister er tydelige, og alle bruker samme informasjonsgrunnlag."
+    },
+    {
+      "q": "Hva skjer etter cut-off?",
+      "a": "Etter cut-off er dagen låst. Da unngår man siste-liten-endringer som skaper usikkerhet."
+    },
+    {
+      "q": "Hvordan ser oppstarten ut?",
+      "a": "Oppstarten er enkel: avklar rammer, informer ansatte og følg samme modell fra første uke."
+    }
+  ],
+  "/alternativ-til-kantine": [
+    {
+      "q": "Hva betyr alternativ til kantine?",
+      "a": "Det betyr at bedriften tilbyr firmalunsj uten å drifte egen kantine internt."
+    },
+    {
+      "q": "Hvorfor velger bedrifter denne modellen?",
+      "a": "Mange velger modellen for å redusere administrasjon og få en mer forutsigbar lunsjhverdag."
+    },
+    {
+      "q": "Hvordan sikres forutsigbarhet?",
+      "a": "Tydelige rammer og cut-off kl. 08:00 gjør at dagen blir enklere å planlegge."
+    },
+    {
+      "q": "Passer modellen i kontorfellesskap?",
+      "a": "Ja, modellen passer godt når flere team trenger samme tydelige struktur."
+    },
+    {
+      "q": "Kan vi innføre dette gradvis?",
+      "a": "Ja, start med en tydelig grunnmodell og utvid kontrollert etter behov."
+    }
+  ],
+  "/lunsjordning-trondheim": [
+    {
+      "q": "Hva er lunsjordning i Trondheim?",
+      "a": "En tydelig lunsjmodell for bedrifter i Trondheim med faste rammer og enkel oppfølging."
+    },
+    {
+      "q": "Hvordan holder vi driften forutsigbar?",
+      "a": "Ved å følge samme frister og regler hver dag, spesielt cut-off kl. 08:00."
+    },
+    {
+      "q": "Hva er første steg for oppstart?",
+      "a": "Avklar behov, sett rammer og start med en enkel modell uten unødige unntak."
+    },
+    {
+      "q": "Hvem passer ordningen for?",
+      "a": "Ordningen passer for bedrifter som ønsker mindre administrasjon og tydeligere lunsjflyt."
+    }
+  ],
+  "/lunch-levering-bergen": [
+    {
+      "q": "Hva innebærer lunsjordning i Bergen?",
+      "a": "En fast modell for firmalunsj i Bergen med tydelige rammer og rolig drift."
+    },
+    {
+      "q": "Hvorfor er frist viktig i Bergen også?",
+      "a": "Fristen gir forutsigbarhet i hverdagen og færre endringer sent på morgenen."
+    },
+    {
+      "q": "Hvordan kommer vi i gang i Bergen?",
+      "a": "Start med tydelige rammer, informer ansatte og hold en enkel modell i oppstartsfasen."
+    },
+    {
+      "q": "Hva får admin igjen for modellen?",
+      "a": "Mindre løpende koordinering og bedre oversikt over den daglige lunsjflyten."
+    }
+  ],
+  "/lunsj-levering-oslo": [
+    {
+      "q": "Tilbys lunsjordning i Oslo?",
+      "a": "Ja, med samme tydelige modell: faste rammer, klar frist og forutsigbar drift."
+    },
+    {
+      "q": "Hva er viktigst i Oslo-modellen?",
+      "a": "At alle følger samme oppsett med cut-off kl. 08:00 og tydelige roller."
+    },
+    {
+      "q": "Hvordan starter bedriften i Oslo?",
+      "a": "Bedriften avklarer behov og går i gang med en enkel og tydelig grunnmodell."
+    },
+    {
+      "q": "Hva gir modellen i praksis?",
+      "a": "Mindre intern støy, bedre oversikt og en mer stabil lunsjhverdag."
+    }
+  ],
+  "/system-for-lunsjbestilling": [
+    {
+      "q": "Hva er et system for lunsjbestilling?",
+      "a": "Et system der ansatte bestiller innenfor bedriftens rammer, med tydelig status for alle."
+    },
+    {
+      "q": "Hvorfor er dette bedre enn manuell koordinering?",
+      "a": "Det gir mindre støy i hverdagen og et mer forutsigbart grunnlag for oppfølging."
+    },
+    {
+      "q": "Kan ansatte bestille og avbestille selv?",
+      "a": "Ja, innenfor fastsatte frister og regler som bedriften har definert."
+    },
+    {
+      "q": "Hva er gevinsten for admin?",
+      "a": "Admin får tydelig oversikt uten å håndtere mange små avklaringer hver dag."
+    },
+    {
+      "q": "Hvordan sikres lik praksis?",
+      "a": "Ved at alle bruker samme løsning og samme regelverk hver dag."
+    }
+  ],
+  "/hva-er-lunsjordning": [
+    {
+      "q": "Hva er den enkleste definisjonen av lunsjordning?",
+      "a": "En lunsjordning er en fast modell for firmalunsj med tydelige rammer og klare frister."
+    },
+    {
+      "q": "Er lunsjordning kun levering av mat?",
+      "a": "Nei, det er en helhetlig modell for hvordan lunsj håndteres i bedriften."
+    },
+    {
+      "q": "Hvorfor er tydelige roller viktig?",
+      "a": "Tydelige roller gjør at ansatte og admin vet hva de skal gjøre, og når de skal gjøre det."
+    },
+    {
+      "q": "Hva betyr cut-off i denne modellen?",
+      "a": "Cut-off er tidspunktet der dagens grunnlag låses, slik at resten av dagen blir forutsigbar."
+    },
+    {
+      "q": "Når passer lunsjordning best?",
+      "a": "Den passer best når bedriften ønsker mer struktur og mindre daglig administrasjon."
+    },
+    {
+      "q": "Hvordan henger lunsjordning og trivsel sammen?",
+      "a": "Når hverdagen blir enklere og tydeligere, oppleves lunsjordningen som mer stabil for ansatte."
+    },
+    {
+      "q": "Hva er første steg ved innføring?",
+      "a": "Avklar roller, informer tydelig om frister og start med en enkel modell."
+    },
+    {
+      "q": "Hva er hovedprinsippet i en god ordning?",
+      "a": "Én plattform, tydelige rammer og lik praksis for alle."
+    }
+  ],
+  "/definitiv-guide-firmalunsj": [
+    {
+      "q": "Hva er firmalunsj i et styringsperspektiv?",
+      "a": "Firmalunsj er en fast prosess som bør ha tydelige rammer og klare ansvarsforhold."
+    },
+    {
+      "q": "Hva skiller firmalunsj fra lunsjordning?",
+      "a": "Firmalunsj er behovet, mens lunsjordning er modellen som styrer gjennomføringen."
+    },
+    {
+      "q": "Hvorfor brukes cut-off kl. 08:00?",
+      "a": "Fristen gir en tydelig start på dagen og gjør videre oppfølging enklere."
+    },
+    {
+      "q": "Hvem bør eie ordningen internt?",
+      "a": "Ledelsen setter retning, mens firmaadmin følger opp den daglige driften."
+    },
+    {
+      "q": "Hva skjer når reglene blir uklare?",
+      "a": "Uklare regler gir flere avklaringer og mindre forutsigbarhet i hverdagen."
+    },
+    {
+      "q": "Hvordan innfører man ordningen uten støy?",
+      "a": "Start enkelt, kommuniser tydelig og unngå unødige unntak i første fase."
+    },
+    {
+      "q": "Hvordan måles om modellen fungerer?",
+      "a": "Se på etterlevelse av frister, færre avklaringer og bedre daglig flyt."
+    },
+    {
+      "q": "Hvordan håndteres flere lokasjoner?",
+      "a": "Bruk samme grunnmodell overalt, med tydelige lokale rammer der det trengs."
+    },
+    {
+      "q": "Hva er viktigst ved leverandørvalg?",
+      "a": "Velg en modell som er tydelig, forutsigbar og enkel å drifte over tid."
+    },
+    {
+      "q": "Hva er essensen i en god firmalunsjmodell?",
+      "a": "Klar struktur, tydelige frister og samme praksis for hele bedriften."
+    }
+  ]
+}

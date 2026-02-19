@@ -1,4 +1,4 @@
-﻿// app/api/cron/daily-sanity/route.ts
+// app/api/cron/daily-sanity/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,12 +9,17 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 import { opsLog } from "@/lib/ops/log";
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { requireCronAuth as requireCronAuthShared } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
 function normalizeRole(v: unknown): Role {
-  const s = String(v ?? "").trim().toLowerCase();
+  const s = safeStr(v).toLowerCase();
   if (s === "superadmin") return "superadmin";
   if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
   if (s === "kitchen" || s === "kjokken") return "kitchen";
@@ -26,14 +31,51 @@ function roleByEmail(email: string | null | undefined): Role | null {
   return systemRoleByEmail(email);
 }
 
-async function allowSuperadmin(req: NextRequest, rid: string): Promise<{ ok: true; actorId: string | null } | { ok: false; res: Response }> {
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
-  const headerSecret = req.headers.get("x-cron-secret") || "";
+/* =========================================================
+   Cron auth (standardized)
+   - Primary: Authorization: Bearer <CRON_SECRET>
+   - Fallback: x-cron-secret: <CRON_SECRET>
+========================================================= */
+function requireCronAuth(req: NextRequest) {
+  return requireCronAuthShared(req);
+}
 
-  if (cronSecret && headerSecret && headerSecret === cronSecret) {
-    return { ok: true, actorId: null };
+/**
+ * Allow:
+ * - Cron caller (secret) -> ok
+ * - Superadmin (session) -> ok
+ * Fail-closed otherwise
+ */
+async function allowSuperadminOrCron(
+  req: NextRequest,
+  rid: string
+): Promise<{ ok: true; actorId: string | null; mode: "cron" | "superadmin" } | { ok: false; res: Response }> {
+  // 1) Cron secret (preferred for scheduled runs)
+  try {
+    requireCronAuth(req);
+    return { ok: true, actorId: null, mode: "cron" };
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    const code = String(e?.code ?? "").trim();
+
+    // If CRON_SECRET missing -> configuration error, but still allow superadmin session.
+    // In staging/prod, CRON_SECRET MUST exist (CODEX STOP THE LINE).
+    const isCronAuthFail = msg === "forbidden" || code === "forbidden";
+    const isCronMisconf = msg === "cron_secret_missing" || code === "cron_secret_missing";
+
+    // Any other unexpected errors -> block hard
+    if (!isCronAuthFail && !isCronMisconf) {
+      return {
+        ok: false,
+        res: jsonErr(rid, "Uventet feil i cron-gate.", 500, {
+          code: "CRON_GATE_ERROR",
+          detail: { message: msg },
+        }),
+      };
+    }
   }
 
+  // 2) Superadmin session fallback
   try {
     const sb = await supabaseServer();
     const { data, error } = await sb.auth.getUser();
@@ -41,14 +83,32 @@ async function allowSuperadmin(req: NextRequest, rid: string): Promise<{ ok: tru
 
     if (error || !user) return { ok: false, res: jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHENTICATED") };
 
+    // Hard role override by email (systemRoleByEmail)
     const hardRole = roleByEmail(user.email);
-    if (hardRole === "superadmin") return { ok: true, actorId: user.id };
+    if (hardRole === "superadmin") return { ok: true, actorId: user.id, mode: "superadmin" };
 
-    const { data: profile } = await sb
+    // Profile role (IMPORTANT: profiles primary key is usually `id` == auth.users.id)
+    // We check both `id` and legacy `user_id` to be robust during migrations.
+    const p1 = await sb
       .from("profiles")
-      .select("role, disabled_at, is_active")
-      .eq("user_id", user.id)
-      .maybeSingle<{ role: string | null; disabled_at: string | null; is_active: boolean | null }>();
+      .select("id, role, disabled_at, is_active")
+      .eq("id", user.id)
+      .maybeSingle<{ id: string; role: string | null; disabled_at: string | null; is_active: boolean | null }>();
+
+    const p2 =
+      p1.data || !p1.error
+        ? null
+        : await sb
+            .from("profiles")
+            .select("id, role, disabled_at, is_active")
+            .eq("user_id", user.id)
+            .maybeSingle<{ id: string; role: string | null; disabled_at: string | null; is_active: boolean | null }>();
+
+    const profile = (p1.data ?? p2?.data ?? null) as {
+      role: string | null;
+      disabled_at: string | null;
+      is_active: boolean | null;
+    } | null;
 
     if (profile?.disabled_at || profile?.is_active === false) {
       return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN") };
@@ -59,18 +119,21 @@ async function allowSuperadmin(req: NextRequest, rid: string): Promise<{ ok: tru
       return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN") };
     }
 
-    return { ok: true, actorId: user.id };
+    return { ok: true, actorId: user.id, mode: "superadmin" };
   } catch {
     return { ok: false, res: jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHENTICATED") };
   }
 }
 
+/* =========================================================
+   GET /api/cron/daily-sanity
+========================================================= */
 export async function GET(req: NextRequest) {
   const rid = makeRid();
-  const gate = await allowSuperadmin(req, rid);
+
+  const gate = await allowSuperadminOrCron(req, rid);
   if (gate.ok === false) return gate.res;
 
-  const id = rid;
   const today = osloTodayISODate();
   const admin = supabaseAdmin();
 
@@ -103,7 +166,7 @@ export async function GET(req: NextRequest) {
     anomalies.push("orders_today_query_failed");
   }
 
-  // 2) Orders missing fields (company_id/location_id/slot/date)
+  // 2) Orders missing fields
   try {
     const { data, error } = await admin
       .from("orders")
@@ -116,9 +179,7 @@ export async function GET(req: NextRequest) {
       if (anomalies.length >= 20) break;
       const o: any = row;
       anomalies.push(
-        `order_missing_fields id=${o.id} date=${o.date ?? "null"} slot=${o.slot ?? "null"} company_id=${
-          o.company_id ?? "null"
-        } location_id=${o.location_id ?? "null"}`
+        `order_missing_fields id=${o.id} date=${o.date ?? "null"} slot=${o.slot ?? "null"} company_id=${o.company_id ?? "null"} location_id=${o.location_id ?? "null"}`
       );
     }
   } catch {
@@ -154,7 +215,7 @@ export async function GET(req: NextRequest) {
     if (anomalies.length < 20) anomalies.push("company_admin_profile_check_failed");
   }
 
-  // 4) Critical data checks (recent orders)
+  // 4) Recent orders scan
   try {
     const { data } = await admin
       .from("orders")
@@ -184,17 +245,22 @@ export async function GET(req: NextRequest) {
   summary.anomalies = anomalies.length;
 
   opsLog("cron.daily-sanity", {
-    rid: id,
+    rid,
     ok,
     today,
     summary,
     anomalies,
     actor_id: gate.actorId,
+    mode: gate.mode,
   });
 
   if (!ok) {
-    return jsonErr(id, "Daily sanity check feilet.", 500, { code: "SANITY_FAILED", detail: { summary, anomalies } });
+    return jsonErr(rid, "Daily sanity check feilet.", 500, { code: "SANITY_FAILED", detail: { summary, anomalies } });
   }
 
-  return jsonOk(id, { ok, rid: id, summary, anomalies }, 200);
+  return jsonOk(rid, { ok, rid, summary, anomalies }, 200);
 }
+
+
+
+

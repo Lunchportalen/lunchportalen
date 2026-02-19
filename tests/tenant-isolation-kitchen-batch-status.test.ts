@@ -26,8 +26,8 @@ vi.mock("@/lib/http/routeGuard", async () => {
         scope: {
           userId: "u1",
           role: "kitchen",
-          companyId: null,
-          locationId: null,
+          companyId: "cA",
+          locationId: "l1",
           email: "kitchen@lunchportalen.no",
         },
       },
@@ -184,3 +184,4 @@ describe("kitchen batch – tenant isolation", () => {
     expect(res.status).toBe(403);
   });
 });
+

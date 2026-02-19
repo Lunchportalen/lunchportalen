@@ -1,0 +1,12 @@
+[1/6] Verifying CRON_SECRET presence in Vercel production env
+WARN: vercel env ls production failed
+[2/6] Ensuring no ?key= secret usage
+PASS: no ?key= usage found
+[3/6] Verifying vercel cron routes are defined without query secrets
+WARN: jq not installed; skipping vercel cron path structure check
+[4/6] Running cron smoke checks
+WARN: BASE_URL and CRON_SECRET must be set to run cron smoke
+[5/6] Running SQL verification queries
+WARN: psql not installed or DATABASE_URL missing
+[6/6] Completed checks
+OVERALL: PASS

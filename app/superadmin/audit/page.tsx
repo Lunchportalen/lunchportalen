@@ -3,11 +3,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import "server-only";
+
+import React from "react";
 import { redirect } from "next/navigation";
+
 import { supabaseServer } from "@/lib/supabase/server";
 import AuditClient from "./audit-client";
 import { isSuperadminEmail } from "@/lib/system/emails";
-
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | null; disabled_at?: string | null };
@@ -18,8 +21,9 @@ type ProfileRow = { role: Role | null; disabled_at?: string | null };
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
+
 function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
+  return isSuperadminEmail(email ?? null);
 }
 
 /** Minimal, enterprise-grade error surface (no leaks) */
@@ -70,7 +74,7 @@ export default async function SuperadminAuditPage() {
   }
 
   /* =========================================================
-     3) Profile read (FASET hos dere: profiles.user_id = auth.users.id)
+     3) Profile read (profiles.user_id = auth.users.id)
      - Brukes kun som ekstra sikkerhetslag (disabled / mismatch)
   ========================================================= */
   const { data: profile, error: pErr } = await supabase
@@ -95,7 +99,21 @@ export default async function SuperadminAuditPage() {
   }
 
   /* =========================================================
-     4) Render client UI
+     4) Render client UI (shell)
   ========================================================= */
-  return <AuditClient />;
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">Audit</h1>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+            Spor hendelser på rid, actor, action og entity – deterministisk og uten støy.
+          </p>
+        </div>
+      </header>
+
+      <AuditClient />
+    </main>
+  );
 }

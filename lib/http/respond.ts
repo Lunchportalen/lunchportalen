@@ -8,15 +8,16 @@ import { opsLog } from "@/lib/ops/log";
    RID
 ========================================================= */
 
-function genRid() {
+function genRid(prefix = "rid") {
+  // Kort, logg-vennlig, sortérbar (tid først) + god kollisjonssikring
   const t = Date.now().toString(36);
   const r1 = Math.random().toString(36).slice(2, 10);
   const r2 = Math.random().toString(36).slice(2, 10);
-  return `rid_${t}_${r1}${r2}`;
+  return `${prefix}_${t}_${r1}${r2}`;
 }
 
-export function makeRid(): string {
-  return genRid();
+export function makeRid(prefix = "rid"): string {
+  return genRid(prefix);
 }
 
 /* =========================================================
@@ -46,6 +47,20 @@ function allowDetail(): boolean {
   return false;
 }
 
+function toSafeJson(value: unknown): string {
+  // Robust stringify uten "stille feil": vi returnerer alltid noe JSON
+  try {
+    return JSON.stringify(value);
+  } catch {
+    try {
+      // siste utvei: minimal safe payload
+      return JSON.stringify({ ok: false, error: "JSON_STRINGIFY_FAILED" });
+    } catch {
+      return '{"ok":false,"error":"JSON_STRINGIFY_FAILED"}';
+    }
+  }
+}
+
 function buildJsonHeaders(rid: string, extra?: HeadersInit): Headers {
   const h = new Headers();
 
@@ -73,7 +88,7 @@ function buildJsonHeaders(rid: string, extra?: HeadersInit): Headers {
 }
 
 function jsonResponse(body: unknown, status: number, rid: string, extraHeaders?: HeadersInit): Response {
-  return new Response(JSON.stringify(body), {
+  return new Response(toSafeJson(body), {
     status,
     headers: buildJsonHeaders(rid, extraHeaders),
   });
@@ -83,16 +98,22 @@ function jsonResponse(body: unknown, status: number, rid: string, extraHeaders?:
    Success
 ========================================================= */
 
-export function jsonOk<T>(rid: string, data: T, status = 200): Response {
+/**
+ * Standard OK-respons.
+ * - Always { ok:true, rid, data }
+ * - For konsistens: data blir null hvis undefined
+ */
+export function jsonOk<T>(rid: string, data: T, status = 200, extraHeaders?: HeadersInit): Response {
   try {
     return jsonResponse(
       {
         ok: true as const,
         rid,
-        data: data ?? null,
+        data: (data ?? null) as any,
       },
       status,
-      rid
+      rid,
+      extraHeaders
     );
   } catch (e) {
     const rid2 = makeRid();
@@ -104,7 +125,7 @@ export function jsonOk<T>(rid: string, data: T, status = 200): Response {
         status: 500,
         message: "RESPOND_FAILED",
         error: errorOut,
-        meta: { originalRid: rid },
+        meta: { originalRid: rid, kind: "jsonOk" },
       });
     } catch {
       // ignore
@@ -133,13 +154,15 @@ export function jsonOk<T>(rid: string, data: T, status = 200): Response {
 // jsonErr(rid, message, status)
 // jsonErr(rid, message, status, error)
 // jsonErr(rid, message, status, error, detail)
+// jsonErr(rid, message, status, error, detail, extraHeaders)
 
 export function jsonErr(
   rid: string,
   message: string,
   status = 400,
   error?: unknown,
-  detail?: unknown
+  detail?: unknown,
+  extraHeaders?: HeadersInit
 ): Response {
   try {
     const errorOut = normalizeError(error);
@@ -155,6 +178,7 @@ export function jsonErr(
     const withDetail = allowDetail() && detail !== undefined;
     if (withDetail) payload.detail = detail;
 
+    // Log incidents for 5xx (best effort)
     if (status >= 500) {
       try {
         opsLog("incident", {
@@ -169,7 +193,7 @@ export function jsonErr(
       }
     }
 
-    return jsonResponse(payload, status, rid);
+    return jsonResponse(payload, status, rid, extraHeaders);
   } catch (e) {
     const rid2 = makeRid();
     const errorOut = normalizeError(e);
@@ -180,7 +204,7 @@ export function jsonErr(
         status: 500,
         message: "RESPOND_FAILED",
         error: errorOut,
-        meta: { originalRid: rid, originalStatus: status },
+        meta: { originalRid: rid, originalStatus: status, kind: "jsonErr" },
       });
     } catch {
       // ignore
@@ -204,13 +228,50 @@ export function jsonErr(
    Thrown helper (valgfri men anbefalt)
 ========================================================= */
 
-export function jsonFromThrown(rid: string, err: unknown, fallbackMessage = "Internal error"): Response {
+/**
+ * Konverterer en thrown error til en deterministisk 500-respons.
+ * - I prod: skjuler detaljer (fail-closed)
+ * - I RC/dev: inkluderer err i detail
+ */
+export function jsonFromThrown(
+  rid: string,
+  err: unknown,
+  fallbackMessage = "Internal error",
+  extraHeaders?: HeadersInit
+): Response {
   const errorOut = normalizeError(err);
 
   const safeMessage =
-    allowDetail() && err instanceof Error
+    allowDetail() && err instanceof Error && typeof err.message === "string" && err.message
       ? err.message
       : fallbackMessage;
 
-  return jsonErr(rid, safeMessage, 500, errorOut, allowDetail() ? err : undefined);
+  return jsonErr(
+    rid,
+    safeMessage,
+    500,
+    errorOut,
+    allowDetail() ? err : undefined,
+    extraHeaders
+  );
+}
+
+/* =========================================================
+   Convenience helpers (valgfri, men nyttige)
+========================================================= */
+
+export function jsonBlocked(rid: string, message: string, code = "BLOCKED", detail?: unknown): Response {
+  return jsonErr(rid, message, 400, code, detail);
+}
+
+export function jsonUnauthorized(rid: string, message = "Unauthorized", detail?: unknown): Response {
+  return jsonErr(rid, message, 401, "UNAUTHORIZED", detail);
+}
+
+export function jsonForbidden(rid: string, message = "Forbidden", detail?: unknown): Response {
+  return jsonErr(rid, message, 403, "FORBIDDEN", detail);
+}
+
+export function jsonNotFound(rid: string, message = "Not found", detail?: unknown): Response {
+  return jsonErr(rid, message, 404, "NOT_FOUND", detail);
 }

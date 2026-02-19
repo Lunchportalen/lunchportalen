@@ -1,0 +1,160 @@
+name: Supabase Migrate + Verify + Evidence + Typegen
+
+on:
+  pull_request:
+    branches: [ "**" ]
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: supabase-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      EVIDENCE_DIR: evidence/staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Prepare evidence dir
+        run: |
+          mkdir -p "$EVIDENCE_DIR"
+          echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
+          echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
+
+      # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
+      - name: Migration gate (order + bootstrap-safe)
+        run: |
+          node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
+
+      - name: Link project (staging)
+        run: |
+          supabase link --project-ref "$PROJECT_REF"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # ✅ Apply migrations to staging
+      - name: Apply migrations (staging)
+        run: |
+          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      # ✅ Verify DB contracts (fail-closed)
+      - name: Verify DB contracts (staging)
+        run: |
+          node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
+
+      # ✅ Optional: run your smoke scripts (cron/auth/RPC etc.)
+      - name: Smoke tests (staging)
+        run: |
+          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+
+      # ✅ Typegen (committed types are optional; here we just generate + upload as evidence)
+      - name: Typegen (staging)
+        run: |
+          mkdir -p "$EVIDENCE_DIR/typegen"
+          supabase gen types typescript --project-ref "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
+          echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
+
+      - name: Upload evidence artifact (staging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-staging-${{ github.sha }}
+          path: evidence/staging
+          if-no-files-found: error
+
+  prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+      DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+      EVIDENCE_DIR: evidence/prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Prepare evidence dir
+        run: |
+          mkdir -p "$EVIDENCE_DIR"
+          echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
+          echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
+
+      # ✅ Gate 1: same gate in prod (fail before touching prod)
+      - name: Migration gate (order + bootstrap-safe)
+        run: |
+          node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
+
+      - name: Link project (prod)
+        run: |
+          supabase link --project-ref "$PROJECT_REF"
+
+      - name: Apply migrations (prod)
+        run: |
+          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      - name: Verify DB contracts (prod)
+        run: |
+          node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
+
+      - name: Smoke tests (prod)
+        run: |
+          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+
+      - name: Typegen (prod)
+        run: |
+          mkdir -p "$EVIDENCE_DIR/typegen"
+          supabase gen types typescript --project-ref "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
+          echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
+
+      - name: Upload evidence artifact (prod)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-prod-${{ github.sha }}
+          path: evidence/prod
+          if-no-files-found: error

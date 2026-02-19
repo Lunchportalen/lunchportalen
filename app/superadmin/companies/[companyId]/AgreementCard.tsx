@@ -1,85 +1,95 @@
-"use client";
+import "server-only";
 
-import { useState, useTransition } from "react";
+type AgreementSnapshot = {
+  id: string;
+  status: string;
+  tier: string | null;
+  delivery_days?: string[] | null;
+  days?: string[] | null;
+  starts_at: string | null;
+  slot_start: string | null;
+  slot_end: string | null;
+  updated_at: string | null;
+} | null;
 
-type PlanTier = "BASIS" | "LUXUS";
 type Props = {
   companyId: string;
-  initialTier: PlanTier | null;
-  initialAgreement: any | null;
+  initialAgreement: AgreementSnapshot;
 };
 
-export default function AgreementCard({ companyId, initialTier, initialAgreement }: Props) {
-  const [tier, setTier] = useState<PlanTier>(initialTier ?? "BASIS");
-  const [bindingMonths, setBindingMonths] = useState<number>(
-    Number(initialAgreement?.contract?.binding_months ?? 12)
-  );
-  const [startDate, setStartDate] = useState<string>(
-    initialAgreement?.contract?.start_date ?? new Date().toISOString().slice(0, 10)
-  );
-  const [note, setNote] = useState<string>(initialAgreement?.internal_note ?? "");
-  const [pending, startTransition] = useTransition();
-  const [msg, setMsg] = useState<string | null>(null);
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
 
-  function save() {
-    startTransition(async () => {
-      setMsg(null);
-      const res = await fetch("/api/superadmin/companies/agreement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-        body: JSON.stringify({
-          companyId,
-          plan_tier: tier,
-          start_date: startDate,
-          binding_months: bindingMonths,
-          delivery_days: ["mon", "tue", "wed", "thu", "fri"],
-          note,
-        }),
-      });
-      const j = await res.json();
-      if (!res.ok || !j?.ok) {
-        setMsg(j?.message ?? "Kunne ikke lagre avtale.");
-        return;
-      }
-      setMsg("Avtale oppdatert.");
-    });
+function normalizeTier(raw: unknown): "BASIS" | "LUXUS" | null {
+  const s = safeStr(raw).toUpperCase();
+  if (s === "BASIS" || s === "LUXUS") return s;
+  return null;
+}
+
+function normalizeDays(raw: unknown): string[] {
+  const src = Array.isArray(raw) ? raw : [];
+  return src
+    .map((x) => safeStr(x).toUpperCase())
+    .filter((x) => x === "MON" || x === "TUE" || x === "WED" || x === "THU" || x === "FRI");
+}
+
+function dayLabel(day: string) {
+  if (day === "MON") return "Man";
+  if (day === "TUE") return "Tir";
+  if (day === "WED") return "Ons";
+  if (day === "THU") return "Tor";
+  if (day === "FRI") return "Fre";
+  return day;
+}
+
+function statusClass(status: string) {
+  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  if (status === "PENDING") return "bg-amber-50 text-amber-900 ring-amber-200";
+  if (status === "TERMINATED") return "bg-rose-50 text-rose-900 ring-rose-200";
+  return "bg-neutral-50 text-neutral-800 ring-black/10";
+}
+
+export default function AgreementCard({ companyId, initialAgreement }: Props) {
+  void companyId;
+
+  if (!initialAgreement) {
+    return <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen avtale registrert.</div>;
   }
+
+  const delivery_days = normalizeDays(initialAgreement.delivery_days ?? initialAgreement.days ?? []);
+  const tier = normalizeTier(initialAgreement.tier ?? null);
+  const slot_start = safeStr(initialAgreement.slot_start ?? null) || null;
+  const slot_end = safeStr(initialAgreement.slot_end ?? null) || null;
+  const starts_at = safeStr(initialAgreement.starts_at ?? null) || null;
+  const status = safeStr(initialAgreement.status ?? null).toUpperCase() || "UKJENT";
 
   return (
     <div className="rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-      <div className="text-sm font-semibold">Avtale & binding</div>
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="text-sm">
-          <span className="block text-xs text-[rgb(var(--lp-muted))]">Plan</span>
-          <select value={tier} onChange={(e) => setTier(e.target.value as PlanTier)} className="mt-1 w-full rounded-xl border px-3 py-2">
-            <option value="BASIS">Basis</option>
-            <option value="LUXUS">Luxus</option>
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <span className="block text-xs text-[rgb(var(--lp-muted))]">Binding (mnd)</span>
-          <input type="number" value={bindingMonths} onChange={(e) => setBindingMonths(Number(e.target.value))} className="mt-1 w-full rounded-xl border px-3 py-2" />
-        </label>
-
-        <label className="text-sm">
-          <span className="block text-xs text-[rgb(var(--lp-muted))]">Startdato</span>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" />
-        </label>
-
-        <label className="text-sm sm:col-span-2">
-          <span className="block text-xs text-[rgb(var(--lp-muted))]">Intern notat</span>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" rows={3} />
-        </label>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm font-semibold">Avtale</div>
+        <span className={["inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1", statusClass(status)].join(" ")}>
+          {status}
+        </span>
       </div>
 
-      {msg ? <div className="mt-3 text-sm">{msg}</div> : null}
-
-      <div className="mt-4">
-        <button onClick={save} disabled={pending} className="rounded-xl bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-60">
-          {pending ? "Lagrerâ¦" : "Lagre avtale"}
-        </button>
+      <div className="mt-4 grid gap-2 text-sm md:grid-cols-2">
+        <div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Tier</div>
+          <div className="font-medium">{tier === "LUXUS" ? "LUXUS" : tier === "BASIS" ? "BASIS" : "Ikke satt"}</div>
+        </div>
+        <div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Startdato</div>
+          <div className="font-medium">{starts_at ?? "Ikke satt"}</div>
+        </div>
+        <div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Leveringsdager</div>
+          <div className="font-medium">{delivery_days.length ? delivery_days.map(dayLabel).join(", ") : "Ikke satt"}</div>
+        </div>
+        <div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Leveringsvindu</div>
+          <div className="font-medium">{slot_start && slot_end ? `${slot_start}-${slot_end}` : "Ikke satt"}</div>
+        </div>
       </div>
     </div>
   );

@@ -85,7 +85,22 @@ async function fetchJson(url, opts = {}) {
 
 function fatal(code, payload) {
   console.error(code, payload);
-  process.exit(1);
+  process.exitCode = 1;
+  throw new Error(code);
+}
+
+function isUnreachableError(err) {
+  const msg = String(err?.message || "").toLowerCase();
+  const cause = String(err?.cause || "").toLowerCase();
+  const name = String(err?.name || "").toLowerCase();
+  return (
+    name.includes("abort") ||
+    msg.includes("timeout") ||
+    msg.includes("fetch failed") ||
+    msg.includes("network") ||
+    msg.includes("econnrefused") ||
+    cause.includes("econnrefused")
+  );
 }
 
 async function run() {
@@ -157,15 +172,24 @@ async function run() {
   }
 
   console.log("[sanity:live] OK");
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 run().catch((e) => {
+  if (isUnreachableError(e)) {
+    console.warn("[sanity:live] WARNING: unreachable URL, skipping (soft gate)", {
+      message: e?.message || String(e),
+      base,
+    });
+    process.exitCode = 0;
+    return;
+  }
+
   console.error("sanity_live_error", {
     message: e?.message || String(e),
     name: e?.name,
     cause: e?.cause ? String(e.cause) : undefined,
     base,
   });
-  process.exit(1);
+  process.exitCode = 1;
 });

@@ -1,34 +1,53 @@
 // lib/auth/routeByUser.ts
+import "server-only";
+
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { getScopeServer } from "@/lib/auth/getScopeServer";
+import { homeForRole, homeForUser, type Role } from "@/lib/auth/redirect";
 
-export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+export type { Role };
 
-export function destinationForUser(user: {
-  email?: string | null;
-  user_metadata?: any;
-}): { role: Role; path: string } {
+function normalizeRole(raw: unknown): Role {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
+  if (s === "superadmin") return "superadmin";
+  if (s === "kitchen") return "kitchen";
+  if (s === "driver") return "driver";
+  return "employee";
+}
+
+/**
+ * Legacy fallback: user-only routing (no DB).
+ * Keep for safety, but DO NOT use it in post-login flows when DB is available.
+ */
+export function destinationForUser(user: { email?: string | null; user_metadata?: any }): { role: Role; path: string } {
   const systemRole = systemRoleByEmail(user.email);
   if (systemRole === "superadmin") return { role: "superadmin", path: "/superadmin" };
   if (systemRole === "kitchen") return { role: "kitchen", path: "/kitchen" };
   if (systemRole === "driver") return { role: "driver", path: "/driver" };
 
-  // 2) Kundekontoer: rolle fra metadata/profil (fallback)
-  const roleRaw = String(user.user_metadata?.role ?? "employee").toLowerCase();
-  const role: Role =
-    roleRaw === "company_admin"
-      ? "company_admin"
-      : roleRaw === "superadmin"
-      ? "superadmin"
-      : roleRaw === "kitchen"
-      ? "kitchen"
-      : roleRaw === "driver"
-      ? "driver"
-      : "employee";
+  const role = normalizeRole(user.user_metadata?.role ?? "employee");
+  return { role, path: homeForRole(role) };
+}
 
-  // 3) Standard destinasjon per rolle
-  if (role === "superadmin") return { role, path: "/superadmin" };
-  if (role === "company_admin") return { role, path: "/admin" };
-  if (role === "kitchen") return { role, path: "/kitchen" };
-  if (role === "driver") return { role, path: "/driver" };
-  return { role: "employee", path: "/week" };
+/**
+ * Enterprise routing: use DB truth (profiles + companies + company_billing_accounts).
+ * Intended for server-side post-login router.
+ */
+export async function destinationForCurrentUser(): Promise<{ role: Role; path: string }> {
+  const { scope } = await getScopeServer();
+
+  const role = scope.role as Role;
+
+  // Use enterprise home routing (agreement/billing aware)
+  const path = homeForUser({
+    role,
+    company_id: scope.company_id,
+    location_id: scope.location_id,
+    agreement_status: scope.agreement_status ?? "unknown",
+    billing_hold: scope.billing_hold ?? false,
+    is_active: scope.is_active,
+  });
+
+  return { role, path };
 }

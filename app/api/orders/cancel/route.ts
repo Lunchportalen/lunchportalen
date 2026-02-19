@@ -6,23 +6,20 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// Ã¢Å“â€¦ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-// ✅ Oslo single source of truth
+// Ã¢Å“â€¦ Oslo single source of truth
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
-// ✅ Backup mail (failsafe)
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
-import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
-import { osloNowISO } from "@/lib/date/oslo";
+// Ã¢Å“â€¦ Backup mail (failsafe)
 
-// ✅ MUST audit (lukket sirkel)
+// Ã¢Å“â€¦ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
 import { requireRule } from "@/lib/agreement/requireRule";
+import { lpOrderCancel } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Helpers
@@ -63,7 +60,7 @@ function isoWeekday(isoDate: string): number | null {
 }
 
 /**
- * Midlertidig (Dag 2): pricing må finnes i respons for UI-kvittering.
+ * Midlertidig (Dag 2): pricing mÃƒÂ¥ finnes i respons for UI-kvittering.
  */
 function pricingFallback(isoDate: string): { tier: "BASIS" | "LUXUS"; unit_price: number } {
   const wd = isoWeekday(isoDate);
@@ -112,45 +109,40 @@ type SavedOrder = {
   slot: string | null;
 };
 
-async function setCancelled(sb: any, input: { company_id: string; user_id: string; isoDate: string; note: string | null; slot?: string | null }) {
-  const updated_at = nowIso();
+async function setCancelled(
+  sb: any,
+  input: { company_id: string; user_id: string; isoDate: string; slot?: string | null }
+) {
+  const rpc = await lpOrderCancel(sb as any, { p_date: input.isoDate });
+  if (!rpc.ok) {
+    return { ok: false as const, error: rpc.error, code: rpc.code };
+  }
 
-  const tryUpdate = async (statusValue: string) => {
-    let q = sb
-      .from("orders")
-      .update({ status: statusValue, updated_at, ...(input.note !== null ? { note: input.note } : {}) })
-      .eq("company_id", input.company_id)
-      .eq("user_id", input.user_id)
-      .eq("date", input.isoDate);
+  let q = sb
+    .from("orders")
+    .select("id,date,status,created_at,updated_at,note,slot")
+    .eq("company_id", input.company_id)
+    .eq("user_id", input.user_id)
+    .eq("date", input.isoDate);
 
-    if (input.slot) q = q.eq("slot", input.slot);
+  if (input.slot) q = q.eq("slot", input.slot);
 
-    return await q.select("id,date,status,created_at,updated_at,note,slot").maybeSingle();
-  };
+  const row = await q.maybeSingle();
+  if (row.error) {
+    return { ok: false as const, error: row.error, code: "ORDER_READ_FAILED" };
+  }
+  if (!row.data) {
+    return { ok: false as const, notFound: true as const };
+  }
 
-  // Prøv canonical først
-  const r1 = await tryUpdate("CANCELLED");
-  if (!r1.error && r1.data) return { ok: true as const, used: "CANCELLED" as const, row: r1.data as SavedOrder };
-
-  // Fallback for eldre verdier (idempotent “uansett hva som lå før”)
-  const r2 = await tryUpdate("canceled");
-  if (!r2.error && r2.data) return { ok: true as const, used: "canceled" as const, row: r2.data as SavedOrder };
-
-  const r3 = await tryUpdate("canceled");
-  if (!r3.error && r3.data) return { ok: true as const, used: "canceled" as const, row: r3.data as SavedOrder };
-
-  // Hvis ingen rad ble oppdatert → not found
-  if (!r3.error && !r3.data) return { ok: false as const, notFound: true as const };
-
-  return { ok: false as const, error: r3.error ?? r2.error ?? r1.error };
+  return { ok: true as const, row: row.data as SavedOrder };
 }
 
 /* =========================================================
    Route
 ========================================================= */
+
 export async function POST(req: NextRequest) {
-  
-  const { supabaseServer } = await import("@/lib/supabase/server");
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
@@ -169,6 +161,7 @@ export async function POST(req: NextRequest) {
   if (!company_id || !user_id) return jsonErr(rid, "Mangler scope (user/company).", 409, "SCOPE_MISSING");
   if (!location_id) return jsonErr(rid, "Mangler lokasjonstilknytning (location_id).", 409, "LOCATION_MISSING");
 
+  const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
 
   try {
@@ -182,17 +175,23 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
     }
 
-    // Firmastatus (service role) – fail-closed
+    // Firmastatus (service role) Ã¢â‚¬â€œ fail-closed
     const admin = await adminClientOrNull();
     if (!admin) {
-      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, { code: "CONFIG_ERROR", detail: {
-        missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
-      } });
+      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, {
+        code: "CONFIG_ERROR",
+        detail: {
+          missing: ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL"],
+        },
+      });
     }
 
     const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
     if (cRes.error || !cRes.data) {
-      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: { error: cRes.error?.message ?? null } });
+      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, {
+        code: "COMPANY_LOOKUP_FAILED",
+        detail: { error: cRes.error?.message ?? null },
+      });
     }
 
     const companyStatus = normCompanyStatus((cRes.data as any).status);
@@ -201,37 +200,56 @@ export async function POST(req: NextRequest) {
     // Enforcement: cancel blocked hvis firma ikke er ACTIVE
     if (companyStatus !== "ACTIVE") {
       const reason =
-        companyStatus === "PAUSED" ? "COMPANY_PAUSED" : companyStatus === "CLOSED" ? "COMPANY_CLOSED" : "COMPANY_NOT_ACTIVE";
+        companyStatus === "PAUSED"
+          ? "COMPANY_PAUSED"
+          : companyStatus === "CLOSED"
+            ? "COMPANY_CLOSED"
+            : "COMPANY_NOT_ACTIVE";
 
-      await auditSafe(async () => {
-        await auditWriteMust({
-          rid,
-          action: "ENFORCEMENT_BLOCK",
-          entity_type: "order",
-          entity_id,
-          company_id,
-          location_id,
-          actor_user_id: user_id,
-          actor_email: scope.email ?? null,
-          actor_role: scope.role ?? null,
-          summary: reason,
-          detail: { route: "/api/orders/cancel", intent: "CANCEL", date: isoDate, slot, company_status: companyStatus },
-        });
-      }, rid);
+      await auditSafe(
+        async () => {
+          await auditWriteMust({
+            rid,
+            action: "ENFORCEMENT_BLOCK",
+            entity_type: "order",
+            entity_id,
+            company_id,
+            location_id,
+            actor_user_id: user_id,
+            actor_email: scope.email ?? null,
+            actor_role: scope.role ?? null,
+            summary: reason,
+            detail: { route: "/api/orders/cancel", intent: "CANCEL", date: isoDate, slot, company_status: companyStatus },
+          });
+        },
+        rid
+      );
 
-      return jsonErr(rid, "Avbestilling er låst pga firmastatus.", 403, { code: reason, detail: { company_status: companyStatus } });
+      return jsonErr(rid, "Avbestilling er lÃƒÂ¥st pga firmastatus.", 403, {
+        code: reason,
+        detail: { company_status: companyStatus },
+      });
     }
 
+    // Cutoff enforcement (Oslo)
     const cutoff = cutoffStatusForDate(isoDate);
     if (cutoff === "PAST") {
-      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date: isoDate } });
+      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, {
+        code: "DATE_LOCKED_PAST",
+        detail: { date: isoDate },
+      });
     }
     if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, { code: "CUTOFF_LOCKED", detail: { date: isoDate, cutoff: "08:00" } });
+      return jsonErr(rid, "Endringer er lÃƒÂ¥st etter kl. 08:00 i dag.", 403, {
+        code: "CUTOFF_LOCKED",
+        detail: { date: isoDate, cutoff: "08:00" },
+      });
     }
+
     const dayKey = weekdayKeyOslo(isoDate);
     if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: isoDate } });
 
+    // Agreement rule enforcement (fail-closed)
     const ruleSlot = slot ?? "lunch";
     const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot: ruleSlot, rid });
     if (!ruleRes.ok) {
@@ -240,14 +258,38 @@ export async function POST(req: NextRequest) {
     }
 
     // Apply cancel (idempotent)
-    const cancelled = await setCancelled(sb, { company_id, user_id, isoDate, note, slot });
+    const cancelled = await setCancelled(sb, { company_id, user_id, isoDate, slot });
 
     if (!cancelled.ok) {
       if ((cancelled as any).notFound) {
-        await auditSafe(async () => {
+        await auditSafe(
+          async () => {
+            await auditWriteMust({
+              rid,
+              action: "ORDER_CANCEL_NOT_FOUND",
+              entity_type: "order",
+              entity_id,
+              company_id,
+              location_id,
+              actor_user_id: user_id,
+              actor_email: scope.email ?? null,
+              actor_role: scope.role ?? null,
+              summary: "No order to cancel",
+              detail: { route: "/api/orders/cancel", date: isoDate, slot },
+            });
+          },
+          rid
+        );
+
+        // Idempotent UX: returning 200 with a "noop" is often better, but you asked for strict.
+        return jsonErr(rid, "Ingen bestilling ÃƒÂ¥ avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
+      }
+
+      await auditSafe(
+        async () => {
           await auditWriteMust({
             rid,
-            action: "ORDER_CANCEL_NOT_FOUND",
+            action: "ORDER_CANCEL_FAILED",
             entity_type: "order",
             entity_id,
             company_id,
@@ -255,84 +297,27 @@ export async function POST(req: NextRequest) {
             actor_user_id: user_id,
             actor_email: scope.email ?? null,
             actor_role: scope.role ?? null,
-            summary: "No order to cancel",
-            detail: { route: "/api/orders/cancel", date: isoDate, slot },
+            summary: "Cancel DB error",
+            detail: {
+              route: "/api/orders/cancel",
+              date: isoDate,
+              slot,
+              error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown"),
+            },
           });
-        }, rid);
+        },
+        rid
+      );
 
-        return jsonErr(rid, "Ingen bestilling å avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
-      }
-
-      await auditSafe(async () => {
-        await auditWriteMust({
-          rid,
-          action: "ORDER_CANCEL_FAILED",
-          entity_type: "order",
-          entity_id,
-          company_id,
-          location_id,
-          actor_user_id: user_id,
-          actor_email: scope.email ?? null,
-          actor_role: scope.role ?? null,
-          summary: "Cancel DB error",
-          detail: {
-            route: "/api/orders/cancel",
-            date: isoDate,
-            slot,
-            error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown"),
-          },
-        });
-      }, rid);
-
-      return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "DB_ERROR", detail: {
-        error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown"),
-      } });
-    }
-
-    // Backup mail (failsafe – må ikke stoppe user flow)
-    const pricing = pricingFallback(isoDate);
-    const backupTs = osloNowISO();
-    let backupNames: { company_name: string | null; location_name: string | null } = { company_name: null, location_name: null };
-    try {
-      backupNames = await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id });
-    } catch {
-      // ignore
-    }
-
-    const backup = await sendOrderBackup({
-      rid,
-      action: "CANCEL",
-      status: "CANCELLED",
-      orderId: cancelled.row?.id ?? null,
-      date: isoDate,
-      slot: cancelled.row?.slot ?? slot ?? null,
-      user_id,
-      company_id,
-      location_id,
-      company_name: backupNames.company_name ?? null,
-      location_name: backupNames.location_name ?? null,
-      actor_email: scope.email ?? null,
-      actor_role: scope.role ?? null,
-      note: cancelled.row?.note ?? note ?? null,
-      timestamp_oslo: backupTs,
-      extra: { route: "/api/orders/cancel", pricing },
-    });
-
-    await auditSafe(async () => {
-      await auditWriteMust({
-        rid,
-        action: backup.ok ? "ORDER_BACKUP_SENT" : "ORDER_BACKUP_FAILED",
-        entity_type: "order",
-        entity_id: cancelled.row?.id ?? entity_id,
-        company_id,
-        location_id,
-        actor_user_id: user_id,
-        actor_email: scope.email ?? null,
-        actor_role: scope.role ?? null,
-        summary: backup.ok ? "Backup email sent" : "Backup email failed",
-        detail: { route: "/api/orders/cancel", date: isoDate, slot, backup },
+      return jsonErr(rid, "Kunne ikke avbestille.", 500, {
+        code: "DB_ERROR",
+        detail: { error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown") },
       });
-    }, rid);
+    }
+
+    // Backup mail (failsafe Ã¢â‚¬â€œ mÃƒÂ¥ ikke stoppe user flow)
+    const pricing = pricingFallback(isoDate);
+    const backup = { ok: true, skipped: "outbox_db_trigger" } as const;
 
     return jsonOk(rid, {
       order: {
@@ -349,6 +334,15 @@ export async function POST(req: NextRequest) {
       backup,
     });
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, { code: "UNHANDLED", detail: { at: "orders/cancel" } });
+    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, {
+      code: "UNHANDLED",
+      detail: { at: "orders/cancel" },
+    });
   }
 }
+
+
+
+
+
+

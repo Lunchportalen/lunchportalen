@@ -1,4 +1,4 @@
-﻿// tests/kitchen-batch-summary.test.ts
+// tests/kitchen-batch-summary.test.ts
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
@@ -26,8 +26,8 @@ vi.mock("@/lib/http/routeGuard", async () => {
         scope: {
           userId: "u1",
           role: mockRole,
-          companyId: null,
-          locationId: null,
+          companyId: "cA",
+          locationId: "l1",
           email: "kitchen@lunchportalen.no",
         },
       },
@@ -137,7 +137,7 @@ beforeEach(() => {
 });
 
 describe("kitchen batch/summary", () => {
-  test("kitchen f�r 200 og deterministisk sortering", async () => {
+  test("kitchen f?r 200 og deterministisk sortering", async () => {
     const req = mkReq(`http://localhost/api/kitchen/batch/summary?date=2026-02-02&location_id=${LOCATION_ID}`, { method: "GET" });
     const res = await batchSummaryGET(req);
     expect(res.status).toBe(200);
@@ -149,7 +149,7 @@ describe("kitchen batch/summary", () => {
     expect(json?.data?.counts?.orders).toBe(3);
   });
 
-  test("wrong tenant f�r 403", async () => {
+  test("wrong tenant f?r 403", async () => {
     adminDb = makeAdminMock({
       profiles: [{ id: "p1", user_id: "u1", company_id: OTHER_COMPANY, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
@@ -168,14 +168,14 @@ describe("kitchen batch/summary", () => {
     expect(res.status).toBe(403);
   });
 
-  test("non-kitchen f�r 403", async () => {
+  test("non-kitchen f?r 403", async () => {
     mockRole = "employee";
     const req = mkReq(`http://localhost/api/kitchen/batch/summary?date=2026-02-02&location_id=${LOCATION_ID}`, { method: "GET" });
     const res = await batchSummaryGET(req);
     expect(res.status).toBe(403);
   });
 
-  test("422 n�r ingen orders", async () => {
+  test("422 n?r ingen orders", async () => {
     adminDb = makeAdminMock({
       profiles: [{ id: "p1", user_id: "u1", company_id: COMPANY_ID, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
@@ -188,3 +188,4 @@ describe("kitchen batch/summary", () => {
     expect(res.status).toBe(422);
   });
 });
+

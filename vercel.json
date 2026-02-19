@@ -1,16 +1,36 @@
-{
+﻿{
   "crons": [
     {
-      "path": "/api/cron/week-scheduler?key=${CRON_SECRET}",
+      "path": "/api/cron/week-scheduler",
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/cron/forecast?key=${CRON_SECRET}",
+      "path": "/api/cron/forecast",
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/cron/preprod?key=${CRON_SECRET}",
+      "path": "/api/cron/preprod",
       "schedule": "5 8 * * 1-5"
+    },
+    {
+      "path": "/api/cron/outbox",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-invites",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/esg/daily",
+      "schedule": "15 1 * * *"
+    },
+    {
+      "path": "/api/cron/esg/monthly",
+      "schedule": "20 1 1 * *"
+    },
+    {
+      "path": "/api/cron/esg/yearly",
+      "schedule": "25 1 1 1 *"
     }
   ],
   "ignoreCommand": "git diff --name-only HEAD^ HEAD | grep -q '^studio/' && ! git diff --name-only HEAD^ HEAD | grep -vq '^studio/'"

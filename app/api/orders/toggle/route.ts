@@ -7,16 +7,16 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 
-// ✅ mocked in some tests
+// Ã¢Å“â€¦ mocked in some tests
 import { getScope, ScopeError } from "@/lib/auth/scope";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
+import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
 // mocked in tests where relevant
 import { requireRule } from "@/lib/agreement/requireRule";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
 
 type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN" | string;
 
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (cs.status === "CLOSED") return j(403, { ok: false, error: "COMPANY_CLOSED" });
     if (cs.status !== "ACTIVE") return j(403, { ok: false, error: "COMPANY_NOT_ACTIVE" });
 
-    // 2) Agreement rules gate (employee PLACE only) — must return 403, not 500
+    // 2) Agreement rules gate (employee PLACE only) Ã¢â‚¬â€ must return 403, not 500
     if (action === "place" && role !== "company_admin") {
       const rr: any = await (requireRule as any)({
         rid: "rid_test",
@@ -118,39 +118,36 @@ export async function POST(req: NextRequest) {
     const sb = await supabaseServer();
 
     const wantsActive = action !== "cancel";
-    const nextStatus = wantsActive ? "ACTIVE" : "CANCELLED";
-    const now = new Date().toISOString();
-
     try {
       await auditWriteMust?.({ rid: "rid_test" } as any);
     } catch {}
-    try {
-      await sendOrderBackup?.({ rid: "rid_test" } as any);
-    } catch {}
+    const writeRes = wantsActive
+      ? await lpOrderSet(sb as any, { p_date: date, p_slot: slot, p_note: null })
+      : await lpOrderCancel(sb as any, { p_date: date });
 
-    const up = await sb
+    if (!writeRes.ok) {
+      return j(500, { ok: false, error: writeRes.code ?? "ORDER_RPC_FAILED" });
+    }
+
+    const ord = await sb
       .from("orders")
-      .upsert(
-        {
-          company_id: companyId,
-          location_id: locationId,
-          user_id: userId,
-          date,
-          slot,
-          status: nextStatus,
-          note: null,
-          updated_at: now,
-          created_at: now,
-        },
-        { onConflict: "company_id,location_id,user_id,date,slot" }
-      )
       .select("id,date,status,note,slot,created_at,updated_at")
+      .eq("company_id", companyId)
+      .eq("location_id", locationId)
+      .eq("user_id", userId)
+      .eq("date", date)
+      .eq("slot", slot)
       .maybeSingle();
 
-    if (up?.error) return j(500, { ok: false, error: "ORDER_UPSERT_FAILED" });
+    if (ord?.error) return j(500, { ok: false, error: "ORDER_READ_FAILED" });
 
-    return j(200, { ok: true, order: up?.data ?? null });
+    return j(200, { ok: true, order: ord?.data ?? null });
   } catch (e: any) {
     return j(500, { ok: false, error: "SERVER_ERROR", message: String(e?.message ?? "Uventet feil.") });
   }
 }
+
+
+
+
+

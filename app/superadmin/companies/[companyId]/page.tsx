@@ -1,4 +1,4 @@
-﻿// app/superadmin/companies/[companyId]/page.tsx
+// app/superadmin/companies/[companyId]/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,6 +11,7 @@ import AuditCompanyPanel from "@/components/audit/AuditCompanyPanel";
 import ArchivePanel from "./ArchivePanel";
 import InvoiceBasisPanel from "./InvoiceBasisPanel";
 import EsgSummaryPanel from "./EsgSummaryPanel";
+import AgreementCard from "./AgreementCard";
 
 type CompanyStatus = "active" | "paused" | "closed" | "pending";
 
@@ -25,11 +26,14 @@ type CompanyDetails = {
     deleted_at: string | null;
   };
   agreement: null | {
-    tier: "basis" | "luxus";
-    days: string[];
-    price_per_unit: number;
-    binding_start: string | null;
-    binding_end: string | null;
+    id: string;
+    status: string;
+    tier: "BASIS" | "LUXUS" | null;
+    delivery_days: string[];
+    starts_at: string | null;
+    slot_start: string | null;
+    slot_end: string | null;
+    updated_at: string | null;
   };
   employees: Array<{
     id: string;
@@ -95,6 +99,85 @@ function formatISO(iso: string | null | undefined) {
   } catch {
     return String(iso);
   }
+}
+
+function normalizeTier(raw: unknown): "BASIS" | "LUXUS" | null {
+  const t = safeStr(raw).toUpperCase();
+  if (t === "BASIS" || t === "LUXUS") return t;
+  return null;
+}
+
+function normalizeDeliveryDays(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((v) => safeStr(v).toUpperCase())
+    .filter((v) => v === "MON" || v === "TUE" || v === "WED" || v === "THU" || v === "FRI");
+}
+
+function normalizeAgreement(raw: any): CompanyDetails["agreement"] {
+  if (!raw || typeof raw !== "object") return null;
+
+  const id = safeStr(raw.id ?? raw.agreementId);
+  if (!id) return null;
+
+  const daysSource = Array.isArray(raw.delivery_days)
+    ? raw.delivery_days
+    : Array.isArray(raw.days)
+    ? raw.days
+    : [];
+
+  return {
+    id,
+    status: safeStr(raw.status).toUpperCase() || "UKJENT",
+    tier: normalizeTier(raw.tier),
+    delivery_days: normalizeDeliveryDays(daysSource),
+    starts_at: safeStr(raw.starts_at ?? raw.start_date) || null,
+    slot_start: safeStr(raw.slot_start) || null,
+    slot_end: safeStr(raw.slot_end) || null,
+    updated_at: safeStr(raw.updated_at) || null,
+  };
+}
+
+function normalizeCompanyDetails(raw: any): CompanyDetails {
+  const companyRaw = raw?.company ?? {};
+  const employeesRaw = Array.isArray(raw?.employees) ? raw.employees : [];
+  const locationsRaw = Array.isArray(raw?.locations) ? raw.locations : [];
+
+  return {
+    company: {
+      id: safeStr(companyRaw.id),
+      name: safeStr(companyRaw.name) || null,
+      orgnr: safeStr(companyRaw.orgnr) || null,
+      status: (() => {
+        const s = safeStr(companyRaw.status).toLowerCase();
+        return s === "active" || s === "paused" || s === "closed" || s === "pending"
+          ? (s as CompanyStatus)
+          : "pending";
+      })(),
+      updated_at: safeStr(companyRaw.updated_at) || null,
+      created_at: safeStr(companyRaw.created_at) || null,
+      deleted_at: null,
+    },
+    agreement: normalizeAgreement(raw?.agreement),
+    employees: employeesRaw.map((e: any) => ({
+      id: safeStr(e?.id),
+      name: safeStr(e?.name) || null,
+      email: safeStr(e?.email) || null,
+      role: safeStr(e?.role) || null,
+      is_active: typeof e?.is_active === "boolean" ? e.is_active : typeof e?.active === "boolean" ? e.active : null,
+      deleted_at: safeStr(e?.deleted_at) || null,
+      last_seen_at: safeStr(e?.last_seen_at) || null,
+    })),
+    locations: locationsRaw.map((l: any) => ({
+      id: safeStr(l?.id),
+      name: safeStr(l?.name) || null,
+      address_line: safeStr(l?.address_line ?? l?.address) || null,
+      postnr: safeStr(l?.postnr) || null,
+      city: safeStr(l?.city) || null,
+      slot: safeStr(l?.slot) || null,
+    })),
+    kpi: undefined,
+  };
 }
 
 function roleLabel(role: string | null) {
@@ -171,7 +254,13 @@ async function fetchCompanyDetails(companyId: string): Promise<ApiOk | ApiErr> {
     };
   }
 
-  if (json?.ok === true) return json as ApiOk;
+  if (json?.ok === true) {
+    return {
+      ok: true,
+      rid: safeStr(json?.rid),
+      data: normalizeCompanyDetails(json?.data),
+    } as ApiOk;
+  }
 
   return {
     ok: false,
@@ -314,29 +403,7 @@ export default async function SuperadminCompanyDetailPage(props: {
       </section>
 
       <section id="okonomi" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-sm font-semibold">Økonomi</div>
-        {data.agreement ? (
-          <div className="mt-2 grid gap-3 text-sm md:grid-cols-2">
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Plan</div>
-              <div className="font-medium">{data.agreement.tier === "luxus" ? "Luxus" : "Basis"}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Pris per enhet</div>
-              <div className="font-medium">{data.agreement.price_per_unit} NOK</div>
-            </div>
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Binding start</div>
-              <div className="font-medium">{formatISO(data.agreement.binding_start)}</div>
-            </div>
-            <div>
-              <div className="text-xs text-[rgb(var(--lp-muted))]">Binding slutt</div>
-              <div className="font-medium">{formatISO(data.agreement.binding_end)}</div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Ingen avtale funnet.</div>
-        )}
+        <AgreementCard companyId={companyId} initialAgreement={data.agreement} />
       </section>
 
       <section id="fakturagrunnlag" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
@@ -416,6 +483,7 @@ export default async function SuperadminCompanyDetailPage(props: {
     </main>
   );
 }
+
 
 
 

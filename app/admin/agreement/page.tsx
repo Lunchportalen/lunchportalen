@@ -55,7 +55,7 @@ function formatDate(value: string | null) {
 }
 
 function formatUpdatedAt(value: string | null) {
-  if (!value) return "â€”";
+  if (!value) return "—";
   return formatDateTimeNO(value);
 }
 
@@ -96,8 +96,10 @@ async function fetchAgreementServer(companyId?: string | null): Promise<Agreemen
   const origin = getOriginFromHeaders(h as unknown as HeaderLike);
   const cookieHeader = h.get("cookie") ?? "";
 
+  // ✅ Use the route you actually have:
+  // app/api/admin/agreements/my-latest/route.ts
   const companyParam = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
-  const fetchUrl = `${origin}/api/admin/agreement${companyParam}`;
+  const fetchUrl = `${origin}/api/admin/agreements/my-latest${companyParam}`;
 
   try {
     const res = await fetch(fetchUrl, {
@@ -114,7 +116,7 @@ async function fetchAgreementServer(companyId?: string | null): Promise<Agreemen
     if (!json || json.ok !== true) {
       return {
         kind: "error",
-        message: json?.message ?? "Kunne ikke hente avtalen. PrÃ¸v igjen.",
+        message: json?.message ?? "Kunne ikke hente avtalen. Prøv igjen.",
         rid: responseRid,
         errorCode: json?.error ?? "API_ERROR",
       };
@@ -122,7 +124,7 @@ async function fetchAgreementServer(companyId?: string | null): Promise<Agreemen
 
     return { kind: "ok", data: json.data as AgreementPageData, rid: responseRid };
   } catch {
-    return { kind: "error", message: "Kunne ikke hente avtalen. PrÃ¸v igjen.", rid, errorCode: "FETCH_FAILED" };
+    return { kind: "error", message: "Kunne ikke hente avtalen. Prøv igjen.", rid, errorCode: "FETCH_FAILED" };
   }
 }
 
@@ -142,10 +144,7 @@ function DayStrip({ data }: { data: AgreementPageData }) {
         const day = data.weekPlan.find((d) => d.dayKey === dayKey);
         const hasTier = Boolean(day?.tier);
         return (
-          <div
-            key={dayKey}
-            className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2"
-          >
+          <div key={dayKey} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2">
             <div className="text-xs font-semibold text-[rgb(var(--lp-text))]">{day?.label ?? DAY_LABELS[dayKey]}</div>
             <div className="mt-1 text-[11px] text-[rgb(var(--lp-muted))]">
               {hasTier ? (day?.tier === "LUXUS" ? "Luxus" : "Basis") : "Ikke i avtalen"}
@@ -199,10 +198,10 @@ function AgreementLoading() {
 function AgreementError({ message, rid, errorCode }: { message: string; rid: string; errorCode?: string | null }) {
   return (
     <Card className="p-6">
-      <div className="text-sm text-[rgb(var(--lp-muted))]">{message || "Kunne ikke hente avtalen. PrÃ¸v igjen."}</div>
+      <div className="text-sm text-[rgb(var(--lp-muted))]">{message || "Kunne ikke hente avtalen. Prøv igjen."}</div>
       <div className="mt-2 flex flex-wrap gap-4 text-[11px] uppercase tracking-[0.12em] text-[rgb(var(--lp-muted))]">
-        <span>Ã…rsak: {errorCode ?? "UKJENT"}</span>
-        <span>RID: {rid || "â€”"}</span>
+        <span>Årsak: {errorCode ?? "UKJENT"}</span>
+        <span>RID: {rid || "—"}</span>
       </div>
     </Card>
   );
@@ -212,8 +211,8 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
   const status = statusBadge(data.status);
   const note = statusNote(data.status);
   const updatedAt = formatUpdatedAt(data.updatedAt);
-  const endDateLabel = data.binding.endDate ? formatDate(data.binding.endDate) : "LÃ¸pende";
-  const remainingLabel = data.binding.endDate ? `${data.binding.remainingDays ?? 0} dager` : "â€”";
+  const endDateLabel = data.binding.endDate ? formatDate(data.binding.endDate) : "Løpende";
+  const remainingLabel = data.binding.endDate ? `${data.binding.remainingDays ?? 0} dager` : "—";
 
   return (
     <div className="grid gap-6">
@@ -231,6 +230,7 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
         </div>
         <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">{note}</div>
       </Card>
+
       <Card className="p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -239,6 +239,7 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
           </div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Kilde: company_current_agreement</div>
         </div>
+
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
             <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Plan og pris</div>
@@ -247,12 +248,14 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
               Pris per dag: {formatPriceExVat(data.pricing.pricePerCuvertNok)}
             </div>
           </div>
+
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
             <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Binding</div>
             <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Start: {formatDate(data.binding.startDate)}</div>
             <div className="text-sm text-[rgb(var(--lp-text))]">Slutt: {endDateLabel}</div>
-            <div className="text-sm text-[rgb(var(--lp-text))]">Gjenstar: {remainingLabel}</div>
+            <div className="text-sm text-[rgb(var(--lp-text))]">Gjenstår: {remainingLabel}</div>
           </div>
+
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
             <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Leveringsdager</div>
             <div className="mt-2">
@@ -260,17 +263,19 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
             </div>
           </div>
         </div>
+
         <details className="mt-5">
           <summary className="cursor-pointer text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">
             Kilde til sannhet
           </summary>
           <div className="mt-3 text-sm text-[rgb(var(--lp-text))]">
-            Firma-ID: {data.sourceOfTruth.companyId} - Avtale-ID: {data.sourceOfTruth.agreementId ?? "-"} - Sist oppdatert:{" "}
+            Firma-ID: {data.sourceOfTruth.companyId} · Avtale-ID: {data.sourceOfTruth.agreementId ?? "-"} · Sist oppdatert:{" "}
             {formatUpdatedAt(data.sourceOfTruth.updatedAt)}
           </div>
           <div className="mt-2 text-[11px] text-[rgb(var(--lp-muted))]">Dashboard: {ADMIN_DASHBOARD_HREF}</div>
         </details>
       </Card>
+
       <Card className="p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -292,17 +297,19 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
             buttonClassName="lp-btn lp-btn--primary lp-neon-focus lp-neon-glow-hover"
           />
         </div>
+
         <div className="mt-5">
           <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Dette er det ansatte ser</div>
           <div className="mt-3">
             <WeekPreview data={data} />
           </div>
         </div>
+
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <StatItem label="Ansatte totalt" value={statValue(data.metrics.employeesTotal)} />
           <StatItem label="Ansatte aktive" value={statValue(data.metrics.employeesActive)} />
           <StatItem label="Ansatte deaktivert" value={statValue(data.metrics.employeesDeactivated)} />
-          <StatItem label="Avbestillinger for 08:00 (7d)" value={statValue(data.metrics.cancelsBeforeCutoff7d)} />
+          <StatItem label="Avbestillinger før 08:00 (7d)" value={statValue(data.metrics.cancelsBeforeCutoff7d)} />
           <StatItem label="Bestillinger i dag" value={statValue(data.metrics.ordersToday)} />
         </div>
       </Card>
@@ -321,7 +328,7 @@ function blockedBody(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Kontoen er deaktivert og har ikke tilgang til administrasjon.";
   if (ctx.blocked === "MISSING_COMPANY_ID") return "Kontoen er registrert som company_admin, men mangler company_id.";
   if (ctx.blocked === "COMPANY_INACTIVE") return "Tilgang er begrenset fordi firma ikke er aktivt.";
-  return "Vi klarte ikke Ã¥ hente nÃ¸dvendig kontekst akkurat nÃ¥.";
+  return "Vi klarte ikke å hente nødvendig kontekst akkurat nå.";
 }
 
 function blockedLevel(ctx: AdminContextBlocked): "followup" | "critical" {
@@ -373,11 +380,7 @@ export default async function Page({
   const result = await fetchAgreementServer(companyIdParam);
 
   return (
-    <AdminPageShell
-      title="Avtale"
-      subtitle="Systemfasit for avtale, levering og kontroll."
-      actions={null}
-    >
+    <AdminPageShell title="Avtale" subtitle="Systemfasit for avtale, levering og kontroll." actions={null}>
       <Suspense fallback={<AgreementLoading />}>
         {result.kind === "error" ? (
           <AgreementError message={result.message} rid={result.rid} errorCode={result.errorCode ?? "API_ERROR"} />
@@ -388,4 +391,3 @@ export default async function Page({
     </AdminPageShell>
   );
 }
-

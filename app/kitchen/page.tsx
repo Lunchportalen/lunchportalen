@@ -52,6 +52,14 @@ function loginNext(urlPath: string, code: string) {
   return `/login?next=${encodeURIComponent(urlPath)}&code=${encodeURIComponent(code)}`;
 }
 
+function renderBlocked(subtitle: string, title: string, body: string, nextSteps: string[], meta: Array<{ label: string; value: string }>) {
+  return (
+    <PageSection title="Kjøkken" subtitle={subtitle}>
+      <BlockedState level="critical" title={title} body={body} nextSteps={nextSteps} meta={meta} />
+    </PageSection>
+  );
+}
+
 /* =========================================================
    Page
 ========================================================= */
@@ -105,32 +113,70 @@ export default async function Page() {
 
   const emailRole = roleByEmail(user.email);
   const role: Role = emailRole ?? normalizeRole(profile.role);
+  const companyId = safeStr(profile.company_id);
+  const locationId = safeStr(profile.location_id);
 
-  // Final allow
   if (!allowKitchenOrSuperadmin(role)) {
-    redirect("/week");
+    return renderBlocked(
+      "Du har ikke tilgang til kjøkkenvisningen.",
+      "Ingen tilgang",
+      "Siden er kun tilgjengelig for kjøkken og superadmin.",
+      ["Logg inn med en bruker som har riktig rolle."],
+      [
+        { label: "rolle", value: role },
+        { label: "kode", value: "FORBIDDEN" },
+      ]
+    );
   }
 
-  if (role === "kitchen" && (!safeStr(profile.company_id) || !safeStr(profile.location_id))) {
-    return (
-      <PageSection title="Kjøkken" subtitle="Tilgang er blokkert inntil scope er korrekt tildelt.">
-        <BlockedState
-          level="critical"
-          title="Scope mangler"
-          body="Kjøkken-rollen er tenant-bound og krever både firma og lokasjon."
-          nextSteps={[
-            "Tildel company_id og location_id på brukerprofilen.",
-            "Verifiser tilgang via API og RLS før ny innlogging.",
-          ]}
-          meta={[
-            { label: "code", value: "SCOPE_NOT_ASSIGNED" },
-            { label: "role", value: role },
-            { label: "company_id", value: safeStr(profile.company_id) || "null" },
-            { label: "location_id", value: safeStr(profile.location_id) || "null" },
-          ]}
-        />
-      </PageSection>
+  if (role === "kitchen" && !companyId) {
+    return renderBlocked(
+      "Brukeren er ikke koblet til et firma.",
+      "Firma mangler",
+      "Kjøkkenvisning krever at brukeren er koblet til et firma.",
+      ["Koble brukeren til riktig firma.", "Prøv innlogging på nytt."],
+      [
+        { label: "rolle", value: role },
+        { label: "kode", value: "COMPANY_MISSING" },
+      ]
     );
+  }
+
+  if (role === "kitchen" && !locationId) {
+    return renderBlocked(
+      "Brukeren er ikke koblet til et sted.",
+      "Sted mangler",
+      "Kjøkkenvisning krever at brukeren er koblet til et sted.",
+      ["Koble brukeren til riktig sted.", "Prøv innlogging på nytt."],
+      [
+        { label: "rolle", value: role },
+        { label: "kode", value: "LOCATION_MISSING" },
+      ]
+    );
+  }
+
+  if (role === "kitchen") {
+    const { data: agreementRows, error: agreementErr } = await supabase
+      .from("agreements")
+      .select("id")
+      .eq("company_id", companyId)
+      .in("status", ["ACTIVE", "active"])
+      .limit(1);
+
+    const hasActiveAgreement = !agreementErr && Array.isArray(agreementRows) && agreementRows.length > 0;
+    if (!hasActiveAgreement) {
+      return renderBlocked(
+        "Kjøkkenvisning er ikke tilgjengelig før firmaet har aktiv avtale.",
+        "Aktiv avtale mangler",
+        "Firmaet må ha aktiv avtale før kjøkkenlisten kan åpnes.",
+        ["Aktiver en avtale for firmaet.", "Prøv siden på nytt."],
+        [
+          { label: "rolle", value: role },
+          { label: "firma", value: companyId || "mangler" },
+          { label: "kode", value: "MISSING_CONTRACT" },
+        ]
+      );
+    }
   }
 
   /* =========================

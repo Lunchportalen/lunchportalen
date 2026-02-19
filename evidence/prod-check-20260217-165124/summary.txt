@@ -1,0 +1,10 @@
+[1/5] Verifying CRON_SECRET presence in Vercel production env
+FAIL: vercel env ls production failed
+[2/5] Ensuring no ?key= secret usage
+FAIL: Found forbidden ?key= usage
+[3/5] Running cron smoke checks
+FAIL: BASE_URL and CRON_SECRET must be set to run cron smoke
+[4/5] Running SQL verification queries
+FAIL: psql not installed or DATABASE_URL missing
+[5/5] Completed checks
+OVERALL: FAIL

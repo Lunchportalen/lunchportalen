@@ -1,19 +1,20 @@
 // app/api/superadmin/agreements/[agreementId]/close/route.ts
 
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { type NextRequest } from "next/server";
+import "server-only";
+
+import type { NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText, isISODate } from "@/lib/agreements/normalize";
 import { writeAuditEvent } from "@/lib/audit/write";
+import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 // YYYY-MM-DD in Europe/Oslo without depending on other libs (safe for nodejs runtime)
 function osloTodayISO(): string {
-  // Use Intl to compute date parts in Europe/Oslo deterministically
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Oslo",
     year: "numeric",
@@ -39,7 +40,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     allowSuperadminOrCompanyAdmin(scope);
 
     // ✅ Hard rule
-    if (scope.role !== "superadmin") return jsonErr(rid, "Kun superadmin kan close avtale.", 403, "FORBIDDEN");
+    if (scope.role !== "superadmin") {
+      return jsonErr(rid, "Kun superadmin kan close avtale.", 403, "FORBIDDEN");
+    }
 
     const params = await Promise.resolve(ctx.params as any);
     const agreementId = String(params?.agreementId ?? "").trim();
@@ -61,24 +64,36 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     const companyId = String((before.data as any).company_id ?? "").trim();
     if (!isUuid(companyId)) {
-      return jsonErr(rid, "Avtalen har ugyldig company_id.", 500, { code: "DATA_INVALID", detail: { company_id: (before.data as any).company_id } });
+      return jsonErr(rid, "Avtalen har ugyldig company_id.", 500, {
+        code: "DATA_INVALID",
+        detail: { company_id: (before.data as any).company_id },
+      });
     }
 
     // Idempotency: already closed
     if (String((before.data as any).status) === "CLOSED") {
-      // keep companies.status sync best-effort
-      await admin.from("companies").update({ status: "CLOSED", updated_at: new Date().toISOString() } as any).eq("id", companyId);
+      // ✅ B-LOCK: DO NOT update companies.status here
+      opsLog("agreement.close.idempotent", {
+        rid,
+        agreement_id: agreementId,
+        company_id: companyId,
+        note: "Already CLOSED. B-LOCK: companies.status not modified here.",
+      });
+
       return jsonOk(rid, { agreement: before.data, idempotent: true }, 200);
     }
 
     // Company name (best-effort for audit summary)
     const company = await admin.from("companies").select("id, name, status").eq("id", companyId).maybeSingle();
-    if (company.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
+    if (company.error) {
+      return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
+    }
 
     const todayOslo = osloTodayISO();
 
     // Close agreement: set CLOSED + end_date (if not set) to today
-    const nextEndDate = (before.data as any).end_date && isISODate((before.data as any).end_date) ? (before.data as any).end_date : todayOslo;
+    const prevEnd = (before.data as any).end_date;
+    const nextEndDate = prevEnd && isISODate(prevEnd) ? prevEnd : todayOslo;
 
     const upd = await admin
       .from("company_agreements")
@@ -96,8 +111,20 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     if (upd.error) return jsonErr(rid, "Kunne ikke close avtale.", 500, { code: "CLOSE_FAILED", detail: upd.error });
 
-    // Keep companies.status in sync
-    await admin.from("companies").update({ status: "CLOSED", updated_at: new Date().toISOString() } as any).eq("id", companyId);
+    /**
+     * ✅ B-LOCK
+     * companies.status skal IKKE settes her.
+     * Én sannhetskilde for company status:
+     * - app/api/company/create -> pending
+     * - app/api/superadmin/companies/set-status -> pending|active|paused|closed
+     */
+    opsLog("agreement.close.company_status_not_modified", {
+      rid,
+      agreement_id: agreementId,
+      company_id: companyId,
+      agreement_status_after: "CLOSED",
+      note: "B-LOCK: companies.status is managed only by company/create and companies/set-status.",
+    });
 
     // Audit (best-effort)
     const audit = await writeAuditEvent({
@@ -116,12 +143,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       },
     });
 
-    return jsonOk(rid, {
-      agreement: upd.data,
-      audit_ok: (audit as any)?.ok === true,
-      audit_event: (audit as any)?.ok ? (audit as any).audit : null,
-      audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
-    }, 200);
+    return jsonOk(
+      rid,
+      {
+        agreement: upd.data,
+        audit_ok: (audit as any)?.ok === true,
+        audit_event: (audit as any)?.ok ? (audit as any).audit : null,
+        audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
+      },
+      200
+    );
   } catch (e: any) {
     const status = typeof e?.status === "number" ? e.status : 500;
     const code = e?.code || (status === 401 ? "UNAUTH" : "SERVER_ERROR");
@@ -129,17 +160,17 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å close avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å close avtale.", 405, "METHOD_NOT_ALLOWED");
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(_req: NextRequest) {
   const rid = makeRid();
   return jsonErr(rid, "Bruk POST for å close avtale.", 405, "METHOD_NOT_ALLOWED");
 }

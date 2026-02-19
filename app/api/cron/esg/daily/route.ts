@@ -4,16 +4,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
+import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-/* =========================================================
-   Helpers
-========================================================= */
 function isISODate(v: any) {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
-/** Oslo "today" uten ekstern pakke */
 function osloTodayISO(): string {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Oslo",
@@ -21,65 +18,34 @@ function osloTodayISO(): string {
     month: "2-digit",
     day: "2-digit",
   });
-  return fmt.format(new Date()); // en-CA => YYYY-MM-DD
+  return fmt.format(new Date());
 }
 
-/* =========================================================
-   Cron secret gate (NO cookies / NO scope) - fail closed
-   - Header: x-cron-secret: <CRON_SECRET>
-   - Authorization: Bearer <CRON_SECRET> (supported)
-========================================================= */
-function requireCronSecret(req: NextRequest) {
-  const expected = (process.env.CRON_SECRET ?? "").trim();
-  if (!expected) throw new Error("cron_secret_missing");
-
-  const hdr = (req.headers.get("x-cron-secret") ?? "").trim();
-  const auth = (req.headers.get("authorization") ?? "").trim();
-  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-
-  const got = hdr || bearer;
-  if (!got || got !== expected) {
-    const err = new Error("forbidden");
-    (err as any).code = "forbidden";
-    throw err;
-  }
-}
-
-/* =========================================================
-   Supabase admin client
-   - supports both factory and instance variants
-========================================================= */
 async function getAdminClient() {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const anyAdmin: any = supabaseAdmin as any;
   return typeof anyAdmin === "function" ? await anyAdmin() : anyAdmin;
 }
 
-/* =========================================================
-   POST /api/cron/esg/daily?date=YYYY-MM-DD
-   - idempotent as long as RPC is idempotent for the date
-========================================================= */
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 
-  // Gate FIRST (no side effects before secret validated)
   try {
-    requireCronSecret(req);
+    requireCronAuth(req);
   } catch (e: any) {
     const msg = String(e?.message ?? e);
-    if (msg === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i env", 500, "misconfigured");
-    if (msg === "forbidden" || e?.code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
+    const code = String(e?.code ?? "").trim();
+    if (msg === "cron_secret_missing" || code === "cron_secret_missing") return jsonErr(rid, "CRON_SECRET mangler i env", 500, "misconfigured");
+    if (msg === "forbidden" || code === "forbidden") return jsonErr(rid, "Ugyldig cron secret", 403, "forbidden");
     return jsonErr(rid, "Uventet feil i cron-gate", 500, { code: "server_error", detail: { message: msg } });
   }
 
   const url = new URL(req.url);
   const date = (url.searchParams.get("date") ?? "").trim() || osloTodayISO();
-  if (!isISODate(date)) return jsonErr(rid, "date må være YYYY-MM-DD", 400, { code: "bad_request", detail: { date } });
+  if (!isISODate(date)) return jsonErr(rid, "date ma vaere YYYY-MM-DD", 400, { code: "bad_request", detail: { date } });
 
   try {
     const admin = await getAdminClient();
-
-    // RPC is the source of truth for ESG aggregation
     const { data, error } = await admin.rpc("esg_build_daily", { p_date: date });
 
     if (error) {

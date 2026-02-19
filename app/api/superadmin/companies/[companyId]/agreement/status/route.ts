@@ -1,4 +1,4 @@
-// app/api/superadmin/companies/[companyId]/agreement/status/route.ts
+﻿// app/api/superadmin/companies/[companyId]/agreement/status/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,18 +9,28 @@ import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { isUuid } from "@/lib/agreements/normalize";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
-type Status = "ACTIVE" | "PAUSED" | "CLOSED";
+type AgreementStatus = "ACTIVE" | "PENDING" | "TERMINATED";
+type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 
-function toDbCompanyStatus(s: Status) {
-  return s.toLowerCase(); // active/paused/closed
+function normalizeAgreementStatus(raw: string | null): AgreementStatus | null {
+  const s = safeStr(raw).toUpperCase();
+  if (s === "ACTIVE") return "ACTIVE";
+  if (s === "PENDING" || s === "PAUSED" || s === "DRAFT") return "PENDING";
+  if (s === "TERMINATED" || s === "CLOSED") return "TERMINATED";
+  return null;
+}
+
+function toDbCompanyStatus(status: AgreementStatus): CompanyStatus {
+  if (status === "ACTIVE") return "ACTIVE";
+  if (status === "PENDING") return "PAUSED";
+  return "CLOSED";
 }
 
 function osloISODate() {
-  // YYYY-MM-DD (Europe/Oslo)
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Oslo",
     year: "numeric",
@@ -46,7 +56,6 @@ function denyResponse(s: any): Response {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
-  
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
@@ -60,17 +69,16 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   if (!isUuid(companyId)) return jsonErr(a.rid, "Ugyldig companyId.", 400, "BAD_REQUEST");
 
   const body = (await readJson(req)) ?? {};
-  const sRaw = safeStr(body?.status ?? "").toUpperCase();
-  const next = sRaw as Status;
+  const statusRaw = body?.status == null ? null : safeStr(body?.status);
+  const next = normalizeAgreementStatus(statusRaw);
 
-  if (next !== "ACTIVE" && next !== "PAUSED" && next !== "CLOSED") {
-    return jsonErr(a.rid, "status må være ACTIVE/PAUSED/CLOSED.", 400, "BAD_REQUEST");
+  if (!next) {
+    return jsonErr(a.rid, "Ugyldig status.", 400, { code: "BAD_REQUEST", detail: { status: statusRaw } });
   }
 
   const admin = supabaseAdmin();
 
   try {
-    // Finn "current" (foretrukket ACTIVE ellers nyeste) for audit + for å vite agreementId
     const { data: list, error: listErr } = await admin
       .from("company_agreements")
       .select(
@@ -86,8 +94,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
     const current = rows.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? rows[0] ?? null;
     if (!current?.id) return jsonErr(a.rid, "Fant ingen avtale for firmaet.", 404, "NOT_FOUND");
 
-    // Idempotent
-    const prevStatus = String(current.status ?? "").toUpperCase();
+    const prevStatus = normalizeAgreementStatus(current.status ?? null) ?? safeStr(current.status).toUpperCase();
     if (prevStatus === next) {
       return jsonOk(
         a,
@@ -103,12 +110,11 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       );
     }
 
-    // Hvis ACTIVE: pause andre ACTIVE først (invariant)
     let pausedOtherActiveIds: string[] = [];
     if (next === "ACTIVE") {
       const pause = await admin
         .from("company_agreements")
-        .update({ status: "PAUSED", updated_at: new Date().toISOString(), updated_by: a.scope?.userId ?? null } as any)
+        .update({ status: "PENDING", updated_at: new Date().toISOString(), updated_by: a.scope?.userId ?? null } as any)
         .eq("company_id", companyId)
         .eq("status", "ACTIVE")
         .neq("id", current.id)
@@ -118,14 +124,13 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       pausedOtherActiveIds = (pause.data ?? []).map((x: any) => String(x.id));
     }
 
-    // Oppdater valgt agreement
     const patch: any = {
       status: next,
       updated_at: new Date().toISOString(),
       updated_by: a.scope?.userId ?? null,
     };
 
-    if (next === "CLOSED" && !current.end_date) patch.end_date = osloISODate();
+    if (next === "TERMINATED" && !current.end_date) patch.end_date = osloISODate();
     if (next === "ACTIVE") patch.end_date = null;
 
     const upd = await admin
@@ -137,13 +142,11 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
     if (upd.error) return jsonErr(a.rid, "Kunne ikke oppdatere status.", 500, { code: "DB_ERROR", detail: upd.error });
 
-    // Sync companies.status (lowercase)
     await admin
       .from("companies")
       .update({ status: toDbCompanyStatus(next), updated_at: new Date().toISOString() } as any)
       .eq("id", companyId);
 
-    // Audit (best effort)
     const auditOk = await tryAuditMeta(admin, {
       actor_user_id: a.scope?.userId ?? null,
       actor_email: a.scope?.email ?? null,
@@ -171,7 +174,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         rid: a.rid,
         company_id: upd.data?.company_id ?? companyId,
         agreement_id: upd.data?.id ?? String(current.id),
-        status: (upd.data?.status ?? next) as Status,
+        status: normalizeAgreementStatus(upd.data?.status ?? next) ?? next,
         end_date: upd.data?.end_date ?? null,
         paused_other_active_ids: pausedOtherActiveIds,
         audit_ok: auditOk,
@@ -179,9 +182,12 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       200
     );
   } catch (e: any) {
-    return jsonErr(a.rid, "Kunne ikke oppdatere agreement status.", 500, { code: "SERVER_ERROR", detail: {
-      message: String(e?.message ?? e),
-    } });
+    return jsonErr(a.rid, "Kunne ikke oppdatere agreement status.", 500, {
+      code: "SERVER_ERROR",
+      detail: {
+        message: String(e?.message ?? e),
+      },
+    });
   }
 }
 
@@ -200,4 +206,3 @@ export async function DELETE(req: NextRequest): Promise<Response> {
   if (!s?.ok) return denyResponse(s);
   return jsonErr(s.ctx.rid, "Bruk POST.", 405, "METHOD_NOT_ALLOWED");
 }
-

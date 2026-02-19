@@ -5,6 +5,7 @@ export const revalidate = 0;
 
 import AdminEsgClient from "./AdminEsgClient";
 import DownloadEsgPdfButton from "./DownloadEsgPdfButton";
+import LatestMonthlyBox from "./LatestMonthlyBox";
 
 export default function AdminBerekraftPage() {
   return (
@@ -20,6 +21,10 @@ export default function AdminBerekraftPage() {
         <div className="shrink-0">
           <DownloadEsgPdfButton />
         </div>
+      </div>
+
+      <div className="mb-6">
+        <LatestMonthlyBox />
       </div>
 
       <AdminEsgClient />

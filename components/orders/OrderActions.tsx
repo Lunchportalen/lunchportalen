@@ -65,7 +65,7 @@ export default function OrderActions() {
       setRes(j ?? null);
 
       if (!r.ok || !j?.ok) {
-        setErr(j?.message ?? `Feil ved henting (HTTP ${r.status}).`);
+        setErr(j?.message ?? "Vi kunne ikke hente bestillingsstatus nå.");
         return;
       }
     } catch (e: any) {
@@ -82,18 +82,19 @@ export default function OrderActions() {
     setErr(null);
 
     try {
+      const effectiveDate = res?.date ?? new Date().toISOString().slice(0, 10);
       const r = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ note: "" }),
+        body: JSON.stringify({ date: effectiveDate, action: "SET", note: "", slot: "default" }),
       });
 
       const j = (await r.json()) as OrderApiResponse;
       setRes(j ?? null);
 
       if (!r.ok || !j?.ok) {
-        setErr(j?.message ?? `Kunne ikke bestille (HTTP ${r.status}).`);
+        setErr(j?.message ?? "Vi kunne ikke lagre bestillingen nå.");
         return;
       }
 
@@ -101,40 +102,41 @@ export default function OrderActions() {
       await load("silent");
       router.refresh();
     } catch (e: any) {
-      setErr(e?.message ?? "Kunne ikke registrere bestilling.");
+      setErr(e?.message ?? "Vi kunne ikke lagre bestillingen nå.");
     } finally {
       setState("idle");
     }
   }
-
   async function cancelOrder() {
     if (isBusy) return;
     setState("deleting");
     setErr(null);
 
     try {
+      const effectiveDate = res?.date ?? new Date().toISOString().slice(0, 10);
       const r = await fetch("/api/orders", {
-        method: "DELETE",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         cache: "no-store",
+        body: JSON.stringify({ date: effectiveDate, action: "CANCEL", slot: "default" }),
       });
 
       const j = (await r.json()) as OrderApiResponse;
       setRes(j ?? null);
 
       if (!r.ok || !j?.ok) {
-        setErr(j?.message ?? `Kunne ikke avbestille (HTTP ${r.status}).`);
+        setErr(j?.message ?? "Vi kunne ikke lagre endringen nå.");
         return;
       }
 
       await load("silent");
       router.refresh();
     } catch (e: any) {
-      setErr(e?.message ?? "Kunne ikke avbestille.");
+      setErr(e?.message ?? "Vi kunne ikke lagre endringen nå.");
     } finally {
       setState("idle");
     }
   }
-
   useEffect(() => {
     load("initial");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -242,3 +244,6 @@ export default function OrderActions() {
     </div>
   );
 }
+
+
+

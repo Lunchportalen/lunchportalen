@@ -7,18 +7,17 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 
-import { osloNowISO, osloTodayISODate, cutoffStatusForDate } from "@/lib/date/oslo";
+import { osloTodayISODate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { orderBase, receiptFor } from "@/lib/api/orderResponse";
 
-// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// Ã¢Å“â€¦ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-// ✅ MUST audit (lukket sirkel)
+// Ã¢Å“â€¦ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
-import { sendOrderBackup } from "@/lib/orders/orderBackup";
-import { fetchCompanyLocationNames } from "@/lib/orders/backupContext";
+import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
 
 type Action = "place" | "cancel";
 
@@ -257,7 +256,7 @@ export async function POST(req: NextRequest) {
           detail: {
             route: "/api/orders/today",
             reason: lock.lockCode,
-            message: "Bestilling/avbestilling er låst etter 08:00.",
+            message: "Bestilling/avbestilling er lÃƒÂ¥st etter 08:00.",
             intent: action.toUpperCase(),
             date: today,
             cutoffTime: lock.cutoffTime,
@@ -276,7 +275,7 @@ export async function POST(req: NextRequest) {
           menuAvailable: true,
           canAct: false,
           error: lock.lockCode ?? "LOCKED",
-          message: "Bestilling/avbestilling er låst etter 08:00.",
+          message: "Bestilling/avbestilling er lÃƒÂ¥st etter 08:00.",
           detail: null,
           receipt: null,
           order: null,
@@ -286,26 +285,22 @@ export async function POST(req: NextRequest) {
 
     const sb = await supabaseServer();
 
-    const nextStatus = action === "place" ? "ACTIVE" : "CANCELLED";
-    const nowUtc = new Date().toISOString();
-
-    const payload = {
-      user_id,
-      company_id,
-      location_id,
-      date: today,
-      status: nextStatus,
-      note: clampNote(body?.note),
-      updated_at: nowUtc,
-    };
+    const note = clampNote(body?.note);
+    const writeRes = action === "place"
+      ? await lpOrderSet(sb as any, { p_date: today, p_slot: "lunch", p_note: note })
+      : await lpOrderCancel(sb as any, { p_date: today });
 
     const { data: upserted, error: uErr } = await sb
       .from("orders")
-      .upsert(payload, { onConflict: "user_id,location_id,date" })
       .select("id,status,date,created_at,updated_at,note,company_id,location_id")
-      .single();
+      .eq("user_id", user_id)
+      .eq("company_id", company_id)
+      .eq("location_id", location_id)
+      .eq("date", today)
+      .eq("slot", "lunch")
+      .maybeSingle();
 
-    if (uErr || !upserted) {
+    if (!writeRes.ok || uErr || !upserted) {
       return jsonOrder(a.ctx,
         500,
         orderBase({
@@ -316,43 +311,15 @@ export async function POST(req: NextRequest) {
           cutoffTime: "08:00",
           menuAvailable: true,
           canAct: false,
-          error: "DB_ERROR",
-          message: uErr?.message ?? "Upsert feilet.",
-          detail: { error: uErr?.message ?? String(uErr ?? "unknown") },
+          error: writeRes.code ?? "ORDER_RPC_FAILED",
+          message: writeRes.error?.message ?? uErr?.message ?? "RPC feilet.",
+          detail: { error: writeRes.error?.message ?? uErr?.message ?? "unknown" },
           receipt: null,
           order: null,
         } as any)
       );
     }
-
-    const backupTs = osloNowISO();
-    try {
-      const names = admin
-        ? await fetchCompanyLocationNames({ admin: admin as any, companyId: company_id, locationId: location_id })
-        : { company_name: null, location_name: null };
-      await sendOrderBackup({
-        rid,
-        action: action === "place" ? "PLACE" : "CANCEL",
-        status: nextStatus,
-        orderId: upserted.id,
-        date: upserted.date,
-        slot: "lunch",
-        user_id,
-        company_id,
-        location_id,
-        company_name: names.company_name ?? null,
-        location_name: names.location_name ?? null,
-        actor_email: scope.email ?? null,
-        actor_role: scope.role ?? null,
-        note: upserted.note ?? null,
-        timestamp_oslo: backupTs,
-        extra: { route: "/api/orders/today" },
-      });
-    } catch {
-      // best effort
-    }
-
-    return jsonOrder(a.ctx,
+return jsonOrder(a.ctx,
       200,
       orderBase({
         ok: true,
@@ -364,7 +331,7 @@ export async function POST(req: NextRequest) {
         canAct: true,
         error: null,
         message: String(upserted.status ?? "").toUpperCase() === "ACTIVE" ? "Bestilling registrert." : "Avbestilling registrert.",
-        receipt: receiptFor(upserted.id, String(upserted.status ?? "unknown"), upserted.updated_at ?? upserted.created_at ?? osloNowISO()),
+        receipt: receiptFor(upserted.id, String(upserted.status ?? "unknown"), upserted.updated_at ?? upserted.created_at ?? new Date().toISOString()),
         order: upserted,
       } as any)
     );
@@ -496,7 +463,7 @@ export async function GET(req: NextRequest) {
         canAct: !lock.locked,
         error: null,
         message: null,
-        receipt: order?.id ? receiptFor(order.id, String(order.status ?? "unknown"), order.updated_at ?? order.created_at ?? osloNowISO()) : null,
+        receipt: order?.id ? receiptFor(order.id, String(order.status ?? "unknown"), order.updated_at ?? order.created_at ?? new Date().toISOString()) : null,
         order: order ?? null,
       } as any)
     );
@@ -520,5 +487,12 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+
+
+
+
+
+
 
 
