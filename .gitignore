@@ -33,3 +33,7 @@ tsconfig.tsbuildinfo
 .tmp_*.sql
 .tmp_*.ts
 
+
+# Evidence artifacts (generated)
+evidence/
+

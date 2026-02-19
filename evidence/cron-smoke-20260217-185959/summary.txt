@@ -1,1 +1,0 @@
-GET /api/cron/week-scheduler no_auth=403 with_bearer=400 with_x_cron_secret=400

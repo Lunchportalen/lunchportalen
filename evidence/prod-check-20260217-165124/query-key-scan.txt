@@ -1,1 +1,0 @@
-lib/http/cronAuth.ts:17: * - We also support x-cron-secret (local/manual), never query ?key=
