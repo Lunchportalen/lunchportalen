@@ -7,13 +7,34 @@ import "server-only";
 import type { NextRequest } from "next/server";
 
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 import { osloTodayISODate, OSLO_TZ } from "@/lib/date/oslo";
-import type { AgreementPageData, AgreementStatus, AgreementPageCompany } from "@/lib/admin/agreement/types";
+import type {
+  AgreementPageData,
+  AgreementStatus,
+  AgreementPageCompany,
+  AgreementEditorContact,
+  AgreementEditorSchedule,
+} from "@/lib/admin/agreement/types";
+
+type AgreementEditorBody = {
+  companyId?: unknown;
+  company_id?: unknown;
+  locationId?: unknown;
+  location_id?: unknown;
+  slotStart?: unknown;
+  slot_start?: unknown;
+  slotEnd?: unknown;
+  slot_end?: unknown;
+  schedule?: unknown;
+  contact?: unknown;
+};
+
+const agreementColumnCache = new Map<string, boolean>();
 
 /* =========================================================
    Helpers

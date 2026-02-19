@@ -15,6 +15,14 @@ export type AgreementPageCompany = {
   locationName?: string | null;
 };
 
+export type AgreementEditorContact = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+export type AgreementEditorSchedule = Partial<Record<DayKey, { enabled: boolean; tier: Tier }>>;
+
 export type AgreementPageData = {
   rid: string;
   company: AgreementPageCompany;
@@ -40,4 +48,13 @@ export type AgreementPageData = {
   updatedAt: string | null;
   cutoff: { time: "08:00"; timezone: "Europe/Oslo" };
   sourceOfTruth: { companyId: string; agreementId: string | null; updatedAt: string | null };
+  locations?: Array<{ id: string; name: string | null }>;
+  pending?: { id: string; created_at?: string | null } | null;
+  editorDefaults?: {
+    locationId?: string | null;
+    slotStart?: string | null;
+    slotEnd?: string | null;
+    contact?: AgreementEditorContact | null;
+    schedule?: AgreementEditorSchedule | null;
+  };
 };
