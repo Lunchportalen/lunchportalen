@@ -25,3 +25,11 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 .vercel
+
+# Local temp / artifacts
+.tmp/
+*.log
+*.tsbuildinfo
+.tmp_*.sql
+.tmp_*.ts
+
