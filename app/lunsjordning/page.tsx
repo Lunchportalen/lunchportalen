@@ -130,12 +130,25 @@ export default function Page() {
             <h2 className="lp-h2">Relaterte sider</h2>
             <p className="lp-sub">Disse sidene hjelper dere å vurdere modell, oppstart og videre drift.</p>
           </div>
-          <div className="lp-linkChips" aria-label="Intent-lenker">
-            {entry.intentLinks.map((link) => (
-              <Link className="lp-linkChip" href={link.href} key={`${link.href}-${link.label}`}>
-                {link.label}
-              </Link>
-            ))}
+          <div className="lp-linkChips" aria-label="Relaterte sider">
+            <Link className="lp-linkChip" href="/priser">
+              Priser
+            </Link>
+            <Link className="lp-linkChip" href="/registrering">
+              Registrering
+            </Link>
+            <Link className="lp-linkChip" href="/hvordan">
+              Hvordan
+            </Link>
+            <Link className="lp-linkChip" href="/alternativ-til-kantine">
+              Alternativ til kantine
+            </Link>
+            <Link className="lp-linkChip" href="/definitiv-guide-firmalunsj">
+              Definitiv guide firmalunsj
+            </Link>
+            <Link className="lp-linkChip" href="/kontakt">
+              Kontakt
+            </Link>
           </div>
         </div>
       </section>

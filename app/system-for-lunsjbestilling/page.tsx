@@ -81,6 +81,32 @@ export default function Page() {
         </div>
       </section>
 
+      <section className="lp-section" aria-label="Relaterte sider">
+        <div className="lp-container">
+          <h2 className="lp-h2">Relaterte sider</h2>
+          <div className="lp-linkChips" style={{ marginTop: 12 }}>
+            <Link className="lp-linkChip" href="/sikkerhet">
+              Sikkerhet
+            </Link>
+            <Link className="lp-linkChip" href="/personvern">
+              Personvern
+            </Link>
+            <Link className="lp-linkChip" href="/vilkar">
+              Vilkår
+            </Link>
+            <Link className="lp-linkChip" href="/priser">
+              Priser
+            </Link>
+            <Link className="lp-linkChip" href="/registrering">
+              Registrering
+            </Link>
+            <Link className="lp-linkChip" href="/kontakt">
+              Kontakt
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {faqItems.length ? (
         <section className="lp-section alt" aria-label="Spørsmål og svar">
           <div className="lp-container">
