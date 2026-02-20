@@ -1,4 +1,4 @@
-﻿// components/superadmin/OperationsToday.tsx
+// components/superadmin/OperationsToday.tsx
 import { osloTodayISODate } from "@/lib/date/oslo";
 import {
   listDeliveriesForDate,

@@ -1,4 +1,4 @@
-﻿# Company Archive RC
+# Company Archive RC
 
 ## Freeze-protokoll
 Disse filene og endepunktene er nå låst for RC for arkivering. Ingen endringer uten eksplisitt godkjenning.

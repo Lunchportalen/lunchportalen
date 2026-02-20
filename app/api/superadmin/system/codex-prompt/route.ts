@@ -1,4 +1,4 @@
-﻿export const runtime = "nodejs";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -120,7 +120,7 @@ function safeNum(v: any, fallback = 0) {
 }
 
 const ID_KEYS = ["order_ids", "user_ids", "company_ids", "location_ids", "ids", "evidence_ids"];
-const MOJIBAKE_MARKERS = ["Ã", "Â", "â", "ï¿½", "Ãƒ"];
+const MOJIBAKE_MARKERS = ["\u00C3", "\u00C2", "\u00E2", "\uFFFD", "\u00C3\u0192"];
 
 function hasMojibake(text: string) {
   return MOJIBAKE_MARKERS.some((m) => text.includes(m));

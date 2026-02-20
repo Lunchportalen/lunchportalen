@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const supabase = await supabaseServer();
 
   const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth?.user) return bad(rid, "AUTH_REQUIRED", "Du mÃ¥ vÃ¦re innlogget.", 401);
+  if (authErr || !auth?.user) return bad(rid, "AUTH_REQUIRED", "Du må være innlogget.", 401);
 
   {
     const { data: rl, error: rlErr } = await supabase.rpc("rate_limit_allow", {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const row = Array.isArray(rl) ? rl[0] : rl;
     if (!row?.allowed) {
-      return bad(rid, "RATE_LIMITED", "For mange forespÃ¸rsler. PrÃ¸v igjen straks.", 429, {
+      return bad(rid, "RATE_LIMITED", "For mange forespørsler. Prøv igjen straks.", 429, {
         retry_after_seconds: row?.retry_after_seconds ?? 30,
       });
     }
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   {
     const { data: cached, error: idemErr } = await supabase.rpc("idem_get", { p_route: routeName, p_key: idemKey });
-    if (idemErr) return bad(rid, "IDEMPOTENCY_LOOKUP_FAILED", "Kunne ikke slÃ¥ opp idempotency.", 500, { message: idemErr.message });
+    if (idemErr) return bad(rid, "IDEMPOTENCY_LOOKUP_FAILED", "Kunne ikke slå opp idempotency.", 500, { message: idemErr.message });
     const row = Array.isArray(cached) ? cached[0] : cached;
     if (row?.found) {
       return NextResponse.json(row.response, { status: row.status_code, headers: { "cache-control": "no-store" } });
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   const note = body?.note == null ? null : String(body.note);
   const slot = String(body?.slot ?? "lunch").trim() || "lunch";
 
-  if (!mustISODate(date)) return bad(rid, "INVALID_DATE", "Dato mÃ¥ vÃ¦re YYYY-MM-DD.");
+  if (!mustISODate(date)) return bad(rid, "INVALID_DATE", "Dato må være YYYY-MM-DD.");
 
   const setRes = await lpOrderSet(supabase as any, {
     p_date: date,

@@ -1,4 +1,4 @@
-﻿// lib/auth/getScopeServer.ts
+// lib/auth/getScopeServer.ts
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
@@ -53,7 +53,7 @@ async function enforceCompanyActive(sb: any, role: ScopeRole, company_id: string
   if (!data?.id) throw new ScopeError("Firma finnes ikke", 403, "COMPANY_NOT_FOUND");
 
   const st = normalizeStatus(data.status);
-  if (st !== "active") throw new ScopeError("Firma er ikke aktivert ennÃ¥", 403, "COMPANY_NOT_ACTIVE");
+  if (st !== "active") throw new ScopeError("Firma er ikke aktivert ennå", 403, "COMPANY_NOT_ACTIVE");
 }
 
 async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: string | null): Promise<BillingGate> {
@@ -87,7 +87,7 @@ async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: 
   };
 }
 
-// âœ… NEW: agreement location truth for mismatch checks (employee)
+// ✅ NEW: agreement location truth for mismatch checks (employee)
 async function getAgreementLocationId(sb: any, company_id: string | null): Promise<string | null> {
   if (!company_id) return null;
 
@@ -138,7 +138,7 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
     return { user, scope };
   }
 
-  // âœ… Deterministic profile lookup
+  // ✅ Deterministic profile lookup
   const { data: profile, error: pErr } = await sb
     .from("profiles")
     .select("id,user_id,email,role,company_id,location_id,is_active")
@@ -157,7 +157,7 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
   const is_active = profile.is_active === true;
 
   if (role !== "superadmin" && !is_active) {
-    throw new ScopeError("Konto er ikke aktivert ennÃ¥", 403, "ACCOUNT_INACTIVE");
+    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
   }
 
   if ((role === "company_admin" || role === "employee") && !profile.company_id) {
@@ -170,7 +170,7 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
   await enforceCompanyActive(sb, role, profile.company_id ?? null);
   const billing = await enforceAgreementAndBilling(sb, role, profile.company_id ?? null);
 
-  // âœ… agreement location truth (used for mismatch)
+  // ✅ agreement location truth (used for mismatch)
   const agreement_location_id = await getAgreementLocationId(sb, profile.company_id ?? null);
 
   const scope: Scope & { agreement_location_id?: string | null } = {

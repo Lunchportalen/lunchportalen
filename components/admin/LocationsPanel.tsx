@@ -1,4 +1,4 @@
-﻿// components/admin/LocationsPanel.tsx
+// components/admin/LocationsPanel.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -125,7 +125,7 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
           </div>
           {readOnly ? (
             <div className="mt-2 inline-flex rounded-2xl bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))]">
-              LÃ¥st: Admin kan se disse opplysningene, men kun Superadmin kan redigere.
+              Låst: Admin kan se disse opplysningene, men kun Superadmin kan redigere.
             </div>
           ) : null}
         </div>
@@ -148,7 +148,7 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
       <div className="mt-4 overflow-hidden rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
         <div className="bg-white p-4">
           {loading ? (
-            <div className="text-sm text-[rgb(var(--lp-muted))]">Lasterâ€¦</div>
+            <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
           ) : err ? (
             <div className="text-sm text-red-600">{err}</div>
           ) : rows.length === 0 ? (
@@ -173,14 +173,14 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
 
                     <div className="mt-3 grid gap-2 text-sm text-[rgb(var(--lp-muted))]">
                       <div>
-                        Leveringskontakt: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.contact_name ?? "â€”"}</span>
+                        Leveringskontakt: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.contact_name ?? "—"}</span>
                       </div>
                       <div>
-                        Telefon: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.contact_phone ?? "â€”"}</span>
+                        Telefon: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.contact_phone ?? "—"}</span>
                       </div>
                       <div>
-                        Vindu: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_from ?? "â€”"}</span> â€“{" "}
-                        <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_to ?? "â€”"}</span>
+                        Vindu: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_from ?? "—"}</span> –{" "}
+                        <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_to ?? "—"}</span>
                       </div>
                       {loc.address ? (
                         <div className="text-xs text-[rgb(var(--lp-muted))]">Adresse: {loc.address}</div>
@@ -198,7 +198,7 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                           className="rounded-full border px-3 py-1 text-xs font-semibold text-neutral-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {busyId === loc.id
-                            ? "Oppdatererâ€¦"
+                            ? "Oppdaterer…"
                             : status === "ACTIVE"
                               ? "Deaktiver"
                               : "Aktiver"}

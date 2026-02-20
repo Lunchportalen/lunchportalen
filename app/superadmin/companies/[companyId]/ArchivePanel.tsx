@@ -1,4 +1,4 @@
-﻿// app/superadmin/companies/[companyId]/ArchivePanel.tsx
+// app/superadmin/companies/[companyId]/ArchivePanel.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";

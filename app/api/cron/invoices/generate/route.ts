@@ -1,4 +1,4 @@
-﻿export const runtime = "nodejs";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -276,7 +276,7 @@ async function upsertInvoicePeriods(admin: any, rows: InvoicePeriodUpsert[]): Pr
  * 3) SENT rows: status=SENT + tripletex_invoice_id => SKIPPED_SENT (ingen rewrite, ingen outbox).
  * 4) Manglende avtale/pris/tier => FAILED + last_error, ingen outbox-event.
  * 5) dryRun=1 => ingen writes til invoice_periods/outbox; kun preview/summary.
- * 6) Smoke: kjÃ¸r samme period to ganger => maks 1 outbox event per invoice.ready:<uniqueRef>.
+ * 6) Smoke: kjør samme period to ganger => maks 1 outbox event per invoice.ready:<uniqueRef>.
  */
 export async function GET(req: NextRequest): Promise<Response> {
   const rid = makeRid();
@@ -288,7 +288,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     const msg = safeStr(e?.message).toLowerCase();
 
     if (code === "cron_secret_missing" || msg === "cron_secret_missing") {
-      return jsonErr(rid, "CRON_SECRET mangler i servermiljÃ¸.", 500, "CRON_SECRET_MISSING");
+      return jsonErr(rid, "CRON_SECRET mangler i servermiljø.", 500, "CRON_SECRET_MISSING");
     }
 
     return jsonErr(rid, "Ugyldig eller manglende cron-tilgang.", 403, "CRON_FORBIDDEN");
@@ -301,7 +301,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const dryRun = dryRunEnabled(req);
 
   if (!bounds || !parsePeriodYm(resolvedPeriod)) {
-    return jsonErr(rid, "period mÃ¥ vÃ¦re pÃ¥ formatet YYYY-MM.", 400, "BAD_REQUEST", {
+    return jsonErr(rid, "period må være på formatet YYYY-MM.", 400, "BAD_REQUEST", {
       period: resolvedPeriod,
     });
   }

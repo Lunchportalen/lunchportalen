@@ -1,4 +1,4 @@
-﻿// app/admin/locations/page.tsx
+// app/admin/locations/page.tsx
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -95,7 +95,7 @@ export default async function AdminLocationsPage() {
       <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
           <div className="mb-6">
-            <GhostLink href="/admin">â† Tilbake</GhostLink>
+            <GhostLink href="/admin">← Tilbake</GhostLink>
           </div>
 
           <BlockedState
@@ -112,11 +112,11 @@ export default async function AdminLocationsPage() {
             }
             meta={[
               { label: "auth.user.id", value: ctx.dbg.authUserId },
-              { label: "auth.user.email", value: ctx.dbg.authEmail || "â€”" },
-              { label: "company_id", value: ctx.companyId ?? "â€”" },
-              { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "â€”" },
+              { label: "auth.user.email", value: ctx.dbg.authEmail || "—" },
+              { label: "company_id", value: ctx.companyId ?? "—" },
+              { label: "env.url", value: ctx.dbg.envSupabaseUrl ?? "—" },
               { label: "env.hasServiceKey", value: String(ctx.dbg.hasServiceKey) },
-              ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "â€”" }] : []),
+              ...(ctx.dbg.q_company ? [{ label: "company.err", value: ctx.dbg.q_company.error ?? "—" }] : []),
             ]}
           />
         </div>
@@ -133,14 +133,14 @@ export default async function AdminLocationsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin Â· {companyName} Â· Lokasjoner
+              Admin · {companyName} · Lokasjoner
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Lokasjoner</h1>
             <p className="mt-2 text-neutral-600">Aktiver eller deaktiver leveringslokasjoner innenfor avtalt scope.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <GhostLink href="/admin">â† Command Center</GhostLink>
+            <GhostLink href="/admin">← Command Center</GhostLink>
             <GhostLink href="/admin/people">Ansatte</GhostLink>
             <PrimaryLink href="/admin/history">Historikk</PrimaryLink>
           </div>
@@ -190,7 +190,7 @@ export default async function AdminLocationsPage() {
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
           <span>Lokasjoner kan aktiveres/deaktiveres av kunde-admin. Avtaleendringer gjøres av superadmin.</span>
           <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/admin">
-            Til Command Center â†’
+            Til Command Center →
           </Link>
         </div>
       </div>

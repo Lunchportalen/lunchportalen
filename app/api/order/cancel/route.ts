@@ -49,7 +49,7 @@ function assertEnv(name: string, v: string | undefined) {
   return v;
 }
 
-/** Europe/Oslo "nÃƒÂ¥" -> (YYYY-MM-DD, HH:MM) */
+/** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -70,7 +70,7 @@ function osloNowParts() {
   };
 }
 
-/** LÃƒÂ¥s etter 08:00 Europe/Oslo samme dag */
+/** Lås etter 08:00 Europe/Oslo samme dag */
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
@@ -97,7 +97,7 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   };
 
   const key = map[wd];
-  if (!key) throw new Error("Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre.");
+  if (!key) throw new Error("Dato må være Man–Fre.");
   return key;
 }
 
@@ -128,8 +128,8 @@ function supabaseService() {
 
 /* =========================
    Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for ÃƒÂ¥ unngÃƒÂ¥ TS "public vs never"
-   - For cancel: vi blokkerer ogsÃƒÂ¥ for PAUSED/CLOSED (enterprise-stramt).
+   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
+   - For cancel: vi blokkerer også for PAUSED/CLOSED (enterprise-stramt).
      Hvis dere vil tillate cancel under PAUSED, endre status === "paused" -> ok.
 ========================= */
 async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
@@ -189,21 +189,21 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
     }
 
-    // 2) Cutoff-lÃƒÂ¥s
+    // 2) Cutoff-lås
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er lÃƒÂ¥st etter 08:00.", 423, { code: "LOCKED", detail: {
+      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
         locked: true,
         cutoffTime: cutoff.cutoffTime,
         canAct: false,
       } });
     }
 
-    // 3) Ukedag (ManÃ¢â‚¬â€œFri)
+    // 3) Ukedag (Man–Fri)
     try {
       weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato mÃƒÂ¥ vÃƒÂ¦re ManÃ¢â‚¬â€œFre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
+      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
         locked: false,
         cutoffTime: cutoff.cutoffTime,
         canAct: false,
@@ -251,7 +251,7 @@ export async function POST(req: Request) {
       } });
     }
 
-    // 6) Ã¢Å“â€¦ Company status gate (PAUSED/CLOSED)
+    // 6) ✅ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) {
       return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
@@ -281,13 +281,13 @@ export async function POST(req: Request) {
     }
 
     if (!existing) {
-      // Idempotent: ingen rad ÃƒÂ¥ kansellere
+      // Idempotent: ingen rad å kansellere
       return jsonOk(rid, {
         ok: true,
         rid,
         cancelled: false,
         alreadyCancelled: false,
-        message: "Ingen bestilling ÃƒÂ¥ avbestille for denne dagen.",
+        message: "Ingen bestilling å avbestille for denne dagen.",
         date,
         locked: false,
         cutoffTime: cutoff.cutoffTime,

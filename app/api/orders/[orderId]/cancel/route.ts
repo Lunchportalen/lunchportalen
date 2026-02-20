@@ -32,7 +32,7 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   }
 }
 
-// Ã¢Å“â€¦ Konsistent logging + kontekst
+// ✅ Konsistent logging + kontekst
 function logApiError(scope: string, err: any, extra?: Record<string, any>) {
   try {
     console.error(`[${scope}]`, err?.message || err, { ...extra, err });
@@ -73,7 +73,7 @@ type OrderRow = {
    PATCH: /api/orders/[orderId]/cancel
    - Idempotent: hvis allerede kansellert -> ok, changed:false
    - Eierskap: kun egen ordre
-   - Firma gate: company mÃƒÂ¥ vÃƒÂ¦re active
+   - Firma gate: company må være active
    - Cutoff: assertBeforeCutoffForDeliveryDate
 ========================================================= */
 
@@ -120,12 +120,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
 
     const role = profile.role ?? null;
     if (role !== "employee" && role !== "company_admin") {
-      return jsonErr(r, "Ingen tilgang til ÃƒÂ¥ avbestille med denne rollen.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Ingen tilgang til å avbestille med denne rollen.", 403, { code: "forbidden", detail: { role } });
     }
 
     const companyId = String(profile.company_id ?? "").trim();
     if (!companyId) {
-      return jsonErr(r, "Mangler company_id pÃƒÂ¥ profil.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Mangler company_id på profil.", 403, { code: "forbidden", detail: { role } });
     }
 
     // -----------------------------
@@ -167,7 +167,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       return jsonErr(r, "Ordre ikke funnet.", 404, { code: "not_found", detail: { orderId } });
     }
 
-    // Ã¢Å“â€¦ Firmasjekk (ordre mÃƒÂ¥ tilhÃƒÂ¸re samme firma som profilen)
+    // ✅ Firmasjekk (ordre må tilhøre samme firma som profilen)
     if (String(order.company_id ?? "") !== companyId) {
       return jsonErr(r, "Du har ikke tilgang til denne ordren.", 403, { code: "forbidden", detail: {
         orderCompanyId: order.company_id,
@@ -175,7 +175,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       } });
     }
 
-    // Ã¢Å“â€¦ Eier-sjekk (ansatt/admin kan kun avbestille egen ordre)
+    // ✅ Eier-sjekk (ansatt/admin kan kun avbestille egen ordre)
     if (order.user_id !== auth.user.id) {
       return jsonErr(r, "Du kan kun avbestille egen ordre.", 403, { code: "forbidden", detail: { orderUserId: order.user_id } });
     }
@@ -201,7 +201,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
 
     // -----------------------------
     // Idempotens: allerede kansellert
-    // (stÃƒÂ¸tter bÃƒÂ¥de ny og legacy status)
+    // (støtter både ny og legacy status)
     // -----------------------------
     const curr = String(order.status ?? "").toUpperCase();
     const isCancelled = curr === "CANCELLED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED" || curr === "CANCELED"; // safe
@@ -260,7 +260,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       },
     }, 200);
   } catch (err: any) {
-    // Ã°Å¸Å½Â¯ Cutoff-feil (forretningsregel)
+    //  Cutoff-feil (forretningsregel)
     if (err?.code === "CUTOFF") {
       return jsonErr(r, err.message, 409, { code: "LOCKED_AFTER_0800", detail: {
         date: osloTodayISODate(),

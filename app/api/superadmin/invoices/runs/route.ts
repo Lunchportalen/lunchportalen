@@ -52,7 +52,7 @@ export async function GET() {
     .limit(50);
 
   if (error) {
-    return jsonErr(rid, "Kunne ikke hente fakturakjÃ¸ringer", 500, { code: "DB_FAILED", detail: error });
+    return jsonErr(rid, "Kunne ikke hente fakturakjøringer", 500, { code: "DB_FAILED", detail: error });
   }
 
   // ─────────────────────────────────────────────────────

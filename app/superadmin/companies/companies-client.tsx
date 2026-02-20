@@ -1,4 +1,4 @@
-﻿// app/superadmin/companies/companies-client.tsx
+// app/superadmin/companies/companies-client.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";

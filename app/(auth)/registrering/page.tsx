@@ -1,9 +1,9 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Script from "next/script";
 import RegistrationGate from "@/components/auth/RegistrationGate";
 
 export const metadata: Metadata = {
-  title: "Registrer firma â€“ Lunchportalen",
+  title: "Registrer firma – Lunchportalen",
   description:
     "Kun firma-admin kan registrere ny bedrift. Ansatte skal bruke innlogging.",
   alternates: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Registrer firma â€“ Lunchportalen",
+    title: "Registrer firma – Lunchportalen",
     description:
       "Registrer bedrift for firmalunsj. Kun firma-admin kan opprette ny avtale.",
     url: "/registrering",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Registrer firma â€“ Lunchportalen",
+    title: "Registrer firma – Lunchportalen",
     description:
       "Kun firma-admin kan registrere ny bedrift. Ansatte skal bruke innlogging.",
   },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      {/* Strukturert data for SEO og entydig sideforstÃ¥else */}
+      {/* Strukturert data for SEO og entydig sideforståelse */}
       <Script
         id="registration-jsonld"
         type="application/ld+json"
@@ -41,7 +41,7 @@ export default function Page() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: "Registrer firma â€“ Lunchportalen",
+            name: "Registrer firma – Lunchportalen",
             url: "https://lunchportalen.no/registrering",
             description:
               "Registrering for firma-admin. Ansatte skal bruke innlogging.",

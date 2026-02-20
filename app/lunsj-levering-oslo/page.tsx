@@ -1,12 +1,12 @@
-﻿// app/lunsj-levering-oslo/page.tsx
+// app/lunsj-levering-oslo/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "Lunsj levering Oslo â€“ lunsjordning for bedrift med kontroll og fast pris",
+  title: "Lunsj levering Oslo – lunsjordning for bedrift med kontroll og fast pris",
   description:
-    "Lunsj levering Oslo: lunsjordning for bedrift med fast ramme, selvbetjening fÃ¸r kl. 08:00 og mindre matsvinn. Et moderne alternativ til kantine.",
+    "Lunsj levering Oslo: lunsjordning for bedrift med fast ramme, selvbetjening før kl. 08:00 og mindre matsvinn. Et moderne alternativ til kantine.",
   alternates: { canonical: '/lunsj-levering-oslo' },
   robots: { index: true, follow: true },
 };
@@ -14,15 +14,15 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "Leverer dere lunsj i Oslo?",
-    a: "Ja â€“ vi kan levere til bedrifter i Oslo. Leveringsopplegg og rammer avtales, slik at dere fÃ¥r en stabil ordning som passer arbeidshverdagen.",
+    a: "Ja – vi kan levere til bedrifter i Oslo. Leveringsopplegg og rammer avtales, slik at dere får en stabil ordning som passer arbeidshverdagen.",
   },
   {
     q: "Hva er viktigst i en lunsjordning for firma?",
-    a: "Forutsigbarhet. Tydelige rammer, fast modell og enkel bestilling gir mindre arbeid internt â€“ og mindre svinn nÃ¥r bestilling skjer fÃ¸r kl. 08:00.",
+    a: "Forutsigbarhet. Tydelige rammer, fast modell og enkel bestilling gir mindre arbeid internt – og mindre svinn når bestilling skjer før kl. 08:00.",
   },
   {
     q: "Hvordan kommer vi i gang?",
-    a: "Be om tilbud. Vi avklarer behov, rammer og oppstart â€“ og dere fÃ¥r en enkel hverdag der ansatte bestiller innen fristen.",
+    a: "Be om tilbud. Vi avklarer behov, rammer og oppstart – og dere får en enkel hverdag der ansatte bestiller innen fristen.",
   },
 ];
 
@@ -73,9 +73,9 @@ export default function Page() {
             </h1>
 
             <p className="lp-lead">
-              For bedrifter som Ã¸nsker <strong>lunsj til ansatte</strong> med tydelige rammer:
-              forutsigbar modell, enkel bestilling og frist fÃ¸r <strong>kl. 08:00</strong>.
-              Resultatet er mindre arbeid internt â€“ og mindre svinn.
+              For bedrifter som ønsker <strong>lunsj til ansatte</strong> med tydelige rammer:
+              forutsigbar modell, enkel bestilling og frist før <strong>kl. 08:00</strong>.
+              Resultatet er mindre arbeid internt – og mindre svinn.
             </p>
 
             <div className="lp-actions">
@@ -88,9 +88,9 @@ export default function Page() {
             </div>
 
             <div className="lp-trust">
-              <span className="lp-trust-item">âœ… Forutsigbar modell</span>
-              <span className="lp-trust-item">âœ… Mindre svinn</span>
-              <span className="lp-trust-item">âœ… Tydelige rammer</span>
+              <span className="lp-trust-item">✅ Forutsigbar modell</span>
+              <span className="lp-trust-item">✅ Mindre svinn</span>
+              <span className="lp-trust-item">✅ Tydelige rammer</span>
             </div>
           </div>
 
@@ -106,11 +106,11 @@ export default function Page() {
                 </div>
                 <div className="lp-mini">
                   <div className="lp-mini-h">Mindre arbeid for admin</div>
-                  <div className="lp-mini-p">Ansatte ordner bestilling selv â€“ innen fristen.</div>
+                  <div className="lp-mini-p">Ansatte ordner bestilling selv – innen fristen.</div>
                 </div>
                 <div className="lp-mini">
                   <div className="lp-mini-h">Bedre flyt, mindre svinn</div>
-                  <div className="lp-mini-p">Bestilling fÃ¸r kl. 08:00 gir bedre planlegging.</div>
+                  <div className="lp-mini-p">Bestilling før kl. 08:00 gir bedre planlegging.</div>
                 </div>
               </div>
 
@@ -127,13 +127,13 @@ export default function Page() {
       <section className="lp-section">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">PrisnivÃ¥ og avtale</h2>
+            <h2 className="lp-h2">Prisnivå og avtale</h2>
             <p className="lp-sub">
-              Rammene settes i avtalen. Mange velger en kombinasjon â€“ for eksempel 4 dager Basis og 1 dag Luxus.
+              Rammene settes i avtalen. Mange velger en kombinasjon – for eksempel 4 dager Basis og 1 dag Luxus.
             </p>
           </div>
 
-          {/* Ingen nye store knapper her â€“ bare stÃ¸tteinformasjon */}
+          {/* Ingen nye store knapper her – bare støtteinformasjon */}
           <div style={{ marginTop: 14 }}>
             <p className="lp-sub" style={{ marginBottom: 10 }}>
               Vil dere vurdere dette som erstatning for kantine, eller se hvordan det fungerer i praksis?
@@ -157,7 +157,7 @@ export default function Page() {
       <section className="lp-section alt" style={{ paddingTop: 36 }}>
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">SpÃ¸rsmÃ¥l og svar</h2>
+            <h2 className="lp-h2">Spørsmål og svar</h2>
             <p className="lp-sub">Kort og tydelig.</p>
           </div>
 
@@ -173,7 +173,7 @@ export default function Page() {
             ))}
           </div>
 
-          {/* Kun Ã©n CTA til, ikke dupliser hero */}
+          {/* Kun én CTA til, ikke dupliser hero */}
           <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
             <Link className="lp-btn lp-btn-primary lp-neon" href="/kontakt">
               Be om tilbud

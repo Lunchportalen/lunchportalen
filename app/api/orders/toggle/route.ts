@@ -7,7 +7,7 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 
-// Ã¢Å“â€¦ mocked in some tests
+// ✅ mocked in some tests
 import { getScope, ScopeError } from "@/lib/auth/scope";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (cs.status === "CLOSED") return j(403, { ok: false, error: "COMPANY_CLOSED" });
     if (cs.status !== "ACTIVE") return j(403, { ok: false, error: "COMPANY_NOT_ACTIVE" });
 
-    // 2) Agreement rules gate (employee PLACE only) Ã¢â‚¬â€ must return 403, not 500
+    // 2) Agreement rules gate (employee PLACE only) — must return 403, not 500
     if (action === "place" && role !== "company_admin") {
       const rr: any = await (requireRule as any)({
         rid: "rid_test",

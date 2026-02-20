@@ -1,4 +1,4 @@
-﻿// app/layout.tsx
+// app/layout.tsx
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 
 import PublicHeader from "@/components/site/PublicHeader";
-import AdminHeader from "@/components/site/AdminHeader";
+import HeaderShell from "@/components/nav/HeaderShell";
 import AppFooter from "@/components/AppFooter";
 import DevOverflowGuard from "@/components/DevOverflowGuard";
 
@@ -138,61 +138,31 @@ function isAuthPath(pathname: string) {
   );
 }
 
-function isAdminPath(pathname: string) {
+function isRoleAppPath(pathname: string) {
   return (
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname === "/superadmin" ||
     pathname.startsWith("/superadmin/") ||
-    pathname === "/system" ||
-    pathname.startsWith("/system/") ||
     pathname === "/kitchen" ||
     pathname.startsWith("/kitchen/") ||
     pathname === "/driver" ||
-    pathname.startsWith("/driver/")
+    pathname.startsWith("/driver/") ||
+    pathname === "/week" ||
+    pathname.startsWith("/week/") ||
+    pathname === "/orders" ||
+    pathname.startsWith("/orders/") ||
+    pathname === "/today" ||
+    pathname.startsWith("/today/") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/")
   );
-}
-
-function isSuperadminPath(pathname: string) {
-  return pathname === "/superadmin" || pathname.startsWith("/superadmin/");
 }
 
 /* =========================================================
    Nav
 ========================================================= */
 type NavItem = { label: string; href: string };
-
-function navForAdmin(pathname: string): NavItem[] {
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    return [
-      { label: "Dashboard", href: "/admin" },
-      { label: "Avtale", href: "/admin/agreement" },
-      { label: "Ordre", href: "/admin/orders" },
-      { label: "Ansatte", href: "/admin/employees" },
-    ];
-  }
-
-  if (pathname === "/superadmin" || pathname.startsWith("/superadmin/")) {
-    return [
-      { label: "Oversikt", href: "/superadmin" },
-      { label: "Firma", href: "/superadmin/companies" },
-      { label: "Avtaler", href: "/superadmin/agreements" },
-      { label: "System", href: "/system" },
-    ];
-  }
-
-  if (pathname.startsWith("/kitchen") || pathname.startsWith("/kjokken")) {
-    return [{ label: "Rapport", href: "/kitchen" }];
-  }
-  if (pathname.startsWith("/driver")) {
-    return [{ label: "Ruter", href: "/driver" }];
-  }
-  if (pathname.startsWith("/system")) {
-    return [{ label: "Status", href: "/system" }];
-  }
-
-  return [];
-}
 
 /* ✅ Public navigation */
 const PUBLIC_NAV: NavItem[] = [
@@ -209,8 +179,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const pathname = await resolvePathname();
 
   const authRoute = pathname ? isAuthPath(pathname) : false;
-  const adminRoute = pathname ? isAdminPath(pathname) : false;
-  const adminNav = adminRoute ? navForAdmin(pathname) : [];
+  const roleRoute = pathname ? isRoleAppPath(pathname) : false;
 
   return (
     <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
@@ -222,9 +191,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           children
         ) : (
           <div className="lp-page">
-            {/* ✅ Header selection */}
-            {adminRoute ? (
-              <AdminHeader nav={adminNav} title={isSuperadminPath(pathname) ? "Superadmin" : "Admin"} />
+            {roleRoute ? (
+              <HeaderShell />
             ) : (
               <PublicHeader
                 nav={PUBLIC_NAV}

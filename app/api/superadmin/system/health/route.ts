@@ -1,4 +1,4 @@
-﻿// app/api/superadmin/system/health/route.ts
+// app/api/superadmin/system/health/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -261,7 +261,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     // 1) Runtime env check is authoritative for "runtime" key
     const runtimeEnv = validateSystemRuntimeEnv();
 
-    // âœ… TS-safe: missing may only exist on one union branch
+    // ✅ TS-safe: missing may only exist on one union branch
     const runtimeMissing =
       !runtimeEnv.ok && "missing" in runtimeEnv && Array.isArray((runtimeEnv as any).missing)
         ? ((runtimeEnv as any).missing as string[])

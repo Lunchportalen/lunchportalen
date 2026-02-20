@@ -1,4 +1,4 @@
-﻿// app/superadmin/layout.tsx
+// app/superadmin/layout.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,7 +7,6 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import SuperadminHeader from "@/components/superadmin/SuperadminHeader";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -46,7 +45,6 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
 
   return (
     <div className="min-h-[calc(100vh-0px)] bg-[rgb(var(--lp-bg))]">
-      <SuperadminHeader />
       <div className="mx-auto max-w-7xl px-4 pt-[27px] pb-16">
         <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur sm:p-6">{children}</div>
       </div>

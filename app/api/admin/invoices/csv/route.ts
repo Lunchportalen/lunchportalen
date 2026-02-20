@@ -131,7 +131,7 @@ function emptyCsvResponse(opts: {
 }
 
 /**
- * Ã¢Å“â€¦ Definitive agreement lookup:
+ * ✅ Definitive agreement lookup:
  * - Use agreements table ONLY (direct truth)
  * - No dependency on company_current_agreement (stale/missing in prod)
  */
@@ -230,7 +230,7 @@ export async function GET(req: NextRequest) {
         rid,
         {
           ...diag,
-          company: company ? { id: company.id, name: safeStr(company.name) || "Ã¢â‚¬â€" } : null,
+          company: company ? { id: company.id, name: safeStr(company.name) || "—" } : null,
           agreement_source: ag.src,
           agreement_row: summarizeAgreementRow(ag.data ?? null),
           agreement_lookup_error: ag.ok === false ? asErrDetail(ag.error) : null,
@@ -248,7 +248,7 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke hente avtale.", 500, { code: "DB_ERROR", detail: asErrDetail(ag.error) });
     }
 
-    // Ã¢Å“â€¦ CSV should not error when agreement is missing: return empty CSV
+    // ✅ CSV should not error when agreement is missing: return empty CSV
     if (!ag.data) {
       return emptyCsvResponse({
         rid,
@@ -260,7 +260,7 @@ export async function GET(req: NextRequest) {
 
     const agreementRes = normalizeAgreement(ag.data as AgreementRow);
 
-    // Ã¢Å“â€¦ CSV should not error when agreement invalid: return empty CSV
+    // ✅ CSV should not error when agreement invalid: return empty CSV
     if (isAgreementInvalid(agreementRes)) {
       return emptyCsvResponse({
         rid,
@@ -313,14 +313,14 @@ export async function GET(req: NextRequest) {
       try {
         tierRaw = resolveTierForDate(agreement, dateISO);
       } catch {
-        // Ã¢Å“â€¦ Weekend/unsupported dates should not fail CSV export. We simply ignore them.
+        // ✅ Weekend/unsupported dates should not fail CSV export. We simply ignore them.
         continue;
       }
 
       const tier = asPlanTier(tierRaw);
       if (!tier) {
         // This is a true data/config error: keep as 500.
-        return jsonErr(rid, "Kunne ikke lÃƒÂ¸se plan-tier for dato (forventer BASIS/LUXUS).", 500, {
+        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, {
           code: "BAD_TIER",
           detail: { date: dateISO, tier: tierRaw },
         });
@@ -336,7 +336,7 @@ export async function GET(req: NextRequest) {
       else buckets.set(key, { date: dateISO, location_id, slot, tier, unit, qty: 1 });
     }
 
-    // Ã¢Å“â€¦ No invoice lines => return empty CSV (still 200)
+    // ✅ No invoice lines => return empty CSV (still 200)
     if (buckets.size === 0) {
       return emptyCsvResponse({
         rid,
@@ -373,7 +373,7 @@ export async function GET(req: NextRequest) {
       rows.push(
         csvLine([
           companyId,
-          safeStr(company.name) || "Ã¢â‚¬â€",
+          safeStr(company.name) || "—",
           from,
           to,
           r.date,

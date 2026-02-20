@@ -51,7 +51,7 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 type ToggleBody = {
-  // Ã¢Å“â€¦ Idempotent: klienten sender ÃƒÂ¸nsket slutt-tilstand
+  // ✅ Idempotent: klienten sender ønsket slutt-tilstand
   wantsLunch?: boolean;
   // (valgfritt) hvis dere vil tillate note her
   note?: string | null;
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     const body = (await readJson(req)) as ToggleBody;
     if (typeof body.wantsLunch !== "boolean") {
-      return jsonErr(r, "Mangler wantsLunch (boolean). Send ÃƒÂ¸nsket slutt-tilstand (idempotent).", 400, { code: "bad_request", detail: { received: body } });
+      return jsonErr(r, "Mangler wantsLunch (boolean). Send ønsket slutt-tilstand (idempotent).", 400, { code: "bad_request", detail: { received: body } });
     }
 
     const desiredStatus = body.wantsLunch ? "ACTIVE" : "CANCELLED";
@@ -137,12 +137,12 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
 
     const role = profile.role ?? null;
     if (role !== "employee" && role !== "company_admin") {
-      return jsonErr(r, "Ingen tilgang til ÃƒÂ¥ endre bestillinger med denne rollen.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Ingen tilgang til å endre bestillinger med denne rollen.", 403, { code: "forbidden", detail: { role } });
     }
 
     const companyId = String(profile.company_id ?? "").trim();
     if (!companyId) {
-      return jsonErr(r, "Mangler company_id pÃƒÂ¥ profil.", 403, { code: "forbidden", detail: { role } });
+      return jsonErr(r, "Mangler company_id på profil.", 403, { code: "forbidden", detail: { role } });
     }
 
     // -----------------------------
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       return jsonErr(r, "Datoen er passert og kan ikke endres.", 403, "DATE_LOCKED_PAST");
     }
     if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(r, "Endringer er lÃƒÂ¥st etter kl. 08:00 i dag.", 403, "LOCKED_AFTER_0800");
+      return jsonErr(r, "Endringer er låst etter kl. 08:00 i dag.", 403, "LOCKED_AFTER_0800");
     }
 
     const imm = immutabilityStatusForDate(existing.date);
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       const msg =
         imm.lockCode === "DATE_LOCKED_PAST"
           ? "Datoen er passert og kan ikke endres."
-          : "Endringer er lÃƒÂ¥st etter kl. 08:05 i dag.";
+          : "Endringer er låst etter kl. 08:05 i dag.";
       return jsonErr(r, msg, 423, imm.lockCode ?? "LOCKED");
     }
 

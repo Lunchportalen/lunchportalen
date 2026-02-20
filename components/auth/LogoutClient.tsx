@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 
 type LogoutState =
@@ -18,12 +18,57 @@ function timeoutFetch(url: string, ms = 8000) {
   };
 }
 
+async function performLogoutRedirect() {
+  try {
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+      redirect: "follow",
+      cache: "no-store",
+    });
+
+    if (res.redirected && res.url) {
+      window.location.href = res.url;
+      return;
+    }
+
+    window.location.href = "/login";
+  } catch {
+    window.location.href = "/login";
+  }
+}
+
+export function LogoutClientButton({ className }: { className?: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  function onLogout() {
+    if (isPending) return;
+
+    startTransition(async () => {
+      await performLogoutRedirect();
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      className={className ?? "lp-btn lp-btn--ghost lp-btn--sm"}
+      disabled={isPending}
+      onClick={onLogout}
+      aria-busy={isPending}
+      title={isPending ? "Logger ut..." : "Logg ut"}
+    >
+      {isPending ? "Logger ut..." : "Logg ut"}
+    </button>
+  );
+}
+
 export default function LogoutClient() {
   const [state, setState] = useState<LogoutState>({ status: "loading" });
 
   const errLabel = useMemo(() => {
     if (state.status !== "error") return null;
-    return `${state.message} (RID: ${state.rid || "â€”"})`;
+    return `${state.message} (RID: ${state.rid || "—"})`;
   }, [state]);
 
   async function runLogout() {
@@ -49,11 +94,10 @@ export default function LogoutClient() {
 
   useEffect(() => {
     void runLogout();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (state.status === "loading") {
-    return <div className="text-sm text-[rgb(var(--lp-muted))]">Logger utÃ¢â‚¬Â¦</div>;
+    return <div className="text-sm text-[rgb(var(--lp-muted))]">Logger ut...</div>;
   }
 
   if (state.status === "done") {
@@ -74,14 +118,14 @@ export default function LogoutClient() {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
-        {errLabel || "Kunne ikke logge ut. PrÃ¸v igjen."}
+        {errLabel || "Kunne ikke logge ut. Prøv igjen."}
       </div>
       <div className="flex flex-wrap gap-2">
         <Button asChild className="lp-btn--stable lp-neon-focus lp-neon-glow-hover">
           <Link href="/login">Til login</Link>
         </Button>
         <Button variant="secondary" onClick={runLogout}>
-          PrÃ¸v igjen
+          Prøv igjen
         </Button>
       </div>
     </div>

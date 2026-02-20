@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -61,7 +61,7 @@ export function SuperadminMobileMenu({ className = "" }: { className?: string })
         className="rounded-full border px-3 py-1 text-sm opacity-90 hover:opacity-100"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Ã…pne meny"
+        aria-label="Åpne meny"
       >
         <span className="inline-flex items-center gap-2">
           <HamburgerIcon />

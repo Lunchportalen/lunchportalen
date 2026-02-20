@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       tierToday = ruleRes.rule.tier;
     }
   } else {
-    reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er lÃ¥st etter 08:00.";
+    reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er låst etter 08:00.";
   }
 
   const sb = await supabaseServer();
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
 
   const cutoff = cutoffState(dateISO);
   if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er lÃ¥st etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
   }
 
   const dayKey = weekdayKeyOslo(dateISO);
@@ -226,7 +226,7 @@ export async function DELETE(req: NextRequest) {
 
   const cutoff = cutoffState(dateISO);
   if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er lÃ¥st etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
   }
 
   const sb = await supabaseServer();

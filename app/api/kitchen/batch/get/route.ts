@@ -1,4 +1,4 @@
-﻿// app/api/kitchen/batch/get/route.ts
+// app/api/kitchen/batch/get/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   // confirm cookie-session
   const sb = await supabaseServer();
   const { data: auth, error: authErr } = await sb.auth.getUser();
-  if (authErr || !auth?.user) return jsonErr(rid, "Du mÃ¥ vÃ¦re innlogget.", 401, "UNAUTHENTICATED");
+  if (authErr || !auth?.user) return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 
   let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
   try {
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       if (!prof) return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
       if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
       if (date !== osloTodayISODate()) {
-        return jsonErr(rid, "KjÃ¸kken kan kun se dagens batch.", 403, { code: "FORBIDDEN_DATE", detail: { date, today: osloTodayISODate() } });
+        return jsonErr(rid, "Kjøkken kan kun se dagens batch.", 403, { code: "FORBIDDEN_DATE", detail: { date, today: osloTodayISODate() } });
       }
       if (profileLocationId && location_id !== profileLocationId) {
         return jsonErr(rid, "Ugyldig lokasjon.", 403, "FORBIDDEN");
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Batch finnes ikke.", 404, { code: "NOT_FOUND", detail: { date, slot, location_id } });
     }
     if (role === "kitchen" && safeStr((locRow as any).company_id) !== companyId) {
-      return jsonErr(rid, "Lokasjon tilhÃ¸rer ikke firmaet.", 403, "FORBIDDEN");
+      return jsonErr(rid, "Lokasjon tilhører ikke firmaet.", 403, "FORBIDDEN");
     }
 
     const { data: row, error } = await admin

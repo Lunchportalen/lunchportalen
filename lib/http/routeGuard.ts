@@ -1,4 +1,4 @@
-﻿// lib/http/routeGuard.ts
+// lib/http/routeGuard.ts
 import "server-only";
 
 import type { NextRequest } from "next/server";
@@ -106,7 +106,7 @@ function ridFromReq(req: NextRequest) {
 }
 
 function mapScope(raw: any): ScopeLike {
-  // stÃ¸tt bÃ¥de snake_case og camelCase
+  // støtt både snake_case og camelCase
   const userId = safeStr(raw?.user_id ?? raw?.userId) || null;
   const companyId = safeStr(raw?.company_id ?? raw?.companyId) || null;
   const locationId = safeStr(raw?.location_id ?? raw?.locationId) || null;
@@ -118,8 +118,8 @@ function mapScope(raw: any): ScopeLike {
 }
 
 /**
- * âœ… Fallback: hent auth fra Supabase cookie-session dersom getScope mangler felt.
- * Dette er avgjÃ¸rende for system-roller dersom getScope() ikke leverer email/role.
+ * ✅ Fallback: hent auth fra Supabase cookie-session dersom getScope mangler felt.
+ * Dette er avgjørende for system-roller dersom getScope() ikke leverer email/role.
  */
 async function enrichScopeFromSupabase(scope: ScopeLike): Promise<ScopeLike> {
   try {

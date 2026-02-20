@@ -224,7 +224,7 @@ export async function GET(req: Request) {
 
     return jsonOk(rid, out, 200);
   } catch (e: any) {
-    return jsonErr(rid, "Kunne ikke hente kjÃƒÂ¸kken-data.", 500, { code: "kitchen_company_failed", detail: e?.message || String(e) });
+    return jsonErr(rid, "Kunne ikke hente kjøkken-data.", 500, { code: "kitchen_company_failed", detail: e?.message || String(e) });
   }
 }
 

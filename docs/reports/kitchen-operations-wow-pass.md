@@ -1,4 +1,4 @@
-﻿# Kitchen / Operations WOW Pass
+# Kitchen / Operations WOW Pass
 
 ## Files Changed
 - app/kitchen/page.tsx

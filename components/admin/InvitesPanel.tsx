@@ -1,4 +1,4 @@
-﻿// components/admin/InvitesPanel.tsx
+// components/admin/InvitesPanel.tsx
 "use client";
 
 import { useMemo, useState } from "react";

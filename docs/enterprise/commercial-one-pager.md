@@ -1,4 +1,4 @@
-﻿# Commercial One-Pager
+# Commercial One-Pager
 
 ## Hvorfor Lunchportalen
 - Kontroll og forutsigbarhet i leveranser.

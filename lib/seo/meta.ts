@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 
 import type { MarketingPage } from "@/lib/seo/marketingRegistry";
 import { absoluteUrl, canonicalForPath, pageMetaDefaults } from "@/lib/seo/site";

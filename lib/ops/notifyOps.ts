@@ -26,7 +26,7 @@ export async function notifyOps(input: NotifyOpsInput) {
   const from = env("LP_OPS_FROM") || env("OPS_FROM") || SYSTEM_EMAILS.ORDER;
   const to = env("LP_OPS_TO") || env("OPS_TO") || SYSTEM_EMAILS.ORDER;
 
-  // Hvis creds mangler: logg, men ikke kast (varsling er sekundÃ¦rt)
+  // Hvis creds mangler: logg, men ikke kast (varsling er sekundært)
   if (!user || !pass) {
     console.warn("[ops.notify] Missing SMTP creds, cannot email ops.", {
       rid: input.rid,

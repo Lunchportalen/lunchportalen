@@ -1,4 +1,4 @@
-﻿// lib/orders/rpcWrite.ts
+// lib/orders/rpcWrite.ts
 
 type RpcError =
   | { message?: string | null; code?: string | null; details?: unknown; hint?: string | null }

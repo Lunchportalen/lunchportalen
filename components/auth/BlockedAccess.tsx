@@ -1,4 +1,4 @@
-﻿import type { AuthReason } from "@/lib/auth/getAuthContext";
+import type { AuthReason } from "@/lib/auth/getAuthContext";
 
 type BlockedAccessProps = {
   reason: AuthReason;

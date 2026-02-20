@@ -18,7 +18,7 @@ type Props = {
 };
 
 function fmtDate(d?: string) {
-  if (!d) return "â";
+  if (!d) return "—";
   return formatDateNO(d);
 }
 
@@ -58,7 +58,7 @@ async function readJsonSafe(res: Response) {
 }
 
 function normalizeInvoices(json: any): Invoice[] {
-  // StÃ¸tt bÃ¥de:
+  // Støtt både:
   // - { ok:true, invoices:[...] }
   // - { ok:true, data:{ invoices:[...] } }
   const list = json?.invoices ?? json?.data?.invoices ?? [];
@@ -118,11 +118,11 @@ export default function InvoicesCard({ companyId }: Props) {
       <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Historikk per avtaleperiode. Kun lesetilgang.</div>
 
       {state.kind === "loading" ? (
-        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Henter fakturaerâ¦</div>
+        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Henter fakturaer…</div>
       ) : state.kind === "error" ? (
         <p className="mt-4 text-sm text-[rgb(var(--lp-muted))]">{state.message}</p>
       ) : state.kind === "ready" && state.invoices.length === 0 ? (
-        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Ingen fakturaer ennÃ¥.</div>
+        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Ingen fakturaer ennå.</div>
       ) : state.kind === "ready" ? (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
@@ -139,7 +139,7 @@ export default function InvoicesCard({ companyId }: Props) {
               {state.invoices.map((i) => (
                 <tr key={i.id} className="border-t border-[rgb(var(--lp-border))]">
                   <td className="py-2">
-                    {fmtDate(i.period_start)} â {fmtDate(i.period_end)}
+                    {fmtDate(i.period_start)} – {fmtDate(i.period_end)}
                   </td>
                   <td className="py-2">
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ring-1 ${statusBadge(i.status)}`}>
@@ -155,7 +155,7 @@ export default function InvoicesCard({ companyId }: Props) {
           </table>
         </div>
       ) : (
-        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">â</div>
+        <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">—</div>
       )}
     </div>
   );

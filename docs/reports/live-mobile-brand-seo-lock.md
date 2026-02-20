@@ -1,4 +1,4 @@
-﻿# Live Mobile/Brand/SEO Lock Report
+# Live Mobile/Brand/SEO Lock Report
 
 ## Files Changed
 - app/globals.css

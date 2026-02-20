@@ -34,9 +34,9 @@ function hasAllergens(arr: unknown) {
 }
 
 /**
- * Ã¢Å“â€¦ Superadmin Menyoversikt Ã¢â‚¬â€œ uke (ManÃ¢â‚¬â€œFre)
+ * ✅ Superadmin Menyoversikt – uke (Man–Fre)
  * - Guard: session + profiles.role === superadmin
- * - offset: uke +/- n (0 = innevÃƒÂ¦rende uke)
+ * - offset: uke +/- n (0 = inneværende uke)
  * - Innhold: Sanity (admin) via getMenuForDatesAdmin (inkl upublisert, ekskl drafts)
  * - Publisering: DB mirror menu_visibility_days (is_published)
  * - Status:
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     const user = userRes?.user ?? null;
 
     if (!user || userErr) {
-      return jsonErr(rid, "Du mÃƒÂ¥ vÃƒÂ¦re innlogget for ÃƒÂ¥ bruke denne ruten.", 401, "AUTH_REQUIRED");
+      return jsonErr(rid, "Du må være innlogget for å bruke denne ruten.", 401, "AUTH_REQUIRED");
     }
 
     const { data: profile, error: profErr } = await supabase
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
     const offset = Number(offsetRaw ?? 0);
     const safeOffset = Number.isFinite(offset) ? clamp(offset, -52, 104) : 0;
 
-    // 3) Week dates (MonÃ¢â‚¬â€œFri)
+    // 3) Week dates (Mon–Fri)
     const todayISO = osloTodayISODate();
     const weekStart = startOfWeekISO(todayISO);
     const monday = addDaysISO(weekStart, safeOffset * 7);
@@ -95,13 +95,13 @@ export async function GET(req: Request) {
     const byDate = new Map<string, MenuContent>();
     for (const m of sanityRows) byDate.set(m.date, m);
 
-    // 5) Visibility mirror (DB) Ã¢â‚¬â€œ service role
+    // 5) Visibility mirror (DB) – service role
     let admin;
     try {
       admin = supabaseAdmin();
     } catch (e: any) {
-      // Dette skal ikke stoppe bygg/CI Ã¢â‚¬â€œ men vil stoppe ruten runtime hvis env mangler
-      return jsonErr(rid, "Mangler nÃƒÂ¸dvendige miljÃƒÂ¸variabler for admin-lesing.", 500, { code: "MISSING_ENV", detail: safeStr(e?.message) });
+      // Dette skal ikke stoppe bygg/CI – men vil stoppe ruten runtime hvis env mangler
+      return jsonErr(rid, "Mangler nødvendige miljøvariabler for admin-lesing.", 500, { code: "MISSING_ENV", detail: safeStr(e?.message) });
     }
 
     const { data: visRows, error: visErr } = await admin
@@ -133,7 +133,7 @@ export async function GET(req: Request) {
 
       const missing = !menu || !hasText(title) || !hasText(description) || !hasAllergens(allergens);
 
-      // Ã¢â‚¬Å“PublishedÃ¢â‚¬Â = DB mirror (styrer hva kundene ser) Ã¢â‚¬â€œ fallback til menu.isPublished
+      // “Published” = DB mirror (styrer hva kundene ser) – fallback til menu.isPublished
       const published = (dbPublished.get(d.date) ?? false) || Boolean((menu as any)?.isPublished ?? false);
 
       const status: DayStatus = missing ? "missing" : published ? "published" : "unpublished";

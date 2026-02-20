@@ -1,4 +1,4 @@
-﻿# Commercial Packaging WOW Pass
+# Commercial Packaging WOW Pass
 
 ## Files Changed
 - components/Hero.tsx

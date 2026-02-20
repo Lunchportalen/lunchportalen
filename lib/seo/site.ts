@@ -1,4 +1,4 @@
-﻿import registryData from "./marketing-registry.json";
+import registryData from "./marketing-registry.json";
 
 const RAW_SITE_URL = "https://www.lunchportalen.no";
 

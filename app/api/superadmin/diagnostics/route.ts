@@ -18,7 +18,7 @@ function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
   const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(rid, "Du mÃ¥ vÃ¦re innlogget.", 401, "UNAUTHENTICATED");
+  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
 }
 
 async function runChecks(): Promise<{
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e ?? "Ukjent feil");
     opsLog("superadmin.diagnostics.error", { rid: ctx.rid, message });
-    return jsonErr(ctx.rid, "Kunne ikke kjÃ¸re diagnostics.", 500, {
+    return jsonErr(ctx.rid, "Kunne ikke kjøre diagnostics.", 500, {
       code: "SERVER_ERROR",
       detail: { message, diag: { checks: [] } },
     });

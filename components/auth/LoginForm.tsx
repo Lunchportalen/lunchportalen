@@ -1,4 +1,4 @@
-﻿// components/auth/LoginForm.tsx
+// components/auth/LoginForm.tsx
 "use client";
 
 import React from "react";

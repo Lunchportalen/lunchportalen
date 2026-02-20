@@ -70,25 +70,25 @@ function validatePayload(body: any) {
   const delivery_from = safeStr(body?.delivery_from);
   const delivery_to = safeStr(body?.delivery_to);
 
-  if (!company_name) return { ok: false as const, message: "Bedriftsnavn mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
+  if (!company_name) return { ok: false as const, message: "Bedriftsnavn må fylles ut.", code: "VALIDATION" };
 
   if (!Number.isFinite(employee_count) || employee_count < 20) {
-    return { ok: false as const, message: "Antall ansatte mÃƒÂ¥ vÃƒÂ¦re minst 20.", code: "VALIDATION" };
+    return { ok: false as const, message: "Antall ansatte må være minst 20.", code: "VALIDATION" };
   }
 
-  if (!address) return { ok: false as const, message: "Adresse mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
+  if (!address) return { ok: false as const, message: "Adresse må fylles ut.", code: "VALIDATION" };
   if (!/^[0-9]{4}$/.test(postal_code)) {
-    return { ok: false as const, message: "Postnummer mÃƒÂ¥ vÃƒÂ¦re 4 siffer.", code: "VALIDATION" };
+    return { ok: false as const, message: "Postnummer må være 4 siffer.", code: "VALIDATION" };
   }
-  if (!city) return { ok: false as const, message: "Poststed mÃƒÂ¥ fylles ut.", code: "VALIDATION" };
+  if (!city) return { ok: false as const, message: "Poststed må fylles ut.", code: "VALIDATION" };
 
   if (!delivery_from || !delivery_to || delivery_from >= delivery_to) {
-    return { ok: false as const, message: "Leveringsvindu er ugyldig (fra mÃƒÂ¥ vÃƒÂ¦re fÃƒÂ¸r til).", code: "VALIDATION" };
+    return { ok: false as const, message: "Leveringsvindu er ugyldig (fra må være før til).", code: "VALIDATION" };
   }
 
   // lightweight orgnr check (optional)
   if (orgnr && !/^[0-9]{9}$/.test(orgnr)) {
-    return { ok: false as const, message: "Organisasjonsnummer mÃƒÂ¥ vÃƒÂ¦re 9 siffer (eller tomt).", code: "VALIDATION" };
+    return { ok: false as const, message: "Organisasjonsnummer må være 9 siffer (eller tomt).", code: "VALIDATION" };
   }
 
   return {
@@ -107,7 +107,7 @@ function validatePayload(body: any) {
 function validateAgreement(agreement: Record<string, any>) {
   const enabledDays = Object.keys(agreement);
   if (enabledDays.length === 0) {
-    return { ok: false as const, message: "Velg minst ÃƒÂ©n leveringsdag.", code: "AGREEMENT_VALIDATION" };
+    return { ok: false as const, message: "Velg minst én leveringsdag.", code: "AGREEMENT_VALIDATION" };
   }
 
   for (const day of enabledDays) {
@@ -116,7 +116,7 @@ function validateAgreement(agreement: Record<string, any>) {
     const price = Number(row?.price);
 
     if (!(tier === "BASIS" || tier === "LUXUS")) {
-      return { ok: false as const, message: `Ugyldig nivÃƒÂ¥ for ${day}.`, code: "AGREEMENT_VALIDATION" };
+      return { ok: false as const, message: `Ugyldig nivå for ${day}.`, code: "AGREEMENT_VALIDATION" };
     }
     if (!Number.isFinite(price) || price <= 0) {
       return { ok: false as const, message: `Ugyldig pris for ${day}.`, code: "AGREEMENT_VALIDATION" };
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return jsonErr(rid, "Ugyldig forespÃƒÂ¸rsel.", 400, { code: "BAD_JSON" });
+      return jsonErr(rid, "Ugyldig forespørsel.", 400, { code: "BAD_JSON" });
     }
 
     const v = validatePayload(body);

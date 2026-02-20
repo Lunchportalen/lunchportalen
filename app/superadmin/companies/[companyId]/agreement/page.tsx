@@ -73,7 +73,7 @@ export default async function CompanyAgreementPage(props: { params: { id: string
             className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
             href={`/superadmin/companies/${companyId}`}
           >
-            â Tilbake
+            ← Tilbake
           </Link>
         </div>
       </header>

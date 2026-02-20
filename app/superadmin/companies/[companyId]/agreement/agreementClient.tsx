@@ -89,8 +89,8 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
 
   // ---------- derived ----------
   const dirty = useMemo(() => {
-    // Hvis ingen agreement i DB, sÃ¥ er den "dirty" hvis bruker endrer noe fra defaults
-    // (vi returnerer true for Ã¥ tillate "Lagre" pÃ¥ ny avtale)
+    // Hvis ingen agreement i DB, så er den "dirty" hvis bruker endrer noe fra defaults
+    // (vi returnerer true for å tillate "Lagre" på ny avtale)
     if (!agreement) return true;
 
     const bm = bindingMonths.trim() ? Number(bindingMonths) : null;
@@ -190,14 +190,14 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
 
     // Minimal UI-validering (API validerer hardt uansett)
     if (!startDate) return setErr("Startdato mangler");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return setErr("Startdato mÃ¥ vÃ¦re YYYY-MM-DD");
-    if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return setErr("Sluttdato mÃ¥ vÃ¦re YYYY-MM-DD");
-    if (!/^\d{2}:\d{2}$/.test(cutoffTime)) return setErr("Cut-off mÃ¥ vÃ¦re HH:MM");
-    if (!deliveryDays.length) return setErr("Velg minst Ã©n leveringsdag");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return setErr("Startdato må være YYYY-MM-DD");
+    if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return setErr("Sluttdato må være YYYY-MM-DD");
+    if (!/^\d{2}:\d{2}$/.test(cutoffTime)) return setErr("Cut-off må være HH:MM");
+    if (!deliveryDays.length) return setErr("Velg minst én leveringsdag");
 
     if (mode === "BY_DAY") {
       const keys = Object.keys(tierByDay || {});
-      if (!keys.length) return setErr("Velg minst Ã©n dag i 'Plan per dag' (eller bytt til 'Enkel plan')");
+      if (!keys.length) return setErr("Velg minst én dag i 'Plan per dag' (eller bytt til 'Enkel plan')");
     }
 
     const payload: any = {
@@ -241,7 +241,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
         const json = await readJson(res);
         if (!json?.ok) throw new Error(apiErrorMessage(json));
         setStatus(next);
-        await load(); // refetch for Ã¥ fÃ¥ fasit fra DB
+        await load(); // refetch for å få fasit fra DB
       } catch (e: any) {
         setErr(e?.message || "Kunne ikke oppdatere status");
       }
@@ -251,7 +251,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
   if (loading) {
     return (
       <div className="rounded-2xl border bg-white p-5 shadow-sm">
-        <div className="text-sm text-neutral-500">Laster avtaleâ¦</div>
+        <div className="text-sm text-neutral-500">Laster avtale…</div>
       </div>
     );
   }
@@ -357,7 +357,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
                   );
                 })}
               </div>
-              <div className="mt-2 text-xs text-neutral-400">Tips: ManâFre er standard.</div>
+              <div className="mt-2 text-xs text-neutral-400">Tips: Man–Fre er standard.</div>
             </div>
 
             <label className="grid gap-1">
@@ -388,7 +388,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold">Plan</div>
-            <div className="text-xs text-neutral-500">StÃ¸tter bÃ¥de Ã©n plan, eller plan per ukedag.</div>
+            <div className="text-xs text-neutral-500">Støtter både én plan, eller plan per ukedag.</div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
           <div className="rounded-2xl border p-4">
             <div className="mb-2 text-xs font-semibold text-neutral-700">Fallback-plan</div>
             <div className="mb-3 text-xs text-neutral-500">
-              Brukes alltid som standard, og som fallback hvis en dag ikke er definert i âPlan per dagâ.
+              Brukes alltid som standard, og som fallback hvis en dag ikke er definert i “Plan per dag”.
             </div>
 
             <div className="flex gap-2">
@@ -438,7 +438,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
           {/* by-day */}
           <div className="rounded-2xl border p-4">
             <div className="mb-2 text-xs font-semibold text-neutral-700">Plan per dag</div>
-            <div className="mb-3 text-xs text-neutral-500">Kun aktiv nÃ¥r âPlan per dagâ er valgt.</div>
+            <div className="mb-3 text-xs text-neutral-500">Kun aktiv når “Plan per dag” er valgt.</div>
 
             <div className={`grid gap-2 ${mode !== "BY_DAY" ? "opacity-50 pointer-events-none" : ""}`}>
               {DAYS.map((d) => {
@@ -496,7 +496,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Badge tone={dirty ? "yellow" : "green"}>{dirty ? "Ulagrede endringer" : "Alt lagret"}</Badge>
-              {pending ? <span className="text-xs text-neutral-500">Jobberâ¦</span> : null}
+              {pending ? <span className="text-xs text-neutral-500">Jobber…</span> : null}
             </div>
 
             <div className="flex items-center gap-2">

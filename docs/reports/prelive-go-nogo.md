@@ -1,4 +1,4 @@
-﻿# Pre-Live GO/NO-GO
+# Pre-Live GO/NO-GO
 
 1) Verdict: NO-GO
 

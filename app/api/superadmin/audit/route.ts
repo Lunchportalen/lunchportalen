@@ -35,7 +35,7 @@ function isIsoTs(v: any) {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v));
 }
 function escapeForIlike(v: string) {
-  // best-effort: nÃƒÂ¸ytraliser wildcard-tegn
+  // best-effort: nøytraliser wildcard-tegn
   return v.replace(/[%_]/g, (m) => `\\${m}`);
 }
 
@@ -96,15 +96,15 @@ export async function GET(req: NextRequest) {
 
   try {
     /* =========================
-       Auth (cookie) Ã¢â‚¬â€ fail-closed
+       Auth (cookie) — fail-closed
     ========================= */
     const sb = await supabaseServer();
     const { data: userRes, error: authErr } = await sb.auth.getUser();
     const user = userRes?.user ?? null;
 
-    if (authErr || !user) return jsonErr(rid, "Du mÃƒÂ¥ vÃƒÂ¦re innlogget.", 401, "AUTH_REQUIRED");
+    if (authErr || !user) return jsonErr(rid, "Du må være innlogget.", 401, "AUTH_REQUIRED");
 
-    // Ã¢Å“â€¦ Hard superadmin gate by email
+    // ✅ Hard superadmin gate by email
     if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ikke tilgang.", 403, "FORBIDDEN");
 
     /* =========================

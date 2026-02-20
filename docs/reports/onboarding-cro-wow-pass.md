@@ -1,4 +1,4 @@
-﻿# Onboarding / Registration CRO WOW Pass
+# Onboarding / Registration CRO WOW Pass
 
 ## Files Changed
 - app/register/page.tsx

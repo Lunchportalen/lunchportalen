@@ -1,4 +1,4 @@
-﻿import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 import { listMarketingPages } from "@/lib/seo/marketingRegistry";
 import { absoluteUrl } from "@/lib/seo/site";

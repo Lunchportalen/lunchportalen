@@ -1,4 +1,4 @@
-﻿// app/api/admin/locations/route.ts
+// app/api/admin/locations/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 
-// âœ… Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 

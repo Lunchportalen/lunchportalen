@@ -1,4 +1,4 @@
-﻿# Admin Insights / ROI WOW Pass
+# Admin Insights / ROI WOW Pass
 
 ## Files Changed
 - app/api/admin/insights/route.ts

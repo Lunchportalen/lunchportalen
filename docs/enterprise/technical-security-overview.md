@@ -1,4 +1,4 @@
-﻿# Technical & Security Overview
+# Technical & Security Overview
 
 ## Hosting og plattform
 - Next.js App Router (Node.js) og Supabase (Postgres + Auth + Storage).

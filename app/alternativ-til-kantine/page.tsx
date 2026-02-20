@@ -1,18 +1,18 @@
-﻿// app/alternativ-til-kantine/page.tsx
+// app/alternativ-til-kantine/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "Alternativ til kantine â€“ kontroll uten kjÃ¸kkeninvestering",
+  title: "Alternativ til kantine – kontroll uten kjøkkeninvestering",
   description:
-    "Alternativ til kantine uten kjÃ¸kkeninvestering: fast ramme, selvbetjening fÃ¸r kl. 08:00 og tydelig kontroll for admin. Et driftbart alternativ til kantinedrift.",
+    "Alternativ til kantine uten kjøkkeninvestering: fast ramme, selvbetjening før kl. 08:00 og tydelig kontroll for admin. Et driftbart alternativ til kantinedrift.",
   alternates: { canonical: "/alternativ-til-kantine" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Alternativ til kantine â€“ kontroll uten kantinedrift",
+    title: "Alternativ til kantine – kontroll uten kantinedrift",
     description:
-      "Fast ramme. Cut-off kl. 08:00. Ã‰n sannhetskilde. Mindre drift og mindre risiko â€“ uten tradisjonell kantinedrift.",
+      "Fast ramme. Cut-off kl. 08:00. Én sannhetskilde. Mindre drift og mindre risiko – uten tradisjonell kantinedrift.",
     url: "/alternativ-til-kantine",
     type: "website",
     images: [
@@ -20,38 +20,38 @@ export const metadata: Metadata = {
         url: "/matbilder/MelhusCatering-Lunsj-1018016.jpg",
         width: 1200,
         height: 630,
-        alt: "Lunsj â€“ alternativ til kantine",
+        alt: "Lunsj – alternativ til kantine",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Alternativ til kantine â€“ kontroll uten kantinedrift",
-    description: "Fast ramme. Cut-off 08:00. Ã‰n sannhetskilde. Et driftbart alternativ til kantine.",
+    title: "Alternativ til kantine – kontroll uten kantinedrift",
+    description: "Fast ramme. Cut-off 08:00. Én sannhetskilde. Et driftbart alternativ til kantine.",
     images: ["/matbilder/MelhusCatering-Lunsj-1018016.jpg"],
   },
 };
 
 const FAQ = [
   {
-    q: "Hva betyr Â«kantine uten kjÃ¸kkenÂ»?",
-    a: "Det betyr at dere kan tilby sosial lunsj uten Ã¥ bygge og drifte eget kjÃ¸kken. Lunsjen leveres fra eksternt kjÃ¸kken, mens dere fÃ¥r en digital flyt med rammer, cut-off og kontroll.",
+    q: "Hva betyr «kantine uten kjøkken»?",
+    a: "Det betyr at dere kan tilby sosial lunsj uten å bygge og drifte eget kjøkken. Lunsjen leveres fra eksternt kjøkken, mens dere får en digital flyt med rammer, cut-off og kontroll.",
   },
   {
     q: "Er dette billigere enn tradisjonell kantine?",
-    a: "Ofte, ja â€“ fordi dere unngÃ¥r investering i kjÃ¸kken, bemanning og intern drift. Modellen gir forutsigbar kost per kuvert og lavere administrasjon.",
+    a: "Ofte, ja – fordi dere unngår investering i kjøkken, bemanning og intern drift. Modellen gir forutsigbar kost per kuvert og lavere administrasjon.",
   },
   {
-    q: "Hvordan fÃ¥r vi kontroll pÃ¥ kostnad og svinn?",
-    a: "Cut-off kl. 08:00 gir presis produksjon. Ansatte kan avbestille fÃ¸r cut-off, og systemet lÃ¥ser dagen etter 08:00 for Ã¥ unngÃ¥ avvik og matsvinn.",
+    q: "Hvordan får vi kontroll på kostnad og svinn?",
+    a: "Cut-off kl. 08:00 gir presis produksjon. Ansatte kan avbestille før cut-off, og systemet låser dagen etter 08:00 for å unngå avvik og matsvinn.",
   },
   {
-    q: "Passer dette for kontorfellesskap og nÃ¦ringsbygg?",
-    a: "Ja. Modellen egner seg godt der man Ã¸nsker en sosial lunsjflate uten kantineinvestering. Admin setter rammer for firma/lokasjoner, ansatte selvbetjener.",
+    q: "Passer dette for kontorfellesskap og næringsbygg?",
+    a: "Ja. Modellen egner seg godt der man ønsker en sosial lunsjflate uten kantineinvestering. Admin setter rammer for firma/lokasjoner, ansatte selvbetjener.",
   },
   {
-    q: "Kan ansatte fÃ¥ individuelle unntak?",
-    a: "Nei. Modellen fungerer fordi rammene er faste og felles. Systemet er Ã©n sannhetskilde â€“ uten manuelle unntak som skaper stÃ¸y og avvik.",
+    q: "Kan ansatte få individuelle unntak?",
+    a: "Nei. Modellen fungerer fordi rammene er faste og felles. Systemet er én sannhetskilde – uten manuelle unntak som skaper støy og avvik.",
   },
 ];
 
@@ -80,14 +80,14 @@ function jsonLd() {
 
 const BASIS_CHIPS = [
   "Salatbar",
-  "PÃ¥smurt",
+  "Påsmurt",
   "Varmmat",
   "Faste rammer (admin)",
   "Cut-off kl. 08:00",
   "Forutsigbar drift",
 ];
 
-const LUXUS_CHIPS = ["Salatbar", "PÃ¥smurt", "Varmmat", "Sushi", "PokÃ©bowl", "Thaimat"];
+const LUXUS_CHIPS = ["Salatbar", "Påsmurt", "Varmmat", "Sushi", "Pokébowl", "Thaimat"];
 
 export default function Page() {
   return (
@@ -95,7 +95,7 @@ export default function Page() {
       <script id="ld-altkantine" type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd() }} />
 
       {/* =========================================================
-         HERO (URÃ˜RT)
+         HERO (URØRT)
       ========================================================= */}
       <section className="lp-hero">
         <div className="lp-heroMedia" aria-hidden="true">
@@ -118,14 +118,14 @@ export default function Page() {
             <h1 className="lp-heroTitle">Kontroll uten kantinedrift</h1>
 
             <p className="lp-heroLead">
-              For bedrifter og nÃ¦ringsbygg som vil ha lunsj pÃ¥ jobb uten Ã¥ bygge og drifte kantine. Dere fÃ¥r fast ramme,
-              selvbetjening og tydelig kontroll â€“ uten bemanning og uten manuelle unntak.
+              For bedrifter og næringsbygg som vil ha lunsj på jobb uten å bygge og drifte kantine. Dere får fast ramme,
+              selvbetjening og tydelig kontroll – uten bemanning og uten manuelle unntak.
             </p>
 
             <ul className="lp-heroBullets" aria-label="Hovedpunkter">
-              <li>Uten kjÃ¸kkeninvestering â€“ lunsj leveres fra eksternt kjÃ¸kken</li>
+              <li>Uten kjøkkeninvestering – lunsj leveres fra eksternt kjøkken</li>
               <li>Cut-off kl. 08:00 gir presis produksjon og mindre svinn</li>
-              <li>Ã‰n sannhetskilde: admin setter rammer â€“ ansatte selvbetjener</li>
+              <li>Én sannhetskilde: admin setter rammer – ansatte selvbetjener</li>
             </ul>
 
             <div className="lp-heroActions">
@@ -137,7 +137,7 @@ export default function Page() {
               </Link>
             </div>
 
-            <div className="lp-heroNote">Avtale fÃ¸rst. Tydelige regler. Ingen manuelle unntak.</div>
+            <div className="lp-heroNote">Avtale først. Tydelige regler. Ingen manuelle unntak.</div>
           </div>
 
           {/* Right: glassboks */}
@@ -147,8 +147,8 @@ export default function Page() {
 
               <div className="lp-panelGrid">
                 <div className="lp-panelItem">
-                  <div className="lp-panelH">Ã‰n sannhetskilde</div>
-                  <div className="lp-panelP">Data i portalen er fasit â€“ uten manuell overstyring.</div>
+                  <div className="lp-panelH">Én sannhetskilde</div>
+                  <div className="lp-panelP">Data i portalen er fasit – uten manuell overstyring.</div>
                 </div>
 
                 <div className="lp-panelItem">
@@ -172,7 +172,7 @@ export default function Page() {
                   Se bestillingssystemet
                 </Link>
                 <Link className="lp-btn lp-btn-ghost lp-btn-block" href="#pris">
-                  Se prisnivÃ¥ (Basis / Luxus)
+                  Se prisnivå (Basis / Luxus)
                 </Link>
               </div>
             </div>
@@ -187,30 +187,24 @@ export default function Page() {
       <section className="lp-section">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">Hva betyr Â«outsource kantineÂ»?</h2>
-            <p className="lp-sub">
-              En moderne lÃ¸sning handler om flyt â€“ ikke kjÃ¸kken. Admin setter rammene, ansatte bestiller selv.
-            </p>
+            <h2 className="lp-h2">Hva betyr «outsource kantine»?</h2>
+            <p className="lp-sub">En moderne løsning handler om flyt – ikke kjøkken. Admin setter rammene, ansatte bestiller selv.</p>
           </div>
 
           <div className="lp-cards3">
             <div className="lp-card soft lp-card-pad">
               <h3 className="lp-h3">Hva</h3>
-              <p className="lp-p">
-                Lunsj uten kantinedrift. Dere slipper tradisjonell kantinebemanning og intern kjÃ¸kkenlogistikk.
-              </p>
+              <p className="lp-p">Lunsj uten kantinedrift. Dere slipper tradisjonell kantinebemanning og intern kjøkkenlogistikk.</p>
             </div>
 
             <div className="lp-card soft lp-card-pad">
               <h3 className="lp-h3">Hvorfor</h3>
-              <p className="lp-p">
-                Lavere investering og mindre drift â€“ samtidig som dere fÃ¥r ro, kontroll og forutsigbar kost.
-              </p>
+              <p className="lp-p">Lavere investering og mindre drift – samtidig som dere får ro, kontroll og forutsigbar kost.</p>
             </div>
 
             <div className="lp-card soft lp-card-pad">
               <h3 className="lp-h3">Hvordan</h3>
-              <p className="lp-p">Cut-off kl. 08:00 + avtale pÃ¥ firmanivÃ¥ gir presisjon og fÃ¦rre avvik.</p>
+              <p className="lp-p">Cut-off kl. 08:00 + avtale på firmanivå gir presisjon og færre avvik.</p>
             </div>
           </div>
 
@@ -227,13 +221,12 @@ export default function Page() {
 
       {/* =========================================================
          PRIS (FULL WIDTH BODY)
-         (Knappetekst endret -> ikke 8x "Registrer firma")
       ========================================================= */}
       <section id="pris" className="lp-section alt">
         <div className="lp-container">
           <div className="lp-section-head">
             <h2 className="lp-h2">Basis og Luxus</h2>
-            <p className="lp-sub">Tydelig avtale â€“ uten stÃ¸y. Firma-admin velger nivÃ¥ og leveringsdager.</p>
+            <p className="lp-sub">Tydelig avtale – uten støy. Firma-admin velger nivå og leveringsdager.</p>
           </div>
 
           <div className="lp-pricing">
@@ -252,7 +245,7 @@ export default function Page() {
               </ul>
 
               <Link className="lp-btn lp-btn-primary lp-btn-block" href="/registrering">
-                Velg Basis â†’
+                Velg Basis →
               </Link>
             </div>
 
@@ -271,7 +264,7 @@ export default function Page() {
               </ul>
 
               <Link className="lp-btn lp-btn-primary lp-btn-block" href="/registrering">
-                Velg Luxus â†’
+                Velg Luxus →
               </Link>
             </div>
           </div>
@@ -292,13 +285,12 @@ export default function Page() {
 
       {/* =========================================================
          FAQ (FULL WIDTH BODY)
-         (Ingen ekstra "Registrer firma" her)
       ========================================================= */}
-      <section className="lp-section" aria-label="SpÃ¸rsmÃ¥l og svar">
+      <section className="lp-section" aria-label="Spørsmål og svar">
         <div className="lp-container">
           <div className="lp-section-head">
             <h2 className="lp-h2">Kort og tydelig</h2>
-            <p className="lp-sub">Svar pÃ¥ det viktigste â€“ uten omveier.</p>
+            <p className="lp-sub">Svar på det viktigste – uten omveier.</p>
           </div>
 
           <div className="lp-faq lp-faq--premium">
@@ -323,7 +315,6 @@ export default function Page() {
 
       {/* =========================================================
          SLUTT-CTA (FULL WIDTH BODY)
-         (1 tydelig "Registrer firma" her â€“ ferdig)
       ========================================================= */}
       <section className="lp-section alt">
         <div className="lp-container">
@@ -332,7 +323,7 @@ export default function Page() {
               Klar for kontroll uten kantinedrift?
             </h2>
             <p className="lp-sub" style={{ marginBottom: 16 }}>
-              Registrer firma â€“ sÃ¥ tar dere neste steg med tydelige rammer, fast pris og en modell som fungerer i drift.
+              Registrer firma – så tar dere neste steg med tydelige rammer, fast pris og en modell som fungerer i drift.
             </p>
             <div className="lp-cta-row">
               <Link className="lp-btn lp-btn-primary lp-neon" href="/registrering">
@@ -348,4 +339,3 @@ export default function Page() {
     </main>
   );
 }
-

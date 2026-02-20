@@ -77,7 +77,7 @@ export type AdminContextBlocked = {
 export type AdminContext = AdminContextOk | AdminContextBlocked;
 
 /**
- * Ã¢Å“â€¦ Type-guard for stabil TS narrowing i pages/components.
+ * ✅ Type-guard for stabil TS narrowing i pages/components.
  * Bruk: if (isAdminContextBlocked(ctx)) { ... ctx.blocked ... }
  */
 export function isAdminContextBlocked(ctx: AdminContext): ctx is AdminContextBlocked {
@@ -88,7 +88,7 @@ export function isAdminContextBlocked(ctx: AdminContext): ctx is AdminContextBlo
    Small helpers
 ========================================================= */
 function errToText(e: any) {
-  if (!e) return "Ã¢â‚¬â€";
+  if (!e) return "—";
   if (typeof e === "string") return e;
   if (typeof e?.message === "string" && e.message.trim()) return e.message;
   try {
@@ -125,12 +125,12 @@ export async function loadAdminContext(opts?: {
   /**
    * Default: true
    * Hvis true: redirects bort hvis role != company_admin
-   * Hvis false: returnerer role og lar caller hÃƒÂ¥ndtere.
+   * Hvis false: returnerer role og lar caller håndtere.
    */
   enforceCompanyAdmin?: boolean;
   /**
    * Default: false
-   * Hvis true: returnerer blokkert state (i stedet for ÃƒÂ¥ krasje/returnere Ã¢â‚¬Å“tom UIÃ¢â‚¬Â).
+   * Hvis true: returnerer blokkert state (i stedet for å krasje/returnere “tom UI”).
    * OBS: login-redirect vil fortsatt skje hvis ikke innlogget.
    */
   returnBlockedState?: boolean;
@@ -146,7 +146,7 @@ export async function loadAdminContext(opts?: {
 
   if (authErr || !user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
 
-  // 2) Service role for robuste oppslag (unngÃƒÂ¥r RLS)
+  // 2) Service role for robuste oppslag (unngår RLS)
   const admin = supabaseAdmin();
 
   const authUserId = user.id;
@@ -156,7 +156,7 @@ export async function loadAdminContext(opts?: {
     authUserId,
     authEmail,
     envSupabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? String(process.env.NEXT_PUBLIC_SUPABASE_URL).slice(0, 60) + "Ã¢â‚¬Â¦"
+      ? String(process.env.NEXT_PUBLIC_SUPABASE_URL).slice(0, 60) + "…"
       : null,
     hasServiceKey: hasSupabaseAdminConfig(),
     q_profile_user_id: null,
@@ -166,7 +166,7 @@ export async function loadAdminContext(opts?: {
     q_counts: {},
   };
 
-  // 3) Robust profile load (prioritet: user_id Ã¢â€ â€™ id Ã¢â€ â€™ email)
+  // 3) Robust profile load (prioritet: user_id → id → email)
   let profile: AdminProfile | null = null;
 
   {
@@ -204,7 +204,7 @@ export async function loadAdminContext(opts?: {
     if (r.data) profile = r.data as any;
   }
 
-  // Rolle Ã¢â‚¬â€œ profile.role hvis finnes, ellers metadata fallback
+  // Rolle – profile.role hvis finnes, ellers metadata fallback
   const rawProfileRole = String(profile?.role ?? "").trim().toLowerCase();
   const normalizedProfileRole =
     rawProfileRole === "admin" || rawProfileRole === "companyadmin" ? "company_admin" : profile?.role;
@@ -226,7 +226,7 @@ export async function loadAdminContext(opts?: {
         counts: null,
         dbg,
         support: { reason: "ADMIN_FORBIDDEN_ROLE", companyId: profile?.company_id ?? null, locationId: profile?.location_id ?? null },
-        nextSteps: ["Du har ikke tilgang til admin-omrÃƒÂ¥det for dette firmaet."],
+        nextSteps: ["Du har ikke tilgang til admin-området for dette firmaet."],
       };
     }
     redirect(homeForRole(role));
@@ -260,11 +260,11 @@ export async function loadAdminContext(opts?: {
       nextSteps: ["Kontakt superadmin for reaktivering dersom dette er en feil."],
     });
 
-    // returnBlockedState pÃƒÂ¥virker ikke her (vi returnerer alltid blokkert object hvis det skjer)
+    // returnBlockedState påvirker ikke her (vi returnerer alltid blokkert object hvis det skjer)
     return out;
   }
 
-  // MÃƒÂ¥ ha company_id for company_admin
+  // Må ha company_id for company_admin
   if (role === "company_admin" && !profile?.company_id) {
     return blocked({
       blocked: "MISSING_COMPANY_ID",
@@ -276,7 +276,7 @@ export async function loadAdminContext(opts?: {
       support: { reason: "COMPANY_ADMIN_MISSING_COMPANY_ID", companyId: null, locationId: null },
       nextSteps: [
         "Superadmin knytter profilen til firma (profiles.company_id + ev. profiles.location_id).",
-        "Firma mÃƒÂ¥ vÃƒÂ¦re aktivert (ACTIVE) fÃƒÂ¸r full tilgang.",
+        "Firma må være aktivert (ACTIVE) før full tilgang.",
       ],
     });
   }
@@ -293,7 +293,7 @@ export async function loadAdminContext(opts?: {
       support: { reason: "COMPANY_ADMIN_MISSING_COMPANY_ID", companyId: null, locationId: profile?.location_id ?? null },
       nextSteps: [
         "Superadmin knytter profilen til firma (profiles.company_id + ev. profiles.location_id).",
-        "Firma mÃƒÂ¥ vÃƒÂ¦re aktivert (ACTIVE) fÃƒÂ¸r full tilgang.",
+        "Firma må være aktivert (ACTIVE) før full tilgang.",
       ],
     });
   }

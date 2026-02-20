@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import type { Metadata } from "next";
 import Image from "next/image";

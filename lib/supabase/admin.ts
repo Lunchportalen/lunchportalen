@@ -8,7 +8,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * ====================================
  * Brukes KUN server-side til:
  * - admin/superadmin-endepunkter
- * - eksplisitt omgÃƒÂ¥else av RLS
+ * - eksplisitt omgåelse av RLS
  *
  * Krav:
  * - Fail-closed hvis env mangler
@@ -16,7 +16,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * - Stabil X-Client-Info for logging
  *
  * NOTE:
- * - Bruker server-var fÃƒÂ¸rst (SUPABASE_URL), fallback til NEXT_PUBLIC_SUPABASE_URL for legacy.
+ * - Bruker server-var først (SUPABASE_URL), fallback til NEXT_PUBLIC_SUPABASE_URL for legacy.
  * - Bruker kun SUPABASE_SERVICE_ROLE_KEY (service role).
  */
 
@@ -41,8 +41,8 @@ export function supabaseAdmin(): SupabaseClient {
   const url = envStr("SUPABASE_URL") ?? envStr("NEXT_PUBLIC_SUPABASE_URL");
   const serviceRoleKey = envStr("SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!url) throw configError("Mangler SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) i server-miljÃƒÂ¸.");
-  if (!serviceRoleKey) throw configError("Mangler SUPABASE_SERVICE_ROLE_KEY i server-miljÃƒÂ¸.");
+  if (!url) throw configError("Mangler SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) i server-miljø.");
+  if (!serviceRoleKey) throw configError("Mangler SUPABASE_SERVICE_ROLE_KEY i server-miljø.");
 
   _admin = createClient(url, serviceRoleKey, {
     auth: {

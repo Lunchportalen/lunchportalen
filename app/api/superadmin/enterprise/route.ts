@@ -1,4 +1,4 @@
-﻿// app/api/superadmin/enterprise/route.ts
+// app/api/superadmin/enterprise/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

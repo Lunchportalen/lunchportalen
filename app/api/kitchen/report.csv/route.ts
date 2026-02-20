@@ -1,4 +1,4 @@
-﻿// app/api/kitchen/report.csv/route.ts
+// app/api/kitchen/report.csv/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

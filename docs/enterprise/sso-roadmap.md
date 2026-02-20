@@ -1,4 +1,4 @@
-﻿# SSO Roadmap
+# SSO Roadmap
 
 ## Phase 1: SAML (Entra ID / Okta)
 - SAML-basert SSO for enterprise-kunder.

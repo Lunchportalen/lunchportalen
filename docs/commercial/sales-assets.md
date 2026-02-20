@@ -1,4 +1,4 @@
-﻿# Commercial Sales Assets
+# Commercial Sales Assets
 
 ## Executive Pitch
 Lunchportalen erstatter manuell lunsjadministrasjon med faste rammer og én sannhetskilde.

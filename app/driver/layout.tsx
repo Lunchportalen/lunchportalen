@@ -1,4 +1,4 @@
-﻿// app/driver/layout.tsx
+// app/driver/layout.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

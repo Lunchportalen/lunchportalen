@@ -1,4 +1,4 @@
-﻿import { absoluteUrl, canonicalForPath, siteName } from "@/lib/seo/site";
+import { absoluteUrl, canonicalForPath, siteName } from "@/lib/seo/site";
 
 export type JsonLdFaqItem = { q: string; a: string };
 export type JsonLdBreadcrumbItem = { name: string; item: string };

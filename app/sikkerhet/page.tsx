@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getMarketingPage } from "@/lib/seo/marketingRegistry";

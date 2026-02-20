@@ -1,4 +1,4 @@
-﻿# Typography: Heading Inter Fix
+# Typography: Heading Inter Fix
 
 ## Files Changed
 - app/layout.tsx

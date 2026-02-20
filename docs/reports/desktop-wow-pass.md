@@ -1,4 +1,4 @@
-﻿# Desktop WOW Pass Report
+# Desktop WOW Pass Report
 
 ## Files Changed
 - app/globals.css

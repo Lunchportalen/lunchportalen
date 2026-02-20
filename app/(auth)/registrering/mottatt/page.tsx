@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();

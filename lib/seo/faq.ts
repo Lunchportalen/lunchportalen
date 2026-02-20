@@ -1,4 +1,4 @@
-﻿import faqData from "./faq-data.json";
+import faqData from "./faq-data.json";
 import { normalizePath } from "./site";
 
 export type FAQItem = { q: string; a: string };

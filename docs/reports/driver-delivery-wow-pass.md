@@ -1,4 +1,4 @@
-﻿# Driver / Delivery WOW Pass
+# Driver / Delivery WOW Pass
 
 ## Files Changed
 - app/driver/DriverClient.tsx

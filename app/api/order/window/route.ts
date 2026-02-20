@@ -87,12 +87,12 @@ function weekdayKeyFromISO(dateISO: string): DayKey {
   const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
   const map: Record<string, DayKey> = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri" };
   const key = map[wd];
-  if (!key) throw new Error(`Ugyldig weekday for ${dateISO} (${wd}). Kun Manâ€“Fre er gyldig.`);
+  if (!key) throw new Error(`Ugyldig weekday for ${dateISO} (${wd}). Kun Man–Fre er gyldig.`);
   return key;
 }
 
 /**
- * âœ… Note parsing:
+ * ✅ Note parsing:
  * - legacy: "choice:varmmat"
  * - legacy: "varmmat"
  */
@@ -227,15 +227,15 @@ const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130 };
 const FIXED_CHOICES_BY_TIER: Record<Tier, Choice[]> = {
   BASIS: [
     { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "PÃ¥smurt" },
+    { key: "paasmurt", label: "Påsmurt" },
     { key: "varmmat", label: "Varmmat" },
   ],
   LUXUS: [
     { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "PÃ¥smurt" },
+    { key: "paasmurt", label: "Påsmurt" },
     { key: "varmmat", label: "Varmmat" },
     { key: "sushi", label: "Sushi" },
-    { key: "pokebowl", label: "PokÃ©bowl" },
+    { key: "pokebowl", label: "Pokébowl" },
     { key: "thaimat", label: "Thaimat" },
   ],
 };
@@ -339,8 +339,8 @@ export async function GET(req: NextRequest) {
         ? policy.lockReason === "PAUSED"
           ? "Bestilling/avbestilling er midlertidig pauset."
           : policy.lockReason === "CLOSED"
-          ? "Firma er stengt. Bestilling/avbestilling er lÃ¥st."
-          : "Firma er ikke aktivt. Bestilling/avbestilling er lÃ¥st."
+          ? "Firma er stengt. Bestilling/avbestilling er låst."
+          : "Firma er ikke aktivt. Bestilling/avbestilling er låst."
         : undefined,
     };
 
@@ -398,7 +398,7 @@ export async function GET(req: NextRequest) {
       ordersByDate.set(dISO, o);
     }
 
-    // day choices (service role) â€” best effort
+    // day choices (service role) — best effort
     const dayChoicesByDate = new Map<string, DayChoiceRow>();
     try {
       const dcBase = (admin as any)
@@ -463,10 +463,10 @@ export async function GET(req: NextRequest) {
         const stateLocationId = state.locationId ? String(state.locationId).trim() : "";
 
         if (stateCompanyId && stateCompanyId !== sc.company_id) {
-          return jsonErr(rid, "Avtalen tilhÃ¸rer et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
+          return jsonErr(rid, "Avtalen tilhører et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
         }
         if (sc.location_id && stateLocationId && stateLocationId !== sc.location_id) {
-          return jsonErr(rid, "Avtalen tilhÃ¸rer en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH");
+          return jsonErr(rid, "Avtalen tilhører en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH");
         }
 
         startDateISO = state.startDate ? String(state.startDate).slice(0, 10) : null;
@@ -479,7 +479,7 @@ export async function GET(req: NextRequest) {
 
         if (policy.status === "PENDING") {
           agreementStatus = "PENDING_COMPANY";
-          agreementMessage = "Firmaet er ikke aktivert ennÃ¥. Kontakt firma-admin.";
+          agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
         } else if (startsLater) {
           agreementStatus = "STARTS_LATER";
         } else if (agreementRawStatus === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {

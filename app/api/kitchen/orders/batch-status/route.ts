@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
   const ctx = s.ctx;
   const { rid, scope } = ctx;
 
-  // âœ… riktig signatur: (ctx|rid, role, allowed)
+  // ✅ riktig signatur: (ctx|rid, role, allowed)
   const roleBlock = requireRoleOr403(ctx, scope.role ?? null, allowedRoles);
   if (roleBlock) return roleBlock;
 
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
   const role = asString(scope?.role).toLowerCase();
   const today = osloNowISO().slice(0, 10);
   if (role === "kitchen" && q.date && q.date !== today) {
-    return jsonErr(rid, "KjÃ¸kken kan kun se dagens ordre.", 403, { code: "FORBIDDEN_DATE", detail: { date: q.date, today } });
+    return jsonErr(rid, "Kjøkken kan kun se dagens ordre.", 403, { code: "FORBIDDEN_DATE", detail: { date: q.date, today } });
   }
 
   // Valider query
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST = APPLY
- * - Oppdaterer status pÃ¥ mange ordre samtidig
+ * - Oppdaterer status på mange ordre samtidig
  * - Logger 1 audit-rad (batch)
  */
 export async function POST(req: NextRequest) {

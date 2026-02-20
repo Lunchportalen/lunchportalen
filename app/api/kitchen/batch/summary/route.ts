@@ -1,4 +1,4 @@
-﻿// app/api/kitchen/batch/summary/route.ts
+// app/api/kitchen/batch/summary/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

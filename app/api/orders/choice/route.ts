@@ -101,7 +101,7 @@ function normalizeChoiceKey(choiceKey: string) {
  * New behaviour: note == "<choice_key>||<human_note>"
  *
  * - The first segment is ALWAYS the system-stable choice key.
- * - The suffix is optional and can be a human-readable variant (e.g. "PÃƒÂ¥smurt: Vegan").
+ * - The suffix is optional and can be a human-readable variant (e.g. "Påsmurt: Vegan").
  * - If client does not send note:
  *    - preserve suffix only when choice key stays the same
  *    - otherwise clear suffix (avoid stale variant)
@@ -202,24 +202,24 @@ type UpdatedRow = {
 export async function POST(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
 
-  // Ã¢Å“â€¦ scope gate
+  // ✅ scope gate
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
   const ctx = a.ctx;
   const { rid } = ctx;
 
-  // Ã¢Å“â€¦ role gate
+  // ✅ role gate
   const denyRole = requireRoleOr403(ctx, "orders.choice", ["employee", "company_admin"]);
   if (denyRole) return denyRole;
 
-  // Ã¢Å“â€¦ normalize scope ONCE
+  // ✅ normalize scope ONCE
   const norm = normalizeScope(ctx.scope);
   if (!norm.userId || !norm.companyId || !norm.locationId) {
     return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "missing_scope");
   }
 
-  // Ã¢Å“â€¦ service role admin for company-status + rules
+  // ✅ service role admin for company-status + rules
   let admin: any = null;
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
   const choice_key_raw = safeText(body?.choice_key);
   const client_request_id = safeText(body?.client_request_id);
 
-  // Ã¢Å“â€¦ NEW: optional note (variant)
+  // ✅ NEW: optional note (variant)
   const client_note_raw = safeText(body?.note); // may be null
   const client_note = client_note_raw ? sanitizeSuffix(client_note_raw) : null;
 
@@ -255,7 +255,7 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, { code: "DATE_LOCKED_PAST", detail: { date } });
   }
   if (cutoff === "TODAY_LOCKED") {
-    return jsonErr(rid, "Endringer er lÃƒÂ¥st etter kl. 08:00 i dag.", 409, {
+    return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 409, {
       code: "LOCKED_AFTER_0800",
       detail: { date, cutoff: "08:00" },
     });
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "company_blocked", detail: { companyStatus } });
   }
 
-  // Agreement rule gate Ã¢â‚¬â€ Ã¢Å“â€¦ FAIL SOFT (only hard-stop on explicit FORBIDDEN/403)
+  // Agreement rule gate — ✅ FAIL SOFT (only hard-stop on explicit FORBIDDEN/403)
   const dayKey = weekdayKeyOslo(date);
   if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "bad_date", detail: { date } });
 
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
     // ignore (fail-soft)
   }
 
-  // Ã¢Å“â€¦ Find current order (tenant-safe)
+  // ✅ Find current order (tenant-safe)
   const { data: order, error: ordErr } = (await sb
     .from("orders")
     .select("id,date,status,note,slot,user_id,company_id,location_id")
@@ -307,7 +307,7 @@ export async function POST(req: NextRequest) {
 
   const savedAt = nowIso();
 
-  // Ã¢Å“â€¦ NOTE: keep choice key first, optionally store variant suffix
+  // ✅ NOTE: keep choice key first, optionally store variant suffix
   const nextNote = setChoiceInNote(order?.note ?? null, choice_key, client_note);
 
   const setRes = await lpOrderSet(sb as any, {

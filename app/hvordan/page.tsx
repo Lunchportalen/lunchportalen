@@ -1,4 +1,4 @@
-﻿// app/hvordan/page.tsx
+// app/hvordan/page.tsx
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,19 +7,19 @@ import RelatedLinks from "@/components/seo/RelatedLinks";
 import { organizationJsonLd, webPageJsonLd } from "@/lib/seo/jsonld";
 import { canonicalForPath } from "@/lib/seo/site";
 
-// âœ… Client component for safe computed styles (no SSR crash)
+// ✅ Client component for safe computed styles (no SSR crash)
 import ComputedDivider from "@/components/ComputedDivider";
 
 export const metadata: Metadata = {
-  title: "Slik fungerer Lunchportalen â€“ avtale, onboarding, bestilling og cut-off 08:00",
+  title: "Slik fungerer Lunchportalen – avtale, onboarding, bestilling og cut-off 08:00",
   description:
-    "Se nÃ¸yaktig hvordan Lunchportalen fungerer â€“ fra avtale og onboarding til bestilling, cut-off kl. 08:00 og kjÃ¸kkenflyt. Ã‰n sannhetskilde, null manuelle unntak.",
+    "Se nøyaktig hvordan Lunchportalen fungerer – fra avtale og onboarding til bestilling, cut-off kl. 08:00 og kjøkkenflyt. Én sannhetskilde, null manuelle unntak.",
   alternates: { canonical: "/hvordan" },
   robots: { index: true, follow: true },
   openGraph: {
     title: "Slik fungerer Lunchportalen",
     description:
-      "Avtale fÃ¸rst. Cut-off kl. 08:00. Verifisert lagring. KjÃ¸kkenflyt. Driftssikkerhet. Se hele modellen.",
+      "Avtale først. Cut-off kl. 08:00. Verifisert lagring. Kjøkkenflyt. Driftssikkerhet. Se hele modellen.",
     type: "website",
     url: "https://lunchportalen.no/hvordan",
   },
@@ -28,23 +28,23 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "Hva er Lunchportalen?",
-    a: "Lunchportalen er en digital lunsjplattform og et bestillingssystem for lunsj til ansatte. Admin setter avtalerammer, ansatte bestiller selv innenfor rammene â€“ uten manuell oppfÃ¸lging.",
+    a: "Lunchportalen er en digital lunsjplattform og et bestillingssystem for lunsj til ansatte. Admin setter avtalerammer, ansatte bestiller selv innenfor rammene – uten manuell oppfølging.",
   },
   {
     q: "Hvorfor er cut-off kl. 08:00 viktig?",
-    a: "Cut-off kl. 08:00 (Europe/Oslo) gjÃ¸r at produksjon og levering kan planlegges presist. Det reduserer matsvinn og gir forutsigbar drift for bÃ¥de bedrift og kjÃ¸kken.",
+    a: "Cut-off kl. 08:00 (Europe/Oslo) gjør at produksjon og levering kan planlegges presist. Det reduserer matsvinn og gir forutsigbar drift for både bedrift og kjøkken.",
   },
   {
     q: "Hvem oppretter brukere?",
     a: "Firma/admin oppretter og administrerer ansatte i portalen. Ansatte har selvbetjening, men bedriften eier rammene og avtalen.",
   },
   {
-    q: "Hvordan unngÃ¥r dere at noen tror noe er registrert uten at det er lagret?",
-    a: "UI bekrefter kun nÃ¥r lagring er verifisert. Handlinger er idempotente, og systemet kan sende e-post-backup via outbox + retry for driftssikkerhet.",
+    q: "Hvordan unngår dere at noen tror noe er registrert uten at det er lagret?",
+    a: "UI bekrefter kun når lagring er verifisert. Handlinger er idempotente, og systemet kan sende e-post-backup via outbox + retry for driftssikkerhet.",
   },
   {
-    q: "Hvordan ser kjÃ¸kkenflyten ut?",
-    a: "Bestillinger grupperes per leveringsvindu â†’ firma â†’ lokasjon â†’ ansatt, klart for produksjon og utskrift/eksport.",
+    q: "Hvordan ser kjøkkenflyten ut?",
+    a: "Bestillinger grupperes per leveringsvindu → firma → lokasjon → ansatt, klart for produksjon og utskrift/eksport.",
   },
 ] as const;
 
@@ -137,7 +137,7 @@ export default function HvordanDetFungererPage() {
       />
 
       {/* =========================================================
-         HERO â€” IDENTISK STRUKTUR SOM /LUNSJORDNING
+         HERO — IDENTISK STRUKTUR SOM /LUNSJORDNING
       ========================================================= */}
       <section className="lp-hero lp-fullbleed lp-how-page" aria-label="Slik fungerer Lunchportalen">
         <div className="lp-heroMedia" aria-hidden="true">
@@ -160,14 +160,14 @@ export default function HvordanDetFungererPage() {
             <h1 className="lp-heroTitle">Slik fungerer Lunchportalen</h1>
 
             <p className="lp-heroLead">
-              Modellen er laget for bedrifter som vil ha kontroll og forutsigbarhet: avtalerammer fÃ¸rst, selvbetjening
-              for ansatte â€“ og produksjon som kan planlegges presist.
+              Modellen er laget for bedrifter som vil ha kontroll og forutsigbarhet: avtalerammer først, selvbetjening
+              for ansatte – og produksjon som kan planlegges presist.
             </p>
 
             <ul className="lp-heroBullets" aria-label="Hovedpunkter">
-              <li>Ã‰n sannhetskilde â€“ tydelige regler og fÃ¦rre avvik</li>
+              <li>Én sannhetskilde – tydelige regler og færre avvik</li>
               <li>Cut-off kl. 08:00 gir presis produksjon og mindre svinn</li>
-              <li>Bekreftelse fÃ¸rst nÃ¥r lagring er verifisert</li>
+              <li>Bekreftelse først når lagring er verifisert</li>
             </ul>
 
             <div className="lp-heroActions">
@@ -179,10 +179,10 @@ export default function HvordanDetFungererPage() {
               </Link>
             </div>
 
-            <div className="lp-heroNote">Avtale fÃ¸rst. Tydelige regler. Ingen manuelle unntak.</div>
+            <div className="lp-heroNote">Avtale først. Tydelige regler. Ingen manuelle unntak.</div>
           </div>
 
-          {/* Right â€” glasspanel */}
+          {/* Right — glasspanel */}
           <aside className="lp-heroPanel" aria-label="Kontroll i drift">
             <div className="lp-panelCard">
               <div className="lp-panelTitle">Dette gir kontroll i drift</div>
@@ -190,17 +190,17 @@ export default function HvordanDetFungererPage() {
               <div className="lp-panelGrid">
                 <div className="lp-panelItem">
                   <div className="lp-panelH">Avtale &amp; rammer</div>
-                  <div className="lp-panelP">NivÃ¥, dager, pris og rammer settes fÃ¸r noe kan bestilles.</div>
+                  <div className="lp-panelP">Nivå, dager, pris og rammer settes før noe kan bestilles.</div>
                 </div>
 
                 <div className="lp-panelItem">
                   <div className="lp-panelH">Selvbetjening</div>
-                  <div className="lp-panelP">Ansatte bestiller/avbestiller innenfor rammene â€“ frem til kl. 08:00.</div>
+                  <div className="lp-panelP">Ansatte bestiller/avbestiller innenfor rammene – frem til kl. 08:00.</div>
                 </div>
 
                 <div className="lp-panelItem">
-                  <div className="lp-panelH">Verifisert â†’ kjÃ¸kkenliste</div>
-                  <div className="lp-panelP">Etter cut-off lÃ¥ses dagen og grupperes klart for produksjon og levering.</div>
+                  <div className="lp-panelH">Verifisert → kjøkkenliste</div>
+                  <div className="lp-panelP">Etter cut-off låses dagen og grupperes klart for produksjon og levering.</div>
                 </div>
               </div>
 
@@ -223,7 +223,7 @@ export default function HvordanDetFungererPage() {
                 <span className="lp-proof-chip">
                   <IconShield /> STATUS: ACTIVE
                 </span>
-                <span className="lp-proof-chip lp-proof-chip--rid">RID: 8F3Kâ€¦</span>
+                <span className="lp-proof-chip lp-proof-chip--rid">RID: 8F3K…</span>
               </div>
 
               <div className="lp-panelActions" style={{ marginTop: 14 }}>
@@ -243,10 +243,10 @@ export default function HvordanDetFungererPage() {
       <section className="lp-section" aria-label="Hva, hvorfor og hvordan">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">Hva er det â€“ og hvorfor fungerer det?</h2>
+            <h2 className="lp-h2">Hva er det – og hvorfor fungerer det?</h2>
             <p className="lp-sub">
-              En rolig â€œcommand centerâ€-modell: admin setter rammene, ansatte betjener seg selv. Det gir mindre
-              administrasjon, mindre svinn â€“ og mer presisjon i produksjon.
+              En rolig “command center”-modell: admin setter rammene, ansatte betjener seg selv. Det gir mindre
+              administrasjon, mindre svinn – og mer presisjon i produksjon.
             </p>
           </div>
 
@@ -254,34 +254,34 @@ export default function HvordanDetFungererPage() {
             <div className="lp-card soft lp-card-pad">
               <h3>Hva</h3>
               <p className="lp-muted" style={{ marginTop: 8 }}>
-                Digital lunsjplattform med status, kvittering og avtalerammer â€“ uten supportkaos.
+                Digital lunsjplattform med status, kvittering og avtalerammer – uten supportkaos.
               </p>
             </div>
 
             <div className="lp-card soft lp-card-pad">
               <h3>Hvorfor</h3>
               <p className="lp-muted" style={{ marginTop: 8 }}>
-                Cut-off 08:00 gir presis produksjon. Ã‰n sannhetskilde fjerner misforstÃ¥elser. Ingen manuelle unntak.
+                Cut-off 08:00 gir presis produksjon. Én sannhetskilde fjerner misforståelser. Ingen manuelle unntak.
               </p>
             </div>
 
             <div className="lp-card soft lp-card-pad">
               <h3>Hvordan</h3>
               <p className="lp-muted" style={{ marginTop: 8 }}>
-                Avtale â†’ onboarding â†’ selvbetjening â†’ verifisert lagring â†’ kjÃ¸kkenflyt â†’ driftssikkerhet.
+                Avtale → onboarding → selvbetjening → verifisert lagring → kjøkkenflyt → driftssikkerhet.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TIMELINE â€” THE ENGINE */}
-      <section className="lp-section alt" aria-label="Slik gÃ¥r en uke">
+      {/* TIMELINE — THE ENGINE */}
+      <section className="lp-section alt" aria-label="Slik går en uke">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">Slik gÃ¥r en uke â€“ uten overraskelser</h2>
+            <h2 className="lp-h2">Slik går en uke – uten overraskelser</h2>
             <p className="lp-sub">
-              Dette er rytmen som gjÃ¸r at systemet kan levere stabilt â€“ og at kjÃ¸kkenet fÃ¥r tall som faktisk stemmer.
+              Dette er rytmen som gjør at systemet kan levere stabilt – og at kjøkkenet får tall som faktisk stemmer.
             </p>
           </div>
 
@@ -290,7 +290,7 @@ export default function HvordanDetFungererPage() {
               <div className="lp-timeline-dot lp-active-ring" aria-hidden="true" />
               <div className="lp-timeline-body">
                 <div className="lp-timeline-title">Torsdag 08:00</div>
-                <div className="lp-muted">Neste uke Ã¥pner for forhÃ¥ndsvisning/bestilling (der det er avtalt).</div>
+                <div className="lp-muted">Neste uke åpner for forhåndsvisning/bestilling (der det er avtalt).</div>
               </div>
             </div>
 
@@ -306,16 +306,16 @@ export default function HvordanDetFungererPage() {
               <div className="lp-timeline-dot lp-active-ring" aria-hidden="true" />
               <div className="lp-timeline-body">
                 <div className="lp-timeline-title">Cut-off kl. 08:00 (Europe/Oslo)</div>
-                <div className="lp-muted">Etter 08:00 lÃ¥ses dagen for produksjon. Systemet â€œfail-closedâ€.</div>
+                <div className="lp-muted">Etter 08:00 låses dagen for produksjon. Systemet “fail-closed”.</div>
               </div>
             </div>
 
             <div className="lp-timeline-item">
               <div className="lp-timeline-dot" aria-hidden="true" />
               <div className="lp-timeline-body">
-                <div className="lp-timeline-title">KjÃ¸kkenflyt</div>
+                <div className="lp-timeline-title">Kjøkkenflyt</div>
                 <div className="lp-muted">
-                  Gruppering per leveringsvindu â†’ firma â†’ lokasjon â†’ ansatt (klar for utskrift/eksport).
+                  Gruppering per leveringsvindu → firma → lokasjon → ansatt (klar for utskrift/eksport).
                 </div>
               </div>
             </div>
@@ -325,7 +325,7 @@ export default function HvordanDetFungererPage() {
               <div className="lp-timeline-body">
                 <div className="lp-timeline-title">Kvittering &amp; driftssikkerhet</div>
                 <div className="lp-muted">
-                  Bekreftelse fÃ¸rst nÃ¥r lagring er verifisert. Backup/outbox + retry ved behov.
+                  Bekreftelse først når lagring er verifisert. Backup/outbox + retry ved behov.
                 </div>
               </div>
             </div>
@@ -346,8 +346,8 @@ export default function HvordanDetFungererPage() {
       <section className="lp-section" aria-label="Steg for steg">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">Steg for steg â€“ slik skjer det i systemet</h2>
-            <p className="lp-sub">Flyten som gjÃ¸r drift forutsigbar: samme regler, samme sannhetskilde â€“ hver dag.</p>
+            <h2 className="lp-h2">Steg for steg – slik skjer det i systemet</h2>
+            <p className="lp-sub">Flyten som gjør drift forutsigbar: samme regler, samme sannhetskilde – hver dag.</p>
           </div>
 
           <div className="lp-zig">
@@ -357,9 +357,9 @@ export default function HvordanDetFungererPage() {
                 <div className="lp-zig-step">
                   <span className="lp-neon-ring">1</span>
                   <div>
-                    <h3>Avtale fÃ¸rst</h3>
+                    <h3>Avtale først</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      Firma registrerer interesse. Avtale aktiveres med nivÃ¥, dager og rammer. Ingen bestilling fÃ¸r
+                      Firma registrerer interesse. Avtale aktiveres med nivå, dager og rammer. Ingen bestilling før
                       avtalen er aktiv.
                     </p>
                   </div>
@@ -388,7 +388,7 @@ export default function HvordanDetFungererPage() {
                   <div>
                     <h3>FirmaAdmin legger til ansatte</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      FirmaAdmin oppretter brukere internt. Ansatte fÃ¥r selvbetjening innenfor rammene â€“ admin slipper
+                      FirmaAdmin oppretter brukere internt. Ansatte får selvbetjening innenfor rammene – admin slipper
                       ansatt-support.
                     </p>
                   </div>
@@ -399,7 +399,7 @@ export default function HvordanDetFungererPage() {
                 <div className="lp-media-card">
                   <Image
                     src="/matbilder/MelhusCatering-Lunsj-1018001.jpg"
-                    alt="Lunsj til ansatte â€“ selvbetjening innenfor rammer"
+                    alt="Lunsj til ansatte – selvbetjening innenfor rammer"
                     width={1200}
                     height={900}
                     className="lp-section-img"
@@ -417,7 +417,7 @@ export default function HvordanDetFungererPage() {
                   <div>
                     <h3>Bestill / avbestill (cut-off 08:00)</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      Endringer er tillatt frem til kl. 08:00 (Europe/Oslo). Etter cut-off er dagen lÃ¥st for produksjon
+                      Endringer er tillatt frem til kl. 08:00 (Europe/Oslo). Etter cut-off er dagen låst for produksjon
                       og levering.
                     </p>
                   </div>
@@ -446,7 +446,7 @@ export default function HvordanDetFungererPage() {
                   <div>
                     <h3>Kvittering + verifisert lagring</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      UI bekrefter fÃ¸rst nÃ¥r lagring er verifisert. Handlinger er idempotente og kan kvitteres med
+                      UI bekrefter først når lagring er verifisert. Handlinger er idempotente og kan kvitteres med
                       orderId, status og tidspunkt.
                     </p>
                   </div>
@@ -473,9 +473,9 @@ export default function HvordanDetFungererPage() {
                 <div className="lp-zig-step">
                   <span className="lp-neon-ring">5</span>
                   <div>
-                    <h3>KjÃ¸kkenflyt</h3>
+                    <h3>Kjøkkenflyt</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      Bestillinger grupperes per leveringsvindu â†’ firma â†’ lokasjon â†’ ansatt, klart for produksjon og
+                      Bestillinger grupperes per leveringsvindu → firma → lokasjon → ansatt, klart for produksjon og
                       utskrift/eksport.
                     </p>
                   </div>
@@ -486,7 +486,7 @@ export default function HvordanDetFungererPage() {
                 <div className="lp-media-card">
                   <Image
                     src="/matbilder/MelhusCatering-Lunsj-1018047.jpg"
-                    alt="KjÃ¸kkenflyt og gruppering per leveringsvindu"
+                    alt="Kjøkkenflyt og gruppering per leveringsvindu"
                     width={1200}
                     height={900}
                     className="lp-section-img"
@@ -504,7 +504,7 @@ export default function HvordanDetFungererPage() {
                   <div>
                     <h3>Driftssikkerhet</h3>
                     <p className="lp-muted" style={{ marginTop: 8 }}>
-                      Backup/outbox + retry gjÃ¸r at ingen kan fÃ¥ â€œfalsk bekreftelseâ€. Systemet er Ã©n sannhetskilde.
+                      Backup/outbox + retry gjør at ingen kan få “falsk bekreftelse”. Systemet er én sannhetskilde.
                     </p>
                   </div>
                 </div>
@@ -539,21 +539,21 @@ export default function HvordanDetFungererPage() {
         </div>
       </section>
 
-      {/* SXO â€” premium two-card module */}
+      {/* SXO — premium two-card module */}
       <section className="lp-section alt" aria-label="Lokalt og SXO">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">PrisnivÃ¥ og lokalt (SXO)</h2>
+            <h2 className="lp-h2">Prisnivå og lokalt (SXO)</h2>
             <p className="lp-sub">
-              I avtalen settes nivÃ¥ (Basis/Luxus) og leveringsdager. Samme modell â€“ samme kontroll â€“ uansett lokasjon.
+              I avtalen settes nivå (Basis/Luxus) og leveringsdager. Samme modell – samme kontroll – uansett lokasjon.
             </p>
           </div>
 
           <div className="lp-sxo-grid">
             <div className="lp-card soft lp-card-pad">
-              <h3>Modell &amp; prisnivÃ¥</h3>
+              <h3>Modell &amp; prisnivå</h3>
               <p className="lp-muted" style={{ marginTop: 8 }}>
-                Basis og Luxus defineres i avtalen. Firma/admin eier rammene â€“ ansatte bruker selvbetjening innenfor
+                Basis og Luxus defineres i avtalen. Firma/admin eier rammene – ansatte bruker selvbetjening innenfor
                 avtalte regler.
               </p>
               <div className="lp-proof" style={{ marginTop: 12 }}>
@@ -569,7 +569,7 @@ export default function HvordanDetFungererPage() {
             <div className="lp-card soft lp-card-pad">
               <h3>Lokale sider</h3>
               <p className="lp-muted" style={{ marginTop: 8 }}>
-                Brukes som landingssider for lokalt sÃ¸k â€“ uten at modellen endrer seg.
+                Brukes som landingssider for lokalt søk – uten at modellen endrer seg.
               </p>
               <div className="lp-cta-row" style={{ marginTop: 12 }}>
                 <Link className="lp-btn lp-btn-ghost" href="/lunsj-levering-oslo">
@@ -587,12 +587,12 @@ export default function HvordanDetFungererPage() {
         </div>
       </section>
 
-      {/* FAQ â€” premium accordion */}
+      {/* FAQ — premium accordion */}
       <section className="lp-section" style={{ paddingTop: 36 }} aria-label="FAQ">
         <div className="lp-container">
           <div className="lp-section-head">
-            <h2 className="lp-h2">SpÃ¸rsmÃ¥l og svar</h2>
-            <p className="lp-sub">Kort og tydelig â€“ uten stÃ¸y.</p>
+            <h2 className="lp-h2">Spørsmål og svar</h2>
+            <p className="lp-sub">Kort og tydelig – uten støy.</p>
           </div>
 
           <div className="lp-faq lp-faq--premium">
@@ -619,7 +619,7 @@ export default function HvordanDetFungererPage() {
               Klar for en modell som bare fungerer?
             </h2>
             <p className="lp-sub" style={{ marginBottom: 16 }}>
-              Registrer firma og fÃ¥ en driftbar lunsjflyt med cut-off 08:00, verifisert lagring og full oversikt.
+              Registrer firma og få en driftbar lunsjflyt med cut-off 08:00, verifisert lagring og full oversikt.
             </p>
             <div className="lp-cta-row">
               <Link className="lp-btn lp-btn-primary" href="/registrering">

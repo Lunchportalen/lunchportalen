@@ -1,4 +1,4 @@
-﻿// app/superadmin/enterprise/page.tsx
+// app/superadmin/enterprise/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

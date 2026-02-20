@@ -6,16 +6,16 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Oslo single source of truth
+// ✅ Oslo single source of truth
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Backup mail (failsafe)
+// ✅ Backup mail (failsafe)
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ MUST audit (lukket sirkel)
+// ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
 import { requireRule } from "@/lib/agreement/requireRule";
@@ -60,7 +60,7 @@ function isoWeekday(isoDate: string): number | null {
 }
 
 /**
- * Midlertidig (Dag 2): pricing mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥ finnes i respons for UI-kvittering.
+ * Midlertidig (Dag 2): pricing må finnes i respons for UI-kvittering.
  */
 function pricingFallback(isoDate: string): { tier: "BASIS" | "LUXUS"; unit_price: number } {
   const wd = isoWeekday(isoDate);
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
     }
 
-    // Firmastatus (service role) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ fail-closed
+    // Firmastatus (service role) — fail-closed
     const admin = await adminClientOrNull();
     if (!admin) {
       return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, {
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
         rid
       );
 
-      return jsonErr(rid, "Avbestilling er lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥st pga firmastatus.", 403, {
+      return jsonErr(rid, "Avbestilling er låst pga firmastatus.", 403, {
         code: reason,
         detail: { company_status: companyStatus },
       });
@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
       });
     }
     if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(rid, "Endringer er lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥st etter kl. 08:00 i dag.", 403, {
+      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, {
         code: "CUTOFF_LOCKED",
         detail: { date: isoDate, cutoff: "08:00" },
       });
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
         );
 
         // Idempotent UX: returning 200 with a "noop" is often better, but you asked for strict.
-        return jsonErr(rid, "Ingen bestilling ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥ avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
+        return jsonErr(rid, "Ingen bestilling å avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
       }
 
       await auditSafe(
@@ -315,7 +315,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Backup mail (failsafe ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥ ikke stoppe user flow)
+    // Backup mail (failsafe — må ikke stoppe user flow)
     const pricing = pricingFallback(isoDate);
     const backup = { ok: true, skipped: "outbox_db_trigger" } as const;
 

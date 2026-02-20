@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import AuthShell from "@/components/auth/AuthShell";
 import RegistrationGate from "@/components/auth/RegistrationGate";
 

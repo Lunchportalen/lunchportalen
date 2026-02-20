@@ -62,7 +62,7 @@ function normStatus(v: any): CompanyStatus {
   return s || "active";
 }
 
-/** Europe/Oslo "nÃƒÂ¥" -> (YYYY-MM-DD, HH:MM) */
+/** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
 function osloNowParts() {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
@@ -83,7 +83,7 @@ function osloNowParts() {
   };
 }
 
-/** LÃƒÂ¥s etter 08:00 Europe/Oslo samme dag */
+/** Lås etter 08:00 Europe/Oslo samme dag */
 function cutoffState(dateISO: string) {
   const now = osloNowParts();
   const cutoffTime = "08:00";
@@ -104,7 +104,7 @@ function weekdayKeyOslo(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" 
   };
 
   const key = map[wd];
-  if (!key) throw new Error("Kun ManÃ¢â‚¬â€œFre er gyldig.");
+  if (!key) throw new Error("Kun Man–Fre er gyldig.");
   return key;
 }
 
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
   const rid = makeRid();
 
   try {
-    // Ã¢Å“â€¦ Tenant scope (single source of truth)
+    // ✅ Tenant scope (single source of truth)
     let scope: any;
     try {
       scope = await getScope(req);
@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
 
     const supa = supabaseAdmin();
 
-    // Ã¢Å“â€¦ Company status gate (PAUSED/CLOSED)
+    // ✅ Company status gate (PAUSED/CLOSED)
     const gate = await assertCompanyActive(supa as any, company_id);
     if (!gate.ok) return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
 
@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, "CONTRACT_MISSING_WEEK_TIER");
     }
 
-    // Bygg 2 uker (10 hverdager) og filtrer pÃƒÂ¥ uke hvis ÃƒÂ¸nsket
+    // Bygg 2 uker (10 hverdager) og filtrer på uke hvis ønsket
     const today = osloNowParts().dateISO;
     const datesAll = getNextWeekdays(today, 10);
     const dates = weekIndex === undefined ? datesAll : datesAll.slice(weekIndex * 5, weekIndex * 5 + 5);
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
           skippedLocked,
           skippedTierMismatch,
           skippedNotAllowed,
-          message: "Ingen dager ÃƒÂ¥ oppdatere (enten lÃƒÂ¥st eller ikke tillatt).",
+          message: "Ingen dager å oppdatere (enten låst eller ikke tillatt).",
           actor: { role, user_id, company_id, location_id },
         },
         200

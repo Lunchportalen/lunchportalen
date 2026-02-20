@@ -10,11 +10,11 @@ import type { NextRequest } from "next/server";
 import { osloTodayISODate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { orderBase, receiptFor } from "@/lib/api/orderResponse";
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
+// ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
-// ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ MUST audit (lukket sirkel)
+// ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
 import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
           detail: {
             route: "/api/orders/today",
             reason: lock.lockCode,
-            message: "Bestilling/avbestilling er lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥st etter 08:00.",
+            message: "Bestilling/avbestilling er låst etter 08:00.",
             intent: action.toUpperCase(),
             date: today,
             cutoffTime: lock.cutoffTime,
@@ -275,7 +275,7 @@ export async function POST(req: NextRequest) {
           menuAvailable: true,
           canAct: false,
           error: lock.lockCode ?? "LOCKED",
-          message: "Bestilling/avbestilling er lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥st etter 08:00.",
+          message: "Bestilling/avbestilling er låst etter 08:00.",
           detail: null,
           receipt: null,
           order: null,

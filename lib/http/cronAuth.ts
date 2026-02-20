@@ -1,4 +1,4 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 export type CronAuthMode = "authorization" | "x-cron-secret";
 

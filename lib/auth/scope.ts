@@ -1,4 +1,4 @@
-﻿// lib/auth/scope.ts
+// lib/auth/scope.ts
 import "server-only";
 
 import type { NextRequest } from "next/server";
@@ -216,7 +216,7 @@ async function enforceCompanyActive(
 
   const st = normalizeStatus(data.status);
   if (st !== "active") {
-    throw new ScopeError("Firma er ikke aktivert ennÃ¥", 403, "COMPANY_NOT_ACTIVE");
+    throw new ScopeError("Firma er ikke aktivert ennå", 403, "COMPANY_NOT_ACTIVE");
   }
 }
 
@@ -361,7 +361,7 @@ export async function getScope(req: NextRequest): Promise<Scope> {
   // 4) Account active (tenant-only)
   const is_active = profile.is_active === true;
   if (role !== "superadmin" && !is_active) {
-    throw new ScopeError("Konto er ikke aktivert ennÃ¥", 403, "ACCOUNT_INACTIVE");
+    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
   }
 
   // 5) Tenant binding

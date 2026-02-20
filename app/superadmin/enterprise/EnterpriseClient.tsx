@@ -1,4 +1,4 @@
-﻿// app/superadmin/enterprise/EnterpriseClient.tsx
+// app/superadmin/enterprise/EnterpriseClient.tsx
 "use client";
 
 import Link from "next/link";

@@ -1,4 +1,4 @@
-﻿import { getMarketingPage, listMarketingPages } from "@/lib/seo/marketingRegistry";
+import { getMarketingPage, listMarketingPages } from "@/lib/seo/marketingRegistry";
 
 export type IntentLink = {
   href: string;

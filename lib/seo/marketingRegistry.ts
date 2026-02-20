@@ -1,4 +1,4 @@
-﻿import faqData from "./faq-data.json";
+import faqData from "./faq-data.json";
 import registryData from "./marketing-registry.json";
 
 import { normalizePath } from "./site";

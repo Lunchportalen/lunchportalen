@@ -42,7 +42,7 @@ export default function StatusHeader({
       <div className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="text-sm font-semibold">Behandle registrering</div>
         <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-          Pending kan kun endres av superadmin: Aktiver eller AvslÃ¥.
+          Pending kan kun endres av superadmin: Aktiver eller Avslå.
         </div>
         <Actions companyId={companyId} status={status} onStatusChange={setStatus} />
       </div>

@@ -1,4 +1,4 @@
-﻿// app/onboarding/thanks/page.tsx
+// app/onboarding/thanks/page.tsx
 import Link from "next/link";
 import { SYSTEM_EMAILS } from "@/lib/system/emails";
 

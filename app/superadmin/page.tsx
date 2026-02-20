@@ -1,4 +1,4 @@
-﻿// app/superadmin/page.tsx
+// app/superadmin/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,7 +15,7 @@ import PageSection from "@/components/layout/PageSection";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 
-// âœ… Oslo single source of truth (for display in superadmin)
+// ✅ Oslo single source of truth (for display in superadmin)
 import {
   OSLO_TZ,
   osloNowParts,
@@ -111,7 +111,7 @@ function ErrorSurface(props: { title?: string; message: string; detail?: string 
 }
 
 async function getOriginFromHeaders(): Promise<string> {
-  const h = await headers(); // âœ… Next: may require await in your setup
+  const h = await headers(); // ✅ Next: may require await in your setup
   const proto = safeStr(h.get("x-forwarded-proto")) || "http";
   const host = safeStr(h.get("x-forwarded-host")) || safeStr(h.get("host"));
   return host ? `${proto}://${host}` : "http://localhost:3000";
@@ -193,14 +193,14 @@ export default async function SuperadminPage() {
   const supabase = await supabaseServer();
   const cookieStore = await cookies();
 
-  // âœ… Oslo time snapshot (server-side, no fetch, no refetch)
+  // ✅ Oslo time snapshot (server-side, no fetch, no refetch)
   const oslo = osloNowParts();
-  const systemTimeLine = `${osloTodayNODate()} Â· ${String(oslo.hh).padStart(2, "0")}:${String(oslo.mi).padStart(
+  const systemTimeLine = `${osloTodayNODate()} · ${String(oslo.hh).padStart(2, "0")}:${String(oslo.mi).padStart(
     2,
     "0"
   )}`;
-  const cutoffLine = isAfterCutoff0800() ? "Cutoff: LÃ…ST (08:00)" : "Cutoff: Ã…PEN (til 08:00)";
-  const cutoff0805Line = isAfterCutoff0805() ? "Â· 08:05: LÃ…ST" : "Â· 08:05: Ã…PEN";
+  const cutoffLine = isAfterCutoff0800() ? "Cutoff: LÅST (08:00)" : "Cutoff: ÅPEN (til 08:00)";
+  const cutoff0805Line = isAfterCutoff0805() ? "· 08:05: LÅST" : "· 08:05: ÅPEN";
 
   // 1) Auth
   const auth = await getAuthContext();
@@ -223,7 +223,7 @@ export default async function SuperadminPage() {
     .order("updated_at", { ascending: false });
 
   if (cErr) {
-    return <ErrorSurface message="Klarte ikke Ã¥ hente firmalisten." detail={safeStr(cErr.message)} />;
+    return <ErrorSurface message="Klarte ikke å hente firmalisten." detail={safeStr(cErr.message)} />;
   }
 
   // 4) Normalize
@@ -254,7 +254,7 @@ export default async function SuperadminPage() {
   // 6) Render
   return (
     <>
-      {/* âœ… Oslo time / cutoff banner (server truth) */}
+      {/* ✅ Oslo time / cutoff banner (server truth) */}
       <div className="mx-auto w-full max-w-[1400px] px-4 pt-4">
         <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">
           <span className="font-semibold text-[rgb(var(--lp-fg))]">Systemtid (Oslo):</span>{" "}
@@ -262,8 +262,8 @@ export default async function SuperadminPage() {
           <span className="ml-2">{cutoffLine}</span>{" "}
           <span className="opacity-80">{cutoff0805Line}</span>
           <span className="ml-2 opacity-70">({OSLO_TZ})</span>
-          <span className="ml-3 opacity-60">Â· {osloNowISO()}</span>
-          <span className="ml-2 opacity-60">Â· i dag ISO: {osloTodayISODate()}</span>
+          <span className="ml-3 opacity-60">· {osloNowISO()}</span>
+          <span className="ml-2 opacity-60">· i dag ISO: {osloTodayISODate()}</span>
         </div>
       </div>
 
