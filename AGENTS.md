@@ -1,15 +1,15 @@
 # LUNCHPORTALEN — AGENTS.md
-**“THIS FILE IS LOCKED. EDIT ONLY BY EXPLICIT OWNER INSTRUCTION.”**
+**“THIS FILE IS LOCKED. EDIT ONLY BY EXPLICIT OWNER INSTRUCTION.”**  
 Enterprise Command System · Commercial Excellence · System Truth
 
-You are working on **Lunchportalen.no**
+You are working on **Lunchportalen.no**  
 (Stack: Next.js App Router · Supabase · Sanity)
 
-This system is **LIVE (RC)**.
+This system is **LIVE (RC)**.  
 All work is **enterprise-hardening, system integrity, and commercial dominance**.
 
-If something is only “correct”, it is **NOT DONE**.
-It must be **correct, resilient, elegant, and inevitable**.
+If something is only “correct”, it is **NOT DONE**.  
+It must be **correct, resilient, elegant, deterministic, and inevitable**.
 
 ---
 
@@ -38,6 +38,13 @@ If the required commands are GREEN/PASS, the agent must:
 - change nothing
 
 Agent must NEVER ask for confirmation when the goal is already satisfied.
+
+## 0.3 Fail-closed rule (LOCKED)
+If uncertain about role, tenant scope, contracts, data presence, env/runtime, or redirects:
+- block actions
+- show safe read-only UI
+- never guess
+- never silently fallback
 
 ---
 
@@ -177,8 +184,8 @@ UI must feel:
 - years ahead
 - self-explanatory
 
-If UI needs explanation → **FAIL**
-If system guesses → **FAIL**
+If UI needs explanation → **FAIL**  
+If system guesses → **FAIL**  
 If data can leak → **FAIL**
 
 ### 1–3–1 RULE (LOCKED)
@@ -231,6 +238,7 @@ Violation → **INVALID IMPLEMENTATION**
 - `company_admin` → own company only
 - `employee` → own orders + week view
 - `driver` → driver tools only
+- `kitchen` → tenant-bound production only (read-only)
 
 **No role confusion. Ever.**
 
@@ -244,6 +252,7 @@ Violation → **INVALID IMPLEMENTATION**
 - Company A never sees Company B
 - Company admin sees only own agreement & staff
 - Kitchen output never mixes tenants
+- Driver output never mixes tenants
 
 ---
 
@@ -259,6 +268,7 @@ Landing resolved server-side:
 - superadmin → `/superadmin*`
 - company_admin → `/admin*`
 - employee → `/orders*`, `/week*`
+- kitchen → `/kitchen*`
 - driver → `/driver*`
 
 ### HARD STOP: Login loops (LOCKED)
@@ -321,14 +331,15 @@ Admin ≠ Auth. Never mix.
 ## H8) CANONICAL HEADER (LOCKED)
 
 ### Canonical definition
-- Exactly **ONE** header implementation
+- Exactly **ONE** header implementation (ONE shell)
 - Reused across all admin/role pages
 - Only `tabs`, `email/name`, `areaLabel` vary
+- Role determines visible tabs (no cross-role buttons)
 
 ### Mandatory primitives
-- `components/admin/AdminHeader.tsx` (SERVER)
-- `components/admin/AdminTabs.tsx` (CLIENT)
-- `components/admin/AdminMobileMenu.tsx` (CLIENT)
+- `components/nav/HeaderShell.tsx` (SERVER)
+- `components/nav/RoleTabs.tsx` (CLIENT)
+- `components/nav/MobileMenu.tsx` (CLIENT)
 - `components/auth/LogoutClient.tsx` (CLIENT)
 
 ### Layout law (NON-NEGOTIABLE)
@@ -342,9 +353,12 @@ True centering:
 ### Pill law
 ```ts
 const pill = "rounded-full border px-3 py-1 text-sm";
+
 Email pill uses pill
 Logout uses pill (exact same size)
+
 Mobile law
+
 < md: tabs hidden, hamburger visible
 
 Dropdown closes on select / outside / Escape
@@ -352,12 +366,17 @@ Dropdown closes on select / outside / Escape
 Touch targets ≥ 44px
 
 Header behavior (LOCKED)
-Display-only
+
+Display-only:
+
 No redirects
+
 No getSession() checks
+
 No auth logic
 
 Header → Content gap (LOCKED)
+
 EXACT visual gap: 7mm ≈ 27px
 Applied at admin shell wrapper
 Required class: pt-[27px]
@@ -367,10 +386,13 @@ Any deviation → INVALID IMPLEMENTATION
 
 I) TEXT & LANGUAGE LAW (LOCKED)
 I9) TEXT & LANGUAGE LAW
+
 One H1 per view
+
 No duplicated headings or labels
 
 Norwegian correctness
+
 Correct UTF-8: æ, ø, å
 Mojibake forbidden: Ã, Â, â†’ → FAIL
 
@@ -383,6 +405,7 @@ Use:
 “Aktivér” (é if used)
 
 Encoding rule
+
 All source files UTF-8
 Prefer literal UTF-8 over escaped sequences
 
@@ -390,6 +413,7 @@ Violation → INVALID
 
 J) CHANGE CONTROL (LOCKED)
 J10) CHANGE CONTROL — “10 BACK · 10 FORWARD”
+
 Before implementing:
 
 Map existing architecture & contracts
@@ -420,10 +444,11 @@ No hacks
 
 Signals correctness
 
-Do NOT break frozen flows.
+Do NOT break frozen flows
 
 K) CI / RELEASE GATE (LOCKED)
 K11) CI / RELEASE GATE
+
 A change is DONE only when:
 
 build:enterprise passes
@@ -451,6 +476,7 @@ no cross-tenant leakage
 Fail → STOP AND FIX
 
 Mandatory RC command sequence (LOCKED)
+
 Run in this order:
 
 npm run typecheck
@@ -463,6 +489,7 @@ If all PASS and goal is satisfied → STOP (no changes).
 
 L) DEBUGGING STANDARD (LOCKED)
 L12) DEBUGGING STANDARD
+
 Capture server logs
 
 Capture full URL chain (incl. next)
@@ -479,6 +506,7 @@ Fail closed — never guess
 
 M) LOCKED FILE POLICY (RC SAFE)
 M13) LOCKED FILE POLICY
+
 High-risk files require explicit justification:
 
 middleware.ts
@@ -504,20 +532,13 @@ non-regression checklist
 proof of no impact on frozen flows
 
 Shared normalization utilities (LOCKED)
+
 lib/phone/no.ts is the single place for Norwegian phone normalization.
-
-No duplicate phone logic in random components/routes.
-
-If phone behavior changes, it must be:
-
-explicitly instructed
-
-minimal
-
-verified across onboarding + any other phone usage
+No duplicate phone logic elsewhere.
 
 N) RUNTIME / ENV TRUTH (LOCKED)
 N14) RUNTIME ENV LAW
+
 Required runtime env:
 
 SYSTEM_MOTOR_SECRET
@@ -531,9 +552,11 @@ System status: DEGRADED or DOWN
 Repairs that require env must be blocked.
 
 Restart law
+
 Env changes require process restart or redeploy.
 
 Verification
+
 /superadmin/system must show:
 
 “Env / runtime config OK”
@@ -547,14 +570,17 @@ Secrets must never be logged or exposed.
 O) PROMPT BLOCKS (LOCKED)
 O15) PROMPT BLOCKS
 O15.1 UI ONLY
+
 UI ONLY.
 Do NOT change middleware, auth, guards, redirects, API routes, data fetches, or page logic.
 
 O15.2 TEXT ONLY
+
 TEXT ONLY.
 Change string literals only. Ensure correct Norwegian UTF-8.
 
 O15.3 NO LOGIN LOOP
+
 Ensure:
 
 /login never redirects to /login
@@ -566,14 +592,17 @@ middleware does not gate /api or /login
 no client redirects based on getSession()
 
 O15.4 API CONTRACT ENFORCEMENT
+
 All API responses MUST match the locked contract.
 
 O15.5 FAIL-CLOSED
+
 If uncertain → block actions, show safe read-only UI.
 
 P) COMPANY LIFECYCLE (FROZEN) — RC SAFE
 P16) FROZEN: Company Lifecycle A–I (LOCKED)
-This project now includes a frozen enterprise lifecycle for companies:
+
+This project includes a frozen enterprise lifecycle:
 
 Archive (kill access) + history
 
@@ -587,7 +616,7 @@ ESG summary (readonly)
 
 Incidents logging (if present)
 
-All related files and routes are considered FROZEN unless explicitly stated otherwise:
+All related files/routes are FROZEN unless explicitly stated:
 
 app/superadmin/companies/**
 
@@ -609,7 +638,8 @@ verified impact on adjacent flows
 
 Q) ENTERPRISE ROADMAP SCOPE (K1–K4) — ALLOWED WORK AFTER FREEZE
 Q17) Allowed scope (LOCKED)
-After Company Lifecycle is frozen, ONLY these enterprise initiatives are allowed without new approval:
+
+Allowed without new approval:
 
 K1: Enterprise groups / multi-location governance
 
@@ -623,6 +653,7 @@ No marketplace. No employee-economy. No feature-bloat.
 
 R) FINAL INSTRUCTION (HARD STOP)
 R18) FINAL INSTRUCTION
+
 Do not patch.
 Do not compromise.
 Do not simplify.
@@ -632,6 +663,7 @@ Build something that feels inevitable.
 
 S) IMMUTABLE PRODUCTION RULES (HARD LOCK)
 S1) MOBILE + BRAND + SEO/CRO IMMUTABLE RULES (PRODUCTION)
+
 Mobile must NEVER allow horizontal scrolling.
 
 All content must be full width on mobile.
@@ -640,19 +672,128 @@ No element may render outside viewport on mobile.
 
 Logout and primary actions must always be visible.
 
-Login must redirect instantly without refresh.
+Login must redirect instantly and deterministically without refresh loops.
 
 Buttons must maintain readable contrast in all states.
 
 Hero image and logo must be mobile-safe and non-overflowing.
 
-Copy must follow calm, warm, professional Melhuscatering-style.
+Copy must follow calm, warm, professional style.
 
 SEO and CRO must remain 10/10, especially the front page.
 
 Any change violating these rules is a BLOCKING DEFECT.
 
+S1.1) Mobile super-optimization (LOCKED) — Forside + Week
+
+Forside (/) og Week (/week) er mobil-kritiske og skal være superoptimalisert for:
+
+iPhone (iOS Safari)
+
+Android (Chrome)
+
+Dette er production law.
+
+Absolutte krav (BLOCKING ved brudd):
+
+0 horisontal scroll (alltid)
+
+Ingen viewport overflow, heller ikke ved:
+
+lange ord / e-post / firmalogo
+
+tabeller/lister
+
+knapper i header
+
+Touch targets ≥ 44px (alle primærinteraksjoner)
+
+All tekst og CTA lesbar uten zoom (minst 16px body)
+
+Ingen layout shift ved first paint (logo/hero stabilt)
+
+Performance: rask first paint, ingen scroll-jank
+
+Keyboard-safe (iOS/Android):
+
+inputfelt må ikke hoppe ut av viewport
+
+primærknapp må være tilgjengelig når tastatur er oppe
+
+Week må være scannbar med én hånd:
+
+tydelig status
+
+én primær handling
+
+ingen tettpakket UI
+
+Minimum testmatrise (MÅ verifiseres før DONE):
+
+iPhone (iOS Safari): 375×812 og 390×844
+
+Android (Chrome): 360×800 og 412×915
+
+Test både: ikke innlogget + employee + admin (dersom header shell vises)
+
+Brudd på S1.1 → BLOCKING DEFECT (STOP THE LINE)
+
+S1.2) Mobile alignment law (LOCKED) — Alt innhold midtstilles
+
+Alt innhold på mobil (iPhone Safari og Android Chrome) skal være visuelt og strukturelt midtstilt.
+
+Gjelder spesielt:
+
+Forside (/)
+
+Week (/week)
+
+Onboarding
+
+Login
+
+Alle employee-visninger
+
+Midtstillingskrav (BLOCKING ved brudd):
+
+Hovedcontainer: mx-auto + balansert horisontal padding (min px-4)
+
+Ingen elementer skal “henge” til venstre/høyre uten bevisst designvalg
+
+H1, primær KPI og primær handling skal være visuelt sentrert
+
+Cards skal være symmetrisk plassert med lik luft på begge sider
+
+Tabell-lignende lister på mobil skal:
+
+stackes vertikalt
+
+være sentrert
+
+aldri brekke layout
+
+Forbudt:
+
+Desktop left-align layout som bare “skaleres ned”
+
+Negative margins for å “fikse” mobil
+
+Manuell px-justering per side
+
+Innhold som ser forskjøvet/asymmetrisk ut
+
+Testkrav:
+
+iPhone 390px bredde
+
+Android 360px bredde
+
+Ingen visuell ubalanse, ingen asymmetrisk whitespace, ingen clipping
+
+Brudd på S1.2 → BLOCKING DEFECT
+
 S2) ONBOARDING & REGISTRATION CRO IMMUTABLE RULES
+
 Onboarding must be mobile-first and distraction-free.
 
 One primary action per screen.
@@ -668,6 +809,7 @@ Conversion clarity is more important than feature explanation.
 Any change violating these rules is a BLOCKING DEFECT.
 
 S3) KITCHEN & OPERATIONS IMMUTABLE RULES
+
 Kitchen view is read-only and represents system truth.
 
 No manual overrides or exceptions are allowed.
@@ -683,6 +825,7 @@ Mobile and desktop must both be production-safe.
 Any change violating these rules is a BLOCKING DEFECT.
 
 S4) DRIVER & DELIVERY IMMUTABLE RULES
+
 Driver view is mobile-first and must never allow horizontal scroll.
 
 Stops are grouped and ordered deterministically (date → slot → company → location).
@@ -698,6 +841,7 @@ UI must be scannable under time pressure with one-hand use.
 Any change violating these rules is a BLOCKING DEFECT.
 
 S5) ADMIN INSIGHTS & ROI IMMUTABLE RULES
+
 Reports must show real, traceable numbers only.
 
 No vanity metrics or decorative charts.
@@ -713,17 +857,19 @@ Reports are read-only and reflect system truth.
 Any change violating these rules is a BLOCKING DEFECT.
 
 S6) TYPOGRAPHY IMMUTABLE RULES (PRODUCTION)
+
 Headings (H1–H4 and title/heading classes) must use Inter for enterprise clarity.
 
 Decorative or character-heavy display fonts are forbidden for headings.
 
-Letterforms (especially F and J) must remain neutral, readable, and professional.
+Letterforms must remain neutral, readable, professional.
 
 Body text font must remain unchanged unless explicitly approved as a separate change.
 
 Any change violating these rules is a BLOCKING DEFECT.
 
 S7) COMMERCIAL & SALES IMMUTABLE RULES
+
 Lunchportalen selges på kontroll, forutsigbarhet og mindre administrasjon.
 
 Ingen hype, buzzwords eller urealistiske løfter er tillatt.
@@ -737,6 +883,7 @@ Beslutningstakere skal forstå verdien på under 10 sekunder.
 Endringer som bryter disse reglene er BLOCKING DEFECTS.
 
 S8) PASSWORD RESET IMMUTABLE RULES
+
 Passord tilbakestilles kun via «Glemt passord».
 
 Ingen admin-resetter eller manuelle inngrep er tillatt.
@@ -750,17 +897,19 @@ Lenker skal være single-use (ny forespørsel erstatter gammel).
 Systemet er én sannhetskilde. Brudd på dette er en BLOCKING DEFECT.
 
 S9) BRAND ASSET IMMUTABLE RULES
+
 Official Lunchportalen logo must be rendered from /public/brand.
 
 Placeholder text-only logos are forbidden in production header.
 
-Favicon + app icons must be wired via app/layout.tsx metadata (or Next icon convention) and must not regress.
+Favicon + app icons must be wired via Next metadata conventions and must not regress.
 
 Brand assets must never introduce layout shift or horizontal scroll.
 
 Any change violating these rules is a BLOCKING DEFECT.
 
 S10) LOGO IMMUTABLE RULE (PRODUCTION)
+
 Lunchportalen logo must be rendered as an image in the header on all pages.
 
 Text-only branding in production headers is forbidden.
@@ -770,6 +919,7 @@ Logo must use /public/brand assets and must never cause overflow or layout shift
 Any change violating this is a BLOCKING DEFECT.
 
 S11) HEADER LOGO IMMUTABLE RULES
+
 Header must contain exactly ONE brand element: the logo image.
 
 Text-based logos are forbidden in production.
@@ -780,4 +930,4 @@ Logo height is locked to 64px (mobile) and 120px (desktop).
 
 Logo must always link to "/" (home).
 
-Any change violating these rules is a BLOCKING DEFECT.
+Any overflow/layout shift is a BLOCKING DEFECT.

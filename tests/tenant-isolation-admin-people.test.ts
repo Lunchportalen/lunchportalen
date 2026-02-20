@@ -1,4 +1,4 @@
-﻿// tests/tenant-isolation-admin-people.test.ts
+// tests/tenant-isolation-admin-people.test.ts
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
 

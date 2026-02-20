@@ -7,7 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 
 const ROOT = process.cwd();
 
@@ -65,6 +65,9 @@ const ORDERS_WRITE_METHODS = [
 const ORDERS_WRITE_PATTERNS = ORDERS_FROM_PATTERNS.flatMap((p) =>
   ORDERS_WRITE_METHODS.map((m) => `${p}${m}`)
 );
+
+const MOJIBAKE_MARKDOWN_PATTERN = "\u00C3|\u00E2\u20AC\u2013|\u00E2\u20AC\u2014|\u00E2\u20AC\u2122|\u00E2\u20AC\u0153|\u00E2\u20AC\u009D|\u00C2 ";
+const MOJIBAKE_DOCS_ARGS = ["-n", MOJIBAKE_MARKDOWN_PATTERN, "docs", "-g", "**/*.md"];
 
 function toRel(p) {
   return p.split(path.sep).join("/");
@@ -132,6 +135,33 @@ function snippet(text, idx, len = 140) {
   return text.slice(start, end).replace(/\s+/g, " ").trim();
 }
 
+function runMojibakeMarkdownGuard() {
+  const checks = [{ label: "docs markdown", args: MOJIBAKE_DOCS_ARGS }];
+  let found = false;
+
+  for (const check of checks) {
+    const res = spawnSync("rg", check.args, { cwd: ROOT, encoding: "utf8" });
+
+    if (res.error || (res.status !== 0 && res.status !== 1)) {
+      console.error(`CI GUARD FAILED - mojibake check error (${check.label}).`);
+      if (res.error) console.error(String(res.error));
+      if (res.stderr) process.stderr.write(res.stderr);
+      process.exit(1);
+    }
+
+    if (res.status === 0) {
+      found = true;
+      console.error(`- [MOJIBAKE_MARKDOWN] ${check.label}`);
+      if (res.stdout) process.stderr.write(res.stdout);
+    }
+  }
+
+  if (found) {
+    console.error("\nCI GUARD FAILED - mojibake funnet i docs markdown.\n");
+    process.exit(1);
+  }
+}
+
 const files = listTrackedFiles();
 const violations = [];
 
@@ -189,6 +219,8 @@ if (violations.length) {
   );
   process.exit(1);
 }
+
+runMojibakeMarkdownGuard();
 
 console.log("CI GUARD PASSED - ingen policy-brudd funnet.");
 process.exit(0);

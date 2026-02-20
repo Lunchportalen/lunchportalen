@@ -1,4 +1,4 @@
-﻿# LUNCHPORTALEN - DRIFTSCODEX (Enterprise Hardening Reality)
+# LUNCHPORTALEN - DRIFTSCODEX (Enterprise Hardening Reality)
 Date: 2026-02-17
 Environment: local
 
