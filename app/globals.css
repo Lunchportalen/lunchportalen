@@ -3627,3 +3627,135 @@ html[data-resolved-theme="dark"] .lp-linkChip:hover {
 .lp-hero .lp-debug {
   display: none !important;
 }
+/* =========================================================
+   Superadmin Overview V2 (additive + scoped)
+   - no global layout/body side effects
+   - scoped to .lp-shell usage
+========================================================= */
+@layer components {
+  .lp-shell {
+    width: 100%;
+    border-radius: 22px;
+    background:
+      radial-gradient(120% 120% at 0% 0%, rgba(255, 0, 127, 0.06) 0%, rgba(255, 0, 127, 0) 45%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.96) 100%);
+    border: 1px solid rgba(var(--lp-border), 0.8);
+    padding: 16px;
+  }
+
+  .lp-shell .lp-card {
+    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+    border-color: rgba(var(--lp-border), 0.9);
+  }
+
+  .lp-command {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lp-command::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 0, 127, 0.08) 0%, rgba(255, 0, 127, 0) 40%);
+  }
+
+  .lp-kpi {
+    min-height: 156px;
+  }
+
+  .lp-shell .lp-input {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 14px;
+    border-color: rgba(var(--lp-border), 0.9);
+  }
+
+  .lp-shell .lp-pill {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(var(--lp-border), 0.95);
+  }
+
+  .lp-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .lp-status-ok {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.32);
+    color: rgb(6, 95, 70);
+  }
+
+  .lp-status-warn {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.34);
+    color: rgb(120, 53, 15);
+  }
+
+  .lp-status-bad {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.34);
+    color: rgb(127, 29, 29);
+  }
+
+  .lp-shell .lp-table {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .lp-th,
+  .lp-td {
+    padding: 12px 14px;
+    vertical-align: middle;
+  }
+
+  .lp-th {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(var(--lp-muted));
+  }
+
+  .lp-tr {
+    border-bottom: 1px solid rgba(var(--lp-border), 0.7);
+  }
+
+  .lp-tr:hover {
+    background: rgba(var(--lp-surface-alt), 0.8);
+  }
+
+  .lp-shell .lp-empty {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.8);
+  }
+}
+
+@layer utilities {
+  @media (max-width: 767px) {
+    .lp-mobile-center {
+      text-align: center;
+    }
+
+    .lp-mobile-center .lp-pill,
+    .lp-mobile-center .lp-status {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .lp-mobile-center .lp-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
