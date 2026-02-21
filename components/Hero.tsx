@@ -7,7 +7,7 @@ export default function Hero() {
     <section className="w-full pb-7 pt-7 md:pb-9 md:pt-9">
       <div className="grid items-start gap-7 md:grid-cols-[1.15fr_0.85fr] md:gap-10">
         {/* Left */}
-        <div className="min-w-0">
+        <div className="relative z-10 min-w-0">
           <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl md:leading-[1.05]">
             Firmalunsj med kontroll.
             <span className="block text-white/90">Ingen unntak.</span>

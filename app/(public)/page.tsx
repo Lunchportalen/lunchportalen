@@ -64,7 +64,7 @@ export default function MarketingHome() {
                 <Image src={src} alt="" fill priority={i === 0} className="lp-hero-img" sizes="100vw" />
               </div>
             ))}
-            <div className="lp-hero-overlay" />
+            <div className="lp-hero-overlay pointer-events-none" />
           </div>
 
           {/* ✅ Hold content inside container while image goes edge-to-edge */}

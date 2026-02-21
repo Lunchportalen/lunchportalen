@@ -36,21 +36,15 @@ function isActive(currentRaw: string, hrefRaw: string) {
   return current === href || current.startsWith(href + "/");
 }
 
-/**
- * ✅ Safe "next" target:
- * - Avoid sending users back to /login or /status which can create loops.
- * - Default to /week when you're already on auth/status routes.
- */
+// Safe next target:
+// - Avoid sending users back to /login or /status which can create loops.
+// - Default to /week when already on auth/status routes.
 function safeNextFromPath(pathname: string) {
   const p = safePath(pathname);
   if (p.startsWith("/login") || p.startsWith("/status") || p.startsWith("/auth")) return "/week";
   return p || "/week";
 }
 
-/**
- * ✅ Exported helper you can pass as rightSlot from layout.
- * This ensures "Til login" ALWAYS points to /login (not /status).
- */
 export function PublicAuthSlot({
   next,
   isLoggedIn = false,
@@ -61,7 +55,6 @@ export function PublicAuthSlot({
   const pathname = safePath(usePathname());
   const targetNext = encodeURIComponent(next ?? safeNextFromPath(pathname));
 
-  // You can style these with your existing button classes.
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <span className="hidden sm:inline-flex items-center rounded-full border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-xs text-[rgb(var(--lp-muted))] shadow-[var(--lp-shadow-sm)]">
@@ -90,12 +83,10 @@ export default function PublicHeader({
   const pathname = safePath(usePathname());
   const [open, setOpen] = React.useState(false);
 
-  // Close menu when route changes
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // ESC to close
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -109,7 +100,6 @@ export default function PublicHeader({
   return (
     <header className="lp-topbar border-b border-[rgb(var(--lp-border))] bg-white/90 supports-[backdrop-filter]:bg-white/75">
       <div className={cx("lp-container", "flex items-center justify-between gap-4 h-20 md:h-28")}>
-        {/* LEFT: Logo */}
         <div className="flex min-w-0 items-center gap-4">
           <Link href="/" aria-label="Gå til forsiden" className="inline-flex items-center focus:outline-none">
             <Image
@@ -123,7 +113,6 @@ export default function PublicHeader({
           </Link>
         </div>
 
-        {/* CENTER (desktop nav) */}
         {hasNav ? (
           <nav className="hidden md:flex items-center gap-2 text-sm" aria-label="Hovedmeny">
             {nav.map((item) => {
@@ -146,9 +135,7 @@ export default function PublicHeader({
           <div className="hidden md:block" />
         )}
 
-        {/* RIGHT */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Mobile hamburger */}
           {hasNav ? (
             <button
               type="button"
@@ -174,12 +161,11 @@ export default function PublicHeader({
             </button>
           ) : null}
 
-          {/* ✅ If rightSlot is not provided, use safe default auth slot */}
-          {rightSlot ?? <PublicAuthSlot />}
+          {/* Optional right slot (no default auth/session UI). */}
+          {rightSlot}
         </div>
       </div>
 
-      {/* MOBILE MENU (dropdown) */}
       {hasNav ? (
         <div className={cx("md:hidden", open ? "block" : "hidden")}>
           <div className="lp-container pb-3">
