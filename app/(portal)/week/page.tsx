@@ -12,6 +12,8 @@ import WeekClient from "./WeekClient";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { requireActiveAgreement } from "@/lib/agreements/requireActiveAgreement";
+import { homeForRole as roleHome } from "@/lib/auth/roles";
 
 export const metadata: Metadata = {
   title: "Ukeplan – Lunchportalen",
@@ -96,15 +98,11 @@ export default async function WeekPage() {
   const metaRole = normalizeRole((data.user.user_metadata as any)?.role);
   const role: Role = (emailRole ?? metaRole) as Role;
 
-  // Hard-route system roles away (safety)
-  if (role === "superadmin") redirect("/superadmin");
-  if (role === "kitchen") redirect("/kitchen");
-  if (role === "driver") redirect("/driver");
-
-  // (portal) allows employee + company_admin only
-  if (role !== "employee" && role !== "company_admin") {
-    redirect("/status?code=ROLE_BLOCKED");
+  if (role !== "employee") {
+    redirect(roleHome(role));
   }
+
+  await requireActiveAgreement();
 
   // Determine company_id from RLS-safe profiles (single source)
   const pRes = await sb.from("profiles").select("company_id,location_id,role,active").maybeSingle();
@@ -119,7 +117,14 @@ export default async function WeekPage() {
   const admin = await adminClientOrNull();
   if (!admin) {
     // We can still allow read-only UI, but we do not allow writes without enforcement config.
-    return <WeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." />;
+    return (
+      <WeekClient
+        canAct={false}
+        billingHoldReason="Mangler service-konfigurasjon for firmaverifisering."
+        role={role}
+        teamOrderMode={false}
+      />
+    );
   }
 
   // Try to fetch company status + optional hold fields (select only what exists in your schema)
@@ -131,10 +136,19 @@ export default async function WeekPage() {
     .maybeSingle();
 
   if (cRes.error || !cRes.data) {
-    return <WeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." />;
+    return (
+      <WeekClient
+        canAct={false}
+        billingHoldReason="Kan ikke verifisere firmastatus akkurat nå."
+        role={role}
+        teamOrderMode={false}
+      />
+    );
   }
 
   const hold = computeBillingHold(cRes.data);
 
-  return <WeekClient canAct={hold.canAct} billingHoldReason={hold.reason} />;
+  return <WeekClient canAct={hold.canAct} billingHoldReason={hold.reason} role={role} teamOrderMode={false} />;
 }
+
+
