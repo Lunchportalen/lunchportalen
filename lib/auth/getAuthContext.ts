@@ -126,6 +126,19 @@ function isBlockedStatus(status: unknown) {
   return s === "blocked" || s === "disabled" || s === "inactive";
 }
 
+function isMissingRequestScopeError(error: unknown) {
+  const e = error as any;
+  const message = safeStr(e?.message ?? e).toLowerCase();
+  const digest = safeStr(e?.digest).toLowerCase();
+  const causeMessage = safeStr(e?.cause?.message).toLowerCase();
+  const text = `${message} ${digest} ${causeMessage}`;
+
+  if (text.includes("outside a request scope")) return true;
+  if (text.includes("next-dynamic-api-wrong-context")) return true;
+  if (text.includes("next_dynamic_api_usage")) return true;
+  return false;
+}
+
 function claimsFromCache(rid: string, user: { id: string; email: string | null }, cached: CachedAuthClaims): AuthContext {
   const role = normalizeRole(cached.role);
   if (!role) return noProfile(user, rid, "CACHE");
@@ -216,6 +229,10 @@ async function resolveAuthContext(explicitRid?: string): Promise<AuthContext> {
 
     return ctx(rid, "OK", "DB_LOOKUP", userRef, role, company_id, location_id);
   } catch (e: any) {
+    if (isMissingRequestScopeError(e)) {
+      return unauthenticated(rid);
+    }
+
     authLog(rid, "unexpected_error", {
       message: safeStr(e?.message ?? e),
     });
@@ -231,4 +248,3 @@ export async function getAuthContext(input?: GetAuthContextInput): Promise<AuthC
   if (rid) return resolveAuthContext(rid);
   return getAuthContextMemoized();
 }
-
