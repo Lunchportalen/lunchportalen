@@ -8,16 +8,14 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { assertCompanyActiveOr403 } from "@/lib/guards/assertCompanyActiveApi";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 
 type Body = {
   date: string; // YYYY-MM-DD
 };
-
-type CompanyStatus = "active" | "paused" | "closed";
 
 type ProfileRow = {
   user_id: string;
@@ -126,51 +124,6 @@ function supabaseService() {
   return supabaseAdmin();
 }
 
-/* =========================
-   Company status gate (PAUSED/CLOSED)
-   - Bruk SupabaseClient<any, any, any> for å unngå TS "public vs never"
-   - For cancel: vi blokkerer også for PAUSED/CLOSED (enterprise-stramt).
-     Hvis dere vil tillate cancel under PAUSED, endre status === "paused" -> ok.
-========================= */
-async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
-  const { data, error } = await (supa as any)
-    .from("companies")
-    .select("status, paused_reason, closed_reason")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (error || !data) {
-    return {
-      ok: false as const,
-      status: 500,
-      error: "COMPANY_LOOKUP_FAILED",
-      reason: error?.message ?? "Company lookup failed",
-    };
-  }
-
-  const status = (data.status ?? "active") as CompanyStatus;
-
-  if (status === "paused") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_PAUSED",
-      reason: (data.paused_reason as string | null) ?? "Firma er pauset.",
-    };
-  }
-
-  if (status === "closed") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_CLOSED",
-      reason: (data.closed_reason as string | null) ?? "Firma er stengt.",
-    };
-  }
-
-  return { ok: true as const };
-}
-
 export async function POST(req: Request) {
   const rid = makeRid();
 
@@ -251,11 +204,12 @@ export async function POST(req: Request) {
       } });
     }
 
-    // 6) ✅ Company status gate (PAUSED/CLOSED)
-    const gate = await assertCompanyActive(supa as any, company_id);
-    if (!gate.ok) {
-      return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
-    }
+    const gate = await assertCompanyActiveOr403({
+      supa: supa as any,
+      companyId: company_id,
+      rid,
+    });
+    if (gate.ok === false) return gate.res;
 
     // 7) Finn eksisterende day_choice (idempotent)
     const { data: existingRaw, error: eErr } = await (supa as any)
