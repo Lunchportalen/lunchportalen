@@ -3,11 +3,12 @@
  * Idempotent: upserts content_pages + content_page_variants (nb/prod).
  *
  * Run: npx tsx scripts/seedCmsHomeAndOverlays.ts
+ * Requires: SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and service role in env.
  */
 
 import nextEnv from "@next/env";
-import { createClient } from "@supabase/supabase-js";
 import type { BlockList, BlockNode } from "../lib/cms/model/blockTypes";
+import { supabaseAdmin } from "../lib/supabase/admin";
 import { APP_OVERLAYS } from "../lib/cms/overlays/registry";
 import { buildOverlayBodies } from "./seedAppOverlaysFromHardcoded";
 
@@ -45,22 +46,13 @@ function buildHomeBody(): BlockList {
 nextEnv.loadEnvConfig(process.cwd());
 
 async function main() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[seedCmsHomeAndOverlays] env", {
-      hasSupabaseUrl: Boolean(url),
-      hasServiceRole: Boolean(serviceRoleKey),
-    });
-  }
-
-  if (!url || !serviceRoleKey) {
-    console.error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) or SUPABASE_SERVICE_ROLE_KEY");
+  let supabase;
+  try {
+    supabase = supabaseAdmin();
+  } catch (e) {
+    console.error("Missing Supabase config (URL and service role in env).", e instanceof Error ? e.message : e);
     process.exit(1);
   }
-
-  const supabase = createClient(url, serviceRoleKey);
   const now = new Date().toISOString();
 
   const overlayBodies = buildOverlayBodies();
