@@ -11,6 +11,9 @@ import KitchenView from "./KitchenView";
 import PageSection from "@/components/layout/PageSection";
 import BlockedState from "@/components/admin/BlockedState";
 
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 
@@ -179,11 +182,19 @@ export default async function Page() {
     }
   }
 
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.kitchen.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
   /* =========================
      ✅ PAGE
   ========================= */
   return (
     <>
+      {topBanner ? <div className="mb-3 print:hidden">{topBanner}</div> : null}
+      {headerSlot ? <div className="mb-3 print:hidden">{headerSlot}</div> : null}
       {/* Screen header (not printed) */}
       <div className="print:hidden">
         <PageSection
@@ -211,6 +222,8 @@ export default async function Page() {
       <div className="mt-6 print:mt-0">
         <KitchenView />
       </div>
+      {helpSlot ? <div className="mt-6 print:hidden">{helpSlot}</div> : null}
+      {footerCtaSlot ? <div className="mt-6 print:hidden">{footerCtaSlot}</div> : null}
     </>
   );
 }

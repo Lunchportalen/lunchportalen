@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday";
@@ -521,7 +522,7 @@ export default function CreateCompanyForm() {
             className="mt-1 h-5 w-5"
           />
           <span className="text-sm">
-            Jeg har lest og aksepterer <a className="underline" href="/vilkar">avtalevilkårene</a> *
+            Jeg har lest og aksepterer <Link className="underline" href="/vilkar">avtalevilkårene</Link> *
           </span>
         </label>
 

@@ -14,6 +14,9 @@ import { supabaseServer } from "@/lib/supabase/server";
 import PageSection from "@/components/layout/PageSection";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 
 // ✅ Oslo single source of truth (for display in superadmin)
 import {
@@ -251,9 +254,17 @@ export default async function SuperadminPage() {
   const systemState: SystemState =
     degradedByFeed || stats.companiesActive === null ? "DEGRADED" : computeSystemState(stats);
 
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.superadmin.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
   // 6) Render
   return (
     <>
+      {topBanner ? <div className="mx-auto w-full max-w-[1400px] px-4 pt-4">{topBanner}</div> : null}
+      {headerSlot ? <div className="mx-auto w-full max-w-[1400px] px-4">{headerSlot}</div> : null}
       {/* ✅ Oslo time / cutoff banner (server truth) */}
       <div className="mx-auto w-full max-w-[1400px] px-4 pt-4">
         <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">
@@ -273,6 +284,8 @@ export default async function SuperadminPage() {
         degradedRid={degradedRid}
         systemState={systemState}
       />
+      {helpSlot ? <div className="mx-auto w-full max-w-[1400px] px-4 mt-6">{helpSlot}</div> : null}
+      {footerCtaSlot ? <div className="mx-auto w-full max-w-[1400px] px-4 mt-6">{footerCtaSlot}</div> : null}
     </>
   );
 }

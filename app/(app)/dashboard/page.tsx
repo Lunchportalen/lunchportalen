@@ -1,5 +1,8 @@
 // app/(app)/dashboard/page.tsx
 import Link from "next/link";
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 
 type Status = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING";
 
@@ -143,7 +146,13 @@ function KPI({ label, value, hint }: { label: string; value: string; hint: strin
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.dashboard.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
   // Demo-data — kobles mot deres ekte API/SSR senere
   const companyName = "Acme AS";
   const status: Status = "ACTIVE";
@@ -151,6 +160,8 @@ export default function DashboardPage() {
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--s-4) var(--s-2)" }}>
+      {topBanner ? <div style={{ marginBottom: 12 }}>{topBanner}</div> : null}
+      {headerSlot ? <div style={{ marginBottom: 12 }}>{headerSlot}</div> : null}
       {/* Topbar */}
       <div
         style={{
@@ -257,6 +268,8 @@ export default function DashboardPage() {
           </Panel>
         </div>
       </section>
+      {helpSlot ? <div style={{ marginTop: 24 }}>{helpSlot}</div> : null}
+      {footerCtaSlot ? <div style={{ marginTop: 24 }}>{footerCtaSlot}</div> : null}
     </main>
   );
 }

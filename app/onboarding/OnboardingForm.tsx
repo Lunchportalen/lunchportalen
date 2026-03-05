@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 
@@ -575,7 +576,7 @@ export default function OnboardingForm() {
               className="mt-1 h-5 w-5"
             />
             <span className="text-sm">
-              Jeg har lest og aksepterer <a className="underline" href="/vilkar">avtalevilkårene</a> <span className="text-red-600">*</span>
+              Jeg har lest og aksepterer <Link className="underline" href="/vilkar">avtalevilkårene</Link> <span className="text-red-600">*</span>
             </span>
           </label>
 

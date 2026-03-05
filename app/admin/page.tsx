@@ -26,6 +26,9 @@ import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import CommandCenterKpis from "@/components/admin/CommandCenterKpis";
 import PendingInvitesStat from "@/components/admin/PendingInvitesStat";
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 
 /* =========================================================
    UI helpers
@@ -275,6 +278,12 @@ export default async function AdminCommandCenterPage() {
 
   const companyStatus = String(ctx.companyStatus || ctx.company?.status || "ACTIVE").toUpperCase();
 
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.companyAdmin.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
   return (
     <AdminPageShell
       title="Oversikt"
@@ -286,6 +295,8 @@ export default async function AdminCommandCenterPage() {
         </div>
       }
     >
+      {topBanner ? <div className="mb-3">{topBanner}</div> : null}
+      {headerSlot ? <div className="mb-3">{headerSlot}</div> : null}
       {/* Row 1 — Header (1–3–1) */}
       <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
@@ -427,12 +438,14 @@ export default async function AdminCommandCenterPage() {
         </div>
       </div>
 
+      {helpSlot ? <div className="mt-6">{helpSlot}</div> : null}
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
         <span>Dashboard 2.0 viser kun beslutningsverdi. Detaljer ligger på undersider.</span>
         <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/week">
           Til ansattvisning →
         </Link>
       </div>
+      {footerCtaSlot ? <div className="mt-6">{footerCtaSlot}</div> : null}
     </AdminPageShell>
   );
 }

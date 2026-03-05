@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Profile = {
@@ -303,9 +304,9 @@ export default function LoginClient() {
           <div className={`mt-2 text-sm${msgTone === "error" ? " text-red-500" : ""}`}>{msg}</div>
         ) : null}
 
-        <a className="mt-2 text-sm underline opacity-80 hover:opacity-100" href="/forgot-password">
+        <Link className="mt-2 text-sm underline opacity-80 hover:opacity-100" href="/forgot-password">
           Glemt passord?
-        </a>
+        </Link>
       </form>
     </main>
   );

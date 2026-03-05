@@ -1,0 +1,162 @@
+﻿import { NextResponse, NextRequest } from "next/server";
+
+const RATE_LIMIT_PER_MINUTE = 60;
+
+const rateLimitMap = new Map<string, number>();
+
+function getMinuteBucket(): number {
+  return Math.floor(Date.now() / 60_000);
+}
+
+function pruneOldBuckets(currentMinute: number): void {
+  for (const [key, _] of rateLimitMap) {
+    const parts = key.split(":");
+    const bucket = parseInt(parts[parts.length - 1], 10);
+    if (bucket < currentMinute - 1) rateLimitMap.delete(key);
+  }
+}
+
+const ENVIRONMENTS = ["prod", "staging"] as const;
+const LOCALES = ["nb", "en"] as const;
+const EVENT_TYPES = ["page_view", "search", "cta_click"] as const;
+
+export async function POST(request: NextRequest) {
+  const rid = makeRid("ana");
+  try {
+    if (request.method !== "POST") {
+      return NextResponse.json(
+        { ok: false, error: "method_not_allowed", message: "Method not allowed" },
+        { status: 405 }
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "invalid_json", message: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const o = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+    if (!o) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_body", message: "Body must be an object" },
+        { status: 400 }
+      );
+    }
+
+    const environment = o.environment;
+    const locale = o.locale;
+    const eventType = o.eventType;
+    if (
+      typeof environment !== "string" ||
+      !ENVIRONMENTS.includes(environment as (typeof ENVIRONMENTS)[number])
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_environment", message: "environment must be prod or staging" },
+        { status: 400 }
+      );
+    }
+    if (typeof locale !== "string" || !LOCALES.includes(locale as (typeof LOCALES)[number])) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_locale", message: "locale must be nb or en" },
+        { status: 400 }
+      );
+    }
+    if (
+      typeof eventType !== "string" ||
+      !EVENT_TYPES.includes(eventType as (typeof EVENT_TYPES)[number])
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "invalid_event_type",
+          message: "eventType must be page_view, search, or cta_click",
+        },
+        { status: 400 }
+      );
+    }
+
+    const pageId = (o.pageId ?? o.page_id) != null ? String(o.pageId ?? o.page_id) : "";
+    const variantId = (o.variantId ?? o.variant_id) != null ? String(o.variantId ?? o.variant_id) : "";
+    const eventKey = (o.eventKey ?? o.event_key) != null ? String(o.eventKey ?? o.event_key) : "";
+    const eventValue = (o.eventValue ?? o.event_value) != null ? String(o.eventValue ?? o.event_value) : null;
+    const metadataRaw = o.metadata;
+
+    if (eventValue !== null && eventValue.length > 80) {
+      return NextResponse.json(
+        { ok: false, error: "event_value_too_long", message: "event_value max 80 chars" },
+        { status: 400 }
+      );
+    }
+    if (eventKey.length > 64) {
+      return NextResponse.json(
+        { ok: false, error: "event_key_too_long", message: "event_key max 64 chars" },
+        { status: 400 }
+      );
+    }
+
+    let metadata: Record<string, unknown> = {};
+    if (metadataRaw != null) {
+      if (typeof metadataRaw !== "object" || Array.isArray(metadataRaw)) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_metadata", message: "metadata must be an object" },
+          { status: 400 }
+        );
+      }
+      metadata = metadataRaw as Record<string, unknown>;
+    }
+    const metadataStr = JSON.stringify(metadata);
+    if (metadataStr.length > 1000) {
+      return NextResponse.json(
+        { ok: false, error: "metadata_too_long", message: "metadata JSON stringify max 1000" },
+        { status: 400 }
+      );
+    }
+
+    const minuteBucket = getMinuteBucket();
+    pruneOldBuckets(minuteBucket);
+    const rateKey = `${eventType}:${environment}:${locale}:${pageId}:${variantId}:${eventKey}:${minuteBucket}`;
+    const count = (rateLimitMap.get(rateKey) ?? 0) + 1;
+    rateLimitMap.set(rateKey, count);
+    if (count > RATE_LIMIT_PER_MINUTE) {
+      return NextResponse.json(
+        { ok: false, error: "rate_limit_exceeded", message: "Too many requests" },
+        { status: 429 }
+      );
+    }
+
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const supabase = supabaseAdmin();
+
+    const { error: insertError } = await supabase.from("content_analytics_events").insert({
+      page_id: pageId || null,
+      variant_id: variantId || null,
+      environment,
+      locale,
+      event_type: eventType,
+      event_key: eventKey || null,
+      event_value: eventValue,
+      metadata: metadataStr.length ? (JSON.parse(metadataStr) as object) : {},
+    });
+
+    if (insertError) {
+      return NextResponse.json(
+        { ok: false, error: "insert_failed", message: insertError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json(
+      { ok: false, error: "server_error", message },
+      { status: 500 }
+    );
+  }
+}
+

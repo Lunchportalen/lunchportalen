@@ -99,70 +99,93 @@ export default function PublicHeader({
 
   return (
     <header className="lp-topbar border-b border-[rgb(var(--lp-border))] bg-white/90 supports-[backdrop-filter]:bg-white/75">
-      <div className={cx("lp-container", "flex items-center justify-between gap-4 h-20 md:h-28")}>
-        <div className="flex min-w-0 items-center gap-4">
-          <Link href="/" aria-label="Gå til forsiden" className="inline-flex items-center focus:outline-none">
-            <Image
-              src="/brand/LP-logo-uten-bakgrunn.png"
-              alt="Lunchportalen"
-              width={900}
-              height={320}
-              className="lp-header-logo"
-              priority
-            />
-          </Link>
-        </div>
+      <div className={cx("lp-container", "h-20 md:h-28")}>
+        <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <div className="flex min-w-0 items-center gap-4 justify-self-start">
+            <Link href="/" aria-label="Gå til forsiden" className="inline-flex items-center focus:outline-none">
+              <Image
+                src="/brand/LP-logo-uten-bakgrunn.png"
+                alt="Lunchportalen"
+                width={900}
+                height={320}
+                className="lp-header-logo"
+                priority
+              />
+            </Link>
+          </div>
 
-        {hasNav ? (
-          <nav className="hidden md:flex items-center gap-2 text-sm" aria-label="Hovedmeny">
-            {nav.map((item) => {
-              const href = normalizeHref(item.href);
-              const active = isActive(pathname, href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cx("lp-nav-item", active ? "lp-nav-item--active" : "hover:bg-black/5")}
-                  prefetch
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        ) : (
-          <div className="hidden md:block" />
-        )}
-
-        <div className="flex items-center gap-2 sm:gap-3">
           {hasNav ? (
-            <button
-              type="button"
-              className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-[var(--lp-radius-btn)] border border-[rgba(var(--lp-border),0.9)] bg-white shadow-[var(--lp-shadow-sm)]"
-              aria-label={open ? "Lukk meny" : "Åpne meny"}
-              aria-expanded={open}
-              onClick={() => setOpen((v) => !v)}
-            >
-              <span className="relative block h-4 w-5">
-                <span
-                  className="absolute left-0 top-0 h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
-                  style={{ transform: open ? "translateY(7px) rotate(45deg)" : "none" }}
-                />
-                <span
-                  className="absolute left-0 top-[7px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
-                  style={{ opacity: open ? 0 : 1 }}
-                />
-                <span
-                  className="absolute left-0 top-[14px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
-                  style={{ transform: open ? "translateY(-7px) rotate(-45deg)" : "none" }}
-                />
-              </span>
-            </button>
-          ) : null}
+            <nav className="hidden md:flex items-center justify-center gap-2 text-sm" aria-label="Hovedmeny">
+              {nav.map((item) => {
+                const href = normalizeHref(item.href);
+                const active = isActive(pathname, href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={cx("lp-nav-item", active ? "lp-nav-item--active" : "hover:bg-black/5")}
+                    prefetch
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          ) : (
+            <div className="hidden md:block" />
+          )}
 
-          {/* Optional right slot (no default auth/session UI). */}
-          {rightSlot}
+          <div className="flex items-center justify-end gap-2 sm:gap-3">
+            {hasNav ? (
+              <button
+                type="button"
+                className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-[var(--lp-radius-btn)] border border-[rgba(var(--lp-border),0.9)] bg-white shadow-[var(--lp-shadow-sm)]"
+                aria-label={open ? "Lukk meny" : "Åpne meny"}
+                aria-expanded={open}
+                onClick={() => setOpen((v) => !v)}
+              >
+                <span className="relative block h-4 w-5">
+                  <span
+                    className="absolute left-0 top-0 h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    style={{ transform: open ? "translateY(7px) rotate(45deg)" : "none" }}
+                  />
+                  <span
+                    className="absolute left-0 top-[7px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    style={{ opacity: open ? 0 : 1 }}
+                  />
+                  <span
+                    className="absolute left-0 top-[14px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    style={{ transform: open ? "translateY(-7px) rotate(-45deg)" : "none" }}
+                  />
+                </span>
+              </button>
+            ) : null}
+
+            {/* Mobile auth: only "Logg inn" button to keep UI simple. */}
+            <Link
+              href="/login"
+              className="md:hidden inline-flex h-11 items-center justify-center rounded-[var(--lp-radius-btn)] border border-[rgba(var(--lp-border),0.9)] bg-white px-4 text-sm font-medium text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-sm)] hover:bg-black/5"
+            >
+              Logg inn
+            </Link>
+
+            {/* Desktop auth buttons: Logg inn / Registrering */}
+            <div className="hidden md:inline-flex items-center gap-2">
+              <Link href="/login" className="lp-btn lp-btn--secondary min-h-[44px]">
+                Logg inn
+              </Link>
+              <Link
+                href="/registrering"
+                className="lp-btn lp-btn--primary lp-neon-focus lp-neon-glow-hover min-h-[44px]"
+              >
+                Registrering
+              </Link>
+            </div>
+
+            {/* Optional right slot (no default auth/session UI). */}
+            {rightSlot}
+          </div>
         </div>
       </div>
 

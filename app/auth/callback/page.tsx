@@ -1,7 +1,7 @@
 // app/auth/callback/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function safeNextPath(next: string | null) {
@@ -13,7 +13,7 @@ function safeNextPath(next: string | null) {
   return next;
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -31,5 +31,17 @@ export default function AuthCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6 text-sm text-slate-600">Laster…</div>
+      }
+    >
+      <AuthCallbackInner />
+    </Suspense>
   );
 }

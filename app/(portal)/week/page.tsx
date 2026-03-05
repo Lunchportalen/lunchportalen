@@ -10,6 +10,9 @@ import { redirect } from "next/navigation";
 
 import WeekClient from "./WeekClient";
 
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 import { requireActiveAgreement } from "@/lib/agreements/requireActiveAgreement";
@@ -148,7 +151,28 @@ export default async function WeekPage() {
 
   const hold = computeBillingHold(cRes.data);
 
-  return <WeekClient canAct={hold.canAct} billingHoldReason={hold.reason} role={role} teamOrderMode={false} />;
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.week.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const emptyStateSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "emptyState", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
+  return (
+    <>
+      {topBanner ? <div className="mb-3">{topBanner}</div> : null}
+      {headerSlot ? <div className="mb-3">{headerSlot}</div> : null}
+      <WeekClient
+        canAct={hold.canAct}
+        billingHoldReason={hold.reason}
+        role={role}
+        teamOrderMode={false}
+        overlayHelp={helpSlot}
+        overlayEmptyState={emptyStateSlot}
+        overlayFooterCta={footerCtaSlot}
+      />
+    </>
+  );
 }
 
 

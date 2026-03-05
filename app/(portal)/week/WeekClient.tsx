@@ -22,6 +22,11 @@ const API_BASE = "/api/order";
 export type WeekClientProps = {
   canAct?: boolean;
   billingHoldReason?: string | null;
+  role?: "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+  teamOrderMode?: boolean;
+  overlayHelp?: ReactNode;
+  overlayEmptyState?: ReactNode;
+  overlayFooterCta?: ReactNode;
 };
 
 /* =========================================================
@@ -89,29 +94,29 @@ type WindowWrapped =
 
 type SetChoiceResp =
   | {
-      ok: true;
-      rid?: string;
-      receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
-      date: string;
-      choice_key: string;
-      note: string | null;
-      updated_at?: string | null;
-    }
+    ok: true;
+    rid?: string;
+    receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
+    date: string;
+    choice_key: string;
+    note: string | null;
+    updated_at?: string | null;
+  }
   | { ok: false; rid?: string; error?: string; message?: string; detail?: any };
 
 type SetDayResp =
   | {
-      ok: true;
-      rid?: string;
-      receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
-      date: string;
-      status?: string;
-      wants_lunch?: boolean;
-      choice_key?: string | null;
-      note?: string | null;
-      pricing?: { tier?: string; unit_price?: number };
-      updated_at?: string | null;
-    }
+    ok: true;
+    rid?: string;
+    receipt?: { orderId?: string; status?: string; date?: string; updatedAt?: string | null };
+    date: string;
+    status?: string;
+    wants_lunch?: boolean;
+    choice_key?: string | null;
+    note?: string | null;
+    pricing?: { tier?: string; unit_price?: number };
+    updated_at?: string | null;
+  }
   | { ok: false; rid?: string; error?: string; message?: string; detail?: any };
 
 /* =========================================================
@@ -344,7 +349,7 @@ function clientRequestId() {
   try {
     // @ts-ignore
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  } catch {}
+  } catch { }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
@@ -437,7 +442,13 @@ function ReceiptBanner() {
    Main
 ========================================================= */
 
-export default function WeekClient({ canAct = true, billingHoldReason = null }: WeekClientProps) {
+export default function WeekClient({
+  canAct = true,
+  billingHoldReason = null,
+  overlayHelp = null,
+  overlayEmptyState = null,
+  overlayFooterCta = null,
+}: WeekClientProps) {
   const uiCanAct = Boolean(canAct);
 
   // A4 global action motor + state
@@ -527,11 +538,11 @@ export default function WeekClient({ canAct = true, billingHoldReason = null }: 
       if (!res.ok || !raw || (raw as any).ok !== true || !payload) {
         const errText = safeUserMessage(
           (payload as any)?.error ||
-            (payload as any)?.detail ||
-            (raw as any)?.error ||
-            (raw as any)?.detail ||
-            (raw as any)?.message ||
-            "Kunne ikke hente lunsjplanen."
+          (payload as any)?.detail ||
+          (raw as any)?.error ||
+          (raw as any)?.detail ||
+          (raw as any)?.message ||
+          "Kunne ikke hente lunsjplanen."
         );
         setMsg(errText);
         setData(null);
@@ -1106,6 +1117,7 @@ export default function WeekClient({ canAct = true, billingHoldReason = null }: 
       {showAgreementNotice ? (
         <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">{showAgreementNotice}</div>
       ) : null}
+      {overlayHelp ? <div className="mt-4">{overlayHelp}</div> : null}
 
       {loading ? (
         <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Henter lunsjplan …</div>
@@ -1114,14 +1126,20 @@ export default function WeekClient({ canAct = true, billingHoldReason = null }: 
           {msg}
         </div>
       ) : !isAgreementActive ? (
-        <div className="mt-4 rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
-          <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
-            {agreementStatusMessage || "Ingen aktiv avtale"}
+        <div className="mt-4 space-y-4">
+          <div className="rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
+            <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
+              {agreementStatusMessage || "Ingen aktiv avtale"}
+            </div>
           </div>
+          {overlayEmptyState ? <div>{overlayEmptyState}</div> : null}
         </div>
       ) : !visibleDays.length ? (
-        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
-          Ingen uke er tilgjengelig akkurat nå.
+        <div className="mt-4 space-y-4">
+          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
+            Ingen uke er tilgjengelig akkurat nå.
+          </div>
+          {overlayEmptyState ? <div>{overlayEmptyState}</div> : null}
         </div>
       ) : (
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -1317,6 +1335,7 @@ export default function WeekClient({ canAct = true, billingHoldReason = null }: 
           })}
         </div>
       )}
+      {overlayFooterCta ? <div className="mt-6">{overlayFooterCta}</div> : null}
     </section>
   );
 }

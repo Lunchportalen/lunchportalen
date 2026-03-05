@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -241,9 +242,9 @@ export default function AcceptInviteClient({ token }: Props) {
 
       <p className="text-center text-xs text-muted">
         Har du allerede konto?{" "}
-        <a className="inline-flex min-h-[44px] items-center underline" href="/login">
+        <Link className="inline-flex min-h-[44px] items-center underline" href="/login">
           Logg inn
-        </a>
+        </Link>
       </p>
     </form>
   );

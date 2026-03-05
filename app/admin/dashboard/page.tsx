@@ -1,6 +1,7 @@
 // app/admin/dashboard/page.tsx
 export const revalidate = 0;
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Sparkline from "./Sparkline";
@@ -205,18 +206,18 @@ export default async function CompanyAdminDashboardPage() {
               <div className="text-sm text-[rgb(var(--lp-muted))]">Gå til ansatteoversikt eller egne ordrer.</div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <a
+                <Link
                   href="/orders"
                   className="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
                 >
                   Se egne ordrer
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/admin/users"
                   className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-[rgb(var(--lp-text))] ring-1 ring-[rgb(var(--lp-border))] hover:bg-[rgb(var(--lp-surface))]"
                 >
                   Ansatte
-                </a>
+                </Link>
               </div>
             </div>
           </section>

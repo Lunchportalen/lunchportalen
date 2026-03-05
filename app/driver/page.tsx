@@ -11,6 +11,9 @@ import DriverClient from "./DriverClient";
 import PageSection from "@/components/layout/PageSection";
 import BlockedState from "@/components/admin/BlockedState";
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
+import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
+import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = {
@@ -108,11 +111,19 @@ export default async function DriverPage() {
     );
   }
 
+  const overlay = await getOverlayBySlug(APP_OVERLAYS.driver.slug, { locale: "nb", environment: "prod" });
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+
   /* =========================
      ✅ PAGE
   ========================= */
   return (
     <>
+      {topBanner ? <div className="mb-3 print:hidden">{topBanner}</div> : null}
+      {headerSlot ? <div className="mb-3 print:hidden">{headerSlot}</div> : null}
       <div className="print:hidden">
         <PageSection
           title="Sjåfør"
@@ -144,6 +155,8 @@ export default async function DriverPage() {
       <div className="mt-6 print:mt-0">
         <DriverClient />
       </div>
+      {helpSlot ? <div className="mt-6 print:hidden">{helpSlot}</div> : null}
+      {footerCtaSlot ? <div className="mt-6 print:hidden">{footerCtaSlot}</div> : null}
     </>
   );
 }

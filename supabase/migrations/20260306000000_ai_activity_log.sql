@@ -1,0 +1,1 @@
+-- NO-OP: superseded by 20260305000000_ai_activity_log.sql to prevent duplicate creation.

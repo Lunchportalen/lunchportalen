@@ -1,0 +1,13 @@
+# HARD SCOPE LOCK
+app/api/**
+supabase/**
+package*.json
+app/globals.css
+app/layout.tsx
+components/**
+lib/**
+!app/api/backoffice/**
+!app/(backoffice)/backoffice/**
+!lib/backoffice/**
+!lib/backofficeStore/**
+!docs/backoffice/**

@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import KitchenClient from "./kitchenClient";
@@ -56,9 +57,9 @@ export default async function KitchenPage(props: { searchParams?: Record<string,
           </div>
 
           <div className="mt-6">
-            <a className="inline-block text-sm text-[rgb(var(--lp-muted))] hover:underline" href="/today">
+            <Link className="inline-block text-sm text-[rgb(var(--lp-muted))] hover:underline" href="/today">
               Tilbake til i dag
-            </a>
+            </Link>
           </div>
         </div>
       </main>
