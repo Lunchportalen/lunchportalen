@@ -146,8 +146,17 @@ export default function AIControlPage() {
 
   return (
     <div className="p-6 max-w-5xl">
-      <h1 className="text-xl font-semibold text-slate-900">AI Control Center</h1>
-      <p className="mt-1 text-sm text-slate-600">Kjøre jobs, innholdshelse og eksperimentstatistikk (kun superadmin).</p>
+      <h1 className="text-xl font-semibold text-slate-900">AI Control</h1>
+      <p className="mt-1 text-sm text-slate-600">
+        Drift og overvåkning av AI-jobs, innholdshelse og eksperimenter (kun superadmin).
+      </p>
+
+      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p>
+          Denne siden viser kun operative verktøy (jobs, health og experiments) for AI i denne branchen. Flere strategiske
+          AI-funksjoner kan finnes i arkitekturen, men er ikke eksponert her.
+        </p>
+      </div>
 
       {error && (
         <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
@@ -157,6 +166,9 @@ export default function AIControlPage() {
 
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">Jobs</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Kø av AI-oppgaver som kjører i bakgrunnen. Brukes for blant annet innholdsvedlikehold og analyser.
+        </p>
         <div className="mt-2 flex items-center gap-2">
           <button
             type="button"
@@ -202,6 +214,9 @@ export default function AIControlPage() {
 
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">Content Health</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Periodiske helsesjekker av sider i publiseringsløpet. Høy score betyr færre blokkerende avvik.
+        </p>
         <div className="mt-2 flex items-center gap-2">
           <button
             type="button"
@@ -247,6 +262,9 @@ export default function AIControlPage() {
 
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-800">Experiments</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Oversikt over resultatene for AI-støttede eksperimenter (A/B-varianter).
+        </p>
         <div className="mt-2 flex items-center gap-2">
           <input
             type="text"

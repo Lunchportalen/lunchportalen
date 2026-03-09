@@ -23,7 +23,16 @@ import {
   type BlockType as AddModalBlockType,
 } from "./_stubs";
 import type { BlockDefinition } from "./blockRegistry";
+import type { SupportSnapshot, StatusLineState } from "./types";
+import { applyAIPatchV1 } from "@/lib/cms/model/applyAIPatch";
+import { isAIPatchV1 } from "@/lib/cms/model/aiPatch";
 import { BlockPickerOverlay } from "./BlockPickerOverlay";
+import { ContentTopbar } from "./ContentTopbar";
+import { ContentInfoPanel } from "./ContentInfoPanel";
+import { ContentSaveBar } from "./ContentSaveBar";
+import { ContentAiTools } from "./ContentAiTools";
+import { logEditorAiEvent } from "@/domain/backoffice/ai/metrics/logEditorAiEvent";
+import type { EditorAiFeature } from "@/domain/backoffice/ai/metrics/editorAiMetricsTypes";
 
 type PageStatus = "draft" | "published";
 
@@ -323,6 +332,16 @@ type BodyParseResult = {
   error: string | null;
 };
 
+type AiToolId =
+  | "landing.generate.sections"
+  | "seo.optimize.page"
+  | "content.maintain.page"
+  | "experiment.generate.variants"
+  | "image.generate.brand_safe"
+  | "image.improve.metadata"
+  | "i18n.translate.blocks"
+  | "block.builder";
+
 function safeStr(v: unknown): string {
   return String(v ?? "").trim();
 }
@@ -330,6 +349,62 @@ function safeStr(v: unknown): string {
 function safeObj(v: unknown): Record<string, unknown> {
   if (!v || typeof v !== "object" || Array.isArray(v)) return {};
   return v as Record<string, unknown>;
+}
+
+function buildAiBlocks(
+  blocks: Block[]
+): Array<{ id: Block["id"]; type: Block["type"]; data?: Record<string, unknown> }> {
+  return blocks.map((b: Block) => {
+    switch (b.type) {
+      case "hero": {
+        const { id, type, title, subtitle, imageUrl, imageAlt, ctaLabel, ctaHref } = b;
+        return { id, type, data: { title, subtitle, imageUrl, imageAlt, ctaLabel, ctaHref } };
+      }
+      case "richText": {
+        const { id, type, heading, body } = b;
+        return { id, type, data: { heading, body } };
+      }
+      case "image": {
+        const { id, type, assetPath, alt, caption } = b;
+        return { id, type, data: { assetPath, alt, caption } };
+      }
+      case "cta": {
+        const { id, type, title, body, buttonLabel, buttonHref } = b;
+        return { id, type, data: { title, body, buttonLabel, buttonHref } };
+      }
+      case "banners": {
+        const { id, type, items } = b;
+        return { id, type, data: { items } };
+      }
+      case "divider": {
+        const { id, type, style } = b;
+        return { id, type, data: { style } };
+      }
+      case "code": {
+        const { id, type, code, displayIntro, displayOutro } = b;
+        return { id, type, data: { code, displayIntro, displayOutro } };
+      }
+      default: {
+        const neverBlock: never = b;
+        return { id: (neverBlock as Block).id, type: (neverBlock as Block).type };
+      }
+    }
+  });
+}
+
+function buildAiExistingBlocks(blocks: Block[]): Array<{ id: string; type: string }> {
+  return blocks.map((b) => ({ id: b.id, type: b.type }));
+}
+
+function buildAiMeta(meta: Record<string, unknown>): { description?: string } | undefined {
+  const root = safeObj(meta);
+  const seo = safeObj((root as { seo?: unknown }).seo);
+  const descriptionRaw = (seo as { description?: unknown }).description;
+  const description = typeof descriptionRaw === "string" ? descriptionRaw : undefined;
+  if (description && description.trim()) {
+    return { description: description.trim() };
+  }
+  return undefined;
 }
 
 function normalizeSlug(v: unknown): string {
@@ -345,6 +420,38 @@ function formatDate(v: string | null | undefined): string {
   const raw = safeStr(v);
   if (!raw) return "-";
   return formatDateTimeNO(raw) || raw;
+}
+
+function extractAiSummary(tool: AiToolId, data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const o = data as Record<string, unknown>;
+  if (typeof o.summary === "string" && o.summary.trim()) {
+    return o.summary.trim();
+  }
+  if (tool === "experiment.generate.variants") {
+    if (Array.isArray(o.variants)) {
+      const count = o.variants.length;
+      return count > 0
+        ? `Genererte ${count} A/B-variant${count === 1 ? "" : "er"}.`
+        : "Ingen A/B-varianter generert.";
+    }
+    if (Array.isArray(o.suggestionIds)) {
+      const count = o.suggestionIds.length;
+      return count > 0
+        ? `Genererte ${count} A/B-variant${count === 1 ? "" : "er"}.`
+        : "Ingen A/B-varianter generert.";
+    }
+  }
+  if (tool === "image.generate.brand_safe" && Array.isArray(o.candidates)) {
+    const count = o.candidates.length;
+    return count > 0
+      ? `Genererte ${count} bildeforslag i mediearkivet.`
+      : "Ingen bildeforslag generert.";
+  }
+  if (tool === "image.improve.metadata") {
+    return "Forslag til bilde-metadata er klare i AI-forslaget.";
+  }
+  return null;
 }
 
 // I1 – pure mapper: state – statuslinje (prioritet: conflict > offline > error > saving > unsaved > saved)
@@ -1074,6 +1181,21 @@ export function ContentWorkspace({
   /** Resolved page id for API calls; when URL is slug we use page.id after load. */
   const effectiveId = page?.id ?? selectedId;
 
+  // AI – editor-scoped state (busyId can be AiToolId or dedicated-route id e.g. layout.suggestions)
+  const [aiBusyToolId, setAiBusyToolId] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiBlockBuilderResult, setAiBlockBuilderResult] = useState<{
+    block: Record<string, unknown>;
+    message: string;
+  } | null>(null);
+  const [aiLastAppliedTool, setAiLastAppliedTool] = useState<string | null>(null);
+  const [aiLastActionFeature, setAiLastActionFeature] = useState<EditorAiFeature | null>(null);
+  type AiCapabilityStatus = "loading" | "available" | "unavailable";
+  const [aiCapability, setAiCapability] = useState<AiCapabilityStatus>("loading");
+
+  const editorOpenedLoggedForRef = useRef<string | null>(null);
+
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outboxWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
@@ -1090,6 +1212,54 @@ export function ContentWorkspace({
   const [isStatusInProgress, setIsStatusInProgress] = useState(false);
   const [blockPickerOpen, setBlockPickerOpen] = useState(false);
   const addInsertIndexRef = useRef<number | null>(null);
+
+  // Editor-AI metrics: log editor_opened once per page
+  useEffect(() => {
+    if (!effectiveId) {
+      editorOpenedLoggedForRef.current = null;
+      return;
+    }
+    if (editorOpenedLoggedForRef.current === effectiveId) return;
+    editorOpenedLoggedForRef.current = effectiveId;
+    logEditorAiEvent({
+      type: "editor_opened",
+      pageId: effectiveId,
+      variantId: null,
+      timestamp: new Date().toISOString(),
+    });
+  }, [effectiveId]);
+
+  // Editor-AI capability: fetch once when a page is selected so we show loading/available/unavailable correctly
+  useEffect(() => {
+    if (!selectedId) {
+      setAiCapability("loading");
+      return;
+    }
+    let cancelled = false;
+    setAiCapability("loading");
+    fetch("/api/backoffice/ai/capability", { method: "GET", credentials: "include" })
+      .then((res) => res.json().catch(() => ({})))
+      .then((data: { ok?: boolean; enabled?: boolean; data?: { ok?: boolean; enabled?: boolean } }) => {
+        if (cancelled) return;
+        const enabled =
+          typeof data.enabled === "boolean"
+            ? data.enabled
+            : typeof data?.data?.enabled === "boolean"
+              ? data.data.enabled
+              : false;
+        const status: AiCapabilityStatus = enabled ? "available" : "unavailable";
+        if (process.env.NODE_ENV === "development") {
+          console.log("[EDITOR_AI] capability", { payload: data, enabled, status });
+        }
+        setAiCapability(status);
+      })
+      .catch(() => {
+        if (!cancelled) setAiCapability("unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId]);
 
   const statusLabel = useMemo<PageStatus>(() => {
     if (!page) return "draft";
@@ -1127,6 +1297,14 @@ export function ContentWorkspace({
   const canPublish = Boolean(selectedId && page && !isPublished && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
   const canUnpublish = Boolean(selectedId && page && !isDraft && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
 
+  const publicSlug = useMemo(() => {
+    const raw = slug || page?.slug || "";
+    const norm = normalizeSlug(raw);
+    return norm || null;
+  }, [slug, page?.slug]);
+
+  const canOpenPublic = Boolean(publicSlug);
+
   // I2 – publish/unpublish disabled forklaring (title på knappene)
   const publishDisabledTitle =
     !canPublish && (!selectedId || !page)
@@ -1154,10 +1332,17 @@ export function ContentWorkspace({
               : undefined;
 
   // I1 – statusLine-useMemo (én sannhetskilde)
-  const statusLine = useMemo(
+  const statusLine: StatusLineState = useMemo(
     () => getStatusLineState({ saveState, dirty, isOffline, lastSavedAt, lastError, formatDateFn: formatDate }),
     [saveState, dirty, isOffline, lastSavedAt, lastError]
   );
+
+  const onOpenPublicPage = useCallback(() => {
+    if (!publicSlug) return;
+    if (typeof window === "undefined") return;
+    const path = `/${publicSlug}`;
+    window.open(path, "_blank", "noopener,noreferrer");
+  }, [publicSlug]);
 
   // Block List Editor 2.0 – parse body to BlockList when useEditor2 and page available (read-only adapter)
   useEffect(() => {
@@ -1197,7 +1382,7 @@ export function ContentWorkspace({
   }, [useEditor2]);
 
   // I4 – support snapshot (kun ved conflict/offline/error)
-  const supportSnapshot = useMemo(() => {
+  const supportSnapshot: SupportSnapshot | null = useMemo(() => {
     if (statusLine.key !== "conflict" && statusLine.key !== "offline" && statusLine.key !== "error") return null;
     if (!sessionRidRef.current) sessionRidRef.current = makeRidClient();
     return {
@@ -1583,8 +1768,429 @@ export function ContentWorkspace({
   );
 
   const onSave = useCallback(async () => {
+    if (aiLastActionFeature && effectiveId) {
+      logEditorAiEvent({
+        type: "ai_save_after_action",
+        pageId: effectiveId,
+        variantId: null,
+        feature: aiLastActionFeature,
+        timestamp: new Date().toISOString(),
+      });
+      setAiLastActionFeature(null);
+    }
     await saveDraft("manual");
-  }, [saveDraft]);
+  }, [saveDraft, aiLastActionFeature, effectiveId]);
+
+  const onSaveAndPreview = async () => {
+    if (canSave) await onSave();
+    if (selectedId && typeof window !== "undefined") {
+      window.open(
+        `${window.location.origin}/backoffice/preview/${selectedId}`,
+        "_blank",
+        "noopener"
+      );
+    }
+  };
+
+  async function callAiSuggest(
+    tool: Exclude<AiToolId, "block.builder">,
+    input: Record<string, unknown>,
+    options?: { metricsFeature?: EditorAiFeature }
+  ): Promise<unknown> {
+    const metricsFeature = options?.metricsFeature;
+    setAiBusyToolId(tool);
+    setAiError(null);
+    setAiSummary(null);
+    try {
+      const body = {
+        tool,
+        pageId: effectiveId ?? null,
+        variantId: null,
+        environment: "preview",
+        locale: "nb",
+        input,
+        blocks: buildAiBlocks(blocks),
+        existingBlocks: buildAiExistingBlocks(blocks),
+        meta: buildAiMeta(meta),
+        pageTitle: title || undefined,
+        pageSlug: slug || undefined,
+      };
+      const res = await fetch("/api/backoffice/ai/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as unknown;
+      if (!res.ok) {
+        const rawMsg =
+          json &&
+          typeof json === "object" &&
+          "message" in (json as { message?: unknown }) &&
+          typeof (json as { message?: unknown }).message === "string"
+            ? (json as { message: string }).message
+            : null;
+        const code = json && typeof json === "object" && "error" in (json as { error?: unknown }) ? (json as { error: string }).error : null;
+        const msg =
+          res.status === 503 && (code === "FEATURE_DISABLED" || rawMsg === "AI is disabled.")
+            ? "AI er ikke tilgjengelig (mangler serverkonfigurasjon)."
+            : rawMsg || `Feil ${res.status}`;
+        setAiError(msg);
+        return null;
+      }
+      if (!json || typeof json !== "object" || !(json as { ok?: unknown }).ok) {
+        const msg =
+          (json as { message?: unknown })?.message &&
+          typeof (json as { message?: unknown }).message === "string"
+            ? ((json as { message: string }).message || "AI-forespørsel feilet.")
+            : "AI-forespørsel feilet.";
+        setAiError(msg);
+        return null;
+      }
+      const rawData =
+        "data" in (json as { data?: unknown })
+          ? ((json as { data?: unknown }).data as unknown)
+          : null;
+      // API returns { ok, rid, data: { suggestionId?, suggestion? } }; payload for summary/patch is in data.suggestion
+      const payload =
+        rawData &&
+        typeof rawData === "object" &&
+        rawData !== null &&
+        "suggestion" in (rawData as Record<string, unknown>)
+          ? (rawData as { suggestion: unknown }).suggestion
+          : rawData;
+      const summary = extractAiSummary(tool, payload);
+      if (summary) setAiSummary(summary);
+      // Reset last applied marker unless this call produces a valid patch we can apply.
+      setAiLastAppliedTool(null);
+
+      if (metricsFeature) {
+        const patchPresent = Boolean(
+          payload &&
+            typeof payload === "object" &&
+            "patch" in (payload as Record<string, unknown>) &&
+            isAIPatchV1((payload as { patch: unknown }).patch)
+        );
+        logEditorAiEvent({
+          type: "ai_result_received",
+          feature: metricsFeature,
+          pageId: effectiveId ?? null,
+          variantId: null,
+          patchPresent,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Apply patch to editor when suggestion returns a valid AIPatchV1 (Improve Page, SEO, Generate sections, etc.)
+      if (
+        payload &&
+        typeof payload === "object" &&
+        "patch" in (payload as Record<string, unknown>) &&
+        isAIPatchV1((payload as { patch: unknown }).patch)
+      ) {
+        const patch = (payload as { patch: Parameters<typeof applyAIPatchV1>[1] }).patch;
+        const body: BlockList = {
+          version: 1,
+          blocks: buildAiBlocks(blocks).map((b) => ({ id: b.id, type: b.type, data: b.data ?? {} })),
+          meta: buildAiMeta(meta) ?? {},
+        };
+        const applied = applyAIPatchV1(body, patch);
+        if (applied.ok) {
+          const editorBlocks = applied.next.blocks.map((n) => ({
+            id: n.id,
+            type: n.type,
+            ...(n.data ?? {}),
+          }));
+          applyParsedBody(
+            parseBodyToBlocks({ blocks: editorBlocks, meta: applied.next.meta ?? {} })
+          );
+          setAiLastAppliedTool(tool);
+          if (metricsFeature) {
+            logEditorAiEvent({
+              type: "ai_patch_applied",
+              feature: metricsFeature,
+              pageId: effectiveId ?? null,
+              variantId: null,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        }
+      }
+      return payload;
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Ukjent AI-feil.");
+      return null;
+    } finally {
+      setAiBusyToolId(null);
+    }
+  }
+
+  async function callDedicatedAiRoute<T = Record<string, unknown>>(params: {
+    path: string;
+    body: Record<string, unknown>;
+    busyId: string;
+    getSummary: (data: T) => string | null;
+  }): Promise<T | null> {
+    const { path, body, busyId, getSummary } = params;
+    setAiBusyToolId(busyId);
+    setAiError(null);
+    setAiSummary(null);
+    setAiBlockBuilderResult(null);
+    try {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as unknown;
+      if (!res.ok) {
+        const rawMsg =
+          json &&
+          typeof json === "object" &&
+          "message" in (json as { message?: unknown }) &&
+          typeof (json as { message?: unknown }).message === "string"
+            ? (json as { message: string }).message
+            : null;
+        const code =
+          json && typeof json === "object" && "error" in (json as { error?: unknown })
+            ? (json as { error: string }).error
+            : null;
+        const msg =
+          res.status === 503 && (code === "FEATURE_DISABLED" || rawMsg === "AI is disabled.")
+            ? "AI er ikke tilgjengelig (mangler serverkonfigurasjon)."
+            : rawMsg || `Feil ${res.status}`;
+        setAiError(msg);
+        return null;
+      }
+      const rawData =
+        json && typeof json === "object" && "data" in (json as { data?: unknown })
+          ? (json as { data: unknown }).data
+          : null;
+      const data = rawData as T | null;
+      const summary = data ? getSummary(data) : null;
+      if (summary) setAiSummary(summary);
+      if (busyId === "block.builder" && data && typeof data === "object" && "block" in data) {
+        const block = (data as { block?: unknown }).block;
+        if (block && typeof block === "object" && !Array.isArray(block)) {
+          setAiBlockBuilderResult({
+            block: block as Record<string, unknown>,
+            message: typeof (data as { message?: string }).message === "string"
+              ? (data as { message: string }).message
+              : "",
+          });
+        }
+      }
+      return data;
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Ukjent AI-feil.");
+      return null;
+    } finally {
+      setAiBusyToolId(null);
+    }
+  }
+
+  const handleAiImprovePage = useCallback(
+    (input: { goal: "lead" | "info" | "signup"; audience: string }) => {
+      const feature: EditorAiFeature = "improve_page";
+      logEditorAiEvent({
+        type: "ai_action_triggered",
+        feature,
+        pageId: effectiveId ?? null,
+        variantId: null,
+        timestamp: new Date().toISOString(),
+      });
+      setAiLastActionFeature(feature);
+      void callAiSuggest(
+        "content.maintain.page",
+        {
+          goal: input.goal,
+          audience: input.audience || undefined,
+          brand: "Lunchportalen",
+          mode: "safe",
+        },
+        { metricsFeature: feature }
+      );
+    },
+    [blocks, meta, effectiveId, title, slug]
+  );
+
+  const handleAiSeoOptimize = useCallback(
+    (
+      input: { goal: "lead" | "info" | "signup"; audience: string },
+      opts?: { fromInline?: boolean }
+    ) => {
+      const feature: EditorAiFeature = opts?.fromInline ? "seo_inline" : "seo_optimize";
+      logEditorAiEvent({
+        type: "ai_action_triggered",
+        feature,
+        pageId: effectiveId ?? null,
+        variantId: null,
+        timestamp: new Date().toISOString(),
+      });
+      setAiLastActionFeature(feature);
+      void callAiSuggest(
+        "seo.optimize.page",
+        {
+          goal: input.goal,
+          audience: input.audience || undefined,
+          brand: "Lunchportalen",
+          mode: "safe",
+        },
+        { metricsFeature: feature }
+      );
+    },
+    [blocks, meta, effectiveId, title, slug]
+  );
+
+  const handleAiGenerateSections = useCallback(
+    (input: { goal: string; audience: string }) => {
+      const feature: EditorAiFeature = "generate_sections";
+      logEditorAiEvent({
+        type: "ai_action_triggered",
+        feature,
+        pageId: effectiveId ?? null,
+        variantId: null,
+        timestamp: new Date().toISOString(),
+      });
+      setAiLastActionFeature(feature);
+      void callAiSuggest(
+        "landing.generate.sections",
+        {
+          goal: input.goal || undefined,
+          audience: input.audience || undefined,
+          offerName: title || undefined,
+          tone: "enterprise",
+        },
+        { metricsFeature: feature }
+      );
+    },
+    [blocks, meta, effectiveId, title, slug]
+  );
+
+  const handleAiStructuredIntent = useCallback(
+    (
+      input: { variantCount: 2 | 3; target: "hero_cta" | "hero_only" },
+      opts?: { fromPanel?: boolean }
+    ) => {
+      const feature: EditorAiFeature =
+        opts?.fromPanel !== false
+          ? "structured_intent"
+          : input.target === "hero_only"
+            ? "hero_inline"
+            : "cta_inline";
+      logEditorAiEvent({
+        type: "ai_action_triggered",
+        feature,
+        pageId: effectiveId ?? null,
+        variantId: null,
+        timestamp: new Date().toISOString(),
+      });
+      setAiLastActionFeature(feature);
+      void callAiSuggest(
+        "experiment.generate.variants",
+        {
+          variantCount: input.variantCount,
+          target: input.target,
+          goal: "lead",
+          brand: "Lunchportalen",
+          mode: "safe",
+        },
+        { metricsFeature: feature }
+      );
+    },
+    [blocks, meta, effectiveId, title, slug]
+  );
+
+  const handleAiImageGenerate = useCallback(
+    (input: { purpose: "hero" | "section" | "social"; topic: string }) => {
+      void callDedicatedAiRoute<{ message?: string; imageUrl?: string | null }>({
+        path: "/api/backoffice/ai/image-generator",
+        body: {
+          topic: input.topic,
+          purpose: input.purpose,
+          locale: "nb",
+          brand: "Lunchportalen",
+        },
+        busyId: "image.generate.brand_safe",
+        getSummary: (d) => d.message ?? (d.imageUrl ? "Bildeforslag generert." : null),
+      });
+    },
+    []
+  );
+
+  const handleAiImageImproveMetadata = useCallback(
+    (input: { mediaItemId: string; url: string }) => {
+      void callDedicatedAiRoute<{ message?: string; alt?: string }>({
+        path: "/api/backoffice/ai/image-metadata",
+        body: {
+          mediaItemId: input.mediaItemId || undefined,
+          url: input.url || undefined,
+          locale: "nb",
+          pageTitle: title || undefined,
+        },
+        busyId: "image.improve.metadata",
+        getSummary: (d) => d.message ?? "Forslag til bilde-metadata er klare.",
+      });
+    },
+    [title]
+  );
+
+  const handleLayoutSuggestions = useCallback(() => {
+    void callDedicatedAiRoute<{ message?: string; suggestions?: unknown[] }>({
+      path: "/api/backoffice/ai/layout-suggestions",
+      body: {
+        blocks: buildAiBlocks(blocks),
+        title: title || undefined,
+        slug: slug || undefined,
+        pageId: effectiveId ?? undefined,
+        locale: "nb",
+      },
+      busyId: "layout.suggestions",
+      getSummary: (d) =>
+        d.message ??
+        (Array.isArray(d.suggestions) && d.suggestions.length > 0
+          ? `${d.suggestions.length} layoutforslag.`
+          : null),
+    });
+  }, [blocks, title, slug, effectiveId]);
+
+  const handleBlockBuilder = useCallback(
+    (input: { description: string }) => {
+      void callDedicatedAiRoute<{ message?: string; block?: { type?: string } }>({
+        path: "/api/backoffice/ai/block-builder",
+        body: {
+          description: input.description.trim(),
+          locale: "nb",
+          pageId: effectiveId ?? undefined,
+        },
+        busyId: "block.builder",
+        getSummary: (d) =>
+          d.message ?? (d.block?.type ? `Blokk generert: ${d.block.type}.` : null),
+      });
+    },
+    [effectiveId]
+  );
+
+  const handleScreenshotBuilder = useCallback(
+    (input: { screenshotUrl?: string; description?: string }) => {
+      void callDedicatedAiRoute<{ message?: string; blocks?: unknown[] }>({
+        path: "/api/backoffice/ai/screenshot-builder",
+        body: {
+          screenshotUrl: input.screenshotUrl?.trim() || undefined,
+          description: input.description?.trim() || undefined,
+          locale: "nb",
+          pageId: effectiveId ?? undefined,
+        },
+        busyId: "screenshot.builder",
+        getSummary: (d) =>
+          d.message ??
+          (Array.isArray(d.blocks) && d.blocks.length > 0
+            ? `Skjermbilde-bootstrap: ${d.blocks.length} blokker.`
+            : null),
+      });
+    },
+    [effectiveId]
+  );
 
   const onSetStatus = useCallback(
     async (nextStatus: PageStatus) => {
@@ -5125,87 +5731,30 @@ export function ContentWorkspace({
                 >
                   <div className="min-w-0 w-full space-y-2">
                     {/* U1 – command center top bar (Umbraco-style) */}
-                    <div
-                      role="status"
-                      className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm text-[rgb(var(--lp-text))] shadow-sm"
-                    >
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-                        <span className={`shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium ${statusTone(statusLabel)}`}>
-                          {statusLabel === "published" ? "Publisert" : "Kladd"}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="truncate text-base font-medium text-[rgb(var(--lp-text))]">{page.title || "Untitled"}</div>
-                          <div className="truncate text-xs text-[rgb(var(--lp-muted))]">{page.slug || "—"}</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-md border px-2 py-0.5 text-xs font-medium ${statusLine.tone}`} key={statusLine.key}>
-                          {statusLine.label}
-                        </span>
-                        {statusLine.key === "saved" && statusLine.detail && <span className="text-[rgb(var(--lp-muted))] text-xs">{statusLine.detail}</span>}
-                        {supportSnapshot && (
-                          <>
-                            {/* I4 – Kopier support-snapshot */}
-                            <button
-                              type="button"
-                              onClick={() => void copySupportSnapshot()}
-                              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
-                            >
-                              Kopier
-                            </button>
-                            {supportCopyFeedback === "ok" && <span className="text-xs text-green-700">Kopiert</span>}
-                            {supportCopyFeedback === "fail" && <span className="text-xs text-slate-500">Kunne ikke kopiere</span>}
-                          </>
-                        )}
-                        {statusLine.actions.retry && !isOffline && (
-                          <button
-                            type="button"
-                            onClick={() => void performSave()}
-                            disabled={!selectedId || !page || isOffline}
-                            title={!selectedId || !page ? "Mangler side" : isOffline ? "Du er offline" : undefined}
-                            className="rounded border border-amber-400 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            Prøv igjen
-                          </button>
-                        )}
-                        {statusLine.actions.reload && !isOffline && (
-                          <button
-                            type="button"
-                            onClick={onReloadFromServer}
-                            disabled={isOffline}
-                            title={isOffline ? "Du er offline" : undefined}
-                            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            Last på nytt
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (canSave) await onSave();
-                            if (canPublish) void onSetStatus("published");
-                          }}
-                          disabled={!canPublish}
-                          title={publishDisabledTitle ?? undefined}
-                          className="min-h-[32px] rounded-md border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          Publiser
-                        </button>
-                        {isPublished ? (
-                          <button
-                            type="button"
-                            onClick={() => void onSetStatus("draft")}
-                            disabled={!canUnpublish}
-                            title={unpublishDisabledTitle ?? undefined}
-                            className="min-h-[32px] rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            Sett til kladd
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
+                    <ContentTopbar
+                      statusBadgeClass={statusTone(statusLabel)}
+                      statusLabel={statusLabel}
+                      title={page.title || "Untitled"}
+                      slug={page.slug || "—"}
+                      statusLine={statusLine}
+                      supportSnapshot={supportSnapshot}
+                      supportCopyFeedback={supportCopyFeedback}
+                      canPublish={canPublish}
+                      canUnpublish={canUnpublish}
+                      selectedId={selectedId}
+                      pageExists={!!page}
+                      isOffline={isOffline}
+                      publishDisabledTitle={publishDisabledTitle}
+                      unpublishDisabledTitle={unpublishDisabledTitle}
+                      onCopySupportSnapshot={() => void copySupportSnapshot()}
+                      onRetrySave={() => void performSave()}
+                      onReload={onReloadFromServer}
+                      onPublish={async () => {
+                        if (canSave) await onSave();
+                        if (canPublish) void onSetStatus("published");
+                      }}
+                      onUnpublish={() => void onSetStatus("draft")}
+                    />
                     {recoveryBannerVisible && outboxData && (
                       <div
                         role="alert"
@@ -5354,118 +5903,148 @@ export function ContentWorkspace({
                         </span>
                         <span>Oppdatert {formatDate(page.updated_at)}</span>
                         <span className="ml-2 hidden md:inline">ID: {page.id}</span>
+                        {canOpenPublic && (
+                          <button
+                            type="button"
+                            onClick={onOpenPublicPage}
+                            className="ml-2 inline-flex items-center gap-1 rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-1 text-[11px] font-medium text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))]/60 hover:text-[rgb(var(--lp-text))]"
+                          >
+                            <span aria-hidden>↗</span>
+                            <span>Åpne offentlig side</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
                     {isContentTab && (
                       <div
-                        className={`space-y-3 rounded-b-lg rounded-t-lg border border-t-0 border-[rgb(var(--lp-border))] bg-white p-3 ${showPreview ? "lg:grid lg:grid-cols-[2fr_1fr] lg:gap-4 lg:items-start" : ""}`}
+                        className={`space-y-3 rounded-b-lg rounded-t-lg border border-t-0 border-[rgb(var(--lp-border))] bg-white p-3 ${
+                          showPreview ? "lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-4 lg:items-start" : ""
+                        }`}
                       >
-                        <div className="space-y-3 min-w-0">
-                          {/* Umbraco Core Patch A – Document Type (single source of truth) */}
-                          <section className="space-y-2">
-                            <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Document Type</h3>
-                            <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
-                            <div className="pt-1">
-                              <label htmlFor="doc-type-select" className="sr-only">
-                                Dokumenttype
-                              </label>
-                              <select
-                                id="doc-type-select"
-                                value={documentTypeAlias ?? ""}
-                                onChange={(e) => {
-                                  const next = e.target.value.trim() || null;
-                                  setDocumentTypeAlias(next);
-                                  if (next !== documentTypeAlias) setEnvelopeFields({});
-                                }}
-                                className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-border))]"
-                                aria-label="Velg dokumenttype"
-                              >
-                                <option value="">— Ingen dokumenttype —</option>
-                                {documentTypes.map((dt) => (
-                                  <option key={dt.alias} value={dt.alias}>
-                                    {dt.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <p className="mt-1 text-[11px] text-[rgb(var(--lp-muted))]">
-                                Dokumenttypen styrer tillatte undernoder og egenskapsfelt.
-                              </p>
-                            </div>
-                          </section>
-                          {/* U1 – hard section structure */}
-                          <section className="space-y-2">
-                            <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Layout</h3>
-                            <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
-                            <div className="grid gap-2 pt-1">
-                              <div className="flex flex-wrap gap-3">
-                                {(
-                                  [
-                                    ["full", "FULL"],
-                                    ["left", "LEFT"],
-                                    ["right", "RIGHT"],
-                                    ["centerNavLeft", "CENTER (NAV LEFT)"],
-                                    ["centerNavRight", "CENTER (NAV RIGHT)"],
-                                  ] as const
-                                ).map(([value, label]) => {
-                                  const currentLayout = safeStr((meta as { layout?: unknown }).layout) || "full";
-                                  const selected = currentLayout === value;
-                                  return (
-                                    <button
-                                      key={value}
-                                      type="button"
-                                      onClick={() =>
-                                        setMeta((prev) => ({ ...prev, layout: value }))
-                                      }
-                                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition ${selected
-                                        ? "border-slate-400 bg-slate-50"
-                                        : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300"
-                                        }`}
-                                      title={label}
-                                    >
-                                      <LayoutThumbnail layout={value} />
-                                      <span className="text-xs font-medium text-[rgb(var(--lp-text))]">{label}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              <div className="flex items-center gap-3 text-sm">
-                                <span className="text-[rgb(var(--lp-muted))]">Skjul sidetitler</span>
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={Boolean(safeObj(meta).hidePageHeadings)}
-                                  onClick={() =>
-                                    setMeta((prev) => ({ ...prev, hidePageHeadings: !safeObj(prev).hidePageHeadings }))
-                                  }
-                                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors ${safeObj(meta).hidePageHeadings
-                                    ? "border-slate-500 bg-slate-500"
-                                    : "border-[rgb(var(--lp-border))] bg-slate-200"
-                                    }`}
+                        <div className="space-y-4 min-w-0">
+                          {/* Page setup */}
+                          <section className="space-y-3 rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/40 p-3">
+                            {/* Umbraco Core Patch A – Document Type (single source of truth) */}
+                            <div className="space-y-2">
+                              <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Document Type</h3>
+                              <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
+                              <div className="pt-1">
+                                <label htmlFor="doc-type-select" className="sr-only">
+                                  Dokumenttype
+                                </label>
+                                <select
+                                  id="doc-type-select"
+                                  value={documentTypeAlias ?? ""}
+                                  onChange={(e) => {
+                                    const next = e.target.value.trim() || null;
+                                    setDocumentTypeAlias(next);
+                                    if (next !== documentTypeAlias) setEnvelopeFields({});
+                                  }}
+                                  className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-border))]"
+                                  aria-label="Velg dokumenttype"
                                 >
-                                  <span
-                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${safeObj(meta).hidePageHeadings ? "translate-x-5" : "translate-x-0.5"
+                                  <option value="">— Ingen dokumenttype —</option>
+                                  {documentTypes.map((dt) => (
+                                    <option key={dt.alias} value={dt.alias}>
+                                      {dt.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <p className="mt-1 text-[11px] text-[rgb(var(--lp-muted))]">
+                                  Dokumenttypen styrer tillatte undernoder og egenskapsfelt.
+                                </p>
+                              </div>
+                            </div>
+                            {/* Layout / page chrome */}
+                            <div className="space-y-2">
+                              <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Layout</h3>
+                              <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
+                              <div className="grid gap-2 pt-1">
+                                <div className="flex flex-wrap gap-3">
+                                  {(
+                                    [
+                                      ["full", "FULL"],
+                                      ["left", "LEFT"],
+                                      ["right", "RIGHT"],
+                                      ["centerNavLeft", "CENTER (NAV LEFT)"],
+                                      ["centerNavRight", "CENTER (NAV RIGHT)"],
+                                    ] as const
+                                  ).map(([value, label]) => {
+                                    const currentLayout = safeStr((meta as { layout?: unknown }).layout) || "full";
+                                    const selected = currentLayout === value;
+                                    return (
+                                      <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() =>
+                                          setMeta((prev) => ({ ...prev, layout: value }))
+                                        }
+                                        className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition ${
+                                          selected
+                                            ? "border-slate-400 bg-slate-50"
+                                            : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300"
+                                        }`}
+                                        title={label}
+                                      >
+                                        <LayoutThumbnail layout={value} />
+                                        <span className="text-xs font-medium text-[rgb(var(--lp-text))]">{label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm">
+                                  <span className="text-[rgb(var(--lp-muted))]">Skjul sidetitler</span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={Boolean(safeObj(meta).hidePageHeadings)}
+                                    onClick={() =>
+                                      setMeta((prev) => ({ ...prev, hidePageHeadings: !safeObj(prev).hidePageHeadings }))
+                                    }
+                                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 transition-colors ${
+                                      safeObj(meta).hidePageHeadings
+                                        ? "border-slate-500 bg-slate-500"
+                                        : "border-[rgb(var(--lp-border))] bg-slate-200"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                        safeObj(meta).hidePageHeadings ? "translate-x-5" : "translate-x-0.5"
                                       }`}
-                                  />
-                                </button>
-                                <span className="text-xs font-medium text-[rgb(var(--lp-muted))]">
-                                  {safeObj(meta).hidePageHeadings ? "JA" : "NEI"}
-                                </span>
+                                    />
+                                  </button>
+                                  <span className="text-xs font-medium text-[rgb(var(--lp-muted))]">
+                                    {safeObj(meta).hidePageHeadings ? "JA" : "NEI"}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </section>
 
+                          {/* Main content / blocks */}
                           <section className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
-                              <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Main content</h3>
+                              <div>
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
+                                  Main content
+                                </h3>
+                                <p className="mt-0.5 text-[11px] text-[rgb(var(--lp-muted))]">
+                                  Bygg siden blokk for blokk. Rekkefølgen her er rekkefølgen på den offentlige siden.
+                                </p>
+                              </div>
                               {showBlocks && (
-                                <button type="button" onClick={() => setShowPreviewColumn((v) => !v)} className="text-xs text-[rgb(var(--lp-muted))] underline hover:text-[rgb(var(--lp-text))]">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPreviewColumn((v) => !v)}
+                                  className="whitespace-nowrap text-xs text-[rgb(var(--lp-muted))] underline hover:text-[rgb(var(--lp-text))]"
+                                >
                                   {showPreviewColumn ? "Skjul forhåndsvisning" : "Vis forhåndsvisning"}
                                 </button>
                               )}
                             </div>
                             <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
-                            <div className="rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 p-2 pt-2">
+                            <div className="rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 p-3 pt-3">
 
                               {bodyMode === "legacy" && (
                                 <div className="mt-3 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -5518,7 +6097,7 @@ export function ContentWorkspace({
                                         </div>
                                         <h3 className="text-sm font-medium text-[rgb(var(--lp-text))]">Ingen blokker ennå</h3>
                                         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                                          Bygg siden med blokker. Klikk under for å legge til første blokk.
+                                          Bygg siden med blokker. Klikk under for å legge til din første blokk.
                                         </p>
                                         <button
                                           type="button"
@@ -5543,13 +6122,26 @@ export function ContentWorkspace({
                                           key={block.id}
                                           className="border-b border-[rgb(var(--lp-border))] bg-white last:border-b-0"
                                         >
-                                          <button
-                                            type="button"
+                                          <div
+                                            role="button"
+                                            tabIndex={0}
                                             onClick={() => onToggleBlock(block.id)}
+                                            onKeyDown={(event) => {
+                                              if (event.key === "Enter" || event.key === " ") {
+                                                event.preventDefault();
+                                                onToggleBlock(block.id);
+                                              }
+                                            }}
                                             className="flex w-full items-center gap-2 px-2 py-2 text-left hover:bg-[rgb(var(--lp-card))]/40"
                                           >
-                                            <span className="flex h-8 w-6 shrink-0 items-center justify-center text-[rgb(var(--lp-muted))]" aria-hidden title="Drag handle">++</span>
-                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/80 text-[rgb(var(--lp-muted))] text-xs font-medium">
+                                            <span
+                                              className="flex h-8 w-6 shrink-0 items-center justify-center text-[rgb(var(--lp-muted))]"
+                                              aria-hidden
+                                              title="Drag handle"
+                                            >
+                                              ++
+                                            </span>
+                                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))] text-[11px] font-medium">
                                               {block.type === "hero" ? (
                                                 <span className="font-bold">H</span>
                                               ) : block.type === "richText" ? (
@@ -5567,8 +6159,13 @@ export function ContentWorkspace({
                                               )}
                                             </span>
                                             <div className="min-w-0 flex-1 text-left">
-                                              <div className="text-sm font-medium text-[rgb(var(--lp-text))]">
-                                                {getBlockLabel(block.type)}
+                                              <div className="flex items-center gap-2">
+                                                <span className="inline-flex shrink-0 items-center rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[rgb(var(--lp-muted))]">
+                                                  Blokk {index + 1}
+                                                </span>
+                                                <span className="truncate text-sm font-medium text-[rgb(var(--lp-text))]">
+                                                  {getBlockLabel(block.type)}
+                                                </span>
                                               </div>
                                               <div className="text-[11px] uppercase tracking-wide text-[rgb(var(--lp-muted))]">
                                                 COMPONENT: {blockTypeSubtitle(block.type, block)}
@@ -5611,7 +6208,7 @@ export function ContentWorkspace({
                                               </button>
                                             </div>
                                             <span className="text-xs text-[rgb(var(--lp-muted))]">{open ? "▼" : "▶"}</span>
-                                          </button>
+                                          </div>
 
                                           {open ? (
                                             <div className="border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/30 px-3 py-2">
@@ -5661,7 +6258,22 @@ export function ContentWorkspace({
                                                       </label>
                                                     ) : null}
                                                     <label className="grid gap-1 text-sm">
-                                                      <span className="text-[rgb(var(--lp-muted))]">Title</span>
+                                                      <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[rgb(var(--lp-muted))]">Title</span>
+                                                        <button
+                                                          type="button"
+                                                          className="inline-flex items-center justify-center rounded border border-[rgb(var(--lp-border))] bg-white px-2 py-0.5 text-[10px] font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
+                                                          disabled={isOffline || !effectiveId || aiBusyToolId === "experiment.generate.variants"}
+                                                          onClick={() =>
+                                                            handleAiStructuredIntent?.(
+                                                              { variantCount: 2, target: "hero_only" },
+                                                              { fromPanel: false }
+                                                            )
+                                                          }
+                                                        >
+                                                          {aiBusyToolId === "experiment.generate.variants" ? "Kjører…" : "Generer bedre overskrift"}
+                                                        </button>
+                                                      </div>
                                                       <input
                                                         value={block.title}
                                                         onChange={(e) => {
@@ -5688,7 +6300,22 @@ export function ContentWorkspace({
                                                     </label>
                                                     <div className="grid gap-2 md:grid-cols-2">
                                                       <label className="grid gap-1 text-sm">
-                                                        <span className="text-[rgb(var(--lp-muted))]">CTA label</span>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                          <span className="text-[rgb(var(--lp-muted))]">CTA label</span>
+                                                          <button
+                                                            type="button"
+                                                            className="inline-flex items-center justify-center rounded border border-[rgb(var(--lp-border))] bg-white px-2 py-0.5 text-[10px] font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
+                                                            disabled={isOffline || !effectiveId || aiBusyToolId === "experiment.generate.variants"}
+                                                            onClick={() =>
+                                                              handleAiStructuredIntent?.(
+                                                                { variantCount: 2, target: "hero_cta" },
+                                                                { fromPanel: false }
+                                                              )
+                                                            }
+                                                          >
+                                                            {aiBusyToolId === "experiment.generate.variants" ? "Kjører…" : "Generer CTA-idéer"}
+                                                          </button>
+                                                        </div>
                                                         <input
                                                           value={block.ctaLabel || ""}
                                                           onChange={(e) => {
@@ -6107,7 +6734,7 @@ export function ContentWorkspace({
                         </div>
 
                         {showPreview && (
-                          <div className="rounded-lg border-l border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/60 py-2 pl-3 pr-2">
+                          <div className="mt-4 rounded-lg border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/60 py-2 pl-3 pr-2 lg:mt-0 lg:border-t-0 lg:border-l">
                             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Forhåndsvisning</h3>
                             <LivePreviewPanel pageTitle={title} blocks={blocks} pageId={effectiveId ?? undefined} variantId={undefined} />
                           </div>
@@ -6363,7 +6990,22 @@ export function ContentWorkspace({
                               </label>
 
                               <label className="grid gap-1 text-sm">
-                                <span className="text-[rgb(var(--lp-muted))]">Meta-beskrivelse</span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[rgb(var(--lp-muted))]">Meta-beskrivelse</span>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center rounded border border-[rgb(var(--lp-border))] bg-white px-2 py-0.5 text-[10px] font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
+                                    disabled={isOffline || !effectiveId || aiBusyToolId === "seo.optimize.page"}
+                                    onClick={() =>
+                                      handleAiSeoOptimize?.(
+                                        { goal: "lead", audience: "" },
+                                        { fromInline: true }
+                                      )
+                                    }
+                                  >
+                                    {aiBusyToolId === "seo.optimize.page" ? "Kjører…" : "Generer SEO-forslag"}
+                                  </button>
+                                </div>
                                 <textarea
                                   value={seoDescription}
                                   onChange={(e) => {
@@ -6656,69 +7298,40 @@ export function ContentWorkspace({
                     ) : null}
 
                     {/* U1 – typography/spacing tightening */}
-                    <div className="flex flex-wrap items-center gap-2 border-t border-[rgb(var(--lp-border))] bg-white px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (canSave) await onSave();
-                          if (selectedId && typeof window !== "undefined") {
-                            window.open(`${window.location.origin}/backoffice/preview/${selectedId}`, "_blank", "noopener");
-                          }
-                        }}
-                        disabled={!selectedId || saving}
-                        className="min-h-[40px] rounded-lg border border-[rgb(var(--lp-border))] px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Lagre og forhåndsvis
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void onSave()}
-                        disabled={!canSave}
-                        className="min-h-[40px] rounded-lg border border-[rgb(var(--lp-border))] px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Lagre
-                      </button>
-                    </div>
+                    <ContentSaveBar
+                      selectedId={selectedId}
+                      saving={saving}
+                      canSave={canSave}
+                      onSaveAndPreview={onSaveAndPreview}
+                      onSave={() => void onSave()}
+                    />
+
+                    <ContentAiTools
+                      disabled={isOffline || !effectiveId || aiCapability !== "available"}
+                      aiCapabilityStatus={aiCapability}
+                      busyToolId={aiBusyToolId}
+                      errorMessage={aiError}
+                      lastSummary={aiSummary}
+                      lastBlockBuilderResult={aiBlockBuilderResult}
+                      lastAppliedTool={aiLastAppliedTool}
+                      onImprovePage={handleAiImprovePage}
+                      onSeoOptimize={handleAiSeoOptimize}
+                      onGenerateSections={handleAiGenerateSections}
+                      onStructuredIntent={handleAiStructuredIntent}
+                      onLayoutSuggestions={handleLayoutSuggestions}
+                      onBlockBuilder={handleBlockBuilder}
+                      onImageGenerate={handleAiImageGenerate}
+                      onScreenshotBuilder={handleScreenshotBuilder}
+                      onImageImproveMetadata={handleAiImageImproveMetadata}
+                    />
                   </div>
                   {SHELL_V1 && (
-                    <aside className="sticky top-20 self-start rounded-lg border border-[rgb(var(--lp-border))] bg-white px-4 py-3 text-sm">
-                      <h2 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Info</h2>
-                      <dl className="mt-3 space-y-2">
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Node-ID</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">{page?.id ?? "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Slug</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">{page?.slug || "—"}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Status</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">
-                            {statusLabel === "published" ? "Publisert" : "Kladd"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Opprettet</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">{formatDate(page?.created_at)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Sist oppdatert</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">{formatDate(page?.updated_at)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-[rgb(var(--lp-muted))]">Publisert</dt>
-                          <dd className="text-sm text-[rgb(var(--lp-text))]">{formatDate(page?.published_at)}</dd>
-                        </div>
-                        {isForsidePage() && (
-                          <div className="mt-1 rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] px-3 py-2">
-                            <p className="text-xs font-medium text-[rgb(var(--lp-text))]">
-                              Systemnode – kan ikke slettes
-                            </p>
-                          </div>
-                        )}
-                      </dl>
-                    </aside>
+                    <ContentInfoPanel
+                      page={page}
+                      statusLabel={statusLabel}
+                      isForsidePage={isForsidePage}
+                      formatDate={formatDate}
+                    />
                   )}
                 </div>
               )

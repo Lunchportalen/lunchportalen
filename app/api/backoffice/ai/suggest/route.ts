@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+﻿import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { isAIEnabled, suggestJSON } from "@/lib/ai/provider";
 import { generateLandingPatch } from "@/lib/ai/tools/landingGenerateSections";
@@ -342,3 +342,4 @@ export async function POST(request: NextRequest) {
 
   return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, suggestionId, suggestion: result.data }, 200);
 }
+

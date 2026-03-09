@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+﻿import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 
 const METADATA_MAX = 2000;
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     return jsonErr(ctx.rid, "Ugyldig JSON.", 400, "BAD_REQUEST");
   }
   const o = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
-  if (!o) return jsonErr(ctx.rid, "Body må være et objekt.", 400, "BAD_REQUEST");
+    if (!o) return jsonErr(ctx.rid, "Body må være et objekt.", 400, "BAD_REQUEST");
 
   const environment =
     o.environment === "staging" ? "staging" : o.environment === "preview" ? "preview" : "prod";
@@ -55,3 +55,5 @@ export async function POST(request: NextRequest) {
 
   return jsonOk(ctx.rid, { ok: true, rid: ctx.rid }, 200);
 }
+
+
