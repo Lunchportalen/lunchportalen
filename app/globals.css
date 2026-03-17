@@ -23,6 +23,7 @@
   --lp-surface: 255 255 255;
   --lp-surface-alt: 248 244 238;
   --lp-surface-2: 252 248 243;
+  --lp-card: 252 248 243;
 
   --lp-text: 26 26 26;
   --lp-fg: 26 26 26;
@@ -80,6 +81,7 @@ html[data-resolved-theme="dark"] {
   --lp-surface: 24 24 24;
   --lp-surface-alt: 30 30 30;
   --lp-surface-2: 22 22 22;
+  --lp-card: 22 22 22;
 
   --lp-text: 245 245 245;
   --lp-fg: 245 245 245;
@@ -435,7 +437,7 @@ html[data-resolved-theme="dark"] .lp-auth-spotlight {
 .lp-topbar {
   position: relative;
   background: rgba(var(--lp-surface-rgb), 0.92);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
   border-bottom: 0 !important;
   box-shadow: none !important;
 }
@@ -601,6 +603,27 @@ h4 {
 
 .lp-prose {
   max-width: 70ch;
+}
+
+/* =========================================================
+   Typography tokens — semantic font roles (premium font registry)
+   Use .font-body, .font-heading, .font-display, etc. instead of raw font-family.
+========================================================= */
+.font-body,
+.font-ui {
+  font-family: var(--lp-font-body), system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans",
+    sans-serif;
+}
+.font-heading,
+.font-accent {
+  font-family: var(--lp-font-heading), system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans",
+    sans-serif;
+}
+.font-display,
+.font-editorial,
+.font-campaign {
+  font-family: var(--lp-font-display), system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans",
+    sans-serif;
 }
 
 /* =========================================================
@@ -1249,7 +1272,7 @@ html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
 }
 
 .lp-heroTitle {
@@ -1298,8 +1321,8 @@ html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
   border-radius: var(--lp-radius-card);
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
   padding: 16px;
 }
@@ -1507,8 +1530,9 @@ html[data-resolved-theme="dark"] .lp-location {
 .lp-modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(3px);
+  background: var(--lp-glass-overlay-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-lg));
   z-index: 60;
 }
 
@@ -2143,10 +2167,23 @@ html[data-resolved-theme="dark"] *::-webkit-scrollbar-thumb {
     opacity: 1 !important;
   }
 
+  .lp-shine {
+    animation: none !important;
+  }
+
   .lp-btn,
   .lp-card,
-  .lp-nav-item {
+  .lp-nav-item,
+  .lp-link,
+  .lp-related-card,
+  .lp-section-img {
     transition: none !important;
+  }
+
+  /* Tailwind animation utilities: respect reduced-motion so UI stays understandable */
+  .animate-pulse,
+  .animate-spin {
+    animation: none !important;
   }
 }
 
@@ -2439,6 +2476,15 @@ details[open] .lp-faq-icon::after {
   display: none;
 }
 
+/* FAQ expand/collapse: modern chevron icon (replaces CSS-only plus) */
+.lp-faq-chevron {
+  transition: transform 0.2s ease;
+}
+details[open] .lp-faq-q .lp-faq-chevron,
+details[open] .lp-faqSummary .lp-faq-chevron {
+  transform: rotate(180deg);
+}
+
 .lp-faq-a,
 .lp-faqAnswer {
   padding: 0 16px 16px 16px;
@@ -2508,7 +2554,7 @@ html[data-resolved-theme="dark"] .lp-faqAnswer {
   background: rgba(var(--lp-surface-rgb), 0.75);
   box-shadow: var(--lp-shadow-sm);
   text-decoration: none;
-  transition: transform 140ms var(--lp-ease), box-shadow 140ms var(--lp-ease), border-color 140ms var(--lp-ease);
+  transition: transform 0.2s var(--lp-ease), box-shadow 0.2s var(--lp-ease), border-color 0.2s var(--lp-ease);
   min-height: 164px;
 }
 
@@ -3509,7 +3555,8 @@ html[data-resolved-theme="dark"] .lp-linkChip:hover {
 .lp-altkantine .lp-heroPanel .lp-panelCard {
   background: rgba(18, 18, 18, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
 }
 
 /* 2) Gjør panel-tekst 100% lesbar */
@@ -3563,7 +3610,8 @@ html[data-resolved-theme="dark"] .lp-linkChip:hover {
 .lp-heroPanel .lp-panelCard {
   background: rgba(18, 18, 18, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
 }
 
 /* 2) Tittel + tekst i panel skal alltid være lys */
