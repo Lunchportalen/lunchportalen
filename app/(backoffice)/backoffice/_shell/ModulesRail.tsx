@@ -2,26 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  IconContent,
-  IconMedia,
-  IconTemplate,
-  IconUsers,
-  IconMember,
-  IconForm,
-  IconTranslation,
-  IconSettings,
-} from "./icons";
+import { Icon, type SemanticIconKey } from "./icons";
 
-const MODULES: { href: string; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-  { href: "/backoffice/content", icon: IconContent, label: "Content" },
-  { href: "/backoffice/media", icon: IconMedia, label: "Media" },
-  { href: "/backoffice/templates", icon: IconTemplate, label: "Templates" },
-  { href: "/backoffice/users", icon: IconUsers, label: "Users" },
-  { href: "/backoffice/members", icon: IconMember, label: "Members" },
-  { href: "/backoffice/forms", icon: IconForm, label: "Forms" },
-  { href: "/backoffice/translation", icon: IconTranslation, label: "Translation" },
-  { href: "/backoffice/settings", icon: IconSettings, label: "Settings" },
+const MODULES: { href: string; icon: SemanticIconKey; label: string }[] = [
+  { href: "/backoffice/content", icon: "content", label: "Content" },
+  { href: "/backoffice/media", icon: "media", label: "Media" },
+  { href: "/backoffice/templates", icon: "template", label: "Templates" },
+  { href: "/backoffice/users", icon: "users", label: "Users" },
+  { href: "/backoffice/members", icon: "employee", label: "Members" },
+  { href: "/backoffice/forms", icon: "form", label: "Forms" },
+  { href: "/backoffice/translation", icon: "translation", label: "Translation" },
+  { href: "/backoffice/settings", icon: "settings", label: "Settings" },
 ];
 
 export default function ModulesRail() {
@@ -33,7 +24,7 @@ export default function ModulesRail() {
       style={{ width: "64px" }}
       aria-label="Moduler"
     >
-      {MODULES.map(({ href, icon: Icon, label }) => {
+      {MODULES.map(({ href, icon, label }) => {
         const isActive = pathname === href || (href !== "/backoffice/content" && pathname.startsWith(href + "/")) || (href === "/backoffice/content" && pathname.startsWith("/backoffice/content"));
         return (
           <Link
@@ -43,7 +34,7 @@ export default function ModulesRail() {
             title={label}
             aria-current={isActive ? "true" : undefined}
           >
-            <Icon className="h-5 w-5" />
+            <Icon name={icon} className="h-5 w-5" />
           </Link>
         );
       })}
