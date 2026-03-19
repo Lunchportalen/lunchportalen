@@ -290,7 +290,7 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
 
           {/* Grid */}
           <main className="flex min-w-0 flex-1 flex-col px-3 py-3 text-sm">
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
               {category === "all" && favoriteDefs.length > 0 && (
                 <section>
                   <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">

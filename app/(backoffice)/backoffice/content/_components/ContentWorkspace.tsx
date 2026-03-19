@@ -651,7 +651,7 @@ function LivePreviewPanel({
             {blocks.map((block, index) => {
               if (block.type === "hero") {
                 return (
-                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white overflow-hidden">
+                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white">
                     {block.imageUrl ? (
                       <div className="aspect-[21/9] w-full bg-slate-100">
                         <img src={block.imageUrl} alt={block.imageAlt ?? ""} className="h-full w-full object-cover" />
@@ -1248,9 +1248,6 @@ export function ContentWorkspace({
               ? data.data.enabled
               : false;
         const status: AiCapabilityStatus = enabled ? "available" : "unavailable";
-        if (process.env.NODE_ENV === "development") {
-          console.log("[EDITOR_AI] capability", { payload: data, enabled, status });
-        }
         setAiCapability(status);
       })
       .catch(() => {
@@ -1972,11 +1969,13 @@ export function ContentWorkspace({
       if (busyId === "block.builder" && data && typeof data === "object" && "block" in data) {
         const block = (data as { block?: unknown }).block;
         if (block && typeof block === "object" && !Array.isArray(block)) {
+          const msg =
+            typeof (data as any)?.message === "string"
+              ? (data as any).message
+              : "";
           setAiBlockBuilderResult({
             block: block as Record<string, unknown>,
-            message: typeof (data as { message?: string }).message === "string"
-              ? (data as { message: string }).message
-              : "",
+            message: msg,
           });
         }
       }

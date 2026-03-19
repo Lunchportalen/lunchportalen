@@ -1,7 +1,7 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { isAIEnabled } from "@/lib/ai/provider";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { jsonOk, makeRid } from "@/lib/http/respond";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,9 +14,13 @@ function hasNonEmpty(name: string): boolean {
 export async function GET(req: NextRequest) {
   const rid = makeRid();
   const gate = await scopeOr401(req);
-  if (gate.ok === false) return gate.res;
+  if (gate.ok === false) {
+    return jsonErr(rid, "Unauthorized", 401, "UNAUTHORIZED");
+  }
   const deny = requireRoleOr403(gate.ctx, ["superadmin", "company_admin"]);
-  if (deny) return deny;
+  if (deny) {
+    return jsonErr(rid, "Forbidden", 403, "FORBIDDEN");
+  }
 
   const hasAiProvider = hasNonEmpty("AI_PROVIDER");
   const hasAiApiKey = hasNonEmpty("AI_API_KEY");
@@ -35,5 +39,5 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return jsonOk(rid, { ok: true, enabled }, 200);
+  return jsonOk(rid, { enabled }, 200);
 }
