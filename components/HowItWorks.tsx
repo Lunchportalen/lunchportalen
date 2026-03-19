@@ -1,3 +1,5 @@
+import { Container } from "@/components/ui/container";
+
 export default function HowItWorks() {
   const steps = [
     {
@@ -23,7 +25,8 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section id="how" className="mx-auto max-w-6xl px-4 py-10">
+    <section id="how">
+      <Container className="max-w-6xl py-10">
       <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
         Slik fungerer det
       </h2>
@@ -35,7 +38,7 @@ export default function HowItWorks() {
         {steps.map((s) => (
           <div
             key={s.n}
-            className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]"
+            className="lp-card lp-motion-card p-6"
           >
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-[rgb(var(--lp-cta))] px-3 py-1 text-xs font-semibold text-white">
@@ -49,6 +52,8 @@ export default function HowItWorks() {
           </div>
         ))}
       </div>
+      </Container>
     </section>
   );
 }
+

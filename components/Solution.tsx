@@ -1,6 +1,8 @@
+import { Container } from "@/components/ui/container";
+
 function Card({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[rgb(var(--lp-border))]">
+    <div className="lp-card lp-motion-card p-6">
       <div className="text-sm font-semibold">{title}</div>
       <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{desc}</div>
     </div>
@@ -9,8 +11,9 @@ function Card({ title, desc }: { title: string; desc: string }) {
 
 export default function Solution() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <div className="rounded-3xl bg-white/70 p-8 ring-1 ring-[rgb(var(--lp-border))]">
+    <section>
+      <Container className="max-w-6xl py-10">
+      <div className="lp-card lp-motion-card p-8">
         <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
           En firmastyrt lunsjløsning – ikke en markedsplass
         </h2>
@@ -25,6 +28,10 @@ export default function Solution() {
           <Card title="Kontroll & sporbarhet" desc="Én sannhetskilde og tydelig bekreftelse på handlinger." />
         </div>
       </div>
+      </Container>
     </section>
   );
 }
+
+
+

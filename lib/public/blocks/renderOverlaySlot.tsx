@@ -23,7 +23,7 @@ export function renderOverlaySlot(
   return (
     <>
       {filtered.map((block) => (
-        <div key={block.id} className="mb-3">
+        <div key={block.id} className="mb-4">
           {renderBlock(block, env, locale)}
         </div>
       ))}

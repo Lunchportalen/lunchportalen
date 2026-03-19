@@ -1,4 +1,4 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -25,10 +25,12 @@ export async function GET(request: NextRequest) {
   for (const r of Array.isArray(rows) ? rows : []) {
     const pageId = r.page_id != null ? String(r.page_id) : "";
     if (byPage.has(pageId)) continue;
+    const rawScore = typeof r.score === "number" && Number.isFinite(r.score) ? r.score : 0;
+    const score = Math.max(0, Math.min(100, rawScore));
     byPage.set(pageId, {
       pageId,
       variantId: r.variant_id != null ? String(r.variant_id) : null,
-      score: typeof r.score === "number" ? r.score : 0,
+      score,
       issues: Array.isArray(r.issues) ? r.issues : [],
       createdAt: r.created_at != null ? String(r.created_at) : "",
     });

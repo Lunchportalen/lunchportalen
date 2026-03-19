@@ -89,7 +89,7 @@ export default async function AuditDetailPage({ params }: { params: { id: string
     const err = data as ApiErr | null;
 
     return (
-      <main className="lp-select-text mx-auto grid max-w-[1100px] gap-4 p-5">
+      <main className="lp-select-text mx-auto grid w-full max-w-6xl gap-4 p-5">
         <header className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-semibold">Audit detail</h1>
@@ -131,7 +131,7 @@ export default async function AuditDetailPage({ params }: { params: { id: string
   const a = (data as ApiOk).audit;
 
   return (
-    <main className="lp-select-text mx-auto grid max-w-[1100px] gap-4 p-5">
+    <main className="lp-select-text mx-auto grid w-full max-w-6xl gap-4 p-5">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold">Audit detail</h1>

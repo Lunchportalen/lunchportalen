@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatDateTimeNO } from "@/lib/date/format";
 
-type OutboxStatus = "ALL" | "PENDING" | "FAILED" | "SENT";
+type OutboxStatus = "ALL" | "PENDING" | "PROCESSING" | "FAILED" | "FAILED_PERMANENT" | "SENT";
 
 type Row = {
   event_key: string;
-  status: "PENDING" | "FAILED" | "SENT";
+  status: "PENDING" | "PROCESSING" | "FAILED" | "FAILED_PERMANENT" | "SENT";
   attempts: number;
   created_at: string;
   sent_at: string | null;
@@ -42,8 +42,9 @@ async function readJsonSafe(res: Response) {
 
 function statusBadge(status: Row["status"]) {
   const base = "inline-flex items-center rounded-full border px-2 py-0.5 text-xs";
+  if (status === "FAILED_PERMANENT") return `${base} border-red-300 bg-red-50 text-red-900`;
   if (status === "FAILED") return `${base} border-red-200 bg-red-50 text-red-800`;
-  if (status === "PENDING") return `${base} border-amber-200 bg-amber-50 text-amber-900`;
+  if (status === "PENDING" || status === "PROCESSING") return `${base} border-amber-200 bg-amber-50 text-amber-900`;
   return `${base} border-emerald-200 bg-emerald-50 text-emerald-900`;
 }
 
@@ -177,6 +178,7 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
             <option value="ALL">ALL</option>
             <option value="PENDING">PENDING</option>
             <option value="FAILED">FAILED</option>
+            <option value="FAILED_PERMANENT">FAILED_PERMANENT</option>
             <option value="SENT">SENT</option>
           </select>
 

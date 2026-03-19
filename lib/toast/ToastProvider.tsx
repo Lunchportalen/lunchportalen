@@ -148,7 +148,7 @@ function ToastViewport({
         {items.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto rounded-2xl border border-[rgb(var(--lp-border))] bg-white/95 p-3 shadow-[var(--lp-shadow-soft)] backdrop-blur"
+            className="pointer-events-auto lp-glass-surface rounded-card p-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">

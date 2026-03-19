@@ -444,7 +444,7 @@ export default function ArchivePanel(props: {
 
           {!ordersErr && !ordersLoading && orders ? (
             <div className="mt-4">
-              {orders.items.length === 0 ? (
+              {(Array.isArray(orders.items) ? orders.items : []).length === 0 ? (
                 <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen ordre i valgt periode.</div>
               ) : (
                 <div className="overflow-x-auto">
@@ -460,7 +460,7 @@ export default function ArchivePanel(props: {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.items.map((o) => (
+                      {(Array.isArray(orders.items) ? orders.items : []).map((o) => (
                         <tr key={o.id} className="border-b border-[rgb(var(--lp-border))]">
                           <td className="px-3 py-2 whitespace-nowrap">{o.date ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">{o.status ?? "—"}</td>

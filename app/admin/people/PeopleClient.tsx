@@ -8,6 +8,11 @@ import InvitesPanel from "@/components/admin/InvitesPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Button } from "@/components/ui/button";
+import { Card, getCardVariantClass } from "@/components/ui/card";
+
+function cn(...v: Array<string | false | null | undefined>) {
+  return v.filter(Boolean).join(" ");
+}
 
 type EmployeeRow = {
   user_id: string;
@@ -216,14 +221,14 @@ export default function PeopleClient({
         </div>
       </section>
 
-      <details className="lp-card p-6">
+      <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
         <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Invitasjoner</summary>
         <div className="mt-4">
           <InvitesPanel rows={data?.invites ?? []} loading={loading} error={err} onReload={load} />
         </div>
       </details>
 
-      <details className="lp-card p-6">
+      <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
         <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Support</summary>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <SupportReportButton
@@ -239,7 +244,7 @@ export default function PeopleClient({
         </div>
       </details>
 
-      <details className="lp-card p-6">
+      <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
         <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Kilde til sannhet</summary>
         <div className="mt-3 text-sm text-[rgb(var(--lp-text))]">
           companyId: {sourceMeta.companyId || "Ikke tilgjengelig"} · updatedAt: {sourceMeta.updatedAt || "Ikke tilgjengelig"} · rid: {sourceMeta.rid || "Ikke tilgjengelig"}

@@ -15,7 +15,7 @@ export default function AdminPageShell({ title, subtitle, actions, children }: A
         {/* Left */}
         <div className="min-w-0">
           <h1 className="lp-h1">{title}</h1>
-          {subtitle ? <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{subtitle}</p> : null}
+          {subtitle ? <p className="font-body mt-2 text-sm text-[rgb(var(--lp-muted))]">{subtitle}</p> : null}
         </div>
 
         {/* Center (bevisst tom i denne fasen – kan brukes senere) */}

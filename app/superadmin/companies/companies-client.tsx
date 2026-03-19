@@ -336,10 +336,21 @@ function stop(e: React.SyntheticEvent) {
    Component
 ========================================================= */
 
-export default function CompaniesClient() {
+type CompaniesClientCmsCopy = {
+  searchPlaceholder?: string | null;
+  emptyStateTitle?: string | null;
+  emptyStateText?: string | null;
+};
+
+export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCopy }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  const cmsCopy = props.cmsCopy ?? {};
+  const searchPlaceholder = cmsCopy.searchPlaceholder ?? "Navn, org.nr …";
+  const emptyStateTitle = cmsCopy.emptyStateTitle ?? "Ingen treff.";
+  const emptyStateText = cmsCopy.emptyStateText ?? null;
 
   const initial = useMemo(() => {
     const q = safeStr(searchParams.get("q"));
@@ -709,7 +720,7 @@ export default function CompaniesClient() {
             <input
               value={qText}
               onChange={(e) => setQText(e.target.value)}
-              placeholder="Navn, org.nr …"
+              placeholder={searchPlaceholder}
               className="mt-1 w-full rounded-2xl border bg-white px-3 py-2 text-sm outline-none"
             />
           </div>
@@ -1074,7 +1085,8 @@ export default function CompaniesClient() {
               ) : visibleRows.length === 0 ? (
                 <tr>
                   <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
-                    Ingen treff.
+                    <div className="font-medium">{emptyStateTitle}</div>
+                    {emptyStateText ? <div className="mt-1 text-xs">{emptyStateText}</div> : null}
                   </td>
                 </tr>
               ) : (

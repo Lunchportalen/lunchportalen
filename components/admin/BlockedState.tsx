@@ -117,7 +117,7 @@ function CopyButton({ text }: { text: string }) {
         window.setTimeout(() => setState("idle"), 1200);
       }}
       className={cx(
-        "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition select-none",
+        "lp-motion-btn inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold ring-1 select-none",
         "bg-white/70 text-neutral-900 ring-black/10 hover:bg-white active:scale-[0.99]"
       )}
       aria-label="Kopier teknisk info"
@@ -155,8 +155,7 @@ export default function BlockedState(props: BlockedStateProps) {
   return (
     <section
       className={cx(
-        "rounded-3xl bg-white/80 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur",
-        "select-text",
+        "lp-glass-card rounded-3xl select-text",
         compact ? "p-5" : "p-6"
       )}
     >
@@ -193,7 +192,7 @@ export default function BlockedState(props: BlockedStateProps) {
           <summary
             className={cx(
               "cursor-pointer list-none rounded-2xl bg-white/60 px-4 py-3 text-sm font-semibold text-neutral-900",
-              "ring-1 ring-black/10 transition hover:bg-white",
+              "lp-motion-btn ring-1 ring-black/10 hover:bg-white",
               "select-text"
             )}
           >
@@ -206,7 +205,7 @@ export default function BlockedState(props: BlockedStateProps) {
 
               <span
                 className={cx(
-                  "ml-1 inline-block h-2 w-2 rotate-45 border-r-2 border-b-2 border-neutral-400 transition",
+                  "lp-motion-icon ml-1 inline-block h-2 w-2 rotate-45 border-r-2 border-b-2 border-neutral-400",
                   "group-open:rotate-[225deg]",
                   "select-none"
                 )}

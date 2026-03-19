@@ -21,7 +21,7 @@ export default function AuthShell({ title, subtitle, children, footer, bare = fa
               "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(255,0,127,0.07) 0%, rgba(255,0,127,0.00) 55%)",
           }}
         />
-        <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[760px] items-center justify-center">
+        <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-3xl items-center justify-center">
           <div className="w-full">{children}</div>
         </div>
       </main>
@@ -41,11 +41,11 @@ export default function AuthShell({ title, subtitle, children, footer, bare = fa
       />
 
       {/* Center */}
-      <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[520px] items-center justify-center">
+      <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-lg items-center justify-center">
         <div className="w-full">
           {/* Glass frame */}
           <div
-            className="rounded-[22px] border p-[1px] shadow-[0_26px_80px_rgba(0,0,0,0.10)]"
+            className="rounded-3xl border p-px shadow-[var(--lp-shadow-soft)]"
             style={{
               borderColor: "rgba(var(--lp-border),0.55)",
               background: "linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.52))",
@@ -53,7 +53,7 @@ export default function AuthShell({ title, subtitle, children, footer, bare = fa
           >
             {/* Card */}
             <div
-              className="relative overflow-hidden rounded-[21px] bg-white p-8"
+              className="relative overflow-hidden rounded-3xl bg-white p-8"
               style={{
                 boxShadow: "var(--lp-shadow-card)",
               }}
@@ -79,8 +79,8 @@ export default function AuthShell({ title, subtitle, children, footer, bare = fa
               <AuthBrand />
 
               <div className="mt-6">
-                {title ? <h1 className="text-[28px] font-semibold leading-tight tracking-tight">{title}</h1> : null}
-                {subtitle ? <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--lp-muted))]">{subtitle}</p> : null}
+                {title ? <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight">{title}</h1> : null}
+                {subtitle ? <p className="font-body mt-2 text-sm leading-relaxed text-[rgb(var(--lp-muted))]">{subtitle}</p> : null}
               </div>
 
               <div className="mt-6">{children}</div>

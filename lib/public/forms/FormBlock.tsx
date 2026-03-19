@@ -124,7 +124,7 @@ export function FormBlock({ formId, title, env, locale }: Props) {
   const honeypotId = schema.honeypotId ?? "_hp";
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="lp-glass-surface rounded-[var(--lp-radius-card)] p-4">
       {title && <h3 className="mb-2 text-lg font-semibold text-slate-900">{title}</h3>}
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field) => {

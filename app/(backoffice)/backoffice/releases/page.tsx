@@ -22,6 +22,12 @@ type ReleaseItem = {
   created_at: string;
 };
 
+function releaseStatusLabel(status: string, publishAt: string | null): string {
+  if (status === "completed") return "Fullført";
+  if (status === "scheduled" && publishAt) return "Planlagt";
+  return "Kladd";
+}
+
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +53,8 @@ export default function ReleasesPage() {
       const res = await fetch(`/api/backoffice/releases?environment=${env}`);
       if (!res.ok) throw new Error(res.status === 401 ? "Ikke innlogget" : res.status === 403 ? "Krever superadmin" : `Feil ${res.status}`);
       const data = await res.json();
-      if (data?.ok && Array.isArray(data.releases)) setReleases(data.releases);
+      const list = Array.isArray(data?.data?.releases) ? data.data.releases : Array.isArray(data?.releases) ? data.releases : [];
+      if (data?.ok && list.length >= 0) setReleases(list);
       else setReleases([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunne ikke laste releases");
@@ -63,7 +70,9 @@ export default function ReleasesPage() {
       const res = await fetch(`/api/backoffice/releases/${encodeURIComponent(id)}`);
       if (!res.ok) throw new Error(res.status === 404 ? "Ikke funnet" : `Feil ${res.status}`);
       const data = await res.json();
-      if (data?.ok && data.release && Array.isArray(data.items)) setDetail({ release: data.release, items: data.items });
+      const release = data?.data?.release ?? data?.release;
+      const items = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.items) ? data.items : [];
+      if (data?.ok && release && items.length >= 0) setDetail({ release, items });
       else setDetail(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunne ikke laste release");
@@ -93,7 +102,8 @@ export default function ReleasesPage() {
       const data = await res.json();
       setCreateName("");
       await fetchReleases();
-      if (data?.release?.id) setSelectedId(data.release.id);
+      const created = data?.data?.release ?? data?.release;
+      if (created?.id) setSelectedId(created.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunne ikke opprette release");
     } finally {
@@ -249,8 +259,8 @@ export default function ReleasesPage() {
                     className={`w-full rounded px-2 py-1.5 text-left text-sm ${selectedId === r.id ? "bg-slate-100 font-medium" : "hover:bg-slate-50"}`}
                   >
                     <span className="text-slate-900">{r.name}</span>
-                    <span className="ml-2 text-slate-500">({r.status})</span>
-                    {r.publish_at && <span className="ml-2 text-xs text-slate-400">{formatDate(r.publish_at)}</span>}
+                    <span className="ml-2 text-slate-500">{releaseStatusLabel(r.status, r.publish_at)}</span>
+                    {r.publish_at && <span className="ml-2 text-xs text-slate-400"> — {formatDate(r.publish_at)}</span>}
                   </button>
                 </li>
               ))}
@@ -267,8 +277,8 @@ export default function ReleasesPage() {
           ) : detail ? (
             <div className="mt-3 space-y-4">
               <div>
-                <p className="text-sm text-slate-700"><strong>{detail.release.name}</strong> — {detail.release.status}</p>
-                <p className="text-xs text-slate-500">Publiseres: {formatDate(detail.release.publish_at)}</p>
+                <p className="text-sm text-slate-700"><strong>{detail.release.name}</strong> — {releaseStatusLabel(detail.release.status, detail.release.publish_at)}</p>
+                <p className="text-xs text-slate-500">{detail.release.publish_at ? `Publiseres: ${formatDate(detail.release.publish_at)}` : "Ikke planlagt"}</p>
               </div>
 
               <div>

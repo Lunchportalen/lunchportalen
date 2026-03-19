@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import CompanyRegistrationForm from "@/components/auth/CompanyRegistrationForm";
 import RoleGate from "@/components/registration/RoleGate";
+import { Container } from "@/components/ui/container";
 
 export default function PublicRegistrationFlow() {
   const [started, setStarted] = useState(false);
@@ -13,8 +14,8 @@ export default function PublicRegistrationFlow() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6">
+    <Container className="max-w-3xl py-6">
       <CompanyRegistrationForm />
-    </div>
+    </Container>
   );
 }

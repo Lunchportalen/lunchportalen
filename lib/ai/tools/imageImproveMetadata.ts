@@ -1,6 +1,8 @@
 /**
  * Phase 35B: AI Image Improve - deterministic suggestions for alt/caption/tags.
  * No external AI; uses locale-aware templates and small tag sets.
+ * Output is safe to apply: suggestion fields are clamped (ALT_MAX, CAPTION_MAX, TAGS_MAX);
+ * when no improvement is needed, suggestion may be undefined — consumers must not treat that as a valid apply payload.
  */
 
 const ALT_MAX = 180;

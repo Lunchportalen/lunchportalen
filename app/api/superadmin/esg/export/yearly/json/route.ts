@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
-import { getScope } from "@/lib/auth/scope";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 
 // ✅ RIKTIG: filen finnes hos dere
 import { buildEsgNarrativeYear } from "@/lib/esg/narrative";
@@ -28,24 +28,21 @@ function isUuid(v: any): v is string {
 }
 
 export async function GET(req: NextRequest) {
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, ["superadmin"]);
+  if (deny) return deny;
+
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
   const supabase = await supabaseServer();
-
-  const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-
-  if (scope.role !== "superadmin") {
-    return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role ?? null } });
-  }
 
   const url = new URL(req.url);
   const year = clampYear(Number(url.searchParams.get("year") ?? osloYear()));
 
   const companyId = url.searchParams.get("company_id");
   if (companyId && !isUuid(companyId)) {
-    return jsonErr(rid, "company_id må være uuid", 400, { code: "BAD_REQUEST", detail: { company_id: companyId } });
+    return jsonErr(ctx.rid, "company_id må være uuid", 400, "BAD_REQUEST", { detail: { company_id: companyId } });
   }
 
   let curQ = supabase.from("esg_yearly_snapshots").select("*").eq("year", year);
@@ -57,10 +54,10 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: cur, error: e1 } = await curQ;
-  if (e1) return jsonErr(rid, "Kunne ikke hente året", 500, { code: "DB_ERROR", detail: e1 });
+  if (e1) return jsonErr(ctx.rid, "Kunne ikke hente året", 500, "DB_ERROR", { detail: e1 });
 
   const { data: prev, error: e2 } = await prevQ;
-  if (e2) return jsonErr(rid, "Kunne ikke hente forrige år", 500, { code: "DB_ERROR", detail: e2 });
+  if (e2) return jsonErr(ctx.rid, "Kunne ikke hente forrige år", 500, "DB_ERROR", { detail: e2 });
 
   const prevMap = new Map<string, any>();
   for (const r of prev ?? []) prevMap.set((r as any).company_id, r);
@@ -71,7 +68,7 @@ export async function GET(req: NextRequest) {
     return { ...r, narrative };
   });
 
-  return jsonOk(rid, { year, company_id: companyId ?? null, items });
+  return jsonOk(ctx.rid, { year, company_id: companyId ?? null, items });
 }
 
 

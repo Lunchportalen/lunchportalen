@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
-import { getScope } from "@/lib/auth/scope";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 
 function osloYear() {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo", year: "numeric" });
@@ -21,20 +21,15 @@ function clampInt(n: number, min: number, max: number) {
 type CompanyMeta = { name: string | null; status: string | null };
 
 export async function GET(req: NextRequest) {
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, ["superadmin"]);
+  if (deny) return deny;
+
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
-
   try {
-    // ✅ await klienten
     const supabase = await supabaseServer();
-
-    // ✅ scope fra request (robust: støtter både Scope og { ok:false })
-    const scope: any = await getScope(req);
-    if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-    if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-
-    // ✅ superadmin-only
-    if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
     const url = new URL(req.url);
     const year = clampInt(Number(url.searchParams.get("year") ?? osloYear()), 2000, 2100);
@@ -55,7 +50,7 @@ export async function GET(req: NextRequest) {
     if (score !== "ALL") yearlyQ = yearlyQ.eq("stability_score", score);
 
     const { data: rows, error: yErr } = await yearlyQ;
-    if (yErr) return jsonErr(rid, "Kunne ikke hente ESG yearly", 500, { code: "DB_ERROR", detail: yErr });
+    if (yErr) return jsonErr(ctx.rid, "Kunne ikke hente ESG yearly", 500, "DB_ERROR", { detail: yErr });
 
     // 2) firmainfo (navn/status) for UI
     // - IKKE anta created_at finnes
@@ -70,10 +65,12 @@ export async function GET(req: NextRequest) {
       // Fallback uten status
       const tryWithoutStatus = await supabase.from("companies").select("id, name");
       if (tryWithoutStatus.error) {
-        return jsonErr(rid, "Kunne ikke hente companies", 500, { code: "DB_ERROR", detail: {
-          withStatus: tryWithStatus.error,
-          withoutStatus: tryWithoutStatus.error,
-        } });
+        return jsonErr(ctx.rid, "Kunne ikke hente companies", 500, "DB_ERROR", {
+          detail: {
+            withStatus: tryWithStatus.error,
+            withoutStatus: tryWithoutStatus.error,
+          },
+        });
       }
       companies = tryWithoutStatus.data ?? [];
     }
@@ -144,10 +141,9 @@ export async function GET(req: NextRequest) {
     const total = list.length;
     const pageItems = list.slice(offset, offset + limit);
 
-    return jsonOk(rid, { year, total, page, limit, items: pageItems });
+    return jsonOk(ctx.rid, { year, total, page, limit, items: pageItems });
   } catch (e: any) {
-    // ✅ aldri tom 500 igjen
-    return jsonErr(rid, "Uventet feil i ESG benchmark", 500, { code: "UNEXPECTED", detail: { message: String(e?.message ?? e) } });
+    return jsonErr(ctx.rid, "Uventet feil i ESG benchmark", 500, "UNEXPECTED", { detail: { message: String(e?.message ?? e) } });
   }
 }
 

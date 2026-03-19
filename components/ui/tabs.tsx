@@ -1,6 +1,11 @@
 "use client";
 
 import * as React from "react";
+import {
+  getTabListVariantClass,
+  getTabVariantClass,
+  type TabSegmentVariant,
+} from "@/lib/ui/tabSegmentVariants";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -9,6 +14,7 @@ function cn(...v: Array<string | false | null | undefined>) {
 type TabsCtx = {
   value: string;
   setValue: (v: string) => void;
+  variant?: TabSegmentVariant;
 };
 
 const TabsContext = React.createContext<TabsCtx | null>(null);
@@ -18,10 +24,12 @@ export interface TabsProps {
   defaultValue?: string;
   onValueChange?: (v: string) => void;
   className?: string;
+  /** Visual variant for list and triggers; omit for default styling */
+  variant?: TabSegmentVariant;
   children: React.ReactNode;
 }
 
-export function Tabs({ value, defaultValue, onValueChange, className, children }: TabsProps) {
+export function Tabs({ value, defaultValue, onValueChange, className, variant, children }: TabsProps) {
   const [internal, setInternal] = React.useState(defaultValue ?? "");
   const controlled = typeof value === "string";
 
@@ -35,7 +43,7 @@ export function Tabs({ value, defaultValue, onValueChange, className, children }
     [controlled, onValueChange]
   );
 
-  const ctx = React.useMemo(() => ({ value: current, setValue }), [current, setValue]);
+  const ctx = React.useMemo(() => ({ value: current, setValue, variant }), [current, setValue, variant]);
 
   return (
     <TabsContext.Provider value={ctx}>
@@ -47,13 +55,15 @@ export function Tabs({ value, defaultValue, onValueChange, className, children }
 export type TabsListProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function TabsList({ className, ...props }: TabsListProps) {
+  const ctx = React.useContext(TabsContext);
+  const listVariantClass = ctx?.variant ? getTabListVariantClass(ctx.variant) : "";
   return (
     <div
       role="tablist"
       className={cn(
         "inline-flex items-center gap-1 rounded-2xl p-1",
-        "bg-[color:var(--lp-surface-2)] ring-1 ring-[color:var(--lp-border)]",
-        "shadow-[var(--lp-shadow-sm)] [box-shadow:var(--lp-shadow-sm),var(--lp-shadow-inset)]",
+        listVariantClass ||
+          "bg-[color:var(--lp-surface-2)] ring-1 ring-[color:var(--lp-border)] shadow-[var(--lp-shadow-sm)] [box-shadow:var(--lp-shadow-sm),var(--lp-shadow-inset)]",
         className
       )}
       {...props}
@@ -70,6 +80,7 @@ export function TabsTrigger({ className, value, children, ...props }: TabsTrigge
   if (!ctx) throw new Error("TabsTrigger must be used within <Tabs>.");
 
   const selected = ctx.value === value;
+  const tabVariantClass = ctx.variant ? getTabVariantClass(ctx.variant) : "";
 
   return (
     <button
@@ -78,13 +89,13 @@ export function TabsTrigger({ className, value, children, ...props }: TabsTrigge
       aria-selected={selected}
       onClick={() => ctx.setValue(value)}
       className={cn(
-        "h-10 rounded-xl px-4 text-sm font-semibold",
-        "transition-[transform,box-shadow,background-color,color,opacity] duration-200 [transition-timing-function:var(--lp-ease)]",
+        "lp-motion-btn h-10 rounded-xl px-4 text-sm font-semibold",
         "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)]",
-        selected
-          ? "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)] shadow-[var(--lp-shadow-sm)]"
-          : "text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface)] hover:text-[color:var(--lp-fg)]",
-        "active:scale-[0.99]",
+        "active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-transparent disabled:hover:text-[color:var(--lp-muted)]",
+        tabVariantClass ||
+          (selected
+            ? "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)] shadow-[var(--lp-shadow-sm)]"
+            : "text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface)] hover:text-[color:var(--lp-fg)]"),
         className
       )}
       {...props}

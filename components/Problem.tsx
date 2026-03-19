@@ -1,3 +1,5 @@
+import { Container } from "@/components/ui/container";
+
 export default function Problem() {
   const items = [
     {
@@ -19,7 +21,8 @@ export default function Problem() {
   ];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
+    <section>
+      <Container className="max-w-6xl py-10">
       <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
         Lunsj på jobb har blitt unødvendig komplisert
       </h2>
@@ -32,7 +35,7 @@ export default function Problem() {
         {items.map((x) => (
           <div
             key={x.title}
-            className="rounded-3xl bg-white/60 p-6 ring-1 ring-[rgb(var(--lp-border))]"
+            className="lp-card lp-motion-card p-6"
           >
             <div className="text-sm font-semibold">{x.title}</div>
             <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
@@ -41,6 +44,9 @@ export default function Problem() {
           </div>
         ))}
       </div>
+      </Container>
     </section>
   );
 }
+
+

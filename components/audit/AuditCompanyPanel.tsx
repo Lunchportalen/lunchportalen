@@ -221,7 +221,7 @@ export default function AuditCompanyPanel({
       {toast ? (
         <div
           className={[
-            "absolute right-3 bottom-3 z-20 rounded-xl border px-3 py-2 text-xs font-semibold backdrop-blur",
+            "lp-glass-surface absolute right-3 bottom-3 z-20 rounded-xl px-3 py-2 text-xs font-semibold",
             toastClass(toast.kind),
           ].join(" ")}
           role="status"
@@ -249,7 +249,7 @@ export default function AuditCompanyPanel({
       {open ? (
         <div className="grid gap-3 p-4">
           {/* Mini sticky controls */}
-          <div className="sticky top-3 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgba(var(--lp-surface),0.85)] px-3 py-2 backdrop-blur">
+          <div className="lp-glass-surface sticky top-3 z-10 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2">
             <button
               onClick={() => setPreset("critical")}
               className={[
@@ -346,7 +346,7 @@ export default function AuditCompanyPanel({
                     <div className="lp-mono text-xs font-semibold text-[rgb(var(--lp-text))]">
                       {it.action ?? "-"}{" "}
                       {preset === "critical" && critical ? (
-                        <span className="ml-2 inline-flex items-center rounded-full border border-[rgba(var(--lp-crit-bd),0.95)] bg-[rgba(var(--lp-crit-bg),0.85)] px-2 py-0.5 text-[10px] font-semibold text-[rgb(var(--lp-crit-tx))]">
+                        <span className="ml-2 inline-flex items-center rounded-full border border-[rgba(var(--lp-crit-bd),0.95)] bg-[rgba(var(--lp-crit-bg),0.85)] px-2 py-0.5 text-xs font-semibold text-[rgb(var(--lp-crit-tx))]">
                           KRITISK
                         </span>
                       ) : null}

@@ -141,6 +141,7 @@ function StatusMenuPortal(props: {
 
   return createPortal(
     <div className="fixed inset-0 z-[99999]" aria-hidden={!open}>
+      <div className="lp-glass-overlay absolute inset-0" aria-hidden />
       <button type="button" onClick={onClose} className="absolute inset-0 cursor-default" aria-label="Lukk" />
       <div
         ref={menuRef}
@@ -422,7 +423,7 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
                 const uiStatus = normalizeUiStatus(f.status);
 
                 return (
-                  <tr key={f.id} className="border-b last:border-b-0 hover:bg-bg/60">
+                  <tr key={f.id} className="lp-motion-row border-b last:border-b-0 hover:bg-[color:var(--lp-surface-alt)]">
                     <td className="p-3">
                       <div className="flex flex-col">
                         <Link className="font-medium underline-offset-4 hover:underline" href={`/superadmin/firms/${encodeURIComponent(f.id)}`}>

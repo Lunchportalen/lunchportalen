@@ -103,10 +103,15 @@ function Modal({
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[9999] grid place-items-center bg-black/40 p-4"
+      className="fixed inset-0 z-[9999] grid place-items-center p-4"
     >
-      <div className="max-h-[90vh] w-[min(1000px,96vw)] overflow-auto rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] shadow-[0_20px_70px_rgba(0,0,0,0.25)]">
-        <div className="sticky top-0 flex items-center justify-between gap-3 rounded-t-2xl border-b border-[rgba(var(--lp-border),0.8)] bg-[rgb(var(--lp-surface))] px-4 py-3">
+      <div
+        className="lp-motion-overlay lp-glass-overlay absolute inset-0"
+        aria-hidden
+        onClick={onClose}
+      />
+      <div className="lp-glass-panel relative z-10 max-h-[90vh] w-[min(1000px,96vw)] overflow-auto rounded-card" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 flex items-center justify-between gap-3 border-b border-[rgb(var(--lp-border))] px-4 py-3">
           <div className="text-sm font-semibold text-[rgb(var(--lp-text))]">{title}</div>
           <button
             ref={closeBtnRef}
@@ -283,14 +288,14 @@ export default function AuditFeed({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Søk (actor, action, entity_type, summary)"
-          className="min-w-[320px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
+          className="w-full max-w-[320px] min-w-0 rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
         />
 
         <input
           value={action}
           onChange={(e) => setAction(e.target.value)}
           placeholder="Filtrer på action (f.eks. COMPANY_ACTIVATED)"
-          className="min-w-[320px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
+          className="w-full max-w-[320px] min-w-0 rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
         />
 
         <button
@@ -309,8 +314,8 @@ export default function AuditFeed({
         {err ? <div className="text-sm font-semibold text-[rgb(var(--lp-crit-tx))]">{err}</div> : null}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]">
-        <div className="grid grid-cols-[170px_220px_1fr_260px] gap-0 border-b border-[rgba(var(--lp-border),0.7)] bg-[rgb(var(--lp-surface-2))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">
+      <div className="overflow-x-auto rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]">
+        <div className="grid min-w-0 grid-cols-[170px_220px_1fr_260px] gap-0 border-b border-[rgba(var(--lp-border),0.7)] bg-[rgb(var(--lp-surface-2))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">
           <div>Tid</div>
           <div>Actor</div>
           <div>Action / Summary</div>
@@ -351,7 +356,7 @@ export default function AuditFeed({
           onClick={() => startTransition(() => load(false))}
           disabled={pending || inFlightRef.current}
           className={[
-            "w-[180px] rounded-lg border px-3 py-2 text-xs font-semibold",
+            "w-full max-w-[180px] rounded-lg border px-3 py-2 text-xs font-semibold",
             pending || inFlightRef.current
               ? "border-[rgba(var(--lp-border),0.6)] bg-[rgb(var(--lp-surface-2))] text-[rgb(var(--lp-muted))] opacity-70"
               : "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]",

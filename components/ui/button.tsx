@@ -2,14 +2,28 @@
 
 import * as React from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "default";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "destructive"
+  | "default"
+  | "glass"
+  | "soft"
+  | "gradient"
+  | "outline"
+  | "glow";
 type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
 }
 
-const BASE = "lp-btn";
+const BASE = "lp-btn lp-motion-btn";
+
+/** Shared interaction states for all variants */
+const INTERACTION =
+  "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70";
 
 const SIZE: Record<ButtonSize, string> = {
   default: "",
@@ -62,6 +76,33 @@ const VARIANT: Record<ButtonVariant, string> = {
     "hover:bg-[rgb(var(--lp-surface))] hover:text-[rgb(var(--lp-text))]",
     "focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_rgba(var(--lp-ring),0.22)]"
   ),
+
+  /* Premium effect variants: lp-btn-* from lib/ui/motion.css; text + focus for contrast/a11y; INTERACTION (active/disabled) below applies to all */
+  glass: cn(
+    "lp-btn-glass",
+    "text-[rgb(var(--lp-text))]",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_rgba(var(--lp-ring),0.22)]"
+  ),
+  soft: cn(
+    "lp-btn-soft",
+    "text-[rgb(var(--lp-text))]",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_rgba(var(--lp-ring),0.22)]"
+  ),
+  gradient: cn(
+    "lp-btn-gradient",
+    "text-[rgb(var(--lp-text))]",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_rgba(var(--lp-ring),0.22)]"
+  ),
+  outline: cn(
+    "lp-btn-outline",
+    "text-[rgb(var(--lp-text))]",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_4px_rgba(var(--lp-ring),0.22)]"
+  ),
+  glow: cn(
+    "lp-btn-glow",
+    "text-[rgb(var(--lp-text))]"
+    /* focus-visible: .lp-btn-glow:focus-visible in motion.css */
+  ),
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -76,7 +117,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
 ) {
   // Safety class: never allow text to disappear on hover due to accidental overrides
   // (If someone adds hover:bg-white + text-white, our variant hover:text wins.)
-  const classes = cn(BASE, SIZE[size], VARIANT[variant], className);
+  const classes = cn(BASE, SIZE[size], VARIANT[variant], INTERACTION, className);
 
   if (asChild) {
     const child = React.Children.only(children) as React.ReactElement<any>;

@@ -9,7 +9,7 @@ export default function StatusPill({ state }: { state: SystemState }) {
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1 shadow-[var(--lp-shadow-soft)]",
+        "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ring-1 shadow-[var(--lp-shadow-soft)]",
         tone(state),
       ].join(" ")}
     >

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { Container } from "@/components/ui/container";
 
 type Mode = "company_admin" | "employee";
 
@@ -84,7 +85,8 @@ export default function RegisterGate() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[780px] px-4 py-10">
+    <main>
+      <Container className="max-w-3xl py-10">
       <header className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-6 shadow-[var(--lp-shadow-soft)]">
         <h1 className="text-2xl font-semibold">Registrering</h1>
         <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
@@ -189,6 +191,7 @@ export default function RegisterGate() {
           {receipt ? <ReceiptBox receipt={receipt} /> : null}
         </section>
       )}
+      </Container>
     </main>
   );
 }

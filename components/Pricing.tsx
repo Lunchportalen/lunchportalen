@@ -16,7 +16,7 @@ function Plan({
   return (
     <div
       className={[
-        "rounded-3xl p-7 ring-1",
+        "lp-card lp-motion-card p-7",
         isHighlight
           ? "bg-white shadow-sm ring-[rgb(var(--lp-cta))]"
           : "bg-white/70 ring-[rgb(var(--lp-border))]",
@@ -45,9 +45,12 @@ function Plan({
   );
 }
 
+import { Container } from "@/components/ui/container";
+
 export default function Pricing() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
+    <section>
+      <Container className="max-w-6xl py-10">
       <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
         To nivåer. Enkelt å forstå.
       </h2>
@@ -56,7 +59,7 @@ export default function Pricing() {
       </p>
 
       {/* CRO: fjern tvil / tydelig kontroll */}
-      <div className="mt-4 rounded-2xl bg-white/60 p-4 text-sm ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="mt-4 lp-card lp-motion-card p-4 text-sm">
         <span className="font-semibold">Viktig:</span> Fordelingen (f.eks. 4 dager Basis + 1 dag Luxus) settes av firma/admin ved avtale
         – ikke av ansatte.
       </div>
@@ -75,7 +78,7 @@ export default function Pricing() {
         />
       </div>
 
-      <div className="mt-6 rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="mt-6 lp-card lp-motion-card p-6">
         <div className="text-sm font-semibold">Fordeling settes ved avtale</div>
         <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
           Eksempel: 4 dager Basis og 1 dag Luxus. Dette settes av firma/admin, og gjelder for alle – uten individuelle unntak.
@@ -93,6 +96,11 @@ export default function Pricing() {
           </Link>
         </div>
       </div>
+      </Container>
     </section>
   );
 }
+
+
+
+

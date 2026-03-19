@@ -26,7 +26,7 @@ export default function VilkarPage() {
         <div className="grid gap-5 lg:grid-cols-3">
           {/* LEFT: Quick facts */}
           <aside className="space-y-5 lg:col-span-1">
-            <div className="rounded-2xl border bg-white/90 p-4 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-4">
               <h2 className="text-sm font-semibold">Leverandør</h2>
 
               <div className="mt-3 space-y-3 text-sm">
@@ -50,12 +50,12 @@ export default function VilkarPage() {
                   <div className="text-xs text-muted-foreground">Kontakt</div>
                   <a
                     href={`mailto:${SUPPORT_EMAIL}`}
-                    className="font-medium transition hover:text-[#ff007f]"
+                    className="lp-motion-btn font-medium hover:text-[#ff007f]"
                   >
                     {SUPPORT_EMAIL}
                   </a>
                   <div className="mt-1">
-                    <a href="tel:+4748155481" className="font-medium transition hover:text-[#ff007f]" >
+                    <a href="tel:+4748155481" className="lp-motion-btn font-medium hover:text-[#ff007f]" >
                       481 55 481
                     </a>
                   </div>
@@ -64,10 +64,10 @@ export default function VilkarPage() {
                 <div className="pt-1">
                   <div className="text-xs text-muted-foreground">Snarveier</div>
                   <div className="mt-2 flex flex-col gap-2">
-                    <Link href="/personvern" className="text-sm font-medium transition hover:text-[#ff007f]">
+                    <Link href="/personvern" className="lp-motion-btn text-sm font-medium hover:text-[#ff007f]">
                       Personvern
                     </Link>
-                    <Link href="/kontakt" className="text-sm font-medium transition hover:text-[#ff007f]">
+                    <Link href="/kontakt" className="lp-motion-btn text-sm font-medium hover:text-[#ff007f]">
                       Kontakt oss
                     </Link>
                   </div>
@@ -75,7 +75,7 @@ export default function VilkarPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border bg-white/90 p-4 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-4">
               <div className="text-xs font-semibold text-muted-foreground">Kortversjon</div>
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <li>• Tjenesten er for bedrifter (B2B).</li>
@@ -88,7 +88,7 @@ export default function VilkarPage() {
 
           {/* RIGHT: Terms */}
           <section className="lg:col-span-2">
-            <div className="rounded-2xl border bg-white/90 p-5 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold">Bruksvilkår</h2>
@@ -170,7 +170,7 @@ export default function VilkarPage() {
                   <h3 className="text-sm font-semibold">7. Personvern</h3>
                   <p className="mt-2 text-muted-foreground">
                     Behandling av personopplysninger følger vår{" "}
-                    <Link href="/personvern" className="font-medium transition hover:text-[#ff007f]">
+                    <Link href="/personvern" className="lp-motion-btn font-medium hover:text-[#ff007f]">
                       personvernerklæring
                     </Link>
                     .
@@ -189,11 +189,11 @@ export default function VilkarPage() {
                   <div className="text-xs font-semibold text-muted-foreground">Spørsmål om vilkår?</div>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Ta kontakt via{" "}
-                    <Link href="/kontakt" className="font-medium transition hover:text-[#ff007f]">
+                    <Link href="/kontakt" className="lp-motion-btn font-medium hover:text-[#ff007f]">
                       kontaktsiden
                     </Link>{" "}
                     eller e-post til{" "}
-                    <a className="font-medium transition hover:text-[#ff007f]" href={`mailto:${SUPPORT_EMAIL}`}>
+                    <a className="lp-motion-btn font-medium hover:text-[#ff007f]" href={`mailto:${SUPPORT_EMAIL}`}>
                       {SUPPORT_EMAIL}
                     </a>
                     .

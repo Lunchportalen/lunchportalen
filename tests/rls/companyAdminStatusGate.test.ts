@@ -43,16 +43,19 @@ vi.mock("@/lib/auth/scope", () => ({
   getScope: vi.fn(async () => ({ ...SCOPE })),
 }));
 
-// ✅ Toggle route typically uses routeGuard helpers
+// ✅ Toggle route bruker Dag-10 routeGuard helpers
 vi.mock("@/lib/http/routeGuard", () => ({
-  // Hybrid object to satisfy multiple internal access patterns
   scopeOr401: vi.fn(async () => ({
-    ok: true,
-    rid: "rid_test",
-    scope: { ...SCOPE },
-    ...SCOPE,
+    ok: true as const,
+    ctx: {
+      rid: "rid_test",
+      route: "/api/orders/toggle",
+      method: "POST",
+      scope: { ...SCOPE },
+    },
   })),
-  requireRoleOr403: vi.fn(async () => ({ ok: true })),
+  requireRoleOr403: vi.fn(() => null),
+  requireCompanyScopeOr403: vi.fn(() => null),
   readJson: vi.fn(async (req: any) => {
     try {
       return await req.json();

@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { writeAuditEvent } from "@/lib/audit/write";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { isIsoDate } from "@/lib/date/oslo";
 
@@ -150,12 +151,42 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke opprette avtale.", 500, "AGREEMENT_CREATE_BAD_RESPONSE");
     }
 
+    const scopeForAudit = {
+      user_id: g.ctx.scope.userId,
+      email: g.ctx.scope.email,
+      role: g.ctx.scope.role,
+    };
+
+    const audit = await writeAuditEvent({
+      scope: scopeForAudit,
+      action: "agreement.create_pending",
+      entity_type: "agreement",
+      entity_id: agreementId,
+      summary: `Opprettet avtale (PENDING) for company ${companyId}`,
+      detail: {
+        rid,
+        company_id: companyId,
+        location_id: locationId,
+        tier,
+        delivery_days: deliveryNorm.days,
+        starts_at: startsAt,
+        slot_start: slotStart,
+        slot_end: slotEnd,
+        binding_months: bindingMonths,
+        notice_months: noticeMonths,
+        price_per_employee: pricePerEmployee,
+      },
+    });
+
     return jsonOk(
       rid,
       {
         agreementId,
         status,
         message: "Avtale opprettet som Venter.",
+        audit_ok: (audit as any)?.ok === true,
+        audit_event: (audit as any)?.ok ? (audit as any).audit : null,
+        audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
       },
       200
     );

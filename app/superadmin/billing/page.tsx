@@ -14,7 +14,7 @@ export default async function Page() {
   const href = `/api/superadmin/billing/export?from=${from}&to=${to}`;
 
   return (
-    <main className="lp-select-text mx-auto grid max-w-[900px] gap-4 p-4">
+    <main className="lp-select-text mx-auto grid w-full max-w-4xl gap-4 p-4">
       <header>
         <h1 className="text-[22px] font-semibold">Fakturagrunnlag (CSV)</h1>
         <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">

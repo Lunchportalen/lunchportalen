@@ -18,7 +18,7 @@ export default function RouteComplianceCard({ items }: { items: RouteRegistryIte
   const s = summarizeRegistry(items);
 
   return (
-    <section className="rounded-2xl border bg-white shadow-sm p-6">
+    <section className="lp-card-soft rounded-card p-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">API Route Compliance</h2>

@@ -240,32 +240,33 @@ export async function processOutboxBatch(
     const outboxId = safeStr(row.id);
     const key = safeStr(row.event_key) || outboxId;
 
-    try {
-      const p: any = row.payload;
+    const p: any = row.payload;
+    const from = safeStr(p.from ?? p.from_email ?? p.fromEmail);
+    const to = safeStr(p.to ?? p.to_email ?? p.toEmail);
+    const subject = safeStr(p.subject);
+    const text = safeStr(p.bodyText ?? p.text ?? "");
+    const html = (p.bodyHtml ?? p.html ?? null) as string | null;
 
-      const from = safeStr(p.from ?? p.from_email ?? p.fromEmail);
-      const to = safeStr(p.to ?? p.to_email ?? p.toEmail);
-      const subject = safeStr(p.subject);
-      const text = safeStr(p.bodyText ?? p.text ?? "");
-      const html = (p.bodyHtml ?? p.html ?? null) as string | null;
-
-      if (!from || !to || !subject) {
-        throw new Error(`payload_missing_fields: from/to/subject (event_key=${key})`);
-      }
-
-      await sendMail({ from, to, subject, text, html });
-      await markOutboxSent(outboxId, null);
-
-      sent += 1;
-      outboxLog("info", "sent", { rid, outbox_id: outboxId, event_key: key });
-    } catch (e: any) {
-      const mark = await markOutboxFailed(outboxId, errString(e));
-      if (mark.status === "FAILED_PERMANENT") {
-        failedPermanent += 1;
-      } else {
+    if (!from || !to || !subject) {
+      try {
+        const mark = await markOutboxFailed(outboxId, "payload_missing_fields: from/to/subject");
+        if (mark.status === "FAILED_PERMANENT") failedPermanent += 1;
+        else failed += 1;
+      } catch {
         failed += 1;
       }
+      outboxLog("error", "send_failed", { rid, outbox_id: outboxId, event_key: key, reason: "payload_missing_fields" });
+      continue;
+    }
 
+    let sendSucceeded = false;
+    try {
+      await sendMail({ from, to, subject, text, html });
+      sendSucceeded = true;
+    } catch (e: any) {
+      const mark = await markOutboxFailed(outboxId, errString(e));
+      if (mark.status === "FAILED_PERMANENT") failedPermanent += 1;
+      else failed += 1;
       outboxLog("error", "send_failed", {
         rid,
         outbox_id: outboxId,
@@ -273,6 +274,30 @@ export async function processOutboxBatch(
         attempts_after: mark.attempts,
         max_attempts: OUTBOX_MAX_ATTEMPTS,
       });
+      continue;
+    }
+
+    // Send succeeded: must mark SENT so retries do not duplicate. Retry mark once on failure.
+    if (sendSucceeded) {
+      let marked = false;
+      try {
+        await markOutboxSent(outboxId, null);
+        marked = true;
+      } catch (e1: any) {
+        try {
+          await markOutboxSent(outboxId, null);
+          marked = true;
+        } catch (e2: any) {
+          outboxLog("error", "mark_sent_failed_after_send", {
+            rid,
+            outbox_id: outboxId,
+            event_key: key,
+            error: errString(e2),
+          });
+        }
+      }
+      sent += 1;
+      if (marked) outboxLog("info", "sent", { rid, outbox_id: outboxId, event_key: key });
     }
   }
 

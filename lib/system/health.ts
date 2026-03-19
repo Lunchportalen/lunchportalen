@@ -201,7 +201,7 @@ export async function runHealthChecks(): Promise<HealthReport> {
   }
 
   /* =========================
-     Final verdict
+     Final verdict (operational truth: no optimistic ok)
   ========================= */
   const ok = checks.every((c) => c.status === "ok" || c.status === "skip");
 

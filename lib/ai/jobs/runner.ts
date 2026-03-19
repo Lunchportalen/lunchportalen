@@ -2,6 +2,7 @@
  * AI jobs runner: process pending ai_jobs with claim, retries, and backoff (Phase 43A).
  */
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { opsLog } from "@/lib/ops/log";
 import { claimPendingJobs } from "@/lib/ai/jobs/claim";
 import { computeBackoffSeconds } from "@/lib/ai/jobs/backoff";
 import { generateLandingPatch } from "@/lib/ai/tools/landingGenerateSections";
@@ -203,10 +204,19 @@ export async function runPendingJobs(): Promise<{ ran: number; completed: number
           locked_at: null,
         }).eq("id", jobId);
       }
-      await supabase.from("ai_activity_log").insert({
-        page_id: null, variant_id: null, environment: "preview", locale: "nb",
-        action: "job_failed", tool, metadata: { jobId, tool, error: errorMessage, attempts: nextAttempts },
-      });
+      const { buildAiActivityLogRow } = await import("@/lib/ai/logging/aiActivityLogRow");
+      const { error: logErr } = await supabase.from("ai_activity_log").insert(
+        buildAiActivityLogRow({
+          action: "job_failed",
+          page_id: null,
+          variant_id: null,
+          tool,
+          environment: "preview",
+          locale: "nb",
+          metadata: { jobId, tool, error: errorMessage, attempts: nextAttempts },
+        })
+      );
+      if (logErr) opsLog("ai_activity_log.insert_failed", { context: "job_runner", action: "job_failed", tool, jobId, error: logErr.message });
       failed += 1;
     }
   }

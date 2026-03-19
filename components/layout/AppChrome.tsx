@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { headers } from "next/headers";
 import AuthStatus from "@/components/auth/AuthStatus";
+import { Container } from "@/components/ui/container";
 
 function isPublicPath(pathname: string) {
   return (
@@ -30,8 +31,8 @@ export default async function AppChrome({ children }: { children: React.ReactNod
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 md:h-16 md:gap-4">
+      <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] lp-glass-nav">
+        <Container className="flex h-14 max-w-6xl items-center justify-between gap-3 md:h-16 md:gap-4">
           <Link href="/" className="flex items-center">
             <Image
               src="/brand/LP-logo-uten-bakgrunn.png"
@@ -47,15 +48,15 @@ export default async function AppChrome({ children }: { children: React.ReactNod
           <nav className="flex flex-nowrap items-center gap-3">
             <AuthStatus />
           </nav>
-        </div>
+        </Container>
       </header>
 
       <main>{children}</main>
 
       <footer className="border-t border-[rgb(var(--lp-border))] bg-white/40">
-        <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-[rgb(var(--lp-muted))]">
+        <Container className="max-w-6xl py-10 text-sm text-[rgb(var(--lp-muted))]">
           © {new Date().getFullYear()} Lunchportalen
-        </div>
+        </Container>
       </footer>
     </>
   );

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Phase 43B: Daily content health scan agent. Reads pages from DB, runs analyzeContentHealth, writes content_health.
  * Does NOT modify content tables.
  */
@@ -94,12 +94,13 @@ export async function runContentHealthDaily(
       meta,
       pageTitle,
     });
+    const clampedScore = Math.max(0, Math.min(100, typeof score === "number" && Number.isFinite(score) ? score : 0));
 
     toInsert.push({
       page_id: pageId,
       variant_id: variantId,
-      score,
-      issues,
+      score: clampedScore,
+      issues: Array.isArray(issues) ? issues : [],
     });
   }
 
@@ -116,19 +117,22 @@ export async function runContentHealthDaily(
     if (!error) written += chunk.length;
   }
 
-  await supabase.from("ai_activity_log").insert({
-    page_id: null,
-    variant_id: null,
-    environment: "preview",
-    locale: options.locale ?? "nb",
-    action: "agent_run",
-    tool: "content_health_daily",
-    metadata: {
-      agent: "content_health_daily",
-      scanned: rows.length,
-      written,
-    },
-  });
+  const { buildAiActivityLogRow } = await import("@/lib/ai/logging/aiActivityLogRow");
+  await supabase.from("ai_activity_log").insert(
+    buildAiActivityLogRow({
+      action: "agent_run",
+      page_id: null,
+      variant_id: null,
+      tool: "content_health_daily",
+      environment: "preview",
+      locale: options.locale ?? "nb",
+      metadata: {
+        agent: "content_health_daily",
+        scanned: rows.length,
+        written,
+      },
+    })
+  );
 
   return { scanned: rows.length, written };
 }

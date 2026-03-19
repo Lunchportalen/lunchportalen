@@ -231,12 +231,12 @@ export default function AuditClient() {
   const critCount = useMemo(() => viewItems.filter((x) => isCritical(x)).length, [viewItems]);
 
   return (
-    <div className="mx-auto max-w-[1100px] p-4">
+    <div className="mx-auto w-full max-w-6xl p-4">
       {/* Toast */}
       {toast ? (
         <div
           className={[
-            "fixed right-4 bottom-4 z-50 rounded-xl border px-3 py-2 text-xs font-semibold backdrop-blur",
+            "lp-glass-surface fixed right-4 bottom-4 z-50 rounded-xl px-3 py-2 text-xs font-semibold",
             toastClass(toast.kind),
           ].join(" ")}
           role="status"
@@ -247,7 +247,7 @@ export default function AuditClient() {
       ) : null}
 
       {/* Sticky header */}
-      <div className="sticky top-3 z-10 rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-[rgba(var(--lp-surface),0.85)] p-3 backdrop-blur">
+      <div className="lp-glass-surface sticky top-3 z-10 rounded-card p-3">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <div className="text-[22px] font-semibold">Audit</div>

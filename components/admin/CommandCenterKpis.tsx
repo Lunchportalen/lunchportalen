@@ -46,13 +46,13 @@ function Kpi({
   const Inner = (
     <div
       className={cx(
-        "group rounded-2xl p-5 ring-1 ring-black/5 transition",
+        "lp-motion-card group rounded-2xl p-5 ring-1 ring-black/5",
         "bg-neutral-50/70 hover:bg-white hover:shadow-[0_12px_38px_-30px_rgba(0,0,0,.45)]"
       )}
     >
       <div className="flex items-center gap-2">
         <div className="text-xs font-semibold tracking-wide text-neutral-600">{label}</div>
-        {primary ? <span className="rounded-full bg-black px-2 py-0.5 text-[10px] font-semibold text-white">Primær</span> : null}
+        {primary ? <span className="rounded-full bg-black px-2 py-0.5 text-xs font-semibold text-white">Primær</span> : null}
       </div>
 
       <div className="mt-2 text-2xl font-extrabold text-neutral-900">{value}</div>

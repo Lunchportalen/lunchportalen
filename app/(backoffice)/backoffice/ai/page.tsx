@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+
+import { AiTreeNav } from "./AiTreeNav";
 
 type JobRow = {
   id: string;
@@ -146,174 +149,206 @@ export default function AIControlPage() {
 
   return (
     <div className="p-6 max-w-5xl">
-      <h1 className="text-xl font-semibold text-slate-900">AI Control</h1>
+      <h1 className="text-xl font-semibold text-slate-900">AI Command Center</h1>
       <p className="mt-1 text-sm text-slate-600">
         Drift og overvåkning av AI-jobs, innholdshelse og eksperimenter (kun superadmin).
       </p>
 
-      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
+        <AiTreeNav />
+
+        <div className="space-y-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
         <p>
           Denne siden viser kun operative verktøy (jobs, health og experiments) for AI i denne branchen. Flere strategiske
           AI-funksjoner kan finnes i arkitekturen, men er ikke eksponert her.
         </p>
+        <p className="mt-2">
+          <Link
+            href="/backoffice/ai/editor-verification"
+            className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900"
+          >
+            AI editor — verifikasjon
+          </Link>
+          {" "}
+          (intern verifikasjonsside for shell, tilstander og accept/reject).
+        </p>
       </div>
 
-      {error && (
-        <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+          {error && (
+            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {error}
+            </div>
+          )}
 
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Jobs</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Kø av AI-oppgaver som kjører i bakgrunnen. Brukes for blant annet innholdsvedlikehold og analyser.
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRunJobs}
-            disabled={runJobsSubmitting}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {runJobsSubmitting ? "Kjører…" : "Run Jobs Now"}
-          </button>
-          <button type="button" onClick={fetchJobs} className="rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-            Oppdater
-          </button>
-        </div>
-        {jobsLoading ? (
-          <p className="mt-2 text-sm text-slate-500">Laster…</p>
-        ) : jobs.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">Ingen jobs.</p>
-        ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full text-sm text-left">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Status</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Tool</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Forsøk</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Neste kjøring</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((j) => (
-                  <tr key={j.id} className="border-b border-slate-100">
-                    <td className="py-1.5 pr-2 text-slate-800">{j.status}</td>
-                    <td className="py-1.5 pr-2 text-slate-700">{j.tool}</td>
-                    <td className="py-1.5 pr-2 text-slate-600">{j.attempts}/{j.max_attempts}</td>
-                    <td className="py-1.5 pr-2 text-slate-600">{formatDate(j.next_run_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Content Health</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Periodiske helsesjekker av sider i publiseringsløpet. Høy score betyr færre blokkerende avvik.
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleScanHealth}
-            disabled={scanSubmitting}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {scanSubmitting ? "Skanner…" : "Scan Health Now"}
-          </button>
-          <button type="button" onClick={fetchHealth} className="rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-            Oppdater
-          </button>
-        </div>
-        {healthLoading ? (
-          <p className="mt-2 text-sm text-slate-500">Laster…</p>
-        ) : health.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">Ingen health-data. Kjør scan.</p>
-        ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full text-sm text-left">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Page ID</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Score</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Antall issues</th>
-                  <th className="py-1.5 pr-2 font-medium text-slate-700">Opprettet</th>
-                </tr>
-              </thead>
-              <tbody>
-                {health.map((h, i) => (
-                  <tr key={`${h.pageId}-${h.variantId ?? ""}-${i}`} className="border-b border-slate-100">
-                    <td className="py-1.5 pr-2 text-slate-800 font-mono text-xs">{h.pageId.slice(0, 8)}…</td>
-                    <td className="py-1.5 pr-2 text-slate-700">{h.score}</td>
-                    <td className="py-1.5 pr-2 text-slate-600">{Array.isArray(h.issues) ? h.issues.length : 0}</td>
-                    <td className="py-1.5 pr-2 text-slate-600">{formatDate(h.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-800">Experiments</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Oversikt over resultatene for AI-støttede eksperimenter (A/B-varianter).
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            type="text"
-            value={experimentId}
-            onChange={(e) => setExperimentId(e.target.value)}
-            placeholder="experimentId"
-            className="rounded border border-slate-200 px-3 py-1.5 text-sm w-48 font-mono"
-          />
-          <button
-            type="button"
-            onClick={handleLoadStats}
-            disabled={statsLoading || !experimentId.trim()}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {statsLoading ? "Laster…" : "Load stats"}
-          </button>
-        </div>
-        {experimentStats && (
-          <div className="mt-3 space-y-2">
-            <p className="text-sm text-slate-700">
-              Totalt: views {experimentStats.views}, clicks {experimentStats.clicks}, conversions {experimentStats.conversions}
+          <section id="jobs" className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-800">Jobs</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Kø av AI-oppgaver som kjører i bakgrunnen. Brukes for blant annet innholdsvedlikehold og analyser.
             </p>
-            {Array.isArray(experimentStats.byVariant) && experimentStats.byVariant.length > 0 && (
-              <div className="overflow-x-auto">
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRunJobs}
+                disabled={runJobsSubmitting}
+                className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {runJobsSubmitting ? "Kjører…" : "Run Jobs Now"}
+              </button>
+              <button
+                type="button"
+                onClick={fetchJobs}
+                className="rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Oppdater
+              </button>
+            </div>
+            {jobsLoading ? (
+              <p className="mt-2 text-sm text-slate-500">Laster…</p>
+            ) : jobs.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500">Ingen jobs.</p>
+            ) : (
+              <div className="mt-3 overflow-x-auto">
                 <table className="min-w-full text-sm text-left">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="py-1.5 pr-2 font-medium text-slate-700">Variant</th>
-                      <th className="py-1.5 pr-2 font-medium text-slate-700">Views</th>
-                      <th className="py-1.5 pr-2 font-medium text-slate-700">Clicks</th>
-                      <th className="py-1.5 pr-2 font-medium text-slate-700">Conversions</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Status</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Tool</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Forsøk</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Neste kjøring</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {experimentStats.byVariant.map((v) => (
-                      <tr key={v.variant} className="border-b border-slate-100">
-                        <td className="py-1.5 pr-2 text-slate-800">{v.variant}</td>
-                        <td className="py-1.5 pr-2 text-slate-600">{v.views}</td>
-                        <td className="py-1.5 pr-2 text-slate-600">{v.clicks}</td>
-                        <td className="py-1.5 pr-2 text-slate-600">{v.conversions}</td>
+                    {jobs.map((j) => (
+                      <tr key={j.id} className="border-b border-slate-100">
+                        <td className="py-1.5 pr-2 text-slate-800">{j.status}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{j.tool}</td>
+                        <td className="py-1.5 pr-2 text-slate-600">
+                          {j.attempts}/{j.max_attempts}
+                        </td>
+                        <td className="py-1.5 pr-2 text-slate-600">{formatDate(j.next_run_at)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </div>
-        )}
-      </section>
+          </section>
+
+          <section id="health" className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-800">Content Health</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Periodiske helsesjekker av sider i publiseringsløpet. Høy score betyr færre blokkerende avvik.
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleScanHealth}
+                disabled={scanSubmitting}
+                className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {scanSubmitting ? "Skanner…" : "Scan Health Now"}
+              </button>
+              <button
+                type="button"
+                onClick={fetchHealth}
+                className="rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Oppdater
+              </button>
+            </div>
+            {healthLoading ? (
+              <p className="mt-2 text-sm text-slate-500">Laster…</p>
+            ) : health.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500">Ingen health-data. Kjør scan.</p>
+            ) : (
+              <div className="mt-3 overflow-x-auto">
+                <table className="min-w-full text-sm text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Page ID</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Score</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Antall issues</th>
+                      <th className="py-1.5 pr-2 font-medium text-slate-700">Opprettet</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {health.map((h, i) => (
+                      <tr key={`${h.pageId}-${h.variantId ?? ""}-${i}`} className="border-b border-slate-100">
+                        <td className="py-1.5 pr-2 font-mono text-xs text-slate-800">
+                          {h.pageId.slice(0, 8)}…
+                        </td>
+                        <td className="py-1.5 pr-2 text-slate-700">{h.score}</td>
+                        <td className="py-1.5 pr-2 text-slate-600">
+                          {Array.isArray(h.issues) ? h.issues.length : 0}
+                        </td>
+                        <td className="py-1.5 pr-2 text-slate-600">{formatDate(h.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section id="experiments" className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-800">Experiments</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Oversikt over resultatene for AI-støttede eksperimenter (A/B-varianter).
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="text"
+                value={experimentId}
+                onChange={(e) => setExperimentId(e.target.value)}
+                placeholder="experimentId"
+                className="w-48 rounded border border-slate-200 px-3 py-1.5 text-sm font-mono"
+              />
+              <button
+                type="button"
+                onClick={handleLoadStats}
+                disabled={statsLoading || !experimentId.trim()}
+                className="rounded bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {statsLoading ? "Laster…" : "Load stats"}
+              </button>
+            </div>
+            {experimentStats && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-slate-700">
+                  Totalt: views {experimentStats.views}, clicks {experimentStats.clicks}, conversions{" "}
+                  {experimentStats.conversions}
+                </p>
+                {Array.isArray(experimentStats.byVariant) && experimentStats.byVariant.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm text-left">
+                      <thead>
+                        <tr className="border-b border-slate-200">
+                          <th className="py-1.5 pr-2 font-medium text-slate-700">Variant</th>
+                          <th className="py-1.5 pr-2 font-medium text-slate-700">Views</th>
+                          <th className="py-1.5 pr-2 font-medium text-slate-700">Clicks</th>
+                          <th className="py-1.5 pr-2 font-medium text-slate-700">Conversions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {experimentStats.byVariant.map((v) => (
+                          <tr key={v.variant} className="border-b border-slate-100">
+                            <td className="py-1.5 pr-2 text-slate-800">{v.variant}</td>
+                            <td className="py-1.5 pr-2 text-slate-600">{v.views}</td>
+                            <td className="py-1.5 pr-2 text-slate-600">{v.clicks}</td>
+                            <td className="py-1.5 pr-2 text-slate-600">{v.conversions}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
+

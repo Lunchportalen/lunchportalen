@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, denyResponse, readJson } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate0805, osloNowISO } from "@/lib/date/oslo";
 import { sendOrderBackup } from "@/lib/orders/orderBackup";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s = await scopeOr401(req);
-  if (s.ok === false) return s.res;
+  if (s.ok === false) return denyResponse(s);
 
   const ctx = s.ctx;
   const { rid, scope } = ctx;

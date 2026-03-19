@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { writeAuditEvent } from "@/lib/audit/write";
 
 type Ctx = {
   params: { agreementId: string } | Promise<{ agreementId: string }>;
@@ -89,6 +90,27 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return jsonErr(rid, "Kunne ikke godkjenne avtalen.", 500, "AGREEMENT_APPROVE_BAD_RESPONSE");
     }
 
+    const scopeForAudit = {
+      user_id: g.ctx.scope.userId,
+      email: g.ctx.scope.email,
+      role: g.ctx.scope.role,
+    };
+
+    const audit = await writeAuditEvent({
+      scope: scopeForAudit,
+      action: "agreement.approve_active",
+      entity_type: "agreement",
+      entity_id: outAgreementId,
+      summary: `Godkjente avtale for company ${companyId}`,
+      detail: {
+        rid,
+        company_id: companyId,
+        status_before: "PENDING",
+        status_after: status,
+        receipt,
+      },
+    });
+
     return jsonOk(
       rid,
       {
@@ -97,6 +119,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         status,
         receipt,
         message: "Avtalen er godkjent",
+        audit_ok: (audit as any)?.ok === true,
+        audit_event: (audit as any)?.ok ? (audit as any).audit : null,
+        audit_error: (audit as any)?.ok ? null : (audit as any)?.error ?? null,
       },
       200
     );

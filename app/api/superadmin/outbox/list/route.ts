@@ -5,15 +5,8 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { listOutbox, outboxCounts } from "@/lib/orderBackup/admin";
-
-function denyResponse(s: any): Response {
-  if (s?.response) return s.response as Response;
-  if (s?.res) return s.res as Response;
-  const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
-}
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -25,8 +18,8 @@ function clampInt(n: number, min: number, max: number, fallback: number) {
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
-  const s: any = await scopeOr401(req);
-  if (!s?.ok) return denyResponse(s);
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
 
   const ctx = s.ctx;
 

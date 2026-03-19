@@ -1,3 +1,6 @@
+import { Container } from "@/components/ui/container";
+import { Card } from "@/components/ui/card";
+
 export default function FAQ() {
   const faqs = [
     {
@@ -19,16 +22,18 @@ export default function FAQ() {
   ];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10">
-      <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">Spørsmål og svar</h2>
+    <section>
+      <Container className="max-w-6xl py-10">
+      <h2 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">Spørsmål og svar</h2>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         {faqs.map((f) => (
-          <div key={f.q} className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-            <div className="text-sm font-semibold">{f.q}</div>
-            <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{f.a}</div>
-          </div>
+          <Card key={f.q} variant="soft" className="p-6">
+            <div className="font-heading text-sm font-semibold">{f.q}</div>
+            <div className="font-body mt-2 text-sm text-[rgb(var(--lp-muted))]">{f.a}</div>
+          </Card>
         ))}
       </div>
+      </Container>
     </section>
   );
 }

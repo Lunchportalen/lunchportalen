@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { Icon } from "@/components/ui/Icon";
 import { faqForPage } from "@/lib/seo/faq";
 import { getMarketingPage } from "@/lib/seo/marketingRegistry";
 import { createPageMetadata } from "@/lib/seo/meta";
@@ -165,7 +166,9 @@ export default function Page() {
                 <details className="lp-faqRow" key={item.q}>
                   <summary className="lp-faqSummary">
                     <span>{item.q}</span>
-                    <span className="lp-faqPlus" aria-hidden="true" />
+                    <span className="inline-flex shrink-0">
+                      <Icon name="chevronDown" size="sm" className="lp-faq-chevron" />
+                    </span>
                   </summary>
                   <p className="lp-faqAnswer">{item.a}</p>
                 </details>

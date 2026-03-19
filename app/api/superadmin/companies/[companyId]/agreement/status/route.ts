@@ -94,7 +94,14 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
     const current = rows.find((x) => String(x.status).toUpperCase() === "ACTIVE") ?? rows[0] ?? null;
     if (!current?.id) return jsonErr(a.rid, "Fant ingen avtale for firmaet.", 404, "NOT_FOUND");
 
-    const prevStatus = normalizeAgreementStatus(current.status ?? null) ?? safeStr(current.status).toUpperCase();
+    const prevStatus = normalizeAgreementStatus(current.status ?? null);
+    if (!prevStatus) {
+      return jsonErr(a.rid, "Ukjent gjeldende avtale-status. Kan ikke oppdatere.", 409, {
+        code: "INVALID_CURRENT_STATUS",
+        detail: { status: current.status },
+      });
+    }
+
     if (prevStatus === next) {
       return jsonOk(
         a,
@@ -108,6 +115,20 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         },
         200
       );
+    }
+
+    const allowedTransitions: Record<AgreementStatus, AgreementStatus[]> = {
+      ACTIVE: ["PENDING", "TERMINATED"],
+      PENDING: ["ACTIVE", "TERMINATED"],
+      TERMINATED: [],
+    };
+
+    const allowedNext = allowedTransitions[prevStatus] ?? [];
+    if (!allowedNext.includes(next)) {
+      return jsonErr(a.rid, "Ugyldig overgang for avtale-status.", 409, {
+        code: "INVALID_TRANSITION",
+        detail: { from: prevStatus, to: next, allowedNext },
+      });
     }
 
     let pausedOtherActiveIds: string[] = [];

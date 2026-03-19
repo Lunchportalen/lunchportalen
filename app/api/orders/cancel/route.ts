@@ -97,6 +97,8 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 
 /* =========================================================
    Cancel write (idempotent)
+   lp_order_set(CANCEL) is idempotent: repeated cancel same date/slot
+   yields same outcome, no duplicate outbox (event_key dedup).
 ========================================================= */
 
 type SavedOrder = {

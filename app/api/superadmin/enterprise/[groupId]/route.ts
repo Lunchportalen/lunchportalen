@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 
 type RouteCtx = { params: { groupId: string } | Promise<{ groupId: string }> };
 
@@ -28,16 +28,15 @@ function isUuid(v: any): v is string {
 export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
 
-  const s: any = await scopeOr401(req);
-  if (!s?.ok) return s.res ?? s.response;
-
-  const a = s.ctx;
-  const deny = requireRoleOr403(a, "api.superadmin.enterprise.group.GET", ["superadmin"]);
+  const s = await scopeOr401(req);
+  if (!s.ok) return denyResponse(s);
+  const authCtx = s.ctx;
+  const deny = requireRoleOr403(authCtx, "api.superadmin.enterprise.group.GET", ["superadmin"]);
   if (deny) return deny;
 
   const params = await Promise.resolve(ctx.params as any);
   const groupId = safeStr(params?.groupId);
-  if (!isUuid(groupId)) return jsonErr(a.rid, "Ugyldig groupId.", 400, "BAD_REQUEST");
+  if (!isUuid(groupId)) return jsonErr(authCtx.rid, "Ugyldig groupId.", 400, "BAD_REQUEST");
 
   const url = new URL(req.url);
   const page = toInt(url.searchParams.get("page"), 1);
@@ -54,9 +53,9 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .maybeSingle();
 
     if (groupRes.error) {
-      return jsonErr(a.rid, "Kunne ikke hente konsern.", 500, { code: "DB_ERROR", detail: groupRes.error });
+      return jsonErr(authCtx.rid, "Kunne ikke hente konsern.", 500, { code: "DB_ERROR", detail: groupRes.error });
     }
-    if (!groupRes.data?.id) return jsonErr(a.rid, "Fant ikke konsern.", 404, "NOT_FOUND");
+    if (!groupRes.data?.id) return jsonErr(authCtx.rid, "Fant ikke konsern.", 404, "NOT_FOUND");
 
     const companiesRes = await admin
       .from("companies")
@@ -66,10 +65,11 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .range(offset, offset + limit - 1);
 
     if (companiesRes.error) {
-      return jsonErr(a.rid, "Kunne ikke hente selskaper.", 500, { code: "DB_ERROR", detail: companiesRes.error });
+      return jsonErr(authCtx.rid, "Kunne ikke hente selskaper.", 500, { code: "DB_ERROR", detail: companiesRes.error });
     }
 
-    const companies = (companiesRes.data ?? []).map((c: any) => ({
+    const companyRows = Array.isArray(companiesRes.data) ? companiesRes.data : [];
+    const companies = companyRows.map((c: any) => ({
       id: safeStr(c?.id),
       name: safeStr(c?.name) || "Ukjent firma",
       orgnr: safeStr(c?.orgnr) || null,
@@ -88,10 +88,10 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         .order("created_at", { ascending: false });
 
       if (locRes.error) {
-        return jsonErr(a.rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: locRes.error });
+        return jsonErr(authCtx.rid, "Kunne ikke hente lokasjoner.", 500, { code: "DB_ERROR", detail: locRes.error });
       }
 
-      locations = locRes.data ?? [];
+      locations = Array.isArray(locRes.data) ? locRes.data : [];
     }
 
     const locationsByCompany = new Map<string, any[]>();
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       return { ...c, locations: locs, location_count: locs.length };
     });
 
-    return jsonOk(a.rid, {
+    return jsonOk(authCtx.rid, {
       group: {
         id: safeStr(groupRes.data?.id),
         name: safeStr(groupRes.data?.name),
@@ -127,6 +127,6 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       companies: companiesWithLocations,
     });
   } catch (e: any) {
-    return jsonErr(a.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
+    return jsonErr(authCtx.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }

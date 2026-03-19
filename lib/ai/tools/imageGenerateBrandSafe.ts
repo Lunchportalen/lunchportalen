@@ -1,6 +1,7 @@
 /**
- * Phase 32 Media: brand-safe image generator (foundation).
- * Deterministic: creates 2-4 candidate media_items with placeholder URLs; logs via caller.
+ * Brand-safe image prompt suggestions (production).
+ * Returns prompt + alt suggestions only; no image generation, no placeholder URLs, no media_items.
+ * Editor can use prompts in an external image tool or upload flow.
  */
 
 export type ImageGenerateInput = {
@@ -12,17 +13,16 @@ export type ImageGenerateInput = {
   count?: 2 | 4;
 };
 
-export type ImageGenerateOutput = {
-  summary: string;
-  candidates: Array<{ mediaItemId: string; url: string; alt: string }>;
+export type ImagePromptCandidate = {
+  prompt: string;
+  alt: string;
 };
 
-const PLACEHOLDER_URLS = [
-  "/matbilder/MelhusCatering-Lunsj-1018143.jpg",
-  "/og/og-default-1200x630.jpg",
-  "/matbilder/MelhusCatering-Lunsj-1018047.jpg",
-  "/og/og-lunsjordning-1200x630.jpg",
-];
+export type ImageGenerateOutput = {
+  summary: string;
+  /** Prompt suggestions only; no URLs or mediaItemIds. */
+  prompts: ImagePromptCandidate[];
+};
 
 function brandStyleSpec(style: string): Record<string, string> {
   if (style === "warm_enterprise") {
@@ -42,51 +42,32 @@ function altForCandidate(purpose: string, topic: string, locale: string, index: 
   return `${purpose}-bilde for ${t} (alternativ ${index + 1})`;
 }
 
-export async function imageGenerateBrandSafe(args: {
-  input: ImageGenerateInput;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any;
-  createdBy: string | null;
-}): Promise<ImageGenerateOutput> {
-  const { input, supabase, createdBy } = args;
+/**
+ * Returns prompt suggestions for brand-safe images. No media_items, no URLs.
+ * Caller may log/store the result; no fake generated assets.
+ */
+export function imageGenerateBrandSafe(args: { input: ImageGenerateInput }): ImageGenerateOutput {
+  const { input } = args;
   const locale = (input.locale || "nb").toLowerCase().startsWith("en") ? "en" : "nb";
   const purpose = input.purpose ?? "hero";
   const topic = (input.topic ?? "").trim() || "Lunchportalen";
   const style = input.style === "warm_enterprise" ? "warm_enterprise" : "scandi_minimal";
   const count = input.count === 4 ? 4 : 2;
-  const prompt = buildPrompt({ ...input, topic, style });
 
-  const candidates: Array<{ mediaItemId: string; url: string; alt: string }> = [];
+  const prompts: ImagePromptCandidate[] = [];
   for (let i = 0; i < count; i++) {
-    const url = PLACEHOLDER_URLS[i % PLACEHOLDER_URLS.length];
-    const alt = altForCandidate(purpose, topic, locale, i);
-    const { data: inserted, error } = await supabase
-      .from("media_items")
-      .insert({
-        type: "image",
-        status: "proposed",
-        source: "ai",
-        url,
-        alt,
-        caption: null,
-        tags: ["ai", purpose, style],
-        metadata: { tool: "image.generate.brand_safe", purpose, topic, style, prompt },
-        created_by: createdBy,
-      })
-      .select("id")
-      .single();
-    if (!error && inserted && typeof (inserted as { id?: string }).id === "string") {
-      candidates.push({
-        mediaItemId: (inserted as { id: string }).id,
-        url,
-        alt,
-      });
-    }
+    const basePrompt = buildPrompt({ ...input, topic, style });
+    const variant = count > 1 ? ` Variant ${i + 1}: focus on ${i === 0 ? "main subject" : i === 1 ? "context and atmosphere" : "detail and clarity"}.` : "";
+    prompts.push({
+      prompt: basePrompt + variant,
+      alt: altForCandidate(purpose, topic, locale, i),
+    });
   }
 
-  const summary = locale === "en"
-    ? `Generated ${candidates.length} brand-safe image candidate(s) for ${purpose}.`
-    : `Genererte ${candidates.length} merkesikre bildekandidat(er) for ${purpose}.`;
+  const summary =
+    locale === "en"
+      ? `${prompts.length} prompt suggestion(s) for brand-safe images. Use these in your image tool; no images were generated.`
+      : `${prompts.length} promptforslag for merkesikre bilder. Bruk disse i bildeverktøyet ditt; ingen bilder er generert.`;
 
-  return { summary, candidates };
+  return { summary, prompts };
 }

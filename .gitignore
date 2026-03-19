@@ -1,4 +1,4 @@
-﻿# Next.js
+# Next.js
 .next/
 out/
 
@@ -36,4 +36,10 @@ tsconfig.tsbuildinfo
 
 # Evidence artifacts (generated)
 evidence/
+
+# Playwright (keep e2e/*-snapshots for visual baselines)
+playwright-report/
+test-results/
+playwright/.cache/
+blob-report/
 

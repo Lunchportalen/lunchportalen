@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Card } from "@/components/ui/card";
 import { supabaseServer } from "@/lib/supabase/server";
 import { AuditClient } from "./AuditClient";
 
@@ -30,7 +31,7 @@ export default async function AdminAuditPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+      <Card variant="soft" className="rounded-3xl p-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
@@ -52,14 +53,14 @@ export default async function AdminAuditPage() {
           <AuditClient />
         </div>
 
-        <div className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <Card variant="soft" className="mt-6 rounded-3xl p-5">
           <div className="text-sm font-semibold">Prinsipp</div>
           <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
             Audit-loggen er ikke et analyseverktøy. Den eksisterer for ansvar, sporbarhet og revisjon.
             Hendelser kan ikke redigeres eller slettes.
           </p>
-        </div>
-      </div>
+        </Card>
+      </Card>
     </main>
   );
 }

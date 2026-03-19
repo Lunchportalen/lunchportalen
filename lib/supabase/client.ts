@@ -4,6 +4,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabasePublicConfig } from "@/lib/config/env-public";
 
 // Singleton for browser-session
 let browserClient: SupabaseClient | null = null;
@@ -11,14 +12,7 @@ let browserClient: SupabaseClient | null = null;
 export function supabaseBrowser(): SupabaseClient {
   if (browserClient) return browserClient;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error(
-      "Supabase env mangler: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    );
-  }
+  const { url, anonKey } = getSupabasePublicConfig();
 
   browserClient = createBrowserClient(url, anonKey, {
     auth: {
@@ -31,3 +25,4 @@ export function supabaseBrowser(): SupabaseClient {
 
   return browserClient;
 }
+

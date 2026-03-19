@@ -89,12 +89,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Hent dagens ordre (utelater cancelled)
+  // Hent dagens ordre (kun aktive, deterministisk for kjøkken)
   let ordersQ = admin
     .from("orders")
     .select("id,user_id,company_id,location_id,note,status")
     .eq("date", date)
-    .neq("status", "canceled");
+    .in("status", ["ACTIVE", "active"]);
 
   if (role === "kitchen") {
     ordersQ = ordersQ.eq("company_id", scopeCompanyId).eq("location_id", scopeLocationId);
@@ -103,14 +103,21 @@ export async function GET(req: NextRequest) {
   const { data: orders, error: oErr } = await ordersQ;
 
   if (oErr) {
-    return jsonErr(rid, "Kunne ikke hente kjøkkenordre.", 500, { code: "DB_ERROR", detail: {
-      code: oErr.code,
-      message: oErr.message,
-      detail: (oErr as any).details ?? (oErr as any).hint ?? null,
-    } });
+    return jsonErr(rid, "Kunne ikke hente kjøkkenordre.", 500, {
+      code: "DB_ERROR",
+      detail: {
+        code: oErr.code,
+        message: oErr.message,
+        detail: (oErr as any).details ?? (oErr as any).hint ?? null,
+      },
+    });
   }
 
-  const list = orders ?? [];
+  const raw = orders ?? [];
+
+  // Fail-closed: kun ordre med entydig firma+lokasjon+bruker
+  const list = raw.filter((r: any) => safeStr(r.company_id) && safeStr(r.location_id) && safeStr(r.user_id));
+
   if (list.length === 0) {
     const resp: KitchenData = {
       date,

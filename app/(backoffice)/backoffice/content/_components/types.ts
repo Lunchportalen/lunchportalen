@@ -7,6 +7,15 @@ export type SupportSnapshot = {
   ts?: string;
 };
 
+export type SaveState =
+  | "idle"
+  | "dirty"
+  | "saving"
+  | "saved"
+  | "conflict"
+  | "offline"
+  | "error";
+
 export type StatusLineState = {
   key: string;
   tone: string;

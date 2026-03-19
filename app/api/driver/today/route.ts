@@ -197,8 +197,10 @@ export async function GET(req: NextRequest) {
     } });
   }
 
-  const companies = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
-  const locations = new Map((locationsRes.data ?? []).map((l: any) => [String(l.id), l]));
+  const companyRows = Array.isArray(companiesRes.data) ? companiesRes.data : [];
+  const locationRows = Array.isArray(locationsRes.data) ? locationsRes.data : [];
+  const companies = new Map(companyRows.map((c: any) => [String(c.id), c]));
+  const locations = new Map(locationRows.map((l: any) => [String(l.id), l]));
 
   const byLoc = new Map<string, Delivery>();
 

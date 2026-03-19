@@ -349,7 +349,7 @@ export default function CreateCompanyForm() {
                   <button
                     type="button"
                     key={it.id}
-                    className="block w-full px-3 py-2 text-left hover:bg-[rgb(var(--lp-surface-2))]"
+                    className="lp-motion-row block w-full px-3 py-2 text-left hover:bg-[rgb(var(--lp-surface-2))]"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => resolveSuggestion(it.id)}
                   >

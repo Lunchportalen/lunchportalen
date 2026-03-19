@@ -1,6 +1,7 @@
 // components/superadmin/StatusDropdown.tsx
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type CompanyStatus = "pending" | "active" | "paused" | "closed";
@@ -178,7 +179,7 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
           setErr(null);
         }}
         className={[
-          "inline-flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-extrabold ring-1 transition",
+          "lp-motion-btn inline-flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-extrabold ring-1",
           "bg-white hover:bg-neutral-50 ring-[rgb(var(--lp-border))]",
           disabled || busy ? "opacity-60" : "",
         ].join(" ")}
@@ -187,27 +188,20 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
       >
         <span
           className={[
-            "inline-flex items-center rounded-full px-2 py-1 text-[11px] font-black ring-1 leading-none",
+            "inline-flex items-center rounded-full px-2 py-1 text-xs font-black ring-1 leading-none",
             pillClasses(status),
           ].join(" ")}
         >
           {currentLabel}
         </span>
 
-        <span className="text-[12px] font-black text-neutral-900">Status</span>
+        <span className="text-xs font-black text-neutral-900">Status</span>
 
-        <svg
-          className={["h-4 w-4 text-neutral-700 transition", open ? "rotate-180" : ""].join(" ")}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <Icon
+          name="chevronDown"
+          size="sm"
+          className={["lp-motion-icon text-neutral-700", open ? "rotate-180" : ""].join(" ")}
+        />
       </button>
 
       {/* Menu */}
@@ -215,13 +209,13 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
         <div
           role="menu"
           className={[
-            "absolute right-0 z-50 mt-2 w-[320px] rounded-2xl bg-white shadow-xl ring-1",
+            "lp-motion-card absolute right-0 z-50 mt-2 w-80 rounded-2xl bg-white shadow-xl ring-1",
             "ring-[rgb(var(--lp-border))]",
           ].join(" ")}
         >
           {/* Header */}
           <div className="px-3 py-3 border-b border-[rgb(var(--lp-border))]">
-            <div className="text-[11px] font-extrabold tracking-wide text-neutral-600">STATUS</div>
+            <div className="text-xs font-extrabold tracking-wide text-neutral-600">STATUS</div>
             <div className="mt-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
               Endring påvirker tilgang og bestilling for hele firmaet.
             </div>
@@ -249,7 +243,7 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
                       onClick={() => choose(s)}
                       disabled={busy || disabled}
                       className={[
-                        "relative rounded-xl px-2 py-2 text-center text-[11px] font-extrabold transition ring-1",
+                        "lp-motion-row relative rounded-xl px-2 py-2 text-center text-xs font-extrabold ring-1",
                         active
                           ? "bg-white text-neutral-950 ring-[rgb(var(--lp-border))]"
                           : "bg-transparent text-neutral-700 ring-transparent hover:bg-white/70 hover:ring-[rgb(var(--lp-border))]",
@@ -298,7 +292,7 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
 
             {/* Busy hint */}
             {busy && (
-              <div className="mt-2 text-[11px] font-semibold text-neutral-600">
+              <div className="mt-2 text-xs font-semibold text-neutral-600">
                 Oppdaterer status…
               </div>
             )}

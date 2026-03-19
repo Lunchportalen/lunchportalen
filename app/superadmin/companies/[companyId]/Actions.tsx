@@ -77,7 +77,7 @@ export default function Actions({ companyId, status, onStatusChange }: Props) {
           disabled={isPending || !canDecide}
           onClick={actActivate}
           className={[
-            "rounded-2xl px-4 py-2 text-sm font-medium ring-1 transition",
+            "lp-motion-btn rounded-2xl px-4 py-2 text-sm font-medium ring-1",
             "disabled:cursor-not-allowed disabled:opacity-60",
             "bg-black text-white ring-black hover:bg-black/90",
           ].join(" ")}
@@ -89,7 +89,7 @@ export default function Actions({ companyId, status, onStatusChange }: Props) {
           disabled={isPending || !canDecide}
           onClick={actReject}
           className={[
-            "rounded-2xl px-4 py-2 text-sm font-medium ring-1 transition",
+            "lp-motion-btn rounded-2xl px-4 py-2 text-sm font-medium ring-1",
             "disabled:cursor-not-allowed disabled:opacity-60",
             "bg-white text-red-700 ring-[rgb(var(--lp-border))] hover:bg-red-50",
           ].join(" ")}

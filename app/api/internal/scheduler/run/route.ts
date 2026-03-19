@@ -1,10 +1,25 @@
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { requireCronAuth } from "@/lib/http/cronAuth";
 import { executeRelease } from "@/lib/backoffice/content/releasesRepo";
 import { getWorkflow } from "@/lib/backoffice/content/workflowRepo";
 
 export async function POST(request: NextRequest) {
   const rid = makeRid("sched");
+  try {
+    requireCronAuth(request);
+  } catch (e: any) {
+    const code = String(e?.code ?? "").trim();
+    const msg = String(e?.message ?? e);
+    if (code === "cron_secret_missing") {
+      return jsonErr(rid, "CRON_SECRET er ikke satt i environment.", 500, "misconfigured");
+    }
+    if (code === "forbidden" || msg === "forbidden") {
+      return jsonErr(rid, "Ugyldig eller manglende cron secret.", 403, "forbidden");
+    }
+    return jsonErr(rid, "Uventet feil i scheduler-gate.", 500, { code: "server_error", detail: { message: msg } });
+  }
+
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();

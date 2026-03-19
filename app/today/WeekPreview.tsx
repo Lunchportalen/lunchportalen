@@ -61,7 +61,7 @@ function SegButton({
       type="button"
       onClick={onClick}
       className={[
-        "h-10 rounded-full px-4 text-sm font-semibold transition",
+        "lp-motion-btn h-10 rounded-full px-4 text-sm font-semibold",
         active
           ? "bg-[rgb(var(--lp-text))] text-white"
           : "border border-[rgb(var(--lp-border))] bg-white text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-bg))]",

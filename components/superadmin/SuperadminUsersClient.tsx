@@ -143,7 +143,7 @@ export default function SuperadminUsersClient() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-[280px] max-w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
+            className="w-72 max-w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
             placeholder="Søk…"
           />
 

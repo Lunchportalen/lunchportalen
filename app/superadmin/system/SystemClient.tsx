@@ -1,6 +1,7 @@
 // app/superadmin/system/SystemClient.tsx
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTimeNO } from "@/lib/date/format";
 import { deriveReasons, deriveSystemStatus } from "@/lib/system/healthStatus";
@@ -140,6 +141,43 @@ type CodexPromptData = {
   flowFailsCount: number;
 };
 
+type SliResult = {
+  sloId: string;
+  sliKey: string;
+  good: number;
+  total: number;
+  ratePercent: number | null;
+  status: "ok" | "warn" | "breach" | "unknown";
+  message: string;
+  evidence?: Record<string, unknown>;
+};
+
+type AlertState = {
+  sloId: string;
+  severity: "critical" | "warning" | "info";
+  message: string;
+  sliRatePercent: number | null;
+  thresholdPercent: number;
+  since: string;
+  rid?: string | null;
+  evidence?: Record<string, unknown>;
+};
+
+type OperationalStatusData = {
+  status: "normal" | "degraded" | "critical";
+  ts: string;
+  rid: string | null;
+  checks: Array<{ key: string; status: string; message: string }>;
+  slos: SliResult[];
+  alerts: AlertState[];
+  openIncidentsByType: Record<string, number>;
+  reasons: string[];
+};
+
+type StatusOk = { ok: true; rid: string; data: OperationalStatusData };
+type StatusErr = { ok: false; rid?: string; error: string; message?: string };
+type StatusResp = StatusOk | StatusErr;
+
 function statusTone(s: CheckStatus) {
   if (s === "OK") return "bg-emerald-50 text-emerald-900 ring-emerald-200";
   if (s === "WARN") return "bg-amber-50 text-amber-900 ring-amber-200";
@@ -272,6 +310,7 @@ export default function SystemClient() {
   const [codexPrompt, setCodexPrompt] = useState<CodexPromptData | null>(null);
   const [codexRid, setCodexRid] = useState<string | null>(null);
   const [codexErr, setCodexErr] = useState<string | null>(null);
+  const [operationalStatus, setOperationalStatus] = useState<OperationalStatusData | null>(null);
 
   const codexTimerRef = useRef<number | null>(null);
 
@@ -300,13 +339,14 @@ export default function SystemClient() {
     setErr(null);
 
     try {
-      const [healthRes, incidentsRes, jobsRes, summaryRes, opsRes, integrityRes] = await Promise.all([
+      const [healthRes, incidentsRes, jobsRes, summaryRes, opsRes, integrityRes, statusRes] = await Promise.all([
         fetch("/api/superadmin/system/health", { cache: "no-store" }),
         fetch("/api/superadmin/system/incidents?page=1&pageSize=25", { cache: "no-store" }),
         fetch("/api/superadmin/system/repairs/jobs?page=1&limit=25", { cache: "no-store" }),
         fetch("/api/superadmin/system/repairs/summary", { cache: "no-store" }),
         fetch("/api/superadmin/system/repairs/ops?page=1&limit=25", { cache: "no-store" }),
         fetch("/api/superadmin/system/orders/integrity/summary", { cache: "no-store" }),
+        fetch("/api/superadmin/system/status", { cache: "no-store" }),
       ]);
 
       const healthJson = (await healthRes.json().catch(() => null)) as HealthResp | null;
@@ -315,11 +355,12 @@ export default function SystemClient() {
       const summaryJson = (await summaryRes.json().catch(() => null)) as RepairSummaryResp | null;
       const opsJson = (await opsRes.json().catch(() => null)) as OpsEventsResp | null;
       const integrityJson = (await integrityRes.json().catch(() => null)) as IntegritySummaryResp | null;
+      const statusJson = (await statusRes.json().catch(() => null)) as StatusResp | null;
 
       const errors: string[] = [];
       let nextRid: string | null = null;
 
-      // HEALTH
+      // HEALTH (may be new aggregator format: database, cron, outbox, ai_jobs, migrations, timestamp)
       if (!healthRes.ok || !healthJson || (healthJson as any).ok !== true) {
         const e = healthJson as HealthErr | null;
         errors.push(e?.message || e?.error || `HTTP ${healthRes.status}`);
@@ -328,25 +369,34 @@ export default function SystemClient() {
       } else {
         const ok = healthJson as HealthOk;
         const data = ok.data ?? null;
-        const normalized: HealthData | null = data
-          ? {
-              status: data.status ?? "degraded",
-              reasons: Array.isArray(data.reasons) ? data.reasons : [],
-              checks: { items: Array.isArray(data.checks?.items) ? data.checks.items : [] },
-              details: {
-                runtime: data.details?.runtime
-                  ? {
-                      ok: Boolean(data.details.runtime.ok),
-                      missing: Array.isArray(data.details.runtime.missing) ? data.details.runtime.missing : [],
-                      node_env: data.details.runtime.node_env ?? undefined,
-                      runtime: data.details.runtime.runtime ?? undefined,
-                    }
-                  : undefined,
-              },
-              ts: data.ts ?? "",
-            }
-          : null;
-        setHealth(normalized);
+        const isNewFormat =
+          data &&
+          typeof (data as any).database === "string" &&
+          typeof (data as any).cron === "string" &&
+          typeof (data as any).outbox === "string";
+        if (isNewFormat) {
+          setHealth({ status: (data as any).status ?? "degraded", reasons: [], checks: { items: [] }, ts: (data as any).timestamp ?? "" });
+        } else {
+          const normalized: HealthData | null = data
+            ? {
+                status: data.status ?? "degraded",
+                reasons: Array.isArray(data.reasons) ? data.reasons : [],
+                checks: { items: Array.isArray(data.checks?.items) ? data.checks.items : [] },
+                details: {
+                  runtime: data.details?.runtime
+                    ? {
+                        ok: Boolean(data.details.runtime.ok),
+                        missing: Array.isArray(data.details.runtime.missing) ? data.details.runtime.missing : [],
+                        node_env: data.details.runtime.node_env ?? undefined,
+                        runtime: data.details.runtime.runtime ?? undefined,
+                      }
+                    : undefined,
+                },
+                ts: data.ts ?? "",
+              }
+            : null;
+          setHealth(normalized);
+        }
         nextRid = ok.rid;
       }
 
@@ -467,6 +517,16 @@ export default function SystemClient() {
         if (!nextRid) nextRid = ok.rid;
       }
 
+      // OPERATIONAL STATUS (SLO / alerts single source of truth)
+      if (!statusRes.ok || !statusJson || (statusJson as any).ok !== true) {
+        setOperationalStatus(null);
+        if (!nextRid && (statusJson as StatusErr)?.rid) nextRid = (statusJson as StatusErr).rid ?? null;
+      } else {
+        const ok = statusJson as StatusOk;
+        setOperationalStatus(ok.data ?? null);
+        if (!nextRid) nextRid = ok.rid;
+      }
+
       setRid(nextRid ?? null);
       if (errors.length) setErr(errors.join(" | "));
     } catch (e: unknown) {
@@ -478,6 +538,7 @@ export default function SystemClient() {
       setRepairSummary(null);
       setOpsEvents(null);
       setIntegritySummary(null);
+      setOperationalStatus(null);
     } finally {
       setLoading(false);
     }
@@ -605,12 +666,14 @@ export default function SystemClient() {
   }, [loadCodexPrompt]);
 
   const checks: HealthCheck[] = Array.isArray(health?.checks?.items) ? health!.checks.items : [];
-  const derivedStatus = checks.length ? deriveSystemStatus(checks) : "degraded";
-  const effectiveStatus = health?.status ?? derivedStatus;
+  const statusChecks = checks.length ? checks : (operationalStatus?.checks ?? []).map((c) => ({ key: c.key, status: c.status as CheckStatus, message: c.message }));
+  const derivedStatus = statusChecks.length ? deriveSystemStatus(statusChecks) : "degraded";
+  const effectiveStatus = operationalStatus?.status ?? health?.status ?? derivedStatus;
   const systemStatusUi = effectiveStatus === "normal" ? "NORMAL" : "DEGRADED";
   const reasons = Array.isArray(health?.reasons) ? health!.reasons : [];
-  const derivedReasons = deriveReasons(checks);
-  const effectiveReasons = reasons.length ? reasons : derivedReasons;
+  const derivedReasons = deriveReasons(statusChecks);
+  const effectiveReasons =
+    (operationalStatus?.reasons?.length ? operationalStatus.reasons : undefined) ?? (reasons.length ? reasons : derivedReasons);
   const runtimeDetails = health?.details?.runtime ?? null;
   const runtimeMissing = Array.isArray(runtimeDetails?.missing) ? runtimeDetails!.missing : [];
   const incidentTotal = Number(incidents?.total ?? 0);
@@ -652,11 +715,21 @@ export default function SystemClient() {
     <div className="mx-auto w-full max-w-4xl space-y-6">
       {/* SYSTEMSTATUS */}
       <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
-        <div className="text-xs font-extrabold tracking-wide text-neutral-600">SYSTEMSTATUS</div>
-        <h1 className="mt-1 text-lg font-extrabold text-neutral-900">Systemstatus</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-xs font-extrabold tracking-wide text-neutral-600">SYSTEMSTATUS</div>
+            <h1 className="mt-1 text-lg font-extrabold text-neutral-900">Systemstatus</h1>
+          </div>
+          <Link
+            href="/superadmin/system/operations"
+            className="text-xs font-medium text-[rgb(var(--lp-accent))] hover:underline"
+          >
+            Driftsoppsummering →
+          </Link>
+        </div>
         <div className="mt-3 flex items-center gap-2">
           <StatusPill state={systemStatusUi} />
-          <div className="text-xs text-neutral-600">Oppdatert: {formatISO(health?.ts)}</div>
+          <div className="text-xs text-neutral-600">Oppdatert: {formatISO(health?.ts ?? operationalStatus?.ts)}</div>
         </div>
         <div className="mt-1 text-xs text-neutral-600">RID: {rid ?? "—"}</div>
 
@@ -669,8 +742,8 @@ export default function SystemClient() {
         <div className="mt-5">
           <div className="text-sm font-semibold text-neutral-900">Sjekker</div>
           <div className="mt-3 space-y-2">
-            {checks.length ? (
-              checks.map((c) => (
+            {statusChecks.length ? (
+              statusChecks.map((c) => (
                 <div key={c.key} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-neutral-900">{c.message}</div>
@@ -701,6 +774,82 @@ export default function SystemClient() {
           </div>
         </div>
       </div>
+
+      {/* SLO OG ALARMER */}
+      {operationalStatus && (
+        <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+          <div className="text-xs font-extrabold tracking-wide text-neutral-600">SLO OG ALARMER</div>
+          <h2 className="mt-1 text-lg font-extrabold text-neutral-900">Operativ status (én sannhetskilde)</h2>
+          <div className="mt-3 flex items-center gap-2">
+            <span
+              className={[
+                "rounded-full px-3 py-1 text-xs font-semibold ring-1",
+                operationalStatus.status === "normal"
+                  ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                  : operationalStatus.status === "degraded"
+                    ? "bg-amber-50 text-amber-900 ring-amber-200"
+                    : "bg-rose-50 text-rose-900 ring-rose-200",
+              ].join(" ")}
+            >
+              {operationalStatus.status.toUpperCase()}
+            </span>
+            <span className="text-xs text-neutral-600">Oppdatert: {formatISO(operationalStatus.ts)}</span>
+          </div>
+          <div className="mt-3 text-sm font-semibold text-neutral-900">SLO / SLI</div>
+          <div className="mt-2 space-y-2">
+            {(operationalStatus.slos ?? []).map((sli) => (
+              <div
+                key={sli.sloId}
+                className="rounded-xl bg-[rgb(var(--lp-surface))] p-3 ring-1 ring-[rgb(var(--lp-border))]"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-neutral-900">{sli.sloId.replace(/_/g, " ")}</span>
+                  <span
+                    className={[
+                      "rounded-full px-2 py-0.5 text-xs font-semibold ring-1",
+                      sli.status === "ok"
+                        ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                        : sli.status === "warn"
+                          ? "bg-amber-50 text-amber-900 ring-amber-200"
+                          : sli.status === "breach"
+                            ? "bg-rose-50 text-rose-900 ring-rose-200"
+                            : "bg-neutral-100 text-neutral-700 ring-neutral-200",
+                    ].join(" ")}
+                  >
+                    {sli.status.toUpperCase()}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-neutral-600">
+                  {sli.ratePercent != null ? `${sli.ratePercent.toFixed(1)} %` : "—"} · {sli.message}
+                </div>
+              </div>
+            ))}
+          </div>
+          {(operationalStatus.alerts ?? []).length > 0 && (
+            <>
+              <div className="mt-4 text-sm font-semibold text-neutral-900">Aktive alarmer</div>
+              <div className="mt-2 space-y-2">
+                {operationalStatus.alerts.map((a, idx) => (
+                  <div
+                    key={`${a.sloId}-${idx}`}
+                    className={[
+                      "rounded-xl border p-3 text-sm",
+                      a.severity === "critical"
+                        ? "border-rose-200 bg-rose-50 text-rose-900"
+                        : "border-amber-200 bg-amber-50 text-amber-900",
+                    ].join(" ")}
+                  >
+                    <span className="font-semibold">{a.severity.toUpperCase()}</span> · {a.message}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {operationalStatus.reasons?.length ? (
+            <div className="mt-3 text-xs text-neutral-600">Årsaker: {operationalStatus.reasons.join(" ")}</div>
+          ) : null}
+        </div>
+      )}
 
       {/* FEIL */}
       {err ? (

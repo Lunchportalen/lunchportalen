@@ -510,7 +510,7 @@ export default function OnboardingForm() {
                 <button
                   type="button"
                   onClick={() => setDay(d.key, { tier: "BASIS", price: d.price || 90 } as any)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  className={`lp-motion-btn rounded-xl border px-4 py-2 text-sm font-semibold ${
                     d.tier === "BASIS"
                       ? "border-transparent bg-black text-white"
                       : "border-[rgba(var(--lp-border),0.9)] bg-white text-[rgb(var(--lp-text))]"
@@ -524,7 +524,7 @@ export default function OnboardingForm() {
                 <button
                   type="button"
                   onClick={() => setDay(d.key, { tier: "LUXUS", price: d.price || 130 } as any)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  className={`lp-motion-btn rounded-xl border px-4 py-2 text-sm font-semibold ${
                     d.tier === "LUXUS"
                       ? "border-transparent bg-black text-white"
                       : "border-[rgba(var(--lp-border),0.9)] bg-white text-[rgb(var(--lp-text))]"
@@ -554,7 +554,7 @@ export default function OnboardingForm() {
           ))}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-[rgba(var(--lp-surface-rgb),0.65)] p-4 text-sm">
+        <div className="lp-glass-surface mt-4 rounded-card p-4 text-sm">
           <div className="font-medium">Hva skjer etter registrering?</div>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-[rgb(var(--lp-muted))]">
             <li>Bedriften opprettes med faste rammer</li>

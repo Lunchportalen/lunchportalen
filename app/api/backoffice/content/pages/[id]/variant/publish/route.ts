@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
-import { getScheduledReleaseForVariant } from "@/lib/backoffice/content/releasesRepo";
+import { copyVariantBodyToProd, getScheduledReleaseForVariant } from "@/lib/backoffice/content/releasesRepo";
 import { getWorkflow, resetToDraftAfterPublish } from "@/lib/backoffice/content/workflowRepo";
 
 function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: string } }): Response {
@@ -47,7 +47,13 @@ export async function POST(
     }
     const scheduledReleaseId = await getScheduledReleaseForVariant(supabase as any, variantId);
     if (scheduledReleaseId) {
-      return jsonErr(ctx.rid, "Variant is part of a scheduled release", 409, "variant_in_release", { message: "Variant is part of a scheduled release" });
+      return jsonErr(
+        ctx.rid,
+        "Varianten er med i en planlagt release. Bruk Releases eller fjern den fra release først.",
+        409,
+        "variant_in_release",
+        { releaseId: scheduledReleaseId }
+      );
     }
     if (env === "prod") {
       const workflow = await getWorkflow(supabase as any, variantId, env, locale);
@@ -62,7 +68,19 @@ export async function POST(
       }
     }
     if (env === "prod") {
+      await copyVariantBodyToProd(supabase as any, pageId, variantId, locale);
       await resetToDraftAfterPublish(supabase as any, variantId, pageId, env, locale, ctx.scope?.email ?? null);
+      await (supabase as any).from("content_audit_log").insert({
+        page_id: pageId,
+        variant_id: variantId,
+        environment: env,
+        locale,
+        action: "content_publish",
+        actor_email: ctx.scope?.email ?? null,
+        metadata: { source: "variant_publish_api" },
+      });
+      const { recordContentPublished } = await import("@/lib/ai/memory/recordOutcome");
+      await recordContentPublished(supabase, { pageId, variantId, env: "prod", sourceRid: ctx.rid });
     }
     return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, published: true }, 200);
   } catch (e) {

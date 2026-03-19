@@ -1,5 +1,12 @@
+/**
+ * Media get/update/delete by id. Authorization: superadmin only.
+ * scopeOr401 → 401 if unauthenticated; requireRoleOr403 → 403 if not superadmin.
+ */
 import type { NextRequest } from "next/server";
-import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { jsonErr, jsonNotFound, jsonOk } from "@/lib/http/respond";
+import { isMediaItemUuid } from "@/lib/media/ids";
+import { getMediaItemById } from "@/lib/media/loaders";
+import { rowToMediaItem, mediaItemSelectColumns } from "@/lib/media/normalize";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,28 +15,22 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
-  const gate = await scopeOr401(request);
-  if (gate.ok === false) return gate.res;
-  const ctx = gate.ctx;
+  const { scopeOr401, requireRoleOr403, denyResponse } = await import("@/lib/http/routeGuard");
+  const s = await scopeOr401(request);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
   const deny = requireRoleOr403(ctx, ["superadmin"]);
   if (deny) return deny;
 
   const { id } = await context.params;
-  if (!id?.trim()) return jsonErr(ctx.rid, "Mangler id.", 400, "BAD_REQUEST");
+  const tid = id?.trim();
+  if (!tid) return jsonErr(ctx.rid, "Mangler id.", 400, "BAD_REQUEST");
+  if (!isMediaItemUuid(tid)) return jsonErr(ctx.rid, "Ugyldig medie-id.", 400, "BAD_REQUEST");
 
   try {
-    const { supabaseAdmin } = await import("@/lib/supabase/admin");
-    const supabase = supabaseAdmin();
-    const { data, error } = await supabase
-      .from("media_items")
-      .select("id, type, status, source, url, alt, caption, width, height, mime_type, bytes, tags, metadata, created_by, created_at")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) return jsonErr(ctx.rid, "Kunne ikke hente medieelement.", 500, "MEDIA_READ_FAILED");
-    if (!data) return jsonErr(ctx.rid, "Medieelement ikke funnet.", 404, "NOT_FOUND");
-    const row = data as Record<string, unknown>;
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, item: { ...row, tags: row.tags ?? [], metadata: row.metadata ?? {} } }, 200);
+    const item = await getMediaItemById(tid);
+    if (!item) return jsonNotFound(ctx.rid, "Medieelement ikke funnet.");
+    return jsonOk(ctx.rid, { item }, 200);
   } catch (e) {
     return jsonErr(ctx.rid, "Kunne ikke hente medieelement.", 500, "MEDIA_READ_FAILED");
   }
@@ -50,15 +51,17 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
-  const gate = await scopeOr401(request);
-  if (gate.ok === false) return gate.res;
-  const ctx = gate.ctx;
+  const { scopeOr401, requireRoleOr403, denyResponse } = await import("@/lib/http/routeGuard");
+  const s = await scopeOr401(request);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
   const deny = requireRoleOr403(ctx, ["superadmin"]);
   if (deny) return deny;
 
   const { id } = await context.params;
-  if (!id?.trim()) return jsonErr(ctx.rid, "Mangler id.", 400, "BAD_REQUEST");
+  const tid = id?.trim();
+  if (!tid) return jsonErr(ctx.rid, "Mangler id.", 400, "BAD_REQUEST");
+  if (!isMediaItemUuid(tid)) return jsonErr(ctx.rid, "Ugyldig medie-id.", 400, "BAD_REQUEST");
 
   let body: unknown;
   try {
@@ -73,8 +76,16 @@ export async function PATCH(
   const captionRaw = o.caption;
   const tagsRaw = o.tags;
   const statusRaw = o.status;
+  const metadataRaw = o.metadata;
 
   const updates: Record<string, unknown> = {};
+
+  if (metadataRaw !== undefined) {
+    if (metadataRaw !== null && typeof metadataRaw !== "object") {
+      return jsonErr(ctx.rid, "metadata må være et objekt.", 400, "VALIDATION_ERROR");
+    }
+    updates.metadata = metadataRaw && typeof metadataRaw === "object" ? (metadataRaw as Record<string, unknown>) : {};
+  }
 
   if (altRaw !== undefined) {
     const alt = typeof altRaw === "string" ? altRaw.trim() : "";
@@ -112,31 +123,66 @@ export async function PATCH(
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
+    const selectCols = updates.metadata !== undefined ? "id, status, metadata" : "id, status";
     const { data: existing, error: fetchErr } = await supabase
       .from("media_items")
-      .select("id, status")
-      .eq("id", id)
+      .select(selectCols)
+      .eq("id", tid)
       .maybeSingle();
     if (fetchErr) return jsonErr(ctx.rid, "Kunne ikke hente medieelement.", 500, "MEDIA_READ_FAILED");
-    if (!existing) return jsonErr(ctx.rid, "Medieelement ikke funnet.", 404, "NOT_FOUND");
+    if (!existing) return jsonNotFound(ctx.rid, "Medieelement ikke funnet.");
 
-    const currentStatus = (existing as { status: string }).status;
+    const existingRow = existing as unknown as { status: string; metadata?: Record<string, unknown> };
+    const currentStatus = existingRow.status;
     if (updates.status !== undefined) {
       const allowed = ALLOWED_TRANSITIONS[currentStatus];
       if (!allowed || !allowed.includes(updates.status as string))
         return jsonErr(ctx.rid, "Ugyldig statustransisjon.", 400, "INVALID_STATUS_TRANSITION");
     }
 
+    if (updates.metadata !== undefined) {
+      const existingMeta = existingRow.metadata ?? {};
+      updates.metadata = { ...existingMeta, ...(updates.metadata as Record<string, unknown>) };
+    }
+
     const { data: updated, error: updateErr } = await supabase
       .from("media_items")
       .update(updates as Record<string, unknown>)
-      .eq("id", id)
-      .select("id, type, status, source, url, alt, caption, width, height, mime_type, bytes, tags, metadata, created_by, created_at")
+      .eq("id", tid)
+      .select(mediaItemSelectColumns)
       .single();
     if (updateErr) return jsonErr(ctx.rid, "Kunne ikke oppdatere medieelement.", 500, "MEDIA_UPDATE_FAILED");
-    const row = updated as Record<string, unknown>;
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, item: { ...row, tags: row.tags ?? [], metadata: row.metadata ?? {} } }, 200);
+    const item = rowToMediaItem(updated as Record<string, unknown>);
+    if (!item) return jsonErr(ctx.rid, "Kunne ikke oppdatere medieelement.", 500, "MEDIA_UPDATE_FAILED");
+    return jsonOk(ctx.rid, { item }, 200);
   } catch (e) {
     return jsonErr(ctx.rid, "Kunne ikke oppdatere medieelement.", 500, "MEDIA_UPDATE_FAILED");
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { scopeOr401, requireRoleOr403, denyResponse } = await import("@/lib/http/routeGuard");
+  const s = await scopeOr401(request);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, ["superadmin"]);
+  if (deny) return deny;
+
+  const { id } = await context.params;
+  const tid = id?.trim();
+  if (!tid) return jsonErr(ctx.rid, "Mangler id.", 400, "BAD_REQUEST");
+  if (!isMediaItemUuid(tid)) return jsonErr(ctx.rid, "Ugyldig medie-id.", 400, "BAD_REQUEST");
+
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const supabase = supabaseAdmin();
+    const { error } = await supabase.from("media_items").delete().eq("id", tid);
+    if (error) return jsonErr(ctx.rid, "Kunne ikke slette medieelement.", 500, "MEDIA_DELETE_FAILED");
+    return jsonOk(ctx.rid, { deleted: true }, 200);
+  } catch (e) {
+    return jsonErr(ctx.rid, "Kunne ikke slette medieelement.", 500, "MEDIA_DELETE_FAILED");
   }
 }

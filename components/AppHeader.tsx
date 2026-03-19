@@ -97,7 +97,7 @@ export default async function AppHeader({
 
   return (
     <header
-      className="lp-topbar border-b border-[rgb(var(--lp-border))] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75"
+      className="lp-topbar border-b border-[rgb(var(--lp-border))] lp-glass-nav"
       role="banner"
     >
       {/* =====================================================
@@ -140,7 +140,7 @@ export default async function AppHeader({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cx(
-                    "lp-nav-item transition-all duration-150",
+                    "lp-nav-item",
                     active ? "lp-nav-item--active lp-neon-glow-hover" : "hover:bg-black/5"
                   )}
                 >
@@ -158,7 +158,7 @@ export default async function AppHeader({
           {emailLabel ? (
             <>
               <span
-                className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] max-w-[220px] sm:max-w-[260px] truncate"
+                className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] max-w-56 sm:max-w-64 truncate"
                 title={emailLabel}
               >
                 {emailLabel}
@@ -187,7 +187,7 @@ export default async function AppHeader({
           - Active shows neon ring
       ====================================================== */}
       {nav.length > 0 ? (
-        <div className="md:hidden border-t border-[rgb(var(--lp-border))] bg-white/90 backdrop-blur">
+        <div className="md:hidden border-t border-[rgb(var(--lp-border))] lp-glass-nav">
           <div className={cx(innerClass, "py-2 flex gap-2 overflow-x-auto")}>
             {nav.map((item) => {
               const active = isActive(pathname, item.href);

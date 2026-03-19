@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
+import { getBlockLabel } from "./blockLabels";
 
 export type BlockCanvasBlock = {
   id: string;
@@ -15,7 +17,6 @@ type BlockCanvasProps = {
   onMove: (fromIndex: number, toIndex: number) => void;
   onRemove: (id: string) => void;
   onAddAt?: (index: number) => void;
-  getBlockLabel: (type: string) => string;
   getBlockSummary?: (block: BlockCanvasBlock) => string;
   renderBlockPreview?: (block: BlockCanvasBlock) => React.ReactNode;
 };
@@ -30,13 +31,44 @@ function truncate(s: string, max: number): string {
   return t.length <= max ? t : t.slice(0, max) + "…";
 }
 
+/** Honest media state for hero/image: no misleading "saved" when media is missing. */
+function mediaSnippet(type: string, data: Record<string, unknown>): string | null {
+  if (type === "hero") {
+    const imageUrl = String(data.imageUrl ?? "").trim();
+    const mediaItemId = data.mediaItemId;
+    if (mediaItemId && !imageUrl) return "Bilde mangler (mediearkiv)";
+    if (!imageUrl) return "Ingen bilde valgt";
+    return null;
+  }
+  if (type === "image") {
+    const assetPath = String(data.assetPath ?? "").trim();
+    const mediaItemId = data.mediaItemId;
+    if (mediaItemId && !assetPath) return "Bilde mangler (mediearkiv)";
+    if (!assetPath) return "Ingen bilde valgt";
+    return null;
+  }
+  if (type === "banners") {
+    const items = Array.isArray(data.items) ? data.items : [];
+    const withMedia = items.filter(
+      (it: unknown) =>
+        it && typeof it === "object" && (String((it as Record<string, unknown>).imageUrl ?? "").trim() || String((it as Record<string, unknown>).videoUrl ?? "").trim())
+    ).length;
+    if (items.length > 0 && withMedia === 0) return "Bannere uten bilde/video";
+    return null;
+  }
+  return null;
+}
+
 /** Safe small preview for canvas card: no scripts, text/snippet only */
-function defaultPreview(block: BlockCanvasBlock, getBlockLabel: (t: string) => string, getBlockSummary?: (b: BlockCanvasBlock) => string): React.ReactNode {
+function defaultPreview(block: BlockCanvasBlock, getBlockSummary?: (b: BlockCanvasBlock) => string): React.ReactNode {
   const label = getBlockLabel(block.type);
   const summary = getBlockSummary ? getBlockSummary(block) : "";
   const data = block.data ?? {};
   let snippet = summary;
-  if (block.type === "code" || block.type === "richText") {
+  const mediaMsg = mediaSnippet(block.type, data);
+  if (mediaMsg) {
+    snippet = mediaMsg;
+  } else if (block.type === "code" || block.type === "richText") {
     const raw = block.type === "code" ? String(data.code ?? "") : String(data.body ?? data.heading ?? "");
     snippet = truncate(stripHtml(raw), 120) || summary;
   }
@@ -54,7 +86,6 @@ export function BlockCanvas({
   onMove,
   onRemove,
   onAddAt,
-  getBlockLabel,
   getBlockSummary,
   renderBlockPreview,
 }: BlockCanvasProps) {
@@ -135,9 +166,9 @@ export function BlockCanvas({
   const previewFor = useCallback(
     (block: BlockCanvasBlock): React.ReactNode => {
       if (renderBlockPreview) return renderBlockPreview(block);
-      return defaultPreview(block, getBlockLabel, getBlockSummary);
+      return defaultPreview(block, getBlockSummary);
     },
-    [getBlockLabel, getBlockSummary, renderBlockPreview]
+    [getBlockSummary, renderBlockPreview]
   );
 
   const typeIcon =
@@ -160,16 +191,25 @@ export function BlockCanvas({
 
   if (blocks.length === 0) {
     return (
-      <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-500">
-        <p className="font-medium text-slate-600">Ingen blokker</p>
-        <p className="mt-1">Legg til innhold i listen til venstre.</p>
+      <div
+        className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/30 p-8 text-center"
+        role="status"
+        aria-label="Ingen blokker. Legg til en blokk for å bygge siden."
+      >
+        <Icon name="add" size="lg" className="mb-3 text-[rgb(var(--lp-muted))]/60" />
+        <p className="text-sm font-medium text-[rgb(var(--lp-text))]">Ingen blokker</p>
+        <p className="mt-1 max-w-[260px] text-xs text-[rgb(var(--lp-muted))]">
+          Legg til innhold i listen til venstre, eller bruk knappen under.
+        </p>
         {onAddAt && (
           <button
             type="button"
             onClick={() => onAddAt(0)}
-            className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="lp-motion-btn mt-5 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border-2 border-[rgb(var(--lp-border))] bg-white px-4 py-2.5 text-sm font-medium text-[rgb(var(--lp-text))] hover:border-slate-400 hover:bg-[rgb(var(--lp-card))]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-2"
+            aria-label="Legg til første blokk"
           >
-            + Legg til blokk
+            <Icon name="add" size="sm" />
+            Legg til blokk
           </button>
         )}
       </div>
@@ -188,7 +228,7 @@ export function BlockCanvas({
           <React.Fragment key={block.id}>
             {showDropBefore && (
               <div
-                className="h-0.5 flex-shrink-0 rounded-full bg-slate-900"
+                className="h-1 flex-shrink-0 rounded-full bg-[rgb(var(--lp-text))] opacity-80 shadow-sm"
                 aria-hidden
                 data-drop-indicator
               />
@@ -200,16 +240,15 @@ export function BlockCanvas({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
-              className={`group relative rounded-lg border bg-white transition ${
-                isDragging ? "opacity-50" : ""
-              } ${isActive ? "ring-2 ring-slate-900 ring-offset-1" : "border-slate-200 hover:border-slate-300"}`}
+              className={`lp-motion-card group relative rounded-xl border bg-white ${
+                isDragging ? "opacity-50 scale-[0.98]" : ""
+              } ${isActive ? "ring-2 ring-[rgb(var(--lp-text))] ring-offset-2 border-[rgb(var(--lp-border))]" : "border-[rgb(var(--lp-border))] hover:border-slate-300 hover:shadow-[var(--lp-shadow-soft)]"}`}
               data-block-id={block.id}
             >
               <div
                 role="button"
                 tabIndex={0}
                 aria-label={`Blokk: ${getBlockLabel(block.type)}`}
-                aria-selected={isActive}
                 onClick={() => onSelect(block.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -217,71 +256,75 @@ export function BlockCanvas({
                     onSelect(block.id);
                   }
                 }}
-                className="flex cursor-pointer flex-col p-3 text-left outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 rounded-lg"
+                className="lp-motion-card flex cursor-pointer flex-col p-3 text-left outline-none rounded-xl focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <span
-                      className="flex h-6 w-6 shrink-0 cursor-grab items-center justify-center rounded border border-slate-200 bg-slate-50 text-[10px] text-slate-500 active:cursor-grabbing"
+                      className="flex h-6 w-6 shrink-0 cursor-grab items-center justify-center rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] text-[10px] text-[rgb(var(--lp-muted))] active:cursor-grabbing"
                       title="Dra for å endre rekkefølge"
-                      aria-hidden
+                      aria-label="Flytt blokk (dra for å endre rekkefølge)"
                       onPointerDown={(e) => e.stopPropagation()}
                     >
                       ⠿
                     </span>
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-100 text-[10px] font-medium text-slate-600">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[rgb(var(--lp-card))] text-[10px] font-medium text-[rgb(var(--lp-text))]">
                       {typeIcon(block.type)}
                     </span>
-                    <span className="truncate text-xs font-semibold text-slate-900">
+                    <span className="truncate text-xs font-semibold text-[rgb(var(--lp-text))]">
                       {getBlockLabel(block.type)}
                     </span>
-                    <span className="shrink-0 text-[10px] text-slate-400">#{index + 1}</span>
+                    <span className="shrink-0 text-[10px] text-[rgb(var(--lp-muted))]">#{index + 1}</span>
                   </div>
-                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="lp-motion-btn flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[selected]:opacity-100" data-selected={isActive ? "" : undefined}>
                     {index > 0 && (
                       <button
                         type="button"
-                        className="rounded p-1 text-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        className="flex h-7 w-7 items-center justify-center rounded border border-[rgb(var(--lp-border))] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))] hover:text-[rgb(var(--lp-text))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-1"
                         title="Flytt opp"
+                        aria-label={`Flytt blokk ${index + 1} opp`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onMove(index, index - 1);
                         }}
                       >
-                        ↑
+                        <Icon name="chevronUp" size="sm" />
                       </button>
                     )}
                     {index < blocks.length - 1 && (
                       <button
                         type="button"
-                        className="rounded p-1 text-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        className="flex h-7 w-7 items-center justify-center rounded border border-[rgb(var(--lp-border))] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))] hover:text-[rgb(var(--lp-text))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-1"
                         title="Flytt ned"
+                        aria-label={`Flytt blokk ${index + 1} ned`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onMove(index, index + 1);
                         }}
                       >
-                        ↓
+                        <Icon name="chevronDown" size="sm" />
                       </button>
                     )}
                     <button
                       type="button"
-                      className="rounded p-1 text-[10px] text-red-600 hover:bg-red-50"
+                      className="flex h-7 items-center justify-center gap-1 rounded border border-red-200 px-1.5 text-[10px] text-red-600 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-1"
                       title="Fjern blokk"
+                      aria-label={`Fjern blokk ${index + 1}`}
                       onClick={(e) => handleRemoveClick(e, block.id)}
                     >
+                      <Icon name="delete" size="sm" />
                       Fjern
                     </button>
                   </div>
                 </div>
-                <div className="mt-1 min-h-[20px] rounded border border-slate-100 bg-slate-50/50 px-2 py-1.5">
+                <div className="mt-1 min-h-[20px] rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 px-2 py-1.5">
                   {previewFor(block)}
                 </div>
               </div>
             </div>
             {showDropAfter && (
               <div
-                className="h-0.5 flex-shrink-0 rounded-full bg-slate-900"
+                className="min-h-[6px] flex-shrink-0 rounded-full bg-[rgb(var(--lp-ring))]/90 shadow-sm ring-1 ring-[rgb(var(--lp-border))]"
                 aria-hidden
                 data-drop-indicator
               />
@@ -293,9 +336,11 @@ export function BlockCanvas({
         <button
           type="button"
           onClick={() => onAddAt(blocks.length)}
-          className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 py-2 text-[11px] text-slate-500 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-700"
+          className="lp-motion-btn mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[rgb(var(--lp-border))] py-2.5 text-sm text-[rgb(var(--lp-muted))] hover:border-slate-400 hover:bg-[rgb(var(--lp-card))]/50 hover:text-[rgb(var(--lp-text))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-2"
+          aria-label="Legg til blokk på slutten"
         >
-          + Legg til blokk
+          <Icon name="add" size="sm" />
+          Legg til blokk
         </button>
       )}
     </div>

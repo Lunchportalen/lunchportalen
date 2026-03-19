@@ -9,6 +9,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText, isISODate } from "@/lib/agreements/normalize";
+import { normalizeCompanyAgreementStatus, type CompanyAgreementStatus } from "@/lib/agreements/companyAgreementStatus";
 import { writeAuditEvent } from "@/lib/audit/write";
 import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -70,8 +71,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     }
 
+    const beforeStatusRaw = (before.data as any).status ?? null;
+    const beforeStatus = normalizeCompanyAgreementStatus(beforeStatusRaw);
+
+    if (!beforeStatus) {
+      return jsonErr(rid, "Avtalen har ukjent status. Kan ikke close.", 409, {
+        code: "INVALID_CURRENT_STATUS",
+        detail: { status: beforeStatusRaw },
+      });
+    }
+
     // Idempotency: already closed
-    if (String((before.data as any).status) === "CLOSED") {
+    if (beforeStatus === "CLOSED") {
       // ✅ B-LOCK: DO NOT update companies.status here
       opsLog("agreement.close.idempotent", {
         rid,
@@ -81,6 +92,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
 
       return jsonOk(rid, { agreement: before.data, idempotent: true }, 200);
+    }
+
+    const allowedFrom: CompanyAgreementStatus[] = ["ACTIVE", "PAUSED", "PENDING", "DRAFT"];
+    if (!allowedFrom.includes(beforeStatus)) {
+      return jsonErr(rid, "Ugyldig overgang. Kan ikke close TERMINATED-avtale.", 409, {
+        code: "INVALID_TRANSITION",
+        detail: { from: beforeStatus, to: "CLOSED" },
+      });
     }
 
     // Company name (best-effort for audit summary)

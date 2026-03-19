@@ -16,6 +16,11 @@ type Row = {
 const rows: Row[] = [];
 const sendMailMock = vi.fn();
 
+/** When set, lp_outbox_mark_sent returns error for this id (so retry path is exercised). */
+const markSentFailsForId = vi.hoisted(() => ({ current: null as string | null }));
+/** Ids passed to lp_outbox_mark_failed (to assert no mark_failed after successful send). */
+const markFailedCallIds = vi.hoisted(() => ({ list: [] as string[] }));
+
 vi.mock("@/lib/orderBackup/smtp", () => ({
   sendMail: (...args: any[]) => sendMailMock(...args),
 }));
@@ -56,6 +61,9 @@ function makeAdminMock() {
 
       if (fn === "lp_outbox_mark_sent") {
         const id = String(params?.p_id ?? params?.id ?? params?.p_outbox_id ?? "");
+        if (markSentFailsForId.current === id) {
+          return { data: null, error: { message: "mark_sent_failed" } };
+        }
         const row = rows.find((r) => r.id === id);
         if (!row) return { data: [], error: null };
         row.status = "SENT";
@@ -67,6 +75,7 @@ function makeAdminMock() {
 
       if (fn === "lp_outbox_mark_failed") {
         const id = String(params?.p_id ?? params?.id ?? params?.p_outbox_id ?? "");
+        markFailedCallIds.list.push(id);
         const row = rows.find((r) => r.id === id);
         if (!row) return { data: [], error: null };
         row.status = row.attempts >= 10 ? "FAILED_PERMANENT" : "FAILED";
@@ -90,6 +99,8 @@ import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 beforeEach(() => {
   rows.splice(0, rows.length);
   sendMailMock.mockReset();
+  markSentFailsForId.current = null;
+  markFailedCallIds.list = [];
 });
 
 describe("outbox retry policy", () => {
@@ -143,5 +154,27 @@ describe("outbox retry policy", () => {
     expect(sendMailMock).toHaveBeenCalledTimes(1);
     expect(rows[0].status).toBe("FAILED_PERMANENT");
     expect(rows[1].status).toBe("SENT");
+  });
+
+  test("after successful send, never marks row as failed (retry safety — no duplicate send)", async () => {
+    const id = "retry-safe-1";
+    rows.push({
+      id,
+      event_key: "ev-retry-safe",
+      payload: { from: "a@x.no", to: "b@x.no", subject: "s", bodyText: "x" },
+      status: "PENDING",
+      attempts: 0,
+      created_at: "2026-02-01T00:00:00.000Z",
+      last_error: null,
+    });
+    sendMailMock.mockResolvedValueOnce({ messageId: "m1" });
+    markSentFailsForId.current = id;
+
+    const res = await processOutboxBatch(25, { rid: "rid-test" });
+
+    expect(res.ok).toBe(true);
+    expect(res.sent).toBe(1);
+    expect(sendMailMock).toHaveBeenCalledTimes(1);
+    expect(markFailedCallIds.list).not.toContain(id);
   });
 });

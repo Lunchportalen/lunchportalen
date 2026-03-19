@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -14,22 +15,6 @@ const items: Item[] = [
   { label: "Audit", href: "/superadmin/audit" },
   { label: "System", href: "/superadmin/system" },
 ];
-
-function HamburgerIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M4 12h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function SuperadminMobileMenu({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
@@ -64,7 +49,7 @@ export function SuperadminMobileMenu({ className = "" }: { className?: string })
         aria-label="Åpne meny"
       >
         <span className="inline-flex items-center gap-2">
-          <HamburgerIcon />
+          <Icon name="menu" size="md" />
           <span className="hidden xs:inline">Meny</span>
         </span>
       </button>

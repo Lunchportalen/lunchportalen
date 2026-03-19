@@ -164,7 +164,7 @@ export default function FirmEmployeesClient({ companyId }: { companyId: string }
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Søk e-post/navn/avdeling"
-            className="w-[320px] max-w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
+            className="w-80 max-w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
           />
           <button
             onClick={() => {
@@ -258,8 +258,13 @@ export default function FirmEmployeesClient({ companyId }: { companyId: string }
       </div>
 
       {confirmState ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="lp-motion-overlay lp-glass-overlay absolute inset-0"
+            aria-hidden
+            onClick={() => setConfirmState(null)}
+          />
+          <div className="lp-motion-overlay lp-glass-panel relative z-10 w-full max-w-lg rounded-3xl p-6">
             <div className="text-sm font-semibold">Slett ansatt</div>
             <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
               Denne handlingen deaktiverer og anonymiserer brukeren. Historikk beholdes.

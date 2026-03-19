@@ -2,19 +2,9 @@
 import "server-only";
 
 import { createClient } from "@sanity/client";
+import { getSanityReadConfig, getSanityWriteToken } from "@/lib/config/env";
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
-const writeToken = process.env.SANITY_WRITE_TOKEN;
-
-if (!projectId) {
-  throw new Error("Missing NEXT_PUBLIC_SANITY_PROJECT_ID");
-}
-
-if (!dataset) {
-  throw new Error("Missing NEXT_PUBLIC_SANITY_DATASET");
-}
+const { projectId, dataset, apiVersion } = getSanityReadConfig();
 
 export const sanity = createClient({
   projectId,
@@ -24,6 +14,7 @@ export const sanity = createClient({
 });
 
 export const sanityWrite = (() => {
+  const writeToken = getSanityWriteToken();
   if (!writeToken) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[sanityWrite] SANITY_WRITE_TOKEN missing. Write operations will fail.");
@@ -46,3 +37,4 @@ export function requireSanityWrite() {
   }
   return sanityWrite;
 }
+

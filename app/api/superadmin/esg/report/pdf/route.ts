@@ -5,10 +5,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getScope } from "@/lib/auth/scope";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { buildEsgPdf } from "@/lib/esg/pdf";
 import { formatMonthYearLongNO } from "@/lib/date/format";
-import { jsonErr, makeRid } from "@/lib/http/respond";
+import { jsonErr } from "@/lib/http/respond";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -45,22 +45,19 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, ["superadmin"]);
+  if (deny) return deny;
+
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
   const supabase = await supabaseServer();
-
-  // ✅ scope fra request (robust: støtter både Scope og {ok:false})
-  const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-
-  // ✅ superadmin-only (erstatter allowSuperadmin)
-  if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
   const url = new URL(req.url);
 
   const companyId = url.searchParams.get("company_id");
-  if (!companyId) return jsonErr(rid, "company_id mangler", 400, "BAD_REQUEST");
+  if (!companyId) return jsonErr(ctx.rid, "company_id mangler", 400, "BAD_REQUEST");
 
   const modeRaw = (url.searchParams.get("mode") || "year").toLowerCase();
   const mode = modeRaw === "month" ? "month" : "year";
@@ -70,7 +67,7 @@ export async function GET(req: NextRequest) {
   const year = clampYear(Number(url.searchParams.get("year") ?? nowMonth01.slice(0, 4)));
 
   const month = url.searchParams.get("month") || nowMonth01; // YYYY-MM-01
-  if (!isIsoMonth01(month)) return jsonErr(rid, "month må være YYYY-MM-01", 400, { code: "BAD_REQUEST", detail: { month } });
+  if (!isIsoMonth01(month)) return jsonErr(ctx.rid, "month må være YYYY-MM-01", 400, "BAD_REQUEST", { detail: { month } });
 
   const toMonth = month;
 
@@ -90,7 +87,7 @@ export async function GET(req: NextRequest) {
     .lte("month", toMonth)
     .order("month", { ascending: true });
 
-  if (mErr) return jsonErr(rid, "Kunne ikke hente måneder", 500, { code: "DB_ERROR", detail: mErr });
+  if (mErr) return jsonErr(ctx.rid, "Kunne ikke hente måneder", 500, "DB_ERROR", { detail: mErr });
 
   const { data: yearly, error: yErr } = await supabase
     .from("esg_yearly_snapshots")
@@ -101,10 +98,10 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .maybeSingle();
 
-  if (yErr) return jsonErr(rid, "Kunne ikke hente år", 500, { code: "DB_ERROR", detail: yErr });
+  if (yErr) return jsonErr(ctx.rid, "Kunne ikke hente år", 500, "DB_ERROR", { detail: yErr });
 
   const { data: c, error: cErr } = await supabase.from("companies").select("name").eq("id", companyId).maybeSingle();
-  if (cErr) return jsonErr(rid, "Kunne ikke hente firmanavn", 500, { code: "DB_ERROR", detail: cErr });
+  if (cErr) return jsonErr(ctx.rid, "Kunne ikke hente firmanavn", 500, "DB_ERROR", { detail: cErr });
 
   const companyName = (c as any)?.name ?? null;
 
@@ -127,6 +124,6 @@ export async function GET(req: NextRequest) {
 
   const safeName = (companyName || "firma").replace(/[^\w\-]+/g, "_");
   const filename = `ESG_${safeName}_${mode === "month" ? month : year}.pdf`;
-  return pdfResponse(bytes, filename, rid);
+  return pdfResponse(bytes, filename, ctx.rid);
 }
 

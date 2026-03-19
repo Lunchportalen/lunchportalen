@@ -18,7 +18,7 @@ type StatusState =
 
 type SP = Record<string, string | string[] | undefined>;
 
-function safeState(v: string | null): StatusState {
+export function safeState(v: string | null): StatusState {
   const s = String(v ?? "").trim().toLowerCase();
 
   if (s === "closed") return "closed";
@@ -47,7 +47,7 @@ function safeDecode(v: string) {
   }
 }
 
-function normalizePath(p: string | null): string | null {
+export function normalizePath(p: string | null): string | null {
   if (!p) return null;
   const s = safeDecode(p).trim();
   if (!s) return null;
@@ -83,7 +83,7 @@ function normalizePath(p: string | null): string | null {
 }
 
 /** Never show /superadmin as next for non-superadmin UX (status page is public). */
-function sanitizeNextForDisplay(nextPath: string | null): string | null {
+export function sanitizeNextForDisplay(nextPath: string | null): string | null {
   if (!nextPath) return null;
   if (nextPath.startsWith("/superadmin")) return "/admin";
   return nextPath;
@@ -162,7 +162,7 @@ function chipForState(state: StatusState) {
   return { cls, label };
 }
 
-function safeNextFallback(nextPath: string | null) {
+export function safeNextFallback(nextPath: string | null) {
   // status is public: always keep a sane fallback
   return nextPath ?? "/week";
 }
@@ -173,7 +173,7 @@ function safeNextFallback(nextPath: string | null) {
  * - if user is not logged in, they’ll be redirected to /login by that route
  * This keeps "one truth-ledd" intact.
  */
-function primaryHref(nextPath: string | null) {
+export function primaryHref(nextPath: string | null) {
   const next = safeNextFallback(nextPath);
   return `/api/auth/post-login?next=${encodeURIComponent(next)}`;
 }

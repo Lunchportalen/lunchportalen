@@ -1,6 +1,7 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getSupabasePublicConfig } from "@/lib/config/env";
 
 function isBypassPath(pathname: string) {
   const isApi = pathname.startsWith("/api/");
@@ -27,6 +28,7 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/week") ||
     pathname.startsWith("/superadmin") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/backoffice") ||
     pathname.startsWith("/orders") ||
     pathname.startsWith("/driver") ||
     pathname.startsWith("/kitchen")
@@ -40,11 +42,6 @@ function isExplicitlyPublicProtectedSubpath(_pathname: string) {
 function buildNextParam(pathname: string, searchParams: URLSearchParams) {
   const qs = searchParams.toString();
   return pathname + (qs ? `?${qs}` : "");
-}
-
-function mustEnv(name: string) {
-  const v = process.env[name];
-  return v && String(v).trim() ? String(v).trim() : null;
 }
 
 function copyCookies(from: NextResponse, to: NextResponse) {
@@ -83,12 +80,26 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anon = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  let url: string;
+  let anon: string;
 
-  if (!url || !anon) {
-    res.headers.set("x-lp-mw-env", "missing");
-    return res;
+  try {
+    const cfg = getSupabasePublicConfig();
+    url = cfg.url;
+    anon = cfg.anonKey;
+  } catch (e: any) {
+    // Fail-closed if Supabase public env mangler: send bruker til status-side.
+    const u = req.nextUrl.clone();
+    u.pathname = "/status";
+    u.search = "";
+    u.searchParams.set("state", "blocked");
+    u.searchParams.set("code", "MISSING_SUPABASE_ENV");
+
+    const redir = NextResponse.redirect(u, { status: 303 });
+    copyDebugHeaders(res, redir);
+    redir.headers.set("x-lp-mw-env", "missing");
+    redir.headers.set("x-lp-mw-env-error", String(e?.message ?? "Missing Supabase public env"));
+    return redir;
   }
 
   const supabase = createServerClient(url, anon, {

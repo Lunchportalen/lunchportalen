@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Icon } from "@/components/ui/Icon";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -39,32 +40,23 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(functi
             "border border-[color:var(--lp-border)]",
             "shadow-[var(--lp-shadow-sm)]",
             "outline-none",
-            "transition-[box-shadow,border-color,background-color,transform] duration-200 [transition-timing-function:var(--lp-ease)]",
+            "lp-motion-control",
             "hover:bg-[color:var(--lp-surface-2)]",
-            "focus:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
+            "focus:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)] focus-visible:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
             "checked:bg-[color:var(--lp-accent)] checked:border-transparent",
             "checked:hover:bg-[color:var(--lp-accent-2)]",
             "active:scale-[0.98]",
+            "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-[color:var(--lp-surface)]",
             className
           )}
           {...props}
         />
 
-        {/* check icon */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 20 20"
-          className="pointer-events-none absolute left-0 top-0 h-5 w-5 opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
-          fill="none"
-        >
-          <path
-            d="M5 10.5l3 3L15.5 6"
-            stroke="white"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon
+          name="success"
+          size="md"
+          className="lp-motion-opacity pointer-events-none absolute left-0 top-0 opacity-0 peer-checked:opacity-100 stroke-white stroke-[2.2]"
+        />
       </span>
 
       {label ? (

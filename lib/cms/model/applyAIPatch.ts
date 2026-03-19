@@ -1,6 +1,8 @@
 /**
  * Phase 27: Apply AIPatchV1 to BlockList (immutable, deterministic).
  * Import from canonical blockTypes and blockId.
+ * Fail-closed: invalid op (block not found, index out of range) returns { ok: false, reason };
+ * never mutates body in place. Caller must not apply when ok is false.
  */
 
 import type { BlockList, BlockNode } from "@/lib/cms/model/blockTypes";

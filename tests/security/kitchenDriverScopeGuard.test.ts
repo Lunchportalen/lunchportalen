@@ -12,6 +12,7 @@ function mkCtx(overrides?: Partial<AuthedCtx>): AuthedCtx {
       companyId: "c1",
       locationId: "l1",
       email: "user@test.lunchportalen.no",
+      sub: "sub_u1",
     },
     ...(overrides ?? {}),
   };
@@ -57,6 +58,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: null,
         locationId: "l1",
         email: "kitchen@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 
@@ -76,6 +78,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: "c1",
         locationId: null,
         email: "kitchen@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 
@@ -95,6 +98,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: null,
         locationId: null,
         email: "driver@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 
@@ -114,6 +118,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: "c1",
         locationId: "l1",
         email: "kitchen@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 
@@ -129,6 +134,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: null,
         locationId: null,
         email: "employee@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 
@@ -145,6 +151,7 @@ describe("routeGuard: kitchen/driver scope enforcement (TENANT-BOUND)", () => {
         companyId: null,
         locationId: null,
         email: "employee@test.lunchportalen.no",
+        sub: "sub_u1",
       },
     });
 

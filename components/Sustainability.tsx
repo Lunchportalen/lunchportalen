@@ -1,12 +1,14 @@
 // components/marketing/Sustainability.tsx
 import Image from "next/image";
+import { Container } from "@/components/ui/container";
 
 export default function Sustainability() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 md:py-16">
+    <section>
+      <Container className="max-w-6xl py-10 md:py-16">
       <div className="grid gap-6 md:grid-cols-2 md:items-center">
         {/* Left: Copy */}
-        <div className="rounded-3xl bg-white/70 p-8 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="lp-card lp-motion-card p-8">
           <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Bærekraft som kan dokumenteres
           </h2>
@@ -45,7 +47,7 @@ export default function Sustainability() {
         </div>
 
         {/* Right: Sustainability / system image */}
-        <div className="rounded-3xl bg-white ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="lp-card lp-motion-card">
           <div className="aspect-[4/3] w-full">
             <Image
               src="/forsidebilder/lunchportalen-mobil-bestilling.png"
@@ -58,6 +60,10 @@ export default function Sustainability() {
           </div>
         </div>
       </div>
+      </Container>
     </section>
   );
 }
+
+
+

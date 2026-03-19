@@ -16,9 +16,15 @@ function fail(message) {
     failures.push(message);
 }
 
-function routeToFile(routePath) {
-    if (routePath === "/") return "app/page.tsx";
-    return `app/${routePath.replace(/^\//, "")}/page.tsx`;
+function resolvePageFile(routePath) {
+    const segment = routePath === "/" ? "" : routePath.replace(/^\//, "");
+    const candidates = segment
+        ? [`app/(public)/${segment}/page.tsx`, `app/${segment}/page.tsx`]
+        : ["app/(public)/page.tsx", "app/page.tsx"];
+    for (const p of candidates) {
+        if (fs.existsSync(path.join(root, p))) return p;
+    }
+    return null;
 }
 
 function readJson(relativePath) {
@@ -46,10 +52,10 @@ if (registry) {
             continue;
         }
 
-        const relFile = routeToFile(routePath);
-        const fullFile = path.join(root, relFile);
-        if (!fs.existsSync(fullFile)) {
-            fail(`[${routePath}] missing page file ${relFile}`);
+        const relFile = resolvePageFile(routePath);
+        const fullFile = relFile ? path.join(root, relFile) : null;
+        if (!fullFile || !fs.existsSync(fullFile)) {
+            fail(`[${routePath}] missing page file (checked app/(public)/ and app/)`);
             continue;
         }
 

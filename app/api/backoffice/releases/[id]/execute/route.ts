@@ -23,6 +23,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     if (!release) return jsonErr(s.ctx.rid, "Release ikke funnet.", 404, "NOT_FOUND");
     if (release.status !== "scheduled") return jsonErr(s.ctx.rid, "Kun scheduled release kan kjores.", 400, "BAD_REQUEST");
     const result = await executeRelease(supabase as any, releaseId, s.ctx.scope?.email ?? null);
+    const { recordReleaseExecuted } = await import("@/lib/ai/memory/recordOutcome");
+    await recordReleaseExecuted(supabase, { releaseId, count: result.count, sourceRid: s.ctx.rid });
     return jsonOk(s.ctx.rid, { ok: true, rid: s.ctx.rid, count: result.count }, 200);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Internal server error";

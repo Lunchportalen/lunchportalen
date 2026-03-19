@@ -2,8 +2,9 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 
 function deny(s: { response?: Response; res?: Response; ctx?: { rid: string } }) {
-  if (s?.response) return s.response; if (s?.res) return s.res;
-  return jsonErr(s?.ctx?.rid ?? "r", "Ikke innlogget.", 401, "UNAUTHORIZED");
+  if (s?.response) return s.response;
+  if (s?.res) return s.res;
+  return jsonErr(s?.ctx?.rid ?? "rid_missing", "Ikke innlogget.", 401, "UNAUTHORIZED");
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {

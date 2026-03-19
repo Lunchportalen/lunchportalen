@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getScope } from "@/lib/auth/scope";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { toCsv } from "@/lib/esg/csv";
-import { jsonErr, makeRid } from "@/lib/http/respond";
+import { jsonErr } from "@/lib/http/respond";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -39,16 +39,14 @@ function clampYear(n: number) {
 }
 
 export async function GET(req: NextRequest) {
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, ["superadmin"]);
+  if (deny) return deny;
+
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
-
   const supabase = await supabaseServer();
-
-  const scope: any = await getScope(req);
-  if (scope?.ok === false) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-  if (!scope?.role) return jsonErr(rid, "Ikke innlogget", 401, { code: "UNAUTHORIZED", detail: scope });
-
-  if (scope.role !== "superadmin") return jsonErr(rid, "Krever superadmin", 403, { code: "FORBIDDEN", detail: { role: scope.role } });
 
   const url = new URL(req.url);
   const year = clampYear(Number(url.searchParams.get("year") ?? osloYear()));
@@ -61,7 +59,7 @@ export async function GET(req: NextRequest) {
     .eq("year", year)
     .order("stability_score", { ascending: true });
 
-  if (error) return jsonErr(rid, "Kunne ikke hente yearly snapshots", 500, { code: "DB_ERROR", detail: error });
+  if (error) return jsonErr(ctx.rid, "Kunne ikke hente yearly snapshots", 500, "DB_ERROR", { detail: error });
 
   const headers = [
     "company_id",
@@ -85,7 +83,7 @@ export async function GET(req: NextRequest) {
   ];
 
   const csv = toCsv((data ?? []) as any, headers);
-  return csvResponse(csv, `ESG_YEARLY_${year}.csv`, rid);
+  return csvResponse(csv, `ESG_YEARLY_${year}.csv`, ctx.rid);
 }
 
 

@@ -1,6 +1,7 @@
 /**
  * Content health analysis: score and issues from blocks, meta, pageTitle.
- * No DB writes; deterministic checks only.
+ * No DB writes; deterministic checks only. Score is always 0–100; based on real page content.
+ * Used by content_health_daily agent and any consumer that needs page-quality signals.
  */
 
 export type ContentHealthIssue = {
@@ -64,6 +65,7 @@ export function analyzeContentHealth(args: {
     issues.push({ code: "short_meta_description", severity: "medium", message: "Meta-beskrivelse under 80 tegn" });
   }
 
-  const score = Math.max(0, 100 - issues.length * 10);
+  const rawScore = 100 - issues.length * 10;
+  const score = Math.max(0, Math.min(100, rawScore));
   return { score, issues };
 }

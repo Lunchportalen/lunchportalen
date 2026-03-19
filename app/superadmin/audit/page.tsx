@@ -30,7 +30,7 @@ function isHardSuperadmin(email: string | null | undefined) {
 function ErrorSurface(props: { title?: string; message: string; detail?: string }) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
-      <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur">
+      <div className="lp-glass-card rounded-card p-6">
         <div className="flex items-center justify-between">
           <div className="text-xs font-extrabold tracking-wide text-neutral-600">SUPERADMIN MODE</div>
           <div className="text-xs font-extrabold text-rose-700">AUDIT</div>

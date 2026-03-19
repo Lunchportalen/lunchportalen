@@ -125,6 +125,9 @@ create table if not exists public.profiles (
 alter table if exists public.profiles
   drop constraint if exists profiles_user_matches_id_ck;
 
+-- SAFETY: Destructive. Drops columns if present; any data in them is lost.
+-- Intended for baseline bootstrap on empty DB only. Do not run on populated DB
+-- that still uses user_id/is_active/name.
 alter table if exists public.profiles
   drop column if exists user_id,
   drop column if exists is_active,

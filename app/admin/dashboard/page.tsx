@@ -4,8 +4,14 @@ export const revalidate = 0;
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { Card } from "@/components/ui/card";
+import { motionClasses } from "@/lib/ui/motionTokens";
 import Sparkline from "./Sparkline";
 import { supabaseServer } from "@/lib/supabase/server";
+
+function cn(...v: Array<string | false | null | undefined>) {
+  return v.filter(Boolean).join(" ");
+}
 
 type Metrics = {
   ok: boolean;
@@ -119,7 +125,7 @@ export default async function CompanyAdminDashboardPage() {
       </div>
 
       {err ? (
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5 shadow-sm">
+        <div className="lp-error-outline rounded-card p-5">
           <div className="text-sm font-medium text-red-600">Kunne ikke laste data</div>
           <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{err}</div>
           <div className="mt-4 text-xs text-[rgb(var(--lp-muted))]">
@@ -128,13 +134,13 @@ export default async function CompanyAdminDashboardPage() {
           </div>
         </div>
       ) : !m ? (
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5 shadow-sm">
+        <div className="lp-state-soft rounded-card p-5">
           <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
         </div>
       ) : (
         <>
           {/* Header */}
-          <section className="mb-6 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-6 shadow-sm">
+          <Card variant="glass" className="mb-6 rounded-card p-6">
             <div className="flex flex-col gap-1">
               <div className="text-xs text-[rgb(var(--lp-muted))]">Firma</div>
               <div className="flex flex-wrap items-center gap-3">
@@ -159,7 +165,7 @@ export default async function CompanyAdminDashboardPage() {
                 </div>
               ) : null}
             </div>
-          </section>
+          </Card>
 
           {/* Trends */}
           {d ? (
@@ -200,7 +206,7 @@ export default async function CompanyAdminDashboardPage() {
           </section>
 
           {/* Actions */}
-          <section className="mt-6 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-6 shadow-sm">
+          <Card variant="outline" className="mt-6 rounded-card p-6">
             <div className="flex flex-col gap-1">
               <div className="text-sm font-semibold">Hurtigvalg</div>
               <div className="text-sm text-[rgb(var(--lp-muted))]">Gå til ansatteoversikt eller egne ordrer.</div>
@@ -220,7 +226,7 @@ export default async function CompanyAdminDashboardPage() {
                 </Link>
               </div>
             </div>
-          </section>
+          </Card>
         </>
       )}
     </main>
@@ -229,7 +235,7 @@ export default async function CompanyAdminDashboardPage() {
 
 function TrendCard(props: { title: string; value: string; subtitle: string; spark: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5 shadow-sm">
+    <Card variant="soft" className={cn("rounded-card p-5", motionClasses.hoverLift)}>
       <div className="text-xs text-[rgb(var(--lp-muted))]">{props.title}</div>
       <div className="mt-2 flex items-center justify-between gap-4">
         <div>
@@ -238,16 +244,16 @@ function TrendCard(props: { title: string; value: string; subtitle: string; spar
         </div>
         <div className="text-[rgb(var(--lp-text))]">{props.spark}</div>
       </div>
-    </div>
+    </Card>
   );
 }
 
 function KpiCard(props: { title: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5 shadow-sm">
+    <Card variant="soft" className={cn("rounded-card p-5", motionClasses.hoverLift)}>
       <div className="text-xs text-[rgb(var(--lp-muted))]">{props.title}</div>
       <div className="mt-2 text-2xl font-semibold tracking-tight">{props.value}</div>
       {props.hint ? <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">{props.hint}</div> : null}
-    </div>
+    </Card>
   );
 }

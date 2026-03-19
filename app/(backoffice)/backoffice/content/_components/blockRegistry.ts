@@ -1,5 +1,6 @@
 "use client";
 
+import type { CMSBlockFieldSchema } from "@/lib/cms/plugins/types";
 import { initPluginsOnce } from "@/lib/cms/plugins/loadPlugins";
 import { getAllBlocks } from "@/lib/cms/plugins/registry";
 
@@ -15,6 +16,8 @@ export type BlockDefinition = {
   previewText?: (data: Record<string, unknown>) => string;
   iconKey?: string;
   defaults: () => Record<string, unknown>;
+  /** Schema-driven fields for generic editor rendering (enterprise CMS). */
+  fields?: CMSBlockFieldSchema[];
 };
 
 function buildBlockRegistry(): BlockDefinition[] {
@@ -30,6 +33,7 @@ function buildBlockRegistry(): BlockDefinition[] {
     previewText: b.previewText,
     iconKey: b.type,
     defaults: b.defaults,
+    fields: b.fields,
   }));
 }
 

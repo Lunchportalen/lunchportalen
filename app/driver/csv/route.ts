@@ -110,12 +110,16 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Missing window param.", 400, "MISSING_WINDOW");
   }
 
-  // 2) Hent ordregrunnlag (ACTIVE for dato + slot)
+  // 2) Hent ordregrunnlag for dato + slot
+  // Alignér med driver-stops-fasit:
+  // - Kun integritets-godkjente ordre (integrity_status = "ok")
+  // - Status i ACTIVE/QUEUED/PACKED/DELIVERED (driver-visningens sannhet)
   let ordersQ = admin
     .from("orders")
-    .select("id, slot, note, company_id, location_id, user_id, date, status")
+    .select("id, slot, note, company_id, location_id, user_id, date, status, integrity_status")
     .eq("date", date)
-    .eq("status", "ACTIVE")
+    .eq("integrity_status", "ok")
+    .in("status", ["ACTIVE", "QUEUED", "PACKED", "DELIVERED"])
     .eq("slot", windowQ)
     .eq("company_id", companyId);
 
@@ -131,11 +135,13 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = orders ?? [];
+  // Fail-closed: kun rader med entydig firma + lokasjon (speiler driver-stops)
+  const safeRows = rows.filter((o: any) => safeStr(o.company_id) && safeStr(o.location_id));
 
   // 3) Hvis ingen rader: returnér tom CSV med header
   const header = ["Leveringsvindu", "Firma", "Lokasjon", "Kontakt", "Telefon", "Ansatt", "Avdeling", "Notat"];
 
-  if (!rows.length) {
+  if (!safeRows.length) {
     const csv = header.map(csvEscape).join(",") + "\n";
     return new NextResponse(csv, {
       headers: {
@@ -146,9 +152,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const companyIds = Array.from(new Set(rows.map((o: any) => o.company_id).filter(Boolean))).map(String);
-  const locationIds = Array.from(new Set(rows.map((o: any) => o.location_id).filter(Boolean))).map(String);
-  const userIds = Array.from(new Set(rows.map((o: any) => o.user_id).filter(Boolean))).map(String);
+  const companyIds = Array.from(new Set(safeRows.map((o: any) => o.company_id).filter(Boolean))).map(String);
+  const locationIds = Array.from(new Set(safeRows.map((o: any) => o.location_id).filter(Boolean))).map(String);
+  const userIds = Array.from(new Set(safeRows.map((o: any) => o.user_id).filter(Boolean))).map(String);
 
   // 4) Metadata i parallell
   const [companiesRes, locationsRes, profilesRes] = await Promise.all([
@@ -178,7 +184,7 @@ export async function GET(req: NextRequest) {
   const profMap = new Map((profilesRes.data ?? []).map((p: any) => [String(p.user_id), p]));
 
   // 5) CSV bygg
-  const csvRows = rows.map((o: any) => {
+  const csvRows = safeRows.map((o: any) => {
     const comp = compMap.get(String(o.company_id));
     const loc = locMap.get(String(o.location_id));
     const prof = profMap.get(String(o.user_id));
@@ -198,7 +204,24 @@ export async function GET(req: NextRequest) {
     ];
   });
 
-  const csv = [header, ...csvRows].map((r) => r.map(csvEscape).join(",")).join("\n") + "\n";
+  // Stabil og deterministisk rekkefølge i eksport: Firma → Lokasjon → Kontakt → Ansatt
+  const sortedCsvRows = csvRows.sort((a, b) => {
+    const [, aCompany, aLocation, aContact, , aEmployee] = a;
+    const [, bCompany, bLocation, bContact, , bEmployee] = b;
+
+    const c = safeStr(aCompany).localeCompare(safeStr(bCompany), "nb");
+    if (c !== 0) return c;
+
+    const l = safeStr(aLocation).localeCompare(safeStr(bLocation), "nb");
+    if (l !== 0) return l;
+
+    const k = safeStr(aContact).localeCompare(safeStr(bContact), "nb");
+    if (k !== 0) return k;
+
+    return safeStr(aEmployee).localeCompare(safeStr(bEmployee), "nb");
+  });
+
+  const csv = [header, ...sortedCsvRows].map((r) => r.map(csvEscape).join(",")).join("\n") + "\n";
 
   return new NextResponse(csv, {
     headers: {

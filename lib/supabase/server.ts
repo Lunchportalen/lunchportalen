@@ -3,25 +3,19 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-
-function mustEnv(name: string) {
-  const v = String(process.env[name] ?? "").trim();
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+import { getSupabasePublicConfig } from "@/lib/config/env";
 
 /**
  * ✅ Enterprise: SSR auth via httpOnly cookies (single truth)
  * - Reads cookies from Next headers()
  * - Writes cookies back via setAll()
+ * - Fails fast with clear error if Supabase env is missing.
  */
 export async function supabaseServer() {
   const cookieStore = await cookies();
+  const { url, anonKey } = getSupabasePublicConfig();
 
-  const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anon = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-
-  return createServerClient(url, anon, {
+  return createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -39,3 +33,4 @@ export async function supabaseServer() {
     },
   });
 }
+

@@ -77,7 +77,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   return (
     <PortalProviders>
       <main className="min-h-[100svh] w-full lp-page">
-        <div className="mx-auto w-full max-w-[1100px] px-4 pb-10 pt-4 md:px-6 md:pt-6">{children}</div>
+        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4 md:px-6 md:pt-6">{children}</div>
       </main>
     </PortalProviders>
   );

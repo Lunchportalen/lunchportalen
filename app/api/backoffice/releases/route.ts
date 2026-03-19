@@ -1,4 +1,4 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { createRelease, listReleases } from "@/lib/backoffice/content/releasesRepo";
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
     const list = await listReleases(supabase as any, env);
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, releases: list }, 200);
+    return jsonOk(ctx.rid, { releases: list }, 200);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, message, 500, "SERVER_ERROR", { detail: String(e) });
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
     const release = await createRelease(supabase as any, { name, environment, publish_at, createdBy: ctx.scope?.email ?? null });
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, release }, 200);
+    return jsonOk(ctx.rid, { release }, 200);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, message, 500, "SERVER_ERROR", { detail: String(e) });

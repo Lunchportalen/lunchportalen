@@ -75,7 +75,7 @@ export default function ActionMenu({ items }: { items: ActionMenuItem[] }) {
         onClick={() => setOpen((v) => !v)}
         className={cx(
           "inline-flex h-9 w-9 items-center justify-center rounded-full",
-          "bg-white text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] transition",
+          "lp-motion-btn bg-white text-neutral-900 ring-1 ring-[rgb(var(--lp-border))]",
           "hover:bg-black/5"
         )}
       >

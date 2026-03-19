@@ -6,6 +6,7 @@ export const revalidate = 0;
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isAfterCutoff0800, osloTodayISODate } from "@/lib/date/oslo";
+import { validateSystemRuntimeEnv } from "@/lib/env/system";
 
 function versionFromEnv() {
   return (
@@ -29,6 +30,8 @@ export async function GET() {
   let profilesOk = false;
   let sanityOk = false;
   let failureRid: string | null = null;
+  const envReport = validateSystemRuntimeEnv();
+  const envOk = envReport.ok;
 
   try {
     const sb = supabaseAdmin();
@@ -59,24 +62,44 @@ export async function GET() {
     sanityOk = false;
   }
 
-  const ok = Boolean(appOk && supabaseOk && dbSchemaOk && sanityOk);
+  const supabaseHealthy = Boolean(supabaseOk && dbSchemaOk);
+  const sanityHealthy = Boolean(sanityOk);
+  const envHealthy = Boolean(envOk);
+
+  const allHealthy = Boolean(appOk && supabaseHealthy && sanityHealthy && envHealthy);
+  const ok = allHealthy;
   if (!ok) failureRid = makeRid();
+
+  // Operational truth: ok | degraded | failed. Missing critical deps (supabase, env) → failed; optional (sanity) down → degraded.
+  const summaryStatus: "ok" | "degraded" | "failed" = allHealthy
+    ? "ok"
+    : supabaseHealthy && envHealthy
+      ? "degraded"
+      : "failed";
 
   const body = {
     ok,
     ts,
     version,
     ...(failureRid ? { rid: failureRid } : {}),
+    summary: {
+      status: summaryStatus,
+      supabase: supabaseHealthy ? "ok" : "failed",
+      sanity: sanityHealthy ? "ok" : "degraded",
+      env: envHealthy ? "ok" : "failed",
+      timestamp: ts,
+    },
     checks: {
       app: { ok: appOk },
       supabase: { ok: supabaseOk },
       db_schema: { ok: dbSchemaOk, orders: { ok: ordersOk }, profiles: { ok: profilesOk } },
       sanity: { ok: sanityOk, cutoff_helpers: { ok: sanityOk } },
+      env: envReport,
     },
   };
 
   if (!ok) {
-    return jsonErr(rid, "Health check failed.", 503, { code: "HEALTH_FAILED", detail: body });
+    return jsonErr(rid, "Health check failed.", 503, "HEALTH_FAILED", body);
   }
 
   return jsonOk(rid, body, 200);

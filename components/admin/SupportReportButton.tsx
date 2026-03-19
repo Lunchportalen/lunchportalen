@@ -97,7 +97,7 @@ export default function SupportReportButton({
         disabled={isSending}
         className={
           buttonClassName ||
-          "lp-btn lp-btn--secondary min-h-[44px] border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-2 text-sm font-semibold"
+          "lp-btn lp-btn--secondary min-h-11 border border-[rgb(var(--lp-border))] bg-white/70 px-4 py-2 text-sm font-semibold"
         }
       >
         {isSending ? "Sender..." : label}

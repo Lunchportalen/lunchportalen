@@ -1,4 +1,4 @@
-﻿-- supabase/migrations/20260218_enterprise_registration_agreement_order_guards.sql
+-- supabase/migrations/20260218_enterprise_registration_agreement_order_guards.sql
 -- A+B+C enterprise-safe hardening:
 -- A) Registration factual record + idempotent orgnr flow
 -- B) Agreement lifecycle RPC (PENDING -> ACTIVE) with DB-level uniqueness
@@ -17,6 +17,15 @@ $$;
 do $$
 begin
   create type public.agreement_status as enum ('PENDING', 'ACTIVE', 'TERMINATED');
+exception
+  when duplicate_object then null;
+end
+$$;
+
+-- Ensure TERMINATED exists for step1_4 assertion (bootstrap may have created PAUSED/CLOSED only).
+do $$
+begin
+  alter type public.agreement_status add value if not exists 'TERMINATED';
 exception
   when duplicate_object then null;
 end

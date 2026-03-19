@@ -1,3 +1,4 @@
+# Release gate: npm run ci:critical (docs/RELEASE_GATE.md). This workflow adds PROOF/audit logging. All steps blocking.
 name: CI Enterprise
 
 on:
@@ -105,6 +106,8 @@ jobs:
       # ✅ Enterprise gate (explicit, deterministic)
       - name: Enterprise gate (RC, explicit) - pre-audit
         shell: bash
+        env:
+          NODE_ENV: test
         run: |
           set -euo pipefail
 
@@ -117,8 +120,8 @@ jobs:
           echo "==> tenant tests"
           npm run test:tenant
 
-          echo "==> lint:ci (non-blocking)"
-          npm run lint:ci
+          echo "==> lint"
+          npm run lint
 
           echo "==> audit:api (RC_MODE must be true)"
           node -e "console.log('[CI AUDIT ENV]', { RC_MODE: process.env.RC_MODE, CI_MODE: process.env.CI_MODE, CI: process.env.CI });"
@@ -150,5 +153,6 @@ jobs:
           echo "==> agents:check"
           npm run agents:check
 
+          # Required gate: production build must pass.
           echo "==> build:enterprise"
           npm run build:enterprise

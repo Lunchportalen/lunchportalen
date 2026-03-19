@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { logIncident } from "@/lib/observability/incident";
 
 function safeStr(v: any) {
@@ -32,11 +32,10 @@ function isMissingSchema(err: any) {
 export async function GET(req: NextRequest): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
 
-  const s: any = await scopeOr401(req);
-  if (!s?.ok) return s.res ?? s.response;
-
-  const a = s.ctx;
-  const deny = requireRoleOr403(a, "api.superadmin.enterprise.GET", ["superadmin"]);
+  const s = await scopeOr401(req);
+  if (!s.ok) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, "api.superadmin.enterprise.GET", ["superadmin"]);
   if (deny) return deny;
 
   const url = new URL(req.url);
@@ -57,13 +56,13 @@ export async function GET(req: NextRequest): Promise<Response> {
         await logIncident({
           scope: "enterprise",
           severity: "warn",
-          rid: a.rid,
+          rid: ctx.rid,
           message: "Enterprise schema mangler; returnerer tom liste.",
           meta: { code: res.error.code, message: res.error.message },
         });
-        return jsonOk(a.rid, { items: [], count: 0 });
+        return jsonOk(ctx.rid, { items: [], count: 0 });
       }
-      return jsonErr(a.rid, "Kunne ikke hente konsern.", 500, { code: "DB_ERROR", detail: res.error });
+      return jsonErr(ctx.rid, "Kunne ikke hente konsern.", 500, { code: "DB_ERROR", detail: res.error });
     }
 
     const items = Array.isArray(res.data) ? res.data : [];
@@ -72,11 +71,11 @@ export async function GET(req: NextRequest): Promise<Response> {
       await logIncident({
         scope: "enterprise",
         severity: "info",
-        rid: a.rid,
+        rid: ctx.rid,
         message: "No enterprise groups found (valid empty state)",
       });
     }
-    return jsonOk(a.rid, {
+    return jsonOk(ctx.rid, {
       items: items.map((r: any) => ({
         id: safeStr(r?.id),
         name: safeStr(r?.name),
@@ -86,6 +85,6 @@ export async function GET(req: NextRequest): Promise<Response> {
       count,
     });
   } catch (e: any) {
-    return jsonErr(a.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
+    return jsonErr(ctx.rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
   }
 }

@@ -41,7 +41,7 @@ export default function AdminHeader({ role, userEmail }: AdminHeaderProps) {
   const [logoOk, setLogoOk] = useState(true);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[rgb(var(--lp-border))] lp-glass-nav">
       <div className="lp-container py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -60,7 +60,7 @@ export default function AdminHeader({ role, userEmail }: AdminHeaderProps) {
                   priority
                 />
               ) : (
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
                   LP
                 </span>
               )}
@@ -76,18 +76,18 @@ export default function AdminHeader({ role, userEmail }: AdminHeaderProps) {
           <div className="flex items-center gap-2 text-xs text-[rgb(var(--lp-muted))]">
             <Link
               href={ADMIN_DASHBOARD_HREF}
-              className="lp-btn lp-btn--ghost min-h-[36px] border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold"
+              className="lp-btn lp-btn--ghost min-h-9 border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold"
             >
               Til dashbord
             </Link>
             <span className="hidden whitespace-nowrap sm:inline">Cut-off 08:00 (Europe/Oslo)</span>
-            <Badge variant="outline" className="text-[11px]">
+            <Badge variant="outline" className="text-xs">
               {roleLabel}
             </Badge>
-            {userEmail ? <span className="hidden text-[11px] sm:inline">{userEmail}</span> : null}
+            {userEmail ? <span className="hidden text-xs sm:inline">{userEmail}</span> : null}
             <Link
               href="/logout"
-              className="lp-btn lp-btn--ghost min-h-[36px] border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold"
+              className="lp-btn lp-btn--ghost min-h-9 border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold"
             >
               Logg ut
             </Link>

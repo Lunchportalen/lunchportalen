@@ -54,6 +54,7 @@ export function isAIPatchV1(value: unknown): value is AIPatchV1 {
   return true;
 }
 
+/** Validates patch against current body; ensures all target block ids and indices exist before apply. */
 export function validateAIPatchV1(
   patch: AIPatchV1,
   body: BlockList

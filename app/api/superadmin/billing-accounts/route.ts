@@ -20,14 +20,9 @@ function isUuid(v: any) {
 
 export async function POST(req: Request) {
   const rid = makeRid();
-  const { supabaseServer } = await import("@/lib/supabase/server");
-  const supabase = await supabaseServer();
-
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonError(rid, 401, "NOT_AUTHENTICATED", "Ikke innlogget");
-
-  const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return jsonError(rid, 403, "FORBIDDEN", "Kun superadmin");
+  const { requireRole } = await import("@/lib/auth/requireRole");
+  const guard = await requireRole(["superadmin"]);
+  if (!guard.ok) return jsonError(rid, guard.status ?? 403, "FORBIDDEN", guard.error ?? "Ingen tilgang.");
 
   const body = await req.json().catch(() => null);
   const company_id = body?.company_id;
@@ -35,8 +30,10 @@ export async function POST(req: Request) {
 
   if (!isUuid(company_id)) return jsonError(rid, 400, "BAD_COMPANY_ID", "company_id må være UUID");
 
-  // Upsert
-  const { error } = await supabase.from("company_billing_accounts").upsert(
+  // Upsert (service role; superadmin-only route, cross-tenant table)
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const admin = supabaseAdmin();
+  const { error } = await admin.from("company_billing_accounts").upsert(
     {
       company_id,
       tripletex_customer_id,
@@ -45,6 +42,18 @@ export async function POST(req: Request) {
   );
 
   if (error) return jsonError(rid, 500, "UPSERT_FAILED", "Kunne ikke lagre mapping", error);
+
+  const { auditSuperadmin } = await import("@/lib/audit/actions");
+  await auditSuperadmin({
+    actor_user_id: guard.userId,
+    action: "billing_account.upsert",
+    company_id,
+    target_type: "company_billing_account",
+    target_id: company_id,
+    target_label: `company=${company_id}`,
+    after: { company_id, tripletex_customer_id },
+    meta: { rid },
+  });
 
   return jsonOk(rid, { ok: true }, 200);
 }

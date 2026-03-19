@@ -8,11 +8,29 @@ import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function clampInt(v: unknown, min: number, max: number, fallback: number) {
   const n = Number(v);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+async function logCronRun(
+  payload: { job: "outbox"; status: "ok" | "error"; rid: string; detail?: string | null; meta?: Record<string, any> }
+) {
+  try {
+    const admin: any = supabaseAdmin();
+    await admin.from("cron_runs").insert({
+      job: payload.job,
+      status: payload.status,
+      rid: payload.rid,
+      detail: payload.detail ?? null,
+      meta: payload.meta ?? {},
+    });
+  } catch {
+    // Observability-only; never block cron on cron_runs failure.
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -45,6 +63,24 @@ export async function POST(req: NextRequest) {
       timeBudgetMs,
     });
 
+    void logCronRun({
+      job: "outbox",
+      status: "ok",
+      rid,
+      meta: {
+        batchSize,
+        timeBudgetMs,
+        staleMinutes,
+        processed: result.processed,
+        sent: result.sent,
+        failed: result.failed,
+        failedPermanent: result.failedPermanent,
+        timedOut: result.timedOut,
+        resetStale: result.resetStale,
+        maxAttempts: result.maxAttempts,
+      },
+    });
+
     return jsonOk(
       rid,
       {
@@ -62,9 +98,18 @@ export async function POST(req: NextRequest) {
       200
     );
   } catch (e: any) {
+    const message = String(e?.message ?? e);
+
+    void logCronRun({
+      job: "outbox",
+      status: "error",
+      rid,
+      detail: message,
+    });
+
     return jsonErr(rid, "Outbox processing feilet.", 500, {
       code: "outbox_failed",
-      detail: { message: String(e?.message ?? e) },
+      detail: { message },
     });
   }
 }

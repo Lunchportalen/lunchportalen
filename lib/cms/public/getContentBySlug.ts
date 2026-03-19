@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server-only: resolve CMS page + variant body by slug for public rendering.
  */
 export type ContentBySlugResult = {
@@ -16,18 +16,20 @@ export async function getContentBySlug(slug: string): Promise<ContentBySlugResul
   const supabase = supabaseAdmin();
   const { data: page, error: pageError } = await supabase
     .from("content_pages")
-    .select("id, slug, title")
+    .select("id, slug, title, status")
     .eq("slug", normalized)
+    .eq("status", "published")
     .maybeSingle();
   if (pageError || !page?.id) return null;
+  // Public route shows published content only: prod variant for default locale.
   const { data: variant, error: variantError } = await supabase
     .from("content_page_variants")
     .select("id, body")
     .eq("page_id", page.id)
-    .order("id", { ascending: true })
-    .limit(1)
+    .eq("locale", "nb")
+    .eq("environment", "prod")
     .maybeSingle();
-  if (variantError) return null;
-  const body = variant?.body ?? null;
+  if (variantError || !variant) return null;
+  const body = variant.body ?? null;
   return { pageId: page.id, slug: String(page.slug ?? normalized), title: page.title ?? null, body };
 }

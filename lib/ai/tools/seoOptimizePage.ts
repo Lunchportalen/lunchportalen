@@ -1,11 +1,12 @@
 /**
  * Phase 30: SEO/AEO rules engine – produces optional AIPatchV1 + metaSuggestion.
  * Deterministic: meta title/description suggestions, FAQ richText insert, CTA clarity.
- * Uses canonical newBlockId(); ops <= 20.
+ * Uses page-analysis engine (lib/seo/pageAnalysis) for content signals; ops <= 20.
  */
 
 import type { AIPatchV1 } from "@/lib/cms/model/aiPatch";
 import { newBlockId } from "@/lib/cms/model/blockId";
+import { analyzePageForSeo } from "@/lib/seo/pageAnalysis";
 
 export type SeoOptimizeInput = {
   locale: string;
@@ -19,7 +20,7 @@ export type SeoOptimizeInput = {
 
 export type SeoOptimizeContext = {
   blocks: Array<{ id: string; type: string; data?: Record<string, unknown> }>;
-  meta?: { description?: string };
+  meta?: Record<string, unknown>;
 };
 
 export type SeoOptimizeStats = {
@@ -31,15 +32,6 @@ export type SeoOptimizeStats = {
 
 const FAQ_HEADING_NB = "Spørsmål og svar";
 const FAQ_HEADING_EN = "FAQ";
-
-function hasFaqBlock(blocks: SeoOptimizeContext["blocks"], locale: string): boolean {
-  const needle = locale === "en" ? FAQ_HEADING_EN : FAQ_HEADING_NB;
-  return blocks.some((b) => {
-    if (b.type !== "richText" || !b.data) return false;
-    const h = b.data.heading ?? b.data.title;
-    return typeof h === "string" && h.trim().toLowerCase() === needle.toLowerCase();
-  });
-}
 
 function findInsertIndex(blocks: SeoOptimizeContext["blocks"]): number {
   const firstRich = blocks.findIndex((b) => b.type === "richText");
@@ -93,8 +85,13 @@ export function seoOptimizeToSuggestion(args: {
   const brand = (input.brand || "Lunchportalen").trim();
   const goal = input.goal === "info" || input.goal === "signup" ? input.goal : "lead";
   const blocks = context.blocks.slice(0, 100);
-  const metaDesc = context.meta?.description;
-  const pageTitle = input.pageTitle?.trim() ?? "";
+  const analysis = analyzePageForSeo({
+    blocks: context.blocks,
+    meta: context.meta,
+    pageTitle: input.pageTitle,
+  });
+  const metaDesc = analysis.description;
+  const pageTitle = (input.pageTitle?.trim() ?? analysis.title) || "";
 
   const stats: SeoOptimizeStats = {
     blocksScanned: blocks.length,
@@ -120,7 +117,7 @@ export function seoOptimizeToSuggestion(args: {
     stats.changesProposed++;
   }
 
-  if (!hasFaqBlock(blocks, locale) && ops.length < MAX_OPS) {
+  if (!analysis.hasFaq && ops.length < MAX_OPS) {
     const idx = findInsertIndex(blocks);
     const heading = locale === "en" ? FAQ_HEADING_EN : FAQ_HEADING_NB;
     const id = newBlockId();

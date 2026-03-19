@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Alternativ til kantine – kontroll uten kjøkkeninvestering",
@@ -298,7 +299,9 @@ export default function Page() {
               <details className="lp-faq-item" key={x.q}>
                 <summary className="lp-faq-q">
                   <span>{x.q}</span>
-                  <span className="lp-faq-icon" aria-hidden="true" />
+                  <span className="inline-flex shrink-0">
+                    <Icon name="chevronDown" size="sm" className="lp-faq-chevron" />
+                  </span>
                 </summary>
                 <div className="lp-faq-a">{x.a}</div>
               </details>

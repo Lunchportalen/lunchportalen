@@ -141,15 +141,15 @@ function metricValue(value: number | null, loading: boolean) {
 
 function chipBase(active: boolean) {
   return [
-    "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold ring-1 transition",
+    "lp-motion-btn inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold ring-1",
     active
       ? "bg-neutral-900 text-white ring-neutral-900"
-      : "bg-white/70 text-neutral-800 ring-[rgb(var(--lp-border))] hover:bg-white",
+      : "bg-glass-medium text-neutral-800 ring-[rgb(var(--lp-border))] hover:bg-white",
   ].join(" ");
 }
 
 function ghostBtn() {
-  return "rounded-lg bg-transparent px-3 py-2 text-xs font-extrabold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] hover:bg-black/5 transition";
+  return "lp-motion-btn rounded-lg bg-transparent px-3 py-2 text-xs font-extrabold text-neutral-900 ring-1 ring-[rgb(var(--lp-border))] hover:bg-black/5";
 }
 
 /* =========================
@@ -415,6 +415,7 @@ export default function SuperadminClient({
     if (qq) usp.set("q", qq);
     const st = statusParam(filter);
     if (st) usp.set("status", st);
+    if (filter === "all") usp.set("includeClosed", "1");
     usp.set("limit", String(PAGE_LIMIT));
 
     try {
@@ -436,10 +437,15 @@ export default function SuperadminClient({
       }
 
       clearDegraded();
-      const okJson = json as CompaniesListOk;
-
-      setCompanies((okJson.items || []).map(normalizeCompanyRow));
-      setCursor(okJson.nextCursor ?? null);
+      // API returns standard envelope { ok, rid, data: { items, page, totalPages, ... } }
+      const payload = (json as any)?.data ?? json;
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      setCompanies(items.map(normalizeCompanyRow));
+      const page = Number(payload?.page);
+      const totalPages = Number(payload?.totalPages);
+      const nextPage =
+        Number.isFinite(page) && Number.isFinite(totalPages) && page < totalPages ? String(page + 1) : null;
+      setCursor(nextPage);
 
       loadStats().catch(() => {});
     } catch (err) {
@@ -463,8 +469,9 @@ export default function SuperadminClient({
     if (qq) usp.set("q", qq);
     const st = statusParam(filter);
     if (st) usp.set("status", st);
+    if (filter === "all") usp.set("includeClosed", "1");
     usp.set("limit", String(PAGE_LIMIT));
-    usp.set("cursor", cursor);
+    usp.set("page", cursor);
 
     try {
       const res = await fetch(`/api/superadmin/companies?${usp.toString()}`, {
@@ -481,8 +488,9 @@ export default function SuperadminClient({
       }
 
       clearDegraded();
-      const okJson = json as CompaniesListOk;
-      const incoming = (okJson.items || []).map(normalizeCompanyRow);
+      const payload = (json as any)?.data ?? json;
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const incoming = items.map(normalizeCompanyRow);
 
       setCompanies((prev) => {
         const seen = new Set(prev.map((x) => x.id));
@@ -490,7 +498,11 @@ export default function SuperadminClient({
         return prev.concat(add);
       });
 
-      setCursor(okJson.nextCursor ?? null);
+      const page = Number(payload?.page);
+      const totalPages = Number(payload?.totalPages);
+      const nextPage =
+        Number.isFinite(page) && Number.isFinite(totalPages) && page < totalPages ? String(page + 1) : null;
+      setCursor(nextPage);
     } catch (err) {
       if (!isAbort(err)) {
         markDegraded(null);
@@ -577,7 +589,7 @@ export default function SuperadminClient({
       />
 
       {effectiveSystemState === "DEGRADED" && (
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-neutral-700">
+        <div className="lp-glass-card rounded-card p-4 text-sm text-neutral-700">
           <div className="font-semibold text-neutral-900">System i degraded mode</div>
           <div className="mt-1">
             Statistikk kan være midlertidig utilgjengelig, men firmalisten fungerer som normalt.
@@ -589,7 +601,7 @@ export default function SuperadminClient({
       )}
 
       {/* SEARCH + FILTERS */}
-      <div className="mt-4 rounded-2xl bg-white/60 p-4 ring-1 ring-[rgb(var(--lp-border))] backdrop-blur">
+      <div className="lp-glass-card mt-4 rounded-card p-4">
         <div className="flex flex-col gap-3">
           <div>
             <div className="text-xs font-extrabold tracking-wide text-neutral-600">SØK FIRMA</div>
@@ -651,7 +663,7 @@ export default function SuperadminClient({
                 disabled={!cursor || loadingMore || loadingList}
                 onClick={loadMore}
                 className={[
-                  "rounded-lg px-4 py-2 text-xs font-extrabold ring-1 transition",
+                  "lp-motion-btn rounded-lg px-4 py-2 text-xs font-extrabold ring-1",
                   "disabled:cursor-not-allowed disabled:opacity-60",
                   "bg-white text-neutral-900 ring-[rgb(var(--lp-border))] hover:bg-black/5",
                 ].join(" ")}
@@ -694,7 +706,7 @@ export default function SuperadminClient({
               ) : (
                 <>
                   {visible.map((c) => (
-                    <tr key={c.id} className="border-b border-[rgb(var(--lp-border))] hover:bg-neutral-50/60">
+                    <tr key={c.id} className="lp-motion-row border-b border-[rgb(var(--lp-border))] hover:bg-[color:var(--lp-surface-alt)]">
                       <td className="px-4 py-3">
                         <div className="font-extrabold text-neutral-950">{c.name}</div>
                         <div className="mt-0.5 font-mono text-xs text-neutral-500">{c.id}</div>

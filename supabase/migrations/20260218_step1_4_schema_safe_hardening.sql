@@ -1,4 +1,4 @@
-﻿-- supabase/migrations/20260218_step1_4_schema_safe_hardening.sql
+-- supabase/migrations/20260218_step1_4_schema_safe_hardening.sql
 -- Purpose:
 -- - Schema-safe hardening for companies/agreements/outbox
 -- - Deterministic, fail-closed RPC for company registration + agreement approval
@@ -140,7 +140,7 @@ begin
       and t.typname = 'agreement_status'
       and e.enumlabel in ('PENDING','ACTIVE','TERMINATED')
     group by t.typname
-    having count(distinct e.enumlabel) = 3
+    having count(distinct e.enumlabel) >= 3
   ) then
     raise exception 'enum public.agreement_status must include PENDING, ACTIVE, TERMINATED';
   end if;

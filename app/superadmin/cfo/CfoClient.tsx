@@ -114,7 +114,7 @@ export default function CfoClient() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+          className="lp-motion-btn rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {loading ? "Oppdaterer..." : "Oppdater"}
         </button>

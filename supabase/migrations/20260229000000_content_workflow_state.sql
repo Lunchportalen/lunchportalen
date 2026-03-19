@@ -3,7 +3,7 @@
 create table if not exists public.content_pages ( id uuid primary key default gen_random_uuid() );
 create table if not exists public.content_page_variants ( id uuid primary key default gen_random_uuid(), page_id uuid references public.content_pages(id) on delete cascade );
 
-create table public.content_workflow_state (
+create table if not exists public.content_workflow_state (
   id uuid primary key default gen_random_uuid(),
   page_id uuid not null references public.content_pages(id) on delete cascade,
   variant_id uuid not null references public.content_page_variants(id) on delete cascade,
@@ -16,12 +16,14 @@ create table public.content_workflow_state (
   unique(variant_id, environment, locale)
 );
 
-create index idx_workflow_variant on public.content_workflow_state (variant_id);
-create index idx_workflow_env_state on public.content_workflow_state (environment, state);
+create index if not exists idx_workflow_variant on public.content_workflow_state (variant_id);
+create index if not exists idx_workflow_env_state on public.content_workflow_state (environment, state);
 
 alter table public.content_workflow_state enable row level security;
+drop policy if exists content_workflow_state_select_superadmin on public.content_workflow_state;
 create policy content_workflow_state_select_superadmin on public.content_workflow_state for select
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'superadmin'));
+drop policy if exists content_workflow_state_all_superadmin on public.content_workflow_state;
 create policy content_workflow_state_all_superadmin on public.content_workflow_state for all
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'superadmin'));
 revoke all on public.content_workflow_state from anon, authenticated;

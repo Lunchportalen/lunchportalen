@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import RelatedLinks from "@/components/seo/RelatedLinks";
+import { Icon } from "@/components/ui/Icon";
 import { organizationJsonLd, webPageJsonLd } from "@/lib/seo/jsonld";
 import { canonicalForPath } from "@/lib/seo/site";
 
@@ -58,54 +59,6 @@ function faqJsonLd() {
       acceptedAnswer: { "@type": "Answer", text: x.a },
     })),
   });
-}
-
-function IconCheck() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M20 6L9 17l-5-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function IconClock() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-      />
-      <path
-        d="M12 6v6l4 2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function IconShield() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M12 2l8 4v6c0 5-3.5 9.7-8 10-4.5-.3-8-5-8-10V6l8-4Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 export default function HvordanDetFungererPage() {
@@ -215,13 +168,13 @@ export default function HvordanDetFungererPage() {
 
               <div className="lp-proof" style={{ marginTop: 14 }} aria-label="System proof">
                 <span className="lp-proof-chip">
-                  <IconCheck /> LAGRET: 07:42
+                  <Icon name="success" size="md" /> LAGRET: 07:42
                 </span>
                 <span className="lp-proof-chip">
-                  <IconClock /> CUTOFF: 08:00
+                  <Icon name="clock" size="md" /> CUTOFF: 08:00
                 </span>
                 <span className="lp-proof-chip">
-                  <IconShield /> STATUS: ACTIVE
+                  <Icon name="shield" size="md" /> STATUS: ACTIVE
                 </span>
                 <span className="lp-proof-chip lp-proof-chip--rid">RID: 8F3K…</span>
               </div>
@@ -558,10 +511,10 @@ export default function HvordanDetFungererPage() {
               </p>
               <div className="lp-proof" style={{ marginTop: 12 }}>
                 <span className="lp-proof-chip">
-                  <IconClock /> Cut-off: 08:00
+                  <Icon name="clock" size="md" /> Cut-off: 08:00
                 </span>
                 <span className="lp-proof-chip">
-                  <IconCheck /> Verifisert lagring
+                  <Icon name="success" size="md" /> Verifisert lagring
                 </span>
               </div>
             </div>
@@ -600,7 +553,9 @@ export default function HvordanDetFungererPage() {
               <details className="lp-faq-item" key={x.q}>
                 <summary className="lp-faq-q">
                   <span>{x.q}</span>
-                  <span className="lp-faq-icon" aria-hidden="true" />
+                  <span className="inline-flex shrink-0">
+                    <Icon name="chevronDown" size="sm" className="lp-faq-chevron" />
+                  </span>
                 </summary>
                 <div className="lp-faq-a">{x.a}</div>
               </details>

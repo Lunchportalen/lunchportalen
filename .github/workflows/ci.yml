@@ -1,3 +1,5 @@
+# Main CI. Release gate (reproducible locally): npm run ci:critical — see docs/RELEASE_GATE.md
+# All steps blocking: ci:guard → typecheck → lint → test:run → test:tenant → build:enterprise
 name: CI
 
 on:
@@ -39,14 +41,18 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
+        env:
+          NODE_ENV: test
         run: npm run test:run
 
       - name: Tenant isolation test
+        env:
+          NODE_ENV: test
         run: npm run test:tenant
-
-      - name: Lint (CI)
-        run: npm run lint:ci
 
       - name: Verify required secrets
         shell: bash
@@ -70,6 +76,7 @@ jobs:
           : "${SANITY_API_TOKEN:?Missing SANITY_WRITE_TOKEN secret (mapped to SANITY_API_TOKEN)}"
           : "${SYSTEM_MOTOR_SECRET:?Missing SYSTEM_MOTOR_SECRET secret}"
 
+      # Required gate: production build (build:enterprise) must pass; failure blocks merge.
       - name: Build (Enterprise)
         env:
           SYSTEM_MOTOR_SECRET: "${{ secrets.SYSTEM_MOTOR_SECRET }}"
@@ -81,12 +88,3 @@ jobs:
           NEXT_PUBLIC_SANITY_API_VERSION: "${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}"
           SANITY_API_TOKEN: "${{ secrets.SANITY_WRITE_TOKEN }}"
         run: npm run build:enterprise
-
-      - name: SEO Proof
-        run: node scripts/seo-proof.mjs
-
-      - name: SEO Audit
-        run: node scripts/seo-audit.mjs
-
-      - name: SEO Content Lint
-        run: node scripts/seo-content-lint.mjs

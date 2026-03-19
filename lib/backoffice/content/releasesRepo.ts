@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Phase 20: Content releases (batch publish + scheduled). Server-only.
  */
 
@@ -123,6 +123,65 @@ export async function updateReleaseStatus(
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Copy source variant body into the prod variant for the same page/locale.
+ * Ensures public route sees published content after publish.
+ */
+export async function copyVariantBodyToProd(
+  supabase: any,
+  pageId: string,
+  variantId: string,
+  locale: "nb" | "en"
+): Promise<void> {
+  const { data: source, error: fetchErr } = await supabase
+    .from("content_page_variants")
+    .select("body")
+    .eq("id", variantId)
+    .eq("page_id", pageId)
+    .maybeSingle();
+  if (fetchErr) {
+    throw new Error(fetchErr.message ?? "Failed to read source variant for publish");
+  }
+  if (!source) {
+    throw new Error("Source variant not found for publish");
+  }
+  const body = source.body;
+  if (body == null) {
+    throw new Error("Source variant body is null; cannot publish empty content");
+  }
+  const now = new Date().toISOString();
+  const { data: existing, error: existingErr } = await supabase
+    .from("content_page_variants")
+    .select("id")
+    .eq("page_id", pageId)
+    .eq("locale", locale)
+    .eq("environment", "prod")
+    .maybeSingle();
+  if (existingErr) {
+    throw new Error(existingErr.message ?? "Failed to read existing prod variant for publish");
+  }
+  if (existing?.id) {
+    const { error: updateErr } = await supabase
+      .from("content_page_variants")
+      .update({ body, updated_at: now })
+      .eq("id", existing.id);
+    if (updateErr) {
+      throw new Error(updateErr.message ?? "Failed to update prod variant during publish");
+    }
+  } else {
+    const { error: insertErr } = await supabase.from("content_page_variants").insert({
+      page_id: pageId,
+      locale,
+      environment: "prod",
+      body,
+      updated_at: now,
+    });
+    if (insertErr) {
+      throw new Error(insertErr.message ?? "Failed to create prod variant during publish");
+    }
+  }
+}
+
 export async function publishVariant(
   supabase: any,
   pageId: string,
@@ -134,6 +193,7 @@ export async function publishVariant(
   if (env === "staging") return;
   const workflow = await getWorkflow(supabase, variantId, env, locale);
   if (workflow.state !== "approved") throw new Error("Workflow not approved");
+  await copyVariantBodyToProd(supabase, pageId, variantId, locale);
   await resetToDraftAfterPublish(supabase, variantId, pageId, env, locale, actorEmail);
 }
 

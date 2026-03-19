@@ -22,7 +22,7 @@ export default function SystemNav({ active }: { active: SystemSectionId }) {
                 key={id}
                 href={`/system/${id}`}
                 className={[
-                  "block rounded-xl px-3 py-2 text-sm transition",
+                  "lp-motion-btn block rounded-xl px-3 py-2 text-sm",
                   isActive
                     ? "bg-neutral-900 text-white"
                     : "hover:bg-neutral-50 text-neutral-800",

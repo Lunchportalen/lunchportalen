@@ -27,14 +27,14 @@ export default function RegistrationGate({ blocked = false, blockedReason = null
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="lp-btn lp-btn-primary lp-neon min-h-[48px]"
+            className="lp-btn lp-btn-primary lp-neon min-h-12"
           >
             Jeg er firma-admin (skal registrere firma)
           </button>
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="lp-btn lp-btn-ghost min-h-[48px]"
+            className="lp-btn lp-btn-ghost min-h-12"
           >
             Jeg er ansatt (skal logge inn)
           </button>

@@ -9,6 +9,7 @@ import "server-only";
 import { type NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
+import { normalizeCompanyAgreementStatus, type CompanyAgreementStatus } from "@/lib/agreements/companyAgreementStatus";
 import { writeAuditEvent } from "@/lib/audit/write";
 import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -59,7 +60,15 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const company = await admin.from("companies").select("id, name").eq("id", companyId).maybeSingle();
     if (company.error) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "COMPANY_LOOKUP_FAILED", detail: company.error });
 
-    const curStatus = String((cur.data as any).status ?? "").toUpperCase();
+    const curStatusRaw = (cur.data as any).status ?? null;
+    const curStatus = normalizeCompanyAgreementStatus(curStatusRaw);
+
+    if (!curStatus) {
+      return jsonErr(rid, "Avtalen har ukjent status. Kan ikke aktivere.", 409, {
+        code: "INVALID_CURRENT_STATUS",
+        detail: { status: curStatusRaw },
+      });
+    }
 
     // ✅ Idempotent: already ACTIVE
     if (curStatus === "ACTIVE") {
@@ -78,6 +87,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         },
         200
       );
+    }
+
+    const allowedFrom: CompanyAgreementStatus[] = ["PENDING", "PAUSED", "DRAFT"];
+    if (!allowedFrom.includes(curStatus)) {
+      return jsonErr(rid, "Ugyldig overgang. Kan bare aktivere PENDING, PAUSED eller DRAFT-avtaler.", 409, {
+        code: "INVALID_TRANSITION",
+        detail: { from: curStatus, to: "ACTIVE" },
+      });
     }
 
     // Snapshot: eksisterende ACTIVE før vi endrer

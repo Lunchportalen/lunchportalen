@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatDateTimeNO } from "@/lib/date/format";
+import { Container } from "@/components/ui/container";
 
 type CompanyStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
 
@@ -91,7 +92,7 @@ export default function SuperadminMotorClient(props: {
   }, [stats.active, stats.capacity]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6">
+    <Container className="max-w-6xl pb-10 pt-6">
       {/* TOP SYSTEM BAR */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
@@ -109,7 +110,7 @@ export default function SuperadminMotorClient(props: {
           </span>
 
           {props.lastEvent?.label ? (
-            <span className="hidden items-center gap-2 rounded-lg bg-white/60 px-3 py-2 text-xs font-semibold text-neutral-700 ring-1 ring-neutral-200 md:inline-flex">
+            <span className="lp-glass-surface hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-neutral-700 md:inline-flex">
               <span className="opacity-70">Sist:</span>
               <span className="font-extrabold">{props.lastEvent.label}</span>
               <span className="opacity-70">{fmtTs(props.lastEvent.ts)}</span>
@@ -137,7 +138,7 @@ export default function SuperadminMotorClient(props: {
       </div>
 
       {/* PRIMARY METRIC */}
-      <div className="mt-6 rounded-2xl bg-white/70 p-5 ring-1 ring-neutral-200 backdrop-blur">
+      <div className="lp-glass-card mt-6 rounded-card p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-xs font-extrabold tracking-wide text-neutral-600">PRIMARY METRIC</div>
@@ -154,7 +155,7 @@ export default function SuperadminMotorClient(props: {
       </div>
 
       {/* ACTION LANE */}
-      <div className="mt-4 rounded-2xl bg-white/60 p-4 ring-1 ring-neutral-200 backdrop-blur">
+      <div className="lp-glass-card mt-4 rounded-card p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex-1">
             <div className="text-xs font-extrabold tracking-wide text-neutral-600">SEARCH FIRMS</div>
@@ -256,7 +257,7 @@ export default function SuperadminMotorClient(props: {
       </div>
 
       {/* SIGNALS (Audit lite) */}
-      <div className="mt-4 rounded-2xl bg-white/60 p-4 ring-1 ring-neutral-200 backdrop-blur">
+      <div className="lp-glass-card mt-4 rounded-card p-4">
         <div className="text-xs font-extrabold tracking-wide text-neutral-600">SIGNALS</div>
         <div className="text-sm font-bold text-neutral-900">LAST 24H</div>
 
@@ -266,7 +267,7 @@ export default function SuperadminMotorClient(props: {
           <Signal label="Firms closed" value={String(stats.closed)} />
         </div>
       </div>
-    </div>
+    </Container>
   );
 }
 
@@ -290,7 +291,7 @@ function FilterPill(props: { value: string; active: boolean; onClick: () => void
       type="button"
       onClick={props.onClick}
       className={[
-        "inline-flex items-center rounded-lg px-3 py-2 text-xs font-extrabold ring-1 transition",
+        "lp-motion-btn inline-flex items-center rounded-lg px-3 py-2 text-xs font-extrabold ring-1",
         props.active
           ? "bg-neutral-900 text-white ring-neutral-900"
           : "bg-white text-neutral-800 ring-neutral-200 hover:bg-neutral-50",

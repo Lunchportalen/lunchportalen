@@ -8,12 +8,12 @@ export default function Hero() {
       <div className="grid items-start gap-7 md:grid-cols-[1.15fr_0.85fr] md:gap-10">
         {/* Left */}
         <div className="relative z-10 min-w-0">
-          <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl md:leading-[1.05]">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl md:leading-[1.05]">
             Firmalunsj med kontroll.
             <span className="block text-white/90">Ingen unntak.</span>
           </h1>
 
-          <p className="mt-3 text-base leading-relaxed text-white/85 drop-shadow-[0_2px_16px_rgba(0,0,0,0.45)] md:mt-4 md:text-lg">
+          <p className="font-body mt-3 text-base leading-relaxed text-white/85 drop-shadow-[0_2px_16px_rgba(0,0,0,0.45)] md:mt-4 md:text-lg">
             Én sannhetskilde for lunsjlevering, avtaler og historikk.
             Cut-off kl. 08:00 gir forutsigbar drift – uten administrativ støy.
           </p>
@@ -23,29 +23,21 @@ export default function Hero() {
               Se hvordan det fungerer
             </Link>
 
-            <Link
-              href="/registrering"
-              className="lp-btn lp-btn-ghost"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                borderColor: "rgba(255,255,255,0.26)",
-                color: "rgba(255,255,255,0.95)",
-              }}
-            >
-              Registrer firma →
-            </Link>
+            <Link href="/registrering" className="lp-btn lp-btn-ghost">
+                Registrer firma
+              </Link>
           </div>
 
-          <div className="mt-2 text-xs text-white/80">
+          <div className="font-body mt-2 text-xs text-white/80">
             Én sannhetskilde · Cut-off kl. 08:00 · Ingen manuelle unntak
           </div>
         </div>
 
         {/* Right */}
         <div className="w-full md:flex md:justify-end">
-          <div className="relative w-full max-w-[520px] md:max-w-[480px]">
-            <div className="relative aspect-[16/11] w-full rounded-[22px] ring-1 ring-white/20">
-              <div className="absolute inset-0 rounded-[22px] overflow-clip">
+          <div className="relative w-full max-w-lg md:max-w-md">
+            <div className="relative aspect-[16/11] w-full rounded-3xl ring-1 ring-white/20">
+              <div className="absolute inset-0 rounded-3xl overflow-clip">
                 <Image
                   src="/forsidebilder/lunchportalen-mobil-bestilling.png"
                   alt="Mobilbestilling av firmalunsj i Lunchportalen"
@@ -57,10 +49,19 @@ export default function Hero() {
               </div>
             </div>
 
-            <div className="pointer-events-none absolute -inset-3 -z-10 rounded-[26px] bg-black/10 blur-xl" />
+            <div className="pointer-events-none absolute -inset-3 -z-10 rounded-3xl bg-black/10 blur-xl" />
           </div>
         </div>
       </div>
     </section>
   );
 }
+
+
+
+
+
+
+
+
+

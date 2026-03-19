@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
       return jsonErr(ctx.rid, "Kunne ikke hente AI-forslag.", 500, "AI_SUGGESTIONS_LIST_FAILED", error);
     }
 
-    const items = (data ?? []).map((row: any) => ({
+    const rows = Array.isArray(data) ? data : [];
+    const items = rows.map((row: any) => ({
       id: row.id as string,
       tool: row.tool as string,
       status: row.status as string,

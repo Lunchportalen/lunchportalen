@@ -1,19 +1,12 @@
-﻿import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
-
-function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: string } }): Response {
-  if (s?.response instanceof Response) return s.response;
-  if (s?.res instanceof Response) return s.res;
-  const rid = s?.ctx?.rid ?? "rid_missing";
-  return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHORIZED");
-}
 
 export async function GET(request: NextRequest) {
   const s = await scopeOr401(request);
-  if (!s?.ok) return denyResponse(s);
-  const { ctx } = s;
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
   const roleDeny = requireRoleOr403(ctx, ["superadmin"]);
   if (roleDeny) return roleDeny;
 

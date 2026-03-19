@@ -1,6 +1,6 @@
-# Editor-AI metrics (trinn 1)
+# Editor-AI metrics
 
-Kort dokumentasjon av client-side editor-AI-eventer for beregning av **AI Activation Rate** og **AI Assisted Save Rate**. Ingen backend eller DB i trinn 1; kun best-effort logging (f.eks. `console.log`).
+Kort dokumentasjon av client-side editor-AI-eventer for beregning av **AI Activation Rate** og **AI Assisted Save Rate**. **Trinn 2 er aktiv:** eventer sendes til `POST /api/editor-ai/metrics` og lagres i `ai_activity_log`. Ingen stille drop: ved insert-feil returnerer ruten 500 (METRICS_INSERT_FAILED).
 
 ## Eventtyper som logges
 
@@ -28,6 +28,7 @@ Alle eventer har `pageId`, `variantId` (null i trinn 1), `timestamp` og ingen se
 - SEO fra panel → `seo_optimize`; inline (meta-felt) → `seo_inline`
 - Generate sections → `generate_sections`
 - Structured intent fra panel → `structured_intent`; inline hero → `hero_inline`; inline CTA → `cta_inline`
+- CRO: run analysis → `cro_analysis`; apply suggestion → `cro_apply`; dismiss → `cro_dismiss` (same auth gate; see docs/backoffice/CRO_PERMISSIONS.md)
 
 ## Beregning av KPI (senere)
 
@@ -39,24 +40,30 @@ Alle eventer har `pageId`, `variantId` (null i trinn 1), `timestamp` og ingen se
   = antall **ai_save_after_action**  
   ÷ antall **ai_action_triggered**
 
-## Begrensninger i trinn 1
+## Begrensninger (klient)
 
-- Kun client-side, best-effort (f.eks. `console.log`). Ingen serverpersistens.
-- Ingen backend-route, DB eller tredjeparts tracking.
-- Logging blokkerer aldri editoren og kaster ikke i UI.
-- Serverpersistens kan kobles på senere uten å endre kallestedene (samme eventtyper og payload).
+- Logging blokkerer aldri editoren og kaster ikke i UI (logEditorAiEvent er best-effort, never throws).
+- Ved 401/403 eller 500 fra metrics-API vises kun advarsel i dev-console; UI viser ikke feil for metrics.
 
 ---
 
 ## Serverpersistens (trinn 2)
 
-Metrics sendes best-effort til `POST /api/editor-ai/metrics` og lagres i **ai_activity_log**. Ruten bruker samme auth som øvrige backoffice AI-ruter (scopeOr401, requireRoleOr403 superadmin).
+Metrics sendes best-effort til `POST /api/editor-ai/metrics` og lagres i **ai_activity_log**. Ruten bruker scopeOr401 og requireRoleOr403(superadmin | company_admin). CRO-events bruker samme gate; ingen egen CRO-rute.
 
 - **action:** `editor_ai_metric`
 - **tool:** `event.type` (f.eks. `editor_opened`, `ai_action_triggered`, …)
 - **metadata:** kun `{ pageId, variantId, feature, patchPresent, timestamp }` — ingen prompts, forslagstekst eller sideinnhold.
 
-**Validering i route:** Body må være et objekt; `type` og `timestamp` er påkrevd. Valgfrie felter: `pageId`, `variantId`, `feature`, `patchPresent`. `feature` må være en av: `improve_page`, `seo_optimize`, `generate_sections`, `structured_intent`, `seo_inline`, `hero_inline`, `cta_inline` (ellers 400). Payload med flere enn 20 nøkler avvises.
+**Validering i route:** Body må være et objekt; `type` og `timestamp` er påkrevd. Valgfrie felter: `pageId`, `variantId`, `feature`, `patchPresent`. `feature` må være en av de godkjente (bl.a. `improve_page`, `seo_optimize`, `cro_analysis`, `cro_apply`, `cro_dismiss` — se VALID_FEATURES i route). Payload med flere enn 24 nøkler avvises.
+
+**Observability-events (må aksepteres av ruten):** Klienten sender også disse typene; backend må **ikke** avvise dem med 400. Lagre eller logg dem slik at feil ikke forsvinner stille:
+- `ai_error` – feature?, message, kind?
+- `media_error` – message, kind: fetch | upload | alt
+- `builder_warning` – feature: screenshot_builder | page_builder, message, count?
+- `content_error` – message, kind: save | load | parse
+
+Hvis ruten i dag kun godtar «happy path»-typer, utvid valideringen slik at disse typene enten lagres i ai_activity_log (med eget action/tool-format) eller sendes til samme loggkanal. Se `domain/backoffice/ai/metrics/editorAiMetricsTypes.ts` for full union `EditorAiEvent`.
 
 ### AI Activation Rate (SQL)
 
@@ -83,6 +90,11 @@ SELECT
   (SELECT count(*) FROM sessions_with_trigger) AS sessions_with_ai,
   round(100.0 * (SELECT count(*) FROM sessions_with_trigger) / nullif((SELECT count(*) FROM opened), 0), 2) AS activation_rate_pct;
 ```
+
+### AI writes (suggest / apply) — ingen fake success
+
+- **POST /api/backoffice/ai/suggest:** Lagrer forslag i `ai_suggestions` og logger i `ai_activity_log`. Ved feil på insert returnerer ruten **500** (SUGGESTION_INSERT_FAILED eller SUGGESTION_LOG_FAILED). Klienten får da ikke 200 og viser feil; ingen «brukt» uten sporbarhet.
+- **POST /api/backoffice/ai/apply:** Logger apply i `ai_activity_log`. Ved feil returnerer ruten **500** (APPLY_LOG_FAILED). Ingen stille drop av audit.
 
 ### AI Assisted Save Rate (SQL)
 

@@ -11,7 +11,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 
 function tabClass(active: boolean) {
   return [
-    "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ring-1 transition",
+    "lp-motion-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ring-1",
     active
       ? "bg-black text-white ring-black"
       : "bg-white text-[rgb(var(--lp-text))] ring-[rgb(var(--lp-border))] hover:bg-[rgb(var(--lp-surface))]",

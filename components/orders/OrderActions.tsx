@@ -204,7 +204,7 @@ export default function OrderActions() {
             onClick={placeOrder}
             disabled={!canPlace}
             className={[
-              "rounded-xl px-4 py-2 text-sm font-medium ring-1 transition",
+              "lp-motion-btn rounded-xl px-4 py-2 text-sm font-medium ring-1",
               canPlace
                 ? "bg-black text-white ring-black"
                 : "bg-white/60 text-[rgb(var(--lp-muted))] ring-[rgb(var(--lp-border))] opacity-70",
@@ -218,7 +218,7 @@ export default function OrderActions() {
             onClick={cancelOrder}
             disabled={!canCancel}
             className={[
-              "rounded-xl px-4 py-2 text-sm font-medium ring-1 transition",
+              "lp-motion-btn rounded-xl px-4 py-2 text-sm font-medium ring-1",
               canCancel
                 ? "bg-white/60 ring-[rgb(var(--lp-border))] hover:bg-white"
                 : "bg-white/60 text-[rgb(var(--lp-muted))] ring-[rgb(var(--lp-border))] opacity-70",

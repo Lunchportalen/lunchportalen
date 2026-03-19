@@ -295,6 +295,334 @@ function pickMenuForChoice(menu: any, choiceKey: string | null) {
 }
 
 /* =========================================================
+   Data loading helpers (side-effecting)
+========================================================= */
+
+async function loadMenuByDate(getMenuForRange: any, fromISO: string, toISO: string) {
+  const menuItems = await getMenuForRange(fromISO, toISO).catch(() => []);
+  const menuByDate = new Map<string, any>();
+  for (const it of menuItems || []) {
+    const key = menuDateKey(it);
+    if (key) menuByDate.set(key, it);
+  }
+  return menuByDate;
+}
+
+async function loadOrdersByDate(
+  supabaseServer: () => Promise<any>,
+  sc: ReturnType<typeof normalizeScopeIds>,
+  dates: string[],
+  rid: string
+) {
+  const sb = await supabaseServer();
+  const { data: ordersRaw, error: oErr } = await (sb as any)
+    .from("orders")
+    .select("date,status,note,updated_at,created_at,slot,location_id,company_id,user_id")
+    .eq("user_id", sc.user_id)
+    .eq("company_id", sc.company_id)
+    .eq("location_id", sc.location_id)
+    .eq("slot", "lunch")
+    .in("date", dates);
+
+  if (oErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
+
+  const ordersByDate = new Map<string, OrderRow>();
+  for (const o of (ordersRaw ?? []) as OrderRow[]) {
+    const dISO = asDateISO((o as any)?.date);
+    if (!dISO) continue;
+    ordersByDate.set(dISO, o);
+  }
+
+  return ordersByDate;
+}
+
+async function loadDayChoicesByDate(
+  admin: any,
+  sc: ReturnType<typeof normalizeScopeIds>,
+  dates: string[],
+  rid: string
+) {
+  const dayChoicesByDate = new Map<string, DayChoiceRow>();
+  try {
+    const dcBase = (admin as any)
+      .from("day_choices")
+      .select("date,choice_key,note,status,updated_at")
+      .eq("user_id", sc.user_id)
+      .eq("company_id", sc.company_id)
+      .eq("location_id", sc.location_id);
+
+    if (typeof (dcBase as any).in === "function") {
+      const { data: dcRaw0, error: dcErr } = await (dcBase as any).in("date", dates);
+      if (dcErr) {
+        opsLog("window.day_choices.failed", { rid, company_id: sc.company_id, detail: String(dcErr?.message ?? dcErr) });
+      }
+      const dcRaw = (dcRaw0 ?? []) as DayChoiceRow[];
+      for (const r of dcRaw) {
+        const dISO = asDateISO((r as any)?.date);
+        if (!dISO) continue;
+
+        const prev = dayChoicesByDate.get(dISO);
+        const prevT = prev?.updated_at ? new Date(prev.updated_at).getTime() : 0;
+        const nextT = r?.updated_at ? new Date(r.updated_at).getTime() : 0;
+        if (!prev || nextT >= prevT) dayChoicesByDate.set(dISO, r);
+      }
+    } else {
+      opsLog("window.day_choices.skipped", { rid, reason: "query_builder_missing_in()", company_id: sc.company_id });
+    }
+  } catch (e: any) {
+    opsLog("window.day_choices.exception", { rid, company_id: sc.company_id, detail: String(e?.stack || e?.message || e) });
+  }
+
+  return dayChoicesByDate;
+}
+
+/* =========================================================
+   Agreement helpers (side-effecting)
+========================================================= */
+
+async function resolveAgreementState(
+  sc: ReturnType<typeof normalizeScopeIds>,
+  policy: CompanyPolicy,
+  today: string,
+  rid: string
+) {
+  let startDateISO: string | null = null;
+  let deliveryDays: DayKey[] = [];
+  let dayTiers: Record<DayKey, Tier> = {} as any;
+
+  let agreementMessage: string | null = null;
+  let agreementStatus: AgreementStatusOut = "NOT_READY";
+  let agreementRawStatus: string | null = null;
+
+  try {
+    const st = await getCurrentAgreementState({ rid });
+
+    if ((st as any)?.ok === false) {
+      const e = st as any;
+      const msg = String(e?.message ?? "Ingen aktiv avtale.");
+      const err = String(e?.error ?? "AGREEMENT_ERROR");
+      const status = Number(e?.status ?? 500);
+
+      if (status === 403 && err === "PROFILE_MISSING_SCOPE") {
+        return {
+          scopeError: jsonErr(rid, msg, 403, "AGREEMENT_SCOPE_MISMATCH"),
+          agreementStatus,
+          agreementMessage: msg,
+          agreementRawStatus,
+          startDateISO,
+          deliveryDays,
+          dayTiers,
+        } as const;
+      }
+
+      agreementStatus = "MISSING";
+      agreementMessage = msg;
+    } else {
+      const state = st as any;
+
+      const stateCompanyId = String(state.companyId ?? "").trim();
+      const stateLocationId = state.locationId ? String(state.locationId).trim() : "";
+
+      if (stateCompanyId && stateCompanyId !== sc.company_id) {
+        return {
+          scopeError: jsonErr(rid, "Avtalen tilhører et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH"),
+          agreementStatus,
+          agreementMessage,
+          agreementRawStatus,
+          startDateISO,
+          deliveryDays,
+          dayTiers,
+        } as const;
+      }
+      if (sc.location_id && stateLocationId && stateLocationId !== sc.location_id) {
+        return {
+          scopeError: jsonErr(rid, "Avtalen tilhører en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH"),
+          agreementStatus,
+          agreementMessage,
+          agreementRawStatus,
+          startDateISO,
+          deliveryDays,
+          dayTiers,
+        } as const;
+      }
+
+      startDateISO = state.startDate ? String(state.startDate).slice(0, 10) : null;
+      deliveryDays = Array.isArray(state.deliveryDays) ? (state.deliveryDays as DayKey[]) : [];
+      dayTiers = (state.dayTiers ?? {}) as Record<DayKey, Tier>;
+
+      agreementRawStatus = String(state.status ?? "").trim().toUpperCase() || null;
+
+      const startsLater = Boolean(startDateISO && isIsoDate(startDateISO) && startDateISO > today);
+
+      if (policy.status === "PENDING") {
+        agreementStatus = "PENDING_COMPANY";
+        agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
+      } else if (startsLater) {
+        agreementStatus = "STARTS_LATER";
+      } else if (agreementRawStatus === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {
+        agreementStatus = "ACTIVE";
+      } else if (agreementRawStatus === "MISSING") {
+        agreementStatus = "MISSING";
+        agreementMessage = "Ingen aktiv avtale.";
+      } else {
+        agreementStatus = "NOT_READY";
+        agreementMessage = "Ingen aktiv avtale.";
+      }
+
+      if (agreementStatus === "ACTIVE" && state.statusReason === "NO_ACTIVE_AGREEMENT") {
+        agreementMessage = "Avtalegrunnlag er aktivt (dagmap), men avtale-status er ikke ACTIVE.";
+      }
+      if (agreementStatus === "MISSING" && state.statusReason === "MISSING_DAYMAP") {
+        agreementMessage = "Avtale mangler dagskart (daymap).";
+      }
+      if (agreementStatus === "MISSING" && state.statusReason === "MISSING_DELIVERY_DAYS") {
+        agreementMessage = "Avtale mangler leveringsdager.";
+      }
+    }
+  } catch (e: any) {
+    opsLog("window.agreement.exception", { rid, company_id: sc.company_id, detail: String(e?.stack || e?.message || e) });
+    agreementStatus = "NOT_READY";
+    agreementMessage = "Ingen aktiv avtale.";
+  }
+
+  return {
+    scopeError: null,
+    agreementStatus,
+    agreementMessage,
+    agreementRawStatus,
+    startDateISO,
+    deliveryDays,
+    dayTiers,
+  } as const;
+}
+
+async function loadAgreementForChoices(
+  admin: any,
+  sc: ReturnType<typeof normalizeScopeIds>,
+  agreementUsable: boolean
+) {
+  if (!agreementUsable) return null;
+
+  try {
+    const q = (admin as any).from("company_current_agreement").select("*").eq("company_id", sc.company_id);
+    const { data: agreementRow, error } = await (q as any).maybeSingle();
+    if (!error && agreementRow) {
+      const normRes = normalizeAgreement(agreementRow);
+      const unwrapped = unwrapAgreement(normRes);
+      return unwrapped.ok ? unwrapped.agreement : null;
+    }
+  } catch {
+    // ignore, best effort
+  }
+
+  return null;
+}
+
+/* =========================================================
+   Pure day model builder (testable)
+========================================================= */
+
+type WindowCompany = {
+  id: string;
+  name?: string | null;
+  status: CompanyStatusNorm;
+  canEditOrders: boolean;
+  lockReason: CompanyPolicy["lockReason"];
+  paused_reason: string | null;
+  closed_reason: string | null;
+  policy?: string;
+};
+
+type DayContext = {
+  date: string;
+  company: WindowCompany;
+  agreementUsable: boolean;
+  deliveryDays: DayKey[];
+  dayTiers: Record<DayKey, Tier>;
+  ordersByDate: Map<string, OrderRow>;
+  dayChoicesByDate: Map<string, DayChoiceRow>;
+  menuByDate: Map<string, any>;
+  agreementForChoices: any;
+};
+
+export function buildDayModel(ctx: DayContext) {
+  const { date, company, agreementUsable, deliveryDays, dayTiers, ordersByDate, dayChoicesByDate, menuByDate, agreementForChoices } =
+    ctx;
+
+  const dayKey = weekdayKeyFromISO(date);
+
+  const tier: Tier | null = (dayTiers as any)[dayKey] ?? null;
+  const isDeliveryDay = Array.isArray(deliveryDays) ? deliveryDays.includes(dayKey) : false;
+
+  const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
+
+  const agreementChoices = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
+  const allowedChoices: Choice[] = agreementChoices.length ? agreementChoices : isEnabled && tier ? FIXED_CHOICES_BY_TIER[tier] : [];
+
+  const savedOrder = ordersByDate.get(date);
+  const sNorm = statusNorm(savedOrder?.status);
+  const wantsLunch = sNorm === "ACTIVE";
+
+  const dc = dayChoicesByDate.get(date);
+  const dcChoice = dc?.choice_key ? String(dc.choice_key).trim().toLowerCase() : null;
+  const legacyChoice = parseChoiceKeyFromNote(savedOrder?.note ?? null);
+
+  const rawSelected = dcChoice || legacyChoice || null;
+  const selectedOk = rawSelected ? allowedChoices.some((c) => c.key === rawSelected) : false;
+  const safeSelected = selectedOk ? rawSelected : null;
+
+  const dcNote = dc?.note ?? null;
+  const legacyNote = (() => {
+    const n = String(savedOrder?.note ?? "").trim();
+    if (!n) return null;
+    if (/^[a-z0-9_\-]{2,}$/i.test(n) || /choice:[a-z0-9_\-]+/i.test(n)) return null;
+    return n;
+  })();
+
+  const cutoff = cutoffStatusForDate(date);
+  const dateLocked = cutoff === "PAST" || cutoff === "TODAY_LOCKED";
+
+  const lockReason =
+    dateLocked ? "CUTOFF" :
+    !company.canEditOrders ? "COMPANY" :
+    !agreementUsable ? "COMPANY" :
+    null;
+
+  const menu = menuByDate.get(date) ?? null;
+  const picked = pickMenuForChoice(menu, wantsLunch ? safeSelected : null);
+
+  return {
+    date,
+    weekday: dayKey,
+
+    isLocked: dateLocked || !company.canEditOrders || !agreementUsable,
+    isEnabled,
+    lockReason,
+
+    tier,
+    allowedChoices,
+
+    wantsLunch,
+    orderStatus: sNorm === "ACTIVE" ? "ACTIVE" : sNorm === "CANCELLED" ? "CANCELLED" : null,
+    selectedChoiceKey: wantsLunch ? safeSelected : null,
+
+    note: dcNote ?? legacyNote ?? null,
+
+    menuTitle: picked.title ?? null,
+    menuDescription: picked.description ?? null,
+    allergens: (picked.allergens ?? []) as string[],
+
+    lastSavedAt:
+      hhmmFromIso(dc?.updated_at) ??
+      hhmmFromIso(savedOrder?.updated_at) ??
+      hhmmFromIso(savedOrder?.created_at) ??
+      null,
+
+    unit_price: tier ? PRICE_PER_TIER_EX_VAT[tier] : null,
+  };
+}
+
+/* =========================================================
    Route
 ========================================================= */
 
@@ -327,7 +655,7 @@ export async function GET(req: NextRequest) {
     if (polRes.ok === false) return jsonErr(rid, polRes.message, polRes.status ?? 400, polRes.error);
     const policy = polRes.policy;
 
-    const company = {
+    const company: WindowCompany = {
       id: sc.company_id,
       name: policy.name ?? undefined,
       status: policy.status,
@@ -370,235 +698,40 @@ export async function GET(req: NextRequest) {
     const fromISO = dates[0] ?? today;
     const toISO = dates[dates.length - 1] ?? today;
 
-    // sanity menu
-    const menuItems = await getMenuForRange(fromISO, toISO).catch(() => []);
-    const menuByDate = new Map<string, any>();
-    for (const it of menuItems || []) {
-      const key = menuDateKey(it);
-      if (key) menuByDate.set(key, it);
-    }
+    const menuByDate = await loadMenuByDate(getMenuForRange, fromISO, toISO);
+    const ordersByDateOrResponse = await loadOrdersByDate(supabaseServer, sc, dates, rid);
+    if (ordersByDateOrResponse instanceof Response) return ordersByDateOrResponse;
+    const ordersByDate = ordersByDateOrResponse as Map<string, OrderRow>;
 
-    // orders (RLS)
-    const sb = await supabaseServer();
-    const { data: ordersRaw, error: oErr } = await (sb as any)
-      .from("orders")
-      .select("date,status,note,updated_at,created_at,slot,location_id,company_id,user_id")
-      .eq("user_id", sc.user_id)
-      .eq("company_id", sc.company_id)
-      .eq("location_id", sc.location_id)
-      .eq("slot", "lunch")
-      .in("date", dates);
+    const dayChoicesByDate = await loadDayChoicesByDate(admin, sc, dates, rid);
 
-    if (oErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
+    const agreementState = await resolveAgreementState(sc, policy, today, rid);
+    if (agreementState.scopeError) return agreementState.scopeError;
 
-    const ordersByDate = new Map<string, OrderRow>();
-    for (const o of (ordersRaw ?? []) as OrderRow[]) {
-      const dISO = asDateISO((o as any)?.date);
-      if (!dISO) continue;
-      ordersByDate.set(dISO, o);
-    }
-
-    // day choices (service role) — best effort
-    const dayChoicesByDate = new Map<string, DayChoiceRow>();
-    try {
-      const dcBase = (admin as any)
-        .from("day_choices")
-        .select("date,choice_key,note,status,updated_at")
-        .eq("user_id", sc.user_id)
-        .eq("company_id", sc.company_id)
-        .eq("location_id", sc.location_id);
-
-      if (typeof (dcBase as any).in === "function") {
-        const { data: dcRaw0, error: dcErr } = await (dcBase as any).in("date", dates);
-        if (dcErr) {
-          opsLog("window.day_choices.failed", { rid, company_id: sc.company_id, detail: String(dcErr?.message ?? dcErr) });
-        }
-        const dcRaw = (dcRaw0 ?? []) as DayChoiceRow[];
-        for (const r of dcRaw) {
-          const dISO = asDateISO((r as any)?.date);
-          if (!dISO) continue;
-
-          const prev = dayChoicesByDate.get(dISO);
-          const prevT = prev?.updated_at ? new Date(prev.updated_at).getTime() : 0;
-          const nextT = r?.updated_at ? new Date(r.updated_at).getTime() : 0;
-          if (!prev || nextT >= prevT) dayChoicesByDate.set(dISO, r);
-        }
-      } else {
-        opsLog("window.day_choices.skipped", { rid, reason: "query_builder_missing_in()", company_id: sc.company_id });
-      }
-    } catch (e: any) {
-      opsLog("window.day_choices.exception", { rid, company_id: sc.company_id, detail: String(e?.stack || e?.message || e) });
-    }
-
-    // =========================================================
-    // agreement (uses lib/agreement/currentAgreement.ts as-is)
-    // =========================================================
-    let startDateISO: string | null = null;
-    let deliveryDays: DayKey[] = [];
-    let dayTiers: Record<DayKey, Tier> = {} as any;
-
-    let agreementMessage: string | null = null;
-    let agreementStatus: AgreementStatusOut = "NOT_READY";
-    let agreementRawStatus: string | null = null;
-
-    try {
-      const st = await getCurrentAgreementState({ rid });
-
-      if ((st as any)?.ok === false) {
-        const e = st as any;
-        const msg = String(e?.message ?? "Ingen aktiv avtale.");
-        const err = String(e?.error ?? "AGREEMENT_ERROR");
-        const status = Number(e?.status ?? 500);
-
-        if (status === 403 && err === "PROFILE_MISSING_SCOPE") {
-          return jsonErr(rid, msg, 403, "AGREEMENT_SCOPE_MISMATCH");
-        }
-
-        agreementStatus = "MISSING";
-        agreementMessage = msg;
-      } else {
-        const state = st as any;
-
-        const stateCompanyId = String(state.companyId ?? "").trim();
-        const stateLocationId = state.locationId ? String(state.locationId).trim() : "";
-
-        if (stateCompanyId && stateCompanyId !== sc.company_id) {
-          return jsonErr(rid, "Avtalen tilhører et annet firma.", 403, "AGREEMENT_SCOPE_MISMATCH");
-        }
-        if (sc.location_id && stateLocationId && stateLocationId !== sc.location_id) {
-          return jsonErr(rid, "Avtalen tilhører en annen lokasjon.", 403, "AGREEMENT_SCOPE_MISMATCH");
-        }
-
-        startDateISO = state.startDate ? String(state.startDate).slice(0, 10) : null;
-        deliveryDays = Array.isArray(state.deliveryDays) ? (state.deliveryDays as DayKey[]) : [];
-        dayTiers = (state.dayTiers ?? {}) as Record<DayKey, Tier>;
-
-        agreementRawStatus = String(state.status ?? "").trim().toUpperCase() || null;
-
-        const startsLater = Boolean(startDateISO && isIsoDate(startDateISO) && startDateISO > today);
-
-        if (policy.status === "PENDING") {
-          agreementStatus = "PENDING_COMPANY";
-          agreementMessage = "Firmaet er ikke aktivert ennå. Kontakt firma-admin.";
-        } else if (startsLater) {
-          agreementStatus = "STARTS_LATER";
-        } else if (agreementRawStatus === "ACTIVE" || (Object.keys(dayTiers).length && deliveryDays.length)) {
-          agreementStatus = "ACTIVE";
-        } else if (agreementRawStatus === "MISSING") {
-          agreementStatus = "MISSING";
-          agreementMessage = "Ingen aktiv avtale.";
-        } else {
-          agreementStatus = "NOT_READY";
-          agreementMessage = "Ingen aktiv avtale.";
-        }
-
-        if (agreementStatus === "ACTIVE" && state.statusReason === "NO_ACTIVE_AGREEMENT") {
-          agreementMessage = "Avtalegrunnlag er aktivt (dagmap), men avtale-status er ikke ACTIVE.";
-        }
-        if (agreementStatus === "MISSING" && state.statusReason === "MISSING_DAYMAP") {
-          agreementMessage = "Avtale mangler dagskart (daymap).";
-        }
-        if (agreementStatus === "MISSING" && state.statusReason === "MISSING_DELIVERY_DAYS") {
-          agreementMessage = "Avtale mangler leveringsdager.";
-        }
-      }
-    } catch (e: any) {
-      opsLog("window.agreement.exception", { rid, company_id: sc.company_id, detail: String(e?.stack || e?.message || e) });
-      agreementStatus = "NOT_READY";
-      agreementMessage = "Ingen aktiv avtale.";
-    }
+    const agreementStatus = agreementState.agreementStatus;
+    const agreementMessage = agreementState.agreementMessage;
+    const agreementRawStatus = agreementState.agreementRawStatus;
+    const startDateISO = agreementState.startDateISO;
+    const deliveryDays = agreementState.deliveryDays;
+    const dayTiers = agreementState.dayTiers;
 
     const agreementUsable = agreementStatus === "ACTIVE";
 
-    // Best-effort choices normalization for tier choices
-    let agreementForChoices: any = null;
-    if (agreementUsable) {
-      try {
-        const q = (admin as any).from("company_current_agreement").select("*").eq("company_id", sc.company_id);
-        const { data: agreementRow, error } = await (q as any).maybeSingle();
-        if (!error && agreementRow) {
-          const normRes = normalizeAgreement(agreementRow);
-          const unwrapped = unwrapAgreement(normRes);
-          agreementForChoices = unwrapped.ok ? unwrapped.agreement : null;
-        }
-      } catch {
-        agreementForChoices = null;
-      }
-    }
+    const agreementForChoices = await loadAgreementForChoices(admin, sc, agreementUsable);
 
-    const days = dates.map((date) => {
-      const dayKey = weekdayKeyFromISO(date);
-
-      const tier: Tier | null = (dayTiers as any)[dayKey] ?? null;
-      const isDeliveryDay = Array.isArray(deliveryDays) ? deliveryDays.includes(dayKey) : false;
-
-      const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
-
-      const agreementChoices = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
-      const allowedChoices: Choice[] = agreementChoices.length ? agreementChoices : isEnabled && tier ? FIXED_CHOICES_BY_TIER[tier] : [];
-
-      const savedOrder = ordersByDate.get(date);
-      const sNorm = statusNorm(savedOrder?.status);
-      const wantsLunch = sNorm === "ACTIVE";
-
-      const dc = dayChoicesByDate.get(date);
-      const dcChoice = dc?.choice_key ? String(dc.choice_key).trim().toLowerCase() : null;
-      const legacyChoice = parseChoiceKeyFromNote(savedOrder?.note ?? null);
-
-      const rawSelected = dcChoice || legacyChoice || null;
-      const selectedOk = rawSelected ? allowedChoices.some((c) => c.key === rawSelected) : false;
-      const safeSelected = selectedOk ? rawSelected : null;
-
-      const dcNote = dc?.note ?? null;
-      const legacyNote = (() => {
-        const n = String(savedOrder?.note ?? "").trim();
-        if (!n) return null;
-        if (/^[a-z0-9_\-]{2,}$/i.test(n) || /choice:[a-z0-9_\-]+/i.test(n)) return null;
-        return n;
-      })();
-
-      const cutoff = cutoffStatusForDate(date);
-      const dateLocked = cutoff === "PAST" || cutoff === "TODAY_LOCKED";
-
-      const lockReason =
-        dateLocked ? "CUTOFF" :
-        !company.canEditOrders ? "COMPANY" :
-        !agreementUsable ? "COMPANY" :
-        null;
-
-      const menu = menuByDate.get(date) ?? null;
-      const picked = pickMenuForChoice(menu, wantsLunch ? safeSelected : null);
-
-      return {
+    const days = dates.map((date) =>
+      buildDayModel({
         date,
-        weekday: dayKey,
-
-        isLocked: dateLocked || !company.canEditOrders || !agreementUsable,
-        isEnabled,
-        lockReason,
-
-        tier,
-        allowedChoices,
-
-        wantsLunch,
-        orderStatus: sNorm === "ACTIVE" ? "ACTIVE" : sNorm === "CANCELLED" ? "CANCELLED" : null,
-        selectedChoiceKey: wantsLunch ? safeSelected : null,
-
-        note: dcNote ?? legacyNote ?? null,
-
-        menuTitle: picked.title ?? null,
-        menuDescription: picked.description ?? null,
-        allergens: (picked.allergens ?? []) as string[],
-
-        lastSavedAt:
-          hhmmFromIso(dc?.updated_at) ??
-          hhmmFromIso(savedOrder?.updated_at) ??
-          hhmmFromIso(savedOrder?.created_at) ??
-          null,
-
-        unit_price: tier ? PRICE_PER_TIER_EX_VAT[tier] : null,
-      };
-    });
+        company,
+        agreementUsable,
+        deliveryDays,
+        dayTiers,
+        ordersByDate,
+        dayChoicesByDate,
+        menuByDate,
+        agreementForChoices,
+      })
+    );
 
     return jsonOk(
       rid,

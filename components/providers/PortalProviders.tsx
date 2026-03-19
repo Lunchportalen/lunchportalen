@@ -13,6 +13,7 @@ import React, {
 
 import { OrderActionsProvider } from "@/lib/orders/OrderActionsProvider";
 import OrderToastBridge from "@/components/toast/OrderToastBridge";
+import { Container } from "@/components/ui/container";
 
 /**
  * =========================================================
@@ -321,16 +322,16 @@ function ToastViewport({
   if (!items.length) return null;
 
   return (
-    <div
+    <Container
       aria-live="polite"
       aria-relevant="additions"
-      className="pointer-events-none fixed bottom-3 left-0 right-0 z-[70] mx-auto w-full max-w-[720px] px-3"
+      className="pointer-events-none fixed bottom-3 left-0 right-0 z-[70] max-w-3xl"
     >
       <div className="flex flex-col gap-2">
         {items.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto rounded-2xl border border-[rgb(var(--lp-border))] bg-white/95 p-3 shadow-[var(--lp-shadow-soft)] backdrop-blur"
+            className="pointer-events-auto lp-glass-surface rounded-card p-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -353,7 +354,7 @@ function ToastViewport({
           </div>
         ))}
       </div>
-    </div>
+    </Container>
   );
 }
 

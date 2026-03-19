@@ -20,7 +20,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
     const releaseId = await getScheduledReleaseForVariant(supabase as any, variantId);
-    return jsonOk(s.ctx.rid, { ok: true, rid: s.ctx.rid, inScheduledRelease: !!releaseId }, 200);
+    return jsonOk(s.ctx.rid, {
+      ok: true,
+      rid: s.ctx.rid,
+      inScheduledRelease: !!releaseId,
+      releaseId: releaseId ?? undefined,
+    }, 200);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(s.ctx.rid, message, 500, "SERVER_ERROR", { detail: String(e) });

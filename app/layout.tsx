@@ -1,5 +1,7 @@
 // app/layout.tsx
 import "./globals.css";
+import "../lib/ui/motion.css";
+import "../lib/ui/design.css";
 
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter, Manrope } from "next/font/google";

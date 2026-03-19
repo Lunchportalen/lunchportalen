@@ -20,7 +20,7 @@ export default function SuperadminNav() {
         href={href}
         aria-current={active ? "page" : undefined}
         className={[
-          "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm ring-1 transition",
+          "lp-motion-btn inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm ring-1",
           active
             ? "bg-white font-extrabold ring-[rgb(var(--lp-border))]"
             : "bg-white/60 font-semibold text-[rgb(var(--lp-muted))] ring-[rgb(var(--lp-border))] hover:bg-white",

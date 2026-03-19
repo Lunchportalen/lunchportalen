@@ -381,7 +381,7 @@ function LpButton({
   variant: "primary" | "secondary";
   title?: string;
 }) {
-  const base = "lp-btn min-h-[44px] border border-[rgb(var(--lp-border))] transition";
+  const base = "lp-btn lp-motion-btn min-h-[44px] border border-[rgb(var(--lp-border))]";
   const primary = "lp-btn--primary";
   const secondary = "lp-btn--secondary";
   return (
@@ -408,7 +408,7 @@ function ReceiptBanner() {
 
   if (error) {
     return (
-      <div className="mb-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-4">
+      <div className="lp-glass-card mb-4 rounded-card p-4">
         <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">⚠️ Feil</div>
         <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{error.message}</div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -426,7 +426,7 @@ function ReceiptBanner() {
   }
 
   return (
-    <div className="mb-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-4">
+    <div className="lp-glass-card mb-4 rounded-card p-4">
       <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">✅ Registrert</div>
       <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{receipt?.message ?? "OK."}</div>
       <div className="mt-3">
@@ -1053,7 +1053,7 @@ export default function WeekClient({
   return (
     <section className="lp-card lp-card-pad lp-safe-bottom-pad">
       {!uiCanAct ? (
-        <div className="mb-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-4">
+        <div className="lp-glass-card mb-4 rounded-card p-4">
           <div className="text-sm font-semibold text-[rgb(var(--lp-fg))]">🔒 Bestilling er midlertidig låst</div>
           <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
             {billingHoldReason && String(billingHoldReason).trim()
@@ -1115,19 +1115,19 @@ export default function WeekClient({
       </div>
 
       {showAgreementNotice ? (
-        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">{showAgreementNotice}</div>
+        <div className="lp-glass-card mt-4 rounded-card p-4 text-sm text-[rgb(var(--lp-muted))]">{showAgreementNotice}</div>
       ) : null}
       {overlayHelp ? <div className="mt-4">{overlayHelp}</div> : null}
 
       {loading ? (
         <div className="mt-4 text-sm text-[rgb(var(--lp-muted))]">Henter lunsjplan …</div>
       ) : msg ? (
-        <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
+        <div className="lp-glass-card mt-4 rounded-card p-4 text-sm text-[rgb(var(--lp-muted))]">
           {msg}
         </div>
       ) : !isAgreementActive ? (
         <div className="mt-4 space-y-4">
-          <div className="rounded-2xl bg-white/70 p-5 text-sm text-[rgb(var(--lp-muted))]">
+          <div className="lp-glass-card rounded-card p-5 text-sm text-[rgb(var(--lp-muted))]">
             <div className="text-base font-semibold text-[rgb(var(--lp-fg))]">
               {agreementStatusMessage || "Ingen aktiv avtale"}
             </div>
@@ -1136,7 +1136,7 @@ export default function WeekClient({
         </div>
       ) : !visibleDays.length ? (
         <div className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4 text-sm text-[rgb(var(--lp-muted))]">
+          <div className="lp-glass-card rounded-card p-4 text-sm text-[rgb(var(--lp-muted))]">
             Ingen uke er tilgjengelig akkurat nå.
           </div>
           {overlayEmptyState ? <div>{overlayEmptyState}</div> : null}
@@ -1271,14 +1271,14 @@ export default function WeekClient({
                             disabled={disabled}
                             onClick={() => onSelectChoice(day, c.key)}
                             className={cx(
-                              "min-h-[44px] rounded-full border px-4 py-2 text-sm transition whitespace-nowrap",
+                              "lp-motion-btn min-h-[44px] rounded-full border px-4 py-2 text-sm whitespace-nowrap",
                               "focus:outline-none focus:ring-2 focus:ring-offset-2",
                               disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-white active:brightness-[0.99]",
                               isOrdered
                                 ? "bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-fg))] font-semibold border-transparent lp-active-ring"
                                 : isPending
                                   ? "bg-white/90 text-[rgb(var(--lp-fg))] border-transparent ring-2 ring-[#2563eb]"
-                                  : "border-[rgb(var(--lp-border))] bg-white/80 text-[rgb(var(--lp-muted))]"
+                                  : "border-[rgb(var(--lp-border))] bg-glass-medium text-[rgb(var(--lp-muted))]"
                             )}
                             title={
                               disabled
@@ -1302,7 +1302,7 @@ export default function WeekClient({
                   ) : null}
 
                   {variantKey && showVariant ? (
-                    <div className="mt-3 rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-3">
+                    <div className="lp-glass-card mt-3 rounded-card p-3">
                       <div className="mb-2 text-xs text-[rgb(var(--lp-muted))]">
                         Velg variant for{" "}
                         <span className="font-semibold text-[rgb(var(--lp-fg))]">{titleForChoiceKey(variantKey)}</span>

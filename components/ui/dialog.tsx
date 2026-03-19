@@ -1,6 +1,11 @@
 "use client";
 
 import * as React from "react";
+import {
+  getOverlayVariantClass,
+  getModalVariantClass,
+  type ModalVariant,
+} from "@/lib/ui/modalVariants";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -46,7 +51,10 @@ export function useDialog() {
 
 export type DialogTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-export function DialogTrigger({ onClick, ...props }: DialogTriggerProps) {
+const TRIGGER_BASE =
+  "lp-motion-btn rounded-xl font-medium outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:opacity-70";
+
+export function DialogTrigger({ onClick, className, ...props }: DialogTriggerProps) {
   const { setOpen } = useDialog();
   return (
     <button
@@ -55,6 +63,7 @@ export function DialogTrigger({ onClick, ...props }: DialogTriggerProps) {
         onClick?.(e);
         setOpen(true);
       }}
+      className={cn(TRIGGER_BASE, "hover:opacity-90", className)}
       {...props}
     />
   );
@@ -62,7 +71,7 @@ export function DialogTrigger({ onClick, ...props }: DialogTriggerProps) {
 
 export type DialogCloseProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-export function DialogClose({ onClick, ...props }: DialogCloseProps) {
+export function DialogClose({ onClick, className, ...props }: DialogCloseProps) {
   const { setOpen } = useDialog();
   return (
     <button
@@ -71,6 +80,7 @@ export function DialogClose({ onClick, ...props }: DialogCloseProps) {
         onClick?.(e);
         setOpen(false);
       }}
+      className={cn(TRIGGER_BASE, "hover:opacity-90", className)}
       {...props}
     />
   );
@@ -81,6 +91,8 @@ export interface DialogContentProps extends Omit<React.HTMLAttributes<HTMLDivEle
   title?: React.ReactNode;
   description?: React.ReactNode;
   showClose?: boolean;
+  /** Visual variant for overlay backdrop and modal panel; default "glass" */
+  variant?: ModalVariant;
 }
 
 export function DialogContent({
@@ -88,11 +100,14 @@ export function DialogContent({
   title,
   description,
   showClose = true,
+  variant = "glass",
   children,
   ...props
 }: DialogContentProps) {
   const { open, setOpen } = useDialog();
   const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const overlayClass = getOverlayVariantClass(variant);
+  const modalClass = getModalVariantClass(variant);
 
   React.useEffect(() => {
     if (!open) return;
@@ -118,8 +133,12 @@ export function DialogContent({
 
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
-      {/* overlay */}
-      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]" onMouseDown={() => setOpen(false)} />
+      {/* overlay: shared motion so backdrop and panel use same timing */}
+      <div
+        className={cn("lp-motion-overlay absolute inset-0", overlayClass)}
+        onMouseDown={() => setOpen(false)}
+        aria-hidden
+      />
 
       {/* panel */}
       <div
@@ -127,12 +146,8 @@ export function DialogContent({
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
         className={cn(
-          "relative w-full max-w-lg rounded-2xl",
-          "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)]",
-          "ring-1 ring-[color:var(--lp-border)]",
-          "shadow-[var(--lp-shadow-md)] [box-shadow:var(--lp-shadow-md),var(--lp-shadow-inset)]",
-          "outline-none",
-          "transition-[transform,opacity] duration-200 [transition-timing-function:var(--lp-ease)]",
+          "lp-motion-overlay relative w-full max-w-lg text-[color:var(--lp-fg)] outline-none",
+          modalClass,
           className
         )}
         {...props}
@@ -140,16 +155,15 @@ export function DialogContent({
         {(title || description || showClose) && (
           <div className="flex items-start gap-3 p-6 pb-4">
             <div className="min-w-0">
-              {title ? <div className="text-lg font-semibold">{title}</div> : null}
-              {description ? <div className="mt-1 text-sm text-[color:var(--lp-muted)]">{description}</div> : null}
+              {title ? <div className="font-heading text-lg font-semibold">{title}</div> : null}
+              {description ? <div className="font-body mt-1 text-sm text-[color:var(--lp-muted)]">{description}</div> : null}
             </div>
 
             {showClose ? (
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="ml-auto rounded-xl p-2 text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface-2)] hover:text-[color:var(--lp-fg)]
-                           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)]"
+                className="lp-motion-btn ml-auto rounded-xl p-2 text-[color:var(--lp-muted)] hover:bg-[color:var(--lp-surface-2)] hover:text-[color:var(--lp-fg)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(var(--lp-ring),0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                 aria-label="Lukk"
               >
                 ✕
@@ -163,3 +177,27 @@ export function DialogContent({
     </div>
   );
 }
+
+/** Modal shell header (use inside DialogContent for custom layout) */
+export const DialogHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(function DialogHeader({ className, ...props }, ref) {
+  return <div ref={ref} className={cn("lp-modal-header", className)} {...props} />;
+});
+
+/** Modal shell body (use inside DialogContent for custom layout) */
+export const DialogBody = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(function DialogBody({ className, ...props }, ref) {
+  return <div ref={ref} className={cn("lp-modal-body", className)} {...props} />;
+});
+
+/** Modal shell footer (use inside DialogContent for custom layout) */
+export const DialogFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(function DialogFooter({ className, ...props }, ref) {
+  return <div ref={ref} className={cn("lp-modal-footer", className)} {...props} />;
+});

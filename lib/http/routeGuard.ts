@@ -28,6 +28,11 @@ export type ScopeLike = {
   companyId: string | null;
   locationId: string | null;
   email: string | null;
+  /**
+   * Auth subject (stable identity for rate limiting etc).
+   * May be null when upstream auth does not expose a subject claim.
+   */
+  sub: string | null;
 };
 
 export type AuthedCtx = {
@@ -40,6 +45,17 @@ export type AuthedCtx = {
 export type ScopeOr401Result =
   | { ok: true; ctx: AuthedCtx }
   | { ok: false; res: Response; response: Response; ctx: AuthedCtx };
+
+/**
+ * Canonical 401 response when scopeOr401(req) returned ok: false.
+ * Use: const s = await scopeOr401(req); if (!s.ok) return denyResponse(s);
+ * Safe when s is undefined/null: returns 401 so missing/broken auth state fails closed.
+ */
+export function denyResponse(s: ScopeOr401Result | null | undefined): Response {
+  if (s != null && s.ok === false) return s.res ?? s.response;
+  const rid = (s != null && s.ctx != null ? safeStr(s.ctx.rid) : null) || ridFallback();
+  return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHORIZED");
+}
 
 /* =========================================================
    Small utils
@@ -110,11 +126,12 @@ function mapScope(raw: any): ScopeLike {
   const userId = safeStr(raw?.user_id ?? raw?.userId) || null;
   const companyId = safeStr(raw?.company_id ?? raw?.companyId) || null;
   const locationId = safeStr(raw?.location_id ?? raw?.locationId) || null;
+  const sub = safeStr(raw?.sub) || null;
 
   const email = normEmail(raw?.email);
   const role = normRole(raw?.role);
 
-  return { userId, role, companyId, locationId, email };
+  return { userId, role, companyId, locationId, email, sub };
 }
 
 /**
@@ -143,7 +160,7 @@ function buildEmptyCtx(req: NextRequest, rid: string): AuthedCtx {
     rid,
     route: safeStr(req?.nextUrl?.pathname) || null,
     method: safeStr(req?.method) || null,
-    scope: { userId: null, role: null, companyId: null, locationId: null, email: null },
+    scope: { userId: null, role: null, companyId: null, locationId: null, email: null, sub: null },
   };
 }
 
@@ -171,6 +188,10 @@ function requireKitchenDriverScopeOr403(ctx: AuthedCtx, role: AllowedRole | stri
    Safe JSON (never throws)
 ========================================================= */
 
+/**
+ * Parse request body as JSON. On empty body or parse failure returns {} (never throws).
+ * Fail-closed: callers must validate required fields; do not treat {} as valid for critical payloads.
+ */
 export async function readJson(req: NextRequest): Promise<any> {
   try {
     const t = await req.text();
@@ -467,6 +488,7 @@ export function ctxSnapshot(ctx: AuthedCtx) {
     companyId: safeStr(ctx?.scope?.companyId) || null,
     locationId: safeStr(ctx?.scope?.locationId) || null,
     email: safeStr(ctx?.scope?.email) || null,
+    sub: safeStr(ctx?.scope?.sub) || null,
   };
 }
 

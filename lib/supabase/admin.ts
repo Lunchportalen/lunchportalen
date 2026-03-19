@@ -2,6 +2,7 @@
 import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdminConfig } from "@/lib/config/env";
 
 /**
  * Supabase ADMIN client (SERVICE ROLE)
@@ -22,12 +23,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let _admin: SupabaseClient | null = null;
 
-function envStr(name: string): string | null {
-  const v = process.env[name];
-  const s = String(v ?? "").trim();
-  return s ? s : null;
-}
-
 function configError(message: string) {
   const e: any = new Error(message);
   e.code = "CONFIG_ERROR";
@@ -38,11 +33,17 @@ function configError(message: string) {
 export function supabaseAdmin(): SupabaseClient {
   if (_admin) return _admin;
 
-  const url = envStr("SUPABASE_URL") ?? envStr("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceRoleKey = envStr("SUPABASE_SERVICE_ROLE_KEY");
+  let url: string;
+  let serviceRoleKey: string;
 
-  if (!url) throw configError("Mangler SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) i server-miljø.");
-  if (!serviceRoleKey) throw configError("Mangler SUPABASE_SERVICE_ROLE_KEY i server-miljø.");
+  try {
+    const cfg = getSupabaseAdminConfig();
+    url = cfg.url;
+    serviceRoleKey = cfg.serviceRoleKey;
+  } catch (e: any) {
+    // Normaliser til CONFIG_ERROR for kompatibilitet med eksisterende kallere.
+    throw configError(e?.message ?? "Mangler Supabase admin-konfigurasjon i server-miljø.");
+  }
 
   _admin = createClient(url, serviceRoleKey, {
     auth: {
@@ -61,7 +62,11 @@ export function supabaseAdmin(): SupabaseClient {
 }
 
 export function hasSupabaseAdminConfig(): boolean {
-  const url = envStr("SUPABASE_URL") ?? envStr("NEXT_PUBLIC_SUPABASE_URL");
-  const key = envStr("SUPABASE_SERVICE_ROLE_KEY");
-  return Boolean(url && key);
+  try {
+    const cfg = getSupabaseAdminConfig();
+    return Boolean(cfg.url && cfg.serviceRoleKey);
+  } catch {
+    return false;
+  }
 }
+

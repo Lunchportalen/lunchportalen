@@ -34,7 +34,7 @@ export default function DownloadEsgPdfButton() {
         rounded-xl bg-white px-4 py-2
         text-sm font-extrabold
         ring-1 ring-[rgb(var(--lp-border))]
-        transition hover:bg-white/80
+        lp-motion-btn hover:bg-white/80
         disabled:cursor-not-allowed disabled:opacity-60
       "
     >

@@ -168,7 +168,7 @@ export default function ChangeCompanyAdmin(props: {
           disabled={!canSubmit || submitting}
           onClick={submit}
           className={[
-            "rounded-2xl px-5 py-3 text-sm font-medium ring-1 transition",
+            "lp-motion-btn rounded-2xl px-5 py-3 text-sm font-medium ring-1",
             "disabled:cursor-not-allowed disabled:opacity-60",
             "bg-black text-white ring-black hover:bg-black/90",
           ].join(" ")}

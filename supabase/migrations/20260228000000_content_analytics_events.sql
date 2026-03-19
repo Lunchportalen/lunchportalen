@@ -1,11 +1,12 @@
-﻿create table if not exists public.content_pages ( id uuid primary key default gen_random_uuid() );
+create table if not exists public.content_pages ( id uuid primary key default gen_random_uuid() );
 create table if not exists public.content_page_variants ( id uuid primary key default gen_random_uuid(), page_id uuid references public.content_pages(id) on delete cascade );
-create table public.content_analytics_events ( id uuid primary key default gen_random_uuid(), page_id uuid null references public.content_pages(id) on delete set null, variant_id uuid null references public.content_page_variants(id) on delete set null, environment text not null check (environment in ('prod','staging','preview')), locale text not null, event_type text not null check (event_type in ('page_view','search','cta_click')), event_key text null, event_value text null, metadata jsonb not null default '{}', created_at timestamptz not null default now() );
-create index idx_events_created_at on public.content_analytics_events (created_at desc);
-create index idx_events_page_variant on public.content_analytics_events (page_id, variant_id, created_at desc);
-create index idx_events_env_locale_type on public.content_analytics_events (environment, locale, event_type, created_at desc);
-create index idx_events_type_key on public.content_analytics_events (event_type, event_key, created_at desc);
+create table if not exists public.content_analytics_events ( id uuid primary key default gen_random_uuid(), page_id uuid null references public.content_pages(id) on delete set null, variant_id uuid null references public.content_page_variants(id) on delete set null, environment text not null check (environment in ('prod','staging','preview')), locale text not null, event_type text not null check (event_type in ('page_view','search','cta_click')), event_key text null, event_value text null, metadata jsonb not null default '{}', created_at timestamptz not null default now() );
+create index if not exists idx_events_created_at on public.content_analytics_events (created_at desc);
+create index if not exists idx_events_page_variant on public.content_analytics_events (page_id, variant_id, created_at desc);
+create index if not exists idx_events_env_locale_type on public.content_analytics_events (environment, locale, event_type, created_at desc);
+create index if not exists idx_events_type_key on public.content_analytics_events (event_type, event_key, created_at desc);
 alter table public.content_analytics_events enable row level security;
+drop policy if exists content_analytics_events_select_superadmin on public.content_analytics_events;
 create policy content_analytics_events_select_superadmin on public.content_analytics_events for select using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'superadmin'));
 revoke all on public.content_analytics_events from anon, authenticated;
 grant select on public.content_analytics_events to authenticated;

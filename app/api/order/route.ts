@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { GET as OrdersGET, POST as OrdersPOST, DELETE as OrdersDELETE } from "@/app/api/orders/route";
 
 async function callLegacy(rid: string, fn: (req: NextRequest) => Promise<Response>, req: NextRequest) {
@@ -20,19 +21,44 @@ async function callLegacy(rid: string, fn: (req: NextRequest) => Promise<Respons
   }
 }
 
-// Legacy endpoint kept for compatibility.
-// Canonical implementation lives in /api/orders.
 export async function GET(req: NextRequest) {
-  const rid = makeRid("legacy_order_get");
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const denyRole = requireRoleOr403(a.ctx, "order.get", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const { rid } = a.ctx;
   return callLegacy(rid, OrdersGET, req);
 }
 
 export async function POST(req: NextRequest) {
-  const rid = makeRid("legacy_order_post");
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const denyRole = requireRoleOr403(a.ctx, "order.post", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const { rid } = a.ctx;
   return callLegacy(rid, OrdersPOST, req);
 }
 
 export async function DELETE(req: NextRequest) {
-  const rid = makeRid("legacy_order_delete");
+  const a = await scopeOr401(req);
+  if (a.ok === false) return a.res;
+
+  const denyRole = requireRoleOr403(a.ctx, "order.delete", ["employee", "company_admin"]);
+  if (denyRole) return denyRole;
+
+  const denyScope = requireCompanyScopeOr403(a.ctx);
+  if (denyScope) return denyScope;
+
+  const { rid } = a.ctx;
   return callLegacy(rid, OrdersDELETE, req);
 }

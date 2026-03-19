@@ -216,7 +216,7 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
 
   return (
     <div className="grid gap-6">
-      <Card className="p-6">
+      <Card variant="soft" className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="text-lg font-semibold text-[rgb(var(--lp-text))]">Avtale</div>

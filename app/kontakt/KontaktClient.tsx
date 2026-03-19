@@ -164,20 +164,20 @@ export default function KontaktPage() {
         <div className="mt-6 grid gap-5 lg:grid-cols-3">
           {/* LEFT INFO */}
           <aside className="space-y-5 lg:col-span-1">
-            <div className="rounded-2xl border bg-white/90 p-4 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-4">
               <h2 className="text-sm font-semibold">Kontaktinformasjon</h2>
 
               <div className="mt-4 space-y-4 text-sm">
                 <div>
                   <div className="text-xs text-muted-foreground">E-post</div>
-                  <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium transition hover:text-[#ff007f]">
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="lp-motion-btn font-medium hover:text-[#ff007f]">
                     {SUPPORT_EMAIL}
                   </a>
                 </div>
 
                 <div>
                   <div className="text-xs text-muted-foreground">Telefon</div>
-                  <a href="tel:+4748155481" className="font-medium transition hover:text-[#ff007f]">
+                  <a href="tel:+4748155481" className="lp-motion-btn font-medium hover:text-[#ff007f]">
                     481 55 481
                   </a>
                 </div>
@@ -195,14 +195,14 @@ export default function KontaktPage() {
 
                 <div>
                   <div className="text-xs text-muted-foreground">Kundeside</div>
-                  <Link href="/login" className="font-medium transition hover:text-[#ff007f]">
+                  <Link href="/login" className="lp-motion-btn font-medium hover:text-[#ff007f]">
                     Logg inn
                   </Link>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border bg-white/90 p-4 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-4">
               <div className="text-xs font-semibold text-muted-foreground">Tips for raskere hjelp</div>
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <li>• Oppgi gjerne tidspunkt og hvilken side du var på.</li>
@@ -214,7 +214,7 @@ export default function KontaktPage() {
 
           {/* FORM */}
           <section className="lg:col-span-2">
-            <div className="rounded-2xl border bg-white/90 p-5 shadow-sm backdrop-blur">
+            <div className="lp-glass-card rounded-card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold">Send melding</h2>
@@ -346,7 +346,7 @@ export default function KontaktPage() {
                   <Button
                     type="submit"
                     disabled={!canSend}
-                    className="rounded-xl px-8 text-white transition-all"
+                    className="lp-motion-btn rounded-xl px-8 text-white"
                     style={{ background: "#ff007f", boxShadow: "0 12px 35px rgba(255,0,127,.22)" }}
                   >
                     {status.type === "sending" ? "Sender…" : "Send melding"}
@@ -354,11 +354,11 @@ export default function KontaktPage() {
 
                   <div className="text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">Raskt:</span>{" "}
-                    <a className="transition hover:text-[#ff007f]" href={`mailto:${SUPPORT_EMAIL}`}>
+                    <a className="lp-motion-btn hover:text-[#ff007f]" href={`mailto:${SUPPORT_EMAIL}`}>
                       {SUPPORT_EMAIL}
                     </a>
                     {" · "}
-                    <a className="transition hover:text-[#ff007f]" href="tel:+4748155481">
+                    <a className="lp-motion-btn hover:text-[#ff007f]" href="tel:+4748155481">
                       481 55 481
                     </a>
                   </div>
@@ -385,7 +385,7 @@ export default function KontaktPage() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border bg-white/90 p-5 shadow-sm backdrop-blur">
+            <div className="mt-5 lp-glass-card rounded-card p-5">
               <h3 className="text-base font-semibold">Ofte stilte spørsmål</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border bg-white p-4">

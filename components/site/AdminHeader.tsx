@@ -47,7 +47,7 @@ export default function AdminHeader({
   const pathname = safePath(usePathname());
 
   return (
-    <header className="w-full border-b border-[rgb(var(--lp-border))] bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/75">
+    <header className="w-full border-b border-[rgb(var(--lp-border))] lp-glass-nav">
       <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-4 py-3">
         {/* LEFT */}
         <div className="flex items-center gap-4">
@@ -68,9 +68,9 @@ export default function AdminHeader({
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "rounded-full px-3 py-1.5 text-sm font-semibold transition-all duration-200",
+                  "lp-motion-btn rounded-full px-3 py-1.5 text-sm font-semibold",
                   active
-                    ? "ring-2 ring-[#ff007f] shadow-[0_0_18px_rgba(255,0,127,0.45)]"
+                    ? "ring-2 ring-[var(--lp-hotpink)] shadow-[0_0_18px_rgba(var(--lp-neon-rgb),0.45)]"
                     : "border border-[rgb(var(--lp-border))] hover:bg-black/5"
                 )}
               >

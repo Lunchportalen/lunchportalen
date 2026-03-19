@@ -44,9 +44,15 @@ function readJson(relativePath) {
     }
 }
 
-function routeToFile(routePath) {
-    if (routePath === "/") return "app/page.tsx";
-    return `app/${routePath.replace(/^\//, "")}/page.tsx`;
+function resolvePageFile(routePath) {
+    const segment = routePath === "/" ? "" : routePath.replace(/^\//, "");
+    const candidates = segment
+        ? [`app/(public)/${segment}/page.tsx`, `app/${segment}/page.tsx`]
+        : ["app/(public)/page.tsx", "app/page.tsx"];
+    for (const p of candidates) {
+        if (fs.existsSync(path.join(root, p))) return p;
+    }
+    return segment ? `app/${segment}/page.tsx` : "app/page.tsx";
 }
 
 const registry = readJson("lib/seo/marketing-registry.json");
@@ -161,7 +167,7 @@ if (registry) {
             }
         }
 
-        const pageFile = routeToFile(key);
+        const pageFile = resolvePageFile(key);
         const fullPagePath = path.join(root, pageFile);
         if (!fs.existsSync(fullPagePath)) {
             fail(`[${key}] missing page file: ${pageFile}`);

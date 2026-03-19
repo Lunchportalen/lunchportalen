@@ -2,8 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState, KeyboardEvent, MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import type { SemanticIconKey } from "@/lib/iconRegistry";
+import { Icon } from "@/components/ui/Icon";
 import type { BlockDefinition, BlockCategory } from "./blockRegistry";
 import { BLOCK_REGISTRY } from "./blockRegistry";
+
+/** Map block type to semantic icon (modern icons, no text placeholder). */
+function blockTypeToIconName(type: string): SemanticIconKey {
+  const map: Record<string, SemanticIconKey> = {
+    hero: "media",
+    richText: "content",
+    image: "media",
+    cta: "content",
+    banners: "media",
+    divider: "content",
+    code: "content",
+  };
+  return map[type] ?? "content";
+}
 
 type BlockPickerOverlayProps = {
   open: boolean;
@@ -234,12 +250,12 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
 
   const backdrop = (
     <div className="fixed inset-0 z-[80] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 opacity-100 transition-opacity" aria-hidden="true" />
+      <div className="lp-motion-overlay lp-glass-overlay absolute inset-0" aria-hidden="true" />
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className="relative z-[81] flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg),_1)]/95 bg-white/95 shadow-2xl outline-none backdrop-blur"
+        className="lp-motion-overlay lp-glass-panel relative z-[81] flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl outline-none"
         onKeyDown={handleKeyDown}
       >
         {/* Header */}
@@ -253,15 +269,16 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
               placeholder="Search blocks…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-border))]"
+              className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))] focus:ring-offset-2"
             />
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--lp-border))] bg-white text-xs text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))]"
+            className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--lp-border))] bg-white text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-2"
+            aria-label="Lukk"
           >
-            ×
+            <Icon name="close" size="sm" />
           </button>
         </div>
 
@@ -291,6 +308,7 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
           {/* Grid */}
           <main className="flex min-w-0 flex-1 flex-col px-3 py-3 text-sm">
             <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="min-h-0 flex-1 overflow-auto">
               {category === "all" && favoriteDefs.length > 0 && (
                 <section>
                   <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
@@ -310,12 +328,12 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                           id={cardId}
                           type="button"
                           onClick={() => handlePick(def)}
-                          className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left transition ${
+                          className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left lp-motion-card ${
                             isActive
                               ? "border-[rgb(var(--lp-text))] bg-[rgb(var(--lp-card))]"
                               : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300 hover:bg-[rgb(var(--lp-card))]/60"
                           }`}
-                          aria-selected={isActive}
+                          aria-pressed={isActive}
                         >
                           <div className="mb-1 flex w-full items-center justify-between gap-1">
                             <span className="text-xs font-semibold text-[rgb(var(--lp-text))]">
@@ -338,8 +356,8 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                             <span className="rounded border border-[rgb(var(--lp-border))] px-1 py-0.5">
                               {def.category}
                             </span>
-                            <span className="rounded bg-[rgb(var(--lp-card))] px-1 py-0.5 text-[9px]">
-                              {def.iconKey ?? "block"}
+                            <span className="inline-flex items-center justify-center rounded bg-[rgb(var(--lp-card))] p-0.5">
+                              <Icon name={blockTypeToIconName(def.type)} size="xs" />
                             </span>
                           </div>
                         </button>
@@ -368,12 +386,12 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                           id={cardId}
                           type="button"
                           onClick={() => handlePick(def)}
-                          className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left transition ${
+                          className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left lp-motion-card ${
                             isActive
                               ? "border-[rgb(var(--lp-text))] bg-[rgb(var(--lp-card))]"
                               : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300 hover:bg-[rgb(var(--lp-card))]/60"
                           }`}
-                          aria-selected={isActive}
+                          aria-pressed={isActive}
                         >
                           <div className="mb-1 flex w-full items-center justify-between gap-1">
                             <span className="text-xs font-semibold text-[rgb(var(--lp-text))]">
@@ -396,8 +414,8 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                             <span className="rounded border border-[rgb(var(--lp-border))] px-1 py-0.5">
                               {def.category}
                             </span>
-                            <span className="rounded bg-[rgb(var(--lp-card))] px-1 py-0.5 text-[9px]">
-                              {def.iconKey ?? "block"}
+                            <span className="inline-flex items-center justify-center rounded bg-[rgb(var(--lp-card))] p-0.5">
+                              <Icon name={blockTypeToIconName(def.type)} size="xs" />
                             </span>
                           </div>
                         </button>
@@ -425,12 +443,12 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                         id={cardId}
                         type="button"
                         onClick={() => handlePick(def)}
-                        className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left transition ${
+                        className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left lp-motion-card ${
                           isActive
                             ? "border-[rgb(var(--lp-text))] bg-[rgb(var(--lp-card))]"
                             : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300 hover:bg-[rgb(var(--lp-card))]/60"
                         }`}
-                        aria-selected={isActive}
+                        aria-pressed={isActive}
                       >
                         <div className="mb-1 flex w-full items-center justify-between gap-1">
                           <span className="text-xs font-semibold text-[rgb(var(--lp-text))]">
@@ -453,8 +471,8 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                           <span className="rounded border border-[rgb(var(--lp-border))] px-1 py-0.5">
                             {def.category}
                           </span>
-                          <span className="rounded bg-[rgb(var(--lp-card))] px-1 py-0.5 text-[9px]">
-                            {def.iconKey ?? "block"}
+                          <span className="inline-flex items-center justify-center rounded bg-[rgb(var(--lp-card))] p-0.5">
+                            <Icon name={blockTypeToIconName(def.type)} size="xs" />
                           </span>
                         </div>
                       </button>
@@ -467,6 +485,7 @@ export function BlockPickerOverlay(props: BlockPickerOverlayProps) {
                   )}
                 </div>
               </section>
+              </div>
             </div>
 
             {/* Footer hint */}

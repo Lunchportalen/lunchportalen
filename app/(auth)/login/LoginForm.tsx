@@ -23,11 +23,9 @@ function normEmail(v: unknown) {
   return safeStr(v).toLowerCase();
 }
 
-function mustEnv(name: string) {
-  const v = safeStr((process as any)?.env?.[name] ?? (globalThis as any)?.process?.env?.[name] ?? "");
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+// NOTE: Next.js client bundles require static NEXT_PUBLIC_* access.
+const SUPABASE_URL = safeStr(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+const SUPABASE_ANON_KEY = safeStr(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "");
 
 function resolveNext(raw: string | null) {
   const n = safeStr(raw);
@@ -77,9 +75,9 @@ function resolveNext(raw: string | null) {
 
 function makeSupabase() {
   // createBrowserClient er SSR-kompatibel (matcher server cookie-format)
-  const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anon = mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  return createBrowserClient(url, anon);
+  if (!SUPABASE_URL) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
+  if (!SUPABASE_ANON_KEY) throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 export default function LoginForm() {

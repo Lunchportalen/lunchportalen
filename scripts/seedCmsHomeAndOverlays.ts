@@ -124,6 +124,8 @@ async function main() {
           slug,
           status: "draft",
           updated_at: now,
+          tree_root_key: slug === "home" ? "home" : "overlays",
+          tree_sort_order: 0,
         })
         .select("id")
         .single();

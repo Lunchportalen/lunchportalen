@@ -18,10 +18,10 @@ export default function RuntimeFactsCard({ facts }: { facts: RuntimeFacts }) {
   ];
 
   return (
-    <section className="rounded-2xl border bg-white shadow-sm p-6">
+    <section className="lp-card-soft rounded-card p-6">
       <header>
-        <h2 className="text-lg font-semibold">Driftsfakta (runtime)</h2>
-        <p className="mt-2 text-neutral-600">
+        <h2 className="font-heading text-lg font-semibold">Driftsfakta (runtime)</h2>
+        <p className="font-body mt-2 text-neutral-600">
           Dette er aktive verdier hentet fra konfigurasjon/runtime. Mangler her skal feile tydelig.
         </p>
       </header>

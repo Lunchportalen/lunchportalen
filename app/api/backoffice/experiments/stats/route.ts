@@ -6,10 +6,10 @@ import { getExperimentStats } from "@/lib/ai/experiments/analytics";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
-  const gate = await scopeOr401(request);
-  if (gate.ok === false) return gate.res;
-  const ctx = gate.ctx;
+  const { scopeOr401, requireRoleOr403, denyResponse } = await import("@/lib/http/routeGuard");
+  const s = await scopeOr401(request);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
   const deny = requireRoleOr403(ctx, ["superadmin"]);
   if (deny) return deny;
 

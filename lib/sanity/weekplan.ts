@@ -1,16 +1,9 @@
 // lib/sanity/weekplan.ts
+import "server-only";
 import { createClient } from "@sanity/client";
+import { getSanityReadConfig } from "@/lib/config/env";
 
-function mustEnv(name: string, v: string | undefined) {
-  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
-}
-
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
-
-mustEnv("NEXT_PUBLIC_SANITY_PROJECT_ID", projectId);
-mustEnv("NEXT_PUBLIC_SANITY_DATASET", dataset);
+const { projectId, dataset, apiVersion } = getSanityReadConfig();
 
 const sanityRead = createClient({
   projectId,

@@ -1,6 +1,13 @@
 /**
- * Local mock tree (no API). Multiple root nodes: Hjem, Overlays, Global, Design (all parentId = null).
- * Hjem is the front page. Overlays = app overlay pages (Week, Dashboard, Kitchen, etc.).
+ * Pure helpers for the content tree UI.
+ *
+ * Tree data source: persisted. ContentTree fetches from GET /api/backoffice/content/tree,
+ * which builds from content_pages (tree_parent_id, tree_root_key, tree_sort_order).
+ * Move is persisted via POST /api/backoffice/content/tree/move.
+ *
+ * This file: findNode, flattenVisible are used by ContentTree on API response roots.
+ * getMockRoots / getMockRoot are legacy (not used as tree data source).
+ * removeNodeFromTree / addChildToTree are legacy helpers; not used for persistence.
  */
 
 import type { ContentTreeNode } from "./treeTypes";
@@ -13,7 +20,13 @@ function node(
   id: string,
   parentId: string | null,
   name: string,
-  opts: { slug?: string; hasChildren?: boolean; children?: ContentTreeNode[]; icon?: ContentTreeNode["icon"] } = {}
+  opts: {
+    slug?: string;
+    hasChildren?: boolean;
+    children?: ContentTreeNode[];
+    icon?: ContentTreeNode["icon"];
+    nodeType?: ContentTreeNode["nodeType"];
+  } = {}
 ): ContentTreeNode {
   const children = opts.children ?? [];
   return {
@@ -24,6 +37,7 @@ function node(
     hasChildren: opts.hasChildren ?? children.length > 0,
     children: children.length ? children : undefined,
     icon: opts.icon,
+    nodeType: opts.nodeType,
   };
 }
 
@@ -53,11 +67,13 @@ export function getMockRoots(): ContentTreeNode[] {
       slug: "home",
       icon: "home",
       hasChildren: false,
+      nodeType: "root",
     }),
     node("overlays", null, "App overlays", {
       icon: "folder",
       hasChildren: true,
       children: overlayTreeNodes,
+      nodeType: "folder",
     }),
     node("global", null, "Global", {
       icon: "folder",
@@ -66,6 +82,7 @@ export function getMockRoots(): ContentTreeNode[] {
         node("global-header", "global", "Header", { slug: "header", icon: "document" }),
         node("global-footer", "global", "Footer", { slug: "footer", icon: "document" }),
       ],
+      nodeType: "folder",
     }),
     node("design", null, "Design", {
       icon: "folder",
@@ -73,6 +90,7 @@ export function getMockRoots(): ContentTreeNode[] {
       children: [
         node("design-tokens", "design", "Design tokens", { slug: "design-tokens", icon: "document" }),
       ],
+      nodeType: "folder",
     }),
   ];
 }
@@ -99,6 +117,19 @@ function findInNode(n: ContentTreeNode, id: string): ContentTreeNode | null {
   return null;
 }
 
+/**
+ * Ensure at most one root per id (first occurrence wins).
+ * Prevents duplicate Hjem/Home or other roots from malformed or legacy API responses.
+ */
+export function dedupeRootsById(roots: ContentTreeNode[]): ContentTreeNode[] {
+  const seen = new Set<string>();
+  return roots.filter((n) => {
+    if (n == null || typeof n !== "object" || seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
+}
+
 /** Flatten forest: all roots, children only when parent is expanded. */
 export function flattenVisible(
   roots: ContentTreeNode[],
@@ -111,7 +142,10 @@ export function flattenVisible(
       for (const c of n.children) walk(c, level + 1);
     }
   }
-  for (const root of roots) walk(root, 0);
+  for (const root of roots) {
+    if (root == null) continue;
+    walk(root, 0);
+  }
   return out;
 }
 

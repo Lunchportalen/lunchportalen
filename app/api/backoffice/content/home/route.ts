@@ -56,6 +56,8 @@ export async function GET(request: NextRequest) {
         slug: HOME_SLUG,
         status: "draft",
         updated_at: now,
+        tree_root_key: "home",
+        tree_sort_order: 0,
       })
       .select("id, title, slug, status, updated_at")
       .single();

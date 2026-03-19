@@ -188,6 +188,9 @@ $$;
 -- =========================================================
 -- 1.1) Convert public.orders to partitioned table if needed
 --      (schema-safe, keeps backup table for rollback)
+-- SAFETY: Single atomic transaction. Holds ACCESS EXCLUSIVE on orders for
+-- rename + create + copy. Run in maintenance window; ensure backup before run.
+-- Not split into phases: atomicity avoids window where orders is empty.
 -- =========================================================
 do $$
 declare

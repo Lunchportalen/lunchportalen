@@ -3,6 +3,7 @@ import LogoutButton from "@/components/auth/LogoutButton";
 import { getSessionUser } from "@/lib/auth/getSessionUser";
 import { SuperadminTabs } from "@/components/superadmin/SuperadminTabs";
 import { SuperadminMobileMenu } from "@/components/superadmin/SuperadminMobileMenu";
+import { Container } from "@/components/ui/container";
 
 export default async function SuperadminHeader() {
   const session = await getSessionUser();
@@ -10,11 +11,11 @@ export default async function SuperadminHeader() {
   const pill = "rounded-full border px-3 py-1 text-sm";
 
   return (
-    <header className="sticky top-0 z-50 border-b">
-      <div className="mx-auto w-full max-w-6xl px-4">
+    <header className="sticky top-0 z-50 border-b border-[rgb(var(--lp-border))] lp-glass-nav">
+      <Container className="max-w-6xl">
         <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="justify-self-start">
-            <div className="text-[10px] tracking-[0.22em] opacity-80">LUNCHPORTALEN</div>
+            <div className="text-xs tracking-[0.22em] opacity-80">LUNCHPORTALEN</div>
             <div className="text-sm font-semibold">Superadmin</div>
           </div>
 
@@ -30,7 +31,7 @@ export default async function SuperadminHeader() {
             <LogoutButton className={pill} />
           </div>
         </div>
-      </div>
+      </Container>
     </header>
   );
 }

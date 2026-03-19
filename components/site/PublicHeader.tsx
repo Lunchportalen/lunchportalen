@@ -98,7 +98,7 @@ export default function PublicHeader({
   const hasNav = Array.isArray(nav) && nav.length > 0;
 
   return (
-    <header className="lp-topbar border-b border-[rgb(var(--lp-border))] bg-white/90 supports-[backdrop-filter]:bg-white/75">
+    <header className="lp-topbar border-b border-[rgb(var(--lp-border))] lp-glass-nav">
       <div className={cx("lp-container", "h-20 md:h-28")}>
         <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
           <div className="flex min-w-0 items-center gap-4 justify-self-start">
@@ -140,22 +140,22 @@ export default function PublicHeader({
             {hasNav ? (
               <button
                 type="button"
-                className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-[var(--lp-radius-btn)] border border-[rgba(var(--lp-border),0.9)] bg-white shadow-[var(--lp-shadow-sm)]"
+                className="lp-motion-btn md:hidden inline-flex h-11 w-11 items-center justify-center rounded-[var(--lp-radius-btn)] border border-[rgba(var(--lp-border),0.9)] bg-white shadow-[var(--lp-shadow-sm)]"
                 aria-label={open ? "Lukk meny" : "Åpne meny"}
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
               >
                 <span className="relative block h-4 w-5">
                   <span
-                    className="absolute left-0 top-0 h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    className="lp-motion-icon absolute left-0 top-0 h-0.5 w-5 rounded-full bg-[rgb(var(--lp-text))]"
                     style={{ transform: open ? "translateY(7px) rotate(45deg)" : "none" }}
                   />
                   <span
-                    className="absolute left-0 top-[7px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    className="lp-motion-icon absolute left-0 top-2 h-0.5 w-5 rounded-full bg-[rgb(var(--lp-text))]"
                     style={{ opacity: open ? 0 : 1 }}
                   />
                   <span
-                    className="absolute left-0 top-[14px] h-[2px] w-5 rounded-full bg-[rgb(var(--lp-text))] transition"
+                    className="lp-motion-icon absolute left-0 top-3.5 h-0.5 w-5 rounded-full bg-[rgb(var(--lp-text))]"
                     style={{ transform: open ? "translateY(-7px) rotate(-45deg)" : "none" }}
                   />
                 </span>
@@ -172,12 +172,12 @@ export default function PublicHeader({
 
             {/* Desktop auth buttons: Logg inn / Registrering */}
             <div className="hidden md:inline-flex items-center gap-2">
-              <Link href="/login" className="lp-btn lp-btn--secondary min-h-[44px]">
+              <Link href="/login" className="lp-btn lp-btn--secondary min-h-11">
                 Logg inn
               </Link>
               <Link
                 href="/registrering"
-                className="lp-btn lp-btn--primary lp-neon-focus lp-neon-glow-hover min-h-[44px]"
+                className="lp-btn lp-btn--primary lp-neon-focus lp-neon-glow-hover min-h-11"
               >
                 Registrering
               </Link>
@@ -192,7 +192,7 @@ export default function PublicHeader({
       {hasNav ? (
         <div className={cx("md:hidden", open ? "block" : "hidden")}>
           <div className="lp-container pb-3">
-            <div className="rounded-2xl border border-[rgba(var(--lp-border),0.9)] bg-white/90 shadow-[var(--lp-shadow-card)] backdrop-blur">
+            <div className="lp-glass-surface rounded-card">
               <nav className="flex flex-col p-2" aria-label="Mobilmeny">
                 {nav.map((item) => {
                   const href = normalizeHref(item.href);

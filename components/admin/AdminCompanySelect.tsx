@@ -46,7 +46,7 @@ export default function AdminCompanySelect({ companies, selectedId, label = "Fir
           name="companyId"
           value={selectedId}
           onChange={handleChange}
-          className="min-w-[220px] rounded-full border border-[rgb(var(--lp-border))] bg-white/80 px-3 py-2 text-sm text-[rgb(var(--lp-text))] shadow-sm"
+          className="min-w-56 rounded-full border border-[rgb(var(--lp-border))] bg-white/80 px-3 py-2 text-sm text-[rgb(var(--lp-text))] shadow-sm"
         >
           {companies.map((c) => (
             <option key={c.id} value={c.id}>

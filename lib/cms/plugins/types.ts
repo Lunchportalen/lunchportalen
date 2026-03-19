@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Phase 18: CMS plugin types.
  * Shared by registry (client/server), loadPlugins, and runHooks.
  */
@@ -13,6 +13,13 @@ export type CMSHookContext = {
   slug: string;
 };
 
+/** Optional schema for generic field rendering in the editor (enterprise CMS). */
+export type CMSBlockFieldSchema = {
+  key: string;
+  label: string;
+  kind: "text" | "textarea" | "number";
+};
+
 export type CMSBlockDefinition = {
   type: string;
   label: string;
@@ -22,6 +29,8 @@ export type CMSBlockDefinition = {
   defaults: () => Record<string, unknown>;
   previewText?: (data: Record<string, unknown>) => string;
   allowedEnvironments?: ("prod" | "staging" | "preview")[];
+  /** Optional: drives generic form rendering when present; keys should match defaults(). */
+  fields?: CMSBlockFieldSchema[];
 };
 
 export type CMSInspectorExtension = {

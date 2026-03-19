@@ -142,7 +142,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex w-full min-h-[48px] items-center justify-center rounded-2xl bg-[rgb(var(--lp-text))] px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+        className="inline-flex w-full min-h-12 items-center justify-center rounded-2xl bg-[rgb(var(--lp-text))] px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
       >
         {pending ? "Logger inn …" : "Logg inn"}
       </button>

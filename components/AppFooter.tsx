@@ -2,14 +2,38 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { parseBody } from "@/lib/cms/public/parseBody";
+import { normalizeBlockForRender } from "@/lib/cms/public/normalizeBlockForRender";
+import { renderBlock } from "@/lib/public/blocks/renderBlock";
+import { getFooterVariantClass, type FooterVariant } from "@/lib/ui/footerVariants";
+
 type ContainerMode = "container" | "full";
 
-export default function AppFooter({ containerMode = "container" }: { containerMode?: ContainerMode }) {
+function cn(...v: Array<string | false | null | undefined>) {
+  return v.filter(Boolean).join(" ");
+}
+
+/** Shared footer shell. Pass variant for lp-footer-* (glass/soft/gradient/outline/glow); omit for default. Structure: lp-footer lp-footer--full from globals. */
+export default async function AppFooter({
+  containerMode = "container",
+  variant,
+}: {
+  containerMode?: ContainerMode;
+  /** Visual variant (lib/ui/footerVariants); omit for default footer look */
+  variant?: FooterVariant;
+}) {
   // ✅ FULL: footer går 100% bredde, men content har kontrollert max-bredde
   const innerMax = containerMode === "full" ? "lp-footer-shell" : "lp-footer-shell lp-max-1400";
+  const footerClass = cn("lp-footer lp-footer--full", getFooterVariantClass(variant));
+
+  // Optional global footer content from CMS (content_pages slug "footer", prod variant, locale nb).
+  const footerContent = await getContentBySlug("footer").catch(() => null);
+  const footerBlocks = footerContent ? parseBody(footerContent.body) : [];
+  const safeFooterBlocks = Array.isArray(footerBlocks) ? footerBlocks : [];
 
   return (
-    <footer className="lp-footer lp-footer--full" aria-label="Footer">
+    <footer className={footerClass} aria-label="Footer">
       <div className={innerMax}>
         <div className="lp-footer-grid">
           {/* BRAND */}
@@ -96,6 +120,22 @@ export default function AppFooter({ containerMode = "container" }: { containerMo
             </div>
           </div>
         </div>
+
+        {/* Global footer content from CMS (optional, appended below fixed columns). */}
+        {safeFooterBlocks.length > 0 && (
+          <section className="mt-6 border-t border-[rgb(var(--lp-border))] pt-4">
+            <div className="flex flex-col gap-4">
+              {safeFooterBlocks.map((block, i) => {
+                const node = normalizeBlockForRender(block ?? null, i);
+                return (
+                  <div key={node.id}>
+                    {renderBlock(node, "prod", "nb")}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <div className="lp-footer-bottom">
           <span>© {new Date().getFullYear()} Lunchportalen</span>

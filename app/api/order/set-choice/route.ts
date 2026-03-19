@@ -61,6 +61,12 @@ type DayChoiceSelect = {
   updated_at: string | null;
 };
 
+type ParsedBody = {
+  date: string;
+  choice_key: string;
+  note: string | null;
+};
+
 function logApiError(scope: string, err: any, extra?: Record<string, any>) {
   try {
     console.error(`[${scope}]`, err?.message || err, { ...extra, err });
@@ -211,23 +217,58 @@ function mergeChoices(basis: Choice[] = [], premium: Choice[] = []) {
   return out;
 }
 
+export function parseSetChoiceBody(raw: Partial<Body> | null | undefined, rid: string): ParsedBody | Response {
+  const date = String(raw?.date ?? "").trim();
+  const choice_key = String(raw?.choice_key ?? "").trim();
+  const note = cleanNote(raw?.note);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return jsonErr(rid, "Ugyldig datoformat. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
+  }
+  if (!choice_key) {
+    return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
+  }
+
+  return { date, choice_key, note };
+}
+
+export function validateCutoffAndWeekday(date: string, rid: string) {
+  const cutoff = cutoffState(date);
+  if (cutoff.locked) {
+    return {
+      errorRes: jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
+        code: "LOCKED",
+        detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
+      }),
+      cutoff,
+      dayKey: null,
+    } as const;
+  }
+
+  try {
+    const dayKey = weekdayKeyOslo(date);
+    return { errorRes: null, cutoff, dayKey } as const;
+  } catch {
+    return {
+      errorRes: jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, {
+        code: "WEEKDAY_ONLY",
+        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
+      }),
+      cutoff,
+      dayKey: null,
+    } as const;
+  }
+}
+
 export async function POST(req: Request) {
   const rid = makeRid();
 
   try {
-    const body = (await req.json().catch(() => null)) as Partial<Body> | null;
+    const rawBody = (await req.json().catch(() => null)) as Partial<Body> | null;
+    const parsed = parseSetChoiceBody(rawBody, rid);
+    if (parsed instanceof Response) return parsed;
 
-    const date = String(body?.date ?? "").trim();
-    const choice_key = String(body?.choice_key ?? "").trim();
-    const note = cleanNote(body?.note);
-
-    // 0) Input validering
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return jsonErr(rid, "Ugyldig datoformat. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
-    }
-    if (!choice_key) {
-      return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
-    }
+    const { date, choice_key, note } = parsed;
 
     // 1) Auth (cookie-basert)
     const user_id = await getAuthedUserId();
@@ -236,24 +277,10 @@ export async function POST(req: Request) {
     }
 
     // 2) Cutoff-lås
-    const cutoff = cutoffState(date);
-    if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
-        code: "LOCKED",
-        detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
-      });
-    }
-
-    // 3) Ukedag (Man–Fri)
-    let dayKey: "mon" | "tue" | "wed" | "thu" | "fri";
-    try {
-      dayKey = weekdayKeyOslo(date);
-    } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, {
-        code: "WEEKDAY_ONLY",
-        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
-      });
-    }
+    const cutoffResult = validateCutoffAndWeekday(date, rid);
+    if (cutoffResult.errorRes) return cutoffResult.errorRes;
+    const cutoff = cutoffResult.cutoff;
+    const dayKey = cutoffResult.dayKey!;
 
     // 4) Service role for DB (ingen RLS)
     const supa = supabaseService();

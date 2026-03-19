@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 import { fetchKitchenDayData } from "@/lib/kitchen/dayData";
-import { isAfterCutoff0800 } from "@/lib/kitchen/cutoff";
+import { isAfterCutoff0805 } from "@/lib/kitchen/cutoff";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -70,8 +70,8 @@ export async function GET(req: NextRequest) {
     // slot: optional filter; allow null to mean "all slots"
     const slot = slotParam ? slotParam : null;
 
-    // 6) Cutoff (08:00 Oslo -> computed helper returns UTC cutoff instant + after boolean)
-    const cutoff = isAfterCutoff0800(dateISO);
+    // 6) Cutoff (08:05 Oslo -> computed helper returns UTC cutoff instant + after boolean)
+    const cutoff = isAfterCutoff0805(dateISO);
 
     // 7) Fetch grouped kitchen data
     const { groups } = await fetchKitchenDayData({

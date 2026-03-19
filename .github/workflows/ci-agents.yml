@@ -51,6 +51,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Run tests
+        env:
+          NODE_ENV: test
+        run: npm run test:run
+
+      - name: Tenant isolation test
+        env:
+          NODE_ENV: test
+        run: npm run test:tenant
+
+      # Required gate: production build must pass.
       - name: Build enterprise
         shell: bash
         env:

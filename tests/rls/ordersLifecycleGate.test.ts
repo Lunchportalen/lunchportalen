@@ -22,8 +22,8 @@ function safeStr(v: any) {
 /* =========================================================
    Mocks – vi tester KUN at enforcement gir 403 (ikke audit)
 ========================================================= */
-vi.mock("@/lib/auth/scope", () => ({
-  getScope: vi.fn(async (req: any) => {
+vi.mock("@/lib/http/routeGuard", () => {
+  const mkScope = (req: any) => {
     const h = (k: string) => safeStr(req?.headers?.get?.(k) ?? req?.headers?.[k]);
     return {
       userId: h("x-mock-user") || "u1",
@@ -32,8 +32,34 @@ vi.mock("@/lib/auth/scope", () => ({
       locationId: h("x-mock-location") || "l1",
       email: "test@lunchportalen.no",
     };
-  }),
-}));
+  };
+
+  return {
+    scopeOr401: vi.fn(async (req: any) => ({
+      ok: true as const,
+      ctx: {
+        rid: "rid_test",
+        route: "/api/orders/toggle",
+        method: "POST",
+        scope: mkScope(req),
+      },
+    })),
+    requireRoleOr403: vi.fn(() => null),
+    requireCompanyScopeOr403: vi.fn(() => null),
+    readJson: vi.fn(async (req: any) => {
+      try {
+        return await req.json();
+      } catch {
+        try {
+          const raw = await req.text();
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      }
+    }),
+  };
+});
 
 // supabaseServer: irrelevant når vi blokkerer tidlig
 vi.mock("@/lib/supabase/server", () => ({

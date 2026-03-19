@@ -7,9 +7,11 @@ export const revalidate = 0;
 
 import "server-only";
 
+import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
 type BatchStatus = "queued" | "packed" | "delivered";
 
@@ -82,19 +84,44 @@ function pickLocationName(l: any): string {
   );
 }
 
-export async function GET(req: Request) {
-  const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
-
+export async function GET(req: NextRequest) {
+  let rid: string = "kitchen_company_unknown";
   try {
-    // Auth gate
-    const authClient = await supabaseServer();
-    const { data: auth } = await authClient.auth.getUser();
-    if (!auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
+    // Auth + scope gate (tenant-bound)
+    const scoped = await scopeOr401(req);
+    if (scoped.ok === false) return scoped.res;
+
+    const { rid: ctxRid, scope } = scoped.ctx;
+    rid = ctxRid;
+
+    // Role gate: only kitchen (tenant-bound) or superadmin (global diagnostic)
+    const denyRole = requireRoleOr403(scoped.ctx, "kitchen.company.read", ["kitchen", "superadmin"]);
+    if (denyRole) return denyRole;
 
     const url = new URL(req.url);
-    const company_id = url.searchParams.get("company_id");
-    if (!company_id) return jsonErr(rid, "company_id mangler.", 400, "missing_company_id");
+    const companyFromQuery = url.searchParams.get("company_id");
+
+    const role = String(scope.role ?? "").toLowerCase();
+    const companyFromScope = String(scope.companyId ?? "").trim() || null;
+
+    // Tenant-bound behavior:
+    // - kitchen: MUST use own scoped company_id (ignore query)
+    // - superadmin: may inspect arbitrary company via query param (as before)
+    let company_id: string | null;
+
+    if (role === "kitchen") {
+      if (!companyFromScope) {
+        return jsonErr(rid, "Scope er ikke tilordnet.", 403, {
+          code: "SCOPE_NOT_ASSIGNED",
+          detail: { role, companyIdPresent: false },
+        });
+      }
+      company_id = companyFromScope;
+    } else {
+      // superadmin path
+      company_id = companyFromQuery;
+      if (!company_id) return jsonErr(rid, "company_id mangler.", 400, "missing_company_id");
+    }
 
     const dateParam = url.searchParams.get("date");
     const date = dateParam && isISODate(dateParam) ? dateParam : osloTodayISODate();

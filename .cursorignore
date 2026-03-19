@@ -1,13 +1,19 @@
-# HARD SCOPE LOCK
-app/api/**
-supabase/**
-package*.json
-app/globals.css
-app/layout.tsx
-components/**
-lib/**
-!app/api/backoffice/**
-!app/(backoffice)/backoffice/**
-!lib/backoffice/**
-!lib/backofficeStore/**
-!docs/backoffice/**
+# fortsatt blokkert
+node_modules/**
+.env*
+.env/**
+
+# åpne hele systemet
+!app/api/**
+!lib/**
+!supabase/**
+!domain/**
+!scripts/**
+!tests/**
+!docs/**
+
+# åpne frontend-kjerne
+!app/layout.tsx
+!app/globals.css
+!app/(backoffice)/**
+!components/**

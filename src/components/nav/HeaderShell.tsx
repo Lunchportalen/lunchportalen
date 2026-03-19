@@ -5,6 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 
 import LogoutClient from "@/components/auth/LogoutClient";
+import { getHeaderVariantClass, type HeaderVariant } from "@/lib/ui/headerVariants";
+
+function cn(...v: Array<string | false | null | undefined>) {
+  return v.filter(Boolean).join(" ");
+}
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -94,11 +99,17 @@ async function resolveHeaderConfig(): Promise<{ role: Role | "public"; email: st
   return { role, email, config };
 }
 
-export default async function HeaderShell() {
+/** Canonical header shell. Pass variant for lp-header-* (glass/soft/gradient/outline/glow); omit for default. Structure: lp-topbar from globals. */
+export default async function HeaderShell(props: { variant?: HeaderVariant }) {
+  const { variant } = props;
   const { email, config } = await resolveHeaderConfig();
 
+  const headerClass = variant
+    ? cn("lp-topbar", getHeaderVariantClass(variant))
+    : "border-b border-[rgb(var(--lp-border))] bg-white";
+
   return (
-    <header className="border-b border-[rgb(var(--lp-border))] bg-white">
+    <header className={headerClass}>
       <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-4 py-3 md:py-4">
         {/* Left: logo */}
         <div className="flex items-center justify-self-start">

@@ -9,6 +9,7 @@ import "server-only";
 import { type NextRequest } from "next/server";
 import { getScope, allowSuperadminOrCompanyAdmin } from "@/lib/auth/scope";
 import { isUuid, safeText } from "@/lib/agreements/normalize";
+import { normalizeCompanyAgreementStatus, type CompanyAgreementStatus } from "@/lib/agreements/companyAgreementStatus";
 import { writeAuditEvent } from "@/lib/audit/write";
 import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -54,8 +55,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     }
 
+    const beforeStatusRaw = (before.data as any).status ?? null;
+    const beforeStatus = normalizeCompanyAgreementStatus(beforeStatusRaw);
+
+    if (!beforeStatus) {
+      return jsonErr(rid, "Avtalen har ukjent status. Kan ikke aktivere.", 409, {
+        code: "INVALID_CURRENT_STATUS",
+        detail: { status: beforeStatusRaw },
+      });
+    }
+
     // Idempotency: already active
-    if (String((before.data as any).status) === "ACTIVE") {
+    if (beforeStatus === "ACTIVE") {
       // ✅ B-LOCK: DO NOT update companies.status here
       opsLog("agreement.resume.idempotent", {
         rid,
@@ -65,6 +76,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
 
       return jsonOk(rid, { ok: true, rid, agreement: before.data, idempotent: true }, 200);
+    }
+
+    const allowedFrom: CompanyAgreementStatus[] = ["PAUSED"];
+    if (!allowedFrom.includes(beforeStatus)) {
+      return jsonErr(rid, "Ugyldig overgang. Kan bare gjenoppta PAUSED-avtaler.", 409, {
+        code: "INVALID_TRANSITION",
+        detail: { from: beforeStatus, to: "ACTIVE" },
+      });
     }
 
     // If there is another ACTIVE agreement for this company, pause it first to keep invariant.

@@ -1,5 +1,7 @@
-﻿import type { NextRequest } from "next/server";
+/** POST: log AI apply event to ai_activity_log. Privileged: superadmin only. Unauthenticated or wrong role fails closed (401/403). */
+import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
 
 const METADATA_MAX = 2000;
 
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     return jsonErr(ctx.rid, "Ugyldig JSON.", 400, "BAD_REQUEST");
   }
   const o = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
-    if (!o) return jsonErr(ctx.rid, "Body må være et objekt.", 400, "BAD_REQUEST");
+  if (!o) return jsonErr(ctx.rid, "Body må være et objekt.", 400, "BAD_REQUEST");
 
   const environment =
     o.environment === "staging" ? "staging" : o.environment === "preview" ? "preview" : "prod";
@@ -39,18 +41,31 @@ export async function POST(request: NextRequest) {
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
-    await supabase.from("ai_activity_log").insert({
-      page_id: (o.pageId as string) ?? null,
-      variant_id: (o.variantId as string) ?? null,
-      environment: env,
-      locale,
-      action: "apply",
+    const { error } = await supabase.from("ai_activity_log").insert(
+      buildAiActivityLogRow({
+        action: "apply",
+        page_id: (o.pageId as string) ?? null,
+        variant_id: (o.variantId as string) ?? null,
+        actor_user_id: ctx.scope?.email ?? null,
+        tool: tool || "apply",
+        environment: env,
+        locale,
+        metadata: truncateForMetadata({ applied }) as Record<string, unknown>,
+      })
+    );
+    if (error) {
+      return jsonErr(ctx.rid, "Kunne ikke logge apply.", 500, "APPLY_LOG_FAILED");
+    }
+    const { recordSuggestionApplied } = await import("@/lib/ai/memory/recordOutcome");
+    await recordSuggestionApplied(supabase, {
+      pageId: (o.pageId as string) ?? null,
+      variantId: (o.variantId as string) ?? null,
       tool: tool || "apply",
-      created_by: ctx.scope?.email ?? null,
-      metadata: truncateForMetadata({ applied }) as Record<string, unknown>,
+      appliedKeys: applied && typeof applied === "object" && !Array.isArray(applied) ? Object.keys(applied).slice(0, 20) : undefined,
+      sourceRid: ctx.rid,
     });
   } catch (_) {
-    // best-effort log, non-fatal
+    return jsonErr(ctx.rid, "Kunne ikke logge apply.", 500, "APPLY_LOG_FAILED");
   }
 
   return jsonOk(ctx.rid, { ok: true, rid: ctx.rid }, 200);

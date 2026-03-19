@@ -1,8 +1,10 @@
 /**
  * Phase 36: AI Tool Registry - single source of truth for tool IDs and governance.
- * Used by /api/backoffice/ai/suggest for validation, rate limits, and patch constraints.
+ * Capability layer: used by /api/backoffice/ai/suggest for validation, rate limits, and patch constraints.
+ * Editor tools that use separate routes (block-builder, page-builder, etc.) are listed as editor-only.
  */
 
+/** Tool IDs that go through POST /api/backoffice/ai/suggest (policy + rate limit apply). */
 export const AI_TOOL_IDS = [
   "landing.generate.sections",
   "i18n.translate.blocks",
@@ -98,4 +100,21 @@ export function getToolPolicy(tool: string): ToolPolicy | null {
 
 export function assertToolId(tool: string): tool is ToolId {
   return AI_TOOL_IDS.includes(tool as ToolId);
+}
+
+/** Tool IDs used in the editor but served by separate routes (not suggest). Single source for editor capability surface. */
+export const EDITOR_ONLY_TOOL_IDS = [
+  "block.builder",
+  "page.builder",
+  "screenshot.builder",
+  "layout.suggestions",
+] as const;
+
+export type EditorOnlyToolId = (typeof EDITOR_ONLY_TOOL_IDS)[number];
+
+/** All tool IDs known to the content editor (suggest + editor-only routes). Use for busy state and metrics. */
+export type EditorToolId = ToolId | EditorOnlyToolId;
+
+export function isEditorToolId(tool: string): tool is EditorToolId {
+  return assertToolId(tool) || EDITOR_ONLY_TOOL_IDS.includes(tool as EditorOnlyToolId);
 }

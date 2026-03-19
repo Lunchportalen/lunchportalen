@@ -140,18 +140,18 @@ export default function InviteEmployeeModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
       role="dialog"
       aria-modal="true"
       aria-label={t(titleKey)}
       onMouseDown={(e) => {
-        // click outside closes
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      <button type="button" className="lp-glass-overlay absolute inset-0" onClick={onClose} aria-label="Lukk" />
       <div
         ref={dialogRef}
-        className="w-full max-w-lg rounded-3xl bg-white p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-xl"
+        className="lp-glass-panel relative w-full max-w-lg rounded-card p-6"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4">

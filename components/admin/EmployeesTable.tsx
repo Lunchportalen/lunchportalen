@@ -491,8 +491,9 @@ export default function EmployeesTable({
       </div>
 
       {inviteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="lp-glass-overlay absolute inset-0" onClick={() => setInviteOpen(false)} aria-label="Lukk" />
+          <div className="lp-glass-panel relative w-full max-w-lg rounded-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-base font-semibold">Inviter ansatt</div>
@@ -564,8 +565,9 @@ export default function EmployeesTable({
       ) : null}
 
       {bulkOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-3xl bg-white p-5 ring-1 ring-[rgb(var(--lp-border))]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="lp-glass-overlay absolute inset-0" onClick={() => setBulkOpen(false)} aria-label="Lukk" />
+          <div className="lp-glass-panel relative w-full max-w-3xl rounded-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-base font-semibold">Inviter e-postliste</div>

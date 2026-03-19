@@ -100,7 +100,7 @@ export default function AdminHeaderClient({
           {emailLabel ? (
             <>
               <span
-                className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] max-w-[220px] sm:max-w-[260px] truncate"
+                className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[rgb(var(--lp-text))] max-w-56 sm:max-w-64 truncate"
                 title={emailLabel}
               >
                 {emailLabel}

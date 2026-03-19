@@ -1,6 +1,12 @@
 "use client";
 
 import * as React from "react";
+import {
+  getToastSemanticClass,
+  getToastVariantClass,
+  type FeedbackVariant,
+} from "@/lib/ui/feedbackVariants";
+import { motionClasses } from "@/lib/ui/motionTokens";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -27,14 +33,22 @@ function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
 
-const KIND_STYLE: Record<ToastKind, string> = {
+/** Fallback when variant not used: preserve original kind-based styling */
+const KIND_STYLE_LEGACY: Record<ToastKind, string> = {
   default: "bg-[color:var(--lp-surface)] text-[color:var(--lp-fg)] border-[color:var(--lp-border)]",
   success: "bg-emerald-50 text-emerald-900 border-emerald-200",
   warning: "bg-amber-50 text-amber-900 border-amber-200",
   error: "bg-red-50 text-red-900 border-red-200",
 };
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({
+  children,
+  variant,
+}: {
+  children: React.ReactNode;
+  /** Visual variant (lp-toast-*); omit for legacy kind-based styling */
+  variant?: FeedbackVariant;
+}) {
   const [items, setItems] = React.useState<ToastItem[]>([]);
 
   const dismiss = React.useCallback((id: string) => {
@@ -66,21 +80,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              "rounded-2xl border p-4 shadow-[var(--lp-shadow-sm)]",
-              "transition-[transform,opacity] duration-200 [transition-timing-function:var(--lp-ease)]",
-              "hover:-translate-y-[1px]",
-              KIND_STYLE[t.kind]
+              motionClasses.toast,
+              "p-4 text-[color:var(--lp-fg)] hover:-translate-y-[1px]",
+              variant
+                ? cn(getToastVariantClass(variant), getToastSemanticClass(t.kind as "success" | "error" | "warning" | "info" | "default"))
+                : cn("rounded-2xl border shadow-[var(--lp-shadow-sm)]", KIND_STYLE_LEGACY[t.kind])
             )}
           >
             <div className="flex items-start gap-3">
               <div className="min-w-0">
-                {t.title ? <div className="text-sm font-semibold">{t.title}</div> : null}
-                <div className={cn("text-sm", t.title ? "mt-0.5" : "")}>{t.message}</div>
+                {t.title ? <div className="font-heading text-sm font-semibold">{t.title}</div> : null}
+                <div className={cn("font-body text-sm", t.title ? "mt-0.5" : "")}>{t.message}</div>
               </div>
               <button
                 type="button"
                 onClick={() => dismiss(t.id)}
-                className="ml-auto rounded-xl px-2 py-1 text-xs opacity-70 hover:bg-black/5 hover:opacity-100"
+                className="lp-motion-btn ml-auto rounded-xl px-2 py-1 text-xs opacity-70 hover:bg-black/5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--lp-ring),0.25)] active:scale-[0.98]"
               >
                 Lukk
               </button>

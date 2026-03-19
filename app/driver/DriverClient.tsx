@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { formatDateTimeNO } from "@/lib/date/format";
 
@@ -371,7 +372,7 @@ function IconBtn({
       className={[
         "inline-flex items-center justify-center rounded-full",
         "h-11 w-11 sm:h-10 sm:w-10",
-        "bg-white/70 hover:bg-white text-slate-900",
+        "bg-glass-medium hover:bg-white text-slate-900",
         "shadow-sm ring-1 ring-black/5",
         "disabled:opacity-60",
       ].join(" ")}
@@ -397,7 +398,7 @@ function PrimaryBtn({
       disabled={disabled}
       className={[
         "inline-flex items-center justify-center rounded-2xl",
-        "min-h-[48px] px-4 py-3 text-sm font-semibold",
+        "min-h-12 px-4 py-3 text-sm font-semibold",
         "bg-slate-900 text-white shadow-sm",
         "hover:opacity-95 disabled:opacity-60",
       ].join(" ")}
@@ -423,8 +424,8 @@ function SecondaryBtn({
       disabled={disabled}
       className={[
         "inline-flex items-center justify-center rounded-2xl",
-        "min-h-[48px] px-4 py-3 text-sm font-semibold",
-        "bg-white/70 text-slate-900 shadow-sm ring-1 ring-black/5",
+        "min-h-12 px-4 py-3 text-sm font-semibold",
+        "bg-glass-medium text-slate-900 shadow-sm ring-1 ring-black/5",
         "hover:bg-white disabled:opacity-60",
       ].join(" ")}
     >
@@ -672,7 +673,7 @@ export default function DriverClient() {
       ].join(" ")}
     >
       {/* Sticky Topbar */}
-      <div className={"sticky top-0 z-40 lp-safe-top backdrop-blur-xl bg-white/60 ring-1 ring-black/5"}>
+      <div className="sticky top-0 z-40 lp-safe-top lp-glass-bar">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="flex items-center justify-between py-3">
             <div className="min-w-0">
@@ -686,21 +687,21 @@ export default function DriverClient() {
 
             <div className="flex items-center gap-2">
               <IconBtn label="Verktøy" onClick={() => setToolsOpen(true)}>
-                <span aria-hidden>⚙️</span>
+                <Icon name="settings" size="md" />
               </IconBtn>
 
               <IconBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending || loading}>
-                <span aria-hidden>↻</span>
+                <Icon name="refresh" size="md" />
               </IconBtn>
 
               <IconBtn label="Logg ut" onClick={logout}>
-                <span aria-hidden>⎋</span>
+                <Icon name="logout" size="md" />
               </IconBtn>
             </div>
           </div>
 
           <div className="hidden sm:flex items-center justify-end pb-3">
-            <div className="rounded-2xl bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/5">
+            <div className="lp-glass-surface rounded-card px-4 py-3">
               <div className="text-xs text-slate-600">Leveringsprogress</div>
               <div className="mt-1 flex items-center gap-3">
                 <progress className="lp-progress w-40" value={deliveryProgress} max={100} />
@@ -721,7 +722,7 @@ export default function DriverClient() {
             <div className="mt-1 text-sm text-red-900">{err}</div>
 
             {lastApiErr ? (
-              <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-slate-800 ring-1 ring-black/5">
+              <div className="lp-glass-surface mt-4 rounded-card p-4 text-sm text-slate-800">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <button
                     type="button"
@@ -766,7 +767,7 @@ export default function DriverClient() {
         ) : null}
 
         {!loading && !err && count === 0 ? (
-          <div className="mt-6 rounded-3xl bg-white/70 p-6 shadow-sm ring-1 ring-black/5">
+          <div className="lp-glass-card mt-6 rounded-card p-6">
             <div className="text-base font-semibold text-slate-900">Ingen leveranser</div>
             <div className="mt-1 text-sm text-slate-600">Det er ingen stopp for valgt dato.</div>
 
@@ -779,7 +780,7 @@ export default function DriverClient() {
         {!loading && !err && count > 0 ? (
           <div className="mt-6 space-y-5">
             {groups.map((slot) => (
-              <section key={slot.slotKey} className="rounded-3xl bg-white/70 p-5 shadow-sm ring-1 ring-black/5">
+              <section key={slot.slotKey} className="lp-glass-card rounded-card p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-base font-semibold text-slate-900">Leveringsvindu: {slot.slotLabel}</div>
                   <div className="text-sm text-slate-700">
@@ -853,7 +854,7 @@ export default function DriverClient() {
 
                               <button
                                 onClick={() => void copyStop(l.stop)}
-                                className="w-full sm:w-auto rounded-2xl bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/5 hover:bg-white"
+                                className="w-full sm:w-auto rounded-2xl bg-glass-medium px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-black/5 hover:bg-white"
                                 type="button"
                               >
                                 Kopiér stopp
@@ -874,7 +875,7 @@ export default function DriverClient() {
       {/* Mobile Bottom Action Bar */}
       <div className="sm:hidden fixed left-0 right-0 bottom-0 z-40 lp-safe-bottom">
         <div className="mx-auto w-full max-w-6xl px-4 pb-3">
-          <div className="rounded-3xl bg-white/70 p-3 shadow-lg ring-1 ring-black/5 backdrop-blur-xl">
+          <div className="lp-glass-surface rounded-card p-3">
             <div>
               <SecondaryBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending || loading} />
             </div>
@@ -885,14 +886,16 @@ export default function DriverClient() {
       {/* Tools Sheet */}
       {toolsOpen && (
         <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
-          <button
-            type="button"
-            aria-label="Lukk verktøy"
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setToolsOpen(false)}
-          />
+            <div
+              className="lp-motion-overlay lp-glass-overlay absolute inset-0"
+              role="button"
+              tabIndex={-1}
+              aria-label="Lukk verktøy"
+              onClick={() => setToolsOpen(false)}
+              onKeyDown={(e) => e.key === "Escape" && setToolsOpen(false)}
+            />
           <div className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl lp-safe-bottom">
-            <div className="rounded-t-3xl bg-white/95 p-5 shadow-2xl ring-1 ring-black/10 backdrop-blur-xl">
+            <div className="lp-glass-panel rounded-t-3xl p-5">
               <div className="flex items-center justify-between">
                 <div className="text-base font-semibold text-slate-900">Verktøy</div>
                 <button

@@ -98,7 +98,7 @@ export default async function AgreementBlock(props: {
   if (!agreementState.ok) {
     const err = agreementState as { message: string };
     return (
-      <div className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 backdrop-blur">
+      <div className="lp-glass-card rounded-3xl p-6">
         <div className="text-sm font-semibold text-neutral-900">Kunne ikke hente avtale</div>
         <div className="mt-1 text-sm text-neutral-600">{safeText(err.message)}</div>
       </div>
@@ -107,7 +107,7 @@ export default async function AgreementBlock(props: {
 
   if (agreementState.companyId !== companyId) {
     return (
-      <div className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 backdrop-blur">
+      <div className="lp-glass-card rounded-3xl p-6">
         <div className="text-sm font-semibold text-neutral-900">Avtale er ikke for dette firmaet</div>
         <div className="mt-1 text-sm text-neutral-600">Firmatilknytning stemmer ikke med avtalegrunnlaget.</div>
       </div>
@@ -214,14 +214,14 @@ export default async function AgreementBlock(props: {
             <div
               key={d.key}
               className={[
-                "flex min-h-[110px] flex-col items-center justify-center rounded-[var(--lp-radius)] border px-3 py-4 text-center",
+                "flex min-h-28 flex-col items-center justify-center rounded-[var(--lp-radius)] border px-3 py-4 text-center",
                 d.enabled ? "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface))]" : "border-[rgb(var(--lp-border))] bg-white/40 text-[rgb(var(--lp-muted))]",
               ].join(" ")}
             >
               <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">{d.label}</div>
               <div
                 className={[
-                  "mt-2 inline-flex min-h-[24px] items-center justify-center rounded-full px-3 text-xs font-semibold",
+                  "mt-2 inline-flex min-h-6 items-center justify-center rounded-full px-3 text-xs font-semibold",
                   d.enabled
                     ? isLuxus
                       ? "bg-amber-100 text-amber-900"

@@ -38,7 +38,7 @@ function readJson(relativePath) {
 
 const registry = readJson("lib/seo/marketing-registry.json");
 const faqData = readJson("lib/seo/faq-data.json");
-const pageSource = readText("app/lunsjordning/page.tsx");
+const pageSource = readText("app/(public)/lunsjordning/page.tsx");
 
 if (registry) {
     const entry = registry[PAGE_PATH];

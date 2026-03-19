@@ -12,15 +12,15 @@ export async function safeFetchJson<T>(
       json = { _raw: text };
     }
 
-    // Hvis API-en gir kontrakt, bruk den. Ellers fail-safe.
+    // Honor contract only; ambiguous response must not be reported as success.
     if (json && typeof json === "object") {
       if (json.ok === true && "data" in json) return { ok: true, data: json.data as T };
       if (json.ok === false) return { ok: false, error: json.message ?? "API_ERROR", detail: json };
     }
 
-    // fallback
     if (!res.ok) return { ok: false, error: `HTTP_${res.status}`, detail: json };
-    return { ok: true, data: (json as T) ?? (null as any) };
+    // Fail-closed: response shape did not match { ok: true, data }; do not report success.
+    return { ok: false, error: "BAD_RESPONSE", detail: { status: res.status, body: json } };
   } catch (e: any) {
     return { ok: false, error: "FETCH_FAILED", detail: String(e?.message ?? e) };
   }

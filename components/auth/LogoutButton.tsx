@@ -42,7 +42,7 @@ export default function LogoutButton({
   }
 
   const base =
-    "lp-btn lp-btn--sm transition disabled:opacity-60 disabled:cursor-not-allowed";
+    "lp-btn lp-btn--sm lp-motion-btn disabled:opacity-60 disabled:cursor-not-allowed";
 
   const variantClass =
     variant === "primary"

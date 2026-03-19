@@ -46,7 +46,7 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
   return (
     <div className="min-h-[calc(100vh-0px)] bg-[rgb(var(--lp-bg))]">
       <div className="mx-auto max-w-7xl px-4 pt-[27px] pb-16">
-        <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-sm backdrop-blur sm:p-6">{children}</div>
+        <div className="lp-glass-card rounded-card p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );

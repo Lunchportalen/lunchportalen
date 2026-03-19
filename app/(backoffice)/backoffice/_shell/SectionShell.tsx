@@ -1,8 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { panelBorder, panelBg } from "./panelHeaderClasses";
-
 type SectionShellProps = {
   treeSlot: ReactNode;
   children: ReactNode;
@@ -16,7 +14,7 @@ export default function SectionShell({ treeSlot, children }: SectionShellProps) 
   return (
     <div className="grid h-full min-h-0 flex-1" style={{ gridTemplateColumns: "280px 1fr" }}>
       <aside
-        className={`flex h-full min-h-0 flex-col overflow-y-auto ${panelBorder} ${panelBg}`}
+        className="lp-glass-panel flex h-full min-h-0 flex-col overflow-y-auto"
         style={{ width: "280px" }}
       >
         {treeSlot}

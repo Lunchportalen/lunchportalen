@@ -285,7 +285,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
         <button
           type="submit"
           disabled={!canSubmit}
-          className="lp-btn lp-btn-primary lp-btn-block lp-neon mt-5 min-h-[48px] disabled:opacity-60"
+          className="lp-btn lp-btn-primary lp-btn-block lp-neon mt-5 min-h-12 disabled:opacity-60"
         >
           {pending ? "Sender registrering..." : "Send registrering"}
         </button>

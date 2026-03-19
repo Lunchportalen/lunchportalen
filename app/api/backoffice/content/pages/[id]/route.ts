@@ -58,6 +58,7 @@ function buildPayload(pageRow: PageRow, variantRow: VariantRow | null, locale: s
       updated_at: pageRow.updated_at ?? pageRow.created_at ?? null,
       published_at: pageRow.published_at ?? null,
       body,
+      variantId: variantRow?.id ?? null,
     },
     variant,
   };
@@ -106,13 +107,14 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     }
 
     const payload = buildPayload(pageRow, variantRow, locale, environment);
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, ...payload }, 200);
+    return jsonOk(ctx.rid, payload, 200);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, msg, 500, "SERVER_ERROR", { detail: String(e) });
   }
 }
 
+/** PATCH: update page/variant. Used for both manual edits and CRO-applied meta; same auth (superadmin only). */
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id: pageId } = await context.params;
   const s = await scopeOr401(request);
@@ -161,7 +163,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const pageUpdates: Record<string, unknown> = {};
     if (titleRaw !== undefined) pageUpdates.title = titleRaw;
     if (slugRaw !== undefined) pageUpdates.slug = normalizeSlug(slugRaw);
-    if (status !== undefined) pageUpdates.status = status;
+    if (status !== undefined) {
+      pageUpdates.status = status;
+      if (status === "published") pageUpdates.published_at = now;
+      else if (status === "draft") pageUpdates.published_at = null;
+    }
 
     if (Object.keys(pageUpdates).length > 0) {
       pageUpdates.updated_at = now;
@@ -201,7 +207,32 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       }
     }
 
-    return jsonOk(ctx.rid, { ok: true, rid: ctx.rid }, 200);
+    const { data: pageRowAfter } = await supabase
+      .from("content_pages")
+      .select("id, title, slug, status, created_at, updated_at, published_at")
+      .eq("id", pageId)
+      .maybeSingle();
+    const { data: variantAfter } = await supabase
+      .from("content_page_variants")
+      .select("id, body, locale, environment")
+      .eq("page_id", pageId)
+      .eq("locale", locale)
+      .eq("environment", environment)
+      .maybeSingle();
+    const pageForClient = pageRowAfter
+      ? {
+          id: pageRowAfter.id,
+          title: pageRowAfter.title ?? "",
+          slug: pageRowAfter.slug ?? "",
+          status: pageRowAfter.status ?? "draft",
+          created_at: pageRowAfter.created_at ?? null,
+          updated_at: pageRowAfter.updated_at ?? pageRowAfter.created_at ?? null,
+          published_at: pageRowAfter.published_at ?? null,
+          body: variantAfter?.body ?? { version: 1, blocks: [] },
+          variantId: variantAfter?.id ?? null,
+        }
+      : null;
+    return jsonOk(ctx.rid, pageForClient ? { page: pageForClient } : {}, 200);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, msg, 500, "SERVER_ERROR", { detail: String(e) });

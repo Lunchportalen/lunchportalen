@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
+import { safeAltForImg, safeCaptionForFigcaption } from "@/lib/media/renderSafe";
 import { FormBlock } from "@/lib/public/forms/FormBlock";
+import { SafeCmsImage } from "@/lib/public/blocks/SafeCmsImage";
 
 type CmsBlock = {
   id: string;
@@ -11,36 +13,54 @@ type Env = "prod" | "staging";
 
 type Locale = "nb" | "en";
 
+/** Normalize line endings for visible CMS text so literal "\\r\\n" / "\\n" and CRLF do not render as raw characters. Exported for tests. */
+export function normalizeDisplayText(s: string): string {
+  if (typeof s !== "string") return "";
+  return s
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+}
+
 export function renderBlock(block: CmsBlock, env: Env, locale: Locale): ReactNode {
   if (!block) return null;
   const data = (block.data ?? {}) as Record<string, unknown>;
+
   if (block.type === "form") {
     const formId = typeof data.formId === "string" ? data.formId : "";
-    const title = typeof data.title === "string" ? data.title : undefined;
+    const title =
+      typeof data.title === "string" ? normalizeDisplayText(data.title) : undefined;
     if (!formId) {
       return (
-        <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-[var(--lp-radius-card)] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Skjema-blokk mangler formId.
         </div>
       );
     }
-    return <FormBlock formId={formId} title={title} env={env} locale={locale} />;
+    return (
+      <div className="lp-motion-card">
+        <FormBlock formId={formId} title={title} env={env} locale={locale} />
+      </div>
+    );
   }
   if (block.type === "hero") {
     return (
-      <section className="lp-hero-cms rounded-2xl bg-slate-900 px-4 py-8 text-white md:px-6">
-        <h1 className="text-2xl font-semibold md:text-3xl">
-          {String(data.title ?? data.heading ?? "")}
+      <section className="lp-motion-card rounded-[var(--lp-radius-card)] bg-neutral-900 p-6 text-white shadow-[var(--lp-shadow-soft)]">
+        <h1 className="font-display whitespace-pre-line text-2xl font-semibold md:text-3xl">
+          {normalizeDisplayText(String(data.title ?? data.heading ?? ""))}
         </h1>
         {(data.subtitle ?? data.text) && (
-          <p className="mt-2 text-slate-300">{String(data.subtitle ?? data.text)}</p>
+          <p className="font-body mt-2 whitespace-pre-line text-white/85">
+            {normalizeDisplayText(String(data.subtitle ?? data.text))}
+          </p>
         )}
         {data.ctaLabel && (
           <a
             href={typeof data.ctaHref === "string" ? data.ctaHref : "#"}
-            className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900"
+            className="font-ui mt-4 inline-flex rounded-full bg-[rgb(var(--lp-surface))] px-4 py-2 text-sm font-medium text-[rgb(var(--lp-text))]"
           >
-            {String(data.ctaLabel)}
+            {normalizeDisplayText(String(data.ctaLabel))}
           </a>
         )}
       </section>
@@ -48,29 +68,41 @@ export function renderBlock(block: CmsBlock, env: Env, locale: Locale): ReactNod
   }
   if (block.type === "richText") {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white px-4 py-5">
+      <section className="lp-motion-card lp-glass-surface rounded-[var(--lp-radius-card)] p-6">
         {data.heading && (
-          <h2 className="text-lg font-semibold text-slate-900">{String(data.heading)}</h2>
+          <h2 className="font-heading whitespace-pre-line text-lg font-semibold text-[rgb(var(--lp-text))]">
+            {normalizeDisplayText(String(data.heading))}
+          </h2>
         )}
         {data.body && (
-          <div className="mt-2 text-sm leading-relaxed text-slate-700">{String(data.body)}</div>
+          <div className="font-body mt-2 whitespace-pre-line text-sm leading-relaxed text-[rgb(var(--lp-muted))]">
+            {normalizeDisplayText(String(data.body))}
+          </div>
         )}
       </section>
     );
   }
   if (block.type === "cta") {
     return (
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <section className="lp-motion-card lp-glass-surface flex flex-wrap items-center justify-between gap-4 rounded-[var(--lp-radius-card)] p-6">
         <div>
-          {data.title && <h3 className="text-sm font-semibold text-slate-900">{String(data.title)}</h3>}
-          {data.body && <p className="mt-1 text-xs text-slate-600">{String(data.body)}</p>}
+          {data.title && (
+            <h3 className="font-heading whitespace-pre-line text-sm font-semibold text-[rgb(var(--lp-text))]">
+              {normalizeDisplayText(String(data.title))}
+            </h3>
+          )}
+          {data.body && (
+            <p className="font-body mt-1 whitespace-pre-line text-xs text-[rgb(var(--lp-muted))]">
+              {normalizeDisplayText(String(data.body))}
+            </p>
+          )}
         </div>
         {data.buttonLabel && (
           <a
             href={typeof data.href === "string" ? data.href : "#"}
-            className="inline-flex rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white"
+            className="font-ui inline-flex rounded-full bg-[rgb(var(--lp-text))] px-4 py-2 text-xs font-medium text-white"
           >
-            {String(data.buttonLabel)}
+            {normalizeDisplayText(String(data.buttonLabel))}
           </a>
         )}
       </section>
@@ -78,24 +110,31 @@ export function renderBlock(block: CmsBlock, env: Env, locale: Locale): ReactNod
   }
   if (block.type === "image") {
     const src = typeof data.src === "string" ? data.src : null;
-    const alt = typeof data.alt === "string" ? data.alt : typeof data.caption === "string" ? data.caption : "";
+    const alt = normalizeDisplayText(safeAltForImg(data.alt, data.caption));
+    const captionText = normalizeDisplayText(safeCaptionForFigcaption(data.caption, data.alt));
     return (
-      <figure className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element -- CMS image src can be external/dynamic
-          <img src={src} alt={alt} className="h-auto w-full rounded-lg object-cover" />
-        ) : (
-          <div className="flex h-40 items-center justify-center rounded-lg bg-slate-200 text-xs text-slate-500">
-            Bilde
-          </div>
-        )}
-        {(data.caption ?? data.alt) && (
-          <figcaption className="text-xs text-slate-600">
-            {String(data.caption ?? data.alt)}
+      <figure className="lp-motion-card lp-glass-surface flex flex-col gap-3 rounded-[var(--lp-radius-card)] p-6">
+        <SafeCmsImage src={src} alt={alt} />
+        {captionText ? (
+          <figcaption className="font-body whitespace-pre-line text-xs text-[rgb(var(--lp-muted))]">
+            {captionText}
           </figcaption>
-        )}
+        ) : null}
       </figure>
     );
   }
+
+  // Unknown or unsupported block type.
+  // In production we fail silently to avoid noisy output for end-users.
+  // In staging we surface a safe, visible warning so editors can fix content.
+  if (env === "staging") {
+    const typeLabel = block.type || "ukjent";
+    return (
+      <div className="rounded-[var(--lp-radius-card)] border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+        Ukjent blokktype i innhold: <span className="font-mono">{typeLabel}</span>.
+      </div>
+    );
+  }
+
   return null;
 }

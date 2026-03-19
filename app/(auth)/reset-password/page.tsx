@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <AuthShell title="Tilbakestill passord" subtitle="Venter på sikker sesjon …">
-        <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
+        <div className="lp-glass-card rounded-card px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
           Laster …
         </div>
       </AuthShell>
@@ -138,7 +138,7 @@ export default function ResetPasswordPage() {
     return (
       <AuthShell title="Tilbakestill passord" subtitle="Lenken er utløpt. Be om ny.">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
+          <div className="lp-glass-card rounded-card px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
             Lenken er utløpt. Be om ny.
           </div>
           <Link href="/forgot-password" className="text-sm underline underline-offset-4 text-[rgb(var(--lp-text))]">

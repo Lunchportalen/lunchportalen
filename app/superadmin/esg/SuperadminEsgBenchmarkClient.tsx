@@ -192,7 +192,7 @@ export default function SuperadminEsgBenchmarkClient() {
               <Link
                 key={r.company_id}
                 href={`/superadmin/esg/${r.company_id}`}
-                className="block px-6 py-4 transition hover:bg-white/40"
+                className="lp-motion-row block px-6 py-4 hover:bg-white/40"
               >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">

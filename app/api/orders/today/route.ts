@@ -65,6 +65,33 @@ function jsonOrder(ctx: { rid: string }, status: number, body: any) {
   return jsonOk(ctx.rid, body, status);
 }
 
+export function parseTodayOrderAction(body: { action?: Action; note?: string | null }, today: string, rid: string) {
+  const action = body?.action;
+  if (action !== "place" && action !== "cancel") {
+    return {
+      errorBody: orderBase({
+        ok: false,
+        rid,
+        date: today,
+        locked: false,
+        cutoffTime: "08:00",
+        menuAvailable: true,
+        canAct: false,
+        error: "BAD_REQUEST",
+        message: "Ugyldig action. Bruk 'place' eller 'cancel'.",
+        detail: { action },
+        receipt: null,
+        order: null,
+      } as any),
+      action: null as Action | null,
+      note: null as string | null,
+    } as const;
+  }
+
+  const note = clampNote(body?.note);
+  return { errorBody: null, action, note } as const;
+}
+
 /* =========================================================
    POST (place/cancel today)
 ========================================================= */
@@ -128,27 +155,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = (await readJson(req)) as { action?: Action; note?: string | null };
-
-    const action = body?.action;
-    if (action !== "place" && action !== "cancel") {
-      return jsonOrder(a.ctx,
-        400,
-        orderBase({
-          ok: false,
-          rid,
-          date: today,
-          locked: false,
-          cutoffTime: "08:00",
-          menuAvailable: true,
-          canAct: false,
-          error: "BAD_REQUEST",
-          message: "Ugyldig action. Bruk 'place' eller 'cancel'.",
-          detail: { action },
-          receipt: null,
-          order: null,
-        } as any)
-      );
+    const parsed = parseTodayOrderAction(body, today, rid);
+    if (parsed.errorBody) {
+      return jsonOrder(a.ctx, 400, parsed.errorBody);
     }
+    const action = parsed.action!;
 
     const admin = await adminClientOrNull();
     if (!admin) {
@@ -285,7 +296,7 @@ export async function POST(req: NextRequest) {
 
     const sb = await supabaseServer();
 
-    const note = clampNote(body?.note);
+    const note = parsed.note;
     const writeRes = action === "place"
       ? await lpOrderSet(sb as any, { p_date: today, p_slot: "lunch", p_note: note })
       : await lpOrderCancel(sb as any, { p_date: today });

@@ -20,19 +20,36 @@ async function readJson(res: Response) {
    Mocks: Scope + date + audit + backup
 ========================================================= */
 
-vi.mock("@/lib/auth/scope", () => ({
-  getScope: vi.fn(async () => ({
-    userId: "u1",
-    role: "employee",
-    companyId: "c1",
-    locationId: "l1",
-    email: "test@lunchportalen.no",
+vi.mock("@/lib/http/routeGuard", () => ({
+  scopeOr401: vi.fn(async () => ({
+    ok: true as const,
+    ctx: {
+      rid: "rid_test",
+      route: "/api/orders/toggle",
+      method: "POST",
+      scope: {
+        userId: "u1",
+        role: "employee",
+        companyId: "c1",
+        locationId: "l1",
+        email: "test@lunchportalen.no",
+      },
+    },
   })),
-  // keep type-compat if imported elsewhere
-  ScopeError: class ScopeError extends Error {
-    status = 403;
-    code = "FORBIDDEN";
-  },
+  requireRoleOr403: vi.fn(() => null),
+  requireCompanyScopeOr403: vi.fn(() => null),
+  readJson: vi.fn(async (req: any) => {
+    try {
+      return await req.json();
+    } catch {
+      try {
+        const raw = await req.text();
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+  }),
 }));
 
 vi.mock("@/lib/date/oslo", () => ({

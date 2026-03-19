@@ -42,23 +42,23 @@ export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(function S
         <span
           aria-hidden="true"
           className={cn(
-            "relative inline-flex h-7 w-12 items-center rounded-full",
+            "lp-motion-switch relative inline-flex h-7 w-12 items-center rounded-full",
             "border border-[color:var(--lp-border)]",
             "bg-[color:var(--lp-surface)]",
             "shadow-[var(--lp-shadow-sm)]",
-            "transition-[background-color,border-color,box-shadow] duration-200 [transition-timing-function:var(--lp-ease)]",
             "peer-focus-visible:[box-shadow:0_0_0_4px_rgba(var(--lp-ring),0.22)]",
             "peer-checked:bg-[color:var(--lp-accent)] peer-checked:border-transparent",
-            "peer-checked:hover:bg-[color:var(--lp-accent-2)]"
+            "peer-checked:hover:bg-[color:var(--lp-accent-2)]",
+            "peer-disabled:opacity-70 peer-disabled:cursor-not-allowed peer-disabled:[transition:none]"
           )}
         >
           {/* thumb */}
           <span
             className={cn(
-              "absolute left-1 top-1 h-5 w-5 rounded-full",
+              "lp-motion-switch-thumb absolute left-1 top-1 h-5 w-5 rounded-full",
               "bg-white shadow",
-              "transition-[transform] duration-200 [transition-timing-function:var(--lp-ease)]",
-              "peer-checked:translate-x-5"
+              "peer-checked:translate-x-5",
+              "peer-disabled:[transition:none]"
             )}
           />
         </span>

@@ -1,5 +1,11 @@
 // tests/_helpers/rlsFixtures.ts
+// RLS fixture: builds companies, locations, users, and real auth tokens via signInWithPassword.
+// Sign-ins are throttled and serialized (cross-process lock) to avoid Supabase "Request rate limit reached".
+// When running multiple RLS test files, use: vitest run --poolOptions.forks.maxForks=1 <files>
 import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -86,30 +92,103 @@ function supabaseAs(accessToken: string): SupabaseClient {
   });
 }
 
-async function createAuthUser(admin: SupabaseClient, email: string) {
+async function createAuthUser(admin: SupabaseClient, email: string, password: string) {
   const { data, error } = await admin.auth.admin.createUser({
     email,
+    password,
     email_confirm: true,
   });
   if (error || !data?.user?.id) throw new Error(`createUser failed: ${error?.message ?? "unknown"}`);
   return data.user.id as string;
 }
 
-async function createAccessToken(admin: SupabaseClient, userId: string) {
-  const r = await (admin.auth.admin as any).createSession({ user_id: userId });
-  if (r?.error) throw new Error(`createSession failed: ${r.error.message}`);
-  const token = r?.data?.session?.access_token;
-  if (!token) throw new Error("createSession returned no access_token");
-  return token as string;
+/** Supabase auth token bucket refills slowly; space sign-ins to avoid "Request rate limit reached". */
+const MIN_MS_BETWEEN_SIGN_INS = 2000;
+const LOCK_STALE_MS = 60_000;
+let lastSignInAt = 0;
+const tokenCache = new Map<string, string>();
+
+function tokenCacheKey(email: string, password: string): string {
+  return `${email}\n${password}`;
+}
+
+function signInLockPath(): string {
+  return path.join(os.tmpdir(), "lunchportalen-rls-sign-in.lock");
+}
+
+/** Acquire a cross-process lock so only one sign-in runs at a time (avoids rate limit when test files run in parallel). */
+async function withSignInLock<T>(fn: () => Promise<T>): Promise<T> {
+  const lockPath = signInLockPath();
+  const pollMs = 200;
+  while (true) {
+    try {
+      fs.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+      break;
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err?.code !== "EEXIST" && err?.code !== "EPERM") throw e;
+      try {
+        const st = fs.statSync(lockPath);
+        if (Date.now() - st.mtimeMs > LOCK_STALE_MS) fs.unlinkSync(lockPath);
+      } catch {
+        // ignore
+      }
+      await new Promise((r) => setTimeout(r, pollMs));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    try {
+      fs.unlinkSync(lockPath);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
+ * Obtain a real access token for the user via signInWithPassword.
+ * Uses anon client so RLS sees a normal user session (no createSession API).
+ * Throttles consecutive sign-ins to avoid Supabase auth rate limits.
+ * Reuses cached token when the same (email, password) is requested again.
+ * Exported for regression tests (token reuse / no repeated sign-in).
+ */
+export async function createAccessToken(admin: SupabaseClient, email: string, password: string): Promise<string> {
+  const key = tokenCacheKey(email, password);
+  const cached = tokenCache.get(key);
+  if (cached) return cached;
+
+  await withSignInLock(async () => {
+    const now = Date.now();
+    const elapsed = now - lastSignInAt;
+    if (lastSignInAt > 0 && elapsed < MIN_MS_BETWEEN_SIGN_INS) {
+      await new Promise((r) => setTimeout(r, MIN_MS_BETWEEN_SIGN_INS - elapsed));
+    }
+    lastSignInAt = Date.now();
+
+    const anon = supabaseAnon();
+    const { data, error } = await anon.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(`signInWithPassword failed: ${error.message}`);
+    const token = data?.session?.access_token;
+    if (!token) throw new Error("signInWithPassword returned no access_token");
+    tokenCache.set(key, token);
+
+    await new Promise((r) => setTimeout(r, MIN_MS_BETWEEN_SIGN_INS));
+  });
+
+  const out = tokenCache.get(key);
+  if (!out) throw new Error("createAccessToken: token not set after lock");
+  return out;
 }
 
 /* =========================================================
-   Orgnr generator (companies.orgnr er NOT NULL)
+   Orgnr generator (companies.orgnr er NOT NULL).
+   Per-build unique base from rid to avoid duplicate key across parallel/test runs.
 ========================================================= */
-let _orgnrCounter = 900000000;
-function nextOrgnr() {
-  _orgnrCounter += 1;
-  return String(_orgnrCounter);
+function orgnrBaseFromRid(rid: string): number {
+  const n = parseInt(rid.slice(0, 8), 16);
+  return 100000000 + (n % 800000000);
 }
 
 /* =========================================================
@@ -125,31 +204,28 @@ async function insertProfile(
     company_id?: string | null;
     location_id?: string | null;
     full_name?: string | null;
-    department?: string | null;
     disabled_at?: string | null;
     is_active?: boolean | null;
   }
 ) {
+  // Canonical profiles schema (bootstrap): id, email, full_name, role, company_id, location_id, active, disabled_at, archived_at, ...
+  // No department column; use active (schema) not is_active for the insert.
   const base = {
     role: args.role,
     email: args.email,
     company_id: args.company_id ?? null,
     location_id: args.location_id ?? null,
     full_name: args.full_name ?? null,
-    department: args.department ?? null,
     disabled_at: args.disabled_at ?? null,
-    is_active: args.is_active ?? true,
+    active: args.is_active ?? true,
   };
 
-  // Try 1: profiles.id = auth.users.id
-  const r1 = await admin.from("profiles").insert({ id: args.user_id, ...base } as any);
-  if (!r1.error) return;
-
-  // Try 2: profiles.user_id
-  const r2 = await admin.from("profiles").insert({ user_id: args.user_id, ...base } as any);
-  if (!r2.error) return;
-
-  throw new Error(`insert profile failed: ${r2.error?.message ?? r1.error?.message ?? "unknown"}`);
+  // Canonical schema: profiles.id = auth.users.id (user_id column was dropped in bootstrap).
+  // Use upsert in case a trigger or hook already created a profile row for the auth user.
+  const { error } = await admin
+    .from("profiles")
+    .upsert({ id: args.user_id, ...base } as any, { onConflict: "id" });
+  if (error) throw new Error(`insert profile failed: ${error.message}`);
 }
 
 /**
@@ -167,7 +243,8 @@ async function insertCompany(
   if (!id) throw new Error("insert company failed: missing id");
   if (!name) throw new Error("insert company failed: missing name");
 
-  const orgnr = safeStr(args.orgnr) || nextOrgnr();
+  const orgnr = safeStr(args.orgnr);
+  if (!orgnr) throw new Error("insert company failed: orgnr required (use per-build unique orgnr)");
 
   const raw = safeStr(args.status) || "ACTIVE";
   const upper = raw.toUpperCase();
@@ -199,6 +276,21 @@ async function insertCompany(
     throw new Error(`insert company failed: ${r2.error?.message ?? r1.error?.message ?? "unknown"}`);
   }
 
+  // Schema cache may not know about default_location_id in some environments.
+  // Retry without that column when that specific error is seen.
+  if (msg.includes("default_location_id")) {
+    const { error: r2err } = await admin.from("companies").insert(
+      {
+        id,
+        name,
+        status: upper,
+        orgnr,
+      } as any
+    );
+    if (!r2err) return;
+    throw new Error(`insert company failed: ${r2err?.message ?? r1.error?.message ?? "unknown"}`);
+  }
+
   throw new Error(`insert company failed: ${r1.error?.message ?? "unknown"}`);
 }
 
@@ -215,16 +307,18 @@ async function insertLocation(
   if (!company_id) throw new Error(`insert location failed: missing company_id for location "${name || id}"`);
   if (!name) throw new Error("insert location failed: missing name");
 
-  const { error } = await admin.from("company_locations").insert(
-    {
-      id,
-      company_id,
-      name,
-      label: args.label ?? null,
-    } as any
-  );
+  const payload: Record<string, unknown> = { id, company_id, name };
+  if (args.label != null) payload.label = args.label;
 
-  if (error) throw new Error(`insert location failed: ${error.message}`);
+  const { error } = await admin.from("company_locations").insert(payload as any);
+  if (!error) return;
+
+  const msg = String(error?.message ?? "");
+  if (msg.includes("label") && msg.includes("schema")) {
+    const { error: r2 } = await admin.from("company_locations").insert({ id, company_id, name } as any);
+    if (!r2) return;
+  }
+  throw new Error(`insert location failed: ${error.message}`);
 }
 
 async function insertOrder(
@@ -239,11 +333,65 @@ async function insertOrder(
       status: args.status,
       company_id: args.company_id,
       location_id: args.location_id,
-      slot: args.slot ?? "LUNCH",
+      slot: args.slot ?? "default",
       note: args.note ?? null,
     } as any
   );
   if (error) throw new Error(`insert order failed: ${error.message}`);
+}
+
+/**
+ * Create an ACTIVE agreement for (company, location) so order inserts are allowed.
+ * Tries RPC (lp_agreement_create_pending + lp_agreement_approve_active) first;
+ * if the RPC is not in the schema cache, inserts directly into agreements with status ACTIVE.
+ * Fails if company is CLOSED (RPC path only; direct insert is used for fixture companies that are not CLOSED).
+ */
+async function ensureActiveAgreement(
+  admin: SupabaseClient,
+  companyId: string,
+  locationId: string,
+  startsAtISO: string
+): Promise<void> {
+  const rpcParams = {
+    p_company_id: companyId,
+    p_location_id: locationId,
+    p_tier: "BASIS",
+    p_delivery_days: ["mon", "tue", "wed", "thu", "fri"],
+    p_slot_start: "11:00",
+    p_slot_end: "13:00",
+    p_starts_at: startsAtISO,
+    p_binding_months: 12,
+    p_notice_months: 3,
+    p_price_per_employee: 100,
+  };
+  const { data, error: createErr } = await admin.rpc("lp_agreement_create_pending", rpcParams);
+  if (!createErr) {
+    const row = Array.isArray(data) ? data[0] : data;
+    const agreementId = String((row as { agreement_id?: string })?.agreement_id ?? (row as { id?: string })?.id ?? "");
+    if (!agreementId) throw new Error("lp_agreement_create_pending returned no agreement_id");
+    const { error: approveErr } = await admin.rpc("lp_agreement_approve_active", {
+      p_agreement_id: agreementId,
+      p_actor_user_id: null,
+    });
+    if (!approveErr) return;
+    throw new Error(`lp_agreement_approve_active failed: ${approveErr.message}`);
+  }
+  const msg = String(createErr.message ?? "");
+  if (msg.includes("schema cache") || msg.includes("Could not find the function")) {
+    const { error: insertErr } = await admin.from("agreements").insert({
+      company_id: companyId,
+      location_id: locationId,
+      tier: "BASIS",
+      status: "ACTIVE",
+      delivery_days: ["mon", "tue", "wed", "thu", "fri"],
+      slot_start: "11:00",
+      slot_end: "13:00",
+      starts_at: startsAtISO,
+    } as any);
+    if (insertErr) throw new Error(`agreements insert (fallback) failed: ${insertErr.message}`);
+    return;
+  }
+  throw new Error(`lp_agreement_create_pending failed: ${createErr.message}`);
 }
 
 /* =========================================================
@@ -252,6 +400,7 @@ async function insertOrder(
 export async function buildRlsFixtures(): Promise<Fixtures> {
   const rid = crypto.randomUUID();
   const short = rid.slice(0, 6);
+  const orgnrBase = orgnrBaseFromRid(rid);
 
   const admin = supabaseAdmin();
   const anon = supabaseAnon();
@@ -263,8 +412,8 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
   const companyAName = `Company A ${short}`;
   const companyBName = `Company B ${short}`;
 
-  await insertCompany(admin, { id: companyAId, name: companyAName, status: "ACTIVE" });
-  await insertCompany(admin, { id: companyBId, name: companyBName, status: "ACTIVE" });
+  await insertCompany(admin, { id: companyAId, name: companyAName, status: "ACTIVE", orgnr: String(orgnrBase) });
+  await insertCompany(admin, { id: companyBId, name: companyBName, status: "ACTIVE", orgnr: String(orgnrBase + 1) });
 
   const locAId = crypto.randomUUID();
   const locBId = crypto.randomUUID();
@@ -281,10 +430,10 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
   const companyClosedId = crypto.randomUUID();
   const companyOtherId = crypto.randomUUID();
 
-  await insertCompany(admin, { id: companyActiveId, name: `FX Active ${short}`, status: "ACTIVE" });
-  await insertCompany(admin, { id: companyPausedId, name: `FX Paused ${short}`, status: "PAUSED" });
-  await insertCompany(admin, { id: companyClosedId, name: `FX Closed ${short}`, status: "CLOSED" });
-  await insertCompany(admin, { id: companyOtherId, name: `FX Other ${short}`, status: "ACTIVE" });
+  await insertCompany(admin, { id: companyActiveId, name: `FX Active ${short}`, status: "ACTIVE", orgnr: String(orgnrBase + 2) });
+  await insertCompany(admin, { id: companyPausedId, name: `FX Paused ${short}`, status: "PAUSED", orgnr: String(orgnrBase + 3) });
+  await insertCompany(admin, { id: companyClosedId, name: `FX Closed ${short}`, status: "CLOSED", orgnr: String(orgnrBase + 4) });
+  await insertCompany(admin, { id: companyOtherId, name: `FX Other ${short}`, status: "ACTIVE", orgnr: String(orgnrBase + 5) });
 
   const locActiveId = crypto.randomUUID();
   const locPausedId = crypto.randomUUID();
@@ -296,11 +445,12 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
   await insertLocation(admin, { id: locClosedId, company_id: companyClosedId, name: `FX Loc Closed ${short}`, label: "CLOSED" });
   await insertLocation(admin, { id: locOtherId, company_id: companyOtherId, name: `FX Loc Other ${short}`, label: "OTHER" });
 
-  // Users + tokens
+  // Users + tokens (password used only to obtain session via signInWithPassword; not stored)
   const mk = async (role: Role, company_id?: string | null, location_id?: string | null) => {
     const email = randEmail(role);
-    const user_id = await createAuthUser(admin, email);
-    const accessToken = await createAccessToken(admin, user_id);
+    const password = crypto.randomBytes(20).toString("hex");
+    const user_id = await createAuthUser(admin, email, password);
+    const accessToken = await createAccessToken(admin, email, password);
     await insertProfile(admin, { user_id, email, role, company_id: company_id ?? null, location_id: location_id ?? null });
     return { user_id, email, accessToken, access_token: accessToken } as AuthUserFx;
   };
@@ -323,17 +473,41 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
   const empClosed = await mk("employee", companyClosedId, locClosedId);
   const empOther = await mk("employee", companyOtherId, locOtherId);
 
-  // Minimal orders (for status-gate tests)
-  const today = new Date();
-  const yyyy = String(today.getFullYear());
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  const todayISO = `${yyyy}-${mm}-${dd}`;
+  // Minimal orders (for status-gate tests). Order insert requires ACTIVE agreement per (company, location, date).
+  // Use a non-today order date to avoid production same-day cutoff (orders locked after 08:00 Oslo for "today").
+  const now = new Date();
+  const past = new Date(now);
+  past.setUTCDate(past.getUTCDate() - 7);
+  const startsAtISO = `${past.getUTCFullYear()}-${String(past.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    past.getUTCDate()
+  ).padStart(2, "0")}`;
 
-  await insertOrder(admin, { user_id: empActive.user_id, date: todayISO, status: "ACTIVE", company_id: companyActiveId, location_id: locActiveId });
-  await insertOrder(admin, { user_id: empPaused.user_id, date: todayISO, status: "ACTIVE", company_id: companyPausedId, location_id: locPausedId });
-  await insertOrder(admin, { user_id: empClosed.user_id, date: todayISO, status: "ACTIVE", company_id: companyClosedId, location_id: locClosedId });
-  await insertOrder(admin, { user_id: empOther.user_id, date: todayISO, status: "ACTIVE", company_id: companyOtherId, location_id: locOtherId });
+  const future = new Date(now);
+  future.setUTCDate(future.getUTCDate() + 1);
+  const orderDateISO = `${future.getUTCFullYear()}-${String(future.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    future.getUTCDate()
+  ).padStart(2, "0")}`;
+
+  await ensureActiveAgreement(admin, companyActiveId, locActiveId, startsAtISO);
+  await ensureActiveAgreement(admin, companyPausedId, locPausedId, startsAtISO);
+  await ensureActiveAgreement(admin, companyOtherId, locOtherId, startsAtISO);
+  // CLOSED company cannot have an agreement (lp_agreement_create_pending raises COMPANY_CLOSED), so no order for empClosed.
+  // Order insert also requires company status ACTIVE; PAUSED companies are blocked, so no order for empPaused.
+
+  await insertOrder(admin, {
+    user_id: empActive.user_id,
+    date: orderDateISO,
+    status: "ACTIVE",
+    company_id: companyActiveId,
+    location_id: locActiveId,
+  });
+  await insertOrder(admin, {
+    user_id: empOther.user_id,
+    date: orderDateISO,
+    status: "ACTIVE",
+    company_id: companyOtherId,
+    location_id: locOtherId,
+  });
 
   const authUserIds = [
     employeeA.user_id,
@@ -352,11 +526,16 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
     empOther.user_id,
   ];
 
-  // ✅ FASIT cleanup rekkefølge (orders -> profiles -> locations -> companies -> auth)
+  // ✅ FASIT cleanup rekkefølge (orders -> agreements -> profiles -> locations -> companies -> auth)
   async function cleanup() {
     await admin.from("orders").delete().in("user_id", authUserIds).throwOnError();
 
-    await admin.from("profiles").delete().in("user_id", authUserIds).throwOnError();
+    await admin
+      .from("agreements")
+      .delete()
+      .in("company_id", [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId])
+      .throwOnError();
+
     await admin.from("profiles").delete().in("id", authUserIds).throwOnError();
 
     await admin

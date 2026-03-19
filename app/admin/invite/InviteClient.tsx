@@ -171,7 +171,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+      <section className="lp-glass-card rounded-3xl p-6">
         <div className="mb-5">
           <h2 className="text-sm font-semibold text-neutral-900">Enkeltinvitasjon</h2>
           <p className="mt-1 text-sm text-neutral-600">
@@ -221,7 +221,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
         </form>
       </section>
 
-      <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+      <section className="lp-glass-card rounded-3xl p-6">
         <div className="mb-5">
           <h2 className="text-sm font-semibold text-neutral-900">Bulk-invitasjon</h2>
           <p className="mt-1 text-sm text-neutral-600">
@@ -290,7 +290,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
         </div>
       </section>
 
-      <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+      <section className="lp-glass-card rounded-3xl p-6">
         <div className="mb-3 text-sm font-semibold text-neutral-900">Resultat</div>
         {error ? <div className="text-sm text-rose-700">{error}</div> : null}
         {!error && !result ? <div className="text-sm text-neutral-600">Ingen resultater ennå.</div> : null}
@@ -315,7 +315,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
                   </tr>
                 </thead>
                 <tbody className="[&>tr]:border-t [&>tr]:border-black/5">
-                  {result.results.map((r, idx) => (
+                  {(Array.isArray(result.results) ? result.results : []).map((r, idx) => (
                     <tr key={idx} className="[&>td]:py-2 [&>td]:pr-2">
                       <td className="font-medium">{r.email}</td>
                       <td className="font-mono">{r.status}</td>
@@ -329,7 +329,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
         ) : null}
       </section>
 
-      <section className="rounded-3xl bg-white/80 p-6 ring-1 ring-black/5 shadow-[0_12px_44px_-34px_rgba(0,0,0,.40)] backdrop-blur">
+      <section className="lp-glass-card rounded-3xl p-6">
         <div className="mb-3 text-sm font-semibold text-neutral-900">Siste invitasjoner</div>
         <InvitesPanel />
       </section>

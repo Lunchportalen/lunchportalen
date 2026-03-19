@@ -1,28 +1,39 @@
 import * as React from "react";
+import {
+  type TableVariant,
+  type RowVariant,
+  getTableVariantClass,
+  getRowVariantClass,
+} from "@/lib/ui/tableRowVariants";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
 }
 
-export type TableProps = React.HTMLAttributes<HTMLDivElement>;
+export type TableProps = React.HTMLAttributes<HTMLDivElement> & {
+  /** Visual variant (wrapper surface). When set, replaces default surface/ring/shadow. */
+  variant?: TableVariant;
+};
 
 /**
  * Wrapper rundt <table> som gir:
  * - sticky header ready (hvis du vil)
  * - horisontal scrolling uten at layout sprekker
- * - consistent border/shadow tokens
+ * - consistent border/shadow tokens (or variant: glass | soft | gradient | outline | glow)
  */
 export const Table = React.forwardRef<HTMLDivElement, TableProps>(function Table(
-  { className, ...props },
+  { className, variant, ...props },
   ref
 ) {
+  const variantClass = getTableVariantClass(variant);
   return (
     <div
       ref={ref}
       className={cn(
-        "w-full overflow-x-auto rounded-2xl",
-        "bg-[color:var(--lp-surface)] ring-1 ring-[color:var(--lp-border)]",
-        "shadow-[var(--lp-shadow-sm)] [box-shadow:var(--lp-shadow-sm),var(--lp-shadow-inset)]",
+        "w-full overflow-x-auto",
+        variantClass
+          ? variantClass
+          : "rounded-2xl bg-[color:var(--lp-surface)] ring-1 ring-[color:var(--lp-border)] shadow-[var(--lp-shadow-sm)] [box-shadow:var(--lp-shadow-sm),var(--lp-shadow-inset)]",
         className
       )}
       {...props}
@@ -82,23 +93,39 @@ export const TBody = React.forwardRef<
 });
 TBody.displayName = "TBody";
 
-export const TR = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
-  function TR({ className, ...props }, ref) {
-    return (
-      <tr
-        ref={ref}
-        className={cn(
-          "border-b border-[color:var(--lp-border)]",
-          "transition-[background-color] duration-200 [transition-timing-function:var(--lp-ease)]",
-          "hover:bg-[color:var(--lp-surface-alt)]",
-          "last:border-b-0",
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
+export type TRProps = React.HTMLAttributes<HTMLTableRowElement> & {
+  /** Row surface variant (hover/selected in motion.css). Prefer outline/soft for dense data. */
+  variant?: RowVariant;
+  /** Selected state (adds lp-row--selected / aria-selected). */
+  selected?: boolean;
+  /** Summary/grouped row (adds lp-row-summary). */
+  summary?: boolean;
+};
+
+export const TR = React.forwardRef<HTMLTableRowElement, TRProps>(function TR(
+  { className, variant, selected, summary, ...props },
+  ref
+) {
+  const rowVariantClass = getRowVariantClass(variant);
+  return (
+    <tr
+      ref={ref}
+      className={cn(
+        "lp-motion-row",
+        rowVariantClass
+          ? cn(rowVariantClass, selected && "lp-row--selected", summary && "lp-row-summary")
+          : cn(
+              "border-b border-[color:var(--lp-border)] hover:bg-[color:var(--lp-surface-alt)]",
+              summary && "lp-row-summary"
+            ),
+        "last:border-b-0",
+        className
+      )}
+      aria-selected={selected}
+      {...props}
+    />
+  );
+});
 TR.displayName = "TR";
 
 export const TH = React.forwardRef<
@@ -109,7 +136,7 @@ export const TH = React.forwardRef<
     <th
       ref={ref}
       className={cn(
-        "px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--lp-muted)]",
+        "px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--lp-muted)]",
         "whitespace-nowrap",
         className
       )}

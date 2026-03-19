@@ -4,14 +4,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-
-function denyResponse(s: any): Response {
-  if (s?.response) return s.response as Response;
-  if (s?.res) return s.res as Response;
-  const rid = String(s?.ctx?.rid ?? "rid_missing");
-  return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHENTICATED");
-}
+import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
@@ -39,11 +32,10 @@ function isMissingColumn(err: any) {
 export async function GET(req: NextRequest): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
 
-  const s: any = await scopeOr401(req);
-  if (!s?.ok) return denyResponse(s);
-
-  const a = s.ctx;
-  const deny = requireRoleOr403(a, "api.superadmin.system.incidents.GET", ["superadmin"]);
+  const s = await scopeOr401(req);
+  if (s.ok === false) return denyResponse(s);
+  const ctx = s.ctx;
+  const deny = requireRoleOr403(ctx, "api.superadmin.system.incidents.GET", ["superadmin"]);
   if (deny) return deny;
 
   const url = new URL(req.url);
@@ -71,17 +63,17 @@ export async function GET(req: NextRequest): Promise<Response> {
     if (res.error) {
       // Phase 1: table/column missing -> safe empty list
       if (isMissingRelation(res.error) || isMissingColumn(res.error)) {
-        return jsonOk(a.rid, { items: [], total: 0 }, 200);
+        return jsonOk(ctx.rid, { items: [], total: 0 }, 200);
       }
-      return jsonErr(a.rid, "Kunne ikke hente hendelser.", 500, {
+      return jsonErr(ctx.rid, "Kunne ikke hente hendelser.", 500, {
         code: "DB_ERROR",
         detail: res.error,
       });
     }
 
-    return jsonOk(a.rid, { items: res.data ?? [], total: res.count ?? 0 }, 200);
+    return jsonOk(ctx.rid, { items: res.data ?? [], total: res.count ?? 0 }, 200);
   } catch (e: any) {
-    return jsonErr(a.rid, "Uventet feil.", 500, {
+    return jsonErr(ctx.rid, "Uventet feil.", 500, {
       code: "SERVER_ERROR",
       detail: { message: safeStr(e?.message ?? e) },
     });
