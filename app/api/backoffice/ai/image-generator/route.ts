@@ -9,11 +9,24 @@ import { isAIEnabled } from "@/lib/ai/provider";
 import { imageGenerateBrandSafe } from "@/lib/ai/tools/imageGenerateBrandSafe";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase/admin";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function getMediaBucket(): string {
+  const fromEnv = process.env.MEDIA_STORAGE_BUCKET;
+  if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
+  return "media";
+}
+
+function sanitizeFileName(name: string | null | undefined): string {
+  const fallback = "ai-generated";
+  if (!name || typeof name !== "string") return fallback;
+  const base = (name.trim().split(/[\\/]/).pop() || fallback).replace(/[^a-zA-Z0-9._-]/g, "_");
+  return base || fallback;
+}
 
 export async function POST(req: NextRequest) {
   const gate = await scopeOr401(req);
@@ -45,6 +58,115 @@ export async function POST(req: NextRequest) {
   const style = o.style === "warm_enterprise" ? ("warm_enterprise" as const) : ("scandi_minimal" as const);
   const topicForTool = hasPrompt ? prompt : topic;
   const brand = typeof o.brand === "string" ? o.brand.trim() : "Lunchportalen";
+  const generateAndStore = o.generate === true;
+
+  if (generateAndStore) {
+    if (!hasPrompt) {
+      return jsonErr(ctx.rid, "Missing prompt for image generation.", 400, "MISSING_PROMPT");
+    }
+    if (!hasSupabaseAdminConfig()) {
+      return jsonErr(ctx.rid, "Supabase admin-konfigurasjon mangler.", 500, "MEDIA_UPLOAD_CONFIG_MISSING");
+    }
+
+    const apiKeyRaw = process.env.AI_API_KEY ?? process.env.OPENAI_API_KEY ?? "";
+    const apiKey = typeof apiKeyRaw === "string" ? apiKeyRaw.trim() : "";
+    if (!apiKey) {
+      return jsonErr(ctx.rid, "AI key mangler.", 503, "FEATURE_DISABLED");
+    }
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt,
+          response_format: "b64_json",
+        }),
+      });
+
+      const imageJson = (await response.json().catch(() => null)) as
+        | { data?: Array<{ b64_json?: string; url?: string }> }
+        | null;
+
+      if (!response.ok) {
+        return jsonErr(ctx.rid, "Image generation failed.", 500, "IMAGE_GENERATION_FAILED");
+      }
+
+      const b64 = imageJson?.data?.[0]?.b64_json;
+      if (!b64 || typeof b64 !== "string") {
+        return jsonErr(ctx.rid, "Image generation returned no binary.", 500, "IMAGE_GENERATION_EMPTY");
+      }
+
+      const binary = Buffer.from(b64, "base64");
+      if (!binary || binary.length === 0) {
+        return jsonErr(ctx.rid, "Generated image was empty.", 500, "IMAGE_GENERATION_EMPTY");
+      }
+
+      const now = new Date();
+      const y = now.getUTCFullYear();
+      const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(now.getUTCDate()).padStart(2, "0");
+      const rand = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
+      const fileBase = sanitizeFileName("ai-generated");
+      const objectPath = `ai/${y}/${m}/${d}/${fileBase}-${rand}.png`;
+      const bucket = getMediaBucket();
+      const admin = supabaseAdmin();
+
+      const { error: uploadError } = await admin.storage.from(bucket).upload(objectPath, binary, {
+        cacheControl: "3600",
+        contentType: "image/png",
+        upsert: false,
+      });
+      if (uploadError) {
+        return jsonErr(ctx.rid, "Could not upload generated image.", 500, "MEDIA_UPLOAD_FAILED");
+      }
+
+      const { data: urlData } = admin.storage.from(bucket).getPublicUrl(objectPath);
+      const publicUrl = typeof urlData?.publicUrl === "string" ? urlData.publicUrl : "";
+      if (!publicUrl) {
+        return jsonErr(ctx.rid, "Could not resolve media URL.", 500, "MEDIA_UPLOAD_URL_FAILED");
+      }
+
+      const { data: inserted, error: insertError } = await admin
+        .from("media_items")
+        .insert({
+          type: "image",
+          status: "ready",
+          source: "ai",
+          url: publicUrl,
+          alt: "",
+          caption: null,
+          tags: ["ai", "generated"],
+          width: null,
+          height: null,
+          mime_type: "image/png",
+          bytes: binary.length,
+          metadata: { aiModel: "gpt-image-1", prompt, storageBucket: bucket, path: objectPath },
+          created_by: ctx.scope?.email ?? null,
+        } as Record<string, unknown>)
+        .select("id, url")
+        .single();
+
+      if (insertError || !inserted || typeof inserted.id !== "string" || typeof inserted.url !== "string") {
+        return jsonErr(ctx.rid, "Could not create media item.", 500, "MEDIA_CREATE_FAILED");
+      }
+
+      return jsonOk(
+        ctx.rid,
+        {
+          assetId: inserted.id,
+          url: inserted.url,
+        },
+        200
+      );
+    } catch {
+      return jsonErr(ctx.rid, "Image generation failed.", 500, "IMAGE_GENERATION_FAILED");
+    }
+  }
 
   const imgInput = {
     locale,

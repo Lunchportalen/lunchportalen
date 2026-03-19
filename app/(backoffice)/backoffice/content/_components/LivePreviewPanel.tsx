@@ -43,6 +43,10 @@ type LivePreviewPanelProps = {
   blocks: PreviewBlock[];
   pageId?: string | null;
   variantId?: string | null;
+  /** Selected block id used to keep preview in sync with editor/structure tree. */
+  selectedBlockId?: string | null;
+  /** Click handler for blocks in preview (drives editor selection + scroll). */
+  onSelectBlock?: (blockId: string) => void;
   /** Explicit preview source, e.g. "Utkast" */
   previewSourceLabel?: string;
   /** True when current draft body differs from published (prod) body */
@@ -59,6 +63,8 @@ export function LivePreviewPanel({
   blocks,
   pageId = null,
   variantId = null,
+  selectedBlockId = null,
+  onSelectBlock,
   previewSourceLabel,
   previewDiffersFromPublished,
   hasPublishedVersion,
@@ -106,8 +112,14 @@ export function LivePreviewPanel({
               return (
                 <BlockPreviewErrorBoundary key={node.id} blockId={node.id}>
                   <div
+                    data-block-id={block.id}
                     data-analytics-page-id={pageId ?? undefined}
                     data-analytics-variant-id={variantId ?? undefined}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    className={block.id === selectedBlockId ? "ring-2 ring-rose-200 rounded-md" : undefined}
                   >
                     {renderBlock(node, PREVIEW_ENV, PREVIEW_LOCALE)}
                   </div>

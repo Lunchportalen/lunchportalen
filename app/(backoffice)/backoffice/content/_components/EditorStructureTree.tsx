@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from "react";
 import type { Block, BannersBlock, BannerItem } from "./editorBlockTypes";
 import { getBlockTreeLabel } from "./blockLabels";
 
 export type EditorStructureTreeProps = {
+  /** Active page/node id (UUID) used to reset per-page UI focus state. */
+  nodeId: string | null;
+  /** Currently selected block id (single source of truth for active block highlight). */
+  selectedBlockId: string | null;
+  /** Select a block (drives editor highlight + scroll). */
+  onSelectBlock: Dispatch<SetStateAction<string | null>>;
   /** Current page title for the tree root label. */
   pageTitle: string;
   /** Current editor blocks in order (source of truth). */
@@ -17,6 +23,10 @@ export type EditorStructureTreeProps = {
   selectedBannerItemId: string | null;
   /** Select/deselect banner item (maps to BlockInspectorShell). */
   setSelectedBannerItemId: (id: string | null) => void;
+  /** Currently hovered block id (visual only). */
+  hoverBlockId: string | null;
+  /** Hover callback (visual only). */
+  onHoverBlock: (blockId: string | null) => void;
 };
 
 type Node =
@@ -68,18 +78,28 @@ function bannerItemLabel(item: BannerItem): string {
 }
 
 export function EditorStructureTree({
+  nodeId,
+  selectedBlockId,
+  onSelectBlock,
   pageTitle,
   blocks,
   expandedBlockId,
   onToggleBlock,
   selectedBannerItemId,
   setSelectedBannerItemId,
+  hoverBlockId,
+  onHoverBlock,
 }: EditorStructureTreeProps) {
   // When rendered, the editor is already in blocks mode (`ContentMainShell` only mounts this tree then),
   // so treat the major section as always expanded to avoid unsynced local UI state.
   const sectionsExpanded = true;
 
   const pendingFocusBlockIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Avoid carry-over of "scroll next expanded block" across page changes.
+    pendingFocusBlockIdRef.current = null;
+  }, [nodeId]);
 
   useEffect(() => {
     // Deterministic focus: when the editor reports that a block is expanded,
@@ -102,7 +122,7 @@ export function EditorStructureTree({
 
     const mainChildren: Node[] = blocks.map((block, index) => {
       const isExpanded = expandedBlockId === block.id;
-      const isSelected = isExpanded;
+      const isSelected = selectedBlockId === block.id;
 
       const hasBannersChildren =
         block.type === "banners" && Array.isArray((block as BannersBlock).items);
@@ -131,20 +151,12 @@ export function EditorStructureTree({
         isExpanded,
         hasChildren: hasBannersChildren,
         onToggle: () => {
-          // Only trigger scroll/focus when the click *opens* the block.
-          if (!isExpanded) {
-            pendingFocusBlockIdRef.current = block.id;
-          }
+          onSelectBlock(block.id);
           onToggleBlock(block.id);
         },
         onSelect: () => {
-          if (!isExpanded) {
-            pendingFocusBlockIdRef.current = block.id;
-            onToggleBlock(block.id);
-            return;
-          }
-          // Already expanded: still scroll to reinforce focus.
-          pendingFocusBlockIdRef.current = block.id;
+          onSelectBlock(block.id);
+          if (!isExpanded) onToggleBlock(block.id);
         },
         children: bannerChildren,
       } as const;
@@ -170,6 +182,8 @@ export function EditorStructureTree({
     blocks,
     expandedBlockId,
     onToggleBlock,
+    onSelectBlock,
+    selectedBlockId,
     pageTitle,
     sectionsExpanded,
     selectedBannerItemId,
@@ -220,11 +234,18 @@ export function EditorStructureTree({
                   {section.children.map((n) => {
                     if (n.kind !== "block") return null;
                     return (
-                      <div key={n.id} className="space-y-1">
+                      <div
+                        key={n.id}
+                        className="space-y-1"
+                        onMouseEnter={() => onHoverBlock(n.id)}
+                        onMouseLeave={() => onHoverBlock(null)}
+                      >
                         <div
                           className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${
                             n.isSelected
                               ? "border-rose-200 bg-rose-50/60 ring-1 ring-rose-100"
+                              : hoverBlockId === n.id && !n.isSelected
+                                ? "border-rose-100 bg-white ring-1 ring-rose-100"
                               : "border-[rgb(var(--lp-border))] bg-white hover:bg-[rgb(var(--lp-card))]/40"
                           }`}
                         >

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import ContentEditor from "../_workspace/ContentEditor";
+import ContentWorkspace from "../_workspace/ContentWorkspace";
 import { isContentPageId, getPageIdBySlug } from "@/lib/cms/public/getPageIdBySlug";
 import CreateMissingPageClient from "./_components/CreateMissingPageClient";
 
@@ -21,7 +21,7 @@ export default async function ContentIdPage({ params }: Props) {
 
   // UUID: render editor directly.
   if (isContentPageId(id)) {
-    return <ContentEditor id={id} />;
+    return <ContentWorkspace selectedNodeId={id} />;
   }
 
   // Slug: try to resolve to UUID and redirect.

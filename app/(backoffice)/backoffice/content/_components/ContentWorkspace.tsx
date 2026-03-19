@@ -31,6 +31,9 @@ import { ContentTopbar } from "./ContentTopbar";
 import { ContentInfoPanel } from "./ContentInfoPanel";
 import { ContentSaveBar } from "./ContentSaveBar";
 import { ContentAiTools } from "./ContentAiTools";
+import { ContentAiContextPanel } from "./ContentAiContextPanel";
+import { EditorStructureTree } from "./EditorStructureTree";
+import { useSectionSidebarContent } from "../_workspace/ContentWorkspace";
 import { logEditorAiEvent } from "@/domain/backoffice/ai/metrics/logEditorAiEvent";
 import type { EditorAiFeature } from "@/domain/backoffice/ai/metrics/editorAiMetricsTypes";
 
@@ -238,12 +241,44 @@ type ApiErr = {
 
 type ApiResponse<T> = ApiOk<T> | ApiErr;
 
+const IMAGE_PRESETS = {
+  office: "Sosial lunsj i moderne kontorlandskap",
+  buffet: "Delikat buffet med variert utvalg av lunsjretter",
+  meeting: "Lunsj servert i møterom med ansatte rundt bord",
+  closeup: "Nærbilde av premium mat og råvarer",
+} as const;
+
+const LUNCHPORTALEN_STYLE = `
+moderne nordisk kontormiljø,
+naturlig dagslys (mykt og diffust),
+lyse rom med tre, tekstil og minimalistisk design,
+ekte mennesker (ikke modellaktige),
+naturlige bevegelser og samtaler,
+delikat, realistisk mat (ikke overstylet),
+varm og rolig stemning,
+fotorealistisk, høy kvalitet,
+ingen harde kontraster,
+ingen overmettet farger,
+ingen stockfoto-look
+`;
+
+const LUNCHPORTALEN_NEGATIVE = `
+unngå: stockfoto, kunstig lys, studiooppsett,
+perfekte modeller, overdreven styling,
+plastisk mat, unaturlige farger,
+hard skygge, dramatisk lys
+`;
+
+const LUNCHPORTALEN_STYLE_SEED = "lunchportalen-v1";
+const ONBOARDING_DONE_KEY = "lp_onboarding_done";
+
 type HeroBlock = {
   id: string;
   type: "hero";
   title: string;
   subtitle?: string;
   imageUrl?: string;
+  mediaItemId?: string;
   imageAlt?: string;
   ctaLabel?: string;
   ctaHref?: string;
@@ -260,6 +295,7 @@ type ImageBlock = {
   id: string;
   type: "image";
   assetPath: string;
+  mediaItemId?: string;
   alt?: string;
   caption?: string;
 };
@@ -320,6 +356,32 @@ type CodeBlock = {
 
 type Block = HeroBlock | RichTextBlock | ImageBlock | CtaBlock | DividerBlock | BannersBlock | CodeBlock;
 type BlockType = Block["type"];
+
+const DEMO_BLOCKS: Block[] = [
+  {
+    id: "hero-demo",
+    type: "hero",
+    title: "Lunsjordning for moderne kontor",
+    subtitle: "Raskt, enkelt og premium for travle team",
+    imageUrl: "",
+    ctaLabel: "Kom i gang",
+    ctaHref: "/kontakt",
+  },
+  {
+    id: "text-demo",
+    type: "richText",
+    heading: "Bedre lunsj med mindre administrasjon",
+    body: "En enkel løsning for bedre lunsj på arbeidsplassen.",
+  },
+  {
+    id: "cta-demo",
+    type: "cta",
+    title: "Kom i gang",
+    body: "Se hvordan Lunchportalen forenkler lunsjflyten på under én uke.",
+    buttonLabel: "Book demo",
+    buttonHref: "/kontakt",
+  },
+];
 
 type BodyMode = "blocks" | "legacy" | "invalid";
 
@@ -633,11 +695,19 @@ function LivePreviewPanel({
   blocks,
   pageId = null,
   variantId = null,
+  selectedBlockId = null,
+  onSelectBlock,
+  hoverBlockId = null,
+  onHoverBlock,
 }: {
   pageTitle: string;
   blocks: Block[];
   pageId?: string | null;
   variantId?: string | null;
+  selectedBlockId?: string | null;
+  onSelectBlock?: (blockId: string) => void;
+  hoverBlockId?: string | null;
+  onHoverBlock?: (blockId: string | null) => void;
 }) {
   return (
     <aside className="lg:sticky lg:top-4 h-fit rounded-lg border-0 bg-transparent p-0" aria-label="Live forhåndsvisning av siden">
@@ -649,96 +719,237 @@ function LivePreviewPanel({
         ) : (
           <div className="space-y-4">
             {blocks.map((block, index) => {
+              const previewId = (block as Block).id;
+              const isSelected = previewId === selectedBlockId;
+              const isHover = previewId === hoverBlockId && !isSelected;
+              const previewFocusClass = isSelected
+                ? "ring-2 ring-black/80 bg-black/5 rounded-md transition-all duration-150 ease-out"
+                : isHover
+                  ? "ring-1 ring-black/20 rounded-md transition-all duration-150 ease-out"
+                  : "transition-all duration-150 ease-out";
               if (block.type === "hero") {
                 return (
-                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white">
-                    {block.imageUrl ? (
-                      <div className="aspect-[21/9] w-full bg-slate-100">
-                        <img src={block.imageUrl} alt={block.imageAlt ?? ""} className="h-full w-full object-cover" />
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <section className="rounded-xl border border-[rgb(var(--lp-border))] bg-white">
+                      {block.imageUrl ? (
+                        <div className="aspect-[21/9] w-full bg-slate-100">
+                          <img src={block.imageUrl} alt={block.imageAlt ?? ""} className="h-full w-full object-cover" />
+                        </div>
+                      ) : null}
+                      <div className="p-4">
+                        {block.title ? <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">{block.title}</h2> : null}
+                        {block.subtitle ? <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{block.subtitle}</p> : null}
+                        {block.ctaLabel && block.ctaHref ? (
+                          <a
+                            href={block.ctaHref}
+                            className="mt-2 inline-block rounded-lg bg-black px-3 py-1.5 text-sm text-white"
+                            data-analytics-cta-id={block.id}
+                            data-analytics-page-id={pageId ?? undefined}
+                            data-analytics-variant-id={variantId ?? undefined}
+                          >
+                            {block.ctaLabel}
+                          </a>
+                        ) : null}
                       </div>
-                    ) : null}
-                    <div className="p-4">
-                      {block.title ? <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">{block.title}</h2> : null}
-                      {block.subtitle ? <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{block.subtitle}</p> : null}
-                      {block.ctaLabel && block.ctaHref ? (
+                    </section>
+                  </div>
+                );
+              }
+              if (block.type === "richText") {
+                return (
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <section className="rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
+                      {block.heading ? <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{block.heading}</h2> : null}
+                      {block.body ? <p className="mt-1 whitespace-pre-wrap text-sm text-[rgb(var(--lp-text))]">{block.body}</p> : null}
+                    </section>
+                  </div>
+                );
+              }
+              if (block.type === "image") {
+                const src =
+                  block.assetPath?.startsWith("http://") || block.assetPath?.startsWith("https://") || block.assetPath?.startsWith("/")
+                    ? block.assetPath
+                    : `/${block.assetPath}`;
+                return (
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <figure className="rounded-xl border border-[rgb(var(--lp-border))]">
+                      {block.assetPath ? (
+                        <img src={src} alt={block.alt || ""} className="aspect-video w-full object-cover" />
+                      ) : (
+                        <div className="flex aspect-video items-center justify-center bg-slate-100 text-sm text-[rgb(var(--lp-muted))]">
+                          Bilde
+                        </div>
+                      )}
+                      {block.caption ? <figcaption className="p-2 text-xs text-[rgb(var(--lp-muted))]">{block.caption}</figcaption> : null}
+                    </figure>
+                  </div>
+                );
+              }
+              if (block.type === "cta") {
+                return (
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <section className="rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
+                      {block.title ? <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{block.title}</h2> : null}
+                      {block.body ? <p className="mt-1 text-sm text-[rgb(var(--lp-text))]">{block.body}</p> : null}
+                      {block.buttonLabel && block.buttonHref ? (
                         <a
-                          href={block.ctaHref}
+                          href={block.buttonHref}
                           className="mt-2 inline-block rounded-lg bg-black px-3 py-1.5 text-sm text-white"
                           data-analytics-cta-id={block.id}
                           data-analytics-page-id={pageId ?? undefined}
                           data-analytics-variant-id={variantId ?? undefined}
                         >
-                          {block.ctaLabel}
+                          {block.buttonLabel}
                         </a>
                       ) : null}
-                    </div>
-                  </section>
-                );
-              }
-              if (block.type === "richText") {
-                return (
-                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
-                    {block.heading ? <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{block.heading}</h2> : null}
-                    {block.body ? <p className="mt-1 whitespace-pre-wrap text-sm text-[rgb(var(--lp-text))]">{block.body}</p> : null}
-                  </section>
-                );
-              }
-              if (block.type === "image") {
-                const src = block.assetPath?.startsWith("/") ? block.assetPath : `/${block.assetPath}`;
-                return (
-                  <figure key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))]">
-                    {block.assetPath ? <img src={src} alt={block.alt || ""} className="aspect-video w-full object-cover" /> : <div className="flex aspect-video items-center justify-center bg-slate-100 text-sm text-[rgb(var(--lp-muted))]">Bilde</div>}
-                    {block.caption ? <figcaption className="p-2 text-xs text-[rgb(var(--lp-muted))]">{block.caption}</figcaption> : null}
-                  </figure>
-                );
-              }
-              if (block.type === "cta") {
-                return (
-                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
-                    {block.title ? <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{block.title}</h2> : null}
-                    {block.body ? <p className="mt-1 text-sm text-[rgb(var(--lp-text))]">{block.body}</p> : null}
-                    {block.buttonLabel && block.buttonHref ? (
-                      <a
-                        href={block.buttonHref}
-                        className="mt-2 inline-block rounded-lg bg-black px-3 py-1.5 text-sm text-white"
-                        data-analytics-cta-id={block.id}
-                        data-analytics-page-id={pageId ?? undefined}
-                        data-analytics-variant-id={variantId ?? undefined}
-                      >
-                        {block.buttonLabel}
-                      </a>
-                    ) : null}
-                  </section>
+                    </section>
+                  </div>
                 );
               }
               if (block.type === "banners") {
                 return (
-                  <section key={block.id} className="space-y-2">
-                    {block.items.length === 0 ? <div className="rounded-xl border border-dashed border-[rgb(var(--lp-border))] py-6 text-center text-sm text-[rgb(var(--lp-muted))]">Banners (tom)</div> : block.items.map((item) => (
-                      <div key={item.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white">
-                        {item.imageUrl ? <img src={item.imageUrl} alt="" className="aspect-[21/9] w-full object-cover" /> : <div className="flex aspect-[21/9] items-center justify-center bg-slate-100 text-sm text-[rgb(var(--lp-muted))]">Banner</div>}
-                        <div className="p-2">
-                          {item.heading ? <p className="font-medium text-[rgb(var(--lp-text))]">{item.heading}</p> : null}
-                          {item.secondaryHeading ? <p className="text-xs text-[rgb(var(--lp-muted))]">{item.secondaryHeading}</p> : null}
-                          {(item.buttons?.length ?? 0) > 0 ? item.buttons!.map((b, i) => b.href ? <a key={i} href={b.href} className="mr-2 inline-block rounded bg-black px-2 py-1 text-xs text-white">{b.label || "Lenke"}</a> : null) : null}
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <section className="space-y-2">
+                      {block.items.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-[rgb(var(--lp-border))] py-6 text-center text-sm text-[rgb(var(--lp-muted))]">
+                          Banners (tom)
                         </div>
-                      </div>
-                    ))}
-                  </section>
+                      ) : (
+                        block.items.map((item) => (
+                          <div key={item.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-white">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt="" className="aspect-[21/9] w-full object-cover" />
+                            ) : (
+                              <div className="flex aspect-[21/9] items-center justify-center bg-slate-100 text-sm text-[rgb(var(--lp-muted))]">
+                                Banner
+                              </div>
+                            )}
+                            <div className="p-2">
+                              {item.heading ? <p className="font-medium text-[rgb(var(--lp-text))]">{item.heading}</p> : null}
+                              {item.secondaryHeading ? <p className="text-xs text-[rgb(var(--lp-muted))]">{item.secondaryHeading}</p> : null}
+                              {(item.buttons?.length ?? 0) > 0
+                                ? item.buttons!.map((b, i) =>
+                                    b.href ? (
+                                      <a key={i} href={b.href} className="mr-2 inline-block rounded bg-black px-2 py-1 text-xs text-white">
+                                        {b.label || "Lenke"}
+                                      </a>
+                                    ) : null
+                                  )
+                                : null}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </section>
+                  </div>
                 );
               }
               if (block.type === "code") {
                 return (
-                  <section key={block.id} className="rounded-xl border border-[rgb(var(--lp-border))] bg-slate-900 p-3">
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Kode</p>
-                    {block.code ? <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-200">{block.code}</pre> : <p className="text-xs text-slate-500">Ingen kode</p>}
-                  </section>
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <section className="rounded-xl border border-[rgb(var(--lp-border))] bg-slate-900 p-3">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Kode</p>
+                      {block.code ? (
+                        <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-200">{block.code}</pre>
+                      ) : (
+                        <p className="text-xs text-slate-500">Ingen kode</p>
+                      )}
+                    </section>
+                  </div>
                 );
               }
               if (block.type === "divider") {
-                return <hr key={block.id} className="border-[rgb(var(--lp-border))]" />;
+                return (
+                  <div
+                    key={block.id}
+                    data-block-id={block.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectBlock?.(block.id);
+                    }}
+                    onMouseEnter={() => onHoverBlock?.(previewId)}
+                    onMouseLeave={() => onHoverBlock?.(null)}
+                    className={previewFocusClass}
+                  >
+                    <hr className="border-[rgb(var(--lp-border))]" />
+                  </div>
+                );
               }
-              return <hr key={(block as Block).id} className="border-[rgb(var(--lp-border))]" />;
+              return (
+                <div
+                  key={(block as Block).id}
+                  data-block-id={(block as Block).id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectBlock?.((block as Block).id);
+                  }}
+                  onMouseEnter={() => onHoverBlock?.(previewId)}
+                  onMouseLeave={() => onHoverBlock?.(null)}
+                  className={previewFocusClass}
+                >
+                  <hr className="border-[rgb(var(--lp-border))]" />
+                </div>
+              );
             })}
           </div>
         )}
@@ -1012,6 +1223,18 @@ export function ContentWorkspace({
   const router = useRouter();
   const hideLegacySidebar = embedded === true;
   const selectedId = safeStr(initialPageId);
+  const isPitch = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.search.includes("pitch=1");
+  }, []);
+  const isWow = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.search.includes("wow=1");
+  }, []);
+  const isDemo = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.search.includes("demo=1") || isWow || isPitch;
+  }, [isWow, isPitch]);
   const hjemSingleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [queryInput, setQueryInput] = useState("");
@@ -1112,6 +1335,41 @@ export function ContentWorkspace({
   const [editOpen, setEditOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [hoverBlockId, setHoverBlockId] = useState<string | null>(null);
+  const selectedBlock = useMemo(() => {
+    return blocks.find((b) => b.id === selectedBlockId) ?? null;
+  }, [blocks, selectedBlockId]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
+  const [aiScore, setAiScore] = useState<number | null>(null);
+  const [aiHints, setAiHints] = useState<string[]>([]);
+  const [aiBuildLoading, setAiBuildLoading] = useState(false);
+  const [aiBuildResult, setAiBuildResult] = useState<any[] | null>(null);
+  const [aiProduct, setAiProduct] = useState("");
+  const [aiAudience, setAiAudience] = useState("");
+  const [aiIntent, setAiIntent] = useState("");
+  const [aiImageLoading, setAiImageLoading] = useState(false);
+  const [aiBatchLoading, setAiBatchLoading] = useState(false);
+  const [aiBatchProgress, setAiBatchProgress] = useState({
+    total: 0,
+    done: 0,
+  });
+  const [aiImages, setAiImages] = useState<Array<{ url: string; assetId?: string }> | null>(null);
+  const [imagePreset, setImagePreset] = useState<string>("office");
+  const [aiAudit, setAiAudit] = useState<{
+    score: number;
+    issues: string[];
+  } | null>(null);
+  const [aiAuditLoading, setAiAuditLoading] = useState(false);
+  const [originalBlocks, setOriginalBlocks] = useState<Block[] | null>(null);
+  const [showAfter, setShowAfter] = useState(false);
+  const [pitchStep, setPitchStep] = useState(1);
+  const wowHasRunRef = useRef(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const aiAnyLoading = aiLoading || aiBuildLoading || aiAuditLoading || aiImageLoading || aiBatchLoading || aiSuggestLoading;
+  const aiCacheRef = useRef<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<
     "innhold" | "ekstra" | "oppsummering" | "navigasjon" | "seo" | "scripts" | "avansert"
   >("innhold");
@@ -1180,6 +1438,15 @@ export function ContentWorkspace({
 
   /** Resolved page id for API calls; when URL is slug we use page.id after load. */
   const effectiveId = page?.id ?? selectedId;
+
+  // Left-rail extension: lets this editor populate the existing sidebar slot in the section wrapper.
+  const setSectionSidebarContent = useSectionSidebarContent();
+
+  useEffect(() => {
+    return () => {
+      setSectionSidebarContent?.({ key: "editor-rail-empty", node: null });
+    };
+  }, [setSectionSidebarContent]);
 
   // AI – editor-scoped state (busyId can be AiToolId or dedicated-route id e.g. layout.suggestions)
   const [aiBusyToolId, setAiBusyToolId] = useState<string | null>(null);
@@ -1290,9 +1557,9 @@ export function ContentWorkspace({
 
   const saving = saveState === "saving";
   const hasConflict = saveState === "conflict";
-  const canSave = Boolean(selectedId && page && dirty && !saving && !detailLoading && !hasConflict && !isOffline);
-  const canPublish = Boolean(selectedId && page && !isPublished && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
-  const canUnpublish = Boolean(selectedId && page && !isDraft && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
+  const canSave = Boolean(!isDemo && selectedId && page && dirty && !saving && !detailLoading && !hasConflict && !isOffline);
+  const canPublish = Boolean(!isDemo && selectedId && page && !isPublished && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
+  const canUnpublish = Boolean(!isDemo && selectedId && page && !isDraft && !saving && !detailLoading && !isStatusInProgress && !hasConflict && !isOffline);
 
   const publicSlug = useMemo(() => {
     const raw = slug || page?.slug || "";
@@ -1541,6 +1808,12 @@ export function ContentWorkspace({
   }
 
   const performSave = useCallback(async (): Promise<boolean> => {
+    if (isDemo) {
+      setLastSavedAt(new Date().toISOString());
+      setLastError(null);
+      setSaveStateSafe("saved");
+      return true;
+    }
     if (!selectedId || !page) return false;
     if (pageNotFound || detailError) return false;
     if (isOffline) {
@@ -1668,6 +1941,7 @@ export function ContentWorkspace({
     router,
     effectiveId,
     isOffline,
+    isDemo,
   ]);
 
   const saveDraft = useCallback(async (source: "manual" | "autosave" | "shortcut" = "manual"): Promise<boolean> => {
@@ -2285,6 +2559,457 @@ export function ContentWorkspace({
     setBlocks((prev) => prev.map((entry) => (entry.id === blockId ? updater(entry) : entry)));
   }, []);
 
+  function extractText(block: Block): string {
+    if (block.type === "richText") return block.body ?? "";
+    if (block.type === "code") return block.code ?? "";
+    return "";
+  }
+
+  const buildImagePrompt = useCallback((block: Block, presetOverride?: string): string => {
+    const presetText = IMAGE_PRESETS[(presetOverride ?? imagePreset) as keyof typeof IMAGE_PRESETS] ?? IMAGE_PRESETS.office;
+    const text = (
+      (block as { content?: unknown }).content ||
+      (block as { text?: unknown }).text ||
+      (block.type === "hero" ? `${block.title ?? ""} ${block.subtitle ?? ""}` : "") ||
+      (block.type === "image" ? `${block.caption ?? ""} ${block.alt ?? ""}` : "") ||
+      (block.type === "richText" ? `${block.heading ?? ""} ${block.body ?? ""}` : "")
+    )
+      .toString()
+      .toLowerCase();
+
+    let blockSpecificContext = `
+Moderne kontorlunsj,
+delikat mat, fokus på kvalitet
+`;
+
+    if (block.type === "hero") {
+      blockSpecificContext = `
+Stor sosial lunsjscene i kontor,
+mange ansatte rundt bord,
+energi, fellesskap,
+bred komposisjon,
+mennesker i bakgrunn + mat i forgrunn,
+dybde i bildet
+`;
+    }
+
+    if (block.type === "image" && (presetOverride ?? imagePreset) === "closeup") {
+      blockSpecificContext = `
+Nærbilde av premium mat og råvarer,
+fokus på detaljer,
+grunn dybdeskarphet,
+rolig bakgrunn
+`;
+    } else if (text.includes("buffet")) {
+      blockSpecificContext = `
+Delikat buffet med variert utvalg,
+salater, brød, juice,
+pent oppdekket
+`;
+    } else if (text.includes("møte")) {
+      blockSpecificContext = `
+Lunsj i møterom,
+ansatte rundt bord,
+profesjonell stemning
+`;
+    } else {
+      blockSpecificContext = `
+${presetText},
+${blockSpecificContext}
+`;
+    }
+
+    return `
+${presetText}
+
+${blockSpecificContext}
+
+${LUNCHPORTALEN_STYLE}
+
+${LUNCHPORTALEN_NEGATIVE}
+
+stil-seed: ${LUNCHPORTALEN_STYLE_SEED}
+`;
+  }, [imagePreset]);
+
+  const resolveImagePreset = useCallback((block: Block): string => {
+    const text = (
+      (block as { content?: unknown }).content ||
+      (block as { text?: unknown }).text ||
+      (block.type === "hero" ? `${block.title ?? ""} ${block.subtitle ?? ""}` : "") ||
+      (block.type === "image" ? `${block.caption ?? ""} ${block.alt ?? ""}` : "") ||
+      (block.type === "richText" ? `${block.heading ?? ""} ${block.body ?? ""}` : "")
+    )
+      .toString()
+      .toLowerCase();
+
+    if (block.type === "hero") {
+      return "office";
+    }
+
+    if (text.includes("buffet") || text.includes("utvalg")) {
+      return "buffet";
+    }
+
+    if (text.includes("møte") || text.includes("ansatte")) {
+      return "meeting";
+    }
+
+    if (text.includes("ingredienser") || text.includes("råvarer")) {
+      return "closeup";
+    }
+
+    return "office";
+  }, []);
+
+  const runAiAction = useCallback(
+    async (type: "improve" | "shorten" | "seo") => {
+      if (!selectedBlock) return;
+
+      const blockId = selectedBlock.id;
+      const original = extractText(selectedBlock);
+
+      setAiLoading(true);
+      try {
+        const res = await fetch("/api/ai/block", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text: original, action: type }),
+        });
+
+        if (!res.ok) return;
+
+        const data: unknown = await res.json().catch(() => null);
+        const result = (data as { data?: { result?: unknown }; result?: unknown } | null)?.data?.result ?? (data as { result?: unknown } | null)?.result;
+        if (typeof result !== "string") return;
+
+        // Selection might have changed while the request was in flight.
+        if (selectedBlockId !== blockId) return;
+
+        // Update ONLY the selected block content, using the canonical setBlockById flow.
+        setBlockById(blockId, (current) => {
+          if (current.type === "richText") return { ...current, body: result };
+          if (current.type === "code") return { ...current, code: result };
+          return current;
+        });
+
+        // Ensure the user sees the changed content immediately.
+        setExpandedBlockId(blockId);
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [selectedBlock, selectedBlockId, setBlockById]
+  );
+
+  const runAiSuggest = useCallback(async () => {
+    if (!selectedBlock) return;
+
+    const blockId = selectedBlock.id;
+    const text = extractText(selectedBlock);
+    if (!text || text.length < 2) return;
+
+    const key = `${selectedBlockId}:${text}`;
+    const cached = aiCacheRef.current[key];
+    if (cached) {
+      // Selection might have changed while this effect was scheduled.
+      if (selectedBlockId !== blockId) return;
+      setAiSuggestion(cached);
+
+      const resScore = await fetch("/api/ai/block/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const dataScore: unknown = await resScore.json().catch(() => null);
+      const score = (dataScore as any)?.data?.score ?? null;
+      const hints = (dataScore as any)?.data?.hints ?? [];
+      if (typeof score === "number") {
+        setAiScore(score);
+        setAiHints(Array.isArray(hints) ? hints.filter((h: unknown) => typeof h === "string") : []);
+      }
+      return;
+    }
+
+    setAiSuggestLoading(true);
+    try {
+      const res = await fetch("/api/ai/block", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, action: "seo" }),
+      });
+
+      const data: unknown = await res.json().catch(() => null);
+      const result =
+        (data as any)?.data?.result ?? (data as any)?.result ?? null;
+
+      if (typeof result === "string") {
+        // Selection might have changed while the request was in flight.
+        if (selectedBlockId !== blockId) return;
+        aiCacheRef.current[key] = result;
+        setAiSuggestion(result);
+      }
+
+      const resScore = await fetch("/api/ai/block/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const dataScore: unknown = await resScore.json().catch(() => null);
+      const score = (dataScore as any)?.data?.score ?? null;
+      const hints = (dataScore as any)?.data?.hints ?? [];
+      if (typeof score === "number") {
+        if (selectedBlockId !== blockId) return;
+        setAiScore(score);
+        setAiHints(Array.isArray(hints) ? hints.filter((h: unknown) => typeof h === "string") : []);
+      }
+    } finally {
+      setAiSuggestLoading(false);
+    }
+  }, [selectedBlock, selectedBlockId]);
+
+  const runAiBuild = useCallback(async () => {
+    setAiBuildLoading(true);
+    try {
+      const res = await fetch("/api/ai/page/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product: aiProduct,
+          audience: aiAudience,
+          intent: aiIntent,
+        }),
+      });
+
+      const data: unknown = await res.json().catch(() => null);
+      const blocks = (data as { data?: { blocks?: unknown } } | null)?.data?.blocks ?? null;
+      if (Array.isArray(blocks)) {
+        setAiBuildResult(blocks as any[]);
+      }
+    } finally {
+      setAiBuildLoading(false);
+    }
+  }, [aiAudience, aiIntent, aiProduct]);
+
+  const runAiAudit = useCallback(async () => {
+    if (!blocks || blocks.length === 0) return;
+
+    setAiAuditLoading(true);
+    try {
+      const res = await fetch("/api/ai/page/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocks }),
+      });
+
+      const data: unknown = await res.json().catch(() => null);
+      const score = (data as { data?: { score?: unknown } } | null)?.data?.score ?? null;
+      const issues = (data as { data?: { issues?: unknown } } | null)?.data?.issues ?? [];
+
+      if (typeof score === "number") {
+        setAiAudit({
+          score,
+          issues: Array.isArray(issues) ? issues.filter((i: unknown): i is string => typeof i === "string") : [],
+        });
+      }
+    } finally {
+      setAiAuditLoading(false);
+    }
+  }, [blocks]);
+
+  const runAiImage = useCallback(async () => {
+    if (!selectedBlock) return;
+    if (selectedBlock.type !== "hero" && selectedBlock.type !== "image") return;
+
+    const autoPreset = resolveImagePreset(selectedBlock);
+    setImagePreset(autoPreset);
+    const variations = 3;
+    const results: Array<{ url: string; assetId?: string }> = [];
+
+    setAiImageLoading(true);
+    try {
+      for (let i = 0; i < variations; i++) {
+        const prompt = `${buildImagePrompt(selectedBlock, autoPreset)} variasjon ${i}`;
+        const res = await fetch("/api/backoffice/ai/image-generator", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ prompt, generate: true }),
+        });
+
+        const data: unknown = await res.json().catch(() => null);
+        const assetId =
+          (data as { data?: { assetId?: unknown } } | null)?.data?.assetId;
+        const url = (data as { data?: { url?: unknown } } | null)?.data?.url;
+        if (typeof url === "string" && url) {
+          results.push({
+            url,
+            assetId: typeof assetId === "string" ? assetId : undefined,
+          });
+        }
+      }
+
+      setAiImages(results.length > 0 ? results : null);
+    } finally {
+      setAiImageLoading(false);
+    }
+  }, [selectedBlock, buildImagePrompt, resolveImagePreset]);
+
+  const runAiImageBatch = useCallback(async () => {
+    if (!blocks || blocks.length === 0) return;
+
+    const targets = blocks
+      .filter(
+        (b) =>
+          (b.type === "hero" || b.type === "image") &&
+          !b.mediaItemId
+      )
+      .sort((a, b) => {
+        if (a.type === "hero") return -1;
+        if (b.type === "hero") return 1;
+        return 0;
+      }) as Array<Extract<Block, { type: "hero" | "image" }>>;
+    if (targets.length === 0) return;
+
+    const runWithLimit = async <T,>(
+      items: T[],
+      limit: number,
+      fn: (item: T) => Promise<void>
+    ) => {
+      const queue = [...items];
+      const workers = Array.from({ length: limit }, async () => {
+        while (queue.length) {
+          const item = queue.shift();
+          if (!item) return;
+          await fn(item);
+        }
+      });
+      await Promise.all(workers);
+    };
+
+    const generateImage = async (block: Extract<Block, { type: "hero" | "image" }>) => {
+      const autoPreset = resolveImagePreset(block);
+      let prompt = buildImagePrompt(block, autoPreset);
+      if (block.type === "hero") {
+        prompt += `
+ekstra fokus på komposisjon og dybde,
+bred scene, cinematic følelse
+`;
+      }
+
+      const res = await fetch("/api/backoffice/ai/image-generator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          prompt,
+          generate: true,
+        }),
+      });
+
+      const data: unknown = await res.json().catch(() => null);
+
+      return {
+        url: (data as { data?: { url?: unknown } } | null)?.data?.url,
+        assetId: (data as { data?: { assetId?: unknown } } | null)?.data?.assetId,
+      };
+    };
+
+    const generateWithRetry = async (
+      block: Extract<Block, { type: "hero" | "image" }>,
+      retries = 2
+    ): Promise<{ url?: unknown; assetId?: unknown } | null> => {
+      try {
+        return await generateImage(block);
+      } catch (err) {
+        if (retries > 0) {
+          return generateWithRetry(block, retries - 1);
+        }
+        console.error("AI image failed", block.id);
+        return null;
+      }
+    };
+
+    setAiBatchProgress({
+      total: targets.length,
+      done: 0,
+    });
+    setAiBatchLoading(true);
+    try {
+      await runWithLimit(targets, 2, async (block) => {
+        try {
+          const result = await generateWithRetry(block);
+          const url = result?.url;
+          const assetId = result?.assetId;
+          if (typeof url !== "string" || !url) {
+            console.warn("Fallback image for", block.id);
+            return;
+          }
+
+          if (block.type === "hero") {
+            setBlockById(block.id, (current) =>
+              current.type === "hero"
+                ? {
+                    ...current,
+                    imageUrl: url,
+                    mediaItemId: typeof assetId === "string" ? assetId : current.mediaItemId,
+                  }
+                : current
+            );
+          }
+
+          if (block.type === "image") {
+            setBlockById(block.id, (current) =>
+              current.type === "image"
+                ? {
+                    ...current,
+                    assetPath: url,
+                    mediaItemId: typeof assetId === "string" ? assetId : current.mediaItemId,
+                  }
+                : current
+            );
+          }
+        } finally {
+          setAiBatchProgress((prev) => ({
+            ...prev,
+            done: prev.done + 1,
+          }));
+        }
+      });
+    } finally {
+      setAiBatchLoading(false);
+    }
+  }, [blocks, buildImagePrompt, resolveImagePreset, setBlockById]);
+
+  const applyImage = useCallback(
+    (picked: { url: string; assetId?: string }) => {
+      if (!selectedBlock) return;
+      if (selectedBlock.type !== "hero" && selectedBlock.type !== "image") return;
+
+      const blockId = selectedBlock.id;
+      setBlockById(blockId, (current) => {
+        if (current.type === "hero") {
+          return {
+            ...current,
+            imageUrl: picked.url,
+            mediaItemId: picked.assetId ?? current.mediaItemId,
+          };
+        }
+        if (current.type === "image") {
+          return {
+            ...current,
+            assetPath: picked.url,
+            mediaItemId: picked.assetId ?? current.mediaItemId,
+          };
+        }
+        return current;
+      });
+      setExpandedBlockId(blockId);
+      setAiImages(null);
+    },
+    [selectedBlock, setBlockById]
+  );
+
   const onAddBlock = useCallback((type: AddModalBlockType) => {
     const next = createBlock(type as "hero" | "richText" | "image" | "cta" | "divider" | "banners" | "code");
 
@@ -2320,8 +3045,190 @@ export function ContentWorkspace({
   }, []);
 
   const onToggleBlock = useCallback((blockId: string) => {
-    setExpandedBlockId((prev) => (prev === blockId ? null : blockId));
+    setExpandedBlockId((prev) => {
+      return prev === blockId ? null : blockId;
+    });
   }, []);
+
+  useEffect(() => {
+    if (!selectedBlockId) return;
+    const el = document.getElementById(`lp-editor-block-${selectedBlockId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  }, [selectedBlockId]);
+
+  useEffect(() => {
+    if (!isDemo) return;
+    setBodyMode("blocks");
+    setBlocks(DEMO_BLOCKS);
+    setExpandedBlockId(DEMO_BLOCKS[0]?.id ?? null);
+    setSelectedBlockId(DEMO_BLOCKS[0]?.id ?? null);
+    setTitle("Demo-side");
+    setSlug("demo-side");
+    setLastError(null);
+    if (isWow && !isPitch) {
+      setOriginalBlocks(JSON.parse(JSON.stringify(DEMO_BLOCKS)) as Block[]);
+      setShowAfter(false);
+      wowHasRunRef.current = false;
+    }
+    if (isPitch) {
+      setOriginalBlocks(JSON.parse(JSON.stringify(DEMO_BLOCKS)) as Block[]);
+      setShowAfter(false);
+      setPitchStep(1);
+    }
+  }, [isDemo, isWow, isPitch]);
+
+  useEffect(() => {
+    if (!isWow || isPitch) return;
+    if (wowHasRunRef.current) return;
+    if (!blocks.length) return;
+    wowHasRunRef.current = true;
+
+    const run = async () => {
+      await new Promise((r) => setTimeout(r, 800));
+      const targets = blocks.filter((b) => b.type === "richText");
+      for (const block of targets) {
+        setSelectedBlockId(block.id);
+        setExpandedBlockId(block.id);
+        await new Promise((r) => setTimeout(r, 120));
+        await runAiAction("improve");
+      }
+      await runAiAudit();
+      setTimeout(() => setShowAfter(true), 2000);
+    };
+
+    void run();
+  }, [isWow, isPitch, blocks, runAiAction, runAiAudit]);
+
+  useEffect(() => {
+    if (!isPitch) return;
+    const textBlock = blocks.find((b) => b.type === "richText");
+    const mediaBlock = blocks.find((b) => b.type === "hero" || b.type === "image");
+    if ((pitchStep === 2 || pitchStep === 3 || pitchStep === 4) && textBlock) {
+      setSelectedBlockId(textBlock.id);
+      setExpandedBlockId(textBlock.id);
+    }
+    if (pitchStep === 6 && mediaBlock) {
+      setSelectedBlockId(mediaBlock.id);
+      setExpandedBlockId(mediaBlock.id);
+    }
+  }, [isPitch, pitchStep, blocks]);
+
+  const displayBlocks = isWow && !showAfter && Array.isArray(originalBlocks) ? originalBlocks : blocks;
+
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const hasSeen = window.localStorage.getItem(ONBOARDING_DONE_KEY);
+      if (!hasSeen) {
+        setOnboardingStep(1);
+      }
+    } catch {
+      // ignore localStorage read errors
+    }
+  }, []);
+
+  useEffect(() => {
+    if (onboardingStep !== 2) return;
+    if (!selectedBlockId && blocks.length > 0) {
+      setSelectedBlockId(blocks[0]?.id ?? null);
+      setExpandedBlockId(blocks[0]?.id ?? null);
+      return;
+    }
+    if (selectedBlockId) {
+      setOnboardingStep(3);
+    }
+  }, [onboardingStep, selectedBlockId, blocks]);
+
+  useEffect(() => {
+    if (onboardingStep !== 4) return;
+    const t = setTimeout(() => {
+      setOnboardingStep(5);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [onboardingStep]);
+
+  useEffect(() => {
+    setAiSuggestion(null);
+    setAiScore(null);
+    setAiHints([]);
+    setAiImages(null);
+    if (!selectedBlockId) return;
+    const t = setTimeout(() => {
+      void runAiSuggest();
+    }, 300);
+    return () => clearTimeout(t);
+  }, [selectedBlockId, runAiSuggest]);
+
+  // Populate the left-rail slot (ContentTree stays untouched).
+  // Uses canonical editor state from this component, so AI + structure follow the active page/block.
+  useEffect(() => {
+    if (!setSectionSidebarContent) return;
+
+    if (!effectiveId) {
+      setSectionSidebarContent({ key: "editor-rail-empty", node: null });
+      return;
+    }
+
+    const blocksKey = displayBlocks.map((b) => b.id).join("|");
+    const focusedBlock = expandedBlockId ? displayBlocks.find((b) => b.id === expandedBlockId) ?? null : null;
+    const focusedIndex = focusedBlock ? displayBlocks.findIndex((b) => b.id === focusedBlock.id) : -1;
+    const focusedBlockLabel = focusedBlock
+      ? `${focusedIndex + 1}. ${getBlockLabel(focusedBlock.type)}`
+      : null;
+
+    const pageTitleForTree = (page?.title ?? title).trim() || "—";
+    const pageSlug = (slug ?? page?.slug ?? "").toString();
+
+    setSectionSidebarContent({
+      key: `editor-rail:${effectiveId}:${showBlocks ? "blocks" : "no_blocks"}:${expandedBlockId ?? "none"}:${selectedBlockId ?? "none"}:${selectedBannerItemId ?? "none"}:${blocksKey}:${aiCapability}:${aiSummary ?? ""}:${aiError ?? ""}`,
+      node: (
+        <div className="space-y-4 pb-4">
+          {showBlocks ? (
+            <EditorStructureTree
+              nodeId={selectedId}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={setSelectedBlockId}
+              hoverBlockId={hoverBlockId}
+              onHoverBlock={setHoverBlockId}
+              pageTitle={pageTitleForTree}
+              blocks={displayBlocks}
+              expandedBlockId={expandedBlockId}
+              onToggleBlock={onToggleBlock}
+              selectedBannerItemId={selectedBannerItemId}
+              setSelectedBannerItemId={setSelectedBannerItemId}
+            />
+          ) : null}
+
+          <ContentAiContextPanel
+            aiCapability={aiCapability}
+            pageId={effectiveId}
+            pageTitle={pageTitleForTree}
+            pageSlug={pageSlug}
+            expandedBlockId={expandedBlockId}
+            focusedBlockLabel={focusedBlockLabel}
+            aiSummary={aiSummary}
+            aiError={aiError}
+          />
+        </div>
+      ),
+    });
+  }, [
+    setSectionSidebarContent,
+    effectiveId,
+    showBlocks,
+    displayBlocks,
+    expandedBlockId,
+    onToggleBlock,
+    selectedBlockId,
+    selectedBannerItemId,
+    title,
+    slug,
+    page?.title,
+    aiCapability,
+    aiSummary,
+    aiError,
+    getBlockLabel,
+  ]);
 
   const isForsidePage = useCallback(() => isForside(slug, title), [slug, title]);
 
@@ -6073,7 +6980,7 @@ export function ContentWorkspace({
 
                               {showBlocks && (
                                 <div className="space-y-2">
-                                  {blocks.length === 0 ? (
+                                  {displayBlocks.length === 0 ? (
                                     <>
                                       {isForsidePage() ? (
                                         <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-slate-50 p-4">
@@ -6112,14 +7019,22 @@ export function ContentWorkspace({
                                       </div>
                                     </>
                                   ) : (
-                                    blocks.map((block, index) => {
+                                    displayBlocks.map((block, index) => {
                                       const open = expandedBlockId === block.id;
 
                                       return (
                                         /* U1 – blocks as objects (Umbraco feel) */
                                         <article
+                                          id={`lp-editor-block-${block.id}`}
+                                          data-block-id={block.id}
                                           key={block.id}
-                                          className="border-b border-[rgb(var(--lp-border))] bg-white last:border-b-0"
+                                          className={`border-b border-[rgb(var(--lp-border))] bg-white last:border-b-0 ${
+                                            selectedBlockId === block.id
+                                              ? "ring-2 ring-black/80 bg-black/5"
+                                              : hoverBlockId === block.id
+                                                ? "ring-1 ring-black/20"
+                                                : ""
+                                          } transition-all duration-150 ease-out`}
                                         >
                                           <div
                                             role="button"
@@ -6190,7 +7105,7 @@ export function ContentWorkspace({
                                               </button>
                                               <button
                                                 type="button"
-                                                disabled={index === blocks.length - 1}
+                                                disabled={index === displayBlocks.length - 1}
                                                 onClick={() => onMoveBlock(block.id, 1)}
                                                 className="min-h-[26px] rounded border border-[rgb(var(--lp-border))] px-2 text-xs disabled:opacity-40"
                                                 title="Flytt ned"
@@ -6711,6 +7626,62 @@ export function ContentWorkspace({
                                               </div>
                                             </div>
                                           ) : null}
+
+                                          {selectedBlockId === block.id && (block.type === "richText" || block.type === "code") ? (
+                                            <div className="animate-fade-in mt-2 rounded-lg border border-rose-200 bg-rose-50 p-3 transition-all duration-150 ease-out">
+                                              <div className="mb-1 text-xs font-semibold text-rose-700">AI forslag</div>
+                                              {aiSuggestLoading ? (
+                                                <div className="text-sm text-gray-700">Jobber...</div>
+                                              ) : aiSuggestion ? (
+                                                <>
+                                                  <div className="text-sm text-gray-800">{aiSuggestion}</div>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      const suggestion = aiSuggestion;
+                                                      if (!suggestion) return;
+                                                      setBlockById(block.id, (current) => {
+                                                        if (current.type === "richText") return { ...current, body: suggestion };
+                                                        if (current.type === "code") return { ...current, code: suggestion };
+                                                        return current;
+                                                      });
+                                                      setAiSuggestion(null);
+                                                      setExpandedBlockId(block.id);
+                                                    }}
+                                                    className="mt-2 text-xs font-medium text-rose-700 transition-all duration-150 ease-out hover:underline"
+                                                  >
+                                                    Bruk forslag
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                <div className="text-sm text-gray-700">Ingen forslag enda</div>
+                                              )}
+
+                                              {aiScore !== null ? (
+                                                <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
+                                                  <div className="text-xs font-semibold text-gray-500">AI score</div>
+                                                  <div className="text-lg font-bold">
+                                                    {aiScore}/100
+                                                  </div>
+                                                  {aiHints.length > 0 ? (
+                                                    <ul className="mt-1 ml-4 list-disc text-xs text-gray-700">
+                                                      {aiHints.map((h, i) => (
+                                                        <li key={i}>{h}</li>
+                                                      ))}
+                                                    </ul>
+                                                  ) : null}
+                                                </div>
+                                              ) : null}
+                                            </div>
+                                          ) : null}
+
+                                          {selectedBlockId === block.id &&
+                                          (block.type === "hero" || block.type === "image") &&
+                                          aiImageLoading ? (
+                                            <div className="mt-2 animate-fade-in">
+                                              <div className="h-40 animate-pulse rounded bg-gray-200" />
+                                            </div>
+                                          ) : null}
                                         </article>
                                       );
                                     })
@@ -6735,7 +7706,16 @@ export function ContentWorkspace({
                         {showPreview && (
                           <div className="mt-4 rounded-lg border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/60 py-2 pl-3 pr-2 lg:mt-0 lg:border-t-0 lg:border-l">
                             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Forhåndsvisning</h3>
-                            <LivePreviewPanel pageTitle={title} blocks={blocks} pageId={effectiveId ?? undefined} variantId={undefined} />
+                            <LivePreviewPanel
+                              pageTitle={title}
+                              blocks={displayBlocks}
+                              pageId={effectiveId ?? undefined}
+                              variantId={undefined}
+                              selectedBlockId={selectedBlockId}
+                              onSelectBlock={(id) => setSelectedBlockId(id)}
+                              hoverBlockId={hoverBlockId}
+                              onHoverBlock={(id) => setHoverBlockId(id)}
+                            />
                           </div>
                         )}
 
@@ -7305,7 +8285,241 @@ export function ContentWorkspace({
                       onSave={() => void onSave()}
                     />
 
-                    <ContentAiTools
+                    {isDemo ? (
+                      <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                        <div className="font-medium">Demo-modus – ingen endringer lagres</div>
+                        <div className="mt-0.5 text-xs">Prøv: Klikk en blokk → Forbedre tekst</div>
+                        {isWow ? (
+                          <div className="mt-1 text-xs font-medium text-amber-950">Se hvordan siden forbedres automatisk ✨</div>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBlocks(DEMO_BLOCKS);
+                            setExpandedBlockId(DEMO_BLOCKS[0]?.id ?? null);
+                            setSelectedBlockId(DEMO_BLOCKS[0]?.id ?? null);
+                            if (isWow) {
+                              setOriginalBlocks(JSON.parse(JSON.stringify(DEMO_BLOCKS)) as Block[]);
+                              setShowAfter(false);
+                              wowHasRunRef.current = false;
+                            }
+                          }}
+                          className="mt-2 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-900 transition-all duration-150 ease-out hover:bg-amber-100"
+                        >
+                          Start på nytt
+                        </button>
+                        {isWow ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowAfter((prev) => !prev)}
+                            className="mt-2 ml-2 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-900 transition-all duration-150 ease-out hover:bg-amber-100"
+                          >
+                            Før / Etter
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {isPitch ? null : <div className="mt-2">
+                      <div className="grid gap-2">
+                        <input
+                          value={aiProduct}
+                          onChange={(e) => setAiProduct(e.target.value)}
+                          placeholder="Produkt"
+                          className="h-10 rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 text-sm text-[rgb(var(--lp-text))]"
+                        />
+                        <input
+                          value={aiAudience}
+                          onChange={(e) => setAiAudience(e.target.value)}
+                          placeholder="Målgruppe"
+                          className="h-10 rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 text-sm text-[rgb(var(--lp-text))]"
+                        />
+                        <input
+                          value={aiIntent}
+                          onChange={(e) => setAiIntent(e.target.value)}
+                          placeholder="Mål (f.eks salg / SEO)"
+                          className="h-10 rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 text-sm text-[rgb(var(--lp-text))]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void runAiBuild()}
+                        disabled={aiBuildLoading}
+                        className="mt-2 min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {aiBuildLoading ? "Jobber..." : "Generer side"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void runAiAudit();
+                          if (onboardingStep === 5) setOnboardingStep(6);
+                        }}
+                        disabled={aiAuditLoading}
+                        className="mt-2 ml-2 min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {aiAuditLoading ? "Analyserer..." : "Analyser side"}
+                      </button>
+                      {onboardingStep === 5 ? (
+                        <div className="animate-fade-in mt-2 rounded-lg border border-black/10 bg-black px-2 py-1 text-xs text-white">
+                          Analyser siden
+                        </div>
+                      ) : null}
+                    </div>}
+
+                    {aiBuildResult ? (
+                      <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="mb-2 text-xs font-semibold">AI forslag til side</div>
+                        {aiBuildResult.map((b, i) => (
+                          <div key={i} className="mb-1 text-sm">
+                            {typeof (b as { type?: unknown }).type === "string"
+                              ? ((b as { type: string }).type || "ukjent")
+                              : "ukjent"}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!aiBuildResult) return;
+                            setBlocks(aiBuildResult as Block[]);
+                            setExpandedBlockId(
+                              typeof (aiBuildResult[0] as { id?: unknown } | undefined)?.id === "string"
+                                ? ((aiBuildResult[0] as { id: string }).id ?? null)
+                                : null
+                            );
+                          }}
+                          className="mt-2 text-xs font-medium text-green-700"
+                        >
+                          Bruk forslag
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {aiAudit ? (
+                      <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+                        <div className="text-sm font-semibold text-gray-600">
+                          Sideanalyse
+                        </div>
+
+                        <div className="mt-1 text-2xl font-bold">
+                          {aiAudit.score}/100
+                        </div>
+
+                        <ul className="mt-2 ml-4 list-disc text-sm">
+                          {aiAudit.issues.map((i, idx) => (
+                            <li key={idx}>{i}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {selectedBlock && !isPitch ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mb-2 flex w-full flex-wrap gap-2">
+                          {Object.entries(IMAGE_PRESETS).map(([key, label]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => setImagePreset(key)}
+                              className={`rounded px-2 py-1 text-xs transition-all duration-150 ease-out ${
+                                imagePreset === key ? "bg-black text-white" : "bg-gray-100"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void runAiImage()}
+                          disabled={aiAnyLoading || (selectedBlock.type !== "hero" && selectedBlock.type !== "image")}
+                          className="min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {aiImageLoading ? "Genererer..." : "Generer bilde"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void runAiImageBatch()}
+                          disabled={aiAnyLoading}
+                          className="min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {aiBatchLoading ? "Genererer bilder (hele siden)..." : "Generer bilder (hele siden)"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void runAiAction("improve");
+                            if (onboardingStep === 3) setOnboardingStep(4);
+                          }}
+                          disabled={aiAnyLoading}
+                          className="min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Forbedre tekst
+                        </button>
+                        {onboardingStep === 3 ? (
+                          <div className="animate-fade-in rounded-lg border border-black/10 bg-black px-2 py-1 text-xs text-white">
+                            Klikk &quot;Forbedre tekst&quot;
+                          </div>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => void runAiAction("shorten")}
+                          disabled={aiAnyLoading}
+                          className="min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Forkort
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void runAiAction("seo")}
+                          disabled={aiAnyLoading}
+                          className="min-h-[44px] rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-medium text-[rgb(var(--lp-text))] transition-all duration-150 ease-out hover:bg-[rgb(var(--lp-card))]/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          SEO-optimaliser
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {aiBatchProgress.total > 0 ? (
+                      <div className="mt-2">
+                        <div className="text-xs text-gray-600">
+                          Genererer bilder: {aiBatchProgress.done} / {aiBatchProgress.total}
+                          {aiBatchProgress.done === 0 ? " (starter med hero)" : ""}
+                        </div>
+                        <div className="mt-1 h-1 rounded bg-gray-200">
+                          <div
+                            className="h-1 rounded bg-black transition-all duration-150 ease-out"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.max(
+                                  0,
+                                  aiBatchProgress.total > 0
+                                    ? (aiBatchProgress.done / aiBatchProgress.total) * 100
+                                    : 0
+                                )
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {aiImages && aiImages.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {aiImages.map((img, i) => (
+                          <img
+                            key={`${img.url}-${i}`}
+                            src={img.url}
+                            alt=""
+                            className="cursor-pointer rounded transition-all duration-150 ease-out hover:opacity-80"
+                            onClick={() => applyImage(img)}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {isPitch ? null : <ContentAiTools
                       disabled={isOffline || !effectiveId || aiCapability !== "available"}
                       aiCapabilityStatus={aiCapability}
                       busyToolId={aiBusyToolId}
@@ -7322,7 +8536,7 @@ export function ContentWorkspace({
                       onImageGenerate={handleAiImageGenerate}
                       onScreenshotBuilder={handleScreenshotBuilder}
                       onImageImproveMetadata={handleAiImageImproveMetadata}
-                    />
+                    />}
                   </div>
                   {SHELL_V1 && (
                     <ContentInfoPanel
@@ -7421,6 +8635,172 @@ export function ContentWorkspace({
           setMediaPickerTarget(null);
         }}
       />
+      {onboardingStep > 0 ? (
+        <div className="pointer-events-none fixed inset-0 z-[70] bg-black/40">
+          <div className="pointer-events-auto absolute right-3 top-3">
+            <button
+              type="button"
+              className="rounded-lg border border-white/20 bg-black/80 px-3 py-1.5 text-xs font-medium text-white transition-all duration-150 ease-out hover:bg-black"
+              onClick={() => {
+                try {
+                  if (typeof window !== "undefined") {
+                    window.localStorage.setItem(ONBOARDING_DONE_KEY, "1");
+                  }
+                } catch {
+                  // ignore localStorage write errors
+                }
+                setOnboardingStep(0);
+              }}
+            >
+              Hopp over
+            </button>
+          </div>
+
+          {onboardingStep === 1 ? (
+            <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-2xl">
+              <p className="text-lg font-semibold text-black">Velkommen 👋</p>
+              <p className="mt-1 text-sm text-gray-700">La oss forbedre en side på 30 sek</p>
+              <button
+                type="button"
+                className="mt-4 rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-black/90"
+                onClick={() => setOnboardingStep(2)}
+              >
+                Start
+              </button>
+            </div>
+          ) : null}
+
+          {onboardingStep === 2 ? (
+            <div className="pointer-events-auto absolute left-1/2 top-24 w-[min(92vw,360px)] -translate-x-1/2 rounded-xl bg-white p-4 shadow-2xl">
+              <p className="text-sm font-semibold text-black">Klikk på en blokk</p>
+              <p className="mt-1 text-xs text-gray-600">Vi har valgt første blokk for deg hvis nødvendig.</p>
+            </div>
+          ) : null}
+
+          {onboardingStep === 4 ? (
+            <div className="pointer-events-auto absolute left-1/2 top-24 w-[min(92vw,320px)] -translate-x-1/2 rounded-xl bg-white p-4 shadow-2xl">
+              <p className="text-sm font-semibold text-black">Se forskjellen ✨</p>
+              <p className="mt-1 text-xs text-gray-600">AI har forbedret teksten i valgt blokk.</p>
+            </div>
+          ) : null}
+
+          {onboardingStep === 6 ? (
+            <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(92vw,360px)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-2xl">
+              <p className="text-lg font-semibold text-black">Du er i gang 🚀</p>
+              <p className="mt-1 text-sm text-gray-700">Nå kan du bruke AI-verktøyene fritt.</p>
+              <button
+                type="button"
+                className="mt-4 rounded-lg bg-black px-3 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-black/90"
+                onClick={() => {
+                  try {
+                    if (typeof window !== "undefined") {
+                      window.localStorage.setItem(ONBOARDING_DONE_KEY, "1");
+                    }
+                  } catch {
+                    // ignore localStorage write errors
+                  }
+                  setOnboardingStep(0);
+                }}
+              >
+                Fortsett
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {isPitch ? (
+        <div className="fixed inset-0 z-[74] bg-black/45">
+          <div className="pointer-events-none absolute inset-0" />
+          <div className="pointer-events-auto absolute left-1/2 top-6 w-[min(92vw,640px)] -translate-x-1/2 rounded-xl border border-white/15 bg-black/80 p-4 text-white shadow-2xl">
+            <div className="text-sm font-semibold">
+              {pitchStep === 1 ? "Dette er en vanlig side" : null}
+              {pitchStep === 2 ? "Teksten er svak og lite salgsutlosende" : null}
+              {pitchStep === 3 ? "Forbedre med AI" : null}
+              {pitchStep === 4 ? "Se forskjellen" : null}
+              {pitchStep === 5 ? "Analyser siden" : null}
+              {pitchStep === 6 ? "Generer bilde" : null}
+              {pitchStep >= 7 ? "Dette skjer på sekunder - ikke dager" : null}
+            </div>
+            <div className="mt-1 text-xs text-white/80">Pitch-modus: kontrollert demo uten lagring og uten frie klikk.</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {pitchStep === 3 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAiAction("improve");
+                    setShowAfter(true);
+                    setPitchStep(4);
+                  }}
+                  className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-black transition-all duration-150 ease-out hover:bg-white/90"
+                >
+                  Forbedre med AI
+                </button>
+              ) : null}
+              {pitchStep === 5 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAiAudit();
+                  }}
+                  className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-black transition-all duration-150 ease-out hover:bg-white/90"
+                >
+                  Kjor audit
+                </button>
+              ) : null}
+              {pitchStep === 6 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAiImage();
+                    setShowAfter(true);
+                  }}
+                  className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-black transition-all duration-150 ease-out hover:bg-white/90"
+                >
+                  Generer bilde
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setShowAfter((prev) => !prev)}
+                className="rounded-lg border border-white/20 bg-black/40 px-3 py-1.5 text-xs font-medium text-white transition-all duration-150 ease-out hover:bg-black/60"
+              >
+                For / Etter
+              </button>
+            </div>
+          </div>
+          <div className="pointer-events-auto fixed bottom-4 right-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPitchStep((p) => Math.max(1, p - 1))}
+              className="rounded-lg border border-white/20 bg-black/80 px-3 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-black"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => setPitchStep((p) => Math.min(7, p + 1))}
+              className="rounded-lg border border-white/20 bg-black/80 px-3 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-black"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <style jsx global>{`
+        .animate-fade-in {
+          animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   );
 }

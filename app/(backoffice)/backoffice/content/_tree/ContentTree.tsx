@@ -58,7 +58,13 @@ function permissionsForNode(node: ContentTreeNode): TreePermissions {
 
 const HOME_NODE_ID = "home";
 
-export default function ContentTree() {
+export default function ContentTree({
+  selectedNodeId,
+  onSelectNode,
+}: {
+  selectedNodeId: string | null;
+  onSelectNode: (id: string | null) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const [roots, setRoots] = useState<ContentTreeNode[]>(getMockRoots);
@@ -68,11 +74,12 @@ export default function ContentTree() {
   const homeNavInFlightRef = useRef(false);
   const navInFlightRef = useRef(false);
 
-  const selectedId = pathname.startsWith(BASE + "/recycle-bin")
+  const pathnameSelectedId = pathname.startsWith(BASE + "/recycle-bin")
     ? MOCK_RECYCLE_BIN_ID
     : pathname === BASE
       ? null
       : pathname.replace(BASE + "/", "").split("/")[0] ?? null;
+  const selectedId = selectedNodeId ?? pathnameSelectedId;
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -96,6 +103,7 @@ export default function ContentTree() {
           const body = (await res.json()) as { ok?: boolean; data?: { page?: { id: string } }; error?: string; message?: string };
           const pageId = body?.data?.page?.id;
           if (res.ok && pageId) {
+            onSelectNode(pageId);
             router.push(`${BASE}/${pageId}`);
           } else {
             setHomeNavError(body?.message ?? body?.error ?? "Kunne ikke åpne Hjem.");
@@ -115,12 +123,14 @@ export default function ContentTree() {
       }
 
       if (id === MOCK_RECYCLE_BIN_ID) {
+        onSelectNode(null);
         router.push(`${BASE}/recycle-bin`);
         return;
       }
 
       const node = findNode(roots, id);
       if (isContentPageId(id)) {
+        onSelectNode(id);
         router.push(`${BASE}/${id}`);
         return;
       }
@@ -135,6 +145,7 @@ export default function ContentTree() {
           const data = (await res.json()) as { ok?: boolean; data?: { id?: string; data?: { id?: string } }; error?: string };
           const pageId = data?.data?.data?.id ?? data?.data?.id;
           if (res.ok && pageId) {
+            onSelectNode(pageId);
             router.push(`${BASE}/${pageId}`);
           } else {
             setHomeNavError(data?.error ?? "Finner ikke side med denne slug.");
@@ -148,7 +159,7 @@ export default function ContentTree() {
       }
       toggleExpanded(id);
     },
-    [router, roots, toggleExpanded]
+    [router, roots, toggleExpanded, onSelectNode]
   );
 
   const onCopyLink = useCallback(
@@ -246,7 +257,10 @@ export default function ContentTree() {
           basePath={BASE}
           onSelectAndNavigate={onSelectAndNavigate}
           onToggleExpand={toggleExpanded}
-          onRowClick={() => {}}
+          onRowClick={(id) => {
+            // Only select "editor-ready" UUID nodes; folders/actions keep the current selection.
+            if (isContentPageId(id)) onSelectNode(id);
+          }}
           permissions={permissionsForNode(node)}
           onCopyLink={onCopyLink}
           onPreview={onPreview}
