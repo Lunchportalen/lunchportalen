@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { IconHome, IconFolder, IconRecycle, IconChevronRight } from "../../_shell/icons";
+import { Icon, type SemanticIconKey } from "../../_shell/icons";
 import type { ContentTreeNode, TreePermissions } from "./treeTypes";
 import { NodeActionsMenu } from "./NodeActionsMenu";
 
@@ -29,11 +29,12 @@ export type TreeNodeRowProps = {
   onOpenActions: (id: string | null) => void;
 };
 
-function IconForNode(node: ContentTreeNode) {
-  if (node.icon === "home") return IconHome;
-  if (node.icon === "folder") return IconFolder;
-  if (node.icon === "document") return IconFolder;
-  return IconFolder;
+function iconNameForNode(node: ContentTreeNode): SemanticIconKey {
+  if (node.icon === "home") return "home";
+  if (node.icon === "folder") return "folder";
+  // Preserve existing rendering behaviour: "document" nodes were shown with the folder icon.
+  if (node.icon === "document") return "folder";
+  return "folder";
 }
 
 export function TreeNodeRow({
@@ -57,7 +58,7 @@ export function TreeNodeRow({
 }: TreeNodeRowProps) {
   const kebabRef = useRef<HTMLButtonElement>(null);
   const isActionsOpen = actionsOpenNodeId === node.id;
-  const Icon = node.id === "recycle-bin" ? IconRecycle : IconForNode(node);
+  const iconName: SemanticIconKey = node.id === "recycle-bin" ? "delete" : iconNameForNode(node);
 
   const handleRowClick = () => {
     onRowClick(node.id);
@@ -133,7 +134,8 @@ export function TreeNodeRow({
           aria-label={isExpanded ? "Lukk" : "Utvid"}
         >
           {node.hasChildren ? (
-            <IconChevronRight
+            <Icon
+              name="chevronRight"
               className="h-4 w-4 text-slate-500 transition-transform"
               style={{ transform: isExpanded ? "rotate(90deg)" : undefined }}
             />
@@ -141,7 +143,7 @@ export function TreeNodeRow({
             <span className="inline-block w-4" />
           )}
         </span>
-        <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+        <Icon name={iconName} className="h-4 w-4 shrink-0 text-slate-500" />
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
         <div className="relative flex shrink-0">
           <button

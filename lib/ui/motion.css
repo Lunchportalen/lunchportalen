@@ -1,0 +1,1732 @@
+/* LUNCHPORTALEN — Motion foundation & utilities (safe props only; reduced-motion respected) */
+
+:root {
+  --lp-duration-fast: 120ms;
+  --lp-duration-normal: 200ms;
+  --lp-duration-enter: 220ms;
+  /* Glass primitives: blur scale — cards=sm, panels=md, overlays=lg */
+  --lp-glass-blur-sm: 4px;
+  --lp-glass-blur-md: 8px;
+  --lp-glass-blur-lg: 12px;
+  /* Glass opacity scale: light (translucent) → medium (cards) → strong (panels, readability) */
+  --lp-glass-opacity-light: 0.7;
+  --lp-glass-opacity-medium: 0.82;
+  --lp-glass-opacity-strong: 0.94;
+  --lp-glass-light: rgba(255, 255, 255, var(--lp-glass-opacity-light));
+  --lp-glass-medium: rgba(255, 255, 255, var(--lp-glass-opacity-medium));
+  --lp-glass-strong: rgba(255, 255, 255, var(--lp-glass-opacity-strong));
+  --lp-glass-overlay-bg: rgba(0, 0, 0, 0.5);
+  --lp-glass-surface-bg: var(--lp-glass-strong);
+  --lp-glass-card-bg: var(--lp-glass-medium);
+  --lp-glass-panel-bg: var(--lp-glass-strong);
+  --lp-glass-bar-bg: var(--lp-glass-strong);
+  --lp-glass-ring: rgba(0, 0, 0, 0.05);
+  --lp-glass-highlight: rgba(255, 255, 255, 0.1);
+  /* Glass elevation: subtle only — sm (cards/surfaces), md (panels/modals) */
+  --lp-glass-shadow-sm: var(--lp-shadow-sm);
+  --lp-glass-shadow-md: var(--lp-shadow-md);
+
+  /* Effect families: soft, outline, glow (gradient uses --lp-surface*, --lp-neon-rgb) */
+  --lp-soft-bg: rgba(var(--lp-surface-rgb), 0.92);
+  --lp-soft-border: rgba(var(--lp-border), 0.75);
+  --lp-soft-shadow: var(--lp-shadow-soft);
+  --lp-outline-border: rgb(var(--lp-border));
+  --lp-outline-bg: transparent;
+  --lp-glow-ring: rgba(var(--lp-neon-rgb), 0.28);
+  --lp-glow-shadow: 0 0 18px rgba(var(--lp-neon-rgb), 0.1);
+  --lp-glow-shadow-strong: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.35), 0 0 20px rgba(var(--lp-neon-rgb), 0.15);
+
+  /* Overlay backdrops (modal/dialog dim layer): glass = current; others restrained */
+  --lp-overlay-soft-bg: rgba(0, 0, 0, 0.42);
+  --lp-overlay-gradient-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.35) 100%);
+  --lp-overlay-outline-bg: rgba(0, 0, 0, 0.35);
+  --lp-overlay-glow-bg: rgba(0, 0, 0, 0.48);
+}
+
+/* Easing: single source in globals.css (--lp-ease) */
+/* Buttons: tactile, premium */
+.lp-motion-btn {
+  transition:
+    transform var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease),
+    background-color var(--lp-duration-fast) var(--lp-ease),
+    border-color var(--lp-duration-fast) var(--lp-ease),
+    color var(--lp-duration-fast) var(--lp-ease),
+    opacity var(--lp-duration-fast) var(--lp-ease);
+}
+
+/* Cards / panels / tiles: controlled hover depth */
+.lp-motion-card {
+  transition:
+    transform var(--lp-duration-normal) var(--lp-ease),
+    box-shadow var(--lp-duration-normal) var(--lp-ease),
+    border-color var(--lp-duration-normal) var(--lp-ease);
+}
+
+/* Overlays / modal panels: clean enter */
+.lp-motion-overlay {
+  transition:
+    opacity var(--lp-duration-enter) var(--lp-ease),
+    transform var(--lp-duration-enter) var(--lp-ease);
+}
+
+/* Rows / list / table: responsive, precise */
+.lp-motion-row {
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease);
+}
+
+/* Form controls: input, select, textarea, checkbox (border/shadow/background/transform) */
+.lp-motion-control {
+  transition:
+    box-shadow var(--lp-duration-normal) var(--lp-ease),
+    border-color var(--lp-duration-normal) var(--lp-ease),
+    background-color var(--lp-duration-normal) var(--lp-ease),
+    transform var(--lp-duration-normal) var(--lp-ease);
+}
+
+/* Toggle switch track and thumb: consistent motion, respects reduced-motion */
+.lp-motion-switch {
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease),
+    border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-motion-switch-thumb {
+  transition: transform var(--lp-duration-fast) var(--lp-ease);
+}
+
+/* Icons: transform only (e.g. chevron rotate); performance-safe */
+.lp-motion-icon {
+  transition: transform var(--lp-duration-fast) var(--lp-ease);
+}
+
+/* Opacity-only (e.g. checkmark reveal); fast */
+.lp-motion-opacity {
+  transition: opacity var(--lp-duration-fast) var(--lp-ease);
+}
+
+/* ========== Shared motion primitives (premium SaaS; short durations; no exaggerated transforms) ==========
+   Reusable from CSS (class names) and JS/TS (lib/ui/motionTokens.ts motionClasses).
+   All transitions/animations are disabled under prefers-reduced-motion: reduce at end of file.
+
+   Hover:     lp-motion-hover-soft | lp-motion-hover-lift | lp-motion-hover-glow
+   Press:     lp-motion-press
+   Focus:     lp-motion-focus (focus-visible ring kept strong for a11y)
+   Fade:      lp-motion-fade
+   Slide:     lp-motion-slide-up | lp-motion-slide-down (consumer sets translateY)
+   Panel:     lp-motion-panel (modal/drawer open/close)
+   Toast:     lp-motion-toast
+   Skeleton:  lp-motion-skeleton (shimmer)
+   Success:   lp-motion-success (subtle flash; add class when done, remove after)
+*/
+
+/* Hover: slight lift + smooth shadow increase */
+.lp-motion-hover-soft {
+  transition:
+    transform var(--lp-duration-normal) var(--lp-ease),
+    box-shadow var(--lp-duration-normal) var(--lp-ease);
+}
+.lp-motion-hover-soft:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+/* Hover: stronger elevation + subtle translate/scale */
+.lp-motion-hover-lift {
+  transition:
+    transform var(--lp-duration-normal) var(--lp-ease),
+    box-shadow var(--lp-duration-normal) var(--lp-ease);
+}
+.lp-motion-hover-lift:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--lp-shadow-card);
+}
+
+/* Hover: soft glow emphasis (not neon) */
+.lp-motion-hover-glow {
+  transition: box-shadow var(--lp-duration-normal) var(--lp-ease);
+}
+.lp-motion-hover-glow:hover {
+  box-shadow: 0 0 20px rgba(var(--lp-neon-rgb), 0.06), 0 0 40px rgba(var(--lp-neon-rgb), 0.04);
+}
+
+/* Press: tiny press-down feedback */
+.lp-motion-press {
+  transition: transform var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-motion-press:active {
+  transform: translateY(1px);
+}
+
+/* Focus: clear accessible focus-visible ring (compose with focus-visible styles) */
+.lp-motion-focus {
+  transition: box-shadow var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-motion-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--lp-ring), 0.5), 0 0 0 4px rgba(var(--lp-ring), 0.18);
+}
+
+/* Fade: opacity transition for overlays / content reveal */
+.lp-motion-fade {
+  transition: opacity var(--lp-duration-enter) var(--lp-ease);
+}
+
+/* Slide: transform transition; consumer controls translateY (e.g. 0 vs 8px for up, 0 vs -8px for down) */
+.lp-motion-slide-up,
+.lp-motion-slide-down {
+  transition: transform var(--lp-duration-enter) var(--lp-ease);
+}
+
+/* Panel: modal/drawer enter (opacity + transform) */
+.lp-motion-panel {
+  transition:
+    opacity var(--lp-duration-enter) var(--lp-ease),
+    transform var(--lp-duration-enter) var(--lp-ease);
+}
+
+/* Toast: short enter for toast/snackbar (opacity + transform) */
+.lp-motion-toast {
+  transition:
+    opacity var(--lp-duration-normal) var(--lp-ease),
+    transform var(--lp-duration-normal) var(--lp-ease);
+}
+
+/* Skeleton: refined loading shimmer */
+@keyframes lp-skeleton-shimmer {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+.lp-motion-skeleton {
+  animation: lp-skeleton-shimmer 1.4s var(--lp-ease) infinite;
+}
+
+/* Success: subtle "saved / completed" flash (add class when success; remove after) */
+@keyframes lp-success-flash {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.lp-motion-success {
+  animation: lp-success-flash 0.35s var(--lp-ease);
+}
+
+/* Overlay backdrop: modal/overlay dim + blur-lg */
+.lp-glass-overlay {
+  background: var(--lp-glass-overlay-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-lg));
+}
+
+/* Modal/dialog content panel: premium glass */
+.lp-glass-panel {
+  background: var(--lp-glass-panel-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: var(--lp-glass-shadow-md);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+}
+
+/* Sticky bars (save bar, side panels): light glass — top highlight only */
+.lp-glass-bar {
+  background: var(--lp-glass-bar-bg);
+  border-top: 1px solid var(--lp-glass-highlight);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+/* Generic translucent surface (cards, tiles, inline blocks) */
+.lp-glass-surface {
+  background: var(--lp-glass-surface-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+/* Section/card glass: blur-sm + highlight + subtle elevation */
+.lp-glass-card {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+/* Nav/header strip: surface tint + light blur (compose with .lp-topbar or use standalone) */
+.lp-glass-nav {
+  background: rgba(var(--lp-surface-rgb), 0.92);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+/* Opacity-only tokens: use with backdrop-blur-sm/md where needed */
+.lp-glass-bg-light {
+  background: var(--lp-glass-light);
+}
+.lp-glass-bg-medium {
+  background: var(--lp-glass-medium);
+}
+.lp-glass-bg-strong {
+  background: var(--lp-glass-strong);
+}
+
+/* ========== 5 approved effect families: glass, soft, gradient, outline, glow ==========
+   Shared visual foundations — premium and restrained. Semantics first; selected/active unmistakable.
+   Each family: background, border, shadow (where applicable), blur (glass only).
+   Radius: cards/modals use var(--lp-radius-card); surfaces/headers/footers edge-to-edge or by consumer.
+   Wired via: headerVariants, footerVariants, modalVariants, drawerVariants, tabSegmentVariants,
+   feedbackVariants, chipBadgeVariants. Components: HeaderShell, AppFooter, Dialog, Tabs, ToastProvider;
+   drawer/chip/badge/alert use get*VariantClass() or class-based.
+
+   Surfaces:  .lp-surface-*   Cards:     .lp-card-*     Buttons:   .lp-btn-*
+   Headers:   .lp-header-*    Footers:   .lp-footer-*
+   Overlays:  .lp-overlay-*   Modals:    .lp-modal-*     Drawers:   .lp-drawer-*
+   Tabs:      .lp-tab-*       Tab list:  .lp-tab-list-* Segments:  .lp-segment-*
+   Toasts:    .lp-toast-*     Alerts:    .lp-alert-*     Chips:     .lp-chip-*     Badges:   .lp-badge-*
+*/
+
+/* ---- Surfaces ---- */
+.lp-surface-glass {
+  background: var(--lp-glass-surface-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-surface-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-surface-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-surface-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+
+.lp-surface-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* ---- Cards (full card treatment: bg, border, shadow, radius). Wired to Card variant in components/ui/card.tsx ---- */
+.lp-card-glass {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-card-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-card-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-card-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: none;
+}
+
+.lp-card-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* ---- Buttons (effect only; combine with .lp-btn for layout). Wired to Button variant in components/ui/button.tsx.
+     Default, hover, active (globals .lp-btn:active), focus-visible (component + here for glow), disabled (globals .lp-btn:disabled). Contrast and glow restrained. ---- */
+.lp-btn-glass {
+  background: var(--lp-glass-medium);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-btn-glass:hover {
+  background: var(--lp-glass-strong);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-md);
+}
+
+.lp-btn-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-btn-soft:hover {
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-btn-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.92) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-btn-gradient:hover {
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.lp-btn-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+
+.lp-btn-outline:hover {
+  background: rgba(var(--lp-surface-rgb), 0.04);
+}
+
+.lp-btn-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+.lp-btn-glow:hover {
+  box-shadow: var(--lp-glow-shadow-strong);
+}
+
+.lp-btn-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--lp-neon-rgb), 0.4), var(--lp-glow-shadow);
+}
+
+/* ---- Header shells (strip treatment: bg, border, shadow, blur). Wired to HeaderShell via lib/ui/headerVariants. Compose with lp-topbar for structure. Glass premium; glow restrained. ---- */
+.lp-header-glass {
+  background: rgba(var(--lp-surface-rgb), 0.92);
+  border-bottom: 1px solid var(--lp-glass-highlight);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-header-soft {
+  background: var(--lp-soft-bg);
+  border-bottom: 1px solid var(--lp-soft-border);
+  box-shadow: 0 1px 0 rgba(var(--lp-text-rgb), 0.04);
+}
+
+.lp-header-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.92) 100%);
+  border-bottom: 1px solid var(--lp-soft-border);
+  box-shadow: 0 1px 0 rgba(var(--lp-text-rgb), 0.03);
+}
+
+.lp-header-outline {
+  background: var(--lp-outline-bg);
+  border-bottom: 1px solid var(--lp-outline-border);
+}
+
+.lp-header-glow {
+  background: var(--lp-soft-bg);
+  border-bottom: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 12px rgba(var(--lp-neon-rgb), 0.06);
+}
+
+/* ---- Footer shells. Wired to AppFooter via lib/ui/footerVariants. Compose with lp-footer lp-footer--full for structure. Glass premium; glow restrained. ---- */
+.lp-footer-glass {
+  background: rgba(var(--lp-surface-rgb), 0.92);
+  border-top: 1px solid var(--lp-glass-highlight);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-footer-soft {
+  background: var(--lp-soft-bg);
+  border-top: 1px solid var(--lp-soft-border);
+  box-shadow: 0 -1px 0 rgba(var(--lp-text-rgb), 0.04);
+}
+
+.lp-footer-gradient {
+  background: linear-gradient(0deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.92) 100%);
+  border-top: 1px solid var(--lp-soft-border);
+  box-shadow: 0 -1px 0 rgba(var(--lp-text-rgb), 0.03);
+}
+
+.lp-footer-outline {
+  background: var(--lp-outline-bg);
+  border-top: 1px solid var(--lp-outline-border);
+}
+
+.lp-footer-glow {
+  background: var(--lp-soft-bg);
+  border-top: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 12px rgba(var(--lp-neon-rgb), 0.06);
+}
+
+/* ---- Overlay backdrops (modal/dialog dim layer; use with lp-motion-overlay) ---- */
+.lp-overlay-glass {
+  background: var(--lp-glass-overlay-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-lg));
+}
+
+.lp-overlay-soft {
+  background: var(--lp-overlay-soft-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+}
+
+.lp-overlay-gradient {
+  background: var(--lp-overlay-gradient-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-overlay-outline {
+  background: var(--lp-overlay-outline-bg);
+}
+
+.lp-overlay-glow {
+  background: var(--lp-overlay-glow-bg);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+  box-shadow: inset 0 0 80px rgba(var(--lp-neon-rgb), 0.04);
+}
+
+/* ---- Modal/dialog panel shells (use with lp-motion-overlay; radius from consumer or --lp-radius-card) ---- */
+.lp-modal-glass {
+  background: var(--lp-glass-panel-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-glass-shadow-md);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+}
+
+.lp-modal-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-modal-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-modal-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: none;
+}
+
+.lp-modal-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Modal shell structure (padding/rhythm; use inside lp-modal-* panel) */
+.lp-modal-header {
+  padding: 1rem 1.25rem 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.lp-modal-body {
+  padding: 1rem 1.25rem;
+}
+
+.lp-modal-footer {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ---- Drawer / side panel shells (slide-in, inspector, config; use with lp-motion-overlay/lp-motion-panel) ---- */
+.lp-drawer-glass {
+  background: var(--lp-glass-panel-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: 0;
+  box-shadow: var(--lp-glass-shadow-md);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+}
+
+.lp-drawer-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: 0;
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-drawer-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: 0;
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-drawer-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.lp-drawer-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: 0;
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Drawer structure: use inside lp-drawer-*; header/footer shrink-0, body flex-1 min-h-0 overflow-y-auto for stable scroll */
+.lp-drawer-header {
+  flex-shrink: 0;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(var(--lp-border), 0.6);
+}
+
+.lp-drawer-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+}
+
+.lp-drawer-footer {
+  flex-shrink: 0;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(var(--lp-border), 0.6);
+}
+
+.lp-drawer-divider {
+  height: 1px;
+  flex-shrink: 0;
+  background: rgba(var(--lp-border), 0.6);
+}
+
+/* ---- Tabs (role=tab, aria-selected; use lp-motion-btn for transition) ---- */
+.lp-tab-glass {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-tab-glass[aria-selected="false"],
+.lp-tab-glass:not([aria-selected]) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgb(var(--lp-muted));
+}
+.lp-tab-glass:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-tab-glass[aria-selected="true"] {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+
+.lp-tab-soft {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-tab-soft[aria-selected="false"],
+.lp-tab-soft:not([aria-selected]) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgb(var(--lp-muted));
+}
+.lp-tab-soft:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-tab-soft[aria-selected="true"] {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+  color: rgb(var(--lp-text));
+}
+
+.lp-tab-gradient {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-tab-gradient[aria-selected="false"],
+.lp-tab-gradient:not([aria-selected]) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgb(var(--lp-muted));
+}
+.lp-tab-gradient:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-tab-gradient[aria-selected="true"] {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+
+.lp-tab-outline {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-tab-outline[aria-selected="false"],
+.lp-tab-outline:not([aria-selected]) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgb(var(--lp-muted));
+}
+.lp-tab-outline:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-tab-outline[aria-selected="true"] {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  color: rgb(var(--lp-text));
+}
+
+.lp-tab-glow {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-tab-glow[aria-selected="false"],
+.lp-tab-glow:not([aria-selected]) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgb(var(--lp-muted));
+}
+.lp-tab-glow:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-tab-glow[aria-selected="true"] {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+  color: rgb(var(--lp-text));
+}
+
+/* ---- Segmented controls (container; children use [aria-pressed] for selected) ---- */
+.lp-segment-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-surface-rgb), 0.5);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring);
+}
+.lp-segment-glass > * {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--lp-muted));
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-segment-glass > *:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-segment-glass > [aria-pressed="true"] {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+
+.lp-segment-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-border), 0.15);
+  border: 1px solid var(--lp-soft-border);
+}
+.lp-segment-soft > * {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--lp-muted));
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-segment-soft > *:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-segment-soft > [aria-pressed="true"] {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+  color: rgb(var(--lp-text));
+}
+
+.lp-segment-gradient {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-border), 0.12);
+  border: 1px solid var(--lp-soft-border);
+}
+.lp-segment-gradient > * {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--lp-muted));
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-segment-gradient > *:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-segment-gradient > [aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+
+.lp-segment-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--lp-radius-card);
+  background: transparent;
+  border: 1px solid var(--lp-outline-border);
+}
+.lp-segment-outline > * {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--lp-muted));
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-segment-outline > *:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-segment-outline > [aria-pressed="true"] {
+  background: rgba(var(--lp-surface-rgb), 0.04);
+  border: 1px solid var(--lp-outline-border);
+  color: rgb(var(--lp-text));
+}
+
+.lp-segment-glow {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-border), 0.12);
+  border: 1px solid rgba(var(--lp-glow-ring), 0.5);
+}
+.lp-segment-glow > * {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--lp-muted));
+  transition: background-color var(--lp-duration-fast) var(--lp-ease), border-color var(--lp-duration-fast) var(--lp-ease),
+    box-shadow var(--lp-duration-fast) var(--lp-ease), color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-segment-glow > *:hover {
+  color: rgb(var(--lp-text));
+}
+.lp-segment-glow > [aria-pressed="true"] {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+  color: rgb(var(--lp-text));
+}
+
+/* Segment items: focus-visible for accessibility */
+.lp-segment-glass > *:focus-visible,
+.lp-segment-soft > *:focus-visible,
+.lp-segment-gradient > *:focus-visible,
+.lp-segment-outline > *:focus-visible,
+.lp-segment-glow > *:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--lp-ring), 0.35);
+}
+
+/* ---- Toast (floating notifications; pair with lp-motion-toast) ---- */
+.lp-toast-glass {
+  background: var(--lp-glass-panel-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-glass-shadow-md);
+  backdrop-filter: blur(var(--lp-glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-md));
+}
+
+.lp-toast-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-toast-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-toast-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: none;
+}
+
+.lp-toast-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Toast semantic accents (combine with lp-toast-*; left border + strong contrast) */
+.lp-toast--success {
+  border-left: 4px solid rgb(var(--lp-success));
+}
+.lp-toast--error {
+  border-left: 4px solid rgb(var(--lp-danger));
+}
+.lp-toast--warning {
+  border-left: 4px solid rgb(var(--lp-warning));
+}
+.lp-toast--info {
+  border-left: 4px solid rgb(var(--lp-info));
+}
+
+/* ---- Alert (inline feedback; role=alert or role=status) ---- */
+.lp-alert-glass {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-alert-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-alert-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-alert-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-card);
+  box-shadow: none;
+}
+
+.lp-alert-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Alert semantic accents (combine with lp-alert-*) */
+.lp-alert--success {
+  border-left: 4px solid rgb(var(--lp-success));
+}
+.lp-alert--error {
+  border-left: 4px solid rgb(var(--lp-danger));
+}
+.lp-alert--warning {
+  border-left: 4px solid rgb(var(--lp-warning));
+}
+.lp-alert--info {
+  border-left: 4px solid rgb(var(--lp-info));
+}
+
+/* Tab list (optional wrapper; use with TabsList) */
+.lp-tab-list-glass {
+  background: rgba(var(--lp-surface-rgb), 0.5);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-card);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring);
+}
+.lp-tab-list-soft {
+  background: rgba(var(--lp-border), 0.15);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+}
+.lp-tab-list-outline {
+  background: transparent;
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-card);
+}
+.lp-tab-list-gradient {
+  background: rgba(var(--lp-border), 0.12);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-card);
+}
+.lp-tab-list-glow {
+  background: rgba(var(--lp-border), 0.12);
+  border: 1px solid rgba(var(--lp-glow-ring), 0.5);
+  border-radius: var(--lp-radius-card);
+}
+
+/* ---- Chip (status pills, counts, labels; use with .lp-chip for layout or standalone) ---- */
+.lp-chip-glass {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-chip-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-chip-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.92) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-chip-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: none;
+}
+
+.lp-chip-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Chip semantic states (combine with lp-chip-*; domain meaning first) */
+.lp-chip--success {
+  border-color: rgba(var(--lp-success), 0.5);
+  color: rgb(var(--lp-success));
+}
+.lp-chip--error {
+  border-color: rgba(var(--lp-danger), 0.5);
+  color: rgb(var(--lp-danger));
+}
+.lp-chip--warning {
+  border-color: rgba(var(--lp-warning), 0.5);
+  color: rgb(var(--lp-warning));
+}
+.lp-chip--info {
+  border-color: rgba(var(--lp-info), 0.4);
+  color: rgb(var(--lp-info));
+}
+.lp-chip--neutral {
+  border-color: rgba(var(--lp-border), 0.9);
+  color: rgb(var(--lp-muted));
+}
+
+/* Chip selected/active (interactive filters) */
+.lp-chip--selected {
+  box-shadow: 0 0 0 2px rgba(var(--lp-ring), 0.35);
+}
+
+/* ---- Badge (labels, markers; use with .lp-badge for layout or standalone) ---- */
+.lp-badge-glass {
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+
+.lp-badge-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: var(--lp-soft-shadow);
+}
+
+.lp-badge-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.92) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.lp-badge-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: none;
+}
+
+.lp-badge-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: var(--lp-radius-badge);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Badge semantic states (combine with lp-badge-*) */
+.lp-badge--success {
+  border-color: rgba(var(--lp-success), 0.5);
+  color: rgb(var(--lp-success));
+}
+.lp-badge--error {
+  border-color: rgba(var(--lp-danger), 0.5);
+  color: rgb(var(--lp-danger));
+}
+.lp-badge--warning {
+  border-color: rgba(var(--lp-warning), 0.5);
+  color: rgb(var(--lp-warning));
+}
+.lp-badge--info {
+  border-color: rgba(var(--lp-info), 0.4);
+  color: rgb(var(--lp-info));
+}
+.lp-badge--neutral {
+  border-color: rgba(var(--lp-border), 0.9);
+  color: rgb(var(--lp-muted));
+}
+
+/* ---- Form controls (input, textarea, select). Wired via formControlVariants to Input/Textarea/Select. ----
+     Accessibility: focus-visible, disabled, aria-invalid in CSS. Outline/soft for dense UI; glass legible; glow rare. */
+.lp-input-glass,
+.lp-textarea-glass,
+.lp-select-glass {
+  background: var(--lp-glass-strong);
+  border: 1px solid var(--lp-glass-highlight);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+.lp-input-glass:hover,
+.lp-textarea-glass:hover,
+.lp-select-glass:hover {
+  background: var(--lp-glass-panel-bg);
+  border-color: var(--lp-glass-highlight);
+}
+.lp-input-glass:focus-visible,
+.lp-textarea-glass:focus-visible,
+.lp-select-glass:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
+  border-color: rgba(var(--lp-border), 0.9);
+}
+.lp-input-glass:disabled,
+.lp-textarea-glass:disabled,
+.lp-select-glass:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.lp-input-glass[aria-invalid="true"],
+.lp-textarea-glass[aria-invalid="true"],
+.lp-select-glass[aria-invalid="true"] {
+  border-color: rgba(var(--lp-danger), 0.5);
+}
+
+.lp-input-soft,
+.lp-textarea-soft,
+.lp-select-soft {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: 12px;
+  box-shadow: var(--lp-soft-shadow);
+  color: rgb(var(--lp-text));
+}
+.lp-input-soft:hover,
+.lp-textarea-soft:hover,
+.lp-select-soft:hover {
+  border-color: rgba(var(--lp-border), 0.9);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-input-soft:focus-visible,
+.lp-textarea-soft:focus-visible,
+.lp-select-soft:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
+}
+.lp-input-soft:disabled,
+.lp-textarea-soft:disabled,
+.lp-select-soft:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.lp-input-soft[aria-invalid="true"],
+.lp-textarea-soft[aria-invalid="true"],
+.lp-select-soft[aria-invalid="true"] {
+  border-color: rgba(var(--lp-danger), 0.5);
+}
+
+.lp-input-gradient,
+.lp-textarea-gradient,
+.lp-select-gradient {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  border-radius: 12px;
+  box-shadow: var(--lp-shadow-sm);
+  color: rgb(var(--lp-text));
+}
+.lp-input-gradient:hover,
+.lp-textarea-gradient:hover,
+.lp-select-gradient:hover {
+  box-shadow: var(--lp-shadow-soft);
+}
+.lp-input-gradient:focus-visible,
+.lp-textarea-gradient:focus-visible,
+.lp-select-gradient:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
+}
+.lp-input-gradient:disabled,
+.lp-textarea-gradient:disabled,
+.lp-select-gradient:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.lp-input-gradient[aria-invalid="true"],
+.lp-textarea-gradient[aria-invalid="true"],
+.lp-select-gradient[aria-invalid="true"] {
+  border-color: rgba(var(--lp-danger), 0.5);
+}
+
+.lp-input-outline,
+.lp-textarea-outline,
+.lp-select-outline {
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  border-radius: 12px;
+  box-shadow: none;
+  color: rgb(var(--lp-text));
+}
+.lp-input-outline:hover,
+.lp-textarea-outline:hover,
+.lp-select-outline:hover {
+  background: rgba(var(--lp-surface-rgb), 0.04);
+}
+.lp-input-outline:focus-visible,
+.lp-textarea-outline:focus-visible,
+.lp-select-outline:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22);
+}
+.lp-input-outline:disabled,
+.lp-textarea-outline:disabled,
+.lp-select-outline:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.lp-input-outline[aria-invalid="true"],
+.lp-textarea-outline[aria-invalid="true"],
+.lp-select-outline[aria-invalid="true"] {
+  border-color: rgba(var(--lp-danger), 0.5);
+}
+
+.lp-input-glow,
+.lp-textarea-glow,
+.lp-select-glow {
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+  color: rgb(var(--lp-text));
+}
+.lp-input-glow:hover,
+.lp-textarea-glow:hover,
+.lp-select-glow:hover {
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow-strong);
+}
+.lp-input-glow:focus-visible,
+.lp-textarea-glow:focus-visible,
+.lp-select-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--lp-ring), 0.22), 0 0 0 1px var(--lp-glow-ring);
+}
+.lp-input-glow:disabled,
+.lp-textarea-glow:disabled,
+.lp-select-glow:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.lp-input-glow[aria-invalid="true"],
+.lp-textarea-glow[aria-invalid="true"],
+.lp-select-glow[aria-invalid="true"] {
+  border-color: rgba(var(--lp-danger), 0.5);
+}
+
+/* ---- Table wrapper + rows. Wired via tableRowVariants to Table/TR. Selected: lp-row--selected/aria-selected; summary: lp-row-summary. Outline/soft for dense data. ---- */
+.lp-table-glass {
+  border-radius: var(--lp-radius-card);
+  overflow: hidden;
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+}
+.lp-table-glass thead th {
+  background: rgba(var(--lp-surface-rgb), 0.6);
+  border-bottom: 1px solid var(--lp-glass-highlight);
+}
+
+.lp-table-soft {
+  border-radius: var(--lp-radius-card);
+  overflow: hidden;
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-table-soft thead th {
+  background: rgba(var(--lp-border), 0.12);
+  border-bottom: 1px solid var(--lp-soft-border);
+}
+
+.lp-table-gradient {
+  border-radius: var(--lp-radius-card);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-table-gradient thead th {
+  background: rgba(var(--lp-border), 0.1);
+  border-bottom: 1px solid var(--lp-soft-border);
+}
+
+.lp-table-outline {
+  border-radius: var(--lp-radius-card);
+  overflow: hidden;
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+.lp-table-outline thead th {
+  background: rgba(var(--lp-surface-rgb), 0.03);
+  border-bottom: 1px solid var(--lp-outline-border);
+}
+
+.lp-table-glow {
+  border-radius: var(--lp-radius-card);
+  overflow: hidden;
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+.lp-table-glow thead th {
+  background: rgba(var(--lp-border), 0.08);
+  border-bottom: 1px solid rgba(var(--lp-glow-ring), 0.4);
+}
+
+/* ---- Row surface (apply to tr or list row; use with lp-motion-row) ---- */
+.lp-row-glass {
+  border-bottom: 1px solid rgba(var(--lp-divider-rgb), 0.6);
+  background: transparent;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-row-glass:hover {
+  background: rgba(var(--lp-surface-rgb), 0.5);
+}
+.lp-row-glass.lp-row--selected,
+.lp-row-glass[aria-selected="true"] {
+  background: var(--lp-glass-card-bg);
+}
+
+.lp-row-soft {
+  border-bottom: 1px solid rgba(var(--lp-border), 0.5);
+  background: transparent;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-row-soft:hover {
+  background: rgba(var(--lp-border), 0.08);
+}
+.lp-row-soft.lp-row--selected,
+.lp-row-soft[aria-selected="true"] {
+  background: var(--lp-soft-bg);
+}
+
+.lp-row-gradient {
+  border-bottom: 1px solid rgba(var(--lp-border), 0.4);
+  background: transparent;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-row-gradient:hover {
+  background: rgba(var(--lp-surface-alt), 0.4);
+}
+.lp-row-gradient.lp-row--selected,
+.lp-row-gradient[aria-selected="true"] {
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.95) 0%, rgba(var(--lp-surface-alt), 0.9) 100%);
+}
+
+.lp-row-outline {
+  border-bottom: 1px solid var(--lp-outline-border);
+  background: transparent;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-row-outline:hover {
+  background: rgba(var(--lp-surface-rgb), 0.04);
+}
+.lp-row-outline.lp-row--selected,
+.lp-row-outline[aria-selected="true"] {
+  background: rgba(var(--lp-surface-rgb), 0.06);
+}
+
+.lp-row-glow {
+  border-bottom: 1px solid rgba(var(--lp-glow-ring), 0.35);
+  background: transparent;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease);
+}
+.lp-row-glow:hover {
+  background: rgba(var(--lp-glow-ring), 0.06);
+}
+.lp-row-glow.lp-row--selected,
+.lp-row-glow[aria-selected="true"] {
+  background: rgba(var(--lp-glow-ring), 0.1);
+}
+
+/* Summary / grouped row (slightly stronger background) */
+.lp-row-summary {
+  font-weight: 600;
+  background: rgba(var(--lp-border), 0.12);
+}
+.lp-table-soft .lp-row-summary {
+  background: rgba(var(--lp-border), 0.15);
+}
+.lp-table-outline .lp-row-summary {
+  background: rgba(var(--lp-surface-rgb), 0.05);
+}
+
+/* ---- State surfaces (empty, loading, error, success, paused). Wired via stateSurfaceVariants. ----
+     Text clarity first; outline/soft for operational UI; glow controlled. */
+.lp-state-glass {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+.lp-state-soft {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-state-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-state-outline {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+.lp-state-glow {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Skeleton block: surface + shimmer (compose with lp-motion-skeleton on inner element) */
+.lp-skeleton-glass {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+}
+.lp-skeleton-glass .lp-motion-skeleton {
+  background: rgba(var(--lp-surface-rgb), 0.4);
+  border-radius: 0.5rem;
+}
+.lp-skeleton-soft {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-skeleton-soft .lp-motion-skeleton {
+  background: rgba(var(--lp-border), 0.2);
+  border-radius: 0.5rem;
+}
+.lp-skeleton-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+}
+.lp-skeleton-gradient .lp-motion-skeleton {
+  background: rgba(var(--lp-border), 0.18);
+  border-radius: 0.5rem;
+}
+.lp-skeleton-outline {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+}
+.lp-skeleton-outline .lp-motion-skeleton {
+  background: rgba(var(--lp-border), 0.15);
+  border-radius: 0.5rem;
+}
+.lp-skeleton-glow {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+.lp-skeleton-glow .lp-motion-skeleton {
+  background: rgba(var(--lp-glow-ring), 0.08);
+  border-radius: 0.5rem;
+}
+
+/* Empty state: calm, clear, no semantic */
+.lp-empty-glass {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-glass-card-bg);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+  backdrop-filter: blur(var(--lp-glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
+}
+.lp-empty-soft {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-empty-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.98) 0%, rgba(var(--lp-surface-alt), 0.95) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-empty-outline {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-outline-bg);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+.lp-empty-glow {
+  border-radius: var(--lp-radius-card);
+  background: var(--lp-soft-bg);
+  border: 1px solid var(--lp-glow-ring);
+  box-shadow: 0 0 0 1px var(--lp-glow-ring), var(--lp-glow-shadow);
+}
+
+/* Error state: high legibility, danger semantic */
+.lp-error-glass {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-danger), 0.06);
+  border: 1px solid rgba(var(--lp-danger), 0.25);
+  box-shadow: 0 0 0 1px rgba(var(--lp-danger), 0.08), var(--lp-shadow-sm);
+}
+.lp-error-soft {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-danger), 0.08);
+  border: 1px solid rgba(var(--lp-danger), 0.3);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-error-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-danger), 0.05) 0%, rgba(var(--lp-danger), 0.1) 100%);
+  border: 1px solid rgba(var(--lp-danger), 0.28);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-error-outline {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-danger), 0.04);
+  border: 1px solid rgba(var(--lp-danger), 0.4);
+  box-shadow: none;
+}
+.lp-error-glow {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-danger), 0.06);
+  border: 1px solid rgba(var(--lp-danger), 0.35);
+  box-shadow: 0 0 0 1px rgba(var(--lp-danger), 0.12), var(--lp-shadow-sm);
+}
+
+/* Success state: polished, calm, subtle (glow very limited) */
+.lp-success-glass {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-success), 0.06);
+  border: 1px solid rgba(var(--lp-success), 0.2);
+  box-shadow: 0 0 0 1px rgba(var(--lp-success), 0.06), var(--lp-shadow-sm);
+}
+.lp-success-soft {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-success), 0.08);
+  border: 1px solid rgba(var(--lp-success), 0.25);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-success-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-success), 0.05) 0%, rgba(var(--lp-success), 0.1) 100%);
+  border: 1px solid rgba(var(--lp-success), 0.22);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-success-outline {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-success), 0.04);
+  border: 1px solid rgba(var(--lp-success), 0.3);
+  box-shadow: none;
+}
+.lp-success-glow {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-success), 0.05);
+  border: 1px solid rgba(var(--lp-success), 0.18);
+  box-shadow: 0 0 0 1px rgba(var(--lp-success), 0.08), 0 0 12px rgba(var(--lp-success), 0.06);
+}
+
+/* Paused / hold / block: informational, neutral (not error) */
+.lp-paused-glass {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-surface-rgb), 0.7);
+  border: 1px solid var(--lp-glass-highlight);
+  box-shadow: 0 0 0 1px var(--lp-glass-ring), var(--lp-glass-shadow-sm);
+}
+.lp-paused-soft {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-border), 0.1);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-soft-shadow);
+}
+.lp-paused-gradient {
+  border-radius: var(--lp-radius-card);
+  background: linear-gradient(180deg, rgba(var(--lp-surface-rgb), 0.95) 0%, rgba(var(--lp-border), 0.08) 100%);
+  border: 1px solid var(--lp-soft-border);
+  box-shadow: var(--lp-shadow-sm);
+}
+.lp-paused-outline {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-surface-rgb), 0.03);
+  border: 1px solid var(--lp-outline-border);
+  box-shadow: none;
+}
+.lp-paused-glow {
+  border-radius: var(--lp-radius-card);
+  background: rgba(var(--lp-surface-rgb), 0.04);
+  border: 1px solid rgba(var(--lp-glow-ring), 0.4);
+  box-shadow: 0 0 0 1px rgba(var(--lp-glow-ring), 0.1), var(--lp-shadow-sm);
+}
+
+/* Disabled: no misleading motion on disabled controls */
+.lp-motion-btn:disabled,
+.lp-motion-control:disabled {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-motion-btn,
+  .lp-motion-card,
+  .lp-motion-overlay,
+  .lp-motion-row,
+  .lp-motion-control,
+  .lp-motion-switch,
+  .lp-motion-switch-thumb,
+  .lp-motion-icon,
+  .lp-motion-opacity,
+  .lp-motion-hover-soft,
+  .lp-motion-hover-lift,
+  .lp-motion-hover-glow,
+  .lp-motion-press,
+  .lp-motion-focus,
+  .lp-motion-fade,
+  .lp-motion-slide-up,
+  .lp-motion-slide-down,
+  .lp-motion-panel,
+  .lp-motion-toast {
+    transition: none !important;
+  }
+  .lp-motion-skeleton,
+  .lp-motion-success {
+    animation: none !important;
+  }
+}

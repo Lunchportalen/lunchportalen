@@ -2,38 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ComponentType } from "react";
 import {
-  IconContent,
-  IconForm,
-  IconMedia,
-  IconMember,
-  IconSettings,
-  IconTemplate,
-  IconTranslation,
-  IconUsers,
+  Icon,
+  type SemanticIconKey,
 } from "./icons";
-
-type SemanticIconKey =
-  | "content"
-  | "media"
-  | "template"
-  | "users"
-  | "employee"
-  | "form"
-  | "translation"
-  | "settings";
-
-const ICONS: Record<SemanticIconKey, ComponentType<{ className?: string }>> = {
-  content: IconContent,
-  media: IconMedia,
-  template: IconTemplate,
-  users: IconUsers,
-  employee: IconMember,
-  form: IconForm,
-  translation: IconTranslation,
-  settings: IconSettings,
-};
 
 const MODULES: { href: string; icon: SemanticIconKey; label: string }[] = [
   { href: "/backoffice/content", icon: "content", label: "Content" },
@@ -57,7 +29,6 @@ export default function ModulesRail() {
     >
       {MODULES.map(({ href, icon, label }) => {
         const isActive = pathname === href || (href !== "/backoffice/content" && pathname.startsWith(href + "/")) || (href === "/backoffice/content" && pathname.startsWith("/backoffice/content"));
-        const IconComponent = ICONS[icon];
         return (
           <Link
             key={href}
@@ -66,7 +37,7 @@ export default function ModulesRail() {
             title={label}
             aria-current={isActive ? "true" : undefined}
           >
-            <IconComponent className="h-5 w-5" />
+            <Icon name={icon} className="h-5 w-5" />
           </Link>
         );
       })}

@@ -7404,8 +7404,9 @@ export function ContentWorkspace({
         open={mediaPickerOpen && !!mediaPickerTarget}
         title={mediaPickerTarget?.field === "heroImageUrl" || mediaPickerTarget?.field === "imageUrl" ? "Velg bilde fra mediearkiv" : "Velg video fra mediearkiv"}
         onClose={() => { setMediaPickerOpen(false); setMediaPickerTarget(null); }}
-        onSelect={(url) => {
+        onSelect={(picked) => {
           if (!mediaPickerTarget) return;
+          const url = typeof picked === "string" ? picked : picked.url;
           if (mediaPickerTarget.field === "heroImageUrl") {
             setBlockById(mediaPickerTarget.blockId, (c) =>
               c.type === "hero" ? { ...c, imageUrl: url } : c

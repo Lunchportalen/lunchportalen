@@ -15,6 +15,14 @@ export { tryParseBlockListFromBody } from "./bodyParse";
 export { parseBodyEnvelope, serializeBodyEnvelope } from "./bodyEnvelope";
 export { documentTypes, getDocType } from "./documentTypes";
 
+// Block editor compatibility exports (used by ContentWorkspace).
+export { BlockAddModal } from "./BlockAddModal";
+export { BlockEditModal } from "./BlockEditModal";
+export { MediaPickerModal } from "./MediaPickerModal";
+export { validateModel } from "./blockValidation";
+export { getBlockLabel } from "./blockLabels";
+export { formatDateTimeNO } from "@/lib/date/format";
+
 export type BlockType = string;
 
 /** PLACEHOLDER: Editor 2.0 shell. Not used (useEditor2=false). Kept for type compatibility. No behavioural impact. */

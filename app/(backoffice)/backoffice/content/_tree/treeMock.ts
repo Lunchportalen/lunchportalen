@@ -25,7 +25,6 @@ function node(
     hasChildren?: boolean;
     children?: ContentTreeNode[];
     icon?: ContentTreeNode["icon"];
-    nodeType?: ContentTreeNode["nodeType"];
   } = {}
 ): ContentTreeNode {
   const children = opts.children ?? [];
@@ -37,7 +36,6 @@ function node(
     hasChildren: opts.hasChildren ?? children.length > 0,
     children: children.length ? children : undefined,
     icon: opts.icon,
-    nodeType: opts.nodeType,
   };
 }
 
@@ -67,13 +65,11 @@ export function getMockRoots(): ContentTreeNode[] {
       slug: "home",
       icon: "home",
       hasChildren: false,
-      nodeType: "root",
     }),
     node("overlays", null, "App overlays", {
       icon: "folder",
       hasChildren: true,
       children: overlayTreeNodes,
-      nodeType: "folder",
     }),
     node("global", null, "Global", {
       icon: "folder",
@@ -82,7 +78,6 @@ export function getMockRoots(): ContentTreeNode[] {
         node("global-header", "global", "Header", { slug: "header", icon: "document" }),
         node("global-footer", "global", "Footer", { slug: "footer", icon: "document" }),
       ],
-      nodeType: "folder",
     }),
     node("design", null, "Design", {
       icon: "folder",
@@ -90,7 +85,6 @@ export function getMockRoots(): ContentTreeNode[] {
       children: [
         node("design-tokens", "design", "Design tokens", { slug: "design-tokens", icon: "document" }),
       ],
-      nodeType: "folder",
     }),
   ];
 }
