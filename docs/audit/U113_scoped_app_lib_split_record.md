@@ -1,3 +1,39 @@
+# U113 scoped app/lib split record
+
+Dato: 2026-04-09
+
+Dette er ikke baseline.
+Dette er ikke proof.
+
+## U112 MED VIDERE brukt i split
+
+- `app/(backoffice)/**`
+- `app/api/**`
+- `app/layout.tsx`
+- `app/globals.css`
+- `app/**`-segmenter med tracked diff (U112-regel)
+- `lib/enforce.ts`
+- `lib/grouping.ts`
+- `lib/<segment>/**` der segmentet har tracked diff mot `HEAD` (U112-regel)
+
+## Eksplisitt ikke med
+
+- `app/saas/**`
+- `app/public/**`
+- `app/product/**`
+- `lib/<segment>/**` med `diff=0` og kun untracked (UTENFOR BASELINE NÅ i U112)
+- Alt utenfor `app/**` og `lib/**`
+
+## Faktisk staged/committet produktkode
+
+- Kun `app/**` + `lib/**` innenfor reglene over
+- Ingen `components/**`, `tests/**`, `e2e/**`, `docs/**` i produktkode-commit
+- Produktkode-commit: `0ab2cf35138e8d4204df32d01543a65567d9438d`
+- Commit-melding: `app/lib: commit scoped keep-candidates from U112`
+
+## Hva dette åpner for
+
+- Neste tekniske pakke kan nå håndtere ikke-baseline-treet separat uten å blande inn U112 keep-candidates.
 # U113 — Scoped split: `app/**` + `lib/**` keep-candidates (git-sannhet)
 
 **Dato:** 2026-04-09  
