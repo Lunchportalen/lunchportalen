@@ -5,10 +5,11 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { observeResponse } from "@/lib/observability/eventLogger";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate, osloTodayISODate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 
 type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
 
@@ -61,6 +62,7 @@ async function getOrder(sb: any, companyId: string, locationId: string, userId: 
     .eq("company_id", companyId)
     .eq("location_id", locationId)
     .eq("date", dateISO)
+    .eq("slot", "default")
     .maybeSingle();
   return data ?? null;
 }
@@ -80,52 +82,69 @@ export async function GET(req: NextRequest) {
 
   const userId = safeStr(scope.userId);
   const companyId = safeStr(scope.companyId);
-  const locationId = safeStr(scope.locationId);
-  const dateISO = osloTodayISODate();
 
-  if (!userId || !companyId || !locationId) {
-    return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
-  }
+  return observeResponse(
+    {
+      type: "orders.my.GET",
+      source: "/api/orders/my",
+      rid,
+      userId: userId || null,
+      companyId: companyId || null,
+      metadata: { verb: "GET" },
+    },
+    async () => {
+      const locationId = safeStr(scope.locationId);
+      const dateISO = osloTodayISODate();
 
-  const admin = supabaseAdmin();
-  const companyStatus = await companyStatusOrNull(admin, companyId);
-  if (!companyStatus) {
-    return jsonErr(rid, "Kunne ikke hente firmastatus.", 500, "COMPANY_LOOKUP_FAILED");
-  }
+      if (!userId || !companyId || !locationId) {
+        return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
+      }
 
-  const cutoff = cutoffState(dateISO);
-  const dayKey = weekdayKeyOslo(dateISO);
-  if (!dayKey) {
-    return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
-  }
+      const admin = supabaseAdmin();
+      const companyStatus = await companyStatusOrNull(admin, companyId);
+      if (!companyStatus) {
+        return jsonErr(rid, "Kunne ikke hente firmastatus.", 500, "COMPANY_LOOKUP_FAILED");
+      }
 
-  let allowed = companyStatus === "ACTIVE" && !cutoff.locked;
-  let reason: string | null = null;
-  let tierToday: "BASIS" | "LUXUS" | null = null;
+      const cutoff = cutoffState(dateISO);
+      const dayKey = weekdayKeyOslo(dateISO);
+      if (!dayKey) {
+        return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
+      }
 
-  if (allowed) {
-    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
-    if (!ruleRes.ok) {
-      const err = ruleRes as { message: string };
-      allowed = false;
-      reason = err.message;
-    } else {
-      tierToday = ruleRes.rule.tier;
-    }
-  } else {
-    reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er låst etter 08:00.";
-  }
+      let allowed = companyStatus === "ACTIVE" && !cutoff.locked;
+      let reason: string | null = null;
+      let tierToday: "BASIS" | "LUXUS" | null = null;
 
-  const sb = await supabaseServer();
-  const myOrder = await getOrder(sb, companyId, locationId, userId, dateISO);
+      if (allowed) {
+        const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
+        if (!ruleRes.ok) {
+          const err = ruleRes as { message: string };
+          allowed = false;
+          reason = err.message;
+        } else {
+          tierToday = ruleRes.rule.tier;
+        }
+      } else {
+        reason = companyStatus !== "ACTIVE" ? "Firma er ikke aktivt." : "Endringer er låst etter 08:00.";
+      }
 
-  return jsonOk(rid, {
-      allowed,
-      reason,
-      cutoff,
-      tierToday,
-      myOrder,
-    }, 200);
+      const sb = await supabaseServer();
+      const myOrder = await getOrder(sb, companyId, locationId, userId, dateISO);
+
+      return jsonOk(
+        rid,
+        {
+          allowed,
+          reason,
+          cutoff,
+          tierToday,
+          myOrder,
+        },
+        200,
+      );
+    },
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -143,57 +162,74 @@ export async function POST(req: NextRequest) {
 
   const userId = safeStr(scope.userId);
   const companyId = safeStr(scope.companyId);
-  const locationId = safeStr(scope.locationId);
-  const dateISO = osloTodayISODate();
 
-  if (!userId || !companyId || !locationId) {
-    return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
-  }
+  return observeResponse(
+    {
+      type: "orders.my.POST",
+      source: "/api/orders/my",
+      rid,
+      userId: userId || null,
+      companyId: companyId || null,
+      metadata: { verb: "POST" },
+    },
+    async () => {
+      const locationId = safeStr(scope.locationId);
+      const dateISO = osloTodayISODate();
 
-  const admin = supabaseAdmin();
-  const companyStatus = await companyStatusOrNull(admin, companyId);
-  if (companyStatus !== "ACTIVE") {
-    return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: companyStatus } });
-  }
+      if (!userId || !companyId || !locationId) {
+        return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
+      }
 
-  const cutoff = cutoffState(dateISO);
-  if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
-  }
+      const admin = supabaseAdmin();
+      const companyStatus = await companyStatusOrNull(admin, companyId);
+      if (companyStatus !== "ACTIVE") {
+        return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: companyStatus } });
+      }
 
-  const dayKey = weekdayKeyOslo(dateISO);
-  if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
+      const cutoff = cutoffState(dateISO);
+      if (cutoff.locked) {
+        return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+      }
 
-  const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
-  if (!ruleRes.ok) {
-    const err = ruleRes as { message: string; status?: number; error?: string };
-    return jsonErr(rid, err.message, err.status ?? 400, err.error);
-  }
+      const dayKey = weekdayKeyOslo(dateISO);
+      if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
 
-  const sb = await supabaseServer();
+      const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
+      if (!ruleRes.ok) {
+        const err = ruleRes as { message: string; status?: number; error?: string };
+        return jsonErr(rid, err.message, err.status ?? 400, err.error);
+      }
 
-  const setRes = await lpOrderSet(sb as any, {
-    p_date: dateISO,
-    p_slot: "lunch",
-    p_note: null,
-  });
+      const sb = await supabaseServer();
 
-  if (!setRes.ok) {
-    return jsonErr(rid, "Kunne ikke bestille lunsj.", 500, {
-      code: setRes.code ?? "ORDER_RPC_FAILED",
-      detail: { message: setRes.error?.message ?? null },
-    });
-  }
+      const setRes = await lpOrderSet(sb as any, {
+        p_date: dateISO,
+        p_slot: ORDER_TABLE_SLOT_DEFAULT,
+        p_note: null,
+      });
 
-  const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+      if (!setRes.ok) {
+        return jsonErr(rid, "Kunne ikke bestille lunsj.", 500, {
+          code: setRes.code ?? "ORDER_RPC_FAILED",
+          detail: { message: setRes.error?.message ?? null },
+        });
+      }
 
-  return jsonOk(rid, {
-      allowed: true,
-      reason: null,
-      cutoff,
-      tierToday: ruleRes.rule.tier,
-      myOrder: data,
-    }, 200);
+      const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+
+      return jsonOk(
+        rid,
+        {
+          allowed: true,
+          reason: null,
+          cutoff,
+          tierToday: ruleRes.rule.tier,
+          myOrder: data,
+        },
+        200,
+      );
+    },
+  );
 }
 
 export async function DELETE(req: NextRequest) {
@@ -211,41 +247,58 @@ export async function DELETE(req: NextRequest) {
 
   const userId = safeStr(scope.userId);
   const companyId = safeStr(scope.companyId);
-  const locationId = safeStr(scope.locationId);
-  const dateISO = osloTodayISODate();
 
-  if (!userId || !companyId || !locationId) {
-    return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
-  }
+  return observeResponse(
+    {
+      type: "orders.my.DELETE",
+      source: "/api/orders/my",
+      rid,
+      userId: userId || null,
+      companyId: companyId || null,
+      metadata: { verb: "DELETE" },
+    },
+    async () => {
+      const locationId = safeStr(scope.locationId);
+      const dateISO = osloTodayISODate();
 
-  const admin = supabaseAdmin();
-  const companyStatus = await companyStatusOrNull(admin, companyId);
-  if (companyStatus !== "ACTIVE") {
-    return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: companyStatus } });
-  }
+      if (!userId || !companyId || !locationId) {
+        return jsonErr(rid, "Mangler firmatilknytning (company/location).", 403, "MISSING_SCOPE");
+      }
 
-  const cutoff = cutoffState(dateISO);
-  if (cutoff.locked) {
-    return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
-  }
+      const admin = supabaseAdmin();
+      const companyStatus = await companyStatusOrNull(admin, companyId);
+      if (companyStatus !== "ACTIVE") {
+        return jsonErr(rid, "Firma er ikke aktivt.", 403, { code: "COMPANY_NOT_ACTIVE", detail: { status: companyStatus } });
+      }
 
-  const sb = await supabaseServer();
-  const cancelRes = await lpOrderCancel(sb as any, { p_date: dateISO });
-  if (!cancelRes.ok) {
-    return jsonErr(rid, "Kunne ikke avbestille.", 500, {
-      code: cancelRes.code ?? "ORDER_RPC_FAILED",
-      detail: { message: cancelRes.error?.message ?? null },
-    });
-  }
+      const cutoff = cutoffState(dateISO);
+      if (cutoff.locked) {
+        return jsonErr(rid, "Endringer er låst etter 08:00.", 409, { code: "CUTOFF_LOCKED", detail: { cutoff } });
+      }
 
-  const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+      const sb = await supabaseServer();
+      const cancelRes = await lpOrderCancel(sb as any, { p_date: dateISO });
+      if (!cancelRes.ok) {
+        return jsonErr(rid, "Kunne ikke avbestille.", 500, {
+          code: cancelRes.code ?? "ORDER_RPC_FAILED",
+          detail: { message: cancelRes.error?.message ?? null },
+        });
+      }
 
-  return jsonOk(rid, {
-      allowed: true,
-      reason: null,
-      cutoff,
-      tierToday: null,
-      myOrder: data ?? null,
-    }, 200);
+      const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+
+      return jsonOk(
+        rid,
+        {
+          allowed: true,
+          reason: null,
+          cutoff,
+          tierToday: null,
+          myOrder: data ?? null,
+        },
+        200,
+      );
+    },
+  );
 }
 

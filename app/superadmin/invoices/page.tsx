@@ -6,14 +6,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import InvoicesClient from "./InvoicesClient";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
-
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 export default async function Page() {
   const sb = await supabaseServer();
@@ -26,15 +19,8 @@ export default async function Page() {
     redirect("/login?next=/superadmin/invoices");
   }
 
-  // Role gate (FASET)
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  // Role gate: profiles.role === "superadmin"
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 

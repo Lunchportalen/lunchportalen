@@ -8,8 +8,8 @@ import {
   MEDIA_TAGS_MAX_COUNT,
   MEDIA_TAG_MAX_LEN,
 } from "@/lib/media/validation";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "tagImage";
 

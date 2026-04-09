@@ -4,10 +4,10 @@
  * og gir operasjonelle anbefalinger daglig.
  */
 
-import { detectKitchenRisks } from "@/lib/ai/capabilities/kitchenRiskDetector";
-import type { KitchenSlotInput } from "@/lib/ai/capabilities/kitchenRiskDetector";
-import { suggestRouteAndWindows } from "@/lib/ai/capabilities/deliveryRouteIntelligence";
-import type { DeliveryStopInput, DepotInput } from "@/lib/ai/capabilities/deliveryRouteIntelligence";
+import { detectKitchenRisks } from "@/lib/ai/engines/capabilities/kitchenRiskDetector";
+import type { KitchenSlotInput } from "@/lib/ai/engines/capabilities/kitchenRiskDetector";
+import { suggestRouteAndWindows } from "@/lib/ai/engines/capabilities/deliveryRouteIntelligence";
+import type { DeliveryStopInput, DepotInput } from "@/lib/ai/engines/capabilities/deliveryRouteIntelligence";
 
 export type OperationalOrdersSummary = {
   date: string;

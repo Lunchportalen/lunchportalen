@@ -21,7 +21,7 @@ export type LoadSuccessPayload = {
   page: ContentPage;
   nextTitle: string;
   nextSlug: string;
-  snapshotBody: string;
+  snapshotBody: string | Record<string, unknown>;
   updated_at: string | null;
 };
 

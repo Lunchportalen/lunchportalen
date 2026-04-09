@@ -1,11 +1,12 @@
 import type { NextRequest } from "next/server";
-import { isAIEnabled } from "@/lib/ai/provider";
+import { isAIEnabled } from "@/lib/ai/runner";
 import { getLayoutSuggestions } from "@/lib/ai/tools/layoutSuggestions";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { prepareAiResponseForClient } from "@/lib/ai/responseSafety";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,6 +24,7 @@ function parseBlocks(raw: unknown): Array<{ id: string; type: string; data?: Rec
 }
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -83,4 +85,5 @@ export async function POST(req: NextRequest) {
   }
 
   return jsonOk(ctx.rid, prepared.data, 200);
+  });
 }

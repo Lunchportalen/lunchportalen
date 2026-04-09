@@ -11,6 +11,11 @@ import { NextRequest } from "next/server";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import {
+  isContentBackendUnavailableError,
+  isLocalDevContentReserveEnabled,
+} from "@/lib/cms/contentLocalDevReserve";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 const VALID_TYPES = [
   "editor_opened",
@@ -73,6 +78,7 @@ function parseBody(body: unknown) {
 }
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const ctx = gate.ctx;
@@ -100,6 +106,14 @@ export async function POST(req: NextRequest) {
   if (p.count != null) metadata.count = p.count;
   if (ctx.scope?.email != null) metadata.actor_email = ctx.scope.email;
 
+  if (isLocalDevContentReserveEnabled()) {
+    return jsonOk(
+      ctx.rid,
+      { ok: true, skipped: true, degraded: true, reason: "LOCAL_DEV_CONTENT_RESERVE" },
+      202,
+    );
+  }
+
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const supabase = supabaseAdmin();
   const meta = metadata && typeof metadata === "object" ? metadata : {};
@@ -115,7 +129,15 @@ export async function POST(req: NextRequest) {
   });
   const { error: insertError } = await supabase.from("ai_activity_log").insert(row);
   if (insertError) {
+    if (isContentBackendUnavailableError(insertError)) {
+      return jsonOk(
+        ctx.rid,
+        { ok: true, skipped: true, degraded: true, reason: "CONTENT_BACKEND_UNREACHABLE" },
+        202,
+      );
+    }
     return jsonErr(ctx.rid, "Kunne ikke lagre metrics-event.", 500, "METRICS_INSERT_FAILED");
   }
   return jsonOk(ctx.rid, { ok: true }, 200);
+  });
 }

@@ -2,35 +2,27 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-import { getSupabasePublicConfig } from "@/lib/config/env";
+import { createClient as createSsrCookieClient } from "@/utils/supabase/server";
+import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+
+function hasSupabaseSsrAuthCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+  return hasSupabaseSsrAuthCookieInJar(cookieStore.getAll());
+}
+
+export type SupabaseSessionSource = "SSR_COOKIE" | "NONE";
+
+/** Cookie-jar signal only — use for auth tracing. Bearer/API flows use `getAuthContext({ reqHeaders })`. */
+export function getSupabaseSessionSource(
+  cookieStore: Awaited<ReturnType<typeof cookies>>
+): SupabaseSessionSource {
+  if (hasSupabaseSsrAuthCookie(cookieStore)) return "SSR_COOKIE";
+  return "NONE";
+}
 
 /**
- * ✅ Enterprise: SSR auth via httpOnly cookies (single truth)
- * - Reads cookies from Next headers()
- * - Writes cookies back via setAll()
- * - Fails fast with clear error if Supabase env is missing.
+ * Cookie-bound SSR Supabase client (refresh via middleware). No cookie-stored bearer fallback here.
  */
 export async function supabaseServer() {
-  const cookieStore = await cookies();
-  const { url, anonKey } = getSupabasePublicConfig();
-
-  return createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        // NOTE: This can throw in some edge contexts; ignore safely.
-        try {
-          for (const c of cookiesToSet) {
-            cookieStore.set(c.name, c.value, c.options);
-          }
-        } catch {
-          // ignore
-        }
-      },
-    },
-  });
+  return createSsrCookieClient();
 }
 

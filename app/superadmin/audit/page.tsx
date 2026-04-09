@@ -10,7 +10,6 @@ import { redirect } from "next/navigation";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import AuditClient from "./audit-client";
-import { isSuperadminEmail } from "@/lib/system/emails";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = { role: Role | null; disabled_at?: string | null };
@@ -20,10 +19,6 @@ type ProfileRow = { role: Role | null; disabled_at?: string | null };
 ========================= */
 function safeStr(v: any) {
   return String(v ?? "").trim();
-}
-
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email ?? null);
 }
 
 /** Minimal, enterprise-grade error surface (no leaks) */
@@ -66,16 +61,8 @@ export default async function SuperadminAuditPage() {
   }
 
   /* =========================================================
-     2) Hard gate (email først)
-     ✅ Superadmin skal ikke være avhengig av metadata for å "bli" superadmin.
-  ========================================================= */
-  if (!isHardSuperadmin(user.email)) {
-    redirect("/login?next=/superadmin/audit");
-  }
-
-  /* =========================================================
-     3) Profile read (profiles.user_id = auth.users.id)
-     - Brukes kun som ekstra sikkerhetslag (disabled / mismatch)
+     2) Profile read (profiles.user_id = auth.users.id)
+     - profiles.role === "superadmin"
   ========================================================= */
   const { data: profile, error: pErr } = await supabase
     .from("profiles")
@@ -93,13 +80,12 @@ export default async function SuperadminAuditPage() {
     redirect("/login?next=/superadmin/audit");
   }
 
-  // Ekstra lag: hvis role finnes og er noe annet enn superadmin -> stopp
-  if (profile?.role && profile.role !== "superadmin") {
+  if (!profile?.role || profile.role !== "superadmin") {
     redirect("/login?next=/superadmin/audit");
   }
 
   /* =========================================================
-     4) Render client UI (shell)
+     3) Render client UI (shell)
   ========================================================= */
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">

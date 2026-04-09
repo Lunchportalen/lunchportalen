@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 type ContentTopStatusPanelProps = {
   title: string;
   setTitle: (value: string) => void;

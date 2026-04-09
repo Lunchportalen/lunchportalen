@@ -1,5 +1,7 @@
 // lib/api/client.ts
 // A2 — Transport layer (idempotent + fail-closed) for Lunchportalen
+
+import type { OrderAttributionRecord } from "@/lib/revenue/types";
 // - Always returns ApiResp<T> (never throws for normal failures)
 // - Adds Idempotency-Key automatically (or accepts explicit key)
 // - Fail-closed if API breaks contract
@@ -102,6 +104,11 @@ export type FetchOpts = {
   signal?: AbortSignal;
 };
 
+export type OrderUpsertFetchOpts = FetchOpts & {
+  /** Sendes til server ved suksess — persisteres på ordre (jsonb) når gyldig. */
+  attribution?: OrderAttributionRecord | null;
+};
+
 export async function apiFetch<T>(url: string, init: RequestInit, opts: FetchOpts = {}): Promise<ApiResp<T>> {
   const idemKey = (opts.idemKey ?? makeIdemKey()).trim();
 
@@ -166,14 +173,86 @@ export async function cancelOrder(
   note?: string | null,
   opts: FetchOpts = {}
 ): Promise<ApiResp<CancelResponse>> {
-  return apiFetch<CancelResponse>(
-    "/api/orders/cancel",
-    {
+  const idemKey = (opts.idemKey ?? makeIdemKey()).trim();
+  const headers = toHeaders(undefined);
+  if (!headers.get("cache-control")) headers.set("cache-control", "no-store");
+  headers.set("content-type", "application/json");
+  headers.set("Idempotency-Key", idemKey);
+
+  let res: Response;
+  try {
+    res = await fetch("/api/order/cancel", {
       method: "POST",
-      body: JSON.stringify({ date, slot: slot ?? null, note: note ?? null }),
+      headers,
+      body: JSON.stringify({ date }),
+      cache: "no-store",
+      signal: opts.signal,
+    });
+  } catch (e: any) {
+    const rid = makeRidFallback();
+    return {
+      ok: false,
+      rid,
+      error: {
+        code: "NETWORK_ERROR",
+        message: "Nettverksfeil. Prøv igjen.",
+        detail: { message: String(e?.message ?? e), url: "/api/order/cancel" },
+      },
+    };
+  }
+
+  const json = (await safeJson(res)) as Record<string, unknown> | null;
+  const rid = typeof json?.rid === "string" ? json.rid : makeRidFallback();
+
+  if (json && json.ok === true && json.data !== undefined && typeof json.data === "object") {
+    const d = json.data as Record<string, unknown>;
+    const receipt = (d.receipt ?? null) as Record<string, unknown> | null;
+    const savedAt = new Date().toISOString();
+    const mapped: CancelResponse = {
+      order: {
+        id: receipt?.orderId != null ? String(receipt.orderId) : null,
+        date: String(d.date ?? date),
+        status: "CANCELLED",
+        note: note ?? null,
+        slot: slot ?? null,
+        created_at: null,
+        updated_at: receipt?.updatedAt != null ? String(receipt.updatedAt) : null,
+        saved_at: savedAt,
+      },
+      pricing: { tier: "BASIS", unit_price: 0 },
+      backup: { ok: true, source: "order_cancel" },
+    };
+    return { ok: true, rid, data: mapped };
+  }
+
+  if (json && json.ok === false) {
+    const errField = json.error;
+    const code =
+      typeof errField === "string"
+        ? errField
+        : errField && typeof errField === "object" && typeof (errField as { code?: string }).code === "string"
+          ? String((errField as { code: string }).code)
+          : "ERROR";
+    return {
+      ok: false,
+      rid,
+      error: {
+        code,
+        message: String(json.message ?? "Feil"),
+        detail: json.detail,
+      },
+    };
+  }
+
+  return {
+    ok: false,
+    rid,
+    error: {
+      code: "BAD_API_CONTRACT",
+      message: "Uventet API-respons (fail-closed).",
+      detail: { status: res.status, url: "/api/order/cancel", body: json },
     },
-    opts
-  );
+  };
 }
 
 export async function upsertOrder(
@@ -181,15 +260,30 @@ export async function upsertOrder(
   slotStart: string,
   slotEnd: string,
   note?: string | null,
-  opts: FetchOpts = {}
+  opts: OrderUpsertFetchOpts = {}
 ): Promise<ApiResp<UpsertResponse>> {
+  const { attribution, ...fetchOpts } = opts;
+  const payload: Record<string, unknown> = {
+    date,
+    slotStart,
+    slotEnd,
+    note: note ?? null,
+  };
+  if (attribution?.postId && attribution.source === "ai_social") {
+    payload.attribution = {
+      postId: attribution.postId,
+      source: attribution.source,
+      ...(attribution.productId ? { productId: attribution.productId } : {}),
+      ...(typeof attribution.capturedAt === "number" ? { capturedAt: attribution.capturedAt } : {}),
+    };
+  }
   return apiFetch<UpsertResponse>(
     "/api/orders/upsert",
     {
       method: "POST",
-      body: JSON.stringify({ date, slotStart, slotEnd, note: note ?? null }),
+      body: JSON.stringify(payload),
     },
-    opts
+    fetchOpts
   );
 }
 

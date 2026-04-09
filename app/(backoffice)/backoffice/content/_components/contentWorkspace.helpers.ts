@@ -61,12 +61,20 @@ export function formatDate(v: string | null | undefined): string {
 export function makeSnapshot(input: {
   title: string;
   slug: string;
-  body: string;
+  /** Blocks JSON string, or envelope object — must match `bodyForSave` / load snapshot semantics. */
+  body: unknown;
 }): string {
+  const raw = input.body;
+  const bodySerialized =
+    typeof raw === "string"
+      ? raw
+      : raw != null && typeof raw === "object"
+        ? JSON.stringify(raw)
+        : String(raw ?? "");
   return JSON.stringify({
     title: safeStr(input.title),
     slug: normalizeSlug(input.slug),
-    body: String(input.body ?? ""),
+    body: bodySerialized,
   });
 }
 

@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import type { ReactNode } from "react";
 
 export type ContentWorkspaceShellProps = {
@@ -26,13 +28,14 @@ export function ContentWorkspaceShell({
         className={
           hideLegacySidebar
             ? "flex h-full min-h-0 min-w-0 flex-1 flex-col bg-slate-200/60"
-            : "grid h-full grid-cols-1 bg-slate-200/60 md:grid-cols-[280px_minmax(0,1fr)]"
+            : "grid h-full grid-cols-1 bg-slate-200/60 md:grid-cols-[minmax(300px,min(36vw,460px))_minmax(0,1fr)]"
         }
       >
         {!hideLegacySidebar && (
           <aside className="min-h-0 overflow-y-auto border-b border-slate-200 bg-slate-100 md:border-b-0 md:border-r md:border-slate-200">
             <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-100 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-800">Content</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Innholdstre</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900">Struktur</p>
             </div>
             <div className="relative flex min-h-0 flex-1 flex-col">
               {sidebar}

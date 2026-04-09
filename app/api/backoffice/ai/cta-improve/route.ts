@@ -10,13 +10,15 @@
  * Input: validated and length-clamped. No arbitrary prompt execution.
  */
 import type { NextRequest } from "next/server";
-import { isAIEnabled, suggestCtaImprove } from "@/lib/ai/provider";
+import { isAIEnabled } from "@/lib/ai/runner";
+import { AI_RUNNER_TOOL, AiRunnerError, runAi } from "@/lib/ai/runner";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { checkAiRateLimit, AI_RATE_LIMIT_SCOPE, DEFAULT_AI_EDITOR_RATE_LIMIT } from "@/lib/ai/rateLimit";
 import { prepareAiResponseForClient } from "@/lib/ai/responseSafety";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,6 +57,7 @@ function improveCtaToSuggestionFallback(input: {
 }
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -93,10 +96,60 @@ export async function POST(req: NextRequest) {
     buttonLabel: typeof o.buttonLabel === "string" ? o.buttonLabel : undefined,
     buttonHref: typeof o.buttonHref === "string" ? o.buttonHref : undefined,
   };
-  const providerResult = await suggestCtaImprove({ ...ctaInput, action, locale });
-  const suggestion = providerResult.ok
-    ? providerResult.suggestion
-    : improveCtaToSuggestionFallback(ctaInput);
+
+  const envPlatformCompany =
+    typeof process.env.CMS_AI_DEFAULT_COMPANY_ID === "string" ? process.env.CMS_AI_DEFAULT_COMPANY_ID.trim() : "";
+  const companyId = (ctx.scope?.companyId ?? "").trim() || envPlatformCompany;
+  const userId = (ctx.scope?.userId ?? ctx.scope?.sub ?? ctx.scope?.email ?? "").trim();
+  if (!companyId) {
+    return jsonErr(ctx.rid, "Mangler company_id på profil eller CMS_AI_DEFAULT_COMPANY_ID.", 422, "MISSING_COMPANY_ID");
+  }
+  if (!userId) {
+    return jsonErr(ctx.rid, "Mangler brukeridentitet.", 422, "MISSING_USER_ID");
+  }
+
+  let suggestion: ReturnType<typeof improveCtaToSuggestionFallback>;
+  try {
+    const { result } = await runAi({
+      companyId,
+      userId,
+      tool: AI_RUNNER_TOOL.EDITOR_CTA,
+      input: {
+        title: ctaInput.title,
+        body: ctaInput.body,
+        buttonLabel: ctaInput.buttonLabel,
+        buttonHref: ctaInput.buttonHref,
+        action,
+      },
+      metadata: { locale },
+    });
+    suggestion =
+      result && typeof result === "object" && !Array.isArray(result)
+        ? (result as typeof suggestion)
+        : improveCtaToSuggestionFallback(ctaInput);
+  } catch (e) {
+    if (
+      e instanceof AiRunnerError &&
+      [
+        "PLAN_NOT_ALLOWED",
+        "USAGE_LIMIT_EXCEEDED",
+        "PROFITABILITY_BLOCK",
+        "PROFITABILITY_CONTEXT_FAILED",
+        "POLICY_DENIED",
+        "ENTITLEMENTS_FAILED",
+      ].includes(e.code)
+    ) {
+      const status =
+        e.code === "PLAN_NOT_ALLOWED" ||
+        e.code === "USAGE_LIMIT_EXCEEDED" ||
+        e.code === "PROFITABILITY_BLOCK" ||
+        e.code === "PROFITABILITY_CONTEXT_FAILED"
+          ? 403
+          : 500;
+      return jsonErr(ctx.rid, e.message, status, e.code);
+    }
+    suggestion = improveCtaToSuggestionFallback(ctaInput);
+  }
 
   const responsePayload = { ok: true, suggestion, blockId, action };
   const prepared = prepareAiResponseForClient(responsePayload);
@@ -124,4 +177,5 @@ export async function POST(req: NextRequest) {
     // Best-effort: do not mask response
   }
   return jsonOk(ctx.rid, prepared.data, 200);
+  });
 }

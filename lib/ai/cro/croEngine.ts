@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI CRO ENGINE
  * Optimaliserer: CTA, layout, tekst, seksjonsrekkefølge.
@@ -5,35 +7,35 @@
  * analyzeReadability, suggestSectionComposition. Kun forslag; ingen mutasjon.
  */
 
-import { autoImproveCTAs } from "@/lib/ai/capabilities/autoImproveCTAs";
+import { autoImproveCTAs } from "@/lib/ai/engines/capabilities/autoImproveCTAs";
 import type {
   AutoImproveCTAsInput,
   AutoImproveCTAsOutput,
   CTAInput,
-} from "@/lib/ai/capabilities/autoImproveCTAs";
-import { suggestScrollFlow } from "@/lib/ai/capabilities/suggestScrollFlow";
+} from "@/lib/ai/engines/capabilities/autoImproveCTAs";
+import { suggestScrollFlow } from "@/lib/ai/engines/capabilities/suggestScrollFlow";
 import type {
   SuggestScrollFlowInput,
   SuggestScrollFlowOutput,
   ScrollFlowSectionInput,
-} from "@/lib/ai/capabilities/suggestScrollFlow";
-import { optimizeResponsiveLayout } from "@/lib/ai/capabilities/optimizeResponsiveLayout";
+} from "@/lib/ai/engines/capabilities/suggestScrollFlow";
+import { optimizeResponsiveLayout } from "@/lib/ai/engines/capabilities/optimizeResponsiveLayout";
 import type {
   OptimizeResponsiveLayoutInput,
   OptimizeResponsiveLayoutOutput,
   LayoutInput,
-} from "@/lib/ai/capabilities/optimizeResponsiveLayout";
-import { analyzeReadability } from "@/lib/ai/capabilities/analyzeReadability";
+} from "@/lib/ai/engines/capabilities/optimizeResponsiveLayout";
+import { analyzeReadability } from "@/lib/ai/engines/capabilities/analyzeReadability";
 import type {
   AnalyzeReadabilityInput,
   AnalyzeReadabilityOutput,
   ReadabilityContentInput,
-} from "@/lib/ai/capabilities/analyzeReadability";
-import { suggestSectionComposition } from "@/lib/ai/capabilities/suggestSectionComposition";
+} from "@/lib/ai/engines/capabilities/analyzeReadability";
+import { suggestSectionComposition } from "@/lib/ai/engines/capabilities/suggestSectionComposition";
 import type {
   SuggestSectionCompositionInput,
   SuggestSectionCompositionOutput,
-} from "@/lib/ai/capabilities/suggestSectionComposition";
+} from "@/lib/ai/engines/capabilities/suggestSectionComposition";
 
 export type { CTAInput, ScrollFlowSectionInput, LayoutInput, ReadabilityContentInput };
 

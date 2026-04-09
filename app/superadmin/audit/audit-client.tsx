@@ -73,6 +73,30 @@ function pickEntityId(it: AuditItem) {
   return it.entity?.id ?? it.entity_id ?? it.company_id ?? "-";
 }
 
+function datetimeLocalToIso(s: string): string | null {
+  const x = s.trim();
+  if (!x) return null;
+  const d = new Date(x);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function previewBeforeAfter(detail: unknown) {
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) return null;
+  const o = detail as Record<string, unknown>;
+  const b = o.before;
+  const a = o.after;
+  if (b === undefined && a === undefined) return null;
+  const cap = 140;
+  const bs = b !== undefined ? JSON.stringify(b).slice(0, cap) : "";
+  const as = a !== undefined ? JSON.stringify(a).slice(0, cap) : "";
+  return (
+    <div className="mt-1 max-w-full break-words font-mono text-[10px] text-[rgb(var(--lp-muted))]">
+      {b !== undefined ? <div>before: {bs}{bs.length >= cap ? "…" : ""}</div> : null}
+      {a !== undefined ? <div>after: {as}{as.length >= cap ? "…" : ""}</div> : null}
+    </div>
+  );
+}
+
 function isCritical(it: AuditItem) {
   const a = String(it.action ?? "").toLowerCase();
   const s = String(it.summary ?? "").toLowerCase();
@@ -138,23 +162,25 @@ function normalizeApi(j: ApiOk | ApiErr | null): Norm {
     return { ok: false as const, message: e.message || e.error || "Ukjent feil" };
   }
 
-  const ok = j as ApiOk;
+  const root = j as any;
+  const payload =
+    root?.data && typeof root.data === "object" && !Array.isArray(root.data) ? root.data : root;
 
-  if (Array.isArray(ok.items)) {
+  if (Array.isArray(payload.items)) {
     return {
       ok: true as const,
-      items: ok.items,
-      nextCursor: ok.meta?.nextCursor ?? null,
-      limit: ok.meta?.limit ?? 100,
+      items: payload.items,
+      nextCursor: payload.meta?.nextCursor ?? null,
+      limit: payload.meta?.limit ?? 100,
     };
   }
 
-  if (ok.data && Array.isArray(ok.data.items)) {
+  if (payload.data && Array.isArray(payload.data.items)) {
     return {
       ok: true as const,
-      items: ok.data.items,
-      nextCursor: null,
-      limit: ok.data.limit ?? 100,
+      items: payload.data.items,
+      nextCursor: payload.data.meta?.nextCursor ?? null,
+      limit: payload.data.meta?.limit ?? payload.data.limit ?? 100,
     };
   }
 
@@ -179,6 +205,13 @@ export default function AuditClient() {
   const [actionDeb, setActionDeb] = useState("");
   const [qDeb, setQDeb] = useState("");
 
+  const [sinceLocal, setSinceLocal] = useState("");
+  const [untilLocal, setUntilLocal] = useState("");
+  const [auditSourceLocal, setAuditSourceLocal] = useState<"" | "user" | "system" | "ai">("");
+  const [sinceDeb, setSinceDeb] = useState("");
+  const [untilDeb, setUntilDeb] = useState("");
+  const [auditSourceDeb, setAuditSourceDeb] = useState<"" | "user" | "system" | "ai">("");
+
   const abortRef = useRef<AbortController | null>(null);
 
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -202,9 +235,12 @@ export default function AuditClient() {
       setCompanyIdDeb(companyId.trim());
       setActionDeb(action.trim());
       setQDeb(q.trim());
+      setSinceDeb(sinceLocal.trim());
+      setUntilDeb(untilLocal.trim());
+      setAuditSourceDeb(auditSourceLocal);
     }, 250);
     return () => window.clearTimeout(t);
-  }, [companyId, action, q]);
+  }, [companyId, action, q, sinceLocal, untilLocal, auditSourceLocal]);
 
   const limit = 100;
   const companyIdInvalid = companyId.trim().length > 0 && !isUuid(companyId.trim());
@@ -220,10 +256,15 @@ export default function AuditClient() {
 
     if (actionDeb) p.set("action", actionDeb);
     if (qDeb) p.set("q", qDeb);
+    const sinceIso = datetimeLocalToIso(sinceDeb);
+    if (sinceIso) p.set("since", sinceIso);
+    const untilIso = datetimeLocalToIso(untilDeb);
+    if (untilIso) p.set("until", untilIso);
+    if (auditSourceDeb) p.set("auditSource", auditSourceDeb);
     if (cursor) p.set("cursor", cursor);
 
     return p.toString();
-  }, [companyIdDeb, actionDeb, qDeb, cursor]);
+  }, [companyIdDeb, actionDeb, qDeb, sinceDeb, untilDeb, auditSourceDeb, cursor]);
 
   async function load(opts?: { resetCursor?: boolean; clearCursorBeforeFetch?: boolean }) {
     const resetCursor = !!opts?.resetCursor;
@@ -247,6 +288,11 @@ export default function AuditClient() {
         }
         if (actionDeb) p.set("action", actionDeb);
         if (qDeb) p.set("q", qDeb);
+        const sIso = datetimeLocalToIso(sinceDeb);
+        if (sIso) p.set("since", sIso);
+        const uIso = datetimeLocalToIso(untilDeb);
+        if (uIso) p.set("until", uIso);
+        if (auditSourceDeb) p.set("auditSource", auditSourceDeb);
         url += "?" + p.toString();
       } else {
         url += "?" + qs;
@@ -449,11 +495,42 @@ export default function AuditClient() {
             className="min-w-[280px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
           />
 
+          <input
+            type="datetime-local"
+            value={sinceLocal}
+            onChange={(e) => setSinceLocal(e.target.value)}
+            aria-label="Fra dato"
+            className="min-w-[200px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
+          />
+
+          <input
+            type="datetime-local"
+            value={untilLocal}
+            onChange={(e) => setUntilLocal(e.target.value)}
+            aria-label="Til dato"
+            className="min-w-[200px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
+          />
+
+          <select
+            value={auditSourceLocal}
+            onChange={(e) => setAuditSourceLocal((e.target.value || "") as "" | "user" | "system" | "ai")}
+            aria-label="Kilde"
+            className="min-w-[160px] rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-sm"
+          >
+            <option value="">Alle kilder</option>
+            <option value="user">Bruker</option>
+            <option value="system">System</option>
+            <option value="ai">AI</option>
+          </select>
+
           <button
             onClick={() => {
               setCompanyId("");
               setAction("");
               setQ("");
+              setSinceLocal("");
+              setUntilLocal("");
+              setAuditSourceLocal("");
               setCursor(null);
               setPreset("critical");
               setSelectedIdx(-1);
@@ -555,6 +632,8 @@ export default function AuditClient() {
                 </div>
 
                 {it.summary ? <div className="mt-1 text-[rgb(var(--lp-text))]">{it.summary}</div> : null}
+
+                {previewBeforeAfter(it.detail)}
 
                 <div className="mt-2">
                   <Link

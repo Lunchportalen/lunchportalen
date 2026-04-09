@@ -10,6 +10,9 @@ import {
   parseMetaToPageAiContract,
   contractToAiMetaShape,
 } from "@/lib/cms/model/pageAiContractHelpers";
+import { getBlockEntryFlatForRender, isBlockWithEntryModel } from "@/lib/cms/blocks/blockEntryContract";
+import { getBlockTreeLabel } from "./blockLabels";
+import { makeBlockId, normalizeBlock } from "./contentWorkspace.blocks";
 import type { Block, HeroSuggestion } from "./editorBlockTypes";
 
 /** AI tool ids used for suggest route and metrics. Sourced from registry (suggest + editor-only). */
@@ -34,38 +37,45 @@ export function buildAiBlocks(
   blocks: Block[]
 ): Array<{ id: Block["id"]; type: Block["type"]; data?: Record<string, unknown> }> {
   return blocks.map((b: Block) => {
+    if (isBlockWithEntryModel(b)) {
+      return { id: b.id, type: b.type, data: getBlockEntryFlatForRender(b) };
+    }
     switch (b.type) {
-      case "hero": {
-        const { id, type, title, subtitle, imageUrl, imageAlt, ctaLabel, ctaHref } = b;
-        return { id, type, data: { title, subtitle, imageUrl, imageAlt, ctaLabel, ctaHref } };
-      }
       case "richText": {
         const { id, type, heading, body } = b;
         return { id, type, data: { heading, body } };
       }
       case "image": {
-        const { id, type, assetPath, alt, caption } = b;
-        return { id, type, data: { assetPath, alt, caption } };
-      }
-      case "cta": {
-        const { id, type, title, body, buttonLabel, buttonHref } = b;
-        return { id, type, data: { title, body, buttonLabel, buttonHref } };
-      }
-      case "banners": {
-        const { id, type, items } = b;
-        return { id, type, data: { items } };
+        const { id, type, imageId, alt, caption } = b;
+        return { id, type, data: { imageId, alt, caption } };
       }
       case "divider": {
         const { id, type, style } = b;
         return { id, type, data: { style } };
       }
-      case "code": {
-        const { id, type, code, displayIntro, displayOutro } = b;
-        return { id, type, data: { code, displayIntro, displayOutro } };
+      case "banner": {
+        const { id, type, text, ctaLabel, ctaHref, backgroundImageId, backgroundMediaItemId, variant } = b;
+        return {
+          id,
+          type,
+          data: {
+            text,
+            ctaLabel,
+            ctaHref,
+            backgroundImageId,
+            backgroundMediaItemId,
+            variant,
+          },
+        };
+      }
+      case "form": {
+        const { id, type, formId, title } = b;
+        return { id, type, data: { formId, title } };
       }
       default: {
-        const neverBlock: never = b;
-        return { id: (neverBlock as Block).id, type: (neverBlock as Block).type };
+        const _x: never = b;
+        void _x;
+        return { id: "", type: "richText", data: {} };
       }
     }
   });
@@ -152,4 +162,23 @@ export function normalizeAiApiError(status: number, json: unknown): string {
   return status === 503 && (code === "FEATURE_DISABLED" || rawMsg === "AI is disabled.")
     ? "AI er ikke tilgjengelig (mangler serverkonfigurasjon)."
     : rawMsg || `Feil ${status}`;
+}
+
+/** Summarize block list for AI prompts (full-page draft, etc.). */
+export function summarizeBlocksForAiPrompt(list: Block[]): string {
+  if (!list.length) return "";
+  return list
+    .map((b, i) => `${i + 1}. ${getBlockTreeLabel(b)}`)
+    .join("\n")
+    .slice(0, 4000);
+}
+
+/** Maps `/api/ai/layout` & `/api/ai/page` block JSON to editor blocks (preview insert only). */
+export function mapSerializedAiBlockToBlock(raw: unknown): Block | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const type = typeof o.type === "string" ? o.type : "";
+  if (!type) return null;
+  const id = typeof o.id === "string" && o.id.length > 0 ? o.id : makeBlockId();
+  return normalizeBlock({ id, type, ...o });
 }

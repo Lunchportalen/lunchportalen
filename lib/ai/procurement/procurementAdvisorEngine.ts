@@ -3,14 +3,14 @@
  * AI foreslår innkjøp basert på: prognoser, menyplan, leveringsvolum.
  */
 
-import { suggestProcurement } from "@/lib/ai/capabilities/procurementAdvisor";
+import { suggestProcurement } from "@/lib/ai/engines/capabilities/procurementAdvisor";
 import type {
   ProcurementAdvisorInput,
   ProcurementAdvisorOutput,
   ForecastItemInput,
   RawMaterialPriceInput,
   ProcurementSuggestion,
-} from "@/lib/ai/capabilities/procurementAdvisor";
+} from "@/lib/ai/engines/capabilities/procurementAdvisor";
 
 export type { ForecastItemInput, RawMaterialPriceInput, ProcurementSuggestion };
 

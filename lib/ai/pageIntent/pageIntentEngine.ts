@@ -1,34 +1,36 @@
+// STATUS: KEEP
+
 /**
  * AI PAGE INTENT ENGINE
  * AI analyserer hva en side faktisk prøver å oppnå: informere, selge, rekruttere, bygge tillit.
  * Basert på dette kan AI automatisk foreslå: riktig struktur, riktige seksjoner, riktige CTA.
  */
 
-import { detectPageIntent } from "@/lib/ai/capabilities/detectPageIntent";
+import { detectPageIntent } from "@/lib/ai/engines/capabilities/detectPageIntent";
 import type {
   DetectPageIntentInput,
   DetectPageIntentOutput,
   DetectPageIntentPageInput,
   PageIntentType,
-} from "@/lib/ai/capabilities/detectPageIntent";
-import { improvePageStructure } from "@/lib/ai/capabilities/improvePageStructure";
+} from "@/lib/ai/engines/capabilities/detectPageIntent";
+import { improvePageStructure } from "@/lib/ai/engines/capabilities/improvePageStructure";
 import type {
   ImprovePageStructureInput,
   ImprovePageStructureOutput,
   PageStructureImprovement,
-} from "@/lib/ai/capabilities/improvePageStructure";
-import { suggestSectionComposition } from "@/lib/ai/capabilities/suggestSectionComposition";
+} from "@/lib/ai/engines/capabilities/improvePageStructure";
+import { suggestSectionComposition } from "@/lib/ai/engines/capabilities/suggestSectionComposition";
 import type {
   SuggestSectionCompositionInput,
   SuggestSectionCompositionOutput,
   SectionSuggestion,
-} from "@/lib/ai/capabilities/suggestSectionComposition";
-import { autoImproveCTAs } from "@/lib/ai/capabilities/autoImproveCTAs";
+} from "@/lib/ai/engines/capabilities/suggestSectionComposition";
+import { autoImproveCTAs } from "@/lib/ai/engines/capabilities/autoImproveCTAs";
 import type {
   AutoImproveCTAsInput,
   AutoImproveCTAsOutput,
   CTAInput,
-} from "@/lib/ai/capabilities/autoImproveCTAs";
+} from "@/lib/ai/engines/capabilities/autoImproveCTAs";
 
 export type { PageIntentType, PageStructureImprovement, SectionSuggestion, CTAInput };
 

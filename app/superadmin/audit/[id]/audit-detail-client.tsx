@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 

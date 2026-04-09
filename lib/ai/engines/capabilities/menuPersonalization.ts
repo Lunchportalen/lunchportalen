@@ -4,8 +4,8 @@
  * Deterministic; no LLM.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 import { analyzeOfficeCulture } from "./officeCultureAnalyzer";
 import type { DishChoiceWithTags } from "./officeCultureAnalyzer";
 

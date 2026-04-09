@@ -1,5 +1,5 @@
 // app/api/weekplan/route.ts
-
+// DEPRECATED for nye klienter: bruk GET /api/week (company_current_agreement + menuContent).
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ function defaultWeekPattern(): Record<DayKey, Tier> {
 export async function GET() {
   const rid = makeRid();
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const { fetchNextPublishedWeekPlan } = await import("@/lib/sanity/weekplan");
+  const { fetchNextPublishedWeekPlan } = await import("@/lib/cms/weekPlan");
 
   // 1) Auth + company scope
   const sb = await supabaseServer();
@@ -77,16 +77,26 @@ export async function GET() {
   const today = todayOsloISODate();
   const plan = await fetchNextPublishedWeekPlan(today);
 
-  return jsonOk(rid, {
-    ok: true,
+  return jsonOk(
     rid,
-    today,
-    companyId,
-    agreement: {
-      cutoff,
-      week_pattern: pattern,
-      prices,
+    {
+      ok: true,
+      rid,
+      today,
+      companyId,
+      deprecated: true,
+      successor: "/api/week",
+      agreement: {
+        cutoff,
+        week_pattern: pattern,
+        prices,
+      },
+      plan,
     },
-    plan,
-  }, 200);
+    200,
+    {
+      Deprecation: "true",
+      Link: '</api/week>; rel="successor-version"',
+    }
+  );
 }

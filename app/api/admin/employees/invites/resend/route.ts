@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 
 /* =========================================================
    Helpers
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     // rotate token
     const token = crypto.randomBytes(32).toString("hex");
     const newHash = sha256Hex(token);
-    const link = `${appUrl}/accept-invite?token=${encodeURIComponent(token)}`;
+    const link = buildEmployeeInviteUrl(appUrl, token);
     const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
 
     // update first; rollback on mail failure

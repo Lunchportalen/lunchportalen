@@ -1,114 +1,76 @@
-// lib/auth/roles.ts
-import {
-  isSystemEmail as isSystemEmailSystem,
-  normEmail as normEmailSystem,
-  systemRoleByEmail,
-} from "@/lib/system/emails";
+import type { AuthContext, AuthRole } from "@/lib/auth/getAuthContext";
+import { normalizeRole, normalizeRoleDefaultEmployee } from "@/lib/auth/role";
+import { systemRoleByEmail } from "@/lib/system/emails";
 
-export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+/**
+ * Enterprise-friendly aliases — map to canonical `Role` / `AllowedRole` in this codebase.
+ * (Lunchportalen bruker `company_admin` og `employee`, ikke generiske "admin"/"user".)
+ */
+export const ROLES = {
+  SUPERADMIN: "superadmin",
+  /** Firma-administrator (tenant scope). */
+  ADMIN: "company_admin",
+  /** Innlogget sluttbruker (ansatt / portal). */
+  USER: "employee",
+} as const;
 
-/* =========================================================
-   Normalization
-========================================================= */
-export function normEmail(v: any): string {
-  return normEmailSystem(v);
+export type { Role } from "./redirect";
+export { homeForRole } from "./redirect";
+import type { Role } from "./redirect";
+
+function isAuthContext(v: unknown): v is AuthContext {
+  return typeof v === "object" && v !== null && "sessionOk" in v && "rid" in v;
+}
+
+/** DB / profile string → canonical Role (no default to employee). */
+export function roleFromProfile(raw: string | null | undefined): Role | null {
+  return normalizeRole(raw);
 }
 
 /**
- * HARD e-post-fasit for systemkontoer
- * (Skal være identisk med middleware-prinsippet.)
+ * Client-side style role resolution: email allowlist → profile → metadata (metadata may default to employee).
  */
-export function roleByEmail(email: string | null | undefined): Role | null {
-  return systemRoleByEmail(email);
-}
-
-export function isSystemEmail(email: string | null | undefined): boolean {
-  return isSystemEmailSystem(email);
-}
-
-/**
- * Role fra Supabase user_metadata
- * - Default: employee
- * - Tåler casing og ukjente verdier
- */
-export function roleFromMetadata(user: any): Role {
-  const raw = String(user?.user_metadata?.role ?? "employee").trim().toLowerCase();
-  if (raw === "company_admin") return "company_admin";
-  if (raw === "superadmin") return "superadmin";
-  if (raw === "kitchen") return "kitchen";
-  if (raw === "driver") return "driver";
-  return "employee";
-}
-
-/**
- * Role fra profiles.role (DB) – normaliserer casing
- */
-export function roleFromProfile(profileRole: any): Role | null {
-  const pr = String(profileRole ?? "").trim().toLowerCase();
-  if (!pr) return null;
-
-  if (pr === "company_admin") return "company_admin";
-  if (pr === "superadmin") return "superadmin";
-  if (pr === "kitchen") return "kitchen";
-  if (pr === "driver") return "driver";
-  if (pr === "employee") return "employee";
-
-  return null;
-}
-
-/**
- * Enhetlig rolle-resolusjon:
- * 1) Systemkonto e-post (hard fasit)
- * 2) Profile role (DB) hvis satt
- * 3) Metadata role (auth) fallback
- */
-export function computeRole(user: any, profileRole?: any): Role {
-  const byEmail = roleByEmail(user?.email);
+export function computeRole(
+  user: { email?: string | null; user_metadata?: unknown } | null | undefined,
+  profileRole?: string | null
+): Role {
+  const byEmail = systemRoleByEmail(user?.email ?? null);
   if (byEmail) return byEmail;
 
-  const byProfile = roleFromProfile(profileRole);
-  if (byProfile) return byProfile;
+  const fromProfile = roleFromProfile(profileRole ?? null);
+  if (fromProfile) return fromProfile;
 
-  return roleFromMetadata(user);
+  return normalizeRoleDefaultEmployee((user as { user_metadata?: { role?: unknown } })?.user_metadata?.role);
 }
 
-/**
- * Default "hjem" per rolle (brukes for redirect-gates)
- */
-export function homeForRole(role: Role): string {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "kitchen") return "/kitchen";
-  if (role === "driver") return "/driver";
-  if (role === "company_admin") return "/admin";
-  return "/week";
+/** RBAC: valid session + exact role (AuthContext). */
+export function hasRole(ctx: AuthContext, role: NonNullable<AuthRole>): boolean;
+/** Legacy: role ∈ allowed (non-context). */
+export function hasRole(role: Role, allowed: readonly Role[]): boolean;
+export function hasRole(
+  ctxOrRole: AuthContext | Role,
+  roleOrAllowed: NonNullable<AuthRole> | readonly Role[]
+): boolean {
+  if (isAuthContext(ctxOrRole)) {
+    if (!ctxOrRole.sessionOk) return false;
+    return ctxOrRole.role === roleOrAllowed;
+  }
+  return (roleOrAllowed as readonly Role[]).includes(ctxOrRole as Role);
 }
 
-/**
- * Praktisk helper for gating:
- * - Returnerer true hvis rollen er en av allowed
- */
-export function hasRole(role: Role, allowed: Role[] | ReadonlyArray<Role>): boolean {
-  return allowed.includes(role);
+export function hasAnyRole(ctx: AuthContext, roles: readonly Role[]): boolean {
+  if (!ctx.sessionOk || ctx.role == null) return false;
+  return roles.includes(ctx.role as Role);
 }
 
-/**
- * Role-based allowlist for "next" after login
- * - superadmin: /superadmin*
- * - company_admin: /admin*
- * - kitchen: /kitchen*
- * - driver: /driver*
- * - employee: /week*, /min-side*
- */
-export function allowNextForRole(role: Role, nextPath: string | null): string | null {
-  if (!nextPath) return null;
+export const isSuperadmin = (ctx: AuthContext) => hasRole(ctx, "superadmin");
+export const isCompanyAdmin = (ctx: AuthContext) => hasRole(ctx, "company_admin");
+export const isEmployee = (ctx: AuthContext) => hasRole(ctx, "employee");
+export const isKitchen = (ctx: AuthContext) => hasRole(ctx, "kitchen");
+export const isDriver = (ctx: AuthContext) => hasRole(ctx, "driver");
 
-  if (role === "superadmin") return nextPath.startsWith("/superadmin") ? nextPath : null;
-  if (role === "company_admin") return nextPath.startsWith("/admin") ? nextPath : null;
-  if (role === "kitchen") return nextPath.startsWith("/kitchen") ? nextPath : null;
-  if (role === "driver") return nextPath.startsWith("/driver") ? nextPath : null;
-
-  // employee allowlist
-  if (nextPath.startsWith("/week") || nextPath.startsWith("/min-side")) return nextPath;
-
-  return null;
+/** Full pipeline OK (session + membership/profile rules in getAuthContext). */
+export function requireRole(ctx: AuthContext, role: string): boolean {
+  if (!ctx.ok) return false;
+  return ctx.role === role;
 }

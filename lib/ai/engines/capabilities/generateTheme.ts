@@ -5,9 +5,9 @@
  * Import this module to register the capability.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
-import { generateDesignTokens } from "../design/generateDesignTokens";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
+import { generateDesignTokens } from "../../design/generateDesignTokens";
 
 const CAPABILITY_NAME = "generateTheme";
 

@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { ContentSaveBar, type ContentSaveBarProps } from "./ContentSaveBar";
 import { ContentAiTools, type ContentAiToolsProps } from "./ContentAiTools";
 import { ContentInfoPanel, type ContentInfoPanelPage } from "./ContentInfoPanel";

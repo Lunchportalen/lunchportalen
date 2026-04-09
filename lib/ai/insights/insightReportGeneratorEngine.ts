@@ -3,14 +3,14 @@
  * Automatiske rapporter til: admin, superadmin, kjøkken.
  */
 
-import { generateInsightReport } from "@/lib/ai/capabilities/insightReportGenerator";
+import { generateInsightReport } from "@/lib/ai/engines/capabilities/insightReportGenerator";
 import type {
   InsightReportGeneratorInput,
   InsightReportGeneratorOutput,
   InsightReportAudience,
   ReportSectionInput,
   InsightReportSection,
-} from "@/lib/ai/capabilities/insightReportGenerator";
+} from "@/lib/ai/engines/capabilities/insightReportGenerator";
 
 export type {
   InsightReportAudience,

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 function safeStr(value: unknown): string {
   return String(value ?? "").trim();
 }

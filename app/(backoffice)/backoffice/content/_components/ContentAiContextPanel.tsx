@@ -5,8 +5,11 @@ export type ContentAiContextPanelProps = {
   pageId: string | null | undefined;
   pageTitle: string;
   pageSlug: string;
-  expandedBlockId: string | null;
+  /** Canonical block focus id (same as canvas/inspector selection). */
+  selectedBlockId: string | null;
   focusedBlockLabel: string | null;
+  /** Nabo-blokker (visning / redaktørkontekst). */
+  neighborContext?: { prev: string | null; next: string | null } | null;
   aiSummary: string | null;
   aiError: string | null;
 };
@@ -16,8 +19,9 @@ export function ContentAiContextPanel({
   pageId,
   pageTitle,
   pageSlug,
-  expandedBlockId,
+  selectedBlockId,
   focusedBlockLabel,
+  neighborContext = null,
   aiSummary,
   aiError,
 }: ContentAiContextPanelProps) {
@@ -77,9 +81,24 @@ export function ContentAiContextPanel({
             </p>
           ) : (
             <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
-              Blokk: {expandedBlockId ? "Ukjent blokk" : "Ingen blokk valgt"}
+              Blokk: {selectedBlockId ? "Ukjent blokk" : "Ingen blokk valgt"}
             </p>
           )}
+          {neighborContext && (neighborContext.prev || neighborContext.next) ? (
+            <div className="mt-2 space-y-1 border-t border-[rgb(var(--lp-border))] pt-2 text-[10px] text-[rgb(var(--lp-muted))]">
+              <p className="font-medium text-[rgb(var(--lp-text))]">Naboer på siden</p>
+              {neighborContext.prev ? (
+                <p className="truncate" title={neighborContext.prev}>
+                  ← {neighborContext.prev}
+                </p>
+              ) : null}
+              {neighborContext.next ? (
+                <p className="truncate" title={neighborContext.next}>
+                  → {neighborContext.next}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {aiError ? (

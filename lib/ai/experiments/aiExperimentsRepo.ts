@@ -1,8 +1,12 @@
+// STATUS: KEEP
+
 /**
  * AI Experiment Engine: persistence for ai_experiments and ai_experiment_results.
  * Tabeller: ai_experiments, ai_experiment_results.
  * Server-only; RLS superadmin.
  */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type AiExperimentStatus = "draft" | "active" | "paused" | "completed";
 
@@ -70,7 +74,6 @@ export type AiExperimentStats = {
   byVariant: AiExperimentVariantStats[];
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 function toExperimentRow(raw: Record<string, unknown>): AiExperimentRow {
   const variants = raw.variants;
   const arr = Array.isArray(variants)
@@ -93,7 +96,7 @@ function toExperimentRow(raw: Record<string, unknown>): AiExperimentRow {
 }
 
 export async function insertAiExperiment(
-  supabase: any,
+  supabase: SupabaseClient,
   row: AiExperimentInsert
 ): Promise<AiExperimentRow> {
   const payload = {
@@ -110,7 +113,7 @@ export async function insertAiExperiment(
 }
 
 export async function listAiExperiments(
-  supabase: any,
+  supabase: SupabaseClient,
   opts?: { status?: AiExperimentStatus; pageId?: string; limit?: number }
 ): Promise<AiExperimentRow[]> {
   let q = supabase
@@ -127,7 +130,7 @@ export async function listAiExperiments(
   return list.map((r: Record<string, unknown>) => toExperimentRow(r));
 }
 
-export async function getAiExperimentById(supabase: any, id: string): Promise<AiExperimentRow | null> {
+export async function getAiExperimentById(supabase: SupabaseClient, id: string): Promise<AiExperimentRow | null> {
   const { data, error } = await supabase.from("ai_experiments").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -135,7 +138,7 @@ export async function getAiExperimentById(supabase: any, id: string): Promise<Ai
 }
 
 export async function updateAiExperiment(
-  supabase: any,
+  supabase: SupabaseClient,
   id: string,
   update: AiExperimentUpdate
 ): Promise<AiExperimentRow> {
@@ -157,7 +160,7 @@ export async function updateAiExperiment(
 
 /** Oppdaterer ai_experiment_results: view for variant. */
 export async function recordAiExperimentView(
-  supabase: any,
+  supabase: SupabaseClient,
   experimentId: string,
   variant: string
 ): Promise<void> {
@@ -183,7 +186,7 @@ export async function recordAiExperimentView(
 
 /** Oppdaterer ai_experiment_results: click for variant. */
 export async function recordAiExperimentClick(
-  supabase: any,
+  supabase: SupabaseClient,
   experimentId: string,
   variant: string
 ): Promise<void> {
@@ -209,7 +212,7 @@ export async function recordAiExperimentClick(
 
 /** Oppdaterer ai_experiment_results: conversion for variant. */
 export async function recordAiExperimentConversion(
-  supabase: any,
+  supabase: SupabaseClient,
   experimentId: string,
   variant: string
 ): Promise<void> {
@@ -235,7 +238,7 @@ export async function recordAiExperimentConversion(
 
 /** Henter aggregert statistikk for et eksperiment fra ai_experiment_results. */
 export async function getAiExperimentStats(
-  supabase: any,
+  supabase: SupabaseClient,
   experimentId: string
 ): Promise<AiExperimentStats> {
   const { data: rows, error } = await supabase

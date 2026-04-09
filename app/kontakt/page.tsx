@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { getMarketingPage } from "@/lib/seo/marketingRegistry";
 import { createPageMetadata } from "@/lib/seo/meta";
@@ -11,5 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function KontaktPage() {
-  return <KontaktClient />;
+  return (
+    <Suspense fallback={null}>
+      <KontaktClient />
+    </Suspense>
+  );
 }

@@ -19,6 +19,7 @@ export type TreeNodeRowProps = {
   onToggleExpand: (id: string) => void;
   onRowClick: (id: string) => void;
   permissions: TreePermissions;
+  onEdit: (id: string) => void;
   onCopyLink: (id: string) => void;
   onPreview: (slug: string) => void;
   onCreateChild: (parentId: string) => void;
@@ -27,6 +28,12 @@ export type TreeNodeRowProps = {
   onDelete: (id: string) => void;
   actionsOpenNodeId: string | null;
   onOpenActions: (id: string | null) => void;
+  isRenamingThisNode: boolean;
+  renameDraft: string;
+  onRenameDraftChange: (value: string) => void;
+  onRenameCommit: () => void;
+  onRenameCancel: () => void;
+  onRenameBlur: () => void;
 };
 
 function iconNameForNode(node: ContentTreeNode): SemanticIconKey {
@@ -47,6 +54,7 @@ export function TreeNodeRow({
   onToggleExpand,
   onRowClick,
   permissions,
+  onEdit,
   onCopyLink,
   onPreview,
   onCreateChild,
@@ -55,12 +63,19 @@ export function TreeNodeRow({
   onDelete,
   actionsOpenNodeId,
   onOpenActions,
+  isRenamingThisNode,
+  renameDraft,
+  onRenameDraftChange,
+  onRenameCommit,
+  onRenameCancel,
+  onRenameBlur,
 }: TreeNodeRowProps) {
   const kebabRef = useRef<HTMLButtonElement>(null);
   const isActionsOpen = actionsOpenNodeId === node.id;
   const iconName: SemanticIconKey = node.id === "recycle-bin" ? "delete" : iconNameForNode(node);
 
   const handleRowClick = () => {
+    if (isRenamingThisNode) return;
     onRowClick(node.id);
     onSelectAndNavigate(node.id);
   };
@@ -80,7 +95,7 @@ export function TreeNodeRow({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleRowClick();
+      if (!isRenamingThisNode) handleRowClick();
       return;
     }
     if (e.key === " ") {
@@ -98,9 +113,16 @@ export function TreeNodeRow({
       onToggleExpand(node.id);
       return;
     }
-    if (e.key === "Escape" && isActionsOpen) {
-      onOpenActions(null);
-      e.preventDefault();
+    if (e.key === "Escape") {
+      if (isRenamingThisNode) {
+        onRenameCancel();
+        e.preventDefault();
+        return;
+      }
+      if (isActionsOpen) {
+        onOpenActions(null);
+        e.preventDefault();
+      }
     }
   };
 
@@ -111,6 +133,10 @@ export function TreeNodeRow({
         tabIndex={0}
         aria-selected={isSelected}
         aria-expanded={node.hasChildren ? isExpanded : undefined}
+        data-lp-content-tree-node-id={node.id}
+        data-lp-content-tree-node-alias={node.kind ?? node.nodeType ?? "unknown"}
+        data-lp-content-tree-node-label={node.name}
+        data-lp-content-tree-node-selected={isSelected ? "true" : "false"}
         className={`flex w-full min-w-0 cursor-pointer items-center gap-1 truncate rounded-none border-l-2 py-0 pr-1 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-0 ${
           isSelected
             ? "border-l-red-500 bg-slate-100 font-medium text-slate-900"
@@ -144,7 +170,32 @@ export function TreeNodeRow({
           )}
         </span>
         <Icon name={iconName} className="h-4 w-4 shrink-0 text-slate-500" />
-        <span className="min-w-0 flex-1 truncate">{node.name}</span>
+        {isRenamingThisNode ? (
+          <input
+            type="text"
+            value={renameDraft}
+            onChange={(e) => onRenameDraftChange(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onRenameCommit();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                onRenameCancel();
+              }
+            }}
+            onBlur={() => onRenameBlur()}
+            autoFocus
+            className="min-h-7 min-w-0 flex-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            aria-label="Nytt navn"
+          />
+        ) : (
+          <span className="min-w-0 flex-1 truncate">{node.name}</span>
+        )}
         <div className="relative flex shrink-0">
           <button
             ref={kebabRef}
@@ -164,6 +215,7 @@ export function TreeNodeRow({
               open={true}
               onClose={() => onOpenActions(null)}
               permissions={permissions}
+              onEdit={onEdit}
               onCopyLink={onCopyLink}
               onPreview={onPreview}
               onCreateChild={onCreateChild}

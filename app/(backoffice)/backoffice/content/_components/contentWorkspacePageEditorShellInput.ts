@@ -159,7 +159,13 @@ export function buildContentWorkspacePageEditorShellBundle(
     editor2ResetSearchNonce: f.editor2ResetSearchNonce,
   };
 
-  const identity: AuxiliaryShellIdentity = auxiliaryShellIdentity(f.isDemo, f.isWow, f.effectiveId, f.page);
+  const identity: AuxiliaryShellIdentity = auxiliaryShellIdentity(
+    f.isDemo,
+    f.isWow,
+    f.effectiveId,
+    f.page,
+    f.editorLocale
+  );
   const detail: AuxiliaryShellDetail = auxiliaryShellDetail(
     f.isOffline,
     f.detailLoading,
@@ -204,7 +210,6 @@ export function buildContentWorkspacePageEditorShellBundle(
     f.setOnboardingStep,
     f.aiBuildResult,
     f.setBlocks,
-    f.setExpandedBlockId,
     f.selectedBlock,
     f.imagePresetLabels,
     f.imagePreset,

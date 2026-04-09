@@ -6,10 +6,10 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { getScope, ScopeError } from "@/lib/auth/scope";
+import { assertCompanyActive as assertCompanyActiveShared } from "@/lib/guards/assertCompanyActive";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /* =========================================================
@@ -122,48 +122,6 @@ function getNextWeekdays(startISO: string, days: number) {
   return out;
 }
 
-/* =========================
-   Company status gate (PAUSED/CLOSED)
-========================= */
-async function assertCompanyActive(supa: SupabaseClient<any, any, any>, companyId: string) {
-  const { data, error } = await (supa as any)
-    .from("companies")
-    .select("status, paused_reason, closed_reason")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (error || !data) {
-    return {
-      ok: false as const,
-      status: 500,
-      error: "COMPANY_LOOKUP_FAILED",
-      reason: error?.message ?? "Company lookup failed",
-    };
-  }
-
-  const status = normStatus(data.status);
-
-  if (status === "paused") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_PAUSED",
-      reason: (data.paused_reason as string | null) ?? "Firma er pauset.",
-    };
-  }
-
-  if (status === "closed") {
-    return {
-      ok: false as const,
-      status: 403,
-      error: "COMPANY_CLOSED",
-      reason: (data.closed_reason as string | null) ?? "Firma er stengt.",
-    };
-  }
-
-  return { ok: true as const };
-}
-
 /* =========================================================
    Handler
 ========================================================= */
@@ -208,9 +166,15 @@ export async function POST(req: NextRequest) {
 
     const supa = supabaseAdmin();
 
-    // ✅ Company status gate (PAUSED/CLOSED)
-    const gate = await assertCompanyActive(supa as any, company_id);
-    if (!gate.ok) return jsonErr(rid, gate.reason, gate.status ?? 400, gate.error);
+    try {
+      await assertCompanyActiveShared({ rid, sb: supa as any, company_id });
+    } catch (e: unknown) {
+      const err = e as { status?: number; code?: string; message?: string };
+      const status = typeof err?.status === "number" ? err.status : 500;
+      const code = typeof err?.code === "string" ? err.code : "COMPANY_GUARD_FAILED";
+      const msg = e instanceof Error ? e.message : "Firma sjekk feilet.";
+      return jsonErr(rid, msg, status, code);
+    }
 
     // Kontrakt
     const { data: companyRaw, error: cErr } = await (supa as any)

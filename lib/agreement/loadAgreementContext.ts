@@ -1,5 +1,6 @@
 import "server-only";
 
+import { normalizeRole } from "@/lib/auth/role";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 
@@ -25,14 +26,11 @@ function safeStr(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function normalizeRole(value: unknown): AgreementContextRole {
-  const role = safeStr(value).toLowerCase();
-  if (role === "superadmin" || role === "super_admin") return "superadmin";
-  if (role === "company_admin" || role === "companyadmin" || role === "admin") return "company_admin";
-  if (role === "employee" || role === "ansatt") return "employee";
-  if (role === "kitchen" || role === "kjokken") return "kitchen";
-  if (role === "driver" || role === "sjafor") return "driver";
-  return "unknown";
+/** Kanonisk rolle → avtale-kontekst (`unknown` ved ugyldig streng). */
+function toAgreementContextRole(value: unknown): AgreementContextRole {
+  const r = normalizeRole(value);
+  if (!r) return "unknown";
+  return r as AgreementContextRole;
 }
 
 function normalizeAgreementStatus(value: unknown): AgreementStatus {
@@ -126,7 +124,7 @@ export async function loadAgreementContext(): Promise<AgreementContextResult> {
 
   const emailRole = systemRoleByEmail(user.email ?? null);
   const profile = await loadProfile(sb, user.id);
-  const role = normalizeRole(emailRole ?? profile?.role ?? user.user_metadata?.role);
+  const role = toAgreementContextRole(emailRole ?? profile?.role ?? user.user_metadata?.role);
 
   // Superadmin bypasses agreement gating (global ops role), but remains deterministic.
   if (role === "superadmin") {

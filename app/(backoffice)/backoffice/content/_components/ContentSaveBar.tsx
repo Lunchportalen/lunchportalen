@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useBellissimaWorkspaceModel } from "@/components/backoffice/ContentBellissimaWorkspaceContext";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { motionClasses } from "@/lib/ui/motionTokens";
@@ -33,6 +34,7 @@ export function ContentSaveBar({
   lastSavedAt,
   formatDate,
 }: ContentSaveBarProps) {
+  const workspaceModel = useBellissimaWorkspaceModel();
   const showSavedFeedback = !saving && !saveError && lastSavedAt != null && formatDate;
   const savedLabel = showSavedFeedback ? formatDate(lastSavedAt) : null;
   const [showSuccess, setShowSuccess] = useState(false);
@@ -50,7 +52,7 @@ export function ContentSaveBar({
   }, [lastSavedAt]);
 
   return (
-    <div className="font-ui lp-glass-bar flex flex-col gap-3 px-4 py-3">
+    <div className="font-ui flex flex-col gap-3 px-4 py-3">
       {saveError && (
         <div className="flex w-full items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs" role="alert">
           <Icon name="warning" size="sm" className="text-amber-600 shrink-0" />
@@ -72,35 +74,46 @@ export function ContentSaveBar({
         </span>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => void onSaveAndPreview()}
-          disabled={!selectedId || saving}
-          title="Lagre og åpne forhåndsvisning i ny fane"
-          aria-label="Lagre og åpne forhåndsvisning"
-        >
-          Lagre og forhåndsvis
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => void onSave()}
-          disabled={!canSave}
-          title={saving ? "Lagrer…" : "Lagre endringer uten å åpne forhåndsvisning"}
-          aria-label={saving ? "Lagrer" : "Lagre"}
-        >
-          {saving ? (
-            <>
-              <Icon name="loading" size="sm" className="animate-spin shrink-0" />
-              Lagrer…
-            </>
-          ) : (
-            "Lagre"
-          )}
-        </Button>
+        {workspaceModel ? (
+          <span className="text-xs text-[rgb(var(--lp-muted))]">
+            Primære handlinger styres fra workspace-headeren. Denne linjen holder lagringsstatus og feilmeldinger synlige
+            mens du arbeider.
+          </span>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              className="min-h-11 px-4 text-sm font-semibold"
+              onClick={() => void onSaveAndPreview()}
+              disabled={!selectedId || saving}
+              title="Lagre og åpne forhåndsvisning i ny fane"
+              aria-label="Lagre og åpne forhåndsvisning"
+            >
+              Lagre og forhåndsvis
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              className="min-h-11 px-4 text-sm font-semibold"
+              onClick={() => void onSave()}
+              disabled={!canSave}
+              title={saving ? "Lagrer…" : "Lagre endringer uten å åpne forhåndsvisning"}
+              aria-label={saving ? "Lagrer" : "Lagre"}
+            >
+              {saving ? (
+                <>
+                  <Icon name="loading" size="sm" className="animate-spin shrink-0" />
+                  Lagrer…
+                </>
+              ) : (
+                "Lagre"
+              )}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

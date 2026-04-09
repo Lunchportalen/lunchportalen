@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export type StabilityScore = "A" | "B" | "C" | "D";
 
 export function stabilityScore(args: { ordered: number; wasteMeals: number }): StabilityScore | null {

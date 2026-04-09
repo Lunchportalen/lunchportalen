@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export type PlanTier = "BASIS" | "LUXUS";
 
 export function priceForTierNok(tier: PlanTier): number {

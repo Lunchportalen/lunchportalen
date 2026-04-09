@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { isAIEnabled } from "@/lib/ai/provider";
+import { isAIEnabled } from "@/lib/ai/runner";
 import { buildBlockFromDescription } from "@/lib/ai/tools/blockBuilder";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
@@ -7,11 +7,13 @@ import { checkAiRateLimit, AI_RATE_LIMIT_SCOPE, DEFAULT_AI_EDITOR_RATE_LIMIT } f
 import { prepareAiResponseForClient } from "@/lib/ai/responseSafety";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -77,4 +79,5 @@ export async function POST(req: NextRequest) {
     // Best-effort: do not mask response
   }
   return jsonOk(ctx.rid, prepared.data, 200);
+  });
 }

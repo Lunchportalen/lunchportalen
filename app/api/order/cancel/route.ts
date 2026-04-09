@@ -1,4 +1,5 @@
 // app/api/order/cancel/route.ts
+// CANONICAL — employee cancel HTTP entry (day_choices + cutoff/policy). Orders row changes go through /api/order/set-day (lp_order_set) where applicable.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import type { Database } from "@/lib/types/database";
 import { assertCompanyActiveOr403 } from "@/lib/guards/assertCompanyActiveApi";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -18,7 +20,7 @@ type Body = {
 };
 
 type ProfileRow = {
-  user_id: string;
+  id: string;
   company_id: string | null;
   location_id: string | null;
   role?: string | null;
@@ -105,7 +107,7 @@ async function getAuthedUserId() {
 
   const cookieStore = await cookies();
 
-  const supa = createServerClient(url, anon, {
+  const supa = createServerClient<Database>(url, anon, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -169,8 +171,8 @@ export async function POST(req: Request) {
     // 5) Profil -> firma + lokasjon
     const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
-      .select("user_id, company_id, location_id, role")
-      .eq("user_id", user_id)
+      .select("id, company_id, location_id, role")
+      .eq("id", user_id)
       .maybeSingle();
 
     const profile = (profileRaw ?? null) as ProfileRow | null;

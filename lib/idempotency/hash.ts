@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export async function sha256(text: string) {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest("SHA-256", enc);

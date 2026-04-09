@@ -4,9 +4,9 @@
  * Deterministic; no LLM. Import this module to register the capability.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
-import type { PagePerformanceMetrics } from "../insights/analyzePagePerformance";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
+import type { PagePerformanceMetrics } from "../../insights/analyzePagePerformance";
 
 const CAPABILITY_NAME = "detectContentIssues";
 

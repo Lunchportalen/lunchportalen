@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function noStore() {
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     const { data: auth, error: authErr } = await sbUser.auth.getUser();
     if (authErr || !auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
 
-    if (!isSuperadminEmail(auth.user.email)) {
+    if (!(await isSuperadminProfile(auth.user.id))) {
       return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
     }
 

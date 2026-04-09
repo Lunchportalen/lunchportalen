@@ -1,101 +1,83 @@
-// app/login/LoginForm.tsx
 "use client";
 
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import type { SupabasePublicConfigStatus } from "@/lib/config/env-public";
 
-/**
- * ✅ Enterprise login (deterministisk)
- * 1) Browser signInWithPassword (SSR-kompatibel klient)
- * 2) POST /api/auth/post-login med access/refresh tokens (server setter httpOnly cookies via setSession)
- * 3) Hard redirect til GET /api/auth/post-login (DB-truth routing)
- *
- * Resultat:
- * - Ingen NO_SESSION loop
- * - /api/debug/whoami blir ok:true etter login
- */
+type LoginFormProps = {
+  authRuntime: SupabasePublicConfigStatus;
+  localRuntimeCredentials?: {
+    email: string;
+    password: string;
+  } | null;
+};
+
+type ApiLoginOk = {
+  ok: true;
+  rid: string;
+  next?: string | null;
+  data?: unknown;
+};
+
+type ApiLoginErr = {
+  ok: false;
+  rid: string;
+  error: string;
+  message: string;
+  status: number;
+};
+
+type ApiLoginRes = ApiLoginOk | ApiLoginErr | null;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
+
 function normEmail(v: unknown) {
   return safeStr(v).toLowerCase();
 }
 
-// NOTE: Next.js client bundles require static NEXT_PUBLIC_* access.
-const SUPABASE_URL = safeStr(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
-const SUPABASE_ANON_KEY = safeStr(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "");
+function buildPostLoginUrl(nextPath: string | null) {
+  const next = safeStr(nextPath);
+  if (!next) return "/api/auth/post-login";
+  return `/api/auth/post-login?next=${encodeURIComponent(next)}`;
+}
 
-function resolveNext(raw: string | null) {
-  const n = safeStr(raw);
-
-  // default
-  if (!n || n === "/" || n === "/login") return "/week";
-
-  // open redirect hardening
-  if (!n.startsWith("/")) return "/week";
-  if (n.startsWith("//")) return "/week";
-  if (n.startsWith("/api/")) return "/week";
-  if (/[\r\n\t]/.test(n)) return "/week";
-
-  // no auth loops
-  if (
-    n === "/login" ||
-    n.startsWith("/login/") ||
-    n === "/register" ||
-    n.startsWith("/register/") ||
-    n === "/registrering" ||
-    n.startsWith("/registrering/") ||
-    n === "/forgot-password" ||
-    n.startsWith("/forgot-password/") ||
-    n === "/reset-password" ||
-    n.startsWith("/reset-password/") ||
-    n === "/onboarding" ||
-    n.startsWith("/onboarding/")
-  ) {
-    return "/week";
+function mapLoginError(result: ApiLoginRes): string {
+  if (!result || result.ok !== false) {
+    return "Kunne ikke logge inn.";
   }
 
-  // conservative allow-list
-  const allowed = new Set([
-    "/week",
-    "/admin",
-    "/superadmin",
-    "/kitchen",
-    "/driver",
-    "/hvordan",
-    "/lunsjordning",
-    "/alternativ-til-kantine",
-    "/",
-  ]);
+  if (result.error === "invalid_login" || result.status === 401) {
+    return "Feil e-post eller passord.";
+  }
 
-  return allowed.has(n) ? n : "/week";
+  return safeStr(result.message) || "Kunne ikke logge inn.";
 }
 
-function makeSupabase() {
-  // createBrowserClient er SSR-kompatibel (matcher server cookie-format)
-  if (!SUPABASE_URL) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-  if (!SUPABASE_ANON_KEY) throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-export default function LoginForm() {
+export default function LoginForm({
+  authRuntime,
+  localRuntimeCredentials = null,
+}: LoginFormProps) {
   const sp = useSearchParams();
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
+  const [busyAction, setBusyAction] = React.useState<"login" | null>(null);
   const [err, setErr] = React.useState<string>("");
+  const nextRaw = React.useMemo(() => {
+    const next = safeStr(sp.get("next"));
+    return next || null;
+  }, [sp]);
+  const busy = busyAction !== null;
+  const loginDisabled = busy || !authRuntime.ok;
 
-  const supabaseRef = React.useRef<ReturnType<typeof makeSupabase> | null>(null);
-  if (!supabaseRef.current) supabaseRef.current = makeSupabase();
-
-  async function onLogin() {
-    if (busy) return;
+  async function onLoginSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (busy || !authRuntime.ok) return;
 
     setErr("");
-    setBusy(true);
+    setBusyAction("login");
 
     try {
       const em = normEmail(email);
@@ -106,54 +88,41 @@ export default function LoginForm() {
         return;
       }
 
-      const sb = supabaseRef.current!;
-
-      // 1) Client sign-in => får tokens deterministisk
-      const { data, error } = await sb.auth.signInWithPassword({ email: em, password: pw });
-
-      if (error || !data?.session?.access_token || !data?.session?.refresh_token) {
-        setErr(safeStr(error?.message) || "Kunne ikke logge inn.");
-        return;
-      }
-
-      // 2) Token bridge => server setter httpOnly cookies
-      const nextRaw = sp.get("next");
-      const next = resolveNext(nextRaw);
-
-      const resp = await fetch("/api/auth/post-login", {
+      const resp = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "content-type": "application/json", "cache-control": "no-store" },
-        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
         cache: "no-store",
+        credentials: "include",
         body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          next,
+          email: em,
+          password: pw,
+          next: nextRaw,
         }),
       });
 
-      // Hvis server svarer 4xx/5xx, vis tekst (ikke loop)
-      if (!resp.ok && resp.status !== 303) {
-        const text = await resp.text().catch(() => "");
-        setErr(text.trim() || `Innlogging feilet (HTTP ${resp.status}).`);
+      const loginJson = (await resp.json().catch(() => null)) as ApiLoginRes;
+      if (!resp.ok || !loginJson || loginJson.ok !== true) {
+        setErr(mapLoginError(loginJson));
         return;
       }
 
-      // 3) Hard redirect (DB-truth routing på server)
-      const url = next ? `/api/auth/post-login?next=${encodeURIComponent(next)}` : `/api/auth/post-login`;
-      window.location.assign(url);
-    } catch (e: any) {
-      setErr("Uventet feil ved innlogging.");
+      const nextPath = safeStr(loginJson.next ?? nextRaw) || null;
+      window.location.assign(buildPostLoginUrl(nextPath));
+    } catch {
+      setErr("Innloggingstjenesten svarte ikke. Kontroller lokal runtime og prøv igjen.");
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
   return (
-    <div className="space-y-3">
+    <form className="space-y-4" onSubmit={onLoginSubmit} noValidate>
       <div>
-        <label className="block text-sm font-medium">E-post</label>
+        <label className="block text-sm font-medium" htmlFor="login-email">
+          E-post
+        </label>
         <input
+          id="login-email"
           className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -164,35 +133,49 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Passord</label>
+        <label className="block text-sm font-medium" htmlFor="login-password">
+          Passord
+        </label>
         <input
+          id="login-password"
           className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={busy}
           autoComplete="current-password"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void onLogin();
-            }
-          }}
         />
       </div>
 
+      {!authRuntime.ok ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="alert">
+          {authRuntime.message}
+        </div>
+      ) : null}
+
       {err ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{err}</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+          {err}
+        </div>
       ) : null}
 
       <button
-        type="button"
+        type="submit"
         className="w-full rounded-xl bg-black px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-        disabled={busy}
-        onClick={() => void onLogin()}
+        disabled={loginDisabled}
       >
-        {busy ? "Logger inn…" : "Logg inn"}
+        {busyAction === "login" ? "Logger inn…" : "Logg inn"}
       </button>
-    </div>
+
+      {localRuntimeCredentials ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+          <p className="font-medium text-slate-900">Lokal runtime-konto</p>
+          <p className="mt-1">
+            Bruk normal innlogging med <code>{localRuntimeCredentials.email}</code> og{" "}
+            <code>{localRuntimeCredentials.password}</code>.
+          </p>
+        </div>
+      ) : null}
+    </form>
   );
 }

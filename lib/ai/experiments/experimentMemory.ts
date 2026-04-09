@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 /**
  * Experiment learning memory: store and list historical experiment results in ai_experiment_memory.
  * Server-only; use with Supabase client that has RLS (superadmin for this table).
@@ -42,9 +44,8 @@ export type ListExperimentMemoryOpts = {
   limit?: number;
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function insertExperimentMemory(
-  supabase: any,
+  supabase: SupabaseClient,
   row: AiExperimentMemoryInsert
 ): Promise<AiExperimentMemoryRow> {
   const payload = {
@@ -65,7 +66,7 @@ export async function insertExperimentMemory(
 }
 
 export async function insertExperimentMemoryBatch(
-  supabase: any,
+  supabase: SupabaseClient,
   rows: AiExperimentMemoryInsert[]
 ): Promise<AiExperimentMemoryRow[]> {
   if (rows.length === 0) return [];
@@ -87,7 +88,7 @@ export async function insertExperimentMemoryBatch(
 }
 
 export async function listExperimentMemory(
-  supabase: any,
+  supabase: SupabaseClient,
   opts?: ListExperimentMemoryOpts
 ): Promise<AiExperimentMemoryRow[]> {
   let q = supabase

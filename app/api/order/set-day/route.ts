@@ -9,8 +9,11 @@ import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import type { Database } from "@/lib/types/database";
+import { ensureMealChoicesPresent, resolveTierForOrderDay } from "@/lib/orders/agreementContractFallback";
+import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 
 type Tier = "BASIS" | "PREMIUM";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -24,7 +27,7 @@ type Body = {
   note?: string | null; // for Salatbar/Påsmurt variants
 };
 
-type ProfileRow = { user_id: string; company_id: string | null; location_id: string | null };
+type ProfileRow = { id: string; company_id: string | null; location_id: string | null };
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
@@ -124,7 +127,7 @@ async function getAuthedUserId() {
 
   const cookieStore = await cookies();
 
-  const supa = createServerClient(url, anon, {
+  const supa = createServerClient<Database>(url, anon, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -177,8 +180,8 @@ export async function POST(req: NextRequest) {
     // scope
     const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
-      .select("user_id, company_id, location_id")
-      .eq("user_id", user_id)
+      .select("id, company_id, location_id")
+      .eq("id", user_id)
       .maybeSingle();
 
     const profile = (profileRaw ?? null) as ProfileRow | null;
@@ -202,13 +205,17 @@ export async function POST(req: NextRequest) {
     }
 
     const weekTier = ((companyRaw as any).contract_week_tier as Record<string, Tier>) ?? {};
-    const tier = weekTier[dayKey];
+    let basisChoices = (((companyRaw as any).contract_basis_choices as Choice[]) ?? []).filter((x) => x?.key);
+    let premiumRaw = (((companyRaw as any).contract_premium_choices as Choice[]) ?? []).filter((x) => x?.key);
+    const ensured = ensureMealChoicesPresent(basisChoices, premiumRaw);
+    basisChoices = ensured.basis;
+    premiumRaw = ensured.premium;
+
+    const tier =
+      (await resolveTierForOrderDay(supa as any, company_id, location_id, dayKey, weekTier)) ?? null;
     if (!tier) {
       return jsonErr(rid, "Denne dagen er ikke aktiv i avtalen.", 403, "DAY_NOT_ENABLED");
     }
-
-    const basisChoices = (((companyRaw as any).contract_basis_choices as Choice[]) ?? []).filter((x) => x?.key);
-    const premiumRaw = (((companyRaw as any).contract_premium_choices as Choice[]) ?? []).filter((x) => x?.key);
     const premiumChoices = mergeChoices(basisChoices, premiumRaw);
     const allowed = tier === "BASIS" ? basisChoices : premiumChoices;
 
@@ -229,7 +236,7 @@ export async function POST(req: NextRequest) {
       const t = parseVariantTypeFromNote(note);
       const ck = String(finalChoiceKey ?? "").toLowerCase();
       if (!t || t !== ck) {
-        const label = ck === "salatbar" ? "Salatbar" : "Påsmurt";
+        const label = displayLabelForMealTypeKey(ck, null);
         return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
       }
     }
@@ -238,8 +245,8 @@ export async function POST(req: NextRequest) {
     const legacyNote = wantsLunch && finalChoiceKey ? `choice:${finalChoiceKey}` : null;
 
     const writeRes = wantsLunch
-      ? await lpOrderSet(supa as any, { p_date: date, p_slot: "lunch", p_note: legacyNote })
-      : await lpOrderCancel(supa as any, { p_date: date });
+      ? await lpOrderSet(supa as any, { p_date: date, p_slot: ORDER_TABLE_SLOT_DEFAULT, p_note: legacyNote })
+      : await lpOrderCancel(supa as any, { p_date: date, p_slot: ORDER_TABLE_SLOT_DEFAULT });
 
     if (!writeRes.ok) {
       return jsonErr(rid, "Kunne ikke lagre.", 500, {
@@ -255,7 +262,7 @@ export async function POST(req: NextRequest) {
       .eq("company_id", company_id)
       .eq("location_id", location_id)
       .eq("date", date)
-      .eq("slot", "lunch")
+      .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
       .maybeSingle();
 
     if (oErr || !savedOrder) {

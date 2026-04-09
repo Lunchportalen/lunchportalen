@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { auditAdmin } from "@/lib/audit/actions";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { isSystemEmail as isSystemEmailCore, SYSTEM_EMAILS } from "@/lib/system/emails";
 
 type InviteInput = {
@@ -263,7 +264,7 @@ export async function POST(req: NextRequest) {
 
       const rawToken = crypto.randomBytes(32).toString("hex");
       const token_hash = sha256Hex(rawToken);
-      const link = `${appUrl}/accept-invite?token=${encodeURIComponent(rawToken)}`;
+      const link = buildEmployeeInviteUrl(appUrl, rawToken);
 
       const sent = await sendInviteEmail({ to: i.email, link, companyName: def.companyName });
       if (sent.ok === false) {

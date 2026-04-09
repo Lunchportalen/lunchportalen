@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { withCmsPageDocumentGate } from "@/lib/cms/cmsPageDocumentGate";
+import { isLocalDevContentReserveEnabled } from "@/lib/cms/contentLocalDevReserve";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import {
   getWorkflow,
@@ -8,6 +9,12 @@ import {
   type WorkflowState,
   type WorkflowAction,
 } from "@/lib/backoffice/content/workflowRepo";
+import {
+  getLocalCmsWorkflow,
+  isLocalCmsRuntimeError,
+  transitionLocalCmsWorkflow,
+} from "@/lib/localRuntime/cmsProvider";
+import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 
 const ENVS = ["prod", "staging"] as const;
 const LOCALES = ["nb", "en"] as const;
@@ -40,16 +47,55 @@ export async function GET(
     return jsonErr(ctx.rid, "Mangler page id.", 400, "BAD_REQUEST");
   }
   try {
+    if (isLocalCmsRuntimeEnabled()) {
+      const workflow = getLocalCmsWorkflow({ pageId, variantId, env, locale });
+      return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, ...workflow }, 200);
+    }
+
+    if (isLocalDevContentReserveEnabled()) {
+      return jsonOk(
+        ctx.rid,
+        {
+          ok: true,
+          rid: ctx.rid,
+          variantId: null,
+          state: "draft",
+          updated_at: null,
+          updated_by: null,
+          degraded: true,
+          reserve: true,
+          missingVariant: true,
+        },
+        200,
+      );
+    }
+
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
     if (!variantId?.trim()) {
-      const { data: first } = await supabase
+      const { data: exact } = await supabase
         .from("content_page_variants")
         .select("id")
         .eq("page_id", pageId)
-        .limit(1)
+        .eq("locale", locale)
+        .eq("environment", env)
         .maybeSingle();
-      variantId = first?.id ?? "";
+      variantId = exact?.id ?? "";
+    }
+    if (!variantId) {
+      return jsonOk(
+        ctx.rid,
+        {
+          ok: true,
+          rid: ctx.rid,
+          variantId: null,
+          state: "draft",
+          updated_at: null,
+          updated_by: null,
+          missingVariant: true,
+        },
+        200,
+      );
     }
     if (variantId) {
       const { data: variant } = await supabase
@@ -65,6 +111,9 @@ export async function GET(
     const workflow = await getWorkflow(supabase as any, variantId || pageId, env, locale);
     return jsonOk(ctx.rid, { ok: true, rid: ctx.rid, variantId: variantId || null, state: workflow.state, updated_at: workflow.updated_at, updated_by: workflow.updated_by }, 200);
   } catch (e) {
+    if (isLocalCmsRuntimeError(e)) {
+      return jsonErr(ctx.rid, e.message, e.status, e.code, e.detail);
+    }
     const msg = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, msg, 500, "SERVER_ERROR", { detail: String(e) });
   }
@@ -101,7 +150,33 @@ export async function POST(
   if (typeof action !== "string" || !ACTIONS.includes(action as WorkflowAction)) {
     return jsonErr(ctx.rid, "Ugyldig action.", 400, "BAD_REQUEST");
   }
+  return withCmsPageDocumentGate("api/backoffice/content/pages/[id]/workflow/POST", async () => {
   try {
+    if (isLocalCmsRuntimeEnabled()) {
+      const row = transitionLocalCmsWorkflow({
+        pageId,
+        variantId,
+        env,
+        locale,
+        action: action as WorkflowAction,
+        actorEmail: ctx.scope?.email ?? null,
+      });
+      return jsonOk(ctx.rid, {
+        ok: true,
+        rid: ctx.rid,
+        workflow: { state: row.state, updated_at: row.updated_at, updated_by: row.updated_by },
+      }, 200);
+    }
+
+    if (isLocalDevContentReserveEnabled()) {
+      return jsonErr(
+        ctx.rid,
+        "Lokal content-reserve er skrivebeskyttet. Workflow-endringer er blokkert i reserve-modus.",
+        503,
+        "LOCAL_DEV_CONTENT_RESERVE_READONLY",
+      );
+    }
+
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const supabase = supabaseAdmin();
     const { data: variant } = await supabase
@@ -135,7 +210,11 @@ export async function POST(
       workflow: { state: row.state, updated_at: row.updated_at, updated_by: row.updated_by },
     }, 200);
   } catch (e) {
+    if (isLocalCmsRuntimeError(e)) {
+      return jsonErr(ctx.rid, e.message, e.status, e.code, e.detail);
+    }
     const msg = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, msg, 500, "SERVER_ERROR", { detail: String(e) });
   }
+  });
 }

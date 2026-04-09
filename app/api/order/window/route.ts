@@ -17,6 +17,15 @@ import { osloTodayISODate, addDaysISO, isIsoDate, cutoffStatusForDate } from "@/
 import { opsLog } from "@/lib/ops/log";
 import { canSeeNextWeek, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getProductPlan } from "@/lib/cms/getProductPlan";
+import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
+import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
+import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
+import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
+import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
+import { parseMealContractFromAgreementJson, type StoredMealContract } from "@/lib/server/agreements/mealContract";
+import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
+import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Types
@@ -222,23 +231,22 @@ function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized }
   return { ok: false };
 }
 
+/** Fallback kun når CMS productPlan mangler (driftssikkert). */
 const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130 };
 
-const FIXED_CHOICES_BY_TIER: Record<Tier, Choice[]> = {
-  BASIS: [
-    { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "Påsmurt" },
-    { key: "varmmat", label: "Varmmat" },
-  ],
-  LUXUS: [
-    { key: "salatbar", label: "Salatbar" },
-    { key: "paasmurt", label: "Påsmurt" },
-    { key: "varmmat", label: "Varmmat" },
-    { key: "sushi", label: "Sushi" },
-    { key: "pokebowl", label: "Pokébowl" },
-    { key: "thaimat", label: "Thaimat" },
-  ],
-};
+function choicesFromCmsTier(
+  tier: Tier,
+  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null },
+  menuByMealType: Map<string, CmsMenuByMealType>
+): Choice[] {
+  const plan = tier === "BASIS" ? productPlans.BASIS : productPlans.LUXUS;
+  if (!plan?.allowedMeals?.length) return [];
+  return plan.allowedMeals.map((k) => {
+    const nk = normalizeMealTypeKey(k);
+    const m = menuByMealType.get(nk);
+    return { key: nk, label: displayLabelForMealTypeKey(nk, m) };
+  });
+}
 
 function getChoicesForTier(agreement: any, tier: Tier): Choice[] {
   if (!agreement) return [];
@@ -251,62 +259,8 @@ function getChoicesForTier(agreement: any, tier: Tier): Choice[] {
 }
 
 /* =========================================================
-   Sanity menu helpers
-========================================================= */
-
-function menuDateKey(it: any): string | null {
-  const key =
-    (typeof it?.date === "string" && it.date.slice(0, 10)) ||
-    (typeof it?.dateISO === "string" && it.dateISO.slice(0, 10)) ||
-    (typeof it?.date_iso === "string" && it.date_iso.slice(0, 10)) ||
-    (typeof it?.day === "string" && it.day.slice(0, 10)) ||
-    (typeof it?.dateTime === "string" && it.dateTime.slice(0, 10)) ||
-    (typeof it?.datetime === "string" && it.datetime.slice(0, 10)) ||
-    null;
-
-  return key && /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : null;
-}
-
-function pickMenuForChoice(menu: any, choiceKey: string | null) {
-  const fallback = {
-    title: menu?.title ?? null,
-    description: menu?.description ?? null,
-    allergens: Array.isArray(menu?.allergens) ? menu.allergens : [],
-  };
-
-  const k = String(choiceKey ?? "").trim().toLowerCase();
-  if (!menu || !k) return fallback;
-
-  const node =
-    menu?.[k] ||
-    menu?.choices?.[k] ||
-    menu?.menu?.[k] ||
-    (Array.isArray(menu?.choices) ? menu.choices.find((x: any) => String(x?.key ?? "").toLowerCase() === k) : null) ||
-    (Array.isArray(menu?.items) ? menu.items.find((x: any) => String(x?.key ?? "").toLowerCase() === k) : null) ||
-    null;
-
-  if (!node) return fallback;
-
-  return {
-    title: node?.title ?? node?.name ?? fallback.title,
-    description: node?.description ?? node?.text ?? fallback.description,
-    allergens: Array.isArray(node?.allergens) ? node.allergens : fallback.allergens,
-  };
-}
-
-/* =========================================================
    Data loading helpers (side-effecting)
 ========================================================= */
-
-async function loadMenuByDate(getMenuForRange: any, fromISO: string, toISO: string) {
-  const menuItems = await getMenuForRange(fromISO, toISO).catch(() => []);
-  const menuByDate = new Map<string, any>();
-  for (const it of menuItems || []) {
-    const key = menuDateKey(it);
-    if (key) menuByDate.set(key, it);
-  }
-  return menuByDate;
-}
 
 async function loadOrdersByDate(
   supabaseServer: () => Promise<any>,
@@ -321,7 +275,7 @@ async function loadOrdersByDate(
     .eq("user_id", sc.user_id)
     .eq("company_id", sc.company_id)
     .eq("location_id", sc.location_id)
-    .eq("slot", "lunch")
+    .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
     .in("date", dates);
 
   if (oErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
@@ -541,13 +495,26 @@ type DayContext = {
   dayTiers: Record<DayKey, Tier>;
   ordersByDate: Map<string, OrderRow>;
   dayChoicesByDate: Map<string, DayChoiceRow>;
-  menuByDate: Map<string, any>;
   agreementForChoices: any;
+  mealContract: StoredMealContract | null;
+  menuByMealType: Map<string, CmsMenuByMealType>;
+  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null };
 };
 
 export function buildDayModel(ctx: DayContext) {
-  const { date, company, agreementUsable, deliveryDays, dayTiers, ordersByDate, dayChoicesByDate, menuByDate, agreementForChoices } =
-    ctx;
+  const {
+    date,
+    company,
+    agreementUsable,
+    deliveryDays,
+    dayTiers,
+    ordersByDate,
+    dayChoicesByDate,
+    agreementForChoices,
+    mealContract,
+    menuByMealType,
+    productPlans,
+  } = ctx;
 
   const dayKey = weekdayKeyFromISO(date);
 
@@ -556,8 +523,28 @@ export function buildDayModel(ctx: DayContext) {
 
   const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
 
-  const agreementChoices = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
-  const allowedChoices: Choice[] = agreementChoices.length ? agreementChoices : isEnabled && tier ? FIXED_CHOICES_BY_TIER[tier] : [];
+  const cmsTierChoices = isEnabled && tier ? choicesFromCmsTier(tier, productPlans, menuByMealType) : [];
+  const agreementChoicesRaw = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
+  const agreementChoices: Choice[] = agreementChoicesRaw.length
+    ? agreementChoicesRaw.map((c) => {
+        const nk = normalizeMealTypeKey((c as any).key);
+        const m = menuByMealType.get(nk);
+        const labelRaw = (c as any).label != null ? String((c as any).label).trim() : "";
+        const cmsTitle = m?.title != null ? String(m.title).trim() : "";
+        return {
+          key: nk || String((c as any).key ?? "").trim().toLowerCase(),
+          label: cmsTitle || labelRaw || displayLabelForMealTypeKey(nk, null),
+        };
+      })
+    : [];
+
+  const allowedChoices: Choice[] = agreementChoices.length
+    ? agreementChoices
+    : cmsTierChoices.length
+      ? cmsTierChoices
+      : isEnabled && tier
+        ? fallbackChoicesForTier(tier, null)
+        : [];
 
   const savedOrder = ordersByDate.get(date);
   const sNorm = statusNorm(savedOrder?.status);
@@ -568,8 +555,8 @@ export function buildDayModel(ctx: DayContext) {
   const legacyChoice = parseChoiceKeyFromNote(savedOrder?.note ?? null);
 
   const rawSelected = dcChoice || legacyChoice || null;
-  const selectedOk = rawSelected ? allowedChoices.some((c) => c.key === rawSelected) : false;
-  const safeSelected = selectedOk ? rawSelected : null;
+  const selectedOk = rawSelected ? allowedChoices.some((c) => normalizeMealTypeKey(c.key) === normalizeMealTypeKey(rawSelected)) : false;
+  const safeSelected = selectedOk ? normalizeMealTypeKey(rawSelected) : null;
 
   const dcNote = dc?.note ?? null;
   const legacyNote = (() => {
@@ -588,8 +575,19 @@ export function buildDayModel(ctx: DayContext) {
     !agreementUsable ? "COMPANY" :
     null;
 
-  const menu = menuByDate.get(date) ?? null;
-  const picked = pickMenuForChoice(menu, wantsLunch ? safeSelected : null);
+  const agreementMealType = resolveMenuForDay({
+    dayKey,
+    mealContract,
+    legacyChoiceKey: safeSelected || rawSelected,
+  });
+  const headerMenu = agreementMealType ? menuByMealType.get(agreementMealType) : null;
+
+  const pp = tier ? (tier === "BASIS" ? productPlans.BASIS : productPlans.LUXUS) : null;
+  const unitPrice = tier ? (pp?.price && Number.isFinite(pp.price) && pp.price > 0 ? pp.price : PRICE_PER_TIER_EX_VAT[tier]) : null;
+
+  const menuImages = Array.isArray(headerMenu?.images) ? headerMenu!.images : [];
+  const cmsTitle = headerMenu?.title != null ? String(headerMenu.title).trim() : "";
+  const fallbackTitle = agreementMealType ? agreementMealType : null;
 
   return {
     date,
@@ -608,9 +606,11 @@ export function buildDayModel(ctx: DayContext) {
 
     note: dcNote ?? legacyNote ?? null,
 
-    menuTitle: picked.title ?? null,
-    menuDescription: picked.description ?? null,
-    allergens: (picked.allergens ?? []) as string[],
+    menuTitle: cmsTitle || fallbackTitle,
+    menuDescription: headerMenu?.description != null ? String(headerMenu.description) : null,
+    allergens: (headerMenu?.allergens ?? []) as string[],
+    menuImages,
+    menuImage: menuImages[0] ?? headerMenu?.imageUrl ?? null,
 
     lastSavedAt:
       hhmmFromIso(dc?.updated_at) ??
@@ -618,7 +618,7 @@ export function buildDayModel(ctx: DayContext) {
       hhmmFromIso(savedOrder?.created_at) ??
       null,
 
-    unit_price: tier ? PRICE_PER_TIER_EX_VAT[tier] : null,
+    unit_price: unitPrice,
   };
 }
 
@@ -628,7 +628,6 @@ export function buildDayModel(ctx: DayContext) {
 
 export async function GET(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const { getMenuForRange } = await import("@/lib/sanity/queries");
 
   const rid = ridFromReq(req);
 
@@ -698,7 +697,22 @@ export async function GET(req: NextRequest) {
     const fromISO = dates[0] ?? today;
     const toISO = dates[dates.length - 1] ?? today;
 
-    const menuByDate = await loadMenuByDate(getMenuForRange, fromISO, toISO);
+    const [{ data: compJsonRow }, ppBasis, ppLuxus] = await Promise.all([
+      admin.from("companies").select("agreement_json").eq("id", sc.company_id).maybeSingle(),
+      getProductPlan("basis"),
+      getProductPlan("luxus"),
+    ]);
+    const mealContract = parseMealContractFromAgreementJson((compJsonRow as any)?.agreement_json);
+    const productPlans = { BASIS: ppBasis, LUXUS: ppLuxus };
+    const mealKeys = new Set<string>();
+    for (const k of ppBasis?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
+    for (const k of ppLuxus?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
+    if (mealContract?.plan === "basis") mealKeys.add(normalizeMealTypeKey(mealContract.fixed_meal_type));
+    if (mealContract?.plan === "luxus") {
+      for (const v of Object.values(mealContract.menu_per_day)) mealKeys.add(normalizeMealTypeKey(v));
+    }
+    const menuByMealType = await getMenusByMealTypes([...mealKeys]);
+
     const ordersByDateOrResponse = await loadOrdersByDate(supabaseServer, sc, dates, rid);
     if (ordersByDateOrResponse instanceof Response) return ordersByDateOrResponse;
     const ordersByDate = ordersByDateOrResponse as Map<string, OrderRow>;
@@ -728,8 +742,10 @@ export async function GET(req: NextRequest) {
         dayTiers,
         ordersByDate,
         dayChoicesByDate,
-        menuByDate,
         agreementForChoices,
+        mealContract,
+        menuByMealType,
+        productPlans,
       })
     );
 

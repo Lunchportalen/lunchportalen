@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/sanity/weekPlanOps.ts
 import { requireSanityWrite } from "./client";
 

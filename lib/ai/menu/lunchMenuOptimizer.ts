@@ -4,7 +4,7 @@
  * Dette er ekstremt relevant for Lunchportalen.
  */
 
-import { optimizeLunchMenu } from "@/lib/ai/capabilities/optimizeLunchMenu";
+import { optimizeLunchMenu } from "@/lib/ai/engines/capabilities/optimizeLunchMenu";
 import type {
   OptimizeLunchMenuInput,
   OptimizeLunchMenuOutput,
@@ -14,7 +14,7 @@ import type {
   OfficeHabitsInput,
   CandidateDish,
   SuggestedDay,
-} from "@/lib/ai/capabilities/optimizeLunchMenu";
+} from "@/lib/ai/engines/capabilities/optimizeLunchMenu";
 
 export type {
   HistoricalOrderEntry,

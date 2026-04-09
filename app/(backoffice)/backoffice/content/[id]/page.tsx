@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
-import ContentWorkspace from "../_workspace/ContentWorkspace";
+import ContentEditor from "../_workspace/ContentEditor";
 import { isContentPageId, getPageIdBySlug } from "@/lib/cms/public/getPageIdBySlug";
 import CreateMissingPageClient from "./_components/CreateMissingPageClient";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 function getSuggestedTitleForSlug(slug: string): string {
   if (slug === "home") return "Hjem";
@@ -16,12 +19,20 @@ function getSuggestedTitleForSlug(slug: string): string {
   return `Side: ${slug}`;
 }
 
-export default async function ContentIdPage({ params }: Props) {
+export default async function ContentIdPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const sp = await searchParams;
+  const focusRaw = sp?.focusBlock;
+  const focusBlock =
+    typeof focusRaw === "string" && focusRaw.trim()
+      ? focusRaw.trim()
+      : Array.isArray(focusRaw) && typeof focusRaw[0] === "string" && focusRaw[0].trim()
+        ? focusRaw[0].trim()
+        : undefined;
 
-  // UUID: render editor directly.
+  // UUID: editor only — layout already wraps with _workspace/ContentWorkspaceHost (single tree).
   if (isContentPageId(id)) {
-    return <ContentWorkspace selectedNodeId={id} />;
+    return <ContentEditor nodeId={id} initialFocusBlockId={focusBlock} />;
   }
 
   // Slug: try to resolve to UUID and redirect.

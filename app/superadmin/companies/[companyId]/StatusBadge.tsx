@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // app/superadmin/companies/[companyId]/StatusBadge.tsx
 "use client";
 

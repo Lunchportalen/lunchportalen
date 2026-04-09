@@ -1,6 +1,14 @@
 import type { NextRequest } from "next/server";
+import {
+  type ContentTreeRootKey,
+  isContentTreeRootKey,
+} from "@/lib/cms/contentTreeRoots";
+import { withCmsPageDocumentGate } from "@/lib/cms/cmsPageDocumentGate";
+import { isLocalDevContentReserveEnabled } from "@/lib/cms/contentLocalDevReserve";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { isLocalCmsRuntimeError, moveLocalCmsTreeNode } from "@/lib/localRuntime/cmsProvider";
+import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: string } }): Response {
@@ -9,8 +17,6 @@ function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: str
   const rid = s?.ctx?.rid ?? "rid_missing";
   return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHORIZED");
 }
-
-const ROOT_KEYS = ["home", "overlays", "global", "design"] as const;
 
 async function assertNoCycle(
   supabase: ReturnType<typeof supabaseAdmin>,
@@ -75,8 +81,8 @@ export async function POST(request: NextRequest) {
     : typeof body?.parent_page_id === "string" ? body.parent_page_id.trim() : null;
   const rootKeyRaw = body?.root_key;
   const rootKey =
-    typeof rootKeyRaw === "string" && ROOT_KEYS.includes(rootKeyRaw as (typeof ROOT_KEYS)[number])
-      ? (rootKeyRaw as (typeof ROOT_KEYS)[number])
+    typeof rootKeyRaw === "string" && isContentTreeRootKey(rootKeyRaw.trim())
+      ? (rootKeyRaw.trim() as ContentTreeRootKey)
       : null;
   const sortOrder = typeof body?.sort_order === "number" && Number.isFinite(body.sort_order)
     ? body.sort_order
@@ -99,7 +105,27 @@ export async function POST(request: NextRequest) {
     return jsonErr(ctx.rid, "Når parent_page_id er satt skal root_key ikke angis.", 400, "BAD_REQUEST");
   }
 
+  return withCmsPageDocumentGate("api/backoffice/content/tree/move/POST", async () => {
   try {
+    if (isLocalCmsRuntimeEnabled()) {
+      const page = moveLocalCmsTreeNode({
+        pageId,
+        parentPageId,
+        rootKey,
+        sortOrder: sortOrderSafe,
+      });
+      return jsonOk(ctx.rid, { ok: true, page }, 200);
+    }
+
+    if (isLocalDevContentReserveEnabled()) {
+      return jsonErr(
+        ctx.rid,
+        "Lokal content-reserve er skrivebeskyttet. Flytting i treet er blokkert i reserve-modus.",
+        503,
+        "LOCAL_DEV_CONTENT_RESERVE_READONLY",
+      );
+    }
+
     const supabase = supabaseAdmin();
 
     if (mustUseParent && parentPageId) {
@@ -133,7 +159,11 @@ export async function POST(request: NextRequest) {
 
     return jsonOk(ctx.rid, { ok: true, page: data }, 200);
   } catch (e) {
+    if (isLocalCmsRuntimeError(e)) {
+      return jsonErr(ctx.rid, e.message, e.status, e.code, e.detail);
+    }
     const msg = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(ctx.rid, msg, 500, "SERVER_ERROR", { detail: String(e) });
   }
+  });
 }

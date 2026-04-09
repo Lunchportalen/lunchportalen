@@ -9,6 +9,7 @@ import crypto from "node:crypto";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { auditAdmin } from "@/lib/audit/actions";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 
 function safeUUID(v: unknown) {
   const s = String(v ?? "").trim();
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     const token = crypto.randomBytes(32).toString("hex");
     const token_hash = sha256Hex(token);
-    const link = `${appUrl}/accept-invite?token=${encodeURIComponent(token)}`;
+    const link = buildEmployeeInviteUrl(appUrl, token);
     const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
 
     const upd = await admin

@@ -42,19 +42,24 @@ export function HeroBlockEditor({
 }: HeroBlockEditorProps) {
   const [fetchAltLoading, setFetchAltLoading] = useState(false);
   const [fetchAltError, setFetchAltError] = useState<string | null>(null);
+  const c = block.contentData;
 
   async function handleFetchAltFromArchive() {
-    if (!block.mediaItemId || !onFetchAltFromArchive) return;
+    if (!c.mediaItemId || !onFetchAltFromArchive) return;
     setFetchAltLoading(true);
     setFetchAltError(null);
     try {
-      const result = await onFetchAltFromArchive(block.mediaItemId);
+      const result = await onFetchAltFromArchive(c.mediaItemId);
       if (result.ok === false) {
         setFetchAltError(result.error);
         return;
       }
-      if (result.alt) onChange({ ...block, imageAlt: result.alt });
-      else setFetchAltError("Ingen alt-tekst i mediearkivet for dette bildet.");
+      if (result.alt) {
+        onChange({
+          ...block,
+          contentData: { ...block.contentData, imageAlt: result.alt },
+        });
+      } else setFetchAltError("Ingen alt-tekst i mediearkivet for dette bildet.");
     } catch (e) {
       setFetchAltError(e instanceof Error ? e.message : "Kunne ikke hente fra mediearkiv.");
     } finally {
@@ -62,7 +67,7 @@ export function HeroBlockEditor({
     }
   }
 
-  const hasMediaRefNoUrl = Boolean((block.mediaItemId ?? "").trim() && !(block.imageUrl ?? "").trim());
+  const hasMediaRefNoUrl = Boolean((c.mediaItemId ?? "").trim() && !(c.imageId ?? "").trim());
 
   return (
     <div className="grid gap-2">
@@ -72,12 +77,17 @@ export function HeroBlockEditor({
         </p>
       ) : null}
       <label className="grid gap-1 text-sm">
-        <span className="text-[rgb(var(--lp-muted))]">Bilde (URL)</span>
+        <span className="text-[rgb(var(--lp-muted))]">Bilde (ID / URL)</span>
         <div className="flex gap-2">
           <input
-            value={block.imageUrl || ""}
-            onChange={(e) => onChange({ ...block, imageUrl: e.target.value })}
-            placeholder="https://... eller /path/til/bilde.jpg"
+            value={c.imageId || ""}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                contentData: { ...block.contentData, imageId: e.target.value },
+              })
+            }
+            placeholder="cms:*, media-ID, https://… eller /sti"
             className="h-10 flex-1 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
           />
           <button
@@ -89,16 +99,21 @@ export function HeroBlockEditor({
           </button>
         </div>
       </label>
-      {block.imageUrl ? (
+      {c.imageId ? (
         <label className="grid gap-1 text-sm">
           <span className="text-[rgb(var(--lp-muted))]">Bilde alt-tekst</span>
           <input
-            value={block.imageAlt || ""}
-            onChange={(e) => onChange({ ...block, imageAlt: e.target.value })}
+            value={c.imageAlt || ""}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                contentData: { ...block.contentData, imageAlt: e.target.value },
+              })
+            }
             placeholder="Beskriv bildet for tilgjengelighet"
             className="h-10 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
           />
-          {block.mediaItemId && onFetchAltFromArchive ? (
+          {c.mediaItemId && onFetchAltFromArchive ? (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -172,16 +187,26 @@ export function HeroBlockEditor({
           )}
         </div>
         <input
-          value={block.title}
-          onChange={(e) => onChange({ ...block, title: e.target.value })}
+          value={c.title}
+          onChange={(e) =>
+            onChange({
+              ...block,
+              contentData: { ...block.contentData, title: e.target.value },
+            })
+          }
           className="h-10 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
         />
       </label>
       <label className="grid gap-1 text-sm">
         <span className="text-[rgb(var(--lp-muted))]">Undertittel</span>
         <input
-          value={block.subtitle || ""}
-          onChange={(e) => onChange({ ...block, subtitle: e.target.value })}
+          value={c.subtitle || ""}
+          onChange={(e) =>
+            onChange({
+              ...block,
+              contentData: { ...block.contentData, subtitle: e.target.value },
+            })
+          }
           className="h-10 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
         />
       </label>
@@ -201,16 +226,26 @@ export function HeroBlockEditor({
             )}
           </div>
           <input
-            value={block.ctaLabel || ""}
-            onChange={(e) => onChange({ ...block, ctaLabel: e.target.value })}
+            value={c.ctaLabel || ""}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                contentData: { ...block.contentData, ctaLabel: e.target.value },
+              })
+            }
             className="h-10 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
           />
         </label>
         <label className="grid gap-1 text-sm">
           <span className="text-[rgb(var(--lp-muted))]">CTA-lenke</span>
           <input
-            value={block.ctaHref || ""}
-            onChange={(e) => onChange({ ...block, ctaHref: e.target.value })}
+            value={c.ctaHref || ""}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                contentData: { ...block.contentData, ctaHref: e.target.value },
+              })
+            }
             placeholder="https://..."
             className="h-10 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
           />

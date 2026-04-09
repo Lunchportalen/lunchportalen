@@ -1,7 +1,9 @@
 // lib/supabase/route.ts
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextResponse } from "next/server";
 import { getSupabasePublicConfig } from "@/lib/config/env";
+import type { Database } from "@/lib/types/database";
 
 type CookieKV = { name: string; value: string };
 
@@ -22,14 +24,14 @@ function parseCookieHeader(header: string | null): CookieKV[] {
 }
 
 /**
- * Støtter:
- * - supabaseRoute(res)
- * - supabaseRoute(req, res)
+ * Prefer `supabaseRoute(req, res)` so the client reads the incoming `Cookie` header.
+ * `supabaseRoute(res)` alone yields an empty jar (legacy / special cases only).
  */
-export function supabaseRoute(res: NextResponse): ReturnType<typeof createServerClient>;
-export function supabaseRoute(req: Request, res: NextResponse): ReturnType<typeof createServerClient>;
+export function supabaseRoute(res: NextResponse): SupabaseClient<Database>;
+export function supabaseRoute(req: Request, res: NextResponse): SupabaseClient<Database>;
 export function supabaseRoute(a: Request | NextResponse, b?: NextResponse) {
-  const hasReq = typeof (a as Request).headers?.get === "function";
+  // `NextResponse` also has `headers.get` — distinguish with `instanceof Request` (includes `NextRequest`).
+  const hasReq = a instanceof Request;
 
   const req: Request | null = hasReq ? (a as Request) : null;
   const res: NextResponse | null = hasReq ? (b ?? null) : (a as NextResponse);
@@ -37,7 +39,7 @@ export function supabaseRoute(a: Request | NextResponse, b?: NextResponse) {
   const cookiesFromReq = req ? parseCookieHeader(req.headers.get("cookie")) : [];
   const { url, anonKey } = getSupabasePublicConfig();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookiesFromReq;

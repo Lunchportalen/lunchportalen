@@ -9,7 +9,11 @@ import { requireRule } from "@/lib/agreement/requireRule";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { assertBeforeCutoffForDeliveryDate } from "@/lib/cutoff";
-import { lpOrderCancel } from "@/lib/orders/rpcWrite";
+import {
+  agreementRuleSlotForOrderTableSlot,
+  lpOrderCancel,
+  normalizeOrderTableSlot,
+} from "@/lib/orders/rpcWrite";
 
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -180,7 +184,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       return jsonErr(r, "Du kan kun avbestille egen ordre.", 403, { code: "forbidden", detail: { orderUserId: order.user_id } });
     }
 
-    const slotVal = String((order as any)?.slot ?? "").trim() || "lunch";
+    const orderSlot = normalizeOrderTableSlot((order as any)?.slot);
+    const ruleSlot = agreementRuleSlotForOrderTableSlot((order as any)?.slot);
     const dayKey = weekdayKeyOslo(order.date);
     if (!dayKey) {
       return jsonErr(r, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: order.date } });
@@ -193,7 +198,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
     } catch {
       return jsonErr(r, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
     }
-    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: slotVal, rid: r });
+    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: ruleSlot, rid: r });
     if (!ruleRes.ok) {
       const err = ruleRes as { status: number; error: string; message: string };
       return jsonErr(r, err.message, err.status ?? 400, err.error);
@@ -226,7 +231,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
     // Cancel = UPDATE status (ikke DELETE)
     // Fasit: ACTIVE/CANCELLED
     // -----------------------------
-    const cancelRes = await lpOrderCancel(sb as any, { p_date: order.date });
+    const cancelRes = await lpOrderCancel(sb as any, { p_date: order.date, p_slot: orderSlot });
     if (!cancelRes.ok) {
       logApiError("PATCH /api/orders/[id]/cancel rpc failed", cancelRes.error, { rid: r, orderId, date: order.date });
       return jsonErr(r, "Kunne ikke avbestille ordre.", 500, {

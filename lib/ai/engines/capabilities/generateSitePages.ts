@@ -7,8 +7,8 @@
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 import { buildPageFromPrompt } from "./buildPageFromPrompt";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateSitePages";
 

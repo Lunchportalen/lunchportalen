@@ -412,6 +412,26 @@ export async function GET(req: NextRequest) {
 
   const companies = buildCompanies(companyId, companyRow, locationName);
 
+  let bindingMonths: number | null = null;
+  let noticeMonths: number | null = null;
+  if (agreementRow?.id) {
+    try {
+      const { data: termRow } = await admin
+        .from("agreements")
+        .select("binding_months, notice_months")
+        .eq("id", agreementRow.id)
+        .maybeSingle();
+      if (termRow) {
+        const bm = Number((termRow as any).binding_months);
+        const nm = Number((termRow as any).notice_months);
+        bindingMonths = Number.isFinite(bm) && bm > 0 ? bm : null;
+        noticeMonths = Number.isFinite(nm) && nm > 0 ? nm : null;
+      }
+    } catch {
+      // best-effort only
+    }
+  }
+
   const data: AgreementPageData = {
     rid: ctx.rid,
     company: companies[0],
@@ -428,6 +448,7 @@ export async function GET(req: NextRequest) {
       endDate: agreementRow?.end_date ?? null,
       remainingDays: agreementRow?.end_date ? remainingDays(todayISO, String(agreementRow.end_date)) : null,
     },
+    terms: { bindingMonths, noticeMonths },
     weekPlan,
     metrics: {
       employeesTotal,

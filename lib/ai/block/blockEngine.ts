@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI BLOCK ENGINE
  * Genererer og optimaliserer: CMS-blokker, komponenter.
@@ -6,26 +8,26 @@
  */
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
-import { generateBlock } from "@/lib/ai/capabilities/generateBlock";
-import type { GenerateBlockInput } from "@/lib/ai/capabilities/generateBlock";
-import { optimizeBlockForConversion } from "@/lib/ai/capabilities/optimizeBlockForConversion";
+import { generateBlock } from "@/lib/ai/engines/capabilities/generateBlock";
+import type { GenerateBlockInput } from "@/lib/ai/engines/capabilities/generateBlock";
+import { optimizeBlockForConversion } from "@/lib/ai/engines/capabilities/optimizeBlockForConversion";
 import type {
   OptimizeBlockForConversionInput,
   OptimizeBlockForConversionOutput,
   OptimizeBlockForConversionBlockInput,
-} from "@/lib/ai/capabilities/optimizeBlockForConversion";
-import { suggestComponents } from "@/lib/ai/capabilities/suggestComponents";
+} from "@/lib/ai/engines/capabilities/optimizeBlockForConversion";
+import { suggestComponents } from "@/lib/ai/engines/capabilities/suggestComponents";
 import type {
   SuggestComponentsInput,
   SuggestComponentsOutput,
   ComponentSuggestion,
-} from "@/lib/ai/capabilities/suggestComponents";
-import { generateUIComponents } from "@/lib/ai/capabilities/generateUIComponents";
+} from "@/lib/ai/engines/capabilities/suggestComponents";
+import { generateUIComponents } from "@/lib/ai/engines/capabilities/generateUIComponents";
 import type {
   GenerateUIComponentsInput,
   GenerateUIComponentsOutput,
   GeneratedUIComponent,
-} from "@/lib/ai/capabilities/generateUIComponents";
+} from "@/lib/ai/engines/capabilities/generateUIComponents";
 
 export type { GenerateBlockInput, OptimizeBlockForConversionBlockInput, ComponentSuggestion, GeneratedUIComponent };
 

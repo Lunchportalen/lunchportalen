@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/superadmin/paging.ts
 export type CompaniesCursor = {
   created_at: string;

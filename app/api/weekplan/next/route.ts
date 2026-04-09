@@ -27,27 +27,31 @@ function todayOsloISODate() {
 }
 
 /* =========================================================
-   GET /api/weekplan/next
-   - Returnerer neste uke KUN når status === "open"
-   - UI viser ikke "Neste uke" før torsdag 08:00
+   GET /api/weekplan/next — DEPRECATED
+   Bruk GET /api/week?weekOffset=1 (menuContent + avtale).
 ========================================================= */
 export async function GET() {
   const rid = makeRid();
 
   try {
-    const { fetchNextOpenWeekPlan } = await import("@/lib/sanity/weekplan");
     const today = todayOsloISODate();
 
-    // Henter KUN weekPlan med status "open"
-    // (systemet åpner denne torsdag 08:00)
-    const plan = await fetchNextOpenWeekPlan(today);
-
-    if (!plan) {
-      // Ingen åpen neste uke ennå → helt forventet før torsdag 08:00
-      return jsonOk(rid, { ok: true, today, plan: null }, 200);
-    }
-
-    return jsonOk(rid, { ok: true, today, plan }, 200);
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        today,
+        plan: null,
+        deprecated: true,
+        successor: "/api/week?weekOffset=1",
+        message: "Sanity weekPlan er ikke lenger operativ employee-kilde.",
+      },
+      200,
+      {
+        Deprecation: "true",
+        Link: '</api/week?weekOffset=1>; rel="successor-version"',
+      }
+    );
   } catch (e: any) {
     return jsonErr(rid, "Kunne ikke hente neste uke.", 500, { code: "WEEKPLAN_NEXT_FAILED", detail: {
       message: String(e?.message ?? e),

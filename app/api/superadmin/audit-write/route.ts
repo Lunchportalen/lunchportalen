@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
@@ -107,8 +107,7 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
     }
 
-    // ✅ Hard superadmin-fasit på e-post (ikke metadata)
-    if (!isSuperadminEmail(actor.email)) {
+    if (!(await isSuperadminProfile(actor.id))) {
       return jsonErr(rid, "Krever superadmin.", 403, "FORBIDDEN");
     }
 

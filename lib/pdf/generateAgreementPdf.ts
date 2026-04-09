@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/pdf/generateAgreementPdf.ts
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 

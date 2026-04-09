@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI MARKETING ENGINE
  * Genererer: annonser, e-poster, sosiale innlegg.
@@ -5,30 +7,30 @@
  * Kun generering/spec; ingen publisering eller mutasjon.
  */
 
-import { generateCampaign } from "@/lib/ai/capabilities/generateCampaign";
+import { generateCampaign } from "@/lib/ai/engines/capabilities/generateCampaign";
 import type {
   GenerateCampaignInput,
   GenerateCampaignOutput,
   CampaignPhase,
   CampaignKpi,
-} from "@/lib/ai/capabilities/generateCampaign";
-import { optimizeAdCopy } from "@/lib/ai/capabilities/optimizeAdCopy";
+} from "@/lib/ai/engines/capabilities/generateCampaign";
+import { optimizeAdCopy } from "@/lib/ai/engines/capabilities/optimizeAdCopy";
 import type {
   OptimizeAdCopyInput,
   OptimizeAdCopyOutput,
   CharacterCount,
-} from "@/lib/ai/capabilities/optimizeAdCopy";
-import { generateEmailSequence } from "@/lib/ai/capabilities/generateEmailSequence";
+} from "@/lib/ai/engines/capabilities/optimizeAdCopy";
+import { generateEmailSequence } from "@/lib/ai/engines/capabilities/generateEmailSequence";
 import type {
   GenerateEmailSequenceInput,
   GenerateEmailSequenceOutput,
   EmailInSequence,
-} from "@/lib/ai/capabilities/generateEmailSequence";
-import { generateSocialPosts } from "@/lib/ai/capabilities/generateSocialPosts";
+} from "@/lib/ai/engines/capabilities/generateEmailSequence";
+import { generateSocialPosts } from "@/lib/ai/engines/capabilities/generateSocialPosts";
 import type {
   GenerateSocialPostsInput,
   GenerateSocialPostsOutput,
-} from "@/lib/ai/capabilities/generateSocialPosts";
+} from "@/lib/ai/engines/capabilities/generateSocialPosts";
 
 export type { CampaignPhase, CampaignKpi, CharacterCount, EmailInSequence };
 

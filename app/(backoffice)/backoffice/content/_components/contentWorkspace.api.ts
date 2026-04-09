@@ -1,6 +1,6 @@
 /**
- * API response types and response-reading helpers for ContentWorkspace.
- * No React, no hooks.
+ * Locked API envelope helpers for backoffice content PATCH/GET JSON responses.
+ * Single transport contract: `{ ok, rid, data }` / `{ ok: false, rid, ... }`.
  */
 
 import { safeStr } from "./contentWorkspace.helpers";
@@ -54,5 +54,17 @@ export async function parseJsonSafe<T>(res: Response): Promise<ApiResponse<T> | 
     return (await res.json()) as ApiResponse<T>;
   } catch {
     return null;
+  }
+}
+
+/** Trace API responses: jsonOk/jsonErr both include `rid`. */
+export function logApiRidFromBody(data: unknown): void {
+  if (!data || typeof data !== "object") return;
+  const rid = (data as { rid?: unknown }).rid;
+  if (typeof rid === "string" && rid.length > 0) {
+    if (process.env.NODE_ENV !== "production") {
+      const { log } = console;
+      log("[RID]", rid);
+    }
   }
 }

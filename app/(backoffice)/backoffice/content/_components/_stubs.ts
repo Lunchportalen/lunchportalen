@@ -16,7 +16,6 @@ export { parseBodyEnvelope, serializeBodyEnvelope } from "./bodyEnvelope";
 export { documentTypes, getDocType } from "./documentTypes";
 
 // Block editor compatibility exports (used by ContentWorkspace).
-export { BlockAddModal } from "./BlockAddModal";
 export { BlockEditModal } from "./BlockEditModal";
 export { MediaPickerModal } from "./MediaPickerModal";
 export { validateModel } from "./blockValidation";

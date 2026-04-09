@@ -247,6 +247,31 @@ export function ContentAiTools({
   const pageBuilderBusyId = pageBuilderBusy ?? busyToolId === "page.builder";
 
   const allDisabled = disabled ?? false;
+  const aiUnavailable = aiCapabilityStatus === "unavailable";
+  const canShowDiagnostics = Boolean(onRunDiagnostics || diagnosticsResult);
+  const canShowPageBuilder = Boolean(onPageBuilder || lastPageBuilderResult);
+  const canShowBlockBuilder = Boolean(onBlockBuilder || lastBlockBuilderResult);
+  const canShowImageGenerator = Boolean(onImageGenerate || lastGeneratedImageResult);
+  const canShowScreenshotBuilder = Boolean(onScreenshotBuilder || lastScreenshotBuilderResult);
+
+  const isToolVisible = (toolId: string) => {
+    switch (toolId) {
+      case "improvePage":
+        return Boolean(onImprovePage) && !aiUnavailable;
+      case "seoOptimize":
+        return Boolean(onSeoOptimize) && !aiUnavailable;
+      case "generateSections":
+        return Boolean(onGenerateSections) && !aiUnavailable;
+      case "structuredIntent":
+        return Boolean(onStructuredIntent) && !aiUnavailable;
+      case "layoutDesign":
+        return Boolean(onLayoutSuggestions) && !aiUnavailable;
+      case "imageMetadata":
+        return Boolean(onImageImproveMetadata) && !aiUnavailable;
+      default:
+        return false;
+    }
+  };
 
   // Block type → ordered group ids (UI-only prioritization).
   const BLOCK_TYPE_GROUP_ORDER: Record<string, string[]> = {
@@ -322,6 +347,30 @@ export function ContentAiTools({
 
   const orderedGroupIds =
     BLOCK_TYPE_GROUP_ORDER[focusType] ?? DEFAULT_GROUP_ORDER;
+  const seenToolIds = new Set<string>();
+  const visibleGroups = orderedGroupIds
+    .map((groupId) => {
+      const config = GROUP_CONFIG[groupId];
+      if (!config) return null;
+      const visibleToolIds = config.toolIds.filter((toolId) => {
+        if (!isToolVisible(toolId) || seenToolIds.has(toolId)) {
+          return false;
+        }
+        seenToolIds.add(toolId);
+        return true;
+      });
+      if (visibleToolIds.length === 0) return null;
+      return { groupId, config, visibleToolIds };
+    })
+    .filter(
+      (
+        group,
+      ): group is {
+        groupId: string;
+        config: { title: string; helper: string; toolIds: string[] };
+        visibleToolIds: string[];
+      } => group !== null,
+    );
 
   return (
     <section
@@ -524,67 +573,69 @@ export function ContentAiTools({
       </div>
 
       {/* Samlet sidediagnostikk */}
-      <div className="mb-4 rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
-        <h4 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Diagnostikk</h4>
-        <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
-          Kjør Improve page og SEO optimize og se samlet resultat.
-        </p>
-        {diagnosticsResult ? (
-          <div className="mt-3 space-y-3 border-t border-[rgb(var(--lp-border))] pt-3">
-            <div className="grid gap-2 text-xs">
-              <div className="flex items-start gap-2 rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 px-3 py-2">
-                <span className="shrink-0 text-[rgb(var(--lp-text))]" aria-hidden>
-                  {diagnosticsResult.improvePage.applied ? (
-                    <Icon name="success" size="sm" className="text-[rgb(var(--lp-success))]" />
-                  ) : (
-                    <Icon name="warning" size="sm" className="text-amber-600" />
-                  )}
-                </span>
-                <div>
-                  <p className="font-medium text-[rgb(var(--lp-text))]">Struktur / Innhold</p>
-                  <p className="mt-0.5 text-[rgb(var(--lp-muted))]">
-                    {diagnosticsResult.improvePage.summary || "Ingen oppsummering."}
-                  </p>
-                  <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                    {diagnosticsResult.improvePage.applied
-                      ? "✔ Endringer applisert i editoren. Lagre for å beholde."
-                      : "⚠ Vurder forslag manuelt."}
-                  </p>
+      {canShowDiagnostics && !aiUnavailable ? (
+        <div className="mb-4 rounded-xl border border-[rgb(var(--lp-border))] bg-white p-4">
+          <h4 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Diagnostikk</h4>
+          <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
+            Kjør Improve page og SEO optimize og se samlet resultat.
+          </p>
+          {diagnosticsResult ? (
+            <div className="mt-3 space-y-3 border-t border-[rgb(var(--lp-border))] pt-3">
+              <div className="grid gap-2 text-xs">
+                <div className="flex items-start gap-2 rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 px-3 py-2">
+                  <span className="shrink-0 text-[rgb(var(--lp-text))]" aria-hidden>
+                    {diagnosticsResult.improvePage.applied ? (
+                      <Icon name="success" size="sm" className="text-[rgb(var(--lp-success))]" />
+                    ) : (
+                      <Icon name="warning" size="sm" className="text-amber-600" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="font-medium text-[rgb(var(--lp-text))]">Struktur / Innhold</p>
+                    <p className="mt-0.5 text-[rgb(var(--lp-muted))]">
+                      {diagnosticsResult.improvePage.summary || "Ingen oppsummering."}
+                    </p>
+                    <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                      {diagnosticsResult.improvePage.applied
+                        ? "✔ Endringer applisert i editoren. Lagre for å beholde."
+                        : "⚠ Vurder forslag manuelt."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-2 rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 px-3 py-2">
-                <span className="shrink-0 text-[rgb(var(--lp-text))]" aria-hidden>
-                  {diagnosticsResult.seo.applied ? (
-                    <Icon name="success" size="sm" className="text-[rgb(var(--lp-success))]" />
-                  ) : (
-                    <Icon name="warning" size="sm" className="text-amber-600" />
-                  )}
-                </span>
-                <div>
-                  <p className="font-medium text-[rgb(var(--lp-text))]">SEO</p>
-                  <p className="mt-0.5 text-[rgb(var(--lp-muted))]">
-                    {diagnosticsResult.seo.summary || "Ingen oppsummering."}
-                  </p>
-                  <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                    {diagnosticsResult.seo.applied
-                      ? "✔ Endringer applisert i editoren. Lagre for å beholde."
-                      : "⚠ Vurder forslag manuelt."}
-                  </p>
+                <div className="flex items-start gap-2 rounded border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/50 px-3 py-2">
+                  <span className="shrink-0 text-[rgb(var(--lp-text))]" aria-hidden>
+                    {diagnosticsResult.seo.applied ? (
+                      <Icon name="success" size="sm" className="text-[rgb(var(--lp-success))]" />
+                    ) : (
+                      <Icon name="warning" size="sm" className="text-amber-600" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="font-medium text-[rgb(var(--lp-text))]">SEO</p>
+                    <p className="mt-0.5 text-[rgb(var(--lp-muted))]">
+                      {diagnosticsResult.seo.summary || "Ingen oppsummering."}
+                    </p>
+                    <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                      {diagnosticsResult.seo.applied
+                        ? "✔ Endringer applisert i editoren. Lagre for å beholde."
+                        : "⚠ Vurder forslag manuelt."}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="mt-3 inline-flex items-center justify-center rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-xs font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
-            disabled={allDisabled || !onRunDiagnostics || diagnosticsBusy}
-            onClick={() => void onRunDiagnostics?.()}
-          >
-            {diagnosticsBusy ? "Kjører sidediagnostikk…" : "Kjør sidediagnostikk"}
-          </button>
-        )}
-      </div>
+          ) : (
+            <button
+              type="button"
+              className="mt-3 inline-flex items-center justify-center rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-xs font-medium text-[rgb(var(--lp-text))] disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
+              disabled={allDisabled || !onRunDiagnostics || diagnosticsBusy}
+              onClick={() => void onRunDiagnostics?.()}
+            >
+              {diagnosticsBusy ? "Kjører sidediagnostikk…" : "Kjør sidediagnostikk"}
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {/* Siste AI-handlinger */}
       {aiHistory.length > 0 ? (
@@ -606,9 +657,7 @@ export function ContentAiTools({
       ) : null}
 
       {/* Block-aware AI groups */}
-      {orderedGroupIds.map((groupId, i) => {
-        const config = GROUP_CONFIG[groupId];
-        if (!config) return null;
+      {visibleGroups.map(({ groupId, config, visibleToolIds }, i) => {
         const isFirst = i === 0;
         return (
           <div
@@ -627,7 +676,7 @@ export function ContentAiTools({
             <h4 className="text-sm font-semibold text-[rgb(var(--lp-text))]">{config.title}</h4>
             <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{config.helper}</p>
             <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              {config.toolIds.map((toolId) => (
+              {visibleToolIds.map((toolId) => (
                 <Fragment key={toolId}>
                   {toolId === "improvePage" && (
                     <div className={cardClass}>
@@ -666,6 +715,8 @@ export function ContentAiTools({
                       <button
                         type="button"
                         className={buttonClass}
+                        aria-label="Kjør forbedringsforslag"
+                        data-lp-editor-ai-improve="1"
                         disabled={allDisabled || !onImprovePage || improveBusy}
                         onClick={() =>
                           onImprovePage?.({
@@ -931,12 +982,14 @@ export function ContentAiTools({
         );
       })}
 
-      <div className="mb-4">
-        <h4 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Flere verktøy</h4>
-        <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
-          Sidegenerering, blokk-bygger, bilde og referanse.
-        </p>
-        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+      {!aiUnavailable && (canShowPageBuilder || canShowBlockBuilder || canShowImageGenerator || canShowScreenshotBuilder) ? (
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Flere verktøy</h4>
+          <p className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
+            Sidegenerering, blokk-bygger, bilde og referanse.
+          </p>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        {canShowPageBuilder ? (
         <div className={cardClass}>
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium text-[rgb(var(--lp-text))]">AI Page Composer</p>
@@ -1116,26 +1169,34 @@ export function ContentAiTools({
               <p className="text-xs text-[rgb(var(--lp-muted))]">
                 Erstatt alle nåværende blokker eller legg til under. Forstå resultatet før du klikker.
               </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={buttonClass}
-                  onClick={() => onPageBuilderReplace?.()}
-                >
-                  Erstatt innhold
-                </button>
-                <button
-                  type="button"
-                  className={buttonClass}
-                  onClick={() => onPageBuilderAppend?.()}
-                >
-                  Legg til under
-                </button>
-              </div>
+              {onPageBuilderReplace || onPageBuilderAppend ? (
+                <div className="flex flex-wrap gap-2">
+                  {onPageBuilderReplace ? (
+                    <button
+                      type="button"
+                      className={buttonClass}
+                      onClick={() => onPageBuilderReplace()}
+                    >
+                      Erstatt innhold
+                    </button>
+                  ) : null}
+                  {onPageBuilderAppend ? (
+                    <button
+                      type="button"
+                      className={buttonClass}
+                      onClick={() => onPageBuilderAppend()}
+                    >
+                      Legg til under
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
+        ) : null}
 
+        {canShowBlockBuilder ? (
         <div className={cardClass}>
           <p className="text-sm font-medium text-[rgb(var(--lp-text))]">AI Block Builder</p>
           <p className="text-xs text-[rgb(var(--lp-muted))]">
@@ -1165,12 +1226,12 @@ export function ContentAiTools({
           >
             {blockBuilderBusy ? "Kjører…" : "Bygg blokk"}
           </button>
-          {lastBlockBuilderResult && (
+          {lastBlockBuilderResult && onBlockBuilderInsert ? (
             <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[rgb(var(--lp-border))] pt-2">
               <button
                 type="button"
                 className={buttonClass}
-                onClick={() => onBlockBuilderInsert?.()}
+                onClick={() => onBlockBuilderInsert()}
               >
                 Sett inn blokk
               </button>
@@ -1180,9 +1241,11 @@ export function ContentAiTools({
                   : "blokk"}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
+        ) : null}
 
+        {canShowImageGenerator ? (
         <div className={cardClass}>
           <p className="text-sm font-medium text-[rgb(var(--lp-text))]">AI Image Generator</p>
           <p className="text-xs text-[rgb(var(--lp-muted))]">
@@ -1254,7 +1317,9 @@ export function ContentAiTools({
             Foreslår merkesikre bilde-prompter. Bruk dem i et bildeverktøy og last opp til mediearkiv.
           </p>
         </div>
+        ) : null}
 
+        {canShowScreenshotBuilder ? (
         <div className={cardClass}>
           <p className="text-sm font-medium text-[rgb(var(--lp-text))]">Screenshot / referanse → blokker</p>
           <p className="text-xs text-[rgb(var(--lp-muted))]">
@@ -1330,28 +1395,36 @@ export function ContentAiTools({
               <p className="text-xs text-[rgb(var(--lp-muted))]">
                 Lunchportalen bruker blokkbasert struktur. Elementer som ikke passer i blokkmodellen blir droppet.
               </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={buttonClass}
-                  onClick={() => onScreenshotBuilderReplace?.()}
-                >
-                  Erstatt innhold
-                </button>
-                <button
-                  type="button"
-                  className={buttonClass}
-                  onClick={() => onScreenshotBuilderAppend?.()}
-                >
-                  Legg til under
-                </button>
-              </div>
+              {onScreenshotBuilderReplace || onScreenshotBuilderAppend ? (
+                <div className="flex flex-wrap gap-2">
+                  {onScreenshotBuilderReplace ? (
+                    <button
+                      type="button"
+                      className={buttonClass}
+                      onClick={() => onScreenshotBuilderReplace()}
+                    >
+                      Erstatt innhold
+                    </button>
+                  ) : null}
+                  {onScreenshotBuilderAppend ? (
+                    <button
+                      type="button"
+                      className={buttonClass}
+                      onClick={() => onScreenshotBuilderAppend()}
+                    >
+                      Legg til under
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
+        ) : null}
 
       </div>
       </div>
+      ) : null}
     </section>
   );
 }

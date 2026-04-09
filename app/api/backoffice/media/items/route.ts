@@ -13,6 +13,7 @@ import {
   MEDIA_TAGS_MAX_COUNT,
   MEDIA_TAG_MAX_LEN,
 } from "@/lib/media/validation";
+import { normalizeVariantsMap } from "@/lib/media/variantResolution";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -162,10 +163,19 @@ export async function POST(request: NextRequest) {
   const width = typeof o.width === "number" && Number.isFinite(o.width) ? o.width : null;
   const height = typeof o.height === "number" && Number.isFinite(o.height) ? o.height : null;
   const mime_type = typeof o.mime_type === "string" ? o.mime_type.trim() || null : null;
-  const metadata =
+  const metadataBase =
     o.metadata !== null && typeof o.metadata === "object"
-      ? (o.metadata as Record<string, unknown>)
+      ? ({ ...(o.metadata as Record<string, unknown>) } as Record<string, unknown>)
       : {};
+  const displayNameTop =
+    typeof o.displayName === "string" ? o.displayName.trim().slice(0, 120) : "";
+  if (displayNameTop) metadataBase.displayName = displayNameTop;
+  if (metadataBase.variants !== undefined) {
+    const nv = normalizeVariantsMap(metadataBase.variants);
+    if (nv) metadataBase.variants = nv;
+    else delete metadataBase.variants;
+  }
+  const metadata = metadataBase;
 
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/admin");

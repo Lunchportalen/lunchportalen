@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ParsedDesignSettings } from "@/lib/cms/design/designContract";
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 import type { OverlaySlotId } from "@/lib/cms/overlays/slots";
 import { isOverlaySlotId, isAllowedOverlayBlockType } from "@/lib/cms/overlays/slots";
@@ -11,7 +12,8 @@ export function renderOverlaySlot(
   blocks: BlockNode[],
   slotId: OverlaySlotId,
   env: Env = "prod",
-  locale: Locale = "nb"
+  locale: Locale = "nb",
+  designSettings?: ParsedDesignSettings | null,
 ): ReactNode {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
   const filtered = blocks.filter((block) => {
@@ -24,7 +26,7 @@ export function renderOverlaySlot(
     <>
       {filtered.map((block) => (
         <div key={block.id} className="mb-4">
-          {renderBlock(block, env, locale)}
+          {renderBlock(block, env, locale, { designSettings })}
         </div>
       ))}
     </>

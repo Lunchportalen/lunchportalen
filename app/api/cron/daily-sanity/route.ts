@@ -11,20 +11,11 @@ import { opsLog } from "@/lib/ops/log";
 import { systemRoleByEmail } from "@/lib/system/emails";
 import { requireCronAuth as requireCronAuthShared } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+import type { Role } from "@/lib/auth/role";
+import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
-}
-
-function normalizeRole(v: unknown): Role {
-  const s = safeStr(v).toLowerCase();
-  if (s === "superadmin") return "superadmin";
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "kitchen" || s === "kjokken") return "kitchen";
-  if (s === "driver" || s === "sjafor") return "driver";
-  return "employee";
 }
 
 function roleByEmail(email: string | null | undefined): Role | null {
@@ -114,7 +105,7 @@ async function allowSuperadminOrCron(
       return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN") };
     }
 
-    const role = normalizeRole(profile?.role);
+    const role = normalizeRoleDefaultEmployee(profile?.role);
     if (role !== "superadmin") {
       return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN") };
     }

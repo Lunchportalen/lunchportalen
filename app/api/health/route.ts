@@ -7,6 +7,7 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isAfterCutoff0800, osloTodayISODate } from "@/lib/date/oslo";
 import { validateSystemRuntimeEnv } from "@/lib/env/system";
+import { getCmsRuntimeStatus } from "@/lib/localRuntime/runtime";
 
 function versionFromEnv() {
   return (
@@ -22,13 +23,16 @@ export async function GET() {
   const rid = makeRid();
   const ts = new Date().toISOString();
   const version = versionFromEnv();
+  const cmsRuntime = getCmsRuntimeStatus();
 
   const appOk = true;
-  let supabaseOk = false;
+  let remoteConfigured = true;
+  let remoteSupabaseOk = false;
   let dbSchemaOk = false;
   let ordersOk = false;
   let profilesOk = false;
   let sanityOk = false;
+  let remoteError: string | null = null;
   let failureRid: string | null = null;
   const envReport = validateSystemRuntimeEnv();
   const envOk = envReport.ok;
@@ -37,7 +41,7 @@ export async function GET() {
     const sb = supabaseAdmin();
 
     const supa = await sb.from("profiles").select("id").limit(1);
-    supabaseOk = !supa.error;
+    remoteSupabaseOk = !supa.error;
 
     const [p, o] = await Promise.all([
       sb.from("profiles").select("id").limit(1),
@@ -46,11 +50,16 @@ export async function GET() {
     profilesOk = !p.error;
     ordersOk = !o.error;
     dbSchemaOk = profilesOk && ordersOk;
-  } catch {
-    supabaseOk = false;
+  } catch (error) {
+    remoteSupabaseOk = false;
     dbSchemaOk = false;
     profilesOk = false;
     ordersOk = false;
+    const message = error instanceof Error ? error.message : String(error);
+    remoteError = message || "Ukjent remote-feil";
+    if ((error as { code?: string })?.code === "CONFIG_ERROR") {
+      remoteConfigured = false;
+    }
   }
 
   try {
@@ -62,20 +71,31 @@ export async function GET() {
     sanityOk = false;
   }
 
-  const supabaseHealthy = Boolean(supabaseOk && dbSchemaOk);
+  const remoteHealthy = Boolean(remoteConfigured && remoteSupabaseOk && dbSchemaOk);
   const sanityHealthy = Boolean(sanityOk);
   const envHealthy = Boolean(envOk);
+  const remoteSummaryStatus: "ok" | "degraded" | "failed" | "skipped" =
+    !remoteConfigured
+      ? cmsRuntime.requiresRemoteBackend
+        ? "failed"
+        : "skipped"
+      : remoteHealthy
+        ? "ok"
+        : cmsRuntime.requiresRemoteBackend
+          ? "failed"
+          : "degraded";
 
-  const allHealthy = Boolean(appOk && supabaseHealthy && sanityHealthy && envHealthy);
-  const ok = allHealthy;
+  let summaryStatus: "ok" | "degraded" | "failed" = "ok";
+  if (!envHealthy) {
+    summaryStatus = "failed";
+  } else if (cmsRuntime.requiresRemoteBackend && remoteSummaryStatus !== "ok") {
+    summaryStatus = "failed";
+  } else if (!sanityHealthy || cmsRuntime.mode === "reserve") {
+    summaryStatus = "degraded";
+  }
+
+  const ok = summaryStatus === "ok";
   if (!ok) failureRid = makeRid();
-
-  // Operational truth: ok | degraded | failed. Missing critical deps (supabase, env) → failed; optional (sanity) down → degraded.
-  const summaryStatus: "ok" | "degraded" | "failed" = allHealthy
-    ? "ok"
-    : supabaseHealthy && envHealthy
-      ? "degraded"
-      : "failed";
 
   const body = {
     ok,
@@ -84,14 +104,29 @@ export async function GET() {
     ...(failureRid ? { rid: failureRid } : {}),
     summary: {
       status: summaryStatus,
-      supabase: supabaseHealthy ? "ok" : "failed",
+      runtime: cmsRuntime.mode,
+      remote_backend: remoteSummaryStatus,
+      supabase: remoteSummaryStatus,
       sanity: sanityHealthy ? "ok" : "degraded",
       env: envHealthy ? "ok" : "failed",
       timestamp: ts,
     },
     checks: {
       app: { ok: appOk },
-      supabase: { ok: supabaseOk },
+      runtime: {
+        ok: true,
+        mode: cmsRuntime.mode,
+        source: cmsRuntime.source,
+        explicit: cmsRuntime.explicit,
+        requiresRemoteBackend: cmsRuntime.requiresRemoteBackend,
+      },
+      supabase: {
+        ok: remoteHealthy,
+        configured: remoteConfigured,
+        required: cmsRuntime.requiresRemoteBackend,
+        status: remoteSummaryStatus,
+        error: remoteError,
+      },
       db_schema: { ok: dbSchemaOk, orders: { ok: ordersOk }, profiles: { ok: profilesOk } },
       sanity: { ok: sanityOk, cutoff_helpers: { ok: sanityOk } },
       env: envReport,

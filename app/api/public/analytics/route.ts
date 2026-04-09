@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 
 const RATE_LIMIT_PER_MINUTE = 60;
 
@@ -19,11 +20,22 @@ function pruneOldBuckets(currentMinute: number): void {
 
 const ENVIRONMENTS = ["prod", "staging"] as const;
 const LOCALES = ["nb", "en"] as const;
-const EVENT_TYPES = ["page_view", "search", "cta_click"] as const;
+/** Keep in sync with lib/analytics/events.ts REVENUE_EVENT_TYPES where overlapping. */
+const EVENT_TYPES = [
+  "page_view",
+  "search",
+  "cta_click",
+  "scroll_depth",
+  "form_submit",
+  "conversion",
+] as const;
 
 export async function POST(request: NextRequest) {
   const rid = makeRid("ana");
   try {
+    if (isLocalCmsRuntimeEnabled()) {
+      return jsonOk(rid, { ok: true, rid, localRuntime: true, recorded: false }, 200);
+    }
     if (request.method !== "POST") {
       return jsonErr(rid, "Method not allowed", 405, "METHOD_NOT_ALLOWED");
     }
@@ -56,7 +68,12 @@ export async function POST(request: NextRequest) {
       typeof eventType !== "string" ||
       !EVENT_TYPES.includes(eventType as (typeof EVENT_TYPES)[number])
     ) {
-      return jsonErr(rid, "eventType must be page_view, search, or cta_click", 400, "INVALID_EVENT_TYPE");
+      return jsonErr(
+        rid,
+        "eventType must be page_view, search, cta_click, scroll_depth, form_submit, or conversion",
+        400,
+        "INVALID_EVENT_TYPE",
+      );
     }
 
     const pageId = (o.pageId ?? o.page_id) != null ? String(o.pageId ?? o.page_id) : "";
@@ -109,6 +126,24 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       return jsonErr(rid, insertError.message, 500, "INSERT_FAILED");
+    }
+
+    // POS: kun «signifikante» vekstsignaler (unngå støy fra hver eneste page_view).
+    const isDemoFunnel =
+      typeof metadata.funnel === "string" && metadata.funnel.trim().toLowerCase() === "ai_demo";
+    const significantForPos = eventType === "cta_click" || (isDemoFunnel && eventType === "search");
+    if (significantForPos) {
+      try {
+        const { onEvent } = await import("@/lib/pos/eventHandler");
+        onEvent({
+          type: "variant_performance_updated",
+          analytics_event_type: eventType as (typeof EVENT_TYPES)[number],
+          page_id: pageId || null,
+          variant_id_analytics: variantId || null,
+        });
+      } catch {
+        /* POS er best-effort etter vellykket insert */
+      }
     }
 
     return jsonOk(rid, { ok: true, rid }, 200);

@@ -5,8 +5,8 @@
  */
 
 import { faqJsonLd, type JsonLdFaqItem } from "@/lib/seo/jsonld";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateFAQ";
 

@@ -8,7 +8,7 @@ import { addDaysISO, isIsoDate, osloTodayISODate, startOfWeekISO } from "@/lib/d
 import { receiptFor } from "@/lib/api/orderResponse";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireCompanyScopeOr403, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
-import { getMenuForDates } from "@/lib/sanity/queries";
+import { getMenuForDates } from "@/lib/cms/menuContent";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 

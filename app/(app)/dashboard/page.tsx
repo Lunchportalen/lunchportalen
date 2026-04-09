@@ -1,5 +1,6 @@
 // app/(app)/dashboard/page.tsx
 import Link from "next/link";
+import { getDesignSettings } from "@/lib/cms/design/getDesignSettings";
 import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
 import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
 import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
@@ -147,11 +148,14 @@ function KPI({ label, value, hint }: { label: string; value: string; hint: strin
 }
 
 export default async function DashboardPage() {
-  const overlay = await getOverlayBySlug(APP_OVERLAYS.dashboard.slug, { locale: "nb", environment: "prod" });
-  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
-  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
-  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
-  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+  const [overlay, designSettings] = await Promise.all([
+    getOverlayBySlug(APP_OVERLAYS.dashboard.slug, { locale: "nb", environment: "prod" }),
+    getDesignSettings(),
+  ]);
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb", designSettings) : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb", designSettings) : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb", designSettings) : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb", designSettings) : null;
 
   // Demo-data — kobles mot deres ekte API/SSR senere
   const companyName = "Acme AS";

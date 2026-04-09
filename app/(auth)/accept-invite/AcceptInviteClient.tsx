@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "@/lib/types/database";
 
 type Props = {
   token: string;
@@ -60,7 +61,7 @@ export default function AcceptInviteClient({ token }: Props) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     if (!url || !anon) throw new Error("Missing Supabase env (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
-    return createBrowserClient(url, anon);
+    return createBrowserClient<Database>(url, anon);
   }, []);
 
   const [fullName, setFullName] = useState("");

@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { checkAiRateLimit, AI_RATE_LIMIT_SCOPE, DEFAULT_AI_EDITOR_RATE_LIMIT } from "@/lib/ai/rateLimit";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
 import { prepareAiResponseForClient } from "@/lib/ai/responseSafety";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,7 @@ function truncateMetadata(obj: unknown): Record<string, unknown> {
 }
 
 export async function POST(request: NextRequest) {
+  return withApiAiEntrypoint(request, "POST", async () => {
   const gate = await scopeOr401(request);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -158,4 +160,5 @@ export async function POST(request: NextRequest) {
     return jsonErr(ctx.rid, prepared.message ?? "AI response contained unsafe content.", 400, "AI_SAFETY_REJECTED");
   }
   return jsonOk(ctx.rid, prepared.data, 200);
+  });
 }

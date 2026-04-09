@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -197,7 +198,7 @@ export async function POST(req: Request) {
       // Lag token
       const token = crypto.randomBytes(32).toString("hex");
       const token_hash = crypto.createHash("sha256").update(token).digest("hex");
-      const link = `${appUrl}/accept-invite?token=${encodeURIComponent(token)}`;
+      const link = buildEmployeeInviteUrl(appUrl, token);
 
       // SEND EPOST FØRST (kravet ditt)
       try {

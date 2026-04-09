@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Phase 18: Server-side hook runner (best-effort, never breaks flows).
  * Wire: (1) After successful variant publish + cache invalidation + search index upsert -> runOnPublish(ctx).

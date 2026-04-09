@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { LayoutThumbnail } from "./LayoutThumbnail";
 import { BlockInspectorShell } from "./BlockInspectorShell";
 import { LivePreviewPanel } from "./LivePreviewPanel";
@@ -16,7 +18,7 @@ export function ContentMainShell({
   documentTypeAlias,
   setDocumentTypeAlias,
   documentTypes,
-  setEnvelopeFields,
+  clearEnvelopeScalarLayers,
   meta,
   setMeta,
   safeStr,
@@ -30,37 +32,20 @@ export function ContentMainShell({
   setShowPreviewColumn,
   blockValidationError,
   blocks,
-  expandedBlockId,
-  onToggleBlock,
-  setBlockById,
+  selectedBlockId,
+  setSelectedBlockId,
   blocksValidation,
   onMoveBlock,
   onDeleteBlock,
   setEditOpen,
   setEditIndex,
-  openMediaPicker,
   blockTypeSubtitle,
-  makeBlockId,
   addInsertIndexRef,
   setBlockPickerOpen,
   isForside,
   onFillForsideFromRepo,
-  heroImageSuggestions,
-  handleHeroImageSuggestions,
-  applyHeroImageSuggestion,
-  isOffline,
   effectiveId,
   aiBusyToolId,
-  handleAiStructuredIntent,
-  selectedBannerItemId,
-  setSelectedBannerItemId,
-  bannerPanelTab,
-  setBannerPanelTab,
-  bannerSettingsSubTab,
-  setBannerSettingsSubTab,
-  bannerVisualOptions,
-  handleBannerVisualOptions,
-  handleFetchImageAltFromArchive,
   onOpenCtaAi,
   aiDisabled,
   onInlineAiImprove,
@@ -76,7 +61,7 @@ export function ContentMainShell({
     <div
       className={`lp-motion-card space-y-3 rounded-b-lg rounded-t-lg border border-t-0 border-[rgb(var(--lp-border))] bg-white p-3 ${
         showPreview
-          ? "lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-4 lg:items-start"
+          ? "lg:grid lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.72fr)] lg:gap-5 lg:items-start"
           : ""
       }`}
     >
@@ -99,7 +84,7 @@ export function ContentMainShell({
                 onChange={(e) => {
                   const next = e.target.value.trim() || null;
                   setDocumentTypeAlias(next);
-                  if (next !== documentTypeAlias) setEnvelopeFields({});
+                  if (next !== documentTypeAlias) clearEnvelopeScalarLayers();
                 }}
                 className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-border))]"
                 aria-label="Velg dokumenttype"
@@ -114,6 +99,17 @@ export function ContentMainShell({
               <p className="mt-1 text-[11px] text-[rgb(var(--lp-muted))]">
                 Dokumenttypen styrer tillatte undernoder og egenskapsfelt.
               </p>
+              {!documentTypeAlias ? (
+                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50/90 px-2 py-1.5 text-[11px] text-amber-950">
+                  <span className="font-medium">Legacy / uten envelope:</span> Ingen dokumenttype i lagret innhold —
+                  server håndhever ikke blokkliste. Velg dokumenttype og lagre for kanonisk styring.
+                </p>
+              ) : (
+                <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50/80 px-2 py-1.5 text-[11px] text-emerald-950">
+                  <span className="font-medium">Kanonisk envelope:</span> Blokktyper sjekkes ved lagring mot
+                  dokumenttype «{String(documentTypeAlias)}».
+                </p>
+              )}
             </div>
           </div>
           {/* Layout / page chrome */}
@@ -245,39 +241,21 @@ export function ContentMainShell({
                 )}
                 <BlockInspectorShell
                   blocks={blocks}
-                  expandedBlockId={expandedBlockId}
-                  onToggleBlock={onToggleBlock}
-                  setBlockById={setBlockById}
+                  selectedBlockId={selectedBlockId}
+                  setSelectedBlockId={setSelectedBlockId}
                   blocksValidation={blocksValidation}
                   onMoveBlock={onMoveBlock}
                   onDeleteBlock={onDeleteBlock}
                   setEditOpen={setEditOpen}
                   setEditIndex={setEditIndex}
-                  openMediaPicker={openMediaPicker}
                   blockTypeSubtitle={blockTypeSubtitle}
-                  makeBlockId={makeBlockId}
                   onAddBlockClick={() => {
                     addInsertIndexRef.current = blocks.length;
                     setBlockPickerOpen(true);
                   }}
                   isForsidePage={isForside}
                   onFillForsideFromRepo={onFillForsideFromRepo}
-                  heroImageSuggestions={heroImageSuggestions}
-                  handleHeroImageSuggestions={handleHeroImageSuggestions}
-                  applyHeroImageSuggestion={applyHeroImageSuggestion}
-                  isOffline={isOffline}
-                  effectiveId={effectiveId}
                   aiBusyToolId={aiBusyToolId}
-                  handleAiStructuredIntent={handleAiStructuredIntent}
-                  selectedBannerItemId={selectedBannerItemId}
-                  setSelectedBannerItemId={setSelectedBannerItemId}
-                  bannerPanelTab={bannerPanelTab}
-                  setBannerPanelTab={setBannerPanelTab}
-                  bannerSettingsSubTab={bannerSettingsSubTab}
-                  setBannerSettingsSubTab={setBannerSettingsSubTab}
-                  bannerVisualOptions={bannerVisualOptions}
-                  handleBannerVisualOptions={handleBannerVisualOptions}
-                  onFetchImageAltFromArchive={handleFetchImageAltFromArchive}
                   onOpenCtaAi={onOpenCtaAi}
                   aiDisabled={aiDisabled}
                   onInlineAiImprove={onInlineAiImprove}
@@ -300,6 +278,7 @@ export function ContentMainShell({
           <LivePreviewPanel
             pageTitle={title}
             blocks={blocks}
+            pageCmsMeta={meta}
             pageId={effectiveId ?? undefined}
             variantId={undefined}
             previewSourceLabel="Utkast"

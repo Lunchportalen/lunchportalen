@@ -4,13 +4,13 @@
  * Hvis flere leverandører finnes kan AI: fordele ordre, redusere flaskehalser.
  */
 
-import { balanceKitchenLoad } from "@/lib/ai/capabilities/kitchenLoadBalancer";
+import { balanceKitchenLoad } from "@/lib/ai/engines/capabilities/kitchenLoadBalancer";
 import type {
   KitchenLoadBalancerInput,
   KitchenLoadBalancerOutput,
   KitchenInput,
   KitchenAllocation,
-} from "@/lib/ai/capabilities/kitchenLoadBalancer";
+} from "@/lib/ai/engines/capabilities/kitchenLoadBalancer";
 
 export type { KitchenInput, KitchenAllocation };
 

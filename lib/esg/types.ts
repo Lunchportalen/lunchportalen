@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export type EsgDailyRow = {
   id: string;
 

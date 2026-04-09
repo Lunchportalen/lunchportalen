@@ -9,6 +9,7 @@ import nodemailer from "nodemailer";
 
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -161,7 +162,7 @@ export async function PATCH(req: NextRequest, ctx: { params: { id: string } }) {
       const oldHash = safeStr((cur.data as any).token_hash);
       const token = crypto.randomBytes(32).toString("hex");
       const newHash = sha256Hex(token);
-      const link = `${appUrl}/accept-invite?token=${encodeURIComponent(token)}`;
+      const link = buildEmployeeInviteUrl(appUrl, token);
       const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
 
       const upd1 = await admin

@@ -1,3 +1,5 @@
+// DUPLICATE — review
+
 /**
  * AI Page Composer: structured intent or prompt -> draft page structure (title, blocks).
  * Human-in-the-loop: output is draft only; editor reviews and accepts before publish.

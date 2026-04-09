@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI SEO scoring engine.
  * Metrics: keyword coverage, heading structure, internal linking, content length.

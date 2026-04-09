@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export function monthStartISO(isoDate: string) {
   // isoDate: YYYY-MM-DD
   const [y, m] = isoDate.split("-").map(Number);

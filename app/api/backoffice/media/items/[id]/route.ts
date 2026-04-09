@@ -7,6 +7,7 @@ import { jsonErr, jsonNotFound, jsonOk } from "@/lib/http/respond";
 import { isMediaItemUuid } from "@/lib/media/ids";
 import { getMediaItemById } from "@/lib/media/loaders";
 import { rowToMediaItem, mediaItemSelectColumns } from "@/lib/media/normalize";
+import { normalizeVariantsMap } from "@/lib/media/variantResolution";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,6 +37,7 @@ export async function GET(
   }
 }
 
+const DISPLAY_NAME_MAX = 120;
 const ALT_MAX = 180;
 const CAPTION_MAX = 500;
 const TAGS_MAX_COUNT = 20;
@@ -77,6 +79,7 @@ export async function PATCH(
   const tagsRaw = o.tags;
   const statusRaw = o.status;
   const metadataRaw = o.metadata;
+  const displayNameRaw = o.displayName;
 
   const updates: Record<string, unknown> = {};
 
@@ -85,6 +88,14 @@ export async function PATCH(
       return jsonErr(ctx.rid, "metadata må være et objekt.", 400, "VALIDATION_ERROR");
     }
     updates.metadata = metadataRaw && typeof metadataRaw === "object" ? (metadataRaw as Record<string, unknown>) : {};
+  }
+
+  if (displayNameRaw !== undefined) {
+    const dn = typeof displayNameRaw === "string" ? displayNameRaw.trim().slice(0, DISPLAY_NAME_MAX) : "";
+    const cur = (updates.metadata as Record<string, unknown> | undefined) ?? {};
+    if (dn) cur.displayName = dn;
+    else delete cur.displayName;
+    updates.metadata = cur;
   }
 
   if (altRaw !== undefined) {
@@ -142,7 +153,13 @@ export async function PATCH(
 
     if (updates.metadata !== undefined) {
       const existingMeta = existingRow.metadata ?? {};
-      updates.metadata = { ...existingMeta, ...(updates.metadata as Record<string, unknown>) };
+      const merged = { ...existingMeta, ...(updates.metadata as Record<string, unknown>) };
+      if (merged.variants !== undefined) {
+        const n = normalizeVariantsMap(merged.variants);
+        if (n) merged.variants = n;
+        else delete merged.variants;
+      }
+      updates.metadata = merged;
     }
 
     const { data: updated, error: updateErr } = await supabase

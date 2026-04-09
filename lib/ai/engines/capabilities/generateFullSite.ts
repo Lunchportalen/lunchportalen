@@ -14,8 +14,8 @@ import {
   type PrimaryNavItem,
   type SecondaryNavItem,
 } from "@/lib/ai/architecture/generateSiteArchitecture";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateFullSite";
 

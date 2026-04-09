@@ -3,14 +3,14 @@
  * AI identifiserer firmaer som bør: oppgradere plan, øke volum.
  */
 
-import { detectSalesOpportunities } from "@/lib/ai/capabilities/salesOpportunityDetector";
+import { detectSalesOpportunities } from "@/lib/ai/engines/capabilities/salesOpportunityDetector";
 import type {
   SalesOpportunityDetectorInput,
   SalesOpportunityDetectorOutput,
   CompanyUsageInput,
   UpgradeOpportunity,
   SalesOpportunityType,
-} from "@/lib/ai/capabilities/salesOpportunityDetector";
+} from "@/lib/ai/engines/capabilities/salesOpportunityDetector";
 
 export type { CompanyUsageInput, UpgradeOpportunity, SalesOpportunityType };
 

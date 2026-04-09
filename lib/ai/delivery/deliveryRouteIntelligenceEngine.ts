@@ -3,7 +3,7 @@
  * AI analyserer leveranser og foreslår: mer effektive ruter, bedre leveringsvinduer.
  */
 
-import { suggestRouteAndWindows } from "@/lib/ai/capabilities/deliveryRouteIntelligence";
+import { suggestRouteAndWindows } from "@/lib/ai/engines/capabilities/deliveryRouteIntelligence";
 import type {
   DeliveryRouteIntelligenceInput,
   DeliveryRouteIntelligenceOutput,
@@ -11,7 +11,7 @@ import type {
   DeliveryStopInput,
   SuggestedRouteOutput,
   WindowSuggestion,
-} from "@/lib/ai/capabilities/deliveryRouteIntelligence";
+} from "@/lib/ai/engines/capabilities/deliveryRouteIntelligence";
 
 export type { DepotInput, DeliveryStopInput, SuggestedRouteOutput, WindowSuggestion };
 

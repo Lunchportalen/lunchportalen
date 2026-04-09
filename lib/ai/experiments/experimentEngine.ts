@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI EXPERIMENT ENGINE
  * Dette er der systemet begynner å bli autonomt.
@@ -9,38 +11,38 @@
  * recordAiExperimentView/Click/Conversion, getAiExperimentStats, updateAiExperiment for winner_variant/status).
  */
 
-import { suggestABTests } from "@/lib/ai/capabilities/suggestABTests";
+import { suggestABTests } from "@/lib/ai/engines/capabilities/suggestABTests";
 import type {
   SuggestABTestsInput,
   SuggestABTestsOutput,
   ABTestHypothesis,
-} from "@/lib/ai/capabilities/suggestABTests";
-import { generateABTests } from "@/lib/ai/capabilities/generateABTests";
+} from "@/lib/ai/engines/capabilities/suggestABTests";
+import { generateABTests } from "@/lib/ai/engines/capabilities/generateABTests";
 import type {
   GenerateABTestsInput,
   GenerateABTestsOutput,
   GeneratedABTest,
-} from "@/lib/ai/capabilities/generateABTests";
-import { generateGrowthExperiments } from "@/lib/ai/capabilities/generateGrowthExperiments";
+} from "@/lib/ai/engines/capabilities/generateABTests";
+import { generateGrowthExperiments } from "@/lib/ai/engines/capabilities/generateGrowthExperiments";
 import type {
   GenerateGrowthExperimentsInput,
   GenerateGrowthExperimentsOutput,
   GrowthExperimentIdea,
-} from "@/lib/ai/capabilities/generateGrowthExperiments";
-import { scoreExperimentResults } from "@/lib/ai/capabilities/scoreExperimentResults";
+} from "@/lib/ai/engines/capabilities/generateGrowthExperiments";
+import { scoreExperimentResults } from "@/lib/ai/engines/capabilities/scoreExperimentResults";
 import type {
   ScoreExperimentResultsInput,
   ScoreExperimentResultsOutput,
   VariantInput,
   VariantScore,
   Recommendation,
-} from "@/lib/ai/capabilities/scoreExperimentResults";
-import { detectWinningVariant } from "@/lib/ai/capabilities/detectWinningVariant";
+} from "@/lib/ai/engines/capabilities/scoreExperimentResults";
+import { detectWinningVariant } from "@/lib/ai/engines/capabilities/detectWinningVariant";
 import type {
   DetectWinningVariantInput,
   DetectWinningVariantOutput,
   WinningVariantEvidence,
-} from "@/lib/ai/capabilities/detectWinningVariant";
+} from "@/lib/ai/engines/capabilities/detectWinningVariant";
 
 export type { ABTestHypothesis, GeneratedABTest, GrowthExperimentIdea, VariantInput, VariantScore, Recommendation, WinningVariantEvidence };
 

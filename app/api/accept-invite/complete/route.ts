@@ -275,7 +275,7 @@ export async function POST(req: Request) {
     // 5) Marker invitasjon brukt (idempotent)
     const mark = await admin
       .from("employee_invites")
-      .update({ used_at: nowIso })
+      .update({ used_at: nowIso, accepted_at: nowIso })
       .eq("id", inv.data.id)
       .is("used_at", null);
 

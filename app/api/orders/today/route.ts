@@ -17,7 +17,7 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 
 type Action = "place" | "cancel";
 
@@ -298,8 +298,8 @@ export async function POST(req: NextRequest) {
 
     const note = parsed.note;
     const writeRes = action === "place"
-      ? await lpOrderSet(sb as any, { p_date: today, p_slot: "lunch", p_note: note })
-      : await lpOrderCancel(sb as any, { p_date: today });
+      ? await lpOrderSet(sb as any, { p_date: today, p_slot: ORDER_TABLE_SLOT_DEFAULT, p_note: note })
+      : await lpOrderCancel(sb as any, { p_date: today, p_slot: ORDER_TABLE_SLOT_DEFAULT });
 
     const { data: upserted, error: uErr } = await sb
       .from("orders")
@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
       .eq("company_id", company_id)
       .eq("location_id", location_id)
       .eq("date", today)
-      .eq("slot", "lunch")
+      .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
       .maybeSingle();
 
     if (!writeRes.ok || uErr || !upserted) {

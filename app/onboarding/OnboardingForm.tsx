@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -98,7 +100,7 @@ export default function OnboardingForm() {
     if (!adminEmail.trim() || !adminEmail.includes("@")) return "E-post (firma-admin) må være gyldig.";
     if (!adminPhone.trim()) return "Telefon (firma-admin) må fylles ut.";
 
-    if (!password || password.length < 8) return "Passord må være minimum 8 tegn.";
+    if (!password || password.length < 10) return "Passord må være minimum 10 tegn.";
     if (password2 !== password) return "Bekreft passord må være identisk med passordet.";
 
     if (!deliveryPoint.trim()) return "Leveringspunkt må fylles ut.";
@@ -137,52 +139,66 @@ export default function OnboardingForm() {
 
     const emp = Number(onlyDigits(employeeCount || "0") || 0);
 
+    const agreementDays: Record<
+      DayKey,
+      { enabled: boolean; tier: Tier; price_ex_vat: number; price_inc_vat: number }
+    > = {
+      mon: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
+      tue: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
+      wed: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
+      thu: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
+      fri: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
+    };
+    const vat = 0.25;
+    for (const d of days) {
+      const price_ex_vat = d.enabled ? Number(d.price) : 0;
+      agreementDays[d.key] = {
+        enabled: d.enabled,
+        tier: d.tier,
+        price_ex_vat,
+        price_inc_vat: d.enabled ? Math.round(price_ex_vat * (1 + vat)) : 0,
+      };
+    }
+
     const payload = {
-      company: {
-        name: companyName.trim(),
-        orgnr: onlyDigits(orgnr),
-        employee_count: emp,
-      },
-      admin: {
-        name: adminName.trim(),
-        email: adminEmail.trim().toLowerCase(),
-        phone: adminPhone.trim(),
-        password,
-      },
+      company_name: companyName.trim(),
+      orgnr: onlyDigits(orgnr),
+      employee_count: emp,
+      full_name: adminName.trim(),
+      email: adminEmail.trim().toLowerCase(),
+      phone: adminPhone.trim(),
+      password,
+      password_confirm: password2,
       delivery: {
-        delivery_point: deliveryPoint.trim(),
-        delivery_instruction: deliveryInstruction.trim(),
+        where: deliveryPoint.trim(),
+        when_note: deliveryInstruction.trim(),
         contact_name: deliveryContact.trim(),
         contact_phone: deliveryPhone.trim(),
-        location_name: locationName.trim(),
-        address: address.trim(),
-        postal_code: postalCode.trim(),
-        postal_place: postalPlace.trim(),
         window_from: windowFrom,
         window_to: windowTo,
       },
+      location: {
+        name: locationName.trim(),
+        address: address.trim(),
+        postal_code: postalCode.trim(),
+        city: postalPlace.trim(),
+      },
       agreement: {
-        // eks mva
-        days: days
-          .filter((d) => d.enabled)
-          .map((d) => ({
-            day: d.key,
-            tier: d.tier,
-            price_ex_vat: Number(d.price),
-          })),
-        terms_accepted: true,
-        credit_check_accepted: true,
-        // locked terms
+        days: agreementDays,
+        vat_rate: vat,
+      },
+      terms: {
+        accepted_terms: acceptTerms,
+        accepted_credit_check: acceptCredit,
         binding_months: 12,
-        notice_months_before_end: 3,
-        prices_are_ex_vat: true,
+        notice_months: 3,
       },
     };
 
     try {
       setSubmitting(true);
 
-      const res = await fetch("/api/onboarding", {
+      const res = await fetch("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -190,17 +206,17 @@ export default function OnboardingForm() {
 
       const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
+      if (!res.ok || data?.ok === false) {
         const msg =
-          (data?.error as string) ||
-          (data?.message as string) ||
+          (typeof data?.message === "string" && data.message) ||
+          (typeof data?.error === "string" && data.error) ||
           "Noe gikk galt ved innsending. Prøv igjen.";
         setFormError(msg);
         return;
       }
 
-      // optional redirect from API, else go to /pending
-      const redirectTo = (data?.redirectTo as string) || "/pending";
+      const redirectTo =
+        (typeof data?.data?.redirectTo === "string" && data.data.redirectTo) || "/pending";
       router.push(redirectTo);
     } catch (err: any) {
       setFormError("Nettverksfeil. Prøv igjen.");

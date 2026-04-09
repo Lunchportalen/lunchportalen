@@ -5,55 +5,16 @@ import React, { useEffect, useMemo, useState, useTransition, type ReactNode } fr
 import { Icon } from "@/components/ui/Icon";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { formatDateTimeNO } from "@/lib/date/format";
+import {
+  normalizeStopsResponse,
+  type ApiErr,
+  type Stop,
+  type StopsOk,
+} from "@/lib/driver/normalizeStopsResponse";
 
 /* =========================================================
-   Types
+   Types (UI-gruppering)
 ========================================================= */
-type ApiErr = {
-  ok: false;
-  rid?: string;
-  error?: string;
-  message?: string;
-  detail?: any;
-  status?: number; // klient-side
-};
-
-type Stop = {
-  key: string; // date|slot|companyId|locationId
-  date: string; // YYYY-MM-DD
-  slot: string;
-
-  companyId: string;
-  companyName: string | null;
-
-  locationId: string;
-  locationName: string | null;
-  addressLine: string | null;
-  deliveryWhere: string | null;
-  deliveryWhenNote: string | null;
-  deliveryContactName: string | null;
-  deliveryContactPhone: string | null;
-  deliveryWindowFrom: string | null;
-  deliveryWindowTo: string | null;
-
-  orderCount: number;
-
-  delivered: boolean;
-  deliveredAt: string | null;
-  deliveredBy: string | null;
-};
-
-type StopsOk = { ok: true; rid?: string; date: string; stops: Stop[] };
-
-// jsonOk-wrapper: { ok, rid, data }
-type ApiWrapped<T> = {
-  ok: boolean;
-  rid?: string;
-  data?: T;
-  error?: string;
-  message?: string;
-  detail?: any;
-};
 
 type LocationGroup = {
   locationKey: string;
@@ -260,94 +221,6 @@ function buildGroups(stops: Stop[]): SlotGroup[] {
   return ordered;
 }
 
-/**
- * Normaliserer stops-responsen slik at UI alltid jobber med StopsOk
- * Støtter (robust):
- *  - Direkte: { ok:true, date, stops }
- *  - Wrapped A: { ok:true, rid, data:{ ok:true, date, stops } }
- *  - Wrapped B: { ok:true, rid, data:{ date, stops } }  (vanlig jsonOk-wrapper)
- */
-type NormStops = { ok: true; data: StopsOk } | { ok: false; err: ApiErr };
-
-function normalizeStopsResponse(res: Response, json: any, fallbackRid: string): NormStops {
-  const status = res.status;
-
-  if (!json) {
-    return {
-      ok: false,
-      err: {
-        ok: false,
-        rid: fallbackRid,
-        error: `HTTP_${status}`,
-        message: `Kunne ikke hente stopp (HTTP ${status}).`,
-        detail: null,
-        status,
-      },
-    };
-  }
-
-  const ridAny = safeStr(json?.rid) || fallbackRid;
-
-  function toStopsOk(x: any, rid: string): StopsOk | null {
-    if (!x || typeof x !== "object") return null;
-    if (typeof x.date === "string" && Array.isArray(x.stops)) {
-      return { ok: true, rid, date: String(x.date), stops: x.stops as Stop[] };
-    }
-    return null;
-  }
-
-  // 1) Direkte payload
-  if (json?.ok === true) {
-    const direct = toStopsOk(json, safeStr(json?.rid) || ridAny);
-    if (direct) return { ok: true, data: direct };
-  }
-
-  // 2) Wrapped payload i json.data
-  if (json?.ok === true && json?.data) {
-    const inner = json.data;
-    const innerRid = ridAny;
-
-    const mapped = toStopsOk(inner, innerRid);
-    if (mapped) return { ok: true, data: mapped };
-
-    const mapped2 = toStopsOk(inner?.data, innerRid);
-    if (mapped2) return { ok: true, data: mapped2 };
-  }
-
-  // 3) Hvis API eksplisitt ok:false
-  if (json?.ok === false) {
-    return {
-      ok: false,
-      err: {
-        ok: false,
-        rid: ridAny,
-        error: safeStr(json?.error) || `HTTP_${status}`,
-        message: safeStr(json?.message) || safeStr(json?.error) || "API-feil.",
-        detail: json?.detail ?? json ?? null,
-        status,
-      },
-    };
-  }
-
-  // 4) Uventet struktur
-  const msg =
-    safeStr(json?.message) ||
-    safeStr(json?.error) ||
-    (res.ok ? "Mangler gyldig stops-data i respons." : `Kunne ikke hente stopp (HTTP ${status}).`);
-
-  return {
-    ok: false,
-    err: {
-      ok: false,
-      rid: ridAny,
-      error: safeStr(json?.error) || "bad_payload",
-      message: msg,
-      detail: json?.detail ?? json ?? null,
-      status,
-    },
-  };
-}
-
 /* =========================
    UI primitives (calm)
 ========================= */
@@ -446,6 +319,8 @@ export default function DriverClient() {
   const [pending, startTransition] = useTransition();
 
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "delivered">("all");
 
   // ✅ Stabil stops-referanse uten "missing dependency: data"
   const stopsRaw = data?.stops;
@@ -454,13 +329,20 @@ export default function DriverClient() {
     return Array.isArray(stopsRaw) ? (stopsRaw as Stop[]) : [];
   }, [stopsRaw]);
 
+  const filteredStops = useMemo(() => {
+    if (statusFilter === "all") return stops;
+    if (statusFilter === "pending") return stops.filter((s) => !s.delivered);
+    return stops.filter((s) => s.delivered);
+  }, [stops, statusFilter]);
+
   const count = useMemo(() => stops.length, [stops]);
   const deliveredCount = useMemo(() => stops.filter((s) => s.delivered).length, [stops]);
 
   const shownDate = data?.date ?? date;
   const shownDateSafe = isISODate(shownDate) ? shownDate : date;
 
-  const groups = useMemo(() => buildGroups(stops), [stops]);
+  const groups = useMemo(() => buildGroups(filteredStops), [filteredStops]);
+  const filterEmpty = stops.length > 0 && filteredStops.length === 0;
 
   async function load(nextDate: string) {
     const d = safeStr(nextDate) || todayISO();
@@ -633,10 +515,7 @@ export default function DriverClient() {
     }
   }
 
-  async function logout() {
-    const ok = window.confirm("Vil du logge ut av Lunchportalen?");
-    if (!ok) return;
-
+  async function performLogout() {
     try {
       const sb = supabaseBrowser();
       await sb.auth.signOut();
@@ -647,15 +526,31 @@ export default function DriverClient() {
     }
   }
 
+  function requestLogout() {
+    setLogoutConfirmOpen(true);
+  }
+
+  function confirmLogout() {
+    setLogoutConfirmOpen(false);
+    void performLogout();
+  }
+
+  function cancelLogout() {
+    setLogoutConfirmOpen(false);
+  }
+
   useEffect(() => {
     void load(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
-  // ESC lukker sheet
+  // ESC lukker sheet og avbryter utloggingsbekreftelse (ingen native dialoger)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setToolsOpen(false);
+      if (e.key === "Escape") {
+        setLogoutConfirmOpen(false);
+        setToolsOpen(false);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -682,7 +577,39 @@ export default function DriverClient() {
                 {fmtDateLong(shownDateSafe)} • <span className="font-semibold text-slate-900">{count}</span> stopp •{" "}
                 <span className="font-semibold text-slate-900">{deliveredCount}</span> levert
               </div>
-              <div className="mt-1 text-xs text-slate-600">ACTIVE / READY FOR DELIVERY</div>
+              <div className="mt-1 text-xs text-slate-600">Oslo-dato · sjåfør ser kun dagens ruter</div>
+
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Filtrer stopp">
+                {(
+                  [
+                    { k: "all" as const, label: "Alle" },
+                    { k: "pending" as const, label: "Gjenstår" },
+                    { k: "delivered" as const, label: "Levert" },
+                  ] as const
+                ).map(({ k, label }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setStatusFilter(k)}
+                    className={[
+                      "min-h-[40px] rounded-full border px-3 py-2 text-xs font-semibold transition-colors",
+                      statusFilter === k
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-800 hover:border-slate-400",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-2 sm:hidden">
+                <div className="text-xs text-slate-600">Leveringsprogress</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <progress className="lp-progress min-w-0 flex-1" value={deliveryProgress} max={100} />
+                  <span className="shrink-0 text-sm font-semibold text-slate-900">{deliveryProgress}%</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -694,11 +621,39 @@ export default function DriverClient() {
                 <Icon name="refresh" size="md" />
               </IconBtn>
 
-              <IconBtn label="Logg ut" onClick={logout}>
+              <IconBtn label="Logg ut" onClick={requestLogout}>
                 <Icon name="logout" size="md" />
               </IconBtn>
             </div>
           </div>
+
+          {logoutConfirmOpen ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 bg-amber-50 px-4 py-2.5 sm:px-6"
+            >
+              <p className="min-w-0 text-sm font-medium text-amber-950">
+                Er du sikker? Vil du logge ut av Lunchportalen?
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={confirmLogout}
+                  className="min-h-[44px] rounded-xl border border-amber-700 bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800"
+                >
+                  Ja
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelLogout}
+                  className="min-h-[44px] rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                >
+                  Avbryt
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="hidden sm:flex items-center justify-end pb-3">
             <div className="lp-glass-surface rounded-card px-4 py-3">
@@ -777,14 +732,32 @@ export default function DriverClient() {
           </div>
         ) : null}
 
-        {!loading && !err && count > 0 ? (
+        {!loading && !err && count > 0 && filterEmpty ? (
+          <div className="lp-glass-card mt-6 rounded-card p-6">
+            <div className="text-base font-semibold text-slate-900">Ingen stopp i dette filteret</div>
+            <div className="mt-1 text-sm text-slate-600">Prøv «Alle» eller et annet filter.</div>
+            <div className="mt-5">
+              <PrimaryBtn label="Vis alle" onClick={() => setStatusFilter("all")} disabled={pending} />
+            </div>
+          </div>
+        ) : null}
+
+        {!loading && !err && count > 0 && !filterEmpty ? (
           <div className="mt-6 space-y-5">
             {groups.map((slot) => (
               <section key={slot.slotKey} className="lp-glass-card rounded-card p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-base font-semibold text-slate-900">Leveringsvindu: {slot.slotLabel}</div>
-                  <div className="text-sm text-slate-700">
-                    Totalt: <b>{slot.totalOrders}</b>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={`/driver/csv?window=${encodeURIComponent(slot.slotKey)}&date=${encodeURIComponent(shownDateSafe)}`}
+                      className="inline-flex min-h-[44px] items-center rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm ring-1 ring-black/5"
+                    >
+                      Last ned CSV
+                    </a>
+                    <div className="text-sm text-slate-700">
+                      Totalt: <b>{slot.totalOrders}</b>
+                    </div>
                   </div>
                 </div>
 
@@ -891,8 +864,16 @@ export default function DriverClient() {
               role="button"
               tabIndex={-1}
               aria-label="Lukk verktøy"
-              onClick={() => setToolsOpen(false)}
-              onKeyDown={(e) => e.key === "Escape" && setToolsOpen(false)}
+              onClick={() => {
+                setToolsOpen(false);
+                setLogoutConfirmOpen(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setToolsOpen(false);
+                  setLogoutConfirmOpen(false);
+                }
+              }}
             />
           <div className="absolute left-0 right-0 bottom-0 mx-auto w-full max-w-6xl lp-safe-bottom">
             <div className="lp-glass-panel rounded-t-3xl p-5">
@@ -900,7 +881,10 @@ export default function DriverClient() {
                 <div className="text-base font-semibold text-slate-900">Verktøy</div>
                 <button
                   type="button"
-                  onClick={() => setToolsOpen(false)}
+                  onClick={() => {
+                    setToolsOpen(false);
+                    setLogoutConfirmOpen(false);
+                  }}
                   className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
                 >
                   Lukk
@@ -923,14 +907,42 @@ export default function DriverClient() {
                 <SecondaryBtn label="Oppdater" onClick={() => load(shownDateSafe)} disabled={pending || loading} />
               </div>
 
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-95"
-                >
-                  Logg ut
-                </button>
+              <div className="mt-3 space-y-2">
+                {logoutConfirmOpen ? (
+                  <div
+                    role="group"
+                    aria-label="Bekreft utlogging"
+                    className="rounded-2xl border border-amber-300 bg-amber-50 p-4"
+                  >
+                    <p className="text-sm font-medium text-amber-950">
+                      Er du sikker? Vil du logge ut av Lunchportalen?
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={confirmLogout}
+                        className="min-h-[44px] flex-1 rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-95 sm:flex-none"
+                      >
+                        Ja
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelLogout}
+                        className="min-h-[44px] flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 sm:flex-none"
+                      >
+                        Avbryt
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={requestLogout}
+                    className="w-full min-h-[44px] rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+                  >
+                    Logg ut
+                  </button>
+                )}
               </div>
 
               <div className="mt-3 text-xs text-slate-500">Tips: Trykk ESC for å lukke.</div>

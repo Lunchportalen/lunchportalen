@@ -53,10 +53,10 @@ export const ROUTE_REGISTRY: RouteRegistryItem[] = [
   {
     id: "orders-cancel-post",
     method: "POST",
-    path: "/api/orders/cancel",
+    path: "/api/order/cancel",
     owner: "orders",
     standard: "dag3",
-    notes: "Bruker Dag-3 routeGuard (scopeOr401 + role/scope-gate).",
+    notes: "Canonical employee cancel (HTTP). /api/orders/cancel er DEPRECATED.",
   },
   {
     id: "order-get",

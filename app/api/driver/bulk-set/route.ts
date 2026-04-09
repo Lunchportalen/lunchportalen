@@ -7,7 +7,6 @@ export const revalidate = 0;
 import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
-import { isSuperadminEmail } from "@/lib/system/emails";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
@@ -22,9 +21,6 @@ function rid() {
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
-}
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
 }
 function isIsoDate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -96,7 +92,7 @@ export async function POST(req: NextRequest) {
 
   const role = String(profile.role ?? "").toLowerCase() as Role;
   const driverOk = role === "driver";
-  const superOk = role === "superadmin" && isHardSuperadmin(user.email);
+  const superOk = role === "superadmin";
 
   if (!driverOk && !superOk) {
     return jsonErr(r, "Kun driver/superadmin har tilgang.", 403, "FORBIDDEN");

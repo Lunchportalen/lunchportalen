@@ -1,6 +1,8 @@
 // lib/ops/log.ts
 import "server-only";
 
+import { queueObservabilityPersist } from "@/lib/observability/opsLogPersist";
+
 export type OpsLogPayload = Record<string, any>;
 
 export function opsLog(scope: string, payload: OpsLogPayload) {
@@ -10,4 +12,5 @@ export function opsLog(scope: string, payload: OpsLogPayload) {
     ...payload,
   };
   console.log(JSON.stringify(row));
+  queueObservabilityPersist("event", row as Record<string, unknown>);
 }

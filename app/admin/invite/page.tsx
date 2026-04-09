@@ -13,6 +13,8 @@ import {
 
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
+import SimpleEmployeeInvite from "@/components/admin/SimpleEmployeeInvite";
+
 import InviteClient from "./InviteClient";
 
 function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -107,6 +109,8 @@ export default async function AdminInvitePage() {
             <GhostLink href="/admin/insights">Insights</GhostLink>
           </div>
         </div>
+
+        <SimpleEmployeeInvite />
 
         <InviteClient companyId={ctx.companyId} companyName={ctx.company?.name ?? "Firma"} />
       </div>

@@ -38,8 +38,8 @@ export default function TemplatesPage() {
             <tbody>
               {templates.map((t) => {
                 const allowed =
-                  Array.isArray(t.allowedChildren) && t.allowedChildren.length > 0
-                    ? t.allowedChildren.join(", ")
+                  Array.isArray(t.allowedChildTypes) && t.allowedChildTypes.length > 0
+                    ? t.allowedChildTypes.join(", ")
                     : "Ingen (ingen undernoder)";
                 return (
                   <tr key={t.alias} className="hover:bg-slate-50">

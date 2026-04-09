@@ -1,9 +1,12 @@
 // lib/system/health.ts
 import "server-only";
 
+import { withTimeout } from "@/lib/core/asyncOps";
+import { HEALTH_SUBPROBE_TIMEOUT_MS } from "@/lib/core/limits";
 import { getRuntimeFacts } from "@/lib/system/runtimeFacts";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { getControlCoverageReport } from "@/lib/system/controlCoverage";
 
 /* =========================================================
    Types
@@ -135,6 +138,78 @@ export async function runHealthChecks(): Promise<HealthReport> {
   }
 
   /* =========================
+     2b) Intelligence store readable
+  ========================= */
+  try {
+    const sb = supabaseAdmin();
+    const { error } = await withTimeout(
+      sb.from("ai_intelligence_events").select("id").limit(1),
+      HEALTH_SUBPROBE_TIMEOUT_MS,
+      "intelligence_read",
+    );
+    if (error) {
+      checks.push({
+        key: "intelligence_read",
+        label: "Intelligence (read)",
+        status: "fail",
+        message: "Kunne ikke lese ai_intelligence_events.",
+        detail: { code: error.code, message: error.message },
+      });
+    } else {
+      checks.push({
+        key: "intelligence_read",
+        label: "Intelligence (read)",
+        status: "ok",
+        message: "Intelligence-tabell svarer (select 1).",
+      });
+    }
+  } catch (e) {
+    checks.push({
+      key: "intelligence_read",
+      label: "Intelligence (read)",
+      status: "fail",
+      message: "Intelligence read-probe feilet eller timeout.",
+      detail: safeErr(e),
+    });
+  }
+
+  /* =========================
+     2c) AI activity log readable
+  ========================= */
+  try {
+    const sb = supabaseAdmin();
+    const { error } = await withTimeout(
+      sb.from("ai_activity_log").select("id").limit(1),
+      HEALTH_SUBPROBE_TIMEOUT_MS,
+      "ai_activity_read",
+    );
+    if (error) {
+      checks.push({
+        key: "ai_activity_read",
+        label: "AI activity log (read)",
+        status: "warn",
+        message: "Kunne ikke lese ai_activity_log (kan være migrering/RLS).",
+        detail: { code: error.code, message: error.message },
+      });
+    } else {
+      checks.push({
+        key: "ai_activity_read",
+        label: "AI activity log (read)",
+        status: "ok",
+        message: "ai_activity_log svarer (select 1).",
+      });
+    }
+  } catch (e) {
+    checks.push({
+      key: "ai_activity_read",
+      label: "AI activity log (read)",
+      status: "warn",
+      message: "AI activity read-probe feilet eller timeout.",
+      detail: safeErr(e),
+    });
+  }
+
+  /* =========================
      3) Sanity (valgfritt lag)
   ========================= */
   try {
@@ -201,6 +276,40 @@ export async function runHealthChecks(): Promise<HealthReport> {
   }
 
   /* =========================
+     5) Repo control-plane (static AI/CMS/DS scan)
+  ========================= */
+  try {
+    const repo = getControlCoverageReport();
+    const m = repo.metrics;
+    const violations =
+      repo.aiViolations.length + repo.cmsViolations.length + repo.growthViolations.length;
+    const minPct = Math.min(m.aiCoverage, m.cmsCoverage, m.dsUsage, m.growthIsolation);
+    checks.push({
+      key: "control_repo",
+      label: "Kontrollplan (repo-scan)",
+      status: violations === 0 && minPct === 100 ? "ok" : "warn",
+      message:
+        violations === 0
+          ? `AI ${m.aiCoverage}% · CMS ${m.cmsCoverage}% · DS ${m.dsUsage}% · vekst ${m.growthIsolation}%`
+          : `${violations} avvik i repo (se detail).`,
+      detail: {
+        metrics: m,
+        aiViolations: repo.aiViolations,
+        cmsViolations: repo.cmsViolations,
+        growthViolations: repo.growthViolations,
+      },
+    });
+  } catch (e) {
+    checks.push({
+      key: "control_repo",
+      label: "Kontrollplan (repo-scan)",
+      status: "skip",
+      message: "Repo-scan utilgjengelig.",
+      detail: safeErr(e),
+    });
+  }
+
+  /* =========================
      Final verdict (operational truth: no optimistic ok)
   ========================= */
   const ok = checks.every((c) => c.status === "ok" || c.status === "skip");
@@ -212,3 +321,19 @@ export async function runHealthChecks(): Promise<HealthReport> {
     checks,
   };
 }
+
+/* =========================================================
+   Repo control-plane metrics (static scan) — re-export
+========================================================= */
+
+export {
+  getSystemHealth,
+  getControlCoverageReport,
+  getControlViolationMarkers,
+  logControlCoverageErrors,
+  logControlCoverageSuggestions,
+  logDevControlPlaneSummary,
+  type SystemHealthMetrics,
+  type ControlCoverageReport,
+  type ControlViolationMarker,
+} from "@/lib/system/controlCoverage";

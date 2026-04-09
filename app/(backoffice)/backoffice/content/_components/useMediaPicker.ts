@@ -36,10 +36,10 @@ export function applyMediaSelectionToBlock<BlockShape = any>(
   const c: any = block;
 
   if (target.field === "heroImageUrl") {
-    if (c.type !== "hero") return block;
+    if (c.type !== "hero" && c.type !== "hero_full") return block;
     return {
       ...c,
-      imageUrl: url,
+      imageId: url,
       mediaItemId: mediaItemId ?? c.mediaItemId,
       imageAlt:
         alt !== undefined && alt !== null && String(alt).trim() !== ""
@@ -52,7 +52,7 @@ export function applyMediaSelectionToBlock<BlockShape = any>(
     if (c.type !== "image") return block;
     return {
       ...c,
-      assetPath: url,
+      imageId: url,
       mediaItemId: mediaItemId ?? c.mediaItemId,
       alt:
         alt !== undefined && alt !== null && String(alt).trim() !== ""
@@ -65,15 +65,7 @@ export function applyMediaSelectionToBlock<BlockShape = any>(
     } as BlockShape;
   }
 
-  if (c.type !== "banners" || target.itemId == null) return block;
-
-  const items = Array.isArray(c.items) ? c.items : [];
-  return {
-    ...c,
-    items: items.map((i: any) =>
-      i.id === target.itemId ? { ...i, [target.field]: url } : i
-    ),
-  } as BlockShape;
+  return block;
 }
 
 type MediaPickerHookOptions<Block> = {

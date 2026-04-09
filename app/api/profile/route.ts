@@ -1,26 +1,24 @@
-// app/api/auth/profile/route.ts
+// app/api/profile/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
 
-const ALLOWED_ROLES: Role[] = ["employee", "company_admin", "superadmin", "kitchen", "driver"];
+type ProfileRow = {
+  id: string | null;
+  email: string | null;
+  is_active: boolean | null;
+  disabled_at: string | null;
+  disabled_reason: string | null;
+};
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
-}
-
-function safeRole(v: unknown): Role {
-  const r = safeStr(v).toLowerCase();
-  if (r === "superadmin") return "superadmin";
-  if (r === "company_admin") return "company_admin";
-  if (r === "kitchen") return "kitchen";
-  if (r === "driver") return "driver";
-  return "employee";
 }
 
 function normCompanyStatus(v: unknown): CompanyStatus {
@@ -32,87 +30,78 @@ function normCompanyStatus(v: unknown): CompanyStatus {
   return "UNKNOWN";
 }
 
-type ProfileRow = {
-  id: string;
-  email: string | null;
-  role: string | null;
-  company_id: string | null;
-  location_id: string | null;
-  is_active: boolean | null;
-  disabled_at: string | null;
-  disabled_reason: string | null;
-};
+function buildProfilePayload(input: {
+  userId: string;
+  role: Role;
+  companyId: string | null;
+  locationId: string | null;
+  profile: ProfileRow | null;
+}) {
+  return {
+    id: input.userId,
+    role: input.role,
+    company_id: input.companyId,
+    location_id: input.locationId,
+    is_active: input.profile?.is_active ?? true,
+    disabled_at: input.profile?.disabled_at ?? null,
+    disabled_reason: input.profile?.disabled_reason ?? null,
+  };
+}
 
-export async function GET() {
-  const rid = makeRid();
-
-  // SSR-safe client (leser session-cookie)
+async function loadProfileMeta(userId: string): Promise<{ profile: ProfileRow | null; error: string | null }> {
   const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
 
-  const { data: userRes, error: userErr } = await sb.auth.getUser();
-  const user = userRes?.user ?? null;
+  const byUserId = await sb
+    .from("profiles")
+    .select("id, email, is_active, disabled_at, disabled_reason")
+    .eq("user_id", userId)
+    .maybeSingle<ProfileRow>();
 
-  if (userErr || !user) {
+  if (byUserId.data?.id) {
+    return { profile: byUserId.data, error: null };
+  }
+
+  const byId = await sb
+    .from("profiles")
+    .select("id, email, is_active, disabled_at, disabled_reason")
+    .eq("id", userId)
+    .maybeSingle<ProfileRow>();
+
+  const profile = byId.data?.id ? byId.data : null;
+  const error = byUserId.error?.message?.trim() || byId.error?.message?.trim() || null;
+  return { profile, error };
+}
+
+export async function GET(request?: Request) {
+  const rid = makeRid();
+
+  const auth = await getAuthContext({
+    rid,
+    reqHeaders: request?.headers ?? null,
+  });
+  if (!auth.isAuthenticated || !auth.userId) {
     return jsonErr(rid, "Ikke innlogget.", 401, "AUTH_REQUIRED");
   }
 
-  // Profil må finnes (fail-closed)
-  const { data: profile, error: profErr } = await sb
-    .from("profiles")
-    .select("id, email, role, company_id, location_id, is_active, disabled_at, disabled_reason")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (profErr) {
-    return jsonErr(rid, profErr.message, 500, "PROFILE_LOOKUP_FAILED");
-  }
-
-  if (!profile?.id) {
+  if (auth.reason === "NO_PROFILE") {
     return jsonErr(
       rid,
       "Brukerprofil finnes ikke. Be firma-admin legge deg til som ansatt.",
       404,
-      "PROFILE_NOT_FOUND"
+      "PROFILE_NOT_FOUND",
     );
   }
 
-  const role = safeRole(profile.role);
-  const rawRole = safeStr(profile.role).toLowerCase();
+  if (auth.reason === "BLOCKED") {
+    return jsonErr(rid, "Kontoen er deaktivert. Kontakt administrator.", 403, "ACCOUNT_DISABLED");
+  }
 
-  // Hvis role er satt til noe ugyldig i DB, stopp (fail-closed)
-  if (rawRole && !ALLOWED_ROLES.includes(rawRole as Role)) {
+  if (!auth.role) {
     return jsonErr(rid, "Ingen tilgang for denne rollen.", 403, "ROLE_FORBIDDEN");
   }
 
-  // Disabled/inactive → hard stop (403)
-  if (profile.disabled_at || safeStr(profile.disabled_reason)) {
-    return jsonErr(rid, "Kontoen er deaktivert. Kontakt administrator.", 403, "ACCOUNT_DISABLED");
-  }
-  if (profile.is_active === false) {
-    return jsonErr(rid, "Kontoen er deaktivert. Kontakt administrator.", 403, "ACCOUNT_DISABLED");
-  }
-
-  // Required linkage for employee/company_admin
-  if ((role === "employee" || role === "company_admin") && !profile.company_id) {
-    return jsonErr(
-      rid,
-      "Kontoen er ikke koblet til firma. Kontakt firma-admin.",
-      409,
-      "PROFILE_NOT_READY"
-    );
-  }
-  if (role === "employee" && !profile.location_id) {
-    return jsonErr(
-      rid,
-      "Kontoen er ikke koblet til lokasjon. Kontakt firma-admin.",
-      409,
-      "PROFILE_NOT_READY"
-    );
-  }
-
-  // Superadmin/kitchen/driver trenger ikke company-gate (de er systemroller)
-  if (role === "superadmin" || role === "kitchen" || role === "driver") {
+  if (auth.mode === "DEV_BYPASS") {
     return jsonOk(
       rid,
       {
@@ -120,28 +109,66 @@ export async function GET() {
         rid,
         pending: false,
         profileExists: true,
-        profile: {
-          id: profile.id,
-          role,
-          company_id: profile.company_id,
-          location_id: profile.location_id,
-          is_active: profile.is_active,
-          disabled_at: profile.disabled_at,
-          disabled_reason: profile.disabled_reason,
-        },
+        company_status: "UNKNOWN" as CompanyStatus,
+        profile: buildProfilePayload({
+          userId: auth.userId,
+          role: auth.role,
+          companyId: auth.company_id,
+          locationId: auth.location_id,
+          profile: null,
+        }),
       },
-      200
+      200,
     );
   }
 
-  // Company status gate (for employee/company_admin) – fail-closed
+  const { profile, error } = await loadProfileMeta(auth.userId);
+  if (error && !profile?.id) {
+    return jsonErr(rid, error, 500, "PROFILE_LOOKUP_FAILED");
+  }
+
+  if (profile?.disabled_at || safeStr(profile?.disabled_reason) || profile?.is_active === false) {
+    return jsonErr(rid, "Kontoen er deaktivert. Kontakt administrator.", 403, "ACCOUNT_DISABLED");
+  }
+
+  const profilePayload = buildProfilePayload({
+    userId: auth.userId,
+    role: auth.role,
+    companyId: auth.company_id,
+    locationId: auth.location_id,
+    profile,
+  });
+
+  if (auth.role === "superadmin" || auth.role === "kitchen" || auth.role === "driver") {
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        rid,
+        pending: false,
+        profileExists: true,
+        company_status: "UNKNOWN" as CompanyStatus,
+        profile: profilePayload,
+      },
+      200,
+    );
+  }
+
+  if (!auth.company_id) {
+    return jsonErr(
+      rid,
+      "Kontoen er ikke koblet til firma. Kontakt firma-admin.",
+      409,
+      "PROFILE_NOT_READY",
+    );
+  }
+
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const admin = supabaseAdmin();
-
   const { data: company, error: compErr } = await admin
     .from("companies")
     .select("id,status")
-    .eq("id", profile.company_id)
+    .eq("id", auth.company_id)
     .maybeSingle<{ id: string; status: string | null }>();
 
   if (compErr || !company?.id) {
@@ -149,8 +176,6 @@ export async function GET() {
   }
 
   const companyStatus = normCompanyStatus(company.status);
-
-  // Ikke ACTIVE → pending (200) slik LoginForm håndterer dette eksplisitt
   if (companyStatus !== "ACTIVE") {
     return jsonOk(
       rid,
@@ -161,21 +186,12 @@ export async function GET() {
         reason: companyStatus === "PENDING" ? "COMPANY_PENDING" : "COMPANY_NOT_ACTIVE",
         company_status: companyStatus,
         profileExists: true,
-        profile: {
-          id: profile.id,
-          role,
-          company_id: profile.company_id,
-          location_id: profile.location_id,
-          is_active: profile.is_active,
-          disabled_at: profile.disabled_at,
-          disabled_reason: profile.disabled_reason,
-        },
+        profile: profilePayload,
       },
-      200
+      200,
     );
   }
 
-  // Klar (200)
   return jsonOk(
     rid,
     {
@@ -183,16 +199,9 @@ export async function GET() {
       rid,
       pending: false,
       profileExists: true,
-      profile: {
-        id: profile.id,
-        role,
-        company_id: profile.company_id,
-        location_id: profile.location_id,
-        is_active: profile.is_active,
-        disabled_at: profile.disabled_at,
-        disabled_reason: profile.disabled_reason,
-      },
+      company_status: "ACTIVE" as CompanyStatus,
+      profile: profilePayload,
     },
-    200
+    200,
   );
 }

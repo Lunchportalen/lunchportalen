@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import AuthShell from "@/components/auth/AuthShell";
 import LoginForm from "./LoginForm";
+import { getLocalRuntimeLoginCredentials } from "@/lib/auth/localRuntimeAuth";
+import { getSupabasePublicConfigStatus } from "@/lib/config/env-public";
 
 export const metadata: Metadata = {
   title: "Logg inn - Lunchportalen",
@@ -11,6 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
+  const authRuntime = getSupabasePublicConfigStatus();
+  const localRuntimeCredentials = getLocalRuntimeLoginCredentials();
+
   return (
     <AuthShell
       title="Logg inn"
@@ -22,7 +27,10 @@ export default function LoginPage() {
       }
     >
       <Suspense fallback={null}>
-        <LoginForm />
+        <LoginForm
+          authRuntime={authRuntime}
+          localRuntimeCredentials={localRuntimeCredentials}
+        />
       </Suspense>
     </AuthShell>
   );

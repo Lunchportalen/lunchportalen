@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 import "server-only";
 import type { Scope } from "./types";
 import { HttpError } from "./errors";

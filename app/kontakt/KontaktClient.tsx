@@ -1,9 +1,10 @@
-// app/kontakt/page.tsx
+// app/kontakt/KontaktClient.tsx
 "use client";
 
 import type React from "react";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { SUPPORT_EMAIL } from "@/lib/system/emails";
 type Status =
   | { type: "idle" }
   | { type: "sending"; rid: string }
-  | { type: "ok"; rid: string }
+  | { type: "ok"; rid: string; leadId?: string; /** false når API lagret lead men SMTP feilet */ emailDelivered?: boolean }
   | { type: "error"; message: string; rid?: string };
 
 /* =========================================================
@@ -44,6 +45,11 @@ function isEmail(s: string) {
 ========================================================= */
 
 export default function KontaktPage() {
+  const searchParams = useSearchParams();
+  /** Støtter `?postId=` (redirect fra SoMe) og `?post_id=` for bakoverkompatibilitet. */
+  const socialPostId =
+    searchParams.get("postId")?.trim() ?? searchParams.get("post_id")?.trim() ?? "";
+
   const [status, setStatus] = useState<Status>({ type: "idle" });
 
   const [form, setForm] = useState({
@@ -86,7 +92,7 @@ export default function KontaktPage() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: {
-          "content-type": "application/json",
+          "content-type": "application/json; charset=utf-8",
           "x-rid": rid,
         },
         body: JSON.stringify({
@@ -97,6 +103,7 @@ export default function KontaktPage() {
           subject: form.subject.trim(),
           message: form.message.trim(),
           rid,
+          ...(socialPostId ? { postId: socialPostId } : {}),
         }),
       });
 
@@ -110,18 +117,45 @@ export default function KontaktPage() {
       }
 
       if (!res.ok) {
+        const base =
+          safeStr(data?.message) ||
+          safeStr((data as { error?: unknown })?.error) ||
+          `Kunne ikke sende meldingen (HTTP ${res.status}).`;
+        const detail = safeStr((data as { detail?: unknown })?.detail);
         setStatus({
           type: "error",
-          message: safeStr(data?.message) || `Kunne ikke sende meldingen (HTTP ${res.status}).`,
-          rid,
+          message: detail ? `${base} (${detail})` : base,
+          rid: safeStr(data?.rid) || rid,
         });
         return;
       }
 
+      const payload = (data as { data?: { leadId?: unknown; emailSent?: unknown } })?.data;
+      const leadId = safeStr(payload?.leadId) || undefined;
+      const emailSent =
+        payload && typeof payload === "object" && "emailSent" in payload && typeof (payload as { emailSent?: unknown }).emailSent === "boolean"
+          ? (payload as { emailSent: boolean }).emailSent
+          : undefined;
+
       setStatus({
         type: "ok",
         rid: safeStr(data?.rid) || rid,
+        ...(leadId ? { leadId } : {}),
+        ...(emailSent === false ? { emailDelivered: false } : {}),
       });
+
+      if (socialPostId) {
+        void fetch("/api/social/track", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ postId: socialPostId, type: "lead" }),
+        }).catch(() => {});
+        void fetch("/api/revenue/lead", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ postId: socialPostId, meta: { source: "kontakt_form" } }),
+        }).catch(() => {});
+      }
 
       setForm({
         name: "",
@@ -324,9 +358,20 @@ export default function KontaktPage() {
                     style={{ borderColor: "#ff007f", boxShadow: "0 0 18px rgba(255,0,127,.14)" }}
                   >
                     <div className="font-medium">Meldingen er sendt.</div>
+                    {status.emailDelivered === false ? (
+                      <div className="mt-2 text-muted-foreground">
+                        Vi kunne ikke bekrefte e-postvarsling til oss akkurat nå, men henvendelsen er registrert. Ved hast,
+                        kontakt {SUPPORT_EMAIL} og oppgi RID under.
+                      </div>
+                    ) : null}
                     <div className="mt-1 text-muted-foreground">
                       RID: <span className="font-mono text-foreground">{status.rid}</span>
                     </div>
+                    {status.leadId ? (
+                      <div className="mt-1 text-muted-foreground">
+                        Lead: <span className="font-mono text-foreground">{status.leadId}</span>
+                      </div>
+                    ) : null}
                   </div>
                 )}
 

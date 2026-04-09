@@ -3,7 +3,7 @@
  * AI estimerer hvor fornøyde kunder er basert på: bestillingsmønstre, retter, endringer.
  */
 
-import { predictCustomerSatisfaction } from "@/lib/ai/capabilities/customerSatisfactionPredictor";
+import { predictCustomerSatisfaction } from "@/lib/ai/engines/capabilities/customerSatisfactionPredictor";
 import type {
   CustomerSatisfactionPredictorInput,
   CustomerSatisfactionPredictorOutput,
@@ -11,7 +11,7 @@ import type {
   DishMetricsInput,
   ChangesInput,
   SatisfactionFactor,
-} from "@/lib/ai/capabilities/customerSatisfactionPredictor";
+} from "@/lib/ai/engines/capabilities/customerSatisfactionPredictor";
 
 export type {
   OrderingPatternInput,

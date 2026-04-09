@@ -1,7 +1,21 @@
+import { logActivity } from "@/lib/ai/logActivity";
 import { makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export async function POST(req: Request) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const rid = makeRid("ai_audit");
+  const start = Date.now();
+  const logEnd = (status: "success" | "error", meta?: Record<string, unknown>) => {
+    const duration = Date.now() - start;
+    logActivity({
+      rid,
+      action: "audit",
+      status,
+      duration,
+      metadataExtra: { route: "api/ai/page/audit", ...meta },
+    });
+  };
 
   try {
     const payload: unknown = await req.json().catch(() => null);
@@ -9,6 +23,7 @@ export async function POST(req: Request) {
     const blocks = body?.blocks;
 
     if (!Array.isArray(blocks)) {
+      logEnd("error", { code: "INVALID" });
       return jsonErr(rid, "Missing blocks", 400, "INVALID");
     }
 
@@ -45,9 +60,12 @@ export async function POST(req: Request) {
 
     score = Math.max(score, 0);
 
+    logEnd("success", { blockCount: blocks.length });
     return jsonOk(rid, { score, issues }, 200);
   } catch {
+    logEnd("error", { code: "ERROR", thrown: true });
     return jsonErr(rid, "Failed", 500, "ERROR");
   }
+  });
 }
 

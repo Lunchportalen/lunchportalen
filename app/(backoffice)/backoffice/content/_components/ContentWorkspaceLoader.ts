@@ -4,14 +4,15 @@
  */
 
 import type React from "react";
-import type { PageLoadedData, PageErrorPayload } from "./useContentWorkspacePageData";
+import type { PageLoadedData, PageErrorPayload } from "./ContentWorkspaceState";
 import type { BodyParseResult } from "./contentWorkspace.blocks";
 import type { LoadSuccessPayload } from "./useContentWorkspaceSave";
 import { logEditorAiEvent } from "@/domain/backoffice/ai/metrics/logEditorAiEvent";
 
 export type OnPageLoadedParams = {
   setDocumentTypeAlias: (v: string | null) => void;
-  setEnvelopeFields: (v: Record<string, unknown>) => void;
+  setInvariantEnvelopeFields: (v: Record<string, unknown>) => void;
+  setCultureEnvelopeFields: (v: Record<string, unknown>) => void;
   setTitle: (v: string) => void;
   setSlug: (v: string) => void;
   setSlugTouched: (v: boolean) => void;
@@ -22,7 +23,8 @@ export type OnPageLoadedParams = {
 export function createOnPageLoaded(params: OnPageLoadedParams): (data: PageLoadedData) => void {
   const {
     setDocumentTypeAlias,
-    setEnvelopeFields,
+    setInvariantEnvelopeFields,
+    setCultureEnvelopeFields,
     setTitle,
     setSlug,
     setSlugTouched,
@@ -31,7 +33,8 @@ export function createOnPageLoaded(params: OnPageLoadedParams): (data: PageLoade
   } = params;
   return (data: PageLoadedData) => {
     setDocumentTypeAlias(data.envelope.documentType);
-    setEnvelopeFields(data.envelope.fields);
+    setInvariantEnvelopeFields(data.envelope.invariantFields);
+    setCultureEnvelopeFields(data.envelope.cultureFields);
     setTitle(data.nextTitle);
     setSlug(data.nextSlug);
     setSlugTouched(false);
@@ -56,7 +59,7 @@ export type OnResetParams = {
   setLegacyBodyText: (v: string) => void;
   setInvalidBodyRaw: (v: string) => void;
   setBodyParseError: (v: string | null) => void;
-  setExpandedBlockId: (v: string | null) => void;
+  setSelectedBlockId: (v: string | null) => void;
   clearSaveStateForReset: () => void;
 };
 
@@ -71,7 +74,7 @@ export function createOnReset(params: OnResetParams): () => void {
     setLegacyBodyText,
     setInvalidBodyRaw,
     setBodyParseError,
-    setExpandedBlockId,
+    setSelectedBlockId,
     clearSaveStateForReset,
   } = params;
   return () => {
@@ -84,7 +87,7 @@ export function createOnReset(params: OnResetParams): () => void {
     setLegacyBodyText("");
     setInvalidBodyRaw("");
     setBodyParseError(null);
-    setExpandedBlockId(null);
+    setSelectedBlockId(null);
     clearSaveStateForReset();
   };
 }

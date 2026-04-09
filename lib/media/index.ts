@@ -33,4 +33,6 @@ export {
   MEDIA_URL_MAX_LEN,
 } from "./validation";
 export { safeAltForImg, safeCaptionForFigcaption } from "./renderSafe";
+export { pickResolvedUrlFromMetadata, normalizeVariantsMap, MEDIA_VARIANTS_MAX_KEYS } from "./variantResolution";
+export { getMediaDisplayName } from "./displayName";
 /* Server-only: import getMediaItemById from "@/lib/media/loaders" */

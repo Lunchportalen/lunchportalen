@@ -11,8 +11,9 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { getAiProviderConfig } from "@/lib/ai/provider";
+import { getAiProviderConfig } from "@/lib/ai/runner";
 import { listCapabilities } from "@/lib/ai/capabilityRegistry";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 const allowedRoles = ["superadmin"] as const;
 
@@ -42,6 +43,7 @@ export type AiHealthPayload = {
 };
 
 export async function GET(req: NextRequest) {
+  return withApiAiEntrypoint(req, "GET", async () => {
   const s = await scopeOr401(req);
 
   if (!hasCtx(s)) {
@@ -92,4 +94,5 @@ export async function GET(req: NextRequest) {
     const message = e instanceof Error ? e.message : String(e);
     return jsonErr(s.ctx.rid, "AI health check feilet.", 500, "ai_health_failed", { message });
   }
+  });
 }

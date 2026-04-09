@@ -8,8 +8,11 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import type { Database } from "@/lib/types/database";
 import { assertCompanyActiveOr403 } from "@/lib/guards/assertCompanyActiveApi";
+import { ensureMealChoicesPresent, resolveTierForOrderDay } from "@/lib/orders/agreementContractFallback";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 
 type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING";
 
@@ -25,7 +28,7 @@ type Choice = { key: string; label?: string };
    DB-typer lokalt (for å stoppe TS "never")
 ========================= */
 type ProfileRow = {
-  user_id: string;
+  id: string;
   company_id: string | null;
   location_id: string | null;
   role?: string | null;
@@ -177,7 +180,7 @@ async function getAuthedUserId() {
 
   const cookieStore = await cookies();
 
-  const supa = createServerClient(url, anon, {
+  const supa = createServerClient<Database>(url, anon, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -344,15 +347,15 @@ export async function POST(req: Request) {
       });
     }
 
-    const weekTier = company.contract_week_tier;
-    if (!weekTier) {
-      return jsonErr(rid, "Kontrakt mangler contract_week_tier.", 400, {
-        code: "CONTRACT_MISSING_WEEK_TIER",
-        detail: { locked: false, cutoffTime: cutoff.cutoffTime, canAct: false },
-      });
-    }
+    let basis = Array.isArray(company.contract_basis_choices) ? company.contract_basis_choices : [];
+    let premiumRaw = Array.isArray(company.contract_premium_choices) ? company.contract_premium_choices : [];
+    const ensuredChoices = ensureMealChoicesPresent(basis, premiumRaw);
+    basis = ensuredChoices.basis;
+    premiumRaw = ensuredChoices.premium;
 
-    const tier = weekTier[dayKey];
+    const tier =
+      (await resolveTierForOrderDay(supa as any, company_id, location_id, dayKey, company.contract_week_tier)) ??
+      null;
     if (!tier) {
       return jsonErr(rid, "Kontrakt mangler tier-plan for denne dagen.", 400, {
         code: "CONTRACT_MISSING_DAY_TIER",
@@ -361,8 +364,6 @@ export async function POST(req: Request) {
     }
 
     // ✅ PREMIUM inkluderer BASIS (driftsikkert)
-    const basis = Array.isArray(company.contract_basis_choices) ? company.contract_basis_choices : [];
-    const premiumRaw = Array.isArray(company.contract_premium_choices) ? company.contract_premium_choices : [];
     const premium = mergeChoices(basis, premiumRaw);
     const allowed = tier === "BASIS" ? basis : premium;
 
@@ -385,7 +386,7 @@ export async function POST(req: Request) {
       const t = parseVariantTypeFromNote(note);
       const ck = String(choice_key).toLowerCase();
       if (!t || t !== ck) {
-        const label = ck === "salatbar" ? "Salatbar" : "Påsmurt";
+        const label = displayLabelForMealTypeKey(ck, null);
         return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
       }
     }

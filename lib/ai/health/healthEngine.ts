@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI PLATFORM HEALTH ENGINE
  * Overvåker: feil, ytelse, systemdrift.
@@ -5,26 +7,26 @@
  * Kun overvåking/analyse; ingen mutasjon.
  */
 
-import { detectSystemErrors } from "@/lib/ai/capabilities/detectSystemErrors";
+import { detectSystemErrors } from "@/lib/ai/engines/capabilities/detectSystemErrors";
 import type {
   DetectSystemErrorsInput,
   DetectSystemErrorsOutput,
   ErrorEntry,
   DetectedError,
-} from "@/lib/ai/capabilities/detectSystemErrors";
-import { detectPerformanceRegression } from "@/lib/ai/capabilities/detectPerformanceRegression";
+} from "@/lib/ai/engines/capabilities/detectSystemErrors";
+import { detectPerformanceRegression } from "@/lib/ai/engines/capabilities/detectPerformanceRegression";
 import type {
   DetectPerformanceRegressionInput,
   DetectPerformanceRegressionOutput,
   PerformanceMetricInput,
   MetricRegressionResult,
-} from "@/lib/ai/capabilities/detectPerformanceRegression";
-import { detectModelDrift } from "@/lib/ai/capabilities/detectModelDrift";
+} from "@/lib/ai/engines/capabilities/detectPerformanceRegression";
+import { detectModelDrift } from "@/lib/ai/engines/capabilities/detectModelDrift";
 import type {
   DetectModelDriftInput,
   DetectModelDriftOutput,
   DriftStats,
-} from "@/lib/ai/capabilities/detectModelDrift";
+} from "@/lib/ai/engines/capabilities/detectModelDrift";
 
 export type { ErrorEntry, DetectedError, PerformanceMetricInput, MetricRegressionResult, DriftStats };
 

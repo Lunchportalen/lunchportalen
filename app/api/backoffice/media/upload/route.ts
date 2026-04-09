@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3) Persist media_items row using existing model (type=image, source=upload).
+    const displayNameRaw = typeof form.get("displayName") === "string" ? String(form.get("displayName")).trim() : "";
     const altRaw = typeof form.get("alt") === "string" ? String(form.get("alt")).trim() : "";
     const captionRaw = typeof form.get("caption") === "string" ? String(form.get("caption")).trim() : "";
     const tagsRaw = form.getAll("tags").filter((t) => typeof t === "string") as string[];
@@ -182,7 +183,12 @@ export async function POST(request: NextRequest) {
         height: null,
         mime_type: contentType,
         bytes: fileSize,
-        metadata: { storageBucket: bucket, path: objectPath, originalName: originalName ?? null },
+        metadata: {
+          storageBucket: bucket,
+          path: objectPath,
+          originalName: originalName ?? null,
+          ...(displayNameRaw ? { displayName: displayNameRaw.slice(0, 120) } : {}),
+        },
         created_by: ctx.scope?.email ?? null,
       } as Record<string, unknown>)
       .select("*")

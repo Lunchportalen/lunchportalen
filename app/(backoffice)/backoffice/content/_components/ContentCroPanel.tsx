@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import type { CroRecommendationsState } from "@/lib/cro/editorState";
 import { isCroSuggestionApplicable } from "@/lib/cro/apply";
 import type { CroSuggestionType } from "@/lib/cro/suggestions";

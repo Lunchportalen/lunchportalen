@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { useCallback, useMemo, useState } from "react";
 import { serializeBodyEnvelope } from "./_stubs";
 import type { Block, BlockType } from "./editorBlockTypes";
@@ -13,9 +15,12 @@ import type { BlockType as AddModalBlockType } from "./_stubs";
 
 export function useContentWorkspaceBlocks(options: {
   documentTypeAlias: string | null;
-  envelopeFields: Record<string, unknown>;
+  invariantEnvelopeFields: Record<string, unknown>;
+  cultureEnvelopeFields: Record<string, unknown>;
+  /** Optional: e.g. close modal + animation after add (shell wiring). */
+  onAfterAddBlock?: (block: Block) => void;
 }) {
-  const { documentTypeAlias, envelopeFields } = options;
+  const { documentTypeAlias, invariantEnvelopeFields, cultureEnvelopeFields, onAfterAddBlock } = options;
 
   const [bodyMode, setBodyMode] = useState<BodyMode>("blocks");
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -23,7 +28,6 @@ export function useContentWorkspaceBlocks(options: {
   const [legacyBodyText, setLegacyBodyText] = useState("");
   const [invalidBodyRaw, setInvalidBodyRaw] = useState("");
   const [bodyParseError, setBodyParseError] = useState<string | null>(null);
-  const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
 
   const bodyForSave = useMemo(() => {
     const blocksBody = deriveBodyForSave(
@@ -36,7 +40,8 @@ export function useContentWorkspaceBlocks(options: {
     if (documentTypeAlias && documentTypeAlias.trim() !== "") {
       return serializeBodyEnvelope({
         documentType: documentTypeAlias,
-        fields: envelopeFields,
+        invariantFields: invariantEnvelopeFields,
+        cultureFields: cultureEnvelopeFields,
         blocksBody,
       });
     }
@@ -48,7 +53,8 @@ export function useContentWorkspaceBlocks(options: {
     legacyBodyText,
     invalidBodyRaw,
     documentTypeAlias,
-    envelopeFields,
+    invariantEnvelopeFields,
+    cultureEnvelopeFields,
   ]);
 
   /** Replaces editor body with parsed result. Caller must pass normalized/valid result; AI apply paths use parseBodyToBlocks which normalizes. */
@@ -59,31 +65,28 @@ export function useContentWorkspaceBlocks(options: {
     setLegacyBodyText(parsed.legacyText);
     setInvalidBodyRaw(parsed.rawBody);
     setBodyParseError(parsed.error);
-    setExpandedBlockId(
-      parsed.mode === "blocks" ? parsed.blocks[0]?.id ?? null : null
-    );
   }, []);
 
-  const setBlockById = useCallback(
-    (blockId: string, updater: (block: Block) => Block) => {
-      setBlocks((prev) =>
-        prev.map((entry) => (entry.id === blockId ? updater(entry) : entry))
-      );
+  const setBlockById = useCallback((blockId: string, updater: (block: Block) => Block) => {
+    if (!blockId || typeof blockId !== "string") return;
+    setBlocks((prev) => {
+      if (!prev.find((b) => b.id === blockId)) return prev;
+      return prev.map((entry) => (entry.id === blockId ? updater(entry) : entry));
+    });
+  }, []);
+
+  const onAddBlock = useCallback(
+    (type: AddModalBlockType) => {
+      const next = createBlock(type as BlockType);
+      setBodyMode("blocks");
+      setBodyParseError(null);
+      setLegacyBodyText("");
+      setInvalidBodyRaw("");
+      setBlocks((prev) => [...prev, next]);
+      onAfterAddBlock?.(next);
     },
-    []
+    [documentTypeAlias, onAfterAddBlock]
   );
-
-  const onAddBlock = useCallback((type: AddModalBlockType) => {
-    const next = createBlock(
-      type as "hero" | "richText" | "image" | "cta" | "divider" | "banners" | "code"
-    );
-    setBodyMode("blocks");
-    setBodyParseError(null);
-    setLegacyBodyText("");
-    setInvalidBodyRaw("");
-    setBlocks((prev) => [...prev, next]);
-    setExpandedBlockId(next.id);
-  }, []);
 
   const onMoveBlock = useCallback((blockId: string, direction: -1 | 1) => {
     setBlocks((prev) => {
@@ -101,11 +104,6 @@ export function useContentWorkspaceBlocks(options: {
 
   const onDeleteBlock = useCallback((blockId: string) => {
     setBlocks((prev) => prev.filter((entry) => entry.id !== blockId));
-    setExpandedBlockId((prev) => (prev === blockId ? null : prev));
-  }, []);
-
-  const onToggleBlock = useCallback((blockId: string) => {
-    setExpandedBlockId((prev) => (prev === blockId ? null : blockId));
   }, []);
 
   return {
@@ -121,14 +119,11 @@ export function useContentWorkspaceBlocks(options: {
     setInvalidBodyRaw,
     bodyParseError,
     setBodyParseError,
-    expandedBlockId,
-    setExpandedBlockId,
     bodyForSave,
     applyParsedBody,
     setBlockById,
     onAddBlock,
     onMoveBlock,
     onDeleteBlock,
-    onToggleBlock,
   };
 }

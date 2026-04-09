@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI SITE ARCHITECT
  * Dette er den mest undervurderte motoren.
@@ -14,37 +16,37 @@ import type {
   SecondaryNavItem,
   LandingPageRecommendation,
 } from "@/lib/ai/architecture/generateSiteArchitecture";
-import { generateFullSite } from "@/lib/ai/capabilities/generateFullSite";
+import { generateFullSite } from "@/lib/ai/engines/capabilities/generateFullSite";
 import type {
   GenerateFullSiteInput,
   GenerateFullSiteOutput,
   GeneratedSitePage,
-} from "@/lib/ai/capabilities/generateFullSite";
-import { evolveSiteStructure } from "@/lib/ai/capabilities/evolveSiteStructure";
+} from "@/lib/ai/engines/capabilities/generateFullSite";
+import { evolveSiteStructure } from "@/lib/ai/engines/capabilities/evolveSiteStructure";
 import type {
   EvolveSiteStructureInput,
   EvolveSiteStructureOutput,
   CurrentPageInput,
   StructureEvolution,
-} from "@/lib/ai/capabilities/evolveSiteStructure";
-import { generateTopicCluster } from "@/lib/ai/capabilities/generateTopicCluster";
+} from "@/lib/ai/engines/capabilities/evolveSiteStructure";
+import { generateTopicCluster } from "@/lib/ai/engines/capabilities/generateTopicCluster";
 import type {
   GenerateTopicClusterInput,
   GenerateTopicClusterOutput,
-} from "@/lib/ai/capabilities/generateTopicCluster";
-import { generateNavigation } from "@/lib/ai/capabilities/generateNavigation";
+} from "@/lib/ai/engines/capabilities/generateTopicCluster";
+import { generateNavigation } from "@/lib/ai/engines/capabilities/generateNavigation";
 import type {
   GenerateNavigationInput,
   GenerateNavigationOutput,
-} from "@/lib/ai/capabilities/generateNavigation";
-import { generateInternalLinks } from "@/lib/ai/capabilities/generateInternalLinks";
+} from "@/lib/ai/engines/capabilities/generateNavigation";
+import { generateInternalLinks } from "@/lib/ai/engines/capabilities/generateInternalLinks";
 import type {
   GenerateInternalLinksInput,
   GenerateInternalLinksOutput,
   PageContentInput,
   SiteGraphNode,
   SuggestedInternalLink,
-} from "@/lib/ai/capabilities/generateInternalLinks";
+} from "@/lib/ai/engines/capabilities/generateInternalLinks";
 
 export type {
   PageTreeNode,

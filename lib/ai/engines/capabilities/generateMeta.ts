@@ -4,8 +4,8 @@
  * Import this module to register the capability.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateMeta";
 

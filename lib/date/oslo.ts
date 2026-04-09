@@ -244,3 +244,12 @@ export function cutoffStatusForDate0805(isoDate: string): "PAST" | "TODAY_OPEN" 
 
   return isAfterCutoff0805() ? "TODAY_LOCKED" : "TODAY_OPEN";
 }
+
+/* Re-exports: ukesynlighet (fredag 15:00 / torsdag 08:00) — én implementasjon i lib/week/availability.ts */
+export {
+  canSeeThisWeek,
+  canSeeNextWeek,
+  weekStartMon,
+  isAfterFriday1500,
+  visibleWeekStarts,
+} from "@/lib/week/availability";

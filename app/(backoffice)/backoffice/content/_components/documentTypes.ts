@@ -1,14 +1,6 @@
 /**
- * Document type registry for content editor (e.g. page, allowedChildren).
- * Used by create panel and envelope handling.
+ * Re-export — canonical definitions in `lib/cms/contentDocumentTypes.ts`.
  */
 
-export type DocumentTypeEntry = { alias: string; name: string; allowedChildren?: string[] };
-
-export const documentTypes: DocumentTypeEntry[] = [
-  { alias: "page", name: "Page", allowedChildren: ["page"] },
-];
-
-export function getDocType(alias: string): DocumentTypeEntry | null {
-  return documentTypes.find((d) => d.alias === alias) ?? null;
-}
+export type { DocumentTypeEntry } from "@/lib/cms/contentDocumentTypes";
+export { documentTypes, getDocType } from "@/lib/cms/contentDocumentTypes";

@@ -1,3 +1,5 @@
+// DUPLICATE — review
+
 /**
  * AI Office Behaviour Model capability: buildOfficeBehaviourModel.
  * AI lærer hvordan hvert firma faktisk bruker systemet:
@@ -7,8 +9,8 @@
  * Gir bedre prognoser og mindre matsvinn. Deterministic; no LLM.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "officeBehaviourModel";
 

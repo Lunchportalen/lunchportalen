@@ -6,9 +6,9 @@
  */
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
-import { buildScreenshotBootstrapBlocks } from "../tools/blockBuilder";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
+import { buildScreenshotBootstrapBlocks } from "../../tools/blockBuilder";
 import { parseScreenshotLayout } from "./parseScreenshotLayout";
 
 const CAPABILITY_NAME = "convertScreenshotToBlocks";

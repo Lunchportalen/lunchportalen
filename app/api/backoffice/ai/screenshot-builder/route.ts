@@ -4,15 +4,17 @@
  * Response: { blocks, screenshotUrl, message }. Blocks are deterministic (hero, richText, image, cta); apply path must normalize via normalizePageBuilderBlocks before writing.
  */
 import type { NextRequest } from "next/server";
-import { isAIEnabled } from "@/lib/ai/provider";
+import { isAIEnabled } from "@/lib/ai/runner";
 import { buildScreenshotBootstrapBlocks } from "@/lib/ai/tools/blockBuilder";
 import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const s = await scopeOr401(req);
   if (s.ok === false) return denyResponse(s);
   const ctx = s.ctx;
@@ -43,4 +45,5 @@ export async function POST(req: NextRequest) {
   });
 
   return jsonOk(ctx.rid, { blocks, screenshotUrl: screenshotUrl || "(none)", message }, 200);
+  });
 }

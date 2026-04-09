@@ -5,14 +5,9 @@ export const revalidate = 0;
 
 import { addDaysISO, osloNowParts, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { writeAudit } from "@/lib/audit/log";
+import { requireSanityWrite } from "@/lib/cms/sanityWriteClient";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
-  return String(v).trim();
-}
 
 function isISODate(s: any) {
   return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -26,17 +21,6 @@ async function readJsonSafe(req: Request) {
   } catch {
     return {};
   }
-}
-
-async function getSanityWrite() {
-  const { createClient } = await import("@sanity/client");
-  return createClient({
-    projectId: requireEnv("NEXT_PUBLIC_SANITY_PROJECT_ID"),
-    dataset: requireEnv("NEXT_PUBLIC_SANITY_DATASET"),
-    apiVersion: requireEnv("NEXT_PUBLIC_SANITY_API_VERSION"),
-    token: requireEnv("SANITY_WRITE_TOKEN"),
-    useCdn: false,
-  });
 }
 
 async function getSupabaseAdmin() {
@@ -59,7 +43,7 @@ async function patchVisibilityForRange(opts: {
   onlyApproved: boolean;
 }) {
   const { fromISO, toISO, visible, onlyApproved } = opts;
-  const sanityWrite = await getSanityWrite();
+  const sanityWrite = requireSanityWrite();
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
@@ -90,7 +74,7 @@ async function patchVisibilityForRange(opts: {
 
 async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean; onlyApproved: boolean }) {
   const { dateISO, visible, onlyApproved } = opts;
-  const sanityWrite = await getSanityWrite();
+  const sanityWrite = requireSanityWrite();
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
@@ -192,7 +176,7 @@ export async function GET(req: Request) {
   const week2To = addDaysISO(weekStart, 14);
 
   const isThu0800 = oslo.weekday === "Thu" && oslo.hh === 8 && oslo.mi === 0;
-  const isFri1400 = oslo.weekday === "Fri" && oslo.hh === 14 && oslo.mi === 0;
+  const isFri1500 = oslo.weekday === "Fri" && oslo.hh === 15 && oslo.mi === 0;
 
   const actions: any[] = [];
 
@@ -235,7 +219,7 @@ export async function GET(req: Request) {
       } catch {}
     }
 
-    if (isFri1400) {
+    if (isFri1500) {
       const res = await patchVisibilityForRange({
         fromISO: week1From,
         toISO: week1To,
@@ -268,7 +252,7 @@ export async function GET(req: Request) {
           target_label: `week1 ${week1From}..${week1To}`,
           before: null,
           after: { visible: false, onlyApproved: false, changed: res.changed },
-          meta: { schedule: "Fri 14:00", mirror },
+          meta: { schedule: "Fri 15:00", mirror },
         });
       } catch {}
     }

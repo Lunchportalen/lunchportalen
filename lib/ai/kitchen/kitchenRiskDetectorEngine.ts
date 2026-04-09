@@ -3,14 +3,14 @@
  * Oppdager risiko som: volumspike, forsinkelse, underkapasitet.
  */
 
-import { detectKitchenRisks } from "@/lib/ai/capabilities/kitchenRiskDetector";
+import { detectKitchenRisks } from "@/lib/ai/engines/capabilities/kitchenRiskDetector";
 import type {
   KitchenRiskDetectorInput,
   KitchenRiskDetectorOutput,
   KitchenSlotInput,
   DetectedKitchenRisk,
   KitchenRiskType,
-} from "@/lib/ai/capabilities/kitchenRiskDetector";
+} from "@/lib/ai/engines/capabilities/kitchenRiskDetector";
 
 export type { KitchenSlotInput, DetectedKitchenRisk, KitchenRiskType };
 

@@ -21,9 +21,9 @@ function normalizeLimit(v: unknown) {
   return Math.max(1, Math.min(500, Math.trunc(n)));
 }
 
-function normalizeStatus(v: unknown): "PENDING" | "ACTIVE" | "TERMINATED" | null {
+function normalizeStatus(v: unknown): "PENDING" | "ACTIVE" | "REJECTED" | "PAUSED" | "TERMINATED" | null {
   const s = safeStr(v).toUpperCase();
-  if (s === "PENDING" || s === "ACTIVE" || s === "TERMINATED") return s;
+  if (s === "PENDING" || s === "ACTIVE" || s === "REJECTED" || s === "PAUSED" || s === "TERMINATED") return s;
   return null;
 }
 
@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = new URL(req.url);
-    const status = normalizeStatus(url.searchParams.get("status"));
+    const statusRaw = safeStr(url.searchParams.get("status")).toUpperCase();
+    const statusSingle = normalizeStatus(statusRaw);
     const limit = normalizeLimit(url.searchParams.get("limit"));
     const companyId = safeStr(url.searchParams.get("companyId"));
 
@@ -63,13 +64,19 @@ export async function GET(req: NextRequest) {
         price_per_employee,
         created_at,
         updated_at,
+        activated_at,
+        rejection_reason,
         companies:company_id ( name )
       `
       )
       .order("updated_at", { ascending: false })
       .limit(limit);
 
-    if (status) q = q.eq("status", status);
+    if (statusRaw === "REJECTED") {
+      q = q.in("status", ["REJECTED", "TERMINATED"]);
+    } else if (statusSingle) {
+      q = q.eq("status", statusSingle);
+    }
     if (companyId) q = q.eq("company_id", companyId);
 
     const { data, error } = await q;
@@ -95,6 +102,8 @@ export async function GET(req: NextRequest) {
       price_per_employee: a.price_per_employee ?? null,
       created_at: a.created_at ?? null,
       updated_at: a.updated_at ?? null,
+      activated_at: a.activated_at ?? null,
+      rejection_reason: a.rejection_reason ?? null,
     }));
 
     return jsonOk(rid, { agreements }, 200);

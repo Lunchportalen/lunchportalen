@@ -1,10 +1,12 @@
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { runContentHealthDaily } from "@/lib/ai/agents/contentHealthDaily";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  return withApiAiEntrypoint(request, "POST", async () => {
   const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
   const gate = await scopeOr401(request);
   if (gate.ok === false) return gate.res;
@@ -26,4 +28,5 @@ export async function POST(request: NextRequest) {
   const result = await runContentHealthDaily(supabaseAdmin(), { locale, limitPages });
 
   return jsonOk(ctx.rid, { ok: true, scanned: result.scanned, written: result.written }, 200);
+  });
 }

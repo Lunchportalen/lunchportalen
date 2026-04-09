@@ -21,6 +21,7 @@ export async function fetchBackofficeSuggestRequest(body: SuggestRequest): Promi
   const res = await fetch("/api/backoffice/ai/suggest", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   const json = (await res.json().catch(() => ({}))) as unknown;
@@ -169,11 +170,11 @@ export async function runWorkspaceAiImageBatch(deps: {
   if (!blocks || blocks.length === 0) return;
 
   const targets = blocks
-    .filter(
-      (b) =>
-        (b.type === "hero" || b.type === "hero_full" || b.type === "image") &&
-        !b.mediaItemId
-    )
+    .filter((b) => {
+      if (b.type === "image") return !(b.mediaItemId ?? "").trim();
+      if (b.type === "hero" || b.type === "hero_full") return !(b.contentData.mediaItemId ?? "").trim();
+      return false;
+    })
     .sort((a, b) => {
       if (a.type === "hero" || a.type === "hero_full") return -1;
       if (b.type === "hero" || b.type === "hero_full") return 1;
@@ -286,8 +287,12 @@ bred scene, cinematic følelse
             current.type === "hero" || current.type === "hero_full"
               ? {
                   ...current,
-                  imageId: url,
-                  mediaItemId: typeof assetId === "string" ? assetId : current.mediaItemId,
+                  contentData: {
+                    ...current.contentData,
+                    imageId: url,
+                    mediaItemId:
+                      typeof assetId === "string" ? assetId : current.contentData.mediaItemId,
+                  },
                 }
               : current
           );

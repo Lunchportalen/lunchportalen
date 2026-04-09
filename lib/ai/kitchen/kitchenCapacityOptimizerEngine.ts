@@ -4,7 +4,7 @@
  * Kan foreslå: endret leveringsvindu, volumjustering.
  */
 
-import { optimizeKitchenCapacity } from "@/lib/ai/capabilities/kitchenCapacityOptimizer";
+import { optimizeKitchenCapacity } from "@/lib/ai/engines/capabilities/kitchenCapacityOptimizer";
 import type {
   KitchenCapacityOptimizerInput,
   KitchenCapacityOptimizerOutput,
@@ -12,7 +12,7 @@ import type {
   AlternativeWindowInput,
   DeliveryWindowSuggestion,
   VolumeAdjustment,
-} from "@/lib/ai/capabilities/kitchenCapacityOptimizer";
+} from "@/lib/ai/engines/capabilities/kitchenCapacityOptimizer";
 
 export type {
   CapacitySlotInput,

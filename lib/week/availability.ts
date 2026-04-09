@@ -6,7 +6,7 @@ const OSLO_TZ = "Europe/Oslo";
  * - Avbestilling samme dag: før 08:00
  * - Bestilling: for hele inneværende uke (Man–Fre), men ikke etter 08:00 på den aktuelle dagen
  * - Neste uke åpner: torsdag 08:00 (kan se/bestille neste uke)
- * - Denne uka slettes: fredag 14:00 (inneværende uke skal ikke vises etter dette)
+ * - Denne uka skjules: fredag 15:00 (inneværende uke skal ikke vises etter dette)
  */
 
 /** ---------- Oslo time helpers (zero deps) ---------- */
@@ -140,21 +140,24 @@ function addDaysOsloYMD(y: number, mo: number, d: number, addDays: number) {
 /** ---------- Rules ---------- */
 
 /**
- * Friday 14:00 gate (and weekend)
+ * Friday 15:00 gate (and weekend) — én sannhet for ukesynlighet.
  *
  * IMPORTANT: Søndag har weekday=0.
  * Helg (lør/søn) skal alltid være "etter fredag", ellers vil søndag feilaktig
  * la "denne uke" være synlig.
  */
-export function isAfterFriday1400(now: Date) {
+export function isAfterFriday1500(now: Date) {
   const p = osloParts(now);
 
   // Weekend must be treated as "after Friday"
   if (p.weekday === 6 || p.weekday === 0) return true;
 
-  // Friday after 14:00
-  return p.weekday === 5 && hhmmToMin(p) >= 14 * 60;
+  // Friday from 15:00 Oslo
+  return p.weekday === 5 && hhmmToMin(p) >= 15 * 60;
 }
+
+/** @deprecated Bruk isAfterFriday1500 (fredag 15:00). */
+export const isAfterFriday1400 = isAfterFriday1500;
 
 /**
  * Thursday 08:00 gate (next week opens)
@@ -175,7 +178,7 @@ export function nextWeekOpens(now: Date) {
 }
 
 export function canSeeThisWeek(now: Date) {
-  return !isAfterFriday1400(now);
+  return !isAfterFriday1500(now);
 }
 
 export function canSeeNextWeek(now: Date) {
@@ -212,7 +215,7 @@ export function weekStartMon(now: Date) {
 
 /**
  * Visible week starts (Oslo local Mondays 00:00):
- * - This week if before Friday 14:00
+ * - This week if before Friday 15:00
  * - Next week if from Thursday 08:00 (and through weekend)
  */
 export function visibleWeekStarts(now: Date) {

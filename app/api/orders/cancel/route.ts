@@ -1,4 +1,5 @@
 // app/api/orders/cancel/route.ts
+// DEPRECATED — do not use for new UI/client code. Canonical employee cancel HTTP entry: POST /api/order/cancel (lib/api/client cancelOrder).
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
 import { requireRule } from "@/lib/agreement/requireRule";
-import { lpOrderCancel } from "@/lib/orders/rpcWrite";
+import { lpOrderCancel, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Helpers
@@ -115,19 +116,19 @@ async function setCancelled(
   sb: any,
   input: { company_id: string; user_id: string; isoDate: string; slot?: string | null }
 ) {
-  const rpc = await lpOrderCancel(sb as any, { p_date: input.isoDate });
+  const orderSlot = normalizeOrderTableSlot(input.slot);
+  const rpc = await lpOrderCancel(sb as any, { p_date: input.isoDate, p_slot: orderSlot });
   if (!rpc.ok) {
     return { ok: false as const, error: rpc.error, code: rpc.code };
   }
 
-  let q = sb
+  const q = sb
     .from("orders")
     .select("id,date,status,created_at,updated_at,note,slot")
     .eq("company_id", input.company_id)
     .eq("user_id", input.user_id)
-    .eq("date", input.isoDate);
-
-  if (input.slot) q = q.eq("slot", input.slot);
+    .eq("date", input.isoDate)
+    .eq("slot", orderSlot);
 
   const row = await q.maybeSingle();
   if (row.error) {

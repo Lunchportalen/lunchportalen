@@ -3,10 +3,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderCancel, lpOrderSet, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 
 export async function POST(req: Request) {
   const rid = makeRid();
+
+  // H2: fail-closed in production — dev-only order mutation helper must never run on Vercel prod.
+  if (process.env.VERCEL_ENV === "production") {
+    return jsonErr(rid, "Dev-endepunkt er deaktivert i produksjon.", 404, "not_found");
+  }
+
   const { supabaseServer } = await import("@/lib/supabase/server");
   const supabase = await supabaseServer();
 
@@ -35,8 +41,15 @@ export async function POST(req: Request) {
   }
 
   const writeRes = status === "active"
-    ? await lpOrderSet(supabase as any, { p_date: String(order.date), p_slot: String(order.slot ?? "lunch"), p_note: null })
-    : await lpOrderCancel(supabase as any, { p_date: String(order.date) });
+    ? await lpOrderSet(supabase as any, {
+        p_date: String(order.date),
+        p_slot: normalizeOrderTableSlot((order as { slot?: string | null }).slot),
+        p_note: null,
+      })
+    : await lpOrderCancel(supabase as any, {
+        p_date: String(order.date),
+        p_slot: normalizeOrderTableSlot((order as { slot?: string | null }).slot),
+      });
 
   if (!writeRes.ok) {
     return jsonErr(rid, "Kunne ikke oppdatere ordrestatus.", 500, {

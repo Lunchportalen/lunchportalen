@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { recordView, recordClick, recordConversion } from "@/lib/ai/experiments/analytics";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ function rateLimitOk(ip: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  return withApiAiEntrypoint(request, "POST", async () => {
   const rid = makeRid("exp");
   const secret = process.env.EXPERIMENT_INGEST_SECRET;
   const headerSecret = request.headers.get("x-lp-experiment-secret") ?? "";
@@ -72,4 +74,5 @@ export async function POST(request: NextRequest) {
   );
 
   return jsonOk(rid, { ok: true }, 200);
+  });
 }

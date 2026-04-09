@@ -6,10 +6,7 @@ export const revalidate = 0;
 import { redirect, notFound } from "next/navigation";
 import SuperadminEsgClient from "./SuperadminEsgClient";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 type Props = { params: { companyId: string } | Promise<{ companyId: string }> };
 
@@ -22,10 +19,6 @@ function isUuid(v: any) {
     typeof v === "string" &&
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v)
   );
-}
-
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
 }
 
 export default async function SuperadminEsgCompanyPage({ params }: Props) {
@@ -44,15 +37,7 @@ export default async function SuperadminEsgCompanyPage({ params }: Props) {
     redirect(`/login?next=/superadmin/esg/${encodeURIComponent(companyId)}`);
   }
 
-  // Role gate (FASET: profiles.id = auth.user.id)
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 

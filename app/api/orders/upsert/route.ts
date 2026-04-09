@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { supabaseServer } from "@/lib/supabase/server";
-import { lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderSet, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 
 function mustISODate(s: string) {
   return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s);
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   const date = String(body?.date ?? "").trim();
   const note = body?.note == null ? null : String(body.note);
-  const slot = String(body?.slot ?? "lunch").trim() || "lunch";
+  const slot = normalizeOrderTableSlot(body?.slot);
 
   if (!mustISODate(date)) {
     return jsonErr(rid, "Dato må være YYYY-MM-DD.", 400, "INVALID_DATE");
@@ -110,6 +110,29 @@ export async function POST(req: NextRequest) {
     },
     order: row ?? null,
   });
+
+  const orderId = String(row?.order_id ?? row?.orderId ?? "").trim();
+  try {
+    const { normalizeOrderAttributionInput, readAttributionCookieFromRequest } = await import("@/lib/revenue/session");
+    const { persistOrderAttribution } = await import("@/lib/revenue/persistOrderAttribution");
+    const attr = normalizeOrderAttributionInput(body, readAttributionCookieFromRequest(req));
+    if (orderId && attr) {
+      await persistOrderAttribution(orderId, attr, rid);
+    }
+  } catch {
+    /* attributjon skal aldri blokkere upsert */
+  }
+
+  try {
+    const { applyLeadPipelineOrderAttribution } = await import("@/lib/revenue/applyLeadPipelineOrderAttribution");
+    await applyLeadPipelineOrderAttribution({
+      orderId,
+      userEmail: String((scope as { email?: unknown })?.email ?? "").trim() || null,
+      rid,
+    });
+  } catch {
+    /* lead_pipeline / SoMe-metrics skal aldri blokkere upsert */
+  }
 
   await supabase.rpc("idem_put", { p_route: routeName, p_key: idemKey, p_status: 200, p_response: await res.clone().json() });
 

@@ -13,7 +13,7 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderCancel, lpOrderSet, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 
 // mocked in tests where relevant
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const body = await readJson(req);
     const date = String(body?.date ?? "").trim();
     const action = String(body?.action ?? body?.op ?? "place").trim().toLowerCase();
-    const slot = String(body?.slot ?? "lunch").trim() || "lunch";
+    const slot = normalizeOrderTableSlot(body?.slot);
 
     if (!isIsoDate(date)) {
       return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, "INVALID_DATE", { date });

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI TRAFFIC ENGINE
  * Oppdager: søkeordmuligheter, trafikkmønstre, trend-topics.
@@ -5,32 +7,32 @@
  * Kun oppdagelse/analyse; ingen mutasjon.
  */
 
-import { discoverKeywordGaps } from "@/lib/ai/capabilities/discoverKeywordGaps";
+import { discoverKeywordGaps } from "@/lib/ai/engines/capabilities/discoverKeywordGaps";
 import type {
   DiscoverKeywordGapsInput,
   DiscoverKeywordGapsOutput,
   KeywordOpportunity,
-} from "@/lib/ai/capabilities/discoverKeywordGaps";
-import { detectTrafficAnomaly } from "@/lib/ai/capabilities/detectTrafficAnomaly";
+} from "@/lib/ai/engines/capabilities/discoverKeywordGaps";
+import { detectTrafficAnomaly } from "@/lib/ai/engines/capabilities/detectTrafficAnomaly";
 import type {
   DetectTrafficAnomalyInput,
   DetectTrafficAnomalyOutput,
   DataPoint,
-} from "@/lib/ai/capabilities/detectTrafficAnomaly";
-import { predictOrganicTraffic } from "@/lib/ai/capabilities/predictOrganicTraffic";
+} from "@/lib/ai/engines/capabilities/detectTrafficAnomaly";
+import { predictOrganicTraffic } from "@/lib/ai/engines/capabilities/predictOrganicTraffic";
 import type {
   PredictOrganicTrafficInput,
   PredictOrganicTrafficOutput,
   OrganicTrafficDataPoint,
   OrganicTrafficPrediction,
-} from "@/lib/ai/capabilities/predictOrganicTraffic";
-import { detectTrendingTopics } from "@/lib/ai/capabilities/detectTrendingTopics";
+} from "@/lib/ai/engines/capabilities/predictOrganicTraffic";
+import { detectTrendingTopics } from "@/lib/ai/engines/capabilities/detectTrendingTopics";
 import type {
   DetectTrendingTopicsInput,
   DetectTrendingTopicsOutput,
   TopicDataPoint,
   TrendingTopicResult,
-} from "@/lib/ai/capabilities/detectTrendingTopics";
+} from "@/lib/ai/engines/capabilities/detectTrendingTopics";
 
 export type { KeywordOpportunity, DataPoint, OrganicTrafficDataPoint, OrganicTrafficPrediction, TopicDataPoint, TrendingTopicResult };
 

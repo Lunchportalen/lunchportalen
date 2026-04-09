@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/superadmin/auth.ts
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";

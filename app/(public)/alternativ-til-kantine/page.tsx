@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@/components/ui/Icon";
+import { mealDisplayLabelsForPlan } from "@/lib/cms/marketingMeals";
 
 export const metadata: Metadata = {
   title: "Alternativ til kantine – kontroll uten kjøkkeninvestering",
@@ -79,18 +80,14 @@ function jsonLd() {
   return JSON.stringify([breadcrumbLd, faqLd]);
 }
 
-const BASIS_CHIPS = [
-  "Salatbar",
-  "Påsmurt",
-  "Varmmat",
-  "Faste rammer (admin)",
-  "Cut-off kl. 08:00",
-  "Forutsigbar drift",
-];
+export default async function Page() {
+  const [basisMeals, luxusMeals] = await Promise.all([
+    mealDisplayLabelsForPlan("basis"),
+    mealDisplayLabelsForPlan("luxus"),
+  ]);
+  const BASIS_CHIPS = [...basisMeals, "Faste rammer (admin)", "Cut-off kl. 08:00", "Forutsigbar drift"];
+  const LUXUS_CHIPS = luxusMeals;
 
-const LUXUS_CHIPS = ["Salatbar", "Påsmurt", "Varmmat", "Sushi", "Pokébowl", "Thaimat"];
-
-export default function Page() {
   return (
     <main className="lp-home lp-altkantine">
       <script id="ld-altkantine" type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd() }} />

@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { getDocType } from "./_stubs";
 import { normalizeSlug } from "./contentWorkspace.helpers";
 
@@ -98,7 +100,7 @@ export function ContentWorkspaceCreatePanel({
                     </span>
                     <span className="font-medium text-slate-800">{name}</span>
                     <span className="text-xs text-slate-500">
-                      Opprett en ny  ««{name} «».
+                      Opprett en ny side med typen «{name}».
                     </span>
                   </button>
                 );

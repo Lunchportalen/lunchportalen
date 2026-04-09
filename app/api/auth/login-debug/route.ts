@@ -6,7 +6,9 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getSupabasePublicConfig } from "@/lib/config/env";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import type { Database } from "@/lib/types/database";
 
 
 type LoginBody = { email?: string; password?: string };
@@ -32,11 +34,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return jsonErr(rid, "Mangler Supabase ENV (URL/ANON_KEY).", 500, "missing_env");
+  let supabaseUrl: string;
+  let supabaseAnonKey: string;
+  try {
+    const pub = getSupabasePublicConfig();
+    supabaseUrl = pub.url;
+    supabaseAnonKey = pub.anonKey;
+  } catch {
+    return jsonErr(rid, "Mangler Supabase ENV (URL/publiserbar nøkkel).", 500, "missing_env");
   }
 
   const hostname = req.nextUrl.hostname;
@@ -52,6 +57,11 @@ export async function POST(req: NextRequest) {
     httpOnly?: any;
     maxAge?: any;
   }> = [];
+  const stagedCookies: Array<{
+    name: string;
+    value: string;
+    options: Record<string, unknown>;
+  }> = [];
 
   // ✅ Sett cookies på responsen (slik som i login-route)
   const response = jsonOk(rid, { ok: true, rid }, 200) as NextResponse;
@@ -63,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     if (!email || !password) return jsonErr(rid, "Fyll inn e-post og passord.", 400, "missing_credentials");
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return req.cookies.getAll();
@@ -89,7 +99,10 @@ export async function POST(req: NextRequest) {
               maxAge: patched.maxAge,
             });
 
-            response.cookies.set(name, value, patched);
+            stagedCookies.push({ name, value, options: patched });
+            if (response.cookies?.set) {
+              response.cookies.set(name, value, patched);
+            }
           });
         },
       },
@@ -114,15 +127,15 @@ export async function POST(req: NextRequest) {
         error: error?.message || null,
       },
       cookiesAttempted,
-      responseSetCookieNames: response.cookies.getAll().map((c) => c.name),
+      responseSetCookieNames: stagedCookies.map((c) => c.name),
       requestCookieNames: req.cookies.getAll().map((c) => c.name),
     };
 
     const res2 = jsonOk(rid, out, 200) as NextResponse;
 
     // ✅ Kopier set-cookie fra response -> res2
-    response.cookies.getAll().forEach((c) => {
-      res2.cookies.set(c.name, c.value, c);
+    stagedCookies.forEach((cookie) => {
+      res2.cookies.set(cookie.name, cookie.value, cookie.options);
     });
 
     return res2;

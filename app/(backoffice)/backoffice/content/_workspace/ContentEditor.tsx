@@ -2,6 +2,18 @@
 
 import { ContentWorkspace } from "../_components/ContentWorkspace";
 
-export default function ContentEditor({ nodeId }: { nodeId: string }) {
-  return <ContentWorkspace initialPageId={nodeId} embedded />;
+export default function ContentEditor({
+  nodeId,
+  initialFocusBlockId,
+}: {
+  nodeId: string;
+  initialFocusBlockId?: string | null;
+}) {
+  return (
+    <ContentWorkspace
+      initialPageId={nodeId}
+      embedded
+      initialFocusBlockId={initialFocusBlockId ?? undefined}
+    />
+  );
 }

@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 
 import AdminFooter from "@/components/admin/AdminFooter";
 import NeonGuard from "@/components/admin/NeonGuard";
+import AdminNav from "./AdminNav";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -88,10 +89,16 @@ async function currentPathFromHeaders(fallback: string) {
   return fallback;
 }
 
-function shell(children: ReactNode) {
+function shell(children: ReactNode, opts?: { showCompanyAdminNav?: boolean }) {
+  const showNav = opts?.showCompanyAdminNav !== false;
   return (
     <div className="w-full">
       <NeonGuard />
+      {showNav ? (
+        <div className="mx-auto w-full max-w-[1440px] px-4 pt-[27px]">
+          <AdminNav />
+        </div>
+      ) : null}
       <main className="w-full">{children}</main>
       <AdminFooter />
     </div>
@@ -115,7 +122,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   if (role === "superadmin") {
-    return shell(children);
+    return shell(children, { showCompanyAdminNav: false });
   }
 
   if (role !== "company_admin") {

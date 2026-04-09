@@ -1,7 +1,9 @@
+// STATUS: KEEP
+
 // app/superadmin/_guard.tsx
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 export default async function SuperadminGuard({ children }: { children: React.ReactNode }) {
   const supabase = await supabaseServer();
@@ -13,8 +15,8 @@ export default async function SuperadminGuard({ children }: { children: React.Re
     redirect("/login?next=/superadmin");
   }
 
-  // Hard superadmin-fasit
-  if (!isSuperadminEmail(user.email)) {
+  // profiles.role === "superadmin"
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/"); // eller /week, men / er trygg "failsafe"
   }
 

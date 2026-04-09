@@ -19,6 +19,10 @@ export type MediaUsageHint = "hero" | "thumbnail" | "og" | "inline" | "banner";
 
 export type MediaItemMetadata = {
   usageHint?: MediaUsageHint;
+  /** Short editorial name for library lists (not alt text). */
+  displayName?: string;
+  /** Optional responsive or derivative URLs: key → absolute https URL (e.g. w640, og). */
+  variants?: Record<string, string>;
   [key: string]: unknown;
 };
 

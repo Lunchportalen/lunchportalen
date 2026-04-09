@@ -4,8 +4,8 @@
  */
 
 import { analyzeContentHealth } from "@/lib/ai/analysis/contentHealth";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type ContentHealthDailyOptions = {
   locale?: string;
   limitPages?: number;
@@ -36,7 +36,7 @@ function normalizeBlocks(
 }
 
 export async function runContentHealthDaily(
-  supabase: any,
+  supabase: SupabaseClient,
   options: ContentHealthDailyOptions = {}
 ): Promise<{ scanned: number; written: number }> {
   const limitPages = Math.min(200, Math.max(1, options.limitPages ?? 200));
@@ -47,7 +47,9 @@ export async function runContentHealthDaily(
     .order("created_at", { ascending: false })
     .limit(limitPages);
 
-  const rows = Array.isArray(variants) ? variants : [];
+  const rows = (Array.isArray(variants) ? variants : []) as Array<
+    Record<string, unknown> & { id?: unknown; page_id?: unknown }
+  >;
   let written = 0;
   const chunkSize = 50;
   const toInsert: Array<{
@@ -58,8 +60,8 @@ export async function runContentHealthDaily(
   }> = [];
 
   for (const row of rows) {
-    const pageId = row.page_id ?? null;
-    const variantId = row.id ?? null;
+    const pageId = row.page_id != null ? String(row.page_id) : null;
+    const variantId = row.id != null ? String(row.id) : null;
 
     let blocks: Array<{ id: string; type: string; data?: Record<string, unknown> }> = [];
     let meta: { description?: string } | undefined;

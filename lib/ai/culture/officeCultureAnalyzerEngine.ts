@@ -4,12 +4,12 @@
  * Gir personaliserte menyer per firma.
  */
 
-import { analyzeOfficeCulture } from "@/lib/ai/capabilities/officeCultureAnalyzer";
+import { analyzeOfficeCulture } from "@/lib/ai/engines/capabilities/officeCultureAnalyzer";
 import type {
   OfficeCultureAnalyzerInput,
   OfficeCultureProfile,
   DishChoiceWithTags,
-} from "@/lib/ai/capabilities/officeCultureAnalyzer";
+} from "@/lib/ai/engines/capabilities/officeCultureAnalyzer";
 
 export type { DishChoiceWithTags, OfficeCultureProfile };
 

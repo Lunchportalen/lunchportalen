@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Autonomous content planner: planContentCalendar.
  * Produces a weekly content plan from traffic gaps and SEO opportunities.

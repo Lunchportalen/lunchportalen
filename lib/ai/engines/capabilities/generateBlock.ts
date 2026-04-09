@@ -7,8 +7,8 @@
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 import { newBlockId } from "@/lib/cms/model/blockId";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateBlock";
 
@@ -74,7 +74,7 @@ function buildHero(id: string, context: string, tone: string, locale: string): B
     data: {
       title,
       subtitle,
-      imageUrl: "",
+      imageId: "",
       imageAlt: "",
       ctaLabel: isEn ? "Get started" : "Kom i gang",
       ctaHref: "#",
@@ -117,7 +117,7 @@ function buildImage(id: string, context: string, _tone: string, locale: string):
     id,
     type: "image",
     data: {
-      assetPath: "",
+      imageId: "",
       alt,
       caption: "",
     },

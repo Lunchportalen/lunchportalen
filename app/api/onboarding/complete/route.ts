@@ -1,10 +1,12 @@
 // app/api/onboarding/complete/route.ts
+// CANONICAL — public onboarding commit (single source of truth for self-serve registration).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { parseGrowthAbFromCookieHeader } from "@/lib/growth/growthAbCookie";
 import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 
 /* =========================================================
@@ -696,6 +698,37 @@ export async function POST(req: NextRequest) {
         notice_months: Number(terms?.notice_months ?? 3),
       });
       if (insTerms.error && !isTableMissingError(insTerms.error)) return await fail(insTerms.error);
+    }
+
+    try {
+      const { onEvent } = await import("@/lib/pos/eventHandler");
+      if (companyId) {
+        onEvent({ type: "signup_completed", company_id: companyId });
+      }
+    } catch {
+      /* POS etter vellykket registrering */
+    }
+
+    try {
+      const attrRaw = req.cookies.get("lp_order_attr")?.value;
+      const { deserializeAttribution } = await import("@/lib/revenue/session");
+      const attr = attrRaw ? deserializeAttribution(attrRaw) : null;
+      const postId = attr?.postId ?? null;
+      const ab = parseGrowthAbFromCookieHeader(req.headers.get("cookie"));
+      const leadEmailRaw = delivery?.contact_email
+        ? String(delivery.contact_email).trim().toLowerCase()
+        : String(email).trim().toLowerCase();
+      if (postId && leadEmailRaw) {
+        const { upsertLeadFromSocial } = await import("@/lib/pipeline/upsertLead");
+        await upsertLeadFromSocial({
+          postId,
+          company: company_name,
+          email: leadEmailRaw,
+          abVariantId: ab?.variantId ?? null,
+        });
+      }
+    } catch {
+      /* growth pipeline — skal aldri blokkere onboarding */
     }
 
     return jsonOk(

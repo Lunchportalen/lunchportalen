@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/outbox/orderBackup.ts
 import nodemailer from "nodemailer";
 import { supabaseAdmin } from "@/lib/supabase/admin";

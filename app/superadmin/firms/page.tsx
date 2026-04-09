@@ -11,10 +11,7 @@ import type { CompanyStatus, FirmsSortKey, SortDir } from "@/lib/superadmin/type
 import FirmsTable from "@/components/superadmin/FirmsTable";
 
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -47,10 +44,6 @@ function safeInt(v: string, fallback: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
 }
 
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
-
 export default async function SuperadminFirmsPage(props: { searchParams?: SP }) {
   // -----------------------------
   // Auth + superadmin gate (FASET)
@@ -64,14 +57,7 @@ export default async function SuperadminFirmsPage(props: { searchParams?: SP }) 
     redirect("/login?next=/superadmin/firms");
   }
 
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 

@@ -7,7 +7,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
-import { systemRoleByEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 type RouteCtx = {
   params: { companyId: string } | Promise<{ companyId: string }>;
@@ -48,8 +48,7 @@ export async function POST(_req: NextRequest, ctx: RouteCtx) {
       return jsonErr(rid, "Ingen tilgang.", 401, "UNAUTHORIZED");
     }
 
-    const role = systemRoleByEmail(auth.user.email ?? null);
-    if (role !== "superadmin") {
+    if (!(await isSuperadminProfile(auth.user.id))) {
       return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
     }
 

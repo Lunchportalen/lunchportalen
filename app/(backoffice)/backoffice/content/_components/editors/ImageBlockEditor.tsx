@@ -22,8 +22,8 @@ export function ImageBlockEditor({
   const [fetchAltLoading, setFetchAltLoading] = useState(false);
   const [fetchAltError, setFetchAltError] = useState<string | null>(null);
 
-  const hasImageNoAlt = Boolean((block.assetPath || "").trim() && !(block.alt || "").trim());
-  const hasMediaRefNoPath = Boolean((block.mediaItemId ?? "").trim() && !(block.assetPath ?? "").trim());
+  const hasImageNoAlt = Boolean((block.imageId || "").trim() && !(block.alt || "").trim());
+  const hasMediaRefNoPath = Boolean((block.mediaItemId ?? "").trim() && !(block.imageId ?? "").trim());
 
   async function handleFetchAltFromArchive() {
     if (!block.mediaItemId || !onFetchAltFromArchive) return;
@@ -52,12 +52,12 @@ export function ImageBlockEditor({
         </p>
       ) : null}
       <label className="grid gap-1 text-sm">
-        <span className="text-[rgb(var(--lp-muted))]">Bilde (URL eller sti)</span>
+        <span className="text-[rgb(var(--lp-muted))]">Bilde (ID / URL)</span>
         <div className="flex gap-2">
           <input
-            value={block.assetPath || ""}
-            onChange={(e) => onChange({ ...block, assetPath: e.target.value })}
-            placeholder="https://... eller /path/til/bilde.jpg"
+            value={block.imageId || ""}
+            onChange={(e) => onChange({ ...block, imageId: e.target.value })}
+            placeholder="cms:*, media-ID, https://…"
             className="h-10 flex-1 rounded-lg border border-[rgb(var(--lp-border))] px-3 text-sm"
           />
           <button

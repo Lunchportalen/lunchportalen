@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI STRATEGIC ENGINE
  * Langsiktig analyse av: marked, produkt, plattformretning.
@@ -5,29 +7,29 @@
  * Kun analyse/plan; ingen mutasjon.
  */
 
-import { analyzeMarketTrends } from "@/lib/ai/capabilities/analyzeMarketTrends";
+import { analyzeMarketTrends } from "@/lib/ai/engines/capabilities/analyzeMarketTrends";
 import type {
   AnalyzeMarketTrendsInput,
   AnalyzeMarketTrendsOutput,
   TrendItem,
   SeriesInput,
   SegmentInput,
-} from "@/lib/ai/capabilities/analyzeMarketTrends";
-import { generateProductRoadmap } from "@/lib/ai/capabilities/generateProductRoadmap";
+} from "@/lib/ai/engines/capabilities/analyzeMarketTrends";
+import { generateProductRoadmap } from "@/lib/ai/engines/capabilities/generateProductRoadmap";
 import type {
   GenerateProductRoadmapInput,
   GenerateProductRoadmapOutput,
   InitiativeInput,
   RoadmapPhase,
   RoadmapInitiative,
-} from "@/lib/ai/capabilities/generateProductRoadmap";
-import { generateStrategicInsights } from "@/lib/ai/capabilities/generateStrategicInsights";
+} from "@/lib/ai/engines/capabilities/generateProductRoadmap";
+import { generateStrategicInsights } from "@/lib/ai/engines/capabilities/generateStrategicInsights";
 import type {
   GenerateStrategicInsightsInput,
   GenerateStrategicInsightsOutput,
   StrategicContextInput,
   StrategicInsight,
-} from "@/lib/ai/capabilities/generateStrategicInsights";
+} from "@/lib/ai/engines/capabilities/generateStrategicInsights";
 
 export type {
   TrendItem,

@@ -3,13 +3,13 @@
  * Automatisk menytilpasning per firma basert på historikk.
  */
 
-import { getPersonalizedMenuForCompany } from "@/lib/ai/capabilities/menuPersonalization";
+import { getPersonalizedMenuForCompany } from "@/lib/ai/engines/capabilities/menuPersonalization";
 import type {
   MenuPersonalizationInput,
   MenuPersonalizationOutput,
   MenuPersonalizationDishInput,
   PersonalizedDishItem,
-} from "@/lib/ai/capabilities/menuPersonalization";
+} from "@/lib/ai/engines/capabilities/menuPersonalization";
 
 export type { MenuPersonalizationDishInput, PersonalizedDishItem };
 

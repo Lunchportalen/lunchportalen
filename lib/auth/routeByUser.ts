@@ -1,20 +1,14 @@
+// STATUS: KEEP
+
 // lib/auth/routeByUser.ts
 import "server-only";
 
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 import { getScopeServer } from "@/lib/auth/getScopeServer";
 import { homeForRole, homeForUser, type Role } from "@/lib/auth/redirect";
 
 export type { Role };
-
-function normalizeRole(raw: unknown): Role {
-  const s = String(raw ?? "").trim().toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  return "employee";
-}
 
 /**
  * Legacy fallback: user-only routing (no DB).
@@ -26,7 +20,7 @@ export function destinationForUser(user: { email?: string | null; user_metadata?
   if (systemRole === "kitchen") return { role: "kitchen", path: "/kitchen" };
   if (systemRole === "driver") return { role: "driver", path: "/driver" };
 
-  const role = normalizeRole(user.user_metadata?.role ?? "employee");
+  const role = normalizeRoleDefaultEmployee(user.user_metadata?.role ?? "employee");
   return { role, path: homeForRole(role) };
 }
 

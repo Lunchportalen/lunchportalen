@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function norm(v: any) {
@@ -25,8 +25,7 @@ async function requireSuperadmin() {
 
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
 
-  // Hard e-post-fasit (samme som i middleware-prinsippet)
-  if (!isSuperadminEmail(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     throw Object.assign(new Error("forbidden"), { code: "forbidden" });
   }
 

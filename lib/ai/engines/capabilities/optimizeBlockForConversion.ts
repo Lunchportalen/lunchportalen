@@ -5,8 +5,8 @@
  * Aligns with 1-3-1, one primary action, calm tone. Import this module to register the capability.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "optimizeBlockForConversion";
 

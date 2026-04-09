@@ -1,28 +1,16 @@
 // lib/supabase/client.ts
-// Browser-side Supabase client
-// Brukes KUN i "use client"-komponenter
+// Browser-side Supabase client — brukes KUN i "use client"-komponenter.
+// Canonical implementation: `@/utils/supabase/client`.
 
-import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupabasePublicConfig } from "@/lib/config/env-public";
+import type { Database } from "@/lib/types/database";
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client";
 
-// Singleton for browser-session
-let browserClient: SupabaseClient | null = null;
+export function createClient(): SupabaseClient<Database> {
+  return createBrowserSupabaseClient();
+}
 
-export function supabaseBrowser(): SupabaseClient {
-  if (browserClient) return browserClient;
-
-  const { url, anonKey } = getSupabasePublicConfig();
-
-  browserClient = createBrowserClient(url, anonKey, {
-    auth: {
-      // Viktig for stabil client-state + logout
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
-
-  return browserClient;
+export function supabaseBrowser(): SupabaseClient<Database> {
+  return createBrowserSupabaseClient();
 }
 

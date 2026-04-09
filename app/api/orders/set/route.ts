@@ -6,8 +6,12 @@ import type { NextRequest } from "next/server";
 
 import { isIsoDate } from "@/lib/date/oslo";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
-import { readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
-import { getPublishedMenuForDate } from "@/lib/sanity/queries";
+import { companyIdFromCtx, readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
+import { getPublishedMenuForDate } from "@/lib/cms/menuContent";
+import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
+import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
+import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
+import { auditLog, buildAuditEventFromAuthedCtx } from "@/lib/audit/log";
 import { supabaseServer } from "@/lib/supabase/server";
 
 type OrderSetBody = {
@@ -54,6 +58,7 @@ function mapRpcErrorToHttp(message: string) {
   if (m.includes("NO_ACTIVE_AGREEMENT")) return { status: 409, code: "NO_ACTIVE_AGREEMENT" };
   if (m.includes("OUTSIDE_DELIVERY_DAYS")) return { status: 409, code: "OUTSIDE_DELIVERY_DAYS" };
   if (m.includes("CUTOFF_PASSED")) return { status: 409, code: "CUTOFF_PASSED" };
+  if (m.includes("ORDER_RPC_FAILED")) return { status: 500, code: "ORDER_RPC_FAILED" };
   return { status: 500, code: "ORDER_SET_FAILED" };
 }
 
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest) {
   const date = safeStr(body?.date);
   const action = normalizeAction(body?.action);
   const note = sanitizeNote(body?.note ?? null);
-  const slot = safeStr(body?.slot || "");
+  const slot = normalizeOrderTableSlot(body?.slot ?? "");
 
   if (!isIsoDate(date)) {
     return jsonErr(rid, "Ugyldig dato. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
@@ -98,12 +103,39 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Kunne ikke verifisere meny-status.", 409, "MENU_NOT_PUBLISHED");
   }
 
+  const pricingGuard = assertEmployeeOrderBodyHasNoPricingOverrides(body, auth.ctx.scope.role);
+  if ("code" in pricingGuard) {
+    return jsonErr(rid, "Du kan ikke overstyre pris eller plan i bestillingen.", 403, pricingGuard.code);
+  }
+
   const sb = await supabaseServer();
+  const companyId = companyIdFromCtx(auth.ctx);
+  if (action === "ORDER") {
+    if (!companyId) {
+      return jsonErr(rid, "Mangler firmatilknytning for bestilling.", 403, "COMPANY_SCOPE_REQUIRED");
+    }
+    const hold = await assertCompanyOrderWriteAllowed(sb, companyId, rid);
+    if (hold.ok === false) {
+      return jsonErr(rid, hold.message, hold.status, hold.code);
+    }
+    const pre = await assertOrderWithinAgreementPreflight({
+      sb,
+      companyId,
+      orderIsoDate: date,
+      agreementRuleSlot: agreementRuleSlotForOrderTableSlot(slot),
+      rid,
+      action: "SET",
+    });
+    if (pre.ok === false) {
+      return jsonErr(rid, pre.message, pre.status, pre.code);
+    }
+  }
+
   const { data, error } = await sb.rpc("lp_order_set", {
     p_date: date,
     p_action: action,
     p_note: note,
-    p_slot: slot || null,
+    p_slot: slot,
   });
 
   if (error) {
@@ -115,6 +147,15 @@ export async function POST(req: NextRequest) {
 
   const rpc = extractRpcPayload(data);
   const outStatus = safeStr(rpc?.status).toUpperCase() || (action === "ORDER" ? "ORDERED" : "CANCELED");
+
+  auditLog(
+    buildAuditEventFromAuthedCtx(auth.ctx, {
+      action: action === "ORDER" ? "CREATE" : "UPDATE",
+      resource: "orders:set",
+      resourceId: rpc?.order_id ?? null,
+      metadata: { date, orderAction: action },
+    }),
+  );
 
   return jsonOk(rid, {
     status: outStatus,

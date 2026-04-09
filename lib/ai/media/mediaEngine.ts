@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI MEDIA ENGINE
  * Håndterer: bilder, video, alt-tekst, visuell konsistens.
@@ -6,49 +8,49 @@
  * Kun generering/sjekk; ingen mutasjon.
  */
 
-import { generateAltText } from "@/lib/ai/capabilities/generateAltText";
+import { generateAltText } from "@/lib/ai/engines/capabilities/generateAltText";
 import type {
   GenerateAltTextInput,
   GenerateAltTextOutput,
   ImageMetadataInput,
-} from "@/lib/ai/capabilities/generateAltText";
-import { generateImagePrompt } from "@/lib/ai/capabilities/generateImagePrompt";
+} from "@/lib/ai/engines/capabilities/generateAltText";
+import { generateImagePrompt } from "@/lib/ai/engines/capabilities/generateImagePrompt";
 import type {
   GenerateImagePromptInput,
   GenerateImagePromptOutput,
-} from "@/lib/ai/capabilities/generateImagePrompt";
-import { generateHeroVisual } from "@/lib/ai/capabilities/generateHeroVisual";
+} from "@/lib/ai/engines/capabilities/generateImagePrompt";
+import { generateHeroVisual } from "@/lib/ai/engines/capabilities/generateHeroVisual";
 import type {
   GenerateHeroVisualInput,
   GenerateHeroVisualOutput,
-} from "@/lib/ai/capabilities/generateHeroVisual";
-import { generateThumbnail } from "@/lib/ai/capabilities/generateThumbnail";
+} from "@/lib/ai/engines/capabilities/generateHeroVisual";
+import { generateThumbnail } from "@/lib/ai/engines/capabilities/generateThumbnail";
 import type {
   GenerateThumbnailInput,
   GenerateThumbnailOutput,
-} from "@/lib/ai/capabilities/generateThumbnail";
-import { optimizeThumbnail } from "@/lib/ai/capabilities/optimizeThumbnail";
+} from "@/lib/ai/engines/capabilities/generateThumbnail";
+import { optimizeThumbnail } from "@/lib/ai/engines/capabilities/optimizeThumbnail";
 import type {
   OptimizeThumbnailInput,
   OptimizeThumbnailOutput,
-} from "@/lib/ai/capabilities/optimizeThumbnail";
-import { generateVideoStoryboard } from "@/lib/ai/capabilities/generateVideoStoryboard";
+} from "@/lib/ai/engines/capabilities/optimizeThumbnail";
+import { generateVideoStoryboard } from "@/lib/ai/engines/capabilities/generateVideoStoryboard";
 import type {
   GenerateVideoStoryboardInput,
   GenerateVideoStoryboardOutput,
-} from "@/lib/ai/capabilities/generateVideoStoryboard";
-import { checkVisualConsistency } from "@/lib/ai/capabilities/checkVisualConsistency";
+} from "@/lib/ai/engines/capabilities/generateVideoStoryboard";
+import { checkVisualConsistency } from "@/lib/ai/engines/capabilities/checkVisualConsistency";
 import type {
   CheckVisualConsistencyInput,
   CheckVisualConsistencyOutput,
   ImageDescriptor,
-} from "@/lib/ai/capabilities/checkVisualConsistency";
-import { checkImageStyleConsistency } from "@/lib/ai/capabilities/checkImageStyleConsistency";
+} from "@/lib/ai/engines/capabilities/checkVisualConsistency";
+import { checkImageStyleConsistency } from "@/lib/ai/engines/capabilities/checkImageStyleConsistency";
 import type {
   CheckImageStyleConsistencyInput,
   CheckImageStyleConsistencyOutput,
   ImageStyleDescriptor,
-} from "@/lib/ai/capabilities/checkImageStyleConsistency";
+} from "@/lib/ai/engines/capabilities/checkImageStyleConsistency";
 
 export type { ImageMetadataInput, ImageDescriptor, ImageStyleDescriptor };
 

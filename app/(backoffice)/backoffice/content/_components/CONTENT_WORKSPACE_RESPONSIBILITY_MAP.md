@@ -68,7 +68,7 @@
 | `bodyForSave` | useMemo: deriveBodyForSave + optional envelope serialization. |
 | `currentSnapshot` | useMemo: makeSnapshot({ title, slug, body: bodyForSave }). |
 | `dirty` | useMemo: currentSnapshot !== savedSnapshot (when page loaded). |
-| `applyParsedBody` | Sets bodyMode, blocks, meta, legacy/invalid, bodyParseError, expandedBlockId. |
+| `applyParsedBody` | In `useContentWorkspaceBlocks`: sets bodyMode, blocks, meta, legacy/invalid, bodyParseError. Shell wraps caller to sync `selectedBlockId` (canonical block focus). |
 | **Editor2** | `useEditor2` (false), `editor2Model`, `editor2SelectedBlockId`, `editor2FocusNonce`, `editor2ResetSearchNonce`, refs for focus/search. | Read-only adapter from page.body when useEditor2; validation from validateModel. |
 
 ---
@@ -92,10 +92,10 @@
 
 | Item | Purpose |
 |------|--------|
-| `setBlockById` | Update single block by id (used by media picker and inline edits). |
-| `onAddBlock` | createBlock, set bodyMode blocks, append block, expand it, close add modal. |
-| `onMoveBlock`, `onDeleteBlock`, `onToggleBlock` | Reorder, remove, expand/collapse. |
-| `expandedBlockId` | Which block is expanded in list. |
+| `setBlockById` | Update single block by id (media picker, AI rich-text apply, same `blocks` truth). |
+| `onAddBlock` | createBlock, set bodyMode blocks, append block; shell focuses new block via `selectedBlockId`. |
+| `onMoveBlock`, `onDeleteBlock` | Reorder, remove (canonical list = `blocks`). |
+| `selectedBlockId` | `useContentWorkspaceUi` — single focus truth for canvas, inspector, actions (no parallel `expandedBlockId`). |
 | `onFillForsideFromRepo`, `onConvertLegacyBody`, `onResetInvalidBody` | Legacy/invalid → blocks. |
 
 ---
@@ -212,7 +212,7 @@
 |---------|--------------------|--------|
 | Pure helpers | `contentWorkspace.helpers.ts` + `contentWorkspace.blocks.ts` + `contentWorkspace.api.ts` | No React; only imports: formatDateTimeNO, parseMetaToPageAiContract, contractToAiMetaShape (blocks/api may need minimal types). |
 | Save/autosave | `useContentWorkspaceSave.ts` | Needs: patchPage, applyParsedBody, bodyForSave, title, slug, page, selectedId, effectiveId, isOffline, updateSidebarItem, router; refs for autosave/outbox. Single source of truth for saveState, lastSavedAt, lastError, performSave, saveDraft, clearAutosaveTimer. |
-| Block model | `useContentWorkspaceBlocks.ts` | Owns: bodyMode, blocks, meta, legacyBodyText, invalidBodyRaw, bodyParseError, applyParsedBody, bodyForSave derivation, setBlockById, onAddBlock, onMoveBlock, onDeleteBlock, onToggleBlock, expandedBlockId. Tight coupling to applyParsedBody and save payload. |
+| Block model | `useContentWorkspaceBlocks.ts` + `useContentWorkspaceUi.ts` | Blocks hook owns: bodyMode, blocks, meta, legacy/invalid, applyParsedBody, bodyForSave, setBlockById, onAdd/Move/Delete. UI hook owns: `selectedBlockId` (focus). See `lib/cms/workspaceBlockDatasetCanon.ts`. |
 | AI | `useContentWorkspaceAi.ts` | callAiSuggest/callDedicatedAiRoute + handlers; depends on blocks, meta, title, slug, effectiveId, applyParsedBody, setBlockById, pushAiHistory, reportAiError. Shared state with editor (applyParsedBody). |
 | Modal/panel UI | `useContentWorkspaceUiState.ts` | Many setState for modals/tabs; low risk if only state bundles, no logic. |
 
@@ -229,7 +229,8 @@
 | `contentWorkspace.helpers.ts` | safeStr, safeObj, normalizeSlug, formatDate, makeRidClient, looksMojibakeText, looksMojibakeAny, makeSnapshot, extractAiSummary |
 | `contentWorkspace.api.ts` | ApiOk, ApiErr, ApiResponse, readApiMessage, readApiRid, readApiError, parseJsonSafe |
 | `contentWorkspace.blocks.ts` | BodyMode, BodyParseResult, makeBlockId, createBlock, isAddModalBlockTypeFromOverlay, blockTypeSubtitle, normalizeBlock, normalizeBlocks, looksJsonLike, toRawBodyString, parseBodyToBlocks, serializeBlocksToBody, deriveBodyForSave, deriveBodyFromParse |
-| `useContentWorkspaceBlocks.ts` | bodyMode, blocks, meta, legacyBodyText, invalidBodyRaw, bodyParseError, expandedBlockId, bodyForSave (derived), applyParsedBody, setBlockById, onAddBlock, onMoveBlock, onDeleteBlock, onToggleBlock |
+| `useContentWorkspaceBlocks.ts` | bodyMode, blocks, meta, legacyBodyText, invalidBodyRaw, bodyParseError, bodyForSave (derived), applyParsedBody, setBlockById, onAddBlock, onMoveBlock, onDeleteBlock |
+| `useContentWorkspaceUi.ts` | selectedBlockId (canonical block focus) |
 
 ### Not extracted (and why)
 

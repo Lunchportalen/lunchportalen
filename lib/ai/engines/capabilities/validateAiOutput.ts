@@ -1,3 +1,5 @@
+// DUPLICATE — review
+
 /**
  * AI safety enforcement capability: validateAiOutput.
  * Validates AI output against a schema and enforces safety: type checks, required fields,
@@ -5,13 +7,13 @@
  * Deterministic; no LLM. Import this module to register the capability.
  */
 
-import type { Capability, SchemaRef } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability, SchemaRef } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 import {
   validateAiOutput as validateAiOutputImpl,
   type ValidateAiOutputOptions,
   type ValidateAiOutputResult,
-} from "../validation/validateAiOutput";
+} from "../../validation/validateAiOutput";
 
 const CAPABILITY_NAME = "validateAiOutput";
 
@@ -95,7 +97,7 @@ export function validateAiOutputFromContext(input: ValidateAiOutputCapabilityInp
   return validateAiOutputImpl(raw, schema, opts);
 }
 
-export type { ValidateAiOutputOptions, ValidateAiOutputResult } from "../validation/validateAiOutput";
-export { stripUnsafeHtml } from "../validation/validateAiOutput";
+export type { ValidateAiOutputOptions, ValidateAiOutputResult } from "../../validation/validateAiOutput";
+export { stripUnsafeHtml } from "../../validation/validateAiOutput";
 
 export { validateAiOutputCapability, CAPABILITY_NAME };

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/orders/result.ts
 export type OrderStatus =
   | "registered"
@@ -17,7 +19,7 @@ export type OrderOk = {
   orderId: string | null;
 
   date: string; // YYYY-MM-DD
-  slot: string; // e.g. "lunch"
+  slot: string; // canonical orders.slot: "default"
   note: string | null;
 
   serverTime: string; // ISO timestamp
@@ -49,8 +51,9 @@ export function isISODate(d: string) {
 }
 
 export function normSlot(v: unknown) {
-  const s = String(v ?? "").trim();
-  return s ? s.toLowerCase() : "lunch";
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s || s === "lunch") return "default";
+  return s || "default";
 }
 
 export function safeNote(v: unknown) {

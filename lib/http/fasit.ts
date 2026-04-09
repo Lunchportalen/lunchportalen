@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/http/fasit.ts
 import crypto from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";

@@ -4,13 +4,13 @@
  * Output: hvilke retter bør beholdes, hvilke bør byttes, hvilke gir høy tilfredshet.
  */
 
-import { analyzeDishPerformance } from "@/lib/ai/capabilities/menuOptimizer";
+import { analyzeDishPerformance } from "@/lib/ai/engines/capabilities/menuOptimizer";
 import type {
   MenuOptimizerInput,
   MenuOptimizerOutput,
   DishPerformanceInput,
   DishRecommendation,
-} from "@/lib/ai/capabilities/menuOptimizer";
+} from "@/lib/ai/engines/capabilities/menuOptimizer";
 
 export type { DishPerformanceInput, DishRecommendation };
 

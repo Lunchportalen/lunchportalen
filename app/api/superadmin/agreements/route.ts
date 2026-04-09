@@ -11,6 +11,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditEvent } from "@/lib/audit/write";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { isIsoDate } from "@/lib/date/oslo";
+import {
+  mergeMealContractIntoAgreementJson,
+  validateMealContractForAgreementWrite,
+} from "@/lib/server/agreements/submitAgreement";
 
 type CreateAgreementBody = {
   company_id?: unknown;
@@ -23,6 +27,8 @@ type CreateAgreementBody = {
   binding_months?: unknown;
   notice_months?: unknown;
   price_per_employee?: unknown;
+  /** Valgfritt: lagres kun i companies.agreement_json.meal_contract (ingen nye DB-kolonner). */
+  meal_contract?: unknown;
 };
 
 type CreateRpcOut = {
@@ -124,6 +130,15 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Ugyldige leveringsdager.", 400, "BAD_INPUT");
     }
 
+    const mealCheck = await validateMealContractForAgreementWrite({
+      rpcTier: tier,
+      deliveryDays: deliveryNorm.days,
+      mealContract: body.meal_contract,
+    });
+    if (mealCheck.ok === false) {
+      return jsonErr(rid, mealCheck.message, 400, mealCheck.code);
+    }
+
     const admin = supabaseAdmin();
     const { data, error } = await admin.rpc("lp_agreement_create_pending", {
       p_company_id: companyId,
@@ -157,6 +172,22 @@ export async function POST(req: NextRequest) {
       role: g.ctx.scope.role,
     };
 
+    if (mealCheck.ok === true && "skip" in mealCheck && mealCheck.skip === false) {
+      const { data: compRow, error: compErr } = await admin
+        .from("companies")
+        .select("agreement_json")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (compErr) {
+        return jsonErr(rid, "Kunne ikke oppdatere måltidskontrakt (firma).", 500, "MEAL_CONTRACT_MERGE_FAILED");
+      }
+      const nextJson = mergeMealContractIntoAgreementJson((compRow as any)?.agreement_json, mealCheck.normalized);
+      const { error: upErr } = await admin.from("companies").update({ agreement_json: nextJson as any }).eq("id", companyId);
+      if (upErr) {
+        return jsonErr(rid, "Kunne ikke lagre måltidskontrakt.", 500, "MEAL_CONTRACT_MERGE_FAILED");
+      }
+    }
+
     const audit = await writeAuditEvent({
       scope: scopeForAudit,
       action: "agreement.create_pending",
@@ -175,6 +206,7 @@ export async function POST(req: NextRequest) {
         binding_months: bindingMonths,
         notice_months: noticeMonths,
         price_per_employee: pricePerEmployee,
+        meal_contract: mealCheck.ok && mealCheck.skip === false ? mealCheck.normalized : null,
       },
     });
 

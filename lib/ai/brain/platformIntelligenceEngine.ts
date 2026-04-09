@@ -4,13 +4,13 @@
  * Selve hjernen i systemet.
  */
 
-import { runPlatformIntelligence } from "@/lib/ai/capabilities/platformIntelligence";
+import { runPlatformIntelligence } from "@/lib/ai/engines/capabilities/platformIntelligence";
 import type {
   PlatformModelInput,
   PlatformIntelligenceOutput,
   StrategicRecommendation,
   GrowthOpportunity,
-} from "@/lib/ai/capabilities/platformIntelligence";
+} from "@/lib/ai/engines/capabilities/platformIntelligence";
 
 export type {
   PlatformModelInput,

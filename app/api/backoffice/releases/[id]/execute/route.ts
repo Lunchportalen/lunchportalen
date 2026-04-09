@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { executeRelease, getRelease } from "@/lib/backoffice/content/releasesRepo";
 
 function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: string } }): Response {
@@ -9,6 +10,7 @@ function denyResponse(s: { response?: Response; res?: Response; ctx?: { rid: str
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  return withApiAiEntrypoint(request, "POST", async () => {
   const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
   const s = await scopeOr401(request);
   if (!s?.ok) return denyResponse(s);
@@ -30,4 +32,5 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const message = e instanceof Error ? e.message : "Internal server error";
     return jsonErr(s.ctx.rid, message, 500, "SERVER_ERROR", { detail: String(e) });
   }
+  });
 }

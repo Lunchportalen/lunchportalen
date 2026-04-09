@@ -10,7 +10,7 @@ import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
-import { lpOrderSet } from "@/lib/orders/rpcWrite";
+import { lpOrderSet, ORDER_TABLE_SLOT_DEFAULT, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Route-local jsonErr (beholder canAct:false for UI)
@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
     .eq("company_id", norm.companyId)
     .eq("location_id", norm.locationId)
     .eq("date", date)
-    .eq("slot", "lunch")
+    .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
     .maybeSingle()) as { data: OrderRow | null; error: any };
 
   if (ordErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, { code: "db_order", detail: { message: ordErr.message } });
@@ -312,7 +312,7 @@ export async function POST(req: NextRequest) {
 
   const setRes = await lpOrderSet(sb as any, {
     p_date: date,
-    p_slot: "lunch",
+    p_slot: ORDER_TABLE_SLOT_DEFAULT,
     p_note: nextNote,
   });
 
@@ -330,7 +330,7 @@ export async function POST(req: NextRequest) {
     .eq("company_id", norm.companyId)
     .eq("location_id", norm.locationId)
     .eq("date", date)
-    .eq("slot", "lunch")
+    .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
     .maybeSingle()) as { data: UpdatedRow | null; error: any };
 
   if (updErr || !updated) {
@@ -352,7 +352,7 @@ export async function POST(req: NextRequest) {
       date: updated.date,
       status: String(updated.status ?? "").toUpperCase(),
       note: updated.note,
-      slot: updated.slot ?? "lunch",
+      slot: updated.slot ?? ORDER_TABLE_SLOT_DEFAULT,
       updated_at: updated.updated_at,
       saved_at: savedAt,
       created_at: updated.created_at,

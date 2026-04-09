@@ -33,6 +33,32 @@ type ApiOk = {
 
 type ApiErr = { ok: false; rid?: string; error: string; message?: string; status?: number };
 
+type DemandInsightsData = {
+  transparencyNote: string;
+  window: { from: string; to: string; days?: number };
+  weekdayRanking: Array<{ weekday: string; label: string; avgActive: number; sampleDays: number }>;
+  dishSignals: Array<{ choiceKey: string; count: number; signal: "high" | "low" | "neutral" }>;
+  suggestions: string[];
+  nextBusinessDayForecast: {
+    date: string;
+    predictedOrders: number;
+    confidence: number;
+    marginOfError: number;
+    plannedWithBuffer: number;
+    bufferPercent: number;
+    explanation: string[];
+  };
+  waste: {
+    rollup: {
+      averageWastePercent: number | null;
+      daysWithData: number;
+      daysMissingProduction: number;
+      transparencyNote: string;
+    };
+    note: string;
+  };
+};
+
 function fmtNum(n: number | null | undefined, decimals = 0) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
   return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: decimals }).format(n);
@@ -85,6 +111,10 @@ export default function AdminInsightsClient() {
   const [err, setErr] = useState<string | null>(null);
   const [rid, setRid] = useState<string | null>(null);
 
+  const [demandLoading, setDemandLoading] = useState(false);
+  const [demandErr, setDemandErr] = useState<string | null>(null);
+  const [demandData, setDemandData] = useState<DemandInsightsData | null>(null);
+
   useEffect(() => {
     let alive = true;
 
@@ -119,6 +149,37 @@ export default function AdminInsightsClient() {
     };
   }, [range]);
 
+  useEffect(() => {
+    if (loading || err || !data) return;
+    let alive = true;
+    void (async () => {
+      setDemandLoading(true);
+      setDemandErr(null);
+      try {
+        const res = await fetch("/api/admin/demand-insights", { cache: "no-store" });
+        const json = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          data?: DemandInsightsData;
+          message?: string;
+        } | null;
+        if (!alive) return;
+        if (!res.ok || !json || json.ok !== true) {
+          throw new Error(json?.message || `HTTP ${res.status}`);
+        }
+        setDemandData(json.data ?? null);
+      } catch (e: unknown) {
+        if (!alive) return;
+        setDemandErr(String((e as Error)?.message ?? e));
+        setDemandData(null);
+      } finally {
+        if (alive) setDemandLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [loading, err, data]);
+
   const summaryRows = useMemo(() => data?.daily_summary ?? [], [data]);
 
   if (loading) {
@@ -148,6 +209,71 @@ export default function AdminInsightsClient() {
 
   return (
     <div className="space-y-6">
+      <SectionCard
+        title="AI Innsikt"
+        subtitle="Deterministisk etterspørselsstøtte fra ordrehistorikk — endrer ikke bestillinger eller produksjon automatisk."
+      >
+        {demandLoading ? <div className="h-20 animate-pulse rounded-2xl bg-black/5" /> : null}
+        {demandErr && !demandLoading ? <div className="text-sm text-rose-700">{demandErr}</div> : null}
+        {demandData && !demandLoading ? (
+          <div className="space-y-4 text-sm text-neutral-800">
+            <p className="text-xs text-neutral-600">{demandData.transparencyNote}.</p>
+            <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
+              <div className="text-xs font-semibold text-neutral-600">Neste virkedag (prognose)</div>
+              <div className="mt-2 text-lg font-extrabold text-neutral-900">
+                {fmtNum(demandData.nextBusinessDayForecast.predictedOrders)} porsjoner
+              </div>
+              <div className="mt-1 text-xs text-neutral-600">
+                Sikkerhetsbånd ±{fmtNum(demandData.nextBusinessDayForecast.marginOfError)} · Plan med buffer ca.{" "}
+                {fmtNum(demandData.nextBusinessDayForecast.plannedWithBuffer)} (+{demandData.nextBusinessDayForecast.bufferPercent.toFixed(0)} %)
+              </div>
+              <div className="mt-2 text-xs text-neutral-600">
+                Konfidansindikator: {fmtNum(demandData.nextBusinessDayForecast.confidence * 100, 0)} % (intern).
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-neutral-700">Etterspørsel per ukedag (snitt)</div>
+              <ul className="mt-2 space-y-1 text-xs text-neutral-600">
+                {demandData.weekdayRanking
+                  .filter((w) => w.sampleDays > 0)
+                  .sort((a, b) => b.avgActive - a.avgActive)
+                  .map((w) => (
+                    <li key={w.weekday}>
+                      {w.label}: {fmtNum(w.avgActive, 1)} aktive (n={fmtNum(w.sampleDays)})
+                    </li>
+                  ))}
+              </ul>
+            </div>
+            {demandData.dishSignals.filter((d) => d.signal !== "neutral").length > 0 ? (
+              <div>
+                <div className="text-xs font-semibold text-neutral-700">Menyvalg (volum)</div>
+                <ul className="mt-2 space-y-1 text-xs">
+                  {demandData.dishSignals
+                    .filter((d) => d.signal !== "neutral")
+                    .map((d) => (
+                      <li key={d.choiceKey} className="text-neutral-600">
+                        <span className="font-semibold text-neutral-800">{d.choiceKey}</span>: {fmtNum(d.count)}{" "}
+                        {d.signal === "high" ? "— høy etterspørsel" : "— lavere volum"}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ) : null}
+            <div>
+              <div className="text-xs font-semibold text-neutral-700">Forslag</div>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-neutral-600">
+                {demandData.suggestions.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-dashed border-black/10 bg-white/50 p-3 text-xs text-neutral-600">
+              <span className="font-semibold text-neutral-800">Svinn:</span> {demandData.waste.note}
+            </div>
+          </div>
+        ) : null}
+      </SectionCard>
+
       <SectionCard
         title="Periode"
         subtitle={`Viser ${data.window.from} – ${data.window.to}. Tallene under viser faktisk bruk, ikke estimater.`}

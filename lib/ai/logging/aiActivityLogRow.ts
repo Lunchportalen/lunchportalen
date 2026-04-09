@@ -5,7 +5,11 @@
  * entity_type is "page" when page_id is set, otherwise "system"; entity_id is page_id or "".
  * Legacy fields (tool, created_by, environment, locale, etc.) are stored inside metadata only;
  * do not add them as top-level columns — the table may not have them (schema cache / migrations).
+ *
+ * actor_user_id is uuid → profiles.id in some deployments; non-UUID actors (e.g. email) go to metadata.actor_email.
  */
+
+import { isMediaItemUuid } from "@/lib/media/ids";
 
 export type AiActivityLogRowInput = {
   action: string;
@@ -69,8 +73,11 @@ export function buildAiActivityLogRow(input: AiActivityLogRowInput): AiActivityL
   }
 
   const actorRaw = input.actor_user_id ?? input.created_by ?? null;
-  const actorId =
-    typeof actorRaw === "string" ? (actorRaw.trim() || null) : null;
+  const actorTrimmed = typeof actorRaw === "string" ? actorRaw.trim() : "";
+  const actorUuid = isMediaItemUuid(actorTrimmed) ? actorTrimmed : null;
+  if (actorTrimmed && !actorUuid) {
+    metadata.actor_email = actorTrimmed;
+  }
 
   const pageIdRaw = typeof input.page_id === "string" ? input.page_id.trim() : "";
   const pageId = pageIdRaw || null;
@@ -85,7 +92,7 @@ export function buildAiActivityLogRow(input: AiActivityLogRowInput): AiActivityL
     entity_id: entityId,
     page_id: pageId,
     variant_id: variantId,
-    actor_user_id: actorId,
+    actor_user_id: actorUuid,
     metadata,
   };
 }

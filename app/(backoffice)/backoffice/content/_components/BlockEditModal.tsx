@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { getBlockFieldSchema, hasSchemaForBlockType } from "./blockFieldSchemas";
+import {
+  getBlockFieldSchema,
+  hasSchemaForBlockType,
+  validateBlockEditorCrossFields,
+  validateEditorField,
+} from "./blockFieldSchemas";
+import { PropertyDatasetExplainer } from "./PropertyDatasetExplainer";
 import { SchemaDrivenBlockForm } from "./SchemaDrivenBlockForm";
 import type { EditorBlockFieldSchema } from "./blockFieldSchemas";
+import { MediaPickerModal } from "./MediaPickerModal";
+import { InternalLinkPickerModal } from "./InternalLinkPickerModal";
 
 export type EditableBlock = {
   id: string;
@@ -18,23 +26,22 @@ type BlockEditModalProps = {
   onClose: () => void;
   onChange: (next: EditableBlock) => void;
   onDelete: () => void;
+  /** Live preview merge in ContentWorkspace (no save). */
+  onLiveDraftChange?: (draft: EditableBlock | null) => void;
 };
 
 function validateBlock(
   block: EditableBlock,
-  schema: EditorBlockFieldSchema[]
+  schema: EditorBlockFieldSchema[],
+  blockType: string
 ): Record<string, string> {
   const errors: Record<string, string> = {};
+  const rec = block as Record<string, unknown>;
   for (const field of schema) {
-    const value = String((block as Record<string, unknown>)[field.key] ?? "").trim();
-    if (field.required && !value) errors[field.key] = "Påkrevd felt.";
-    else if (field.maxLength != null && value.length > field.maxLength)
-      errors[field.key] = `Maks ${field.maxLength} tegn.`;
-    else if (field.kind === "url" && value) {
-      if (!value.startsWith("http") && !value.startsWith("/"))
-        errors[field.key] = "Skriv en gyldig URL eller bane.";
-    }
+    const msg = validateEditorField(blockType, field, rec);
+    if (msg) errors[field.key] = msg;
   }
+  Object.assign(errors, validateBlockEditorCrossFields(blockType, rec));
   return errors;
 }
 
@@ -45,12 +52,25 @@ export function BlockEditModal({
   onClose,
   onChange,
   onDelete,
+  onLiveDraftChange,
 }: BlockEditModalProps) {
   const [draft, setDraft] = useState<EditableBlock | null>(null);
   const [jsonDraft, setJsonDraft] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showRawJson, setShowRawJson] = useState(false);
+  const [editMediaOpen, setEditMediaOpen] = useState(false);
+  const [editMediaFieldKey, setEditMediaFieldKey] = useState<string | null>(null);
+  const [editLinkOpen, setEditLinkOpen] = useState(false);
+  const [editLinkFieldKey, setEditLinkFieldKey] = useState<string | null>(null);
+
+  const editLinkFieldKeyRef = useRef<string | null>(null);
+  const onLiveDraftChangeRef = useRef(onLiveDraftChange);
+  onLiveDraftChangeRef.current = onLiveDraftChange;
+  editLinkFieldKeyRef.current = editLinkFieldKey;
+
+  const showJsonAdvancedToggle =
+    process.env.NODE_ENV === "development" && block?.type !== "banner";
 
   const blockType = block?.type ?? null;
   const schema = useMemo(
@@ -65,12 +85,33 @@ export function BlockEditModal({
     setJsonError(null);
     setFieldErrors({});
     setShowRawJson(false);
+    setEditMediaOpen(false);
+    setEditMediaFieldKey(null);
+    setEditLinkOpen(false);
+    setEditLinkFieldKey(null);
     try {
       setJsonDraft(JSON.stringify(block, null, 2));
     } catch {
       setJsonDraft('{"id":"","type":"richText"}');
     }
   }, [open, block]);
+
+  useEffect(() => {
+    if (!open || !draft || !showRawJson) return;
+    try {
+      setJsonDraft(JSON.stringify(draft, null, 2));
+    } catch {
+      // ignore stringify edge cases
+    }
+  }, [open, draft, showRawJson]);
+
+  useEffect(() => {
+    if (!open) {
+      onLiveDraftChangeRef.current?.(null);
+      return;
+    }
+    if (draft) onLiveDraftChangeRef.current?.(draft);
+  }, [open, draft]);
 
   useEffect(() => {
     if (!open) return;
@@ -83,7 +124,7 @@ export function BlockEditModal({
 
   const handleSchemaSave = useCallback(() => {
     if (!draft || !block) return;
-    const errors = validateBlock(draft, schema);
+    const errors = validateBlock(draft, schema, block.type);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     onChange(draft);
@@ -119,6 +160,76 @@ export function BlockEditModal({
     }
   }, [jsonDraft, block?.type, onChange, onClose]);
 
+  const handleEditMediaSelect = useCallback(
+    (picked: { url: string; id?: string } | string) => {
+      const key = editMediaFieldKey;
+      if (!key) return;
+      const url = typeof picked === "string" ? picked : picked.url;
+      const archiveId =
+        typeof picked === "object" && picked && "id" in picked && picked.id ?
+          String(picked.id)
+        : undefined;
+      const field = schema.find((f) => f.key === key);
+      setDraft((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev } as Record<string, unknown>;
+        if (field?.kind === "media" && field.mediaRole === "heroBleedBackground") {
+          next.backgroundImageId = url;
+          if (archiveId) next.backgroundMediaItemId = archiveId;
+          else delete next.backgroundMediaItemId;
+        } else if (field?.kind === "media" && field.mediaRole === "heroBleedOverlay") {
+          next.overlayImageId = url;
+          if (archiveId) next.overlayMediaItemId = archiveId;
+          else delete next.overlayMediaItemId;
+        } else {
+          next[key] = url;
+        }
+        return next as EditableBlock;
+      });
+      setFieldErrors((prev) => {
+        const n = { ...prev };
+        delete n[key];
+        return n;
+      });
+      setEditMediaFieldKey(null);
+      setEditMediaOpen(false);
+    },
+    [editMediaFieldKey, schema]
+  );
+
+  const handleClearMediaField = useCallback((key: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev } as Record<string, unknown>;
+      next[key] = "";
+      if (key === "backgroundImageId") delete next.backgroundMediaItemId;
+      if (key === "overlayImageId") delete next.overlayMediaItemId;
+      return next as EditableBlock;
+    });
+    setFieldErrors((prev) => {
+      const n = { ...prev };
+      delete n[key];
+      return n;
+    });
+  }, []);
+
+  const handleInternalLinkPick = useCallback(
+    (href: string) => {
+      const key = editLinkFieldKeyRef.current;
+      if (!key || !block || draft == null) return;
+      const field = schema.find((f) => f.key === key);
+      const next = { ...draft } as Record<string, unknown>;
+      next[key] = href;
+      if (field?.linkKindKey) next[field.linkKindKey] = "internal";
+      const nb = next as EditableBlock;
+      setDraft(nb);
+      setFieldErrors(validateBlock(nb, schema, block.type));
+      setEditLinkFieldKey(null);
+      setEditLinkOpen(false);
+    },
+    [block, draft, schema]
+  );
+
   if (!open || !block) return null;
 
   return (
@@ -129,7 +240,7 @@ export function BlockEditModal({
       aria-label="Rediger blokk"
     >
       <div
-        className="lp-motion-card lp-glass-panel flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl"
+        className="lp-motion-card lp-glass-panel flex max-h-[85vh] w-full max-w-3xl flex-col overflow-clip rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[rgb(var(--lp-border))] px-4 py-3">
@@ -139,7 +250,7 @@ export function BlockEditModal({
             </h2>
             <p className="text-[11px] text-[rgb(var(--lp-muted))]">
               {useSchemaForm
-                ? "Fyll ut feltene under. Endringer lagres når du trykker Lagre."
+                ? "Forhåndsvisningen oppdateres mens du redigerer. Trykk Lagre for å skrive til siden."
                 : "JSON-representasjon. Endringer oppdaterer blokken ved Lagre."}
             </p>
           </div>
@@ -159,7 +270,7 @@ export function BlockEditModal({
             </span>
             <span className="font-mono text-[rgb(var(--lp-text))]">id: {block.id}</span>
             <span className="font-mono text-[rgb(var(--lp-text))]">type: {block.type}</span>
-            {hasSchemaForBlockType(block.type) && (
+            {hasSchemaForBlockType(block.type) && showJsonAdvancedToggle ? (
               <button
                 type="button"
                 onClick={() => setShowRawJson((v) => !v)}
@@ -167,7 +278,7 @@ export function BlockEditModal({
               >
                 {showRawJson ? "Vis skjemafelter" : "Avansert: vis JSON"}
               </button>
-            )}
+            ) : null}
           </div>
           <button
             type="button"
@@ -184,7 +295,17 @@ export function BlockEditModal({
         )}
         <div className="flex-1 overflow-auto px-4 py-3">
           {useSchemaForm && draft ? (
-            <SchemaDrivenBlockForm
+            <>
+              <details className="mb-3 rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/60 px-3 py-2">
+                <summary className="cursor-pointer text-[11px] font-medium text-[rgb(var(--lp-text))]">
+                  Property dataset (skjema · datakontrakt · editor-UI)
+                </summary>
+                <div className="mt-2">
+                  <PropertyDatasetExplainer blockType={block.type} schema={schema} />
+                </div>
+              </details>
+              <SchemaDrivenBlockForm
+              blockType={block.type}
               block={draft}
               schema={schema}
               onChange={setDraft}
@@ -197,7 +318,17 @@ export function BlockEditModal({
                   return next;
                 })
               }
+              onOpenMediaPicker={(fieldKey) => {
+                setEditMediaFieldKey(fieldKey);
+                setEditMediaOpen(true);
+              }}
+              onClearMediaField={handleClearMediaField}
+              onOpenInternalLinkPicker={(fieldKey) => {
+                setEditLinkFieldKey(fieldKey);
+                setEditLinkOpen(true);
+              }}
             />
+            </>
           ) : (
             <>
               <textarea
@@ -214,7 +345,7 @@ export function BlockEditModal({
         </div>
         <div className="flex items-center justify-between border-t border-[rgb(var(--lp-border))] px-4 py-2">
           <p className="text-[10px] text-[rgb(var(--lp-muted))]">
-            {useSchemaForm ? "Feltene matcher blokktypen. Lagre for å overføre til editoren." : null}
+            {useSchemaForm ? "Skjemaet er deterministisk: kun tillatte felt for denne blokktypen." : null}
           </p>
           <div className="flex gap-2">
             <button
@@ -234,6 +365,25 @@ export function BlockEditModal({
           </div>
         </div>
       </div>
+
+      <MediaPickerModal
+        open={editMediaOpen}
+        title="Velg bilde fra mediearkiv"
+        onClose={() => {
+          setEditMediaOpen(false);
+          setEditMediaFieldKey(null);
+        }}
+        onSelect={handleEditMediaSelect}
+      />
+
+      <InternalLinkPickerModal
+        open={editLinkOpen}
+        onClose={() => {
+          setEditLinkOpen(false);
+          setEditLinkFieldKey(null);
+        }}
+        onPick={handleInternalLinkPick}
+      />
     </div>
   );
 }

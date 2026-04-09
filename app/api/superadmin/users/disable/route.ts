@@ -5,7 +5,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { isSuperadminEmail, systemRoleByEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
+import { systemRoleByEmail } from "@/lib/system/emails";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function safeText(v: any, max = 200) {
@@ -25,7 +26,7 @@ async function requireSuperadmin() {
   const { data: auth, error } = await sb.auth.getUser();
   const user = auth?.user ?? null;
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
-  if (!isSuperadminEmail(user.email)) throw Object.assign(new Error("forbidden"), { code: "forbidden" });
+  if (!(await isSuperadminProfile(user.id))) throw Object.assign(new Error("forbidden"), { code: "forbidden" });
   return user;
 }
 

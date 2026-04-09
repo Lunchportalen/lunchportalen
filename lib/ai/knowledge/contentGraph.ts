@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Semantic content graph: nodes for pages, topics, and keywords; edges for relationships.
  * In-memory structure for querying and feeding into AI capabilities (internal links, gap detection, etc.).

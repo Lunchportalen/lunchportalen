@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI memory outcome recording: best-effort writes to ai_memory for learning.
  * Used by apply, publish, release, SEO flows. Never throws; failures are opsLogged.
@@ -5,9 +7,8 @@
  */
 
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { insertAiMemory } from "./aiMemory";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const PAYLOAD_MAX_KEYS = 24;
 function truncatePayload(obj: Record<string, unknown>): Record<string, unknown> {
@@ -29,7 +30,7 @@ export type RecordSuggestionAppliedOpts = {
 };
 
 /** Record that a user applied an AI suggestion (feeds learning: what gets applied). */
-export async function recordSuggestionApplied(supabase: any, opts: RecordSuggestionAppliedOpts): Promise<void> {
+export async function recordSuggestionApplied(supabase: SupabaseClient, opts: RecordSuggestionAppliedOpts): Promise<void> {
   try {
     const payload = truncatePayload({
       worked: true,
@@ -60,7 +61,7 @@ export type RecordContentPublishedOpts = {
 };
 
 /** Record that content was published (feeds learning: what gets published). */
-export async function recordContentPublished(supabase: any, opts: RecordContentPublishedOpts): Promise<void> {
+export async function recordContentPublished(supabase: SupabaseClient, opts: RecordContentPublishedOpts): Promise<void> {
   try {
     const payload = truncatePayload({
       worked: true,
@@ -88,7 +89,7 @@ export type RecordReleaseExecutedOpts = {
 };
 
 /** Record that a release was executed (feeds learning: bulk publish outcomes). */
-export async function recordReleaseExecuted(supabase: any, opts: RecordReleaseExecutedOpts): Promise<void> {
+export async function recordReleaseExecuted(supabase: SupabaseClient, opts: RecordReleaseExecutedOpts): Promise<void> {
   try {
     const payload = truncatePayload({
       worked: true,
@@ -115,7 +116,7 @@ export type RecordSeoLearningOpts = {
 };
 
 /** Record SEO intelligence result (feeds learning: SEO scores over time). */
-export async function recordSeoLearning(supabase: any, opts: RecordSeoLearningOpts): Promise<void> {
+export async function recordSeoLearning(supabase: SupabaseClient, opts: RecordSeoLearningOpts): Promise<void> {
   try {
     const payload = truncatePayload({
       score: opts.score,

@@ -17,6 +17,9 @@ type KitchenRow = {
   department?: string | null;
   note?: string | null;
   tier?: "BASIS" | "LUXUS" | null;
+  menu_title?: string | null;
+  menu_description?: string | null;
+  menu_allergens?: string[];
 };
 
 type KitchenData = {
@@ -134,7 +137,7 @@ export async function GET(req: NextRequest) {
 
   const [companiesRes, locationsRes, profilesRes] = await Promise.all([
     companyIds.length
-      ? admin.from("companies").select("id,name").in("id", companyIds)
+      ? admin.from("companies").select("id,name,agreement_json").in("id", companyIds)
       : Promise.resolve({ data: [] as any[], error: null as any }),
     locationIds.length
       ? admin.from("company_locations").select("id,name,company_id").in("id", locationIds)
@@ -167,12 +170,96 @@ export async function GET(req: NextRequest) {
   const locations = new Map((locationsRes.data ?? []).map((l: any) => [safeStr(l.id), l]));
   const profiles = new Map((profilesRes.data ?? []).map((p: any) => [safeStr(p.user_id), p]));
 
+  const dcMap = new Map<string, { choice_key: string; note: string | null; updated_at: string | null }>();
+  if (userIds.length) {
+    let dcQ = admin
+      .from("day_choices")
+      .select("user_id,company_id,location_id,date,choice_key,note,updated_at")
+      .eq("date", date)
+      .in("user_id", userIds);
+    if (role === "kitchen") {
+      dcQ = dcQ.eq("company_id", scopeCompanyId);
+    } else if (companyIds.length) {
+      dcQ = dcQ.in("company_id", companyIds);
+    }
+    const { data: dcRows } = await dcQ;
+    for (const row of (dcRows ?? []) as any[]) {
+      const cid = safeStr(row.company_id);
+      const uid = safeStr(row.user_id);
+      const lid = safeStr(row.location_id);
+      const k = `${cid}|${lid}|${uid}`;
+      const prev = dcMap.get(k);
+      const prevT = prev?.updated_at ? new Date(prev.updated_at).getTime() : 0;
+      const nextT = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+      if (!prev || nextT >= prevT) {
+        dcMap.set(k, {
+          choice_key: safeStr(row.choice_key),
+          note: row.note != null ? safeStr(row.note) : null,
+          updated_at: row.updated_at != null ? String(row.updated_at) : null,
+        });
+      }
+    }
+  }
+
+  const { normalizeMealTypeKey } = await import("@/lib/cms/mealTypeKey");
+  const { getMenusByMealTypes } = await import("@/lib/cms/getMenusByMealTypes");
+  const { parseMealContractFromAgreementJson } = await import("@/lib/server/agreements/mealContract");
+  const { resolveMenuForDay } = await import("@/lib/domain/resolveMenuForDay");
+  const { weekdayKeyFromOsloISODate } = await import("@/lib/date/weekdayKeyFromIso");
+
+  function choiceKeyFromRow(r: any, dc: { choice_key: string } | undefined): string {
+    if (dc?.choice_key) return dc.choice_key;
+    const n = safeStr(r.note).toLowerCase();
+    const m = /(?:^|\s)choice:([a-z0-9_\-]+)/i.exec(n);
+    if (m?.[1]) return m[1].toLowerCase();
+    if (/^[a-z0-9_\-]{2,}$/i.test(safeStr(r.note))) return safeStr(r.note).toLowerCase();
+    return "";
+  }
+
+  const dayKey = weekdayKeyFromOsloISODate(date);
+
+  const mealKeys = new Set<string>();
+  for (const r of list as any[]) {
+    const cid = safeStr(r.company_id);
+    const uid = safeStr(r.user_id);
+    const lid = safeStr(r.location_id);
+    const dc = dcMap.get(`${cid}|${lid}|${uid}`);
+    const ck = choiceKeyFromRow(r, dc);
+    const nk = ck ? normalizeMealTypeKey(ck) : "";
+    const comp = companies.get(cid);
+    const contract = parseMealContractFromAgreementJson(comp?.agreement_json);
+    const resolved =
+      dayKey ? resolveMenuForDay({ dayKey, mealContract: contract, legacyChoiceKey: nk || null }) : nk || null;
+    if (resolved) mealKeys.add(resolved);
+    else if (nk) mealKeys.add(nk);
+  }
+
+  let menuByMeal = new Map<string, import("@/lib/cms/types").CmsMenuByMealType>();
+  try {
+    menuByMeal = await getMenusByMealTypes([...mealKeys]);
+  } catch (e: any) {
+    console.warn("[api/kitchen] getMenusByMealTypes failed", String(e?.message ?? e));
+  }
+
   const rows: KitchenRow[] = list.map((r: any) => {
     const comp = companies.get(safeStr(r.company_id));
     const loc = locations.get(safeStr(r.location_id));
     const prof = profiles.get(safeStr(r.user_id));
 
     const employeeName = safeStr(prof?.full_name) || safeStr(prof?.name) || safeStr(prof?.email) || "Ansatt";
+
+    const cid = safeStr(r.company_id);
+    const uid = safeStr(r.user_id);
+    const lid = safeStr(r.location_id);
+    const dc = dcMap.get(`${cid}|${lid}|${uid}`);
+    const ck = choiceKeyFromRow(r, dc);
+    const nk = ck ? normalizeMealTypeKey(ck) : "";
+    const contract = parseMealContractFromAgreementJson(comp?.agreement_json);
+    const mealTypeResolved =
+      dayKey ? resolveMenuForDay({ dayKey, mealContract: contract, legacyChoiceKey: nk || null }) : nk || null;
+    const lookupKey = mealTypeResolved || nk;
+    const m = lookupKey ? menuByMeal.get(lookupKey) : null;
+    const titleFallback = mealTypeResolved || nk || null;
 
     return {
       company: safeStr(comp?.name) || "Ukjent firma",
@@ -181,6 +268,9 @@ export async function GET(req: NextRequest) {
       department: prof?.department ? safeStr(prof.department) : null,
       note: r.note ? safeStr(r.note) : null,
       tier: null, // kobles senere til avtale (BASIS/LUXUS)
+      menu_title: (m?.title != null ? String(m.title).trim() : "") || titleFallback,
+      menu_description: m?.description != null ? String(m.description) : null,
+      menu_allergens: Array.isArray(m?.allergens) ? m!.allergens! : [],
     };
   });
 

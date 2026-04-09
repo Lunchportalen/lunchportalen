@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { weekRangeISO, weekRangeISOFrom } from "@/lib/date/week";
-import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/sanity/queries";
+import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/cms/menuContent";
 import { formatDateNO, formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
 
 function isISODate(d: string) {

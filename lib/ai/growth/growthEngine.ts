@@ -1,3 +1,7 @@
+// STATUS: KEEP
+
+// DUPLICATE — review
+
 /**
  * AI GROWTH ENGINE
  * Identifiserer: vekstmuligheter, nye sider, nye kampanjer.
@@ -5,25 +9,25 @@
  * Kun oppdagelse/spec; ingen mutasjon eller publisering.
  */
 
-import { discoverKeywordGaps } from "@/lib/ai/capabilities/discoverKeywordGaps";
+import { discoverKeywordGaps } from "@/lib/ai/engines/capabilities/discoverKeywordGaps";
 import type {
   DiscoverKeywordGapsInput,
   DiscoverKeywordGapsOutput,
   KeywordOpportunity,
-} from "@/lib/ai/capabilities/discoverKeywordGaps";
-import { evolveSiteStructure } from "@/lib/ai/capabilities/evolveSiteStructure";
+} from "@/lib/ai/engines/capabilities/discoverKeywordGaps";
+import { evolveSiteStructure } from "@/lib/ai/engines/capabilities/evolveSiteStructure";
 import type {
   EvolveSiteStructureInput,
   EvolveSiteStructureOutput,
   StructureEvolution,
-} from "@/lib/ai/capabilities/evolveSiteStructure";
-import { generateCampaign } from "@/lib/ai/capabilities/generateCampaign";
+} from "@/lib/ai/engines/capabilities/evolveSiteStructure";
+import { generateCampaign } from "@/lib/ai/engines/capabilities/generateCampaign";
 import type {
   GenerateCampaignInput,
   GenerateCampaignOutput,
   CampaignPhase,
   CampaignKpi,
-} from "@/lib/ai/capabilities/generateCampaign";
+} from "@/lib/ai/engines/capabilities/generateCampaign";
 
 export type { KeywordOpportunity, StructureEvolution, CampaignPhase, CampaignKpi };
 

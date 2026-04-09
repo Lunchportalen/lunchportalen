@@ -2,10 +2,12 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getExperimentStats } from "@/lib/ai/experiments/analytics";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  return withApiAiEntrypoint(request, "GET", async () => {
   const { scopeOr401, requireRoleOr403, denyResponse } = await import("@/lib/http/routeGuard");
   const s = await scopeOr401(request);
   if (s.ok === false) return denyResponse(s);
@@ -19,4 +21,5 @@ export async function GET(request: NextRequest) {
   const supabase = supabaseAdmin();
   const stats = await getExperimentStats(supabase, experimentId.trim());
   return jsonOk(ctx.rid, { ok: true, data: stats }, 200);
+  });
 }

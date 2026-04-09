@@ -4,14 +4,14 @@
  * Signaler: færre bestillinger, lavere engagement, flere avbestillinger.
  */
 
-import { predictChurnRisk } from "@/lib/ai/capabilities/churnPrediction";
+import { predictChurnRisk } from "@/lib/ai/engines/capabilities/churnPrediction";
 import type {
   ChurnPredictionInput,
   ChurnPredictionOutput,
   ChurnEntityInput,
   ChurnRiskResult,
   ChurnSignal,
-} from "@/lib/ai/capabilities/churnPrediction";
+} from "@/lib/ai/engines/capabilities/churnPrediction";
 
 export type { ChurnEntityInput, ChurnRiskResult, ChurnSignal };
 

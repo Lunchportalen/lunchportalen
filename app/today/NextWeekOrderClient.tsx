@@ -2,21 +2,31 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { fallbackLuxusChoicesClient, type MealChoice } from "@/lib/cms/mealTierFallback";
+import { unwrapJsonOkData } from "@/lib/http/unwrapClientJson";
+
 type MenuDayItem = {
-  date: string; // YYYY-MM-DD
+  date: string;
   weekday: string;
   isPublished: boolean;
   description: string | null;
   allergens: string[];
 };
 
-type WeekResp = {
-  ok: boolean;
-  weekOffset: 0 | 1;
-  range: { from: string; to: string };
+type WeekApiData = {
+  ok?: boolean;
+  weekOffset: number;
+  range?: { from: string; to: string };
   days: MenuDayItem[];
-  error?: string;
-  detail?: string;
+};
+
+type WindowDayRow = {
+  date: string;
+  allowedChoices?: { key: string; label?: string }[];
+};
+
+type WindowApiData = {
+  days?: WindowDayRow[];
 };
 
 type BulkSetResp = {
@@ -27,17 +37,6 @@ type BulkSetResp = {
   detail?: string;
 };
 
-const CHOICES = [
-  { key: "salatbar", label: "Salatbar" },
-  { key: "paasmurt", label: "Påsmurt" },
-  { key: "varmmat", label: "Varmmat" },
-  { key: "sushi", label: "Sushi" },
-  { key: "poke", label: "Pokébowl" },
-  { key: "thai", label: "Thaimat" },
-] as const;
-
-type ChoiceKey = (typeof CHOICES)[number]["key"];
-
 function Pill({ label }: { label: string }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-900">
@@ -47,12 +46,29 @@ function Pill({ label }: { label: string }) {
   );
 }
 
+function normalizeWeek(data: WeekApiData | null): { ok: boolean; range: { from: string; to: string }; days: MenuDayItem[] } {
+  if (!data?.days?.length) return { ok: false, range: { from: "", to: "" }, days: [] };
+  const days = data.days.map((d) => ({
+    date: String(d.date ?? "").slice(0, 10),
+    weekday: String(d.weekday ?? ""),
+    isPublished: Boolean(d.isPublished),
+    description: d.description != null ? String(d.description) : null,
+    allergens: Array.isArray(d.allergens) ? d.allergens.map((x) => String(x)) : [],
+  }));
+  const from = data.range?.from ?? days[0]?.date ?? "";
+  const to = data.range?.to ?? days[days.length - 1]?.date ?? "";
+  const ok = days.length > 0 && days.every((x) => x.date);
+  return { ok, range: { from, to }, days };
+}
+
 export default function NextWeekOrderClient() {
   const [loading, setLoading] = useState(true);
-  const [week, setWeek] = useState<WeekResp | null>(null);
+  const [weekOk, setWeekOk] = useState(false);
+  const [range, setRange] = useState({ from: "", to: "" });
+  const [days, setDays] = useState<MenuDayItem[]>([]);
+  const [rowChoicesByDate, setRowChoicesByDate] = useState<Record<string, MealChoice[]>>({});
 
-  // valg per dato
-  const [choicesByDate, setChoicesByDate] = useState<Record<string, ChoiceKey | "">>({});
+  const [choicesByDate, setChoicesByDate] = useState<Record<string, string>>({});
   const [noteByDate, setNoteByDate] = useState<Record<string, string>>({});
 
   const [busy, setBusy] = useState(false);
@@ -62,23 +78,54 @@ export default function NextWeekOrderClient() {
     setLoading(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/week?weekOffset=1", { cache: "no-store" });
-      const json = (await res.json()) as WeekResp;
-      setWeek(json);
+      const [weekRes, winRes] = await Promise.all([
+        fetch("/api/week?weekOffset=1", { cache: "no-store" }),
+        fetch("/api/order/window?weeks=2", { cache: "no-store" }),
+      ]);
+      const weekJson = await weekRes.json();
+      const winJson = await winRes.json();
 
-      // init maps
-      if (json?.ok) {
-        const initChoices: Record<string, ChoiceKey | ""> = {};
-        const initNotes: Record<string, string> = {};
-        json.days.forEach((d) => {
-          initChoices[d.date] = initChoices[d.date] ?? "";
-          initNotes[d.date] = initNotes[d.date] ?? "";
-        });
-        setChoicesByDate(initChoices);
-        setNoteByDate(initNotes);
+      const weekRaw = unwrapJsonOkData<WeekApiData>(weekJson) ?? (weekJson as WeekApiData);
+      const norm = normalizeWeek(weekRaw);
+      setWeekOk(norm.ok);
+      setRange(norm.range);
+      setDays(norm.days);
+
+      const initChoices: Record<string, string> = {};
+      const initNotes: Record<string, string> = {};
+      norm.days.forEach((d) => {
+        initChoices[d.date] = initChoices[d.date] ?? "";
+        initNotes[d.date] = initNotes[d.date] ?? "";
+      });
+      setChoicesByDate(initChoices);
+      setNoteByDate(initNotes);
+
+      const winData = unwrapJsonOkData<WindowApiData>(winJson) ?? (winJson as WindowApiData);
+      const dateSet = new Set(norm.days.map((d) => d.date));
+      const nextRow: Record<string, MealChoice[]> = {};
+      for (const row of winData?.days ?? []) {
+        const dt = String(row?.date ?? "").slice(0, 10);
+        if (!dateSet.has(dt)) continue;
+        const raw = Array.isArray(row.allowedChoices) ? row.allowedChoices : [];
+        const mapped: MealChoice[] = raw
+          .map((c) => ({
+            key: String(c?.key ?? "")
+              .trim()
+              .toLowerCase(),
+            label: String(c?.label ?? c?.key ?? "").trim() || String(c?.key ?? "").trim().toLowerCase(),
+          }))
+          .filter((c) => c.key);
+        nextRow[dt] = mapped;
+      }
+      setRowChoicesByDate(nextRow);
+
+      if (!weekRes.ok || !norm.ok) {
+        setMsg("Neste uke kunne ikke lastes.");
       }
     } catch {
-      setWeek({ ok: false, weekOffset: 1, range: { from: "", to: "" }, days: [], error: "FETCH_FAILED" });
+      setWeekOk(false);
+      setDays([]);
+      setRange({ from: "", to: "" });
       setMsg("Kunne ikke hente neste uke.");
     } finally {
       setLoading(false);
@@ -89,34 +136,54 @@ export default function NextWeekOrderClient() {
     loadNextWeek();
   }, []);
 
-  const days = useMemo(() => (week?.ok ? week.days : []), [week]);
+  const choicesForDate = useMemo(() => {
+    return (date: string): MealChoice[] => {
+      const cms = rowChoicesByDate[date];
+      return cms?.length ? cms : fallbackLuxusChoicesClient();
+    };
+  }, [rowChoicesByDate]);
+
+  const quickChoiceButtons = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const d of days) {
+      if (!d.isPublished) continue;
+      for (const c of choicesForDate(d.date)) {
+        if (!m.has(c.key)) m.set(c.key, c.label);
+      }
+    }
+    if (!m.size) {
+      for (const c of fallbackLuxusChoicesClient()) m.set(c.key, c.label);
+    }
+    return [...m.entries()].map(([key, label]) => ({ key, label }));
+  }, [days, choicesForDate]);
 
   const allPublished = useMemo(() => {
-    if (!week?.ok) return false;
-    return week.days.every((d) => d.isPublished);
-  }, [week]);
+    if (!weekOk || !days.length) return false;
+    return days.every((d) => d.isPublished);
+  }, [weekOk, days]);
 
   const missingChoices = useMemo(() => {
     const missing: string[] = [];
     days.forEach((d) => {
-      if (!d.isPublished) return; // ikke bestillbar uten publisert meny
+      if (!d.isPublished) return;
       if (!choicesByDate[d.date]) missing.push(d.date);
     });
     return missing;
   }, [days, choicesByDate]);
 
-  function setAll(choice: ChoiceKey) {
+  function setAll(choiceKey: string) {
     const next = { ...choicesByDate };
     days.forEach((d) => {
-      if (d.isPublished) next[d.date] = choice;
+      if (!d.isPublished) return;
+      const list = choicesForDate(d.date);
+      if (list.some((c) => c.key === choiceKey)) next[d.date] = choiceKey;
     });
     setChoicesByDate(next);
   }
 
   async function saveAll() {
-    if (!week?.ok) return;
+    if (!weekOk) return;
 
-    // kun publiserte dager kan bestilles
     const orderDays = days.filter((d) => d.isPublished);
     if (!orderDays.length) {
       setMsg("Ingen publiserte dager å bestille.");
@@ -128,13 +195,11 @@ export default function NextWeekOrderClient() {
       return;
     }
 
-    const payload = {
-      days: orderDays.map((d) => ({
-        date: d.date,
-        choice_key: choicesByDate[d.date],
-        note: noteByDate[d.date] || "",
-      })),
-    };
+    const firstKey = choicesByDate[orderDays[0]?.date ?? ""];
+    if (!firstKey) {
+      setMsg("Velg minst ett måltid.");
+      return;
+    }
 
     setBusy(true);
     setMsg(null);
@@ -144,13 +209,14 @@ export default function NextWeekOrderClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ choice_key: firstKey, weekIndex: 1 }),
       });
 
-      const json = (await res.json().catch(() => ({}))) as BulkSetResp;
+      const jsonRaw = await res.json().catch(() => ({}));
+      const json = (unwrapJsonOkData<BulkSetResp>(jsonRaw) ?? jsonRaw) as BulkSetResp;
 
       if (!res.ok || !json?.ok) {
-        setMsg(json?.message || json?.error || "Kunne ikke lagre neste uke.");
+        setMsg(json?.message || (json as { error?: string })?.error || "Kunne ikke lagre neste uke.");
         return;
       }
 
@@ -166,17 +232,13 @@ export default function NextWeekOrderClient() {
         <div>
           <div className="text-sm font-semibold text-[rgb(var(--lp-text))]">Bestill neste uke</div>
           <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-            Forhåndsbestilling (Man–Fre). Lagre alle i én operasjon.
+            Forhåndsbestilling (Man–Fre). Ett måltidsvalg settes for alle åpne dager neste uke (API bulk-set).
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {week?.ok ? (
-            <Pill label={`${week.range.from} → ${week.range.to}`} />
-          ) : (
-            <Pill label="—" />
-          )}
-          {!allPublished && <Pill label="Ikke fullt publisert" />}
+          {weekOk ? <Pill label={`${range.from} → ${range.to}`} /> : <Pill label="—" />}
+          {!allPublished && weekOk ? <Pill label="Ikke fullt publisert" /> : null}
         </div>
       </div>
 
@@ -184,16 +246,15 @@ export default function NextWeekOrderClient() {
         <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 text-sm text-[rgb(var(--lp-muted))]">
           Henter neste uke…
         </div>
-      ) : !week?.ok ? (
+      ) : !weekOk ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Neste uke kunne ikke lastes.
         </div>
       ) : (
         <>
-          {/* Quick actions */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Sett alle:</div>
-            {CHOICES.map((c) => (
+            <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Sett alle (samme valg for visning):</div>
+            {quickChoiceButtons.map((c) => (
               <button
                 key={c.key}
                 type="button"
@@ -206,11 +267,11 @@ export default function NextWeekOrderClient() {
             ))}
           </div>
 
-          {/* Rows */}
           <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white">
             <div className="divide-y divide-[rgb(var(--lp-divider))]">
               {days.map((d) => {
                 const disabled = !d.isPublished || busy;
+                const rowOpts = choicesForDate(d.date);
                 return (
                   <div key={d.date} className="p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -219,7 +280,11 @@ export default function NextWeekOrderClient() {
                           {d.weekday} <span className="font-normal text-[rgb(var(--lp-muted))]">• {d.date}</span>
                         </div>
                         <div className="mt-1 text-sm text-[rgb(var(--lp-text))]">
-                          {d.isPublished ? (d.description || "—") : <span className="text-[rgb(var(--lp-muted))]">Ikke publisert</span>}
+                          {d.isPublished ? (
+                            d.description || "—"
+                          ) : (
+                            <span className="text-[rgb(var(--lp-muted))]">Ikke publisert</span>
+                          )}
                         </div>
                       </div>
 
@@ -227,13 +292,11 @@ export default function NextWeekOrderClient() {
                         <select
                           className="h-11 w-full rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)] disabled:opacity-60"
                           value={choicesByDate[d.date] ?? ""}
-                          onChange={(e) =>
-                            setChoicesByDate((prev) => ({ ...prev, [d.date]: e.target.value as ChoiceKey }))
-                          }
+                          onChange={(e) => setChoicesByDate((prev) => ({ ...prev, [d.date]: e.target.value }))}
                           disabled={disabled}
                         >
                           <option value="">{d.isPublished ? "Velg…" : "Utilgjengelig"}</option>
-                          {CHOICES.map((c) => (
+                          {rowOpts.map((c) => (
                             <option key={c.key} value={c.key}>
                               {c.label}
                             </option>
@@ -242,11 +305,9 @@ export default function NextWeekOrderClient() {
 
                         <input
                           className="h-11 w-full rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm outline-none focus:ring-4 focus:ring-[rgb(var(--lp-cta)/0.15)] disabled:opacity-60"
-                          placeholder="Kommentar (valgfritt)"
+                          placeholder="Kommentar (valgfritt) — kobles ikke til bulk-set"
                           value={noteByDate[d.date] ?? ""}
-                          onChange={(e) =>
-                            setNoteByDate((prev) => ({ ...prev, [d.date]: e.target.value }))
-                          }
+                          onChange={(e) => setNoteByDate((prev) => ({ ...prev, [d.date]: e.target.value }))}
                           disabled={disabled}
                           maxLength={280}
                         />
@@ -258,7 +319,6 @@ export default function NextWeekOrderClient() {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-[rgb(var(--lp-cta))] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
@@ -277,17 +337,15 @@ export default function NextWeekOrderClient() {
             </button>
 
             {missingChoices.length ? (
-              <div className="text-sm text-amber-900">
-                Velg for alle publiserte dager før lagring.
-              </div>
+              <div className="text-sm text-amber-900">Velg for alle publiserte dager før lagring.</div>
             ) : null}
           </div>
 
-          {msg && (
+          {msg ? (
             <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
               {msg}
             </div>
-          )}
+          ) : null}
         </>
       )}
     </section>

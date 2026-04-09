@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PageShell from "@/components/PageShell";
+import { CmsBlockRenderer } from "@/components/cms/CmsBlockRenderer";
 import { buildCmsPageMetadata } from "@/lib/cms/public/cmsPageMetadata";
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
-import { normalizeBlockForRender } from "@/lib/cms/public/normalizeBlockForRender";
-import { parseBody } from "@/lib/cms/public/parseBody";
-import { renderBlock } from "@/lib/public/blocks/renderBlock";
+import { loadLivePageContent } from "@/lib/cms/public/loadLivePageContent";
 
 const ENV: "prod" | "staging" =
   typeof process.env.NEXT_PUBLIC_APP_ENV === "string" && process.env.NEXT_PUBLIC_APP_ENV === "staging"
@@ -13,11 +11,23 @@ const ENV: "prod" | "staging" =
     : "prod";
 const LOCALE: "nb" | "en" = "nb";
 
-type Props = { params: Promise<{ slug: string }> };
+type SP = Record<string, string | string[] | undefined> | undefined;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+function isPreviewFromSearchParams(sp: SP): boolean {
+  const raw = sp?.preview;
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return v === "true";
+}
+
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<SP> | SP;
+};
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const content = await getContentBySlug(slug);
+  const sp = await Promise.resolve(searchParams ?? {});
+  const content = await loadLivePageContent(slug, { preview: isPreviewFromSearchParams(sp) });
   if (!content) return { title: "Siden finnes ikke" };
   return buildCmsPageMetadata({
     pageTitle: content.title ?? null,
@@ -26,13 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function PublicCmsPage({ params }: Props) {
+export default async function PublicCmsPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const content = await getContentBySlug(slug);
+  const sp = await Promise.resolve(searchParams ?? {});
+  const content = await loadLivePageContent(slug, { preview: isPreviewFromSearchParams(sp) });
   if (!content) notFound();
 
-  const blocks = parseBody(content.body);
-  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+  const safeBlocks = content.blocks;
 
   return (
     <PageShell>
@@ -43,14 +53,14 @@ export default async function PublicCmsPage({ params }: Props) {
           </h1>
         )}
         <div className="flex flex-col gap-6">
-          {safeBlocks.map((block, i) => {
-            const node = normalizeBlockForRender(block ?? null, i);
-            return (
-              <div key={node.id}>
-                {renderBlock(node, ENV, LOCALE)}
-              </div>
-            );
-          })}
+          <CmsBlockRenderer
+            blocks={safeBlocks}
+            env={ENV}
+            locale={LOCALE}
+            enableLivePricing
+            blockWrapperClassName="w-full"
+            pageCmsMeta={content.meta}
+          />
         </div>
         {safeBlocks.length === 0 && (
           <p className="text-slate-500">Ingen innhold å vise.</p>

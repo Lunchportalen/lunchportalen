@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Samler all kontekst for AI: sideinnhold, struktur, SEO, analytics, brukerdata, intern linking, CMS schema.
  * Single entry point; bruker buildContext (AI Context Engine) og legger til normalisert brukerdata.

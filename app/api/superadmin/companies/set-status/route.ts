@@ -8,7 +8,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
-import { systemRoleByEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
 
 /**
@@ -49,12 +49,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const email = au.user.email ?? null;
-    const role = systemRoleByEmail(email);
-    if (role !== "superadmin") {
+    if (!(await isSuperadminProfile(au.user.id))) {
       return jsonErr(rid, "Ingen tilgang.", 403, {
         code: "FORBIDDEN",
-        detail: { email: email ?? "unknown" },
+        detail: { reason: "superadmin_required" },
       });
     }
 
@@ -101,7 +99,7 @@ export async function POST(req: NextRequest) {
     await logOpsEventBestEffort(sb, {
       rid,
       actor_user_id: au.user.id,
-      actor_email: email,
+      actor_email: au.user.email ?? null,
       actor_role: "superadmin",
       action: "COMPANY_STATUS_CHANGED",
       entity_type: "company",

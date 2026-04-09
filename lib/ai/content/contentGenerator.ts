@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Genererer: artikler, seksjoner, blokker, FAQ, meta.
  * Samlet inngang for innholdsgenerering; bruker eksisterende capabilities og modeller.
@@ -5,16 +7,16 @@
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 import type { PageAiSeo, PageAiIntent } from "@/lib/cms/model/pageAiContract";
-import { autoGenerateArticle } from "@/lib/ai/capabilities/autoGenerateArticle";
-import type { AutoGenerateArticleInput, AutoGenerateArticleOutput } from "@/lib/ai/capabilities/autoGenerateArticle";
-import { generateBlock } from "@/lib/ai/capabilities/generateBlock";
-import type { GenerateBlockInput } from "@/lib/ai/capabilities/generateBlock";
-import { generateFAQ } from "@/lib/ai/capabilities/generateFAQ";
-import type { GenerateFAQInput, GenerateFAQOutput, FAQItem } from "@/lib/ai/capabilities/generateFAQ";
+import { autoGenerateArticle } from "@/lib/ai/engines/capabilities/autoGenerateArticle";
+import type { AutoGenerateArticleInput, AutoGenerateArticleOutput } from "@/lib/ai/engines/capabilities/autoGenerateArticle";
+import { generateBlock } from "@/lib/ai/engines/capabilities/generateBlock";
+import type { GenerateBlockInput } from "@/lib/ai/engines/capabilities/generateBlock";
+import { generateFAQ } from "@/lib/ai/engines/capabilities/generateFAQ";
+import type { GenerateFAQInput, GenerateFAQOutput, FAQItem } from "@/lib/ai/engines/capabilities/generateFAQ";
 import { generateInterface } from "@/lib/ai/ui/generateInterface";
 import type { GenerateInterfaceInput, UILayoutSpecification, SectionSpec } from "@/lib/ai/ui/generateInterface";
 
-export type { AutoGenerateArticleInput, AutoGenerateArticleOutput, ArticleOutlineSection } from "@/lib/ai/capabilities/autoGenerateArticle";
+export type { AutoGenerateArticleInput, AutoGenerateArticleOutput, ArticleOutlineSection } from "@/lib/ai/engines/capabilities/autoGenerateArticle";
 export type { GenerateBlockInput };
 export type { GenerateFAQInput, GenerateFAQOutput, FAQItem };
 export type { GenerateInterfaceInput, UILayoutSpecification, SectionSpec };

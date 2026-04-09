@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * ContentWorkspaceActions — compatibility shim.
  *
@@ -10,6 +12,8 @@
  */
 
 import type { FormEvent } from "react";
+
+import { CONTROL_ACTIONS } from "@/lib/ai/controlTower/actionRegistry";
 
 export type CreateOnCreateHandler = (ev: FormEvent<HTMLFormElement>) => Promise<void> | void;
 
@@ -27,4 +31,27 @@ export function createOnCreate(params?: CreateOnCreateParams): CreateOnCreateHan
     }
   };
 }
+
+/** Superadmin session cookie; single action per request. Wire from existing CMS action surfaces only. */
+export async function runControl(action: string): Promise<Response> {
+  return fetch("/api/control-tower", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ action }),
+  });
+}
+
+export const CONTROL_TOWER_ACTIONS: ReadonlyArray<{ label: string; action: string }> = [
+  { label: "Run Growth", action: CONTROL_ACTIONS.RUN_GROWTH },
+  { label: "Run Strategy", action: CONTROL_ACTIONS.RUN_STRATEGY },
+  { label: "Run Org", action: CONTROL_ACTIONS.RUN_ORG },
+  { label: "Run Market", action: CONTROL_ACTIONS.RUN_MARKET },
+  { label: "Run Profit", action: CONTROL_ACTIONS.RUN_PROFIT },
+  { label: "Run Budget", action: CONTROL_ACTIONS.RUN_BUDGET },
+  { label: "Run Credit Check", action: CONTROL_ACTIONS.RUN_CREDIT_CHECK },
+  { label: "Run Invoicing", action: CONTROL_ACTIONS.RUN_INVOICING },
+  { label: "Kill Switch ON", action: CONTROL_ACTIONS.KILL_SWITCH_ON },
+  { label: "Kill Switch OFF", action: CONTROL_ACTIONS.KILL_SWITCH_OFF },
+];
 

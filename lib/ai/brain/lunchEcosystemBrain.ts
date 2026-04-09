@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI LUNCH ECOSYSTEM BRAIN
  * Det store systemet: AI kobler sammen bestillinger, menyer, kjøkken, levering, kundeanalyse.

@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/lib/types/database";
 
 function jsonError(res: NextResponse, status: number, code: string, message: string, detail?: any) {
   return NextResponse.json({ ok: false, code, message, detail: detail ?? undefined }, { status, headers: res.headers });
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       return jsonError(res, 500, "MISCONFIG", "Mangler Supabase env");
     }
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnon, {
+    const supabase = createServerClient<Database>(supabaseUrl, supabaseAnon, {
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;

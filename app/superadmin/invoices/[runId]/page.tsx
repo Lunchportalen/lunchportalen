@@ -10,17 +10,10 @@ import { redirect, notFound } from "next/navigation";
 
 import InvoiceRunDetailClient from "@/components/superadmin/InvoiceRunDetailClient";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
-}
-
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
 }
 
 async function getBaseUrl() {
@@ -76,14 +69,7 @@ export default async function InvoiceRunDetailPage(props: {
     redirect(`/login?next=/superadmin/invoices/${encodeURIComponent(runId)}`);
   }
 
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 

@@ -1,6 +1,16 @@
 import type { NextRequest } from "next/server";
+import {
+  getLocalDevContentReserveHomePage,
+  isContentBackendUnavailableError,
+  isLocalDevContentReserveEnabled,
+} from "@/lib/cms/contentLocalDevReserve";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import {
+  ensureLocalCmsHomePage,
+  isLocalCmsRuntimeError,
+} from "@/lib/localRuntime/cmsProvider";
+import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const HOME_SLUG = "home";
@@ -24,6 +34,36 @@ export async function GET(request: NextRequest) {
   if (roleDeny) return roleDeny;
 
   try {
+    if (isLocalCmsRuntimeEnabled()) {
+      const home = ensureLocalCmsHomePage();
+      return jsonOk(ctx.rid, {
+        ok: true,
+        rid: ctx.rid,
+        page: home.page,
+      }, 200);
+    }
+
+    if (isLocalDevContentReserveEnabled()) {
+      const reservePage = getLocalDevContentReserveHomePage();
+      return jsonOk(
+        ctx.rid,
+        {
+          ok: true,
+          rid: ctx.rid,
+          page: {
+            id: reservePage.id,
+            title: reservePage.title,
+            slug: reservePage.slug,
+            status: reservePage.status,
+            updated_at: reservePage.updated_at,
+          },
+          degraded: true,
+          reserve: true,
+        },
+        200,
+      );
+    }
+
     const supabase = supabaseAdmin();
 
     const { data: existing, error: selectErr } = await supabase
@@ -134,6 +174,17 @@ export async function GET(request: NextRequest) {
       },
     }, 200);
   } catch (e) {
+    if (isLocalCmsRuntimeError(e)) {
+      return jsonErr(ctx.rid, e.message, e.status, e.code, e.detail);
+    }
+    if (isContentBackendUnavailableError(e)) {
+      return jsonErr(
+        ctx.rid,
+        "Content-backenden svarte ikke. Hjem-node kan ikke hentes fra Supabase i dette miljøet akkurat nå.",
+        503,
+        "CONTENT_BACKEND_UNREACHABLE",
+      );
+    }
     const msg = e instanceof Error ? e.message : "Internal server error";
     const code = (e as { code?: string })?.code;
     if (code) console.error("[content/home GET]", code, msg);

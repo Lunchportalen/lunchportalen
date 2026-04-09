@@ -1,7 +1,10 @@
 // app/kitchen/report/KitchenReportClient.tsx
+/** @deprecated Routen `/kitchen/report` redirecter til `/kitchen?tab=aggregate`. Beholdes midlertidig for referanse. */
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+
+import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 
 type Mode = "day" | "week";
 type Totals = { basis: number; luxus: number; total: number };
@@ -75,7 +78,7 @@ function flagLabel(f: string) {
     case "missing_choice":
       return "Mangler menyvalg (day_choices)";
     case "missing_variant":
-      return "Mangler variant (Salatbar/Påsmurt)";
+      return `Mangler variant (${displayLabelForMealTypeKey("salatbar", null)}/${displayLabelForMealTypeKey("paasmurt", null)})`;
     default:
       return f;
   }

@@ -7,6 +7,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import BackofficeShell from "./_shell/BackofficeShell";
+import { CmsHistoryDiscoveryStrip } from "@/components/cms/control-plane/CmsHistoryDiscoveryStrip";
+import CmsRuntimeStatusStrip from "./_shell/CmsRuntimeStatusStrip";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { roleHome } from "@/lib/auth/roleHome";
@@ -27,10 +29,6 @@ async function currentPathFromHeaders(fallback: string) {
   return fallback;
 }
 
-function shell(children: ReactNode) {
-  return <BackofficeShell>{children}</BackofficeShell>;
-}
-
 export default async function BackofficeLayout({ children }: { children: ReactNode }) {
   const auth = await getAuthContext();
 
@@ -47,5 +45,12 @@ export default async function BackofficeLayout({ children }: { children: ReactNo
     redirect(roleHome(auth.role));
   }
 
-  return shell(children);
+  return (
+    <BackofficeShell
+      statusStrip={<CmsRuntimeStatusStrip />}
+      historyStrip={<CmsHistoryDiscoveryStrip />}
+    >
+      {children}
+    </BackofficeShell>
+  );
 }

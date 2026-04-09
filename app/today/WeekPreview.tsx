@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { unwrapJsonOkData } from "@/lib/http/unwrapClientJson";
+
 type MenuDayItem = {
   date: string; // YYYY-MM-DD
   weekday: string;
@@ -112,8 +114,36 @@ export default function WeekPreview({
     setLoading(true);
     try {
       const res = await fetch(`/api/week?weekOffset=${offset}`, { cache: "no-store" });
-      const json = (await res.json()) as WeekResp;
-      setData(json);
+      const json = await res.json();
+      const raw = unwrapJsonOkData<{
+        weekOffset?: number;
+        range?: { from: string; to: string };
+        days?: unknown[];
+      }>(json) ?? json;
+
+      const days: MenuDayItem[] = Array.isArray(raw?.days)
+        ? (raw.days as Record<string, unknown>[]).map((d) => ({
+            date: String(d?.date ?? "").slice(0, 10),
+            weekday: String(d?.weekday ?? ""),
+            isPublished: Boolean(d?.isPublished),
+            description: d?.description != null ? String(d.description) : null,
+            allergens: Array.isArray(d?.allergens) ? (d.allergens as unknown[]).map((x) => String(x)) : [],
+          }))
+        : [];
+
+      const range = raw?.range ?? {
+        from: days[0]?.date ?? "",
+        to: days[days.length - 1]?.date ?? "",
+      };
+
+      const ok = res.ok && days.length > 0;
+      setData({
+        ok,
+        weekOffset: offset,
+        range,
+        days,
+        error: ok ? undefined : "FETCH_FAILED",
+      });
     } catch {
       setData({ ok: false, range: { from: "", to: "" }, weekOffset: offset, days: [], error: "FETCH_FAILED" });
     } finally {

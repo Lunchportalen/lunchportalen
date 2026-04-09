@@ -32,6 +32,9 @@ export default async function OrdersPage() {
     // (scope.ts er bygget for dette mønsteret)
     const scope = await getScope({ headers: headers() } as any);
     const role = String((scope as any)?.role ?? "").trim().toLowerCase();
+    if (role === "employee") {
+      redirect("/week");
+    }
     if (role !== "employee") {
       if (isKnownRole(role)) {
         redirect(homeForRole(role));
@@ -44,7 +47,7 @@ export default async function OrdersPage() {
     if (e instanceof ScopeError) {
       // Ikke innlogget -> login
       if (e.code === "UNAUTHENTICATED") {
-        redirect("/login?next=/orders");
+        redirect("/login?next=/week");
       }
 
       // Pending / inactive / paused / closed -> status

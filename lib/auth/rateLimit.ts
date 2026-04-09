@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/auth/rateLimit.ts
 import "server-only";
 

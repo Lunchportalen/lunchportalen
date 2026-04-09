@@ -3,7 +3,7 @@
  * Optimaliserer leveringsplan: ruter, tidsvinduer, prioritering.
  */
 
-import { optimizeDeliveryPlan } from "@/lib/ai/capabilities/deliveryIntelligence";
+import { optimizeDeliveryPlan } from "@/lib/ai/engines/capabilities/deliveryIntelligence";
 import type {
   DeliveryIntelligenceInput,
   DeliveryIntelligenceOutput,
@@ -13,7 +13,7 @@ import type {
   SuggestedDeliveryRoute,
   TimeWindowSuggestion,
   StopPrioritization,
-} from "@/lib/ai/capabilities/deliveryIntelligence";
+} from "@/lib/ai/engines/capabilities/deliveryIntelligence";
 
 export type {
   DeliveryDepotInput,

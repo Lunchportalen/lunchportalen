@@ -13,7 +13,7 @@ import DownloadAgreementButton from "@/components/DownloadAgreementButton";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
-import { getMenuForDate } from "@/lib/sanity/queries";
+import { getMenuForDate } from "@/lib/cms/menuContent";
 
 import { buildKitchenGroups } from "@/lib/kitchen/grouping";
 import type { DbOrderRow, ProfileRow, KitchenGroup } from "@/lib/kitchen/grouping";

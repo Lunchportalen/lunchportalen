@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 // Narrow presentational wrapper for the SEO tab.
 // All state and business logic live in ContentWorkspace and are passed via props.
 // Validation limits and preview mirror lib/cms/public/cmsPageMetadata.ts for consistency.

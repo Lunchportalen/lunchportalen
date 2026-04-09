@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { useMemo, useState } from "react";
 import { validateModel } from "./blockValidation";
 

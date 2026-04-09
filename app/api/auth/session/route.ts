@@ -25,15 +25,19 @@ export async function POST(req: Request) {
   const access_token = String(body?.access_token ?? "");
   const refresh_token = String(body?.refresh_token ?? "");
 
-  // ✅ Én response som Supabase får lov å sette cookies på
-  const res = jsonOk(rid, { ok: true, rid, data: {} }, 200) as NextResponse;
-  res.headers.set("cache-control", "no-store");
-
-  const supabase = await supabaseRoute(res);
-
   if (!access_token || !refresh_token) {
-    return copySetCookie(res, jsonErr(rid, "Mangler access_token/refresh_token", 400, "BAD_INPUT") as NextResponse);
+    return jsonErr(rid, "Mangler access_token/refresh_token", 400, "BAD_INPUT");
   }
+
+  // NextResponse (not plain Response) so `supabaseRoute` can attach SSR Set-Cookie headers.
+  // Re-wrap `jsonOk` so body/headers match enterprise contract while staying a NextResponse.
+  const baseOk = jsonOk(rid, {});
+  const res = new NextResponse(baseOk.body, {
+    status: baseOk.status,
+    headers: new Headers(baseOk.headers),
+  });
+
+  const supabase = supabaseRoute(req, res);
 
   const { error } = await supabase.auth.setSession({ access_token, refresh_token });
 

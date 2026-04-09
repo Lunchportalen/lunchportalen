@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 ﻿/**
  * Page Health Engine V1 - Beyond Umbraco
  * Deterministic: score (never 100 on empty), issues, suggestions, recommendedStructure.
@@ -131,21 +133,6 @@ export function getPageHealth(args: {
           severity: "warn",
           title: "Empty CTA",
           detail: "CTA is missing label or link.",
-          blockId: b.id,
-        });
-      }
-    });
-
-    blocks.forEach((b) => {
-      if (b.type !== "banners") return;
-      const items = (b.data ?? b) as Record<string, unknown>;
-      const arr = Array.isArray(items?.items) ? items.items : [];
-      if (arr.length < 2) {
-        issues.push({
-          id: makeId("banners_min", issues.length),
-          severity: "warn",
-          title: "Banners need at least 2 items",
-          detail: "Add more items in the inspector.",
           blockId: b.id,
         });
       }

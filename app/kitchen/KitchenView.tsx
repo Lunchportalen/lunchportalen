@@ -2,6 +2,29 @@
 
 import React from "react";
 
+import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
+import { formatDateNO } from "@/lib/date/format";
+import type { DemandForecastOutput } from "@/lib/ai/demandEngine";
+
+type DemandForecastApi = {
+  forDate: string;
+  forecast: DemandForecastOutput;
+};
+
+function nextBusinessOslo(fromISO: string): string {
+  let cur = addDaysISO(fromISO, 1);
+  for (let i = 0; i < 14; i++) {
+    const w = new Date(`${cur}T12:00:00+01:00`).getDay();
+    if (w !== 0 && w !== 6) return cur;
+    cur = addDaysISO(cur, 1);
+  }
+  return cur;
+}
+
+function prettyOsloDate(iso: string): string {
+  return formatDateNO(iso);
+}
+
 type Mode = "day" | "week";
 
 type Totals = {
@@ -87,15 +110,35 @@ function apiMessage(error: any): string {
   return detail || "Kunne ikke hente kjøkkenrapport.";
 }
 
-export default function KitchenView() {
+export type KitchenViewProps = {
+  /** Synkroniser dag-modus med forelder (kjøkkenflate). Uke-modus er fortsatt lokal. */
+  syncDateISO?: string;
+  onSyncDateISOChange?: (iso: string) => void;
+};
+
+export default function KitchenView(props: KitchenViewProps = {}) {
+  const { syncDateISO, onSyncDateISOChange } = props;
   const defaultDate = React.useMemo(() => todayIso(), []);
   const [mode, setMode] = React.useState<Mode>("day");
-  const [date, setDate] = React.useState<string>(defaultDate);
+  const [internalDate, setInternalDate] = React.useState<string>(defaultDate);
   const [weekStart, setWeekStart] = React.useState<string>(mondayIso(defaultDate));
+
+  const date = syncDateISO !== undefined ? syncDateISO : internalDate;
+  const setDateMerged = React.useCallback(
+    (next: string) => {
+      if (onSyncDateISOChange) onSyncDateISOChange(next);
+      else setInternalDate(next);
+    },
+    [onSyncDateISOChange],
+  );
 
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const [report, setReport] = React.useState<Report | null>(null);
+
+  const [fcLoading, setFcLoading] = React.useState(false);
+  const [fcError, setFcError] = React.useState<string | null>(null);
+  const [fcData, setFcData] = React.useState<DemandForecastApi | null>(null);
 
   const csvHref = React.useMemo(() => {
     const params = new URLSearchParams({ mode });
@@ -147,9 +190,35 @@ export default function KitchenView() {
     }
   }, [mode, date, weekStart]);
 
+  const loadForecast = React.useCallback(async () => {
+    setFcLoading(true);
+    setFcError(null);
+    try {
+      const tomorrow = nextBusinessOslo(osloTodayISODate());
+      const res = await fetch(`/api/kitchen/demand-forecast?forDate=${encodeURIComponent(tomorrow)}`, {
+        cache: "no-store",
+        headers: { accept: "application/json" },
+      });
+      const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: DemandForecastApi; message?: string } | null;
+      if (!res.ok || !body || body.ok !== true || !body.data) {
+        throw new Error(safeStr(body?.message) || `HTTP ${res.status}`);
+      }
+      setFcData(body.data);
+    } catch (err: unknown) {
+      setFcData(null);
+      setFcError(apiMessage(err));
+    } finally {
+      setFcLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     void load();
   }, [load]);
+
+  React.useEffect(() => {
+    void loadForecast();
+  }, [loadForecast]);
 
   return (
     <section className="w-full">
@@ -174,7 +243,7 @@ export default function KitchenView() {
                 className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
                 type="date"
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                onChange={(event) => setDateMerged(event.target.value)}
               />
             </label>
           ) : (
@@ -192,7 +261,10 @@ export default function KitchenView() {
           <div className="ml-auto flex flex-wrap items-end gap-2">
             <button
               className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm font-semibold"
-              onClick={() => void load()}
+              onClick={() => {
+                void load();
+                void loadForecast();
+              }}
               type="button"
             >
               Oppdater
@@ -212,6 +284,34 @@ export default function KitchenView() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="print:hidden mt-4 rounded-2xl border border-dashed border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))]/40 p-4 shadow-[var(--lp-shadow-soft)]">
+        <h2 className="text-sm font-extrabold text-slate-900">Forventet antall i morgen</h2>
+        <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+          Prognose for {fcData ? prettyOsloDate(fcData.forDate) : "neste virkedag"} — vises kun som beslutningsstøtte (endrer ikke bestillinger).
+        </p>
+        {fcLoading ? <p className="mt-2 text-sm text-slate-600">Henter prognose…</p> : null}
+        {fcError && !fcLoading ? (
+          <p className="mt-2 text-sm text-amber-900">{fcError}</p>
+        ) : null}
+        {fcData && !fcLoading ? (
+          <div className="mt-3 space-y-1 text-sm text-slate-800">
+            <p>
+              <span className="font-semibold">Estimert:</span> {fcData.forecast.predictedOrders} porsjoner
+            </p>
+            <p>
+              <span className="font-semibold">Sikkerhet:</span> ±{fcData.forecast.marginOfError}{" "}
+              <span className="text-xs text-[rgb(var(--lp-muted))]">
+                (plan med buffer ca. {fcData.forecast.plannedWithBuffer} porsjoner, +{fcData.forecast.bufferPercent.toFixed(0)} %)
+              </span>
+            </p>
+            <p className="text-xs text-[rgb(var(--lp-muted))]">{fcData.forecast.transparencyNote}.</p>
+            <p className="text-xs text-[rgb(var(--lp-muted))]">
+              Konfidansindikator: {Math.round(fcData.forecast.confidence * 100)} % (intern, ikke kundeløfte).
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {loading ? (

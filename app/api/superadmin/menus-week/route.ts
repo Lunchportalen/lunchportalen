@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import type { MenuContent } from "@/lib/sanity/queries";
+import type { MenuContent } from "@/lib/cms/menuContent";
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -46,7 +46,7 @@ function hasAllergens(arr: unknown) {
  */
 export async function GET(req: Request) {
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const { getMenuForDatesAdmin } = await import("@/lib/sanity/queries");
+  const { getMenuForDatesAdmin } = await import("@/lib/cms/menuContent");
   const rid = makeRid();
 
   try {

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI LAYOUT ENGINE
  * Designer: layout, grid, responsive struktur.
@@ -18,14 +20,14 @@ import type {
   ContentSectionInput,
   GridCellPlacement,
 } from "@/lib/ai/layout/generateLayout";
-import { generateResponsiveLayout } from "@/lib/ai/capabilities/generateResponsiveLayout";
+import { generateResponsiveLayout } from "@/lib/ai/engines/capabilities/generateResponsiveLayout";
 import type {
   GenerateResponsiveLayoutInput,
   GenerateResponsiveLayoutOutput,
   ResponsiveSectionInput,
   Placement,
   BreakpointLayout,
-} from "@/lib/ai/capabilities/generateResponsiveLayout";
+} from "@/lib/ai/engines/capabilities/generateResponsiveLayout";
 
 export type { ContentSectionInput, GridCellPlacement, SectionSpec, Placement, BreakpointLayout };
 export type { UILayoutSpecification, GridLayoutConfiguration, GenerateResponsiveLayoutOutput };

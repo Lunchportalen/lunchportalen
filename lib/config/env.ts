@@ -4,9 +4,10 @@ import "server-only";
  * Centralised, typed access to critical platform env vars.
  *
  * Scope:
- * - Supabase URL / anon key (public + server)
- * - Supabase service role key (admin client)
+ * - Supabase URL / publishable (anon) key (public + server)
  * - Sanity project / dataset / API version (read + write)
+ *
+ * Supabase service role: NOT exposed here — use `supabaseAdmin()` from `@/lib/supabase/admin` only.
  *
  * Design:
  * - Required vars: mustEnv() throws on missing (no silent fallback). Callers fail fast.
@@ -51,34 +52,26 @@ export type SupabasePublicConfig = {
   anonKey: string;
 };
 
-export type SupabaseAdminConfig = {
-  /**
-   * Server-side Supabase URL.
-   * Prefer SUPABASE_URL when present, otherwise NEXT_PUBLIC_SUPABASE_URL.
-   */
-  url: string;
-  serviceRoleKey: string;
-};
-
 const TEST_SUPABASE_URL = "http://supabase.test";
-const TEST_SUPABASE_ANON_KEY = "anon_test_key";
+const TEST_SUPABASE_PUBLISHABLE_KEY = "anon_test_key";
+
+function readSupabasePublishableKey(): string {
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const v = safeTrim(key);
+  if (v) return v;
+  if (isTestEnv()) return TEST_SUPABASE_PUBLISHABLE_KEY;
+  throw new Error(
+    "Missing env: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or legacy NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY)"
+  );
+}
 
 export function getSupabasePublicConfig(): SupabasePublicConfig {
   return {
     url: mustEnv("NEXT_PUBLIC_SUPABASE_URL", { testDefault: TEST_SUPABASE_URL }),
-    anonKey: mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", { testDefault: TEST_SUPABASE_ANON_KEY }),
-  };
-}
-
-export function getSupabaseAdminConfig(): SupabaseAdminConfig {
-  const explicitServerUrl = safeTrim(process.env.SUPABASE_URL);
-  const fallbackUrl = explicitServerUrl || mustEnv("NEXT_PUBLIC_SUPABASE_URL", { testDefault: TEST_SUPABASE_URL });
-
-  const serviceRoleKey = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
-
-  return {
-    url: fallbackUrl,
-    serviceRoleKey,
+    anonKey: readSupabasePublishableKey(),
   };
 }
 

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Selection and navigation state for ContentWorkspace sidebar and page switching.
  * Owns: queryInput/query (debounced), mainView, hjemExpanded, onSelectPage.
@@ -8,10 +10,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { MutableRefObject } from "react";
+import { useBellissimaEntityWorkspaceViewState } from "@/components/backoffice/ContentBellissimaWorkspaceContext";
+import type { BackofficeContentEntityWorkspaceViewId } from "@/lib/cms/backofficeExtensionRegistry";
 import { safeStr } from "./contentWorkspace.helpers";
-import { useMainView } from "../_workspace/MainViewContext";
-
-export type MainView = "page" | "global" | "design";
 
 export type UseContentWorkspaceNavigationParams = {
   /** Current page id from URL (e.g. initialPageId). */
@@ -23,6 +24,7 @@ export type UseContentWorkspaceNavigationParams = {
 };
 
 const DEBOUNCE_MS = 180;
+export type MainView = BackofficeContentEntityWorkspaceViewId;
 
 export function useContentWorkspaceNavigation({
   selectedId,
@@ -31,7 +33,8 @@ export function useContentWorkspaceNavigation({
 }: UseContentWorkspaceNavigationParams) {
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
-  const { mainView, setMainView } = useMainView();
+  const { activeView: mainView, setActiveView: setMainView } =
+    useBellissimaEntityWorkspaceViewState();
   const [hjemExpanded, setHjemExpanded] = useState(true);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export function useContentWorkspaceNavigation({
 
   const onSelectPage = useCallback(
     (nextId: string, _slugForUrl?: string) => {
-      setMainView("page");
+      setMainView("content");
       const isSamePage = !nextId || nextId === pageId || nextId === selectedId;
       if (isSamePage) return;
       const navigate = navigateRef.current;

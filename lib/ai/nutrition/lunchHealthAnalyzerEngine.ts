@@ -4,14 +4,14 @@
  * Kan gi anbefalinger.
  */
 
-import { analyzeLunchHealth } from "@/lib/ai/capabilities/lunchHealthAnalyzer";
+import { analyzeLunchHealth } from "@/lib/ai/engines/capabilities/lunchHealthAnalyzer";
 import type {
   LunchHealthAnalyzerInput,
   LunchHealthAnalyzerOutput,
   DishNutritionInput,
   NutrientAssessment,
   VariationAssessment,
-} from "@/lib/ai/capabilities/lunchHealthAnalyzer";
+} from "@/lib/ai/engines/capabilities/lunchHealthAnalyzer";
 
 export type { DishNutritionInput, NutrientAssessment, VariationAssessment };
 

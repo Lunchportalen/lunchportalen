@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI UX ENGINE
  * Analyserer: scroll, friksjon, navigasjon, kognitiv belastning.
@@ -5,36 +7,36 @@
  * analyzeInterfaceReadability (og valgfritt analyzeReadability). Kun analyse; ingen mutasjon.
  */
 
-import { suggestScrollFlow } from "@/lib/ai/capabilities/suggestScrollFlow";
+import { suggestScrollFlow } from "@/lib/ai/engines/capabilities/suggestScrollFlow";
 import type {
   SuggestScrollFlowInput,
   SuggestScrollFlowOutput,
   ScrollFlowSectionInput,
-} from "@/lib/ai/capabilities/suggestScrollFlow";
-import { suggestUXFixes } from "@/lib/ai/capabilities/suggestUXFixes";
+} from "@/lib/ai/engines/capabilities/suggestScrollFlow";
+import { suggestUXFixes } from "@/lib/ai/engines/capabilities/suggestUXFixes";
 import type {
   SuggestUXFixesInput,
   SuggestUXFixesOutput,
   UXFix,
   UXFixCategory,
-} from "@/lib/ai/capabilities/suggestUXFixes";
-import { analyzeLayoutReadability } from "@/lib/ai/capabilities/analyzeLayoutReadability";
+} from "@/lib/ai/engines/capabilities/suggestUXFixes";
+import { analyzeLayoutReadability } from "@/lib/ai/engines/capabilities/analyzeLayoutReadability";
 import type {
   LayoutReadabilityInput,
   AnalyzeLayoutReadabilityOutput,
-} from "@/lib/ai/capabilities/analyzeLayoutReadability";
-import { analyzeInterfaceReadability } from "@/lib/ai/capabilities/analyzeInterfaceReadability";
+} from "@/lib/ai/engines/capabilities/analyzeLayoutReadability";
+import { analyzeInterfaceReadability } from "@/lib/ai/engines/capabilities/analyzeInterfaceReadability";
 import type {
   AnalyzeInterfaceReadabilityInput,
   AnalyzeInterfaceReadabilityOutput,
   ReadabilityTextBlock,
-} from "@/lib/ai/capabilities/analyzeInterfaceReadability";
-import { analyzeReadability } from "@/lib/ai/capabilities/analyzeReadability";
+} from "@/lib/ai/engines/capabilities/analyzeInterfaceReadability";
+import { analyzeReadability } from "@/lib/ai/engines/capabilities/analyzeReadability";
 import type {
   AnalyzeReadabilityInput,
   AnalyzeReadabilityOutput,
   ReadabilityContentInput,
-} from "@/lib/ai/capabilities/analyzeReadability";
+} from "@/lib/ai/engines/capabilities/analyzeReadability";
 
 export type { ScrollFlowSectionInput, UXFix, UXFixCategory, ReadabilityTextBlock, ReadabilityContentInput };
 

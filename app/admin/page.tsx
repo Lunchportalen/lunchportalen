@@ -26,6 +26,7 @@ import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import CommandCenterKpis from "@/components/admin/CommandCenterKpis";
 import PendingInvitesStat from "@/components/admin/PendingInvitesStat";
+import { getDesignSettings } from "@/lib/cms/design/getDesignSettings";
 import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
 import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
 import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
@@ -254,6 +255,9 @@ export default async function AdminCommandCenterPage() {
   const employeesTotal = Number(counts.employeesTotal ?? 0);
   const employeesActive = Number(counts.employeesActive ?? 0);
   const employeesDisabled = Number(counts.employeesDisabled ?? 0);
+  const locationsTotal = Number(counts.locationsTotal ?? 0);
+  const ordersTodayActive = Number(counts.ordersTodayActive ?? 0);
+  const ordersWeekActive = Number(counts.ordersWeekActive ?? 0);
 
   // Health is conservative (fail-closed mindset)
   const health: Health = employeesDisabled > 0 ? "warn" : "ok";
@@ -274,15 +278,19 @@ export default async function AdminCommandCenterPage() {
     { label: "Lokasjoner", href: "/admin/locations" },
     { label: "Historikk", href: "/admin/history" },
     { label: "Insights", href: "/admin/insights" },
+    { label: "Kontrolltårn", href: "/admin/control-tower" },
   ] as const;
 
   const companyStatus = String(ctx.companyStatus || ctx.company?.status || "ACTIVE").toUpperCase();
 
-  const overlay = await getOverlayBySlug(APP_OVERLAYS.companyAdmin.slug, { locale: "nb", environment: "prod" });
-  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
-  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
-  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
-  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+  const [overlay, designSettings] = await Promise.all([
+    getOverlayBySlug(APP_OVERLAYS.companyAdmin.slug, { locale: "nb", environment: "prod" }),
+    getDesignSettings(),
+  ]);
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb", designSettings) : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb", designSettings) : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb", designSettings) : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb", designSettings) : null;
 
   return (
     <AdminPageShell
@@ -315,19 +323,32 @@ export default async function AdminCommandCenterPage() {
         </div>
       </div>
 
-      {/* Row 2 — KPI cards (3) */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+      {/* Row 2 — KPI cards (same kilde som loadAdminContext + /api/admin/dashboard-tall) */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard
-          label="Dagens status"
+          label="Ansatte"
           value={`${employeesActive} aktive`}
-          hint={`${employeesTotal} totalt • ${employeesDisabled} deaktivert`}
+          hint={`${employeesTotal} totalt · ${employeesDisabled} deaktivert`}
         />
+        <KpiCard label="Lokasjoner" value={String(locationsTotal)} hint="Registrerte lokasjoner i firmaet." />
         <KpiCard
           label="Neste leveringsvindu"
           value={nextDeliveryLabel}
-          hint="Leveringsvindu styres av avtalen per lokasjon."
+          hint="Leveringsvindu fra avtale per lokasjon."
         />
-        <KpiCard label="Avtale" value={companyStatus} hint="Avtalen er fasit. Ingen manuelle unntak." />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiCard label="Avtale (status)" value={companyStatus} hint="Firma- og avtalestatus (systemfasit)." />
+        <KpiCard
+          label="Bestillinger i dag"
+          value={String(ordersTodayActive)}
+          hint="Aktive ordre i dag (Oslo-dato)."
+        />
+        <KpiCard
+          label="Bestillinger denne uken"
+          value={String(ordersWeekActive)}
+          hint="Aktive ordre i inneværende uke (mandag–søndag-vindu som i dashboard-API)."
+        />
       </div>
 
       {/* Row 3 — Main (8) + Side (4) */}

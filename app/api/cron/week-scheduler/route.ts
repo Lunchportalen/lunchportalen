@@ -88,8 +88,8 @@ export async function GET(req: Request) {
       results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
     }
 
-    if (inWindow(p, "Friday", 14, 10)) {
-      triggered.push("friday_14_rollover");
+    if (inWindow(p, "Friday", 15, 10)) {
+      triggered.push("friday_15_rollover");
       results.push({ action: "lock-weekplans", ...(await callInternal(req, "/api/cron/lock-weekplans")) });
     }
 

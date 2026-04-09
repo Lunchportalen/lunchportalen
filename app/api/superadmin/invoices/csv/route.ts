@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { defaultInvoiceWindowISO, isIsoDate } from "@/lib/billing/period";
 import { toCsv, type InvoiceRow } from "@/lib/billing/csv";
 import { safeTier, unitPriceNOK, type PlanTier } from "@/lib/billing/pricing";
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 
@@ -61,10 +61,7 @@ export async function GET(req: Request) {
 
   if (authErr || !user) return jsonErr(rid, "Ikke innlogget", 401, "unauthorized");
 
-  // ✅ Hard superadmin gate (ikke metadata)
-  if (!isSuperadminEmail(user.email)) return jsonErr(rid, "Ingen tilgang", 403, "forbidden");
-
-  // (valgfritt ekstra-lag): hvis dere senere vil sjekke profiles.role, gjør det her.
+  if (!(await isSuperadminProfile(user.id))) return jsonErr(rid, "Ingen tilgang", 403, "forbidden");
 
   const url = new URL(req.url);
   const qFrom = url.searchParams.get("from");

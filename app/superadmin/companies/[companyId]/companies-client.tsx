@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // app/superadmin/companies/[companyId]/companies-client.tsx
 "use client";
 

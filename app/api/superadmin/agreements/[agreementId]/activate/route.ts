@@ -1,4 +1,5 @@
 // app/api/superadmin/agreements/[agreementId]/activate/route.ts
+// CANONICAL — agreement activation to ACTIVE (superadmin); system tests use lp_agreement_* RPCs with the same end state.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

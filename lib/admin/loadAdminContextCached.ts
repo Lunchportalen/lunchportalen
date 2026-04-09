@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/admin/loadAdminContextCached.ts
 import "server-only";
 import { cache } from "react";

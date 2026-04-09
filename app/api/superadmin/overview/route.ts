@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isoDate(d: Date) {
@@ -26,7 +26,7 @@ export async function GET() {
     const sbUser = await supabaseServer();
     const { data: auth, error: authErr } = await sbUser.auth.getUser();
     if (authErr || !auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
-    if (!isSuperadminEmail(auth.user.email)) return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
+    if (!(await isSuperadminProfile(auth.user.id))) return jsonErr(rid, "Ingen tilgang.", 403, "forbidden");
 
     const sb = supabaseAdmin();
 

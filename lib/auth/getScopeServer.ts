@@ -1,9 +1,9 @@
 // lib/auth/getScopeServer.ts
 import "server-only";
 
+import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { supabaseServer } from "@/lib/supabase/server";
 import { ScopeError, type Scope, type Role as ScopeRole } from "@/lib/auth/scope";
-import { systemRoleByEmail } from "@/lib/system/emails";
 
 type BillingGate = {
   agreement_status: "active" | "paused" | "closed" | "unknown";
@@ -24,23 +24,6 @@ function normalizeStatus(v: unknown) {
   if (s === "paused") return "paused";
   if (s === "closed") return "closed";
   return s;
-}
-
-function roleByEmail(email: string | null | undefined): ScopeRole | null {
-  return systemRoleByEmail(email);
-}
-
-function normalizeRole(v: unknown): ScopeRole {
-  const s = safeStr(v).toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  return "employee";
-}
-
-function isValidRole(role: any): role is ScopeRole {
-  return ["superadmin", "company_admin", "employee", "kitchen", "driver"].includes(String(role));
 }
 
 async function enforceCompanyActive(sb: any, role: ScopeRole, company_id: string | null) {
@@ -111,21 +94,48 @@ async function getAgreementLocationId(sb: any, company_id: string | null): Promi
  * - profiles.user_id is authoritative FK to auth.users.id in your schema.
  */
 export async function getScopeServer(): Promise<{ user: any; scope: Scope & { agreement_location_id?: string | null } }> {
-  const sb = await supabaseServer();
-  const { data, error } = await sb.auth.getUser();
-  const user = data?.user ?? null;
-
-  if (error || !user) {
+  const auth = await getAuthContext();
+  if (!auth.isAuthenticated || !auth.userId) {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // Kun superadmin bypasser tenant gates
-  const sys = roleByEmail(user.email ?? null);
-  if (sys === "superadmin") {
+  if (auth.reason === "NO_PROFILE") {
+    throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
+  }
+
+  if (auth.reason === "BLOCKED") {
+    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
+  }
+
+  if (!auth.ok || !auth.role) {
+    throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
+  }
+
+  const user = { id: auth.userId, email: auth.email };
+
+  if (auth.mode === "DEV_BYPASS") {
     const scope: Scope & { agreement_location_id?: string | null } = {
-      user_id: user.id,
-      email: user.email ?? null,
-      role: sys,
+      user_id: auth.userId,
+      email: auth.email,
+      role: auth.role,
+      company_id: auth.company_id,
+      location_id: auth.location_id,
+      is_active: true,
+      agreement_status: "unknown",
+      billing_hold: false,
+      billing_hold_reason: null,
+      can_act: true,
+      agreement_location_id: null,
+    };
+    return { user, scope };
+  }
+
+  const role = auth.role as ScopeRole;
+  if (role === "superadmin") {
+    const scope: Scope & { agreement_location_id?: string | null } = {
+      user_id: auth.userId,
+      email: auth.email,
+      role,
       company_id: null,
       location_id: null,
       is_active: true,
@@ -138,48 +148,20 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
     return { user, scope };
   }
 
-  // ✅ Deterministic profile lookup
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("id,user_id,email,role,company_id,location_id,is_active")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (pErr) throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
-  if (!profile) throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
-
-  const profileRoleRaw = safeStr(profile.role);
-  const role: ScopeRole =
-    profileRoleRaw && isValidRole(profileRoleRaw)
-      ? (profileRoleRaw as ScopeRole)
-      : normalizeRole(user?.app_metadata?.role ?? user?.user_metadata?.role);
-
-  const is_active = profile.is_active === true;
-
-  if (role !== "superadmin" && !is_active) {
-    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
-  }
-
-  if ((role === "company_admin" || role === "employee") && !profile.company_id) {
-    throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
-  }
-  if ((role === "kitchen" || role === "driver") && (!profile.company_id || !profile.location_id)) {
-    throw new ScopeError("Scope er ikke tilordnet", 403, "SCOPE_NOT_ASSIGNED");
-  }
-
-  await enforceCompanyActive(sb, role, profile.company_id ?? null);
-  const billing = await enforceAgreementAndBilling(sb, role, profile.company_id ?? null);
+  const sb = await supabaseServer();
+  await enforceCompanyActive(sb, role, auth.company_id ?? null);
+  const billing = await enforceAgreementAndBilling(sb, role, auth.company_id ?? null);
 
   // ✅ agreement location truth (used for mismatch)
-  const agreement_location_id = await getAgreementLocationId(sb, profile.company_id ?? null);
+  const agreement_location_id = await getAgreementLocationId(sb, auth.company_id ?? null);
 
   const scope: Scope & { agreement_location_id?: string | null } = {
-    user_id: user.id,
-    email: profile.email ?? user.email ?? null,
+    user_id: auth.userId,
+    email: auth.email,
     role,
-    company_id: profile.company_id ?? null,
-    location_id: profile.location_id ?? null,
-    is_active,
+    company_id: auth.company_id ?? null,
+    location_id: auth.location_id ?? null,
+    is_active: true,
     agreement_status: billing.agreement_status,
     billing_hold: billing.billing_hold,
     billing_hold_reason: billing.billing_hold_reason,

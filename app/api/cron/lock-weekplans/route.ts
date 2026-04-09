@@ -1,4 +1,5 @@
 // app/api/cron/lock-weekplans/route.ts
+// Låser Sanity weekPlan-dokumenter (redaksjonelt spor — ikke employee order/window).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,7 +23,7 @@ const FIND_TO_LOCK_GROQ = /* groq */ `
 
 export async function GET(req: Request) {
   const rid = makeRid();
-  const { sanityServer } = await import("@/lib/sanity/server");
+  const { sanityServer } = await import("@/lib/cms/sanityWriteClient");
 
   try {
     requireCronAuth(req);

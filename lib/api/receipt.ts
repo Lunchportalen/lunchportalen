@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/api/receipt.ts
 export type OrderReceipt = {
   orderId: string;

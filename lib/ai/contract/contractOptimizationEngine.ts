@@ -3,7 +3,7 @@
  * Analyserer kontrakter og bruksmønster for å foreslå bedre avtalestruktur.
  */
 
-import { suggestContractOptimizations } from "@/lib/ai/capabilities/contractOptimization";
+import { suggestContractOptimizations } from "@/lib/ai/engines/capabilities/contractOptimization";
 import type {
   ContractOptimizationInput,
   ContractOptimizationOutput,
@@ -12,7 +12,7 @@ import type {
   OptimalDeliveryOutput,
   PriceStructureType,
   AgreementLevel,
-} from "@/lib/ai/capabilities/contractOptimization";
+} from "@/lib/ai/engines/capabilities/contractOptimization";
 
 export type {
   PriceStructureType,

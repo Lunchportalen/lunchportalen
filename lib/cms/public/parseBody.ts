@@ -4,24 +4,43 @@
  * to feed normalizeBlockForRender + renderBlock (same pipeline as public).
  */
 
-export type BlockItem = { id?: string; type?: string; data?: Record<string, unknown> };
+import type { BlockConfig } from "@/lib/cms/design/designContract";
+import { extractBlocksSource } from "@/lib/cms/extractBlocksSource";
+
+export type BlockItem = {
+  id?: string;
+  type?: string;
+  data?: Record<string, unknown>;
+  config?: BlockConfig;
+};
 
 /**
- * Extracts blocks array from raw body (object with .blocks, or array, or nested .body).
- * Returns empty array when body is null/undefined or has no blocks.
+ * Extracts canonical blocks array from raw body.
+ * Supports flat `{ blocks }`, legacy nested `.body`, and envelope payloads with `blocksBody.blocks`.
  */
 export function parseBody(body: unknown): BlockItem[] {
   if (body == null) return [];
   if (Array.isArray(body)) return body as BlockItem[];
-  if (
-    typeof body === "object" &&
-    "blocks" in body &&
-    Array.isArray((body as { blocks: unknown }).blocks)
-  ) {
-    return (body as { blocks: BlockItem[] }).blocks;
-  }
+  const source = extractBlocksSource(body);
+  if (Array.isArray(source)) return source as BlockItem[];
   if (typeof body === "object" && "body" in body) {
     return parseBody((body as { body: unknown }).body);
   }
   return [];
+}
+
+/**
+ * Extracts `meta` from canonical `{ blocks, meta }` body (or nested `.body` envelope).
+ * Returns empty object when absent — never throws.
+ */
+export function parseBodyMeta(body: unknown): Record<string, unknown> {
+  if (body == null) return {};
+  if (typeof body === "object" && !Array.isArray(body) && "body" in body) {
+    return parseBodyMeta((body as { body: unknown }).body);
+  }
+  if (typeof body === "object" && !Array.isArray(body) && "meta" in body) {
+    const m = (body as { meta: unknown }).meta;
+    if (m && typeof m === "object" && !Array.isArray(m)) return m as Record<string, unknown>;
+  }
+  return {};
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { applyAIPatchV1 } from "@/lib/cms/model/applyAIPatch";
 import { isAIPatchV1 } from "@/lib/cms/model/aiPatch";
 import {
@@ -33,6 +33,17 @@ import {
   parsePageBuilderResponse,
   parseCapabilityResponse,
 } from "./editorAiContracts";
+import {
+  fetchBackofficeGetJson,
+  fetchBackofficePostJson,
+  fetchBackofficeSuggestRequest,
+} from "./contentWorkspace.aiRequests";
+import { logApiRidFromBody } from "./contentWorkspace.api";
+import { extractWorkspaceBlockText } from "./contentWorkspaceImagePromptShell";
+import { neighborAiPreamble } from "./contentWorkspacePresentationSelectors";
+import { validateEditorBlockTypesForGovernedApply } from "@/lib/cms/legacyEnvelopeGovernance";
+import { useBlockEditorDataTypesMergedOptional } from "./BlockEditorDataTypesMergedContext";
+import { useDocumentTypeDefinitionsMergedOptional } from "./DocumentTypeDefinitionsMergedContext";
 
 export type AiCapabilityStatus = "loading" | "available" | "unavailable";
 
@@ -50,6 +61,8 @@ export type UseContentWorkspaceAiDeps = {
   meta: Record<string, unknown>;
   title: string;
   slug: string;
+  /** U26: når satt, forhåndsvaliderer AI-patch mot blokkallowliste (typeliste). */
+  documentTypeAlias: string | null;
   /** Apply suggest result to editor (ContentWorkspace does parseBodyToBlocks + applyParsedBody). */
   onApplySuggestPatch: (
     editorBlocks: EditorBlockForPatch,
@@ -74,9 +87,15 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
     meta,
     title,
     slug,
+    documentTypeAlias,
     onApplySuggestPatch,
     onMergeDiagnostics,
   } = deps;
+
+  const bdtMerged = useBlockEditorDataTypesMergedOptional();
+  const mergedBlockEditorDataTypes = bdtMerged?.data?.merged ?? null;
+  const docMerged = useDocumentTypeDefinitionsMergedOptional();
+  const mergedDocumentTypeDefinitions = docMerged?.data?.merged ?? null;
 
   const [aiBusyToolId, setAiBusyToolId] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -209,18 +228,13 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
           pageTitle: title || undefined,
           pageSlug: slug || undefined,
         };
-        const res = await fetch("/api/backoffice/ai/suggest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json().catch(() => ({}))) as unknown;
-        if (!res.ok) {
+        const { ok: httpOk, json, status: httpStatus } = await fetchBackofficeSuggestRequest(body);
+        if (!httpOk) {
           const parsed = parseBackofficeAiJson(json);
           const msg =
             parsed && !parsed.ok
               ? parsed.message
-              : normalizeAiApiError(res.status, json);
+              : normalizeAiApiError(httpStatus, json);
           reportAiError(msg, {
             kind: "api",
             feature: metricsFeature ?? AI_TOOL_TO_FEATURE[tool] ?? null,
@@ -296,6 +310,16 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
                 ...(n.data ?? {}),
               })
             );
+            const gov = validateEditorBlockTypesForGovernedApply(
+              documentTypeAlias,
+              editorBlocks,
+              mergedBlockEditorDataTypes,
+              mergedDocumentTypeDefinitions,
+            );
+            if (gov.ok === false) {
+              reportAiError(gov.message, { kind: "apply", feature: metricsFeature ?? null });
+              return payload;
+            }
             const baseMeta = applied.next.meta ?? {};
             let mergedMeta =
               payloadRecord.metaSuggestion != null
@@ -356,6 +380,9 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
       meta,
       title,
       slug,
+      documentTypeAlias,
+      mergedBlockEditorDataTypes,
+      mergedDocumentTypeDefinitions,
       reportAiError,
       pushAiHistory,
       onApplySuggestPatch,
@@ -383,19 +410,13 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
       if (busyId === "layout.suggestions") setLastLayoutSuggestionsResult(null);
       if (busyId === "image.generate.brand_safe") setLastGeneratedImageResult(null);
       try {
-        const res = await fetch(path, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json().catch(() => ({}))) as unknown;
-        if (!res.ok) {
+        const { ok: httpOk, json, status: httpStatus } = await fetchBackofficePostJson(path, body);
+        if (!httpOk) {
           const parsed = parseBackofficeAiJson(json);
           const msg =
             parsed && !parsed.ok
               ? parsed.message
-              : normalizeAiApiError(res.status, json);
+              : normalizeAiApiError(httpStatus, json);
           reportAiError(msg, { kind: "api" });
           return null;
         }
@@ -762,20 +783,25 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
         type: n.type,
         ...(n.data ?? {}),
       }));
+      const gov = validateEditorBlockTypesForGovernedApply(
+        documentTypeAlias,
+        editorBlocks,
+        mergedBlockEditorDataTypes,
+        mergedDocumentTypeDefinitions,
+      );
+      if (gov.ok === false) {
+        reportAiError(gov.message, { kind: "apply", feature: null });
+        return;
+      }
       onApplySuggestPatch(editorBlocks, applied.next.meta ?? {});
       setDesignSuggestionsApplied((prev) => new Set(prev).add(designSuggestionKey(suggestion)));
       pushAiHistory("layout.suggestions", "Layoutforslag", suggestion.title);
       try {
-        await fetch("/api/backoffice/ai/design-suggestion/log-apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            kind: suggestion.kind,
-            suggestionTitle: suggestion.title,
-            pageId: effectiveId ?? undefined,
-            locale: "nb",
-          }),
+        await fetchBackofficePostJson("/api/backoffice/ai/design-suggestion/log-apply", {
+          kind: suggestion.kind,
+          suggestionTitle: suggestion.title,
+          pageId: effectiveId ?? undefined,
+          locale: "nb",
         });
       } catch {
         // Log failure must not block UX
@@ -784,6 +810,9 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
     [
       blocks,
       meta,
+      documentTypeAlias,
+      mergedBlockEditorDataTypes,
+      mergedDocumentTypeDefinitions,
       onApplySuggestPatch,
       designSuggestionKey,
       reportAiError,
@@ -897,21 +926,18 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
       if (input.sectionsInclude?.length) body.sectionsInclude = input.sectionsInclude;
       if (input.sectionsExclude?.length) body.sectionsExclude = input.sectionsExclude;
       try {
-        const res = await fetch("/api/backoffice/ai/page-builder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json().catch(() => ({}))) as unknown;
-        if (!res.ok) {
+        const { ok: httpOk, json, status: httpStatus } = await fetchBackofficePostJson(
+          "/api/backoffice/ai/page-builder",
+          body
+        );
+        if (!httpOk) {
           const parsed = parseBackofficeAiJson(json);
           const msg =
             parsed && !parsed.ok
               ? parsed.message
               : (json && typeof json === "object" && "message" in (json as Record<string, unknown>)
                   ? String((json as { message?: string }).message)
-                  : `Feil ${res.status}`);
+                  : `Feil ${httpStatus}`);
           reportAiError(msg, { kind: "api", feature: "page_builder" });
           return;
         }
@@ -1006,11 +1032,8 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
     }
     let cancelled = false;
     setAiCapability("loading");
-    fetch("/api/backoffice/ai/capability", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((res) => res.json().catch(() => ({})))
+    fetchBackofficeGetJson("/api/backoffice/ai/capability")
+      .then(({ json }) => json)
       .then((json: unknown) => {
         if (cancelled) return;
         const parsed = parseCapabilityResponse(json);
@@ -1066,4 +1089,186 @@ export function useContentWorkspaceAi(deps: UseContentWorkspaceAiDeps) {
     handlePageBuilder,
     lastLayoutSuggestionsResult: filteredLayoutSuggestionsResult,
   };
+}
+
+export type UseContentWorkspaceRunAiSuggestParams = {
+  selectedBlock: Block | null;
+  selectedBlockId: string | null;
+  blocks: Block[];
+  aiBlockRunContext: { userId: string; companyId: string } | null;
+  aiCacheRef: MutableRefObject<Record<string, string>>;
+  setAiSuggestion: (v: string | null) => void;
+  setAiError: (v: string | null) => void;
+  setAiScore: (v: number | null) => void;
+  setAiHints: (v: string[]) => void;
+  setAiSuggestLoading: (v: boolean) => void;
+  bumpMetricsAction: () => void;
+  bumpMetricsError: () => void;
+};
+
+/** Blokk-forslag + score (samme flyt som tidligere i `ContentWorkspace` — ren flytting for linjebudsjett). */
+export function useContentWorkspaceRunAiSuggest(p: UseContentWorkspaceRunAiSuggestParams) {
+  const {
+    selectedBlock,
+    selectedBlockId,
+    blocks,
+    aiBlockRunContext,
+    aiCacheRef,
+    setAiSuggestion,
+    setAiError,
+    setAiScore,
+    setAiHints,
+    setAiSuggestLoading,
+    bumpMetricsAction,
+    bumpMetricsError,
+  } = p;
+
+  return useCallback(async () => {
+    if (!selectedBlock) return;
+    if (!selectedBlock.id) return;
+
+    const blockId = selectedBlock.id;
+    const text = extractWorkspaceBlockText(selectedBlock);
+    if (!text || text.length < 2) return;
+
+    const preamble = neighborAiPreamble(blockId, blocks);
+    const textForAi = `${preamble}${text}`;
+    const key = `${blockId}:${preamble.length}:${text}`;
+    const cached = aiCacheRef.current[key];
+    if (cached) {
+      try {
+        if (selectedBlockId !== blockId) return;
+        setAiSuggestion(cached);
+
+        const resScore = await fetch("/api/ai/block/score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const dataScore: unknown = await resScore.json().catch(() => null);
+        logApiRidFromBody(dataScore);
+        if (!resScore.ok) {
+          console.error("[AI_ACTION_FAILED]", resScore.status);
+          setAiError("Kunne ikke hente resultat");
+          bumpMetricsError();
+          return;
+        }
+        const scoreBody =
+          dataScore && typeof dataScore === "object" ? (dataScore as { ok?: boolean; data?: { score?: unknown; hints?: unknown } }) : null;
+        if (!scoreBody || scoreBody.ok !== true) {
+          console.error("[AI_ACTION_FAILED]", dataScore);
+          setAiError("Kunne ikke hente resultat");
+          bumpMetricsError();
+          return;
+        }
+        const score = scoreBody.data?.score ?? null;
+        const hints = scoreBody.data?.hints ?? [];
+        if (typeof score === "number") {
+          setAiScore(score);
+          setAiHints(Array.isArray(hints) ? hints.filter((h: unknown) => typeof h === "string") : []);
+          bumpMetricsAction();
+        }
+      } catch (e) {
+        console.error("[AI_ACTION_FAILED]", e);
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+      }
+      return;
+    }
+
+    setAiSuggestLoading(true);
+    try {
+      if (!aiBlockRunContext?.userId || !aiBlockRunContext?.companyId) {
+        setAiError("Mangler bruker- eller firmakontekst for AI. Oppdater siden og prøv igjen.");
+        setAiSuggestLoading(false);
+        return;
+      }
+      const res = await fetch("/api/ai/block", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          text: textForAi,
+          action: "seo",
+          companyId: aiBlockRunContext.companyId,
+          userId: aiBlockRunContext.userId,
+        }),
+      });
+
+      const data: unknown = await res.json().catch(() => null);
+      logApiRidFromBody(data);
+      if (!res.ok) {
+        console.error("[AI_ACTION_FAILED]", res.status);
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+        return;
+      }
+      const blockBody = data && typeof data === "object" ? (data as { ok?: boolean; data?: { result?: unknown } }) : null;
+      if (!blockBody || blockBody.ok !== true) {
+        console.error("[AI_ACTION_FAILED]", data);
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+        return;
+      }
+      const result = blockBody.data?.result;
+
+      if (typeof result === "string") {
+        if (selectedBlockId !== blockId) return;
+        aiCacheRef.current[key] = result;
+        setAiSuggestion(result);
+      } else {
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+      }
+
+      const resScore = await fetch("/api/ai/block/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const dataScore: unknown = await resScore.json().catch(() => null);
+      logApiRidFromBody(dataScore);
+      if (!resScore.ok) {
+        console.error("[AI_ACTION_FAILED]", resScore.status);
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+        return;
+      }
+      const scoreParsed =
+        dataScore && typeof dataScore === "object" ? (dataScore as { ok?: boolean; data?: { score?: unknown; hints?: unknown } }) : null;
+      if (!scoreParsed || scoreParsed.ok !== true) {
+        console.error("[AI_ACTION_FAILED]", dataScore);
+        setAiError("Kunne ikke hente resultat");
+        bumpMetricsError();
+        return;
+      }
+      const score = scoreParsed.data?.score ?? null;
+      const hints = scoreParsed.data?.hints ?? [];
+      if (typeof score === "number") {
+        if (selectedBlockId !== blockId) return;
+        setAiScore(score);
+        setAiHints(Array.isArray(hints) ? hints.filter((h: unknown) => typeof h === "string") : []);
+        bumpMetricsAction();
+      }
+    } catch (e) {
+      console.error("[AI_ACTION_FAILED]", e);
+      setAiError("Kunne ikke hente resultat");
+      bumpMetricsError();
+    } finally {
+      setAiSuggestLoading(false);
+    }
+  }, [
+    aiBlockRunContext,
+    aiCacheRef,
+    blocks,
+    bumpMetricsAction,
+    bumpMetricsError,
+    selectedBlock,
+    selectedBlockId,
+    setAiError,
+    setAiHints,
+    setAiScore,
+    setAiSuggestion,
+    setAiSuggestLoading,
+  ]);
 }

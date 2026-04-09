@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/seo/routes.ts
 
 export const SEO_TAGS = [

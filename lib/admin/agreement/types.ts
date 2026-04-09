@@ -31,6 +31,8 @@ export type AgreementPageData = {
   status: AgreementStatus;
   pricing: { planTier: Tier | null; pricePerCuvertNok: number | null; currency: "NOK" };
   binding: { startDate: string | null; endDate: string | null; remainingDays: number | null };
+  /** Fra agreements.binding_months / notice_months når tilgjengelig (lesing). */
+  terms?: { bindingMonths: number | null; noticeMonths: number | null } | null;
   weekPlan: Array<{
     dayKey: DayKey;
     label: "Man" | "Tir" | "Ons" | "Tor" | "Fre";

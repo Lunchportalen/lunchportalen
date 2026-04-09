@@ -1,10 +1,13 @@
 import type { NextRequest } from "next/server";
+import { logEvent } from "@/lib/ai/intelligence";
+import { opsLog } from "@/lib/ops/log";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getExperimentById, updateExperiment } from "@/lib/backoffice/experiments/experimentsRepo";
 import { getExperimentStats } from "@/lib/ai/experiments/analytics";
 import { isExperimentType, isExperimentStatus } from "@/lib/backoffice/experiments/model";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  return withApiAiEntrypoint(request, "GET", async () => {
   const s = await scopeOr401(request);
   if (!s?.ok) return denyResponse(s);
   const ctx = s.ctx;
@@ -39,12 +43,14 @@ export async function GET(
     const msg = e instanceof Error ? e.message : "Get experiment failed";
     return jsonErr(ctx.rid, msg, 500, "GET_FAILED");
   }
+  });
 }
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  return withApiAiEntrypoint(request, "PATCH", async () => {
   const s = await scopeOr401(request);
   if (!s?.ok) return denyResponse(s);
   const ctx = s.ctx;
@@ -84,8 +90,8 @@ export async function PATCH(
     if (update.status === "completed" && row.experiment_id) {
       try {
         const { getExperimentStats } = await import("@/lib/ai/experiments/analytics");
-        const { detectWinningVariant } = await import("@/lib/ai/capabilities/detectWinningVariant");
-        const { storeExperimentLearning } = await import("@/lib/ai/capabilities/storeExperimentLearning");
+        const { detectWinningVariant } = await import("@/lib/ai/engines/capabilities/detectWinningVariant");
+        const { storeExperimentLearning } = await import("@/lib/ai/engines/capabilities/storeExperimentLearning");
         const { insertExperimentMemoryBatch } = await import("@/lib/ai/experiments/experimentMemory");
         const stats = await getExperimentStats(supabase, row.experiment_id);
         if (stats.byVariant.length > 0) {
@@ -100,6 +106,22 @@ export async function PATCH(
             pageId: row.page_id ?? undefined,
           });
           await insertExperimentMemoryBatch(supabase, records);
+          const evLog = await logEvent({
+            type: "experiment",
+            source: "experiment_completed",
+            payload: {
+              kind: "experiment_completed",
+              experimentId: row.experiment_id,
+              recordCount: records.length,
+              pageId: row.page_id ?? null,
+            },
+            page_id: row.page_id ?? null,
+            company_id: null,
+            source_rid: ctx.rid,
+          });
+          if (evLog.ok === false) {
+            opsLog("ai_intelligence.experiment_completed_log_failed", { error: evLog.error });
+          }
         }
       } catch (learnErr) {
         const { opsLog } = await import("@/lib/ops/log");
@@ -114,4 +136,5 @@ export async function PATCH(
     const msg = e instanceof Error ? e.message : "Update experiment failed";
     return jsonErr(ctx.rid, msg, 500, "UPDATE_FAILED");
   }
+  });
 }

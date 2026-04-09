@@ -2,7 +2,8 @@
  * Phase 43A: Concurrency-safe claim of pending AI jobs. Uses DB function for atomic update.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type ClaimedJob = {
   id: string;
   tool: string;
@@ -20,7 +21,7 @@ export type ClaimedJob = {
 };
 
 export async function claimPendingJobs(
-  supabase: any,
+  supabase: SupabaseClient,
   options: { limit: number; runnerId: string }
 ): Promise<ClaimedJob[]> {
   const { limit, runnerId } = options;

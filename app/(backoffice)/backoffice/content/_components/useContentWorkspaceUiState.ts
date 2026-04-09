@@ -1,7 +1,8 @@
 "use client";
 
+// STATUS: KEEP
+
 import { useState } from "react";
-import type { BannerVisualOption } from "./editorBlockTypes";
 import {
   DEFAULT_THEME_FONT_BY_ROLE,
   resolveThemeFontByRole,
@@ -80,7 +81,6 @@ export function useContentWorkspaceUiState() {
   const [bannerSettingsSubTab, setBannerSettingsSubTab] = useState<"layout" | "animation" | "advanced">("layout");
   const [showPreviewColumn, setShowPreviewColumn] = useState(false);
 
-  const [addBlockModalOpen, setAddBlockModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -170,8 +170,6 @@ export function useContentWorkspaceUiState() {
     setBannerSettingsSubTab,
     showPreviewColumn,
     setShowPreviewColumn,
-    addBlockModalOpen,
-    setAddBlockModalOpen,
     editOpen,
     setEditOpen,
     editIndex,

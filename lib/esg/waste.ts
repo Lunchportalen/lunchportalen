@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export type WasteFactors = {
   mealKg: number;              // meal_kg
   co2ePerKgFood: number;       // co2e_per_kg_food

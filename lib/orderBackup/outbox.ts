@@ -117,6 +117,15 @@ export async function upsertOutboxEvent(eventKey: string, payload: OrderBackupIn
     );
 
   if (error) throw error;
+
+  if (process.env.OUTBOX_QUEUE_FANOUT === "true") {
+    try {
+      const { fanOutOutboxInserted } = await import("@/lib/infra/outboxQueueBridge");
+      await fanOutOutboxInserted(key);
+    } catch (e) {
+      outboxLog("error", "queue_fanout_failed", { eventKey: key, message: errString(e) });
+    }
+  }
 }
 
 async function markOutboxSentById(outboxId: string, messageId: string | null = null) {

@@ -173,7 +173,11 @@ export async function POST(req: NextRequest) {
   if (profUpd.error) return jsonErr(rid, "Kunne ikke oppdatere profil.", 500, { code: "profile_update_failed", detail: profUpd.error.message });
 
   // 5) mark invite used
-  const mark = await admin.from("employee_invites").update({ used_at: nowIso }).eq("id", inv.data.id).is("used_at", null);
+  const mark = await admin
+    .from("employee_invites")
+    .update({ used_at: nowIso, accepted_at: nowIso })
+    .eq("id", inv.data.id)
+    .is("used_at", null);
   if (mark.error) return jsonOk(rid, { message: "Konto opprettet, men kunne ikke markere invitasjon brukt." }, 200);
 
   return jsonOk(rid, { message: "Konto opprettet." }, 200);

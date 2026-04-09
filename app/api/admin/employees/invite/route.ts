@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
 
 function makeRidLocal() {
@@ -232,7 +233,7 @@ export async function POST(req: NextRequest) {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const token_hash = sha256Hex(rawToken);
     const appUrl = getAppUrl(req);
-    const link = `${appUrl}/accept-invite?token=${encodeURIComponent(rawToken)}`;
+    const link = buildEmployeeInviteUrl(appUrl, rawToken);
 
     // SEND FIRST (samme flyt som original)
     const sent = await sendInviteEmail(email, link);

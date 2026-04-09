@@ -12,6 +12,7 @@ import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { checkAiRateLimit, AI_RATE_LIMIT_SCOPE, DEFAULT_AI_EDITOR_RATE_LIMIT } from "@/lib/ai/rateLimit";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,6 +35,7 @@ function parseMeta(raw: unknown): Record<string, unknown> | undefined {
 }
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -108,4 +110,5 @@ export async function POST(req: NextRequest) {
   }
 
   return jsonOk(ctx.rid, result, 200);
+  });
 }

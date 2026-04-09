@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/kitchen/groupKitchen.ts
 import "server-only";
 

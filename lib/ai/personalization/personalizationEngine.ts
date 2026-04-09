@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI PERSONALIZATION ENGINE
  * Tilpasser: sider, CTA, innhold — basert på bruker.
@@ -5,38 +7,38 @@
  * Kun tilpasning/valg; ingen mutasjon av brukerdata eller publisering.
  */
 
-import { adaptNavigationToUser } from "@/lib/ai/capabilities/adaptNavigationToUser";
+import { adaptNavigationToUser } from "@/lib/ai/engines/capabilities/adaptNavigationToUser";
 import type {
   AdaptNavigationToUserInput,
   AdaptNavigationToUserOutput,
   NavItemInput,
   NavItemOutput,
   UserNavContext,
-} from "@/lib/ai/capabilities/adaptNavigationToUser";
-import { personalizeCTA } from "@/lib/ai/capabilities/personalizeCTA";
+} from "@/lib/ai/engines/capabilities/adaptNavigationToUser";
+import { personalizeCTA } from "@/lib/ai/engines/capabilities/personalizeCTA";
 import type {
   PersonalizeCTAInput,
   PersonalizeCTAOutput,
   CTASlot,
   UserCTAContext,
   PersonalizedCTA,
-} from "@/lib/ai/capabilities/personalizeCTA";
-import { generatePersonalizedContent } from "@/lib/ai/capabilities/generatePersonalizedContent";
+} from "@/lib/ai/engines/capabilities/personalizeCTA";
+import { generatePersonalizedContent } from "@/lib/ai/engines/capabilities/generatePersonalizedContent";
 import type {
   GeneratePersonalizedContentInput,
   GeneratePersonalizedContentOutput,
   UserContext,
   ContentSlot,
   SelectedVariant,
-} from "@/lib/ai/capabilities/generatePersonalizedContent";
-import { adaptLayoutInRealtime } from "@/lib/ai/capabilities/adaptLayoutInRealtime";
+} from "@/lib/ai/engines/capabilities/generatePersonalizedContent";
+import { adaptLayoutInRealtime } from "@/lib/ai/engines/capabilities/adaptLayoutInRealtime";
 import type {
   AdaptLayoutInRealtimeInput,
   AdaptLayoutInRealtimeOutput,
   ViewportInput,
   LayoutBlockInput,
   LayoutAdaptation,
-} from "@/lib/ai/capabilities/adaptLayoutInRealtime";
+} from "@/lib/ai/engines/capabilities/adaptLayoutInRealtime";
 
 export type { NavItemInput, NavItemOutput, UserNavContext, CTASlot, UserCTAContext, PersonalizedCTA, UserContext, ContentSlot, SelectedVariant, ViewportInput, LayoutBlockInput, LayoutAdaptation };
 

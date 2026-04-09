@@ -4,12 +4,12 @@
  * Eksempel: Thai curry → mango salad → kokosdessert.
  */
 
-import { suggestMenuPairings } from "@/lib/ai/capabilities/foodPairing";
+import { suggestMenuPairings } from "@/lib/ai/engines/capabilities/foodPairing";
 import type {
   FoodPairingInput,
   FoodPairingOutput,
   MenuPairingSuggestion,
-} from "@/lib/ai/capabilities/foodPairing";
+} from "@/lib/ai/engines/capabilities/foodPairing";
 
 export type { MenuPairingSuggestion };
 

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/audit/idempotency.ts
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/system/healthTypes.ts
 export type HealthStatus = "ok" | "fail" | "warn" | "skip";
 

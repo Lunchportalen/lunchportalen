@@ -21,7 +21,7 @@
 | **selectedId** | From props (initialPageId); URL/router truth. ContentWorkspace passes to hook. |
 | **query / queryInput** | Query state; list filter. ContentWorkspace keeps query, passes query to hook. |
 | **onPageLoaded** | Callback from hook: ContentWorkspace applies title, slug, documentTypeAlias, envelopeFields, applyParsedBody, setSavedSnapshot, setLastServerUpdatedAt, setSaveStateSafe, setLastError, skipNextAutosaveSchedule, outbox logic (readOutbox, clearOutbox, setOutboxData, setRecoveryBannerVisible). |
-| **onReset** | Callback when !selectedId: ContentWorkspace clears title, slug, bodyMode, blocks, meta, legacyBodyText, invalidBodyRaw, bodyParseError, expandedBlockId, detailError, pageNotFound, lastError, lastSavedAt, lastServerUpdatedAt, saveState, savedSnapshot, outboxData, recoveryBannerVisible. |
+| **onReset** | Callback when !selectedId: ContentWorkspace clears title, slug, bodyMode, blocks, meta, legacyBodyText, invalidBodyRaw, bodyParseError, selectedBlockId (block focus), detailError, pageNotFound, lastError, lastSavedAt, lastServerUpdatedAt, saveState, savedSnapshot, outboxData, recoveryBannerVisible. |
 | **onPageError** | Callback when detail load fails: ContentWorkspace clears savedSnapshot, outboxData, recoveryBannerVisible; optional logEditorAiEvent (ContentWorkspace keeps). |
 | **setRefetchDetailKey** | Trigger for refetch; hook exposes setRefetchDetailKey; ContentWorkspace calls it from onReloadFromServer. |
 | **setListReloadKey** | Trigger for list refresh; hook exposes setListReloadKey; ContentWorkspace calls it after create page. |

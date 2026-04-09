@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageStatus } from "./contentTypes";
 import type { SaveState } from "./types";
-import type { ContentPage } from "./useContentWorkspacePageData";
+import type { ContentPage } from "./ContentWorkspaceState";
 import { useContentSaveStatus } from "./useContentSaveStatus";
 import { safeStr } from "./contentWorkspace.helpers";
 

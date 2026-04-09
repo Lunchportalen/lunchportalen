@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI explainability log: writes decision, rationale, and summaries to ai_activity_log via logAiExecution.
  * Server-only. No silent drop: callers should handle insert failure.
@@ -5,7 +7,7 @@
  */
 
 import "server-only";
-import { buildAiDecisionEntry, type LogAiDecisionInput } from "../capabilities/logAiDecision";
+import { buildAiDecisionEntry, type LogAiDecisionInput } from "../engines/capabilities/logAiDecision";
 import { logAiExecution } from "./aiExecutionLog";
 
 export type LogAiDecisionParams = LogAiDecisionInput & {

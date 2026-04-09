@@ -7,15 +7,17 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import DriverClient from "./DriverClient";
+import DriverRuntimeClient from "./DriverRuntimeClient";
 import PageSection from "@/components/layout/PageSection";
 import BlockedState from "@/components/admin/BlockedState";
+import type { Role } from "@/lib/auth/role";
+import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 import { systemRoleByEmail } from "@/lib/system/emails";
+import { getDesignSettings } from "@/lib/cms/design/getDesignSettings";
 import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
 import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
 import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 type ProfileRow = {
   role: Role | string | null;
   disabled_at: string | null;
@@ -34,15 +36,6 @@ function safeStr(v: unknown) {
  */
 function roleByEmail(email: string | null | undefined): Role | null {
   return systemRoleByEmail(email);
-}
-
-function normalizeRole(v: unknown): Role {
-  const s = safeStr(v).toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin" || s === "root") return "superadmin";
-  if (s === "kitchen" || s === "kjokken") return "kitchen";
-  if (s === "driver" || s === "sjafor") return "driver";
-  return "employee";
 }
 
 function loginNext(urlPath: string) {
@@ -82,7 +75,7 @@ export default async function DriverPage() {
   if (profile.is_active === false) redirect(loginNext("/driver"));
 
   const emailRole = roleByEmail(user.email);
-  const role: Role = emailRole ?? normalizeRole(profile.role);
+  const role: Role = emailRole ?? normalizeRoleDefaultEmployee(profile.role);
 
   // Kun driver og superadmin
   if (role !== "driver" && role !== "superadmin") {
@@ -111,11 +104,14 @@ export default async function DriverPage() {
     );
   }
 
-  const overlay = await getOverlayBySlug(APP_OVERLAYS.driver.slug, { locale: "nb", environment: "prod" });
-  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb") : null;
-  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb") : null;
-  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb") : null;
-  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb") : null;
+  const [overlay, designSettings] = await Promise.all([
+    getOverlayBySlug(APP_OVERLAYS.driver.slug, { locale: "nb", environment: "prod" }),
+    getDesignSettings(),
+  ]);
+  const topBanner = overlay.ok ? renderOverlaySlot(overlay.blocks, "topBanner", "prod", "nb", designSettings) : null;
+  const headerSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "header", "prod", "nb", designSettings) : null;
+  const helpSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "help", "prod", "nb", designSettings) : null;
+  const footerCtaSlot = overlay.ok ? renderOverlaySlot(overlay.blocks, "footerCta", "prod", "nb", designSettings) : null;
 
   /* =========================
      ✅ PAGE
@@ -127,7 +123,7 @@ export default async function DriverPage() {
       <div className="print:hidden">
         <PageSection
           title="Sjåfør"
-          subtitle="Dagens leveringer er gruppert per tidsvindu, firma og lokasjon. Dette er fasit."
+          subtitle="Én leveringsflate: stopp per vindu, firma og lokasjon — status og «markér levert» fra samme API-grunnlag."
           right={
             <aside className="hidden w-full max-w-sm rounded-2xl bg-white px-4 py-3 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))] md:block">
               <div className="font-semibold text-slate-900">Driftsnotat</div>
@@ -153,7 +149,7 @@ export default async function DriverPage() {
       </div>
 
       <div className="mt-6 print:mt-0">
-        <DriverClient />
+        <DriverRuntimeClient />
       </div>
       {helpSlot ? <div className="mt-6 print:hidden">{helpSlot}</div> : null}
       {footerCtaSlot ? <div className="mt-6 print:hidden">{footerCtaSlot}</div> : null}

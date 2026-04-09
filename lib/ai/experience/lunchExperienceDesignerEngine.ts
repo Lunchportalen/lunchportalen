@@ -3,7 +3,7 @@
  * AI foreslår temamenyer og spesialdager for å øke trivsel.
  */
 
-import { suggestLunchExperiences } from "@/lib/ai/capabilities/lunchExperienceDesigner";
+import { suggestLunchExperiences } from "@/lib/ai/engines/capabilities/lunchExperienceDesigner";
 import type {
   LunchExperienceDesignerInput,
   LunchExperienceDesignerOutput,
@@ -11,7 +11,7 @@ import type {
   SeasonMenuSuggestion,
   InternationalWeekSuggestion,
   Season,
-} from "@/lib/ai/capabilities/lunchExperienceDesigner";
+} from "@/lib/ai/engines/capabilities/lunchExperienceDesigner";
 
 export type {
   Season,

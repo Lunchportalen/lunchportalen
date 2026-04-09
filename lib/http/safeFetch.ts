@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 export async function safeFetchJson<T>(
   input: RequestInfo | URL,
   init?: RequestInit

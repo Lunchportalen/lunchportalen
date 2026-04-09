@@ -3,14 +3,14 @@
  * AI genererer nye retter basert på: trender, sesong, kjøkkenets kapasitet.
  */
 
-import { suggestNewDishes } from "@/lib/ai/capabilities/menuCreativity";
+import { suggestNewDishes } from "@/lib/ai/engines/capabilities/menuCreativity";
 import type {
   MenuCreativityInput,
   MenuCreativityOutput,
   NewDishSuggestion,
   Season,
   KitchenCapacity,
-} from "@/lib/ai/capabilities/menuCreativity";
+} from "@/lib/ai/engines/capabilities/menuCreativity";
 
 export type { Season, KitchenCapacity, NewDishSuggestion };
 

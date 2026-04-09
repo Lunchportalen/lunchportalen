@@ -6,9 +6,9 @@
  * Deterministic; no LLM. Import this module to register the capability.
  */
 
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
-import type { AiExperimentMemoryInsert, ExperimentMemoryOutcome, ExperimentMemoryPrimaryMetric } from "../experiments/experimentMemory";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
+import type { AiExperimentMemoryInsert, ExperimentMemoryOutcome, ExperimentMemoryPrimaryMetric } from "../../experiments/experimentMemory";
 
 const CAPABILITY_NAME = "storeExperimentLearning";
 

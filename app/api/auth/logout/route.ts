@@ -10,7 +10,10 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
+import { clearLocalDevAuthSessionCookies } from "@/lib/auth/devBypass";
+import { getSupabasePublicConfig } from "@/lib/config/env";
 import { makeRid } from "@/lib/http/respond";
+import type { Database } from "@/lib/types/database";
 
 /* =========================================================
    Headers
@@ -28,12 +31,6 @@ function noStoreHeaders() {
    Helpers
 ========================================================= */
 
-function envOrThrow(key: string) {
-  const v = process.env[key];
-  if (!v || !String(v).trim()) throw new Error(`Missing env: ${key}`);
-  return String(v).trim();
-}
-
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
@@ -42,7 +39,7 @@ function safeStr(v: unknown) {
  * Hard cookie cleanup (fail-safe)
  * Supabase typically uses:
  * - sb-<project-ref>-auth-token
- * - sb-access-token / sb-refresh-token
+ * - legacy `sb-access-token` / `sb-refresh-token` (compatibility cleanup if still present)
  * - supabase-auth-token (older)
  *
  * We clear anything that *looks like* supabase auth cookies.
@@ -152,22 +149,30 @@ function loginTarget(rid: string, nextSafe: string) {
 async function bestEffortSignOut(rid: string) {
   const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    envOrThrow("NEXT_PUBLIC_SUPABASE_URL"),
-    envOrThrow("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          // Next will emit Set-Cookie for these.
-          // This keeps Supabase consistent, but we ALSO hard-clear afterward.
-          for (const c of cookiesToSet) cookieStore.set(c.name, c.value, c.options);
-        },
+  let url: string;
+  let anonKey: string;
+  try {
+    const pub = getSupabasePublicConfig();
+    url = pub.url;
+    anonKey = pub.anonKey;
+  } catch (e: any) {
+    // eslint-disable-next-line no-console
+    console.warn(`[logout] missing Supabase public config rid=${rid}: ${safeStr(e?.message ?? e)}`);
+    return;
+  }
+
+  const supabase = createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        // Next will emit Set-Cookie for these.
+        // This keeps Supabase consistent, but we ALSO hard-clear afterward.
+        for (const c of cookiesToSet) cookieStore.set(c.name, c.value, c.options);
+      },
+    },
+  });
 
   try {
     const { error } = await supabase.auth.signOut();
@@ -210,6 +215,7 @@ export async function POST(req: NextRequest) {
 
     // 3) Hard-clear any supabase auth cookies (fail-safe, loop killer)
     clearAuthCookies(res, all);
+    clearLocalDevAuthSessionCookies(res.cookies);
 
     return res;
   } catch (e: any) {
@@ -234,6 +240,7 @@ export async function GET(req: NextRequest) {
 
     const res = redirect303(req, rid, loginTarget(rid, nextSafe));
     clearAuthCookies(res, all);
+    clearLocalDevAuthSessionCookies(res.cookies);
 
     return res;
   } catch (e: any) {

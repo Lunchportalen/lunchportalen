@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import React, { useEffect, useState, FormEvent } from "react";
 import type { FormSchema, FormFieldBase } from "@/lib/public/forms/types";
 
 type Props = {
@@ -110,7 +110,7 @@ export function FormBlock({ formId, title, env, locale }: Props) {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-500">Laster skjema�</div>;
+    return <div className="text-sm text-slate-500">Laster skjema …</div>;
   }
 
   if (error || !schema) {

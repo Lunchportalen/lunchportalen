@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/email/templates.ts
 function safeName(v: any) {
   const s = String(v ?? "").trim();

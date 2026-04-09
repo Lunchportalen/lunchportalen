@@ -2,8 +2,9 @@
  * Experiment analytics: record views/clicks/conversions and get stats.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export async function recordView(supabase: any, experimentId: string, variant: string): Promise<void> {
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export async function recordView(supabase: SupabaseClient, experimentId: string, variant: string): Promise<void> {
   const table = supabase.from("experiment_results");
   const { data: row } = await table.select("views").eq("experiment_id", experimentId).eq("variant", variant).maybeSingle();
   if (row && typeof row.views === "number") {
@@ -16,7 +17,7 @@ export async function recordView(supabase: any, experimentId: string, variant: s
   }
 }
 
-export async function recordClick(supabase: any, experimentId: string, variant: string): Promise<void> {
+export async function recordClick(supabase: SupabaseClient, experimentId: string, variant: string): Promise<void> {
   const table = supabase.from("experiment_results");
   const { data: row } = await table.select("clicks").eq("experiment_id", experimentId).eq("variant", variant).maybeSingle();
   if (row && typeof row.clicks === "number") {
@@ -29,7 +30,7 @@ export async function recordClick(supabase: any, experimentId: string, variant: 
   }
 }
 
-export async function recordConversion(supabase: any, experimentId: string, variant: string): Promise<void> {
+export async function recordConversion(supabase: SupabaseClient, experimentId: string, variant: string): Promise<void> {
   const table = supabase.from("experiment_results");
   const { data: row } = await table.select("conversions").eq("experiment_id", experimentId).eq("variant", variant).maybeSingle();
   if (row && typeof row.conversions === "number") {
@@ -49,7 +50,7 @@ export type ExperimentVariantStats = {
   conversions: number;
 };
 
-export async function getExperimentStats(supabase: any, experimentId: string): Promise<{
+export async function getExperimentStats(supabase: SupabaseClient, experimentId: string): Promise<{
   views: number;
   clicks: number;
   conversions: number;

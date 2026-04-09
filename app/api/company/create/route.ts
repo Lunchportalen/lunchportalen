@@ -126,6 +126,8 @@ function validateAgreement(agreement: Record<string, any>) {
   return { ok: true as const };
 }
 
+// DEPRECATED — do not use for new flows. Canonical self-serve onboarding + company bootstrap: POST /api/onboarding/complete. This RPC path remains for controlled/legacy provisioning only.
+
 export async function POST(req: NextRequest) {
   const rid = makeRid();
 

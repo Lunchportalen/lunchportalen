@@ -5,7 +5,7 @@
  * Resultat: produksjonsprognose.
  */
 
-import { runDemandForecast } from "@/lib/ai/capabilities/demandForecast";
+import { runDemandForecast } from "@/lib/ai/engines/capabilities/demandForecast";
 import type {
   DemandForecastInput,
   DemandForecastOutput,
@@ -13,7 +13,7 @@ import type {
   LocalEventInput,
   DemandForecastDay,
   ProductionForecast,
-} from "@/lib/ai/capabilities/demandForecast";
+} from "@/lib/ai/engines/capabilities/demandForecast";
 
 export type {
   HistoricalOrderRow,

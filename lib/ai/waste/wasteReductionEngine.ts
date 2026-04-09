@@ -4,13 +4,13 @@
  * og foreslår menyendringer.
  */
 
-import { suggestMenuChangesForWaste } from "@/lib/ai/capabilities/wasteReduction";
+import { suggestMenuChangesForWaste } from "@/lib/ai/engines/capabilities/wasteReduction";
 import type {
   WasteReductionInput,
   WasteReductionOutput,
   DishWasteStats,
   MenuChangeSuggestion,
-} from "@/lib/ai/capabilities/wasteReduction";
+} from "@/lib/ai/engines/capabilities/wasteReduction";
 
 export type { DishWasteStats, MenuChangeSuggestion };
 

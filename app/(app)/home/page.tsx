@@ -13,7 +13,7 @@ import {
   getMenuForDates,
   type Announcement,
   type MenuContent,
-} from "@/lib/sanity/queries";
+} from "@/lib/cms/menuContent";
 
 function severityCard(sev: Announcement["severity"]) {
   if (sev === "critical") return "bg-red-50 border-red-200 text-red-900";

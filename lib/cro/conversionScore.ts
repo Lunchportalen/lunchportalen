@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Conversion scoring engine.
  * Evaluates: CTA visibility, headline strength, trust signals, friction.

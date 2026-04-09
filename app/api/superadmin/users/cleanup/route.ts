@@ -5,15 +5,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { isSuperadminEmail, normEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
+import { normEmail } from "@/lib/system/emails";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
   const err = detail !== undefined ? { code: error, detail } : error;
   return jsonErr(rid, message, status, err);
 }
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -26,15 +25,7 @@ async function requireSuperadmin() {
   const user = auth?.user ?? null;
   if (error || !user) throw Object.assign(new Error("not_authenticated"), { code: "not_authenticated" });
 
-  // Hard-fasit på systemkonto, som dere allerede bruker
-  if (isSuperadminEmail(user.email)) return { user, actorEmail: user.email ?? null };
-
-  // Fallback: profiles.role hvis dere også støtter det
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const admin = supabaseAdmin();
-  const p = await admin.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
-  const role = String(p.data?.role ?? user.user_metadata?.role ?? "").trim().toLowerCase() as Role;
-  if (role !== "superadmin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
+  if (!(await isSuperadminProfile(user.id))) throw Object.assign(new Error("forbidden"), { code: "forbidden" });
 
   return { user, actorEmail: user.email ?? null };
 }

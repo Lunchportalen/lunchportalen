@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * AI GOVERNANCE ENGINE
  * Kontrollerer: sikkerhet, compliance, AI-policy.
@@ -5,7 +7,7 @@
  * Kun evaluering/kontroll; ingen mutasjon.
  */
 
-import { detectOperationalRisk } from "@/lib/ai/capabilities/detectOperationalRisk";
+import { detectOperationalRisk } from "@/lib/ai/engines/capabilities/detectOperationalRisk";
 import type {
   DetectOperationalRiskInput,
   DetectOperationalRiskOutput,
@@ -13,22 +15,22 @@ import type {
   IncidentInput,
   DependencyInput,
   ComplianceSignalInput,
-} from "@/lib/ai/capabilities/detectOperationalRisk";
-import { monitorCompliance } from "@/lib/ai/capabilities/monitorCompliance";
+} from "@/lib/ai/engines/capabilities/detectOperationalRisk";
+import { monitorCompliance } from "@/lib/ai/engines/capabilities/monitorCompliance";
 import type {
   MonitorComplianceInput,
   MonitorComplianceOutput,
   ComplianceCheckInput,
   ComplianceFinding,
-} from "@/lib/ai/capabilities/monitorCompliance";
-import { enforceAIPolicies } from "@/lib/ai/capabilities/enforceAIPolicies";
+} from "@/lib/ai/engines/capabilities/monitorCompliance";
+import { enforceAIPolicies } from "@/lib/ai/engines/capabilities/enforceAIPolicies";
 import type {
   EnforceAIPoliciesInput,
   EnforceAIPoliciesOutput,
   AIPolicyInput,
   EnforcementAction,
   PolicyCondition,
-} from "@/lib/ai/capabilities/enforceAIPolicies";
+} from "@/lib/ai/engines/capabilities/enforceAIPolicies";
 
 export type {
   OperationalRisk,

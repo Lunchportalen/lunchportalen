@@ -2,6 +2,7 @@
  * Phase 20: Content releases (batch publish + scheduled). Server-only.
  */
 
+import { recordPageContentVersion } from "./pageVersionsRepo";
 import { getWorkflow, resetToDraftAfterPublish } from "./workflowRepo";
 
 export type ReleaseStatus = "draft" | "scheduled" | "executed" | "cancelled";
@@ -131,7 +132,8 @@ export async function copyVariantBodyToProd(
   supabase: any,
   pageId: string,
   variantId: string,
-  locale: "nb" | "en"
+  locale: "nb" | "en",
+  opts?: { versionCreatedByUserId?: string | null }
 ): Promise<void> {
   const { data: source, error: fetchErr } = await supabase
     .from("content_page_variants")
@@ -180,6 +182,15 @@ export async function copyVariantBodyToProd(
       throw new Error(insertErr.message ?? "Failed to create prod variant during publish");
     }
   }
+
+  await recordPageContentVersion(supabase, {
+    pageId,
+    locale,
+    environment: "prod",
+    createdBy: opts?.versionCreatedByUserId ?? null,
+    label: "Publisert til produksjon",
+    action: "publish",
+  });
 }
 
 export async function publishVariant(
@@ -188,12 +199,13 @@ export async function publishVariant(
   variantId: string,
   env: "prod" | "staging",
   locale: "nb" | "en",
-  actorEmail: string | null
+  actorEmail: string | null,
+  actorUserId: string | null = null
 ): Promise<void> {
   if (env === "staging") return;
   const workflow = await getWorkflow(supabase, variantId, env, locale);
   if (workflow.state !== "approved") throw new Error("Workflow not approved");
-  await copyVariantBodyToProd(supabase, pageId, variantId, locale);
+  await copyVariantBodyToProd(supabase, pageId, variantId, locale, { versionCreatedByUserId: actorUserId });
   await resetToDraftAfterPublish(supabase, variantId, pageId, env, locale, actorEmail);
 }
 
@@ -212,7 +224,8 @@ export async function executeRelease(
       item.variant_id,
       release.environment as "prod" | "staging",
       item.locale as "nb" | "en",
-      actorEmail
+      actorEmail,
+      null
     );
   }
   await updateReleaseStatus(supabase, releaseId, "executed");

@@ -4,58 +4,50 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { NextRequest } from "next/server";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { resolveRunnerCompanyIdForBackoffice } from "@/lib/ai/resolveRunnerCompanyForBackoffice";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
+export async function GET(req: NextRequest): Promise<Response> {
+  return withApiAiEntrypoint(req, "GET", async () => {
+    const rid = makeRid();
 
-const AUTH_TIMEOUT_MS = 1500;
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+    try {
+      const auth = await getAuthContext({ rid, reqHeaders: req.headers });
+      if (!auth.isAuthenticated || !auth.userId) {
+        return jsonErr(rid, "Ikke innlogget.", 401, {
+          code: "not_authenticated",
+          detail: { user: null },
+        });
+      }
 
-export async function GET() {
-  const { supabaseServer } = await import("@/lib/supabase/server");
-  const rid = makeRid();
+      const aiRunnerCompanyId =
+        auth.ok === true ? await resolveRunnerCompanyIdForBackoffice(auth).catch(() => null) : null;
 
-  try {
-    const supabase = await supabaseServer();
-
-    const userRes = (await Promise.race([
-      supabase.auth.getUser(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("getUser_timeout")), AUTH_TIMEOUT_MS)
-      ),
-    ])) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
-
-    const user = userRes.data?.user;
-
-    if (!user) return jsonErr(rid, "Ikke innlogget.", 401, { code: "not_authenticated", detail: { user: null } });
-
-    const profileRes = (await Promise.race([
-      supabase
-        .from("profiles")
-        .select("role, company_id")
-        .eq("id", user.id)
-        .maybeSingle(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("profile_timeout")), AUTH_TIMEOUT_MS)
-      ),
-    ]).catch(() => null)) as
-      | { data: { role?: Role | null; company_id?: string | null } | null }
-      | null;
-
-    const profile = profileRes?.data ?? null;
-
-    return jsonOk(rid, {
-      ok: true,
-      rid,
-      user: {
-        id: user.id,
-        email: user.email ?? null,
-        role: (profile?.role as Role) || "employee",
-        companyId: profile?.company_id ?? null,
-      },
-    }, 200);
-  } catch {
-    return jsonErr(rid, "Kunne ikke verifisere innlogging.", 401, { code: "auth_check_failed", detail: { user: null } });
-  }
+      return jsonOk(
+        rid,
+        {
+          ok: true,
+          rid,
+          user: {
+            id: auth.userId,
+            email: auth.email,
+            role: auth.role,
+            companyId: auth.company_id,
+            aiRunnerCompanyId,
+          },
+        },
+        200,
+      );
+    } catch {
+      return jsonErr(rid, "Kunne ikke verifisere innlogging.", 401, {
+        code: "auth_check_failed",
+        detail: { user: null },
+      });
+    }
+  });
 }
 
 

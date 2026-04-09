@@ -3,7 +3,8 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { systemRoleByEmail } from "@/lib/system/emails";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
+import type { Database } from "@/lib/types/database";
 
 export type Role = "superadmin" | "company_admin" | "employee" | "kitchen" | "driver";
 
@@ -125,7 +126,7 @@ function supabaseFromRequest(req: NextRequest) {
   const SUPABASE_URL = envOrTestDefault("NEXT_PUBLIC_SUPABASE_URL", "http://supabase.test");
   const SUPABASE_ANON_KEY = envOrTestDefault("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_test_key");
 
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
         return getCookiesAll(req);
@@ -138,50 +139,8 @@ function supabaseFromRequest(req: NextRequest) {
 }
 
 /* =========================================================
-   Helpers
-========================================================= */
-
-function roleByEmail(email: string | null | undefined): Role | null {
-  return systemRoleByEmail(email);
-}
-
-function normalizeRole(v: unknown): Role {
-  const s = String(v ?? "").trim().toLowerCase();
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  return "employee";
-}
-
-function isValidRole(role: any): role is Role {
-  return ["superadmin", "company_admin", "employee", "kitchen", "driver"].includes(String(role));
-}
-
-function computeRoleNoDb(user: any): Role {
-  const emailRole = roleByEmail(user?.email);
-  if (emailRole) return emailRole;
-
-  const appRole = normalizeRole(user?.app_metadata?.role);
-  if (appRole !== "employee") return appRole;
-
-  const metaRole = normalizeRole(user?.user_metadata?.role);
-  return metaRole;
-}
-
-/* =========================================================
    Scope loader (FASIT)
 ========================================================= */
-
-type ProfileRow = {
-  id: string | null;
-  user_id: string | null;
-  email: string | null;
-  role: string | null;
-  company_id: string | null;
-  location_id: string | null;
-  is_active: boolean | null;
-};
 
 function normalizeStatus(v: unknown) {
   const s = String(v ?? "").trim().toLowerCase();
@@ -206,7 +165,7 @@ async function enforceCompanyActive(
   if (role === "superadmin") return;
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
-  const res = await (supabase as any).from("companies").select("id,status").eq("id", company_id).maybeSingle();
+  const res = await supabase.from("companies").select("id,status").eq("id", company_id).maybeSingle();
 
   const error = res?.error as any;
   const data = res?.data as any;
@@ -243,7 +202,7 @@ async function enforceAgreementAndBilling(
   }
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
-  const res = await (supabase as any)
+  const res = await supabase
     .from("company_billing_accounts")
     .select("company_id,status,billing_hold,billing_hold_reason")
     .eq("company_id", company_id)
@@ -282,7 +241,7 @@ async function getAgreementLocationId(
 ): Promise<string | null> {
   if (!company_id) return null;
 
-  const res = await (supabase as any)
+  const res = await supabase
     .from("agreements")
     .select("company_id,status,location_id,updated_at")
     .eq("company_id", company_id)
@@ -301,25 +260,44 @@ async function getAgreementLocationId(
 }
 
 export async function getScope(req: NextRequest): Promise<Scope> {
-  const supabase = supabaseFromRequest(req);
-
-  // 1) Auth user
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) {
+  const auth = await getAuthContext({ reqHeaders: req.headers });
+  if (!auth.isAuthenticated || !auth.userId) {
     throw new ScopeError("Ikke innlogget", 401, "UNAUTHENTICATED");
   }
 
-  // Kun superadmin bypasser tenant gates
-  const sys = roleByEmail(user.email ?? null);
-  if (sys === "superadmin") {
+  if (auth.reason === "NO_PROFILE") {
+    throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
+  }
+
+  if (auth.reason === "BLOCKED") {
+    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
+  }
+
+  if (!auth.ok || !auth.role) {
+    throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
+  }
+
+  if (auth.mode === "DEV_BYPASS") {
     return {
-      user_id: user.id,
-      email: user.email ?? null,
-      role: sys,
+      user_id: auth.userId,
+      email: auth.email,
+      role: auth.role,
+      company_id: auth.company_id,
+      location_id: auth.location_id,
+      is_active: true,
+      agreement_status: "unknown",
+      billing_hold: false,
+      billing_hold_reason: null,
+      can_act: true,
+      agreement_location_id: null,
+    };
+  }
+
+  if (auth.role === "superadmin") {
+    return {
+      user_id: auth.userId,
+      email: auth.email,
+      role: auth.role,
       company_id: null,
       location_id: null,
       is_active: true,
@@ -331,63 +309,20 @@ export async function getScope(req: NextRequest): Promise<Scope> {
     };
   }
 
-  // 2) Profile (DETERMINISTIC: profiles.user_id === auth.users.id)
-  const profRes = await (supabase as any)
-    .from("profiles")
-    .select("id,user_id,email,role,company_id,location_id,is_active")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const supabase = supabaseFromRequest(req);
+  const role = auth.role;
 
-  const profile = (profRes?.data ?? null) as ProfileRow | null;
-  const profErr = profRes?.error as any;
-
-  if (profErr) {
-    throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
-  }
-  if (!profile) {
-    // For employees this should later map to EMPLOYEE_NOT_ASSIGNED in post-login/status UX.
-    throw new ScopeError("Profil mangler", 403, "PROFILE_MISSING");
-  }
-
-  // 3) Role
-  let role: Role;
-  const profileRoleRaw = String(profile.role ?? "").trim();
-  if (profileRoleRaw && isValidRole(profileRoleRaw)) {
-    role = profileRoleRaw as Role;
-  } else {
-    role = computeRoleNoDb(user);
-  }
-
-  // 4) Account active (tenant-only)
-  const is_active = profile.is_active === true;
-  if (role !== "superadmin" && !is_active) {
-    throw new ScopeError("Konto er ikke aktivert ennå", 403, "ACCOUNT_INACTIVE");
-  }
-
-  // 5) Tenant binding
-  if ((role === "company_admin" || role === "employee") && !profile.company_id) {
-    throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
-  }
-  if ((role === "kitchen" || role === "driver") && (!profile.company_id || !profile.location_id)) {
-    throw new ScopeError("Scope er ikke tilordnet", 403, "SCOPE_NOT_ASSIGNED");
-  }
-
-  // 6) Company gate
-  await enforceCompanyActive(supabase, role, profile.company_id ?? null);
-
-  // 7) Agreement/Billing gate (NY)
-  const billing = await enforceAgreementAndBilling(supabase, role, profile.company_id ?? null);
-
-  // 8) Agreement location truth (for LOCATION_MISMATCH)
-  const agreement_location_id = await getAgreementLocationId(supabase, profile.company_id ?? null);
+  await enforceCompanyActive(supabase, role, auth.company_id ?? null);
+  const billing = await enforceAgreementAndBilling(supabase, role, auth.company_id ?? null);
+  const agreement_location_id = await getAgreementLocationId(supabase, auth.company_id ?? null);
 
   return {
-    user_id: user.id,
-    email: profile.email ?? user.email ?? null,
+    user_id: auth.userId,
+    email: auth.email,
     role,
-    company_id: profile.company_id ?? null,
-    location_id: profile.location_id ?? null,
-    is_active,
+    company_id: auth.company_id ?? null,
+    location_id: auth.location_id ?? null,
+    is_active: true,
 
     agreement_status: billing.agreement_status,
     billing_hold: billing.billing_hold,
@@ -431,6 +366,14 @@ export function requireDriver(scope: Scope) {
 
 export function allowSuperadminOrCompanyAdmin(scope: Scope) {
   return requireRole(scope, ["superadmin", "company_admin"]);
+}
+
+export function allowSuperadminOrKitchen(scope: Scope) {
+  return requireRole(scope, ["superadmin", "kitchen"]);
+}
+
+export function allowSuperadminOrDriver(scope: Scope) {
+  return requireRole(scope, ["superadmin", "driver"]);
 }
 
 /* =========================================================

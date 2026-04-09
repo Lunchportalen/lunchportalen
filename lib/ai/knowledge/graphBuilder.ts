@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Knowledge graph builder: extract topic words from pages and insert entities + relations.
  */

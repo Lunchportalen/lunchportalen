@@ -34,9 +34,12 @@ async function fetchAgreements() {
       price_per_employee,
       created_at,
       updated_at,
+      activated_at,
+      rejection_reason,
       companies:company_id ( name )
     `
     )
+    .eq("status", "PENDING")
     .order("updated_at", { ascending: false })
     .limit(200);
 
@@ -60,6 +63,8 @@ async function fetchAgreements() {
       price_per_employee: a.price_per_employee ?? null,
       created_at: a.created_at ?? null,
       updated_at: a.updated_at ?? null,
+      activated_at: a.activated_at ?? null,
+      rejection_reason: a.rejection_reason ?? null,
     })) ?? [];
 
   return { ok: true as const, agreements };
@@ -89,7 +94,7 @@ export default async function SuperadminAgreementsPage() {
   return (
     <div className="w-full px-4 sm:px-6 lg:px-10 py-8">
       <h1 className="lp-h1">Avtaler</h1>
-      <p className="mt-2 text-sm lp-muted">Opprett avtale som Venter og godkjenn den når alt er klart.</p>
+      <p className="mt-2 text-sm lp-muted">Gjennomgå avtaler fra firma-admin. Standard visning: venter på godkjenning.</p>
 
       <div className="mt-6">
         <AgreementsClient initial={initial} />

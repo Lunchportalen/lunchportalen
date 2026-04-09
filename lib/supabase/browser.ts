@@ -1,17 +1,10 @@
-// lib/supabase/browser.ts
+// lib/supabase/browser.ts — legacy shim; prefer `@/lib/supabase/client` or `@/utils/supabase/client`.
 "use client";
 
-import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/types/database";
+import { createClient } from "@/utils/supabase/client";
 
-function mustEnv(name: string) {
-  const v = String(process.env[name] ?? "").trim();
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
-
-export function supabaseBrowser() {
-  return createBrowserClient(
-    mustEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    mustEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-  );
+export function supabaseBrowser(): SupabaseClient<Database> {
+  return createClient();
 }

@@ -1,38 +1,40 @@
+// STATUS: KEEP
+
 /**
  * AI CONTENT ENGINE
  * Motoren som genererer: sider, blokker, artikler, FAQ, seksjoner, meta.
  * Dette er selve produksjonsmotoren.
  */
 
-import { generateFullPageBlocks } from "@/lib/ai/capabilities/generateFullPage";
+import { generateFullPageBlocks } from "@/lib/ai/engines/capabilities/generateFullPage";
 import type {
   GenerateFullPageInput,
   GenerateFullPageOutput,
-} from "@/lib/ai/capabilities/generateFullPage";
-import { generateBlock } from "@/lib/ai/capabilities/generateBlock";
-import type { GenerateBlockInput } from "@/lib/ai/capabilities/generateBlock";
-import { autoGenerateArticle } from "@/lib/ai/capabilities/autoGenerateArticle";
+} from "@/lib/ai/engines/capabilities/generateFullPage";
+import { generateBlock } from "@/lib/ai/engines/capabilities/generateBlock";
+import type { GenerateBlockInput } from "@/lib/ai/engines/capabilities/generateBlock";
+import { autoGenerateArticle } from "@/lib/ai/engines/capabilities/autoGenerateArticle";
 import type {
   AutoGenerateArticleInput,
   AutoGenerateArticleOutput,
-} from "@/lib/ai/capabilities/autoGenerateArticle";
-import { generateFAQ } from "@/lib/ai/capabilities/generateFAQ";
+} from "@/lib/ai/engines/capabilities/autoGenerateArticle";
+import { generateFAQ } from "@/lib/ai/engines/capabilities/generateFAQ";
 import type {
   GenerateFAQInput,
   GenerateFAQOutput,
   FAQItem,
-} from "@/lib/ai/capabilities/generateFAQ";
+} from "@/lib/ai/engines/capabilities/generateFAQ";
 import { generateInterface } from "@/lib/ai/ui/generateInterface";
 import type {
   GenerateInterfaceInput,
   UILayoutSpecification,
   SectionSpec,
 } from "@/lib/ai/ui/generateInterface";
-import { generateMeta } from "@/lib/ai/capabilities/generateMeta";
+import { generateMeta } from "@/lib/ai/engines/capabilities/generateMeta";
 import type {
   GenerateMetaInput as CapabilityGenerateMetaInput,
   GenerateMetaOutput,
-} from "@/lib/ai/capabilities/generateMeta";
+} from "@/lib/ai/engines/capabilities/generateMeta";
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 
 export type { FAQItem, SectionSpec };

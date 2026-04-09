@@ -3,10 +3,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
+import { recordStructuredSettingsAudit } from "@/lib/audit/log";
+import { auditLog } from "@/lib/core/audit";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { invalidateSettingsCache } from "@/lib/settings/cache";
 import {
   getSystemSettings,
   type SystemSettings,
@@ -45,6 +47,7 @@ function normalizePatch(current: SystemSettings, patch: any) {
     cancellations: pickBool(patch?.killswitch?.cancellations, current.killswitch.cancellations),
     emails: pickBool(patch?.killswitch?.emails, current.killswitch.emails),
     kitchen_feed: pickBool(patch?.killswitch?.kitchen_feed, current.killswitch.kitchen_feed),
+    ai: pickBool(patch?.killswitch?.ai, current.killswitch.ai ?? false),
   };
 
   const nextRetention: Retention = {
@@ -69,6 +72,23 @@ function normalizePatch(current: SystemSettings, patch: any) {
     strict_mode: pickBool(nextToggles.strict_mode, current.toggles.strict_mode ?? true),
     esg_engine: pickBool(nextToggles.esg_engine, current.toggles.esg_engine ?? false),
     email_backup: pickBool(nextToggles.email_backup, current.toggles.email_backup ?? true),
+    autonomy_master_enabled: pickBool(
+      nextToggles.autonomy_master_enabled,
+      current.toggles.autonomy_master_enabled ?? false,
+    ),
+    autonomy_allow_auto_ads: pickBool(
+      nextToggles.autonomy_allow_auto_ads,
+      current.toggles.autonomy_allow_auto_ads ?? false,
+    ),
+    autonomy_allow_auto_pricing: pickBool(
+      nextToggles.autonomy_allow_auto_pricing,
+      current.toggles.autonomy_allow_auto_pricing ?? false,
+    ),
+    autonomy_allow_auto_procurement: pickBool(
+      nextToggles.autonomy_allow_auto_procurement,
+      current.toggles.autonomy_allow_auto_procurement ?? false,
+    ),
+    ai_enabled: pickBool(nextToggles.ai_enabled, current.toggles.ai_enabled ?? true),
   };
 
   return { toggles: normalizedToggles, killswitch: nextKill, retention: nextRetention };
@@ -101,7 +121,14 @@ function buildPlan(prev: SystemSettings, next: { toggles: SystemToggles; killswi
       key: String(k),
       from: yn(a),
       to: yn(b),
-      severity: k === "strict_mode" ? "warn" : "normal",
+      severity:
+        k === "strict_mode"
+          ? "warn"
+          : k === "autonomy_master_enabled"
+            ? "danger"
+            : k.startsWith("autonomy_")
+              ? "warn"
+              : "normal",
     });
   });
 
@@ -143,9 +170,23 @@ function rootPolicyForPlan(plan: PlanItem[]) {
   if (plan.some((p) => p.area === "RETENTION")) reasons.push("RETENTION_CHANGE");
   if (has("KILL", "orders") || has("KILL", "cancellations")) reasons.push("KILL_ORDERS_OR_CANCELLATIONS");
   if (has("TOGGLE", "strict_mode")) reasons.push("STRICT_MODE_CHANGE");
+  if (
+    plan.some(
+      (p) =>
+        p.area === "TOGGLE" &&
+        p.key === "autonomy_master_enabled" &&
+        p.from === "OFF" &&
+        p.to === "ON",
+    )
+  ) {
+    reasons.push("AUTONOMY_MASTER_ENABLE");
+  }
 
   const required = reasons.length > 0;
-  const severity: "warn" | "danger" = reasons.includes("KILL_ORDERS_OR_CANCELLATIONS") ? "danger" : "warn";
+  const severity: "warn" | "danger" =
+    reasons.includes("KILL_ORDERS_OR_CANCELLATIONS") || reasons.includes("AUTONOMY_MASTER_ENABLE")
+      ? "danger"
+      : "warn";
   return { required, severity, reasons };
 }
 
@@ -282,6 +323,18 @@ export async function PUT(req: NextRequest): Promise<Response> {
       },
     });
 
+    const { data: systemRow, error: rowFetchErr } = await sb
+      .from("system_settings")
+      .select("id")
+      .limit(1)
+      .maybeSingle();
+
+    if (rowFetchErr || !systemRow || (systemRow as { id?: unknown }).id == null) {
+      return jsonErr(ctx.rid, "Kunne ikke finne systemsettings-rad.", 500, "SETTINGS_ROW_MISSING", rowFetchErr);
+    }
+
+    const rowId = String((systemRow as { id: string | number }).id);
+
     const { error } = await sb
       .from("system_settings")
       .update({
@@ -289,9 +342,8 @@ export async function PUT(req: NextRequest): Promise<Response> {
         killswitch: next.killswitch as any,
         retention: next.retention as any,
         updated_at: new Date().toISOString(),
-        updated_by: userId,
       })
-      .eq("id", 1);
+      .eq("id", rowId);
 
     if (error) {
       await auditMetaFailClosed(sb, {
@@ -308,7 +360,41 @@ export async function PUT(req: NextRequest): Promise<Response> {
       return jsonErr(ctx.rid, "Kunne ikke lagre systeminnstillinger.", 500, { code: "DB_ERROR", detail: error });
     }
 
+    invalidateSettingsCache();
+
     const settings = await getSystemSettings();
+
+    await auditLog({
+      action: "settings_update",
+      entity: "system_settings",
+      metadata: {
+        rid: ctx.rid,
+        toggles: next.toggles,
+        killswitch: next.killswitch,
+        retention: next.retention,
+      },
+    });
+
+    console.log("[SETTINGS_UPDATED]", {
+      at: new Date().toISOString(),
+      rid: ctx.rid,
+      changes: {
+        toggles: next.toggles,
+        killswitch: next.killswitch,
+        retention: next.retention,
+      },
+    });
+
+    await recordStructuredSettingsAudit(sb, {
+      rid: ctx.rid,
+      actorUserId: userId,
+      actorEmail: ctx.scope?.email ?? null,
+      payload: {
+        toggles: next.toggles,
+        killswitch: next.killswitch,
+        retention: next.retention,
+      },
+    });
 
     // Audit APPLIED (fail-closed)
     await auditMetaFailClosed(sb, {

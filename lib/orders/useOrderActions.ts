@@ -12,6 +12,7 @@ import {
   type UpsertResponse,
   type ApiErr,
 } from "@/lib/api/client";
+import { getOrderAttributionForApi } from "@/lib/revenue/attributionSessionBrowser";
 
 export type OrderAction = "UPSERT" | "CANCEL";
 type InFlightKey = `${OrderAction}:${string}`;
@@ -244,9 +245,14 @@ export function useOrderActions(options: UseOrderActionsOptions = {}) {
     async (date: string, slotStart: string, slotEnd: string, note?: string | null) => {
       lastCall.current = { action: "UPSERT", date, slotStart, slotEnd, note };
 
-      const resp = await runWithRetry<UpsertResponse>("UPSERT", date, (idem, signal) =>
-        upsertOrderApi(date, slotStart, slotEnd, note ?? null, { idemKey: idem, signal })
-      );
+      const resp = await runWithRetry<UpsertResponse>("UPSERT", date, (idem, signal) => {
+        const attribution = getOrderAttributionForApi();
+        return upsertOrderApi(date, slotStart, slotEnd, note ?? null, {
+          idemKey: idem,
+          signal,
+          ...(attribution ? { attribution } : {}),
+        });
+      });
 
       setReceipt(receiptFromUpsert(date, resp));
       setError(errorFrom(resp));

@@ -11,12 +11,18 @@
 
 export const PAGE_BUILDER_SUPPORTED_TYPES = [
   "hero",
+  "hero_full",
+  "hero_bleed",
+  "banner",
   "richText",
   "cta",
   "image",
   "divider",
-  "banners",
-  "code",
+  "cards",
+  "zigzag",
+  "pricing",
+  "grid",
+  "relatedLinks",
 ] as const;
 
 export type PageBuilderSupportedType = (typeof PAGE_BUILDER_SUPPORTED_TYPES)[number];
@@ -47,6 +53,9 @@ function mapToSupportedType(type: string): PageBuilderSupportedType {
     benefits: "richText", proof: "richText", testimonials: "richText", trust: "richText",
     ctaband: "cta", cta_band: "cta", call_to_action: "cta",
     separator: "divider", spacer: "divider",
+    banners: "banner",
+    code: "richText",
+    windows: "richText",
   };
   return aliasMap[t] ?? "richText";
 }
@@ -60,13 +69,83 @@ export type NormalizedEditorBlock = {
 
 function defaultsForType(type: PageBuilderSupportedType): Record<string, unknown> {
   switch (type) {
-    case "hero": return { title: "", subtitle: "", imageUrl: "", imageAlt: "", ctaLabel: "", ctaHref: "" };
+    case "hero": return { title: "", subtitle: "", imageId: "", imageAlt: "", ctaLabel: "", ctaHref: "" };
+    case "hero_full":
+      return { title: "", subtitle: "", imageId: "", imageAlt: "", ctaLabel: "", ctaHref: "", useGradient: true };
     case "richText": return { heading: "", body: "" };
-    case "cta": return { title: "", body: "", buttonLabel: "", buttonHref: "" };
-    case "image": return { assetPath: "", alt: "", caption: "" };
+    case "cta":
+      return {
+        eyebrow: "",
+        title: "",
+        body: "",
+        buttonLabel: "",
+        buttonHref: "",
+        secondaryButtonLabel: "",
+        secondaryButtonHref: "",
+      };
+    case "image": return { imageId: "", alt: "", caption: "" };
     case "divider": return {};
-    case "banners": return { items: [] };
-    case "code": return { code: "", displayIntro: false, displayOutro: false };
+    case "cards":
+      return {
+        title: "",
+        text: "",
+        presentation: "feature",
+        items: [
+          { title: "", text: "" },
+          { title: "", text: "" },
+          { title: "", text: "" },
+        ],
+        cta: [],
+      };
+    case "zigzag":
+      return {
+        title: "",
+        intro: "",
+        presentation: "process",
+        steps: [
+          { step: "1", title: "", text: "", imageId: "" },
+          { step: "2", title: "", text: "", imageId: "" },
+        ],
+      };
+    case "pricing":
+      return { title: "To nivå – tydelig avtale", intro: "", footnote: "", plans: [] };
+    case "banner":
+      return {
+        text: "",
+        ctaLabel: "",
+        ctaHref: "",
+        backgroundImageId: "",
+        variant: "center",
+      };
+    case "grid":
+      return {
+        title: "",
+        intro: "",
+        variant: "center",
+        items: [
+          { title: "", imageId: "" },
+          { title: "", imageId: "" },
+          { title: "", imageId: "" },
+        ],
+      };
+    case "relatedLinks":
+      return { currentPath: "/", tags: [], title: "", subtitle: "", maxSuggestions: 8, emptyFallbackText: "" };
+    case "hero_bleed":
+      return {
+        title: "",
+        subtitle: "",
+        ctaPrimary: "",
+        ctaSecondary: "",
+        ctaPrimaryHref: "",
+        ctaSecondaryHref: "",
+        backgroundImageId: "",
+        overlayImageId: "",
+        overlayImageAlt: "",
+        variant: "center",
+        textAlign: "center",
+        textPosition: "center",
+        overlayPosition: "center",
+      };
     default: return { heading: "", body: "" };
   }
 }
@@ -78,12 +157,20 @@ function clearStaleMediaRef(
   type: PageBuilderSupportedType,
   out: Record<string, unknown>
 ): void {
-  if (type === "hero") {
-    const url = safeStr(out.imageUrl);
-    if (out.mediaItemId != null && !url) delete out.mediaItemId;
+  if (type === "hero" || type === "hero_full") {
+    const ref = safeStr(out.imageId);
+    if (out.mediaItemId != null && !ref) delete out.mediaItemId;
+  } else if (type === "hero_bleed") {
+    const bg = safeStr(out.backgroundImageId);
+    const ov = safeStr(out.overlayImageId);
+    if (out.backgroundMediaItemId != null && !bg) delete out.backgroundMediaItemId;
+    if (out.overlayMediaItemId != null && !ov) delete out.overlayMediaItemId;
+  } else if (type === "banner") {
+    const bg = safeStr(out.backgroundImageId);
+    if (out.backgroundMediaItemId != null && !bg) delete out.backgroundMediaItemId;
   } else if (type === "image") {
-    const path = safeStr(out.assetPath);
-    if (out.mediaItemId != null && !path) delete out.mediaItemId;
+    const ref = safeStr(out.imageId);
+    if (out.mediaItemId != null && !ref) delete out.mediaItemId;
   }
 }
 
@@ -92,8 +179,16 @@ function sanitizeData(type: PageBuilderSupportedType, raw: Record<string, unknow
   for (const [key, value] of Object.entries(raw)) {
     if (value === null || value === undefined) continue;
     if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") out[key] = value;
-    else if (key === "items" && type === "banners" && Array.isArray(value)) {
+    else if (key === "items" && (type === "cards" || type === "zigzag" || type === "grid") && Array.isArray(value)) {
       out[key] = value.map((item) => (typeof item === "object" && item && !Array.isArray(item) ? safeObj(item) : {}));
+    } else if (key === "steps" && type === "zigzag" && Array.isArray(value)) {
+      out[key] = value.map((item) => (typeof item === "object" && item && !Array.isArray(item) ? safeObj(item) : {}));
+    } else if (key === "plans" && type === "pricing" && Array.isArray(value)) {
+      out[key] = value.map((item) => (typeof item === "object" && item && !Array.isArray(item) ? safeObj(item) : {}));
+    } else if (key === "cta" && type === "cards" && Array.isArray(value)) {
+      out[key] = value.map((item) => (typeof item === "object" && item && !Array.isArray(item) ? safeObj(item) : {}));
+    } else if (key === "tags" && type === "relatedLinks" && Array.isArray(value)) {
+      out[key] = value.map((x) => (typeof x === "string" || typeof x === "number" ? String(x) : "")).filter(Boolean);
     }
   }
   clearStaleMediaRef(type, out);

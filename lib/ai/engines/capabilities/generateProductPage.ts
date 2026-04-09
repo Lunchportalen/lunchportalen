@@ -7,8 +7,8 @@
 
 import type { BlockNode } from "@/lib/cms/model/blockTypes";
 import { newBlockId } from "@/lib/cms/model/blockId";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateProductPage";
 

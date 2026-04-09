@@ -1,5 +1,7 @@
 "use client";
 
+// STATUS: KEEP
+
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 

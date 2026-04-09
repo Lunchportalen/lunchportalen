@@ -1,11 +1,22 @@
 // lib/system/emails.ts
 
-export const SUPERADMIN_EMAIL = "superadmin@lunchportalen.no";
-export const KITCHEN_EMAIL = "kjokken@lunchportalen.no";
-export const DRIVER_EMAIL = "driver@lunchportalen.no";
-export const DRIVER_ALIAS_EMAIL = "sjafor@lunchportalen.no";
-export const ORDER_EMAIL = "ordre@lunchportalen.no";
-export const SUPPORT_EMAIL = "post@lunchportalen.no";
+export * from "./emailAddresses";
+
+import {
+  DRIVER_ALIAS_EMAIL,
+  DRIVER_EMAIL,
+  KITCHEN_EMAIL,
+  ORDER_EMAIL,
+  REMOTE_BACKEND_HARNESS_EMAIL,
+  SUPERADMIN_EMAIL,
+  SUPPORT_EMAIL,
+} from "./emailAddresses";
+
+/** Standard avsender for Resend når RESEND_FROM ikke er satt. */
+export const RESEND_DEFAULT_FROM = "Lunchportalen <noreply@lunchportalen.no>";
+
+/** Legacy fallback «from» for Resend når `LP_RESEND_FROM` mangler (ordre-kanal). */
+export const RESEND_DEFAULT_FROM_ORDER = `Lunchportalen <${ORDER_EMAIL}>`;
 
 export const SYSTEM_EMAILS = {
   SUPERADMIN: SUPERADMIN_EMAIL,
@@ -33,6 +44,12 @@ export const SYSTEM_EMAIL_ALLOWLIST = (() => {
 
 export type SystemRole = "superadmin" | "kitchen" | "driver";
 
+function remoteBackendHarnessSuperadminEnabled(): boolean {
+  const enabled = String(process.env.LP_REMOTE_BACKEND_AUTH_HARNESS ?? "").trim().toLowerCase();
+  const runtimeMode = String(process.env.LP_CMS_RUNTIME_MODE ?? "").trim().toLowerCase();
+  return (enabled === "1" || enabled === "true" || enabled === "on" || enabled === "yes") && runtimeMode === "remote_backend";
+}
+
 export function normEmail(v: unknown): string {
   return String(v ?? "").trim().toLowerCase();
 }
@@ -40,6 +57,7 @@ export function normEmail(v: unknown): string {
 export function systemRoleByEmail(email: unknown): SystemRole | null {
   const e = normEmail(email);
   if (e === SYSTEM_EMAILS.SUPERADMIN) return "superadmin";
+  if (remoteBackendHarnessSuperadminEnabled() && e === REMOTE_BACKEND_HARNESS_EMAIL) return "superadmin";
   if (e === SYSTEM_EMAILS.KITCHEN) return "kitchen";
   if (e === SYSTEM_EMAILS.DRIVER || e === SYSTEM_EMAILS.DRIVER_ALIAS) return "driver";
   return null;
@@ -53,6 +71,7 @@ export function isSystemEmail(email: unknown): boolean {
   const e = normEmail(email);
   return (
     e === SYSTEM_EMAILS.SUPERADMIN ||
+    (remoteBackendHarnessSuperadminEnabled() && e === REMOTE_BACKEND_HARNESS_EMAIL) ||
     e === SYSTEM_EMAILS.KITCHEN ||
     e === SYSTEM_EMAILS.DRIVER ||
     e === SYSTEM_EMAILS.DRIVER_ALIAS ||

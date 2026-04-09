@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 import { getMarketingPage, listMarketingPages } from "@/lib/seo/marketingRegistry";
 
 export type IntentLink = {

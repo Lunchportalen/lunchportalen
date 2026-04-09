@@ -5,9 +5,9 @@
  * which builds from content_pages (tree_parent_id, tree_root_key, tree_sort_order).
  * Move is persisted via POST /api/backoffice/content/tree/move.
  *
- * This file: findNode, flattenVisible are used by ContentTree on API response roots.
- * getMockRoots / getMockRoot are legacy (not used as tree data source).
- * removeNodeFromTree / addChildToTree are legacy helpers; not used for persistence.
+ * This file: findNode, flattenVisible, collectDescendantIds, dedupeRootsById are used on API-shaped trees.
+ * getMockRoots / getMockRoot — fixtures for unit tests only (not used by live ContentTree).
+ * removeNodeFromTree / addChildToTree — legacy helpers for tests; not used by live ContentTree.
  */
 
 import type { ContentTreeNode } from "./treeTypes";
@@ -140,6 +140,129 @@ export function flattenVisible(
     if (root == null) continue;
     walk(root, 0);
   }
+  return out;
+}
+
+/** Case-insensitive match on name or slug (CP9 — tree filter). */
+export function contentTreeNodeMatchesFilter(node: ContentTreeNode, needle: string): boolean {
+  const q = needle.trim().toLowerCase();
+  if (!q) return true;
+  const name = (node.name ?? "").toLowerCase();
+  const slug = (typeof node.slug === "string" ? node.slug : "").toLowerCase();
+  return name.includes(q) || slug.includes(q);
+}
+
+/**
+ * Node ids to show when filtering (self-match or path to match). `null` = no filter active.
+ */
+export function collectVisibleNodeIdsForTreeFilter(roots: ContentTreeNode[], needle: string): Set<string> | null {
+  const q = needle.trim();
+  if (!q) return null;
+  const ids = new Set<string>();
+  function walk(nodes: ContentTreeNode[], ancestors: string[]): boolean {
+    let any = false;
+    for (const node of nodes) {
+      const selfMatch = contentTreeNodeMatchesFilter(node, q);
+      const childAny = node.children?.length ? walk(node.children, [...ancestors, node.id]) : false;
+      if (selfMatch || childAny) {
+        ancestors.forEach((id) => ids.add(id));
+        ids.add(node.id);
+        any = true;
+      }
+    }
+    return any;
+  }
+  walk(roots, []);
+  return ids;
+}
+
+/** Expand folders so filter matches become visible. */
+export function collectExpandedIdsForTreeFilter(roots: ContentTreeNode[], needle: string): Set<string> {
+  const q = needle.trim();
+  const expanded = new Set<string>();
+  if (!q) return expanded;
+  function walk(nodes: ContentTreeNode[], ancestors: string[]): boolean {
+    let any = false;
+    for (const node of nodes) {
+      const selfMatch = contentTreeNodeMatchesFilter(node, q);
+      let childAny = false;
+      if (node.children?.length) {
+        childAny = walk(node.children, [...ancestors, node.id]);
+      }
+      if (selfMatch || childAny) {
+        ancestors.forEach((id) => expanded.add(id));
+        if (childAny && node.children?.length) expanded.add(node.id);
+        any = true;
+      }
+    }
+    return any;
+  }
+  walk(roots, []);
+  return expanded;
+}
+
+/** Path of ancestor node ids that must be expanded so `targetId` is reachable (excludes target). */
+export function ancestorIdsToExpand(roots: ContentTreeNode[], targetId: string): string[] {
+  const path: string[] = [];
+  function walk(nodes: ContentTreeNode[], acc: string[]): boolean {
+    for (const n of nodes) {
+      if (n.id === targetId) {
+        path.push(...acc);
+        return true;
+      }
+      if (n.children?.length && walk(n.children, [...acc, n.id])) return true;
+    }
+    return false;
+  }
+  walk(roots, []);
+  return path;
+}
+
+/**
+ * Ids to expand so `selectedId` is visible (ancestors of selected page, or virtual home root chain).
+ * Mirrors ContentTree expand logic — single source for post-create reveal tests.
+ */
+export function expandIdsForSelection(roots: ContentTreeNode[], selectedId: string | null): string[] {
+  if (!selectedId) return [];
+  const path = ancestorIdsToExpand(roots, selectedId);
+  if (path.length) return path;
+  for (const r of roots) {
+    if (r.nodeType === "root" && r.targetPageId === selectedId) {
+      return [r.id];
+    }
+  }
+  return [];
+}
+
+/**
+ * U97F — After POST create, expand branch so the new node is proofable in the tree.
+ * Prefer expansion derived from the new node id when it already appears in `roots`;
+ * otherwise expand through known `parentPageId` so the next paint shows the child once the API catches up.
+ */
+export function expandRevealIdsForPostCreate(
+  roots: ContentTreeNode[],
+  newPageId: string,
+  parentPageId: string | null,
+): string[] {
+  const fromNew = expandIdsForSelection(roots, newPageId);
+  if (fromNew.length > 0) return fromNew;
+  if (parentPageId) {
+    const anc = ancestorIdsToExpand(roots, parentPageId);
+    return [...anc, parentPageId];
+  }
+  return [];
+}
+
+/** All descendant ids including the root id (for move target exclusion). */
+export function collectDescendantIds(roots: ContentTreeNode[], id: string): Set<string> {
+  const target = findNode(roots, id);
+  if (!target) return new Set();
+  const out = new Set<string>();
+  function walk(n: ContentTreeNode) {
+    out.add(n.id);
+    for (const c of n.children ?? []) walk(c);
+  }
+  walk(target);
   return out;
 }
 

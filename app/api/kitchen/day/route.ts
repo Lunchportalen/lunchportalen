@@ -10,20 +10,11 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 import { fetchKitchenDayData } from "@/lib/kitchen/dayData";
 import { isAfterCutoff0805 } from "@/lib/kitchen/cutoff";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+import type { Role } from "@/lib/auth/role";
+import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 
 function safeStr(v: any) {
   return String(v ?? "").trim();
-}
-
-function normalizeRole(v: any): Role {
-  const s = safeStr(v).toLowerCase();
-  if (s === "superadmin") return "superadmin";
-  if (s === "kitchen") return "kitchen";
-  if (s === "driver") return "driver";
-  if (s === "company_admin" || s === "companyadmin" || s === "admin") return "company_admin";
-  return "employee";
 }
 
 export async function GET(req: NextRequest) {
@@ -47,7 +38,7 @@ export async function GET(req: NextRequest) {
     if ((profile as any).disabled_at || (profile as any).is_active === false) return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
 
     // 3) Role gate
-    const role = normalizeRole((profile as any).role);
+    const role = normalizeRoleDefaultEmployee((profile as any).role);
     if (role !== "kitchen" && role !== "superadmin") return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
 
     // 4) Scope (company/location) - fail-closed

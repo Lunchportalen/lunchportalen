@@ -1,4 +1,5 @@
 // app/onboarding/complete/route.ts
+// DEPRECATED — do not use. Canonical onboarding commit: POST /api/onboarding/complete (same payload contract).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

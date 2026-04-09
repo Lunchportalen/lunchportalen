@@ -1,6 +1,10 @@
 // lib/kitchen/dayData.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { opsLog } from "@/lib/ops/log";
+import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
+import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
+import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
+import type { CmsMenuByMealType } from "@/lib/cms/types";
 
 export type KitchenOrder = {
   id: string; // order id
@@ -13,6 +17,10 @@ export type KitchenOrder = {
    * - Fallback to legacy orders.note ("choice:varmmat") if day_choices missing
    */
   note: string | null;
+  /** CMS `menu` for choice_key (read-only enrichment). */
+  menu_title?: string | null;
+  menu_description?: string | null;
+  menu_allergens?: string[];
 };
 
 export type KitchenGroup = {
@@ -148,47 +156,52 @@ function parseChoiceKeyFromLegacyNote(note: string | null): string | null {
   return null;
 }
 
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Variant parsing:
  * Accept:
  * - "variant||Salatbar: Skinke"
  * - "Salatbar: Skinke"
+ * Prefix matches CMS `menu.title` when present, else {@link displayLabelForMealTypeKey}.
  */
-function parseVariantFromNote(choiceKey: string, note: string | null): string | null {
+function parseVariantFromNote(
+  choiceKey: string,
+  note: string | null,
+  menuByMeal: Map<string, CmsMenuByMealType>
+): string | null {
   const n = safeStr(note);
   if (!n) return null;
 
   const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
   const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
 
-  const ck = safeStr(choiceKey).toLowerCase();
-  const label = ck === "salatbar" ? "Salatbar" : ck === "paasmurt" ? "Påsmurt" : null;
+  const nk = normalizeMealTypeKey(choiceKey);
+  if (nk !== "salatbar" && nk !== "paasmurt") return null;
+
+  const label = displayLabelForMealTypeKey(nk, nk ? menuByMeal.get(nk) : null);
   if (!label) return null;
 
-  const re = new RegExp(`^${label}\\s*:\\s*(.+)$`, "i");
+  const re = new RegExp(`^${escapeRegExp(label)}\\s*:\\s*(.+)$`, "i");
   const m = re.exec(payload);
   const v = m?.[1] ? String(m[1]).trim() : "";
   return v || null;
 }
 
-function prettyChoice(choiceKey: string) {
-  const k = safeStr(choiceKey).toLowerCase();
-  if (k === "salatbar") return "Salatbar";
-  if (k === "paasmurt") return "Påsmurt";
-  if (k === "varmmat") return "Varmmat";
-  if (k === "sushi") return "Sushi";
-  if (k === "pokebowl") return "Pokébowl";
-  if (k === "thaimat") return "Thaimat";
-  return choiceKey;
-}
-
-function buildKitchenNote(choiceKey: string | null, note: string | null): string | null {
+function buildKitchenNote(
+  choiceKey: string | null,
+  note: string | null,
+  menuByMeal: Map<string, CmsMenuByMealType>
+): string | null {
   const ck = safeStr(choiceKey).toLowerCase();
   if (!ck) return null;
 
-  const base = prettyChoice(ck);
-  if (ck === "salatbar" || ck === "paasmurt") {
-    const v = parseVariantFromNote(ck, note);
+  const nk = normalizeMealTypeKey(ck);
+  const base = displayLabelForMealTypeKey(nk || ck, nk ? menuByMeal.get(nk) : null) || nk || ck;
+  if (nk === "salatbar" || nk === "paasmurt") {
+    const v = parseVariantFromNote(nk, note, menuByMeal);
     if (v) return `${base} (${v})`;
     return base;
   }
@@ -366,6 +379,20 @@ export async function fetchKitchenDayData(args: {
     if (!dcMap.has(k)) anomalies.day_choices_missing += 1;
   }
 
+  const mealKeys = new Set<string>();
+  for (const o of orderRows) {
+    const dcKey = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
+    const dc = dcMap.get(dcKey);
+    const choiceKey = dc?.choice_key ?? parseChoiceKeyFromLegacyNote(o.note ?? null);
+    if (choiceKey) mealKeys.add(normalizeMealTypeKey(choiceKey));
+  }
+  let menuByMeal = new Map<string, CmsMenuByMealType>();
+  try {
+    menuByMeal = await getMenusByMealTypes([...mealKeys]);
+  } catch (e: any) {
+    opsLog("kitchen.day.cms_menu_failed", { rid, detail: String(e?.message ?? e) });
+  }
+
   // =========================================================
   // 4) Kitchen batch status (optional)
   // =========================================================
@@ -428,13 +455,18 @@ export async function fetchKitchenDayData(args: {
     const dc = dcMap.get(dcKey);
 
     const choiceKey = dc?.choice_key ?? parseChoiceKeyFromLegacyNote(o.note ?? null);
-    const kitchenNote = buildKitchenNote(choiceKey, dc?.note ?? null);
+    const nk = choiceKey ? normalizeMealTypeKey(choiceKey) : "";
+    const menuRow = nk ? menuByMeal.get(nk) : null;
+    const kitchenNote = buildKitchenNote(choiceKey, dc?.note ?? null, menuByMeal);
 
     groups.get(groupKey)!.orders.push({
       id: String(o.id),
       full_name: prof?.full_name ?? "Ukjent",
       department: prof?.department ?? null,
       note: kitchenNote ?? o.note ?? null,
+      menu_title: menuRow?.title ?? null,
+      menu_description: menuRow?.description ?? null,
+      menu_allergens: Array.isArray(menuRow?.allergens) ? menuRow!.allergens! : [],
     });
   }
 

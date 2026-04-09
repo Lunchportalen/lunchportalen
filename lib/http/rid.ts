@@ -21,6 +21,11 @@ export function makeRid(prefix: string = "LP"): string {
   return `${prefix}_${timePart}_${uuidPart}`;
 }
 
+/** Canonical request id for API JSON contract (alias of {@link makeRid}). */
+export function rid(prefix?: string): string {
+  return makeRid(prefix ?? "LP");
+}
+
 /**
  * ISO-timestamp (UTC)
  * Brukes i alle kvitteringer

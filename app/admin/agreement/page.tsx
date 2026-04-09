@@ -96,10 +96,9 @@ async function fetchAgreementServer(companyId?: string | null): Promise<Agreemen
   const origin = getOriginFromHeaders(h as unknown as HeaderLike);
   const cookieHeader = h.get("cookie") ?? "";
 
-  // ✅ Use the route you actually have:
-  // app/api/admin/agreements/my-latest/route.ts
+  // GET /api/admin/agreement — canonical AgreementPageData (jsonOk { data })
   const companyParam = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
-  const fetchUrl = `${origin}/api/admin/agreements/my-latest${companyParam}`;
+  const fetchUrl = `${origin}/api/admin/agreement${companyParam}`;
 
   try {
     const res = await fetch(fetchUrl, {
@@ -274,6 +273,36 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
           </div>
           <div className="mt-2 text-[11px] text-[rgb(var(--lp-muted))]">Dashboard: {ADMIN_DASHBOARD_HREF}</div>
         </details>
+      </Card>
+
+      <Card className="p-6">
+        <div className="mb-3">
+          <h2 className="lp-h2">Oppsigelse og fornyelse</h2>
+          <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+            Automatisk e-post/påminnelse (f.eks. tre måneder før binding utløper) er ikke aktivert som egen kjørende tjeneste ennå.
+            Tallene under kommer fra avtaleregistrering når de finnes.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
+            <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Registrerte vilkår</div>
+            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">
+              Bindingstid:{" "}
+              {data.terms?.bindingMonths != null ? `${data.terms.bindingMonths} måneder` : "Ikke tilgjengelig i data"}
+            </div>
+            <div className="mt-1 text-sm text-[rgb(var(--lp-text))]">
+              Oppsigelsesfrist:{" "}
+              {data.terms?.noticeMonths != null ? `${data.terms.noticeMonths} måneder` : "Ikke tilgjengelig i data"}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-neutral-50/80 p-4 text-sm text-[rgb(var(--lp-text))]">
+            <div className="text-xs font-semibold uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Viktig</div>
+            <p className="mt-2 text-sm leading-relaxed">
+              Oppsigelse og fornyelse styres av avtale og norsk avtalerett. For formelle steg, kontakt kundeteam eller bruk
+              supportrapport. Ingen endring av avtale gjøres herfra uten superadmin/prosess.
+            </p>
+          </div>
+        </div>
       </Card>
 
       <Card className="p-6">

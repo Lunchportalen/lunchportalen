@@ -3,7 +3,7 @@
  * AI lager automatiske innsiktsrapporter: mest populære retter, endringer i preferanser, sesongmønstre.
  */
 
-import { generateInsightReport } from "@/lib/ai/capabilities/customerInsight";
+import { generateInsightReport } from "@/lib/ai/engines/capabilities/customerInsight";
 import type {
   CustomerInsightInput,
   CustomerInsightOutput,
@@ -12,7 +12,7 @@ import type {
   PopularDishItem,
   PreferenceChangeItem,
   SeasonalPatternItem,
-} from "@/lib/ai/capabilities/customerInsight";
+} from "@/lib/ai/engines/capabilities/customerInsight";
 
 export type {
   DishOrderEntry,

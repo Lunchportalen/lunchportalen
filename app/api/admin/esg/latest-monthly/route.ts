@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 
 import { parsePeriodYm } from "@/lib/billing/periodYm";
 import { osloPreviousPeriodYm } from "@/lib/date/osloPeriod";
+import { loadLatestMonthlyRollupForCompany } from "@/lib/esg/latestMonthlyRollupList";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireCompanyScopeOr403, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -42,33 +43,13 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   try {
     const admin = supabaseAdmin();
-    const { data, error } = await admin
-      .from("esg_monthly")
-      .select("month,delivered_count,cancelled_count,delivery_rate,waste_estimate_kg,co2_estimate_kg,generated_at")
-      .eq("company_id", companyId)
-      .eq("month", month)
-      .maybeSingle();
-
-    if (error) {
-      return jsonErr(rid, "Kunne ikke hente ESG-data.", 500, "ESG_READ_FAILED");
-    }
-
-    const record = data
-      ? {
-          month: safeStr((data as any).month),
-          delivered_count: Number((data as any).delivered_count ?? 0),
-          cancelled_count: Number((data as any).cancelled_count ?? 0),
-          delivery_rate: Number((data as any).delivery_rate ?? 0),
-          waste_estimate_kg: Number((data as any).waste_estimate_kg ?? 0),
-          co2_estimate_kg: Number((data as any).co2_estimate_kg ?? 0),
-          generated_at: safeStr((data as any).generated_at) || null,
-        }
-      : null;
+    const result = await loadLatestMonthlyRollupForCompany(admin, companyId, month);
 
     return jsonOk(rid, {
-      companyId,
-      month,
-      record,
+      companyId: result.companyId,
+      month: result.month,
+      record: result.record,
+      baseline: result.baseline,
     });
   } catch {
     return jsonErr(rid, "Uventet feil ved henting av ESG-data.", 500, "ESG_LATEST_FAILED");

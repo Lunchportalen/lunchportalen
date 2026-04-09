@@ -10,6 +10,7 @@ import type { NextRequest } from "next/server";
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 
 // Optional: if you have a mail/outbox helper already, you can swap this out.
 // This route will still function without sending email (it returns the URL for UI to copy).
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
 
     // 8) Build URL (UI can copy / or you can enqueue mail elsewhere)
     const base = safeStr(process.env.NEXT_PUBLIC_SITE_URL).replace(/\/$/, "") || "http://localhost:3000";
-    const acceptUrl = `${base}/accept-invite?token=${encodeURIComponent(token)}`;
+    const acceptUrl = buildEmployeeInviteUrl(base, token);
 
     // (Optional) If you have an outbox table, enqueue here. We don't assume it exists.
     // If you want mail-outbox, tell me which table + columns.

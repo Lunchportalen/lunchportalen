@@ -35,9 +35,14 @@
   --lp-gold-hover: 156 120 74;
   --lp-gold-soft: 244 235 221;
 
-  /* Hot pink neon */
+  /* Hot pink neon — accent only (CTA, focus, AI highlight); never full surfaces */
   --lp-neon-pink: 330 100% 55%;
   --lp-hotpink: #ff007f;
+
+  /* V3 DNA: semantic aliases (same RGB space — no parallel theme object) */
+  --lp-chrome-bg: 15 23 42;
+  --lp-ink-plum: 36 28 40;
+  --lp-accent-neon-rgb: var(--lp-neon-rgb);
 
   --lp-success: 31 122 77;
   --lp-info: 33 87 213;
@@ -77,6 +82,8 @@
    Dark theme tokens
 ========================================================= */
 html[data-resolved-theme="dark"] {
+  --lp-chrome-bg: 15 23 42;
+  --lp-ink-plum: 36 28 40;
   --lp-bg: 16 16 16;
   --lp-surface: 24 24 24;
   --lp-surface-alt: 30 30 30;
@@ -1118,10 +1125,173 @@ html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
   padding: 58px 0;
 }
 
+.lp-section.lp-section--divider {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.lp-section-tight.lp-section--divider {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.lp-section-wide.lp-section--divider {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
 @media (max-width: 640px) {
   .lp-section {
     padding: 44px 0;
   }
+
+  .lp-section.lp-section--divider {
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+  }
+}
+
+/* CMS design system — section spacing */
+.lp-section-tight {
+  padding: 36px 0;
+}
+
+@media (max-width: 640px) {
+  .lp-section-tight {
+    padding: 28px 0;
+  }
+}
+
+.lp-section-wide {
+  padding: 80px 0;
+}
+
+@media (max-width: 640px) {
+  .lp-section-wide {
+    padding: 56px 0;
+  }
+}
+
+.lp-section.alt {
+  background: rgba(var(--lp-text-rgb), 0.03);
+}
+
+.lp-section.lp-section--contrast {
+  background: rgba(var(--lp-surface-rgb), 0.98);
+  border-top: 1px solid rgba(var(--lp-divider-rgb), 0.85);
+  border-bottom: 1px solid rgba(var(--lp-divider-rgb), 0.85);
+}
+
+html[data-resolved-theme="dark"] .lp-section.lp-section--contrast {
+  background: rgba(var(--lp-text-rgb), 0.06);
+  border-top-color: rgba(var(--lp-text-rgb), 0.12);
+  border-bottom-color: rgba(var(--lp-text-rgb), 0.12);
+}
+
+/* CMS design system — container width */
+.lp-container-wide {
+  width: 100%;
+  max-width: min(1600px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 640px) {
+  .lp-container-wide {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .lp-container-wide {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-container-wide {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .lp-container-wide {
+    padding-left: 56px;
+    padding-right: 56px;
+  }
+}
+
+@media (min-width: 1720px) {
+  .lp-container-wide {
+    padding-left: 72px;
+    padding-right: 72px;
+  }
+}
+
+.lp-container-full {
+  width: 100%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 640px) {
+  .lp-container-full {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .lp-container-full {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-container-full {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .lp-container-full {
+    padding-left: 56px;
+    padding-right: 56px;
+  }
+}
+
+@media (min-width: 1720px) {
+  .lp-container-full {
+    padding-left: 72px;
+    padding-right: 72px;
+  }
+}
+
+/* CMS design system — typography */
+.lp-display {
+  font-family: var(--lp-font-display), ui-serif, Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgb(var(--lp-text));
+}
+
+.lp-p-sm {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgb(var(--lp-muted));
 }
 
 .lp-section-head {
@@ -1146,6 +1316,10 @@ html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
 .lp-hero.lp-fullbleed {
   padding-left: 0 !important;
   padding-right: 0 !important;
+}
+
+.lp-hero.lp-hero--layout-full {
+  min-height: min(72vh, 40rem);
 }
 
 /* media wrappers */
@@ -1259,6 +1433,22 @@ html[data-resolved-theme="dark"] .lp-btn[aria-disabled="true"] {
 .lp-heroCopy {
   padding: 6px 0;
   min-width: 0;
+}
+
+/* CMS full-bleed hero: centered copy stack (matches spec name lp-hero-content) */
+.lp-hero-content {
+  width: 100%;
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  padding: 40px 0 36px;
+}
+
+@media (min-width: 768px) {
+  .lp-hero-content {
+    padding: 56px 0 44px;
+  }
 }
 
 .lp-kicker {
@@ -2656,6 +2846,10 @@ html[data-resolved-theme="dark"] .lp-related-cta {
   .lp-local-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .lp-local-grid.lp-local-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .lp-local-card {
@@ -3805,5 +3999,70 @@ html[data-resolved-theme="dark"] .lp-linkChip:hover {
       width: 100%;
       justify-content: center;
     }
+  }
+}
+
+/* =========================================================
+   Superadmin Control Tower — micro-motion (additive)
+========================================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.lp-ct-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.lp-ai-status-life {
+  animation: pulse 2s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.lp-superadmin-motion-shell button:not(:disabled) {
+  transition: transform 0.15s ease;
+}
+
+.lp-superadmin-motion-shell button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-ct-skeleton,
+  .lp-ai-status-life {
+    animation: none;
+    opacity: 1;
+  }
+
+  .lp-superadmin-motion-shell button:active:not(:disabled) {
+    transform: none;
   }
 }

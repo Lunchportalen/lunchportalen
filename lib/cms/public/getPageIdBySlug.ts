@@ -1,4 +1,8 @@
-﻿import "server-only";
+import "server-only";
+
+import { getLocalDevContentReservePageBySlug, isLocalDevContentReserveEnabled } from "@/lib/cms/contentLocalDevReserve";
+import { listLocalCmsTreePages } from "@/lib/localRuntime/cmsProvider";
+import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
@@ -10,6 +14,16 @@ export async function getPageIdBySlug(slug: string): Promise<string | null> {
   if (!slug || typeof slug !== "string") return null;
   const s = slug.trim().toLowerCase();
   if (!s) return null;
+
+  if (isLocalCmsRuntimeEnabled()) {
+    const page = listLocalCmsTreePages().find((entry) => entry.slug === s) ?? null;
+    return page?.id ?? null;
+  }
+
+  if (isLocalDevContentReserveEnabled()) {
+    return getLocalDevContentReservePageBySlug(s)?.id ?? null;
+  }
+
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const supabase = supabaseAdmin();
   const { data, error } = await supabase

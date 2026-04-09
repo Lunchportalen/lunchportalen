@@ -6,10 +6,7 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import ReconcileClient from "./ReconcileClient";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 function safeStr(value: unknown): string {
   return String(value ?? "").trim();
@@ -25,10 +22,6 @@ function normalizeMonth(raw: string): string {
   return month;
 }
 
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
-
 export default async function Page(props: {
   searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
 }) {
@@ -41,14 +34,7 @@ export default async function Page(props: {
     redirect("/login?next=/superadmin/invoices/reconcile");
   }
 
-  const { data: profile, error: profileErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (profileErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 

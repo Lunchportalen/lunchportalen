@@ -3,13 +3,13 @@
  * AI overvåker mattrender og foreslår nye retter.
  */
 
-import { getTrendReport } from "@/lib/ai/capabilities/lunchTrendRadar";
+import { getTrendReport } from "@/lib/ai/engines/capabilities/lunchTrendRadar";
 import type {
   LunchTrendRadarInput,
   LunchTrendRadarOutput,
   TrendConcept,
   SuggestedDishFromTrend,
-} from "@/lib/ai/capabilities/lunchTrendRadar";
+} from "@/lib/ai/engines/capabilities/lunchTrendRadar";
 
 export type { TrendConcept, SuggestedDishFromTrend };
 

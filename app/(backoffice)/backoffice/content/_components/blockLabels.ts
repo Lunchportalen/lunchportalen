@@ -1,36 +1,36 @@
 "use client";
 
 import type { Block } from "./editorBlockTypes";
+import { buildBlockEntryTreeLabel, isBlockEntryModelAlias } from "@/lib/cms/blocks/blockEntryContract";
+import { getBlockTypeDefinition } from "@/lib/cms/blocks/blockTypeDefinitions";
+import type { ElementTypeRuntimeMergedEntry } from "@/lib/cms/schema/elementTypeRuntimeMerge";
 
-type KnownBlockType =
-  | "hero"
-  | "richText"
-  | "image"
-  | "cta"
-  | "divider"
-  | "banners"
-  | "code";
+/** Compact label for block chrome (toolbar / badges). */
+export function getBlockShortLabel(type: string): string {
+  const t = (type ?? "").trim();
+  const c = getBlockTypeDefinition(t);
+  if (c) return c.shortTitle;
+  const raw = t;
+  return raw ? raw.slice(0, 12).toUpperCase() : "UKJENT";
+}
 
 export function getBlockLabel(type: string): string {
-  const t = (type ?? "").trim() as KnownBlockType;
-  switch (t) {
-    case "hero":
-      return "Hero-seksjon";
-    case "richText":
-      return "Tekstseksjon";
-    case "image":
-      return "Bilde";
-    case "cta":
-      return "CTA / handlingsseksjon";
-    case "divider":
-      return "Skillelinje";
-    case "banners":
-      return "Bannere";
-    case "code":
-      return "Kodeblokk";
-    default:
-      return "Blokk";
-  }
+  const t = (type ?? "").trim();
+  const c = getBlockTypeDefinition(t);
+  if (c) return c.title;
+  const raw = t;
+  return raw ? `Innholdstype «${raw}»` : "Ukjent innholdstype";
+}
+
+/** U96B — admin-merged element type title vinner over code-baseline. */
+export function resolveElementRuntimeLabel(
+  type: string,
+  merged: Record<string, ElementTypeRuntimeMergedEntry> | null | undefined,
+): string {
+  const t = (type ?? "").trim();
+  const title = merged?.[t]?.title?.trim();
+  if (title) return title;
+  return getBlockLabel(t);
 }
 
 function compactWhitespace(s: string): string {
@@ -45,21 +45,18 @@ function truncateLabel(s: string, maxChars: number): string {
 
 /**
  * Content-aware, short and stable label for the editor structure tree.
- * Must not be noisy: prefer primary identifiers (title/heading/button label/count).
+ * U91: nøkkelblokker bruker `buildBlockEntryTreeLabel` (samme kontrakt som library/preview).
  */
 export function getBlockTreeLabel(block: Block): string {
+  if (isBlockEntryModelAlias(block.type)) return buildBlockEntryTreeLabel(block);
   switch (block.type) {
-    case "hero": {
-      const title = (block.title ?? "").trim();
-      const subtitle = (block.subtitle ?? "").trim();
-      const cta = (block.ctaLabel ?? "").trim();
-      const primary = title || subtitle || cta;
-      return primary ? truncateLabel(`Hero · ${primary}`, 42) : "Hero-seksjon";
+    case "banner": {
+      const t = (block.text ?? "").trim();
+      return t ? truncateLabel(`Banner · ${t}`, 42) : "Banner";
     }
     case "richText": {
       const heading = (block.heading ?? "").trim();
       if (heading) return truncateLabel(`Tekst · ${heading}`, 42);
-      // body may contain newlines; keep first stable snippet.
       const snippet = compactWhitespace(block.body ?? "").slice(0, 40);
       return snippet ? truncateLabel(`Tekst · ${snippet}`, 42) : "Tekstseksjon";
     }
@@ -69,25 +66,14 @@ export function getBlockTreeLabel(block: Block): string {
       const primary = caption || alt;
       return primary ? truncateLabel(`Bilde · ${primary}`, 42) : "Bilde";
     }
-    case "cta": {
-      const button = (block.buttonLabel ?? "").trim();
-      const title = (block.title ?? "").trim();
-      const primary = button || title;
-      return primary ? truncateLabel(`CTA · ${primary}`, 42) : "CTA / handlingsseksjon";
-    }
     case "divider": {
       return block.style === "space" ? "Skillelinje · luft" : "Skillelinje";
     }
-    case "banners": {
-      const count = Array.isArray(block.items) ? block.items.length : 0;
-      return count > 0 ? `Bannere · ${count}` : "Bannere";
-    }
-    case "code": {
-      const intro = block.displayIntro ? (block.code ?? "").split("\n")[0]?.trim() : "";
-      return intro ? truncateLabel(`Kode · ${intro}`, 42) : "Kodeblokk";
+    case "form": {
+      const id = (block.formId ?? "").trim();
+      return id ? truncateLabel(`Skjema · ${id}`, 42) : "Skjema";
     }
     default:
-      return "Blokk";
+      return "Ukjent innholdstype";
   }
 }
-

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin, hasSupabaseAdminConfig } from "@/lib/supabase/admin";
 import { computeRole, homeForRole, type Role } from "@/lib/auth/roles";
+import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 
 export type CompanyStatusUI = "active" | "paused" | "closed" | "pending";
 
@@ -24,6 +25,12 @@ export type AdminCounts = {
   employeesTotal: number;
   employeesActive: number;
   employeesDisabled: number;
+  /** company_locations rows for this company */
+  locationsTotal: number;
+  /** orders.status = ACTIVE for Oslo today */
+  ordersTodayActive: number;
+  /** ACTIVE orders in current ISO week (Mon–Sun window used by /api/admin/dashboard) */
+  ordersWeekActive: number;
 };
 
 export type AdminDebug = {
@@ -366,10 +373,45 @@ export async function loadAdminContext(opts?: {
       .not("disabled_at", "is", null)
   );
 
-  const [employeesTotal, employeesActive, employeesDisabled] = await Promise.all([
+  const todayISO = osloTodayISODate();
+  const weekStart = startOfWeekISO(todayISO);
+  const weekEnd = addDaysISO(weekStart, 7);
+
+  const locationsTotalP = safeCountExact(
+    "locations_total",
+    admin.from("company_locations").select("id", { count: "exact", head: true }).eq("company_id", companyId)
+  );
+
+  const ordersTodayActiveP = safeCountExact(
+    "orders_today_active",
+    admin.from("orders").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("date", todayISO).eq("status", "ACTIVE")
+  );
+
+  const ordersWeekActiveP = safeCountExact(
+    "orders_week_active",
+    admin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .gte("date", weekStart)
+      .lt("date", weekEnd)
+      .eq("status", "ACTIVE")
+  );
+
+  const [
+    employeesTotal,
+    employeesActive,
+    employeesDisabled,
+    locationsTotal,
+    ordersTodayActive,
+    ordersWeekActive,
+  ] = await Promise.all([
     employeesTotalP,
     employeesActiveP,
     employeesDisabledP,
+    locationsTotalP,
+    ordersTodayActiveP,
+    ordersWeekActiveP,
   ]);
 
   const countErrors = Object.entries(dbg.q_counts).filter(([, v]) => v);
@@ -381,7 +423,14 @@ export async function loadAdminContext(opts?: {
       companyId,
       companyStatus,
       company: companyRow,
-      counts: { employeesTotal, employeesActive, employeesDisabled },
+      counts: {
+        employeesTotal,
+        employeesActive,
+        employeesDisabled,
+        locationsTotal,
+        ordersTodayActive,
+        ordersWeekActive,
+      },
       support: {
         reason: "ADMIN_OVERVIEW_COUNTS_FAILED",
         companyId,
@@ -400,7 +449,14 @@ export async function loadAdminContext(opts?: {
     companyId,
     companyStatus,
     company: companyRow,
-    counts: { employeesTotal, employeesActive, employeesDisabled },
+    counts: {
+      employeesTotal,
+      employeesActive,
+      employeesDisabled,
+      locationsTotal,
+      ordersTodayActive,
+      ordersWeekActive,
+    },
     dbg,
   };
 }

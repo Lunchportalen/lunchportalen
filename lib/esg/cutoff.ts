@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Fasit: cut-off 08:00 Europe/Oslo.
  * Vi bruker ISO timestamps. Viktig: server validerer.

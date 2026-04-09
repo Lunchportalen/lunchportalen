@@ -1,25 +1,15 @@
-// app/superadmin/orders-today/page.tsx
+// app/superadmin/orders-today/page.tsx — hub entry removed; deep links redirect to operativ oversikt
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isSuperadminEmail } from "@/lib/system/emails";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
-type ProfileRow = { role: Role | null };
-
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 
 export default async function OrdersTodayPage() {
   const sb = await supabaseServer();
 
-  // -----------------------------
-  // Auth gate
-  // -----------------------------
   const { data: auth, error: authErr } = await sb.auth.getUser();
   const user = auth?.user ?? null;
 
@@ -27,44 +17,9 @@ export default async function OrdersTodayPage() {
     redirect("/login?next=/superadmin/orders-today");
   }
 
-  // -----------------------------
-  // Superadmin gate (FASET)
-  // -----------------------------
-  const { data: profile, error: pErr } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (pErr || !profile?.role) redirect("/login?next=/superadmin");
-  if (profile.role !== "superadmin" || !isHardSuperadmin(user.email)) {
+  if (!(await isSuperadminProfile(user.id))) {
     redirect("/login?next=/superadmin");
   }
 
-  return (
-    <main className="lp-container lp-select-text">
-      <h1 className="lp-h1">Dagens ordre</h1>
-      <p className="lp-muted mt-2">
-        Oversikt over dagens aktive bestillinger. (Kommer: filter, eksport/print, og grupper per
-        leveringsvindu → firma → lokasjon.)
-      </p>
-
-      <div className="lp-card lp-card-pad mt-6">
-        <div className="lp-row">
-          <div>
-            <div className="lp-sectionTitle">Status</div>
-            <div className="lp-listMeta mt-1">Siden er opprettet og ruten er aktiv.</div>
-          </div>
-          <span className="lp-chip lp-chip-ok">OK</span>
-        </div>
-
-        <div className="lp-divider my-5" />
-
-        <div className="lp-listMeta">
-          Neste steg: koble til eksisterende OperationsToday-queries og rendere faktiske data
-          gruppert per leveringsvindu → firma → lokasjon.
-        </div>
-      </div>
-    </main>
-  );
+  redirect("/superadmin/operations");
 }

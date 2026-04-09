@@ -9,7 +9,8 @@
  * Auth: scopeOr401 + requireRoleOr403(superadmin). Same pattern as cta-improve.
  */
 import type { NextRequest } from "next/server";
-import { isAIEnabled } from "@/lib/ai/provider";
+import { AiRunnerError } from "@/lib/ai/runner";
+import { isAIEnabled } from "@/lib/ai/runner";
 import {
   EDITOR_TEXT_ACTION,
   editorTextSuggestAsync,
@@ -21,6 +22,7 @@ import { checkAiRateLimit, AI_RATE_LIMIT_SCOPE, DEFAULT_AI_EDITOR_RATE_LIMIT } f
 import { prepareAiResponseForClient } from "@/lib/ai/responseSafety";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,6 +42,7 @@ function safeStr(s: unknown, max: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  return withApiAiEntrypoint(req, "POST", async () => {
   const gate = await scopeOr401(req);
   if (gate.ok === false) return gate.res;
   const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
@@ -67,7 +70,38 @@ export async function POST(req: NextRequest) {
   const text = safeStr(o.text, TEXT_MAX);
   const action = parseAction(o.action);
   const locale = o.locale === "en" ? "en" : "nb";
-  const { suggestion } = await editorTextSuggestAsync({ text: text || "—", action, locale });
+
+  const envPlatformCompany =
+    typeof process.env.CMS_AI_DEFAULT_COMPANY_ID === "string" ? process.env.CMS_AI_DEFAULT_COMPANY_ID.trim() : "";
+  const companyId = (ctx.scope?.companyId ?? "").trim() || envPlatformCompany;
+  const userId = (ctx.scope?.userId ?? ctx.scope?.sub ?? ctx.scope?.email ?? "").trim();
+  if (!companyId) {
+    return jsonErr(ctx.rid, "Mangler company_id på profil eller CMS_AI_DEFAULT_COMPANY_ID.", 422, "MISSING_COMPANY_ID");
+  }
+  if (!userId) {
+    return jsonErr(ctx.rid, "Mangler brukeridentitet.", 422, "MISSING_USER_ID");
+  }
+
+  let suggestion: string;
+  try {
+    const out = await editorTextSuggestAsync({ text: text || "—", action, locale }, { companyId, userId });
+    suggestion = out.suggestion;
+  } catch (e) {
+    if (e instanceof AiRunnerError) {
+      const status =
+        e.code === "PLAN_NOT_ALLOWED" ||
+        e.code === "POLICY_DENIED" ||
+        e.code === "USAGE_LIMIT_EXCEEDED" ||
+        e.code === "PROFITABILITY_BLOCK" ||
+        e.code === "PROFITABILITY_CONTEXT_FAILED"
+          ? 403
+          : e.code === "MISSING_COMPANY_ID" || e.code === "MISSING_USER_ID"
+            ? 422
+            : 500;
+      return jsonErr(ctx.rid, e.message, status, e.code);
+    }
+    throw e;
+  }
 
   const prepared = prepareAiResponseForClient({ suggestion });
   if (!prepared.ok) {
@@ -94,4 +128,5 @@ export async function POST(req: NextRequest) {
     // Best-effort: do not mask response
   }
   return jsonOk(ctx.rid, prepared.data, 200);
+  });
 }

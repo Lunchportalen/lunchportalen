@@ -5,8 +5,8 @@
  */
 
 import { MEDIA_ALT_MAX } from "@/lib/media/validation";
-import type { Capability } from "../capabilityRegistry";
-import { registerCapability } from "../capabilityRegistry";
+import type { Capability } from "../../capabilityRegistry";
+import { registerCapability } from "../../capabilityRegistry";
 
 const CAPABILITY_NAME = "generateAltText";
 

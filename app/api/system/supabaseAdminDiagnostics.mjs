@@ -1,29 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
-
 function safeTrim(v) {
   return String(v ?? "").trim();
 }
 
+/**
+ * URL-only diagnostics stub. Service role access is confined to lib/supabase/admin.ts (supabaseAdmin).
+ * @returns {{ out: Record<string, unknown>, supabase: null }}
+ */
 export function getSupabaseAdminDiagnostics() {
   const env = process.env;
   const url = safeTrim(env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || "");
-  const serviceRoleKey = safeTrim(env.SUPABASE_SERVICE_ROLE_KEY || "");
 
   const out = {
-    configPresent: Boolean(url && serviceRoleKey),
+    configPresent: Boolean(url),
     urlLength: url ? url.length : 0,
-    keyPresent: Boolean(serviceRoleKey),
+    keyPresent: false,
     tables: {},
+    note: "Admin DB checks use supabaseAdmin from lib/supabase/admin.ts only.",
   };
 
-  if (!out.configPresent) {
-    return { out, supabase: null };
-  }
-
-  const supabase = createClient(url, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  });
-
-  return { out, supabase };
+  return { out, supabase: null };
 }
-

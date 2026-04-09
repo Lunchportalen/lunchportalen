@@ -5,6 +5,9 @@ export const revalidate = 0;
 
 import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { clientIpFromRequest } from "@/lib/security/context";
+import { scheduleAuditEvent } from "@/lib/security/audit";
+import { trackSecurityEvent } from "@/lib/security/monitoring";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -43,7 +46,23 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-    if (error || !data?.user) return jsonErr(rid, "Feil e-post eller passord.", 401, { code: "LOGIN_FAILED", detail: { message: error?.message ?? "no_user" } });
+    if (error || !data?.user) {
+      trackSecurityEvent({
+        type: "auth.login_failed",
+        severity: "warn",
+        message: "Innlogging feilet",
+        context: { ip: clientIpFromRequest(req) },
+      });
+      return jsonErr(rid, "Feil e-post eller passord.", 401, { code: "LOGIN_FAILED", detail: { message: error?.message ?? "no_user" } });
+    }
+
+    scheduleAuditEvent({
+      companyId: null,
+      userId: data.user.id,
+      action: "auth.login.success",
+      resource: "session",
+      metadata: { rid, ip: clientIpFromRequest(req) },
+    });
 
     // Supabase setter cookie-session automatisk via server-clienten.
     // Vi returnerer aldri tokens i body.

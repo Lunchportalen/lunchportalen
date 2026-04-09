@@ -7,7 +7,7 @@
  * Gir bedre prognoser og mindre matsvinn.
  */
 
-import { buildOfficeBehaviourModel } from "@/lib/ai/capabilities/officeBehaviourModel";
+import { buildOfficeBehaviourModel } from "@/lib/ai/engines/capabilities/officeBehaviourModel";
 import type {
   OfficeBehaviourModelInput,
   OfficeBehaviourModelOutput,
@@ -16,7 +16,7 @@ import type {
   DayPattern,
   DishPreferences,
   CancellationSummary,
-} from "@/lib/ai/capabilities/officeBehaviourModel";
+} from "@/lib/ai/engines/capabilities/officeBehaviourModel";
 
 export type {
   UsageByDayEntry,

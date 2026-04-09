@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // lib/superadmin/rootMode.ts
 import "server-only";
 import crypto from "node:crypto";

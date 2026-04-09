@@ -194,8 +194,11 @@ export async function computeSliCronOutbox(
         total: 0,
         ratePercent: null,
         status: "unknown",
-        message: "Outbox cron_runs ikke tilgjengelig (outbox persisterer ikke ennå).",
-        evidence: { note: "Persist outbox run result in cron_runs for measurable SLI." },
+        message: "Kunne ikke lese cron_runs for outbox (database/RLS).",
+        evidence: {
+          note: "Outbox POST /api/cron/outbox persisterer til cron_runs ved suksess/feil når tabellen er tilgjengelig.",
+          error: res.error.message,
+        },
       };
     }
 
@@ -210,8 +213,8 @@ export async function computeSliCronOutbox(
         total: 0,
         ratePercent: null,
         status: "unknown",
-        message: "Ingen outbox-kjøringer i vinduet (outbox skriver ikke til cron_runs ennå).",
-        evidence: { note: "Add cron_runs insert in outbox route for SLI." },
+        message: "Ingen outbox-kjøringer i vinduet (ingen rader i cron_runs for job=outbox).",
+        evidence: { note: "Verifiser at Vercel cron treffer /api/cron/outbox og at CRON_SECRET er satt." },
       };
     }
 

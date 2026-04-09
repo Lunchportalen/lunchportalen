@@ -1,9 +1,35 @@
+// STATUS: KEEP
+
 /**
  * Shared state types for ContentWorkspace.
  * Single source for page/list/create and UI state shapes used across shell, panels, and loader.
  */
 
 import type { PageStatus } from "./contentTypes";
+import type { BodyParseResult } from "./contentWorkspace.blocks";
+
+/** Payload after GET detail succeeds — shared by loader callbacks and persistence tests. */
+export type PageLoadedData = {
+  page: ContentPage;
+  nextTitle: string;
+  nextSlug: string;
+  envelope: {
+    documentType: string | null;
+    /** Flattenet union (kompat). */
+    fields: Record<string, unknown>;
+    invariantFields: Record<string, unknown>;
+    cultureFields: Record<string, unknown>;
+    blocksBody: unknown;
+  };
+  parsedBody: BodyParseResult;
+  snapshotBody: string | Record<string, unknown>;
+  updated_at: string | null;
+};
+
+export type PageErrorPayload = {
+  message?: string;
+  isParseLike?: boolean;
+};
 
 export type ContentPageListItem = {
   id: string;

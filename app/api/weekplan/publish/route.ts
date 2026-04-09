@@ -59,7 +59,7 @@ function alreadyPublished(doc: any) {
 ========================= */
 export async function POST(req: Request) {
   
-  const { sanityServer } = await import("@/lib/sanity/server");
+  const { sanityServer } = await import("@/lib/cms/sanityWriteClient");
   const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = `publish_weekplan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 

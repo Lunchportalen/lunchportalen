@@ -1,344 +1,195 @@
-"use client";
+import Link from "next/link";
+import { BackofficeManagementWorkspaceFrame } from "@/components/backoffice/BackofficeManagementWorkspaceFrame";
+import { Icon } from "@/components/ui/Icon";
+import {
+  backofficeSettingsHonestyLabel,
+  backofficeSettingsKindLabel,
+  buildBackofficeManagementWorkspaceModel,
+} from "@/lib/cms/backofficeSettingsWorkspaceModel";
+import {
+  getDocumentTypeGovernanceSummaries,
+  getFieldKindUsageSummaries,
+  getPropertyEditorSystemModel,
+} from "@/lib/cms/backofficeSchemaSettingsModel";
+import { BACKOFFICE_SETTINGS_COLLECTIONS } from "@/lib/cms/backofficeExtensionRegistry";
 
-import { useCallback, useEffect, useState } from "react";
-
-type SystemToggles = {
-  enforce_cutoff?: boolean;
-  require_active_agreement?: boolean;
-  employee_self_service?: boolean;
-  company_admin_can_order?: boolean;
-  strict_mode?: boolean;
-  esg_engine?: boolean;
-  email_backup?: boolean;
-};
-
-type KillSwitch = {
-  orders: boolean;
-  cancellations: boolean;
-  emails: boolean;
-  kitchen_feed: boolean;
-};
-
-type Retention = {
-  orders_months: number;
-  audit_years: number;
-};
-
-type SystemSettings = {
-  toggles: SystemToggles;
-  killswitch: KillSwitch;
-  retention: Retention;
-  updated_at: string | null;
-  updated_by: string | null;
-};
-
-type SystemGetResponse =
-  | { ok: true; rid: string; data: { settings?: SystemSettings } | { settings?: SystemSettings }; settings?: SystemSettings }
-  | { ok: false; rid: string; error: string; message: string; status: number };
-
-type SystemPutResponse =
-  | { ok: true; rid: string; data?: { settings?: SystemSettings }; settings?: SystemSettings }
-  | { ok: false; rid: string; error: string; message: string; status: number };
-
-export default function SettingsPage() {
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/superadmin/system", {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-      });
-      const json = (await res.json().catch(() => null)) as SystemGetResponse | null;
-      if (!res.ok || !json || (json as any).ok === false) {
-        const msg =
-          (json as any)?.message ||
-          (json as any)?.error ||
-          (res.status === 401
-            ? "Ikke innlogget."
-            : res.status === 403
-            ? "Ingen tilgang til systeminnstillinger."
-            : `Kunne ikke hente systeminnstillinger (status ${res.status}).`);
-        setError(String(msg));
-        setSettings(null);
-        return;
-      }
-      const dataSettings =
-        (json as any).settings ?? ((json as any).data && (json as any).data.settings);
-      if (dataSettings) {
-        setSettings(dataSettings as SystemSettings);
-      } else {
-        setError("Mangler settings i responsen.");
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Ukjent feil ved henting av systeminnstillinger.");
-      setSettings(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const updateToggle = (key: keyof SystemToggles, value: boolean) => {
-    setSettings((prev) =>
-      prev ? { ...prev, toggles: { ...prev.toggles, [key]: value } } : prev
-    );
-  };
-
-  const updateKill = (key: keyof KillSwitch, value: boolean) => {
-    setSettings((prev) =>
-      prev ? { ...prev, killswitch: { ...prev.killswitch, [key]: value } } : prev
-    );
-  };
-
-  const updateRetention = (key: keyof Retention, value: number) => {
-    setSettings((prev) =>
-      prev ? { ...prev, retention: { ...prev.retention, [key]: value } } : prev
-    );
-  };
-
-  const handleSave = async () => {
-    if (!settings) return;
-    setSaving(true);
-    setError(null);
-    setToast(null);
-    try {
-      const res = await fetch("/api/superadmin/system", {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toggles: settings.toggles,
-          killswitch: settings.killswitch,
-          retention: settings.retention,
-        }),
-      });
-      const json = (await res.json().catch(() => null)) as SystemPutResponse | null;
-      if (!res.ok || !json || (json as any).ok === false) {
-        const msg =
-          (json as any)?.message ||
-          (json as any)?.error ||
-          (res.status === 403
-            ? "Endringen krever aktiv Root Mode eller høyere tilgang."
-            : `Kunne ikke lagre systeminnstillinger (status ${res.status}).`);
-        setError(String(msg));
-        return;
-      }
-      const updated =
-        (json as any).settings ?? ((json as any).data && (json as any).data.settings);
-      if (updated) {
-        setSettings(updated as SystemSettings);
-      }
-      setToast("Systeminnstillinger lagret.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Ukjent feil ved lagring av systeminnstillinger.");
-    } finally {
-      setSaving(false);
-    }
-  };
+export default function BackofficeSettingsHubPage() {
+  const propertyEditorSystem = getPropertyEditorSystemModel();
+  const documentTypeCount = getDocumentTypeGovernanceSummaries().length;
+  const dataTypeCount = getFieldKindUsageSummaries().length;
+  const configuredInstanceCount = propertyEditorSystem.configuredInstances.length;
+  const workspaceModel = buildBackofficeManagementWorkspaceModel({
+    collectionId: "overview",
+    title: "Innstillinger",
+    description:
+      "Førsteordens management-seksjon for document types, data types, schema/configured instances, create policy, AI governance og systemnære settings-flater.",
+    routeKind: "overview",
+    signals: [
+      {
+        label: "Document types",
+        value: String(documentTypeCount),
+        description: "Kanoniske typer som styrer tree-policy, body-envelope og blokkgovnering.",
+      },
+      {
+        label: "Data types",
+        value: String(dataTypeCount),
+        description: "Property editor-kinds med eksplisitt usage, UI-kobling og presets.",
+      },
+      {
+        label: "Configured instances",
+        value: String(configuredInstanceCount),
+        description: "Block-field registreringer der schema, UI og defaults faktisk møtes.",
+      },
+    ],
+    primaryAction: {
+      label: "Åpne document types",
+      href: "/backoffice/settings/document-types",
+      look: "primary",
+    },
+    secondaryActions: [
+      { label: "Compositions", href: "/backoffice/settings/compositions", look: "secondary" },
+      { label: "Data types", href: "/backoffice/settings/data-types", look: "secondary" },
+      { label: "Create policy", href: "/backoffice/settings/create-policy", look: "outline" },
+    ],
+    relatedLinks: [
+      { label: "Schema og presets", href: "/backoffice/settings/schema", look: "outline" },
+      { label: "Governance & bruk", href: "/backoffice/settings/governance-insights", look: "outline" },
+      { label: "AI governance", href: "/backoffice/settings/ai-governance", look: "outline" },
+      { label: "System & drift", href: "/backoffice/settings/system", look: "outline" },
+    ],
+    note:
+      "Settings eier management objects og control-plane-lesing. Kode-styrt sannhet er fortsatt lovlig, men skal fremstå som first-class objekter i UI med eksplisitt schema -> configured instance -> UI -> preset-flyt.",
+  });
+  const cards = BACKOFFICE_SETTINGS_COLLECTIONS.filter((item) => item.id !== "overview").map((item) => ({
+    href: item.href,
+    title: item.label,
+    body: item.description,
+    icon:
+      item.id === "document-types"
+        ? ("template" as const)
+        : item.id === "element-types"
+          ? ("form" as const)
+          : item.id === "data-types"
+          ? ("content" as const)
+          : item.id === "create-policy"
+            ? ("form" as const)
+            : item.id === "ai-governance"
+              ? ("ai" as const)
+              : item.id === "system"
+                ? ("company" as const)
+                : ("shield" as const),
+    honesty: backofficeSettingsHonestyLabel(item.honesty),
+    kind: backofficeSettingsKindLabel(item.kind),
+  }));
 
   return (
-    <div className="p-6 max-w-4xl">
-      <h1 className="text-xl font-semibold text-slate-900">Systeminnstillinger</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Globale toggles og killswitches for Lunchportalen. Endringer gjelder hele systemet og krever superadmin.
-      </p>
-
-      {error ? (
-        <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
-        </div>
-      ) : null}
-      {toast ? (
-        <div className="mt-3 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {toast}
-        </div>
-      ) : null}
-
-      <div className="mt-4 flex items-center gap-3 text-sm">
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          className="h-9 rounded border border-slate-300 bg-white px-3 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          {loading ? "Laster…" : "Oppdater"}
-        </button>
-        {settings?.updated_at && (
-          <span className="text-xs text-slate-500">
-            Sist oppdatert {new Date(settings.updated_at).toLocaleString("nb-NO")}
-            {settings.updated_by ? ` av ${settings.updated_by}` : ""}
-          </span>
-        )}
-      </div>
-
-      {!settings && !loading ? (
-        <p className="mt-4 text-sm text-slate-500">
-          Ingen systeminnstillinger kunne lastes. Sjekk at tabellen <code>system_settings</code> finnes og at du er logget inn som superadmin.
-        </p>
-      ) : null}
-
-      {settings && (
-        <div className="mt-6 space-y-6">
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-900">Toggles</h2>
-            <p className="mt-1 text-xs text-slate-600">
-              Funksjonsflagg for bestilling, avtaler og drift. Alle verdier er persistente i <code>system_settings</code>.
-            </p>
-            <div className="mt-3 space-y-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.enforce_cutoff}
-                  onChange={(e) => updateToggle("enforce_cutoff", e.target.checked)}
-                />
-                <span>Håndhev bestillingsfrist (cutoff)</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.require_active_agreement}
-                  onChange={(e) => updateToggle("require_active_agreement", e.target.checked)}
-                />
-                <span>Krev aktiv avtale for bestilling</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.employee_self_service}
-                  onChange={(e) => updateToggle("employee_self_service", e.target.checked)}
-                />
-                <span>Ansatt selvbetjening for bestilling/avbestilling</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.company_admin_can_order}
-                  onChange={(e) => updateToggle("company_admin_can_order", e.target.checked)}
-                />
-                <span>Company admin kan bestille på vegne av ansatte</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.strict_mode}
-                  onChange={(e) => updateToggle("strict_mode", e.target.checked)}
-                />
-                <span>Strict mode (ingen unntak / myke feil)</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.esg_engine}
-                  onChange={(e) => updateToggle("esg_engine", e.target.checked)}
-                />
-                <span>Aktiver ESG-motor</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!settings.toggles.email_backup}
-                  onChange={(e) => updateToggle("email_backup", e.target.checked)}
-                />
-                <span>Aktiver e‑post backup/outbox</span>
-              </label>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-900">Killswitch</h2>
-            <p className="mt-1 text-xs text-slate-600">
-              Strenge globale sperrer. Endringer her påvirker hele systemet umiddelbart.
-            </p>
-            <div className="mt-3 space-y-2 text-sm">
-              <label className="flex items-center gap-2 text-red-700">
-                <input
-                  type="checkbox"
-                  checked={settings.killswitch.orders}
-                  onChange={(e) => updateKill("orders", e.target.checked)}
-                />
-                <span>Stopp alle ordre (orders)</span>
-              </label>
-              <label className="flex items-center gap-2 text-red-700">
-                <input
-                  type="checkbox"
-                  checked={settings.killswitch.cancellations}
-                  onChange={(e) => updateKill("cancellations", e.target.checked)}
-                />
-                <span>Stopp alle avbestillinger (cancellations)</span>
-              </label>
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={settings.killswitch.emails}
-                  onChange={(e) => updateKill("emails", e.target.checked)}
-                />
-                <span>Stopp utsendelse av e‑post</span>
-              </label>
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={settings.killswitch.kitchen_feed}
-                  onChange={(e) => updateKill("kitchen_feed", e.target.checked)}
-                />
-                <span>Stopp oppdatering av kjøkkenfeed</span>
-              </label>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-900">Retensjon</h2>
-            <p className="mt-1 text-xs text-slate-600">
-              Hvor lenge data beholdes før automatisk opprydding (lageres i <code>system_settings.retention</code>).
-            </p>
-            <div className="mt-3 flex flex-wrap gap-4 text-sm">
-              <label className="grid gap-1">
-                <span>Ordrehistorikk (måneder)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={settings.retention.orders_months}
-                  onChange={(e) => updateRetention("orders_months", Number(e.target.value || settings.retention.orders_months))}
-                  className="h-9 w-24 rounded border border-slate-200 px-2 text-sm"
-                />
-              </label>
-              <label className="grid gap-1">
-                <span>Revisjonshistorikk (år)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={15}
-                  value={settings.retention.audit_years}
-                  onChange={(e) => updateRetention("audit_years", Number(e.target.value || settings.retention.audit_years))}
-                  className="h-9 w-24 rounded border border-slate-200 px-2 text-sm"
-                />
-              </label>
-            </div>
-          </section>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !settings}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+    <BackofficeManagementWorkspaceFrame model={workspaceModel}>
+      <ul className="grid gap-5 sm:grid-cols-2">
+        {cards.map((card) => (
+          <li key={card.href}>
+            <Link
+              href={card.href}
+              className="lp-motion-card group flex h-full min-h-[170px] flex-col rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition hover:border-slate-300 hover:shadow-md"
             >
-              {saving ? "Lagrer…" : "Lagre systeminnstillinger"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-800 group-hover:border-pink-300/40">
+                  <Icon name={card.icon} size="md" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg font-semibold text-slate-900">{card.title}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.body}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wide">
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700">
+                  {card.kind}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700">
+                  {card.honesty}
+                </span>
+              </div>
+              <span className="mt-6 text-sm font-semibold text-slate-900">Åpne management object →</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <article className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">Collection til workspace</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            Hver arbeidsflate skal kunne nås som et tydelig management object: collection, detail workspace, property-editor system workspace eller runtime-read workspace.
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <li>
+              <Link href="/backoffice/settings/compositions" className="font-medium text-slate-900 underline underline-offset-4">
+                Compositions
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/document-types" className="font-medium text-slate-900 underline underline-offset-4">
+                Document types
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/element-types" className="font-medium text-slate-900 underline underline-offset-4">
+                Element types
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/data-types" className="font-medium text-slate-900 underline underline-offset-4">
+                Data types
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/schema" className="font-medium text-slate-900 underline underline-offset-4">
+                Schema og presets
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/create-policy" className="font-medium text-slate-900 underline underline-offset-4">
+                Create policy
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/backoffice/settings/management-read"
+                className="font-medium text-slate-900 underline underline-offset-4"
+              >
+                Management read
+              </Link>
+            </li>
+            <li>
+              <Link href="/backoffice/settings/ai-governance" className="font-medium text-slate-900 underline underline-offset-4">
+                AI governance
+              </Link>
+            </li>
+          </ul>
+        </article>
+
+        <article className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900">Section posture</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            Settings er styringsplanet. Runtime, auth og transaksjonell sannhet eies fortsatt av operativ runtime, men kobles hit med ærlig språk og trygge lenker.
+          </p>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Truth model</dt>
+              <dd className="mt-1 text-slate-900">
+                Kode-styrt registry, eksplisitt property-editor systemmodell og runtime-lesing der nødvendig
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">CRUD posture</dt>
+              <dd className="mt-1 text-slate-900">Ingen falsk CRUD. Mutasjoner vises bare der backend og kontrakt faktisk tillater det.</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Primary workflow</dt>
+              <dd className="mt-1 text-slate-900">Oversikt → collection → detail/workspace → trygg runtime-ruting ved behov</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+    </BackofficeManagementWorkspaceFrame>
   );
 }

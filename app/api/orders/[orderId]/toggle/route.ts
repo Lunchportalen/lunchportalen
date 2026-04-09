@@ -8,7 +8,12 @@ import { jsonOk, jsonErr, makeRid } from "@/lib/http/respond";
 import { requireRule } from "@/lib/agreement/requireRule";
 import { immutabilityStatusForDate } from "@/lib/orders/immutability";
 import { cutoffStatusForDate } from "@/lib/date/oslo";
-import { lpOrderCancel, lpOrderSet } from "@/lib/orders/rpcWrite";
+import {
+  agreementRuleSlotForOrderTableSlot,
+  lpOrderCancel,
+  lpOrderSet,
+  normalizeOrderTableSlot,
+} from "@/lib/orders/rpcWrite";
 
 /* =========================================================
    Response helpers (fasit)
@@ -211,7 +216,8 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     // -----------------------------
     // Agreement rules gate (fail-closed)
     // -----------------------------
-    const slotVal = String((existing as any)?.slot ?? "").trim() || "lunch";
+    const orderSlot = normalizeOrderTableSlot((existing as any)?.slot);
+    const ruleSlot = agreementRuleSlotForOrderTableSlot((existing as any)?.slot);
     const dayKey = weekdayKeyOslo(existing.date);
     if (!dayKey) {
       return jsonErr(r, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: existing.date } });
@@ -224,7 +230,7 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     } catch {
       return jsonErr(r, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
     }
-    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: slotVal, rid: r });
+    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: ruleSlot, rid: r });
     if (!ruleRes.ok) {
       const err = ruleRes as { status: number; error: string; message: string };
       return jsonErr(r, err.message, err.status ?? 400, err.error);
@@ -246,8 +252,8 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
     }
 
     const rpcRes = desiredStatus === "ACTIVE"
-      ? await lpOrderSet(sb as any, { p_date: existing.date, p_slot: slotVal, p_note: nextNote ?? null })
-      : await lpOrderCancel(sb as any, { p_date: existing.date });
+      ? await lpOrderSet(sb as any, { p_date: existing.date, p_slot: orderSlot, p_note: nextNote ?? null })
+      : await lpOrderCancel(sb as any, { p_date: existing.date, p_slot: orderSlot });
 
     if (!rpcRes.ok) {
       return jsonErr(r, "Kunne ikke oppdatere ordre.", 500, {

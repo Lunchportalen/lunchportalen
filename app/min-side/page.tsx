@@ -1,6 +1,7 @@
 // app/min-side/page.tsx
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { homeForRole } from "@/lib/auth/redirect";
 import { getScope, ScopeError } from "@/lib/auth/scope";
 
 export const dynamic = "force-dynamic";
@@ -8,19 +9,20 @@ export const revalidate = 0;
 
 /**
  * Min side er kun en smart redirect:
- * - Ikke innlogget            → /login?next=/week
+ * - Ikke innlogget            → /login?next=/week (kanonisk employee-flate)
  * - Innlogget, men ikke aktiv → /status
- * - Aktiv bruker              → /week
+ * - Aktiv bruker              → rolle-hjem (employee → /week)
  *
  * Ingen UI rendres her med vilje.
  */
 export default async function MinSidePage() {
   try {
-    // Bruk samme sannhetskilde som API og admin/UI
-    await getScope({ headers: headers() } as any);
-
-    // Konto og firma er aktiv → ansattvisning
-    redirect("/week");
+    const scope = await getScope({ headers: headers() } as any);
+    // Eksplisitt: ansatt skal aldri «lande» på /min-side — samme mål som (app)-layout (/week).
+    if (scope.role === "employee") {
+      redirect("/week");
+    }
+    redirect(homeForRole(scope.role));
   } catch (e: any) {
     if (e instanceof ScopeError) {
       // Ikke innlogget

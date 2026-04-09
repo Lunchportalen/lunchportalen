@@ -1,4 +1,4 @@
-// app/superadmin/firms/[companyId]/page.tsx
+// app/superadmin/firms/[companyId]/employees/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,10 +8,8 @@ import { redirect, notFound } from "next/navigation";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import ChangeCompanyAdmin from "../ChangeCompanyAdmin";
-import { isSuperadminEmail } from "@/lib/system/emails";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { formatDateTimeNO } from "@/lib/date/format";
-
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 // DB kan være lower/upper – vi normaliserer til UI (UPPERCASE)
 type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
@@ -30,8 +28,6 @@ type LocationRow = {
   label: string;
   name: string;
 };
-
-type ProfileRow = { role: Role | null };
 
 type PageProps = {
   params: { companyId: string } | Promise<{ companyId: string }>;
@@ -65,10 +61,6 @@ function fmtTs(ts: string) {
   return formatDateTimeNO(ts);
 }
 
-function isHardSuperadmin(email: string | null | undefined) {
-  return isSuperadminEmail(email);
-}
-
 export default async function FirmPage({ params }: PageProps) {
   const p = (await params) as { companyId: string };
   const companyId = safeStr(p?.companyId);
@@ -86,15 +78,10 @@ export default async function FirmPage({ params }: PageProps) {
     redirect(`/login?next=/superadmin/firms/${encodeURIComponent(companyId)}`);
   }
 
-  // ---- superadmin gate (FASET: profiles.id = auth.user.id) ----
-  const { data: me, error: meErr } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileRow>();
-
-  if (meErr || !me?.role) redirect("/login?next=/superadmin");
-  if (me.role !== "superadmin" || !isHardSuperadmin(user.email)) redirect("/login?next=/superadmin");
+  // ---- superadmin gate: profiles.role === "superadmin"
+  if (!(await isSuperadminProfile(user.id))) {
+    redirect("/login?next=/superadmin");
+  }
 
   // ---- company ----
   const { data: companyRaw, error: cErr } = await supabase

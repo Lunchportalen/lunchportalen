@@ -2,6 +2,7 @@
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
+import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 const METADATA_MAX = 2000;
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
+  return withApiAiEntrypoint(request, "POST", async () => {
   const { scopeOr401, requireRoleOr403 } = await import("@/lib/http/routeGuard");
   const gate = await scopeOr401(request);
   if (gate.ok === false) return gate.res;
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
   }
 
   return jsonOk(ctx.rid, { ok: true, rid: ctx.rid }, 200);
+  });
 }
 
 

@@ -54,9 +54,19 @@ export default function AIControlPage() {
     setError(null);
     try {
       const res = await fetch("/api/backoffice/ai/jobs");
-      if (!res.ok) throw new Error(res.status === 401 ? "Ikke innlogget" : res.status === 403 ? "Krever superadmin" : `Feil ${res.status}`);
-      const data = await res.json();
-      const raw = data?.data?.data ?? data?.data;
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          res.status === 401 ? "Ikke innlogget" : res.status === 403 ? "Krever superadmin" : `Feil ${res.status}`,
+        );
+      }
+      if (!json.ok) {
+        console.warn("Jobs failed", json);
+        setJobs([]);
+        return;
+      }
+      const inner = json.data as { jobs?: unknown; data?: unknown } | null | undefined;
+      const raw = inner?.jobs ?? inner?.data ?? (Array.isArray(inner) ? inner : []);
       setJobs(Array.isArray(raw) ? raw : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunne ikke laste jobs");
@@ -162,6 +172,16 @@ export default function AIControlPage() {
         <p>
           Denne siden viser kun operative verktøy (jobs, health og experiments) for AI i denne branchen. Flere strategiske
           AI-funksjoner kan finnes i arkitekturen, men er ikke eksponert her.
+        </p>
+        <p className="mt-2">
+          <Link
+            href="/backoffice/ai/overview"
+            className="font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900"
+          >
+            AI-inntjening
+          </Link>
+          {" "}
+          (kostnad, MRR, margin, verktøy og topp selskaper).
         </p>
         <p className="mt-2">
           <Link

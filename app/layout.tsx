@@ -8,6 +8,7 @@ import { Fraunces, Inter, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 
 import DevOverflowGuard from "@/components/DevOverflowGuard";
+import AttributionCapture from "@/components/revenue/AttributionCapture";
 
 /* =========================================================
    Fonts
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
       <body className="min-h-full antialiased">
         {process.env.NODE_ENV !== "production" ? <DevOverflowGuard /> : null}
+        <AttributionCapture />
         {children}
       </body>
     </html>

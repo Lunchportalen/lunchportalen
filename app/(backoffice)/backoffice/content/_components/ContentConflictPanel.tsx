@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 import type { StatusLineState, SupportSnapshot } from "./types";
 
 type SupportCopyFeedback = "ok" | "fail" | null;

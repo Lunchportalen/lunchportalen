@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 /**
  * Content strategy plan: deterministic suggestions for missing/common pages.
  */
