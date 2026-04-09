@@ -59,7 +59,7 @@ Dette dokumentet beskriver klikk-, caret-, kebab- og tastaturoppførsel for innh
 
 **Create child:** Kaller `onCreateChild(id)`; i denne patchen legges barn kun til i lokal state/mock (ingen API).
 
-**Rename:** Inline prompt eller enkel modal (f.eks. `window.prompt`); oppdaterer nodenavn i state.
+**Rename:** Inline redigering i tre-raden (tekstfelt); oppdaterer nodenavn i state.
 
 **Delete:** Flytter node til “recycle bin”-array i lokal state og fjerner den fra treet.
 
