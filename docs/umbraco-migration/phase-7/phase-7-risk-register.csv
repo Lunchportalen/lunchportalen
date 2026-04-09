@@ -1,0 +1,11 @@
+id,description,why_matters_now,owner,mitigation,severity,confidence
+R7-1,Editors need engineer shadowing,False adoption,Product editorial signoff owner,Training metrics A1 A7,High,Med
+R7-2,Preview untrusted flaky,Abandon governance SEO,Lead developer,Validation doc 77 fix P0,High,Med
+R7-3,Workflow socially bypassed,Parity failure,CMS admin,Permissions audit A3,High,Med
+R7-4,Locale behavior unresolved,Wrong language,CTO Product,Sign policy nb-only mode,High,High
+R7-5,Legacy dependency persists,Dual authority,Migration lead,Clean register 78,Critical,High
+R7-6,Training insufficient,Defect misclassification,Editorial lead,M1-M7 quiz lab,Med,Med
+R7-7,Support burden too high,Engineering drag,Support owner,Office hours triage 74,Med,Med
+R7-8,Triage political,Binary gates erode,CTO,Severity definitions 75,Med,Low
+R7-9,Evidence incomplete,Signoff theater,Support owner,Bundle E1-E8,High,Med
+R7-10,Plugin block gaps,False done,Migration lead,Inventory quarantine,Med,Med

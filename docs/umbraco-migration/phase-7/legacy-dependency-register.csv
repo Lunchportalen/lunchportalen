@@ -1,0 +1,10 @@
+id,dependency_escape_hatch,affected_content_type,actor_affected,why_exists,allowed_temporarily,owner,planned_removal,blocks_signoff
+L1,Legacy Next backoffice page body,webPage webPageHome,Editor,Migration habit,No,Migration lead,Cutover freeze,Yes
+L2,Postgres direct edit content_pages,Same,Engineer,Hotfix,No,Lead developer,Write-freeze,Yes
+L3,Sanity Studio public pages authority,Same,Editor,Historical,No,Product owner,Decommission,Yes
+L4,Management API ad-hoc publish,Same,Engineer,Faster pilot,No,CMS admin,Policy monitoring,Yes
+L5,appShellPage overlays undecided B1,appShellPage overlays,Editor,Product pending,Yes if excluded pilot,Product owner,Decision X1,Yes if claims full site
+L6,Locale policy unsigned B2,webPage variants,Editor,Strategy open,Yes nb-only pilot signed,CTO Product,Close B2,Yes for multi-locale claims
+L7,Unknown block types B3,webPage blocks,Editor ETL,Inventory open,Yes quarantine signed,Migration lead,Close X3,Yes if full parity claimed
+L8,Preview via Postgres query param,webPage,Editor,Legacy Next,No,Lead developer,Umbraco preview,Yes
+L9,Engineer performs author publish,In-scope types,Editor,Support habit,No,Support owner,Training tooling,Yes if chronic

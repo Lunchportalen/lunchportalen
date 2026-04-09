@@ -1,0 +1,27 @@
+# U30X-READ-R3 — Extension type parity matrix (1:1 mot Umbraco 17-begreper)
+
+Normativ referanse: Umbraco 17 — Extension Manifest, Extension Types, Section, Menu, Tree, Workspace, Collections (ekstern docs — ikke sitert ordrett her; mapping er mot **begrepsnavn** brukeren oppga).
+
+| Umbraco extension type | Lunchportalen equivalent | Exact files | Current behavior | Parity class | Why not full parity | Replatforming? | Notes |
+|------------------------|--------------------------|-------------|------------------|--------------|---------------------|----------------|-------|
+| extension manifest | Statisk TypeScript-array «manifest» | `lib/cms/backofficeExtensionRegistry.ts` | Én kompilert liste; ingen JSON manifest, ingen hot reload | **UX_PARITY_ONLY** | Ingen runtime manifest; ingen bundler | **REPLATFORMING_GAP** hvis full Bellissima | Kommentar i fil refererer til CP13 |
+| extension registry / bundles | `BACKOFFICE_EXTENSION_REGISTRY` + palett-dedup | `backofficeExtensionRegistry.ts` | Lesing fra statisk array; `findBackofficeExtensionForPathname` for longest-prefix | **PARTIAL** | Ikke plugin registry; ingen isolate bundles | Delvis gap | |
+| section | `BackofficeNavGroupId` + `sectionId` på entries | `backofficeExtensionRegistry.ts`, `BackofficeExtensionContextStrip.tsx` | Grupper i UI; ikke Umbraco Section API | **UX_PARITY_ONLY** | Ingen server-side section model | STRUCTURAL_GAP | |
+| menu / menu item | TopBar items + command palette | `TopBar.tsx` (imports registry), `BackofficeCommandPalette` | Lenker; ikke context menu tree items | **PARTIAL** | Mangler meny-hierarki per section | STRUCTURAL_GAP | |
+| tree | Virtuelle røtter + `content_pages` | `app/api/backoffice/content/tree/route.ts`, `ContentTree.tsx` | API-bygger tre; klient henter og mapper | **PARTIAL** | Ikke entity type-drevet tree; `kind`/`nodeType` er ad hoc | PARTIAL | Superadmin-only på API |
+| collection / collection view | `BackofficeCollectionToolbar`, growth dashboard som liste | `GrowthDashboard.tsx`, `lib/cms/backofficeCollectionViewModel.ts` (hvis brukt) | Ikke generisk collection workspace | **STRUCTURAL_GAP** | Landing er growth dashboard, ikke entity collection | REPLATFORMING_GAP | |
+| workspace | Route + `SectionShell` + `ContentWorkspace` | `ContentWorkspaceLayout.tsx`, `ContentWorkspace.tsx` | Monolittisk React workspace | **UX_PARITY_ONLY** | Ingen Umbraco workspace host | STRUCTURAL_GAP | |
+| workspace context | Type + strip | `lib/cms/backofficeWorkspaceContextModel.ts` (typer), `BackofficeExtensionContextStrip.tsx` | **Read-only strip** fra pathname; ikke delt editor-state | **PARTIAL** | `BackofficeWorkspaceSession` er ikke React Context for editor | **STRUCTURAL_GAP** | Fil sier «fortsatt ingen global React Context» |
+| workspace view | `mainView`, design/global paneler, modus-striper | `useContentWorkspaceShell`, `ContentWorkspaceDesignTailShell.tsx`, etc. | Flere «views» som React state | **UX_PARITY_ONLY** | Ikke registrerte content apps | STRUCTURAL_GAP | |
+| workspace action | Diverse callbacks/knapper i chrome, save bar | `ContentSaveBar.tsx`, `ContentWorkspaceActions.ts` | Handlingsknapper; ikke manifest actions | **PARTIAL** | Ingen action pipeline | STRUCTURAL_GAP | |
+| workspace footer app | *Ingen treff* | Grep: `workspaceFooterApp` — **0 treff** i `*.ts`/`*.tsx` | N/A | **STRUCTURAL_GAP** | Konseptet finnes ikke | REPLATFORMING_GAP | |
+| entity action | `controlPlaneDomainActionSurfaces` lenker | `lib/cms/controlPlaneDomainActionSurfaces.ts`, context strip | Primær lenke fra domain surface | **PARTIAL** | Ikke per-entity Umbraco actions | STRUCTURAL_GAP | |
+| entity bulk action | Batch previews i growth/AI | `GrowthDashboard` (`applySafeBatchPreview`) | Ad hoc | **PARTIAL** | Ikke CMS entity bulk framework | STRUCTURAL_GAP | |
+| entity create option action | `createDocumentTypeAlias`, `allowedChildTypes`, `EDITOR_BLOCK_CREATE_OPTIONS` | `ContentWorkspace.tsx`, `lib/cms/editorBlockCreateOptions.ts`, `contentDocumentTypes.ts` | Delvis «create policy» | **PARTIAL** | Dokumenttype-register er minimalt (`page` only i `contentDocumentTypes` export path) | PARTIAL | Se `documentTypes.ts` i app layer |
+| global context | `MainViewProvider`, flere hooks | `ContentWorkspaceLayout.tsx`, `useContentWorkspace*` | Spredt state | **STRUCTURAL_GAP** | Ingen Bellissima `globalContext` | STRUCTURAL_GAP | |
+| data type | *Ikke* som Umbraco Data Type entitet | `blockFieldSchemas.ts`, `SchemaDrivenBlockForm.tsx` | JSON-lignende skjema per blokk | **UX_PARITY_ONLY** | Lagret som TS/JSON i kode, ikke DB datatype definitions | STRUCTURAL_GAP | |
+| property editor schema | `blockFieldSchemas`, validation | `blockFieldSchemas.ts`, `blockValidation.ts` | Per-block felt | **PARTIAL** | Ikke Umbraco PE manifest | PARTIAL | |
+| property editor UI | Block editors, `SchemaDrivenBlockForm` | `editors/*`, `BlockInspectorShell.tsx` | React-komponenter | **UX_PARITY_ONLY** | Ikke isolerte PE packages | PARTIAL | |
+| property value preset | Outbox/snapshot, `resolveWorkspaceImagePreset` | `contentWorkspace.outbox.ts`, diverse | Draft/preset-lignende | **PARTIAL** | Ikke CMS preset entitet | STRUCTURAL_GAP | |
+
+**Samlet:** Ingen rad oppnår **FULL_PARITY** mot Bellissima extension-typer; nærmeste er **UX_PARITY_ONLY** på shell/navigation. **workspaceFooterApp** og dynamisk **extension manifest** er **STRUCTURAL_GAP** / **REPLATFORMING_GAP**.

@@ -1,0 +1,7 @@
+id,description,severity,owner,mitigation
+R4.1,Index not rebuilt after deploy,High,Platform admin,Post-deploy checklist + smoke
+R4.2,Over-broad Delivery exposure,High,Security+CMS,DT delivery audit
+R4.3,Preview token leakage,High,Security,Short TTL noindex training
+R4.6,Stale cache no webhook fan-out,High,Infra,Multi-instance invalidation strategy
+R4.7,Webhook silent failure,High,Infra,Metrics alerts idempotency
+R4.11,Locale URL ambiguity,High,Product+CTO,Close B2

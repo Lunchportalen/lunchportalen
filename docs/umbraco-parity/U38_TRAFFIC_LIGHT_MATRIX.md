@@ -1,0 +1,29 @@
+# U38 Traffic Light Matrix
+
+| Kategori | Status | Evidence | Why | Required action |
+| --- | --- | --- | --- | --- |
+| Extension registry parity | GREEN | `lib/cms/backofficeExtensionRegistry.ts`, `tests/backoffice/settingsRoutes.smoke.test.ts` | Settings workspace views now derive from the canonical collection registry. | Keep registry as single source of truth. |
+| Sections / menus parity | YELLOW | `SettingsSectionChrome.tsx`, registry-derived views | Stronger than before, but not full Bellissima menu parity across every section. | Continue aligning non-settings section menus. |
+| Tree / workspace parity | YELLOW | Bellissima workspace model, editor convergence docs | Workspace model is clearer, but full tree/workspace parity still needs more UI proof. | Capture route proof and continue shell convergence. |
+| Workspace context parity | YELLOW | `backofficeWorkspaceContextModel.ts`, `U38_WORKSPACE_TRUTH_MODEL.md` | Context owns more actions/shortcuts now, but `ContentWorkspace.tsx` is still large. | Further reduce composition responsibility in the workspace root. |
+| Workspace views parity | GREEN | Registry-derived settings views, settings tabs | Views are now tighter to the canonical registry. | Preserve derived-view pattern. |
+| Workspace actions parity | GREEN | `management` / `schema` / `governance` actions in workspace model | Actions are more explicit and model-driven. | Extend same clarity to remaining domain surfaces. |
+| Footer app parity | GREEN | `schema_shortcut` footer app, workspace model tests | Footer shortcut is now a real primitive rather than ad hoc UI. | Expand only through the model, not local props. |
+| Entity actions parity | YELLOW | Workspace entity actions + management routes | Better aligned, but not fully uniform across tree, discovery and all collections. | Standardize remaining action menus and collection affordances. |
+| Collection view parity | YELLOW | Settings collections and detail workspaces | Stronger settings flow, but collection behaviors are still uneven across modules. | Continue collection-level consolidation. |
+| Document type parity | YELLOW | document type detail workspace flow cards | Feels more first-class, but still code-governed/read-only. | Add lifecycle depth only if backed by real persisted contracts. |
+| Data type parity | YELLOW | data type detail workspace flow cards | Usage and UI mapping are visible, but CRUD parity is not present. | Keep honesty boundary; expand only with real backend support. |
+| Property editor parity | YELLOW | `getPropertyEditorFlowForDocumentType`, `getPropertyEditorFlowForKind` | The model is explicit now, but not fully Umbraco-level object lifecycle. | Continue mapping and lifecycle clarity without fake CRUD. |
+| Property value preset parity | YELLOW | presets/defaults surfaced in settings and governance | Presets are visible, but still not a full persisted preset management system. | Add lifecycle only if storage truth exists. |
+| Create policy parity | YELLOW | route is required and linked, but no new runtime proof captured | Present in the model, but not visually proven in U38 yet. | Capture proof and continue collection/action alignment. |
+| Settings section parity | YELLOW | settings flow cards, registry-derived tabs, `U38_SETTINGS_RUNTIME.md` | Clearly improved, but screen proof is still missing. | Capture route proof and keep reducing explanatory clutter. |
+| Management / delivery clarity | GREEN | content workspace governance links, global settings auth, runtime docs | Control-plane versus runtime boundaries are clearer and better enforced. | Maintain fail-closed separation. |
+| Discovery / quick find parity | YELLOW | Bellissima model integration but no broad discovery overhaul | Not regressed, but not fully converged to one discovery language. | Continue action/collection standardization. |
+| Unified history parity | YELLOW | publish contract test, audit/runtime docs | Runtime story is more honest, but history UX is not fully unified in Bellissima terms. | Add proof for degraded audit state and continue history cleanup. |
+| Week/menu publishing from CMS | YELLOW | existing module posture + decision docs | Existing governance path remains intact and no duplicate truth was introduced, but U38 did not deeply extend it. | Keep current truth model; do not over-claim beyond existing pipeline. |
+| AI governance / modularity | YELLOW | settings management object model, existing AI surfaces | Still present in the same control-plane logic, but not fully converged in proof/UI. | Continue integrating AI governance into the same collection/workspace patterns. |
+| Access/security | GREEN | superadmin gate on global settings POST, locked runtime boundaries | Security posture tightened rather than relaxed. | Keep server-side authority on control-plane writes. |
+| Cron/worker/job safety | YELLOW | module posture registry marks remaining limits honestly | Safety posture is honest, but several modules remain non-broad-live. | Keep posture explicit; do not over-promote. |
+| Support/ops | YELLOW | `x-rid`, ESG `query_failed`, debug login fix | Operational tracing improved, but browser proof for degraded states is still absent. | Capture degraded tree/audit proof and keep operator messaging explicit. |
+| Scale confidence | YELLOW | green gates and broad regression suite | Verification is strong, but architectural heaviness remains in the editor root. | Continue convergence before claiming world-class scale confidence. |
+| Overall Umbraco 17 parity | RED | missing `U38` screenshot proof, remaining workspace-host and lifecycle gaps | Structural direction is stronger, but the required visual proof and final convergence are not complete. | Capture all required screenshots and keep tightening the editor host and management-object lifecycle. |

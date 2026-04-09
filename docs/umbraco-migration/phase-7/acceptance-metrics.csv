@@ -1,0 +1,10 @@
+metric_id,metric_name,definition_summary,evidence_artifact,owner_role,target_threshold_or_governed
+A1,Editor autonomy rate,Pct tasks without engineer live session,Task log attestation,Product editorial signoff owner,>=80pct tasks 100pct S7-S10
+A2,Scenario completion,Pct mandatory scenario rows PASS,Per-scenario tickets,Support owner,100pct or signed waiver per row
+A3,Workflow adherence,Zero publishes outside Workflow where required,Umbraco audit Delivery logs,CMS admin,0 violations
+A4,Preview trust,Preview matches draft culture no cache bleed,HAR server log checklist,Lead developer,100pct S6 runs PASS
+A5,Publish correctness,Next staging matches Delivery within SLA,Screenshot JSON etag,Lead developer,100pct S11 PASS
+A6,Legacy dependency,Zero legacy editor API for migrated types,Logs attestation,Security Migration lead,0 incidents
+A7,Support burden,Engineer live hours over editor pilot hours,Time log pilot-support,Support owner,<20pct ratio
+A8,Defect density,P0 count per pilot week,Tracker,Support owner,0 open P0 at signoff
+A9,Training effectiveness,Quiz pass lab completion,Roster LMS,Editorial lead,100pct cohort

@@ -1,0 +1,8 @@
+row,dev,staging,live,control_type
+Delivery API,enable when Cloud dev exists,must enable for integration,must enable,PC+RT
+Delivery index rebuild,after model change,after each DT deploy,after each DT deploy,PC+RT
+Media Delivery API,as needed for dev,must enable for parity,must enable,PC+RT
+Preview,may be partial,full path required,full path required,PC+RT
+Webhooks,optional/ngrok,register to staging URL,register production URL,PC+RT
+Caching,relaxed,mirror live policy,webhook+tags,RT
+Secrets,local/host only,Cloud+staging host,production host,PC+RT

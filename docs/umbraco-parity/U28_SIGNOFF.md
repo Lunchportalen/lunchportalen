@@ -1,0 +1,24 @@
+# U28 — Sign-off checklist
+
+- [x] CMS synlig kontrollsenter (innhold + settings insights)
+- [x] Sections/trees/workspaces ikke fragmentert av U28
+- [x] Runtime-sannhet uendret for ordre/billing/week
+- [x] Uke/meny-kjede uendret
+- [x] Ingen dobbel week-sannhet
+- [x] Kontrolltårn (vekst) med konsistente entity-lenker
+- [x] Discovery uendret
+- [x] Publish/history ikke svekket
+- [x] AI ikke ombygget
+- [x] Workspace context uendret strukturelt
+- [x] Actions: delt primær stil der implementert
+- [x] Collections + batch: governance insights + vekst
+- [x] Property/editor story uendret i kjerne
+- [x] Settings eksplisitt (coverage + batch)
+- [x] Creation flow uendret
+- [x] Type governance / allowlist utvidet med coverage-innsikt
+- [x] Legacy posture ærlig (batch reviewbar)
+- [x] Management read eksplisitt
+- [x] Modulposture ikke falskt oppgradert
+- [x] Build green — `npm run build:enterprise`
+- [x] Tests green — `npm run test:run`
+- [ ] Ingen kritisk RED uadressert

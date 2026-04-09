@@ -1,0 +1,8 @@
+parity_dimension,validation_level,acceptable_delta_notes,unacceptable_delta_notes,default_method
+field_parity,L1,trim whitespace documented,missing required property,automated diff
+block_parity,L2,key order only; type sequence must match,wrong type or missing block,structural diff + hash
+slug_parity,L1,none,collision or wrong path,automated string compare
+seo_parity,L1,canonical merge per manifest,missing robots/canonical on indexable,automated
+media_ref_parity,L1+L2,URL host differs if same hash,broken 404 or wrong asset,binary check + HEAD
+redirect_parity,L1,n/a for Phase 5 execution,404 on legacy URL after cutover,post-cutover scan (Phase 7+)
+tree_parity,L1,sort tie-break documented,wrong parent or order,tree walk compare

@@ -1,0 +1,9 @@
+capability,content_types_affected,actor,allowed_action,output_form,may_modify_content,may_publish,required_approval,audit_requirement,keep_reject,confidence
+alt_text_suggestion,image blocks,Author/Editor,suggest alt,suggestion+diff,Yes on explicit apply,No,Editor apply,log before/after,Keep,High
+seo_meta_suggestion,webPage,Author/Editor,suggest title/desc,suggestion,Yes on apply,No,Editor for live,log fields,Keep,High
+copy_rewrite_suggestion,marketing pages,Author/Editor,paraphrase,diff,Yes on apply,No,Editor review,log section,Keep,High
+summary_generation,long pages,Author/Editor,excerpt,draft text,Yes on apply,No,Editor public-facing,log,Keep,Medium
+taxonomy_suggestion,if modeled,Editor,suggest tags,structured,Yes on apply,No,Editor,log,Keep or Reject,Low
+translation_assist,nb to en,B2 gated,Translator,translate segments,suggestion,Yes on apply,No,Approver target culture,log cultures,Defer until B2,Low
+bulk_seo_fix_all,all pages,REJECT,n/a,n/a,No,No,n/a,n/a,Reject,High
+image_generation_draft,marketing,Editor,create draft media,asset draft,Yes unpublished only,No,Editor+brand,log class+asset,Keep with policy,Medium

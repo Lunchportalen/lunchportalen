@@ -1,0 +1,23 @@
+source_system,source_entity_field,target_umbraco_type_property,transform_rule,required_validation,disposition,owner,confidence
+Postgres,content_pages.id,migration_mapping.umbraco_key,Map legacy id to node key via sidecar table,Unique legacy id,migrate (mapping only),Migration lead,High
+Postgres,content_pages.title,webPage.pageTitle,Trim copy,Non-empty for published,migrate,Editorial lead,High
+Postgres,content_pages.slug,webPage.slug,Copy + reserved path check,Unique per parent+culture,migrate,Solution architect,High
+Postgres,content_pages.tree_parent_id,Umbraco document parent,Map via mapping table,Parent exists,migrate,Migration lead,High
+Postgres,content_pages.tree_root_key,Content tree folder placement,Map virtual root per Phase 2-3,Allowed root for DT,migrate,Solution architect,High
+Postgres,content_pages.tree_sort_order,Umbraco sortOrder,Numeric copy,Consistent siblings,migrate,Migration lead,High
+Postgres,content_pages.page_key,webPage.pageKey or appShellPage.*,Route to DT per B1 decision,B1 closed or manual_review,manual_review if B1 open,Product owner,Medium
+Postgres,variant.locale,Umbraco culture variant,Map nb/en per B2 policy,Culture enabled,migrate,CTO delegate,High
+Postgres,variant.environment,N/A,Do not migrate,N/A,skip,Migration lead,High
+Postgres,content_pages.status,N/A,Initial import state only; not ongoing authority,No app publish after cutover,skip (ongoing),Platform admin,High
+JSON envelope,documentType,Umbraco Document Type alias,Alias map 1:1,Allowlist,migrate,Lead developer,High
+JSON envelope,fields.*,Named DT properties,Per-key map in appendix,Each key accounted,migrate,Lead developer,Medium
+JSON,body.blocks[],webPage blocks root,Per-block mapper + ordering,Type in closed inventory B3,migrate,Migration lead,Medium
+JSON,blocks[].id,N/A,Drop for public content,N/A,skip,Migration lead,High
+JSON,blocks[].type,Element Type alias,Registry map,Known type,migrate,Lead developer,Medium
+JSON,blocks[].imageId / media refs,Media Picker UDI,Resolve+import Media,Delivery resolvable,migrate,Migration lead,High
+JSON,body.meta.seo.*,Page SEO properties,Flatten per cmsPageMetadata,Required fields for indexable,migrate,Editorial lead,High
+JSON,body.meta.social.*,OG/Twitter properties,Copy,OG image resolves,migrate,Editorial lead,High
+JSON,body.meta.intent.*,Optional intent group,Copy,No PII,migrate,Editorial lead,Medium
+JSON,body.meta.cro.*,Optional CRO group,Copy,No PII,migrate,Editorial lead,Medium
+JSON,body.meta.diagnostics,N/A,Drop,N/A,skip,Migration lead,High
+JSON,body.meta.seoRecommendations,N/A or editor note,Default DROP; optional comment import,Human review,manual_review,Editorial lead,Medium

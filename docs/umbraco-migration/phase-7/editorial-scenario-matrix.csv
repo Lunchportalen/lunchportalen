@@ -1,0 +1,14 @@
+scenario_id,scenario_name,actor,content_type,preconditions_summary,steps_summary,touched_types,expected_outcome,workflow_expectation,evidence_required,failure_severity,confidence
+S1,Create page,Editor,webPage,Staging Workflow on; parent folder; Author group,Create webPage nb culture title slug blocks Save,Parent folder new webPage Element Types,Draft in tree no live URL until publish,Draft saved not live,Screenshot tree node key ticket,P0,High
+S2,Edit page,Editor,webPage,Existing webPage,Edit fields blocks Save,webPage blocks,Changes persist revision visible,Per Workflow state,Before after revision ref ticket,P0,High
+S3,Add reorder blocks,Editor,webPage,Editable state,Add Element Type configure drag Save,Element Types Block List,Order stable validation clear,Save draft submit may need SEO,Screenshot block editor ticket,P0,High
+S4,Manage media,Editor,Media + webPage,Media folders exist,Upload pick into block Save,Media Types block props,Media Delivery resolves 200,Same as S1-3,Media ID page ref link check ticket,P0 High P1 UX,High
+S5,Localize content,Editor,webPage,Multi-culture signed B2 closed,Switch culture translate Save,Culture variants,Completeness per policy no wrong culture,Variant gates if any,Per-culture screenshots URL note,P0 if multi-locale N A if waived,Medium until B2 closed
+S5-alt,Single-culture completeness,Editor,webPage,nb or single signed culture,Complete mandatory fields attempt submit,webPage,Validation matches policy,Submit when mandatory met,Checklist culture policy screenshot,P1,High
+S6,Preview content,Editor,webPage,Phase 4 preview on staging,Umbraco Preview open link,Preview channel Next,Draft visible noindex no published-cache leak,N A preview not publish,HAR server log screenshot banner,P0,High
+S7,Submit for approval,Editor,webPage,Draft complete mandatory,Workflow Submit for review,Workflow instance,State review approver notified,Mandatory no direct publish,Workflow state notification ticket,P0,High
+S8,Approve,Approver,webPage,Item in review,Workflow Approve,Workflow,Approved audit actor time,SoD respected,Audit export screenshot ticket,P0,High
+S9,Reject,Approver,webPage,Item in review,Reject with comment,Workflow,Author revises no partial publish,Reject first-class,Screenshot reject feedback ticket,P0,High
+S10,Publish,Approver,webPage,Approved,Publish Live,Delivery index,Published Delivery updated webhooks,No Workflow bypass,URL timestamp JSON hash etag ticket,P0,High
+S11,Verify published in Next,Editor or Approver,webPage,S10 complete,Anonymous staging URL verify,Next published route,Change visible within SLA no preview leak,N A,Side by side screenshot cache header ticket,P0,High
+S12,Edit site settings,Editor,siteSettings,Singleton permitted,Change low-risk default Workflow publish,siteSettings,Dependent behavior per design,Full Workflow if mandated,Subset S6-S11 ticket,P1 if in slice,Medium

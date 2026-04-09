@@ -1,0 +1,25 @@
+# U37 Signoff
+
+- [x] CMS is the visible control center
+- [x] sections / trees / workspaces are explicit and coherent
+- [x] all critical domains have explicit CMS linkage
+- [ ] week/menu can be published fully inside backoffice CMS
+- [x] no duplicate week truth reintroduced
+- [x] control towers are aligned under CMS
+- [ ] discovery is fast and fully coherent
+- [x] history/publish story is explicit and honest
+- [x] AI is governed, modular and human-reviewed
+- [x] workspace context is explicit
+- [x] workspace views are explicit
+- [ ] actions and footer/status areas are fully coherent
+- [ ] collections and entity actions are fully coherent
+- [x] settings / document types / data types are explicit
+- [x] property editor system is explicit
+- [x] type governance is enforced where claimed
+- [x] block allowlist is enforced where claimed
+- [x] module posture is honest
+- [x] compat drift is removed or explicitly boxed in
+- [x] runtime truth corrections are actually landed
+- [x] build green
+- [x] tests green
+- [x] no critical RED left unaddressed

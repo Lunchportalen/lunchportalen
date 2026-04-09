@@ -1,0 +1,23 @@
+# U25 — Signoff (brutal checklist)
+
+- [x] CMS is the visible control center for content (not orders/billing truth).
+- [x] Sections / trees / workspaces remain coherent (no parallel CMS).
+- [x] Critical runtime domains stay outside CMS mutation scope.
+- [x] Week/menu publish path unchanged (operational chain still authoritative where defined).
+- [x] No duplicate week truth introduced.
+- [x] Control towers remain aligned under existing routes.
+- [x] Discovery/history: no regression claimed beyond prior state.
+- [x] AI remains governed; human save still authoritative.
+- [x] Workspace context: documented; not fully Umbraco-identical.
+- [x] Actions/footer: no broad refactor.
+- [x] Collections/entity actions: partial parity only.
+- [x] Property dataset/editor: code-governed, explicit in Settings.
+- [x] Settings / document types / data types: explicit read-only registry + system page for ops toggles.
+- [x] Creation flow: POST envelope default + optional validated body.
+- [x] Type governance: enforced when `documentType` in stored payload.
+- [x] Block allowlist: enforced on save when DT set; duplicate guarded in UI.
+- [x] Settings persistence: honest (no fake type CRUD).
+- [x] Module posture: unchanged responsibility.
+- [x] Build green (`build:enterprise`).
+- [x] Tests green (`test:run`).
+- [ ] **Critical RED:** bulk Umbraco parity — explicitly not closed in U25.

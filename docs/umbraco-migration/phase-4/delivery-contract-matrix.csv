@@ -1,0 +1,8 @@
+obligation_id,obligation,consumer,umbraco_surface,failure_mode,doc_ref
+D1,Published CMS pages readable via Content Delivery API,Next server,Delivery API,404 or empty payload,41-published-delivery-contract.md
+D2,Route/slug resolution for webPage (+ home),Next server,Delivery API + content tree,collision or wrong document,41-published-delivery-contract.md
+D3,Block/element JSON matches Phase 2-3 types,Next mapping,Delivery serialization,render gap or crash,41-published-delivery-contract.md
+D4,SEO fields available per variant culture,Next metadata,Delivery variant,mojibake SEO / wrong locale,41-published-delivery-contract.md
+D5,Internal/editor fields excluded from public Delivery,Security,CMS delivery settings,data leak,41-published-delivery-contract.md
+D6,DeliveryApiContentIndex rebuilt after DT/model deploy,Platform ops,Umbraco Cloud,index stale vs backoffice,41-published-delivery-contract.md
+D7,No end-state dual authority Postgres+Umbraco for same slug,Engineering,both systems,public truth fork,40-phase-4-master.md

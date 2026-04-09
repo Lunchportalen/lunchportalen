@@ -1,0 +1,25 @@
+# U27 — Sign-off checklist
+
+- [x] CMS er synlig kontrollsenter for innhold/redaksjon
+- [x] Sections/trees/workspaces er eksplisitte nok (ingen stor U27-ombygging)
+- [x] Kritiske domener har eksisterende CMS-kobling; U27 rører ikke runtime-sannhet
+- [x] Uke/meny kan fortsatt publiseres via eksisterende CMS-kjede (uendret)
+- [x] Ingen ny dobbel week-sannhet introdusert
+- [x] Kontrolltårn under CMS (vekst) har tryggere bulk (clipboard)
+- [x] Discovery uendret i U27
+- [x] History/publish story uendret
+- [x] AI ikke ombygget
+- [x] Workspace context uendret strukturelt
+- [x] Actions/footer: vekst bulk gruppert
+- [x] Collections + entity actions: delvis forbedret (vekst) + dokumentert
+- [x] Property/editor story uendret
+- [x] Settings / document / data types: hub + U27 insights
+- [x] Creation flow uendret
+- [x] Type governance / allowlist uendret i semantikk
+- [x] Legacy posture ærlig (insights + cap)
+- [x] Settings persistence ærlig
+- [x] Management read model eksplisitt (registry + usage)
+- [x] Modulposture ikke falskt oppgradert
+- [x] Build green — `npm run build:enterprise` (2026-03-30)
+- [x] Tests green — `npm run test:run` (2026-03-30)
+- [ ] Ingen kritisk RED uadressert — se matrix

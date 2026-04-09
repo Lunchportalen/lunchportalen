@@ -1,0 +1,7 @@
+obligation_id,obligation,owner_plane,consumer,notes,doc_ref
+M1,CMS binaries in Umbraco Media only,Umbraco Media library,Next,No operational file mix,44-media-delivery-contract.md
+M2,Public URLs via Media Delivery API (separate enablement),Umbraco Cloud,Next server,broken images if off,44-media-delivery-contract.md
+M3,Block-level alt (+ caption) variant-aware,Element types,Next a11y,until L3 signed use Phase 2-3 default,44-media-delivery-contract.md
+M4,Focal point / crop aliases authored in CMS,Umbraco,Next transform params,do not invent focal,44-media-delivery-contract.md
+M5,SVG policy follows signed L2,Security + CMS,Next,sanitize owner if allowed,44-media-delivery-contract.md
+M6,Media 404 does not crash page,Next runtime,CmsBlockRenderer,monitor + placeholder,44-media-delivery-contract.md

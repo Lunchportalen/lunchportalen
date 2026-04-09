@@ -1,0 +1,10 @@
+id,description,owner,mitigation,severity,confidence
+R6.1,API User over-privilege,Security,Scope matrix+review,High,High
+R6.2,Browser secret exposure,Lead developer,Server proxy+lint,High,High
+R6.3,AI capability creep,Editorial lead,Matrix+change ctrl,Medium,Medium
+R6.4,Prompt policy drift,Security,Versioned policy,Medium,Medium
+R6.5,Silent mutation,CTO,Anomaly alerts,High,Medium
+R6.6,Cross-tenant leakage,Security,Tenant-scoped prompts,High,Medium
+R6.7,Missing audit,Platform admin,Required log fields,High,High
+R6.8,Kill-switch failure,Platform admin,Runbook+synthetic,Medium,Medium
+R6.9,MCP misuse,Eng manager,Boundary+reviews,Medium,High

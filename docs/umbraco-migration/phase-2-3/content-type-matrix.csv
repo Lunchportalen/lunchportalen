@@ -1,0 +1,11 @@
+current_concept,proposed_document_type,purpose,parent_rules,allowed_children,variants_yes_no,workflow,notes,confidence
+program_single_site,siteRoot,optional container,none,webSite settingsFolder contentFolder,no,N/A,optional if single-site,medium
+public_home,webPageHome,homepage reserved URL,contentFolder or siteRoot,none or per policy,yes,full,
+standard_page,webPage,routable marketing page,contentFolder or nested webPage,webPage,yes,full,maps legacy page alias,high
+landing_optional,webLandingPage,stricter block allowlist,same as webPage,webLandingPage or webPage,yes,full,only if needed vs webPage,medium
+folder_global,editorialFolderGlobal,shared snippets,content root,snippets folders,yes on children,N/A on folder,stock folder pattern,high
+folder_design,editorialFolderDesign,design experiments,content root,allowed types,yes on children,per child,medium
+app_overlays,appShellPage,in-app shell content,overlaysFolder,none,yes,full,scope decision required,medium
+site_settings,siteSettings,singleton defaults,settingsFolder,none,yes,full,,high
+redirect_rule,redirectRule,editorial redirect,settingsFolder,none,optional,full,or use package/infra,medium
+nav_optional,navigationRoot,explicit menu,settingsFolder,navigationItem,yes,full,only if IA needs it,medium

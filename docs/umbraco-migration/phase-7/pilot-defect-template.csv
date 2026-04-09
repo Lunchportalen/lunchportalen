@@ -1,0 +1,16 @@
+field_name,description,example_or_format
+defect_id,Unique ID,PHASE7-123
+created_at,ISO datetime,2026-04-05T10:00:00Z
+reporter,Display name,
+severity,P0 P1 P2 P3,P1
+scenario_id,Link to S1-S12,S6
+environment,staging umbraco next versions,
+content_type_affected,webPage etc,webPage
+summary,One line,
+steps_to_reproduce,Bulleted in cell or ticket link,
+expected_per_contract,Phase 4 or Phase 7 doc ref,
+actual_observed,,
+evidence_links,Screenshots HAR logs,
+blocks_pilot_signoff,Y N,Y
+owner_triage,Role name,
+resolution_status,open fixed waived deferred,

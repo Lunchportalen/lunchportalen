@@ -1,0 +1,6 @@
+group,create,edit,delete_move,media_upload,workflow_submit,workflow_approve,publish_live,admin_users
+Authors,yes_limited,yes_drafts,no_limited,yes,yes,no,no,no
+Editors,yes,yes_broad,policy,yes,yes,maybe_peer,no,no
+Approvers,no_default,fix_if_policy,no,no,no,yes,yes_default,no
+Web_admins,yes,yes,yes,yes,yes,break_glass_if_policy,yes_break_glass,no
+Administrators,-,-,-,-,-,-,-,yes

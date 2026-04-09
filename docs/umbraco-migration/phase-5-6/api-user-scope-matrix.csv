@@ -1,0 +1,6 @@
+identity_name,purpose,environment,is_api_user,scope_summary,allowed_operations,forbidden_operations,rotation_owner,audit_requirement,emergency_disable
+au-migration-etl-staging,Staging bulk import,Staging,Yes,Subtree migration-staging + DT allowlist,Create/update draft nodes,Publish live,Platform admin,Per-run log + run id,Revoke secret
+au-migration-etl-live,Controlled live import,Live,Yes,Narrow DT allowlist + subtree,Draft upsert only,Workflow approve; broad delete,CTO delegate,Full audit,Revoke secret + job stop
+au-delivery-readonly-smoke,Delivery JSON smoke,Staging+Live,Yes,Delivery read scope,GET published,N/A write,Lead developer,CI artifact,Rotate read key
+au-search-indexer,External search index,TBD,Yes,Delivery read; Management read optional,Read content,Write unless approved,Security,Job logs,Disable integration
+FORBIDDEN_SHARED_ADMIN,Anti-pattern,N/A,No,N/A,N/A,Any use,Security,N/A,N/A

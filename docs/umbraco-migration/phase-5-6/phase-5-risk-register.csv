@@ -1,0 +1,11 @@
+id,description,owner,mitigation,severity,confidence
+R5.1,Non-idempotent ETL,Migration lead,Mapping+upsert+dry-run,High,High
+R5.2,Hidden transforms,Solution architect,Manifest-only changes,High,Medium
+R5.3,Legacy writes continue,Lead developer,Freeze+metrics,High,Medium
+R5.4,Slug collisions,Editorial lead,Validation+cleanup,High,High
+R5.5,Media metadata loss,Editorial+A11y,Alt rules+PB6,Medium,Medium
+R5.6,Redirect gaps,Product owner,Redirect manifest,Medium,High
+R5.7,Parity false positives,Migration lead,Canonical normalization,Medium,Medium
+R5.8,Unknown block shapes,Lead developer,Quarantine+B3,High,Medium
+R5.9,Source authority ambiguity,Solution architect,Postgres default,Medium,High
+R5.10,Locale unset B2,CTO+Product,Close B2 before live,High,High

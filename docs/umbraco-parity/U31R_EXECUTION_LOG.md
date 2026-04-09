@@ -1,0 +1,50 @@
+# U31R Execution Log
+
+## 2026-03-30
+
+- Read and mapped the requested CMS/backoffice, API, lib, UI, docs, and config areas before editing.
+- Verified the canonical content editor flow as:
+  - `content/[id]/page.tsx`
+  - `content/_workspace/ContentEditor.tsx`
+  - `content/_components/ContentWorkspace.tsx`
+  - `content/_workspace/ContentWorkspaceLayout.tsx`
+  - `content/_tree/ContentTree.tsx`
+- Verified the canonical settings section flow as:
+  - `settings/layout.tsx`
+  - `settings/_components/SettingsSectionChrome.tsx`
+  - `settings/page.tsx`
+- Read the latest terminal outputs:
+  - captured `build:enterprise` finished green
+  - captured `typecheck` finished green in an earlier run
+- Verified current IDE diagnostics still show:
+  - missing module `../_workspace/ContentEditor` in `content/page.tsx`
+  - missing module `../_components/CreateMissingPageClient` in `content/page.tsx`
+  - tree-route type error on `fetched.error`
+- Verified tree and audit already contain real degraded runtime behavior and should be hardened, not replaced.
+- Created the U31R execution docs and moved directly into implementation scope.
+- Restored `app/(backoffice)/backoffice/content/page.tsx` to a pure overview route backed by `ContentDashboard`.
+- Kept `app/(backoffice)/backoffice/content/[id]/page.tsx` as the sole detail/editor owner for `ContentEditor` and `CreateMissingPageClient`.
+- Fixed the tree-route discriminated-union issue by narrowing on `fetched.ok === false`.
+- Hardened tree degraded messaging in `mapTreeApiRoots.ts` and `ContentTree.tsx` for missing tree columns and missing tables.
+- Reframed the backoffice shell, topbar, section shell, and content workspace to strengthen section -> tree -> workspace posture.
+- Reworked preview, inspector, history, publish/save, and footer status zones to reduce box-in-box noise and surface degraded runtime honestly.
+- Promoted settings to direct `SettingsSectionChrome` layout ownership and clarified first-class/code-governed posture on the overview page.
+- Added focused verification tests for:
+  - content section root rendering the dashboard overview
+  - tree degraded hint mapping for missing tree columns
+  - audit degraded `historyStatus` and `operatorMessage`
+- Ran verification in RC order:
+  - `npm run typecheck` -> PASS
+  - `npm run lint` -> PASS (existing warnings only)
+  - `npm run build:enterprise` -> PASS
+  - `npm run test:run -- tests/backoffice/content-page-smoke.test.tsx tests/cms/mapTreeApiRoots.test.ts tests/api/contentAuditLogRoute.test.ts` -> PASS
+  - `npm run test:run` -> PASS
+  - `npm run sanity:live` -> soft gate warning because `http://localhost:3000` was unreachable
+- Added the remaining runtime documentation pack:
+  - `U31R_IMPORT_GRAPH_RUNTIME.md`
+  - `U31R_TREE_AND_AUDIT_RUNTIME.md`
+  - `U31R_BACKOFFICE_IA_RUNTIME.md`
+  - `U31R_CONTENT_WORKSPACE_RUNTIME.md`
+  - `U31R_PREVIEW_INSPECTOR_RUNTIME.md`
+  - `U31R_SETTINGS_RUNTIME.md`
+  - `U31R_VERIFICATION.md`

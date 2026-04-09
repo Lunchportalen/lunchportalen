@@ -1,0 +1,16 @@
+source_field,source_system,disposition,target_umbraco,rationale
+content_pages.title,Postgres,KEEP,webPage.pageTitle,
+content_pages.slug,Postgres,KEEP,webPage.slug,
+content_pages.status,Postgres,DROP,Umbraco publish+Workflow,single authority
+content_pages.tree_*,Postgres,KEEP_SEMANTIC,tree parent/sort,Umbraco tree
+body.blocks,JSON,SPLIT,Block editor + elements,no blob
+body.meta.seo,JSON,KEEP,page SEO properties,
+body.meta.social,JSON,KEEP,page social properties,
+body.meta.intent,JSON,KEEP,optional property group,
+body.meta.cro,JSON,KEEP,optional property group,
+body.meta.diagnostics,JSON,DROP,,not editorial
+documentType,JSON,KEEP,Umbraco Document Type,native
+block imageId strings,JSON,MOVE_TO_MEDIA,Media Picker,
+ctaPrimaryHrefKind,JSON,DROP,URL Picker,
+pricing.plans empty,JSON,KEEP_SEMANTIC,elPricing API mode,
+Sanity menuContent,Sanity,MOVE_OUT_OF_CMS,,operational
