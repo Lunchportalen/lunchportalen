@@ -73,6 +73,8 @@ const REQUIRED_TABLES = [
   "entities",
   "entity_relations",
   "experiment_results",
+  "ab_experiments",
+  "ab_variants",
 ];
 
 const REQUIRED_CONSTRAINTS = [
@@ -85,7 +87,7 @@ const REQUIRED_INDEXES = [
   "outbox_claim_idx",
 ];
 
-const REQUIRED_FUNCTIONS = ["lp_order_set"];
+const REQUIRED_FUNCTIONS = ["lp_order_set", "lp_pgrst_reload_schema"];
 
 function run(cmd, args = [], opts = {}) {
   return new Promise((resolve) => {

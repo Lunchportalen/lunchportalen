@@ -112,9 +112,15 @@ function makeAdminMock(seed?: { profiles?: any[]; company_locations?: any[]; kit
 
 let adminDb: any;
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => adminDb,
-}));
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
@@ -156,7 +162,7 @@ describe("kitchen batch/start", () => {
     expect(json?.data?.batch?.id || json?.batch?.id).toBeTruthy();
   });
 
-  test("kitchen kan ikke starte batch før 08:05", async () => {
+  test("kitchen kan ikke starte batch fï¿½r 08:05", async () => {
     mockCutoff = "TODAY_OPEN";
     const req = mkReq("http://localhost/api/kitchen/batch/start", {
       method: "POST",

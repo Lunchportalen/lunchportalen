@@ -5,16 +5,12 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { motionTokens, motionClasses } from "@/lib/ui/motionTokens";
 import { renderBlock } from "@/lib/public/blocks/renderBlock";
-import type { ReactElement } from "react";
 
 const ROOT = process.cwd();
-
-function getSectionClassName(out: unknown): string | undefined {
-  const el = out as ReactElement<{ className?: string }> | null;
-  return el?.props?.className;
-}
 
 describe("Motion system proof — shared primitives", () => {
   test("motionTokens has required durations and ease", () => {
@@ -63,6 +59,7 @@ describe("Motion system proof — reduced-motion in globals.css", () => {
     const css = readFileSync(join(ROOT, "app", "globals.css"), "utf-8");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
     expect(css).toContain(".lp-hero-frame");
+    expect(css).toContain(".lp-hero-content");
     expect(css).toContain(".lp-shine");
     expect(css).toContain(".lp-btn");
     expect(css).toContain(".lp-card");
@@ -76,24 +73,30 @@ describe("Motion system proof — reduced-motion in globals.css", () => {
 });
 
 describe("Motion system proof — renderBlock uses shared motion (preview/public parity)", () => {
-  test("hero block output includes lp-motion-card", () => {
+  test("legacy hero type renders via enterprise hero_bleed (full-bleed shell)", () => {
     const out = renderBlock({ id: "h1", type: "hero", data: { title: "T" } }, "prod", "nb");
-    expect(getSectionClassName(out)).toContain("lp-motion-card");
+    expect(out).not.toBeNull();
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("w-screen");
+    expect(html).toContain("max-w-[100vw]");
   });
 
   test("richText block output includes lp-motion-card", () => {
     const out = renderBlock({ id: "r1", type: "richText", data: {} }, "prod", "nb");
-    expect(getSectionClassName(out)).toContain("lp-motion-card");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("lp-motion-card");
   });
 
   test("cta block output includes lp-motion-card", () => {
     const out = renderBlock({ id: "c1", type: "cta", data: {} }, "prod", "nb");
-    expect(getSectionClassName(out)).toContain("lp-motion-card");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("lp-motion-card");
   });
 
   test("image block output includes lp-motion-card", () => {
     const out = renderBlock({ id: "i1", type: "image", data: {} }, "prod", "nb");
-    expect(getSectionClassName(out)).toContain("lp-motion-card");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("lp-motion-card");
   });
 
   test("form block with formId wraps in lp-motion-card", () => {
@@ -102,8 +105,8 @@ describe("Motion system proof — renderBlock uses shared motion (preview/public
       "prod",
       "nb"
     );
-    const el = out as ReactElement<{ className?: string; children?: unknown }> | null;
-    expect(el).not.toBeNull();
-    expect(el?.props?.className).toContain("lp-motion-card");
+    expect(out).not.toBeNull();
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("lp-motion-card");
   });
 });

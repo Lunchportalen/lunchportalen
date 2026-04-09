@@ -28,7 +28,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
   requireRoleOr403: requireRoleOr403Mock,
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: () => ({
       select: () => ({
@@ -38,7 +43,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     }),
   }),
-}));
+  };
+});
 
 describe("GET /api/backoffice/content/tree — auth and safe failure", () => {
   beforeEach(() => {

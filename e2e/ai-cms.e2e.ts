@@ -3,25 +3,23 @@
 
 import { test, expect } from "@playwright/test";
 import {
-  getCredentialsForRole,
   loginViaForm,
+  resolveBackofficeSuperadminCredentialsForE2E,
   waitForPostLoginNavigation,
-  type E2ERole,
 } from "./helpers/auth";
 import { assertProtectedShellReady, waitForMainContent } from "./helpers/ready";
 
-const hasSuperadminCreds =
-  !!(process.env.E2E_SUPERADMIN_EMAIL && process.env.E2E_SUPERADMIN_PASSWORD) ||
-  !!(process.env.E2E_TEST_USER_EMAIL && process.env.E2E_TEST_USER_PASSWORD);
+const hasSuperadminCreds = !!resolveBackofficeSuperadminCredentialsForE2E();
 
 function requireSuperadmin() {
-  const creds = getCredentialsForRole("superadmin" as E2ERole);
-  if (!creds) {
+  const resolved = resolveBackofficeSuperadminCredentialsForE2E();
+  if (!resolved) {
     throw new Error(
-      "Missing superadmin credentials. Set E2E_SUPERADMIN_EMAIL/PASSWORD or E2E_TEST_USER_EMAIL/PASSWORD."
+      "Missing superadmin credentials. Set E2E_SUPERADMIN_EMAIL/PASSWORD or E2E_TEST_USER_EMAIL/PASSWORD, or run with LP_CMS_RUNTIME_MODE=local_provider (canonical login on /login), or LP_CMS_RUNTIME_MODE=remote_backend with LP_REMOTE_BACKEND_AUTH_HARNESS=1 (remote harness)."
     );
   }
-  return creds;
+  const { email, password } = resolved;
+  return { email, password };
 }
 
 test.describe("CMS AI — suggestion apply → save → reload → persisted", () => {

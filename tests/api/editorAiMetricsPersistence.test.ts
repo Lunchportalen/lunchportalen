@@ -9,13 +9,17 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const hasDb = Boolean(url?.trim()) && Boolean(serviceKey?.trim());
+import type { Database } from "@/lib/types/database";
+import {
+  hasRemoteSupabaseIntegrationEnv,
+  readRemoteSupabaseIntegrationEnv,
+} from "@/tests/_helpers/remoteSupabaseIntegration";
 
-function adminClient(): SupabaseClient {
-  if (!url || !serviceKey) throw new Error("Missing Supabase env");
-  return createClient(url, serviceKey, {
+const hasDb = hasRemoteSupabaseIntegrationEnv();
+
+function adminClient(): SupabaseClient<Database> {
+  const { url, serviceKey } = readRemoteSupabaseIntegrationEnv();
+  return createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

@@ -130,9 +130,15 @@ function makeAdmin() {
   };
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => makeAdmin(),
-}));
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({

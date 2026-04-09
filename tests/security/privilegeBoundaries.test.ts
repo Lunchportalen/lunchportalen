@@ -32,13 +32,19 @@ vi.mock("@/lib/http/routeGuard", () => ({
 }));
 
 describe("Privilege boundaries — backoffice content pages", () => {
-  vi.mock("@/lib/supabase/admin", () => ({
+  vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
     supabaseAdmin: () => ({
       from: () => ({
         select: () => ({ order: () => ({ order: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }) }) }),
       }),
     }),
-  }));
+    };
+});
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -53,6 +53,15 @@ module.exports = {
       spacing: {
         card: "1.5rem",
       },
+      keyframes: {
+        lpShimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+      },
+      animation: {
+        lpShimmer: "lpShimmer 1.35s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

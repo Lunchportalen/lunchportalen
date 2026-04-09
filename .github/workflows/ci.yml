@@ -21,6 +21,8 @@ jobs:
     env:
       RC_MODE: "true"
       CI: "true"
+      # Next.js production compile is memory-heavy; matches package.json build scripts.
+      NODE_OPTIONS: "--max-old-space-size=8192"
 
     steps:
       - name: Checkout
@@ -37,6 +39,9 @@ jobs:
 
       - name: CI Guard
         run: npm run ci:guard
+
+      - name: Platform guards (API contract, status, mocks, CMS, AI, UI)
+        run: npm run ci:platform-guards
 
       - name: Typecheck
         run: npm run typecheck

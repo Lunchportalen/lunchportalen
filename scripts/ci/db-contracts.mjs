@@ -26,6 +26,7 @@ const requiredTables = [
 
 const requiredFunctions = [
   "lp_order_set",
+  "lp_pgrst_reload_schema",
   // legg inn flere RPC’er som er kontrakt
 ];
 

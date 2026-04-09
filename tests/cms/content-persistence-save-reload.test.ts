@@ -12,10 +12,19 @@
 // @ts-nocheck
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { LP_CMS_CLIENT_CONTENT_WORKSPACE, LP_CMS_CLIENT_HEADER } from "@/lib/cms/cmsClientHeaders";
 
 function mkReq(url: string, init?: RequestInit & { headers?: Record<string, string>; body?: unknown }) {
   const { headers = {}, body, ...rest } = init ?? {};
-  const opts: RequestInit = { ...rest, headers: { ...headers, "content-type": "application/json" } as HeadersInit };
+  const h: Record<string, string> = { ...headers, "content-type": "application/json" };
+  // Canonical ContentWorkspace saves send this header; isStrictCms() / CI rejects body PATCH without it.
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    const o = body as Record<string, unknown>;
+    if (o.body !== undefined || o.blocks !== undefined) {
+      h[LP_CMS_CLIENT_HEADER] = LP_CMS_CLIENT_CONTENT_WORKSPACE;
+    }
+  }
+  const opts: RequestInit = { ...rest, headers: h as HeadersInit };
   if (body !== undefined) opts.body = typeof body === "string" ? body : JSON.stringify(body);
   return new Request(url, opts) as any;
 }
@@ -72,8 +81,22 @@ function variantKey(pageId: string, locale: string, env: string) {
   return `${pageId}:${locale}:${env}`;
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
+    rpc: (fn: string) => {
+      if (fn === "lp_insert_page_version") {
+        return Promise.resolve({
+          data: [{ id: "pv-test-1", version_number: 1 }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: { message: "unknown_rpc" } });
+    },
     from: (table: string) => {
       if (table === "content_pages") {
         return {
@@ -173,7 +196,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 import { GET as PageByIdGET, PATCH as PageByIdPATCH } from "../../app/api/backoffice/content/pages/[id]/route";
 
@@ -311,5 +335,41 @@ describe("CMS persistence — save then reload returns saved value", () => {
     const getData = await readJson(getRes);
     expect(getData.data?.page?.title).toBe(newTitle);
     expect(getData.data?.page?.body?.blocks?.[0]?.data?.heading).toBe("Initial");
+  });
+
+  test("PATCH blocks top-level preserves existing envelope metadata for the variant", async () => {
+    store.variants.set(variantKey(PAGE_ID, "nb", "prod"), {
+      id: "v-1",
+      page_id: PAGE_ID,
+      locale: "nb",
+      environment: "prod",
+      body: {
+        version: 1,
+        documentType: "page",
+        envelopeFields: { policy: "managed" },
+        blocks: [{ id: "b1", type: "richText", data: { heading: "Initial" } }],
+      },
+      updated_at: null,
+    });
+
+    const nextBlocks = [{ id: "b2", type: "richText", data: { heading: "Only blocks changed" } }];
+    const patchRes = await PageByIdPATCH(
+      mkReq(`http://localhost/api/backoffice/content/pages/${PAGE_ID}`, {
+        method: "PATCH",
+        body: { blocks: nextBlocks },
+      }),
+      ctx,
+    );
+
+    expect(patchRes.status).toBe(200);
+    const patchData = await readJson(patchRes);
+    expect(patchData.data?.page?.body?.documentType).toBe("page");
+    expect(patchData.data?.page?.body?.envelopeFields).toEqual({ policy: "managed" });
+    expect(patchData.data?.page?.body?.blocks).toEqual(nextBlocks);
+
+    const getRes = await PageByIdGET(mkReq(`http://localhost/api/backoffice/content/pages/${PAGE_ID}`), ctx);
+    const getData = await readJson(getRes);
+    expect(getData.data?.page?.body?.documentType).toBe("page");
+    expect(getData.data?.page?.body?.blocks).toEqual(nextBlocks);
   });
 });

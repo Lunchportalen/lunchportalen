@@ -45,9 +45,13 @@ vi.mock("@/lib/http/routeGuard", () => ({
   requireRoleOr403: requireRoleOr403Mock,
 }));
 
-vi.mock("@/lib/ai/provider", () => ({
-  isAIEnabled: isAIEnabledMock,
-}));
+vi.mock("@/lib/ai/runner", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/ai/runner")>();
+  return {
+    ...mod,
+    isAIEnabled: isAIEnabledMock,
+  };
+});
 
 const imageGenerateBrandSafeMock = vi.fn();
 vi.mock("@/lib/ai/tools/imageGenerateBrandSafe", () => ({
@@ -65,9 +69,15 @@ const supabaseAdminMock = vi.fn(() => ({
     insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
   })),
 }));
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: (...args: unknown[]) => supabaseAdminMock(...args),
-}));
+  };
+});
 
 import { POST as ImageGeneratorPOST } from "../../app/api/backoffice/ai/image-generator/route";
 import { POST as ImageMetadataPOST } from "../../app/api/backoffice/ai/image-metadata/route";

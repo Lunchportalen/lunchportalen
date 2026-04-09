@@ -23,7 +23,12 @@ vi.mock("@/lib/auth/scope", () => ({
   getScope: vi.fn(async () => ({ ...scopeState })),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: () => ({
       select: () => ({
@@ -35,7 +40,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     }),
   }),
-}));
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({

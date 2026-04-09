@@ -4,7 +4,6 @@
  * - Preview uses draft (preview variant).
  * - Same renderBlock pipeline; variant selection is the only divergence.
  */
-// @ts-nocheck
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
@@ -16,56 +15,72 @@ function variantKey(pageId: string, locale: string, environment: string): string
   return `${pageId}:${locale}:${environment}`;
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
-  supabaseAdmin: () => ({
-    from: (table: string) => {
-      const q: any = {
-        _slug: undefined as string | undefined,
-        _status: undefined as string | undefined,
-        _pageId: undefined as string | undefined,
-        _locale: undefined as string | undefined,
-        _env: undefined as string | undefined,
-        select(_cols?: string | string[]) {
-          return q;
-        },
-        eq(col: string, val: string) {
-          if (table === "content_pages") {
-            if (col === "slug") q._slug = val;
-            else if (col === "status") q._status = val;
-          } else if (table === "content_page_variants") {
-            if (col === "page_id") q._pageId = val;
-            else if (col === "locale") q._locale = val;
-            else if (col === "environment") q._env = val;
-          }
-          return q;
-        },
-        order() {
-          return q;
-        },
-        limit() {
-          return q;
-        },
-        maybeSingle(): Promise<{ data: any; error: any }> {
-          if (table === "content_pages") {
-            const pageRaw = q._slug != null ? mockPagesBySlug[q._slug] ?? null : null;
-            const page =
-              pageRaw && q._status != null
-                ? (pageRaw.status === q._status ? pageRaw : null)
-                : pageRaw;
-            return Promise.resolve({ data: page, error: null });
-          }
-          if (table === "content_page_variants" && q._pageId != null && q._locale != null && q._env != null) {
-            const key = variantKey(q._pageId, q._locale, q._env);
-            const variant = mockVariantsByKey.get(key) ?? null;
-            return Promise.resolve({ data: variant, error: null });
-          }
-          return Promise.resolve({ data: null, error: null });
-        },
-      };
-      return q;
-    },
-  }),
-}));
+type MockChain = {
+  _slug?: string;
+  _status?: string;
+  _pageId?: string;
+  _locale?: string;
+  _env?: string;
+  select: (_cols?: string | string[]) => MockChain;
+  eq: (col: string, val: string) => MockChain;
+  order: () => MockChain;
+  limit: () => MockChain;
+  maybeSingle: () => Promise<{ data: unknown; error: null }>;
+};
+
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
+    supabaseAdmin: () => ({
+      from: (table: string) => {
+        const q: MockChain = {
+          select() {
+            return q;
+          },
+          eq(col: string, val: string) {
+            if (table === "content_pages") {
+              if (col === "slug") q._slug = val;
+              else if (col === "status") q._status = val;
+            } else if (table === "content_page_variants") {
+              if (col === "page_id") q._pageId = val;
+              else if (col === "locale") q._locale = val;
+              else if (col === "environment") q._env = val;
+            }
+            return q;
+          },
+          order() {
+            return q;
+          },
+          limit() {
+            return q;
+          },
+          maybeSingle() {
+            if (table === "content_pages") {
+              const pageRaw = q._slug != null ? mockPagesBySlug[q._slug] ?? null : null;
+              const page =
+                pageRaw && q._status != null
+                  ? pageRaw.status === q._status
+                    ? pageRaw
+                    : null
+                  : pageRaw;
+              return Promise.resolve({ data: page, error: null });
+            }
+            if (table === "content_page_variants" && q._pageId != null && q._locale != null && q._env != null) {
+              const key = variantKey(q._pageId, q._locale, q._env);
+              const variant = mockVariantsByKey.get(key) ?? null;
+              return Promise.resolve({ data: variant, error: null });
+            }
+            return Promise.resolve({ data: null, error: null });
+          },
+        };
+        return q;
+      },
+    }),
+  } as unknown as typeof import("@/lib/supabase/admin");
+});
 
 describe("getContentBySlug — public uses published (prod) content", () => {
   beforeEach(() => {
@@ -135,6 +150,22 @@ describe("getContentBySlug — public uses published (prod) content", () => {
     const blocks = (result!.body as { blocks?: unknown[] })?.blocks ?? [];
     const heading = blocks[0] && typeof blocks[0] === "object" && "data" in blocks[0] ? (blocks[0].data as { heading?: string }).heading : undefined;
     expect(heading).toBe("Published content");
+  });
+
+  test("getContentBySlug with preview:true returns preview variant body (no prod fallback)", async () => {
+    const pageId = "page-preview-flag";
+    mockPagesBySlug["preview-flag"] = { id: pageId, slug: "preview-flag", title: "PF", status: "published" };
+    mockVariantsByKey.set(variantKey(pageId, "nb", "preview"), {
+      id: "v-preview-only",
+      body: { version: 1, blocks: [{ id: "pv", type: "richText", data: { heading: "Preview only" } }] },
+    });
+    const prodResult = await getContentBySlug("preview-flag");
+    expect(prodResult).toBeNull();
+    const previewResult = await getContentBySlug("preview-flag", { preview: true });
+    expect(previewResult).not.toBeNull();
+    const blocks = (previewResult!.body as { blocks?: unknown[] })?.blocks ?? [];
+    const heading = blocks[0] && typeof blocks[0] === "object" && "data" in blocks[0] ? (blocks[0].data as { heading?: string }).heading : undefined;
+    expect(heading).toBe("Preview only");
   });
 });
 

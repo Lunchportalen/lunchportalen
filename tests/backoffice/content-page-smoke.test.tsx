@@ -4,40 +4,81 @@
  */
 /** @vitest-environment jsdom */
 
-import React from "react";
-import { describe, it, expect } from "vitest";
+import React, { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 (global as any).React = React;
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
-import ContentDashboard from "@/app/(backoffice)/backoffice/content/_workspace/ContentDashboard";
+import ContentPageRoute from "@/app/(backoffice)/backoffice/content/page";
+import ContentSectionLanding from "@/app/(backoffice)/backoffice/content/_workspace/ContentSectionLanding";
+
+const pushMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
 
 describe("Backoffice content page smoke", () => {
-  it("ContentDashboard renders with heading and no crash", async () => {
+  beforeEach(() => {
+    pushMock.mockReset();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ok: true,
+          data: {
+            items: [],
+          },
+        }),
+      })),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("content page route renders the content-first landing without crashing", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
     await act(async () => {
-      root.render(React.createElement(ContentDashboard));
+      root.render(React.createElement(ContentPageRoute));
       await Promise.resolve();
     });
     const heading = container.querySelector("h1");
     expect(heading?.textContent?.trim()).toBe("Content");
-    expect(container.textContent).toContain("Velg en node");
+    expect(container.textContent).toContain("Content tree");
     document.body.removeChild(container);
   });
 
-  it("ContentDashboard shows empty-state areas (Områder)", async () => {
+  it("ContentSectionLanding renders with heading and no crash", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
     await act(async () => {
-      root.render(React.createElement(ContentDashboard));
+      root.render(React.createElement(ContentSectionLanding));
       await Promise.resolve();
     });
-    expect(container.textContent).toContain("Områder");
-    expect(container.textContent).toContain("Home");
-    expect(container.textContent).toContain("Recycle Bin");
+    const heading = container.querySelector("h1");
+    expect(heading?.textContent?.trim()).toBe("Innhold");
+    expect(container.textContent).toContain("Landingflaten er oversikt, ikke en alternativ editor.");
+    document.body.removeChild(container);
+  });
+
+  it("ContentSectionLanding shows recent content empty-state", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(React.createElement(ContentSectionLanding));
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain("Siste sider (API)");
+    expect(container.textContent).toContain("Ingen sider returnert");
+    expect(container.textContent).toContain("Opprett");
     document.body.removeChild(container);
   });
 });

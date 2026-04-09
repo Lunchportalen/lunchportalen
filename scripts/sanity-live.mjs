@@ -1,4 +1,4 @@
-﻿// scripts/sanity-live.mjs
+// scripts/sanity-live.mjs
 
 // Try to load .env/.env.local for Node scripts (enterprise: deterministic env behavior)
 try {
@@ -89,20 +89,6 @@ function fatal(code, payload) {
   throw new Error(code);
 }
 
-function isUnreachableError(err) {
-  const msg = String(err?.message || "").toLowerCase();
-  const cause = String(err?.cause || "").toLowerCase();
-  const name = String(err?.name || "").toLowerCase();
-  return (
-    name.includes("abort") ||
-    msg.includes("timeout") ||
-    msg.includes("fetch failed") ||
-    msg.includes("network") ||
-    msg.includes("econnrefused") ||
-    cause.includes("econnrefused")
-  );
-}
-
 async function run() {
   // 🔎 Always print what we are about to do (fixes "fetch failed" mystery)
   console.log("[sanity:live] base =", base);
@@ -119,31 +105,23 @@ async function run() {
   console.log("[sanity:live] GET", healthUrl);
   let health = await fetchJson(healthUrl);
 
-  // If /api/health is missing, try a lightweight fallback that still validates reachability
-  if (health.res.status === 404) {
-    const fallbackUrl = urlFor("/");
-    console.log("[sanity:live] /api/health 404, fallback GET", fallbackUrl);
-    const res = await fetch(fallbackUrl, { headers: { "cache-control": "no-store" } });
-    if (!res.ok) {
-      fatal("health_fallback_failed", { url: fallbackUrl, status: res.status });
-    }
-  } else {
-    if (!health.res.ok) {
-      fatal("health_failed", {
-        url: healthUrl,
-        status: health.res.status,
-        body: health.json ?? health.text ?? null,
-      });
-    }
-    if (!health.json || health.json.ok !== true) {
-      fatal("health_failed", {
-        url: healthUrl,
-        status: health.res.status,
-        body: health.json ?? health.text ?? null,
-        reason: "expected { ok: true }",
-      });
-    }
+  if (!health.res.ok) {
+    fatal("health_failed", {
+      url: healthUrl,
+      status: health.res.status,
+      body: health.json ?? health.text ?? null,
+    });
   }
+  if (!health.json || health.json.ok !== true) {
+    fatal("health_failed", {
+      url: healthUrl,
+      status: health.res.status,
+      body: health.json ?? health.text ?? null,
+      reason: "expected { ok: true }",
+    });
+  }
+
+  console.log("[sanity:live] runtime =", health.json?.data?.checks?.runtime?.mode ?? "unknown");
 
   // Optional cron gate (only if secret is provided)
   const cronSecret = (process.env.CRON_SECRET || "").trim();
@@ -176,15 +154,6 @@ async function run() {
 }
 
 run().catch((e) => {
-  if (isUnreachableError(e)) {
-    console.warn("[sanity:live] WARNING: unreachable URL, skipping (soft gate)", {
-      message: e?.message || String(e),
-      base,
-    });
-    process.exitCode = 0;
-    return;
-  }
-
   console.error("sanity_live_error", {
     message: e?.message || String(e),
     name: e?.name,

@@ -13,7 +13,7 @@ describe("useMediaPicker – applyMediaSelectionToBlock (hero blocks)", () => {
   const baseHero = {
     id: "hero-1",
     type: "hero",
-    imageUrl: "https://cdn.test/old.jpg",
+    imageId: "https://cdn.test/old.jpg",
     mediaItemId: "old-media-id",
     imageAlt: "Gammel alt",
   };
@@ -23,12 +23,12 @@ describe("useMediaPicker – applyMediaSelectionToBlock (hero blocks)", () => {
     field: "heroImageUrl",
   };
 
-  test("updates imageUrl and keeps existing mediaItemId / imageAlt when item is string", () => {
+  test("updates imageId and keeps existing mediaItemId / imageAlt when item is string", () => {
     const updated = applyMediaSelectionToBlock(baseHero, target, "https://cdn.test/new.jpg");
 
     expect(updated).toMatchObject({
       type: "hero",
-      imageUrl: "https://cdn.test/new.jpg",
+      imageId: "https://cdn.test/new.jpg",
       mediaItemId: "old-media-id",
       imageAlt: "Gammel alt",
     });
@@ -41,7 +41,7 @@ describe("useMediaPicker – applyMediaSelectionToBlock (hero blocks)", () => {
       alt: "  Ny alt-tekst  ",
     });
 
-    expect(updated.imageUrl).toBe("https://cdn.test/new-hero.jpg");
+    expect(updated.imageId).toBe("https://cdn.test/new-hero.jpg");
     expect(updated.mediaItemId).toBe("media-123");
     expect(updated.imageAlt).toBe("Ny alt-tekst");
   });
@@ -61,7 +61,7 @@ describe("useMediaPicker – applyMediaSelectionToBlock (image blocks)", () => {
   const baseImage = {
     id: "img-1",
     type: "image",
-    assetPath: "https://cdn.test/old-img.jpg",
+    imageId: "https://cdn.test/old-img.jpg",
     mediaItemId: "old-media-id",
     alt: "Gammel alt",
   };
@@ -71,12 +71,12 @@ describe("useMediaPicker – applyMediaSelectionToBlock (image blocks)", () => {
     field: "imageUrl",
   };
 
-  test("updates assetPath and keeps existing mediaItemId / alt when item is string", () => {
+  test("updates imageId and keeps existing mediaItemId / alt when item is string", () => {
     const updated = applyMediaSelectionToBlock(baseImage, target, "https://cdn.test/new-img.jpg");
 
     expect(updated).toMatchObject({
       type: "image",
-      assetPath: "https://cdn.test/new-img.jpg",
+      imageId: "https://cdn.test/new-img.jpg",
       mediaItemId: "old-media-id",
       alt: "Gammel alt",
     });
@@ -89,7 +89,7 @@ describe("useMediaPicker – applyMediaSelectionToBlock (image blocks)", () => {
       alt: "  Ny beskrivelse  ",
     });
 
-    expect(updated.assetPath).toBe("https://cdn.test/new-img-2.jpg");
+    expect(updated.imageId).toBe("https://cdn.test/new-img-2.jpg");
     expect(updated.mediaItemId).toBe("media-img-1");
     expect(updated.alt).toBe("Ny beskrivelse");
   });
@@ -105,48 +105,22 @@ describe("useMediaPicker – applyMediaSelectionToBlock (image blocks)", () => {
   });
 });
 
-describe("useMediaPicker – applyMediaSelectionToBlock (banners blocks)", () => {
-  const baseBanners = {
-    id: "banners-1",
-    type: "banners",
-    items: [
-      { id: "b1", imageUrl: "old-1.jpg", videoUrl: null },
-      { id: "b2", imageUrl: "old-2.jpg", videoUrl: null },
-    ],
-  };
-
-  const targetImage: MediaPickerTarget = {
-    blockId: "banners-1",
-    field: "imageUrl",
-    itemId: "b2",
-  };
-
-  const targetVideo: MediaPickerTarget = {
-    blockId: "banners-1",
-    field: "videoUrl",
-    itemId: "b1",
-  };
-
-  test("updates only the targeted banner item for imageUrl", () => {
-    const updated = applyMediaSelectionToBlock(baseBanners, targetImage, "new-banner.jpg");
-
-    expect(updated.items[0].imageUrl).toBe("old-1.jpg");
-    expect(updated.items[1].imageUrl).toBe("new-banner.jpg");
-  });
-
-  test("updates only the targeted banner item for videoUrl", () => {
-    const updated = applyMediaSelectionToBlock(baseBanners, targetVideo, "https://cdn.test/video.mp4");
-
-    expect(updated.items[0].videoUrl).toBe("https://cdn.test/video.mp4");
-    expect(updated.items[1].videoUrl).toBeNull();
-  });
-
-  test("returns original block when type is not banners or itemId is missing", () => {
-    const notBanners = { id: "x", type: "hero" };
-    const noItemTarget: MediaPickerTarget = { blockId: "banners-1", field: "imageUrl" };
-
-    expect(applyMediaSelectionToBlock(notBanners, targetImage, "url")).toBe(notBanners);
-    expect(applyMediaSelectionToBlock(baseBanners, noItemTarget, "url")).toBe(baseBanners);
+describe("useMediaPicker – nested banner/carousel targets (not supported)", () => {
+  test("returns block unchanged when itemId is set (no nested item updates)", () => {
+    const base = {
+      id: "banners-1",
+      type: "banners",
+      items: [
+        { id: "b1", imageUrl: "old-1.jpg", videoUrl: null },
+        { id: "b2", imageUrl: "old-2.jpg", videoUrl: null },
+      ],
+    };
+    const targetImage: MediaPickerTarget = {
+      blockId: "banners-1",
+      field: "imageUrl",
+      itemId: "b2",
+    };
+    expect(applyMediaSelectionToBlock(base, targetImage, "new-banner.jpg")).toBe(base);
   });
 });
 
@@ -155,7 +129,7 @@ describe("useMediaPicker – media reference safety (URL not stored as mediaItem
     const baseImage = {
       id: "img-1",
       type: "image",
-      assetPath: "",
+      imageId: "",
       mediaItemId: undefined as string | undefined,
       alt: "",
     };
@@ -166,7 +140,7 @@ describe("useMediaPicker – media reference safety (URL not stored as mediaItem
       alt: "Alt",
     };
     const updated = applyMediaSelectionToBlock(baseImage, target, itemWithUrlAsId);
-    expect(updated.assetPath).toBe("https://cdn.example.com/asset.jpg");
+    expect(updated.imageId).toBe("https://cdn.example.com/asset.jpg");
     expect(updated.alt).toBe("Alt");
     expect(updated.mediaItemId).toBeUndefined();
   });
@@ -175,7 +149,7 @@ describe("useMediaPicker – media reference safety (URL not stored as mediaItem
     const baseHero = {
       id: "hero-1",
       type: "hero",
-      imageUrl: "",
+      imageId: "",
       mediaItemId: undefined as string | undefined,
       imageAlt: "",
     };
@@ -184,7 +158,7 @@ describe("useMediaPicker – media reference safety (URL not stored as mediaItem
       id: "/uploads/photo.jpg",
       url: "https://cdn.example/uploads/photo.jpg",
     });
-    expect(updated.imageUrl).toBe("https://cdn.example/uploads/photo.jpg");
+    expect(updated.imageId).toBe("https://cdn.example/uploads/photo.jpg");
     expect(updated.mediaItemId).toBeUndefined();
   });
 });
@@ -203,7 +177,7 @@ describe("useMediaPicker – invalid selection (no url) fails safely", () => {
   });
 
   test("applyMediaSelectionToBlock returns block unchanged when item has no url", () => {
-    const base = { id: "h1", type: "hero", imageUrl: "old", imageAlt: "" };
+    const base = { id: "h1", type: "hero", imageId: "old", imageAlt: "" };
     const target: MediaPickerTarget = { blockId: "h1", field: "heroImageUrl" };
     expect(applyMediaSelectionToBlock(base, target, "")).toBe(base);
     expect(applyMediaSelectionToBlock(base, target, { url: "", id: "m1" })).toBe(base);
@@ -211,13 +185,12 @@ describe("useMediaPicker – invalid selection (no url) fails safely", () => {
 
   test("picker stores canonical media reference: url and valid id both set on block", () => {
     const uuid = "a1b2c3d4-e5f6-4789-a012-345678901234";
-    const base = { id: "img-1", type: "image", assetPath: "", alt: "", mediaItemId: undefined };
+    const base = { id: "img-1", type: "image", imageId: "", alt: "", mediaItemId: undefined };
     const target: MediaPickerTarget = { blockId: "img-1", field: "imageUrl" };
     const item = { id: uuid, url: "https://cdn.test/canonical.jpg", alt: "Canonical alt" };
     const updated = applyMediaSelectionToBlock(base, target, item);
-    expect(updated.assetPath).toBe("https://cdn.test/canonical.jpg");
+    expect(updated.imageId).toBe("https://cdn.test/canonical.jpg");
     expect(updated.mediaItemId).toBe(uuid);
     expect(updated.alt).toBe("Canonical alt");
   });
 });
-

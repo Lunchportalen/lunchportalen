@@ -43,7 +43,12 @@ let getByIdRow: any = { id: "exp-1", experiment_id: "exp_1", status: "draft", na
 let updateResult: any = { ...getByIdRow };
 let getStatsResult = { views: 0, clicks: 0, conversions: 0, variants: [], byVariant: [] };
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table === "content_experiments") {
@@ -77,7 +82,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 vi.mock("@/lib/ai/experiments/analytics", () => ({
   getExperimentStats: () => Promise.resolve(getStatsResult),

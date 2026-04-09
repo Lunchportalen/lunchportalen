@@ -7,7 +7,7 @@ import {
   documentTypes,
   getDocType,
   type DocumentTypeEntry,
-} from "@/app/(backoffice)/backoffice/content/_components/documentTypes";
+} from "@/lib/cms/contentDocumentTypes";
 
 describe("documentTypes – schema shape", () => {
   test("documentTypes is non-empty array", () => {
@@ -29,6 +29,18 @@ describe("documentTypes – schema shape", () => {
       if (d.allowedChildren != null) {
         expect(Array.isArray(d.allowedChildren)).toBe(true);
         (d.allowedChildren as string[]).forEach((c) => {
+          expect(typeof c).toBe("string");
+        });
+      }
+    }
+  });
+
+  test("allowedBlockTypes when present is array of strings (U24)", () => {
+    for (const d of documentTypes as DocumentTypeEntry[]) {
+      if (d.allowedBlockTypes != null) {
+        expect(Array.isArray(d.allowedBlockTypes)).toBe(true);
+        expect(d.allowedBlockTypes!.length).toBeGreaterThan(0);
+        (d.allowedBlockTypes as string[]).forEach((c) => {
           expect(typeof c).toBe("string");
         });
       }

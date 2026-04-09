@@ -2,6 +2,8 @@
 // @ts-nocheck
 
 import { describe, test, expect } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { renderBlock, normalizeDisplayText } from "@/lib/public/blocks/renderBlock";
 
 describe("renderBlock — unknown types and malformed data", () => {
@@ -14,13 +16,13 @@ describe("renderBlock — unknown types and malformed data", () => {
     expect(out).toBeNull();
   });
 
-  test("renders a visible warning for unknown block type in staging env", () => {
+  test("returns null for unknown block type in staging env (no fallback markup)", () => {
     const out = renderBlock(
       { id: "x", type: "unknown-type", data: { foo: "bar" } },
       "staging",
       "nb"
     );
-    expect(out).not.toBeNull();
+    expect(out).toBeNull();
   });
 
   test("handles missing data object safely", () => {
@@ -68,8 +70,10 @@ describe("renderBlock — display text normalization (no literal \\r\\n)", () =>
       "nb"
     );
     expect(out).not.toBeNull();
-    const h1 = (out as any)?.props?.children?.[0];
-    expect(h1?.props?.children).toBe("Line one\nLine two");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("Line one");
+    expect(html).toContain("Line two");
+    expect(html).not.toContain("\\r\\n");
   });
 
   test("richText block normalizes body line endings", () => {
@@ -79,8 +83,10 @@ describe("renderBlock — display text normalization (no literal \\r\\n)", () =>
       "nb"
     );
     expect(out).not.toBeNull();
-    const bodyDiv = (out as any)?.props?.children?.[1];
-    expect(bodyDiv?.props?.children).toBe("Para one\nPara two");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("Para one");
+    expect(html).toContain("Para two");
+    expect(html).not.toContain("\\n");
   });
 });
 
@@ -92,7 +98,8 @@ describe("renderBlock — key block types (block editor behavior)", () => {
       "nb"
     );
     expect(out).not.toBeNull();
-    expect((out as any)?.props?.children).toContain("Skjema-blokk mangler formId");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("Skjema-blokk mangler formId");
   });
 
   test("form block with formId renders (FormBlock)", () => {
@@ -117,9 +124,21 @@ describe("renderBlock — key block types (block editor behavior)", () => {
     expect(out).not.toBeNull();
   });
 
-  test("divider or unsupported type in prod returns null (no crash)", () => {
+  test("divider block renders horizontal rule container (no crash)", () => {
     const out = renderBlock(
       { id: "d1", type: "divider", data: {} },
+      "prod",
+      "nb"
+    );
+    expect(out).not.toBeNull();
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("lp-container");
+    expect(html).toContain("lp-section");
+  });
+
+  test("unsupported type in prod returns null (no crash)", () => {
+    const out = renderBlock(
+      { id: "u1", type: "totally_unknown_block_xyz", data: {} },
       "prod",
       "nb"
     );
@@ -138,19 +157,34 @@ describe("renderBlock — key block types (block editor behavior)", () => {
     );
     expect(out).not.toBeNull();
   });
+
+  test("hero_bleed block renders full-bleed shell and title", () => {
+    const out = renderBlock(
+      {
+        id: "hb1",
+        type: "hero_bleed",
+        data: {
+          title: "Kant til kant",
+          backgroundImage: "https://example.com/bg.jpg",
+          textAlign: "left",
+          textPosition: "right",
+          ctaPrimary: "Start",
+          ctaPrimaryHref: "/start",
+        },
+      },
+      "prod",
+      "nb"
+    );
+    expect(out).not.toBeNull();
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("Kant til kant");
+    expect(html).toContain("w-screen");
+    expect(html).toContain("max-w-[100vw]");
+    expect(html).toContain("Start");
+  });
 });
 
 describe("renderBlock — premium typography tokens (preview/public parity)", () => {
-  function collectClassNames(el: any): string {
-    if (!el?.props) return "";
-    const parts = [el.props.className].filter(Boolean);
-    const children = Array.isArray(el.props.children) ? el.props.children : [el.props.children];
-    for (const c of children) {
-      if (c && typeof c === "object" && c.props) parts.push(collectClassNames(c));
-    }
-    return parts.join(" ");
-  }
-
   test("hero block uses font-display, font-body, font-ui (no raw font-family)", () => {
     const out = renderBlock(
       {
@@ -162,10 +196,10 @@ describe("renderBlock — premium typography tokens (preview/public parity)", ()
       "nb"
     );
     expect(out).not.toBeNull();
-    const classNames = collectClassNames(out);
-    expect(classNames).toContain("font-display");
-    expect(classNames).toContain("font-body");
-    expect(classNames).toContain("font-ui");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("font-display");
+    expect(html).toContain("font-body");
+    expect(html).toContain("font-ui");
   });
 
   test("richText block uses font-heading and font-body", () => {
@@ -175,9 +209,9 @@ describe("renderBlock — premium typography tokens (preview/public parity)", ()
       "nb"
     );
     expect(out).not.toBeNull();
-    const classNames = collectClassNames(out);
-    expect(classNames).toContain("font-heading");
-    expect(classNames).toContain("font-body");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("font-heading");
+    expect(html).toContain("font-body");
   });
 
   test("cta block uses font-heading, font-body, font-ui", () => {
@@ -191,10 +225,10 @@ describe("renderBlock — premium typography tokens (preview/public parity)", ()
       "nb"
     );
     expect(out).not.toBeNull();
-    const classNames = collectClassNames(out);
-    expect(classNames).toContain("font-heading");
-    expect(classNames).toContain("font-body");
-    expect(classNames).toContain("font-ui");
+    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
+    expect(html).toContain("font-heading");
+    expect(html).toContain("font-body");
+    expect(html).toContain("font-ui");
   });
 });
 

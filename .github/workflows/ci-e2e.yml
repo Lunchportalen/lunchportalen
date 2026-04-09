@@ -19,6 +19,7 @@ jobs:
     env:
       RC_MODE: "true"
       CI: "true"
+      NODE_OPTIONS: "--max-old-space-size=8192"
       PLAYWRIGHT_BASE_URL: "http://localhost:3000"
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -28,15 +29,6 @@ jobs:
       NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
       SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
-      # Optional: authenticated E2E (login + role landing, core flows, visual, mobile)
-      E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
-      E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
-      E2E_EMPLOYEE_EMAIL: ${{ secrets.E2E_EMPLOYEE_EMAIL }}
-      E2E_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
-      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-      E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
-      E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -81,6 +73,61 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      - name: Bootstrap E2E env from secrets
+        shell: bash
+        env:
+          E2E_TEST_USER_EMAIL: ${{ secrets['E2E_TEST_USER_EMAIL'] }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets['E2E_TEST_USER_PASSWORD'] }}
+          E2E_EMPLOYEE_EMAIL: ${{ secrets['E2E_EMPLOYEE_EMAIL'] }}
+          E2E_EMPLOYEE_PASSWORD: ${{ secrets['E2E_EMPLOYEE_PASSWORD'] }}
+          E2E_ADMIN_EMAIL: ${{ secrets['E2E_ADMIN_EMAIL'] }}
+          E2E_ADMIN_PASSWORD: ${{ secrets['E2E_ADMIN_PASSWORD'] }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets['E2E_SUPERADMIN_EMAIL'] }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
+        run: |
+          set -euo pipefail
+          d=E2EENV__DELIM__LP
+          {
+            echo "E2E_TEST_USER_EMAIL<<${d}"
+            printf '%s\n' "$E2E_TEST_USER_EMAIL"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_TEST_USER_PASSWORD<<${d}"
+            printf '%s\n' "$E2E_TEST_USER_PASSWORD"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_EMPLOYEE_EMAIL<<${d}"
+            printf '%s\n' "$E2E_EMPLOYEE_EMAIL"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_EMPLOYEE_PASSWORD<<${d}"
+            printf '%s\n' "$E2E_EMPLOYEE_PASSWORD"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_ADMIN_EMAIL<<${d}"
+            printf '%s\n' "$E2E_ADMIN_EMAIL"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_ADMIN_PASSWORD<<${d}"
+            printf '%s\n' "$E2E_ADMIN_PASSWORD"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_SUPERADMIN_EMAIL<<${d}"
+            printf '%s\n' "$E2E_SUPERADMIN_EMAIL"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_SUPERADMIN_PASSWORD<<${d}"
+            printf '%s\n' "$E2E_SUPERADMIN_PASSWORD"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
 
       - name: Start server and run E2E
         run: |

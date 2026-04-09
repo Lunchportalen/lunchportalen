@@ -44,7 +44,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
   },
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table !== "ai_activity_log") throw new Error(`Unexpected table: ${table}`);
@@ -56,7 +61,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       };
     },
   }),
-}));
+  };
+});
 
 vi.mock("@/lib/ops/log", () => ({ opsLog: vi.fn() }));
 

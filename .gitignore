@@ -16,6 +16,15 @@ pnpm-debug.log*
 # OS / Editor
 .DS_Store
 .vscode/
+# Cursor IDE (local machine / agent state — not repo truth)
+.cursor/
+
+# Regenerable local inventory & audit dumps (do not commit)
+full_audit.txt
+fullAudit.json
+dead-files.json
+prioritizedTasks.json
+structure.txt
 
 # Build artifacts
 tsconfig.tsbuildinfo
@@ -25,6 +34,9 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 .vercel
+
+# Hyperscale local queue snapshot (file-based; override via LP_QUEUE_FILE)
+queue.json
 
 # Local temp / artifacts
 .tmp/
@@ -37,9 +49,29 @@ tsconfig.tsbuildinfo
 # Evidence artifacts (generated)
 evidence/
 
+# Control-plane CI marker dump (regenerate via npm run verify:control-coverage)
+reports/control-coverage-markers.json
+
+# AI Video Studio — lokal ffmpeg / ElevenLabs-cache under public
+public/generated/video-studio/
+public/generated/voice-studio/
+
 # Playwright (keep e2e/*-snapshots for visual baselines)
 playwright-report/
 test-results/
 playwright/.cache/
 blob-report/
+
+# Python — cua/ policy merge tool
+cua/**/__pycache__/
+cua/**/*.egg-info/
+cua/.venv/
+cua/venv/
+cua/.eggs/
+cua/.pytest_cache/
+cua/.coverage
+cua/htmlcov/
+cua/dist/
+cua/build/
+cua/*.egg-info/
 

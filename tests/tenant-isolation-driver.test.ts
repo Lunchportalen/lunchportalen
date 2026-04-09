@@ -115,9 +115,15 @@ function makeAdmin() {
   };
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => makeAdmin(),
-}));
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
@@ -136,7 +142,7 @@ beforeEach(() => {
   adminConfig = {};
 });
 
-describe("tenant isolation – driver stops", () => {
+describe("tenant isolation ï¿½ driver stops", () => {
   test("orders and confirmations are filtered by company_id", async () => {
     const req = mkReq("http://localhost/api/driver/stops?date=2026-02-02", { method: "GET" });
     const res = await driverStopsGET(req);
@@ -150,7 +156,7 @@ describe("tenant isolation – driver stops", () => {
   });
 });
 
-describe("driver isolation – confirm/csv/bulk-set", () => {
+describe("driver isolation ï¿½ confirm/csv/bulk-set", () => {
   test("driver cannot mark other company stop", async () => {
     const req = mkReq("http://localhost/api/driver/confirm", {
       method: "POST",

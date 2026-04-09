@@ -61,6 +61,37 @@ describe("CMS hardening – 3. Block contract correctness", () => {
     expect(out.data.assetPath).toBe("/img.jpg");
   });
 
+  test("normalizeBlockForRender hero_bleed: persisted variant locks text + overlay axis", () => {
+    const flat = {
+      id: "hb1",
+      type: "hero_bleed",
+      variant: "right",
+      textPosition: "left",
+      textAlign: "center",
+      overlayPosition: "left",
+    };
+    const out = normalizeBlockForRender(flat, 0);
+    expect(out.data.variant).toBe("right");
+    expect(out.data.textPosition).toBe("right");
+    expect(out.data.textAlign).toBe("right");
+    expect(out.data.overlayPosition).toBe("right");
+  });
+
+  test("normalizeBlockForRender hero_bleed: legacy without variant keeps independent positions", () => {
+    const flat = {
+      id: "hb2",
+      type: "hero_bleed",
+      textPosition: "left",
+      textAlign: "center",
+      overlayPosition: "right",
+    };
+    const out = normalizeBlockForRender(flat, 0);
+    expect(out.data.textPosition).toBe("left");
+    expect(out.data.textAlign).toBe("center");
+    expect(out.data.overlayPosition).toBe("right");
+    expect(out.data.variant).toBe("left");
+  });
+
   test("serialize then parse roundtrip preserves block ids and types", () => {
     const blocks: Block[] = [
       createBlock("hero"),
@@ -100,7 +131,12 @@ function variantKeyHardening(pageId: string, locale: string, environment: string
   return `${pageId}:${locale}:${environment}`;
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
     supabaseAdmin: () => ({
       from: (table: string) => {
         const q: any = {
@@ -149,7 +185,8 @@ vi.mock("@/lib/supabase/admin", () => ({
         return q;
       },
     }),
-  }));
+    };
+});
 
 describe("CMS hardening – 4 & 5. Preview/public parity and drafts do not leak", () => {
   beforeEach(() => {

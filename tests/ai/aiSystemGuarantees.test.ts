@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect } from "vitest";
-import { normalizeProviderResult, AI_PROVIDER_ERROR } from "@/lib/ai/provider";
+import { normalizeProviderResult, AI_PROVIDER_ERROR } from "@/lib/ai/runner";
 import { applyAIPatchV1 } from "@/lib/cms/model/applyAIPatch";
 import { validateAIPatchV1, isAIPatchV1 } from "@/lib/cms/model/aiPatch";
 import { analyzeContentHealth } from "@/lib/ai/analysis/contentHealth";

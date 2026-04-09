@@ -13,7 +13,7 @@ import {
 import type {
   PageLoadedData,
   PageErrorPayload,
-} from "@/app/(backoffice)/backoffice/content/_components/useContentWorkspacePageData";
+} from "@/app/(backoffice)/backoffice/content/_components/ContentWorkspaceState";
 
 vi.mock("@/domain/backoffice/ai/metrics/logEditorAiEvent", () => ({
   logEditorAiEvent: vi.fn(),
@@ -28,7 +28,8 @@ describe("ContentWorkspaceLoader – createOnPageLoaded", () => {
     const calls: Record<string, unknown>[] = [];
 
     const setDocumentTypeAlias = vi.fn();
-    const setEnvelopeFields = vi.fn();
+    const setInvariantEnvelopeFields = vi.fn();
+    const setCultureEnvelopeFields = vi.fn();
     const setTitle = vi.fn();
     const setSlug = vi.fn();
     const setSlugTouched = vi.fn();
@@ -39,7 +40,8 @@ describe("ContentWorkspaceLoader – createOnPageLoaded", () => {
 
     const onPageLoaded = createOnPageLoaded({
       setDocumentTypeAlias,
-      setEnvelopeFields,
+      setInvariantEnvelopeFields,
+      setCultureEnvelopeFields,
       setTitle,
       setSlug,
       setSlugTouched,
@@ -62,7 +64,9 @@ describe("ContentWorkspaceLoader – createOnPageLoaded", () => {
       nextSlug: "neste-slug",
       envelope: {
         documentType: "page",
-        fields: { foo: "bar" },
+        fields: { sk: "inv", intro: "en-intro" },
+        invariantFields: { sk: "inv" },
+        cultureFields: { intro: "en-intro" },
         blocksBody: { blocks: [{ id: "b1", type: "richText" }] },
       },
       parsedBody: {
@@ -80,7 +84,8 @@ describe("ContentWorkspaceLoader – createOnPageLoaded", () => {
     onPageLoaded(data);
 
     expect(setDocumentTypeAlias).toHaveBeenCalledWith("page");
-    expect(setEnvelopeFields).toHaveBeenCalledWith({ foo: "bar" });
+    expect(setInvariantEnvelopeFields).toHaveBeenCalledWith({ sk: "inv" });
+    expect(setCultureEnvelopeFields).toHaveBeenCalledWith({ intro: "en-intro" });
     expect(setTitle).toHaveBeenCalledWith("Neste tittel");
     expect(setSlug).toHaveBeenCalledWith("neste-slug");
     expect(setSlugTouched).toHaveBeenCalledWith(false);
@@ -107,7 +112,7 @@ describe("ContentWorkspaceLoader – createOnReset", () => {
     const setLegacyBodyText = vi.fn();
     const setInvalidBodyRaw = vi.fn();
     const setBodyParseError = vi.fn();
-    const setExpandedBlockId = vi.fn();
+    const setSelectedBlockId = vi.fn();
     const clearSaveStateForReset = vi.fn();
 
     const reset = createOnReset({
@@ -120,7 +125,7 @@ describe("ContentWorkspaceLoader – createOnReset", () => {
       setLegacyBodyText,
       setInvalidBodyRaw,
       setBodyParseError,
-      setExpandedBlockId,
+      setSelectedBlockId,
       clearSaveStateForReset,
     });
 
@@ -135,7 +140,7 @@ describe("ContentWorkspaceLoader – createOnReset", () => {
     expect(setLegacyBodyText).toHaveBeenCalledWith("");
     expect(setInvalidBodyRaw).toHaveBeenCalledWith("");
     expect(setBodyParseError).toHaveBeenCalledWith(null);
-    expect(setExpandedBlockId).toHaveBeenCalledWith(null);
+    expect(setSelectedBlockId).toHaveBeenCalledWith(null);
     expect(clearSaveStateForReset).toHaveBeenCalledTimes(1);
   });
 });

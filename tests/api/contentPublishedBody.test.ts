@@ -33,7 +33,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
 
 let mockVariantByPage: Record<string, { id: string; body: unknown } | null> = {};
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table !== "content_page_variants") throw new Error(`Unexpected table: ${table}`);
@@ -61,7 +66,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 import { GET as PublishedBodyGET } from "../../app/api/backoffice/content/pages/[id]/published-body/route";
 

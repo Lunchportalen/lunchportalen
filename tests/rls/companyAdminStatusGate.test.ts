@@ -71,7 +71,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
 }));
 
 // ✅ Company status lookup (this is what we are testing)
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       const q: any = {
@@ -88,7 +93,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 // ✅ Keep these harmless if route touches them
 vi.mock("@/lib/date/oslo", () => ({

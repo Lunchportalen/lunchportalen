@@ -77,7 +77,12 @@ vi.mock("@/lib/supabase/server", () => ({
 
 // admin status lookup
 let companyStatus = "PAUSED";
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: () => ({
       select: () => ({
@@ -90,7 +95,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     }),
   }),
-}));
+  };
+});
 
 // oslo time gates: OPEN
 vi.mock("@/lib/date/oslo", () => ({

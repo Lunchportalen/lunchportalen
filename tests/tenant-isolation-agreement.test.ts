@@ -62,7 +62,7 @@ vi.mock("@/lib/http/routeGuard", async () => {
   };
 });
 
-vi.mock("@/lib/sanity/queries", () => ({
+vi.mock("@/lib/cms/menuContent", () => ({
   getMenuForRange: vi.fn(async () => []),
 }));
 

@@ -112,9 +112,12 @@ function makeAdminMock(seed?: any) {
   return { admin: { from: (table: string) => makeQuery(table) }, eqCalls };
 }
 
-vi.mock("@/lib/supabase/admin", () => {
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/supabase/admin")>();
   const mock = makeAdminMock();
   return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
     supabaseAdmin: () => mock.admin,
     __mock: mock,
   };

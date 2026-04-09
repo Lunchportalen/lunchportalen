@@ -1,4 +1,5 @@
 // tests/outbox-policy.test.ts
+// @ts-nocheck — vi.mock(import()) partial factory return is narrower than SupabaseClient for rpc-only stub
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 type Row = {
@@ -90,9 +91,15 @@ function makeAdminMock() {
   };
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => makeAdminMock(),
-}));
+  };
+});
 
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 

@@ -1,37 +1,23 @@
-/**
- * Login form submit flow: proves real request path and loading state.
- * - Submit sends signInWithPassword then POST /api/auth/post-login (mocked).
- * - Loading appears during request; invalid credentials show error.
- * No auth redesign; no fake success.
- */
 /** @vitest-environment jsdom */
 
-import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import React, { act } from "react";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
+import { SUPERADMIN_EMAIL } from "@/lib/system/emails";
 
-const mockSignIn = vi.fn();
-vi.mock("@supabase/ssr", () => ({
-  createBrowserClient: () => ({
-    auth: { signInWithPassword: mockSignIn },
-  }),
-}));
+// React 19 test environment hint: suppress spurious act-environment warnings.
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+const searchParamsState = {
+  next: null as string | null,
+};
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => ({ get: (_key: string) => null }),
+  useSearchParams: () => ({ get: (key: string) => (key === "next" ? searchParamsState.next : null) }),
 }));
 
-// Env required by LoginForm makeSupabase()
-const origUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const origAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-beforeEach(() => {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://test.supabase.co";
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "anon-key";
-});
 afterEach(() => {
-  if (origUrl !== undefined) process.env.NEXT_PUBLIC_SUPABASE_URL = origUrl;
-  if (origAnon !== undefined) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = origAnon;
+  searchParamsState.next = null;
   vi.clearAllMocks();
 });
 
@@ -41,36 +27,34 @@ async function renderLoginForm() {
   document.body.appendChild(container);
   const root = createRoot(container);
   await act(async () => {
-    root.render(React.createElement(LoginForm));
+    root.render(
+      React.createElement(LoginForm, {
+        authRuntime: {
+          ok: true,
+          url: "https://test.supabase.co",
+          anonKey: "anon-key",
+          issue: null,
+          message: null,
+        },
+        localRuntimeCredentials: {
+          email: SUPERADMIN_EMAIL,
+          password: "Lunchportalen123!",
+        },
+      }),
+    );
     await Promise.resolve();
   });
   return { container, root };
 }
 
 function getEmailInput(container: HTMLElement) {
-  const labels = container.querySelectorAll("label");
-  for (const l of labels) {
-    if (l.textContent?.includes("E-post")) {
-      const id = l.getAttribute("for");
-      if (id) return container.querySelector(`#${id}`) as HTMLInputElement;
-      return l.nextElementSibling as HTMLInputElement;
-    }
-  }
   return container.querySelector('input[autoComplete="email"]') as HTMLInputElement;
 }
 function getPasswordInput(container: HTMLElement) {
-  const labels = container.querySelectorAll("label");
-  for (const l of labels) {
-    if (l.textContent?.includes("Passord")) {
-      const id = l.getAttribute("for");
-      if (id) return container.querySelector(`#${id}`) as HTMLInputElement;
-      return l.nextElementSibling as HTMLInputElement;
-    }
-  }
   return container.querySelector('input[autoComplete="current-password"]') as HTMLInputElement;
 }
 function getSubmitButton(container: HTMLElement) {
-  return container.querySelector('button[type="button"]') as HTMLButtonElement;
+  return container.querySelector('button[type="submit"]') as HTMLButtonElement;
 }
 
 function setInputValue(input: HTMLInputElement, value: string) {
@@ -80,12 +64,14 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 describe("Login form submit flow", () => {
-  it("submit sends signInWithPassword then POST /api/auth/post-login (real request path)", async () => {
-    mockSignIn.mockResolvedValue({
-      data: { session: { access_token: "tk", refresh_token: "rt" } },
-      error: null,
-    });
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 303 }));
+  it("submit sends POST /api/auth/login then redirects via /api/auth/post-login", async () => {
+    searchParamsState.next = "/backoffice/content";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ ok: true, rid: "rid_login", next: "/backoffice/content" }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
     const assignMock = vi.fn();
     (global as any).fetch = fetchMock;
     (global as any).window.location = { assign: assignMock };
@@ -108,25 +94,21 @@ describe("Login form submit flow", () => {
       await Promise.resolve();
     });
 
-    expect(mockSignIn).toHaveBeenCalledWith({
-      email: "test@example.com",
-      password: "secret123",
-    });
     expect(fetchMock).toHaveBeenCalled();
     const [fetchUrl, fetchOpts] = fetchMock.mock.calls[0];
-    expect(String(fetchUrl)).toContain("/api/auth/post-login");
+    expect(String(fetchUrl)).toContain("/api/auth/login");
     expect(fetchOpts?.method).toBe("POST");
     const body = JSON.parse(fetchOpts?.body ?? "{}");
-    expect(body.access_token).toBe("tk");
-    expect(body.refresh_token).toBe("rt");
-    expect(body.next).toBe("/week");
+    expect(body.email).toBe("test@example.com");
+    expect(body.password).toBe("secret123");
+    expect(body.next).toBe("/backoffice/content");
+    expect(assignMock).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fbackoffice%2Fcontent");
   });
 
   it("loading state is shown during request (button disabled and text)", async () => {
-    let resolveSignIn: (v: any) => void;
-    const signInPromise = new Promise<any>((r) => { resolveSignIn = r; });
-    mockSignIn.mockReturnValue(signInPromise);
-    (global as any).fetch = vi.fn().mockResolvedValue(new Response(null, { status: 303 }));
+    let resolveFetch: (v: any) => void;
+    const fetchPromise = new Promise<any>((r) => { resolveFetch = r; });
+    (global as any).fetch = vi.fn().mockReturnValue(fetchPromise);
     (global as any).window.location = { assign: vi.fn() };
 
     const { container } = await renderLoginForm();
@@ -139,29 +121,41 @@ describe("Login form submit flow", () => {
       setInputValue(passwordInput, "p");
     });
 
-    const clickPromise = act(async () => {
+    await act(async () => {
       button.click();
       await Promise.resolve();
     });
 
-    await act(async () => {
-      await Promise.resolve();
-    });
     const btn = getSubmitButton(container);
     expect(btn?.disabled).toBe(true);
     expect(btn?.textContent?.trim()).toContain("Logger inn");
 
-    resolveSignIn!({ data: { session: { access_token: "x", refresh_token: "y" } }, error: null });
-    await clickPromise;
+    await act(async () => {
+      resolveFetch!(
+        new Response(JSON.stringify({ ok: true, rid: "rid_login", next: "/week" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+      await Promise.resolve();
+    });
   });
 
-  it("invalid credentials show error and no POST to post-login", async () => {
-    mockSignIn.mockResolvedValue({
-      data: null,
-      error: { message: "Invalid login credentials" },
-    });
-    const fetchMock = vi.fn();
+  it("invalid credentials show error and no redirect", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: false,
+          rid: "rid_login",
+          error: "invalid_login",
+          message: "Feil e-post eller passord.",
+          status: 401,
+        }),
+        { status: 401, headers: { "content-type": "application/json" } },
+      ),
+    );
     (global as any).fetch = fetchMock;
+    (global as any).window.location = { assign: vi.fn() };
 
     const { container } = await renderLoginForm();
     const emailInput = getEmailInput(container);
@@ -178,14 +172,11 @@ describe("Login form submit flow", () => {
       await Promise.resolve();
     });
 
-    expect(mockSignIn).toHaveBeenCalledWith({
-      email: "wrong@example.com",
-      password: "wrong",
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((global as any).window.location.assign).not.toHaveBeenCalled();
     const errDiv = container.querySelector(".border-red-200");
     expect(errDiv).toBeTruthy();
-    expect(errDiv?.textContent).toContain("Invalid login credentials");
+    expect(errDiv?.textContent).toContain("Feil e-post eller passord");
   });
 
   it("empty email/password shows validation error and no network", async () => {
@@ -200,7 +191,6 @@ describe("Login form submit flow", () => {
       await Promise.resolve();
     });
 
-    expect(mockSignIn).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
     const errDiv = container.querySelector(".border-red-200");
     expect(errDiv?.textContent).toContain("Fyll inn e-post og passord");
@@ -213,12 +203,13 @@ describe("Login form submit flow", () => {
     expect(btnAfter?.textContent?.trim()).toContain("Logg inn");
   });
 
-  it("one click triggers exactly one signIn and one fetch (no duplicate request)", async () => {
-    mockSignIn.mockResolvedValue({
-      data: { session: { access_token: "tk", refresh_token: "rt" } },
-      error: null,
-    });
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 303 }));
+  it("one click triggers exactly one login fetch (no duplicate request)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ ok: true, rid: "rid_login", next: "/week" }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
     (global as any).fetch = fetchMock;
     (global as any).window.location = { assign: vi.fn() };
 
@@ -238,8 +229,7 @@ describe("Login form submit flow", () => {
       await Promise.resolve();
     });
 
-    expect(mockSignIn).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toContain("/api/auth/post-login");
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/auth/login");
   });
 });

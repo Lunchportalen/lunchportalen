@@ -38,7 +38,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
 // Single-item lookup/update: by id. GET uses select().eq("id", id).maybeSingle(); PATCH uses select+maybeSingle then update+eq+select+single.
 let mockItemById: Record<string, Record<string, unknown> | null> = {};
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table !== "media_items") throw new Error(`Unexpected table: ${table}`);
@@ -104,7 +109,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 import { GET as MediaItemGET, PATCH as MediaItemPATCH, DELETE as MediaItemDELETE } from "../../app/api/backoffice/media/items/[id]/route";
 
@@ -300,5 +306,63 @@ describe("Backoffice media items [id] API", () => {
     const req = mkReq("http://localhost/api/backoffice/media/items/ ", { method: "DELETE" });
     const res = await MediaItemDELETE(req, { params: Promise.resolve({ id: " " }) });
     expect(res.status).toBe(400);
+  });
+
+  test("PATCH /api/backoffice/media/items/:id merges displayName into metadata", async () => {
+    const id = VALID_UUID;
+    mockItemById[id] = {
+      id,
+      type: "image",
+      status: "ready",
+      source: "upload",
+      url: "https://cdn.test/dn.jpg",
+      alt: "A",
+      caption: null,
+      tags: [],
+      metadata: { foo: "bar" },
+    };
+
+    const req = mkReq(`http://localhost/api/backoffice/media/items/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: "Bibliotek-navn" }),
+    });
+    const res = await MediaItemPATCH(req, { params: Promise.resolve({ id }) });
+    expect(res.status).toBe(200);
+    const json = await readJson(res);
+    expect(json.data?.item?.metadata?.displayName).toBe("Bibliotek-navn");
+    expect(json.data?.item?.metadata?.foo).toBe("bar");
+  });
+
+  test("PATCH /api/backoffice/media/items/:id normalizes metadata.variants", async () => {
+    const id = VALID_UUID;
+    mockItemById[id] = {
+      id,
+      type: "image",
+      status: "ready",
+      url: "https://cdn.test/v.jpg",
+      alt: "",
+      caption: null,
+      tags: [],
+      metadata: {},
+    };
+
+    const req = mkReq(`http://localhost/api/backoffice/media/items/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        metadata: {
+          variants: {
+            w640: "https://cdn.test/w640.jpg",
+            bad: "javascript:void(0)",
+          },
+        },
+      }),
+    });
+    const res = await MediaItemPATCH(req, { params: Promise.resolve({ id }) });
+    expect(res.status).toBe(200);
+    const json = await readJson(res);
+    expect(json.data?.item?.metadata?.variants?.w640).toBe("https://cdn.test/w640.jpg");
+    expect(json.data?.item?.metadata?.variants?.bad).toBeUndefined();
   });
 });

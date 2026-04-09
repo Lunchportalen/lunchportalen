@@ -21,12 +21,14 @@ describe("order/window – buildDayModel", () => {
       dayTiers: { mon: "BASIS" } as any,
       ordersByDate: new Map(),
       dayChoicesByDate: new Map(),
-      menuByDate: new Map(),
       agreementForChoices: {
         choicesByTier: {
           BASIS: [{ key: "salatbar" }],
         },
       },
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: { BASIS: null, LUXUS: null },
     } as any);
 
     expect(day.date).toBe(date);
@@ -69,12 +71,14 @@ describe("order/window – buildDayModel", () => {
       dayTiers: { mon: "BASIS" } as any,
       ordersByDate,
       dayChoicesByDate: new Map(),
-      menuByDate: new Map(),
       agreementForChoices: {
         choicesByTier: {
           BASIS: [{ key: "salatbar" }],
         },
       },
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: { BASIS: null, LUXUS: null },
     } as any);
 
     expect(day.wantsLunch).toBe(true);

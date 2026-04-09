@@ -28,6 +28,16 @@ async function readJson(res: Response) {
 }
 
 const MOCK_RID = "rid_ai_suggest";
+const MOCK_COMPANY_ID = "00000000-0000-4000-8000-000000000001";
+
+function suggestBody(overrides: Record<string, unknown> = {}) {
+  return {
+    tool: "landing.generate.sections",
+    input: {},
+    existingBlocks: [],
+    ...overrides,
+  };
+}
 
 const { scopeOr401Mock, isAIEnabledMock, requireRoleOr403Mock } = vi.hoisted(() => ({
   scopeOr401Mock: vi.fn(),
@@ -44,9 +54,22 @@ vi.mock("@/lib/http/routeGuard", () => ({
   },
 }));
 
-vi.mock("@/lib/ai/provider", () => ({
-  isAIEnabled: () => isAIEnabledMock(),
-  suggestJSON: vi.fn(),
+vi.mock("@/lib/ai/runner", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/ai/runner")>();
+  return {
+    ...mod,
+    isAIEnabled: () => isAIEnabledMock(),
+  };
+});
+
+vi.mock("@/lib/ai/runnerGovernance", () => ({
+  loadMergedGovernanceForRun: vi.fn(async () => ({
+    platform_blocked_tools: [],
+    platform_throttled_tools: [],
+    company: { model_tier: "default", blocked_tools: [], policy_notes: null },
+  })),
+  isToolBlockedByGovernance: vi.fn(() => ({ blocked: false, scope: null })),
+  isToolThrottledByPlatformGovernance: vi.fn(() => false),
 }));
 
 const supabaseState = vi.hoisted(() => ({
@@ -55,9 +78,23 @@ const supabaseState = vi.hoisted(() => ({
   activityLogInsertError: null as unknown,
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
+      if (table === "content_pages" || table === "content_page_variants") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            }),
+          }),
+        };
+      }
       if (table === "ai_suggestions") {
         return {
           insert: () => ({
@@ -84,7 +121,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 import { POST as SuggestPOST } from "../../app/api/backoffice/ai/suggest/route";
 
@@ -101,7 +139,12 @@ describe("Backoffice AI suggest API", () => {
         rid: MOCK_RID,
         route: "/api/backoffice/ai/suggest",
         method: "POST",
-        scope: { role: "superadmin", email: "test@lunchportalen.no" },
+        scope: {
+          role: "superadmin",
+          email: "test@lunchportalen.no",
+          companyId: MOCK_COMPANY_ID,
+          userId: "usr_test_superadmin",
+        },
       },
     });
   });
@@ -113,7 +156,7 @@ describe("Backoffice AI suggest API", () => {
     });
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: { tool: "landing.generate.sections", input: {}, existingBlocks: [] },
+      body: suggestBody(),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(401);
@@ -122,7 +165,7 @@ describe("Backoffice AI suggest API", () => {
   test("returns 400 when tool is missing", async () => {
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: { input: {} },
+      body: suggestBody({ tool: undefined, input: {} }),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(400);
@@ -135,11 +178,7 @@ describe("Backoffice AI suggest API", () => {
     supabaseState.suggestInsertError = { message: "db constraint" };
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: {
-        tool: "landing.generate.sections",
-        input: {},
-        existingBlocks: [],
-      },
+      body: suggestBody(),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(500);
@@ -153,11 +192,7 @@ describe("Backoffice AI suggest API", () => {
     supabaseState.activityLogInsertError = { message: "log failed" };
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: {
-        tool: "landing.generate.sections",
-        input: {},
-        existingBlocks: [],
-      },
+      body: suggestBody(),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(500);
@@ -170,11 +205,7 @@ describe("Backoffice AI suggest API", () => {
     isAIEnabledMock.mockReturnValueOnce(false);
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: {
-        tool: "landing.generate.sections",
-        input: {},
-        existingBlocks: [],
-      },
+      body: suggestBody(),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(503);
@@ -195,7 +226,7 @@ describe("Backoffice AI suggest API", () => {
     });
     const req = mkReq("http://localhost/api/backoffice/ai/suggest", {
       method: "POST",
-      body: { tool: "landing.generate.sections", input: {}, existingBlocks: [] },
+      body: suggestBody(),
     });
     const res = await SuggestPOST(req);
     expect(res.status).toBe(403);

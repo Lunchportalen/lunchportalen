@@ -127,7 +127,7 @@ describe("domain hardening – agreements + orders", () => {
       p_date: futureDate,
       p_action: "SET",
       p_note: null,
-      p_slot: "lunch",
+      p_slot: "default",
     });
 
     expect(error).toBeTruthy();
@@ -155,7 +155,7 @@ describe("domain hardening – agreements + orders", () => {
       p_date: pastDate,
       p_action: "SET",
       p_note: null,
-      p_slot: "lunch",
+      p_slot: "default",
     });
 
     expect(error).toBeTruthy();
@@ -187,7 +187,7 @@ describe("domain hardening – agreements + orders", () => {
       p_date: nonMonDate,
       p_action: "SET",
       p_note: null,
-      p_slot: "lunch",
+      p_slot: "default",
     });
 
     expect(error).toBeTruthy();
@@ -246,9 +246,9 @@ describe("domain hardening – agreements + orders", () => {
     const sb = supabaseAs(employeeA.accessToken);
 
     // Multiple writes for the same logical order
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "lunch" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "first", p_slot: "lunch" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "second", p_slot: "lunch" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "first", p_slot: "default" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "second", p_slot: "default" });
 
     const check = await admin
       .from("orders")
@@ -257,7 +257,7 @@ describe("domain hardening – agreements + orders", () => {
       .eq("company_id", companyA.id)
       .eq("location_id", locA.id)
       .eq("date", orderDate)
-      .eq("slot", "lunch");
+      .eq("slot", "default");
 
     expect(check.error).toBeNull();
     const rows = Array.isArray(check.data) ? check.data : [];
@@ -280,11 +280,11 @@ describe("domain hardening – agreements + orders", () => {
     const sb = supabaseAs(employeeA.accessToken);
 
     // Place order once
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "lunch" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
 
     // Cancel twice
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "lunch" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "lunch" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
 
     const check = await admin
       .from("orders")
@@ -293,7 +293,7 @@ describe("domain hardening – agreements + orders", () => {
       .eq("company_id", companyA.id)
       .eq("location_id", locA.id)
       .eq("date", orderDate)
-      .eq("slot", "lunch");
+      .eq("slot", "default");
 
     expect(check.error).toBeNull();
     const rows = Array.isArray(check.data) ? check.data : [];
@@ -316,9 +316,9 @@ describe("domain hardening – agreements + orders", () => {
     const sb = supabaseAs(employeeA.accessToken);
 
     // Set -> Cancel -> Set again
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "lunch" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "lunch" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "lunch" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
+    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
 
     const check = await admin
       .from("orders")
@@ -327,7 +327,7 @@ describe("domain hardening – agreements + orders", () => {
       .eq("company_id", companyA.id)
       .eq("location_id", locA.id)
       .eq("date", orderDate)
-      .eq("slot", "lunch");
+      .eq("slot", "default");
 
     expect(check.error).toBeNull();
     const rows = Array.isArray(check.data) ? check.data : [];

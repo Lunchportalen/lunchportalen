@@ -52,7 +52,12 @@ const listThenable = {
   eq: () => listThenable,
 };
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table === "content_experiments") {
@@ -74,7 +79,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 import { GET as ExperimentsGET, POST as ExperimentsPOST } from "../../app/api/backoffice/experiments/route";
 

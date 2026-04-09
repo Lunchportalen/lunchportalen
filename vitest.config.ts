@@ -9,10 +9,36 @@ if (!process.env["NODE_ENV"]) {
   Object.assign(process.env, { NODE_ENV: "test" });
 }
 Object.assign(process.env, { VITEST: "true" });
+// Runner profitability gate uses live margin/budget math; disable in Vitest unless a test sets it explicitly.
+if (process.env.AI_PROFITABILITY_ENABLED === undefined) {
+  Object.assign(process.env, { AI_PROFITABILITY_ENABLED: "false" });
+}
 
 // Local: load .env.local then .env. CI: env comes from workflow env (no .env required).
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
+
+// Dev .env.local often sets LP_CMS_RUNTIME_MODE=local_provider. That short-circuits CMS loaders
+// (e.g. getContentBySlug → local provider) before supabaseAdmin mocks apply, breaking unit tests.
+// Tests that need a runtime mode must vi.stubEnv(...) explicitly.
+for (const key of [
+  "LP_CMS_RUNTIME_MODE",
+  "LP_LOCAL_CMS_RUNTIME",
+  "LOCAL_CMS_RUNTIME_MODE",
+  "LOCAL_DEV_CONTENT_RESERVE",
+] as const) {
+  delete process.env[key];
+}
+
+// Fail-closed: surface async failures that would otherwise warn-only in the runner.
+process.on("unhandledRejection", (reason) => {
+  console.error("[vitest] unhandledRejection", reason);
+  throw reason instanceof Error ? reason : new Error(String(reason));
+});
+process.on("uncaughtException", (err) => {
+  console.error("[vitest] uncaughtException", err);
+  throw err;
+});
 
 export default defineConfig({
   plugins: [

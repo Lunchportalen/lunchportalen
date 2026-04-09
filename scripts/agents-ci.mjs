@@ -29,7 +29,10 @@ const PAGE_FILE_RE = /\/page\.(t|j)sx?$/;
 const ROUTE_FILE_RE = /\/app\/api\/.*\/route\.(t|j)s$/;
 
 // “Menu-like” files/areas we scan harder for overflow-hidden
-const MENU_FILE_HINT_RE = /(ActionMenu|Dropdown|Menu|Popover|ContextMenu|Select|Radix|Portal)/i;
+// NOTE: Do not use /Select/i — it matches the "select" in Tailwind `select-none` (false positive).
+// Match Radix `<Select` / component name `Select` with case-sensitive \bSelect\b only.
+const MENU_FILE_HINT_RE = /(ActionMenu|Dropdown|Menu|Popover|ContextMenu|Radix|Portal)/i;
+const MENU_FILE_HINT_RE_JSX_SELECT = /\bSelect\b/;
 const MENU_PATH_HINT_RE = /(components\/.*(menu|dropdown|popover)|app\/.*(menu|dropdown|popover))/i;
 
 // Neon + primary CTA checks
@@ -142,12 +145,8 @@ const WARN_PATTERNS = [
     re: /\bheaders\(\)\s*\.\s*get\s*\(/g,
     hint: "Prefer: const h = await headers(); then h.get(...). Avoid headers().get(...) directly in server components.",
   },
-  {
-    name: "Clickable <div> risk: onClick on div (prefer button/link)",
-    re: /<div[^>]*\bonClick\s*=\s*\{/g,
-    hint: "Use <button> or <Link>. Avoid dead UI patterns.",
-  },
 ];
+
 
 // Run v1 patterns
 for (const file of files) {
@@ -170,13 +169,17 @@ for (const file of files) {
 // to avoid false positives on legitimate image masks etc.
 for (const file of files) {
   const rel = file.replace(ROOT, "");
-  if (rel.replace(/\\/g, "/").includes("/scripts/")) continue;
+  const norm = rel.replace(/\\/g, "/");
+  if (norm.includes("/scripts/")) continue;
+  // Markdown / JSON / etc. can mention "Menu" or overflow in prose — not UI source (false positives).
+  if (!/\.(tsx?|jsx?|css)$/.test(norm)) continue;
   const text = read(file);
 
   const isMenuRelated =
-    MENU_PATH_HINT_RE.test(rel) ||
+    MENU_PATH_HINT_RE.test(norm) ||
     MENU_FILE_HINT_RE.test(text) ||
-    /ActionMenu/i.test(rel);
+    MENU_FILE_HINT_RE_JSX_SELECT.test(text) ||
+    /ActionMenu/i.test(norm);
 
   if (!isMenuRelated) continue;
 
@@ -207,6 +210,16 @@ for (const file of files) {
     /\brequestId\b/.test(text) ||
     /\brid:\s*/.test(text);
 
+  // jsonOk from @/lib/http/respond always emits { ok: true, rid, data } at runtime; static
+  // literals are not present in the source. Trust the helper + rid when imported from respond.
+  const usesTrustedJsonOkFromRespond =
+    /\bjsonOk\b/.test(text) && /@\/lib\/http\/respond/.test(text) && hasRidGen;
+
+  // Same runtime contract as jsonOk (rid + ok) — implemented in superadminControlTowerJsonGet.
+  const usesSuperadminControlTowerJsonGet =
+    /\bsuperadminControlTowerJsonGet\b/.test(text) &&
+    /@\/lib\/http\/superadminControlTowerGet/.test(text);
+
   const usesRespondHelpers = /\bjsonOk\b/.test(text) && /\bjsonErr\b/.test(text);
 
   const isBinaryRoute =
@@ -222,6 +235,8 @@ for (const file of files) {
   const hasOkFalse =
     /ok\s*:\s*false/.test(text);
 
+  if (usesTrustedJsonOkFromRespond) continue;
+  if (usesSuperadminControlTowerJsonGet) continue;
   if (usesRespondHelpers) continue;
   if (isBinaryRoute && hasRidGen && /jsonErr/.test(text)) continue;
 

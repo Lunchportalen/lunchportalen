@@ -146,9 +146,15 @@ vi.mock("@/lib/auth/scope", () => ({
 }));
 
 // supabaseAdmin -> brukes av admin/orders + kitchen/orders + kitchen/batch/set (service role)
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => adminDb,
-}));
+  };
+});
 
 // supabaseServer -> brukes av kitchen/* for cookie-session gate
 vi.mock("@/lib/supabase/server", () => ({

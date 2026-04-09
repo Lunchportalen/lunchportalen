@@ -23,7 +23,12 @@ function variantKey(pageId: string, locale: string, environment: string): string
   return `${pageId}:${locale}:${environment}`;
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       const q: any = {
@@ -72,7 +77,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 describe("getContentBySlug — slug normalization and routing integrity", () => {
   beforeEach(() => {

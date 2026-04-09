@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
+import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
-const nextConfig: NextConfig = {
+const sharedConfig: NextConfig = {
   async headers() {
     return [
       {
@@ -16,4 +17,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function nextConfig(phase: string): NextConfig {
+  return {
+    ...sharedConfig,
+    distDir: resolveNextDistDir(phase),
+  };
+}

@@ -1,6 +1,10 @@
 // e2e/helpers/auth.ts — Auth & route test helpers (Phase 2). No business logic changes.
 import { Page } from "@playwright/test";
 
+import { CANONICAL_REMOTE_BACKEND_HARNESS_PASSWORD } from "@/lib/auth/canonicalDevCredentials";
+import { getLocalCmsRuntimeLoginCredentials } from "@/lib/localRuntime/runtime";
+import { REMOTE_BACKEND_HARNESS_EMAIL } from "@/lib/system/emails";
+
 /** Roles supported for role-aware login. Uses same semantics as lib/auth/roleHome. */
 export type E2ERole = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -56,6 +60,50 @@ export function getCredentialsForRole(role: E2ERole): { email: string; password:
   const creds = roleEnvMap[role];
   if (creds.email && creds.password) return creds;
   return getE2ETestUser();
+}
+
+const HARNESS_FLAG_VALUES = new Set(["1", "true", "on", "yes"]);
+
+/**
+ * When E2E_* env is unset, use the same canonical credentials the app documents on /login
+ * (local_provider: lib/localRuntime/runtime.ts + lib/auth/localRuntimeAuth.ts) and
+ * remote_backend harness (lib/auth/remoteBackendAuthHarness.ts + lib/system/emails.ts).
+ * Requires matching LP_CMS_RUNTIME_MODE / LP_REMOTE_BACKEND_AUTH_HARNESS in the Playwright process
+ * (and dev server) — same as production login form, no bypass.
+ */
+export function resolveBackofficeSuperadminCredentialsForE2E(): {
+  email: string;
+  password: string;
+  source: "e2e_env" | "canonical_local_provider" | "canonical_remote_backend_harness";
+} | null {
+  const fromEnv = getCredentialsForRole("superadmin");
+  if (fromEnv) {
+    return { ...fromEnv, source: "e2e_env" };
+  }
+
+  const modeRaw = String(process.env.LP_CMS_RUNTIME_MODE ?? "").trim().toLowerCase();
+  const effectiveMode = modeRaw || "remote_backend";
+  const harnessRaw = String(process.env.LP_REMOTE_BACKEND_AUTH_HARNESS ?? "").trim().toLowerCase();
+
+  /** Before local_provider canonical: remote_backend + harness must resolve here (never shadowed by local when mode is remote — local is null then). */
+  if (effectiveMode === "remote_backend" && HARNESS_FLAG_VALUES.has(harnessRaw)) {
+    return {
+      email: REMOTE_BACKEND_HARNESS_EMAIL,
+      password: CANONICAL_REMOTE_BACKEND_HARNESS_PASSWORD,
+      source: "canonical_remote_backend_harness",
+    };
+  }
+
+  const local = getLocalCmsRuntimeLoginCredentials();
+  if (local) {
+    return { ...local, source: "canonical_local_provider" };
+  }
+
+  return null;
+}
+
+export function hasBackofficeSuperadminCredentialsForE2E(): boolean {
+  return resolveBackofficeSuperadminCredentialsForE2E() !== null;
 }
 
 /** Home path for role (matches lib/auth/roleHome). */
@@ -160,6 +208,10 @@ export async function loginViaApi(
  * Wait for the app to have left the login page (navigation after submit).
  * Does not assert final URL; use expect(page).toHaveURL(...) in the test.
  */
-export async function waitForPostLoginNavigation(page: Page): Promise<void> {
-  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
+export async function waitForPostLoginNavigation(
+  page: Page,
+  options?: { timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 15_000;
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout });
 }

@@ -21,13 +21,9 @@ describe("renderBlock — unknown block types", () => {
     expect(node).toBeNull();
   });
 
-  test("returns explicit warning element for unknown block type in staging env", () => {
+  test("returns null for unknown block type in staging env (no fallback markup)", () => {
     const node = renderBlock({ id: "u2", type: "unknown_type", data: {} }, "staging", "nb");
-    expect(node).not.toBeNull();
-
-    const html = renderToStaticMarkup(React.createElement(React.Fragment, null, node));
-    expect(html).toContain("Ukjent blokktype i innhold");
-    expect(html).toContain("unknown_type");
+    expect(node).toBeNull();
   });
 });
 

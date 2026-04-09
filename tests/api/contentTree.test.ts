@@ -53,7 +53,12 @@ let mockTreeRows: Array<any> = [];
 let mockMoveUpdateResult: { data: any; error: any } = { data: null, error: null };
 let mockParentLookup: Record<string, { id: string; tree_parent_id: string | null }> = {};
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table !== "content_pages") {
@@ -104,7 +109,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 /* =========================================================
    Imports

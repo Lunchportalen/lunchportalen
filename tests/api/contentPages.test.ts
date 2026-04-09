@@ -37,7 +37,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
 }));
 
 const state = vi.hoisted(() => ({ pagesInsertError: null as { code: string } | null }));
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table === "content_pages") {
@@ -46,8 +51,22 @@ vi.mock("@/lib/supabase/admin", () => ({
             order: () => ({
               order: () => ({
                 order: () => ({
-                  limit: () =>
-                    Promise.resolve({ data: [], error: null }),
+                  limit: () => Promise.resolve({ data: [], error: null }),
+                }),
+              }),
+            }),
+            eq: () => ({
+              maybeSingle: () => Promise.resolve({ data: { id: "parent-id" }, error: null }),
+              is: () => ({
+                order: () => ({
+                  limit: () => Promise.resolve({ data: [], error: null }),
+                }),
+              }),
+            }),
+            is: () => ({
+              eq: () => ({
+                order: () => ({
+                  limit: () => Promise.resolve({ data: [], error: null }),
                 }),
               }),
             }),
@@ -71,7 +90,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 import { GET as ContentPagesGET, POST as ContentPagesPOST } from "../../app/api/backoffice/content/pages/route";
 

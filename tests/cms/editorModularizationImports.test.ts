@@ -30,6 +30,10 @@ describe("editor modularization – import integrity", () => {
     const mod = await import(`@/${contentPath}/ContentWorkspaceActions.ts`);
     expect(mod.createOnCreate).toBeDefined();
     expect(typeof mod.createOnCreate).toBe("function");
+    expect(mod.runControl).toBeDefined();
+    expect(typeof mod.runControl).toBe("function");
+    expect(Array.isArray(mod.CONTROL_TOWER_ACTIONS)).toBe(true);
+    expect(mod.CONTROL_TOWER_ACTIONS.length).toBeGreaterThan(0);
   });
 
   it("ContentWorkspaceShell exports component", async () => {
@@ -44,6 +48,22 @@ describe("editor modularization – import integrity", () => {
     expect(mod.ContentWorkspaceMainPanel).toBeDefined();
     expect(typeof mod.ContentWorkspaceSidebarPanel).toBe("function");
     expect(typeof mod.ContentWorkspaceMainPanel).toBe("function");
+  });
+
+  it("workspace shell modules export Bellissima editor surfaces", async () => {
+    const [header, body, preview, inspector, footer] = await Promise.all([
+      import(`@/${contentPath}/WorkspaceHeader.tsx`),
+      import(`@/${contentPath}/WorkspaceBody.tsx`),
+      import(`@/${contentPath}/WorkspacePreview.tsx`),
+      import(`@/${contentPath}/WorkspaceInspector.tsx`),
+      import(`@/${contentPath}/WorkspaceFooter.tsx`),
+    ]);
+
+    expect(typeof header.WorkspaceHeader).toBe("function");
+    expect(typeof body.WorkspaceBody).toBe("function");
+    expect(typeof preview.WorkspacePreview).toBe("function");
+    expect(typeof inspector.WorkspaceInspector).toBe("function");
+    expect(typeof footer.WorkspaceFooter).toBe("function");
   });
 
   it("ContentWorkspace exports default component", async () => {

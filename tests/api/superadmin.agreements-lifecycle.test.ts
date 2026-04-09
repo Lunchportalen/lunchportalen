@@ -2,6 +2,10 @@
 import { describe, test, expect } from "vitest";
 import crypto from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { hasRemoteSupabaseIntegrationEnv } from "@/tests/_helpers/remoteSupabaseIntegration";
+
+const hasDb = hasRemoteSupabaseIntegrationEnv();
+const describeIfDb = hasDb ? describe : describe.skip;
 
 function isoFrom(offsetDays: number) {
   const d = new Date();
@@ -215,7 +219,7 @@ async function approveActive(
   return { error: null };
 }
 
-describe("superadmin agreements lifecycle – hardening", () => {
+describeIfDb("superadmin agreements lifecycle – hardening", () => {
   test("pending -> active approval works and is audited", async () => {
     const admin = supabaseAdmin();
     const companyAId = crypto.randomUUID();

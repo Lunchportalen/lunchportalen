@@ -4,7 +4,7 @@
  */
 // @ts-nocheck
 
-import { describe, test, expect, vi, beforeEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
 function mkReq(url: string, init?: RequestInit & { headers?: Record<string, string>; body?: unknown }) {
   const { headers = {}, body, ...rest } = init ?? {};
@@ -25,6 +25,19 @@ async function readJson(res: Response) {
 
 const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const readJsonMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/agreement/requireRule", () => ({
+  requireRule: vi.fn(async () => ({
+    ok: true,
+    rule: {
+      company_id: "c1",
+      day_key: "tue",
+      slot: "lunch",
+      tier: "BASIS",
+    },
+  })),
+}));
+
 vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
   const orig = await importOriginal<typeof import("@/lib/http/routeGuard")>();
   return {
@@ -49,7 +62,7 @@ const authCtx = {
   rid: "rid_test",
   ctx: {
     rid: "rid_test",
-    scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee" },
+    scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee", email: "emp@test.no" },
   },
 };
 
@@ -102,6 +115,13 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
     readJsonMock.mockResolvedValue({});
   });
 
+  afterEach(async () => {
+    const { supabaseServer } = await supabaseServerMod();
+    vi.mocked(supabaseServer).mockImplementation(async () => ({
+      rpc: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    }));
+  });
+
   test("returns 401 when not authenticated (canonical res/response)", async () => {
     scopeOr401Mock.mockResolvedValue({
       ok: false,
@@ -138,12 +158,42 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
     scopeOr401Mock.mockResolvedValue({ ok: true, ctx: authCtx.ctx });
     readJsonMock.mockResolvedValueOnce({ date: "2026-02-03", action: "SET" });
     const { supabaseServer } = await supabaseServerMod();
-    vi.mocked(supabaseServer).mockResolvedValueOnce({
-      rpc: vi.fn().mockResolvedValueOnce({
-        data: { order_id: "ord-1", status: "ACTIVE", date: "2026-02-03", slot: "lunch", receipt: "2026-02-03T12:00:00Z" },
-        error: null,
-      }),
-    } as any);
+    const rpcOk = vi.fn().mockResolvedValueOnce({
+      data: { order_id: "ord-1", status: "ACTIVE", date: "2026-02-03", slot: "lunch", receipt: "2026-02-03T12:00:00Z" },
+      error: null,
+    });
+    vi.mocked(supabaseServer).mockImplementation(async () => ({
+      rpc: rpcOk,
+      from: (table: string) => {
+        const chain: any = {
+          select: () => chain,
+          limit: () => chain,
+          eq: () => chain,
+          maybeSingle: async () => {
+            if (table === "system_settings") {
+              return {
+                data: {
+                  toggles: {},
+                  killswitch: {},
+                  retention: {},
+                  updated_at: null,
+                  updated_by: null,
+                },
+                error: null,
+              };
+            }
+            if (table === "companies") {
+              return {
+                data: { billing_hold: false, billing_hold_reason: null, status: "ACTIVE" },
+                error: null,
+              };
+            }
+            return { data: null, error: null };
+          },
+        };
+        return chain;
+      },
+    }));
 
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",

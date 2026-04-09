@@ -6,14 +6,17 @@
 import { describe, test, expect, beforeAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const hasDb =
-  Boolean(url && String(url).trim()) && Boolean(serviceKey && String(serviceKey).trim());
+import type { Database } from "@/lib/types/database";
+import {
+  hasRemoteSupabaseIntegrationEnv,
+  readRemoteSupabaseIntegrationEnv,
+} from "@/tests/_helpers/remoteSupabaseIntegration";
 
-function adminClient(): SupabaseClient {
-  if (!url || !serviceKey) throw new Error("Missing Supabase env");
-  return createClient(url, serviceKey, {
+const hasDb = hasRemoteSupabaseIntegrationEnv();
+
+function adminClient(): SupabaseClient<Database> {
+  const { url, serviceKey } = readRemoteSupabaseIntegrationEnv();
+  return createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -24,7 +27,7 @@ const CHECK_VIOLATION = "23514";
 const NOT_NULL_VIOLATION = "23502";
 
 describe("database integrity", () => {
-  let admin: SupabaseClient;
+  let admin: SupabaseClient<Database>;
 
   beforeAll(() => {
     if (!hasDb) return;
@@ -117,10 +120,10 @@ describe("database integrity", () => {
     test.skipIf(!hasDb)(
       "anon client without session cannot read orders (RLS denies)",
       async () => {
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const { url, anonKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
         if (!url || !anonKey) return;
 
-        const anon = createClient(url, anonKey, {
+        const anon = createClient<Database>(url, anonKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
@@ -134,10 +137,10 @@ describe("database integrity", () => {
     test.skipIf(!hasDb)(
       "anon client without session cannot read companies (RLS denies)",
       async () => {
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const { url, anonKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
         if (!url || !anonKey) return;
 
-        const anon = createClient(url, anonKey, {
+        const anon = createClient<Database>(url, anonKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
@@ -156,7 +159,7 @@ describe("database integrity", () => {
       "core tables exist and are queryable after migrations",
       async () => {
         for (const table of coreTables) {
-          const { error } = await admin.from(table).select("*").limit(0);
+          const { error } = await admin.from(table as keyof Database["public"]["Tables"]).select("*").limit(0);
           expect(error, `table ${table} should exist and be queryable`).toBeNull();
         }
       },

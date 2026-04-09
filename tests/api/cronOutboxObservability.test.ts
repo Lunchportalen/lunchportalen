@@ -40,7 +40,12 @@ vi.mock("@/lib/orderBackup/outbox", () => ({
   processOutboxBatch: (...args: unknown[]) => processOutboxBatchMock(...args),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from(table: string) {
       if (table === "cron_runs") {
@@ -56,7 +61,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       };
     },
   }),
-}));
+  };
+});
 
 import { POST as CronOutboxPOST } from "../../app/api/cron/outbox/route";
 

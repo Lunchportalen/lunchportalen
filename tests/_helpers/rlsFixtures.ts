@@ -8,16 +8,8 @@ import os from "node:os";
 import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function requireEnv(name: string, v: string | undefined) {
-  if (!v || !String(v).trim()) throw new Error(`Missing env: ${name}`);
-}
-requireEnv("NEXT_PUBLIC_SUPABASE_URL", SUPABASE_URL);
-requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", SUPABASE_ANON);
-requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE);
+import type { Database } from "@/lib/types/database";
+import { readRemoteSupabaseIntegrationEnv } from "./remoteSupabaseIntegration";
 
 export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -31,8 +23,8 @@ export type AuthUserFx = {
 export type Fixtures = {
   rid: string;
 
-  admin: SupabaseClient; // service role
-  anon: SupabaseClient; // anon
+  admin: SupabaseClient<Database>; // service role
+  anon: SupabaseClient<Database>; // anon
 
   companyA: { id: string; name: string };
   companyB: { id: string; name: string };
@@ -59,7 +51,7 @@ export type Fixtures = {
     driver: AuthUserFx;
   };
 
-  supabaseAs: (accessToken: string) => SupabaseClient;
+  supabaseAs: (accessToken: string) => SupabaseClient<Database>;
   cleanup: () => Promise<void>;
 };
 
@@ -72,27 +64,30 @@ function randEmail(prefix: string) {
   return `${prefix}.${n}@test.lunchportalen.no`;
 }
 
-function supabaseAdmin(): SupabaseClient {
-  return createClient(SUPABASE_URL!, SUPABASE_SERVICE!, {
+function supabaseAdmin(): SupabaseClient<Database> {
+  const { url, serviceKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
+  return createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
-function supabaseAnon(): SupabaseClient {
-  return createClient(SUPABASE_URL!, SUPABASE_ANON!, {
+function supabaseAnon(): SupabaseClient<Database> {
+  const { url, anonKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
+  return createClient<Database>(url, anonKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
-function supabaseAs(accessToken: string): SupabaseClient {
+function supabaseAs(accessToken: string): SupabaseClient<Database> {
   // ANON key + bearer token => RLS evalueres som den brukeren
-  return createClient(SUPABASE_URL!, SUPABASE_ANON!, {
+  const { url, anonKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
+  return createClient<Database>(url, anonKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 }
 
-async function createAuthUser(admin: SupabaseClient, email: string, password: string) {
+async function createAuthUser(admin: SupabaseClient<Database>, email: string, password: string) {
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
@@ -154,7 +149,7 @@ async function withSignInLock<T>(fn: () => Promise<T>): Promise<T> {
  * Reuses cached token when the same (email, password) is requested again.
  * Exported for regression tests (token reuse / no repeated sign-in).
  */
-export async function createAccessToken(admin: SupabaseClient, email: string, password: string): Promise<string> {
+export async function createAccessToken(admin: SupabaseClient<Database>, email: string, password: string): Promise<string> {
   const key = tokenCacheKey(email, password);
   const cached = tokenCache.get(key);
   if (cached) return cached;
@@ -196,7 +191,7 @@ function orgnrBaseFromRid(rid: string): number {
 ========================================================= */
 
 async function insertProfile(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   args: {
     user_id: string;
     role: Role;
@@ -235,7 +230,7 @@ async function insertProfile(
  *  2) lowercase (active/paused/closed) hvis status_check feiler
  */
 async function insertCompany(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   args: { id: string; name: string; status?: string | null; default_location_id?: string | null; orgnr?: string | null }
 ) {
   const id = safeStr(args.id);
@@ -295,7 +290,7 @@ async function insertCompany(
 }
 
 async function insertLocation(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   args: { id: string; company_id: string; name: string; label?: string | null }
 ) {
   const id = safeStr(args.id);
@@ -322,7 +317,7 @@ async function insertLocation(
 }
 
 async function insertOrder(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   args: { id?: string; user_id: string; date: string; status: string; company_id: string; location_id: string; slot?: string | null; note?: string | null }
 ) {
   const { error } = await admin.from("orders").insert(
@@ -347,7 +342,7 @@ async function insertOrder(
  * Fails if company is CLOSED (RPC path only; direct insert is used for fixture companies that are not CLOSED).
  */
 async function ensureActiveAgreement(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   companyId: string,
   locationId: string,
   startsAtISO: string

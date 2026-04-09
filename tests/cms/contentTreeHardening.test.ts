@@ -13,7 +13,16 @@
 import { describe, test, expect } from "vitest";
 
 import { isContentPageId } from "@/lib/cms/public/getPageIdBySlug";
-import { dedupeRootsById, flattenVisible, findNode, getMockRoots } from "@/app/(backoffice)/backoffice/content/_tree/treeMock";
+import { contentTreeMutationsLocked } from "@/lib/cms/contentTreeRuntime";
+import {
+  collectExpandedIdsForTreeFilter,
+  collectVisibleNodeIdsForTreeFilter,
+  contentTreeNodeMatchesFilter,
+  dedupeRootsById,
+  flattenVisible,
+  findNode,
+  getMockRoots,
+} from "@/app/(backoffice)/backoffice/content/_tree/treeMock";
 import type { ContentTreeNode, TreePermissions } from "@/app/(backoffice)/backoffice/content/_tree/treeTypes";
 import { MOCK_RECYCLE_BIN_ID } from "@/app/(backoffice)/backoffice/content/_data/mockContent";
 
@@ -271,6 +280,36 @@ describe("contentTreeHardening – tree truth model and selection", () => {
   });
 });
 
+describe("contentTree CP9 — tree filter helpers", () => {
+  test("collectVisibleNodeIdsForTreeFilter returns null when needle is blank", () => {
+    const roots = getMockRoots();
+    expect(collectVisibleNodeIdsForTreeFilter(roots, "")).toBeNull();
+    expect(collectVisibleNodeIdsForTreeFilter(roots, "   ")).toBeNull();
+  });
+
+  test("collectVisibleNodeIdsForTreeFilter includes ancestors for a slug match", () => {
+    const roots = getMockRoots();
+    const ids = collectVisibleNodeIdsForTreeFilter(roots, "header");
+    expect(ids).not.toBeNull();
+    expect(ids!.has("global")).toBe(true);
+    expect(ids!.has("global-header")).toBe(true);
+  });
+
+  test("collectExpandedIdsForTreeFilter expands folders on path to match", () => {
+    const roots = getMockRoots();
+    const ex = collectExpandedIdsForTreeFilter(roots, "header");
+    expect(ex.has("global")).toBe(true);
+  });
+
+  test("contentTreeNodeMatchesFilter matches name or slug", () => {
+    const roots = getMockRoots();
+    const header = findNode(roots, "global-header");
+    expect(header).not.toBeNull();
+    expect(contentTreeNodeMatchesFilter(header!, "head")).toBe(true);
+    expect(contentTreeNodeMatchesFilter(header!, "xyz")).toBe(false);
+  });
+});
+
 describe("contentTreeHardening – fail-closed invalid-node behavior", () => {
   test("flattenVisible tolerates null/undefined in roots (no crash on malformed API response)", () => {
     const validNode: ContentTreeNode = {
@@ -382,6 +421,32 @@ describe("contentTreeHardening – node actions/menu safety", () => {
     expect(perms.canCreate).toBe(false);
     expect(perms.canRename).toBe(false);
     expect(perms.canDelete).toBe(false);
+  });
+});
+
+describe("contentTreeHardening – degraded mutation posture", () => {
+  test("page_key fallback keeps mutations open because tree structure still exists", () => {
+    expect(
+      contentTreeMutationsLocked({
+        degraded: true,
+        reason: "PAGE_KEY_COLUMN_MISSING",
+      }),
+    ).toBe(false);
+  });
+
+  test("missing tree structure locks mutations fail-closed", () => {
+    expect(
+      contentTreeMutationsLocked({
+        degraded: true,
+        reason: "TREE_COLUMNS_MISSING",
+      }),
+    ).toBe(true);
+    expect(
+      contentTreeMutationsLocked({
+        degraded: true,
+        reason: "TABLE_OR_CONTENT_PAGES_UNAVAILABLE",
+      }),
+    ).toBe(true);
   });
 });
 

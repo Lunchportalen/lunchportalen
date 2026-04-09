@@ -21,8 +21,9 @@ describe("env-public (client-safe Supabase config)", () => {
     const origVitest = process.env["VITEST"];
     const origUrl = process.env["NEXT_PUBLIC_SUPABASE_URL"];
     const origAnon = process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+    const origLpCms = process.env["LP_CMS_RUNTIME_MODE"];
 
-    Object.assign(process.env, { NODE_ENV: "production" });
+    Object.assign(process.env, { NODE_ENV: "production", LP_CMS_RUNTIME_MODE: "remote_backend" });
     // eslint-disable-next-line no-restricted-syntax
     delete process.env["VITEST"];
     // eslint-disable-next-line no-restricted-syntax
@@ -36,5 +37,7 @@ describe("env-public (client-safe Supabase config)", () => {
     if (origVitest !== undefined) process.env["VITEST"] = origVitest;
     if (origUrl !== undefined) process.env["NEXT_PUBLIC_SUPABASE_URL"] = origUrl;
     if (origAnon !== undefined) process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"] = origAnon;
+    if (origLpCms !== undefined) process.env["LP_CMS_RUNTIME_MODE"] = origLpCms;
+    else delete process.env["LP_CMS_RUNTIME_MODE"];
   });
 });

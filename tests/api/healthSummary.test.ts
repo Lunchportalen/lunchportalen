@@ -20,7 +20,12 @@ async function readJson(res: Response) {
 const dbFailing = vi.hoisted(() => ({ value: false }));
 const envFailing = vi.hoisted(() => ({ value: false }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (_table: string) => ({
       select: () => ({
@@ -31,7 +36,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     }),
   }),
-}));
+  };
+});
 
 vi.mock("@/lib/env/system", async (orig) => {
   const actual = await orig();

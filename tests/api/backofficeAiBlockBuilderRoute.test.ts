@@ -45,9 +45,13 @@ vi.mock("@/lib/http/routeGuard", () => ({
   requireRoleOr403: requireRoleOr403Mock,
 }));
 
-vi.mock("@/lib/ai/provider", () => ({
-  isAIEnabled: isAIEnabledMock,
-}));
+vi.mock("@/lib/ai/runner", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/ai/runner")>();
+  return {
+    ...mod,
+    isAIEnabled: isAIEnabledMock,
+  };
+});
 
 const buildBlockFromDescriptionMock = vi.fn(() => ({
   block: { id: "b1", type: "hero", data: { title: "T" } },

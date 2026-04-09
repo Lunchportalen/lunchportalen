@@ -89,9 +89,15 @@ function makeAdminMock(seed?: { profiles?: any[]; company_locations?: any[]; kit
 
 let adminDb: any;
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => adminDb,
-}));
+  };
+});
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
@@ -176,7 +182,7 @@ describe("kitchen batch/status", () => {
     expect(res.status).toBe(403);
   });
 
-  test("non-kitchen får 403", async () => {
+  test("non-kitchen fï¿½r 403", async () => {
     mockRole = "employee";
     const req = mkReq("http://localhost/api/kitchen/batch/set", {
       method: "POST",

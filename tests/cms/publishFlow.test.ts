@@ -24,12 +24,27 @@ function addVariant(pageId: string, locale: string, env: string, body: unknown):
   return id;
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
+    rpc: (fn: string) => {
+      if (fn === "lp_insert_page_version") {
+        return Promise.resolve({
+          data: [{ id: "pv-publish-test", version_number: 1 }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: { message: "unknown_rpc" } });
+    },
     from: (table: string) => {
       const q: any = {
         _slug: undefined as string | undefined,
         _pageId: undefined as string | undefined,
+        _byId: undefined as string | undefined,
         _locale: undefined as string | undefined,
         _env: undefined as string | undefined,
         _id: undefined as string | undefined,
@@ -40,6 +55,7 @@ vi.mock("@/lib/supabase/admin", () => ({
         eq(col: string, val: string) {
           if (table === "content_pages") {
             if (col === "slug") q._slug = val;
+            if (col === "id") q._byId = val;
           } else if (table === "content_page_variants") {
             if (col === "page_id") q._pageId = val;
             else if (col === "locale") q._locale = val;
@@ -82,6 +98,21 @@ vi.mock("@/lib/supabase/admin", () => ({
         },
         maybeSingle(): Promise<{ data: any; error: any }> {
           if (table === "content_pages") {
+            if (q._byId != null) {
+              const page = Object.values(mockPagesBySlug).find((p) => p?.id === q._byId) ?? null;
+              const data = page
+                ? {
+                    id: page.id,
+                    title: page.title,
+                    slug: page.slug,
+                    status: "published",
+                    created_at: null,
+                    updated_at: null,
+                    published_at: null,
+                  }
+                : null;
+              return Promise.resolve({ data, error: null });
+            }
             const page = q._slug != null ? mockPagesBySlug[q._slug] ?? null : null;
             return Promise.resolve({ data: page, error: null });
           }
@@ -104,7 +135,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       return q;
     },
   }),
-}));
+  };
+});
 
 describe("publish flow — public and preview parity", () => {
   beforeEach(() => {

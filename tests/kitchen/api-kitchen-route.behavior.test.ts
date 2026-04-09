@@ -73,9 +73,15 @@ function makeAdminMock(seed: { orders?: any[] }) {
 
 let adminDb: any;
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => adminDb,
-}));
+  };
+});
 
 import { GET as kitchenGET } from "../../app/api/kitchen/route";
 

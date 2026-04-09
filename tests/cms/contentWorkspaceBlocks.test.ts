@@ -7,8 +7,10 @@
 // @ts-nocheck
 
 import { describe, test, expect } from "vitest";
+import { createBackofficeBlockDraft } from "@/lib/cms/backofficeBlockCatalog";
 
 import {
+  createBlock,
   parseBodyToBlocks,
   deriveBodyForSave,
   serializeBlocksToBody,
@@ -129,6 +131,15 @@ describe("contentWorkspace.blocks – deriveBodyForSave / serializeBlocksToBody"
     const parsed = parseBodyToBlocks(json);
     expect(parsed.blocks[0].id).toBe("a");
     expect(parsed.blocks[1].id).toBe("b");
+  });
+
+  test("createBlock uses the canonical backoffice block draft defaults", () => {
+    const pricingBlock = createBlock("pricing");
+    const canonicalDraft = createBackofficeBlockDraft("pricing");
+
+    expect(pricingBlock.type).toBe("pricing");
+    expect(pricingBlock.title).toBe(canonicalDraft?.title);
+    expect(pricingBlock.plans).toEqual(canonicalDraft?.plans);
   });
 });
 

@@ -104,9 +104,15 @@ function makeAdminDb() {
   };
 }
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => makeAdminDb(),
-}));
+  };
+});
 
 import { GET as adminPeopleGET } from "../app/api/admin/people/route";
 

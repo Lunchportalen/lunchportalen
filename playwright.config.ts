@@ -2,7 +2,27 @@
 // Phase 1: Playwright foundation — desktop chromium, mobile viewport, baseURL, failure artifacts, stable output paths
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+/** Optional dedicated port for Playwright-spawned dev (use with LP_PLAYWRIGHT_WEBSERVER_LOCAL_CMS=1 when :3000 is already taken). */
+const playwrightDevPort = process.env.LP_PLAYWRIGHT_DEV_PORT?.trim();
+
+/** When set, Playwright spawns `npm run dev` with LP_CMS_RUNTIME_MODE=local_provider and does not reuse an existing server (avoids stale remote_backend instances blocking canonical login). */
+const forceLocalCmsWebServer = process.env.LP_PLAYWRIGHT_WEBSERVER_LOCAL_CMS === "1";
+
+/** U98B — use already-running server (e.g. PORT=3055); disables Playwright webServer. */
+const externalServer = process.env.LP_E2E_EXTERNAL_SERVER === "1";
+
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  (forceLocalCmsWebServer && playwrightDevPort
+    ? `http://localhost:${playwrightDevPort}`
+    : "http://localhost:3000");
+
+const webServerCommand =
+  forceLocalCmsWebServer && playwrightDevPort
+    ? `cross-env PORT=${playwrightDevPort} LP_CMS_RUNTIME_MODE=local_provider npm run dev`
+    : forceLocalCmsWebServer
+      ? `cross-env LP_CMS_RUNTIME_MODE=local_provider npm run dev`
+      : "npm run dev";
 
 export default defineConfig({
   testDir: "e2e",
@@ -28,12 +48,17 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } } },
   ],
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "npm run dev",
-        url: baseURL,
-        reuseExistingServer: true,
-        timeout: 60_000,
-      },
+  webServer:
+    process.env.CI || externalServer
+      ? undefined
+      : {
+          command: webServerCommand,
+          url: baseURL,
+          reuseExistingServer: forceLocalCmsWebServer ? false : true,
+          timeout: forceLocalCmsWebServer ? 120_000 : 60_000,
+          env: {
+            ...process.env,
+            ...(forceLocalCmsWebServer && !playwrightDevPort ? { LP_CMS_RUNTIME_MODE: "local_provider" } : {}),
+          },
+        },
 });

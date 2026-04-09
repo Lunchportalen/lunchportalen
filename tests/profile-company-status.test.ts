@@ -8,15 +8,16 @@ function readJson(res: Response) {
 
 let profileRow: any = null;
 let companyRow: any = null;
-let authUser: any = null;
 let profileErr: any = null;
 let companyErr: any = null;
+const getAuthContextMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/auth/getAuthContext", () => ({
+  getAuthContext: getAuthContextMock,
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
-    auth: {
-      getUser: async () => ({ data: { user: authUser }, error: null }),
-    },
     from: (_table: string) => ({
       select: (_s: string) => ({
         eq: (_k: string, _v: any) => ({
@@ -27,7 +28,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (_table: string) => ({
       select: (_s: string) => ({
@@ -37,7 +43,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }),
     }),
   }),
-}));
+  };
+});
 
 import { GET as profileGET } from "../app/api/profile/route";
 
@@ -52,9 +59,28 @@ beforeEach(() => {
     disabled_reason: null,
   };
   companyRow = { id: "c1", status: "PENDING" };
-  authUser = { id: "u1" };
   profileErr = null;
   companyErr = null;
+  getAuthContextMock.mockResolvedValue({
+    ok: true,
+    reason: "OK",
+    mode: "DB_LOOKUP",
+    user: { id: "u1", email: "user@example.com" },
+    role: "employee",
+    company_id: "c1",
+    location_id: "l1",
+    rid: "rid_profile_status",
+    userId: "u1",
+    email: "user@example.com",
+    isAuthenticated: true,
+    isSessionValid: true,
+    isRefreshable: true,
+    hasAuthError: false,
+    errorType: "NONE",
+    source: "SSR_COOKIE",
+    sessionOk: true,
+    shouldAttemptRefresh: false,
+  });
 });
 
 describe("api/profile company status gate", () => {

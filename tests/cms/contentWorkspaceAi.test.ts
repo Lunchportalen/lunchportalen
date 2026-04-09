@@ -7,8 +7,6 @@
  * - normalizeAiApiError preserves FEATURE_DISABLED semantics and safe fallbacks
  */
 
-// @ts-nocheck
-
 import { describe, test, expect } from "vitest";
 
 import {
@@ -19,8 +17,9 @@ import {
   rankHeroMediaSuggestions,
   normalizeAiApiError,
 } from "@/app/(backoffice)/backoffice/content/_components/contentWorkspace.ai";
-
+import { normalizeBlock } from "@/app/(backoffice)/backoffice/content/_components/contentWorkspace.blocks";
 import type { Block } from "@/app/(backoffice)/backoffice/content/_components/editorBlockTypes";
+import { getBlockEntryFlatForRender } from "@/lib/cms/blocks/blockEntryContract";
 
 describe("contentWorkspace.ai – AI tool to feature mapping", () => {
   test("maps known tools to expected features", () => {
@@ -35,17 +34,27 @@ describe("contentWorkspace.ai – AI tool to feature mapping", () => {
 });
 
 describe("contentWorkspace.ai – buildAiBlocks / buildAiExistingBlocks", () => {
+  const h = normalizeBlock({
+    id: "h1",
+    type: "hero",
+    title: "Tittel",
+    subtitle: "Sub",
+    imageId: "/img.jpg",
+    imageAlt: "Alt",
+    ctaLabel: "CTA",
+    ctaHref: "/lenke",
+  });
+  const c = normalizeBlock({
+    id: "c1",
+    type: "cta",
+    title: "CTA tittel",
+    body: "CTA tekst",
+    buttonLabel: "Knapp",
+    buttonHref: "/cta",
+  });
+  if (!h || !c) throw new Error("normalizeBlock");
   const sampleBlocks: Block[] = [
-    {
-      id: "h1",
-      type: "hero",
-      title: "Tittel",
-      subtitle: "Sub",
-      imageUrl: "/img.jpg",
-      imageAlt: "Alt",
-      ctaLabel: "CTA",
-      ctaHref: "/lenke",
-    },
+    h,
     {
       id: "r1",
       type: "richText",
@@ -55,18 +64,11 @@ describe("contentWorkspace.ai – buildAiBlocks / buildAiExistingBlocks", () => 
     {
       id: "i1",
       type: "image",
-      assetPath: "/asset.png",
+      imageId: "/asset.png",
       alt: "Bilde",
       caption: "Bildetekst",
     },
-    {
-      id: "c1",
-      type: "cta",
-      title: "CTA tittel",
-      body: "CTA tekst",
-      buttonLabel: "Knapp",
-      buttonHref: "/cta",
-    },
+    c,
   ];
 
   test("buildAiBlocks preserves id/type and wraps data per block type", () => {
@@ -75,22 +77,17 @@ describe("contentWorkspace.ai – buildAiBlocks / buildAiExistingBlocks", () => 
     const hero = aiBlocks[0];
     expect(hero.id).toBe("h1");
     expect(hero.type).toBe("hero");
-    expect(hero.data).toEqual({
-      title: "Tittel",
-      subtitle: "Sub",
-      imageUrl: "/img.jpg",
-      imageAlt: "Alt",
-      ctaLabel: "CTA",
-      ctaHref: "/lenke",
-    });
+    expect(hero.data).toEqual(getBlockEntryFlatForRender(sampleBlocks[0]));
     const rich = aiBlocks[1];
     expect(rich.data).toEqual({ heading: "Overskrift", body: "Brødtekst" });
     const image = aiBlocks[2];
     expect(image.data).toEqual({
-      assetPath: "/asset.png",
+      imageId: "/asset.png",
       alt: "Bilde",
       caption: "Bildetekst",
     });
+    const cta = aiBlocks[3];
+    expect(cta.data).toEqual(getBlockEntryFlatForRender(sampleBlocks[3]));
   });
 
   test("buildAiExistingBlocks exposes only id + type", () => {

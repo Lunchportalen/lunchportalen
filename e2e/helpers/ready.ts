@@ -46,6 +46,22 @@ export async function assertLoginPageReady(page: Page, options?: { timeout?: num
 }
 
 /**
+ * Content workspace first-visit onboarding (modal) blocks the inspector rail until skipped.
+ */
+export async function dismissContentWorkspaceOnboardingIfPresent(page: Page): Promise<void> {
+  const skip = page.getByRole("button", { name: "Hopp over" });
+  const visible = await skip.isVisible({ timeout: 4_000 }).catch(() => false);
+  if (visible) await skip.click();
+}
+
+/** In-editor coachmark ("Slik redigerer du siden") can sit above the rail until dismissed. */
+export async function dismissEditorCoachmarkIfPresent(page: Page): Promise<void> {
+  const understood = page.getByRole("button", { name: "Forstått" });
+  const visible = await understood.isVisible({ timeout: 3_000 }).catch(() => false);
+  if (visible) await understood.click();
+}
+
+/**
  * Wait for fonts to be loaded so visual snapshots are stable (Phase 4).
  */
 export async function waitForFontsReady(page: Page): Promise<void> {

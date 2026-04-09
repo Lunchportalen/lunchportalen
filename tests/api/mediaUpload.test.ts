@@ -39,7 +39,12 @@ vi.mock("@/lib/http/routeGuard", () => ({
 let mockUploadResult: { error: any } = { error: null };
 let mockInsertedRow: any = null;
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     storage: {
       from: (bucket: string) => ({
@@ -85,7 +90,8 @@ vi.mock("@/lib/supabase/admin", () => ({
     },
   }),
   hasSupabaseAdminConfig: () => true,
-}));
+  };
+});
 
 // Minimal validation stub (reuses real implementation in route via dynamic import)
 vi.mock("@/lib/media/validation", async () => {

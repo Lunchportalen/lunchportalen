@@ -42,13 +42,19 @@ vi.mock("@/lib/backoffice/content/releasesRepo", () => ({
   executeRelease: vi.fn(async () => ({ count: 1 })),
 }));
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: () => ({
       update: () => ({ eq: () => Promise.resolve({ error: null }) }),
     }),
   }),
-}));
+  };
+});
 
 import { POST as SchedulePOST } from "../../app/api/backoffice/releases/[id]/schedule/route";
 import { POST as ExecutePOST } from "../../app/api/backoffice/releases/[id]/execute/route";

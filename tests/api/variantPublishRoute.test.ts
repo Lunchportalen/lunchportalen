@@ -6,6 +6,7 @@
 // @ts-nocheck
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { CONTENT_AUDIT_ACTION_PUBLISH } from "@/lib/cms/contentAuditActions";
 
 function mkReq(url: string, init?: RequestInit & { headers?: Record<string, string>; body?: unknown }) {
   const { headers = {}, body, ...rest } = init ?? {};
@@ -50,8 +51,14 @@ vi.mock("@/lib/backoffice/content/workflowRepo", () => ({
 }));
 
 let mockVariantByIdAndPage: Record<string, { id: string; page_id: string } | null> = {};
+let auditInsertPayloads: Record<string, unknown>[] = [];
 
-vi.mock("@/lib/supabase/admin", () => ({
+vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    hasSupabaseAdminConfig: () => false,
+
   supabaseAdmin: () => ({
     from: (table: string) => {
       if (table === "content_page_variants") {
@@ -79,7 +86,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       }
       if (table === "content_audit_log") {
         const q: any = {
-          insert() {
+          insert(payload: Record<string, unknown>) {
+            auditInsertPayloads.push(payload);
             return Promise.resolve({ data: null, error: null });
           },
         };
@@ -88,7 +96,8 @@ vi.mock("@/lib/supabase/admin", () => ({
       throw new Error(`Unexpected table: ${table}`);
     },
   }),
-}));
+  };
+});
 
 import { POST as VariantPublishPOST } from "../../app/api/backoffice/content/pages/[id]/variant/publish/route";
 
@@ -96,6 +105,7 @@ describe("POST /api/backoffice/content/pages/[id]/variant/publish", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVariantByIdAndPage = {};
+    auditInsertPayloads = [];
     scopeOr401Mock.mockResolvedValue({
       ok: true,
       ctx: { rid: MOCK_RID, scope: { role: "superadmin", email: "test@test.no" } },
@@ -116,8 +126,14 @@ describe("POST /api/backoffice/content/pages/[id]/variant/publish", () => {
     expect(res.status).toBe(200);
     const json = await readJson(res);
     expect(json.ok).toBe(true);
-    expect(json.published ?? json.data?.published).toBe(true);
+    expect(json.data?.published).toBe(true);
+    expect(json.data?.pageId).toBe(pageId);
+    expect(json.data?.variantId).toBe(variantId);
+    expect(json.data?.ok).toBeUndefined();
+    expect(json.data?.rid).toBeUndefined();
     expect(copyVariantBodyToProdMock).toHaveBeenCalledTimes(1);
+    expect(auditInsertPayloads).toHaveLength(1);
+    expect(auditInsertPayloads[0]?.action).toBe(CONTENT_AUDIT_ACTION_PUBLISH);
   });
 
   test("returns 500 and ok:false when copyVariantBodyToProd throws (no false success)", async () => {

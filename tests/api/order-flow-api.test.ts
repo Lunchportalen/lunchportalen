@@ -26,8 +26,27 @@ async function readJson(res: Response) {
 
 /* ========== POST /api/orders (create/set) ========== */
 
-const scopeOr401Mock = vi.hoisted(() => vi.fn());
-const requireRoleOr403Mock = vi.hoisted(() => vi.fn());
+/** Mutable guard results — vi.fn + clearAllMocks can yield undefined and break scopeOr401 (→ 500 ORDER_SET_FAILED). */
+let scopeOr401Result: {
+  ok: boolean;
+  ctx?: {
+    rid: string;
+    route: string | null;
+    method: string | null;
+    scope: Record<string, unknown>;
+  };
+  response?: Response;
+  res?: Response;
+} = {
+  ok: true,
+  ctx: {
+    rid: "rid_orders",
+    route: "/api/orders",
+    method: "POST",
+    scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee", email: "emp@test.no" },
+  },
+};
+
 let rpcData: unknown = null;
 let rpcError: { message?: string } | null = null;
 let mockOrder: { id: string; date: string; user_id: string; company_id: string; location_id?: string; status: string } | null = null;
@@ -35,37 +54,86 @@ let mockCompanyStatus = "active";
 let requireRuleResult: { ok: true } | { ok: false; status: number; error: string; message: string } = { ok: true };
 let ordersCallCount = 0;
 
-vi.mock("@/lib/http/routeGuard", () => ({
-  scopeOr401: scopeOr401Mock,
-  requireRoleOr403: requireRoleOr403Mock,
-  readJson: vi.fn(async (req: Request) => {
-    try {
-      return await req.json();
-    } catch {
-      return {};
-    }
-  }),
-}));
+vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/http/routeGuard")>();
+  return {
+    ...actual,
+    scopeOr401: async () => scopeOr401Result,
+    requireRoleOr403: () => null,
+    // Not vi.fn — clearAllMocks can strip inner implementations and break JSON parsing.
+    readJson: async (req: Request) => {
+      try {
+        return await req.json();
+      } catch {
+        return {};
+      }
+    },
+  };
+});
 
 vi.mock("@/lib/agreement/requireRule", () => ({
-  requireRule: vi.fn(async () => requireRuleResult),
+  // Plain async fn — vi.fn here can be reset by clearAllMocks in other suites / tooling.
+  requireRule: async () => requireRuleResult,
 }));
 
 vi.mock("@/lib/cutoff", () => ({
   assertBeforeCutoffForDeliveryDate: vi.fn(),
 }));
 
+vi.mock("@/lib/system/enforcement", () => ({
+  enforceSystemGate: async () => {},
+}));
+
+vi.mock("@/lib/orders/companyOrderEligibility", () => ({
+  assertCompanyOrderWriteAllowed: async () => ({ ok: true }),
+}));
+
+vi.mock("@/lib/orders/orderWriteGuard", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("@/lib/orders/orderWriteGuard")>();
+  return {
+    ...orig,
+    assertOrderWithinAgreementPreflight: async () => ({ ok: true as const }),
+  };
+});
+
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: { line_total: 0 }, error: null }),
+        }),
+      }),
+      insert: async () => ({ error: null }),
+    }),
+  }),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
-  supabaseServer: vi.fn(async () => {
+  // Plain async factory — not vi.fn — so clearAllMocks never strips the Supabase client shape.
+  supabaseServer: async () => {
     ordersCallCount = 0;
     return {
-      rpc: vi.fn(async (_name: string, _params: unknown) => ({ data: rpcData, error: rpcError })),
+      rpc: async (_name: string, _params: unknown) => ({ data: rpcData, error: rpcError }),
       auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) },
       from: (table: string) => {
         const chain: any = {
           select: (..._cols: string[]) => chain,
+          limit: () => chain,
           eq: (col: string, val: string) => ({ ...chain, [col]: val }),
           maybeSingle: async () => {
+            if (table === "system_settings") {
+              return {
+                data: {
+                  toggles: {},
+                  killswitch: {},
+                  retention: {},
+                  updated_at: null,
+                  updated_by: null,
+                },
+                error: null,
+              };
+            }
             if (table === "profiles") {
               return { data: { id: "u1", role: "employee", company_id: "c1", disabled_at: null }, error: null };
             }
@@ -97,28 +165,33 @@ vi.mock("@/lib/supabase/server", () => ({
         return chain;
       },
     };
-  }),
+  },
 }));
 
 import { POST as ordersRoutePOST } from "../../app/api/orders/route";
 
 describe("Order create — POST /api/orders", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    scopeOr401Mock.mockResolvedValue({
+  beforeEach(async () => {
+    const { invalidateSettingsCache } = await import("@/lib/settings/cache");
+    invalidateSettingsCache();
+    scopeOr401Result = {
       ok: true,
-      ctx: { rid: "rid_orders", scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee" } },
-    });
-    requireRoleOr403Mock.mockReturnValue(null);
+      ctx: {
+        rid: "rid_orders",
+        route: "/api/orders",
+        method: "POST",
+        scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee", email: "emp@test.no" },
+      },
+    };
     rpcError = null;
     rpcData = [{ order_id: "ord-1", status: "ACTIVE", date: "2026-02-03", slot: "lunch", receipt: "2026-02-03T07:00:00Z" }];
   });
 
   test("returns 401 when not authenticated (guard enforcement)", async () => {
-    scopeOr401Mock.mockResolvedValue({
+    scopeOr401Result = {
       ok: false,
       response: new Response(JSON.stringify({ ok: false, error: "UNAUTHORIZED" }), { status: 401 }),
-    });
+    };
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
       body: { date: "2026-02-03", action: "place", slot: "lunch" },
@@ -226,9 +299,13 @@ describe("Order create — POST /api/orders", () => {
 /* ========== PATCH /api/orders/[orderId]/cancel ========== */
 
 const lpOrderCancelMock = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/orders/rpcWrite", () => ({
-  lpOrderCancel: (...args: unknown[]) => lpOrderCancelMock(...args),
-}));
+vi.mock(import("@/lib/orders/rpcWrite"), async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/orders/rpcWrite")>();
+  return {
+    ...actual,
+    lpOrderCancel: (...args: unknown[]) => lpOrderCancelMock(...args),
+  };
+});
 
 // Dynamic import after mocks so route uses mocked lpOrderCancel
 async function getCancelRoute() {

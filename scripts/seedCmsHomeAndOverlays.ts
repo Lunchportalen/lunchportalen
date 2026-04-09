@@ -8,6 +8,7 @@
 
 import nextEnv from "@next/env";
 import type { BlockList, BlockNode } from "../lib/cms/model/blockTypes";
+import { buildMarketingHomeBody } from "../lib/cms/seed/marketingHomeBody";
 import { supabaseAdmin } from "../lib/supabase/admin";
 import { APP_OVERLAYS } from "../lib/cms/overlays/registry";
 import { buildOverlayBodies } from "./seedAppOverlaysFromHardcoded";
@@ -19,28 +20,12 @@ type SeedPage = {
   slug: string;
   title: string;
   body: BlockList;
+  /** When true, public getContentBySlug returns this page (requires published status). */
+  publish?: boolean;
 };
 
 function block(id: string, type: string, data: Record<string, unknown>): BlockNode {
   return { id, type, data };
-}
-
-function buildHomeBody(): BlockList {
-  return {
-    version: 1,
-    blocks: [
-      block("seed-home-hero", "hero", {
-        slot: "header",
-        title: "Hjem",
-        subtitle: "Forsideinnhold styrt fra CMS.",
-      }),
-      block("seed-home-intro", "richText", {
-        slot: "help",
-        heading: "Innholdsside for hjem",
-        body: "Denne siden er opprettet som hjem i CMS. Rediger blokker her for å oppdatere forsiden.",
-      }),
-    ],
-  };
 }
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -59,11 +44,12 @@ async function main() {
 
   const pages: SeedPage[] = [];
 
-  // Home page
+  // Home page — full marketing body (renderBlock-safe types only); published for public CMS path.
   pages.push({
     slug: "home",
-    title: "Hjem",
-    body: buildHomeBody(),
+    title: "Lunchportalen Home",
+    body: buildMarketingHomeBody(),
+    publish: true,
   });
 
   // Overlays: reuse bodies when available, otherwise create a minimal placeholder.
@@ -91,7 +77,8 @@ async function main() {
   }
 
   for (const page of pages) {
-    const { slug, title, body } = page;
+    const { slug, title, body, publish } = page;
+    const status = publish ? "published" : "draft";
 
     let pageId: string;
     const { data: existingPage, error: pageErr } = await supabase
@@ -108,7 +95,12 @@ async function main() {
     if (existingPage?.id) {
       const { error: updErr } = await supabase
         .from("content_pages")
-        .update({ title, updated_at: now })
+        .update({
+          title,
+          status,
+          updated_at: now,
+          ...(slug === "home" ? { page_key: "home" as const } : {}),
+        })
         .eq("id", existingPage.id);
       if (updErr) {
         console.error(`[${slug}] failed to update page:`, updErr.message);
@@ -122,10 +114,11 @@ async function main() {
         .insert({
           title,
           slug,
-          status: "draft",
+          status,
           updated_at: now,
           tree_root_key: slug === "home" ? "home" : "overlays",
           tree_sort_order: 0,
+          ...(slug === "home" ? { page_key: "home" as const } : {}),
         })
         .select("id")
         .single();

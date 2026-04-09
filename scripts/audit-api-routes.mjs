@@ -18,6 +18,8 @@ const AUDITED_PREFIXES = [
 
 // K1–K4 + public platform
 const RC_EXTRA_PREFIXES = [
+  "app/api/security/",
+  "app/api/saas/",
   "app/api/agreements/",
   "app/api/me/",
   "app/api/onboarding/",
@@ -47,6 +49,7 @@ const EXCLUDED_PREFIXES = [
   "app/api/template/",
   "app/api/_template/",
   "app/api/accept-invite/",
+  "app/api/saas/billing/webhook/",
 ];
 
 const AUDIT_PREFIXES = [...AUDITED_PREFIXES, ...RC_EXTRA_PREFIXES];
