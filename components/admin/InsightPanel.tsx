@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/admin/InsightPanel.tsx
 "use client";
 

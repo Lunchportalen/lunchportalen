@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/superadmin/SuperadminHeader.tsx
 import LogoutButton from "@/components/auth/LogoutButton";
 import { getSessionUser } from "@/lib/auth/getSessionUser";

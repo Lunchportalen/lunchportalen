@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/ui/separator.tsx
 import * as React from "react";
 

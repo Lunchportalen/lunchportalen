@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/app/AppShell.tsx
 "use client";
 

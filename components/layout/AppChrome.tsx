@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/layout/AppChrome.tsx
 import Link from "next/link";
 import Image from "next/image";

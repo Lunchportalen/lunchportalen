@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/superadmin/AlertsTable.tsx
 "use client";
 

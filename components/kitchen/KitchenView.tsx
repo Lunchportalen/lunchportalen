@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/kitchen/KitchenView.tsx
 "use client";
 

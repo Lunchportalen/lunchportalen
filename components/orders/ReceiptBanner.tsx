@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/orders/ReceiptBanner.tsx
 // A3.1 — Deterministic receipt/error banner
 // - Shows rid always

@@ -1,4 +1,6 @@
 // components/admin/AdminFooter.tsx
+"use client";
+
 export default function AdminFooter({ status = "ok", rid }: { status?: "ok" | "error"; rid?: string | null }) {
   const year = new Date().getFullYear();
   const statusLabel = status === "error" ? "Feil" : "OK";

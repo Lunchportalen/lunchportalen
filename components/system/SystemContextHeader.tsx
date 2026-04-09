@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 import * as React from "react";
 
 type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN" | string;

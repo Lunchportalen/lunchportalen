@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 import * as React from "react";
 
 export type AgreementStatus =

@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/admin/AgreementBlock.tsx
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getCurrentAgreementState } from "@/lib/agreement/currentAgreement";

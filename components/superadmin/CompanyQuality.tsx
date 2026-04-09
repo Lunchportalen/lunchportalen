@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/superadmin/CompanyQuality.tsx
 "use client";
 

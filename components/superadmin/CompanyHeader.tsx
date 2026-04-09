@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/superadmin/CompanyHeader.tsx
 import { getCompanyById } from "@/lib/superadmin/queries";
 import CompanyStatusControls from "./CompanyStatusControls";
