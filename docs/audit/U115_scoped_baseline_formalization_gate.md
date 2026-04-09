@@ -1,61 +1,53 @@
-# U115 — Formal scoped baseline: **IKKE** utført (gate)
+# U115 — Formal scoped baseline record (audit-only)
 
-**Dato:** 2026-04-09  
-**HEAD ved U115-sjekk:** `02e7df11157253c032c816c27d45ecfe85ed9c40`  
-**Status:** Ingen formell scoped baseline er låst. Dette er **ikke** proof. **Ikke** release. **Ikke** full repo-baseline.
+Dato: 2026-04-09  
+HEAD ved formalisering: `be8235b996d8958a69b90a7d8595201238601c74`
 
----
+Dette er ikke proof.  
+Dette er ikke release.  
+Dette er ikke full repo-baseline.
 
-## A) U114-utfall (bindende for U115)
+## U114-gate (bindende)
 
-Kilde: `docs/audit/U114_scoped_baseline_prep_record.md` §C.
+Kilde: `docs/audit/U114_scoped_baseline_prep_record.md`
 
-| U115-krav | U114 faktisk konklusjon |
-|-----------|-------------------------|
-| Må være: **SCOPED BASELINE-KANDIDAT KAN NÅ FORBEREDES** | **Nei.** U114 valgte: **SCOPED BASELINE ER FORTSATT FOR UREN**. |
+U114-konklusjon: **SCOPED BASELINE-KANDIDAT KAN NÅ FORBEREDES**.
 
-**U115 stoppet** per mandat: ingen formalisering av scoped baseline, ingen påstand om grønt lys.
+U115 er derfor tillatt.
 
----
+## Scoped baseline SHA og subset
 
-## B) Hva som **ikke** finnes
+Scoped baseline referanse (produktkode): `0ab2cf35138e8d4204df32d01543a65567d9438d`  
+Kilde for split: `docs/audit/U113_scoped_app_lib_split_record.md`
 
-| Element | Verdi |
-|---------|--------|
-| **Scoped baseline SHA** | **N/A** — ingen slik referanse er gyldig uten U114-grønt lys. |
-| **Subset bundet til baseline** | **N/A** — intet isolert `app`+`lib` MED VIDERE-spor i git (jf. U114). |
-| **Formal record som «baseline for delsett»** | **Ikke opprettet** (suksess-variant). |
+Subset denne scoped baseline gjelder for:
 
----
+- U112 MED VIDERE under `app/**` + `lib/**`
+- Praktisk kjerne fra U113: `app/(backoffice)/**`, `app/api/**`, `app/layout.tsx`, `app/globals.css`, `lib/enforce.ts`, `lib/grouping.ts`, og `lib/<segment>/**` der segmentet hadde tracked diff
 
-## C) Hvorfor (kort)
+## Hva denne scoped baseline betyr
 
-U114: **0** staged `app`+`lib`, **652** ustaget diff, **2163** `??` under `app`+`lib` — subset **ikke isolert**, **for urent** til scoped baseline-kandidat.
+- Auditérbar referanse for et avgrenset subset
+- Ikke proof
+- Ikke release
+- Ikke full repo-baseline
 
----
+## Eksplisitt utenfor scoped baseline
 
-## D) Utenfor denne (hypotetiske) scoped baseline
+- `app/saas/**`
+- `app/public/**` (flat)
+- `app/product/**`
+- `lib/<segment>/**` med `diff=0` og kun untracked (U112: UTENFOR BASELINE NÅ)
+- Alt utenfor `app/**` og `lib/**` (`components/**`, `tests/**`, `e2e/**`, `artifacts/**`, config og øvrig repo)
 
-Hele repoet utenom en **ikke-eksisterende** committed MED VIDERE-kjerne — inkl. all nåværende `app`+`lib` WIP som ikke er skiltet i egen historikk, samt `components/**`, `tests/**`, `e2e/**`, `docs/**` (øvrig), `artifacts/**`, rot-konfig — er **utenfor** enhver formalisert scoped baseline, fordi ingen slik baseline ble opprettet.
+## Pakker som muliggjorde formalisering
 
----
+- `U112` — eierbinding av MED VIDERE/utenfor-scope
+- `U113` — teknisk split og produktkode-commit for scoped subset
+- `U114` — scoped baseline-prep-vurdering med grønt lys
 
-## E) Neste pakke (én)
+## Neste pakke (én)
 
-**U113 — Teknisk git-split (utfør):** stage + commit **kun** U112 **MED VIDERE** `app`+`lib` (produkt-commit; audit annen commit). **Ikke** proof, **ikke** CI/e2e i samme pakke.
+`proof inventory normalization for scoped subset relevance`
 
-**Hva den lukker:** Forutsetning for at U114 (retry) kan si noe annet enn FOR UREN — **før** scoped baseline-formalisering kan forsøkes igjen.
-
----
-
-## F) Verifikasjon kjørt denne runden
-
-| Kommando | Resultat |
-|----------|----------|
-| `git rev-parse HEAD` | `02e7df11157253c032c816c27d45ecfe85ed9c40` |
-| `git diff --name-only -- docs/audit` | tom (før denne filen ble skrevet lokalt) |
-| `find docs/audit -maxdepth 4 -type f \| wc -l` | **77** |
-| `npm run typecheck` | **PASS** |
-| `npm run test:run` | **PASS** |
-
-*Grønn typecheck/test endrer ikke U114-gate.*
+Formål: bygge ren proof-inventar koblet kun til scoped baseline-subsettet uten å blande inn full repo.
