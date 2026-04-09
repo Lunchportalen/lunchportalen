@@ -64,7 +64,7 @@ export default defineType({
     }),
     defineField({
       name: "becomesCurrentAt",
-      title: "Blir aktiv uke (fredag 14:00)",
+      title: "Blir aktiv uke (fredag 15:00)",
       type: "datetime",
       readOnly: true,
     }),

@@ -1,11 +1,14 @@
 // src/lib/guards/assertCompanyActiveApi.ts
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { assertCompanyActive } from "@/lib/guards/assertCompanyActive";
 import { jsonErr } from "@/lib/http/respond";
+import type { Database } from "@/lib/types/database";
 
 type Args = {
-  supa: any;
+  supa: SupabaseClient<Database>;
   companyId: string;
   rid: string;
 };
@@ -28,10 +31,11 @@ export async function assertCompanyActiveOr403(args: Args): Promise<CompanyActiv
   try {
     await assertCompanyActive({ rid, sb: supa, company_id: companyId });
     return { ok: true };
-  } catch (err: any) {
-    const status = typeof err?.status === "number" ? err.status : 403;
-    const code = typeof err?.code === "string" ? err.code : "COMPANY_NOT_ACTIVE";
-    const message = (err?.message as string) || "Firma er ikke aktivt.";
+  } catch (err: unknown) {
+    const e = err as { status?: unknown; code?: unknown; message?: unknown };
+    const status = typeof e?.status === "number" ? e.status : 403;
+    const code = typeof e?.code === "string" ? e.code : "COMPANY_NOT_ACTIVE";
+    const message = (typeof e?.message === "string" ? e.message : null) || "Firma er ikke aktivt.";
 
     const res = jsonErr(rid, message, status, {
       code,

@@ -2,6 +2,9 @@
 
 import announcement from "./announcement";
 import menuContent from "./menuContent";
+import menu from "./menu";
+import productPlan from "./productPlan";
+import weekTemplate from "./weekTemplate";
 import closedDate from "./closedDate";
 import page from "./page";
 import pricingInfo from "./pricingInfo";
@@ -19,6 +22,9 @@ import pricingInfo from "./pricingInfo";
 export const schemaTypes = [
   announcement,
   menuContent,
+  menu,
+  productPlan,
+  weekTemplate,
   closedDate,
   page,
   pricingInfo,

@@ -1,7 +1,11 @@
 // middleware.ts
+// Next.js 15: Supabase session refresh runs here via `updateSession` (see `utils/supabase/proxy.ts`).
+// Next.js 16+: Supabase docs recommend root `proxy.ts` with the same refresh pattern; migrate when upgrading.
+
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { getSupabasePublicConfig } from "@/lib/config/env";
+
+import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
+import { updateSession } from "@/utils/supabase/proxy";
 
 function isBypassPath(pathname: string) {
   const isApi = pathname.startsWith("/api/");
@@ -25,6 +29,7 @@ function isBypassPath(pathname: string) {
 
 function isProtectedPath(pathname: string) {
   return (
+    pathname.startsWith("/saas") ||
     pathname.startsWith("/week") ||
     pathname.startsWith("/superadmin") ||
     pathname.startsWith("/admin") ||
@@ -47,7 +52,11 @@ function buildNextParam(pathname: string, searchParams: URLSearchParams) {
 function copyCookies(from: NextResponse, to: NextResponse) {
   try {
     const all = from.cookies.getAll();
-    for (const c of all) to.cookies.set(c.name, c.value);
+    for (const raw of all) {
+      const { name, value, ...opts } = raw as { name: string; value: string } & Record<string, unknown>;
+      if (Object.keys(opts).length) to.cookies.set(name, value, opts as Parameters<typeof to.cookies.set>[2]);
+      else to.cookies.set(name, value);
+    }
   } catch {
     return;
   }
@@ -66,13 +75,15 @@ export async function middleware(req: NextRequest) {
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-url", req.nextUrl.href);
 
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
-  res.headers.set("x-lp-mw", "1");
-
   if (isBypassPath(pathname)) {
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    res.headers.set("x-lp-mw", "1");
     res.headers.set("x-lp-mw-bypass", "1");
     return res;
   }
+
+  const { response: res, hasSupabaseSessionCookie } = await updateSession(req, requestHeaders);
+  res.headers.set("x-lp-mw", "1");
 
   const needsAuth = isProtectedPath(pathname) && !isExplicitlyPublicProtectedSubpath(pathname);
   if (!needsAuth) {
@@ -80,52 +91,17 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  let url: string;
-  let anon: string;
+  /**
+   * Protected-route gate (must align with `getAuthContext()`):
+   * - Normal: Supabase SSR auth-token jar after `updateSession`.
+   * - Dev/test only: valid `lp_local_dev_auth` when `isLocalDevAuthBypassEnabled()` (see `localDevBypassCookie.ts`).
+   */
+  const localDevBypass = isLocalDevAuthenticatedRequest(req);
+  const sessionOk = hasSupabaseSessionCookie || localDevBypass;
+  res.headers.set("x-lp-mw-user", sessionOk ? "1" : "0");
+  if (localDevBypass && !hasSupabaseSessionCookie) res.headers.set("x-lp-mw-dev-bypass", "1");
 
-  try {
-    const cfg = getSupabasePublicConfig();
-    url = cfg.url;
-    anon = cfg.anonKey;
-  } catch (e: any) {
-    // Fail-closed if Supabase public env mangler: send bruker til status-side.
-    const u = req.nextUrl.clone();
-    u.pathname = "/status";
-    u.search = "";
-    u.searchParams.set("state", "blocked");
-    u.searchParams.set("code", "MISSING_SUPABASE_ENV");
-
-    const redir = NextResponse.redirect(u, { status: 303 });
-    copyDebugHeaders(res, redir);
-    redir.headers.set("x-lp-mw-env", "missing");
-    redir.headers.set("x-lp-mw-env-error", String(e?.message ?? "Missing Supabase public env"));
-    return redir;
-  }
-
-  const supabase = createServerClient(url, anon, {
-    cookies: {
-      getAll() {
-        return req.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          res.cookies.set(name, value, options);
-        }
-      },
-    },
-  });
-
-  let user: any = null;
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error) user = data?.user ?? null;
-  } catch {
-    user = null;
-  }
-
-  res.headers.set("x-lp-mw-user", user ? "1" : "0");
-
-  if (!user) {
+  if (!sessionOk) {
     const u = req.nextUrl.clone();
     u.pathname = "/login";
     u.search = "";
@@ -142,5 +118,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

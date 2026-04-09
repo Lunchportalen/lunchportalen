@@ -150,7 +150,7 @@ export default function WeekPlanner() {
             <Stack space={1}>
               <Text weight="semibold" size={2}>Ukeplan (kontroll + automatikk)</Text>
               <Text size={1} muted>
-                Uke 2 blir synlig automatisk torsdag kl. 08:00 (kun hvis godkjent). Uke 1 skjules automatisk fredag kl. 14:00.
+                Uke 2 blir synlig automatisk torsdag kl. 08:00 (kun hvis godkjent). Uke 1 skjules automatisk fredag kl. 15:00.
               </Text>
             </Stack>
 
