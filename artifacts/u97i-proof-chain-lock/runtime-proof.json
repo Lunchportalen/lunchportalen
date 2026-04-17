@@ -1,0 +1,18 @@
+{
+  "runMark": "u97i-1775662928806",
+  "createdNodes": {
+    "parentNodeId": "overlays",
+    "compactPageId": "4e9e83be-1a89-4274-a003-0dffd4f4d07d",
+    "microLandingId": "239bf8f1-fcc0-4a74-8147-ded2eb1afec1"
+  },
+  "runtimeValues": {
+    "compactPageDocumentTypeAlias": "compact_page",
+    "microLandingDocumentTypeAlias": "micro_landing",
+    "compactPageTemplateAlias": "compact_landing_default",
+    "microLandingTemplateAlias": "micro_landing_default",
+    "changedPropertyTitle": "Kompakte blokker · u97i-1775662928806",
+    "changedPropertyDescriptionOrGroup": "U97I property-beskrivelse u97i-1775662928806"
+  },
+  "domCompactTemplateAlias": "compact_landing_default",
+  "domMicroTemplateAlias": "micro_landing_default"
+}

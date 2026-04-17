@@ -1,3 +1,6 @@
+// Canonical superadmin publish: PENDING ledger-avtale → ACTIVE via lp_agreement_approve_active
+// (firma ACTIVE i samme RPC når companies.status ikke allerede er ACTIVE — se migrasjon lp_agreement_approve_active).
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

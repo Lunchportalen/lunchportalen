@@ -10,6 +10,8 @@ import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
 import { osloTodayISODate, isIsoDate } from "@/lib/date/oslo";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
 /* =========================================================
    Helpers
@@ -149,30 +151,33 @@ export async function GET(req: NextRequest) {
     const locationId = safeStr((prof as any).location_id);
     if (!companyId) return jsonErr(ctx.rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
 
-    // 1) Orders (uten embed for å unngå FK/relasjon-feil)
-    let ordersQ = sb
-      .from("orders")
-      .select("id, date, slot, status, company_id, location_id")
-      .eq("date", date)
-      .in("status", ["ACTIVE", "QUEUED", "PACKED", "DELIVERED"])
-      .eq("integrity_status", "ok")
-      .eq("company_id", companyId);
+    const snap = await fetchProductionOperativeSnapshotAllowlist(sb as any, { dateISO: date, companyId });
+    const productionFreezeAllowlist = snap.found ? snap.orderIds : undefined;
 
-    if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
-
-    const { data: orders, error: ordersErr } = await ordersQ;
-
-    if (ordersErr) {
+    const loaded = await loadOperativeKitchenOrders({
+      admin: sb as any,
+      dateISO: date,
+      tenant: { companyId, locationId: locationId || null },
+      productionFreezeAllowlist,
+    });
+    if (loaded.ok === false) {
       return jsonErr(ctx.rid, "Failed to load orders for driver stops.", 500, { code: "db_error", detail: {
-        where: "orders.select",
+        where: "operative_orders",
         role,
         usingServiceRole,
-        message: dbMessage("orders.select", ordersErr),
-        ...errInfo(ordersErr),
+        message: loaded.dbError.message,
+        code: loaded.dbError.code,
       } });
     }
 
-    const rows: OrderRow[] = (Array.isArray(orders) ? orders : []) as any[];
+    const rows: OrderRow[] = loaded.operative.map((r) => ({
+      id: String(r.id),
+      date,
+      slot: normKitchenSlot(r.slot),
+      status: String(r.status ?? ""),
+      company_id: String(r.company_id),
+      location_id: String(r.location_id),
+    }));
 
     // ✅ Tom dag er OK (ALLTID stops: [])
     if (rows.length === 0) {
@@ -267,7 +272,7 @@ export async function GET(req: NextRequest) {
 
     const confKey = new Map<string, { at: string | null; by: string | null }>();
     for (const c of (confs ?? []) as any[]) {
-      const slot = safeStr(c?.slot);
+      const slot = normKitchenSlot(c?.slot);
       const companyId = safeStr(c?.company_id);
       const locationId = safeStr(c?.location_id);
       if (!slot || !companyId || !locationId) continue;
@@ -282,7 +287,7 @@ export async function GET(req: NextRequest) {
     const acc = new Map<string, Stop>();
 
     for (const o of rows) {
-      const slot = safeStr(o.slot) || "—";
+      const slot = normKitchenSlot(o.slot);
       const companyId = safeStr(o.company_id);
       const locationId = safeStr(o.location_id);
 
@@ -387,7 +392,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const stops: Stop[] = Array.from(acc.values()).sort((x, y) => {
+    let stops: Stop[] = Array.from(acc.values()).sort((x, y) => {
       // slot først
       if (x.slot !== y.slot) return x.slot.localeCompare(y.slot, "nb");
       // så lokasjon
@@ -397,6 +402,10 @@ export async function GET(req: NextRequest) {
       // så firma
       return (x.companyName ?? "").localeCompare(y.companyName ?? "", "nb");
     });
+
+    if (role === "driver") {
+      stops = stops.map((s) => ({ ...s, deliveredBy: null }));
+    }
 
     // ✅ ALWAYS array
     return jsonOk(ctx.rid, { date, stops });

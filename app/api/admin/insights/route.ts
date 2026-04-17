@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId, q } from "@/lib/http/routeGuard";
 import { addDaysISO, osloTodayISODate, OSLO_TZ } from "@/lib/date/oslo";
 import { auditAdmin } from "@/lib/audit/actions";
 
@@ -82,15 +82,12 @@ export async function GET(req: NextRequest) {
   const denyRole = requireRoleOr403(a.ctx, "admin.insights.read", ["company_admin"]);
   if (denyRole) return denyRole;
 
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
-
-  const companyId = String(scope.companyId ?? "").trim();
+  const tenant = resolveAdminTenantCompanyId(a.ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const companyId = tenant.companyId;
   const actorUserId = String(scope.userId ?? "").trim();
   const actorEmail = scope.email ?? null;
   const locationId = scope.locationId ?? null;
-
-  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const range = parseRange(q(req, "range"));
   const today = osloTodayISODate();

@@ -81,6 +81,7 @@ export async function approveAgreement(agreementId: string): Promise<AgreementAc
   return { ok: true, rid, message: String(out.data?.message ?? "Avtalen er godkjent") };
 }
 
+/** Server action: superadmin-only (requireSuperadmin) → samme ledger-RPC som POST /reject. */
 export async function rejectAgreement(agreementId: string, reason: string): Promise<AgreementActionResult> {
   const rid = makeRid("agreement_reject");
   const gate = await requireSuperadmin();
@@ -105,6 +106,7 @@ export async function rejectAgreement(agreementId: string, reason: string): Prom
   return { ok: true, rid, message: String(out.data?.message ?? "Avtalen er avslått") };
 }
 
+/** Server action: superadmin-only (requireSuperadmin) → samme ledger-RPC som POST /pause-ledger. */
 export async function pauseAgreementLedger(agreementId: string): Promise<AgreementActionResult> {
   const rid = makeRid("agreement_pause_ledger");
   const gate = await requireSuperadmin();

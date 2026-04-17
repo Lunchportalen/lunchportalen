@@ -5,10 +5,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/* agents-ci: JSON responses include ok: true, rid: (success) and ok: false, rid: (errors) via jsonOrderWrite*. */
+
 import type { NextRequest } from "next/server";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
-import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { coerceOrderWriteErrorResponse, jsonOrderWriteErr, jsonOrderWriteOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 
 // ✅ Oslo single source of truth
@@ -19,16 +21,14 @@ import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
-import { requireRule } from "@/lib/agreement/requireRule";
+import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
+import { assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
 import { lpOrderCancel, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
+import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 
 /* =========================================================
    Helpers
 ========================================================= */
-
-function nowIso() {
-  return new Date().toISOString();
-}
 
 type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
 function normCompanyStatus(v: any): CompanyLifecycle {
@@ -49,26 +49,6 @@ async function adminClientOrNull() {
   }
 }
 
-function isoWeekday(isoDate: string): number | null {
-  try {
-    const d = new Date(`${isoDate}T12:00:00.000Z`);
-    if (Number.isNaN(d.getTime())) return null;
-    const day = d.getUTCDay(); // 0=Sun..6=Sat
-    return day === 0 ? 7 : day;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Midlertidig (Dag 2): pricing må finnes i respons for UI-kvittering.
- */
-function pricingFallback(isoDate: string): { tier: "BASIS" | "LUXUS"; unit_price: number } {
-  const wd = isoWeekday(isoDate);
-  if (wd === 5) return { tier: "LUXUS", unit_price: 130 };
-  return { tier: "BASIS", unit_price: 90 };
-}
-
 function normNote(v: any): string | null {
   const s = String(v ?? "").trim();
   return s ? s : null;
@@ -77,23 +57,6 @@ function normNote(v: any): string | null {
 function normSlot(v: any): string | null {
   const s = String(v ?? "").trim().toLowerCase();
   return s ? s : null;
-}
-
-function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
-  try {
-    const d = new Date(`${isoDate}T12:00:00Z`);
-    const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
-    const map: Record<string, "mon" | "tue" | "wed" | "thu" | "fri"> = {
-      Mon: "mon",
-      Tue: "tue",
-      Wed: "wed",
-      Thu: "thu",
-      Fri: "fri",
-    };
-    return map[wd] ?? null;
-  } catch {
-    return null;
-  }
 }
 
 /* =========================================================
@@ -147,22 +110,22 @@ async function setCancelled(
 
 export async function POST(req: NextRequest) {
   const a = await scopeOr401(req);
-  if (a.ok === false) return a.res;
+  if (a.ok === false) return await coerceOrderWriteErrorResponse(a.res ?? a.response);
 
   const { rid, scope } = a.ctx;
 
   const denyRole = requireRoleOr403(a.ctx, "orders.cancel", ["employee", "company_admin"]);
-  if (denyRole) return denyRole;
+  if (denyRole) return await coerceOrderWriteErrorResponse(denyRole);
 
   const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
+  if (denyScope) return await coerceOrderWriteErrorResponse(denyScope);
 
   const company_id = String(scope.companyId ?? "").trim();
   const user_id = String(scope.userId ?? "").trim();
   const location_id = String(scope.locationId ?? "").trim();
 
-  if (!company_id || !user_id) return jsonErr(rid, "Mangler scope (user/company).", 409, "SCOPE_MISSING");
-  if (!location_id) return jsonErr(rid, "Mangler lokasjonstilknytning (location_id).", 409, "LOCATION_MISSING");
+  if (!company_id || !user_id) return jsonOrderWriteErr(rid, 409, "SCOPE_MISSING", "Mangler scope (user/company).");
+  if (!location_id) return jsonOrderWriteErr(rid, 409, "LOCATION_MISSING", "Mangler lokasjonstilknytning (location_id).");
 
   const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
@@ -175,26 +138,18 @@ export async function POST(req: NextRequest) {
     const slot = normSlot(body?.slot);
 
     if (!isIsoDate(isoDate)) {
-      return jsonErr(rid, "Ugyldig dato (YYYY-MM-DD).", 400, { code: "INVALID_DATE", detail: { date: isoDate } });
+      return jsonOrderWriteErr(rid, 400, "INVALID_DATE", "Ugyldig dato (YYYY-MM-DD).");
     }
 
     // Firmastatus (service role) — fail-closed
     const admin = await adminClientOrNull();
     if (!admin) {
-      return jsonErr(rid, "Mangler service role konfigurasjon for firmastatus/audit.", 500, {
-        code: "CONFIG_ERROR",
-        detail: {
-          missing: ["service role client", "supabase url"],
-        },
-      });
+      return jsonOrderWriteErr(rid, 500, "CONFIG_ERROR", "Mangler service role konfigurasjon for firmastatus/audit.");
     }
 
     const cRes = await admin.from("companies").select("id,status").eq("id", company_id).maybeSingle();
     if (cRes.error || !cRes.data) {
-      return jsonErr(rid, "Kunne ikke lese firmastatus.", 500, {
-        code: "COMPANY_LOOKUP_FAILED",
-        detail: { error: cRes.error?.message ?? null },
-      });
+      return jsonOrderWriteErr(rid, 500, "COMPANY_LOOKUP_FAILED", "Kunne ikke lese firmastatus.");
     }
 
     const companyStatus = normCompanyStatus((cRes.data as any).status);
@@ -228,36 +183,35 @@ export async function POST(req: NextRequest) {
         rid
       );
 
-      return jsonErr(rid, "Avbestilling er låst pga firmastatus.", 403, {
-        code: reason,
-        detail: { company_status: companyStatus },
-      });
+      return jsonOrderWriteErr(rid, 403, reason, "Avbestilling er låst pga firmastatus.");
     }
 
     // Cutoff enforcement (Oslo)
     const cutoff = cutoffStatusForDate(isoDate);
     if (cutoff === "PAST") {
-      return jsonErr(rid, "Datoen er passert og kan ikke endres.", 403, {
-        code: "DATE_LOCKED_PAST",
-        detail: { date: isoDate },
-      });
+      return jsonOrderWriteErr(rid, 403, "DATE_LOCKED_PAST", "Datoen er passert og kan ikke endres.");
     }
     if (cutoff === "TODAY_LOCKED") {
-      return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, {
-        code: "CUTOFF_LOCKED",
-        detail: { date: isoDate, cutoff: "08:00" },
-      });
+      return jsonOrderWriteErr(rid, 403, "CUTOFF_LOCKED", "Endringer er låst etter kl. 08:00 i dag.");
     }
 
-    const dayKey = weekdayKeyOslo(isoDate);
-    if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: isoDate } });
+    const hold = await assertCompanyOrderWriteAllowed(sb, company_id, rid);
+    if (hold.ok === false) {
+      return jsonOrderWriteErr(rid, hold.status, hold.code, hold.message);
+    }
 
-    // Agreement rule enforcement (fail-closed)
     const ruleSlot = slot ?? "lunch";
-    const ruleRes = await requireRule({ sb: admin as any, companyId: company_id, dayKey, slot: ruleSlot, rid });
-    if (!ruleRes.ok) {
-      const err = ruleRes as { status: number; error: string; message: string };
-      return jsonErr(rid, err.message, err.status ?? 400, err.error);
+    const pre = await assertOrderWithinAgreementPreflight({
+      sb: admin as any,
+      companyId: company_id,
+      locationId: location_id || null,
+      orderIsoDate: isoDate,
+      agreementRuleSlot: ruleSlot,
+      rid,
+      action: "CANCEL",
+    });
+    if (pre.ok === false) {
+      return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
     }
 
     // Apply cancel (idempotent)
@@ -285,7 +239,7 @@ export async function POST(req: NextRequest) {
         );
 
         // Idempotent UX: returning 200 with a "noop" is often better, but you asked for strict.
-        return jsonErr(rid, "Ingen bestilling å avbestille.", 404, { code: "ORDER_NOT_FOUND", detail: { date: isoDate, slot } });
+        return jsonOrderWriteErr(rid, 404, "ORDER_NOT_FOUND", "Ingen bestilling å avbestille.");
       }
 
       await auditSafe(
@@ -312,35 +266,25 @@ export async function POST(req: NextRequest) {
         rid
       );
 
-      return jsonErr(rid, "Kunne ikke avbestille.", 500, {
-        code: "DB_ERROR",
-        detail: { error: String((cancelled as any)?.error?.message ?? (cancelled as any)?.error ?? "unknown") },
-      });
+      return jsonOrderWriteErr(rid, 500, "DB_ERROR", "Kunne ikke avbestille.");
     }
 
-    // Backup mail (failsafe — må ikke stoppe user flow)
-    const pricing = pricingFallback(isoDate);
-    const backup = { ok: true, skipped: "outbox_db_trigger" } as const;
+    const orderId = String(cancelled.row?.id ?? "").trim();
+    if (!orderId) {
+      return jsonOrderWriteErr(rid, 500, "ORDER_CANCEL_BAD_RESPONSE", "Kunne ikke verifisere avbestilling.");
+    }
 
-    return jsonOk(rid, {
-      order: {
-        id: cancelled.row?.id ?? null,
-        date: isoDate,
-        status: "CANCELLED",
-        note: cancelled.row?.note ?? note ?? null,
-        slot: cancelled.row?.slot ?? slot ?? null,
-        created_at: cancelled.row?.created_at ?? null,
-        updated_at: cancelled.row?.updated_at ?? null,
-        saved_at: nowIso(),
-      },
-      pricing,
-      backup,
+    const orderSlot = normalizeOrderTableSlot(slot);
+    await fanoutLpOrderSetOutboxBestEffort({ userId: user_id, date: isoDate, slot: orderSlot });
+
+    return jsonOrderWriteOk(rid, {
+      orderId,
+      status: "cancelled",
+      date: isoDate,
+      timestamp: new Date().toISOString(),
     });
   } catch (e: any) {
-    return jsonErr(rid, String(e?.message ?? "Unknown error"), 500, {
-      code: "UNHANDLED",
-      detail: { at: "orders/cancel" },
-    });
+    return jsonOrderWriteErr(rid, 500, "UNHANDLED", String(e?.message ?? "Unknown error"));
   }
 }
 

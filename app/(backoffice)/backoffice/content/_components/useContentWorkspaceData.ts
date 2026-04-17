@@ -481,7 +481,7 @@ export function useContentWorkspaceData({
         const m = message || "Kunne ikke hente side.";
         detailLoadRef.current?.applyLoadError(m);
         setDetailError(m);
-        setPageNotFound(true);
+        setPageNotFound(false);
       } finally {
         if (active && runId === detailRunIdRef.current) setDetailLoading(false);
       }

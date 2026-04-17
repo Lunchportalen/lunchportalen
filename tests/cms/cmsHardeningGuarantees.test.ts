@@ -17,7 +17,7 @@
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { isContentPageId } from "@/lib/cms/public/getPageIdBySlug";
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { readSupabasePublishedContentPageBySlug } from "@/lib/cms/supabase/readPublishedContentPageBySlug";
 import { normalizeBlockForRender } from "@/lib/cms/public/normalizeBlockForRender";
 import {
   serializeBlocksToBody,
@@ -188,40 +188,40 @@ vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
     };
 });
 
-describe("CMS hardening – 4 & 5. Preview/public parity and drafts do not leak", () => {
+describe("CMS hardening – 4 & 5. Supabase published read (internal) — drafts do not leak", () => {
   beforeEach(() => {
     mockPagesBySlugHardening = {};
     mockVariantsByKeyHardening = new Map();
     vi.clearAllMocks();
   });
 
-  test("getContentBySlug returns null when only preview variant exists (drafts do not leak)", async () => {
+  test("readSupabase returns null when only preview variant exists (drafts do not leak)", async () => {
     const pageId = "page-1";
     mockPagesBySlugHardening["draft-page"] = { id: pageId, slug: "draft-page", title: "Draft", status: "published" };
     mockVariantsByKeyHardening.set(variantKeyHardening(pageId, "nb", "preview"), {
       id: "v-preview",
       body: { version: 1, blocks: [{ id: "d", type: "richText", data: { heading: "Draft" } }] },
     });
-    const result = await getContentBySlug("draft-page");
+    const result = await readSupabasePublishedContentPageBySlug("draft-page");
     expect(result).toBeNull();
   });
 
-  test("getContentBySlug returns prod body when prod exists (public sees only published)", async () => {
+  test("readSupabase returns prod body when prod exists", async () => {
     const pageId = "page-2";
     const prodBody = { version: 1, blocks: [{ id: "p", type: "richText", data: { heading: "Published" } }] };
     mockPagesBySlugHardening["live"] = { id: pageId, slug: "live", title: "Live", status: "published" };
     mockVariantsByKeyHardening.set(variantKeyHardening(pageId, "nb", "prod"), { id: "v-prod", body: prodBody });
-    const result = await getContentBySlug("live");
+    const result = await readSupabasePublishedContentPageBySlug("live");
     expect(result).not.toBeNull();
     expect(result!.body).toEqual(prodBody);
   });
 
-  test("getContentBySlug returns null when page is draft (status not published)", async () => {
+  test("readSupabase returns null when page is draft (status not published)", async () => {
     const pageId = "page-3";
     const prodBody = { version: 1, blocks: [{ id: "p", type: "richText", data: { heading: "Published" } }] };
     mockPagesBySlugHardening["draft-status-page"] = { id: pageId, slug: "draft-status-page", title: "Draft status", status: "draft" };
     mockVariantsByKeyHardening.set(variantKeyHardening(pageId, "nb", "prod"), { id: "v-prod", body: prodBody });
-    const result = await getContentBySlug("draft-status-page");
+    const result = await readSupabasePublishedContentPageBySlug("draft-status-page");
     expect(result).toBeNull();
   });
 });

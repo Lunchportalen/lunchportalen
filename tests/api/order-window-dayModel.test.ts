@@ -85,5 +85,42 @@ describe("order/window – buildDayModel", () => {
     expect(day.selectedChoiceKey).toBe("salatbar");
     expect(day.allowedChoices.some((c) => c.key === "salatbar")).toBe(true);
   });
+
+  test("operative closed_dates blokkerer bestillbarhet uten å fjerne menykontekst (agreementDayOk)", () => {
+    const date = "2030-06-04";
+    const operativeClosedReasonByDate = new Map<string, string>([[date, "Planlagt stengt"]]);
+
+    const day = buildDayModel({
+      date,
+      company: {
+        id: "c1",
+        name: "Test",
+        status: "ACTIVE",
+        canEditOrders: true,
+        lockReason: null,
+        paused_reason: null,
+        closed_reason: null,
+      },
+      agreementUsable: true,
+      deliveryDays: ["tue"],
+      dayTiers: { tue: "BASIS" } as any,
+      ordersByDate: new Map(),
+      dayChoicesByDate: new Map(),
+      agreementForChoices: {
+        choicesByTier: {
+          BASIS: [{ key: "varmmat" }],
+        },
+      },
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: { BASIS: null, LUXUS: null },
+      operativeClosedReasonByDate,
+    } as any);
+
+    expect(day.isEnabled).toBe(false);
+    expect(day.isLocked).toBe(true);
+    expect(day.lockReason).toBe("CLOSED_DATE");
+    expect(day.allowedChoices.length).toBeGreaterThan(0);
+  });
 });
 

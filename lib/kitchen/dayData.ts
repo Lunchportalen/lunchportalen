@@ -373,14 +373,36 @@ export async function fetchKitchenDayData(args: {
     }
   }
 
-  // count missing day_choices for active orders (not fatal)
-  for (const o of orderRows) {
+  // Ikke produksjon når dagvalg er kansellert (operativ avstemming mot day_choices)
+  const ordersForKitchen = orderRows.filter((o) => {
+    const k = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
+    const dc = dcMap.get(k);
+    if (dc && String(dc.status ?? "").toUpperCase() === "CANCELLED") return false;
+    return true;
+  });
+
+  if (ordersForKitchen.length === 0) {
+    logOpsSummary({
+      rid,
+      date: dateISO,
+      company_id: companyId,
+      location_id: locationId ?? null,
+      orders_total: 0,
+      groups_total: 0,
+      anomalies,
+      anomaly_ids: uniq(anomalyIds).slice(0, 20),
+    });
+    return { groups: [] as KitchenGroup[] };
+  }
+
+  // count missing day_choices for orders that skal vises (not fatal)
+  for (const o of ordersForKitchen) {
     const k = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
     if (!dcMap.has(k)) anomalies.day_choices_missing += 1;
   }
 
   const mealKeys = new Set<string>();
-  for (const o of orderRows) {
+  for (const o of ordersForKitchen) {
     const dcKey = `${safeStr(o.company_id)}|${safeStr(o.location_id)}|${safeStr(o.user_id)}|${safeStr(o.date)}`;
     const dc = dcMap.get(dcKey);
     const choiceKey = dc?.choice_key ?? parseChoiceKeyFromLegacyNote(o.note ?? null);
@@ -396,7 +418,7 @@ export async function fetchKitchenDayData(args: {
   // =========================================================
   // 4) Kitchen batch status (optional)
   // =========================================================
-  const windows = uniq(orderRows.map((o) => normSlot(o.slot)).filter(Boolean));
+  const windows = uniq(ordersForKitchen.map((o) => normSlot(o.slot)).filter(Boolean));
   const batchMap = new Map<string, any>();
 
   if (locationIds.length && windows.length) {
@@ -420,7 +442,7 @@ export async function fetchKitchenDayData(args: {
   // =========================================================
   const groups = new Map<string, KitchenGroup>();
 
-  for (const o of orderRows) {
+  for (const o of ordersForKitchen) {
     const window = normSlot(o.slot);
     const locId = safeStr(o.location_id);
     const compId = safeStr(o.company_id);
@@ -487,7 +509,7 @@ export async function fetchKitchenDayData(args: {
     date: dateISO,
     company_id: companyId,
     location_id: locationId ?? null,
-    orders_total: orderRows.length,
+    orders_total: ordersForKitchen.length,
     groups_total: out.length,
     anomalies,
     anomaly_ids: uniq(anomalyIds).slice(0, 20),

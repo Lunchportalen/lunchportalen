@@ -9,6 +9,7 @@ import { parseBodyEnvelope, serializeBodyEnvelope } from "@/lib/cms/bodyEnvelope
 import { parseBlockConfig } from "@/lib/cms/design/designContract";
 import { safeStr, safeObj } from "./contentWorkspace.helpers";
 import { getBlockEntryFlatForRender, getEntryLayersFromUnifiedRow } from "@/lib/cms/blocks/blockEntryContract";
+import { getBlockTypeDefinition } from "@/lib/cms/blocks/blockTypeDefinitions";
 import type {
   Block,
   BlockType,
@@ -211,6 +212,155 @@ export function blockTypeSubtitle(type: BlockType, block?: Block): string {
     default:
       return "Innhold";
   }
+}
+
+/** Begrenser undertekst i block list-rad for vertikal skannbarhet. */
+export function truncateBlockRowSummary(text: string | null | undefined, maxChars = 132): string | null {
+  const raw = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return null;
+  if (raw.length <= maxChars) return raw;
+  return `${raw.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+}
+
+/** Kort, menneskelesbar komponentlinje under blokktittel (fra typekatalog — ikke teknisk nøkkel). */
+export function blockRowComponentLine(type: string): string {
+  const t = (type ?? "").trim();
+  const def = getBlockTypeDefinition(t);
+  return def?.shortTitle?.trim() || def?.title?.trim() || "Innholdskomponent";
+}
+
+/**
+ * Content-tab (komponentbygger): kompakt rad-meta per instans —
+ * konfigurasjon og tellere, ikke semantisk «sidekapittel»-fortelling.
+ */
+export function blockTypeSubtitleForComponentBuilder(type: BlockType, block?: Block): string {
+  if (block && block.type === type) {
+    switch (block.type) {
+      case "hero": {
+        const flat = getBlockEntryFlatForRender(block);
+        const n = [flat.title, flat.imageId, flat.ctaLabel].filter((v) => String(v ?? "").trim()).length;
+        return `${n}/3 nøkkelfelt · hero`;
+      }
+      case "hero_full": {
+        const flat = getBlockEntryFlatForRender(block);
+        const n = [flat.title, flat.imageId].filter((v) => String(v ?? "").trim()).length;
+        const overlay = flat.useGradient === false ? "flat overlay" : "gradient";
+        return `${n}/2 innhold + ${overlay}`;
+      }
+      case "hero_bleed": {
+        const flat = getBlockEntryFlatForRender(block);
+        const bits: string[] = [];
+        if (String(flat.backgroundImageId ?? "").trim()) bits.push("bakgrunn");
+        if (String(flat.ctaPrimary ?? "").trim()) bits.push("primær-CTA");
+        if (String(flat.ctaSecondary ?? "").trim()) bits.push("sekundær-CTA");
+        return bits.length ? bits.join(" · ") : "utkast · ingen bakgrunn";
+      }
+      case "banner":
+        return [
+          (block.text || "").trim() ? "tekst" : "uten tekst",
+          (block.ctaLabel || "").trim() ? "knapp" : "uten knapp",
+          (block.backgroundImageId || "").trim() ? "bakgrunn" : "uten bakgrunn",
+        ].join(" · ");
+      case "richText":
+        return [
+          (block.heading || "").trim() ? "overskrift" : "uten overskrift",
+          (block.body || "").trim() ? "innhold" : "tomt innhold",
+        ].join(" · ");
+      case "image":
+        return [
+          (block.imageId || "").trim() ? "kilde" : "mangler kilde",
+          (block.alt || "").trim() ? "alt" : "uten alt",
+        ].join(" · ");
+      case "cta": {
+        const flat = getBlockEntryFlatForRender(block);
+        return [
+          String(flat.buttonLabel ?? "").trim() ? "primær" : "uten primær",
+          String(flat.secondaryButtonLabel ?? "").trim() ? "sekundær" : "uten sekundær",
+          String(flat.body ?? "").trim() ? "støtte" : "uten støtte",
+        ].join(" · ");
+      }
+      case "divider":
+        return block.style === "space" ? "variant · luft" : "variant · linje";
+      case "cards": {
+        const flat = getBlockEntryFlatForRender(block);
+        const items = Array.isArray(flat.items) ? flat.items : [];
+        const n = items.length;
+        const filled = items.filter(
+          (it: unknown) =>
+            String(safeObj(it).title ?? "").trim() && String(safeObj(it).text ?? "").trim(),
+        ).length;
+        const pres = flat.presentation === "plain" ? "plain" : "ikon";
+        return `${n} rader · ${filled} utfylt · ${pres}`;
+      }
+      case "zigzag": {
+        const flat = getBlockEntryFlatForRender(block);
+        const steps = Array.isArray(flat.steps) ? flat.steps : [];
+        const n = steps.length;
+        const mode = flat.presentation === "faq" ? "FAQ" : "liste";
+        return `${n} punkter · ${mode}`;
+      }
+      case "pricing": {
+        const flat = getBlockEntryFlatForRender(block);
+        const plans = Array.isArray(flat.plans) ? flat.plans : [];
+        const n = plans.length;
+        const feat = plans.filter((p: unknown) => safeObj(p).featured === true).length;
+        const ctaN = plans.filter(
+          (p: unknown) =>
+            String(safeObj(p).ctaLabel ?? "").trim() && String(safeObj(p).ctaHref ?? "").trim(),
+        ).length;
+        if (n === 0) return "prisfeed · ingen manuelle rader";
+        return `${n} rader · ${feat} fremhevet · ${ctaN} CTA-par`;
+      }
+      case "grid": {
+        const flat = getBlockEntryFlatForRender(block);
+        const items = Array.isArray(flat.items) ? flat.items : [];
+        const n = items.length;
+        const sub = items.filter((it: unknown) => String(safeObj(it).subtitle ?? "").trim()).length;
+        const meta = items.filter((it: unknown) => String(safeObj(it).metaLine ?? "").trim()).length;
+        return `${n} celler · undertittel ${sub}/${n} · meta ${meta}/${n} · ${String(flat.variant || "center").trim()}`;
+      }
+      case "form":
+        return (block.formId || "").trim() ? `ref · ${(block.formId || "").trim()}` : "mangler skjemaref.";
+      case "relatedLinks": {
+        const flat = getBlockEntryFlatForRender(block);
+        const tags = Array.isArray(flat.tags) ? flat.tags : [];
+        const n = tags.length;
+        const max = flat.maxSuggestions;
+        return [
+          `${n} stikkord`,
+          max != null ? `maks ${max}` : "maks std",
+          String(flat.subtitle ?? "").trim() ? "ingress" : "uten ingress",
+        ].join(" · ");
+      }
+    }
+  }
+  const def = getBlockTypeDefinition(type);
+  return def?.shortTitle?.trim() || "Komponent";
+}
+
+/**
+ * Deler subtitle: første «telle»-segment (starter med tall før første ·) som egen linje,
+ * resten som detalj under.
+ */
+export function splitBlockRowSummaryLines(summary: string | null | undefined): {
+  statsLine: string | null;
+  detailLine: string | null;
+} {
+  const raw = (summary ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return { statsLine: null, detailLine: null };
+  const idx = raw.indexOf("·");
+  if (idx === -1) {
+    return { statsLine: null, detailLine: truncateBlockRowSummary(raw, 160) };
+  }
+  const first = raw.slice(0, idx).trim();
+  const rest = raw.slice(idx + 1).trim();
+  if (/^\d+/.test(first)) {
+    return {
+      statsLine: first,
+      detailLine: rest ? truncateBlockRowSummary(rest, 160) : null,
+    };
+  }
+  return { statsLine: null, detailLine: truncateBlockRowSummary(raw, 160) };
 }
 
 export function normalizeBlock(raw: unknown): Block | null {

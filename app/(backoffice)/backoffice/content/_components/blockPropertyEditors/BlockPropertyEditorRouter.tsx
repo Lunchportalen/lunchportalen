@@ -18,6 +18,7 @@ import { HeroPropertyEditor } from "./HeroPropertyEditor";
 import { PricingPropertyEditor } from "./PricingPropertyEditor";
 import { RelatedLinksPropertyEditor } from "./RelatedLinksPropertyEditor";
 import { StepsPropertyEditor } from "./StepsPropertyEditor";
+import { UnknownBlockPropertyEditor } from "./UnknownBlockPropertyEditor";
 
 /**
  * Umbraco-style routing: one block type → one property editor component.
@@ -40,7 +41,7 @@ export function BlockPropertyEditorRouter(props: { block: Block; ctx: BlockInspe
     case "cta":
       return <CtaPropertyEditor block={block} ctx={ctx} />;
     case "divider":
-      return <DividerPropertyEditor block={block} />;
+      return <DividerPropertyEditor block={block} ctx={ctx} />;
     case "banner":
       return <BannerPropertyEditor block={block} ctx={ctx} />;
     case "form":
@@ -55,9 +56,7 @@ export function BlockPropertyEditorRouter(props: { block: Block; ctx: BlockInspe
       return <StepsPropertyEditor block={block} ctx={ctx} />;
     case "grid":
       return <GridPropertyEditor block={block} ctx={ctx} />;
-    default: {
-      const _exhaustive: never = block;
-      return _exhaustive;
-    }
+    default:
+      return <UnknownBlockPropertyEditor block={block} ctx={ctx} />;
   }
 }

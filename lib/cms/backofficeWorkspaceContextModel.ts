@@ -286,34 +286,38 @@ function resolveContentWorkspaceLabel(
   );
 }
 
+/**
+ * Primær handlingsliste (Umbraco-linje: preview / save / publish).
+ * `publishListed`: om publish skal **vises** i listen når siden er kladd — uavhengig av om knappen
+ * er enabled (det styres av `actionAvailability.publish` / `actionEnabledForSnapshot`).
+ * Tidligere ble `canPublish` (bl.a. `dirty`) brukt her og fjernet publish fra listen helt, slik at UI
+ * aldri kunne matche referansen under redigering.
+ */
 function resolvePrimaryWorkspaceActions(
   activeWorkspaceView: BackofficeContentEntityWorkspaceViewId,
   hasPreview: boolean,
-  canPublish: boolean,
+  publishListed: boolean,
 ): readonly BellissimaWorkspaceActionId[] {
   switch (activeWorkspaceView) {
     case "history":
+      if (publishListed) {
+        return hasPreview ? ["save", "publish", "preview"] : ["save", "publish"];
+      }
       return hasPreview ? ["save", "preview"] : ["save"];
     case "preview":
-      return canPublish
-        ? hasPreview
-          ? ["save", "publish", "public_page"]
-          : ["save", "publish"]
-        : hasPreview
-          ? ["save", "public_page"]
-          : ["save"];
+      if (publishListed) {
+        return hasPreview ? ["save", "publish", "public_page"] : ["save", "publish"];
+      }
+      return hasPreview ? ["save", "public_page"] : ["save"];
     case "global":
       return hasPreview ? ["save", "settings", "preview"] : ["save", "settings"];
     case "design":
       return hasPreview ? ["save", "preview", "settings"] : ["save", "settings"];
     default:
-      return canPublish
-        ? hasPreview
-          ? ["save", "publish", "preview"]
-          : ["save", "publish"]
-        : hasPreview
-          ? ["save", "preview"]
-          : ["save"];
+      if (publishListed) {
+        return hasPreview ? ["save", "publish", "preview"] : ["save", "publish"];
+      }
+      return hasPreview ? ["save", "preview"] : ["save"];
   }
 }
 
@@ -540,6 +544,8 @@ export function buildContentBellissimaWorkspaceSnapshot(
   const canPreview = input.canPreview ?? Boolean(previewHref);
   const canOpenPublic =
     input.canOpenPublic ?? (publishState === "published" && Boolean(publicHref));
+  /** Kladd-sider får publish i primærlisten; enabled styres fortsatt av `actionAvailability.publish`. */
+  const publishListed = publishState === "draft";
 
   return {
     extensionId: "nav.content",
@@ -575,7 +581,7 @@ export function buildContentBellissimaWorkspaceSnapshot(
     primaryActionIds: resolvePrimaryWorkspaceActions(
       activeWorkspaceView,
       canPreview,
-      canPublish,
+      publishListed,
     ),
     secondaryActionIds: resolveSecondaryWorkspaceActions(
       activeWorkspaceView,

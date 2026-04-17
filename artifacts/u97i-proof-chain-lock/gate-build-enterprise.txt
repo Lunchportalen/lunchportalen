@@ -1,0 +1,996 @@
+
+> lunchportalen@1.0.0 build:enterprise
+> cross-env RC_MODE=true npm run agents:check && cross-env RC_MODE=true npm run ci:platform-guards && cross-env RC_MODE=true npm run audit:api && cross-env RC_MODE=true npm run audit:repo && cross-env RC_MODE=true npm run check:admin-copy && cross-env RC_MODE=true npm run check:ai-internal-provider && cross-env RC_MODE=true node scripts/verify-control-coverage.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 RC_MODE=true next build && node scripts/seo-proof.mjs && node scripts/seo-audit.mjs && node scripts/seo-content-lint.mjs
+
+
+> lunchportalen@1.0.0 agents:check
+> node scripts/agents-ci.mjs
+
+
+✅ AGENTS CI GATE PASSED (v2) — no blocking violations found.
+
+
+> lunchportalen@1.0.0 ci:platform-guards
+> npm run api:contract && npm run status:guard && npm run mock:check && npm run cms:check && npm run ai:check && npm run ui:clickable-check
+
+
+> lunchportalen@1.0.0 api:contract
+> node scripts/ci/api-contract-enforcer.mjs
+
+
+✅ api-contract-enforcer: 573 route.ts file(s) OK.
+
+
+> lunchportalen@1.0.0 status:guard
+> node scripts/ci/status-code-guard.mjs
+
+
+✅ status-code-guard: OK.
+
+
+> lunchportalen@1.0.0 mock:check
+> node scripts/ci/mock-integrity.mjs
+
+
+✅ mock-integrity: 363 test file(s) scanned.
+
+
+> lunchportalen@1.0.0 cms:check
+> node scripts/ci/cms-integrity.mjs
+
+
+✅ cms-integrity: public homepage CMS pipeline OK.
+
+
+> lunchportalen@1.0.0 ai:check
+> node scripts/ci/ai-governance-check.mjs
+
+
+✅ ai-governance-check: 63 file(s) OK.
+
+
+> lunchportalen@1.0.0 ui:clickable-check
+> node scripts/ci/ui-clickable-div.mjs
+
+
+✅ ui-clickable-div: critical surfaces OK.
+
+
+> lunchportalen@1.0.0 audit:api
+> cross-env RC_MODE=true node scripts/audit-api-routes.mjs
+
+[AUDIT MODE] { RC_MODE: true, CI: undefined }
+API AUDIT OK
+
+Summary: FAIL 0 | WARN 0 | INFO 0
+
+> lunchportalen@1.0.0 audit:repo
+> node scripts/audit-repo.mjs
+
+audit:repo ok
+
+> lunchportalen@1.0.0 check:admin-copy
+> node scripts/check-admin-no-hardcoded-text.mjs
+
+
+> lunchportalen@1.0.0 check:ai-internal-provider
+> node scripts/check-ai-internal-provider.mjs
+
+check-ai-internal-provider: OK
+[CONTROL] Coverage OK: AI 100%, CMS 100%, lock in sync.
+[CONTROL] Markers written: reports\control-coverage-markers.json
+   ▲ Next.js 15.5.10
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 4.1min
+   Linting and checking validity of types ...
+
+./app/(backoffice)/backoffice/content/_components/AiCeoPanel.tsx
+157:79  Warning: React Hook useMemo has unnecessary dependencies: 'logTick', 'outboundObjTick', and 'pageId'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+173:6  Warning: React Hook useMemo has unnecessary dependencies: 'logTick' and 'outboundObjTick'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/BlockCollapsedPreview.tsx
+257:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+314:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(backoffice)/backoffice/content/_components/contentWorkspace.inspectorCtx.ts
+41:5  Warning: React Hook useMemo has a missing dependency: 'richText'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/ContentWorkspaceAuxiliaryShell.tsx
+255:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(backoffice)/backoffice/content/_components/contentWorkspaceChromeShellArgs.ts
+117:5  Warning: React Hook useMemo has missing dependencies: 'p.visualPatchPendingRef' and 'p.visualPatchTimerRef'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/OutboundPanel.tsx
+101:6  Warning: React Hook useMemo has unnecessary dependencies: 'conversationRev', 'followUpRev', and 'pageId'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+103:59  Warning: React Hook useMemo has an unnecessary dependency: 'followUpRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+104:65  Warning: React Hook useMemo has an unnecessary dependency: 'followUpRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+123:6  Warning: React Hook useMemo has an unnecessary dependency: 'conversationRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceBlocks.ts
+85:5  Warning: React Hook useCallback has an unnecessary dependency: 'documentTypeAlias'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceData.ts
+452:6  Warning: React Hook useEffect has a missing dependency: 'routeUi'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceShellModel.ts
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1134) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1168) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1204) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+830:6  Warning: React Hook useEffect has a missing dependency: 'setSelectedBlockId'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+987:6  Warning: React Hook useCallback has a missing dependency: 'setAiLastActionFeature'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1064:6  Warning: React Hook useCallback has a missing dependency: 'setBlocks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1104:5  Warning: React Hook useCallback has a missing dependency: 'setBlocks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1291:5  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1348:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1371:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks' and 'setCanvasMode'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1387:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks' and 'setCanvasMode'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1616:5  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1742:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1757:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1956:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks', 'setBodyMode', 'setBodyParseError', 'setInvalidBodyRaw', and 'setLegacyBodyText'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+2003:50  Warning: The ref value 'activeAbortRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activeAbortRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+2004:50  Warning: The ref value 'statusAbortRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'statusAbortRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+2039:6  Warning: React Hook useEffect has a missing dependency: 'setQuery'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+2055:6  Warning: React Hook useEffect has missing dependencies: 'setHeaderEditConfig', 'setHeaderEditError', and 'setHeaderEditLoading'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/public/demo/DemoEmailCapture.tsx
+81:6  Warning: React Hook useCallback has a missing dependency: 'intentSeg'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/superadmin/growth/social/SocialEngineClient.tsx
+735:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/superadmin/sales/SalesCockpitClient.tsx
+973:6  Warning: React Hook useCallback has an unnecessary dependency: 'loadCeoRun'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/cms/blockCanvas/HeroCanvasPreview.tsx
+55:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/superadmin/controlTower/SecondsSinceUpdate.tsx
+20:6  Warning: React Hook useMemo has an unnecessary dependency: 'tick'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[QUEUE_EMPTY]
+[QUEUE_EMPTY]
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[QUEUE_EMPTY]
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[QUEUE_EMPTY]
+   Generating static pages (0/95) ...
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+   Generating static pages (23/95) 
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+   Generating static pages (47/95) 
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+   Generating static pages (71/95) 
+ ✓ Generating static pages (95/95)
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+[SYNC] running
+[DISTRIBUTED] { node: 'node-1' }
+[QUEUE_EMPTY]
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                    Size  First Load JS
+┌ ƒ /                                                         206 B         131 kB
+├ ○ /_not-found                                             1.01 kB         103 kB
+├ ƒ /[slug]                                                   204 B         131 kB
+├ ƒ /accept-invite                                          2.27 kB         161 kB
+├ ƒ /admin                                                  3.68 kB         130 kB
+├ ƒ /admin/agreement                                        3.02 kB         105 kB
+├ ƒ /admin/ansatte                                          2.53 kB         105 kB
+├ ƒ /admin/audit                                            3.01 kB         108 kB
+├ ƒ /admin/baerekraft                                       3.34 kB         105 kB
+├ ƒ /admin/companies                                        2.14 kB         108 kB
+├ ƒ /admin/control-tower                                    6.94 kB         112 kB
+├ ƒ /admin/dashboard                                          219 B         106 kB
+├ ƒ /admin/employees                                        1.71 kB         104 kB
+├ ƒ /admin/employees/invites/bulk                           1.69 kB         104 kB
+├ ƒ /admin/firma-onboarding                                 5.92 kB         111 kB
+├ ƒ /admin/history                                          2.63 kB         108 kB
+├ ƒ /admin/insights                                         4.87 kB         110 kB
+├ ƒ /admin/invite                                           3.36 kB         113 kB
+├ ƒ /admin/kitchen-test                                     1.13 kB         156 kB
+├ ƒ /admin/kjokken                                          3.03 kB         108 kB
+├ ƒ /admin/kjokken/orders                                   1.69 kB         104 kB
+├ ƒ /admin/locations                                        3.86 kB         109 kB
+├ ƒ /admin/menus                                            2.66 kB         108 kB
+├ ƒ /admin/orders                                           3.38 kB         109 kB
+├ ƒ /admin/people                                           6.71 kB         117 kB
+├ ƒ /admin/users                                            1.15 kB         107 kB
+├ ƒ /alternativ-til-kantine                                 1.57 kB         116 kB
+├ ƒ /api/accept-invite/complete                             1.69 kB         104 kB
+├ ƒ /api/acquire                                            1.69 kB         104 kB
+├ ƒ /api/acquire/strategy                                   1.69 kB         104 kB
+├ ƒ /api/address/resolve                                    1.69 kB         104 kB
+├ ƒ /api/address/search                                     1.69 kB         104 kB
+├ ƒ /api/admin/accept-invite/complete                       1.69 kB         104 kB
+├ ƒ /api/admin/agreement                                    1.69 kB         104 kB
+├ ƒ /api/admin/agreements                                   1.69 kB         104 kB
+├ ƒ /api/admin/agreements/current                           1.69 kB         104 kB
+├ ƒ /api/admin/auth                                         1.69 kB         104 kB
+├ ƒ /api/admin/auth/login                                   1.69 kB         104 kB
+├ ƒ /api/admin/company/status/set                           1.69 kB         104 kB
+├ ƒ /api/admin/dashboard                                    1.69 kB         104 kB
+├ ƒ /api/admin/deliveries                                   1.69 kB         104 kB
+├ ƒ /api/admin/deliveries/status                            1.69 kB         104 kB
+├ ƒ /api/admin/demand-insights                              1.69 kB         104 kB
+├ ƒ /api/admin/employees                                    1.69 kB         104 kB
+├ ƒ /api/admin/employees/[userId]/disable                   1.69 kB         104 kB
+├ ƒ /api/admin/employees/activity                           1.69 kB         104 kB
+├ ƒ /api/admin/employees/audit                              1.69 kB         104 kB
+├ ƒ /api/admin/employees/export                             1.69 kB         104 kB
+├ ƒ /api/admin/employees/invite                             1.69 kB         104 kB
+├ ƒ /api/admin/employees/invites                            1.69 kB         104 kB
+├ ƒ /api/admin/employees/invites/link                       1.69 kB         104 kB
+├ ƒ /api/admin/employees/invites/resend                     1.69 kB         104 kB
+├ ƒ /api/admin/employees/invites/revoke                     1.69 kB         104 kB
+├ ƒ /api/admin/employees/invites/stats                      1.69 kB         104 kB
+├ ƒ /api/admin/employees/list                               1.69 kB         104 kB
+├ ƒ /api/admin/employees/resend-invite                      1.69 kB         104 kB
+├ ƒ /api/admin/employees/set-disabled                       1.69 kB         104 kB
+├ ƒ /api/admin/esg/latest-monthly                           1.69 kB         104 kB
+├ ƒ /api/admin/esg/report/executive/pdf                     1.69 kB         104 kB
+├ ƒ /api/admin/esg/report/pdf                               1.69 kB         104 kB
+├ ƒ /api/admin/esg/report/technical/pdf                     1.69 kB         104 kB
+├ ƒ /api/admin/esg/summary                                  1.69 kB         104 kB
+├ ƒ /api/admin/insight                                      1.69 kB         104 kB
+├ ƒ /api/admin/insights                                     1.69 kB         104 kB
+├ ƒ /api/admin/invite                                       1.69 kB         104 kB
+├ ƒ /api/admin/invites                                      1.69 kB         104 kB
+├ ƒ /api/admin/invites/[id]                                 1.69 kB         104 kB
+├ ƒ /api/admin/invites/create                               1.69 kB         104 kB
+├ ƒ /api/admin/invites/lookup                               1.69 kB         104 kB
+├ ƒ /api/admin/invites/register                             1.69 kB         104 kB
+├ ƒ /api/admin/invites/resend                               1.69 kB         104 kB
+├ ƒ /api/admin/invites/resolve                              1.69 kB         104 kB
+├ ƒ /api/admin/invites/revoke                               1.69 kB         104 kB
+├ ƒ /api/admin/invoices/csv                                 1.69 kB         104 kB
+├ ƒ /api/admin/locations                                    1.69 kB         104 kB
+├ ƒ /api/admin/locations/audit                              1.69 kB         104 kB
+├ ƒ /api/admin/locations/export                             1.69 kB         104 kB
+├ ƒ /api/admin/locations/status                             1.69 kB         104 kB
+├ ƒ /api/admin/me                                           1.69 kB         104 kB
+├ ƒ /api/admin/metrics                                      1.69 kB         104 kB
+├ ƒ /api/admin/metrics/daily                                1.69 kB         104 kB
+├ ƒ /api/admin/metrics/summary                              1.69 kB         104 kB
+├ ƒ /api/admin/metrics/weekly                               1.69 kB         104 kB
+├ ƒ /api/admin/operations-tower                             1.69 kB         104 kB
+├ ƒ /api/admin/orders                                       1.69 kB         104 kB
+├ ƒ /api/admin/people                                       1.69 kB         104 kB
+├ ƒ /api/admin/support/report                               1.69 kB         104 kB
+├ ƒ /api/admin/users                                        1.69 kB         104 kB
+├ ƒ /api/agreements                                         1.69 kB         104 kB
+├ ƒ /api/agreements/my-latest                               1.69 kB         104 kB
+├ ƒ /api/ai                                                 1.69 kB         104 kB
+├ ƒ /api/ai/analyze                                         1.69 kB         104 kB
+├ ƒ /api/ai/automation                                      1.69 kB         104 kB
+├ ƒ /api/ai/block                                           1.69 kB         104 kB
+├ ƒ /api/ai/block/score                                     1.69 kB         104 kB
+├ ƒ /api/ai/business-engine                                 1.69 kB         104 kB
+├ ƒ /api/ai/continue                                        1.69 kB         104 kB
+├ ƒ /api/ai/copilot                                         1.69 kB         104 kB
+├ ƒ /api/ai/dashboard                                       1.69 kB         104 kB
+├ ƒ /api/ai/decision                                        1.69 kB         104 kB
+├ ƒ /api/ai/design/analyze                                  1.69 kB         104 kB
+├ ƒ /api/ai/design/generate                                 1.69 kB         104 kB
+├ ƒ /api/ai/experiments                                     1.69 kB         104 kB
+├ ƒ /api/ai/generate                                        1.69 kB         104 kB
+├ ƒ /api/ai/growth/ads                                      1.69 kB         104 kB
+├ ƒ /api/ai/growth/funnel                                   1.69 kB         104 kB
+├ ƒ /api/ai/growth/seo                                      1.69 kB         104 kB
+├ ƒ /api/ai/image                                           1.69 kB         104 kB
+├ ƒ /api/ai/inline                                          1.69 kB         104 kB
+├ ƒ /api/ai/insights                                        1.69 kB         104 kB
+├ ƒ /api/ai/layout                                          1.69 kB         104 kB
+├ ƒ /api/ai/learn                                           1.69 kB         104 kB
+├ ƒ /api/ai/optimize                                        1.69 kB         104 kB
+├ ƒ /api/ai/page                                                0 B            0 B
+├ ƒ /api/ai/page/audit                                      1.69 kB         104 kB
+├ ƒ /api/ai/page/build                                      1.69 kB         104 kB
+├ ƒ /api/ai/recommendation/apply                            1.69 kB         104 kB
+├ ƒ /api/ai/recommendation/history                          1.69 kB         104 kB
+├ ƒ /api/ai/rewrite                                         1.69 kB         104 kB
+├ ƒ /api/ai/swarm                                           1.69 kB         104 kB
+├ ƒ /api/ai/track                                           1.69 kB         104 kB
+├ ƒ /api/ai/usage                                           1.69 kB         104 kB
+├ ƒ /api/alerts/run                                         1.69 kB         104 kB
+├ ƒ /api/auth/accept-invite                                 1.69 kB         104 kB
+├ ƒ /api/auth/debug-cookies                                 1.69 kB         104 kB
+├ ƒ /api/auth/dev-bypass                                    1.69 kB         104 kB
+├ ƒ /api/auth/forgot-password                               1.69 kB         104 kB
+├ ƒ /api/auth/login                                         1.69 kB         104 kB
+├ ƒ /api/auth/login-debug                                   1.69 kB         104 kB
+├ ƒ /api/auth/logout                                        1.69 kB         104 kB
+├ ƒ /api/auth/me                                            1.69 kB         104 kB
+├ ƒ /api/auth/post-login                                    1.69 kB         104 kB
+├ ƒ /api/auth/profile                                       1.69 kB         104 kB
+├ ƒ /api/auth/redirect                                      1.69 kB         104 kB
+├ ƒ /api/auth/remote-backend-harness                        1.69 kB         104 kB
+├ ƒ /api/auth/session                                       1.69 kB         104 kB
+├ ƒ /api/automation/mode                                    1.69 kB         104 kB
+├ ƒ /api/autonomy/revenue                                   1.69 kB         104 kB
+├ ƒ /api/autonomy/run                                       1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/apply                                1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/auto-improve                         1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/block-builder                        1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/build-home-from-intent               1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/capability                           1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/cms-menu                             1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/cta-improve                          1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/design-optimizer/analyze             1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/design-optimizer/apply               1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/design-optimizer/revert              1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/design-suggestion/log-apply          1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/health/latest                        1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/health/scan                          1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/image-generator                      1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/image-metadata                       1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/intelligence/dashboard               1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/intelligence/events                  1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/intelligence/query                   1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/jobs                                 1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/jobs/run                             1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/layout-suggestions                   1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/page-builder                         1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/page-intelligence                    1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/screenshot-builder                   1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/seo-intelligence                     1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/status                               1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/suggest                              1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/suggestions                          1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/suggestions/[id]                     1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/suggestions/[id]/status              1.69 kB         104 kB
+├ ƒ /api/backoffice/ai/text-improve                         1.69 kB         104 kB
+├ ƒ /api/backoffice/autonomy/feedback                       1.69 kB         104 kB
+├ ƒ /api/backoffice/autonomy/optimize                       1.69 kB         104 kB
+├ ƒ /api/backoffice/autonomy/recommendations                1.69 kB         104 kB
+├ ƒ /api/backoffice/autonomy/run                            1.69 kB         104 kB
+├ ƒ /api/backoffice/ceo/feedback                            1.69 kB         104 kB
+├ ƒ /api/backoffice/ceo/recommendations                     1.69 kB         104 kB
+├ ƒ /api/backoffice/ceo/run                                 1.69 kB         104 kB
+├ ƒ /api/backoffice/cms/block-editor-data-types             1.69 kB         104 kB
+├ ƒ /api/backoffice/cms/composition-definitions             1.69 kB         104 kB
+├ ƒ /api/backoffice/cms/document-type-definitions           1.69 kB         104 kB
+├ ƒ /api/backoffice/cms/element-type-runtime                1.69 kB         104 kB
+├ ƒ /api/backoffice/cms/menu-draft                          1.69 kB         104 kB
+├ ƒ /api/backoffice/company/control-tower                   1.69 kB         104 kB
+├ ƒ /api/backoffice/content/audit-log                       1.69 kB         104 kB
+├ ƒ /api/backoffice/content/batch-normalize-legacy          1.69 kB         104 kB
+├ ƒ /api/backoffice/content/build-home                      1.69 kB         104 kB
+├ ƒ /api/backoffice/content/footer-config                   1.69 kB         104 kB
+├ ƒ /api/backoffice/content/governance-registry             1.69 kB         104 kB
+├ ƒ /api/backoffice/content/governance-usage                1.69 kB         104 kB
+├ ƒ /api/backoffice/content/header-config/[variant]         1.69 kB         104 kB
+├ ƒ /api/backoffice/content/home                            1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages                           1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]                      1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]/check-release        1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]/insights             1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]/published-body       1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]/variant/publish      1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/[id]/workflow             1.69 kB         104 kB
+├ ƒ /api/backoffice/content/pages/by-slug                   1.69 kB         104 kB
+├ ƒ /api/backoffice/content/publish-home                    1.69 kB         104 kB
+├ ƒ /api/backoffice/content/tree                            1.69 kB         104 kB
+├ ƒ /api/backoffice/content/tree/move                       1.69 kB         104 kB
+├ ƒ /api/backoffice/control-plane/discovery-entity-bundle   1.69 kB         104 kB
+├ ƒ /api/backoffice/control-tower                           1.69 kB         104 kB
+├ ƒ /api/backoffice/enterprise/page-insights                1.69 kB         104 kB
+├ ƒ /api/backoffice/esg/latest-monthly                      1.69 kB         104 kB
+├ ƒ /api/backoffice/esg/summary                             1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments                             1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments/[id]                        1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments/create                      1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments/event                       1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments/resolve                     1.69 kB         104 kB
+├ ƒ /api/backoffice/experiments/stats                       1.69 kB         104 kB
+├ ƒ /api/backoffice/forms                                   1.69 kB         104 kB
+├ ƒ /api/backoffice/forms/[id]                              1.69 kB         104 kB
+├ ƒ /api/backoffice/forms/[id]/submissions                  1.69 kB         104 kB
+├ ƒ /api/backoffice/growth/summary                          1.69 kB         104 kB
+├ ƒ /api/backoffice/media/items                             1.69 kB         104 kB
+├ ƒ /api/backoffice/media/items/[id]                        1.69 kB         104 kB
+├ ƒ /api/backoffice/media/upload                            1.69 kB         104 kB
+├ ƒ /api/backoffice/releases                                1.69 kB         104 kB
+├ ƒ /api/backoffice/releases/[id]                           1.69 kB         104 kB
+├ ƒ /api/backoffice/releases/[id]/execute                   1.69 kB         104 kB
+├ ƒ /api/backoffice/releases/[id]/items                     1.69 kB         104 kB
+├ ƒ /api/backoffice/releases/[id]/items/[variantId]         1.69 kB         104 kB
+├ ƒ /api/backoffice/releases/[id]/schedule                  1.69 kB         104 kB
+├ ƒ /api/backoffice/revenue/insights                        1.69 kB         104 kB
+├ ƒ /api/backoffice/sanity/menu-content/publish             1.69 kB         104 kB
+├ ƒ /api/backoffice/settings                                1.69 kB         104 kB
+├ ƒ /api/backoffice/translation/summary                     1.69 kB         104 kB
+├ ƒ /api/backoffice/users                                   1.69 kB         104 kB
+├ ƒ /api/board                                              1.69 kB         104 kB
+├ ƒ /api/business/run                                       1.69 kB         104 kB
+├ ƒ /api/ceo/brain                                          1.69 kB         104 kB
+├ ƒ /api/ceo/run                                            1.69 kB         104 kB
+├ ƒ /api/ceo/snapshot                                       1.69 kB         104 kB
+├ ƒ /api/chaos/load                                         1.69 kB         104 kB
+├ ƒ /api/chaos/test                                         1.69 kB         104 kB
+├ ƒ /api/company/create                                     1.69 kB         104 kB
+├ ƒ /api/contact                                            1.69 kB         104 kB
+├ ƒ /api/content/global/footer                              1.69 kB         104 kB
+├ ƒ /api/content/global/header                              1.69 kB         104 kB
+├ ƒ /api/content/global/settings                            1.69 kB         104 kB
+├ ƒ /api/control-tower                                      1.69 kB         104 kB
+├ ƒ /api/control-tower/snapshot                             1.69 kB         104 kB
+├ ƒ /api/crm/lead                                           1.69 kB         104 kB
+├ ƒ /api/cron/ai                                            1.69 kB         104 kB
+├ ƒ /api/cron/ai-ceo                                        1.69 kB         104 kB
+├ ƒ /api/cron/ai-experiment-generator                       1.69 kB         104 kB
+├ ƒ /api/cron/ai-governance-auto                            1.69 kB         104 kB
+├ ƒ /api/cron/ai-optimize                                   1.69 kB         104 kB
+├ ƒ /api/cron/attribution                                   1.69 kB         104 kB
+├ ƒ /api/cron/autonomous                                    1.69 kB         104 kB
+├ ƒ /api/cron/autonomy                                      1.69 kB         104 kB
+├ ƒ /api/cron/autopilot                                     1.69 kB         104 kB
+├ ƒ /api/cron/blackbox                                      1.69 kB         104 kB
+├ ƒ /api/cron/boardroom                                     1.69 kB         104 kB
+├ ƒ /api/cron/budget-execution                              1.69 kB         104 kB
+├ ƒ /api/cron/business                                      1.69 kB         104 kB
+├ ƒ /api/cron/capital-allocation                            1.69 kB         104 kB
+├ ƒ /api/cron/ceo                                           1.69 kB         104 kB
+├ ƒ /api/cron/cleanup-invites                               1.69 kB         104 kB
+├ ƒ /api/cron/credit-check                                  1.69 kB         104 kB
+├ ƒ /api/cron/daily-sanity                                  1.69 kB         104 kB
+├ ƒ /api/cron/esg/daily                                     1.69 kB         104 kB
+├ ƒ /api/cron/esg/generate                                  1.69 kB         104 kB
+├ ƒ /api/cron/esg/lock/monthly                              1.69 kB         104 kB
+├ ƒ /api/cron/esg/lock/yearly                               1.69 kB         104 kB
+├ ƒ /api/cron/esg/monthly                                   1.69 kB         104 kB
+├ ƒ /api/cron/esg/yearly                                    1.69 kB         104 kB
+├ ƒ /api/cron/experiments                                   1.69 kB         104 kB
+├ ƒ /api/cron/forecast                                      1.69 kB         104 kB
+├ ƒ /api/cron/global-learning                               1.69 kB         104 kB
+├ ƒ /api/cron/god-mode                                      1.69 kB         104 kB
+├ ƒ /api/cron/invoice-companies                             1.69 kB         104 kB
+├ ƒ /api/cron/invoices/generate                             1.69 kB         104 kB
+├ ƒ /api/cron/kitchen-print                                 1.69 kB         104 kB
+├ ƒ /api/cron/lock-weekplans                                1.69 kB         104 kB
+├ ƒ /api/cron/market                                        1.69 kB         104 kB
+├ ƒ /api/cron/monitor                                       1.69 kB         104 kB
+├ ƒ /api/cron/monitoring                                    1.69 kB         104 kB
+├ ƒ /api/cron/monopoly                                      1.69 kB         104 kB
+├ ƒ /api/cron/omniscient                                    1.69 kB         104 kB
+├ ƒ /api/cron/org                                           1.69 kB         104 kB
+├ ƒ /api/cron/outbox                                        1.69 kB         104 kB
+├ ƒ /api/cron/pipeline                                      1.69 kB         104 kB
+├ ƒ /api/cron/preprod                                       1.69 kB         104 kB
+├ ƒ /api/cron/profit                                        1.69 kB         104 kB
+├ ƒ /api/cron/reality                                       1.69 kB         104 kB
+├ ƒ /api/cron/realtime-monitor                              1.69 kB         104 kB
+├ ƒ /api/cron/resolve-experiments                           1.69 kB         104 kB
+├ ƒ /api/cron/retrain                                       1.69 kB         104 kB
+├ ƒ /api/cron/retrain-sequence                              1.69 kB         104 kB
+├ ƒ /api/cron/revenue                                       1.69 kB         104 kB
+├ ƒ /api/cron/revenue-mode                                  1.69 kB         104 kB
+├ ƒ /api/cron/scaling                                       1.69 kB         104 kB
+├ ƒ /api/cron/singularity                                   1.69 kB         104 kB
+├ ƒ /api/cron/social                                        1.69 kB         104 kB
+├ ƒ /api/cron/strategy                                      1.69 kB         104 kB
+├ ƒ /api/cron/system-motor                                  1.69 kB         104 kB
+├ ƒ /api/cron/train-model                                   1.69 kB         104 kB
+├ ƒ /api/cron/train-sequence                                1.69 kB         104 kB
+├ ƒ /api/cron/week-scheduler                                1.69 kB         104 kB
+├ ƒ /api/cron/week-visibility                               1.69 kB         104 kB
+├ ƒ /api/cto/run                                            1.69 kB         104 kB
+├ ƒ /api/customers/register                                 1.69 kB         104 kB
+├ ƒ /api/debug/cookie-test                                  1.69 kB         104 kB
+├ ƒ /api/debug/cookies                                      1.69 kB         104 kB
+├ ƒ /api/debug/whoami                                       1.69 kB         104 kB
+├ ƒ /api/dev/test-order-status                              1.69 kB         104 kB
+├ ƒ /api/driver/bulk-set                                    1.69 kB         104 kB
+├ ƒ /api/driver/confirm                                     1.69 kB         104 kB
+├ ƒ /api/driver/orders                                      1.69 kB         104 kB
+├ ƒ /api/driver/stops                                       1.69 kB         104 kB
+├ ƒ /api/driver/today                                       1.69 kB         104 kB
+├ ƒ /api/edge/ai                                            1.69 kB         104 kB
+├ ƒ /api/edge/metrics                                       1.69 kB         104 kB
+├ ƒ /api/editor-ai/metrics                                  1.69 kB         104 kB
+├ ƒ /api/events/publish                                     1.69 kB         104 kB
+├ ƒ /api/example                                            1.69 kB         104 kB
+├ ƒ /api/execution/approve                                  1.69 kB         104 kB
+├ ƒ /api/execution/create                                   1.69 kB         104 kB
+├ ƒ /api/execution/queue                                    1.69 kB         104 kB
+├ ƒ /api/execution/run                                      1.69 kB         104 kB
+├ ƒ /api/exit                                               1.69 kB         104 kB
+├ ƒ /api/exit/execute                                       1.69 kB         104 kB
+├ ƒ /api/exit/now                                           1.69 kB         104 kB
+├ ƒ /api/exit/sell                                          1.69 kB         104 kB
+├ ƒ /api/experiments/assign                                 1.69 kB         104 kB
+├ ƒ /api/experiments/results                                1.69 kB         104 kB
+├ ƒ /api/experiments/rollout                                1.69 kB         104 kB
+├ ƒ /api/experiments/track                                  1.69 kB         104 kB
+├ ƒ /api/experiments/winner                                 1.69 kB         104 kB
+├ ƒ /api/global/expand                                      1.69 kB         104 kB
+├ ƒ /api/global/markets                                     1.69 kB         104 kB
+├ ƒ /api/global/run                                         1.69 kB         104 kB
+├ ƒ /api/growth/multichannel                                1.69 kB         104 kB
+├ ƒ /api/growth/optimize                                    1.69 kB         104 kB
+├ ƒ /api/health                                             1.69 kB         104 kB
+├ ƒ /api/health/live                                        1.69 kB         104 kB
+├ ƒ /api/health/ready                                       1.69 kB         104 kB
+├ ƒ /api/integrations/execute                               1.69 kB         104 kB
+├ ƒ /api/internal/scheduler/run                             1.69 kB         104 kB
+├ ƒ /api/investor/valuation                                 1.69 kB         104 kB
+├ ƒ /api/ipo                                                1.69 kB         104 kB
+├ ƒ /api/kitchen                                            1.69 kB         104 kB
+├ ƒ /api/kitchen/batch                                      1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/get                                  1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/list                                 1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/reset                                1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/set                                  1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/start                                1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/summary                              1.69 kB         104 kB
+├ ƒ /api/kitchen/batch/upsert                               1.69 kB         104 kB
+├ ƒ /api/kitchen/companies                                  1.69 kB         104 kB
+├ ƒ /api/kitchen/company                                    1.69 kB         104 kB
+├ ƒ /api/kitchen/day                                        1.69 kB         104 kB
+├ ƒ /api/kitchen/demand-forecast                            1.69 kB         104 kB
+├ ƒ /api/kitchen/orders                                     1.69 kB         104 kB
+├ ƒ /api/kitchen/orders.csv                                 1.69 kB         104 kB
+├ ƒ /api/kitchen/orders/batch-status                        1.69 kB         104 kB
+├ ƒ /api/kitchen/report                                     1.69 kB         104 kB
+├ ƒ /api/kitchen/report.csv                                 1.69 kB         104 kB
+├ ƒ /api/kitchen/today                                      1.69 kB         104 kB
+├ ƒ /api/market                                             1.69 kB         104 kB
+├ ƒ /api/market/domination                                  1.69 kB         104 kB
+├ ƒ /api/me                                                 1.69 kB         104 kB
+├ ƒ /api/me/agreement                                       1.69 kB         104 kB
+├ ƒ /api/observability                                      1.69 kB         104 kB
+├ ƒ /api/observability/edge                                 1.69 kB         104 kB
+├ ƒ /api/onboarding/complete                                1.69 kB         104 kB
+├ ƒ /api/onboarding/terms-pdf                               1.69 kB         104 kB
+├ ƒ /api/ops                                                1.69 kB         104 kB
+├ ƒ /api/ops/global                                         1.69 kB         104 kB
+├ ƒ /api/order                                              1.69 kB         104 kB
+├ ƒ /api/order/bulk-set                                     1.69 kB         104 kB
+├ ƒ /api/order/cancel                                       1.69 kB         104 kB
+├ ƒ /api/order/set-choice                                   1.69 kB         104 kB
+├ ƒ /api/order/set-day                                      1.69 kB         104 kB
+├ ƒ /api/order/week-demand-hints                            1.69 kB         104 kB
+├ ƒ /api/order/window                                       1.69 kB         104 kB
+├ ƒ /api/orders                                             1.69 kB         104 kB
+├ ƒ /api/orders/[orderId]                                   1.69 kB         104 kB
+├ ƒ /api/orders/[orderId]/cancel                            1.69 kB         104 kB
+├ ƒ /api/orders/[orderId]/toggle                            1.69 kB         104 kB
+├ ƒ /api/orders/cancel                                      1.69 kB         104 kB
+├ ƒ /api/orders/choice                                      1.69 kB         104 kB
+├ ƒ /api/orders/export                                      1.69 kB         104 kB
+├ ƒ /api/orders/my                                          1.69 kB         104 kB
+├ ƒ /api/orders/set                                         1.69 kB         104 kB
+├ ƒ /api/orders/today                                       1.69 kB         104 kB
+├ ƒ /api/orders/toggle                                      1.69 kB         104 kB
+├ ƒ /api/orders/upsert                                      1.69 kB         104 kB
+├ ƒ /api/orders/week                                        1.69 kB         104 kB
+├ ƒ /api/outbound/generate                                  1.69 kB         104 kB
+├ ƒ /api/outbox/process                                     1.69 kB         104 kB
+├ ƒ /api/outbox/retry                                       1.69 kB         104 kB
+├ ƒ /api/page/rollback                                      1.69 kB         104 kB
+├ ƒ /api/page/version/[id]                                  1.69 kB         104 kB
+├ ƒ /api/page/versions                                      1.69 kB         104 kB
+├ ƒ /api/pipeline/actions                                   1.69 kB         104 kB
+├ ƒ /api/pipeline/deals                                     1.69 kB         104 kB
+├ ƒ /api/pipeline/update-stage                              1.69 kB         104 kB
+├ ƒ /api/pitch                                              1.69 kB         104 kB
+├ ƒ /api/profile                                            1.69 kB         104 kB
+├ ƒ /api/profile/set-scope                                  1.69 kB         104 kB
+├ ƒ /api/public/ai-demo-cta/assign                          1.69 kB         104 kB
+├ ƒ /api/public/analytics                                   1.69 kB         104 kB
+├ ƒ /api/public/demo-interest                               1.69 kB         104 kB
+├ ƒ /api/public/forms/[id]                                  1.69 kB         104 kB
+├ ƒ /api/public/forms/[id]/schema                           1.69 kB         104 kB
+├ ƒ /api/public/onboarding/create-admin                     1.69 kB         104 kB
+├ ƒ /api/public/onboarding/register                         1.69 kB         104 kB
+├ ƒ /api/public/register                                    1.69 kB         104 kB
+├ ƒ /api/public/register-company                            1.69 kB         104 kB
+├ ƒ /api/public/search                                      1.69 kB         104 kB
+├ ƒ /api/public/track-event                                 1.69 kB         104 kB
+├ ƒ /api/queue/add                                          1.69 kB         104 kB
+├ ƒ /api/register                                           1.69 kB         104 kB
+├ ƒ /api/revenue                                            1.69 kB         104 kB
+├ ƒ /api/revenue/autopilot                                  1.69 kB         104 kB
+├ ƒ /api/revenue/brain                                      1.69 kB         104 kB
+├ ƒ /api/revenue/lead                                       1.69 kB         104 kB
+├ ƒ /api/revenue/live                                       1.69 kB         104 kB
+├ ƒ /api/revenue/pipeline                                   1.69 kB         104 kB
+├ ƒ /api/sales/agent/run                                    1.69 kB         104 kB
+├ ƒ /api/sales/ai                                           1.69 kB         104 kB
+├ ƒ /api/sales/closing/execute                              1.69 kB         104 kB
+├ ƒ /api/sales/closing/ready                                1.69 kB         104 kB
+├ ƒ /api/sales/cockpit/log                                  1.69 kB         104 kB
+├ ƒ /api/sales/lead                                         1.69 kB         104 kB
+├ ƒ /api/sales/loop/run                                     1.69 kB         104 kB
+├ ƒ /api/sales/objection/reply                              1.69 kB         104 kB
+├ ƒ /api/sales/objection/send                               1.69 kB         104 kB
+├ ƒ /api/sales/run                                          1.69 kB         104 kB
+├ ƒ /api/sales/scale                                        1.69 kB         104 kB
+├ ƒ /api/sales/send                                         1.69 kB         104 kB
+├ ƒ /api/sales/sequence/inbound                             1.69 kB         104 kB
+├ ƒ /api/sales/sequence/timeline                            1.69 kB         104 kB
+├ ƒ /api/scope/options                                      1.69 kB         104 kB
+├ ƒ /api/sdr/queue                                          1.69 kB         104 kB
+├ ƒ /api/sdr/run                                            1.69 kB         104 kB
+├ ƒ /api/security/alerts                                    1.69 kB         104 kB
+├ ƒ /api/security/audit                                     1.69 kB         104 kB
+├ ƒ /api/social/ab/analytics                                1.69 kB         104 kB
+├ ƒ /api/social/ab/decisions                                1.69 kB         104 kB
+├ ƒ /api/social/ai                                          1.69 kB         104 kB
+├ ƒ /api/social/ai/generate                                 1.69 kB         104 kB
+├ ƒ /api/social/analytics                                   1.69 kB         104 kB
+├ ƒ /api/social/autonomous/run                              1.69 kB         104 kB
+├ ƒ /api/social/posts                                       1.69 kB         104 kB
+├ ƒ /api/social/posts/[id]                                  1.69 kB         104 kB
+├ ƒ /api/social/posts/publish                               1.69 kB         104 kB
+├ ƒ /api/social/posts/save                                  1.69 kB         104 kB
+├ ƒ /api/social/recommendations                             1.69 kB         104 kB
+├ ƒ /api/social/redirect                                    1.69 kB         104 kB
+├ ƒ /api/social/run                                         1.69 kB         104 kB
+├ ƒ /api/social/track                                       1.69 kB         104 kB
+├ ƒ /api/social/unified/generate                            1.69 kB         104 kB
+├ ƒ /api/something                                          1.69 kB         104 kB
+├ ƒ /api/sre/metrics                                        1.69 kB         104 kB
+├ ƒ /api/sre/uptime                                         1.69 kB         104 kB
+├ ƒ /api/strategy/run                                       1.69 kB         104 kB
+├ ƒ /api/stream                                             1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements                              1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/activate       1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/approve        1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/close          1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/pause          1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/pause-ledger   1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/reject         1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/[agreementId]/resume         1.69 kB         104 kB
+├ ƒ /api/superadmin/agreements/list                         1.69 kB         104 kB
+├ ƒ /api/superadmin/ai-config                               1.69 kB         104 kB
+├ ƒ /api/superadmin/ai-prompts                              1.69 kB         104 kB
+├ ƒ /api/superadmin/audit                                   1.69 kB         104 kB
+├ ƒ /api/superadmin/audit-meta/recent                       1.69 kB         104 kB
+├ ƒ /api/superadmin/audit-write                             1.69 kB         104 kB
+├ ƒ /api/superadmin/audit/[id]                              1.69 kB         104 kB
+├ ƒ /api/superadmin/autonomy                                1.69 kB         104 kB
+├ ƒ /api/superadmin/autonomy/run                            1.69 kB         104 kB
+├ ƒ /api/superadmin/billing-accounts                        1.69 kB         104 kB
+├ ƒ /api/superadmin/billing/export                          1.69 kB         104 kB
+├ ƒ /api/superadmin/break-glass                             1.69 kB         104 kB
+├ ƒ /api/superadmin/cfo/summary                             1.69 kB         104 kB
+├ ƒ /api/superadmin/companies                               1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]                   1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/agreement/status  1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/archive           1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/archive/orders    1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/archive/summary   1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/esg               1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/invoice-basis     1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/[companyId]/orders            1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/agreement                     1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/invoices                      1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/set-status                    1.69 kB         104 kB
+├ ƒ /api/superadmin/companies/stats                         1.69 kB         104 kB
+├ ƒ /api/superadmin/company/[companyId]/activate            1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower                           1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/autopilot                 1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/data                      1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/domination                1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/golive                    1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/monopoly                  1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/scale                     1.69 kB         104 kB
+├ ƒ /api/superadmin/control-tower/snapshot                  1.69 kB         104 kB
+├ ƒ /api/superadmin/dashboard                               1.69 kB         104 kB
+├ ƒ /api/superadmin/diagnostics                             1.69 kB         104 kB
+├ ƒ /api/superadmin/diagnostics/repair                      1.69 kB         104 kB
+├ ƒ /api/superadmin/employees/[userId]                      1.69 kB         104 kB
+├ ƒ /api/superadmin/enterprise                              1.69 kB         104 kB
+├ ƒ /api/superadmin/enterprise/[groupId]                    1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/benchmark                           1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/export/yearly/csv                   1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/export/yearly/json                  1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/latest-monthly                      1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/report/pdf                          1.69 kB         104 kB
+├ ƒ /api/superadmin/esg/summary                             1.69 kB         104 kB
+├ ƒ /api/superadmin/experiments                             1.69 kB         104 kB
+├ ƒ /api/superadmin/firms/[companyId]/employees             1.69 kB         104 kB
+├ ƒ /api/superadmin/firms/[companyId]/employees/delete      1.69 kB         104 kB
+├ ƒ /api/superadmin/global-intelligence/summary             1.69 kB         104 kB
+├ ƒ /api/superadmin/growth-optimization                     1.69 kB         104 kB
+├ ƒ /api/superadmin/growth/capital-allocate                 1.69 kB         104 kB
+├ ƒ /api/superadmin/investor                                1.69 kB         104 kB
+├ ƒ /api/superadmin/investor/metrics                        1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/csv                            1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/export                         1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/exports                        1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/exports/retry                  1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/generate                       1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/mapping                        1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/mapping/bulk                   1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/reconcile                      1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/reverse                        1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/runs                           1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/runs/[runId]                   1.69 kB         104 kB
+├ ƒ /api/superadmin/invoices/runs/[runId]/exports           1.69 kB         104 kB
+├ ƒ /api/superadmin/menu-publish                            1.69 kB         104 kB
+├ ƒ /api/superadmin/menus-week                              1.69 kB         104 kB
+├ ƒ /api/superadmin/outbox/list                             1.69 kB         104 kB
+├ ƒ /api/superadmin/outbox/run                              1.69 kB         104 kB
+├ ƒ /api/superadmin/overview                                1.69 kB         104 kB
+├ ƒ /api/superadmin/profiles/assign                         1.69 kB         104 kB
+├ ƒ /api/superadmin/profiles/link-company                   1.69 kB         104 kB
+├ ƒ /api/superadmin/profiles/remove                         1.69 kB         104 kB
+├ ƒ /api/superadmin/profiles/update                         1.69 kB         104 kB
+├ ƒ /api/superadmin/quality                                 1.69 kB         104 kB
+├ ƒ /api/superadmin/quality/update                          1.69 kB         104 kB
+├ ƒ /api/superadmin/self-heal                               1.69 kB         104 kB
+├ ƒ /api/superadmin/system                                  1.69 kB         104 kB
+├ ƒ /api/superadmin/system-alerts                           1.69 kB         104 kB
+├ ƒ /api/superadmin/system-graph/data                       1.69 kB         104 kB
+├ ƒ /api/superadmin/system/cleanup-check                    1.69 kB         104 kB
+├ ƒ /api/superadmin/system/codex-prompt                     1.69 kB         104 kB
+├ ƒ /api/superadmin/system/flow/diagnostics                 1.69 kB         104 kB
+├ ƒ /api/superadmin/system/health                           1.69 kB         104 kB
+├ ƒ /api/superadmin/system/incidents                        1.69 kB         104 kB
+├ ƒ /api/superadmin/system/orders/integrity/summary         1.69 kB         104 kB
+├ ƒ /api/superadmin/system/repairs/jobs                     1.69 kB         104 kB
+├ ƒ /api/superadmin/system/repairs/ops                      1.69 kB         104 kB
+├ ƒ /api/superadmin/system/repairs/run                      1.69 kB         104 kB
+├ ƒ /api/superadmin/system/repairs/summary                  1.69 kB         104 kB
+├ ƒ /api/superadmin/system/status                           1.69 kB         104 kB
+├ ƒ /api/superadmin/user-disable                            1.69 kB         104 kB
+├ ƒ /api/superadmin/user-role                               1.69 kB         104 kB
+├ ƒ /api/superadmin/users                                   1.69 kB         104 kB
+├ ƒ /api/superadmin/users/cleanup                           1.69 kB         104 kB
+├ ƒ /api/superadmin/users/delete                            1.69 kB         104 kB
+├ ƒ /api/superadmin/users/disable                           1.69 kB         104 kB
+├ ƒ /api/superadmin/users/enable                            1.69 kB         104 kB
+├ ƒ /api/superadmin/users/set-company-admin                 1.69 kB         104 kB
+├ ƒ /api/superadmin/users/set-scope                         1.69 kB         104 kB
+├ ƒ /api/support/report                                     1.69 kB         104 kB
+├ ƒ /api/system/ai/diagnostics                              1.69 kB         104 kB
+├ ƒ /api/system/ai/health                                   1.69 kB         104 kB
+├ ƒ /api/system/control-plane                               1.69 kB         104 kB
+├ ƒ /api/system/freeze                                      1.69 kB         104 kB
+├ ƒ /api/system/health                                      1.69 kB         104 kB
+├ ƒ /api/system/outbox/process                              1.69 kB         104 kB
+├ ƒ /api/system/receipts                                    1.69 kB         104 kB
+├ ƒ /api/system/run                                         1.69 kB         104 kB
+├ ƒ /api/system/snapshot                                    1.69 kB         104 kB
+├ ƒ /api/system/time                                        1.69 kB         104 kB
+├ ƒ /api/saas/billing                                       1.69 kB         104 kB
+├ ƒ /api/saas/billing/webhook                               1.69 kB         104 kB
+├ ƒ /api/saas/onboarding                                    1.69 kB         104 kB
+├ ƒ /api/saas/tenant                                        1.69 kB         104 kB
+├ ƒ /api/track/click                                        1.69 kB         104 kB
+├ ƒ /api/user/gdpr/delete                                   1.69 kB         104 kB
+├ ƒ /api/user/gdpr/export                                   1.69 kB         104 kB
+├ ƒ /api/v1/public/orders                                   1.69 kB         104 kB
+├ ƒ /api/week                                               1.69 kB         104 kB
+├ ƒ /api/weekplan                                           1.69 kB         104 kB
+├ ƒ /api/weekplan/next                                      1.69 kB         104 kB
+├ ƒ /api/weekplan/publish                                   1.69 kB         104 kB
+├ ƒ /api/worker/run                                         1.69 kB         104 kB
+├ ○ /auth/callback                                            643 B         103 kB
+├ ƒ /auth/login                                             1.69 kB         104 kB
+├ ƒ /auth/post-login                                        1.69 kB         104 kB
+├ ƒ /auth/profile                                           1.69 kB         104 kB
+├ ƒ /auth/session                                           1.69 kB         104 kB
+├ ƒ /backoffice/acquire                                     1.32 kB         107 kB
+├ ƒ /backoffice/agreement-runtime                             213 B         106 kB
+├ ƒ /backoffice/ai                                          4.65 kB         110 kB
+├ ƒ /backoffice/ai-control                                  2.66 kB         108 kB
+├ ƒ /backoffice/ai/editor-verification                      2.22 kB         114 kB
+├ ƒ /backoffice/ai/overview                                 8.44 kB         121 kB
+├ ƒ /backoffice/ai/overview/opengraph-image-704wbx          1.69 kB         104 kB
+├ ƒ /backoffice/automation                                  2.06 kB         107 kB
+├ ƒ /backoffice/autonomy                                    1.27 kB         107 kB
+├ ƒ /backoffice/autonomy/optimize                           1.41 kB         107 kB
+├ ƒ /backoffice/board                                        1.2 kB         107 kB
+├ ƒ /backoffice/business                                    1.09 kB         106 kB
+├ ƒ /backoffice/business-exec                               1.43 kB         103 kB
+├ ƒ /backoffice/content                                      1.4 kB         103 kB
+├ ƒ /backoffice/content/[id]                                 176 kB         402 kB
+├ ƒ /backoffice/content/growth                              6.85 kB         141 kB
+├ ƒ /backoffice/content/recycle-bin                           406 B         102 kB
+├ ƒ /backoffice/control                                     1.98 kB         107 kB
+├ ƒ /backoffice/control-tower                               1.22 kB         107 kB
+├ ƒ /backoffice/customers                                     213 B         106 kB
+├ ƒ /backoffice/design                                      10.3 kB         116 kB
+├ ƒ /backoffice/domains                                       213 B         106 kB
+├ ƒ /backoffice/enterprise                                  1.69 kB         104 kB
+├ ƒ /backoffice/esg                                         4.95 kB         110 kB
+├ ƒ /backoffice/execution                                   1.42 kB         107 kB
+├ ƒ /backoffice/exit                                         1.1 kB         106 kB
+├ ƒ /backoffice/exit-now                                    1.09 kB         106 kB
+├ ƒ /backoffice/exit/execute                                1.08 kB         106 kB
+├ ƒ /backoffice/experiments                                 4.46 kB         113 kB
+├ ƒ /backoffice/experiments/[id]                            3.82 kB         113 kB
+├ ƒ /backoffice/forms                                       1.69 kB         104 kB
+├ ƒ /backoffice/forms/[id]                                  2.99 kB         105 kB
+├ ƒ /backoffice/global                                       1.2 kB         107 kB
+├ ƒ /backoffice/intelligence                                 2.4 kB         104 kB
+├ ƒ /backoffice/internal/ai-verification                    2.13 kB         111 kB
+├ ƒ /backoffice/ipo                                         1.11 kB         106 kB
+├ ƒ /backoffice/market                                        962 B         106 kB
+├ ƒ /backoffice/market/domination                            1.3 kB         107 kB
+├ ƒ /backoffice/media                                       7.52 kB         113 kB
+├ ƒ /backoffice/members                                     1.71 kB         104 kB
+├ ƒ /backoffice/observability                               1.44 kB         107 kB
+├ ƒ /backoffice/ops                                         1.04 kB         106 kB
+├ ƒ /backoffice/preview/[id]                                  204 B         131 kB
+├ ƒ /backoffice/realtime                                      992 B         106 kB
+├ ƒ /backoffice/releases                                    2.67 kB         105 kB
+├ ƒ /backoffice/revenue                                     1.17 kB         107 kB
+├ ƒ /backoffice/runtime                                       219 B         106 kB
+├ ƒ /backoffice/sales                                         845 B         106 kB
+├ ƒ /backoffice/sales-machine                               1.19 kB         103 kB
+├ ƒ /backoffice/sdr                                         1.65 kB         107 kB
+├ ƒ /backoffice/security                                    4.44 kB         106 kB
+├ ƒ /backoffice/seo-growth                                  4.79 kB         110 kB
+├ ƒ /backoffice/settings                                    1.55 kB         110 kB
+├ ƒ /backoffice/settings/ai-governance                        219 B         106 kB
+├ ƒ /backoffice/settings/block-editor-data-types            1.47 kB         107 kB
+├ ƒ /backoffice/settings/block-editor-data-types/[alias]     6.9 kB         118 kB
+├ ƒ /backoffice/settings/compositions                         213 B         106 kB
+├ ƒ /backoffice/settings/compositions/workspace/[alias]     2.55 kB         111 kB
+├ ƒ /backoffice/settings/create-options                     1.69 kB         104 kB
+├ ƒ /backoffice/settings/create-policy                        213 B         106 kB
+├ ƒ /backoffice/settings/data-types                           900 B         115 kB
+├ ƒ /backoffice/settings/data-types/[kind]                    213 B         106 kB
+├ ƒ /backoffice/settings/document-types                       900 B         115 kB
+├ ƒ /backoffice/settings/document-types/[alias]               213 B         106 kB
+├ ƒ /backoffice/settings/document-types/workspace/[alias]   4.66 kB         116 kB
+├ ƒ /backoffice/settings/element-types                        213 B         106 kB
+├ ƒ /backoffice/settings/element-types/[alias]                213 B         106 kB
+├ ƒ /backoffice/settings/element-types/workspace/[alias]    1.98 kB         113 kB
+├ ƒ /backoffice/settings/governance-insights                4.78 kB         114 kB
+├ ƒ /backoffice/settings/management-read                      213 B         106 kB
+├ ƒ /backoffice/settings/schema                               213 B         106 kB
+├ ƒ /backoffice/settings/system                             5.55 kB         115 kB
+├ ƒ /backoffice/social                                      3.66 kB         109 kB
+├ ƒ /backoffice/system                                      1.09 kB         106 kB
+├ ƒ /backoffice/system/ai-config                             1.6 kB         107 kB
+├ ƒ /backoffice/system/ai-prompts                           1.42 kB         107 kB
+├ ƒ /backoffice/templates                                   2.11 kB         104 kB
+├ ƒ /backoffice/translation                                 1.54 kB         104 kB
+├ ƒ /backoffice/users                                        1.7 kB         104 kB
+├ ƒ /backoffice/week-menu                                   1.52 kB         107 kB
+├ ƒ /dashboard                                                188 B         126 kB
+├ ○ /definitiv-guide-firmalunsj                             1.56 kB         110 kB
+├ ƒ /driver                                                 9.51 kB         192 kB
+├ ƒ /driver/csv                                             1.69 kB         104 kB
+├ ○ /forgot-password                                        3.28 kB         114 kB
+├ ƒ /home                                                     219 B         106 kB
+├ ○ /hva-er-lunsjordning                                    1.56 kB         110 kB
+├ ƒ /hvordan                                                2.94 kB         117 kB
+├ ƒ /investor                                               1.93 kB         107 kB
+├ ƒ /kitchen                                                9.54 kB         135 kB
+├ ƒ /kitchen/report                                         1.69 kB         104 kB
+├ ○ /kontakt                                                5.04 kB         110 kB
+├ ○ /login                                                  1.53 kB         112 kB
+├ ƒ /logout                                                   926 B         108 kB
+├ ○ /lunch-levering-bergen                                  1.56 kB         110 kB
+├ ○ /lunsj-levering-oslo                                    1.57 kB         116 kB
+├ ƒ /lunsjordning                                           1.57 kB         116 kB
+├ ○ /lunsjordning-trondheim                                 1.57 kB         116 kB
+├ ƒ /menus/week                                             1.69 kB         104 kB
+├ ƒ /min-side                                               1.69 kB         104 kB
+├ ○ /onboarding                                             1.69 kB         104 kB
+├ ƒ /onboarding/complete                                    1.69 kB         104 kB
+├ ƒ /onboarding/thanks                                        219 B         106 kB
+├ ƒ /orders                                                 1.69 kB         104 kB
+├ ƒ /outbox                                                   128 B         105 kB
+├ ƒ /pending                                                  219 B         106 kB
+├ ○ /personvern                                               219 B         106 kB
+├ ƒ /pitch                                                   2.7 kB         108 kB
+├ ○ /priser                                                   219 B         106 kB
+├ ƒ /product/[productId]                                    1.69 kB         104 kB
+├ ○ /public/demo                                            7.45 kB         120 kB
+├ ○ /register                                               1.69 kB         104 kB
+├ ƒ /register/employee                                      2.27 kB         161 kB
+├ ƒ /registrering                                           3.78 kB         106 kB
+├ ƒ /registrering/mottatt                                     219 B         106 kB
+├ ○ /reset-password                                         4.26 kB         168 kB
+├ ○ /robots.txt                                             1.69 kB         104 kB
+├ ○ /sikkerhet                                                219 B         106 kB
+├ ○ /sitemap.xml                                            1.69 kB         104 kB
+├ ƒ /status                                                   219 B         106 kB
+├ ƒ /superadmin                                               213 B         106 kB
+├ ƒ /superadmin/agreements                                  1.99 kB         107 kB
+├ ƒ /superadmin/agreements/[id]                             3.28 kB         109 kB
+├ ƒ /superadmin/audit                                        4.3 kB         110 kB
+├ ƒ /superadmin/audit/[id]                                    219 B         106 kB
+├ ƒ /superadmin/autonomy                                     2.6 kB         105 kB
+├ ƒ /superadmin/billing                                     1.69 kB         104 kB
+├ ƒ /superadmin/cfo                                         3.69 kB         106 kB
+├ ƒ /superadmin/companies                                   7.23 kB         113 kB
+├ ƒ /superadmin/companies/[companyId]                       7.61 kB         113 kB
+├ ƒ /superadmin/companies/[companyId]/agreement             3.29 kB         109 kB
+├ ƒ /superadmin/control-tower                               18.8 kB         166 kB
+├ ƒ /superadmin/cto                                         1.74 kB         104 kB
+├ ƒ /superadmin/enterprise                                  2.15 kB         108 kB
+├ ƒ /superadmin/enterprise/[groupId]                        2.16 kB         108 kB
+├ ƒ /superadmin/esg                                         3.63 kB         109 kB
+├ ƒ /superadmin/esg/[companyId]                             2.34 kB         104 kB
+├ ƒ /superadmin/experiments                                 1.34 kB         103 kB
+├ ƒ /superadmin/firms                                       4.54 kB         110 kB
+├ ƒ /superadmin/firms/[companyId]                           1.79 kB         107 kB
+├ ƒ /superadmin/firms/[companyId]/employees                 1.79 kB         107 kB
+├ ƒ /superadmin/global                                       4.9 kB         107 kB
+├ ƒ /superadmin/growth/social                               30.8 kB         133 kB
+├ ƒ /superadmin/investor                                    2.23 kB         104 kB
+├ ƒ /superadmin/invoices                                    1.43 kB         107 kB
+├ ƒ /superadmin/invoices/[runId]                               4 kB         109 kB
+├ ƒ /superadmin/invoices/reconcile                          2.13 kB         108 kB
+├ ƒ /superadmin/operations                                    816 B         103 kB
+├ ƒ /superadmin/orders-today                                1.69 kB         104 kB
+├ ƒ /superadmin/outbox                                        128 B         105 kB
+├ ƒ /superadmin/overview                                    9.13 kB         139 kB
+├ ƒ /superadmin/pipeline                                    2.51 kB         104 kB
+├ ƒ /superadmin/sales                                       11.6 kB         117 kB
+├ ƒ /superadmin/sales-agent                                 2.84 kB         105 kB
+├ ƒ /superadmin/sales-loop                                  2.62 kB         105 kB
+├ ƒ /superadmin/strategy                                    1.81 kB         104 kB
+├ ƒ /superadmin/system                                      8.32 kB         114 kB
+├ ƒ /superadmin/system-graph                                53.1 kB         155 kB
+├ ƒ /superadmin/system/operations                           2.71 kB         108 kB
+├ ƒ /superadmin/users                                       1.95 kB         104 kB
+├ ƒ /system                                                 1.69 kB         104 kB
+├ ○ /system-for-lunsjbestilling                             1.56 kB         110 kB
+├ ƒ /system/[section]                                         219 B         106 kB
+├ ƒ /system/kvittering                                      3.59 kB         106 kB
+├ ○ /saas/billing                                           1.42 kB         112 kB
+├ ○ /saas/onboarding                                         1.2 kB         112 kB
+├ ○ /saas/plans                                             1.19 kB         112 kB
+├ ○ /today                                                  1.69 kB         104 kB
+├ ○ /vilkar                                                   219 B         106 kB
+└ ƒ /week                                                   10.4 kB         112 kB
++ First Load JS shared by all                                102 kB
+  ├ chunks/31255-3105b0a73dca14fd.js                        45.7 kB
+  ├ chunks/4bd1b696-bad92808725a934a.js                     54.2 kB
+  └ other shared chunks (total)                             2.05 kB
+
+
+ƒ Middleware                                                 126 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+SEO-PROOF OK
+SEO AUDIT REPORT
+Checked 13 registry entries
+SEO-AUDIT OK
+SEO-CONTENT-LINT OK

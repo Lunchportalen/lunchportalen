@@ -1,0 +1,187 @@
+{
+  "ok": true,
+  "rid": "rid_mnp1iojz_gbkpwbxjofjad1vd",
+  "data": {
+    "merged": {
+      "page_marketing_blocks": {
+        "alias": "page_marketing_blocks",
+        "title": "Sideinnhold (marketing)",
+        "description": "Full markedsføringspalette for ordinære sider — hero-familie, innhold, seksjoner og CTA. Standard data type for dokumenttypen «page».",
+        "propertyKey": "body.blocks",
+        "editorKind": "block_list",
+        "allowedBlockAliases": [
+          "hero",
+          "hero_full",
+          "hero_bleed",
+          "richText",
+          "image",
+          "cta",
+          "banner",
+          "cards",
+          "zigzag",
+          "pricing",
+          "grid",
+          "divider",
+          "form",
+          "relatedLinks"
+        ],
+        "groups": [
+          {
+            "id": "heroes",
+            "title": "Hero-familie",
+            "blockAliases": [
+              "hero",
+              "hero_full",
+              "hero_bleed"
+            ]
+          },
+          {
+            "id": "body",
+            "title": "Innholdsblokker",
+            "blockAliases": [
+              "richText",
+              "image",
+              "divider",
+              "banner",
+              "form"
+            ]
+          },
+          {
+            "id": "structure",
+            "title": "Seksjoner",
+            "blockAliases": [
+              "cards",
+              "zigzag",
+              "pricing",
+              "grid"
+            ]
+          },
+          {
+            "id": "conversion",
+            "title": "Handling og lenker",
+            "blockAliases": [
+              "cta",
+              "relatedLinks"
+            ]
+          }
+        ],
+        "minItems": 0,
+        "maxItems": 120,
+        "createButtonLabel": "Legg til innhold",
+        "editorOptions": {
+          "showStructureRail": true,
+          "allowInlineReorder": true
+        },
+        "defaultViewMode": "list"
+      },
+      "compact_page_blocks": {
+        "alias": "compact_page_blocks",
+        "title": "Kompakt blokkspektrum",
+        "description": "Smalt utvalg for enkle landingsstriper — uten pricing, zigzag, grid, relatedLinks og utvidet hero-familie.",
+        "propertyKey": "body.blocks",
+        "editorKind": "block_list",
+        "allowedBlockAliases": [
+          "hero",
+          "richText",
+          "image",
+          "cards",
+          "cta"
+        ],
+        "groups": [
+          {
+            "id": "core",
+            "title": "Kjerne",
+            "blockAliases": [
+              "hero",
+              "richText",
+              "image"
+            ]
+          },
+          {
+            "id": "sections",
+            "title": "Seksjon",
+            "blockAliases": [
+              "cards"
+            ]
+          },
+          {
+            "id": "conversion",
+            "title": "Handling",
+            "blockAliases": [
+              "cta"
+            ]
+          }
+        ],
+        "minItems": 0,
+        "maxItems": 40,
+        "createButtonLabel": "Legg til kompakt blokk",
+        "editorOptions": {
+          "showStructureRail": true
+        },
+        "defaultViewMode": "list"
+      },
+      "page_micro_blocks": {
+        "alias": "page_micro_blocks",
+        "title": "Micro landing (maks 3)",
+        "description": "Minimal allowlist og hard tak på antall blokker — for grenseverifikasjon i editor.",
+        "propertyKey": "body.blocks",
+        "editorKind": "block_list",
+        "allowedBlockAliases": [
+          "hero",
+          "richText",
+          "cta"
+        ],
+        "groups": [
+          {
+            "id": "all",
+            "title": "Tillatte blokker",
+            "blockAliases": [
+              "hero",
+              "richText",
+              "cta"
+            ]
+          }
+        ],
+        "minItems": 1,
+        "maxItems": 3,
+        "createButtonLabel": "Legg til blokk (maks 3)",
+        "editorOptions": {
+          "enforceHardCap": true
+        },
+        "defaultViewMode": "list"
+      }
+    },
+    "overrides": {
+      "version": 1,
+      "byAlias": {}
+    },
+    "referencesByAlias": {
+      "page_marketing_blocks": [
+        {
+          "documentTypeAlias": "page",
+          "documentTypeName": "Page",
+          "propertyKey": "body.blocks"
+        }
+      ],
+      "compact_page_blocks": [
+        {
+          "documentTypeAlias": "compact_page",
+          "documentTypeName": "Kompakt side",
+          "propertyKey": "body.blocks"
+        }
+      ],
+      "page_micro_blocks": [
+        {
+          "documentTypeAlias": "micro_landing",
+          "documentTypeName": "Micro landing",
+          "propertyKey": "body.blocks"
+        }
+      ]
+    },
+    "aliases": [
+      "page_marketing_blocks",
+      "compact_page_blocks",
+      "page_micro_blocks"
+    ]
+  }
+}

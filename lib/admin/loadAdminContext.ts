@@ -233,7 +233,10 @@ export async function loadAdminContext(opts?: {
         counts: null,
         dbg,
         support: { reason: "ADMIN_FORBIDDEN_ROLE", companyId: profile?.company_id ?? null, locationId: profile?.location_id ?? null },
-        nextSteps: ["Du har ikke tilgang til admin-området for dette firmaet."],
+        nextSteps: [
+          "Denne flaten krever rolle firmaadmin (company_admin) med tilknytning til ett firma.",
+          "Superadmin- og systembeslutninger (firmastatus, avtalegodkjenning, tverrfirma) hører ikke til i /admin.",
+        ],
       };
     }
     redirect(homeForRole(role));

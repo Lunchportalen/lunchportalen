@@ -34,6 +34,48 @@ export function listScalarDocumentTypeProperties(doc: DocumentTypeDefinition | n
   });
 }
 
+/** Skalarfelt filtrert på dokumenttype-gruppe (f.eks. Innhold vs Meta). */
+export function listScalarDocumentTypePropertiesForGroupIds(
+  doc: DocumentTypeDefinition | null | undefined,
+  groupIds: readonly string[],
+): PropertyTypeDefinition[] {
+  const allow = new Set(groupIds);
+  return listScalarDocumentTypeProperties(doc).filter((p) => allow.has(p.groupId));
+}
+
+/** Skalarfelt utenom innholdsgruppen (til Global-fanen på dokumenteditoren). */
+export function listScalarDocumentTypePropertiesOutsideContentGroup(
+  doc: DocumentTypeDefinition | null | undefined,
+): PropertyTypeDefinition[] {
+  return listScalarDocumentTypeProperties(doc).filter((p) => p.groupId !== "content");
+}
+
+/**
+ * Detail Innhold-fane: skalarfelt som skal prioriteres før blokkfeltet (Umbraco field-first).
+ * Ekskluderer body/blokklisten. Kun intro + innholdsgruppe — SEO ligger på egen fane (ingen duplikat).
+ * Rekkefølge: intro → innhold.
+ */
+const DETAIL_CONTENT_TAB_SCALAR_GROUP_ORDER = ["intro", "content"] as const;
+
+export function listScalarDocumentTypePropertiesForDetailContentTab(
+  doc: DocumentTypeDefinition | null | undefined,
+): PropertyTypeDefinition[] {
+  if (!doc) return [];
+  const allow = new Set<string>(DETAIL_CONTENT_TAB_SCALAR_GROUP_ORDER);
+  const scalars = listScalarDocumentTypeProperties(doc).filter(
+    (p) => p.alias !== "body" && allow.has(p.groupId),
+  );
+  const rank = (gid: string) => {
+    const i = DETAIL_CONTENT_TAB_SCALAR_GROUP_ORDER.indexOf(gid as (typeof DETAIL_CONTENT_TAB_SCALAR_GROUP_ORDER)[number]);
+    return i === -1 ? 99 : i;
+  };
+  return [...scalars].sort((a, b) => {
+    const d = rank(a.groupId) - rank(b.groupId);
+    if (d !== 0) return d;
+    return a.title.localeCompare(b.title, "nb");
+  });
+}
+
 /**
  * After parseBodyEnvelope, move keys from culture → invariant when schema says invariant (legacy rows used flat `fields`).
  */

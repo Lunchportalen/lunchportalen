@@ -1,0 +1,33 @@
+{
+  "package": "u97e-content-structure-create-flow-proof",
+  "scope": "scoped-baseline-app-lib-subset",
+  "createdBy": "U119 scoped proof strengthening",
+  "createdAt": "2026-04-09",
+  "status": "partial",
+  "summary": "Manifest added to bind existing visual proof files in this package. No gate or runtime logs were added in U119.",
+  "screenshots": [
+    "01-document-types-overview.png",
+    "02-compact-page-workspace.png",
+    "03-document-type-dirty-save-state.png",
+    "04-create-dialog-parent-to-compact.png",
+    "05-compact-created-in-tree.png",
+    "06-compact-page-editor.png",
+    "07-create-dialog-compact-to-micro.png",
+    "08-micro-landing-created-in-tree-editor.png",
+    "09-structure-allowed-disallowed-child-proof.png"
+  ],
+  "gates": {
+    "typecheck": null,
+    "lint": null,
+    "buildEnterprise": null,
+    "testRun": null
+  },
+  "runtime": {
+    "playwrightCommand": null,
+    "sanityOutput": null
+  },
+  "notes": [
+    "This manifest closes the missing-manifest gap only.",
+    "Gate and same-run chain gaps remain open after U119."
+  ]
+}

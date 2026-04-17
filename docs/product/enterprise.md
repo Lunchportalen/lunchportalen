@@ -1,6 +1,10 @@
 # Enterprise-funksjoner — Lunchportalen
 
-Oversikt for **innkjøp, IT, sikkerhet og revisjon**. For detaljert teknisk og sikkerhetsdokumentasjon, se `docs/enterprise/` og `docs/security/`.
+Oversikt for **innkjøp, IT, sikkerhet og revisjon**.
+
+**Start her for samlet pakke:** [docs/enterprise/README.md](../enterprise/README.md) (minimumssett, live vs. senere, lenker).
+
+For detaljert teknisk og sikkerhetsdokumentasjon, se `docs/enterprise/` og `docs/security/`.
 
 ## Multi-tenant og datatilhørighet
 
@@ -16,6 +20,7 @@ Oversikt for **innkjøp, IT, sikkerhet og revisjon**. For detaljert teknisk og s
 
 - Sikkerhets- og enterprise-hendelser kan logges med **append-only** tenkning der det er bygget inn  
 - Egnet for **intern kontroll**, **hendelsesanalyse** og **dialog med revisor** — omfang avhenger av aktivert funksjonalitet og konfigurasjon  
+- **Dekning og begrensninger** beskrives konkret i `docs/security/AUDIT_COVERAGE.md` — ikke anta «full revisjonspakke» uten avklart scope  
 
 ## Etterlevelse og personvern (GDPR)
 
@@ -44,5 +49,6 @@ Oversikt for **innkjøp, IT, sikkerhet og revisjon**. For detaljert teknisk og s
 
 ## Neste lesning
 
+- [Enterprise minimumspakke (index)](../enterprise/README.md)  
 - [Teknisk oversikt](technical.md)  
 - [Investorpitch](../investor/pitch.md)  

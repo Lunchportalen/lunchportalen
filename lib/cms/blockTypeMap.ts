@@ -22,6 +22,26 @@ export const LEGACY_TO_REGISTRY: Readonly<Record<string, string>> = {
   cards: "feature_grid",
   pricing: "pricing_table",
   grid: "grid_3",
+  /**
+   * Umbraco Delivery / mainContent element aliases → enterprise registry (public render parity).
+   * Source types stay on persisted rows until migrated; mapping is in-memory at render.
+   */
+  heroBannerBlock: "hero_bleed",
+  textBlock: "rich_text",
+  accordionOrTab: "accordion_tabs",
+  alertBox: "alert_bar",
+  anchorNavigation: "anchor_navigation",
+  banners: "banner_carousel",
+  codeBlock: "code_block",
+  dualPromoCardsBlock: "dual_promo_cards",
+  /** Umbraco Block List element aliases when persisted as legacy `block.type` (Delivery parity). */
+  sectionIntro: "section_intro",
+  logoCloud: "logo_cloud",
+  statsBlock: "stats_block",
+  testimonialBlock: "testimonial_block",
+  quoteBlock: "quote_block",
+  newsletterSignup: "newsletter_signup",
+  formEmbed: "form_embed",
 };
 
 /**
@@ -46,6 +66,17 @@ function copyData(data: Record<string, unknown> | null | undefined): Record<stri
   return { ...d };
 }
 
+/** Strip tags for safe plain-text fields (Umbraco often stores TinyMCE HTML). */
+function htmlToPlainTextForUmbracoBlock(input: unknown): string {
+  if (typeof input !== "string") return "";
+  return input
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
  * Adapt in-memory data when legacy type maps to a registry type with a different field contract.
  */
@@ -65,6 +96,373 @@ export function adaptLegacyBlockDataForRegistry(
       for (const k of ["f1Kicker", "f1LinkLabel", "f1LinkHref", "f2Kicker", "f2LinkLabel", "f2LinkHref", "f3Kicker", "f3LinkLabel", "f3LinkHref"] as const) {
         if (same[k] == null) same[k] = "";
       }
+      return same;
+    }
+    if (originalType === "anchor_navigation") {
+      if (!Array.isArray(same.links)) same.links = [];
+      if (typeof same.itemsJson !== "string" || !String(same.itemsJson).trim()) {
+        same.itemsJson = JSON.stringify(same.links);
+      }
+      if (same.title == null) same.title = "";
+      if (same.linkStyle == null || String(same.linkStyle).trim() === "") same.linkStyle = "pills";
+      if (same.navigationAlignment == null || String(same.navigationAlignment).trim() === "") {
+        same.navigationAlignment = "center";
+      }
+      if (same.mobileStyle == null || String(same.mobileStyle).trim() === "") {
+        same.mobileStyle = "horizontal-scroll";
+      }
+      return same;
+    }
+    if (originalType === "accordion_tabs") {
+      if (!Array.isArray(same.items)) same.items = [];
+      if (typeof same.itemsJson !== "string" || !String(same.itemsJson).trim()) {
+        same.itemsJson = JSON.stringify(same.items);
+      }
+      if (same.sectionTitle == null) same.sectionTitle = "";
+      if (same.displayMode == null || String(same.displayMode).trim() === "") same.displayMode = "accordion";
+      if (same.defaultOpenIndex == null) same.defaultOpenIndex = "0";
+      if (same.rememberOpen == null) same.rememberOpen = "false";
+      return same;
+    }
+    if (originalType === "banner_carousel") {
+      if (!Array.isArray(same.slides)) same.slides = [];
+      if (typeof same.slidesJson !== "string" || !String(same.slidesJson).trim()) {
+        same.slidesJson = JSON.stringify(same.slides);
+      }
+      if (same.disableCarousel == null) same.disableCarousel = false;
+      if (same.showArrows == null) same.showArrows = true;
+      if (same.showDots == null) same.showDots = true;
+      if (same.autoRotateMs == null) same.autoRotateMs = 0;
+      if (same.shuffleOnLoad == null) same.shuffleOnLoad = false;
+      return same;
+    }
+    if (originalType === "dual_promo_cards") {
+      if (!Array.isArray(same.cards)) same.cards = [];
+      if (typeof same.cardsJson !== "string" || !String(same.cardsJson).trim()) {
+        same.cardsJson = JSON.stringify(same.cards);
+      }
+      if (same.sectionId == null) same.sectionId = "";
+      if (same.maxWidthVariant == null) same.maxWidthVariant = "";
+      return same;
+    }
+    if (originalType === "section_intro") {
+      if (same.eyebrow == null) same.eyebrow = "";
+      if (same.title == null) same.title = "";
+      if (same.lede == null) same.lede = "";
+      const cw = String(same.contentWidth ?? "").toLowerCase();
+      same.contentWidth =
+        cw === "wide" ? "wide"
+        : cw === "normal" ? "normal"
+        : "narrow";
+      return same;
+    }
+    if (originalType === "logo_cloud") {
+      if (same.title == null) same.title = "";
+      type LogoRow = { id: string; image: string; label: string; href: string };
+      let logos: LogoRow[] = [];
+      if (Array.isArray(same.logos)) {
+        const raw = same.logos as unknown[];
+        logos = raw
+          .map((row, idx) => {
+            if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+            const o = row as Record<string, unknown>;
+            const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `logo-${idx}`;
+            const image =
+              (typeof o.image === "string" && o.image.trim() && o.image) ||
+              (typeof o.src === "string" && o.src.trim() && o.src) ||
+              (typeof o.imageUrl === "string" && o.imageUrl.trim() && o.imageUrl) ||
+              "";
+            if (!image) return null;
+            return {
+              id,
+              image,
+              label: typeof o.label === "string" ? o.label : "",
+              href: typeof o.href === "string" ? o.href : "",
+            };
+          })
+          .filter((x): x is LogoRow => x != null);
+      }
+      if (logos.length === 0 && typeof same.logosJson === "string" && same.logosJson.trim()) {
+        try {
+          const parsed = JSON.parse(same.logosJson) as unknown;
+          if (Array.isArray(parsed)) {
+            logos = parsed
+              .map((row, idx) => {
+                if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+                const o = row as Record<string, unknown>;
+                const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `logo-${idx}`;
+                const image =
+                  (typeof o.image === "string" && o.image.trim() && o.image) ||
+                  (typeof o.src === "string" && o.src.trim() && o.src) ||
+                  (typeof o.imageUrl === "string" && o.imageUrl.trim() && o.imageUrl) ||
+                  "";
+                if (!image) return null;
+                return {
+                  id,
+                  image,
+                  label: typeof o.label === "string" ? o.label : "",
+                  href: typeof o.href === "string" ? o.href : "",
+                };
+              })
+              .filter((x): x is LogoRow => x != null);
+          }
+        } catch {
+          logos = [];
+        }
+      }
+      if (logos.length === 0) {
+        for (let n = 1; n <= 4; n++) {
+          const key = `l${n}`;
+          const src = typeof same[key] === "string" ? (same[key] as string).trim() : "";
+          if (src) logos.push({ id: `logo-${n}`, image: src, label: "", href: "" });
+        }
+      }
+      same.logos = logos;
+      same.logosJson = JSON.stringify(logos);
+      const den = String(same.density ?? "").toLowerCase();
+      same.density = den === "compact" || den === "airy" ? den : "comfortable";
+      return same;
+    }
+    if (originalType === "stats_block") {
+      if (same.title == null) same.title = "";
+      type KpiRow = { id: string; value: string; label: string; subtext: string; icon: string; emphasis: boolean };
+      const parseBool = (v: unknown): boolean => {
+        if (v === true) return true;
+        const x = String(v ?? "").toLowerCase().trim();
+        return x === "true" || x === "1" || x === "yes" || x === "highlight";
+      };
+      let kpis: KpiRow[] = [];
+      if (Array.isArray(same.kpis)) {
+        const raw = same.kpis as unknown[];
+        kpis = raw
+          .map((row, idx) => {
+            if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+            const o = row as Record<string, unknown>;
+            const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `kpi-${idx}`;
+            const value = typeof o.value === "string" ? o.value : "";
+            const label = typeof o.label === "string" ? o.label : "";
+            if (!value.trim() && !label.trim()) return null;
+            return {
+              id,
+              value,
+              label,
+              subtext: typeof o.subtext === "string" ? o.subtext : "",
+              icon: typeof o.icon === "string" ? o.icon : "",
+              emphasis: parseBool(o.emphasis ?? o.highlight),
+            };
+          })
+          .filter((x): x is KpiRow => x != null);
+      }
+      if (kpis.length === 0 && typeof same.kpisJson === "string" && same.kpisJson.trim()) {
+        try {
+          const parsed = JSON.parse(same.kpisJson) as unknown;
+          if (Array.isArray(parsed)) {
+            kpis = parsed
+              .map((row, idx) => {
+                if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+                const o = row as Record<string, unknown>;
+                const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `kpi-${idx}`;
+                const value = typeof o.value === "string" ? o.value : "";
+                const label = typeof o.label === "string" ? o.label : "";
+                if (!value.trim() && !label.trim()) return null;
+                return {
+                  id,
+                  value,
+                  label,
+                  subtext: typeof o.subtext === "string" ? o.subtext : "",
+                  icon: typeof o.icon === "string" ? o.icon : "",
+                  emphasis: parseBool(o.emphasis ?? o.highlight),
+                };
+              })
+              .filter((x): x is KpiRow => x != null);
+          }
+        } catch {
+          kpis = [];
+        }
+      }
+      if (kpis.length === 0) {
+        for (let n = 1; n <= 3; n++) {
+          const vk = `s${n}Value`;
+          const lk = `s${n}Label`;
+          const value = typeof same[vk] === "string" ? (same[vk] as string) : "";
+          const label = typeof same[lk] === "string" ? (same[lk] as string) : "";
+          if (!value.trim() && !label.trim()) continue;
+          kpis.push({
+            id: `kpi-${n}`,
+            value,
+            label,
+            subtext: "",
+            icon: "",
+            emphasis: false,
+          });
+        }
+      }
+      same.kpis = kpis;
+      same.kpisJson = JSON.stringify(kpis);
+      const den = String(same.density ?? "").toLowerCase();
+      same.density = den === "compact" || den === "airy" ? den : "comfortable";
+      const col = String(same.columns ?? "").trim();
+      same.columns = col === "2" || col === "4" ? col : "3";
+      return same;
+    }
+    if (originalType === "quote_block") {
+      if (same.quote == null) same.quote = "";
+      if (same.author == null) same.author = "";
+      if (same.role == null) same.role = "";
+      if (same.source == null) same.source = "";
+      if (typeof same.body === "string" && same.body.trim() && !String(same.quote ?? "").trim()) {
+        same.quote = same.body;
+      }
+      if (typeof same.title === "string" && same.title.trim() && !String(same.author ?? "").trim()) {
+        same.author = same.title;
+      }
+      const cw = String(same.contentWidth ?? "").toLowerCase();
+      same.contentWidth =
+        cw === "wide" ? "wide"
+        : cw === "normal" ? "normal"
+        : "narrow";
+      return same;
+    }
+    if (originalType === "newsletter_signup") {
+      if (same.eyebrow == null) same.eyebrow = "";
+      if (same.title == null) same.title = "";
+      if (same.lede == null) same.lede = "";
+      if (typeof same.body === "string" && same.body.trim() && !String(same.lede ?? "").trim()) {
+        same.lede = same.body;
+      }
+      if (same.ctaLabel == null) same.ctaLabel = "";
+      if (same.ctaHref == null) same.ctaHref = "";
+      if (same.disclaimer == null) same.disclaimer = "";
+      const sm = String(same.submitMethod ?? "").toLowerCase();
+      same.submitMethod = sm === "post" ? "post" : "get";
+      const cw = String(same.contentWidth ?? "").toLowerCase();
+      same.contentWidth =
+        cw === "wide" ? "wide"
+        : cw === "normal" ? "normal"
+        : "narrow";
+      return same;
+    }
+    if (originalType === "form_embed") {
+      if (same.formId == null) same.formId = "";
+      if (same.iframeSrc == null) same.iframeSrc = "";
+      if (same.title == null) same.title = "";
+      if (same.lede == null) same.lede = "";
+      if (same.embedHtml == null) same.embedHtml = "";
+      const cw = String(same.contentWidth ?? "").toLowerCase();
+      same.contentWidth =
+        cw === "wide" ? "wide"
+        : cw === "narrow" ? "narrow"
+        : "normal";
+      return same;
+    }
+    if (originalType === "testimonial_block") {
+      if (same.sectionTitle == null) same.sectionTitle = "";
+      type TRow = {
+        id: string;
+        quote: string;
+        author: string;
+        role: string;
+        company: string;
+        image: string;
+        alt: string;
+        logo: string;
+      };
+      let rows: TRow[] = [];
+      if (Array.isArray(same.testimonials)) {
+        const raw = same.testimonials as unknown[];
+        rows = raw
+          .map((row, idx) => {
+            if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+            const o = row as Record<string, unknown>;
+            const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `t-${idx}`;
+            const quote = typeof o.quote === "string" ? o.quote : "";
+            if (!quote.trim()) return null;
+            const image =
+              (typeof o.image === "string" && o.image.trim() && o.image) ||
+              (typeof o.src === "string" && o.src.trim() && o.src) ||
+              (typeof o.imageUrl === "string" && o.imageUrl.trim() && o.imageUrl) ||
+              "";
+            return {
+              id,
+              quote,
+              author: typeof o.author === "string" ? o.author : "",
+              role: typeof o.role === "string" ? o.role : "",
+              company: typeof o.company === "string" ? o.company : typeof o.source === "string" ? o.source : "",
+              image,
+              alt: typeof o.alt === "string" ? o.alt : "",
+              logo:
+                (typeof o.logo === "string" && o.logo.trim() && o.logo) ||
+                (typeof o.logoUrl === "string" && o.logoUrl.trim() && o.logoUrl) ||
+                "",
+            };
+          })
+          .filter((x): x is TRow => x != null);
+      }
+      if (rows.length === 0 && typeof same.testimonialsJson === "string" && same.testimonialsJson.trim()) {
+        try {
+          const parsed = JSON.parse(same.testimonialsJson) as unknown;
+          if (Array.isArray(parsed)) {
+            rows = parsed
+              .map((row, idx) => {
+                if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+                const o = row as Record<string, unknown>;
+                const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `t-${idx}`;
+                const quote = typeof o.quote === "string" ? o.quote : "";
+                if (!quote.trim()) return null;
+                const image =
+                  (typeof o.image === "string" && o.image.trim() && o.image) ||
+                  (typeof o.src === "string" && o.src.trim() && o.src) ||
+                  (typeof o.imageUrl === "string" && o.imageUrl.trim() && o.imageUrl) ||
+                  "";
+                return {
+                  id,
+                  quote,
+                  author: typeof o.author === "string" ? o.author : "",
+                  role: typeof o.role === "string" ? o.role : "",
+                  company: typeof o.company === "string" ? o.company : typeof o.source === "string" ? o.source : "",
+                  image,
+                  alt: typeof o.alt === "string" ? o.alt : "",
+                  logo:
+                    (typeof o.logo === "string" && o.logo.trim() && o.logo) ||
+                    (typeof o.logoUrl === "string" && o.logoUrl.trim() && o.logoUrl) ||
+                    "",
+                };
+              })
+              .filter((x): x is TRow => x != null);
+          }
+        } catch {
+          rows = [];
+        }
+      }
+      if (rows.length === 0) {
+        const quote = typeof same.quote === "string" ? same.quote : "";
+        const author = typeof same.author === "string" ? same.author : "";
+        const role = typeof same.role === "string" ? same.role : "";
+        const image =
+          (typeof same.image === "string" && same.image.trim() && same.image) ||
+          (typeof same.src === "string" && same.src.trim() && same.src) ||
+          (typeof same.imageUrl === "string" && same.imageUrl.trim() && same.imageUrl) ||
+          "";
+        if (quote.trim() || author.trim()) {
+          rows.push({
+            id: "t-1",
+            quote,
+            author,
+            role,
+            company: typeof same.company === "string" ? same.company : typeof same.source === "string" ? same.source : "",
+            image,
+            alt: typeof same.alt === "string" ? same.alt : "",
+            logo:
+              (typeof same.logo === "string" && same.logo.trim() && same.logo) ||
+              (typeof same.logoUrl === "string" && same.logoUrl.trim() && same.logoUrl) ||
+              "",
+          });
+        }
+      }
+      same.testimonials = rows;
+      same.testimonialsJson = JSON.stringify(rows);
+      const den = String(same.density ?? "").toLowerCase();
+      same.density = den === "compact" || den === "airy" ? den : "comfortable";
       return same;
     }
     if (originalType === "pricing_table") {
@@ -87,6 +485,21 @@ export function adaptLegacyBlockDataForRegistry(
   }
 
   const out = copyData(data);
+
+  /** Umbraco camelCase element type persisted on block row → reuse registry same-type adapt. */
+  const umbracoFirstClassBridge: Record<string, string> = {
+    sectionIntro: "section_intro",
+    logoCloud: "logo_cloud",
+    statsBlock: "stats_block",
+    testimonialBlock: "testimonial_block",
+    quoteBlock: "quote_block",
+    newsletterSignup: "newsletter_signup",
+    formEmbed: "form_embed",
+  };
+  const bridgedRegistry = umbracoFirstClassBridge[originalType];
+  if (bridgedRegistry && registryType === bridgedRegistry) {
+    return adaptLegacyBlockDataForRegistry(bridgedRegistry, bridgedRegistry, out);
+  }
 
   if (originalType === "hero" && registryType === "hero_bleed") {
     if (out.ctaPrimary == null && out.ctaLabel != null) out.ctaPrimary = out.ctaLabel;
@@ -113,6 +526,32 @@ export function adaptLegacyBlockDataForRegistry(
     if ((out.quote == null || out.quote === "") && out.text != null) out.quote = out.text;
     if ((out.author == null || out.author === "") && out.title != null) out.author = out.title;
     if ((out.role == null || out.role === "") && out.subtitle != null) out.role = out.subtitle;
+    const quote = typeof out.quote === "string" ? out.quote : "";
+    const author = typeof out.author === "string" ? out.author : "";
+    const role = typeof out.role === "string" ? out.role : "";
+    const img =
+      (typeof out.image === "string" && out.image.trim() && out.image) ||
+      (typeof out.src === "string" && out.src.trim() && out.src) ||
+      (typeof out.imageUrl === "string" && out.imageUrl.trim() && out.imageUrl) ||
+      "";
+    const row = {
+      id: "t-1",
+      quote,
+      author,
+      role,
+      company: typeof out.company === "string" ? out.company : typeof out.source === "string" ? out.source : "",
+      image: img,
+      alt: typeof out.alt === "string" ? out.alt : "",
+      logo:
+        (typeof out.logo === "string" && out.logo.trim() && out.logo) ||
+        (typeof out.logoUrl === "string" && out.logoUrl.trim() && out.logoUrl) ||
+        "",
+    };
+    out.testimonials = [row];
+    out.testimonialsJson = JSON.stringify([row]);
+    if (out.sectionTitle == null) out.sectionTitle = "";
+    const den = String(out.density ?? "").toLowerCase();
+    out.density = den === "compact" || den === "airy" ? den : "comfortable";
     return out;
   }
 
@@ -391,6 +830,235 @@ export function adaptLegacyBlockDataForRegistry(
 
   if (originalType === "divider" && registryType === "section_divider") {
     return { variant: typeof out.variant === "string" ? out.variant : "center" };
+  }
+
+  if (originalType === "heroBannerBlock" && registryType === "hero_bleed") {
+    const sublines = Array.isArray(out.sublineItems)
+      ? (out.sublineItems as Array<Record<string, unknown>>)
+          .map((row) => htmlToPlainTextForUmbracoBlock(row.text))
+          .filter(Boolean)
+      : [];
+    const ql = Array.isArray(out.quickLinks)
+      ? (out.quickLinks as Array<Record<string, unknown>>)
+          .map((row) => {
+            const label = typeof row.label === "string" ? row.label : "";
+            const url = typeof row.url === "string" ? row.url : "";
+            if (label && url) return `${label}: ${url}`;
+            return label || url;
+          })
+          .filter(Boolean)
+      : [];
+    const subtitleParts = [
+      htmlToPlainTextForUmbracoBlock(out.topbarText),
+      htmlToPlainTextForUmbracoBlock(out.titleSubline),
+      sublines.length ? sublines.join(" · ") : "",
+      ql.length ? ql.join(" · ") : "",
+      htmlToPlainTextForUmbracoBlock(out.smallNote),
+    ].filter((p) => typeof p === "string" && p.trim() !== "");
+    const bg =
+      (typeof out.desktopImage === "string" && out.desktopImage.trim()) ||
+      (typeof out.mobileImage === "string" && out.mobileImage.trim()) ||
+      "";
+    return {
+      title: typeof out.title === "string" ? out.title : "",
+      subtitle: subtitleParts.join("\n"),
+      backgroundImage: bg,
+      ctaPrimary: typeof out.primaryCtaLabel === "string" ? out.primaryCtaLabel : "",
+      ctaPrimaryHref: typeof out.primaryCtaUrl === "string" ? out.primaryCtaUrl : "",
+      variant: "center",
+      textAlign: "center",
+      textPosition: "center",
+      overlayPosition: "center",
+    };
+  }
+
+  if (originalType === "textBlock" && registryType === "rich_text") {
+    const settings =
+      out.umbracoSettings && typeof out.umbracoSettings === "object" && !Array.isArray(out.umbracoSettings)
+        ? (out.umbracoSettings as Record<string, unknown>)
+        : {};
+    const name = typeof settings.name === "string" ? settings.name.trim() : "";
+    return {
+      heading: name,
+      body: htmlToPlainTextForUmbracoBlock(out.text),
+      variant: "center",
+    };
+  }
+
+  if (originalType === "accordionOrTab" && registryType === "accordion_tabs") {
+    const rawItems = Array.isArray(out.accordionItems) ? (out.accordionItems as Record<string, unknown>[]) : [];
+    const panels = rawItems.map((row, idx) => {
+      const o = row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {};
+      const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `panel-${idx}`;
+      const title = typeof o.title === "string" ? o.title : "";
+      const body = htmlToPlainTextForUmbracoBlock(o.body ?? "");
+      return { id, title, body };
+    });
+    const settings =
+      out.umbracoSettings && typeof out.umbracoSettings === "object" && !Array.isArray(out.umbracoSettings)
+        ? (out.umbracoSettings as Record<string, unknown>)
+        : {};
+    const dm = String(out.displayMode ?? "").trim().toLowerCase();
+    const displayMode = dm === "tabs" ? "tabs" : "accordion";
+    const rawIdx = settings.componentDefaultOpenIndex;
+    let defaultOpenIndex = 0;
+    if (typeof rawIdx === "number" && Number.isFinite(rawIdx)) defaultOpenIndex = Math.round(rawIdx);
+    else if (typeof rawIdx === "string" && rawIdx.trim()) {
+      const n = parseInt(rawIdx, 10);
+      if (Number.isFinite(n)) defaultOpenIndex = n;
+    }
+    return {
+      sectionTitle: typeof out.sectionTitle === "string" ? out.sectionTitle : "",
+      displayMode,
+      items: panels,
+      itemsJson: JSON.stringify(panels),
+      defaultOpenIndex: String(defaultOpenIndex),
+      rememberOpen: settings.componentRememberOpen === true ? "true" : "false",
+      variant: "center",
+    };
+  }
+
+  if (originalType === "alertBox" && registryType === "alert_bar") {
+    return {
+      text: htmlToPlainTextForUmbracoBlock(out.text),
+      ctaLabel: "",
+      ctaHref: "",
+      variant: "center",
+    };
+  }
+
+  if (originalType === "anchorNavigation" && registryType === "anchor_navigation") {
+    const rawLinks = Array.isArray(out.links) ? (out.links as Record<string, unknown>[]) : [];
+    const links = rawLinks.map((row, idx) => {
+      const o = row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {};
+      const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `toc-${idx}`;
+      return {
+        id,
+        label: typeof o.label === "string" ? o.label : "",
+        href: typeof o.href === "string" ? o.href : "",
+      };
+    });
+    const settings =
+      out.umbracoSettings && typeof out.umbracoSettings === "object" && !Array.isArray(out.umbracoSettings)
+        ? (out.umbracoSettings as Record<string, unknown>)
+        : {};
+    const linkStyle = typeof settings.linkStyle === "string" && settings.linkStyle.trim() ? settings.linkStyle : "pills";
+    const navigationAlignment =
+      typeof settings.navigationAlignment === "string" && settings.navigationAlignment.trim() ?
+        settings.navigationAlignment
+      : "center";
+    const mobileStyle =
+      typeof settings.mobileStyle === "string" && settings.mobileStyle.trim() ? settings.mobileStyle : "horizontal-scroll";
+    return {
+      title: typeof out.navigationTitle === "string" ? out.navigationTitle : "",
+      links,
+      itemsJson: JSON.stringify(links),
+      linkStyle,
+      navigationAlignment,
+      mobileStyle,
+      variant: "center",
+    };
+  }
+
+  if (originalType === "banners" && registryType === "banner_carousel") {
+    const rawItems = Array.isArray(out.bannerItems) ? (out.bannerItems as Record<string, unknown>[]) : [];
+    const slides = rawItems.map((row, idx) => {
+      const o = row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {};
+      const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `slide-${idx}`;
+      const title = typeof o.title === "string" ? o.title : "";
+      const subtitle = typeof o.subtitle === "string" ? o.subtitle : "";
+      const link = typeof o.link === "string" ? o.link : "";
+      const buttonText = typeof o.buttonText === "string" ? o.buttonText : "";
+      const image =
+        (typeof o.image === "string" && o.image.trim()) ||
+        (typeof o.src === "string" && String(o.src).trim()) ||
+        "";
+      return { id, title, subtitle, link, buttonText, image };
+    });
+    const settings =
+      out.umbracoSettings && typeof out.umbracoSettings === "object" && !Array.isArray(out.umbracoSettings)
+        ? (out.umbracoSettings as Record<string, unknown>)
+        : {};
+    const disableCarousel = settings.disableCarousel === true;
+    const showArrows = settings.showArrows !== false;
+    const showDots = settings.showDots !== false;
+    const rawSpeed = settings.autoRotateSpeed;
+    let autoRotateMs = 0;
+    if (!disableCarousel) {
+      if (typeof rawSpeed === "number" && Number.isFinite(rawSpeed)) autoRotateMs = Math.max(0, Math.round(rawSpeed));
+      else if (typeof rawSpeed === "string" && rawSpeed.trim()) {
+        const n = parseInt(rawSpeed, 10);
+        if (Number.isFinite(n)) autoRotateMs = Math.max(0, n);
+      }
+    }
+    const slidesJson = JSON.stringify(slides);
+    return {
+      slides,
+      slidesJson,
+      disableCarousel,
+      showArrows,
+      showDots,
+      autoRotateMs,
+      shuffleOnLoad: out.enableRandomOrder === true,
+      variant: "center",
+    };
+  }
+
+  if (originalType === "codeBlock" && registryType === "code_block") {
+    const settings =
+      out.umbracoSettings && typeof out.umbracoSettings === "object" && !Array.isArray(out.umbracoSettings)
+        ? (out.umbracoSettings as Record<string, unknown>)
+        : {};
+    const caption = typeof settings.name === "string" ? settings.name.trim() : "";
+    return {
+      code: typeof out.code === "string" ? out.code : String(out.code ?? ""),
+      ...(caption ? { caption } : {}),
+      variant: "center",
+    };
+  }
+
+  if (originalType === "dualPromoCardsBlock" && registryType === "dual_promo_cards") {
+    const rawItems = Array.isArray(out.items) ? (out.items as Record<string, unknown>[]) : [];
+    const cards = rawItems.map((row, idx) => {
+      const o = row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {};
+      const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : `promo-${idx}`;
+      const image =
+        (typeof o.image === "string" && o.image.trim() && o.image) ||
+        (typeof o.src === "string" && o.src.trim() && o.src) ||
+        (typeof o.imageUrl === "string" && o.imageUrl.trim() && o.imageUrl) ||
+        "";
+      return {
+        id,
+        image,
+        imageAlt: typeof o.imageAlt === "string" ? o.imageAlt : "",
+        eyebrow: typeof o.eyebrow === "string" ? o.eyebrow : "",
+        title: typeof o.title === "string" ? o.title : "",
+        description: typeof o.description === "string" ? o.description : "",
+        ctaLabel: typeof o.ctaLabel === "string" ? o.ctaLabel : "",
+        ctaUrl: typeof o.ctaUrl === "string" ? o.ctaUrl : "",
+      };
+    });
+    return {
+      sectionId: typeof out.sectionId === "string" ? out.sectionId : "",
+      maxWidthVariant: typeof out.maxWidthVariant === "string" ? out.maxWidthVariant : "",
+      cards,
+      cardsJson: JSON.stringify(cards),
+      variant: "center",
+    };
+  }
+
+  if (originalType === "form" && registryType === "form_embed") {
+    if (out.formId == null) out.formId = "";
+    if (out.iframeSrc == null) out.iframeSrc = "";
+    if (out.title == null) out.title = "";
+    if (out.lede == null) out.lede = "";
+    if (out.embedHtml == null) out.embedHtml = "";
+    const cw = String(out.contentWidth ?? "").toLowerCase();
+    out.contentWidth =
+      cw === "wide" ? "wide"
+      : cw === "narrow" ? "narrow"
+      : "normal";
+    return out;
   }
 
   return out;

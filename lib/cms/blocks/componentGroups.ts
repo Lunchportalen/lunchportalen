@@ -1,5 +1,5 @@
 /**
- * Enterprise CMS component layering — 40 locked types (AI + docs).
+ * Enterprise CMS component layering — locked registry keys (AI + docs).
  * Must match keys in {@link COMPONENT_REGISTRY} exactly.
  */
 
@@ -12,11 +12,13 @@ export const COMPONENT_GROUPS = {
     "hero_video",
   ],
 
-  cta: ["banner", "promo_strip", "cta_block", "cta_split", "newsletter_signup", "alert_bar"],
+  cta: ["banner", "banner_carousel", "promo_strip", "cta_block", "cta_split", "newsletter_signup", "alert_bar"],
 
   content: [
     "text_block",
     "rich_text",
+    /** Eyebrow + section title + short lede (explicit primitive; not rich_text). */
+    "section_intro",
     "quote_block",
     "highlight_block",
     "steps_block",
@@ -29,18 +31,21 @@ export const COMPONENT_GROUPS = {
     "image_block",
     "image_gallery",
     "split_block",
+    "dual_promo_cards",
     "grid_2",
     "grid_3",
     "feature_grid",
     "card_grid",
     "zigzag_block",
     "section_divider",
+    "anchor_navigation",
   ],
 
   trust: [
     "testimonial_block",
     "logo_cloud",
     "faq_block",
+    "accordion_tabs",
     "pricing_table",
     "comparison_table",
     "case_study_block",

@@ -133,7 +133,7 @@ export default async function AdminLocationsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {companyName} · Lokasjoner
+              Firmaadmin · {companyName} · Lokasjoner
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Lokasjoner</h1>
             <p className="mt-2 text-neutral-600">Aktiver eller deaktiver leveringslokasjoner innenfor avtalt scope.</p>

@@ -3,7 +3,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { fetchKitchenList, type KitchenResp, type KitchenRow } from "@/lib/kitchen/kitchenFetch";
+import {
+  buildProductionHierarchy,
+  mealLabel,
+  rowSlot,
+  slotHeading,
+} from "@/lib/kitchen/buildProductionHierarchy";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import Link from "next/link";
 
 function osloISO(d: Date) {
   const parts = new Intl.DateTimeFormat("sv-SE", {
@@ -69,13 +76,6 @@ async function findNextActiveDate(startISO: string) {
   return { date: startISO, res };
 }
 
-function mealLabel(row: KitchenRow): string {
-  const t = String(row.menu_title ?? "").trim();
-  return t || "Uten menyvalg";
-}
-
-type GroupMode = "none" | "company" | "location" | "meal";
-
 function EmptyState({
   reason,
   onNextActive,
@@ -130,7 +130,6 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
   const [filterCompany, setFilterCompany] = useState<string>("all");
   const [filterLocation, setFilterLocation] = useState<string>("all");
   const [filterMeal, setFilterMeal] = useState<string>("all");
-  const [groupBy, setGroupBy] = useState<GroupMode>("company");
 
   async function load(d: string) {
     setLoading(true);
@@ -234,6 +233,17 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
     return m;
   }, [filteredRows]);
 
+  const countsBySlot = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of filteredRows) {
+      const k = rowSlot(r);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  }, [filteredRows]);
+
+  const uniqueSlotCount = useMemo(() => countsBySlot.size, [countsBySlot]);
+
   const status = (() => {
     if (!data) return { kind: "warn" as const, label: "Laster…" };
     if (!data.ok) return { kind: "crit" as const, label: "Problem" };
@@ -276,21 +286,7 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
     }
   }
 
-  const grouped = useMemo(() => {
-    if (groupBy === "none") return null;
-    const m = new Map<string, KitchenRow[]>();
-    for (const r of filteredRows) {
-      let k: string;
-      if (groupBy === "company") k = r.company;
-      else if (groupBy === "location") k = `${r.company} · ${r.location}`;
-      else k = mealLabel(r);
-      const arr = m.get(k) ?? [];
-      arr.push(r);
-      m.set(k, arr);
-    }
-    const keys = Array.from(m.keys()).sort((a, b) => a.localeCompare(b, "nb"));
-    return keys.map((k) => ({ key: k, rows: m.get(k)! }));
-  }, [filteredRows, groupBy]);
+  const productionHierarchy = useMemo(() => buildProductionHierarchy(filteredRows), [filteredRows]);
 
   const pretty = osloPretty(dateISO);
 
@@ -365,13 +361,24 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
           <button type="button" onClick={goNextActive} className="min-h-[44px] rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">
             Finn aktive bestillinger
           </button>
+          <Link
+            href={`/kitchen/print?date=${encodeURIComponent(dateISO)}`}
+            className="inline-flex min-h-[44px] items-center rounded-xl border border-[rgb(var(--lp-border))] bg-white px-4 py-2 text-sm font-medium text-slate-900 print:hidden"
+          >
+            Produksjonsutskrift
+          </Link>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-4 text-center">
             <div className="text-xs text-[rgb(var(--lp-muted))]">Totalt (filtrert)</div>
             <div className="mt-1 text-2xl font-semibold text-slate-900">{filteredRows.length}</div>
             <div className="text-xs text-[rgb(var(--lp-muted))]">porsjoner</div>
+          </div>
+          <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-4 text-center">
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Leveringsvinduer</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-900">{uniqueSlotCount}</div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">unike slot</div>
           </div>
           <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-4 text-center">
             <div className="text-xs text-[rgb(var(--lp-muted))]">Firma (unike)</div>
@@ -388,7 +395,20 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
 
       {/* Fordeling per firma / lokasjon / måltid — kompakt, skannbar */}
       {filteredRows.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Per leveringsvindu</h3>
+            <ul className="mt-2 space-y-1 text-sm text-slate-800">
+              {Array.from(countsBySlot.entries())
+                .sort((a, b) => a[0].localeCompare(b[0], "nb"))
+                .map(([name, n]) => (
+                  <li key={name} className="flex justify-between gap-2">
+                    <span className="min-w-0 truncate">{slotHeading(name)}</span>
+                    <span className="font-semibold tabular-nums">{n}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Per firma</h3>
             <ul className="mt-2 space-y-1 text-sm text-slate-800">
@@ -485,19 +505,6 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
               ))}
             </select>
           </label>
-          <label className="flex min-w-[160px] flex-col gap-1 text-sm font-semibold text-slate-900">
-            Gruppering
-            <select
-              className="rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value as GroupMode)}
-            >
-              <option value="company">Per firma</option>
-              <option value="location">Per lokasjon</option>
-              <option value="meal">Per meny / måltid</option>
-              <option value="none">Flat liste</option>
-            </select>
-          </label>
         </div>
       </div>
 
@@ -509,83 +516,67 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
         <EmptyState reason={data.reason ?? "NO_ORDERS"} onNextActive={goNextActive} />
       ) : (
         <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white shadow-[var(--lp-shadow-soft)]">
-          <div className="border-b border-[rgb(var(--lp-divider))] p-4 text-sm font-semibold text-slate-900">Linjer (ordre)</div>
+          <div className="border-b border-[rgb(var(--lp-divider))] p-4 text-sm font-semibold text-slate-900">
+            Linjer (ordre) — gruppert: leveringsvindu → firma → lokasjon → ansatt
+          </div>
 
-          {groupBy === "none" && (
-            <div className="divide-y divide-[rgb(var(--lp-divider))]">
-              {filteredRows.map((row, idx) => (
-                <div key={`${row.employeeName}-${row.company}-${idx}`} className="p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-slate-900">
-                      {row.employeeName}
-                      {row.department ? <span className="ml-2 text-xs font-normal text-[rgb(var(--lp-muted))]">• {row.department}</span> : null}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {row.tier ? (
-                        <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
-                          {row.tier === "BASIS" ? "Basis" : "Luxus"}
-                        </span>
-                      ) : null}
-                      <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
-                        {row.company} • {row.location}
-                      </span>
-                    </div>
-                  </div>
-                  {row.menu_title || row.menu_description || (row.menu_allergens && row.menu_allergens.length) ? (
-                    <div className="mt-2 rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-slate-800">
-                      {row.menu_title ? <div className="font-semibold">{row.menu_title}</div> : null}
-                      {row.menu_description ? <div className="mt-1 opacity-90">{row.menu_description}</div> : null}
-                      {row.menu_allergens && row.menu_allergens.length ? (
-                        <div className="mt-1 text-xs opacity-80">Allergener: {row.menu_allergens.join(", ")}</div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {row.note ? (
-                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                      <span className="font-medium">Notat:</span> {row.note}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {groupBy !== "none" && grouped
-            ? grouped.map((g) => (
-                <div key={g.key} className="border-b border-[rgb(var(--lp-divider))] last:border-b-0">
-                  <div className="bg-[rgb(var(--lp-surface-2))] px-4 py-2 text-sm font-extrabold text-slate-900">{g.key}</div>
-                  <div className="divide-y divide-[rgb(var(--lp-divider))]">
-                    {g.rows.map((row, idx) => (
-                      <div key={`${g.key}-${row.employeeName}-${idx}`} className="p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-sm font-semibold text-slate-900">
-                            {row.employeeName}
-                            {row.department ? <span className="ml-2 text-xs font-normal text-[rgb(var(--lp-muted))]">• {row.department}</span> : null}
-                          </div>
-                          <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
-                            {row.company} • {row.location}
-                          </span>
+          <div className="divide-y divide-[rgb(var(--lp-divider))]">
+            {productionHierarchy.map((sl) => (
+              <div key={sl.slot} className="bg-white">
+                <div className="bg-slate-100 px-4 py-2 text-sm font-extrabold text-slate-900">{slotHeading(sl.slot)}</div>
+                {sl.companies.map((co) => (
+                  <div key={`${sl.slot}-${co.company}`} className="border-t border-[rgb(var(--lp-divider))] first:border-t-0">
+                    <div className="bg-[rgb(var(--lp-surface-2))] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-800">{co.company}</div>
+                    {co.locations.map((loc) => (
+                      <div key={`${sl.slot}-${co.company}-${loc.location}`}>
+                        <div className="border-t border-[rgb(var(--lp-divider))] bg-white px-4 py-1 text-xs font-semibold text-[rgb(var(--lp-muted))]">
+                          {loc.location}
                         </div>
-                        {row.menu_title || row.menu_description || (row.menu_allergens && row.menu_allergens.length) ? (
-                          <div className="mt-2 rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-slate-800">
-                            {row.menu_title ? <div className="font-semibold">{row.menu_title}</div> : null}
-                            {row.menu_description ? <div className="mt-1 opacity-90">{row.menu_description}</div> : null}
-                            {row.menu_allergens && row.menu_allergens.length ? (
-                              <div className="mt-1 text-xs opacity-80">Allergener: {row.menu_allergens.join(", ")}</div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {row.note ? (
-                          <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                            <span className="font-medium">Notat:</span> {row.note}
-                          </div>
-                        ) : null}
+                        <div className="divide-y divide-[rgb(var(--lp-divider))]">
+                          {loc.rows.map((row) => (
+                            <div key={row.orderId || `${sl.slot}-${row.employeeName}`} className="p-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-sm font-semibold text-slate-900">
+                                  {row.employeeName}
+                                  {row.department ? (
+                                    <span className="ml-2 text-xs font-normal text-[rgb(var(--lp-muted))]">• {row.department}</span>
+                                  ) : null}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
+                                    {row.orderStatus}
+                                  </span>
+                                  {row.tier ? (
+                                    <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
+                                      {row.tier === "BASIS" ? "Basis" : "Luxus"}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                              {row.menu_title || row.menu_description || (row.menu_allergens && row.menu_allergens.length) ? (
+                                <div className="mt-2 rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-3 text-sm text-slate-800">
+                                  {row.menu_title ? <div className="font-semibold">{row.menu_title}</div> : null}
+                                  {row.menu_description ? <div className="mt-1 opacity-90">{row.menu_description}</div> : null}
+                                  {row.menu_allergens && row.menu_allergens.length ? (
+                                    <div className="mt-1 text-xs opacity-80">Allergener: {row.menu_allergens.join(", ")}</div>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                              {row.note ? (
+                                <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                                  <span className="font-medium">Notat (ordre):</span> {row.note}
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              ))
-            : null}
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>

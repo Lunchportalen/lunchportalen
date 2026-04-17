@@ -61,6 +61,139 @@ function differsFromSummary(definition: BackofficeBlockDefinition): string | nul
     .join(" · ");
 }
 
+const bar = "rounded-[1px] bg-white/42";
+const barSoft = "rounded-[1px] bg-white/28";
+const frame = "rounded-sm border border-white/25 bg-white/12";
+
+/** Syntetisk mini-layout i insert-tiles (samme idé som blokkrader, kompakt for bibliotek). */
+function InsertTilePreview({ typeKey }: { typeKey: string }) {
+  const k = typeKey.trim();
+  switch (k) {
+    case "hero":
+    case "hero_full":
+    case "hero_bleed":
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col gap-0.5 p-1">
+          <div className={`h-0.5 w-[68%] ${bar}`} />
+          <div className="flex min-h-0 flex-1 gap-0.5">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-px">
+              <div className={`h-px w-full ${barSoft}`} />
+              <div className={`h-px w-[78%] ${barSoft}`} />
+              <div className="mt-px h-1.5 w-[48%] rounded-sm bg-white/48" />
+            </div>
+            <div className={`w-[34%] shrink-0 ${frame}`} />
+          </div>
+        </div>
+      );
+    case "richText":
+      return (
+        <div className="relative z-10 flex h-full w-full gap-0.5 p-1">
+          <div className="w-px shrink-0 rounded-full bg-white/55" />
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-px py-0.5">
+            <div className={`h-px w-full ${bar}`} />
+            <div className={`h-px w-[88%] ${barSoft}`} />
+            <div className={`h-px w-[72%] ${barSoft}`} />
+          </div>
+        </div>
+      );
+    case "image":
+      return (
+        <div className="relative z-10 flex h-full w-full items-center justify-center p-1">
+          <div className={`flex aspect-[4/3] w-[72%] items-center justify-center ${frame}`}>
+            <div className="h-2 w-2 rotate-45 border border-white/35" />
+          </div>
+        </div>
+      );
+    case "banner":
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col justify-center gap-0.5 px-1 py-0.5">
+          <div className={`h-1 w-full ${bar}`} />
+          <div className={`mx-auto h-px w-[52%] ${barSoft}`} />
+        </div>
+      );
+    case "cards":
+      return (
+        <div className="relative z-10 grid h-full w-full grid-cols-2 gap-px p-1">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={`min-h-0 rounded-[1px] ${frame}`} />
+          ))}
+        </div>
+      );
+    case "grid":
+      return (
+        <div className="relative z-10 grid h-full w-full grid-cols-3 grid-rows-2 gap-px p-1">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className={`min-h-0 rounded-[1px] ${barSoft}`} />
+          ))}
+        </div>
+      );
+    case "pricing":
+      return (
+        <div className="relative z-10 flex h-full w-full items-end justify-center gap-px px-1 pb-0.5 pt-1">
+          <div className="h-[38%] w-[28%] rounded-t-sm border border-b-0 border-white/25 bg-white/18" />
+          <div className="h-[52%] w-[28%] rounded-t-sm border border-b-0 border-white/25 bg-white/22" />
+          <div className="h-[30%] w-[28%] rounded-t-sm border border-b-0 border-white/25 bg-white/15" />
+        </div>
+      );
+    case "zigzag":
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col justify-center gap-0.5 px-1 py-0.5">
+          <div className="flex gap-0.5">
+            <div className={`h-1.5 w-[40%] ${frame}`} />
+            <div className={`h-1.5 flex-1 ${barSoft}`} />
+          </div>
+          <div className="flex gap-0.5 pl-1">
+            <div className={`h-1.5 flex-1 ${barSoft}`} />
+            <div className={`h-1.5 w-[40%] ${frame}`} />
+          </div>
+        </div>
+      );
+    case "cta":
+      return (
+        <div className="relative z-10 flex h-full w-full items-center gap-0.5 p-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-px">
+            <div className={`h-px w-full ${barSoft}`} />
+            <div className={`h-px w-[65%] ${barSoft}`} />
+          </div>
+          <div className="h-3 w-[36%] shrink-0 rounded-sm bg-white/45" />
+        </div>
+      );
+    case "form":
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col gap-px p-1">
+          <div className={`h-1.5 w-full ${frame}`} />
+          <div className={`h-px w-full ${barSoft}`} />
+          <div className={`h-px w-[82%] ${barSoft}`} />
+        </div>
+      );
+    case "relatedLinks":
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col justify-center gap-px px-1.5 py-0.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-0.5">
+              <div className="h-px w-px rounded-full bg-white/55" />
+              <div className={`h-px flex-1 ${i === 1 ? bar : barSoft}`} />
+            </div>
+          ))}
+        </div>
+      );
+    case "divider":
+      return (
+        <div className="relative z-10 flex h-full w-full items-center px-1">
+          <div className="h-px w-full rounded-full bg-white/45" />
+        </div>
+      );
+    default:
+      return (
+        <div className="relative z-10 flex h-full w-full flex-col justify-center gap-px p-1">
+          <div className={`h-px w-full ${bar}`} />
+          <div className={`h-px w-[84%] ${barSoft}`} />
+          <div className={`h-px w-[68%] ${barSoft}`} />
+        </div>
+      );
+  }
+}
+
 export function BlockLibrary(props: BlockLibraryProps) {
   const { open, onClose, onPick, context } = props;
   const etRuntime = useElementTypeRuntimeMergedOptional();
@@ -200,12 +333,12 @@ export function BlockLibrary(props: BlockLibraryProps) {
   }, [open, onClose]);
 
   const categories: { key: CategoryFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "content", label: "Content" },
+    { key: "all", label: "Alle" },
+    { key: "content", label: "Innhold" },
     { key: "layout", label: "Layout" },
-    { key: "navigation", label: "Navigation" },
+    { key: "navigation", label: "Navigasjon" },
     { key: "system", label: "System" },
-    { key: "marketing", label: "Marketing" },
+    { key: "marketing", label: "Markedsføring" },
   ];
 
   const countByCategory: Record<CategoryFilter, number> = useMemo(() => {
@@ -312,200 +445,231 @@ export function BlockLibrary(props: BlockLibraryProps) {
   const activeType = flatList[activeIndex]?.type ?? null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center">
-      <div className="lp-motion-overlay lp-glass-overlay absolute inset-0" aria-hidden="true" />
+    <div className="fixed inset-0 z-[80]" data-lp-block-insert-overlay="true">
+      <button
+        type="button"
+        className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]"
+        aria-label="Lukk blokkbibliotek"
+        onClick={onClose}
+      />
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className="lp-motion-overlay lp-glass-panel relative z-[81] flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl outline-none"
+        aria-labelledby="lp-block-insert-title"
+        className="absolute inset-y-0 right-0 z-[81] flex w-full max-w-[420px] flex-col border-l border-slate-300/90 bg-white shadow-[-20px_0_40px_rgba(15,23,42,0.14)] outline-none sm:w-[420px]"
         onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[rgb(var(--lp-border))] px-4 py-3">
-          <div className="min-w-0 shrink-0">
-            <h2 className="text-sm font-semibold text-[rgb(var(--lp-text))]">Block library</h2>
-            {context.blockListCreateLabel ? (
-              <p
-                className="mt-0.5 max-w-[min(100%,420px)] text-[10px] leading-snug text-[rgb(var(--lp-muted))]"
-                data-lp-library-create-label
+        <header className="shrink-0 border-b border-slate-200/95 bg-[#f6f7f9] px-3 pb-3 pt-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h2
+                id="lp-block-insert-title"
+                className="text-[16px] font-semibold leading-tight tracking-tight text-slate-900"
               >
-                <span className="font-medium text-[rgb(var(--lp-text))]/90">Opprett-knapp (data type):</span>{" "}
-                {context.blockListCreateLabel}
-              </p>
-            ) : null}
-            {context.blockEditorDataTypeAlias ? (
-              <p
-                className="mt-0.5 max-w-[min(100%,420px)] text-[10px] leading-snug text-[rgb(var(--lp-muted))]"
-                data-lp-block-property-binding
-              >
-                <span className="font-medium text-[rgb(var(--lp-text))]/90">Data type:</span>{" "}
-                <span data-lp-block-editor-data-type>{context.blockEditorDataTypeAlias}</span>
-                {dataTypeDefinition ? (
-                  <>
-                    {" "}
-                    · <span data-lp-block-library-allowed-count>{availableEntries.length}</span> tillatte typer
-                    {typeof context.blockMaxItems === "number" ? (
-                      <>
-                        {" "}
-                        · maks <span data-lp-block-list-max>{context.blockMaxItems}</span> blokker
-                      </>
-                    ) : null}
-                    {typeof context.blockCount === "number" ? (
-                      <>
-                        {" "}
-                        · nå <span data-lp-block-list-current>{context.blockCount}</span>
-                      </>
-                    ) : null}
-                  </>
-                ) : null}
-              </p>
-            ) : null}
+                Sett inn blokk
+              </h2>
+              {context.blockListCreateLabel ? (
+                <p className="mt-1 text-[11px] leading-snug text-slate-500" data-lp-library-create-label>
+                  {context.blockListCreateLabel}
+                </p>
+              ) : null}
+              {context.blockEditorDataTypeAlias ? (
+                <p
+                  className="mt-1 max-w-full text-[10px] leading-snug text-slate-400"
+                  data-lp-block-property-binding
+                >
+                  <span data-lp-block-editor-data-type>{context.blockEditorDataTypeAlias}</span>
+                  {dataTypeDefinition ? (
+                    <>
+                      {" "}
+                      · <span data-lp-block-library-allowed-count>{availableEntries.length}</span> typer
+                      {typeof context.blockMaxItems === "number" ? (
+                        <>
+                          {" "}
+                          · maks <span data-lp-block-list-max>{context.blockMaxItems}</span>
+                        </>
+                      ) : null}
+                      {typeof context.blockCount === "number" ? (
+                        <>
+                          {" "}
+                          · <span data-lp-block-list-current>{context.blockCount}</span> nå
+                        </>
+                      ) : null}
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-300/90 bg-white text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-1"
+              aria-label="Lukk"
+            >
+              <Icon name="close" size="sm" />
+            </button>
           </div>
-          <div className="flex-1">
-            <input
-              ref={searchRef}
-              type="search"
-              aria-label="Search blocks"
-              placeholder="Search blocks..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 py-1.5 text-sm text-[rgb(var(--lp-text))] outline-none focus:ring-2 focus:ring-[rgb(var(--lp-ring))] focus:ring-offset-2"
-            />
+          <input
+            ref={searchRef}
+            type="search"
+            aria-label="Søk blant blokker"
+            placeholder="Søk etter blokk …"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="mt-3 w-full rounded border border-slate-300/90 bg-white px-2.5 py-2 text-[13px] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-[#3544b1]/70 focus:ring-1 focus:ring-[#3544b1]/20"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled
+              className="rounded border border-slate-200/90 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-400 opacity-60"
+              title="Ikke tilgjengelig i denne versjonen"
+            >
+              Opprett tom
+            </button>
+            <button
+              type="button"
+              disabled
+              className="rounded border border-slate-200/90 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-400 opacity-60"
+              title="Ikke tilgjengelig i denne versjonen"
+            >
+              Utklipp
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--lp-border))] bg-white text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-card))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--lp-ring))] focus-visible:ring-offset-2"
-            aria-label="Lukk"
-          >
-            <Icon name="close" size="sm" />
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 divide-x divide-[rgb(var(--lp-border))]">
-          <aside className="flex w-40 shrink-0 flex-col gap-1 bg-[rgb(var(--lp-bg))]/60 px-2 py-3 text-xs">
+          <div className="mt-2 flex max-w-full flex-wrap gap-1">
             {categories.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 onClick={() => setCategory(entry.key)}
-                className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left ${
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
                   category === entry.key
-                    ? "bg-white text-[rgb(var(--lp-text))] shadow-sm"
-                    : "text-[rgb(var(--lp-muted))] hover:bg-white/70 hover:text-[rgb(var(--lp-text))]"
+                    ? "border-slate-800 bg-slate-900 text-white"
+                    : "border-slate-200/90 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <span>{entry.label}</span>
-                <span className="ml-2 text-[10px] text-[rgb(var(--lp-muted))]">
+                <span className={`text-[10px] ${category === entry.key ? "text-slate-300" : "text-slate-400"}`}>
                   {countByCategory[entry.key]}
                 </span>
               </button>
             ))}
-          </aside>
+          </div>
+        </header>
 
-          <main className="flex min-w-0 flex-1 flex-col px-3 py-3 text-sm">
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <div className="min-h-0 flex-1 overflow-auto">
-                {category === "all" && favoriteEntries.length > 0 ? (
-                  <BlockLibrarySection
-                    title="Favorites"
-                    items={favoriteEntries}
-                    flatList={flatList}
-                    activeIndex={activeIndex}
-                    activeType={activeType}
-                    favorites={favorites}
-                    elementRuntimeMerged={elementRuntimeMerged}
-                    onPick={handlePick}
-                    onFavoriteToggle={handleFavoriteToggle}
-                  />
-                ) : null}
+        <div className="flex min-h-0 flex-1 flex-col overflow-clip bg-white text-[13px]">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+            {category === "all" && favoriteEntries.length > 0 ? (
+              <BlockLibrarySection
+                title="Favoritter"
+                items={favoriteEntries}
+                flatList={flatList}
+                activeIndex={activeIndex}
+                activeType={activeType}
+                favorites={favorites}
+                elementRuntimeMerged={elementRuntimeMerged}
+                onPick={handlePick}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            ) : null}
 
-                {category === "all" && recentEntries.length > 0 ? (
-                  <BlockLibrarySection
-                    title="Recent"
-                    items={recentEntries}
-                    flatList={flatList}
-                    activeIndex={activeIndex}
-                    activeType={activeType}
-                    favorites={favorites}
-                    elementRuntimeMerged={elementRuntimeMerged}
-                    onPick={handlePick}
-                    onFavoriteToggle={handleFavoriteToggle}
-                  />
-                ) : null}
+            {category === "all" && recentEntries.length > 0 ? (
+              <BlockLibrarySection
+                title="Nylig"
+                items={recentEntries}
+                flatList={flatList}
+                activeIndex={activeIndex}
+                activeType={activeType}
+                favorites={favorites}
+                elementRuntimeMerged={elementRuntimeMerged}
+                onPick={handlePick}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            ) : null}
 
-                <section className="min-h-0 flex-1">
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
-                    {category === "all" ? "Blokkatalog" : "Blokker"}
-                  </h3>
-                  {showCatalogGroups ? (
-                    <div className="max-h-[52vh] space-y-4 overflow-auto pb-1" data-lp-block-library-catalog>
-                      {catalogGrouped.map(({ group, items }) => (
-                        <div key={group}>
-                          <h4
-                            className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[rgb(var(--lp-muted))]"
-                            data-lp-block-library-group-title={group}
-                            data-lp-library-group={group}
-                          >
-                            {group}
-                          </h4>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                            {items.map((definition) => (
-                              <BlockLibraryCard
-                                key={definition.type}
-                                definition={definition}
-                                runtimeEntry={elementRuntimeMerged?.[definition.type] ?? null}
-                                isActive={
-                                  flatList.findIndex((entry) => entry.type === definition.type) === activeIndex &&
-                                  definition.type === activeType
-                                }
-                                isFavorite={favorites.includes(definition.type)}
-                                onPick={handlePick}
-                                onFavoriteToggle={handleFavoriteToggle}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+            <section className="min-h-0">
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+                {category === "all" ? "Blokkatalog" : "Blokker"}
+              </h3>
+              {showCatalogGroups ? (
+                <div className="space-y-4 pb-2" data-lp-block-library-catalog>
+                  {catalogGrouped.map(({ group, items }) => (
+                    <div key={group}>
+                      <h4
+                        className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+                        data-lp-block-library-group-title={group}
+                        data-lp-library-group={group}
+                      >
+                        {group}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {items.map((definition) => (
+                          <BlockLibraryTile
+                            key={definition.type}
+                            definition={definition}
+                            runtimeEntry={elementRuntimeMerged?.[definition.type] ?? null}
+                            isActive={blockLibraryTileIsActive(definition, flatList, activeIndex, activeType)}
+                            isFavorite={favorites.includes(definition.type)}
+                            onPick={handlePick}
+                            onFavoriteToggle={handleFavoriteToggle}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  ) : (
-                    <div
-                      className="grid max-h-[52vh] grid-cols-1 gap-2 overflow-auto pb-1 sm:grid-cols-2 md:grid-cols-3"
-                      aria-label="All blocks"
-                    >
-                      {otherEntriesSorted.map((definition) => (
-                        <BlockLibraryCard
-                          key={definition.type}
-                          definition={definition}
-                          runtimeEntry={elementRuntimeMerged?.[definition.type] ?? null}
-                          isActive={
-                            flatList.findIndex((entry) => entry.type === definition.type) === activeIndex &&
-                            definition.type === activeType
-                          }
-                          isFavorite={favorites.includes(definition.type)}
-                          onPick={handlePick}
-                          onFavoriteToggle={handleFavoriteToggle}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {!flatList.length ? (
-                    <div className="col-span-full rounded-lg border border-dashed border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/60 px-4 py-6 text-center text-xs text-[rgb(var(--lp-muted))]">
-                      Ingen blokker matcher søket ditt.
-                    </div>
-                  ) : null}
-                </section>
-              </div>
-            </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Alle blokker">
+                  {otherEntriesSorted.map((definition) => (
+                    <BlockLibraryTile
+                      key={definition.type}
+                      definition={definition}
+                      runtimeEntry={elementRuntimeMerged?.[definition.type] ?? null}
+                      isActive={blockLibraryTileIsActive(definition, flatList, activeIndex, activeType)}
+                      isFavorite={favorites.includes(definition.type)}
+                      onPick={handlePick}
+                      onFavoriteToggle={handleFavoriteToggle}
+                    />
+                  ))}
+                </div>
+              )}
+              {!flatList.length ? (
+                <div className="mt-2 rounded border border-dashed border-slate-300/90 bg-slate-50 px-3 py-6 text-center text-[12px] text-slate-500">
+                  Ingen blokker matcher søket ditt.
+                </div>
+              ) : null}
+            </section>
+          </div>
 
-            <div className="mt-2 border-t border-[rgb(var(--lp-border))] pt-2 text-[11px] text-[rgb(var(--lp-muted))]">
-              Arrows navigate • Enter add • Esc close • Cmd/Ctrl+K focus search
-            </div>
-          </main>
+          <footer className="shrink-0 border-t border-slate-300/90 bg-[#f3f4f6] px-3 py-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-md border border-slate-400/80 bg-white py-2.5 text-center text-[13px] font-semibold text-slate-800 shadow-sm transition-colors hover:border-slate-500 hover:bg-slate-50"
+            >
+              Avbryt
+            </button>
+            <p className="mt-2 text-center text-[10px] leading-snug text-slate-500">
+              Piltaster · Enter setter inn · Esc lukker · ⌘K / Ctrl+K søk
+            </p>
+          </footer>
         </div>
       </div>
     </div>,
     document.body,
+  );
+}
+
+function blockLibraryTileIsActive(
+  definition: BackofficeBlockDefinition,
+  flatList: BackofficeBlockDefinition[],
+  activeIndex: number,
+  activeType: string | null,
+) {
+  return (
+    flatList.findIndex((entry) => entry.type === definition.type) === activeIndex && definition.type === activeType
   );
 }
 
@@ -523,20 +687,15 @@ function BlockLibrarySection(props: {
   const { title, items, flatList, activeIndex, activeType, favorites, elementRuntimeMerged, onPick, onFavoriteToggle } =
     props;
   return (
-    <section>
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
-        {title}
-      </h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3" aria-label={`${title} blocks`}>
+    <section className="mb-4">
+      <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">{title}</h3>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label={`${title} blocks`}>
         {items.map((definition) => (
-          <BlockLibraryCard
+          <BlockLibraryTile
             key={definition.type}
             definition={definition}
             runtimeEntry={elementRuntimeMerged?.[definition.type] ?? null}
-            isActive={
-              flatList.findIndex((entry) => entry.type === definition.type) === activeIndex &&
-              definition.type === activeType
-            }
+            isActive={blockLibraryTileIsActive(definition, flatList, activeIndex, activeType)}
             isFavorite={favorites.includes(definition.type)}
             onPick={onPick}
             onFavoriteToggle={onFavoriteToggle}
@@ -547,7 +706,7 @@ function BlockLibrarySection(props: {
   );
 }
 
-function BlockLibraryCard(props: {
+function BlockLibraryTile(props: {
   definition: BackofficeBlockDefinition;
   runtimeEntry: ElementTypeRuntimeMergedEntry | null;
   isActive: boolean;
@@ -556,82 +715,74 @@ function BlockLibraryCard(props: {
   onFavoriteToggle: (definition: BackofficeBlockDefinition, event: MouseEvent) => void;
 }) {
   const { definition, runtimeEntry, isActive, isFavorite, onPick, onFavoriteToggle } = props;
-  const diffLine = differsFromSummary(definition);
-  const iconName = (definition.iconKey ?? "content") as SemanticIconKey;
   const displayTitle = runtimeEntry?.title ?? definition.label;
-  const displayDescription = runtimeEntry?.description ?? definition.description;
+  const primaryDesc = (runtimeEntry?.description ?? definition.description ?? "").trim();
+  const help = (runtimeEntry?.editorHelpText ?? "").trim();
+  const secondary =
+    [primaryDesc, help].filter(Boolean).join(" · ") ||
+    (definition.whenToUse?.trim() ? `Passer når: ${definition.whenToUse}` : "");
+  const diffLine = differsFromSummary(definition);
+
   return (
-    <button
-      type="button"
-      onClick={() => onPick(definition)}
-      className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left lp-motion-card ${
-        isActive
-          ? "border-[rgb(var(--lp-text))] bg-[rgb(var(--lp-card))]"
-          : "border-[rgb(var(--lp-border))] bg-white hover:border-slate-300 hover:bg-[rgb(var(--lp-card))]/60"
-      }`}
-      aria-pressed={isActive}
-      data-lp-block-library-card={definition.type}
-      data-lp-library-block-alias={definition.type}
-      data-lp-element-type-alias={definition.type}
-    >
-      <div className="mb-1 flex w-full items-center justify-between gap-1">
-        <span
-          className="text-xs font-semibold text-[rgb(var(--lp-text))]"
-          data-lp-library-title
-          data-lp-element-type-title
-        >
-          {displayTitle}
-        </span>
-        <span
-          role="button"
-          tabIndex={-1}
-          onClick={(event) => onFavoriteToggle(definition, event)}
-          className="text-xs text-amber-500"
-          aria-label="Toggle favorite"
-        >
-          {isFavorite ? "★" : "☆"}
-        </span>
-      </div>
-      <p className="mb-0.5 line-clamp-2 text-[11px] text-[rgb(var(--lp-muted))]" data-lp-library-description>
-        {displayDescription}
-      </p>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => onPick(definition)}
+        className={`flex w-full flex-col overflow-clip rounded-md border text-left shadow-sm transition-all ${
+          isActive
+            ? "border-[#3544b1] ring-2 ring-[#3544b1]/35"
+            : "border-slate-200/95 hover:border-slate-300 hover:shadow-md"
+        }`}
+        aria-pressed={isActive}
+        data-lp-block-library-tile={definition.type}
+        data-lp-library-block-alias={definition.type}
+        data-lp-element-type-alias={definition.type}
+      >
+        <div className="relative h-[4.5rem] w-full shrink-0 overflow-clip">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2a3f5c] to-[#141c2a]" aria-hidden />
+          <InsertTilePreview typeKey={definition.type} />
+        </div>
+        <div className="flex flex-col gap-0.5 border-t border-slate-100 bg-white px-2 py-1.5">
+          <span
+            className="line-clamp-2 text-[11px] font-semibold leading-snug text-slate-900"
+            data-lp-library-title
+            data-lp-element-type-title
+          >
+            {displayTitle}
+          </span>
+          {secondary ? (
+            <span className="line-clamp-2 text-[9px] leading-snug text-slate-500" data-lp-library-description>
+              {secondary}
+            </span>
+          ) : null}
+        </div>
+      </button>
       {runtimeEntry?.editorHelpText ? (
-        <p
-          className="mb-0.5 line-clamp-2 text-[10px] text-[rgb(var(--lp-text))]/85"
-          data-lp-element-type-editor-help
-        >
+        <span className="sr-only" data-lp-element-type-editor-help>
           {runtimeEntry.editorHelpText}
-        </p>
+        </span>
       ) : null}
       {definition.whenToUse ? (
-        <p
-          className="mb-1 line-clamp-2 text-[10px] font-medium leading-snug text-[rgb(var(--lp-text))]/80"
-          data-lp-library-when-to-use
-        >
-          <span className="text-[rgb(var(--lp-muted))]">Når: </span>
+        <span className="sr-only" data-lp-library-when-to-use>
           {definition.whenToUse}
-        </p>
+        </span>
       ) : null}
       {diffLine ? (
-        <p
-          className="mb-1 line-clamp-2 text-[10px] text-[rgb(var(--lp-muted))]"
-          data-lp-block-library-diff
-          data-lp-library-differs-from
-        >
+        <span className="sr-only" data-lp-block-library-diff data-lp-library-differs-from>
           {diffLine}
-        </p>
+        </span>
       ) : null}
-      <div className="mt-auto flex w-full items-center justify-between text-[10px] text-[rgb(var(--lp-muted))]">
-        <span
-          className="max-w-[65%] truncate rounded border border-[rgb(var(--lp-border))] px-1 py-0.5"
-          data-lp-library-group
-        >
-          {definition.libraryGroup} · {definition.category}
-        </span>
-        <span className="inline-flex items-center justify-center rounded bg-[rgb(var(--lp-card))] p-0.5">
-          <Icon name={iconName} size="xs" />
-        </span>
-      </div>
-    </button>
+      <span className="sr-only" data-lp-library-group>
+        {definition.libraryGroup} · {definition.category}
+      </span>
+      <button
+        type="button"
+        onClick={(event) => onFavoriteToggle(definition, event)}
+        className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded border border-white/40 bg-black/35 text-[11px] text-amber-200 shadow-sm hover:bg-black/50"
+        aria-label="Favoritt"
+      >
+        {isFavorite ? "★" : "☆"}
+      </button>
+    </div>
   );
 }

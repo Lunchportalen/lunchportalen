@@ -1,0 +1,43 @@
+# Juster image til ditt registry (f.eks. ghcr.io/org/lunchportalen:tag).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lunchportalen
+  labels:
+    app: lunchportalen
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lunchportalen
+  template:
+    metadata:
+      labels:
+        app: lunchportalen
+    spec:
+      containers:
+        - name: app
+          image: your-docker-image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

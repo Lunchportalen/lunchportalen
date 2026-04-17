@@ -1,4 +1,4 @@
-// app/admin/AdminNav.tsx — Company admin control tower (én IA, /admin canonical)
+// app/admin/AdminNav.tsx — Firmaadmin (company_admin): én company-scoped rammeflate, /admin canonical — ikke superadmin.
 "use client";
 
 import Link from "next/link";
@@ -33,6 +33,10 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/users", label: "Ansatte" },
   { href: "/admin/locations", label: "Lokasjoner" },
   { href: "/admin/agreement", label: "Avtale" },
+  { href: "/admin/leveringsgrunnlag", label: "Leveringsgrunnlag" },
+  { href: "/admin/uke-bestillbarhet", label: "Uke og bestillbarhet" },
+  { href: "/admin/dagens-brukere", label: "Dagens brukere" },
+  { href: "/admin/dagens-levering", label: "Dagens levering" },
   { href: "/admin/insights", label: "Økonomi" },
   { href: "/api/admin/invoices/csv", label: "Faktura (CSV)" },
   { href: "/admin/orders", label: "Historikk" },
@@ -44,7 +48,7 @@ export default function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Admin navigasjon" className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+    <nav aria-label="Firmaadmin-navigasjon" className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
       {NAV_ITEMS.map((item) => {
         const active = isActive(pathname, item.href, item.exact);
         const isExternalApi = item.href.startsWith("/api/");

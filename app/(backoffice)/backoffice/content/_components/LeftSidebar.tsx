@@ -25,21 +25,17 @@ export function LeftSidebar(props: {
       ];
 
   return (
-    <aside className="flex min-h-0 flex-col border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/35 lg:border-b-0 lg:border-r">
-      <div className="sticky top-0 z-10 border-b border-[rgb(var(--lp-border))] bg-white/96 px-3 py-3 backdrop-blur-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">Sideinternt</p>
-        <p className="mt-1 text-xs leading-relaxed text-[rgb(var(--lp-muted))]">
-          Blokkstruktur og sidekontekst for aktiv side. Seksjonsnavigasjonen ligger i treet helt til venstre.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-              className={`min-h-10 rounded-xl px-3 text-xs font-medium transition-colors ${
+    <aside className="flex min-h-0 flex-col border-b border-[rgb(var(--lp-border))]/70 bg-[rgb(var(--lp-card))]/25 lg:border-b-0 lg:border-r lg:border-[rgb(var(--lp-border))]/60">
+      <div className="sticky top-0 z-10 border-b border-[rgb(var(--lp-border))]/55 bg-[rgb(var(--lp-bg))]/55 px-2 py-1.5 backdrop-blur-[6px]">
+        <div className="flex flex-wrap gap-1">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`min-h-8 rounded-md px-2 text-[11px] font-medium transition-colors ${
                 tab === t.id
-                  ? "bg-[rgb(var(--lp-card))] text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-[rgb(var(--lp-border))]"
+                  ? "bg-white/95 text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-[rgb(var(--lp-border))]/80"
                   : "text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))]"
               }`}
             >
@@ -48,7 +44,7 @@ export function LeftSidebar(props: {
           ))}
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-2 sm:p-2.5">
         {!props.hideLegacyNav && tab === "content" ? props.legacyNavSlot : null}
         {tab === "structure" ? props.structureSlot : null}
         {tab === "ai" ? props.aiContextSlot : null}

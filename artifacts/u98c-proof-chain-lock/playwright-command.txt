@@ -1,0 +1,1 @@
+cross-env LP_E2E_EXTERNAL_SERVER=1 LP_CMS_RUNTIME_MODE=local_provider PLAYWRIGHT_BASE_URL=http://localhost:3056 npx playwright test e2e/u98c-proof-chain-lock.e2e.ts --project=chromium --workers=1 --retries=0

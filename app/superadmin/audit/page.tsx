@@ -94,7 +94,7 @@ export default async function SuperadminAuditPage() {
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">Audit</h1>
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Spor hendelser på rid, actor, action og entity – deterministisk og uten støy.
+            Spor hendelser på rid, actor, action og entity. Bruk «Operativ drift» for filtrert liste over avtale- og firmastatushendelser (canonical <span className="font-mono text-xs">audit_events</span>).
           </p>
         </div>
       </header>

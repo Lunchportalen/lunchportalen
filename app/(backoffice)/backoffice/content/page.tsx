@@ -1,5 +1,5 @@
-import ContentDashboard from "./_workspace/ContentDashboard";
+import ContentRootAutoEnter from "./_workspace/ContentRootAutoEnter";
 
 export default function ContentPage() {
-  return <ContentDashboard />;
+  return <ContentRootAutoEnter />;
 }

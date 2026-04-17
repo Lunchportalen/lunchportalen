@@ -6,7 +6,10 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { isUuid } from "@/lib/agreements/normalize";
+import { applyCompanyLifecycleStatus } from "@/lib/server/superadmin/companyLifecycleStatusApply";
+import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 type AgreementStatus = "ACTIVE" | "PENDING" | "TERMINATED";
@@ -63,6 +66,11 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   const a = s.ctx;
   const deny = requireRoleOr403(a, "api.superadmin.companies.agreement.status.POST", ["superadmin"]);
   if (deny) return deny;
+
+  const uid = safeStr(a.scope?.userId);
+  if (!uid || !(await isSuperadminProfile(uid))) {
+    return jsonErr(a.rid, "Ingen tilgang.", 403, { code: "FORBIDDEN", detail: { reason: "superadmin_required" } });
+  }
 
   const params = await Promise.resolve(ctx.params as any);
   const companyId = safeStr(params?.companyId);
@@ -163,10 +171,28 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
 
     if (upd.error) return jsonErr(a.rid, "Kunne ikke oppdatere status.", 500, { code: "DB_ERROR", detail: upd.error });
 
-    await admin
-      .from("companies")
-      .update({ status: toDbCompanyStatus(next), updated_at: new Date().toISOString() } as any)
-      .eq("id", companyId);
+    const companyNext = toDbCompanyStatus(next);
+    const applied = await applyCompanyLifecycleStatus(admin, a.rid, companyId, companyNext);
+    if (applied.ok === false) return applied.response;
+
+    if (!applied.already) {
+      await logOpsEventBestEffort(admin, {
+        rid: a.rid,
+        actor_user_id: uid,
+        actor_email: a.scope?.email ?? null,
+        actor_role: "superadmin",
+        action: "COMPANY_STATUS_CHANGED",
+        entity_type: "company",
+        entity_id: companyId,
+        summary: `Company status changed: ${applied.companyName || companyId}`,
+        detail: {
+          from: applied.prev,
+          to: applied.next,
+          via: "companies.agreement.status",
+          agreement_id: String(current.id),
+        },
+      });
+    }
 
     const auditOk = await tryAuditMeta(admin, {
       actor_user_id: a.scope?.userId ?? null,

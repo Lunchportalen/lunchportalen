@@ -17,6 +17,11 @@ function validState(): CompanyRegistrationFormState {
     postalCode: "7010",
     postalCity: "Trondheim",
     confirmAuthority: true,
+    weekdayTiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+    deliveryWindowFrom: "11:00",
+    deliveryWindowTo: "13:00",
+    termsBindingMonths: "12",
+    termsNoticeMonths: "3",
   };
 }
 

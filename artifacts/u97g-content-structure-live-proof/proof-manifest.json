@@ -1,0 +1,46 @@
+{
+  "package": "u97g-content-structure-live-proof",
+  "scope": "scoped-baseline-app-lib-subset",
+  "createdBy": "U122 scoped manifest closure",
+  "createdAt": "2026-04-09",
+  "status": "partial",
+  "summary": "Manifest added to bind existing u97g evidence files. This closes the manifest gap only; it does not claim scoped proof completion or verified same-run chain closure.",
+  "screenshots": [
+    "01-document-types-overview.png",
+    "02-compact-page-workspace.png",
+    "03-document-type-dirty-save-state.png",
+    "04-create-dialog-parent-to-compact.png",
+    "05-compact-created-in-tree.png",
+    "06-compact-page-editor.png",
+    "07-create-dialog-compact-to-micro.png",
+    "08-micro-landing-created-in-tree-editor.png",
+    "09-structure-allowed-disallowed-child-proof.png",
+    "10-document-type-effect-in-editor.png",
+    "11-template-rendering-binding-proof.png",
+    "12-current-document-type-binding-proof.png",
+    "13-full-content-tree-editor-after-change.png"
+  ],
+  "gates": {
+    "typecheck": "gate-typecheck.txt",
+    "lint": "gate-lint.txt",
+    "buildEnterprise": "gate-build-enterprise.txt",
+    "testRun": "gate-test-run.txt"
+  },
+  "runtime": {
+    "playwrightOutput": "playwright-u97e-output.txt",
+    "sanityOutput": "sanity-live-output.txt",
+    "bootStdout": "boot-stdout.txt",
+    "healthResponse": "health-response.json",
+    "nodeIds": "node-ids.json"
+  },
+  "chain": {
+    "sameRunEvidence": null,
+    "verified": false
+  },
+  "notes": [
+    "No new evidence files were generated in U122.",
+    "Manifest truthfully references only files that already existed in this package.",
+    "Same-run chain verification remains open.",
+    "This package is still not proof-complete."
+  ]
+}

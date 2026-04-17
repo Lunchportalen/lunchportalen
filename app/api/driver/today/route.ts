@@ -7,8 +7,10 @@ export const revalidate = 0;
 import { type NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import { osloTodayISODate } from "@/lib/date/oslo";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { loadOperativeKitchenOrders } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
 const allowedRoles = ["driver", "superadmin"] as const;
 
@@ -48,10 +50,8 @@ type ApiOk = { ok: true; rid: string; date: string; deliveries: Delivery[] };
 
 /**
  * GET /api/driver/today?date=YYYY-MM-DD
- * - Read-only sjåførvisning
- * - Aggregerer pr lokasjon
- * - Tier: prøver orders.tier hvis finnes, ellers slot "lux" fallback
- * - Kun ACTIVE orders (Avensia: én sannhet)
+ * - Read-only sjåførvisning, samme operative ordregrunnlag som GET /api/kitchen (ACTIVE + day_choices)
+ * - Aggregerer pr lokasjon; basis/luxus-hevristikk kun fra slot-tekst (som kjøkken uten tier-kolonne)
  */
 export async function GET(req: NextRequest) {
   
@@ -62,8 +62,7 @@ export async function GET(req: NextRequest) {
 
   const { rid, scope } = (s as any).ctx;
 
-  // 🔐 Role gate (✅ send ctx, ikke rid)
-  const roleBlock = requireRoleOr403((s as any).ctx, scope?.role ?? null, allowedRoles);
+  const roleBlock = requireRoleOr403((s as any).ctx, [...allowedRoles]);
   if (roleBlock) return roleBlock;
 
   // ?date=YYYY-MM-DD (valgfritt)
@@ -101,67 +100,23 @@ export async function GET(req: NextRequest) {
   const locationId = safeStr((prof as any).location_id);
   if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
 
-  // OBS: orders schema-fasit hos dere har ikke "tier".
-  // Vi prøver "tier" (hvis dere har lagt det til), ellers bruker vi slot som fallback.
-  // Viktig: Supabase feiler hvis vi selekterer en kolonne som ikke finnes.
-  // Derfor: prøv med tier først, og fallback til uten tier ved column-error.
-  let orders: any[] = [];
-  try {
-    let q = admin
-      .from("orders")
-      .select("company_id,location_id,date,slot,tier,status")
-      .eq("date", date)
-      .eq("status", "ACTIVE")
-      .eq("integrity_status", "ok")
-      .eq("company_id", companyId);
+  const snap = await fetchProductionOperativeSnapshotAllowlist(admin as any, { dateISO: date, companyId });
+  const productionFreezeAllowlist = snap.found ? snap.orderIds : undefined;
 
-    if (locationId) q = q.eq("location_id", locationId);
-
-    const { data, error } = await q;
-
-    if (error) {
-      // fallback ved "column tier does not exist"
-      const msg = safeStr((error as any).message).toLowerCase();
-      const maybeMissingTier =
-        msg.includes("column") && msg.includes("tier") && (msg.includes("does not exist") || msg.includes("not exist"));
-
-      if (!maybeMissingTier) {
-        return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: {
-          message: (error as any).message,
-          code: (error as any).code,
-          detail: (error as any).details,
-        } });
-      }
-
-      let q2 = admin
-        .from("orders")
-        .select("company_id,location_id,date,slot,status")
-        .eq("date", date)
-        .eq("status", "ACTIVE")
-        .eq("integrity_status", "ok")
-        .eq("company_id", companyId);
-
-      if (locationId) q2 = q2.eq("location_id", locationId);
-
-      const { data: data2, error: error2 } = await q2;
-
-      if (error2) {
-        return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: {
-          message: (error2 as any).message,
-          code: (error2 as any).code,
-          detail: (error2 as any).details,
-        } });
-      }
-
-      orders = data2 ?? [];
-    } else {
-      orders = data ?? [];
-    }
-  } catch (e: any) {
-    return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, { code: "DB_ERROR", detail: { detail: safeStr(e?.message ?? e) } });
+  const loaded = await loadOperativeKitchenOrders({
+    admin: admin as any,
+    dateISO: date,
+    tenant: { companyId, locationId: locationId || null },
+    productionFreezeAllowlist,
+  });
+  if (loaded.ok === false) {
+    return jsonErr(rid, "Kunne ikke hente ordre for sjåførvisning.", 500, {
+      code: "DB_ERROR",
+      detail: { message: loaded.dbError.message, code: loaded.dbError.code },
+    });
   }
 
-  const rows = orders ?? [];
+  const rows = loaded.operative;
 
   const companyIds = Array.from(
     new Set(rows.map((r: any) => String(r.company_id ?? "").trim()).filter((x) => isUuid(x)))
@@ -209,8 +164,8 @@ export async function GET(req: NextRequest) {
     if (!isUuid(locId)) continue;
 
     const loc = locations.get(locId);
-    const companyId = String(loc?.company_id ?? (r as any).company_id ?? "").trim();
-    const comp = companies.get(companyId);
+    const rowCompanyId = String(loc?.company_id ?? (r as any).company_id ?? "").trim();
+    const comp = companies.get(rowCompanyId);
 
     const cur =
       byLoc.get(locId) ??
@@ -232,14 +187,8 @@ export async function GET(req: NextRequest) {
         totals: { basis: 0, luxus: 0 },
       } satisfies Delivery);
 
-    const tierRaw = safeStr((r as any).tier);
     const slotRaw = safeStr((r as any).slot);
-
-    const tierUpper = tierRaw ? tierRaw.toUpperCase() : "";
-    const isLux =
-      tierUpper === "LUXUS" ||
-      tierUpper === "LUX" ||
-      (!tierUpper && slotRaw.toLowerCase().includes("lux"));
+    const isLux = slotRaw.toLowerCase().includes("lux");
 
     if (isLux) cur.totals.luxus += 1;
     else cur.totals.basis += 1;

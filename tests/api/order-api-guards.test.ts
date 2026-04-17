@@ -49,6 +49,31 @@ vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    from: (table: string) => {
+      if (table === "closed_dates") {
+        return {
+          select: () => ({
+            gte: () => ({
+              lte: () => ({
+                or: () => Promise.resolve({ data: [], error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
+        }),
+      };
+    },
+  }),
+}));
+
 // Avoid hitting real RPC/idempotency in guard tests
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: vi.fn(() => Promise.resolve({ rpc: vi.fn(() => Promise.resolve({ data: null, error: null })) })),
@@ -151,7 +176,7 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
     expect(res.status).toBe(400);
     const json = await readJson(res);
     expect(json?.ok).toBe(false);
-    expect(String(json?.error?.code)).toBe("BAD_DATE");
+    expect(String(json?.code)).toBe("BAD_DATE");
   });
 
   test("returns 200 with orderId when RPC succeeds", async () => {
@@ -204,7 +229,7 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
     const json = await readJson(res);
     expect(json?.ok).toBe(true);
     expect(json?.orderId).toBe("ord-1");
-    expect(json?.status).toBe("ACTIVE");
+    expect(json?.status).toBe("active");
   });
 });
 

@@ -86,11 +86,12 @@ export default async function ControlTowerPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {ctx.company?.name ?? "Firma"} · Kontrolltårn
+              Firmaadmin · {ctx.company?.name ?? "Firma"} · Kontrolltårn
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Operativt kontrolltårn</h1>
             <p className="mt-2 text-neutral-600">
-              Etterspørsel, innkjøp, produksjon og leveranse i én visning. Alt er forslag — du godkjenner og utfører manuelt.
+              Oversikt og forslag for <span className="font-semibold">eget firma</span> — ingen systemutførelse, ingen
+              overstyring av kjøkken eller leveranser. Utførelse skjer utenfor denne flaten, etter avtalt praksis.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

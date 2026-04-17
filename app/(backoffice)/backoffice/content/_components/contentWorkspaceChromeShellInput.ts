@@ -157,6 +157,8 @@ export type ChromeShellProperties = Pick<
   | "handleAiSeoOptimize"
   | "mergedBlockEditorDataTypes"
   | "mergedDocumentTypeDefinitions"
+  | "setSlug"
+  | "setSlugTouched"
 >;
 
 export type ChromeShellTri = Pick<
@@ -412,6 +414,8 @@ export function chromeShellProperties(
   handleAiSeoOptimize: ContentWorkspacePropertiesRailProps["handleAiSeoOptimize"],
   mergedBlockEditorDataTypes: Record<string, BlockEditorDataTypeDefinition> | null,
   mergedDocumentTypeDefinitions: Record<string, DocumentTypeDefinition> | null,
+  setSlug: ContentWorkspacePropertiesRailProps["setSlug"],
+  setSlugTouched: ContentWorkspacePropertiesRailProps["setSlugTouched"],
 ): ChromeShellProperties {
   return {
     inspectorSection,
@@ -434,6 +438,8 @@ export function chromeShellProperties(
     handleAiSeoOptimize,
     mergedBlockEditorDataTypes,
     mergedDocumentTypeDefinitions,
+    setSlug,
+    setSlugTouched,
   };
 }
 

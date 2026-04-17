@@ -1,0 +1,160 @@
+{
+  "page": "/backoffice/content/00000000-0000-4000-8000-00000000c001",
+  "baseURL": "http://localhost:3043",
+  "credentialSource": "canonical_local_provider",
+  "email": "superadmin@lunchportalen.no",
+  "addedBlocks": [
+    "hero_bleed",
+    "cards"
+  ],
+  "persistedApiProof": {
+    "hero_bleed": {
+      "contentData": {
+        "title": "U92-BLEED-1775579917792",
+        "subtitle": "",
+        "ctaPrimary": "",
+        "ctaSecondary": "",
+        "ctaPrimaryHref": "",
+        "ctaSecondaryHref": "",
+        "backgroundImageId": "",
+        "overlayImageId": "",
+        "overlayImageAlt": ""
+      },
+      "settingsData": {
+        "variant": "left",
+        "textAlign": "left",
+        "textPosition": "left",
+        "overlayPosition": "left"
+      },
+      "topLevelKeysExcludingIdType": [
+        "contentData",
+        "settingsData"
+      ]
+    },
+    "cards": {
+      "contentData": {
+        "title": "U92-CARDS-1775579920262",
+        "text": "Samme informasjon til alle, tydelige frister og sporbar bestilling."
+      },
+      "settingsData": {
+        "presentation": "plain"
+      },
+      "structureData": {
+        "items": [
+          {
+            "kicker": "Kontroll",
+            "title": "U92 kort rad",
+            "text": "Én cut-off, ett overblikk og færre avklaringer i hverdagen."
+          },
+          {
+            "kicker": "Ansatte",
+            "title": "Enkel hverdag",
+            "text": "Selvbetjening med tydelig meny og forutsigbare leveranser."
+          },
+          {
+            "kicker": "Drift",
+            "title": "Mindre svinn",
+            "text": "Bestillinger og avbestillinger som faktisk kan styres."
+          }
+        ],
+        "cta": []
+      },
+      "topLevelKeysExcludingIdType": [
+        "contentData",
+        "settingsData",
+        "structureData"
+      ]
+    }
+  },
+  "legacyVsNew": {
+    "note": "Ingen flat hero funnet i initial GET; eksempel under er deterministisk migrering fra samme kontrakt.",
+    "sampleLegacyInput": {
+      "type": "hero",
+      "title": "Flat legacy tittel",
+      "subtitle": "sub",
+      "imageId": "",
+      "ctaLabel": "x",
+      "ctaHref": "/y"
+    },
+    "migrateLegacyFlatRowToEntryLayersOutput": {
+      "contentData": {
+        "title": "Flat legacy tittel",
+        "subtitle": "sub",
+        "ctaLabel": "x",
+        "ctaHref": "/y"
+      },
+      "settingsData": {}
+    },
+    "normalizeBlockOutput": {
+      "id": "blk_ad73573a-2c14-49c7-97e3-06e760d071a0",
+      "type": "hero",
+      "contentData": {
+        "title": "Flat legacy tittel",
+        "subtitle": "sub",
+        "ctaLabel": "x",
+        "ctaHref": "/y"
+      },
+      "settingsData": {}
+    },
+    "preExistingFlatHeroSample": null
+  },
+  "library": {
+    "hero_bleed": {
+      "title": "Hero (kant til kant)",
+      "description": "Kant-til-kant med bakgrunnsbilde, mørk lesbarhetsflate, valgfritt forgrunnsbilde og opptil to CTA-er. Layout-variant styrer tekst og overlay.",
+      "whenToUse": "Bruk til kampanje og sterke forsider når du trenger dramatikk, to knapper og kant-til-kant bildeflate — ikke til rolig innholds-hero.",
+      "differsFrom": "vs hero: Full bleed med overlay og sekundær CTA — ikke den enkle innholdsbredden. · vs hero_full: Mørkere, kampanjeorientert — ikke den åpne full-bredde-gradient-heroen.",
+      "canonTitle": "Hero (kant til kant)"
+    },
+    "cards": {
+      "title": "Kort-seksjon",
+      "description": "Tre verdi-kort med ingress og valgfrie seksjons-CTA-er — for budskap i rader, ikke lokasjonsbevis (bruk «Lokasjonsrutenett» for celler med meta per sted) og ikke hero (bruk hero-variantene øverst).",
+      "whenToUse": "Når du vil forklare fordeler eller temaer i like kort, ikke lokasjonsbevis per celle.",
+      "differsFrom": "vs grid: Verdikort med samme mønster — ikke lokasjonsrutenett med meta per sted. · vs zigzag: Statiske kort — ikke nummerert prosess eller FAQ-steg.",
+      "canonTitle": "Kort-seksjon"
+    }
+  },
+  "runtime": {
+    "hero_bleed": {
+      "alias": "hero_bleed",
+      "propertyEditorComponent": "HeroBleedPropertyEditor",
+      "canvasViewCoupling": "HeroCanvasFrame",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true
+    },
+    "cards": {
+      "alias": "cards",
+      "propertyEditorComponent": "CardsPropertyEditor",
+      "canvasViewCoupling": "CardsCanvasFrame",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true
+    }
+  },
+  "markers": {
+    "bleedTitle": "U92-BLEED-1775579917792",
+    "cardsTitle": "U92-CARDS-1775579920262"
+  },
+  "screenshots": {
+    "blockLibraryFull": "01-block-library-full.png",
+    "simpleInLibrary": "02-simple-block-in-library-hero-bleed.png",
+    "libraryWhenToUseDiffersFrom": "02b-library-whenToUse-differsFrom-visible.png",
+    "structureInLibrary": "03-structure-block-in-library-cards.png",
+    "newSimpleCanvasInspector": "04-new-simple-hero-bleed-canvas-inspector.png",
+    "newStructureCanvasInspector": "05-new-structure-cards-canvas-inspector.png",
+    "defaultsSimple": "06-defaults-proof-simple-hero-bleed.png",
+    "defaultsStructure": "07-defaults-proof-structure-cards.png",
+    "validationRuntime": "08-validation-proof.png",
+    "validationHintsCanon": "08b-validation-hints-from-canonical-rules.png",
+    "dirtySave": "09-dirty-save-proof.png",
+    "reloadPersist": "10-reload-persist-proof.png",
+    "fullCanvasAfter": "11-full-canvas-after-creation.png",
+    "canvasViewSimple": "12-canvas-custom-view-proof-simple-hero-bleed.png",
+    "canvasViewStructure": "13-canvas-custom-view-proof-structure-cards.png",
+    "savedJsonShapeSimple": "14-saved-json-shape-proof-hero-bleed.png",
+    "savedJsonShapeStructure": "15-saved-json-shape-proof-cards.png",
+    "savedJsonBleedFile": "saved-json-shape-hero-bleed.json",
+    "savedJsonCardsFile": "saved-json-shape-cards.json"
+  }
+}

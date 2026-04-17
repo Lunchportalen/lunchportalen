@@ -87,6 +87,141 @@ export async function resolveMediaInNormalizedBlocks(blocks: BlockNode[]): Promi
       await fillUrlFromDedicatedId(data, "backgroundImageId", "backgroundImage");
     }
 
+    if (block.type === "banners" && Array.isArray(data.bannerItems)) {
+      for (const item of data.bannerItems) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "banner_carousel" && Array.isArray(data.slides)) {
+      for (const item of data.slides) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "accordionOrTab" && Array.isArray(data.accordionItems)) {
+      for (const item of data.accordionItems) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "accordion_tabs" && Array.isArray(data.items)) {
+      for (const item of data.items) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "anchorNavigation" && Array.isArray(data.links)) {
+      for (const item of data.links) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "anchor_navigation" && Array.isArray(data.links)) {
+      for (const item of data.links) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "dual_promo_cards" && Array.isArray(data.cards)) {
+      for (const item of data.cards) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          await fillRowUrls(item as MutableRecord);
+        }
+      }
+    }
+
+    if (block.type === "testimonial_block") {
+      if (Array.isArray(data.testimonials)) {
+        for (const item of data.testimonials) {
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            await fillRowUrls(item as MutableRecord);
+          }
+        }
+      }
+      if (typeof data.testimonialsJson === "string" && data.testimonialsJson.trim()) {
+        try {
+          const arr = JSON.parse(data.testimonialsJson) as unknown;
+          if (Array.isArray(arr)) {
+            for (const item of arr) {
+              if (item && typeof item === "object" && !Array.isArray(item)) {
+                await fillRowUrls(item as MutableRecord);
+              }
+            }
+            data.testimonialsJson = JSON.stringify(arr);
+          }
+        } catch {
+          /* leave testimonialsJson unchanged */
+        }
+      }
+    }
+
+    if (block.type === "stats_block") {
+      if (Array.isArray(data.kpis)) {
+        for (const item of data.kpis) {
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            await fillRowUrls(item as MutableRecord);
+          }
+        }
+      }
+      if (typeof data.kpisJson === "string" && data.kpisJson.trim()) {
+        try {
+          const arr = JSON.parse(data.kpisJson) as unknown;
+          if (Array.isArray(arr)) {
+            for (const item of arr) {
+              if (item && typeof item === "object" && !Array.isArray(item)) {
+                await fillRowUrls(item as MutableRecord);
+              }
+            }
+            data.kpisJson = JSON.stringify(arr);
+          }
+        } catch {
+          /* leave kpisJson unchanged */
+        }
+      }
+    }
+
+    if (block.type === "logo_cloud") {
+      for (const n of [1, 2, 3, 4] as const) {
+        const k = `l${n}`;
+        await fillUrlFromDedicatedId(data, k, k);
+      }
+      if (Array.isArray(data.logos)) {
+        for (const item of data.logos) {
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            await fillRowUrls(item as MutableRecord);
+          }
+        }
+      }
+      if (typeof data.logosJson === "string" && data.logosJson.trim()) {
+        try {
+          const arr = JSON.parse(data.logosJson) as unknown;
+          if (Array.isArray(arr)) {
+            for (const item of arr) {
+              if (item && typeof item === "object" && !Array.isArray(item)) {
+                await fillRowUrls(item as MutableRecord);
+              }
+            }
+            data.logosJson = JSON.stringify(arr);
+          }
+        } catch {
+          /* leave logosJson unchanged */
+        }
+      }
+    }
+
     await fillRowUrls(data);
 
     if (Array.isArray(data.steps)) {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { readSupabasePublishedContentPageBySlug } from "@/lib/cms/supabase/readPublishedContentPageBySlug";
 
 export type SuperadminCompaniesCmsCopy = {
   title: string | null;
@@ -39,7 +39,7 @@ function readUiMeta(body: unknown): Record<string, unknown> {
  * Returns null when content is missing. Callers must apply deterministic defaults.
  */
 export async function getSuperadminCompaniesCmsCopy(): Promise<SuperadminCompaniesCmsCopy | null> {
-  const content = await getContentBySlug(SLUG);
+  const content = await readSupabasePublishedContentPageBySlug(SLUG);
   if (!content) return null;
 
   const ui = readUiMeta(content.body);

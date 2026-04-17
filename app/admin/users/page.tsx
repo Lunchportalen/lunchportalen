@@ -170,7 +170,7 @@ export default async function AdminUsersPage() {
     <main className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Admin</div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin</div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Ansatte</h1>
           <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Oversikt over ansatte i ditt firma (RLS). Ingen unntak.</p>
         </div>

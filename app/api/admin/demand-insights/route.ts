@@ -8,7 +8,7 @@ import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import type { WeekdayKeyMonFri } from "@/lib/date/weekdayKeyFromIso";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId, q } from "@/lib/http/routeGuard";
 import { auditAdmin } from "@/lib/audit/actions";
 import { aggregateOrdersByDate, type OrderRowForDemand } from "@/lib/ai/demandData";
 import { forecastDemandV1 } from "@/lib/ai/demandEngine";
@@ -41,15 +41,12 @@ export async function GET(req: NextRequest): Promise<Response> {
   const denyRole = requireRoleOr403(a.ctx, "admin.demand_insights.read", ["company_admin"]);
   if (denyRole) return denyRole;
 
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
-
-  const companyId = safeStr(scope.companyId);
+  const tenant = resolveAdminTenantCompanyId(a.ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const companyId = tenant.companyId;
   const actorUserId = safeStr(scope.userId);
   const actorEmail = scope.email ?? null;
   const locationId = scope.locationId ?? null;
-
-  if (!companyId) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
 
   const days = Math.min(90, Math.max(14, Number(q(req, "days")) || 56));
   const today = osloTodayISODate();

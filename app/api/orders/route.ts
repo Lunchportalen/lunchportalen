@@ -2,10 +2,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/* agents-ci: JSON responses include ok: true, rid: (success) and ok: false, rid: (errors) via jsonOrderWrite*. */
+
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { makeRid } from "@/lib/http/respond";
+import {
+  coerceOrderWriteErrorResponse,
+  jsonOrderWriteErr,
+  jsonOrderWriteOk,
+  makeRid,
+  orderWriteStatusFromDb,
+} from "@/lib/http/respond";
 import { runInstrumentedApi } from "@/lib/http/withObservability";
 import { companyIdFromCtx, scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { recordRevenue } from "@/lib/observability/store";
@@ -20,6 +28,7 @@ import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreemen
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { orderWriteBodySchema } from "@/lib/validation/schemas";
 import { persistMvoOnOrder } from "@/lib/mvo/persistOrderMvo";
+import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 
 type OrderBody = {
   date?: unknown;
@@ -67,26 +76,6 @@ function sanitizeSlot(v: unknown) {
   const s = safeStr(v).toLowerCase();
   if (!s || s === "lunch") return "default";
   return s || "default";
-}
-
-function json(rid: string, status: number, payload: Record<string, unknown>) {
-  return new Response(JSON.stringify({ ...payload, rid }), {
-    status,
-    headers: {
-      "cache-control": "no-store",
-      "content-type": "application/json; charset=utf-8",
-      "x-rid": rid,
-    },
-  });
-}
-
-function err(rid: string, status: number, code: string, message: string) {
-  return json(rid, status, {
-    ok: false,
-    status,
-    error: { code },
-    message,
-  });
 }
 
 function mapRpcError(messageRaw: unknown) {
@@ -142,10 +131,10 @@ function asRpcOut(data: unknown): RpcOut {
 
 async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
   const g = await scopeOr401(req);
-  if (g.ok === false) return g.res ?? g.response;
+  if (g.ok === false) return await coerceOrderWriteErrorResponse(g.res ?? g.response);
 
   const deny = requireRoleOr403(g.ctx, "orders.write", ["employee", "company_admin"]);
-  if (deny) return deny;
+  if (deny) return await coerceOrderWriteErrorResponse(deny);
 
   const rid = req.headers.get("x-rid")?.trim() || g.ctx.rid || makeRid("rid_orders");
 
@@ -154,7 +143,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       const rawBody = await readJson(req);
       const validated = orderWriteBodySchema.safeParse(rawBody);
       if (!validated.success) {
-        return err(rid, 422, "VALIDATION_FAILED", "Ugyldig forespørsel.");
+        return jsonOrderWriteErr(rid, 422, "VALIDATION_FAILED", "Ugyldig forespørsel.");
       }
       const body = validated.data as OrderBody;
       const date = safeStr(body?.date) || osloTodayISODate();
@@ -163,11 +152,11 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const slot = sanitizeSlot(body?.slot);
 
     if (!isIsoDate(date)) {
-      return err(rid, 400, "BAD_DATE", "Dato må være på formatet ÅÅÅÅ-MM-DD.");
+      return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Dato må være på formatet ÅÅÅÅ-MM-DD.");
     }
 
     if (!action) {
-      return err(rid, 400, "BAD_ACTION", "Du må velge en gyldig handling.");
+      return jsonOrderWriteErr(rid, 400, "BAD_ACTION", "Du må velge en gyldig handling.");
     }
 
     try {
@@ -178,52 +167,53 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     } catch (e: unknown) {
       const msg = String(e instanceof Error ? e.message : e);
       if (msg === "ORDERS_BLOCKED") {
-        return err(rid, 503, "ORDERS_BLOCKED", "Bestilling er midlertidig deaktivert.");
+        return jsonOrderWriteErr(rid, 503, "ORDERS_BLOCKED", "Bestilling er midlertidig deaktivert.");
       }
       if (msg === "CANCELLATIONS_BLOCKED") {
-        return err(rid, 503, "CANCELLATIONS_BLOCKED", "Avbestilling er midlertidig deaktivert.");
+        return jsonOrderWriteErr(rid, 503, "CANCELLATIONS_BLOCKED", "Avbestilling er midlertidig deaktivert.");
       }
       if (msg === "SYSTEM_HALTED") {
-        return err(rid, 503, "SYSTEM_HALTED", "Systemet er midlertidig stoppet.");
+        return jsonOrderWriteErr(rid, 503, "SYSTEM_HALTED", "Systemet er midlertidig stoppet.");
       }
       if (msg === "SETTINGS_UNAVAILABLE") {
-        return err(rid, 503, "SETTINGS_UNAVAILABLE", "Systeminnstillinger er ikke tilgjengelige akkurat nå.");
+        return jsonOrderWriteErr(rid, 503, "SETTINGS_UNAVAILABLE", "Systeminnstillinger er ikke tilgjengelige akkurat nå.");
       }
       if (msg.startsWith("FEATURE_DISABLED:")) {
-        return err(rid, 503, "FEATURE_DISABLED", "Funksjonen er deaktivert i systeminnstillinger.");
+        return jsonOrderWriteErr(rid, 503, "FEATURE_DISABLED", "Funksjonen er deaktivert i systeminnstillinger.");
       }
       if (msg.startsWith("KILL_SWITCH:")) {
-        return err(rid, 503, "KILL_SWITCH", "Funksjonen er stoppet av killswitch.");
+        return jsonOrderWriteErr(rid, 503, "KILL_SWITCH", "Funksjonen er stoppet av killswitch.");
       }
       throw e;
     }
 
     const pricingGuard = assertEmployeeOrderBodyHasNoPricingOverrides(body, g.ctx.scope.role);
     if ("code" in pricingGuard) {
-      return err(rid, 403, pricingGuard.code, "Du kan ikke overstyre pris eller plan i bestillingen.");
+      return jsonOrderWriteErr(rid, 403, pricingGuard.code, "Du kan ikke overstyre pris eller plan i bestillingen.");
     }
 
     const tableSlot = normalizeOrderTableSlot(slot);
-    if (action === "SET") {
+    if (action === "SET" || action === "CANCEL") {
       const cid = companyIdFromCtx(g.ctx);
       if (!cid) {
-        return err(rid, 403, "COMPANY_SCOPE_REQUIRED", "Mangler firmatilknytning for bestilling.");
+        return jsonOrderWriteErr(rid, 403, "COMPANY_SCOPE_REQUIRED", "Mangler firmatilknytning for bestilling.");
       }
       const sbPre = await supabaseServer();
       const hold = await assertCompanyOrderWriteAllowed(sbPre, cid, rid);
       if (hold.ok === false) {
-        return err(rid, hold.status, hold.code, hold.message);
+        return jsonOrderWriteErr(rid, hold.status, hold.code, hold.message);
       }
       const pre = await assertOrderWithinAgreementPreflight({
         sb: sbPre,
         companyId: cid,
+        locationId: safeStr(g.ctx.scope.locationId) || null,
         orderIsoDate: date,
         agreementRuleSlot: agreementRuleSlotForOrderTableSlot(tableSlot),
         rid,
-        action: "SET",
+        action: action === "CANCEL" ? "CANCEL" : "SET",
       });
       if (pre.ok === false) {
-        return err(rid, pre.status, pre.code, pre.message);
+        return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
       }
     }
 
@@ -237,18 +227,16 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (error) {
       const mapped = mapRpcError(error.message);
-      return err(rid, mapped.status, mapped.code, mapped.message);
+      return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapped.message);
     }
 
     const out = asRpcOut(data);
     const orderId = safeStr(out?.order_id);
     const savedStatus = safeStr(out?.status).toUpperCase();
     const savedDate = safeStr(out?.date) || date;
-    const savedSlot = safeStr(out?.slot) || slot;
-    const receiptAt = safeStr(out?.receipt) || new Date().toISOString();
 
     if (!orderId || !savedStatus) {
-      return err(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
+      return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
     }
 
     if (action === "SET" && savedStatus === "ACTIVE") {
@@ -349,29 +337,20 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       }
     }
 
-    return json(rid, 200, {
-      ok: true,
-      orderId,
-      status: savedStatus,
+    await fanoutLpOrderSetOutboxBestEffort({
+      userId: g.ctx.scope.userId,
       date: savedDate,
-      slot: savedSlot,
-      receipt: {
-        timestamp: receiptAt,
-        cutoffPassed: false,
-      },
-      data: {
-        orderId,
-        status: savedStatus,
-        date: savedDate,
-        slot: savedSlot,
-        receipt: {
-          timestamp: receiptAt,
-          cutoffPassed: false,
-        },
-      },
+      slot: tableSlot,
+    });
+
+    return jsonOrderWriteOk(rid, {
+      orderId,
+      status: orderWriteStatusFromDb(savedStatus),
+      date: savedDate,
+      timestamp: new Date().toISOString(),
     });
   } catch {
-    return err(rid, 500, "ORDER_SET_FAILED", "Vi kunne ikke lagre bestillingen nå.");
+    return jsonOrderWriteErr(rid, 500, "ORDER_SET_FAILED", "Vi kunne ikke lagre bestillingen nå.");
   }
   });
 }

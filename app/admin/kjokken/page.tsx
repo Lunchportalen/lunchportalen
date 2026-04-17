@@ -45,7 +45,7 @@ export default async function KitchenPage(props: { searchParams?: Record<string,
     return (
       <main className="mx-auto max-w-3xl px-4 py-10">
         <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
-          <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Firmaadmin</h1>
           <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Firmainformasjon og avtale (PDF).</p>
 
           <div className="mt-6 rounded-3xl bg-white p-6 ring-1 ring-[rgb(var(--lp-border))]">

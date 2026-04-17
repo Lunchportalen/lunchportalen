@@ -1,5 +1,6 @@
 "use client";
 
+/** Kanonisk editor-AI / høyre panel: workspace + AI + runtime; ingen duplisert CEO-rad i panelet. */
 import type { ReactNode } from "react";
 import {
   useBellissimaWorkspaceModel,
@@ -8,12 +9,27 @@ import {
 import { BackofficeWorkspaceViewTabs } from "@/components/backoffice/BackofficeWorkspaceViewTabs";
 import type { ContentBellissimaWorkspaceSideAppId } from "@/lib/cms/backofficeWorkspaceContextModel";
 
-export function RightPanel(props: {
+function RightPanelInspectorOnly({ workspaceSlot }: { workspaceSlot: ReactNode }) {
+  return (
+    <aside
+      className="flex h-full min-h-0 min-w-0 flex-col border-t border-slate-300/70 bg-[#f1f3f6] lg:border-t-0 lg:border-l lg:border-slate-300/75"
+      data-lp-right-panel="inspector-only"
+      data-lp-right-panel-detail-rail="integrated"
+    >
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">{workspaceSlot}</div>
+      </div>
+    </aside>
+  );
+}
+
+type RightPanelTabsProps = {
   workspaceSlot: ReactNode;
   aiSlot: React.ReactNode;
   diagnoseSlot: React.ReactNode;
-  ceoSlot: React.ReactNode;
-}) {
+};
+
+function RightPanelWithTabs(props: RightPanelTabsProps) {
   const model = useBellissimaWorkspaceModel();
   const { activeSideApp, setActiveSideApp } = useBellissimaWorkspaceShellState();
   const fallbackTabs: {
@@ -28,69 +44,50 @@ export function RightPanel(props: {
   ];
   const tabs =
     model?.sideApps?.length ? model.sideApps : fallbackTabs;
-  const inspectorSections = model?.inspectorSections ?? [];
 
   return (
     <aside className="flex min-h-0 flex-col border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/22 lg:border-t-0 lg:border-l">
-      <div className="sticky top-0 z-10 border-b border-[rgb(var(--lp-border))] bg-white/96 px-3 py-3 backdrop-blur-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">Inspector</p>
-        <p className="mt-1 text-xs leading-relaxed text-[rgb(var(--lp-muted))]">
-          Arbeidsflate, AI og runtime leser fra samme Bellissima-kontekst. Høyre rail bytter app uten å miste aktiv side
-          eller workspace-visning.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1 text-[10px] font-medium text-[rgb(var(--lp-muted))]">
-          {inspectorSections.map((section) => (
-            <span
-              key={section.id}
-              className={`rounded-full border px-2 py-1 ${
-                section.active
-                  ? "border-slate-300 bg-white text-[rgb(var(--lp-text))]"
-                  : "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/55"
-              }`}
-            >
-              {section.label}
-            </span>
-          ))}
-        </div>
-        <div className="mt-3">
-          <BackofficeWorkspaceViewTabs
-            items={tabs.map((tab) => ({
-              id: tab.id,
-              label: tab.label,
-              description: tab.description,
-              active: tab.active ?? activeSideApp === tab.id,
-              onClick: () => setActiveSideApp(tab.id),
-            }))}
-            ariaLabel="Høyre arbeidsflater"
-            surface="subtle"
-          />
-        </div>
+      <div className="sticky top-0 z-10 border-b border-[rgb(var(--lp-border))]/80 bg-[rgb(var(--lp-card))]/40 px-2 py-2 backdrop-blur-sm">
+        <BackofficeWorkspaceViewTabs
+          items={tabs.map((tab) => ({
+            id: tab.id,
+            label: tab.label,
+            description: tab.description,
+            active: tab.active ?? activeSideApp === tab.id,
+            onClick: () => setActiveSideApp(tab.id),
+          }))}
+          ariaLabel="Høyre arbeidsflater"
+          surface="subtle"
+        />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2.5 sm:p-3">
         {activeSideApp === "workspace" ? <div className="space-y-4">{props.workspaceSlot}</div> : null}
-        {activeSideApp === "ai" ? (
-          <div className="space-y-4">
-            <section className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">
-                Kanonisk editor-AI
-              </p>
-              {props.aiSlot}
-            </section>
-          </div>
-        ) : null}
+        {activeSideApp === "ai" ? <div className="space-y-4">{props.aiSlot}</div> : null}
         {activeSideApp === "runtime" ? (
-          <div className="space-y-3">
-            <section className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">Historikk og runtime</p>
-              <p className="text-xs leading-relaxed text-[rgb(var(--lp-muted))]">
-                Degradert audit, runtime-signaler og historikkstatus samles her i én operatørflate, ikke som spredte varsler
-                i hele editoren.
-              </p>
-            </section>
-            {props.diagnoseSlot}
-          </div>
+          <div className="space-y-3">{props.diagnoseSlot}</div>
         ) : null}
       </div>
     </aside>
+  );
+}
+
+export function RightPanel(props: {
+  workspaceSlot: ReactNode;
+  aiSlot: React.ReactNode;
+  diagnoseSlot: React.ReactNode;
+  ceoSlot: React.ReactNode;
+  /** På dokument-detail: kun sekundær inspector — ingen AI/Runtime-fane-rad. */
+  hideSideAppTabs?: boolean;
+}) {
+  if (props.hideSideAppTabs) {
+    return <RightPanelInspectorOnly workspaceSlot={props.workspaceSlot} />;
+  }
+
+  return (
+    <RightPanelWithTabs
+      workspaceSlot={props.workspaceSlot}
+      aiSlot={props.aiSlot}
+      diagnoseSlot={props.diagnoseSlot}
+    />
   );
 }

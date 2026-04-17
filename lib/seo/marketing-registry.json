@@ -346,6 +346,138 @@
     ],
     "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
     "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  },
+  "/om-oss": {
+    "path": "/om-oss",
+    "title": "Om oss | Lunchportalen",
+    "description": "Lunchportalen leverer firmalunsj med kontroll, forutsigbarhet og mindre administrasjon.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.55,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Om oss", "item": "/om-oss" }
+    ],
+    "intentLinks": [
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/personvern", "label": "Personvern" },
+      { "href": "/vilkar", "label": "Vilkår" },
+      { "href": "/hvordan", "label": "Slik fungerer det" },
+      { "href": "/priser", "label": "Priser for firmalunsj" }
+    ],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
+  },
+  "/personvern": {
+    "path": "/personvern",
+    "title": "Personvern | Lunchportalen",
+    "description": "Slik behandler Lunchportalen personopplysninger — tydelig, praktisk og i tråd med regelverket.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.45,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Personvern", "item": "/personvern" }
+    ],
+    "intentLinks": [
+      { "href": "/vilkar", "label": "Vilkår" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/om-oss", "label": "Om oss" },
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/sikkerhet", "label": "Sikkerhet og datagrunnmur" }
+    ],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/vilkar", "label": "Les vilkår" }
+  },
+  "/vilkar": {
+    "path": "/vilkar",
+    "title": "Vilkår | Lunchportalen",
+    "description": "Vilkår for bruk av Lunchportalen — klare rammer for firmakunder og trygg drift.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": true,
+    "priority": 0.45,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Vilkår", "item": "/vilkar" }
+    ],
+    "intentLinks": [
+      { "href": "/personvern", "label": "Personvern" },
+      { "href": "/kontakt", "label": "Kontakt om firmalunsj" },
+      { "href": "/om-oss", "label": "Om oss" },
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" },
+      { "href": "/system-for-lunsjbestilling", "label": "System for lunsjbestilling" },
+      { "href": "/sikkerhet", "label": "Sikkerhet og datagrunnmur" }
+    ],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/personvern", "label": "Les personvern" }
+  },
+  "/pitch": {
+    "path": "/pitch",
+    "title": "Pitch | Lunchportalen",
+    "description": "Redaksjonelt innhold styres i Umbraco — ikke hardkodet i Next.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": false,
+    "priority": 0.3,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Pitch", "item": "/pitch" }
+    ],
+    "intentLinks": [{ "href": "/", "label": "Forside" }],
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
+  },
+  "/investor": {
+    "path": "/investor",
+    "title": "Investor | Lunchportalen",
+    "description": "Redaksjonelt innhold styres i Umbraco — ikke hardkodet i Next.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": false,
+    "priority": 0.3,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "Investor", "item": "/investor" }
+    ],
+    "intentLinks": [{ "href": "/", "label": "Forside" }],
+    "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
+    "secondaryCta": { "href": "/om-oss", "label": "Om oss" }
+  },
+  "/ai-motor-demo": {
+    "path": "/ai-motor-demo",
+    "title": "AI-motoren — demo | Lunchportalen",
+    "description": "Redaksjonelt innhold styres i Umbraco. Tidligere offentlig demo-side er flyttet hit.",
+    "pageType": "website",
+    "ogImage": "/og/og-default-1200x630.jpg",
+    "isIndexable": false,
+    "priority": 0.25,
+    "changefreq": "monthly",
+    "lastmod": "auto",
+    "breadcrumbs": [
+      { "name": "Forside", "item": "/" },
+      { "name": "AI-motoren demo", "item": "/ai-motor-demo" }
+    ],
+    "intentLinks": [
+      { "href": "/", "label": "Forside" },
+      { "href": "/registrering", "label": "Registrer firma" }
+    ],
+    "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
+    "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
   }
 }
 

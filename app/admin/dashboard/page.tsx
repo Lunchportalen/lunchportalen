@@ -119,7 +119,7 @@ export default async function CompanyAdminDashboardPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="mb-6 flex flex-col gap-2">
-        <div className="text-xs text-[rgb(var(--lp-muted))]">Admin</div>
+        <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin</div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-[rgb(var(--lp-muted))]">Status og nøkkeltall for de siste 14 og 30 dagene.</p>
       </div>

@@ -7,6 +7,7 @@ import {
   denyResponse,
   requireRoleOr403,
   requireCompanyScopeOr403,
+  resolveAdminTenantCompanyId,
   readJson,
   pickRid,
   roleFromCtx,
@@ -135,6 +136,79 @@ describe("routeGuard consistency", () => {
       const out = requireCompanyScopeOr403(ctx);
       expect(out).toBeInstanceOf(Response);
       expect(out!.status).toBe(403);
+    });
+
+    it("(ctx, companyIdExpected): company_admin mismatch → 403", () => {
+      const ctx = makeCtx({
+        scope: {
+          userId: "u1",
+          role: "company_admin",
+          companyId: "c-scope",
+          locationId: null,
+          email: "a@test",
+          sub: "sub_u1",
+        },
+      });
+      const out = requireCompanyScopeOr403(ctx, "c-other");
+      expect(out).toBeInstanceOf(Response);
+      expect(out!.status).toBe(403);
+    });
+  });
+
+  describe("resolveAdminTenantCompanyId", () => {
+    it("company_admin: bruker scope og ignorerer matchende query", () => {
+      const ctx = makeCtx({
+        scope: {
+          userId: "u1",
+          role: "company_admin",
+          companyId: "firm-a",
+          locationId: null,
+          email: "a@test",
+          sub: "sub_u1",
+        },
+      });
+      const req = new NextRequest("http://localhost/api/x?company_id=firm-a");
+      const out = resolveAdminTenantCompanyId(ctx, req);
+      expect(out.ok).toBe(true);
+      if (out.ok) expect(out.companyId).toBe("firm-a");
+    });
+
+    it("company_admin: avviser annet firma i query", () => {
+      const ctx = makeCtx({
+        scope: {
+          userId: "u1",
+          role: "company_admin",
+          companyId: "firm-a",
+          locationId: null,
+          email: "a@test",
+          sub: "sub_u1",
+        },
+      });
+      const req = new NextRequest("http://localhost/api/x?company_id=firm-b");
+      const out = resolveAdminTenantCompanyId(ctx, req);
+      expect(out.ok).toBe(false);
+      if (out.ok === false) expect(out.res.status).toBe(403);
+    });
+
+    it("superadmin: krever company_id i query når scope mangler", () => {
+      const ctx = makeCtx({
+        scope: {
+          userId: "u1",
+          role: "superadmin",
+          companyId: null,
+          locationId: null,
+          email: "s@test",
+          sub: "sub_u1",
+        },
+      });
+      const okReq = new NextRequest("http://localhost/api/x?company_id=firm-x");
+      const ok = resolveAdminTenantCompanyId(ctx, okReq);
+      expect(ok.ok).toBe(true);
+      if (ok.ok) expect(ok.companyId).toBe("firm-x");
+
+      const badReq = new NextRequest("http://localhost/api/x");
+      const bad = resolveAdminTenantCompanyId(ctx, badReq);
+      expect(bad.ok).toBe(false);
     });
   });
 

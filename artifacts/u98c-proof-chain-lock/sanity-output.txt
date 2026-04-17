@@ -1,0 +1,16 @@
+
+> lunchportalen@1.0.0 sanity:live
+> node scripts/sanity-live.mjs
+
+[sanity:live] base = http://localhost:3056
+[sanity:live] env = {
+  SANITY_LIVE_URL: 'http://localhost:3056',
+  PUBLIC_APP_URL: undefined,
+  NEXT_PUBLIC_SITE_URL: undefined,
+  VERCEL_URL: undefined,
+  NEXT_PUBLIC_VERCEL_URL: undefined
+}
+[sanity:live] GET http://localhost:3056/api/health
+[sanity:live] runtime = local_provider
+[sanity:live] CRON_SECRET not set, skipping /api/cron/daily-sanity
+[sanity:live] OK

@@ -16,3 +16,7 @@
 | Ops | Backup/SLA/support | **Åpen** (org) |
 
 **Ingen** av disse er lukket innenfor E0 → **NO-GO** for ubetinget enterprise-live.
+
+---
+
+**Closeout 12 (2026-04-17):** Status verifisert mot repo; ingen av risikoene A1–Ops er **lukket** som enkeltgrep. Se rad-for-rad: `ENTERPRISE_LIVE_E0_CLOSEOUT_12.md`.

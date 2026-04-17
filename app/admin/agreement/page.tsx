@@ -3,7 +3,6 @@ export const revalidate = 0;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-import { headers } from "next/headers";
 import { Suspense } from "react";
 
 import {
@@ -12,6 +11,7 @@ import {
   type AdminContextBlocked,
   type AdminContextOk,
 } from "@/lib/admin/loadAdminContext";
+import { fetchAgreementPageDataForAdmin } from "@/lib/admin/fetchAgreementPageDataServer";
 import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import type { AgreementPageData, DayKey } from "@/lib/admin/agreement/types";
 import { ADMIN_DASHBOARD_HREF } from "@/lib/admin/constants";
@@ -23,12 +23,6 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-type AgreementFetchResult =
-  | { kind: "ok"; data: AgreementPageData; rid: string }
-  | { kind: "error"; message: string; rid: string; errorCode?: string | null };
-
-type HeaderLike = { get(name: string): string | null };
-
 const DAY_LABELS: Record<DayKey, string> = {
   mon: "Man",
   tue: "Tir",
@@ -38,16 +32,6 @@ const DAY_LABELS: Record<DayKey, string> = {
 };
 
 const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-
-function makeRid(prefix = "admin_agreement") {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function getOriginFromHeaders(h: HeaderLike) {
-  const proto = (h.get("x-forwarded-proto") ?? "http").split(",")[0]?.trim() || "http";
-  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(",")[0]?.trim();
-  return host ? `${proto}://${host}` : "";
-}
 
 function formatDate(value: string | null) {
   if (!value) return "Ukjent";
@@ -79,52 +63,18 @@ function statusBadge(status: AgreementPageData["status"]) {
 }
 
 function statusNote(status: AgreementPageData["status"]) {
+  if (status === "ACTIVE") {
+    return "Inngåtte avtalerammer for eget firma (read-only). Endringer skjer via avtalt prosess — ikke fra denne flaten.";
+  }
   if (status === "PAUSED") return "Avtalen er pauset. Visningen er skrivebeskyttet.";
   if (status === "CLOSED") return "Avtalen er avsluttet. Visningen er skrivebeskyttet.";
   if (status === "MISSING_AGREEMENT") return "Firmaet mangler aktiv avtale. Visningen er skrivebeskyttet.";
   if (status === "COMPANY_DISABLED") return "Firmaet er deaktivert. Visningen er skrivebeskyttet.";
-  return "Skrivebeskyttet visning for firmaadmin.";
+  return "Skrivebeskyttet visning.";
 }
 
 function statValue(v: number | null) {
   return v == null ? "Ikke tilgjengelig" : String(v);
-}
-
-async function fetchAgreementServer(companyId?: string | null): Promise<AgreementFetchResult> {
-  const h = await headers();
-  const rid = makeRid();
-  const origin = getOriginFromHeaders(h as unknown as HeaderLike);
-  const cookieHeader = h.get("cookie") ?? "";
-
-  // GET /api/admin/agreement — canonical AgreementPageData (jsonOk { data })
-  const companyParam = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
-  const fetchUrl = `${origin}/api/admin/agreement${companyParam}`;
-
-  try {
-    const res = await fetch(fetchUrl, {
-      cache: "no-store",
-      headers: {
-        cookie: cookieHeader,
-        "x-rid": rid,
-      },
-    });
-
-    const json = await res.json().catch(() => null);
-    const responseRid = String(json?.rid ?? rid);
-
-    if (!json || json.ok !== true) {
-      return {
-        kind: "error",
-        message: json?.message ?? "Kunne ikke hente avtalen. Prøv igjen.",
-        rid: responseRid,
-        errorCode: json?.error ?? "API_ERROR",
-      };
-    }
-
-    return { kind: "ok", data: json.data as AgreementPageData, rid: responseRid };
-  } catch {
-    return { kind: "error", message: "Kunne ikke hente avtalen. Prøv igjen.", rid, errorCode: "FETCH_FAILED" };
-  }
 }
 
 function StatItem({ label, value }: { label: string; value: string }) {
@@ -309,7 +259,9 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="lp-h2">Operativt overblikk</h2>
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Ukevisning og driftstall (read-only).</div>
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+              Tall og status for innlogget firma — read-only, samme operative filter som ordre-/avtale-API.
+            </div>
           </div>
           <SupportReportButton
             reason="ADMIN_AGREEMENT_REPORT"
@@ -350,6 +302,7 @@ function blockedTitle(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
   if (ctx.blocked === "MISSING_COMPANY_ID") return "Mangler firmatilknytning";
   if (ctx.blocked === "COMPANY_INACTIVE") return "Firma er ikke aktivt";
+  if (ctx.blocked === "FORBIDDEN") return "Ikke firmaadmin-flate for denne rollen";
   return "Systemfeil";
 }
 
@@ -357,6 +310,8 @@ function blockedBody(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Kontoen er deaktivert og har ikke tilgang til administrasjon.";
   if (ctx.blocked === "MISSING_COMPANY_ID") return "Kontoen er registrert som company_admin, men mangler company_id.";
   if (ctx.blocked === "COMPANY_INACTIVE") return "Tilgang er begrenset fordi firma ikke er aktivt.";
+  if (ctx.blocked === "FORBIDDEN")
+    return "Avtalevisning i /admin er for firmaadmin med firmascope. Systemstyring og godkjenning skjer i superadmin.";
   return "Vi klarte ikke å hente nødvendig kontekst akkurat nå.";
 }
 
@@ -364,11 +319,7 @@ function blockedLevel(ctx: AdminContextBlocked): "followup" | "critical" {
   return ctx.blocked === "COUNTS_FAILED" ? "critical" : "followup";
 }
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: { companyId?: string | string[] | null };
-}) {
+export default async function Page() {
   const ctx = await loadAdminContext({
     nextPath: "/admin/agreement",
     enforceCompanyAdmin: true,
@@ -402,14 +353,14 @@ export default async function Page({
     );
   }
 
-  const companyIdParam = Array.isArray(searchParams?.companyId)
-    ? searchParams?.companyId?.[0] ?? null
-    : searchParams?.companyId ?? null;
-
-  const result = await fetchAgreementServer(companyIdParam);
+  const result = await fetchAgreementPageDataForAdmin(null);
 
   return (
-    <AdminPageShell title="Avtale" subtitle="Systemfasit for avtale, levering og kontroll." actions={null}>
+    <AdminPageShell
+      title="Avtale"
+      subtitle="Avtalerammer og status for eget firma — read-only, samme operative kilde som drift."
+      actions={null}
+    >
       <Suspense fallback={<AgreementLoading />}>
         {result.kind === "error" ? (
           <AgreementError message={result.message} rid={result.rid} errorCode={result.errorCode ?? "API_ERROR"} />

@@ -89,6 +89,7 @@ type AiActionMemoryTable = {
 const PUBLIC_TABLE_NAMES = [
   "ab_experiments",
   "ab_variants",
+  "agreement_day_slot_rules",
   "agreements",
   "ai_action_memory",
   "ai_alerts",
@@ -124,6 +125,7 @@ const PUBLIC_TABLE_NAMES = [
   "company_billing_accounts",
   "company_current_agreement",
   "company_current_agreement_rules",
+  "closed_dates",
   "company_deletions",
   "company_invites",
   "company_locations",
@@ -183,6 +185,7 @@ const PUBLIC_TABLE_NAMES = [
   "ops_events",
   "outbox",
   "profiles",
+  "production_operative_snapshots",
   "quality_reports",
   "repair_jobs",
   "saas_subscriptions",

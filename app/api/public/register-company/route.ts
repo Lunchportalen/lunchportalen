@@ -7,6 +7,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { parseRegistrationPlanPayload } from "@/lib/registration/weekdayMealTiers";
 
 type RegisterBody = {
   orgnr?: unknown;
@@ -36,6 +37,11 @@ type RegisterBody = {
   postalCity?: unknown;
   poststed?: unknown;
   city?: unknown;
+  /** Obligatorisk samtykke — kun eksplisitt `true` godtas. */
+  consent_accepted?: unknown;
+  consentAccepted?: unknown;
+  accept?: unknown;
+  confirmAuthority?: unknown;
 };
 
 type RegisterRpcOut = {
@@ -59,6 +65,16 @@ function asInt(v: unknown) {
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function consentExplicitlyAccepted(body: RegisterBody): boolean {
+  const candidates = [
+    body.consent_accepted,
+    body.consentAccepted,
+    body.accept,
+    body.confirmAuthority,
+  ];
+  return candidates.some((v) => v === true);
 }
 
 function redactEmail(raw: string) {
@@ -144,6 +160,10 @@ export async function POST(req: NextRequest) {
       return err(rid, 400, "BAD_JSON", "Vi kunne ikke motta registreringen.");
     }
 
+    if (!consentExplicitlyAccepted(body)) {
+      return err(rid, 400, "CONSENT_REQUIRED", "Du må bekrefte samtykke før innsending.");
+    }
+
     const orgnr = digitsOnly(body.orgnr);
     const companyName = safeStr(body.company_name ?? body.companyName ?? body.name);
     const employeeCount = asInt(body.employee_count ?? body.employeesCount);
@@ -167,6 +187,11 @@ export async function POST(req: NextRequest) {
     if (!addressLine) return err(rid, 400, "ADDRESS_LINE_REQUIRED", "Adresse må fylles ut.");
     if (!/^\d{4}$/.test(postalCode)) return err(rid, 400, "POSTAL_CODE_INVALID", "Postnummer må være 4 siffer.");
     if (!postalCity) return err(rid, 400, "POSTAL_CITY_REQUIRED", "Poststed må fylles ut.");
+
+    const plan = parseRegistrationPlanPayload(body as Record<string, unknown>);
+    if (plan.ok === false) {
+      return err(rid, 400, plan.code, plan.message);
+    }
 
     const admin = supabaseAdmin();
     const { data, error } = await admin.rpc("lp_company_register", {
@@ -194,13 +219,54 @@ export async function POST(req: NextRequest) {
       return err(rid, 500, "REGISTER_BAD_RESPONSE", "Registreringen kunne ikke fullføres nå.");
     }
 
+    const { data: regRow, error: regErr } = await admin
+      .from("company_registrations")
+      .select("company_id,created_at")
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (regErr || !regRow || !safeStr((regRow as any)?.company_id)) {
+      maybeLog(rid, contactEmail, "REGISTER_PERSISTENCE_FAILED");
+      return err(
+        rid,
+        500,
+        "REGISTER_PERSISTENCE_FAILED",
+        "Registreringen ble ikke bekreftet lagret. Prøv igjen eller kontakt support.",
+      );
+    }
+
+    const { error: planErr } = await admin
+      .from("company_registrations")
+      .update({
+        weekday_meal_tiers: plan.weekday_meal_tiers as unknown as Record<string, string>,
+        delivery_window_from: plan.commercial.delivery_window_from,
+        delivery_window_to: plan.commercial.delivery_window_to,
+        terms_binding_months: plan.commercial.terms_binding_months,
+        terms_notice_months: plan.commercial.terms_notice_months,
+      })
+      .eq("company_id", companyId);
+
+    if (planErr) {
+      maybeLog(rid, contactEmail, "REGISTER_PLAN_UPDATE_FAILED");
+      return err(
+        rid,
+        500,
+        "REGISTER_PLAN_UPDATE_FAILED",
+        "Registreringen ble ikke lagret med måltidsplan. Prøv igjen eller kontakt support.",
+      );
+    }
+
     maybeLog(rid, contactEmail, "OK");
 
     return json(rid, 200, {
       ok: true,
       companyId,
+      /** PK i `company_registrations` = `company_id` (samme som RPC). */
+      registrationId: companyId,
+      persisted: true,
       receipt: {
-        message: "Registreringen er mottatt.",
+        message: "Registreringen er lagret.",
+        createdAt: safeStr((regRow as any)?.created_at ?? ""),
       },
     });
   } catch {

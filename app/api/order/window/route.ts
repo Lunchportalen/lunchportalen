@@ -18,7 +18,7 @@ import { opsLog } from "@/lib/ops/log";
 import { canSeeNextWeek, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getProductPlan } from "@/lib/cms/getProductPlan";
-import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
+import { getMenusByMealTypesWithFetchStatus } from "@/lib/cms/getMenusByMealTypes";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -26,6 +26,7 @@ import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import { parseMealContractFromAgreementJson, type StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
 
 /* =========================================================
    Types
@@ -499,6 +500,8 @@ type DayContext = {
   mealContract: StoredMealContract | null;
   menuByMealType: Map<string, CmsMenuByMealType>;
   productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null };
+  /** Samme operative `public.closed_dates` som order create/cancel (server-only). */
+  operativeClosedReasonByDate?: Map<string, string>;
 };
 
 export function buildDayModel(ctx: DayContext) {
@@ -514,6 +517,7 @@ export function buildDayModel(ctx: DayContext) {
     mealContract,
     menuByMealType,
     productPlans,
+    operativeClosedReasonByDate,
   } = ctx;
 
   const dayKey = weekdayKeyFromISO(date);
@@ -521,10 +525,13 @@ export function buildDayModel(ctx: DayContext) {
   const tier: Tier | null = (dayTiers as any)[dayKey] ?? null;
   const isDeliveryDay = Array.isArray(deliveryDays) ? deliveryDays.includes(dayKey) : false;
 
-  const isEnabled = Boolean(agreementUsable && isDeliveryDay && tier);
+  const agreementDayOk = Boolean(agreementUsable && isDeliveryDay && tier);
+  const operativeClosedReason = operativeClosedReasonByDate?.get(date) ?? null;
+  const operativeClosed = operativeClosedReason != null;
+  const isEnabled = agreementDayOk && !operativeClosed;
 
-  const cmsTierChoices = isEnabled && tier ? choicesFromCmsTier(tier, productPlans, menuByMealType) : [];
-  const agreementChoicesRaw = isEnabled && tier ? getChoicesForTier(agreementForChoices, tier) : [];
+  const cmsTierChoices = agreementDayOk && tier ? choicesFromCmsTier(tier, productPlans, menuByMealType) : [];
+  const agreementChoicesRaw = agreementDayOk && tier ? getChoicesForTier(agreementForChoices, tier) : [];
   const agreementChoices: Choice[] = agreementChoicesRaw.length
     ? agreementChoicesRaw.map((c) => {
         const nk = normalizeMealTypeKey((c as any).key);
@@ -542,7 +549,7 @@ export function buildDayModel(ctx: DayContext) {
     ? agreementChoices
     : cmsTierChoices.length
       ? cmsTierChoices
-      : isEnabled && tier
+      : agreementDayOk && tier
         ? fallbackChoicesForTier(tier, null)
         : [];
 
@@ -571,6 +578,7 @@ export function buildDayModel(ctx: DayContext) {
 
   const lockReason =
     dateLocked ? "CUTOFF" :
+    operativeClosed ? "CLOSED_DATE" :
     !company.canEditOrders ? "COMPANY" :
     !agreementUsable ? "COMPANY" :
     null;
@@ -593,7 +601,7 @@ export function buildDayModel(ctx: DayContext) {
     date,
     weekday: dayKey,
 
-    isLocked: dateLocked || !company.canEditOrders || !agreementUsable,
+    isLocked: dateLocked || !company.canEditOrders || !agreementUsable || operativeClosed,
     isEnabled,
     lockReason,
 
@@ -711,7 +719,9 @@ export async function GET(req: NextRequest) {
     if (mealContract?.plan === "luxus") {
       for (const v of Object.values(mealContract.menu_per_day)) mealKeys.add(normalizeMealTypeKey(v));
     }
-    const menuByMealType = await getMenusByMealTypes([...mealKeys]);
+    const { map: menuByMealType, fetchFailed: menuSanityFetchFailed } = await getMenusByMealTypesWithFetchStatus([
+      ...mealKeys,
+    ]);
 
     const ordersByDateOrResponse = await loadOrdersByDate(supabaseServer, sc, dates, rid);
     if (ordersByDateOrResponse instanceof Response) return ordersByDateOrResponse;
@@ -733,6 +743,18 @@ export async function GET(req: NextRequest) {
 
     const agreementForChoices = await loadAgreementForChoices(admin, sc, agreementUsable);
 
+    const closedRes = await loadOperativeClosedDatesReasonsInRange({
+      companyId: sc.company_id,
+      locationId: sc.location_id,
+      fromIso: fromISO,
+      toIso: toISO,
+      rid,
+    });
+    if (closedRes.ok === false) {
+      return jsonErr(rid, closedRes.message, closedRes.status, closedRes.code);
+    }
+    const operativeClosedReasonByDate = closedRes.byDate;
+
     const days = dates.map((date) =>
       buildDayModel({
         date,
@@ -746,8 +768,22 @@ export async function GET(req: NextRequest) {
         mealContract,
         menuByMealType,
         productPlans,
+        operativeClosedReasonByDate,
       })
     );
+
+    const osloHourForUrgency = Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Oslo",
+        hour: "2-digit",
+        hour12: false,
+      })
+        .formatToParts(now)
+        .find((p) => p.type === "hour")?.value ?? "99",
+    );
+    const todayCutoffStatus = cutoffStatusForDate(today);
+    const weekOrderingAllowed = Boolean(agreementUsable && company.canEditOrders);
+    const orderingUrgencyHint = todayCutoffStatus === "TODAY_OPEN" && osloHourForUrgency === 7;
 
     return jsonOk(
       rid,
@@ -766,6 +802,12 @@ export async function GET(req: NextRequest) {
           delivery_days: deliveryDays,
         },
 
+        /** Serverfasit for /week-UI: ikke re-konstruer i klient. */
+        serverOsloDate: today,
+        weekOrderingAllowed,
+        todayCutoffStatus,
+        orderingUrgencyHint,
+
         range: { from: fromISO, to: toISO },
 
         serverNow: now.toISOString(),
@@ -776,6 +818,9 @@ export async function GET(req: NextRequest) {
           nextWeekStart: nextWeekStartISO,
           canSeeNextWeek: openNextWeek,
         },
+
+        /** Klient skal skille «ingen CMS-data» fra «CMS-kall feilet». */
+        menuSanityFetchFailed,
 
         days,
       },

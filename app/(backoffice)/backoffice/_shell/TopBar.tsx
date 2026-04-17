@@ -13,6 +13,7 @@ import {
   isBackofficeNavActive,
   type BackofficeNavGroupId,
 } from "@/lib/cms/backofficeExtensionRegistry";
+import { resolveBackofficeContentRoute } from "@/lib/cms/backofficeContentRoute";
 import { Icon } from "@/components/ui/Icon";
 
 /**
@@ -59,6 +60,102 @@ export default function TopBar() {
     [localModules]
   );
   const activeModuleLabel = ext?.label ?? activeSection.label;
+
+  const contentRoute = resolveBackofficeContentRoute(pathname);
+  const isContentDetailEditor = contentRoute.kind === "detail";
+
+  /** Content page editor: én kompakt rad — seksjon + moduler. Ingen dashboard-shelf. */
+  if (isContentDetailEditor) {
+    return (
+      <header className="lp-motion-card flex shrink-0 flex-col border-b border-white/10 bg-[rgb(var(--lp-chrome-bg))]/92 text-white backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 px-3 py-2 sm:px-4">
+          <label htmlFor="bo-section" className="sr-only">
+            Seksjon
+          </label>
+          <select
+            id="bo-section"
+            value={activeGroup}
+            onChange={(e) => setActiveGroup(e.target.value as BackofficeNavGroupId)}
+            className="min-h-10 shrink-0 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-w-[11rem]"
+            aria-label="Velg backoffice-seksjon"
+          >
+            {BACKOFFICE_SECTIONS.map((section) => (
+              <option key={section.id} value={section.id} className="bg-slate-900 text-white">
+                {section.label}
+              </option>
+            ))}
+          </select>
+          <span className="hidden min-w-0 max-w-[10rem] truncate text-xs text-white/65 sm:inline" title={activeModuleLabel}>
+            {activeModuleLabel}
+          </span>
+          <nav
+            className="flex min-h-0 flex-1 flex-wrap items-center gap-1"
+            aria-label={`Backoffice-moduler — ${activeSection.label}`}
+          >
+            {sectionEntry ? (
+              <Link
+                href={sectionEntry.href}
+                className={`lp-motion-btn relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-semibold text-white/95 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                  isBackofficeNavActive(sectionEntry.href, pathname)
+                    ? "border-white/30 bg-white/12"
+                    : "border-white/10 bg-white/5"
+                }`}
+              >
+                <Icon name={sectionEntry.iconName} size="sm" />
+                <span className="whitespace-nowrap">{activeSection.label}</span>
+              </Link>
+            ) : null}
+            {visibleModules.map((tab) => {
+              const isActive = isBackofficeNavActive(tab.href, pathname);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`lp-motion-btn relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-white/90 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                    isActive ? "bg-white/12 text-white" : ""
+                  }`}
+                >
+                  <Icon name={tab.iconName} size="sm" />
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                  {isActive ? (
+                    <span
+                      className="lp-motion-btn absolute bottom-1 left-2 right-2 h-0.5 rounded-full bg-[var(--lp-hotpink)]"
+                      aria-hidden
+                    />
+                  ) : null}
+                </Link>
+              );
+            })}
+            {overflowModules.length > 0 ? (
+              <details className="group relative">
+                <summary className="lp-motion-btn flex list-none cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-white/90 hover:bg-white/10 [&::-webkit-details-marker]:hidden">
+                  Flere
+                  <Icon name="chevronDown" size="sm" />
+                </summary>
+                <div className="absolute left-0 top-full z-40 mt-1 flex min-w-[14rem] flex-col rounded-xl border border-white/10 bg-slate-900/98 p-1 shadow-xl backdrop-blur-md">
+                  {overflowModules.map((tab) => {
+                    const isActive = isBackofficeNavActive(tab.href, pathname);
+                    return (
+                      <Link
+                        key={tab.href}
+                        href={tab.href}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ${
+                          isActive ? "bg-white/15 text-white" : "text-white/90 hover:bg-white/10"
+                        }`}
+                      >
+                        <Icon name={tab.iconName} size="sm" />
+                        <span className="whitespace-nowrap">{tab.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </details>
+            ) : null}
+          </nav>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="lp-motion-card flex shrink-0 flex-col border-b border-white/10 bg-[rgb(var(--lp-chrome-bg))]/92 text-white backdrop-blur-md">

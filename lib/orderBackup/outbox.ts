@@ -3,6 +3,7 @@ import "server-only";
 
 import { sendMail } from "@/lib/orderBackup/smtp";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { opsLog } from "@/lib/ops/log";
 import type { OrderBackupInput } from "./types";
 
 export type OutboxStatus = "PENDING" | "PROCESSING" | "SENT" | "FAILED" | "FAILED_PERMANENT";
@@ -123,9 +124,72 @@ export async function upsertOutboxEvent(eventKey: string, payload: OrderBackupIn
       const { fanOutOutboxInserted } = await import("@/lib/infra/outboxQueueBridge");
       await fanOutOutboxInserted(key);
     } catch (e) {
-      outboxLog("error", "queue_fanout_failed", { eventKey: key, message: errString(e) });
+      const message = errString(e);
+      outboxLog("error", "queue_fanout_failed", { eventKey: key, message });
+      opsLog("order.outbox.queue_fanout_failed", { event_key: key, detail: message });
     }
   }
+}
+
+/**
+ * Etter vellykket `lp_order_set`: RPC har allerede skrevet `public.outbox` med `event_key`
+ * `order.set:<userId>:<date>:<slot>`. Dette er kun valgfri wake mot kø/cron — aldri brukerfeil.
+ */
+export async function fanoutLpOrderSetOutboxBestEffort(p: {
+  userId: string | null | undefined;
+  date: string;
+  slot: string;
+}): Promise<void> {
+  const uid = safeStr(p.userId);
+  const date = safeStr(p.date);
+  const slot = safeStr(p.slot);
+  if (!uid || !date) return;
+  const key = `order.set:${uid}:${date}:${slot}`;
+  try {
+    const { fanOutOutboxInserted } = await import("@/lib/infra/outboxQueueBridge");
+    await fanOutOutboxInserted(key);
+  } catch (e) {
+    const message = errString(e);
+    outboxLog("error", "order_outbox_rpc_fanout_failed", { event_key: key, message });
+    opsLog("order.outbox.rpc_fanout_failed", { event_key: key, detail: message });
+  }
+}
+
+/**
+ * `POST /api/order/cancel` (day_choice): persisterer canonical `public.outbox` etter verifisert ordre-rad.
+ * Kaster ved DB-feil — HTTP-laget skal ikke returnere suksess uten vellykket outbox-skriving.
+ */
+export async function persistDayChoiceOrderCancelOutbox(p: {
+  dbEventKey: string;
+  rid: string;
+  orderId: string;
+  companyId: string;
+  locationId: string;
+  userId: string;
+  userEmail: string | null;
+  date: string;
+  orderStatus: string;
+}): Promise<void> {
+  const key = safeStr(p.dbEventKey);
+  if (!key) throw new Error("dbEventKey required");
+
+  const ts = new Date().toISOString();
+  const payload: OrderBackupInput = {
+    eventType: "ORDER_CANCELLED",
+    rid: p.rid,
+    eventKey: key,
+    userId: p.userId,
+    userEmail: p.userEmail,
+    companyId: p.companyId,
+    locationId: p.locationId,
+    date: p.date,
+    status: p.orderStatus,
+    orderId: p.orderId,
+    timestampISO: ts,
+    extra: { source: "day_choice_http" },
+  };
+
+  await upsertOutboxEvent(key, payload);
 }
 
 async function markOutboxSentById(outboxId: string, messageId: string | null = null) {

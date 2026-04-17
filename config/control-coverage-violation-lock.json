@@ -1,0 +1,6 @@
+{
+  "note": "Must match sorted violation paths from npm run verify:control-coverage. Empty = zero tolerance. Remove paths when fixed.",
+  "version": 1,
+  "ai": [],
+  "cms": []
+}

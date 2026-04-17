@@ -7,14 +7,22 @@ type AgreementRow = {
   id: string;
   company_id: string;
   company_name: string;
+  company_status?: string | null;
   location_id: string | null;
   status: string;
   tier: string;
   delivery_days: string[];
+  starts_at?: string | null;
+  ends_at?: string | null;
   created_at: string | null;
   updated_at: string | null;
   activated_at?: string | null;
   rejection_reason?: string | null;
+  ledger_pending_agreement_id?: string | null;
+  ledger_active_agreement_id?: string | null;
+  pipeline_stage_label?: string;
+  next_label?: string;
+  next_href?: string;
 };
 
 type Initial =
@@ -46,6 +54,24 @@ function statusLabel(status: string) {
   if (s === "PAUSED") return "Pause";
   if (s === "TERMINATED") return "Avsluttet";
   return s || "Ukjent";
+}
+
+function companyStatusLabel(raw: string | null | undefined) {
+  const s = safeStr(raw).toUpperCase();
+  if (s === "ACTIVE") return "Aktiv";
+  if (s === "PENDING") return "Venter";
+  if (s === "PAUSED") return "Pauset";
+  if (s === "CLOSED") return "Stengt";
+  return s || "—";
+}
+
+function companyStatusPillClass(raw: string | null | undefined) {
+  const s = safeStr(raw).toUpperCase();
+  if (s === "ACTIVE") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
+  if (s === "PENDING") return "bg-neutral-50 text-neutral-800 ring-1 ring-neutral-200";
+  if (s === "PAUSED") return "bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200";
+  if (s === "CLOSED") return "bg-red-50 text-red-900 ring-1 ring-red-200";
+  return "bg-neutral-50 text-neutral-700 ring-1 ring-neutral-200";
 }
 
 function formatTs(v: string | null) {
@@ -103,7 +129,8 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
           return;
         }
 
-        setRows(Array.isArray(json.data?.agreements) ? json.data!.agreements! : []);
+        const list = Array.isArray(json.data?.agreements) ? json.data!.agreements! : [];
+        setRows(list as AgreementRow[]);
       } catch {
         setMsg("Kunne ikke hente avtaler.");
       }
@@ -125,8 +152,11 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-amber-50 text-amber-950 ring-1 ring-amber-200/80 px-4 py-3 text-sm">
-        Superadmin kan ikke endre avtalen – kun godkjenne eller avslå (og pause aktive ledger-avtaler).
+      <div className="rounded-2xl bg-amber-50 text-amber-950 ring-1 ring-amber-200/80 px-4 py-3 text-sm space-y-1">
+        <p>Superadmin: godkjenn eller avslå PENDING, pause ACTIVE — alt server-side på <span className="font-mono">public.agreements</span>.</p>
+        <p className="text-xs text-amber-950/90">
+          Avtalestatus er adskilt fra <span className="font-mono">companies.status</span>. Ledger PAUSED har ingen definert resume-RPC i migrasjonene.
+        </p>
       </div>
 
       <section className="lp-card lp-card--elevated">
@@ -171,14 +201,19 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
           ) : null}
 
           <div className="overflow-x-auto max-w-full">
-            <table className="min-w-[720px] w-full text-sm">
+            <table className="min-w-[1040px] w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold text-neutral-600">
+                  <th className="py-2 pr-3">Avtale</th>
                   <th className="py-2 pr-3">Firma</th>
+                  <th className="py-2 pr-3">Firmastatus</th>
+                  <th className="py-2 pr-3">Avtalestatus</th>
+                  <th className="py-2 pr-3">Start / slutt</th>
+                  <th className="py-2 pr-3 max-w-[220px]">Operativ fase</th>
+                  <th className="py-2 pr-3 max-w-[200px]">Neste steg</th>
                   <th className="py-2 pr-3">Plan</th>
                   <th className="py-2 pr-3">Leveringsdager</th>
                   <th className="py-2 pr-3">Opprettet</th>
-                  <th className="py-2 pr-3">Status</th>
                   <th className="py-2 pr-3">Detaljer</th>
                 </tr>
               </thead>
@@ -187,8 +222,43 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-t border-black/5">
                     <td className="py-3 pr-3">
+                      <div className="font-mono text-xs text-neutral-800">{r.id}</div>
+                    </td>
+                    <td className="py-3 pr-3">
                       <div className="font-semibold text-neutral-900">{r.company_name}</div>
                       <div className="mt-1 text-xs lp-muted break-all">{r.company_id}</div>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <span
+                        className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", companyStatusPillClass(r.company_status)].join(
+                          " "
+                        )}
+                      >
+                        {companyStatusLabel(r.company_status)}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-black/10 bg-white/70">
+                        {statusLabel(r.status)}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-3 whitespace-nowrap text-xs">
+                      <div>{formatTs(r.starts_at ?? null)}</div>
+                      <div className="mt-0.5 lp-muted">→ {formatTs(r.ends_at ?? null)}</div>
+                    </td>
+                    <td className="max-w-[220px] py-3 pr-3 text-xs leading-snug text-neutral-800">
+                      {safeStr(r.pipeline_stage_label) || "—"}
+                    </td>
+                    <td className="max-w-[200px] py-3 pr-3 text-xs">
+                      <div className="text-neutral-800">{safeStr(r.next_label) || "Åpne"}</div>
+                      <div className="mt-2">
+                        <Link
+                          href={safeStr(r.next_href) || `/superadmin/agreements/${encodeURIComponent(r.id)}`}
+                          className="inline-flex rounded-xl border bg-white px-2 py-1 text-[11px] font-semibold hover:bg-neutral-50"
+                        >
+                          Gå til handling →
+                        </Link>
+                      </div>
                     </td>
 
                     <td className="py-3 pr-3">{safeStr(r.tier) || "-"}</td>
@@ -196,12 +266,6 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
                       {Array.isArray(r.delivery_days) && r.delivery_days.length > 0 ? r.delivery_days.join(", ") : "-"}
                     </td>
                     <td className="py-3 pr-3 whitespace-nowrap">{formatTs(r.created_at)}</td>
-
-                    <td className="py-3 pr-3">
-                      <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-black/10 bg-white/70">
-                        {statusLabel(r.status)}
-                      </span>
-                    </td>
 
                     <td className="py-3 pr-3">
                       <Link href={`/superadmin/agreements/${r.id}`} className="lp-btn lp-btn--secondary inline-flex">
@@ -213,7 +277,7 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
 
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-sm lp-muted">
+                    <td colSpan={11} className="py-6 text-sm lp-muted">
                       Ingen treff.
                     </td>
                   </tr>

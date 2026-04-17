@@ -163,7 +163,7 @@ export default function PeopleClient({
       <section className="lp-card p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="text-xs text-[rgb(var(--lp-muted))]">Admin · {companyName} · Ansatte</div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin · {companyName} · Ansatte</div>
             <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kun ansatte i ditt firma vises.</div>
           </div>
           {viewerEmail ? <div className="text-xs text-[rgb(var(--lp-muted))]">Innlogget: {viewerEmail}</div> : null}

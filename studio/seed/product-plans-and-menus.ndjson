@@ -1,0 +1,8 @@
+{"_type":"productPlan","_id":"productPlan-basis","name":"basis","price":90,"allowedMeals":["salatbar","paasmurt","varmmat"],"rules":{"allowDailyVariation":false}}
+{"_type":"productPlan","_id":"productPlan-luxus","name":"luxus","price":130,"allowedMeals":["salatbar","paasmurt","varmmat","sushi","pokebowl","thaimat"],"rules":{"allowDailyVariation":true}}
+{"_type":"menu","_id":"menu-salatbar","mealType":"salatbar","title":"Salatbar","description":"Dagens salatbar.","allergens":[]}
+{"_type":"menu","_id":"menu-paasmurt","mealType":"paasmurt","title":"Påsmurt","description":"Dagens påsmurt.","allergens":["Gluten","Melk"]}
+{"_type":"menu","_id":"menu-varmmat","mealType":"varmmat","title":"Varmmat","description":"Dagens varmmat.","allergens":[]}
+{"_type":"menu","_id":"menu-sushi","mealType":"sushi","title":"Sushi","description":"Dagens sushi.","allergens":["Fisk","Soya","Sesam"]}
+{"_type":"menu","_id":"menu-pokebowl","mealType":"pokebowl","title":"Pokébowl","description":"Dagens pokébowl.","allergens":["Fisk","Soya"]}
+{"_type":"menu","_id":"menu-thaimat","mealType":"thaimat","title":"Thaimat","description":"Dagens thaimat.","allergens":["Peanøtter"]}

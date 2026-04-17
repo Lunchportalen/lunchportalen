@@ -1,0 +1,57 @@
+name: CUA policy merge (Python)
+
+on:
+  push:
+    paths:
+      - "cua/**"
+      - ".github/workflows/policy-merge.yml"
+  pull_request:
+    paths:
+      - "cua/**"
+      - ".github/workflows/policy-merge.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cua
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install build frontend
+        run: python -m pip install build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Clean venv — install wheel, compileall, unittest, CLI smoke
+        run: |
+          set -eux
+          python -m venv /tmp/cua-policy-merge-ci
+          /tmp/cua-policy-merge-ci/bin/python -m pip install --upgrade pip
+          /tmp/cua-policy-merge-ci/bin/python -m pip install dist/*.whl
+          /tmp/cua-policy-merge-ci/bin/python -c "import compileall, pathlib, cua_chrome; root = pathlib.Path(cua_chrome.__file__).resolve().parent; assert compileall.compile_dir(root, quiet=1) == 0"
+          /tmp/cua-policy-merge-ci/bin/python -m unittest discover -s tests -v
+          /tmp/cua-policy-merge-ci/bin/policy-merge --help
+          rm -rf /tmp/cua-policy-merge-policies
+          mkdir -p /tmp/cua-policy-merge-policies
+          printf '%s\n' '{"ManagedBookmarks":[]}' > /tmp/cua-policy-merge-policies/a.json
+          /tmp/cua-policy-merge-ci/bin/policy-merge --input /tmp/cua-policy-merge-policies --dry-run --verbose
+          /tmp/cua-policy-merge-ci/bin/policy-merge path=/tmp/cua-policy-merge-policies merge_keys=ManagedBookmarks --dry-run
+          mkdir -p /tmp/cua-policy-merge-policies/.policy_merge.lock
+          printf '%s\n' '{"pid":999999999,"hostname":"ci","created_at":"1970-01-01T00:00:00+00:00"}' > /tmp/cua-policy-merge-policies/.policy_merge.lock/owner.json
+          /tmp/cua-policy-merge-ci/bin/policy-merge --input /tmp/cua-policy-merge-policies --dry-run
+          test ! -d /tmp/cua-policy-merge-policies/.policy_merge.lock

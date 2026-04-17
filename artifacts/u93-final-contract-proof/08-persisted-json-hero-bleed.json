@@ -1,0 +1,21 @@
+{
+  "type": "hero_bleed",
+  "contentData": {
+    "title": "U93-BLEED-1775581620002",
+    "subtitle": "",
+    "ctaPrimary": "",
+    "ctaSecondary": "",
+    "ctaPrimaryHref": "",
+    "ctaSecondaryHref": "",
+    "backgroundImageId": "",
+    "overlayImageId": "",
+    "overlayImageAlt": ""
+  },
+  "settingsData": {
+    "variant": "left",
+    "textAlign": "left",
+    "textPosition": "left",
+    "overlayPosition": "left"
+  },
+  "id": "blk_e94305d1-cb2a-40cd-836a-1be03d1fedff"
+}

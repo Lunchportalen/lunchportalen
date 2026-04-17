@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+venv/
+
+# Bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging / build
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local policy-merge outputs (if ever run inside this tree)
+policy_merge_archive/
+
+# Ephemeral lock dirs (if a policy dir is created under this tree)
+**/.policy_merge.lock/

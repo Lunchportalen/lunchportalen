@@ -4,18 +4,13 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/ui/container";
 
 type Mode = "company_admin" | "employee";
 
-function makeIdemKey() {
-  // browser-only: stable per submit attempt
-  // (new key per click is fine; determinism is ensured server-side per key)
-  if (typeof crypto?.randomUUID === "function") return crypto.randomUUID();
-  return `idem_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
 export default function RegisterGate() {
+  const router = useRouter();
   const [mode, setMode] = React.useState<Mode>("company_admin");
 
   const [companyName, setCompanyName] = React.useState("");
@@ -28,7 +23,7 @@ export default function RegisterGate() {
   const [busy, setBusy] = React.useState(false);
   const [receipt, setReceipt] = React.useState<any | null>(null);
 
-  async function submit() {
+  function submit() {
     setReceipt(null);
 
     if (mode !== "company_admin") return;
@@ -41,49 +36,8 @@ export default function RegisterGate() {
       return;
     }
 
-    const idem = makeIdemKey();
-    setBusy(true);
-
-    try {
-      const res = await fetch("/api/public/register-company", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": idem,
-        },
-        body: JSON.stringify({
-          companyName,
-          contactName,
-          email,
-          phone,
-          employeesCount,
-          accept,
-        }),
-        cache: "no-store",
-      });
-
-      const json = await res.json().catch(() => null);
-
-      // Always show a receipt (fail-closed)
-      setReceipt(
-        json ?? {
-          ok: false,
-          status: "FAILED",
-          message: "Uventet svar fra server (ingen JSON).",
-          code: "NO_JSON",
-        }
-      );
-    } catch (e: any) {
-      setReceipt({
-        ok: false,
-        status: "FAILED",
-        message: "Nettverksfeil. Prøv igjen.",
-        code: "NETWORK_ERROR",
-        detail: { message: String(e?.message ?? e) },
-      });
-    } finally {
-      setBusy(false);
-    }
+    // Canonical intake krever full firmadata (org.nr., adresse m.m.) — samme API som `/registrering`.
+    router.push("/registrering");
   }
 
   return (

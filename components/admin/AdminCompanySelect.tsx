@@ -38,6 +38,36 @@ export default function AdminCompanySelect({ companies, selectedId, label = "Fir
     }
   }
 
+  if (!companies.length) {
+    return (
+      <div className="text-sm text-[rgb(var(--lp-muted))]">
+        Ingen firmadata tilgjengelig. Avtalen hentes alltid etter innlogget firmascope.
+      </div>
+    );
+  }
+
+  /** Ett firma (typisk company_admin): ingen «bytt firma»-affordance — scope er låst server-side. */
+  if (companies.length === 1) {
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">{label} (eget firma)</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="min-w-0 rounded-full border border-[rgb(var(--lp-border))] bg-white/80 px-3 py-2 text-sm text-[rgb(var(--lp-text))] shadow-sm">
+            {formatLabel(selected)}
+          </span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-white"
+            title={selected?.id ?? ""}
+          >
+            {copyLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">{label}</div>

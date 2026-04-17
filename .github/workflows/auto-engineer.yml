@@ -1,0 +1,50 @@
+# Autonomous audit → tasks → (optional) fix → validate. PR only; never pushes to main.
+name: Auto Engineer
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: auto-engineer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autonomous:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SKIP_HTTP: "1"
+      AUTONOMOUS_NEXT_BUILD: "1"
+      NODE_OPTIONS: "--max-old-space-size=8192"
+      CI: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run autonomous pipeline
+        run: node scripts/runAutonomous.mjs
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: autonomous audit (auditReport + tasks)"
+          title: "Autonomous engineer — audit + tasks"
+          body: |
+            Generated `repo-intelligence/auditReport.json` and `repo-intelligence/tasks.json`.
+            HTTP probes were skipped (`SKIP_HTTP=1`). Review before merge.
+          branch: autonomous/engineer-audit-${{ github.run_id }}
+          delete-branch: true

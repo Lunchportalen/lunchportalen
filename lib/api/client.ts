@@ -202,44 +202,43 @@ export async function cancelOrder(
   }
 
   const json = (await safeJson(res)) as Record<string, unknown> | null;
-  const rid = typeof json?.rid === "string" ? json.rid : makeRidFallback();
+  const ridHeader = res.headers.get("x-rid");
+  const rid = typeof ridHeader === "string" && ridHeader.trim() ? ridHeader.trim() : makeRidFallback();
 
-  if (json && json.ok === true && json.data !== undefined && typeof json.data === "object") {
-    const d = json.data as Record<string, unknown>;
-    const receipt = (d.receipt ?? null) as Record<string, unknown> | null;
-    const savedAt = new Date().toISOString();
-    const mapped: CancelResponse = {
-      order: {
-        id: receipt?.orderId != null ? String(receipt.orderId) : null,
-        date: String(d.date ?? date),
-        status: "CANCELLED",
-        note: note ?? null,
-        slot: slot ?? null,
-        created_at: null,
-        updated_at: receipt?.updatedAt != null ? String(receipt.updatedAt) : null,
-        saved_at: savedAt,
-      },
-      pricing: { tier: "BASIS", unit_price: 0 },
-      backup: { ok: true, source: "order_cancel" },
-    };
-    return { ok: true, rid, data: mapped };
+  if (json && json.ok === true) {
+    const orderIdRaw = (json as { orderId?: unknown }).orderId;
+    const orderId = typeof orderIdRaw === "string" ? orderIdRaw.trim() : "";
+    if (orderId) {
+      const savedAt =
+        typeof (json as { timestamp?: unknown }).timestamp === "string"
+          ? String((json as { timestamp: string }).timestamp)
+          : new Date().toISOString();
+      const dateOut = typeof (json as { date?: unknown }).date === "string" ? String((json as { date: string }).date) : date;
+      const mapped: CancelResponse = {
+        order: {
+          id: orderId,
+          date: dateOut,
+          status: "CANCELLED",
+          note: note ?? null,
+          slot: slot ?? null,
+          created_at: null,
+          updated_at: null,
+          saved_at: savedAt,
+        },
+        pricing: { tier: "BASIS", unit_price: 0 },
+        backup: { ok: true, source: "order_cancel" },
+      };
+      return { ok: true, rid, data: mapped };
+    }
   }
 
   if (json && json.ok === false) {
-    const errField = json.error;
-    const code =
-      typeof errField === "string"
-        ? errField
-        : errField && typeof errField === "object" && typeof (errField as { code?: string }).code === "string"
-          ? String((errField as { code: string }).code)
-          : "ERROR";
     return {
       ok: false,
-      rid,
+      rid: typeof (json as { rid?: unknown }).rid === "string" ? String((json as { rid: string }).rid) : rid,
       error: {
-        code,
-        message: String(json.message ?? "Feil"),
-        detail: json.detail,
+        code: String((json as { code?: unknown }).code ?? "ERROR"),
+        message: String((json as { message?: unknown }).message ?? "Feil"),
       },
     };
   }

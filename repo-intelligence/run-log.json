@@ -1,0 +1,67 @@
+[
+  {
+    "task": "control_coverage_fix",
+    "status": "stopped",
+    "timestamp": "2026-03-25T00:00:00.000Z",
+    "files_changed": [],
+    "validation": "typecheck passed; lint passed; npm run build failed after lock sync with CONTROL_COVERAGE_UNDER_100 (aiCoverage=94%, need 100). Lock reverted to original empty arrays per failure handling — lock-only cannot satisfy full build gate.",
+    "verified_ai_violation_paths_from_scripts_verify_control_coverage_mjs": [
+      "app/api/ceo/run/route.ts",
+      "app/api/cto/run/route.ts",
+      "app/api/global/expand/route.ts",
+      "app/api/global/run/route.ts",
+      "app/api/sales/cockpit/log/route.ts",
+      "app/api/sales/send/route.ts",
+      "app/api/superadmin/experiments/route.ts"
+    ],
+    "cms_violations_curr": []
+  },
+  {
+    "task": "connect_unused_api_social_ab_analytics",
+    "status": "success",
+    "timestamp": "2026-03-25T22:00:00.000Z",
+    "files_changed": ["app/superadmin/growth/social/SocialEngineClient.tsx"],
+    "api_connected": "GET /api/social/ab/analytics",
+    "validation": "typecheck passed; lint passed; npm run build failed (pre-existing CONTROL_COVERAGE_LOCK_DRIFT, unrelated to this patch)",
+    "rationale": "Endpoint existed with no client fetch; wired to superadmin growth social UI next to A/B decisions."
+  },
+  {
+    "task": "unified_social_ai_images_cms_media",
+    "status": "success",
+    "timestamp": "2026-03-25T22:15:00.000Z",
+    "files_changed": ["lib/social/unifiedGenerator.ts"],
+    "validation": "typecheck passed; lint passed",
+    "change": "AI success path: replace images: [] with getMediaForProduct(product.id) same as deterministic motor; persisted social_posts.content.images via existing save flow."
+  },
+  {
+    "task": "unified_preview_show_cms_images",
+    "status": "success",
+    "timestamp": "2026-03-25T22:30:00.000Z",
+    "files_changed": ["app/superadmin/growth/social/SocialEngineClient.tsx"],
+    "validation": "typecheck passed; eslint SocialEngineClient.tsx passed",
+    "change": "Siste genererte utkast: store and render result.images from generateUnifiedPost so CMS-bilder fra API vises (koblet til eksisterende POST /api/social/ai/generate respons)."
+  },
+  {
+    "task": "revenue_brain_layered_cache",
+    "status": "success",
+    "timestamp": "2026-03-25T23:00:00.000Z",
+    "files_changed": ["app/api/revenue/brain/route.ts"],
+    "validation": "npm run typecheck passed",
+    "change": "GET /api/revenue/brain: layeredGet/layeredSet (Redis+L1 via existing module) key revenue_brain:v1, TTL 15s, ?noCache=1 bypass, _cached on hit. Observability and strategy/run already cached; /api/revenue engine already cached."
+  },
+  {
+    "task": "orders_rid_header_precedence",
+    "status": "success",
+    "timestamp": "2026-03-25T23:30:00.000Z",
+    "files_changed": ["app/api/orders/route.ts"],
+    "validation": "npm run typecheck passed",
+    "change": "writeOrder: rid = x-rid header (trim) then gate.ctx.rid then makeRid — aligns tracing with clients that send x-rid; contact/autonomy already had RL+rid; observability had rid+cache."
+  },
+  {
+    "task": "business_engine_steps_assessment",
+    "status": "documented",
+    "timestamp": "2026-03-26T00:00:00.000Z",
+    "files_changed": [],
+    "notes": "RC: no monolithic implementation in one iteration. Mapped codebase vs steps 1-20; see user-facing STEP 20 output."
+  }
+]

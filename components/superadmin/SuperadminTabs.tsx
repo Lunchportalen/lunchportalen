@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { label: "Dashboard", href: "/superadmin" },
+  { label: "Kontrollsenter", href: "/superadmin" },
   { label: "CFO", href: "/superadmin/cfo" },
   { label: "Konsern", href: "/superadmin/enterprise" },
   { label: "Firma", href: "/superadmin/companies" },
   { label: "ESG", href: "/superadmin/esg" },
-  { label: "Audit", href: "/superadmin/audit" },
-  { label: "System", href: "/superadmin/system" },
+  { label: "Revisjon", href: "/superadmin/audit" },
+  { label: "Systemhelse", href: "/superadmin/system" },
 ];
 
 export function SuperadminTabs({ className = "" }: { className?: string }) {
@@ -18,7 +18,10 @@ export function SuperadminTabs({ className = "" }: { className?: string }) {
   return (
     <nav className={"inline-flex items-center gap-3 text-sm " + className} aria-label="Superadmin">
       {items.map((it) => {
-        const active = pathname === it.href || pathname.startsWith(it.href + "/");
+        const active =
+          it.href === "/superadmin"
+            ? pathname === "/superadmin" || pathname === "/superadmin/"
+            : pathname === it.href || pathname.startsWith(it.href + "/");
         return (
           <Link
             key={it.href}

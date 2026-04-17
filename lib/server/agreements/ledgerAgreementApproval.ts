@@ -1,8 +1,21 @@
 import "server-only";
 
+/**
+ * Ledger-mutasjoner for public.agreements: approve / reject / pause.
+ * HTTP/server-action-kallere MÅ gate superadmin før kall hit (se app/api/superadmin/agreements/... og actions.ts).
+ * RPC: lp_agreement_approve_active, lp_agreement_reject_pending, lp_agreement_pause_ledger_active — ingen definert resume for PAUSED i canonical SQL.
+ */
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditEvent } from "@/lib/audit/write";
 import { validateLedgerAgreementForApproval, type LedgerAgreementValidationResult } from "@/lib/server/agreements/validateLedgerAgreementForApproval";
+import { parseWeekdayMealTiersFromJson, type WeekdayMealTiers } from "@/lib/registration/weekdayMealTiers";
+import {
+  deriveSuperadminAgreementListRowPresentation,
+  deriveSuperadminRegistrationPipelineNext,
+  deriveSuperadminRegistrationPipelinePrimaryHref,
+  indexLedgerAgreementsByCompanyId,
+} from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -114,6 +127,14 @@ export async function runLedgerAgreementApprove(opts: {
   }
 
   const admin = supabaseAdmin();
+  const { data: coBefore } = await admin
+    .from("companies")
+    .select("status")
+    .eq("id", bundle.agreement.company_id)
+    .maybeSingle();
+  const companyStatusBeforeRaw = coBefore ? safeStr((coBefore as { status?: unknown }).status).toUpperCase() : "";
+  const companyStatusBefore = companyStatusBeforeRaw || null;
+
   const { data, error } = await admin.rpc("lp_agreement_approve_active", {
     p_agreement_id: agreementId,
     p_actor_user_id: safeStr(actorUserId) || null,
@@ -143,6 +164,13 @@ export async function runLedgerAgreementApprove(opts: {
     return { ok: false, rid, status: 500, code: "AGREEMENT_APPROVE_BAD_RESPONSE", message: "Kunne ikke godkjenne avtalen." };
   }
 
+  const { data: coAfter } = await admin.from("companies").select("status").eq("id", companyId).maybeSingle();
+  const companyStatusAfter = safeStr((coAfter as { status?: unknown } | null)?.status).toUpperCase() || null;
+  const companyActivatedInSameRpc =
+    companyStatusBefore !== null &&
+    companyStatusBefore !== "ACTIVE" &&
+    companyStatusAfter === "ACTIVE";
+
   const audit = await writeAuditEvent({
     scope,
     action: "agreement.approve_active",
@@ -155,6 +183,9 @@ export async function runLedgerAgreementApprove(opts: {
       status_before: "PENDING",
       status_after: status,
       receipt,
+      company_status_before: companyStatusBefore,
+      company_status_after: companyStatusAfter,
+      company_activated_in_same_rpc: companyActivatedInSameRpc,
     },
   });
 
@@ -168,6 +199,9 @@ export async function runLedgerAgreementApprove(opts: {
       receipt,
       message: "Avtalen er godkjent",
       audit_ok: (audit as any)?.ok === true,
+      company_status_before: companyStatusBefore,
+      company_status_after: companyStatusAfter,
+      company_activated_in_same_rpc: companyActivatedInSameRpc,
     },
   };
 }
@@ -348,9 +382,18 @@ export type LedgerAgreementDetailView =
       ok: true;
       agreement: LedgerAgreementDetailRow;
       company_name: string;
+      company_status: string | null;
       agreement_json: unknown;
       locations: { id: string; name: string }[];
       approvalValidity: LedgerAgreementValidationResult;
+      registration_exists: boolean;
+      ledger_pending_agreement_id: string | null;
+      ledger_active_agreement_id: string | null;
+      weekday_meal_tiers: WeekdayMealTiers | null;
+      pipeline_stage_label: string;
+      pipeline_next_label: string;
+      pipeline_next_href: string;
+      pipeline_primary_href: string;
     }
   | { ok: false; status: number; code: string; message: string };
 
@@ -377,22 +420,45 @@ export async function loadSuperadminLedgerAgreementDetail(agreementId: string): 
 
   const companyId = safeStr((a as any).company_id);
 
-  const { data: c, error: cErr } = await admin.from("companies").select("name, agreement_json").eq("id", companyId).maybeSingle();
+  const [{ data: c, error: cErr }, { data: locRows, error: lErr }, { data: regRow, error: regErr }, { data: ledgerRows, error: leErr }] =
+    await Promise.all([
+      admin.from("companies").select("name, agreement_json, status").eq("id", companyId).maybeSingle(),
+      admin.from("company_locations").select("id, name").eq("company_id", companyId).order("name", { ascending: true }),
+      admin.from("company_registrations").select("company_id, weekday_meal_tiers").eq("company_id", companyId).maybeSingle(),
+      admin
+        .from("agreements")
+        .select("id,company_id,status,created_at")
+        .eq("company_id", companyId)
+        .in("status", ["PENDING", "ACTIVE"]),
+    ]);
 
   if (cErr) {
     return { ok: false, status: 500, code: "COMPANY_READ_FAILED", message: "Kunne ikke hente firma." };
   }
 
-  const { data: locRows, error: lErr } = await admin.from("company_locations").select("id, name").eq("company_id", companyId).order("name", { ascending: true });
-
   if (lErr) {
     return { ok: false, status: 500, code: "LOCATIONS_READ_FAILED", message: "Kunne ikke hente lokasjoner." };
+  }
+
+  if (regErr) {
+    return { ok: false, status: 500, code: "REGISTRATION_READ_FAILED", message: "Kunne ikke hente firmaregistrering." };
+  }
+
+  if (leErr) {
+    return { ok: false, status: 500, code: "LEDGER_INDEX_FAILED", message: "Kunne ikke hente ledger-status for firma." };
   }
 
   const locations = (locRows ?? []).map((r: any) => ({
     id: safeStr(r?.id),
     name: safeStr(r?.name) || "Lokasjon",
   }));
+
+  const company_status = c ? safeStr((c as any).status).toUpperCase() || null : null;
+  const registration_exists = !!(regRow && safeStr((regRow as any).company_id));
+  const weekday_meal_tiers = parseWeekdayMealTiersFromJson((regRow as any)?.weekday_meal_tiers ?? null);
+  const idx = indexLedgerAgreementsByCompanyId((ledgerRows ?? []) as Record<string, unknown>[]);
+  const ledger_pending_agreement_id = idx.pendingIdByCompany.get(companyId) ?? null;
+  const ledger_active_agreement_id = idx.activeIdByCompany.get(companyId) ?? null;
 
   const agreement: LedgerAgreementDetailRow = {
     id: safeStr((a as any).id),
@@ -426,12 +492,42 @@ export async function loadSuperadminLedgerAgreementDetail(agreementId: string): 
     agreement_json,
   });
 
+  const pipe = deriveSuperadminRegistrationPipelineNext({
+    company_status,
+    ledger_pending_agreement_id,
+    ledger_active_agreement_id,
+  });
+  const rowPres = deriveSuperadminAgreementListRowPresentation({
+    agreement_id: agreement.id,
+    agreement_status: agreement.status,
+    company_status,
+    ledger_pending_agreement_id,
+    ledger_active_agreement_id,
+  });
+  const pipeline_primary_href = deriveSuperadminRegistrationPipelinePrimaryHref({
+    company_id: companyId,
+    company_status,
+    ledger_pending_agreement_id,
+    ledger_active_agreement_id,
+    registration_exists,
+    pipe,
+  });
+
   return {
     ok: true,
     agreement,
     company_name: safeStr((c as any)?.name) || "Firma",
+    company_status,
     agreement_json,
     locations,
     approvalValidity,
+    registration_exists,
+    ledger_pending_agreement_id,
+    ledger_active_agreement_id,
+    weekday_meal_tiers,
+    pipeline_stage_label: rowPres.pipeline_stage_label,
+    pipeline_next_label: rowPres.next_label,
+    pipeline_next_href: rowPres.next_href,
+    pipeline_primary_href,
   };
 }

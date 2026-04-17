@@ -2,7 +2,7 @@
 //
 // Avtale/delivery/cutoff håndheves i `public.lp_order_set`. HTTP-lag (f.eks. app/api/orders/set, app/api/orders/route)
 // kaller `lib/orders/companyOrderEligibility` (billing_hold / PAUSED / CLOSED), `lib/orders/orderWriteGuard`
-// (preflight + ansatt pris-blokk) før RPC for fail-fast og revisjonsspor.
+// (preflight for ORDER og CANCEL + ansatt pris-blokk) før RPC for fail-fast og revisjonsspor.
 
 type RpcError =
   | { message?: string | null; code?: string | null; details?: unknown; hint?: string | null }

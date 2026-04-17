@@ -1,0 +1,75 @@
+{
+  "page": "/backoffice/content/00000000-0000-4000-8000-00000000c001",
+  "baseURL": "http://localhost:3042",
+  "credentialSource": "canonical_local_provider",
+  "email": "superadmin@lunchportalen.no",
+  "addedBlocks": [
+    "cta",
+    "cards"
+  ],
+  "initialBlockCount": 7,
+  "finalBlockCount": 9,
+  "newBlockOrdinals": {
+    "cta": 8,
+    "cards": 9
+  },
+  "library": {
+    "cta": {
+      "title": "Handlingsseksjon (CTA)",
+      "description": "Avsluttende eller midtside-handling med overskrift, støttetekst, primærknapp og valgfri sekundær tekstlenke. Ikke «Banner»/strip: banner er kort budskap på bakgrunnsbilde med én knapp, uten samme seksjonsdybde.",
+      "whenToUse": "Når leseren skal forstå kontekst før klikk — mer tekst og sekundær sti enn en bannerstripe.",
+      "differsFrom": "vs banner: Mer seksjonsinnhold og sekundær handling — ikke kort strip med ett budskap.",
+      "canonTitle": "Handlingsseksjon (CTA)",
+      "canonWhenToUse": "Når leseren skal forstå kontekst før klikk — mer tekst og sekundær sti enn en bannerstripe."
+    },
+    "cards": {
+      "title": "Kort-seksjon",
+      "description": "Tre verdi-kort med ingress og valgfrie seksjons-CTA-er — for budskap i rader, ikke lokasjonsbevis (bruk «Lokasjonsrutenett» for celler med meta per sted) og ikke hero (bruk hero-variantene øverst).",
+      "whenToUse": "Når du vil forklare fordeler eller temaer i like kort, ikke lokasjonsbevis per celle.",
+      "differsFrom": "vs grid: Verdikort med samme mønster — ikke lokasjonsrutenett med meta per sted. · vs zigzag: Statiske kort — ikke nummerert prosess eller FAQ-steg.",
+      "canonTitle": "Kort-seksjon",
+      "canonWhenToUse": "Når du vil forklare fordeler eller temaer i like kort, ikke lokasjonsbevis per celle."
+    }
+  },
+  "runtime": {
+    "cta": {
+      "alias": "cta",
+      "propertyEditorComponent": "CtaPropertyEditor",
+      "canvasViewCoupling": "CtaCanvasFrame",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "validationRuleCount": 2
+    },
+    "cards": {
+      "alias": "cards",
+      "propertyEditorComponent": "CardsPropertyEditor",
+      "canvasViewCoupling": "CardsCanvasFrame",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "validationRuleCount": 2
+    }
+  },
+  "markers": {
+    "ctaTitle": "U90B-CTA-1775572126971",
+    "cardsTitle": "U90B-CARDS-1775572128901"
+  },
+  "screenshots": {
+    "blockLibraryFull": "01-block-library-full.png",
+    "simpleInLibrary": "02-simple-block-in-library-cta.png",
+    "structureInLibrary": "03-structure-block-in-library-cards.png",
+    "newSimpleCanvasInspector": "04-new-simple-cta-canvas-inspector.png",
+    "newStructureCanvasInspector": "05-new-structure-cards-canvas-inspector.png",
+    "defaultsSimple": "06-defaults-proof-simple.png",
+    "defaultsStructure": "07-defaults-proof-structure.png",
+    "validationRuntime": "08-validation-proof-title-required.png",
+    "validationHintsCanon": "08b-validation-hints-from-canonical-rules.png",
+    "dirtySave": "09-dirty-save-proof.png",
+    "reloadPersist": "10-reload-persist-proof.png",
+    "fullCanvasAfter": "11-full-canvas-after-creation.png",
+    "libraryWhenToUse": "12-block-library-whenToUse-differsFrom-visible.png",
+    "canvasViewSimple": "13-canvas-custom-view-proof-simple-cta.png",
+    "canvasViewStructure": "14-canvas-custom-view-proof-structure-cards.png"
+  }
+}

@@ -7,10 +7,19 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
+import { opsLog } from "@/lib/ops/log";
 
 const allowedRoles = ["kitchen", "superadmin"] as const;
 
 type KitchenRow = {
+  /** Operativ ordre-id (Supabase orders.id) — stabil nøkkel i UI. */
+  orderId: string;
+  /** Leveringsvindu / slot fra orders.slot (normalisert til små bokstaver, tom → lunch). */
+  slot: string;
+  /** Ordrestatus som hentet fra DB (kjøkken: forventet active). */
+  orderStatus: string;
   company: string;
   location: string;
   employeeName: string;
@@ -28,6 +37,12 @@ type KitchenData = {
   summary: { orders: number; companies: number; people: number };
   rows: KitchenRow[];
   reason?: "NO_ORDERS" | "NOT_DELIVERY_DAY" | "COMPANIES_PAUSED";
+  /** Når aktiv: responsen er filtrert til materialisert ordre-id-sett for firmaet (canonical freeze). */
+  production_operative_snapshot?: {
+    active: true;
+    frozen_at: string | null;
+    captured_order_ids: number;
+  };
 };
 
 function safeStr(v: unknown) {
@@ -92,34 +107,60 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Hent dagens ordre (kun aktive, deterministisk for kjøkken)
-  let ordersQ = admin
-    .from("orders")
-    .select("id,user_id,company_id,location_id,note,status")
-    .eq("date", date)
-    .in("status", ["ACTIVE", "active"]);
+  const tenant =
+    role === "kitchen" ? { companyId: scopeCompanyId, locationId: scopeLocationId } : ("system" as const);
 
+  let productionFreezeAllowlist: ReadonlySet<string> | undefined;
+  let snapshotMeta: KitchenData["production_operative_snapshot"] | undefined;
   if (role === "kitchen") {
-    ordersQ = ordersQ.eq("company_id", scopeCompanyId).eq("location_id", scopeLocationId);
+    const snap = await fetchProductionOperativeSnapshotAllowlist(admin as any, {
+      dateISO: date,
+      companyId: scopeCompanyId,
+    });
+    if (snap.found) {
+      productionFreezeAllowlist = snap.orderIds;
+      snapshotMeta = {
+        active: true,
+        frozen_at: snap.frozenAt,
+        captured_order_ids: snap.orderIds.size,
+      };
+    }
   }
 
-  const { data: orders, error: oErr } = await ordersQ;
+  /**
+   * Live og frozen bruker samme `loadOperativeKitchenOrders`.
+   * Frozen = operative ∩ allowlist (materialisert `production_operative_snapshots.order_ids` for firma+dato).
+   * Ved re-materialisering oppdateres allowlist til gjeldende operative mengde — se `materializeProductionOperativeSnapshot`.
+   */
+  const loaded = await loadOperativeKitchenOrders({
+    admin: admin as any,
+    dateISO: date,
+    tenant,
+    productionFreezeAllowlist,
+  });
 
-  if (oErr) {
+  if (loaded.ok === false) {
     return jsonErr(rid, "Kunne ikke hente kjøkkenordre.", 500, {
       code: "DB_ERROR",
       detail: {
-        code: oErr.code,
-        message: oErr.message,
-        detail: (oErr as any).details ?? (oErr as any).hint ?? null,
+        code: loaded.dbError.code,
+        message: loaded.dbError.message,
+        detail: null,
       },
     });
   }
 
-  const raw = orders ?? [];
+  const { list0, operative: list, dcMap } = loaded;
 
-  // Fail-closed: kun ordre med entydig firma+lokasjon+bruker
-  const list = raw.filter((r: any) => safeStr(r.company_id) && safeStr(r.location_id) && safeStr(r.user_id));
+  if (list0.length === 0) {
+    const resp: KitchenData = {
+      date,
+      summary: { orders: 0, companies: 0, people: 0 },
+      rows: [],
+      reason: "NO_ORDERS",
+    };
+    return jsonOk(rid, resp, 200);
+  }
 
   if (list.length === 0) {
     const resp: KitchenData = {
@@ -170,37 +211,6 @@ export async function GET(req: NextRequest) {
   const locations = new Map((locationsRes.data ?? []).map((l: any) => [safeStr(l.id), l]));
   const profiles = new Map((profilesRes.data ?? []).map((p: any) => [safeStr(p.user_id), p]));
 
-  const dcMap = new Map<string, { choice_key: string; note: string | null; updated_at: string | null }>();
-  if (userIds.length) {
-    let dcQ = admin
-      .from("day_choices")
-      .select("user_id,company_id,location_id,date,choice_key,note,updated_at")
-      .eq("date", date)
-      .in("user_id", userIds);
-    if (role === "kitchen") {
-      dcQ = dcQ.eq("company_id", scopeCompanyId);
-    } else if (companyIds.length) {
-      dcQ = dcQ.in("company_id", companyIds);
-    }
-    const { data: dcRows } = await dcQ;
-    for (const row of (dcRows ?? []) as any[]) {
-      const cid = safeStr(row.company_id);
-      const uid = safeStr(row.user_id);
-      const lid = safeStr(row.location_id);
-      const k = `${cid}|${lid}|${uid}`;
-      const prev = dcMap.get(k);
-      const prevT = prev?.updated_at ? new Date(prev.updated_at).getTime() : 0;
-      const nextT = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-      if (!prev || nextT >= prevT) {
-        dcMap.set(k, {
-          choice_key: safeStr(row.choice_key),
-          note: row.note != null ? safeStr(row.note) : null,
-          updated_at: row.updated_at != null ? String(row.updated_at) : null,
-        });
-      }
-    }
-  }
-
   const { normalizeMealTypeKey } = await import("@/lib/cms/mealTypeKey");
   const { getMenusByMealTypes } = await import("@/lib/cms/getMenusByMealTypes");
   const { parseMealContractFromAgreementJson } = await import("@/lib/server/agreements/mealContract");
@@ -238,7 +248,11 @@ export async function GET(req: NextRequest) {
   try {
     menuByMeal = await getMenusByMealTypes([...mealKeys]);
   } catch (e: any) {
-    console.warn("[api/kitchen] getMenusByMealTypes failed", String(e?.message ?? e));
+    opsLog("kitchen.cms.menu_fetch_threw", {
+      rid,
+      date,
+      detail: String(e?.message ?? e),
+    });
   }
 
   const rows: KitchenRow[] = list.map((r: any) => {
@@ -262,6 +276,9 @@ export async function GET(req: NextRequest) {
     const titleFallback = mealTypeResolved || nk || null;
 
     return {
+      orderId: safeStr(r.id),
+      slot: normKitchenSlot(r.slot),
+      orderStatus: safeStr(r.status) || "active",
       company: safeStr(comp?.name) || "Ukjent firma",
       location: safeStr(loc?.name) || "Lokasjon",
       employeeName,
@@ -274,13 +291,17 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  // Stabil sort for kjøkken: firma -> lokasjon -> ansatt
+  // Stabil sort: leveringsvindu → firma → lokasjon → ansatt → ordre-id
   rows.sort((a, b) => {
+    const s = a.slot.localeCompare(b.slot, "nb");
+    if (s !== 0) return s;
     const c = a.company.localeCompare(b.company, "nb");
     if (c !== 0) return c;
     const l = a.location.localeCompare(b.location, "nb");
     if (l !== 0) return l;
-    return a.employeeName.localeCompare(b.employeeName, "nb");
+    const n = a.employeeName.localeCompare(b.employeeName, "nb");
+    if (n !== 0) return n;
+    return a.orderId.localeCompare(b.orderId, "nb");
   });
 
   const uniqueCompanies = new Set(rows.map((r) => r.company));
@@ -294,6 +315,7 @@ export async function GET(req: NextRequest) {
       people: uniquePeople.size,
     },
     rows,
+    ...(snapshotMeta ? { production_operative_snapshot: snapshotMeta } : {}),
   };
 
   return jsonOk(rid, resp, 200);

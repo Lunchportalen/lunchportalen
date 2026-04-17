@@ -1,8 +1,13 @@
+// STATUS: KEEP
+
 // components/orders/OrderActions.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
+import { getLpExperimentHeadersForFetch } from "@/lib/public/experimentVariantBrowser";
+import { getOrderAttributionForApi } from "@/lib/revenue/attributionSessionBrowser";
 
 type OrderApiResponse = {
   ok: boolean;
@@ -83,18 +88,27 @@ export default function OrderActions() {
 
     try {
       const effectiveDate = res?.date ?? new Date().toISOString().slice(0, 10);
+      const attribution = getOrderAttributionForApi();
+      const expHeaders = getLpExperimentHeadersForFetch();
       const r = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...expHeaders },
         cache: "no-store",
-        body: JSON.stringify({ date: effectiveDate, action: "SET", note: "", slot: "default" }),
+        body: JSON.stringify({
+          date: effectiveDate,
+          action: "SET",
+          note: "",
+          slot: "default",
+          ...(attribution ? { attribution } : {}),
+        }),
       });
 
-      const j = (await r.json()) as OrderApiResponse;
-      setRes(j ?? null);
+      const j = (await r.json()) as Record<string, unknown> | null;
+      const orderId = j && typeof j.orderId === "string" ? j.orderId.trim() : "";
+      const receiptOk = Boolean(r.ok && j && j.ok === true && orderId);
 
-      if (!r.ok || !j?.ok) {
-        setErr(j?.message ?? "Vi kunne ikke lagre bestillingen nå.");
+      if (!receiptOk) {
+        setErr(typeof j?.message === "string" ? j.message : "Vi kunne ikke lagre bestillingen nå.");
         return;
       }
 
@@ -121,11 +135,12 @@ export default function OrderActions() {
         body: JSON.stringify({ date: effectiveDate, action: "CANCEL", slot: "default" }),
       });
 
-      const j = (await r.json()) as OrderApiResponse;
-      setRes(j ?? null);
+      const j = (await r.json()) as Record<string, unknown> | null;
+      const orderId = j && typeof j.orderId === "string" ? j.orderId.trim() : "";
+      const receiptOk = Boolean(r.ok && j && j.ok === true && orderId);
 
-      if (!r.ok || !j?.ok) {
-        setErr(j?.message ?? "Vi kunne ikke lagre endringen nå.");
+      if (!receiptOk) {
+        setErr(typeof j?.message === "string" ? j.message : "Vi kunne ikke lagre endringen nå.");
         return;
       }
 

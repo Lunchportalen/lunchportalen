@@ -1,0 +1,1347 @@
+
+> lunchportalen@1.0.0 test:run
+> vitest run --config vitest.config.ts
+
+[dotenv@17.2.4] injecting env (36) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+ RUN  v2.1.9 C:/prosjekter/lunchportalen
+
+ ✓ tests/system/systemHealthAggregator.test.ts (6 tests) 325ms
+   ✓ systemHealthAggregator > getSystemHealth is exported and returns result with required keys 312ms
+ ✓ tests/lib/cro/suggestions.test.ts (18 tests) 29ms
+ ✓ tests/lib/seo/intelligence.test.ts (15 tests) 35ms
+ ↓ tests/api/superadmin.agreements-lifecycle.test.ts (4 tests | 4 skipped)
+ ✓ tests/api/mediaItemsId.test.ts (12 tests) 73ms
+ ✓ tests/security/roleIsolationEndpoints.test.ts (5 tests) 47ms
+ ✓ tests/api/mediaItems.test.ts (9 tests) 60ms
+ ✓ tests/cms/editorAiContracts.test.ts (26 tests) 32ms
+ ✓ tests/cms/contentTreeHardening.test.ts (14 tests) 33ms
+ ✓ tests/api/contentTree.test.ts (6 tests) 47ms
+ ✓ tests/ai/aiSystemGuarantees.test.ts (19 tests) 30ms
+ ✓ tests/cms/publishFlow.test.ts (4 tests) 391ms
+   ✓ publish flow — public and preview parity > 2. publish action copies preview to prod → public now returns that body 377ms
+ ✓ tests/cms/publicPreviewParity.test.ts (9 tests) 79ms
+stdout | tests/cms/content-persistence-save-reload.test.ts > CMS persistence — save then reload returns saved value > PATCH 200 response includes data.page (client contract: no fake success without persisted page)
+{"ts":"2026-04-08T19:39:15.416Z","scope":"security_audit_no_admin_config","action":"update_content","resource":"content_page","companyId":null,"userId":null}
+
+ ✓ tests/cms/cmsHardeningGuarantees.test.ts (11 tests) 107ms
+stdout | tests/api/smoke-api-routes.test.ts > API smoke — auth > POST /api/auth/login (JSON)
+[auth.login] start {
+  rid: 'rid_mnqgbxzm_r49salti6i9knzjr',
+  nextFromBody: null,
+  nextFromQuery: null,
+  nextSafe: '/week',
+  email: '',
+  localRuntime: false
+}
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > valid create → 200 with orderId and status
+[TRACE_START] rid_orders /api/orders
+
+stdout | tests/cms/content-persistence-save-reload.test.ts > CMS persistence — save then reload returns saved value > PATCH then GET: saved title and body persist (reload returns saved value)
+{"ts":"2026-04-08T19:39:15.651Z","scope":"security_audit_no_admin_config","action":"update_content","resource":"content_page","companyId":null,"userId":null}
+
+stdout | tests/cms/content-persistence-save-reload.test.ts > CMS persistence — save then reload returns saved value > edit → save → fetch → compare: persisted body equals saved payload
+{"ts":"2026-04-08T19:39:15.663Z","scope":"security_audit_no_admin_config","action":"update_content","resource":"content_page","companyId":null,"userId":null}
+
+stdout | tests/cms/content-persistence-save-reload.test.ts > CMS persistence — save then reload returns saved value > PATCH title only then GET: title persists, body unchanged
+{"ts":"2026-04-08T19:39:15.674Z","scope":"security_audit_no_admin_config","action":"update_content","resource":"content_page","companyId":null,"userId":null}
+
+stdout | tests/cms/content-persistence-save-reload.test.ts > CMS persistence — save then reload returns saved value > PATCH blocks top-level preserves existing envelope metadata for the variant
+{"ts":"2026-04-08T19:39:15.681Z","scope":"security_audit_no_admin_config","action":"update_content","resource":"content_page","companyId":null,"userId":null}
+
+ ✓ tests/cms/content-persistence-save-reload.test.ts (6 tests) 305ms
+stdout | tests/api/smoke-api-routes.test.ts > API smoke — auth > GET /api/auth/post-login
+{"ts":"2026-04-08T19:39:15.834Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgby7t_ym6valk4ix7xlvq3"}
+{"ts":"2026-04-08T19:39:15.837Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":3,"rid":"rid_mnqgby7t_ym6valk4ix7xlvq3"}
+
+ ✓ tests/kitchen-batch-start.test.ts (6 tests) 47ms
+ ✓ tests/driver-flow-quality.test.ts (3 tests) 37ms
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > valid create → 200 with orderId and status
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > invalid date → 400 BAD_DATE
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > invalid action → 400 BAD_ACTION
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > RPC NO_ACTIVE_AGREEMENT → 409 with clear code
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > RPC OUTSIDE_DELIVERY_DAYS → 409
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > RPC CUTOFF_PASSED → 409
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+stdout | tests/api/order-flow-api.test.ts > Order create — POST /api/orders > RPC returns empty order_id → 500 ORDER_SET_BAD_RESPONSE (no silent success)
+[TRACE_START] rid_orders /api/orders
+[TRACE_END] rid_orders /api/orders
+
+ ✓ tests/api/order-flow-api.test.ts (12 tests) 758ms
+   ✓ Order create — POST /api/orders > valid create → 200 with orderId and status 447ms
+stdout | tests/kitchen-print.test.ts > kitchen-print cron > print med batch -> ok
+{"ts":"2026-04-08T19:39:16.410Z","scope":"kitchen.day.summary","rid":"rid_mnqgbylm_376od3v9wfijs4m7","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","orders_total":2,"groups_total":1,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":2},"anomaly_ids":[]}
+{"ts":"2026-04-08T19:39:16.413Z","scope":"cron.kitchen.print","rid":"rid_mnqgbylm_376od3v9wfijs4m7","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","slot":"lunch","orders":2,"payload_hash":"79175bc5c2a03177","actor_id":null,"mode":"cron"}
+
+stdout | tests/kitchen-print.test.ts > kitchen-print cron > print to ganger -> samme resultat
+{"ts":"2026-04-08T19:39:16.423Z","scope":"kitchen.day.summary","rid":"rid_mnqgbyo4_sb91b99yvk7ssvzi","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","orders_total":2,"groups_total":1,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":2},"anomaly_ids":[]}
+{"ts":"2026-04-08T19:39:16.423Z","scope":"cron.kitchen.print","rid":"rid_mnqgbyo4_sb91b99yvk7ssvzi","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","slot":"lunch","orders":2,"payload_hash":"79175bc5c2a03177","actor_id":null,"mode":"cron"}
+{"ts":"2026-04-08T19:39:16.426Z","scope":"kitchen.day.summary","rid":"rid_mnqgbyo8_v3i3ednci7zd7rer","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","orders_total":2,"groups_total":1,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":2},"anomaly_ids":[]}
+{"ts":"2026-04-08T19:39:16.426Z","scope":"cron.kitchen.print","rid":"rid_mnqgbyo8_v3i3ednci7zd7rer","date":"2026-02-02","company_id":"11111111-1111-1111-1111-111111111111","location_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","slot":"lunch","orders":2,"payload_hash":"79175bc5c2a03177","actor_id":null,"mode":"cron"}
+
+ ✓ tests/kitchen-print.test.ts (6 tests) 125ms
+ ✓ tests/lib/cro/pageAnalysis.test.ts (15 tests) 20ms
+stdout | tests/ai/company/controlTower.test.ts > company control tower > critical health anomaly blocks autopilot in auto mode
+{"ts":"2026-04-08T19:39:16.528Z","scope":"company_control.anomaly_hard_stop_auto","rid":"rid_test","kinds":"health_degraded"}
+
+ ✓ tests/ai/company/controlTower.test.ts (11 tests) 29ms
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:16.588Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.591Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":4,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > returns 400 when body is not an object
+{"ts":"2026-04-08T19:39:16.599Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.602Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > returns 400 when type is missing
+{"ts":"2026-04-08T19:39:16.608Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.609Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > returns 200 and ok: true with valid body (auth first, then validation)
+{"ts":"2026-04-08T19:39:16.612Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.619Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":8,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > accepts events with layout_suggestions and image_generate feature (observability parity)
+{"ts":"2026-04-08T19:39:16.623Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.626Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":3,"rid":null}
+{"ts":"2026-04-08T19:39:16.627Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.629Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > accepts all workflow event types (trigger, result, apply, error) for observability
+{"ts":"2026-04-08T19:39:16.631Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.633Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+{"ts":"2026-04-08T19:39:16.634Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.635Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+{"ts":"2026-04-08T19:39:16.636Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.637Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+{"ts":"2026-04-08T19:39:16.638Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.640Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > accepts CRO observability events (analysis, apply, dismiss, error)
+{"ts":"2026-04-08T19:39:16.641Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.643Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+{"ts":"2026-04-08T19:39:16.644Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.645Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+{"ts":"2026-04-08T19:39:16.646Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.648Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+{"ts":"2026-04-08T19:39:16.650Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.652Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+{"ts":"2026-04-08T19:39:16.654Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.655Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > CRO event payloads have required shape (type, feature, timestamp)
+{"ts":"2026-04-08T19:39:16.657Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.658Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+
+stdout | tests/api/editorAiMetrics.test.ts > Editor-AI metrics API > unauthorized CRO AI access is denied: 401 for CRO events when not authenticated
+{"ts":"2026-04-08T19:39:16.661Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:16.661Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":0,"rid":null}
+
+ ✓ tests/api/editorAiMetrics.test.ts (9 tests) 92ms
+stdout | tests/tenant-isolation-agreement.test.ts > tenant isolation – kitchen output > kitchen output never mixes companies in same group
+{"ts":"2026-04-08T19:39:16.750Z","scope":"kitchen.day.summary","rid":"rid_kitchen","date":"2026-02-01","company_id":"cA","location_id":null,"orders_total":1,"groups_total":1,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":1},"anomaly_ids":[]}
+
+stdout | tests/tenant-isolation-agreement.test.ts > tenant isolation – kitchen output > scale sanity: queries include company_id filter
+{"ts":"2026-04-08T19:39:16.753Z","scope":"kitchen.day.summary","rid":"rid_scale","date":"2026-02-01","company_id":"cScale","location_id":null,"orders_total":0,"groups_total":0,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":0},"anomaly_ids":[]}
+
+ ✓ tests/tenant-isolation-agreement.test.ts (4 tests) 718ms
+   ✓ tenant isolation – agreement + kitchen > week gating uses day_tiers (active days only) 594ms
+ ✓ tests/kitchen-batch-status.test.ts (7 tests) 43ms
+ ✓ tests/lib/design/fontRegistry.test.ts (20 tests) 35ms
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-generator API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:17.616Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.622Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":7,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-generator API > returns 503 when AI is disabled
+{"ts":"2026-04-08T19:39:17.627Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.629Z","scope":"incident","rid":"rid_ai_image_routes","status":503,"message":"AI is disabled.","error":"FEATURE_DISABLED"}
+{"ts":"2026-04-08T19:39:17.630Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":503},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-generator API > returns 400 when both prompt and topic+purpose are missing
+{"ts":"2026-04-08T19:39:17.635Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.640Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":5,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-generator API > returns 500 when tool returns no prompts
+{"ts":"2026-04-08T19:39:17.643Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.644Z","scope":"incident","rid":"rid_ai_image_routes","status":500,"message":"No prompt suggestions produced.","error":"GENERATION_FAILED"}
+{"ts":"2026-04-08T19:39:17.644Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-generator API > returns 200 with prompts when tool succeeds
+{"ts":"2026-04-08T19:39:17.646Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.647Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-generator","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-metadata API > returns 503 when AI is disabled
+{"ts":"2026-04-08T19:39:17.650Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.650Z","scope":"incident","rid":"rid_ai_image_routes","status":503,"message":"AI is disabled.","error":"FEATURE_DISABLED"}
+{"ts":"2026-04-08T19:39:17.651Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":503},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-metadata API > returns 400 when both url and mediaItemId are missing
+{"ts":"2026-04-08T19:39:17.652Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.653Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiImageRoutes.test.ts > Backoffice AI image-metadata API > returns 200 and normalized metadata when tool succeeds
+{"ts":"2026-04-08T19:39:17.657Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:17.662Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/image-metadata","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":5,"rid":null}
+
+ ✓ tests/api/backofficeAiImageRoutes.test.ts (8 tests) 61ms
+ ✓ tests/lib/cro/scoring.test.ts (12 tests) 24ms
+ ✓ tests/lib/ai/blockSchema.test.ts (23 tests) 43ms
+ ✓ tests/cms/useMediaPickerHelpers.test.ts (13 tests) 20ms
+stdout | tests/api/smoke-api-routes.test.ts > API smoke — order > GET /api/week (PARTIAL: needs valid request URL)
+{"ts":"2026-04-08T19:39:18.275Z","scope":"incident","rid":"week_api_mnqgc02p_mgv3nn","status":500,"message":"`cookies` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context","error":"SERVER_ERROR"}
+
+stderr | tests/api/smoke-api-routes.test.ts > API smoke — order > GET /api/week (PARTIAL: needs valid request URL)
+[GET /api/week] `cookies` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context Error: `cookies` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+    at throwForMissingRequestStore (C:\prosjekter\lunchportalen\node_modules\next\src\server\app-render\work-unit-async-storage.external.ts:335:9)
+    at Proxy.cookies (C:\prosjekter\lunchportalen\node_modules\next\src\server\request\cookies.ts:177:30)
+    at Module.createClient (C:\prosjekter\lunchportalen\utils\supabase\server.ts:11:29)
+    at supabaseServer (C:\prosjekter\lunchportalen\lib\supabase\server.ts:26:10)
+    at GET (C:\prosjekter\lunchportalen\app\api\week\route.ts:92:22)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\prosjekter\lunchportalen\tests\api\smoke-api-routes.test.ts:105:17
+    at file:///C:/prosjekter/lunchportalen/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///C:/prosjekter/lunchportalen/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/prosjekter/lunchportalen/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ tests/kitchen-batch-summary.test.ts (5 tests) 68ms
+stdout | tests/api/order-api-guards.test.ts > Order API guards — orders create (POST /api/orders) > returns 400 when date is invalid
+[TRACE_START] rid_test /api/orders
+[TRACE_END] rid_test /api/orders
+
+stdout | tests/api/order-api-guards.test.ts > Order API guards — orders create (POST /api/orders) > returns 200 with orderId when RPC succeeds
+[TRACE_START] rid_test /api/orders
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:18.722Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.728Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":6,"rid":null}
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 400 when tool is missing
+{"ts":"2026-04-08T19:39:18.730Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.733Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 500 when ai_suggestions insert fails (no fake success)
+{"ts":"2026-04-08T19:39:18.735Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.744Z","scope":"incident","rid":"rid_ai_suggest","status":500,"message":"Kunne ikke lagre forslag (sporbarhet).","error":"SUGGESTION_INSERT_FAILED"}
+{"ts":"2026-04-08T19:39:18.745Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":11,"rid":null}
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 500 when ai_activity_log insert fails after suggestion saved
+{"ts":"2026-04-08T19:39:18.746Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.749Z","scope":"incident","rid":"rid_ai_suggest","status":500,"message":"Kunne ikke logge forslag.","error":"SUGGESTION_LOG_FAILED"}
+{"ts":"2026-04-08T19:39:18.750Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":4,"rid":null}
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 503 FEATURE_DISABLED when AI provider is unavailable (deterministic fallback)
+{"ts":"2026-04-08T19:39:18.751Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.752Z","scope":"incident","rid":"rid_ai_suggest","status":503,"message":"AI is disabled.","error":"FEATURE_DISABLED"}
+{"ts":"2026-04-08T19:39:18.752Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":503},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiSuggest.test.ts > Backoffice AI suggest API > returns 403 when role is company_admin (suggest is superadmin-only)
+{"ts":"2026-04-08T19:39:18.754Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:18.756Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":2,"rid":null}
+
+ ✓ tests/api/backofficeAiSuggest.test.ts (6 tests) 46ms
+ ✓ tests/cms/ContentWorkspaceLoader.test.ts (5 tests) 31ms
+ ✓ tests/tenant-isolation-driver.test.ts (6 tests) 45ms
+ ✓ tests/tenant-isolation-kitchen-batch-status.test.ts (5 tests) 45ms
+ ✓ tests/auth/AuthTruthSingleSource.test.ts (3 tests) 692ms
+   ✓ Auth truth single source > redirect and post-login resolve the same landing target from canonical auth truth 310ms
+stderr | tests/api/order-api-guards.test.ts > Order API guards — orders create (POST /api/orders) > returns 200 with orderId when RPC succeeds
+[ORDER_ATTRIBUTION_ORDER_FETCH] column orders.line_total does not exist { rid: 'rid_test', orderId: 'ord-1' }
+
+stdout | tests/api/order-api-guards.test.ts > Order API guards — orders create (POST /api/orders) > returns 200 with orderId when RPC succeeds
+[TRACE_END] rid_test /api/orders
+
+ ✓ tests/api/order-api-guards.test.ts (6 tests) 1188ms
+   ✓ Order API guards — orders create (POST /api/orders) > returns 200 with orderId when RPC succeeds 1151ms
+ ↓ tests/db/database-integrity.test.ts (7 tests | 7 skipped)
+ ✓ tests/api/routeGuardConsistency.test.ts (18 tests) 48ms
+ ✓ tests/esg/latestMonthlyRollupList.test.ts (3 tests) 17ms
+stdout | tests/api/smoke-api-routes.test.ts > API smoke — backoffice / CMS > GET /api/backoffice/ai/status
+{"ts":"2026-04-08T19:39:20.417Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:20.419Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":401},"status":"failure","durationMs":2,"rid":null}
+
+ ✓ tests/api/contentDetailVariantStrictness.test.ts (3 tests) 1583ms
+   ✓ Content detail variant strictness > remote detail route returns VARIANT_NOT_FOUND instead of first fallback 981ms
+   ✓ Content detail variant strictness > preview page renders an explicit missing preview-variant message 353ms
+stderr | tests/outbox-policy.test.ts > outbox retry policy > marks FAILED_PERMANENT when attempts reaches 10
+[outbox] {
+  ts: '2026-04-08T19:39:20.524Z',
+  event: 'mark_failed',
+  outbox_id: '1',
+  attempts: 10,
+  status: 'FAILED_PERMANENT'
+}
+[outbox] {
+  ts: '2026-04-08T19:39:20.526Z',
+  event: 'send_failed',
+  rid: 'rid-test',
+  outbox_id: '1',
+  event_key: 'ev-1',
+  attempts_after: 10,
+  max_attempts: 10
+}
+
+stdout | tests/outbox-policy.test.ts > outbox retry policy > does not claim FAILED_PERMANENT rows
+[outbox] {
+  ts: '2026-04-08T19:39:20.532Z',
+  event: 'sent',
+  rid: 'rid-test',
+  outbox_id: '3',
+  event_key: 'ev-3'
+}
+
+stderr | tests/outbox-policy.test.ts > outbox retry policy > after successful send, never marks row as failed (retry safety — no duplicate send)
+[outbox] {
+  ts: '2026-04-08T19:39:20.535Z',
+  event: 'mark_sent_failed_after_send',
+  rid: 'rid-test',
+  outbox_id: 'retry-safe-1',
+  event_key: 'ev-retry-safe',
+  error: 'outbox_lookup_failed: admin.from is not a function'
+}
+
+ ✓ tests/outbox-policy.test.ts (3 tests) 24ms
+ ✓ tests/api/backofficeExperimentsRoute.test.ts (6 tests) 30ms
+ ✓ tests/lib/cro/apply.test.ts (10 tests) 14ms
+ ✓ tests/cms/renderBlock.test.ts (17 tests) 72ms
+stdout | tests/api/variantPublishRoute.test.ts > POST /api/backoffice/content/pages/[id]/variant/publish > returns 200 and ok:true when copyVariantBodyToProd succeeds
+{"ts":"2026-04-08T19:39:20.815Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/content/pages/page-1/variant/publish","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/variantPublishRoute.test.ts > POST /api/backoffice/content/pages/[id]/variant/publish > returns 200 and ok:true when copyVariantBodyToProd succeeds
+{"ts":"2026-04-08T19:39:20.982Z","scope":"ai_memory.record_content_published_failed","error":"Unexpected table: ai_memory"}
+{"ts":"2026-04-08T19:39:20.983Z","scope":"lp.observability.event","type":"cms.content_publish","source":"/api/backoffice/content/pages/[id]/variant/publish","userId":null,"companyId":null,"metadata":{"pageId":"page-1","variantId":"v-1","locale":"nb","env":"prod"},"status":"success","durationMs":null,"rid":"rid_variant_publish"}
+{"ts":"2026-04-08T19:39:20.987Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/content/pages/page-1/variant/publish","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":172,"rid":null}
+
+stdout | tests/api/variantPublishRoute.test.ts > POST /api/backoffice/content/pages/[id]/variant/publish > returns 500 and ok:false when copyVariantBodyToProd throws (no false success)
+{"ts":"2026-04-08T19:39:20.995Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/content/pages/page-2/variant/publish","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:20.997Z","scope":"incident","rid":"rid_variant_publish","status":500,"message":"publish_failed","error":"SERVER_ERROR","detail":{"detail":"Error: publish_failed"}}
+{"ts":"2026-04-08T19:39:20.998Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/content/pages/page-2/variant/publish","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":3,"rid":null}
+
+ ✓ tests/api/variantPublishRoute.test.ts (2 tests) 194ms
+ ✓ tests/lib/observability-sli.test.ts (9 tests) 18ms
+ ✓ tests/cms/contentWorkspaceAi.test.ts (8 tests) 20ms
+ ✓ tests/revenue/revenue-engine.test.ts (10 tests) 42ms
+stdout | tests/api/smoke-api-routes.test.ts > API smoke — kitchen / driver > GET /api/kitchen/today (PARTIAL: returns 500 when redirect/deps missing)
+{"ts":"2026-04-08T19:39:21.478Z","scope":"incident","rid":"rid_mnqgc2km_vg4ydbdxs7y3k50n","status":500,"message":"Kunne ikke redirecte til dagsview.","error":"KITCHEN_TODAY_FAILED"}
+
+ ✓ tests/cms/editorViewConsistency.test.ts (5 tests) 37ms
+ ✓ tests/middleware/middlewareRedirectSafety.test.ts (7 tests) 44ms
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:21.667Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.674Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":7,"rid":null}
+
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 403 when role gate denies
+{"ts":"2026-04-08T19:39:21.678Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.679Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 400 when prompt is missing
+{"ts":"2026-04-08T19:39:21.681Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.683Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 500 when generatePageStructure throws
+{"ts":"2026-04-08T19:39:21.690Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.690Z","scope":"incident","rid":"rid_ai_page_builder","status":500,"message":"tool failed","error":"PAGE_BUILDER_FAILED","detail":{"detail":"Error: tool failed"}}
+{"ts":"2026-04-08T19:39:21.691Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 200 and ok:true for valid request (prompt only)
+{"ts":"2026-04-08T19:39:21.694Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > GET returns 404 when experiment not found
+{"ts":"2026-04-08T19:39:21.802Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.815Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":404},"status":"failure","durationMs":12,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > GET returns 200 and data with stats when found
+{"ts":"2026-04-08T19:39:21.826Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.828Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > PATCH returns 400 when no valid fields
+{"ts":"2026-04-08T19:39:21.832Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.834Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH","httpStatus":400},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > PATCH status to active returns 200 and sets started_at
+{"ts":"2026-04-08T19:39:21.836Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:21.838Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > PATCH status to completed returns 200 and sets completed_at
+{"ts":"2026-04-08T19:39:21.841Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/backofficeExperimentsIdRoute.test.ts > Backoffice experiment [id] API > PATCH status to completed returns 200 and sets completed_at
+{"ts":"2026-04-08T19:39:22.136Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/experiments/exp-1","userId":null,"companyId":null,"metadata":{"method":"PATCH","httpStatus":200},"status":"success","durationMs":295,"rid":null}
+
+ ✓ tests/api/backofficeExperimentsIdRoute.test.ts (5 tests) 345ms
+ ✓ tests/cms/backofficeWorkspaceContextModel.test.ts (7 tests) 20ms
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 200 and ok:true for valid request (prompt only)
+{"ts":"2026-04-08T19:39:22.181Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":487,"rid":null}
+
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 200 for structured input (no prompt)
+{"ts":"2026-04-08T19:39:22.184Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/releasesWorkflow.test.ts > Releases execute API > POST returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:22.248Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.251Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":3,"rid":null}
+
+stdout | tests/api/releasesWorkflow.test.ts > Releases execute API > POST returns 400 when release is not scheduled
+{"ts":"2026-04-08T19:39:22.253Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.258Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":5,"rid":null}
+
+stdout | tests/api/releasesWorkflow.test.ts > Releases execute API > POST returns 200 when release is scheduled (workflow: scheduled → execute)
+{"ts":"2026-04-08T19:39:22.260Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/releasesWorkflow.test.ts > Releases execute API > POST returns 200 when release is scheduled (workflow: scheduled → execute)
+{"ts":"2026-04-08T19:39:22.280Z","scope":"ai_memory.record_release_executed_failed","error":"supabase.from(...).insert is not a function"}
+{"ts":"2026-04-08T19:39:22.281Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/releases/r1/execute","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":21,"rid":null}
+
+ ✓ tests/api/releasesWorkflow.test.ts (6 tests) 69ms
+ ✓ tests/tenant-isolation-admin-agreement.test.ts (2 tests) 71ms
+ ✓ tests/cms/cmsPageMetadata.test.ts (10 tests) 19ms
+ ✓ tests/ads/portfolio-planner.test.ts (11 tests) 47ms
+ ✓ tests/cms/designSettingsContract.test.ts (9 tests) 19ms
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – unauthenticated returns 401 > POST /api/backoffice/ai/suggest returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:22.703Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.711Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":9,"rid":null}
+
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – unauthenticated returns 401 > POST /api/backoffice/ai/block-builder returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:22.778Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.778Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":1,"rid":null}
+
+ ✓ tests/api/smoke-api-routes.test.ts (25 tests) 9331ms
+   ✓ API smoke — auth > GET /api/health 1413ms
+   ✓ API smoke — auth > POST /api/auth/login (JSON) 668ms
+   ✓ API smoke — order > GET /api/orders 415ms
+   ✓ API smoke — order > GET /api/order/window 1205ms
+   ✓ API smoke — order > GET /api/week (PARTIAL: needs valid request URL) 478ms
+   ✓ API smoke — order > GET /api/weekplan (BLOCKED in vitest: cookies() outside request scope) 427ms
+   ✓ API smoke — backoffice / CMS > GET /api/backoffice/content/pages 576ms
+   ✓ API smoke — backoffice / CMS > GET /api/backoffice/ai/status 475ms
+   ✓ API smoke — superadmin / system > GET /api/superadmin/system/status 538ms
+   ✓ API smoke — public / onboarding > POST /api/onboarding/complete 368ms
+   ✓ API smoke — public / onboarding > GET /api/public/forms/[id]/schema 656ms
+stdout | tests/api/backofficeAiPageBuilderRoute.test.ts > Backoffice AI page-builder API > returns 200 for structured input (no prompt)
+{"ts":"2026-04-08T19:39:22.792Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/page-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":608,"rid":null}
+
+ ✓ tests/api/backofficeAiPageBuilderRoute.test.ts (6 tests) 1138ms
+   ✓ Backoffice AI page-builder API > returns 200 and ok:true for valid request (prompt only) 490ms
+   ✓ Backoffice AI page-builder API > returns 200 for structured input (no prompt) 611ms
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – unauthenticated returns 401 > POST /api/backoffice/ai/apply returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:22.811Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.812Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":2,"rid":null}
+
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – company_admin returns 403 > POST /api/backoffice/ai/suggest returns 403 for company_admin
+{"ts":"2026-04-08T19:39:22.818Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.820Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/suggest","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":2,"rid":null}
+
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – company_admin returns 403 > POST /api/backoffice/ai/block-builder returns 403 for company_admin
+{"ts":"2026-04-08T19:39:22.826Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.828Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/security/editorAiPermissionGuarantees.test.ts > Editor-AI permission guarantees – company_admin returns 403 > POST /api/backoffice/ai/apply returns 403 for company_admin
+{"ts":"2026-04-08T19:39:22.831Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:22.832Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":1,"rid":null}
+
+ ✓ tests/security/editorAiPermissionGuarantees.test.ts (6 tests) 705ms
+   ✓ Editor-AI permission guarantees – unauthenticated returns 401 > POST /api/backoffice/ai/suggest returns 401 when not authenticated 584ms
+ ✓ tests/api/contentPages.test.ts (4 tests) 32ms
+ ✓ tests/tenant-isolation-api-gate.test.ts (3 tests) 31ms
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:23.381Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:23.389Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":7,"rid":null}
+
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 500 when ai_activity_log insert fails (no silent drop)
+{"ts":"2026-04-08T19:39:23.393Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:23.399Z","scope":"incident","rid":"rid_ai_apply","status":500,"message":"Kunne ikke logge apply.","error":"APPLY_LOG_FAILED"}
+{"ts":"2026-04-08T19:39:23.400Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":500},"status":"failure","durationMs":7,"rid":null}
+
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 200 when log insert succeeds
+{"ts":"2026-04-08T19:39:23.403Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 200 when log insert succeeds
+{"ts":"2026-04-08T19:39:23.415Z","scope":"ai_memory.record_suggestion_applied_failed","error":"Unexpected table: ai_memory"}
+{"ts":"2026-04-08T19:39:23.417Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":14,"rid":null}
+
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 200 for seo.optimize.page tool and patch (application safety / persistence path)
+{"ts":"2026-04-08T19:39:23.419Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:23.422Z","scope":"ai_memory.record_suggestion_applied_failed","error":"Unexpected table: ai_memory"}
+{"ts":"2026-04-08T19:39:23.423Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":4,"rid":null}
+
+stdout | tests/api/backofficeAiApply.test.ts > Backoffice AI apply API > returns 403 when role is company_admin (apply is superadmin-only)
+{"ts":"2026-04-08T19:39:23.426Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:23.428Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/apply","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":2,"rid":null}
+
+ ✓ tests/api/backofficeAiApply.test.ts (5 tests) 61ms
+ ✓ tests/lib/media/mediaDomainGuarantees.test.ts (11 tests) 24ms
+ ✓ tests/tenant-isolation.test.ts (2 tests) 84ms
+ ✓ tests/lib/seo/scoring.test.ts (10 tests) 15ms
+ ✓ tests/api/backofficeSeoIntelligenceRoute.test.ts (4 tests) 102ms
+ ✓ tests/cms/contentWorkspaceBlocks.test.ts (10 tests) 25ms
+ ✓ tests/motion/motionSystemProof.test.ts (9 tests) 59ms
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 401 when not authenticated
+{"ts":"2026-04-08T19:39:24.243Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:24.248Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":401},"status":"failure","durationMs":5,"rid":null}
+
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 403 when role gate denies
+{"ts":"2026-04-08T19:39:24.255Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:24.256Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":403},"status":"failure","durationMs":1,"rid":null}
+
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 503 when AI is disabled
+{"ts":"2026-04-08T19:39:24.258Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:24.259Z","scope":"incident","rid":"rid_ai_block_builder","status":503,"message":"AI is disabled.","error":"FEATURE_DISABLED"}
+{"ts":"2026-04-08T19:39:24.260Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":503},"status":"failure","durationMs":2,"rid":null}
+
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 400 when description is missing
+{"ts":"2026-04-08T19:39:24.266Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-08T19:39:24.268Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":2,"rid":null}
+
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 200 and calls buildBlockFromDescription with normalized input
+{"ts":"2026-04-08T19:39:24.270Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+
+ ✓ tests/security/kitchenDriverScopeGuard.test.ts (6 tests) 22ms
+ ✓ tests/api/contentPublishedBody.test.ts (4 tests) 28ms
+ ✓ tests/cms/mapTreeApiRoots.test.ts (8 tests) 15ms
+stdout | tests/api/backofficeAiBlockBuilderRoute.test.ts > Backoffice AI block-builder API > returns 200 and calls buildBlockFromDescription with normalized input
+{"ts":"2026-04-08T19:39:24.720Z","scope":"ai_activity_log.insert_failed","route":"block-builder","action":"block_build","error":"invalid input syntax for type uuid: \"page-1\""}
+{"ts":"2026-04-08T19:39:24.722Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/block-builder","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":451,"rid":null}
+
+ ✓ tests/api/backofficeAiBlockBuilderRoute.test.ts (5 tests) 495ms
+   ✓ Backoffice AI block-builder API > returns 200 and calls buildBlockFromDescription with normalized input 454ms
+ ✓ tests/kitchen/api-kitchen-route.behavior.test.ts (2 tests) 892ms
+   ✓ api/kitchen – production visibility > includes only ACTIVE orders and excludes cancelled/other statuses 881ms
+ ✓ tests/lib/seo/pageAnalysis.test.ts (7 tests) 20ms
+stdout | tests/api/contentLocalDevReserveRoutes.test.ts > Local dev content reserve routes > tree route returns reserve roots and pages
+{"ts":"2026-04-08T19:39:25.112Z","scope":"incident","rid":"rid_local_reserve","route":"/api/backoffice/content/tree","message":"local dev content reserve enabled; returning reserve tree pages"}
+
+stdout | tests/api/contentAuditLogRoute.test.ts > GET /api/backoffice/content/audit-log — degraded when table missing > returns 200 with empty items and degraded when relation missing
+{"ts":"2026-04-08T19:39:25.142Z","scope":"incident","rid":"rid_t","route":"/api/backoffice/content/audit-log","message":"content_audit_log missing or inaccessible; returning degraded empty list","error":"relation \"content_audit_log\" does not exist","code":"42P01"}
+
+stdout | tests/api/contentAuditLogRoute.test.ts > GET /api/backoffice/content/audit-log — degraded when table missing > returns degraded column-missing payload with code when audit schema drifts
+{"ts":"2026-04-08T19:39:25.158Z","scope":"incident","rid":"rid_t","route":"/api/backoffice/content/audit-log","message":"content_audit_log missing or inaccessible; returning degraded empty list","error":"column \"actor_email\" of relation \"content_audit_log\" does not exist","code":"42703"}
+
+ ✓ tests/api/contentAuditLogRoute.test.ts (3 tests) 499ms
+   ✓ GET /api/backoffice/content/audit-log — degraded when table missing > returns 200 with empty items and degraded when relation missing 486ms
+ ✓ tests/forecast/control-tower.test.ts (12 tests) 41ms
+21:39:25 [vite] warning: Duplicate key "hasSupabaseAdminConfig" in object literal
+90 |      },
+91 |    }),
+92 |    hasSupabaseAdminConfig: () => true,
+   |    ^
+93 |    };
+94 |  });
+
+  Plugin: vite:esbuild
+  File: C:/prosjekter/lunchportalen/tests/api/mediaUpload.test.ts
+stdout | tests/api/contentLocalDevReserveRoutes.test.ts > Local dev content reserve routes > pages routes return reserve data and reject writes
+{"ts":"2026-04-08T19:39:25.839Z","scope":"incident","rid":"rid_local_reserve","status":503,"message":"Lokal content-reserve er skrivebeskyttet. Deaktiver LOCAL_DEV_CONTENT_RESERVE for å lagre mot ekte backend.","error":"LOCAL_DEV_CONTENT_RESERVE_READONLY"}
+
+ ✓ tests/backoffice/backoffice-layout-guard.test.ts (5 tests) 652ms
+   ✓ Backoffice layout guard > unauthenticated → redirect to /login?next=... (safe redirect) 637ms
+ ✓ tests/api/contentLocalDevReserveRoutes.test.ts (2 tests) 982ms
+   ✓ Local dev content reserve routes > pages routes return reserve data and reject writes 711ms
+ ✓ tests/cms/ContentWorkspaceSurfaceOwnership.test.ts (3 tests) 17ms
+ ✓ tests/cms/slugRoutingIntegrity.test.ts (3 tests) 43ms
+stdout | tests/api/cronOutboxAuth.test.ts > Cron outbox API — auth gate > returns 500 when CRON_SECRET is not set
+{"ts":"2026-04-08T19:39:25.764Z","scope":"incident","rid":"rid_mnqgc5vn_fl0estnohp0aaube","status":500,"message":"CRON_SECRET er ikke satt i environment.","error":"misconfigured"}
+
+ ✓ tests/api/cronOutboxAuth.test.ts (5 tests) 161ms
+ ✓ tests/cms/useContentWorkspaceSave.test.ts (10 tests) 15ms
+ ✓ tests/cms/editorAiGuarantees.test.ts (8 tests) 18ms
+ ✓ tests/api/mediaUpload.test.ts (1 test) 127ms
+stdout | tests/security/privilegeBoundaries.test.ts > Privilege boundaries — internal scheduler run > POST returns 500 when CRON_SECRET not set
+{"ts":"2026-04-08T19:39:26.291Z","scope":"incident","rid":"sched_mnqgc6aa_m84wd87qpx8nnkzp","status":500,"message":"CRON_SECRET er ikke satt i environment.","error":"misconfigured"}
+
+ ✓ tests/security/privilegeBoundaries.test.ts (4 tests) 567ms
+   ✓ Privilege boundaries — backoffice content pages > GET returns 403 when authenticated as company_admin (not superadmin) 527ms
+ ✓ tests/tenant-isolation-admin-people.test.ts (1 test) 63ms
+ ✓ tests/ads/profit-first.test.ts (11 tests) 24ms
+ ✓ tests/lib/seo/suggestions.test.ts (8 tests) 20ms
+stdout | tests/ai/schema.test.ts > lib/ai/schema validateEvent > rejects invalid envelope (empty source)
+{"ts":"2026-04-08T19:39:27.144Z","scope":"ai_intelligence.schema_validation_failed","reason":"Invalid intelligence log envelope","source":"","timestamp":null,"domainType":null,"payloadKind":null,"zodIssues":["source: String must contain at least 1 character(s)"]}
+
+stdout | tests/ai/schema.test.ts > lib/ai/schema validateEvent > rejects wrong payload kind for domain (gtm_conversion under gtm)
+{"ts":"2026-04-08T19:39:27.150Z","scope":"ai_intelligence.schema_validation_failed","reason":"Payload kind \"gtm_conversion\" is not allowed for intelligence type \"gtm\"","source":"x","timestamp":null,"domainType":"gtm","payloadKind":"gtm_conversion","zodIssues":null}
+
+stdout | tests/ai/schema.test.ts > lib/ai/schema validateEvent > rejects gtm_outcome missing classification
+{"ts":"2026-04-08T19:39:27.153Z","scope":"ai_intelligence.schema_validation_failed","reason":"Invalid intelligence payload shape","source":"x","timestamp":null,"domainType":"gtm","payloadKind":"gtm_outcome","zodIssues":["classification: Required"]}
+
+stdout | tests/ai/schema.test.ts > lib/ai/schema validateEvent > rejects unknown payload kind
+{"ts":"2026-04-08T19:39:27.155Z","scope":"ai_intelligence.schema_validation_failed","reason":"Payload kind \"totally_unknown\" is not allowed for intelligence type \"analytics\"","source":"x","timestamp":null,"domainType":"analytics","payloadKind":"totally_unknown","zodIssues":null}
+
+ ✓ tests/ai/schema.test.ts (10 tests) 40ms
+ ✓ tests/cms/contentOutbox.test.ts (8 tests) 20ms
+ ✓ tests/ai/CmsAiEntryPointsInventory.test.ts (3 tests) 35ms
+ ✓ tests/cms/bellissimaWorkspaceContext.test.ts (2 tests) 19ms
+ ✓ tests/pricing/strategy.test.ts (13 tests) 13ms
+ ✓ tests/procurement/procurement.test.ts (11 tests) 41ms
+ ✓ tests/statusPageHelpers.test.ts (12 tests) 12ms
+ ↓ tests/api/editorAiMetricsPersistence.test.ts (1 test | 1 skipped)
+ ✓ tests/cms/blockRenderFailSafety.test.ts (8 tests) 51ms
+ ✓ tests/cms/ContentWorkspaceCompositionOnly.test.ts (2 tests) 13ms
+ ✓ tests/cms/aiPageBuilderFlow.smoke.test.ts (4 tests) 18ms
+ ✓ tests/lib/cro/editorState.test.ts (5 tests) 12ms
+stdout | tests/api/cronOutboxObservability.test.ts > Cron outbox API — observability > logs cron_runs row with status=error on failure
+{"ts":"2026-04-08T19:39:28.685Z","scope":"incident","rid":"rid_mnqgc84s_645jzxpiuognsx3y","status":500,"message":"Outbox processing feilet.","error":"outbox_failed"}
+
+ ✓ tests/api/cronOutboxObservability.test.ts (2 tests) 20ms
+ ✓ tests/cms/WorkspacePropertyEditorParity.test.ts (5 tests) 26ms
+ ✓ tests/cms/BlockFrameParity.test.ts (4 tests) 23ms
+ ✓ tests/ai/controlLayer.test.ts (7 tests) 17ms
+stdout | tests/auth/post-login-api.test.ts > GET /api/auth/post-login — unauthenticated redirect > GET when getAuthContext returns UNAUTHENTICATED returns 303 to /login with code=NO_SESSION
+{"ts":"2026-04-08T19:39:29.252Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8kj_7185vyutp5n9sy6q"}
+{"ts":"2026-04-08T19:39:29.258Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":6,"rid":"rid_mnqgc8kj_7185vyutp5n9sy6q"}
+
+stdout | tests/auth/post-login-api.test.ts > GET /api/auth/post-login — unauthenticated redirect > GET superadmin ignores unsafe next (e.g. /week) and redirects to /superadmin
+{"ts":"2026-04-08T19:39:29.261Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8kt_0u28na7t3rr8z49a"}
+{"ts":"2026-04-08T19:39:29.262Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":1,"rid":"rid_mnqgc8kt_0u28na7t3rr8z49a"}
+
+stdout | tests/auth/post-login-api.test.ts > GET /api/auth/post-login — unauthenticated redirect > GET superadmin honors next under /superadmin
+{"ts":"2026-04-08T19:39:29.264Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8kw_y96kd1z2dcug0c3n"}
+{"ts":"2026-04-08T19:39:29.265Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":1,"rid":"rid_mnqgc8kw_y96kd1z2dcug0c3n"}
+
+ ✓ tests/auth/post-login-api.test.ts (5 tests) 546ms
+   ✓ POST /api/auth/post-login — request path and failure handling > POST with missing tokens returns 400 JSON ok false 524ms
+ ✓ tests/product/prioritization-and-pricing.test.ts (10 tests) 13ms
+stdout | tests/auth/postLoginRedirectSafety.test.ts > POST-login redirect safety (/api/auth/post-login GET) > rejects unsafe next (external-style) and falls back to role home
+{"ts":"2026-04-08T19:39:29.288Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8lj_rluhy5qmp199jjmu"}
+{"ts":"2026-04-08T19:39:29.297Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":10,"rid":"rid_mnqgc8lj_rluhy5qmp199jjmu"}
+
+stdout | tests/auth/postLoginRedirectSafety.test.ts > POST-login redirect safety (/api/auth/post-login GET) > employee next=/orders falls back to /week (employee allowlist)
+{"ts":"2026-04-08T19:39:29.302Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8ly_bry8qbhy8rc5po5r"}
+{"ts":"2026-04-08T19:39:29.303Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":1,"rid":"rid_mnqgc8ly_bry8qbhy8rc5po5r"}
+
+stdout | tests/auth/postLoginRedirectSafety.test.ts > POST-login redirect safety (/api/auth/post-login GET) > employee unsafe next=/admin falls back to role landing (E5 allowNextForRole)
+{"ts":"2026-04-08T19:39:29.305Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8m1_oxsyio4f8vl6w0qc"}
+{"ts":"2026-04-08T19:39:29.305Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":0,"rid":"rid_mnqgc8m1_oxsyio4f8vl6w0qc"}
+
+stdout | tests/auth/postLoginRedirectSafety.test.ts > POST-login redirect safety (/api/auth/post-login GET) > superadmin unsafe next=/week falls back to landing (E5 — /superadmin*)
+{"ts":"2026-04-08T19:39:29.307Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqgc8m3_rtkdh5kqn25wxzts"}
+{"ts":"2026-04-08T19:39:29.308Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":1,"rid":"rid_mnqgc8m3_rtkdh5kqn25wxzts"}
+
+ ✓ tests/auth/postLoginRedirectSafety.test.ts (4 tests) 598ms
+   ✓ POST-login redirect safety (/api/auth/post-login GET) > rejects unsafe next (external-style) and falls back to role home 587ms
+ ✓ tests/cms/blockFlowSingleSource.test.ts (6 tests) 20ms
+ ✓ tests/api/globalSettingsRoute.test.ts (3 tests) 371ms
+   ✓ globalPublicGetResponse > returns matching rid in body and x-rid header 345ms
+ ✓ tests/ads/roas-optimizer.test.ts (10 tests) 14ms
+ ✓ tests/lib/ai/pageBuilder.test.ts (10 tests) 22ms
+ ✓ tests/api/contentHome.test.ts (1 test) 22ms
+ ✓ tests/cms/previewParity.test.ts (8 tests) 13ms
+ ✓ tests/backoffice/content-tree-guard.test.ts (3 tests) 409ms
+   ✓ GET /api/backoffice/content/tree — auth and safe failure > returns 401 when unauthenticated 397ms
+stdout | tests/runtime/SanityHealthTruth.test.ts > Sanity and health truth > health fails when remote_backend mode requires a dead remote backend
+{"ts":"2026-04-08T19:39:30.472Z","scope":"incident","rid":"rid_mnqgc9ie_7bsbowx0vrj4vksj","status":503,"message":"Health check failed.","error":"HEALTH_FAILED","detail":{"ok":false,"ts":"2026-04-08T19:39:30.470Z","version":"unknown","rid":"rid_mnqgc9ig_gyuv1jjapislv255","summary":{"status":"failed","runtime":"remote_backend","remote_backend":"failed","supabase":"failed","sanity":"ok","env":"ok","timestamp":"2026-04-08T19:39:30.470Z"},"checks":{"app":{"ok":true},"runtime":{"ok":true,"mode":"remote_backend","source":"LP_CMS_RUNTIME_MODE","explicit":true,"requiresRemoteBackend":true},"supabase":{"ok":false,"configured":true,"required":true,"status":"failed","error":null},"db_schema":{"ok":false,"orders":{"ok":false},"profiles":{"ok":false}},"sanity":{"ok":true,"cutoff_helpers":{"ok":true}},"env":{"ok":true}}}}
+
+ ✓ tests/runtime/SanityHealthTruth.test.ts (3 tests) 539ms
+   ✓ Sanity and health truth > sanity-live no longer soft-passes when the endpoint is unreachable 381ms
+stdout | tests/ai/autonomousSaasEngines.test.ts > autonomous SaaS engines > validateAutonomousAction blocks price types
+{"ts":"2026-04-08T19:39:30.911Z","scope":"autonomous_action_blocked","type":"INCREASE_PRICE","reason":"pricing_never_auto_executed"}
+{"ts":"2026-04-08T19:39:30.913Z","scope":"autonomous_action_blocked","type":"DECREASE_PRICE","reason":"pricing_never_auto_executed"}
+
+stdout | tests/ai/omniscientEngines.test.ts > omniscient / market engines > validateOmniscientAction blocks MARKET_MOVE only
+{"ts":"2026-04-08T19:39:30.914Z","scope":"omniscient_action_blocked","type":"MARKET_MOVE","reason":"market_simulation_never_auto_executed"}
+
+ ✓ tests/runtime/PublicSeededContentRender.test.tsx (2 tests) 658ms
+   ✓ Public seeded content render > loads seeded blocks for /bestilling-og-sporsmal from local runtime truth 428ms
+ ✓ tests/ai/autonomousSaasEngines.test.ts (6 tests) 17ms
+ ✓ tests/ai/omniscientEngines.test.ts (8 tests) 19ms
+ ✓ tests/runtime/RuntimeModeSingleTruth.test.ts (3 tests) 142ms
+ ✓ tests/cms/U83UmbracoEditorModelGate.test.ts (4 tests) 20ms
+ ✓ tests/gtm/gtmEngines.test.ts (7 tests) 20ms
+ ✓ tests/ai/CmsAiAuthRuntimeParity.test.ts (3 tests) 11ms
+ ✓ tests/cms/contentWorkspaceHelpers.test.ts (10 tests) 14ms
+ ✓ tests/auth/employeeDirectRouteBehavior.test.ts (5 tests) 141ms
+ ✓ tests/cms/BlockTypeDefinitionSingleSource.test.ts (4 tests) 31ms
+stdout | tests/auth/LoginApiRuntimeFailureHandling.test.ts > POST /api/auth/login runtime failure handling > returns AUTH_BACKEND_UNREACHABLE when Supabase responds with a network error object
+[auth.login] start {
+  rid: 'rid_mnqgcasu_iof9bzrjdkbg8snq',
+  nextFromBody: '/backoffice/content',
+  nextFromQuery: null,
+  nextSafe: '/backoffice/content',
+  email: 'ru***@example.com',
+  localRuntime: false
+}
+[auth.login] sign_in_result {
+  rid: 'rid_mnqgcasu_iof9bzrjdkbg8snq',
+  hasError: true,
+  hasSession: false,
+  hasUser: false,
+  capturedCookieNames: []
+}
+
+ ✓ tests/cms/designMergeLayers.test.ts (6 tests) 16ms
+ ✓ tests/profile-company-status.test.ts (2 tests) 23ms
+stdout | tests/auth/LoginApiRuntimeFailureHandling.test.ts > POST /api/auth/login runtime failure handling > keeps credential failures on invalid_login
+[auth.login] start {
+  rid: 'rid_mnqgcauw_x0kj2h1ag3frka3h',
+  nextFromBody: null,
+  nextFromQuery: null,
+  nextSafe: '/week',
+  email: 'wr***@example.com',
+  localRuntime: false
+}
+[auth.login] sign_in_result {
+  rid: 'rid_mnqgcauw_x0kj2h1ag3frka3h',
+  hasError: true,
+  hasSession: false,
+  hasUser: false,
+  capturedCookieNames: []
+}
+
+ ✓ tests/auth/LoginApiRuntimeFailureHandling.test.ts (2 tests) 491ms
+   ✓ POST /api/auth/login runtime failure handling > returns AUTH_BACKEND_UNREACHABLE when Supabase responds with a network error object 426ms
+ ✓ tests/lib/systemSettingsBaseline.test.ts (3 tests) 13ms
+ ✓ tests/lib/http/cronAuth.test.ts (6 tests) 21ms
+stdout | tests/ai/revenueModeEngines.test.ts > revenue mode engines > validateRevenueAction blocks pricing experiment and price types
+{"ts":"2026-04-08T19:39:32.735Z","scope":"revenue_action_blocked","type":"RUN_PRICING_EXPERIMENT","reason":"pricing_never_auto_executed"}
+{"ts":"2026-04-08T19:39:32.739Z","scope":"revenue_action_blocked","type":"INCREASE_PRICE","reason":"pricing_never_auto_executed"}
+{"ts":"2026-04-08T19:39:32.739Z","scope":"revenue_action_blocked","type":"DECREASE_PRICE","reason":"pricing_never_auto_executed"}
+
+stdout | tests/ai/revenueModeEngines.test.ts > revenue mode engines > toSingularityActionsFromRevenueOffers maps CREATE_OFFER only
+{"ts":"2026-04-08T19:39:32.740Z","scope":"revenue_action_blocked","type":"RUN_PRICING_EXPERIMENT","reason":"pricing_never_auto_executed"}
+
+ ✓ tests/ai/revenueModeEngines.test.ts (6 tests) 19ms
+ ✓ tests/security/kitchenDriverScopeApi.test.ts (2 tests) 416ms
+   ✓ API guard: kitchen/driver scope enforcement > kitchen without assignment -> 403 SCOPE_NOT_ASSIGNED 308ms
+ ✓ tests/cms/BlockPreviewIdentityParity.test.ts (1 test) 9ms
+ ✓ tests/auth/localDevBypassCookie.test.ts (4 tests) 13ms
+ ✓ tests/cms/BlockInspectorEditorialParity.test.ts (2 tests) 9ms
+ ✓ tests/autonomy/autonomy-pure.test.ts (9 tests) 16ms
+ ✓ tests/backoffice/experimentModel.test.ts (9 tests) 18ms
+stdout | tests/api/treeRoutePageKeyFallback.test.ts > GET /api/backoffice/content/tree — page_key column fallback > returns 200 with schemaHints and inferred home kind
+{"ts":"2026-04-08T19:39:33.483Z","scope":"incident","rid":"rid_t","route":"/api/backoffice/content/tree","message":"content_pages.page_key column missing; legacy select + inferred page keys","error":"column content_pages.page_key does not exist"}
+
+ ✓ tests/api/treeRoutePageKeyFallback.test.ts (1 test) 376ms
+   ✓ GET /api/backoffice/content/tree — page_key column fallback > returns 200 with schemaHints and inferred home kind 373ms
+ ✓ tests/ai/marketEngines.test.ts (5 tests) 13ms
+stdout | tests/api/healthPublic.test.ts > Public health API — no fake OK > returns 503 and ok: false when DB query fails
+{"ts":"2026-04-08T19:39:33.701Z","scope":"incident","rid":"rid_mnqgcc04_l7qpybr1f5ihgwll","status":503,"message":"Health check failed.","error":"HEALTH_FAILED","detail":{"ok":false,"ts":"2026-04-08T19:39:33.700Z","version":"unknown","rid":"rid_mnqgcc05_2y5mjyi1f6mt8v27","summary":{"status":"failed","runtime":"remote_backend","remote_backend":"failed","supabase":"failed","sanity":"ok","env":"ok","timestamp":"2026-04-08T19:39:33.700Z"},"checks":{"app":{"ok":true},"runtime":{"ok":true,"mode":"remote_backend","source":"default_remote_backend","explicit":false,"requiresRemoteBackend":true},"supabase":{"ok":false,"configured":true,"required":true,"status":"failed","error":null},"db_schema":{"ok":false,"orders":{"ok":false},"profiles":{"ok":false}},"sanity":{"ok":true,"cutoff_helpers":{"ok":true}},"env":{"ok":true}}}}
+
+stdout | tests/api/healthPublic.test.ts > Public health API — no fake OK > returns 503 and ok: false when system runtime env is invalid (env fail-closed)
+{"ts":"2026-04-08T19:39:33.706Z","scope":"incident","rid":"rid_mnqgcc09_tsx0nckhnk85wgsm","status":503,"message":"Health check failed.","error":"HEALTH_FAILED","detail":{"ok":false,"ts":"2026-04-08T19:39:33.705Z","version":"unknown","rid":"rid_mnqgcc0a_xb3i2npx19ycf9m4","summary":{"status":"failed","runtime":"remote_backend","remote_backend":"ok","supabase":"ok","sanity":"ok","env":"failed","timestamp":"2026-04-08T19:39:33.705Z"},"checks":{"app":{"ok":true},"runtime":{"ok":true,"mode":"remote_backend","source":"default_remote_backend","explicit":false,"requiresRemoteBackend":true},"supabase":{"ok":true,"configured":true,"required":true,"status":"ok","error":null},"db_schema":{"ok":true,"orders":{"ok":true},"profiles":{"ok":true}},"sanity":{"ok":true,"cutoff_helpers":{"ok":true}},"env":{"ok":false,"missing":["SYSTEM_MOTOR_SECRET"]}}}}
+
+ ✓ tests/api/healthPublic.test.ts (3 tests) 24ms
+ ✓ tests/lib/kitchen/grouping.behavior.test.ts (1 test) 50ms
+ ✓ tests/cms/BlockCustomViewParity.test.ts (4 tests) 14ms
+stdout | tests/api/healthSummary.test.ts > Health summary (platform core) > summary.status is 'failed' and HTTP 503 when DB query fails
+{"ts":"2026-04-08T19:39:34.183Z","scope":"incident","rid":"rid_mnqgccdh_9samtj31u5ln6ckp","status":503,"message":"Health check failed.","error":"HEALTH_FAILED","detail":{"ok":false,"ts":"2026-04-08T19:39:34.181Z","version":"unknown","rid":"rid_mnqgccdi_emxdmd57v3syq762","summary":{"status":"failed","runtime":"remote_backend","remote_backend":"failed","supabase":"failed","sanity":"ok","env":"ok","timestamp":"2026-04-08T19:39:34.181Z"},"checks":{"app":{"ok":true},"runtime":{"ok":true,"mode":"remote_backend","source":"default_remote_backend","explicit":false,"requiresRemoteBackend":true},"supabase":{"ok":false,"configured":true,"required":true,"status":"failed","error":null},"db_schema":{"ok":false,"orders":{"ok":false},"profiles":{"ok":false}},"sanity":{"ok":true,"cutoff_helpers":{"ok":true}},"env":{"ok":true}}}}
+
+stdout | tests/api/healthSummary.test.ts > Health summary (platform core) > summary.status is 'failed' when env validation fails
+{"ts":"2026-04-08T19:39:34.188Z","scope":"incident","rid":"rid_mnqgccdm_7hhpf9ga068twst6","status":503,"message":"Health check failed.","error":"HEALTH_FAILED","detail":{"ok":false,"ts":"2026-04-08T19:39:34.186Z","version":"unknown","rid":"rid_mnqgccdo_1hfcx0wlfwoja11r","summary":{"status":"failed","runtime":"remote_backend","remote_backend":"ok","supabase":"ok","sanity":"ok","env":"failed","timestamp":"2026-04-08T19:39:34.186Z"},"checks":{"app":{"ok":true},"runtime":{"ok":true,"mode":"remote_backend","source":"default_remote_backend","explicit":false,"requiresRemoteBackend":true},"supabase":{"ok":true,"configured":true,"required":true,"status":"ok","error":null},"db_schema":{"ok":true,"orders":{"ok":true},"profiles":{"ok":true}},"sanity":{"ok":true,"cutoff_helpers":{"ok":true}},"env":{"ok":false,"missing":["SYSTEM_MOTOR_SECRET"]}}}}
+
+ ✓ tests/api/healthSummary.test.ts (3 tests) 29ms
+ ✓ tests/env/envValidation.test.ts (3 tests) 14ms
+ ✓ tests/ai/pageBuilderDraft.test.ts (4 tests) 15ms
+ ✓ tests/ai/capitalAllocationEngines.test.ts (5 tests) 36ms
+ ✓ tests/cms/BlockSchemaQuality.test.ts (5 tests) 15ms
+ ✓ tests/finance/finance-and-simulation.test.ts (7 tests) 12ms
+stdout | tests/kitchen/cutoff.test.ts > kitchen determinism – cutoff filter > orders after cutoff are excluded when afterCutoff=true
+{"ts":"2026-04-08T19:39:34.935Z","scope":"kitchen.day.summary","rid":"rid_cutoff","date":"2026-02-01","company_id":"cA","location_id":"l1","orders_total":1,"groups_total":1,"anomalies":{"orders_missing_company_id":0,"orders_missing_location_id":0,"orders_missing_slot":0,"orders_missing_date":0,"profiles_missing":0,"day_choices_missing":0},"anomaly_ids":[]}
+
+ ✓ tests/kitchen/cutoff.test.ts (2 tests) 63ms
+ ✓ tests/runtime/NoZombieCmsSurfaces.test.ts (3 tests) 17ms
+ ✓ tests/ai/boardroomEngines.test.ts (5 tests) 12ms
+ ✓ tests/alerts/financial-alerts.test.ts (8 tests) 16ms
+ ✓ tests/cms/BlockDataTypeLibraryBindingParity.test.ts (3 tests) 40ms
+ ✓ tests/ai/monopolyEngines.test.ts (5 tests) 12ms
+ ✓ tests/cms/BlockFormFactorParity.test.ts (2 tests) 17ms
+stdout | tests/ai/godModeEngines.test.ts > god mode engines > validateBusinessAction blocks pricing types
+{"ts":"2026-04-08T19:39:35.675Z","scope":"business_action_blocked","type":"INCREASE_PRICE","reason":"pricing_never_auto_executed"}
+{"ts":"2026-04-08T19:39:35.679Z","scope":"business_action_blocked","type":"DECREASE_PRICE","reason":"pricing_never_auto_executed"}
+
+ ✓ tests/ai/godModeEngines.test.ts (6 tests) 21ms
+ ✓ tests/cms/DocumentTypeVsDataTypeVsElementTypeParity.test.ts (4 tests) 12ms
+ ✓ tests/ai/realityEngines.test.ts (6 tests) 13ms
+ ✓ tests/ai/designSettingsOptimizer.test.ts (5 tests) 16ms
+ ✓ tests/backoffice/settingsRoutes.smoke.test.ts (6 tests) 22ms
+stdout | tests/api/treeRouteDegradable.test.ts > GET /api/backoffice/content/tree — degradable schema error > returns 200 with degraded virtual roots
+{"ts":"2026-04-08T19:39:36.142Z","scope":"incident","rid":"rid_x","route":"/api/backoffice/content/tree","message":"content_pages query failed (schema/cache); returning virtual roots only","error":"column content_pages.foo does not exist","code":"42703"}
+
+ ✓ tests/api/treeRouteDegradable.test.ts (1 test) 278ms
+ ✓ tests/cms/BlockChromeParity.test.ts (4 tests) 14ms
+ ✓ tests/lib/observability-statusAggregator.test.ts (2 tests) 212ms
+ ✓ tests/cms/BlockPropertyEditorParity.test.ts (2 tests) 15ms
+ ✓ tests/ai/strategicEngines.test.ts (5 tests) 15ms
+ ✓ tests/agreements/mealContractValidate.test.ts (4 tests) 12ms
+ ✓ tests/tenant-isolation-currentAgreement.test.ts (1 test) 6ms
+ ✓ tests/cms/BlockDifferentiationParity.test.ts (4 tests) 12ms
+ ✓ tests/backoffice/documentTypes.test.ts (7 tests) 19ms
+ ✓ tests/cms/BlockGeometryParity.test.ts (2 tests) 18ms
+ ✓ tests/ai/orgEngines.test.ts (4 tests) 10ms
+ ✓ tests/ai/designPolicy.test.ts (5 tests) 17ms
+ ✓ tests/ai/scaling.test.ts (5 tests) 13ms
+stdout | tests/auth/LocalLoginNoRemoteSupabase.test.ts > Local login route bypasses remote Supabase > uses the canonical local auth source and never calls createServerClient on seeded happy path
+[auth.login] start {
+  rid: 'rid_mnqgcf50_1wy9l7al67ct7j8x',
+  nextFromBody: '/backoffice/content',
+  nextFromQuery: null,
+  nextSafe: '/backoffice/content',
+  email: 'su***@lunchportalen.no',
+  localRuntime: true
+}
+
+ ✓ tests/auth/LocalLoginNoRemoteSupabase.test.ts (1 test) 473ms
+   ✓ Local login route bypasses remote Supabase > uses the canonical local auth source and never calls createServerClient on seeded happy path 470ms
+ ✓ tests/api/backofficeEsgSummaryRoute.test.ts (2 tests) 23ms
+ ✓ tests/cms/BlockDataTypeDefinitionParity.test.ts (2 tests) 16ms
+ ✓ tests/ai/attribution.test.ts (3 tests) 11ms
+ ✓ tests/api/order-window-dayModel.test.ts (2 tests) 14ms
+ ✓ tests/cms/backofficeCommandPalette.test.ts (6 tests) 17ms
+stdout | tests/ai/singularityEngines.test.ts > singularity engines > prioritize sorts by score descending
+{"ts":"2026-04-08T19:39:38.759Z","scope":"learning_retrieval_failed","actionType":"optimize","error":"Could not find the table 'public.ai_memory' in the schema cache"}
+{"ts":"2026-04-08T19:39:38.763Z","scope":"learning_priority_skip","actionType":"optimize","reason":"no_history"}
+
+ ✓ tests/ml/sequence.test.ts (4 tests) 714ms
+   ✓ sequence ML (deterministic) > trainSequenceModel is bitwise reproducible for fixed data 498ms
+stdout | tests/ai/singularityEngines.test.ts > singularity engines > prioritize sorts by score descending
+{"ts":"2026-04-08T19:39:38.830Z","scope":"learning_retrieval_failed","actionType":"experiment","error":"Could not find the table 'public.ai_memory' in the schema cache"}
+{"ts":"2026-04-08T19:39:38.830Z","scope":"learning_priority_skip","actionType":"experiment","reason":"no_history"}
+{"ts":"2026-04-08T19:39:38.831Z","scope":"learning_retrieval_failed","actionType":"variant","error":"Could not find the table 'public.ai_memory' in the schema cache"}
+{"ts":"2026-04-08T19:39:38.831Z","scope":"learning_priority_skip","actionType":"variant","reason":"no_history"}
+
+ ✓ tests/ai/singularityEngines.test.ts (4 tests) 406ms
+   ✓ singularity engines > prioritize sorts by score descending 392ms
+ ✓ tests/cms/treeRouteSchema.test.ts (6 tests) 12ms
+ ✓ tests/lib/media/variantResolution.test.ts (6 tests) 14ms
+ ✓ tests/cms/staleMediaRef.test.ts (4 tests) 15ms
+ ✓ tests/cms/BlockPreviewQuality.test.ts (4 tests) 18ms
+stdout | tests/smoke/critical-surfaces.smoke.test.ts > Smoke — critical surfaces > GET /api/superadmin/system/status returns response with status !== 500
+[auth] {
+  rid: 'rid_auth_mnqgcgf4_ftj2apsshgyqgco2',
+  event: 'auth_state',
+  source: 'NONE',
+  hasUser: false,
+  hasAuthError: true,
+  errorType: 'NO_SESSION',
+  isSessionValid: false,
+  shouldAttemptRefresh: false
+}
+
+ ✓ tests/cms/ElementTypeRuntimeEffectParity.test.ts (2 tests) 10ms
+ ✓ tests/cms/blockAllowlistGovernance.test.ts (6 tests) 11ms
+stdout | tests/smoke/critical-surfaces.smoke.test.ts > Smoke — critical surfaces > POST /api/auth/login with JSON returns response with status !== 500
+[auth.login] start {
+  rid: 'rid_mnqgcgmh_gw43cu6mfgjfqu0h',
+  nextFromBody: null,
+  nextFromQuery: null,
+  nextSafe: '/week',
+  email: '',
+  localRuntime: false
+}
+
+ ✓ tests/smoke/critical-surfaces.smoke.test.ts (4 tests) 1472ms
+   ✓ Smoke — critical surfaces > GET /api/health returns response with status !== 500 808ms
+   ✓ Smoke — critical surfaces > GET /api/superadmin/system/status returns response with status !== 500 399ms
+ ✓ tests/env/envPublicClientSafe.test.ts (2 tests) 11ms
+ ✓ tests/cms/backofficeDiscoveryEntities.test.ts (4 tests) 13ms
+ ✓ tests/ai/cmsAiTenant.test.ts (3 tests) 10ms
+ ✓ tests/ai/profit.test.ts (3 tests) 12ms
+ ✓ tests/cms/BlockViewRoutingParity.test.ts (2 tests) 10ms
+ ✓ tests/ai/outcomeLearning.test.ts (5 tests) 10ms
+ ✓ tests/cms/LegacyBlockShapeMigrationParity.test.ts (3 tests) 19ms
+ ✓ tests/lib/observability-alertEvaluator.test.ts (3 tests) 9ms
+ ✓ tests/runtime/LocalProviderStartupNoise.test.ts (3 tests) 126ms
+ ✓ tests/cms/PostCreateTreeRevealParity.test.ts (2 tests) 9ms
+ ✓ tests/cms/BlockCatalogueIdentityParity.test.ts (4 tests) 16ms
+ ✓ tests/cms/BlockSelectionParity.test.ts (3 tests) 13ms
+ ✓ tests/cms/backofficeSchemaSettingsModel.test.ts (5 tests) 15ms
+ ✓ tests/lib/auditLogTableError.test.ts (5 tests) 9ms
+ ✓ tests/ai/budgetExecutionEngines.test.ts (4 tests) 15ms
+ ↓ tests/_helpers/rlsFixtures.tokenReuse.test.ts (1 test | 1 skipped)
+ ✓ tests/ai/predictiveLayer.test.ts (6 tests) 31ms
+ ✓ tests/cms/resolveBlockMediaDeep.test.ts (2 tests) 13ms
+ ✓ tests/cms/BlockHeightRhythmParity.test.ts (2 tests) 16ms
+ ✓ tests/cms/BlockCanvasIdentityParity.test.ts (2 tests) 16ms
+ ✓ tests/cms/backofficeExtensionRegistry.test.ts (4 tests) 10ms
+ ✓ tests/backoffice/experimentAnalytics.test.ts (2 tests) 10ms
+ ✓ tests/cms/BlockDefaultsParity.test.ts (9 tests) 12ms
+ ✓ tests/driver/normalize-stops-response.test.ts (2 tests) 9ms
+ ✓ tests/cms/BlockLibraryContractParity.test.ts (2 tests) 11ms
+ ✓ tests/cms/BlockDatasetAdapterParity.test.ts (2 tests) 14ms
+ ✓ tests/api/authSessionRoute.test.ts (2 tests) 441ms
+   ✓ POST /api/auth/session > returns 400 when tokens are missing 349ms
+ ✓ tests/cms/NoGenericBlockNames.test.ts (2 tests) 18ms
+ ✓ tests/cms/BlockLibraryDataTypeParity.test.ts (3 tests) 16ms
+ ✓ tests/cms/BlockEntryVsDataTypeParity.test.ts (3 tests) 11ms
+ ✓ tests/cms/BlockCustomViewVisualParity.test.ts (2 tests) 9ms
+ ✓ tests/api/order-set-choice-helpers.test.ts (4 tests) 69ms
+ ✓ tests/cms/ContentTypeRuntimeEffectParity.test.ts (2 tests) 9ms
+ ✓ tests/cms/BlockFrameOwnershipParity.test.ts (2 tests) 18ms
+ ✓ tests/lib/observability/eventLogger.test.ts (3 tests) 23ms
+ ✓ tests/cms/backofficeSettingsWorkspaceModel.test.ts (3 tests) 9ms
+ ✓ tests/ai/resourceAllocation.test.ts (3 tests) 15ms
+ ✓ tests/cms/editorModularizationImports.test.ts (7 tests) 14901ms
+   ✓ editor modularization – import integrity > workspace shell modules export Bellissima editor surfaces 6534ms
+   ✓ editor modularization – import integrity > ContentWorkspace exports default component 7909ms
+ ✓ tests/ads/publish.test.ts (5 tests) 9ms
+ ✓ tests/cms/BlockLabelContractParity.test.ts (2 tests) 16ms
+ ✓ tests/cms/BlockDataTypeLimitsParity.test.ts (5 tests) 12ms
+ ✓ tests/cms/NoToyBlocksLeft.test.ts (2 tests) 18ms
+ ✓ tests/cms/SharedChromeInteriorEliminated.test.ts (2 tests) 14ms
+ ✓ tests/cms/BlockDataTypeSettingsWorkspaceParity.test.ts (3 tests) 29ms
+ ✓ tests/auth/employeeOrdersRedirect.test.ts (1 test) 122ms
+ ✓ tests/cms/BlockPropertyBindingParity.test.ts (3 tests) 12ms
+ ✓ tests/cms/BlockDatasetOwnershipParity.test.ts (3 tests) 9ms
+ ✓ tests/cms/surfaceContentMap.test.ts (6 tests) 12ms
+ ✓ tests/cms/BlockEditorialModelParity.test.ts (5 tests) 14ms
+ ✓ tests/cms/editorSmartHints.test.ts (3 tests) 27ms
+ ✓ tests/social/social-post-status.test.ts (7 tests) 10ms
+ ✓ tests/cms/BlockContentSettingsSeparationParity.test.ts (2 tests) 13ms
+ ✓ tests/cms/EditorDensityParity.test.ts (4 tests) 11ms
+ ✓ tests/agreements/validateLedgerAgreementForApproval.test.ts (2 tests) 10ms
+ ✓ tests/cms/BlockDataTypeOverrideMergeParity.test.ts (2 tests) 9ms
+ ✓ tests/cms/BlockEditorContractParity.test.ts (1 test) 10ms
+ ✓ tests/core/stabilization.test.ts (4 tests) 57ms
+ ✓ tests/billing/creditRiskEngine.test.ts (2 tests) 11ms
+ ✓ tests/ai/autoImprove.test.ts (4 tests) 12ms
+ ✓ tests/auth/employeeMinSideRedirect.test.ts (1 test) 208ms
+ ✓ tests/cms/editorCanvasParity.smoke.test.ts (1 test) 11ms
+ ✓ tests/cms/SingleBlockFocusTruth.test.ts (3 tests) 9ms
+ ✓ tests/cms/NoGenericBlockBodyParity.test.ts (2 tests) 14ms
+ ✓ tests/analytics/attribution.test.ts (1 test) 11ms
+ ✓ tests/cms/ElementTypeDefinitionParity.test.ts (2 tests) 12ms
+ ✓ tests/cms/BlockLibraryModelParity.test.ts (1 test) 16ms
+ ✓ tests/api/somethingRoute.test.ts (1 test) 12ms
+ ✓ tests/cms/contentGovernanceUsage.test.ts (2 tests) 16ms
+ ✓ tests/cms/SingleInspectorPathParity.test.ts (2 tests) 7ms
+stdout | tests/observability/metricsHealth.test.ts > observability metrics + health > checkAlerts does not throw
+{"ts":"2026-04-08T19:39:47.231Z","scope":"alert_low_conversion","revenue":0,"mrr":0,"conversion":0.005,"churn":0.2,"traffic":0,"experiments":0,"timestamp":1775677187229}
+{"ts":"2026-04-08T19:39:47.235Z","scope":"alert_high_churn","revenue":0,"mrr":0,"conversion":0.005,"churn":0.2,"traffic":0,"experiments":0,"timestamp":1775677187229}
+
+ ✓ tests/observability/metricsHealth.test.ts (3 tests) 16ms
+ ✓ tests/cms/backofficeContentRoute.test.ts (3 tests) 11ms
+ ✓ tests/components/HeroCta.test.tsx (2 tests) 22ms
+ ✓ tests/cms/controlPlaneDomainActionSurfaces.test.ts (4 tests) 12ms
+ ✓ tests/cms/legacyEnvelopeGovernance.test.ts (4 tests) 25ms
+ ✓ tests/registration-flow-smoke.test.ts (4 tests) 9ms
+ ✓ tests/cms/PropertyTypeBindingParity.test.ts (1 test) 9ms
+ ✓ tests/cms/BlockEntryModelParity.test.ts (9 tests) 20ms
+ ✓ tests/auth/adminOrdersRoleGuard.test.ts (1 test) 545ms
+   ✓ admin/orders role guard > employee cannot access admin orders API 542ms
+ ✓ tests/ml/pipeline.test.ts (2 tests) 15ms
+ ✓ tests/cms/ContentTypeDefinitionParity.test.ts (2 tests) 13ms
+ ✓ tests/lib/media/getMediaDisplayName.test.ts (3 tests) 9ms
+ ✓ tests/cms/CompositionRuntimeEffectParity.test.ts (2 tests) 13ms
+ ✓ tests/ai/analyzeDesign.test.ts (2 tests) 13ms
+ ✓ tests/cms/DisplayBlocksParity.test.ts (2 tests) 8ms
+ ✓ tests/cms/moduleLivePosture.test.ts (4 tests) 10ms
+ ✓ tests/cms/DocumentTypeCompositionParity.test.ts (2 tests) 10ms
+ ✓ tests/video/psychology.test.ts (3 tests) 34ms
+ ✓ tests/cms/BlockCustomViewModelParity.test.ts (1 test) 20ms
+ ✓ tests/auth/employeeAppSurface.test.ts (3 tests) 17ms
+ ✓ tests/lib/contentTreePageKey.test.ts (3 tests) 12ms
+ ✓ tests/lib/system-health-status.test.ts (3 tests) 8ms
+ ✓ tests/cms/agreementScheduleAbbrev.test.ts (2 tests) 11ms
+ ✓ tests/runtime/DevOutputIntegrityGuard.test.ts (2 tests) 9ms
+ ✓ tests/kitchen/kitchen-api-envelope.test.ts (2 tests) 14ms
+ ✓ tests/cms/DocumentTypeStructureParity.test.ts (2 tests) 14ms
+ ✓ tests/cms/DocumentTypeVariationBindingParity.test.ts (1 test) 6ms
+ ✓ tests/cms/BlockDataTypeRuntimeEffectParity.test.ts (1 test) 10ms
+ ✓ tests/observability/predictive.test.ts (3 tests) 14ms
+ ✓ tests/ai/providerFallback.test.ts (2 tests) 18ms
+ ✓ tests/cms/CompositionDefinitionParity.test.ts (2 tests) 12ms
+ ✓ tests/ai/generateVariant.test.ts (1 test) 8ms
+ ✓ tests/cms/VariantRuntimeEffectParity.test.ts (1 test) 10ms
+ ✓ tests/cms/backofficeDiscoveryIndex.test.ts (3 tests) 7ms
+ ✓ tests/cms/BlockInspectorComponentRoutingParity.test.ts (1 test) 10ms
+ ✓ tests/ai/cmsAiEngine.heuristic.test.ts (3 tests) 16ms
+ ✓ tests/cms/VariantContentModelParity.test.ts (1 test) 8ms
+ ✓ tests/cms/BlockInsertionParity.test.ts (2 tests) 8ms
+ ✓ tests/cms/useContentAuditLogHealth.test.ts (3 tests) 9ms
+ ✓ tests/cms/controlPlaneRuntimeStatusData.test.ts (3 tests) 10ms
+ ✓ tests/cms/NoDeadCanvasPath.test.ts (2 tests) 11ms
+ ✓ tests/cms/merge-seo-variant-body.test.ts (2 tests) 9ms
+ ✓ tests/api/orders-today-helpers.test.ts (2 tests) 7ms
+ ✓ tests/cms/marketingHomeBody.test.ts (1 test) 20ms
+ ✓ tests/superadmin/capabilities-contract.test.ts (2 tests) 9ms
+ ✓ tests/cms/useContentWorkspaceWorkflow.test.ts (2 tests) 9ms
+ ✓ tests/runtime/EnterpriseBuildParity.test.ts (2 tests) 9714ms
+   ✓ Enterprise build parity > keeps /_document as a generated Next internal instead of a repo source dependency 9711ms
+ ✓ tests/observability/anomalyAlert.test.ts (2 tests) 8ms
+ ✓ tests/cms/BlockDataTypeReferencesParity.test.ts (2 tests) 20ms
+ ✓ tests/cms/LanguageDefinitionParity.test.ts (2 tests) 12ms
+ ✓ tests/cms/ContentTreeStructureRuntimeParity.test.ts (2 tests) 11ms
+ ✓ tests/video/render.test.ts (1 test) 23ms
+ ✓ tests/cms/PublishStateParity.test.ts (2 tests) 12ms
+ ✓ tests/cms/SaveDirtyPipelineParity.test.ts (2 tests) 7ms
+ ✓ tests/lib/weekAvailability.test.ts (4 tests) 9ms
+ ✓ tests/cms/NoMonolithicInspectorOwnership.test.ts (1 test) 17ms
+ ✓ tests/cms/DocumentTypeCreateDialogParity.test.ts (1 test) 16ms
+ ✓ tests/cms/useContentWorkspaceAiHelpers.test.ts (2 tests) 8ms
+ ✓ tests/ai/seoToolPolicy.test.ts (2 tests) 19ms
+ ✓ tests/cms/sanityStudioUrl.test.ts (2 tests) 16ms
+ ✓ tests/cms/BlockEntryVsDataTypeSeparationParity.test.ts (2 tests) 13ms
+ ✓ tests/cms/DocumentTypeTemplateBindingParity.test.ts (1 test) 12ms
+ ✓ tests/cms/domainRuntimeOverview.test.ts (2 tests) 9ms
+ ✓ tests/lib/getSettings.test.ts (1 test) 7ms
+ ✓ tests/cms/backofficeExtensionRegistryU31.test.ts (2 tests) 8ms
+ ✓ tests/cms/DocumentTypeEditorEffectRuntimeParity.test.ts (1 test) 19ms
+ ✓ tests/api/superadmin-system-status.test.ts (1 test) 588ms
+   ✓ GET /api/superadmin/system/status > route is defined and returns a Response 584ms
+ ✓ tests/admin/adminCountsContract.test.ts (1 test) 8ms
+ ✓ tests/middleware/middlewareImportEdgeSafe.test.ts (1 test) 493ms
+   ✓ middleware import chain (edge-safe) > loads middleware when SYSTEM_EMAIL_ALLOWLIST would throw if emails.ts were imported at module init 490ms
+ ✓ tests/cms/PropertyVariationParity.test.ts (1 test) 6ms
+ ✓ tests/cms/InvariantVsCultureFieldParity.test.ts (1 test) 10ms
+ ✓ tests/cms/reorderBlocks.test.ts (2 tests) 8ms
+ ✓ tests/cms/backofficeCollectionViewModel.test.ts (2 tests) 10ms
+ ✓ tests/cms/AllowedChildTypesCreateFlowParity.test.ts (1 test) 10ms
+ ✓ tests/cms/AllowAtRootCreateFlowParity.test.ts (1 test) 9ms
+ ✓ tests/cms/batchNormalizeLegacy.test.ts (1 test) 8ms
+ ✓ tests/video/dropoff.test.ts (3 tests) 9ms
+ ✓ tests/cms/operationalWeekMenuPublishChain.test.ts (2 tests) 8ms
+ ✓ tests/esg/oslo-month.test.ts (2 tests) 64ms
+ ✓ tests/video/variants.test.ts (1 test) 11ms
+ ✓ tests/cms/CreatedNodeDocumentTypeBindingParity.test.ts (1 test) 6ms
+ ✓ tests/ai/revenue/decisionEngine.test.ts (1 test) 5ms
+ ✓ tests/ai/controlTower.test.ts (1 test) 8ms
+ ✓ tests/audit/security.test.ts (2 tests) 7ms
+ ✓ tests/compliance/gdpr.test.ts (2 tests) 9ms
+ ✓ tests/billing/invoiceEngineWindow.test.ts (1 test) 16ms
+stdout | tests/integrations/revenueEngine.test.ts > revenueEngine > skips non-positive amounts without calling external systems
+{"ts":"2026-04-08T19:39:59.199Z","scope":"revenue_skipped","rid":"test_rid","reason":"non_positive_amount"}
+
+ ✓ tests/integrations/revenueEngine.test.ts (1 test) 18ms
+ ✓ tests/billing/paymentPolicy.test.ts (1 test) 10ms
+ ✓ tests/invites/employeeInviteEmail.test.ts (2 tests) 11ms
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders heading and a user row for normal data
+`ReactDOMTestUtils.act` is deprecated in favor of `React.act`. Import `act` from `react` instead of `react-dom/test-utils`. See https://react.dev/warnings/react-dom-test-utils for more info.
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders heading and a user row for normal data
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders safe empty state when no users are returned
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders safe empty state when no users are returned
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders a safe error message when API returns an error
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/cms/workspaceContextSingleSource.test.ts (2 tests) 96ms
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage smoke states > renders a safe error message when API returns an error
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case A: no data.items — renders safe state without crash
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case A: no data.items — renders safe state without crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case B: data.items is null — renders safe state without crash
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case B: data.items is null — renders safe state without crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case C: items array contains null/undefined — no crash, valid rows render
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/runtime/HappyPathNo404Assets.test.tsx (3 tests) 277ms
+ ✓ tests/auth/LoginRuntimeFailureHandling.test.tsx (2 tests) 472ms
+   ✓ Login runtime failure handling > keeps login failures controlled on 503 responses 398ms
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case C: items array contains null/undefined — no crash, valid rows render
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case D: user object with only id — renders row without crash
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/auth/login-form-submit.test.tsx (5 tests) 540ms
+   ✓ Login form submit flow > submit sends POST /api/auth/login then redirects via /api/auth/post-login 376ms
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case D: user object with only id — renders row without crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case E: user object with wrong primitive types for name/email — no crash
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/runtime/ContentOverlayRegression.test.tsx (1 test) 225ms
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage malformed but successful payloads (fail-safe) > Case E: user object with wrong primitive types for name/email — no crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with non-string email/name/role — no crash, zero-result state safe
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with non-string email/name/role — no crash, zero-result state safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with non-string email/name/role — no crash, zero-result state safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed id-only + valid row — valid row searchable
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed id-only + valid row — valid row searchable
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed id-only + valid row — valid row searchable
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed id-only + valid row — valid row searchable
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with null + valid row — valid row searchable, no crash
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with null + valid row — valid row searchable, no crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with null + valid row — valid row searchable, no crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed malformed + valid rows — valid row findable, zero results safe
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed malformed + valid rows — valid row findable, zero results safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed malformed + valid rows — valid row findable, zero results safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage search/filter with malformed rows (interaction) > search with mixed malformed + valid rows — valid row findable, zero results safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case A: count text and table safe with non-string name/email/role + valid row
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case A: count text and table safe with non-string name/email/role + valid row
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case B: count text and keys safe with missing id + valid row
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case B: count text and keys safe with missing id + valid row
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case C: null filtered out — count and single valid row safe
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case C: null filtered out — count and single valid row safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case D: partial + valid row — count text and zero-result transition safe
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case D: partial + valid row — count text and zero-result transition safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/ContentAccessAfterLogin.test.tsx > Content access after login > successful login path redirects through post-login with backoffice next
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case D: partial + valid row — count text and zero-result transition safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case E: wrong primitives + valid row — count and zero-result safe
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case E: wrong primitives + valid row — count and zero-result safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/usersPage.smoke.test.tsx > UsersPage derived list-state with malformed rows > Case E: wrong primitives + valid row — count and zero-result safe
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/backoffice/usersPage.smoke.test.tsx (17 tests) 779ms
+stderr | tests/auth/ContentAccessAfterLogin.test.tsx > Content access after login > successful login path redirects through post-login with backoffice next
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/ContentAccessAfterLogin.test.tsx > Content access after login > local runtime keeps normal login form and removes bypass button
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/ContentAccessAfterLogin.test.tsx > Content access after login > backoffice content overview route renders without crashing
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/ContentAccessAfterLogin.test.tsx > Content access after login > content editor route mounts for UUID ids
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/auth/ContentAccessAfterLogin.test.tsx (5 tests) 2069ms
+   ✓ Content access after login > successful login path redirects through post-login with backoffice next 549ms
+   ✓ Content access after login > content editor route mounts for UUID ids 1446ms
+ ✓ tests/ai/CmsAiSeamlessBlockFlow.test.ts (1 test) 128ms
+ ✓ tests/ai/CmsAiHappyPath.test.tsx (1 test) 320ms
+   ✓ CMS AI happy path > triggers improve-page from the visible editor UI and lands in canonical workspace state without runtime errors 317ms
+ ✓ tests/cms/contentWorkspaceStability.smoke.test.ts (5 tests) 314ms
+stdout | tests/runtime/RemoteBackendModeHappyPath.test.ts > Remote backend mode happy path > uses normal login API against Supabase cookies without local_provider fallback
+[auth.login] start {
+  rid: 'rid_mnqgd91u_ea0fx0puwpg1dfz1',
+  nextFromBody: '/backoffice/content',
+  nextFromQuery: null,
+  nextSafe: '/backoffice/content',
+  email: 're***@lunchportalen.no',
+  localRuntime: false
+}
+[auth.login] sign_in_result {
+  rid: 'rid_mnqgd91u_ea0fx0puwpg1dfz1',
+  hasError: false,
+  hasSession: true,
+  hasUser: true,
+  capturedCookieNames: [ 'sb-remote-auth-token.0' ]
+}
+[auth.login] response {
+  rid: 'rid_mnqgd91u_ea0fx0puwpg1dfz1',
+  status: 200,
+  next: '/backoffice/content',
+  setCookies: [ { name: 'sb-remote-auth-token.0', valueLength: 27 } ]
+}
+[audit] {
+  action: 'LOGIN',
+  rid: 'rid_mnqgd91u_ea0fx0puwpg1dfz1',
+  resource: 'auth:login',
+  resourceId: 'remote_harness_user_1',
+  userId: 'remote_harness_user_1',
+  role: null,
+  companyId: null,
+  locationId: null,
+  metadata: { outcome: 'success' },
+  ts: 1775677216540
+}
+
+ ✓ tests/runtime/RemoteBackendModeHappyPath.test.ts (4 tests) 4355ms
+   ✓ Remote backend mode happy path > keeps runtime explicit remote_backend and exposes only remote harness credentials 393ms
+   ✓ Remote backend mode happy path > provisions a deterministic remote backend harness user through the canonical route 2228ms
+   ✓ Remote backend mode happy path > uses normal login API against Supabase cookies without local_provider fallback 1639ms
+stderr | tests/auth/AuthBootstrapResilience.test.tsx > Auth bootstrap resilience > login form does not bootstrap auth network on mount
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/AuthBootstrapResilience.test.tsx > Auth bootstrap resilience > invalid runtime config renders controlled state and disables submit
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/auth/AuthBootstrapResilience.test.tsx (3 tests) 147ms
+ ✓ tests/runtime/UnhandledEventRejectionNormalization.test.tsx (2 tests) 159ms
+stderr | tests/auth/LocalLoginHappyPath.test.tsx > Local login happy path > submits the normal login form with canonical seeded credentials and redirects to post-login
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/auth/LocalLoginHappyPath.test.tsx > Local login happy path > submits the normal login form with canonical seeded credentials and redirects to post-login
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/auth/LocalLoginHappyPath.test.tsx (1 test) 166ms
+ ✓ tests/cms/CmsAiEntryPointsInventory.test.tsx (3 tests) 195ms
+stderr | tests/backoffice/content-page-smoke.test.tsx > Backoffice content page smoke > content page route renders the content-first landing without crashing
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/content-page-smoke.test.tsx > Backoffice content page smoke > ContentSectionLanding renders with heading and no crash
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/backoffice/content-page-smoke.test.tsx > Backoffice content page smoke > ContentSectionLanding shows recent content empty-state
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/backoffice/content-page-smoke.test.tsx (3 tests) 127ms
+
+ Test Files  359 passed | 4 skipped (363)
+      Tests  1599 passed | 13 skipped (1612)
+   Start at  21:39:10
+   Duration  70.02s (transform 87.44s, setup 0ms, collect 163.30s, tests 74.10s, environment 133.92s, prepare 133.76s)
+

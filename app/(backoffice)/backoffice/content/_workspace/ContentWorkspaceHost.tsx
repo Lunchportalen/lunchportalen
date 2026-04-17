@@ -178,6 +178,7 @@ export default function ContentWorkspaceHost({
       <SectionWorkspaceRegistrationContext.Provider value={setSectionWorkspaceRegistrationStable}>
         <SectionSidebarContext.Provider value={setSectionSidebarContentStable}>
           <SectionShell
+            flattenContentDetailSurface={routeState.kind === "detail"}
             treeSlot={
               <div className="flex h-full flex-col overflow-y-auto">
                 <ContentTree

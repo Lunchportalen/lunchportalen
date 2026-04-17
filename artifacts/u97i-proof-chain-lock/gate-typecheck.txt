@@ -1,0 +1,4 @@
+
+> lunchportalen@1.0.0 typecheck
+> cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit
+

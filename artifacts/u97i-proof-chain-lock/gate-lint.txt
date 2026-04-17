@@ -1,0 +1,76 @@
+
+> lunchportalen@1.0.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+
+./app/(backoffice)/backoffice/content/_components/AiCeoPanel.tsx
+157:79  Warning: React Hook useMemo has unnecessary dependencies: 'logTick', 'outboundObjTick', and 'pageId'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+173:6  Warning: React Hook useMemo has unnecessary dependencies: 'logTick' and 'outboundObjTick'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/BlockCollapsedPreview.tsx
+257:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+314:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(backoffice)/backoffice/content/_components/contentWorkspace.inspectorCtx.ts
+41:5  Warning: React Hook useMemo has a missing dependency: 'richText'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/ContentWorkspaceAuxiliaryShell.tsx
+255:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/(backoffice)/backoffice/content/_components/contentWorkspaceChromeShellArgs.ts
+117:5  Warning: React Hook useMemo has missing dependencies: 'p.visualPatchPendingRef' and 'p.visualPatchTimerRef'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/OutboundPanel.tsx
+101:6  Warning: React Hook useMemo has unnecessary dependencies: 'conversationRev', 'followUpRev', and 'pageId'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+103:59  Warning: React Hook useMemo has an unnecessary dependency: 'followUpRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+104:65  Warning: React Hook useMemo has an unnecessary dependency: 'followUpRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+123:6  Warning: React Hook useMemo has an unnecessary dependency: 'conversationRev'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceBlocks.ts
+85:5  Warning: React Hook useCallback has an unnecessary dependency: 'documentTypeAlias'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceData.ts
+452:6  Warning: React Hook useEffect has a missing dependency: 'routeUi'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/(backoffice)/backoffice/content/_components/useContentWorkspaceShellModel.ts
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1134) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1168) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+474:3  Warning: The 'setSaveStateSafe' function makes the dependencies of useCallback Hook (at line 1204) change on every render. To fix this, wrap the definition of 'setSaveStateSafe' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+830:6  Warning: React Hook useEffect has a missing dependency: 'setSelectedBlockId'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+987:6  Warning: React Hook useCallback has a missing dependency: 'setAiLastActionFeature'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1064:6  Warning: React Hook useCallback has a missing dependency: 'setBlocks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1104:5  Warning: React Hook useCallback has a missing dependency: 'setBlocks'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1291:5  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1348:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1371:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks' and 'setCanvasMode'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1387:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks' and 'setCanvasMode'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+1616:5  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1742:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1757:6  Warning: React Hook useCallback has a missing dependency: 'setAiError'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1956:6  Warning: React Hook useCallback has missing dependencies: 'setBlocks', 'setBodyMode', 'setBodyParseError', 'setInvalidBodyRaw', and 'setLegacyBodyText'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+2003:50  Warning: The ref value 'activeAbortRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activeAbortRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+2004:50  Warning: The ref value 'statusAbortRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'statusAbortRef.current' to a variable inside the effect, and use that variable in the cleanup function.  react-hooks/exhaustive-deps
+2039:6  Warning: React Hook useEffect has a missing dependency: 'setQuery'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+2055:6  Warning: React Hook useEffect has missing dependencies: 'setHeaderEditConfig', 'setHeaderEditError', and 'setHeaderEditLoading'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/public/demo/DemoEmailCapture.tsx
+81:6  Warning: React Hook useCallback has a missing dependency: 'intentSeg'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/superadmin/growth/social/SocialEngineClient.tsx
+735:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/superadmin/sales/SalesCockpitClient.tsx
+973:6  Warning: React Hook useCallback has an unnecessary dependency: 'loadCeoRun'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/cms/blockCanvas/HeroCanvasPreview.tsx
+55:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/superadmin/controlTower/SecondsSinceUpdate.tsx
+20:6  Warning: React Hook useMemo has an unnecessary dependency: 'tick'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

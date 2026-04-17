@@ -6,7 +6,7 @@
 // @ts-nocheck
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { readSupabasePublishedContentPageBySlug } from "@/lib/cms/supabase/readPublishedContentPageBySlug";
 import { copyVariantBodyToProd } from "@/lib/backoffice/content/releasesRepo";
 
 const variantKey = (pageId: string, locale: string, environment: string) =>
@@ -151,7 +151,7 @@ describe("publish flow — public and preview parity", () => {
     const pageId = "page-1";
     mockPagesBySlug["only-preview"] = { id: pageId, slug: "only-preview", title: "Draft" };
     addVariant(pageId, "nb", "preview", { version: 1, blocks: [{ id: "b1", type: "richText", data: { heading: "Draft" } }] });
-    const result = await getContentBySlug("only-preview");
+    const result = await readSupabasePublishedContentPageBySlug("only-preview");
     expect(result).toBeNull();
   });
 
@@ -165,7 +165,7 @@ describe("publish flow — public and preview parity", () => {
     const supabase = (await import("@/lib/supabase/admin")).supabaseAdmin();
     await copyVariantBodyToProd(supabase, pageId, previewVariantId, "nb");
 
-    const result = await getContentBySlug(slug);
+    const result = await readSupabasePublishedContentPageBySlug(slug);
     expect(result).not.toBeNull();
     expect(result!.body).toEqual(previewBody);
   });
@@ -179,7 +179,7 @@ describe("publish flow — public and preview parity", () => {
     const previewBodyEdited = { version: 1, blocks: [{ id: "b1", type: "richText", data: { heading: "Draft edit" } }] };
     addVariant(pageId, "nb", "preview", previewBodyEdited);
 
-    const result = await getContentBySlug(slug);
+    const result = await readSupabasePublishedContentPageBySlug(slug);
     expect(result).not.toBeNull();
     expect(result!.body).toEqual(publishedBody);
     const blocks = (result!.body as { blocks?: { data?: { heading?: string } }[] })?.blocks ?? [];
@@ -195,7 +195,7 @@ describe("publish flow — public and preview parity", () => {
     addVariant(pageId, "nb", "prod", prodBody);
     addVariant(pageId, "nb", "preview", previewBody);
 
-    const result = await getContentBySlug(slug);
+    const result = await readSupabasePublishedContentPageBySlug(slug);
     expect(result).not.toBeNull();
     expect((result!.body as { blocks?: { data?: { heading?: string } }[] })?.blocks?.[0]?.data?.heading).toBe("Prod");
     const previewVariant = mockVariantsByKey.get(variantKey(pageId, "nb", "preview"));

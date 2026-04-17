@@ -1,10 +1,14 @@
 /**
- * Live public page content: `content_pages` (published) + `content_page_variants` (locale `nb`, environment `prod` or `preview`).
- * Same data path as header/footer global reads — DB is source of truth; publish promotes preview → prod in backoffice.
+ * Live public page content for marketing routes: {@link getContentBySlug} → Umbraco Delivery (allowlisted slugs) or local harness.
+ * Public marketing truth is **not** Supabase editorial rows; those are backoffice/internal readers only.
  */
 import "server-only";
 
-import type { ContentBySlugResult, GetContentBySlugOptions } from "./getContentBySlug";
+import type {
+  ContentBySlugResult,
+  GetContentBySlugOptions,
+  PublicContentRuntimeOrigin,
+} from "./getContentBySlug";
 import { getContentBySlug } from "./getContentBySlug";
 import type { BlockItem } from "./parseBody";
 import { parseBody, parseBodyMeta } from "./parseBody";
@@ -17,12 +21,14 @@ export type LivePublicPage = {
   /** Parsed from `{ blocks, meta }` — page/section CMS design overlays (Phase 2A). */
   meta: Record<string, unknown>;
   blocks: BlockItem[];
+  /** Where this page body came from at runtime (live source or seed). */
+  publicContentOrigin: PublicContentRuntimeOrigin;
   experimentAssignment: ContentBySlugResult["experimentAssignment"];
 };
 
 /**
- * Resolve published (or preview) page body and parsed blocks for public rendering.
- * Returns `null` when no published page or no matching variant (fail-closed).
+ * Resolve page body and parsed blocks for public rendering.
+ * Returns `null` when Delivery misses or slug is not allowlisted (fail-closed before seed overlay).
  */
 export async function loadLivePageContent(
   slug: string,
@@ -39,6 +45,7 @@ export async function loadLivePageContent(
     body: row.body,
     meta,
     blocks: Array.isArray(blocks) ? blocks : [],
+    publicContentOrigin: row.publicContentOrigin,
     experimentAssignment: row.experimentAssignment ?? null,
   };
 }

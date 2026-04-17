@@ -8,6 +8,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 
 import { enterpriseAuditRowToSuperadminListItem, getAuditLogs } from "@/lib/audit/query";
+import { OPERATIVE_AUDIT_EVENTS_OR } from "@/lib/audit/operativeAuditStream";
 import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -78,6 +79,7 @@ type ApiOk = {
       auditSource?: string;
       withEnterprise?: boolean;
       actorUserId?: string;
+      stream?: "operative";
     };
   };
   items: AuditItem[];
@@ -96,6 +98,8 @@ type ApiErr = { ok: false; rid: string; error: string; message?: string; detail?
     - entityId=<uuid> (optional exact)
     - action=<string> (optional ilike)
     - q=<string> (optional search; actor_email/action/entity_type/summary/rid)
+    - stream=operative — kun canonical operative audit_events (avtale/firma-status);
+      tvinger withEnterprise=0 (ingen audit_logs-merge).
 ========================================================= */
 export async function GET(req: NextRequest) {
   const rid = makeRid();
@@ -162,7 +166,8 @@ export async function GET(req: NextRequest) {
         ? (auditSourceRaw as "system" | "user" | "ai")
         : undefined;
 
-    const withEnterprise = u.searchParams.get("withEnterprise") !== "0";
+    const streamOperative = safeText(u.searchParams.get("stream"), 20) === "operative";
+    const withEnterprise = streamOperative ? false : u.searchParams.get("withEnterprise") !== "0";
 
     const actorUserId = safeText(u.searchParams.get("actorUserId") || u.searchParams.get("actor_user_id"), 80);
     if (actorUserId && !isUuid(actorUserId)) {
@@ -208,8 +213,11 @@ export async function GET(req: NextRequest) {
     // Best-effort company filter:
     // If your audit table has company_id column it can be added to select+filters,
     // but we keep this safe: we try entity_id match (most important), plus companyId param as entity_id.
+    if (streamOperative) {
+      qb = qb.or(OPERATIVE_AUDIT_EVENTS_OR);
+    }
+
     if (companyId) {
-      // If your logs use entity_id for company, this works immediately:
       qb = qb.or(`entity_id.eq.${companyId},detail->>company_id.eq.${companyId}`);
     }
 
@@ -330,6 +338,7 @@ export async function GET(req: NextRequest) {
           ...(auditSource ? { auditSource } : {}),
           withEnterprise,
           ...(actorUserId ? { actorUserId } : {}),
+          ...(streamOperative ? { stream: "operative" as const } : {}),
         },
       },
       items: merged,

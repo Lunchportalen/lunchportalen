@@ -7,6 +7,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import EmployeeWeekClient from "./EmployeeWeekClient";
@@ -87,7 +88,12 @@ export default async function EmployeeWeekPage() {
       <>
         <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
         <div className="mx-auto mt-6 max-w-lg px-4 text-center text-sm text-neutral-700">
-          Superadmin har ikke tilgang til denne siden
+          <p>Superadmin bruker systemflaten — ikke ansatt ukevisning.</p>
+          <p className="mt-4">
+            <Link href="/superadmin" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+              Gå til systemadministrasjon
+            </Link>
+          </p>
         </div>
       </>
     );
@@ -106,6 +112,27 @@ export default async function EmployeeWeekPage() {
         <p className="mx-auto mt-2 max-w-lg px-4 text-center text-sm text-neutral-600">
           Forhåndsvalgt meny etter avtale. Avbestilling og nye bestillinger stenger kl. 08:00 samme dag (Oslo).
         </p>
+        <p className="mx-auto mt-3 max-w-lg px-4 text-center text-sm">
+          <Link href="/week/min-dag" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Min dag — status og synlige dager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-lunsjendringer" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine lunsjendringer
+          </Link>
+          {" · "}
+          <Link href="/week/tidligere-lunsjdager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Tidligere lunsjdager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-registrerte-dager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine registrerte dager
+          </Link>
+          {" · "}
+          <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Bestillingsprofil
+          </Link>
+        </p>
         <EmployeeWeekClient canAct={false} billingHoldReason={null} />
       </>
     );
@@ -118,6 +145,27 @@ export default async function EmployeeWeekPage() {
     return (
       <>
         <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
+        <p className="mx-auto mt-3 max-w-lg px-4 text-center text-sm">
+          <Link href="/week/min-dag" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Min dag — status og synlige dager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-lunsjendringer" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine lunsjendringer
+          </Link>
+          {" · "}
+          <Link href="/week/tidligere-lunsjdager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Tidligere lunsjdager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-registrerte-dager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine registrerte dager
+          </Link>
+          {" · "}
+          <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Bestillingsprofil
+          </Link>
+        </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." />
       </>
     );
@@ -133,6 +181,27 @@ export default async function EmployeeWeekPage() {
     return (
       <>
         <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
+        <p className="mx-auto mt-3 max-w-lg px-4 text-center text-sm">
+          <Link href="/week/min-dag" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Min dag — status og synlige dager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-lunsjendringer" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine lunsjendringer
+          </Link>
+          {" · "}
+          <Link href="/week/tidligere-lunsjdager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Tidligere lunsjdager
+          </Link>
+          {" · "}
+          <Link href="/week/mine-registrerte-dager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Mine registrerte dager
+          </Link>
+          {" · "}
+          <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Bestillingsprofil
+          </Link>
+        </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." />
       </>
     );
@@ -145,6 +214,27 @@ export default async function EmployeeWeekPage() {
       <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
       <p className="mx-auto mt-2 max-w-lg px-4 text-center text-sm text-neutral-600">
         Forhåndsvalgt meny etter avtale. Bestilling og avbestilling stenger kl. 08:00 samme dag (Oslo).
+      </p>
+      <p className="mx-auto mt-3 max-w-lg px-4 text-center text-sm">
+        <Link href="/week/min-dag" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+          Min dag — status og synlige dager
+        </Link>
+        {" · "}
+        <Link href="/week/mine-lunsjendringer" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+          Mine lunsjendringer
+        </Link>
+        {" · "}
+        <Link href="/week/tidligere-lunsjdager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+          Tidligere lunsjdager
+        </Link>
+        {" · "}
+        <Link href="/week/mine-registrerte-dager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+          Mine registrerte dager
+        </Link>
+        {" · "}
+        <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+          Bestillingsprofil
+        </Link>
       </p>
       <EmployeeWeekClient canAct={hold.canAct} billingHoldReason={hold.reason} />
     </>

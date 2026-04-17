@@ -1,0 +1,387 @@
+
+> lunchportalen@1.0.0 dev
+> node scripts/dev-singleton.mjs
+
+   ▲ Next.js 15.5.10
+   - Local:        http://localhost:3042
+   - Network:      http://192.168.10.205:3042
+   - Environments: .env.local
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 1761ms (116 modules)
+ ✓ Ready in 7.2s
+ ✓ Compiled /middleware in 394ms (218 modules)
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 2.1s (375 modules)
+ GET /api/health 200 in 989ms
+ GET /api/health 200 in 670ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.5s (769 modules)
+ GET /login?next=%2Fbackoffice%2Fcontent 200 in 7149ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 3.2s (813 modules)
+[auth.login] start {
+  rid: 'rid_mnoqjfmm_ago93m24ughpuab7',
+  nextFromBody: '/backoffice/content',
+  nextFromQuery: null,
+  nextSafe: '/backoffice/content',
+  email: 'su***@lunchportalen.no',
+  localRuntime: true
+}
+ POST /api/auth/login 200 in 4771ms
+ ○ Compiling /api/auth/post-login ...
+ ✓ Compiled /api/auth/post-login in 2.3s (900 modules)
+{"ts":"2026-04-07T14:49:32.281Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnoqjibb_fer20ijo7pd0f5c7"}
+[auth] {
+  rid: 'rid_mnoqjibb_fer20ijo7pd0f5c7',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  step: 'post-login:get',
+  rid: 'rid_mnoqjibb_fer20ijo7pd0f5c7',
+  role: 'superadmin',
+  target: '/backoffice/content'
+}
+{"ts":"2026-04-07T14:49:32.302Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":22,"rid":"rid_mnoqjibb_fer20ijo7pd0f5c7"}
+ GET /api/auth/post-login?next=%2Fbackoffice%2Fcontent 303 in 3285ms
+ ○ Compiling /backoffice/content ...
+ ✓ Compiled /backoffice/content in 2.3s (1088 modules)
+[auth] {
+  rid: 'rid_auth_mnoqjkvu_0jd6p6u4l4c0pbw5',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content?rid=rid_mnoqjibb_fer20ijo7pd0f5c7 200 in 3827ms
+ ○ Compiling /backoffice/content/[id] ...
+ ✓ Compiled /backoffice/content/[id] in 13.9s (2836 modules)
+[auth] {
+  rid: 'rid_auth_mnoqjyht_yv9bre247s8zqjkf',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/tree 200 in 15124ms
+[auth] {
+  rid: 'rid_auth_mnoqjykq_9fdnv1uxixzurj4v',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 15199ms
+[auth] {
+  rid: 'rid_auth_mnoqk0v3_ngij4n1gtrpycsnj',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 19872ms
+[auth] {
+  rid: 'rid_auth_mnoqk5q2_ashe35zs2ypyacv7',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 1268ms
+ ○ Compiling /api/backoffice/content/pages/[id] ...
+ ✓ Compiled /api/editor-ai/metrics in 8.8s (2874 modules)
+[auth] {
+  rid: 'rid_auth_mnoqkd4l_9ismrdlycqta8o5l',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/tree 200 in 10932ms
+{"ts":"2026-04-07T14:50:12.740Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_mnoqkdja_kiskmf1s925c8yov',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+{"ts":"2026-04-07T14:50:12.936Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnoqkdop_xpkzd0s5r93unv16',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[AI_PROVIDER] capability { provider: 'op***', enabled: true, errorCode: null }
+[EDITOR_AI_CAPABILITY] route {
+  hasAiProvider: true,
+  hasAiApiKey: false,
+  hasOpenaiApiKey: true,
+  enabled: true,
+  runtime: {
+    mode: 'local_provider',
+    source: 'LP_CMS_RUNTIME_MODE',
+    explicit: true,
+    usesLocalProvider: true,
+    usesReserve: false,
+    requiresRemoteBackend: false
+  },
+  hint: undefined
+}
+{"ts":"2026-04-07T14:50:12.942Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":5,"rid":null}
+ GET /api/backoffice/ai/capability 200 in 11339ms
+[auth] {
+  rid: 'rid_auth_mnoqkdq6_zk1fzun6z49ibyhr',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages 200 in 11637ms
+{"ts":"2026-04-07T14:50:13.194Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnoqkdvx_9a132umjblenqpa2',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+{"ts":"2026-04-07T14:50:13.467Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":273,"rid":null}
+ POST /api/editor-ai/metrics 200 in 10684ms
+{"ts":"2026-04-07T14:50:13.482Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":743,"rid":null}
+ GET /api/auth/me 200 in 12125ms
+[auth] {
+  rid: 'rid_auth_mnoqkfdz_4w7gkmxa9w78ikei',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=nb&environment=preview 200 in 13499ms
+[auth] {
+  rid: 'rid_auth_mnoqkgjt_f2ohiteak2aujl5a',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 632ms
+ ○ Compiling /api/ai/copilot ...
+ ✓ Compiled /api/ai/copilot in 25.4s (2869 modules)
+{"ts":"2026-04-07T14:51:01.434Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:01.443Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:01.449Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:01.451Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":17,"rid":null}
+{"ts":"2026-04-07T14:51:01.452Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":400},"status":"failure","durationMs":3,"rid":null}
+{"ts":"2026-04-07T14:51:01.466Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":22,"rid":null}
+ POST /api/ai/copilot 200 in 1045ms
+[auth] {
+  rid: 'rid_auth_mnoqlgok_mmw3obvh1s2is3gz',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 1983ms
+{"ts":"2026-04-07T14:51:06.593Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:06.602Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":9,"rid":null}
+ POST /api/ai/copilot 200 in 477ms
+{"ts":"2026-04-07T14:51:08.400Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:08.404Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":4,"rid":null}
+ POST /api/ai/copilot 200 in 568ms
+{"ts":"2026-04-07T14:51:11.815Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:11.822Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":8,"rid":null}
+ POST /api/ai/copilot 200 in 488ms
+{"ts":"2026-04-07T14:51:16.882Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:16.887Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":5,"rid":null}
+ POST /api/ai/copilot 200 in 642ms
+[auth] {
+  rid: 'rid_auth_mnoqlwn2_m836z3e39ks5405w',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ PATCH /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001 200 in 596ms
+[auth] {
+  rid: 'rid_auth_mnoqly2z_m3ecb8907k6c15uj',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 4303ms
+[auth] {
+  rid: 'rid_auth_mnoqm48j_l5yst3jtn4oduua2',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 1023ms
+{"ts":"2026-04-07T14:51:34.261Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_mnoqm4fq_hljl4qrvky7hwp59',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+{"ts":"2026-04-07T14:51:34.429Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnoqm4kd_hyxjwyqssy6ikrjv',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[AI_PROVIDER] capability { provider: 'op***', enabled: true, errorCode: null }
+[EDITOR_AI_CAPABILITY] route {
+  hasAiProvider: true,
+  hasAiApiKey: false,
+  hasOpenaiApiKey: true,
+  enabled: true,
+  runtime: {
+    mode: 'local_provider',
+    source: 'LP_CMS_RUNTIME_MODE',
+    explicit: true,
+    usesLocalProvider: true,
+    usesReserve: false,
+    requiresRemoteBackend: false
+  },
+  hint: undefined
+}
+{"ts":"2026-04-07T14:51:34.432Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":3,"rid":null}
+ GET /api/backoffice/ai/capability 200 in 1288ms
+[auth] {
+  rid: 'rid_auth_mnoqm4m7_9tbk8mutffiey39u',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages 200 in 1511ms
+[auth] {
+  rid: 'rid_auth_mnoqm4ni_35vps8c604es4mkt',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/tree 200 in 1561ms
+[auth] {
+  rid: 'rid_auth_mnoqm4sw_4h27rcybfdi5lbeq',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=nb&environment=preview 200 in 1568ms
+{"ts":"2026-04-07T14:51:34.981Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":721,"rid":null}
+ GET /api/auth/me 200 in 2000ms
+{"ts":"2026-04-07T14:51:35.417Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnoqm5bw_7iojsa309j8owjoa',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+{"ts":"2026-04-07T14:51:35.713Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":296,"rid":null}
+ POST /api/editor-ai/metrics 200 in 952ms
+[auth] {
+  rid: 'rid_auth_mnoqm5u0_lc8ywmslaar6q6v2',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 599ms
+{"ts":"2026-04-07T14:51:41.439Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:41.452Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":13,"rid":null}
+ POST /api/ai/copilot 200 in 2016ms
+{"ts":"2026-04-07T14:51:47.442Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+{"ts":"2026-04-07T14:51:47.444Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/ai/copilot","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+ POST /api/ai/copilot 200 in 385ms
+ ✓ Compiled in 11.3s (1092 modules)
+ ✓ Compiled in 1410ms (1092 modules)
+ ✓ Compiled in 1190ms (1092 modules)
+ ✓ Compiled in 796ms (1092 modules)
+ ✓ Compiled in 901ms (1092 modules)
+ ✓ Compiled in 770ms (1092 modules)
+ ✓ Compiled in 757ms (1092 modules)
+ ✓ Compiled in 779ms (1092 modules)
+ ✓ Compiled in 1874ms (1092 modules)
+ ✓ Compiled in 892ms (1092 modules)
+ ✓ Compiled in 14.3s (2734 modules)
+ ✓ Compiled in 10.8s (2736 modules)
+ ✓ Compiled in 3.7s (2736 modules)
+ ✓ Compiled in 3.4s (2736 modules)
+ ✓ Compiled in 6.3s (2736 modules)
+ ✓ Compiled in 3.2s (2736 modules)
+ ✓ Compiled in 4.2s (2736 modules)
+ ✓ Compiled in 3s (2736 modules)
+ ✓ Compiled in 2.6s (2736 modules)
+ ✓ Compiled in 1247ms (1093 modules)
+ ✓ Compiled in 3.6s (2736 modules)
+ ✓ Compiled in 1444ms (2736 modules)
+ ✓ Compiled in 1691ms (2736 modules)
+ ✓ Compiled in 1574ms (2736 modules)
+ ✓ Compiled in 1721ms (2736 modules)
+ ✓ Compiled in 1098ms (2736 modules)
+ ✓ Compiled in 1148ms (2736 modules)
+ ✓ Compiled in 1509ms (2736 modules)
+ ✓ Compiled in 2.8s (2736 modules)
+ ✓ Compiled in 1842ms (2736 modules)
+ ✓ Compiled in 1278ms (2736 modules)
+ ✓ Compiled in 3.9s (2736 modules)
+ ✓ Compiled in 8s (2736 modules)
+ ✓ Compiled in 8.7s (2736 modules)
+ ✓ Compiled in 2.9s (2736 modules)
+ ✓ Compiled in 1780ms (2736 modules)
+ ✓ Compiled in 1623ms (2736 modules)
+ ✓ Compiled in 1401ms (2736 modules)
+ ✓ Compiled in 1431ms (2736 modules)
+ ✓ Compiled in 1834ms (2736 modules)
+ ✓ Compiled in 1388ms (2736 modules)
+ ✓ Compiled in 1261ms (2736 modules)
+ ✓ Compiled in 1441ms (2736 modules)
+ ✓ Compiled in 1567ms (2736 modules)
+ ✓ Compiled in 2.2s (2736 modules)
+ ✓ Compiled in 1274ms (2736 modules)
+ ✓ Compiled in 1625ms (2736 modules)
+ ✓ Compiled in 1526ms (2736 modules)
+ ✓ Compiled in 3.6s (2736 modules)
+ ✓ Compiled in 1664ms (2736 modules)
+ ✓ Compiled in 1367ms (2736 modules)
+ ✓ Compiled in 1821ms (2736 modules)
+ ✓ Compiled in 1659ms (2736 modules)
+ ✓ Compiled in 2.2s (2736 modules)
+ ✓ Compiled in 1210ms (2736 modules)
+ ✓ Compiled in 1285ms (2736 modules)
+ ✓ Compiled in 2.4s (2736 modules)
+ ✓ Compiled in 2.6s (2736 modules)
+ ✓ Compiled in 960ms (2736 modules)
+ ✓ Compiled in 1227ms (2736 modules)
+ ✓ Compiled in 1360ms (2736 modules)
+ ✓ Compiled in 1393ms (2736 modules)
+ ✓ Compiled in 2.8s (2736 modules)
+ ✓ Compiled in 3.6s (2736 modules)
+ ✓ Compiled in 2.2s (2736 modules)
+ ✓ Compiled in 1013ms (2736 modules)
+ ✓ Compiled in 3.3s (2736 modules)
+ ✓ Compiled in 1246ms (2736 modules)
+ ✓ Compiled in 1541ms (2736 modules)
+ ✓ Compiled in 4s (2736 modules)
+ ✓ Compiled in 6.6s (2736 modules)
+ ✓ Compiled in 1149ms (2736 modules)
+ ✓ Compiled in 5.8s (2736 modules)
+ ✓ Compiled in 950ms (2736 modules)
+ ✓ Compiled in 1561ms (2736 modules)
+ ✓ Compiled in 2.9s (2736 modules)
+ ✓ Compiled in 847ms (2736 modules)
+ ✓ Compiled in 992ms (2736 modules)
+ ✓ Compiled in 3s (2736 modules)
+ ✓ Compiled in 867ms (2736 modules)
+ ✓ Compiled in 795ms (2736 modules)
+ ✓ Compiled in 893ms (2736 modules)
+ ✓ Compiled in 704ms (2736 modules)
+ ✓ Compiled in 1422ms (2736 modules)
+ ✓ Compiled in 1053ms (2736 modules)
+ ✓ Compiled in 912ms (2736 modules)
+ ✓ Compiled in 3.3s (2736 modules)
+ ✓ Compiled in 2.4s (2736 modules)
+ ✓ Compiled in 953ms (2736 modules)
+ ✓ Compiled in 1059ms (2736 modules)
+ ✓ Compiled in 804ms (2736 modules)
+ ✓ Compiled in 1693ms (2736 modules)
+ ✓ Compiled in 793ms (2736 modules)
+ ✓ Compiled in 901ms (2736 modules)
+ ✓ Compiled in 1167ms (2736 modules)
+ ✓ Compiled in 1012ms (2736 modules)
+ ✓ Compiled in 2.2s (1093 modules)
+ ✓ Compiled in 2.6s (2736 modules)
+ ✓ Compiled in 1037ms (2736 modules)
+ ✓ Compiled in 1100ms (2736 modules)
+ ✓ Compiled in 1182ms (2736 modules)
+ ✓ Compiled in 607ms (1093 modules)
+ ✓ Compiled in 6.3s (2736 modules)
+ ✓ Compiled in 2.5s (2736 modules)
+ ✓ Compiled in 728ms (2736 modules)
+ ✓ Compiled in 1590ms (2736 modules)
+ ✓ Compiled in 1620ms (2736 modules)
+ ✓ Compiled in 777ms (2736 modules)
+ ✓ Compiled in 1274ms (2736 modules)
+ ✓ Compiled in 875ms (2736 modules)
+ ✓ Compiled in 1627ms (2736 modules)
+ ✓ Compiled in 475ms (1093 modules)
+ ✓ Compiled in 487ms (1093 modules)
+ ✓ Compiled in 358ms (1093 modules)
+ ✓ Compiled in 445ms (1093 modules)
+ ✓ Compiled in 349ms (1093 modules)
+ ✓ Compiled in 632ms (1093 modules)
+ ✓ Compiled in 513ms (1093 modules)
+ ✓ Compiled in 392ms (1093 modules)
+ ✓ Compiled in 681ms (1093 modules)
+ ✓ Compiled in 5.2s (2736 modules)
+ ✓ Compiled in 1532ms (2736 modules)
+ ✓ Compiled in 14.8s (2736 modules)
+ ✓ Compiled in 11.2s (2736 modules)

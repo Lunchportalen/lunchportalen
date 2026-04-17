@@ -1,3 +1,5 @@
+// STATUS: KEEP
+
 // components/superadmin/SuperadminNav.tsx
 "use client";
 
@@ -5,6 +7,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 function isActive(pathname: string, href: string) {
+  if (href === "/superadmin") {
+    return pathname === "/superadmin" || pathname === "/superadmin/";
+  }
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -36,10 +41,10 @@ export default function SuperadminNav() {
       className="mb-6 flex flex-wrap gap-2"
       aria-label="Superadmin navigation"
     >
-      {navItem("/superadmin", "Dashboard")}
-      {navItem("/superadmin/firms", "Firma")}
+      {navItem("/superadmin", "Kontrollsenter")}
+      {navItem("/superadmin/companies", "Firma")}
       {navItem("/superadmin/esg", "ESG")}
-      {navItem("/superadmin/audit", "Audit")}
+      {navItem("/superadmin/audit", "Revisjon")}
     </nav>
   );
 }

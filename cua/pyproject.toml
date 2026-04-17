@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cua-chrome"
+version = "0.1.2"
+description = "CLI tool to merge Chrome JSON policy fragments in one directory into a single deterministic file with atomic write and safe archival."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "Proprietary" }
+authors = [{ name = "Lunchportalen / CUA maintainers" }]
+maintainers = [{ name = "Lunchportalen / CUA maintainers" }]
+keywords = ["chrome", "enterprise", "json", "merge", "policy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Systems Administration",
+]
+
+[project.scripts]
+policy-merge = "cua_chrome.core.policy_merge:cli"
+
+[tool.setuptools]
+# Import root ``cua_chrome`` lives under ./cua_chrome/ (outer folder in this repo).
+package-dir = { "" = "cua_chrome" }
+packages = ["cua_chrome", "cua_chrome.core"]

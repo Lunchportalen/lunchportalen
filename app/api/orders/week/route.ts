@@ -8,7 +8,7 @@ import { addDaysISO, isIsoDate, osloTodayISODate, startOfWeekISO } from "@/lib/d
 import { receiptFor } from "@/lib/api/orderResponse";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireCompanyScopeOr403, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
-import { getMenuForDates } from "@/lib/cms/menuContent";
+import { getMenuForDates, menuContentHasDisplayableCopy } from "@/lib/cms/menuContent";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -59,7 +59,7 @@ async function getPublishedDatesCached(days: string[]): Promise<Set<string>> {
 
   const menus = await getMenuForDates(days);
   const publishedDates = (menus ?? [])
-    .filter((menu: any) => menu?.isPublished === true)
+    .filter((menu: any) => menu?.isPublished === true && menuContentHasDisplayableCopy(menu))
     .map((menu: any) => safeStr(menu?.date))
     .filter(Boolean);
 

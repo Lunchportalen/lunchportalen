@@ -7,16 +7,21 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { supabaseServer } from "@/lib/supabase/server";
 import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
+import {
+  applyCompanyLifecycleStatus,
+  normalizeCompanyLifecycleStatus,
+} from "@/lib/server/superadmin/companyLifecycleStatusApply";
 
 /**
  * ✅ FASIT
  * - companies.status er ENESTE sannhetskilde (enum): PENDING|ACTIVE|PAUSED|CLOSED
  * - payload aksepterer både companyId og company_id (kompat)
  * - status aksepterer både lower og UPPER (kompat), lagres som enum-label
- * - Superadmin-only
+ * - Superadmin-only (scope + rolle + DB-profil)
  * - Idempotent + audit (best-effort)
  */
 
@@ -24,33 +29,17 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-type CompanyStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CLOSED";
-
-function normalizeCompanyStatus(raw: string | null): CompanyStatus | null {
-  const u = safeStr(raw).toUpperCase();
-  if (u === "ACTIVE") return "ACTIVE";
-  if (u === "PAUSED") return "PAUSED";
-  if (u === "CLOSED") return "CLOSED";
-  if (u === "PENDING") return "PENDING";
-  return null;
-}
-
 export async function POST(req: NextRequest) {
-  const rid = makeRid();
-
   try {
-    const sb = await supabaseServer();
-    const { data: au, error: auErr } = await sb.auth.getUser();
+    const gate = await scopeOr401(req);
+    if (gate.ok === false) return gate.res;
 
-    if (auErr || !au?.user) {
-      return jsonErr(rid, "Ikke innlogget.", 401, {
-        code: "NOT_AUTH",
-        detail: { message: auErr?.message ?? "No user" },
-      });
-    }
+    const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
+    if (deny) return deny;
 
-    if (!(await isSuperadminProfile(au.user.id))) {
-      return jsonErr(rid, "Ingen tilgang.", 403, {
+    const uid = safeStr(gate.ctx.scope.userId);
+    if (!uid || !(await isSuperadminProfile(uid))) {
+      return jsonErr(gate.ctx.rid, "Ingen tilgang.", 403, {
         code: "FORBIDDEN",
         detail: { reason: "superadmin_required" },
       });
@@ -60,56 +49,36 @@ export async function POST(req: NextRequest) {
 
     const company_id = safeStr(body?.companyId ?? body?.company_id);
     const statusRaw = body?.status == null ? null : safeStr(body?.status);
-    const next = normalizeCompanyStatus(statusRaw);
+    const next = normalizeCompanyLifecycleStatus(statusRaw);
 
-    if (!company_id) return jsonErr(rid, "companyId mangler.", 400, { code: "VALIDATION" });
-    if (!next) return jsonErr(rid, "Ugyldig status.", 400, { code: "VALIDATION", detail: { status: statusRaw } });
+    if (!company_id) return jsonErr(gate.ctx.rid, "companyId mangler.", 400, { code: "VALIDATION" });
+    if (!next) return jsonErr(gate.ctx.rid, "Ugyldig status.", 400, { code: "VALIDATION", detail: { status: statusRaw } });
 
-    // Read current for idempotence + audit
-    const { data: company, error: cErr } = await sb
-      .from("companies")
-      .select("id,name,status")
-      .eq("id", company_id)
-      .single();
+    const sb = await supabaseServer();
+    const rid = gate.ctx.rid;
 
-    if (cErr || !company) {
-      return jsonErr(rid, "Fant ikke firma.", 404, {
-        code: "NOT_FOUND",
-        detail: { message: cErr?.message ?? "Missing company" },
-      });
-    }
+    const applied = await applyCompanyLifecycleStatus(sb, rid, company_id, next);
+    if (applied.ok === false) return applied.response;
 
-    const prev = normalizeCompanyStatus(company.status) ?? "PENDING";
-
-    // Idempotent: already correct state
-    if (prev === next) {
+    if (applied.already) {
       return jsonOk(rid, { companyId: company_id, status: next, already: true });
     }
 
-    // Update
-    const { error: uErr } = await sb.from("companies").update({ status: next }).eq("id", company_id);
-    if (uErr) {
-      return jsonErr(rid, "Kunne ikke oppdatere status.", 400, {
-        code: "UPDATE_FAILED",
-        detail: { message: uErr.message },
-      });
-    }
-
-    // Audit (best-effort) — should never block the status change
     await logOpsEventBestEffort(sb, {
       rid,
-      actor_user_id: au.user.id,
-      actor_email: au.user.email ?? null,
+      actor_user_id: uid,
+      actor_email: gate.ctx.scope.email ?? null,
       actor_role: "superadmin",
       action: "COMPANY_STATUS_CHANGED",
       entity_type: "company",
       entity_id: company_id,
-      summary: `Company status changed: ${safeStr(company.name) || company_id}`,
-      detail: { from: prev, to: next },
+      summary: `Company status changed: ${applied.companyName || company_id}`,
+      detail: { from: applied.prev, to: applied.next, via: "companies.set-status" },
     });
 
     return jsonOk(rid, { companyId: company_id, status: next });
   } catch (e: any) {
+    const rid = makeRid();
     return jsonErr(rid, "Uventet feil.", 500, {
       code: "SET_STATUS_CRASH",
       detail: { message: safeStr(e?.message ?? e) },

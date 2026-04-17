@@ -76,7 +76,7 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
   const rootRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
 
-  const apiUrl = useMemo(() => endpoint ?? `/api/superadmin/companies/${companyId}/status`, [endpoint, companyId]);
+  const apiUrl = useMemo(() => endpoint ?? `/api/superadmin/companies/set-status`, [endpoint, companyId]);
 
   // Click outside
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function StatusDropdown({ companyId, status, disabled, onChanged,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ status: toServerStatus(next) }),
+        body: JSON.stringify({ companyId, status: toServerStatus(next) }),
       });
 
       const data = await readJsonSafe(res);

@@ -29,7 +29,10 @@ function renderPreviewPage(params: {
         role="status"
         aria-live="polite"
       >
-        Forhåndsvisning av kladd — dette er ikke publisert innhold
+        Forhåndsvisning av kladd — dette er ikke publisert innhold.
+        <span className="mt-1 block font-normal text-amber-950/90">
+          Samme byggeklosser og render-pipeline som public (her: kladd/staging).
+        </span>
       </div>
       <article className="lp-container mx-auto max-w-4xl px-4 py-8">
         <p className="mb-4 text-xs font-medium uppercase tracking-wide text-slate-500">Forhåndsvisning (kladd)</p>

@@ -8,7 +8,7 @@ import type { NextRequest } from "next/server";
 
 
 // ✅ Dag-10 helpers
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
 
@@ -46,12 +46,9 @@ export async function GET(req: NextRequest) {
   const denyRole = requireRoleOr403(ctx, "admin.locations.export", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
 
-  // 3) company scope (låst for alle roller)
-  const denyScope = requireCompanyScopeOr403(ctx);
-  if (denyScope) return denyScope;
-
-  const companyId = safeStr(ctx.scope.companyId) || null;
-  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  const tenant = resolveAdminTenantCompanyId(ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const companyId = tenant.companyId;
 
   try {
     const admin = supabaseAdmin();

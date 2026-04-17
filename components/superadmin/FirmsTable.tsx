@@ -310,11 +310,11 @@ export default function FirmsTable({ initial }: { initial: FirmsQueryResult }) {
     setBusyId(companyId);
 
     try {
-      const res = await fetch(`/api/superadmin/firms/${encodeURIComponent(companyId)}/status`, {
+      const res = await fetch(`/api/superadmin/companies/set-status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ status: next }),
+        body: JSON.stringify({ companyId, status: next }),
       });
 
       const json: any = await readJsonSafe(res);

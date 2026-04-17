@@ -55,13 +55,13 @@ export const SURFACE_ROUTE_RULES: SurfaceRouteRule[] = [
     },
   },
   {
-    pathPrefix: "/public/demo",
+    pathPrefix: "/ai-motor-demo",
     binding: {
       surface: "public_demo",
       storage: "content_page_slug",
-      slug: "demo",
-      nodeId: "public:demo",
-      notes: "Public demo shell; may also use settings.surfaceCopy.public_demo.*",
+      slug: "ai-motor-demo",
+      nodeId: "public:ai-motor-demo",
+      notes: "Canonical public demo route (tidligere /public/demo → redirect). Innhold fra Umbraco Delivery.",
     },
   },
   {

@@ -24,13 +24,17 @@ function cleanObject<T extends Record<string, unknown>>(obj: T): T {
   return out as T;
 }
 
+/**
+ * WebPage JSON-LD must never throw for empty SEO fields: callers include CMS pages where
+ * `meta.seo.description` may be unset (live) or empty (fail-closed). Use minimal deterministic fallbacks.
+ */
 export function webPageJsonLd(input: WebPageJsonLdInput) {
   const url = toAbsolute(input.url);
-  const name = compact(input.name);
-  const description = compact(input.description);
+  const name = compact(input.name) || siteName();
+  const description = compact(input.description) || name;
   const inLanguage = compact(input.inLanguage || "nb-NO") || "nb-NO";
 
-  if (!url || !name || !description) {
+  if (!url) {
     throw new Error("SEO_JSONLD_WEBPAGE_INVALID");
   }
 

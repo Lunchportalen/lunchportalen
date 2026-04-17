@@ -10,6 +10,9 @@ function isActive(pathname: string, href: string): boolean {
   if (href === "/superadmin/overview") {
     return pathname === "/superadmin/overview" || pathname === "/superadmin/overview/";
   }
+  if (href === "/superadmin/daily-brief") {
+    return pathname === "/superadmin/daily-brief" || pathname === "/superadmin/daily-brief/";
+  }
   if (href === "/superadmin/sales") {
     return pathname === "/superadmin/sales" || pathname === "/superadmin/sales/";
   }
@@ -64,6 +67,9 @@ export default function ControlTowerNav() {
       <Link href="/superadmin/overview" style={linkStyle("/superadmin/overview")}>
         Driftsoversikt
       </Link>
+      <Link href="/superadmin/daily-brief" style={linkStyle("/superadmin/daily-brief")}>
+        Morgenoversikt
+      </Link>
       <Link href="/superadmin/control-tower" style={linkStyle("/superadmin/control-tower")}>
         Kontrolltårn
       </Link>
@@ -93,6 +99,9 @@ export default function ControlTowerNav() {
       </Link>
       <Link href="/superadmin/operations" style={linkStyle("/superadmin/operations")}>
         Operasjoner
+      </Link>
+      <Link href="/superadmin/production-check" style={linkStyle("/superadmin/production-check")}>
+        Produksjonssjekk
       </Link>
       <Link href="/superadmin/system-graph" style={linkStyle("/superadmin/system-graph")}>
         Systemgraf

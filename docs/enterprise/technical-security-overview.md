@@ -1,5 +1,17 @@
 # Technical & Security Overview
 
+**Status:** Teknisk og sikkerhetsmessig sannhet på oversiktsnivå — detaljer og penetrasjonstest avtales separat.
+
+## Live nå vs. senere lag
+
+| Tema | Typisk live (RC/produksjon) | Roadmap / utdyping |
+|------|-----------------------------|---------------------|
+| Next.js + Supabase, server-side guards, rollemodell | Ja | — |
+| Tenant-isolasjon på operative data | Ja | Se `docs/security/TENANT_ISOLATION.md` |
+| Strukturert logging / `rid` i API-feil | Ja | Utvidet observability som egen leveranse (jf. blueprint K3) |
+| SSO / SAML | Nei (standard) | `docs/enterprise/sso-roadmap.md` |
+| Full SOC2 *attest* som leverandørdokument | Utenfor repo | Matrise i `docs/security/SOC2_CONTROL_MATRIX.md` er *mapping*, ikke attest |
+
 ## Hosting og plattform
 - Next.js App Router (Node.js) og Supabase (Postgres + Auth + Storage).
 - All server-side logikk kjører på backend; klient får kun API-responser med ok/rid-kontrakt.

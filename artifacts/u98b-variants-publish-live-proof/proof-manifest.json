@@ -1,0 +1,135 @@
+{
+  "runStartedAt": "2026-04-08T18:32:58.499Z",
+  "runFinishedAt": "2026-04-08T18:34:10.874Z",
+  "baseUrl": "http://localhost:3055",
+  "playwrightCommand": "LP_E2E_EXTERNAL_SERVER=1 LP_CMS_RUNTIME_MODE=local_provider PLAYWRIGHT_BASE_URL=http://localhost:3055 npx playwright test e2e/u98b-variants-publish-live-proof.e2e.ts --project=chromium",
+  "playwrightExitCode": 0,
+  "createdOrUsedNodeId": "00000000-0000-4000-8000-00000000c001",
+  "languages": [
+    {
+      "alias": "nb-no",
+      "title": "Norsk (bokmål)",
+      "isDefault": true
+    },
+    {
+      "alias": "en-gb",
+      "title": "English (UK) — U98B 1775673195340",
+      "isDefault": false
+    }
+  ],
+  "runtimeValues": {
+    "documentTypeAlias": "page",
+    "currentCultureA": "nb",
+    "currentCultureB": "en",
+    "invariantFieldAlias": "structure_key",
+    "cultureFieldAlias": "intro_kicker",
+    "valueCultureA": "cult-nb-u98b-1775673219841",
+    "valueCultureB": "cult-en-u98b-1775673222660",
+    "invariantValue": "inv-u98b-1775673219841",
+    "publishStateBefore": "draft",
+    "publishStateAfter": "published"
+  },
+  "screenshots": [
+    {
+      "file": "01-languages-overview.png",
+      "sha256": "a51695e1e8c7acc95e035f89ae50656f88d4419d836d9c8419a91fa209a95750",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:08.929Z"
+    },
+    {
+      "file": "02-language-workspace.png",
+      "sha256": "66546220545212b13141a2f6bbeb1635d8533802a43827bb0446beb6a69b73ce",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:15.343Z"
+    },
+    {
+      "file": "03-language-dirty-save-state.png",
+      "sha256": "d6c20339562729a05943fa43bc939156d2b4ab7671b95db501e147fd27911f7e",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:15.772Z"
+    },
+    {
+      "file": "04-document-type-variation-proof.png",
+      "sha256": "b0a4e9720ad8dbbb6500750a0d179bfe0750726a2b36c4d67bebfb85e9733b6f",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:28.630Z"
+    },
+    {
+      "file": "05-content-editor-culture-a.png",
+      "sha256": "f8490b1316db4fa27baf5e84b8e1ea13a5aa6362165d1b7db510f59d56c13557",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:40.791Z"
+    },
+    {
+      "file": "06-content-editor-culture-b.png",
+      "sha256": "4138a7f09187ab521d99c29019cf6fa83feea67723036dbbce3ddfeb50f00621",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:43.241Z"
+    },
+    {
+      "file": "07-invariant-vs-culture-field-proof.png",
+      "sha256": "d8533f3b21c7ec1b02d0da6126bbde4f165a86dcc75785baf943565af0e1823c",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:43.893Z"
+    },
+    {
+      "file": "08-dirty-save-proof.png",
+      "sha256": "a0bf0961652a55845a713aae61ed55cc5a115c21f55c4e42682a54254c9b84ed",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:47.364Z"
+    },
+    {
+      "file": "09-publish-state-before.png",
+      "sha256": "8d07c616b6ed3a7f2203315f01245199d14d45b70ec5752988d393b6c29a0058",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:50.990Z"
+    },
+    {
+      "file": "10-publish-state-after.png",
+      "sha256": "ae3754ef2c9c1bf202ab35a231c2c45eed386be5d75f0b2b13d99af45bf49f87",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:33:55.288Z"
+    },
+    {
+      "file": "11-reload-persist-proof.png",
+      "sha256": "75b6066fa46ece7d77d2b0fafb3c317a2a9567ed20a98d2c77883583cc631481",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:34:04.401Z"
+    },
+    {
+      "file": "12-current-culture-binding-proof.png",
+      "sha256": "dd0f3d1183a3aef8735092ae016e878fe7f9798bf44d3e794916b1155412452e",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:34:07.393Z"
+    },
+    {
+      "file": "13-full-editor-after-variant-changes.png",
+      "sha256": "a957d679468984e87f9a4bad9024e53086d8e4ee43c33b65a379787d278d04d3",
+      "width": 1536,
+      "height": 900,
+      "mtime": "2026-04-08T18:34:10.850Z"
+    }
+  ],
+  "sanity": {
+    "exitCode": 0,
+    "note": "filled by gate logs in artifacts"
+  },
+  "gates": {
+    "typecheckExitCode": 0,
+    "lintExitCode": 0,
+    "buildExitCode": 0,
+    "testRunExitCode": 0
+  }
+}

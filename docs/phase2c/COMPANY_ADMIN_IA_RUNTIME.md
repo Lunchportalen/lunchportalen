@@ -5,6 +5,10 @@
 - **`/admin`** er hovedinngang (Oversikt / kontrolltårn-KPI).
 - **Én navigasjon:** `app/admin/AdminNav.tsx` — vist for **`company_admin` kun** (superadmin som åpner `/admin` får ikke denne nav-baren, for å unngå «feil kontekst»).
 
+## Grense mot superadmin (Closeout 4B)
+
+Firmaadmin er **rammeflate for ett firma** (Supabase-operativ sannhet). **Ikke** her: firmastatuspause/lukking, avtalegodkjenning eller tverrfirma — det er **superadmin**-ansvar. UI og `loadAdminContext` skal ikke fremstille `/admin` som system- eller overrideflate.
+
 ## Lenker (samlet)
 
 | Label | Rute | Merknad |

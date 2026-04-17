@@ -37,6 +37,7 @@ Dette dokumentet forklarer **arkitektur og prinsipper** på et nivå IT og sikke
 
 | Tema | Sti |
 |------|-----|
+| **Samlet enterprise-pakke (index)** | `docs/enterprise/README.md` |
 | Teknisk + sikkerhetsoversikt | `docs/enterprise/technical-security-overview.md` |
 | Tenant-isolasjon | `docs/security/TENANT_ISOLATION.md` |
 | Audit | `docs/security/AUDIT_COVERAGE.md` |

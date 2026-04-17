@@ -9,7 +9,7 @@ import type { NextRequest } from "next/server";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId } from "@/lib/http/routeGuard";
 
 function isUuid(v: unknown) {
   return (
@@ -31,10 +31,14 @@ export async function GET(req: NextRequest) {
   const a = await scopeOr401(req);
   if (a.ok === false) return a.res;
 
-  const { rid, scope } = a.ctx;
+  const { rid } = a.ctx;
 
   const denyRole = requireRoleOr403(a.ctx, "admin.employees.audit.read", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
+
+  const tenant = resolveAdminTenantCompanyId(a.ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const myCompanyId = tenant.companyId;
 
   const url = new URL(req.url);
   const userId = String(url.searchParams.get("user_id") ?? "").trim();
@@ -47,11 +51,6 @@ export async function GET(req: NextRequest) {
 
   try {
     const sb = await supabaseServer();
-
-    const denyScope = requireCompanyScopeOr403(a.ctx);
-    if (denyScope) return denyScope;
-
-    const myCompanyId = String(scope.companyId ?? "").trim();
 
     const { data: prof, error: pErr } = await sb.from("profiles").select("user_id,company_id,role").eq("user_id", userId).maybeSingle();
 

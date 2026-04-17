@@ -95,10 +95,10 @@ export default function CompaniesClient() {
       });
     }
 
-    const r = await fetch("/api/superadmin/company-status", {
+    const r = await fetch("/api/superadmin/companies/set-status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyId, status }),
+      body: JSON.stringify({ companyId, status: status.toUpperCase() }),
     });
 
     const j = await r.json().catch(() => ({}));

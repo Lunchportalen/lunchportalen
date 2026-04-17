@@ -41,6 +41,7 @@ const EXCLUDED_PREFIXES = [
   "app/api/auth/",
   "app/api/driver/",
   "app/api/cron/",
+  "app/api/internal/",
   "app/api/debug/",
   "app/api/dev/",
   "app/api/health/",

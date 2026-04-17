@@ -1,0 +1,22 @@
+# Eksempel — kopier til ecs-service.tf og fyll ut task_definition, subnets og security_groups.
+# Ikke inkludert i default plan for å unngå ugyldig delvis konfigurasjon.
+
+# resource "aws_ecs_service" "app_service" {
+#   name            = "lunchportalen-service"
+#   cluster         = aws_ecs_cluster.app.id
+#   task_definition = "arn:aws:ecs:..."
+#   desired_count   = 3
+#   launch_type     = "FARGATE"
+#
+#   network_configuration {
+#     subnets          = var.private_subnet_ids
+#     security_groups  = var.app_security_group_ids
+#     assign_public_ip = false
+#   }
+#
+#   load_balancer {
+#     target_group_arn = aws_lb_target_group.app.arn
+#     container_name   = "app"
+#     container_port   = 3000
+#   }
+# }

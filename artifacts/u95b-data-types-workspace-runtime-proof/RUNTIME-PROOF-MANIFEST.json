@@ -1,0 +1,44 @@
+{
+  "baseURL": "http://localhost:3046",
+  "compactPageId": "00000000-0000-4000-8000-00000000c004",
+  "microPageId": "00000000-0000-4000-8000-00000000c005",
+  "adminChanges": {
+    "compact_page_blocks": {
+      "createButtonLabel": "U95B Kompakt add-knapp",
+      "groupCoreTitle": "U95B Kjerne (runtime)",
+      "removedFromAllowlist": [
+        "image"
+      ]
+    },
+    "page_micro_blocks": {
+      "createButtonLabel": "U95B Micro add-knapp",
+      "maxItems": 5
+    }
+  },
+  "runtimeObservations": [
+    "Compact insert button label matches LABEL_COMPACT after save",
+    "Library shows renamed group heading GROUP_CORE_TITLE",
+    "image block no longer listed in compact library",
+    "Micro insert at-max false after maxItems 5 with 3 blocks on page",
+    "Micro library create label matches LABEL_MICRO"
+  ],
+  "screenshotFiles": [
+    "01-data-types-workspace-overview.png",
+    "02-compact-page-blocks-detail-workspace.png",
+    "03-page-micro-blocks-detail-workspace.png",
+    "04-dirty-state-data-type-workspace.png",
+    "05-saved-state-data-type-workspace.png",
+    "06-compact-editor-foer.png",
+    "07-compact-editor-etter.png",
+    "08-compact-library-changed-label-group.png",
+    "09-compact-disallowed-block-proof.png",
+    "10-micro-editor-foer-maxitems-at-max.png",
+    "11-micro-editor-etter-maxitems-unlocked.png",
+    "12-property-binding-proof.png",
+    "13-micro-maxitems-proof-insert-not-at-max.png",
+    "14-persisted-override-proof-compact.png",
+    "15-merged-runtime-effect-library-micro.png",
+    "16-merged-runtime-effect-merged-vs-override-micro.png",
+    "17-full-canvas-after-config-change.png"
+  ]
+}

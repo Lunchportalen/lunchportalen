@@ -374,6 +374,8 @@ export function useContentWorkspaceShellModel({
     [isWow, showAfter, originalBlocks, blocks],
   );
   const {
+    detailEditorMode,
+    setDetailEditorMode,
     selectedBlockId,
     setSelectedBlockId,
     hoverBlockId,
@@ -2332,6 +2334,8 @@ export function useContentWorkspaceShellModel({
         handleAiSeoOptimize,
         mergedBlockEditorDataTypes,
         mergedDocumentTypeDefinitions,
+        setSlug,
+        setSlugTouched,
       ],
       tri: [onSelectBlockFromTree, aiCapability, aiSummary, aiError],
     },
@@ -2470,6 +2474,7 @@ export function useContentWorkspaceShellModel({
         setLastError(null);
       },
     },
+    detailStatusPresentation: embedded ? "document" : "default",
     ...pageEditorShellBundle,
   };
 
@@ -2601,6 +2606,7 @@ export function useContentWorkspaceShellModel({
     visualInlineEditApi: mainCanvas.visualInlineEditApi,
     setHistoryVersionPreview: mainCanvas.setHistoryVersionPreview,
     title: mainCanvas.title,
+    detailSetTitle: setTitle,
     onNavigateToGlobalDesignSettings: mainCanvas.onNavigateToGlobalDesignSettings,
     pageCmsMetaForPreview: mainCanvas.pageCmsMetaForPreview,
     blockListCreateLabel,
@@ -2616,6 +2622,8 @@ export function useContentWorkspaceShellModel({
       resolvedDocumentTypeForCanvas?.defaultTemplate ??
       resolvedDocumentTypeForCanvas?.templates?.[0] ??
       null,
+    detailEditorMode,
+    setDetailEditorMode,
   } satisfies ContentWorkspaceBodyModelProps;
 
   const workspacePreviewProps = {

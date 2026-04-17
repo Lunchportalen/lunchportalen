@@ -1,0 +1,148 @@
+{
+  "runStartedAt": "2026-04-08T19:28:15.774Z",
+  "runFinishedAt": "2026-04-08T19:40:20.852Z",
+  "baseUrl": "http://localhost:3056",
+  "playwrightCommand": "cross-env LP_E2E_EXTERNAL_SERVER=1 LP_CMS_RUNTIME_MODE=local_provider PLAYWRIGHT_BASE_URL=http://localhost:3056 npx playwright test e2e/u98c-proof-chain-lock.e2e.ts --project=chromium --workers=1 --retries=0",
+  "playwrightExitCode": 0,
+  "usedNodeId": "00000000-0000-4000-8000-00000000c001",
+  "languages": [
+    {
+      "alias": "nb-no",
+      "title": "Norsk (bokmål)",
+      "isDefault": true
+    },
+    {
+      "alias": "en-gb",
+      "title": "English (UK) — U98C 1775676551442",
+      "isDefault": false
+    }
+  ],
+  "runtimeValues": {
+    "documentTypeAlias": "page",
+    "cultureA": "nb",
+    "cultureB": "en",
+    "invariantFieldAlias": "structure_key",
+    "cultureFieldAlias": "intro_kicker",
+    "valueCultureA": "cult-nb-u98c-1775676622404",
+    "valueCultureB": "cult-en-u98c-1775676626023",
+    "invariantValue": "inv-u98c-1775676622404",
+    "publishStateBefore": "draft",
+    "publishStateAfter": "published",
+    "changedLanguageTitle": "English (UK) — U98C 1775676551442"
+  },
+  "screenshots": [
+    {
+      "file": "01-languages-overview.png",
+      "sha256": "07619defe9049ea3e858982617ade005e3fa554e4d4b867fb61bdeeb4200d942",
+      "width": 1536,
+      "height": 900,
+      "bytes": 140777,
+      "mtime": "2026-04-08T19:29:07.288Z"
+    },
+    {
+      "file": "02-language-workspace.png",
+      "sha256": "748e75cf014cfcfcdc02d570c8008e9f8798954de7b4ff401c576f9b177554f2",
+      "width": 1536,
+      "height": 900,
+      "bytes": 132793,
+      "mtime": "2026-04-08T19:29:11.447Z"
+    },
+    {
+      "file": "03-language-dirty-save-state.png",
+      "sha256": "e58775cb1f4b056b67c6ab6c81f51d6395f8962c82c50d94155c372c7db90db9",
+      "width": 1536,
+      "height": 900,
+      "bytes": 136628,
+      "mtime": "2026-04-08T19:29:11.864Z"
+    },
+    {
+      "file": "04-document-type-variation-proof.png",
+      "sha256": "b0a4e9720ad8dbbb6500750a0d179bfe0750726a2b36c4d67bebfb85e9733b6f",
+      "width": 1536,
+      "height": 900,
+      "bytes": 150171,
+      "mtime": "2026-04-08T19:29:23.679Z"
+    },
+    {
+      "file": "05-content-editor-culture-a.png",
+      "sha256": "da1bf7b3e6df5c3ae9e7fdc3c93ca725f408d2cea8ebafd04dc24b97728e489b",
+      "width": 1536,
+      "height": 900,
+      "bytes": 135691,
+      "mtime": "2026-04-08T19:30:23.764Z"
+    },
+    {
+      "file": "06-content-editor-culture-b.png",
+      "sha256": "3a5c791c7514b45c23cc1de042f6c9b99d907f34879e6af98c9826789b1f81e1",
+      "width": 1536,
+      "height": 922,
+      "bytes": 132720,
+      "mtime": "2026-04-08T19:30:27.225Z"
+    },
+    {
+      "file": "07-invariant-vs-culture-field-proof.png",
+      "sha256": "3ea424a88f2676302543ca20917d97c81a067486200d20c02163ae60e2db86bf",
+      "width": 1536,
+      "height": 900,
+      "bytes": 135468,
+      "mtime": "2026-04-08T19:30:27.673Z"
+    },
+    {
+      "file": "08-dirty-save-proof.png",
+      "sha256": "80134e2f6c9456975cee106ff25d086afda752f6bb073ab4b040b900d22f8ded",
+      "width": 1536,
+      "height": 900,
+      "bytes": 136504,
+      "mtime": "2026-04-08T19:30:31.242Z"
+    },
+    {
+      "file": "09-publish-state-before.png",
+      "sha256": "2cd3967a930e77e54f705fd3d5e543efdcdf0559a667f97359819a6c3aa24651",
+      "width": 1536,
+      "height": 908,
+      "bytes": 131670,
+      "mtime": "2026-04-08T19:30:34.705Z"
+    },
+    {
+      "file": "10-publish-state-after.png",
+      "sha256": "666619dbd2028ebb003ead71f303b75c216912781be9c42c701060610af806c4",
+      "width": 1536,
+      "height": 900,
+      "bytes": 133524,
+      "mtime": "2026-04-08T19:30:38.931Z"
+    },
+    {
+      "file": "11-reload-persist-proof.png",
+      "sha256": "75b6066fa46ece7d77d2b0fafb3c317a2a9567ed20a98d2c77883583cc631481",
+      "width": 1536,
+      "height": 922,
+      "bytes": 133270,
+      "mtime": "2026-04-08T19:30:46.854Z"
+    },
+    {
+      "file": "12-current-culture-binding-proof.png",
+      "sha256": "9657dc3ace01e11f0c1de7be086b34f24a277f14341ff933c4d6a864727e1402",
+      "width": 1536,
+      "height": 922,
+      "bytes": 129332,
+      "mtime": "2026-04-08T19:30:49.265Z"
+    },
+    {
+      "file": "13-full-editor-after-variant-changes.png",
+      "sha256": "e88ea25b16d06c5a4fb25c8393177272244a0b1dd123fee0dd1ecb57ac7b91eb",
+      "width": 1536,
+      "height": 900,
+      "bytes": 134030,
+      "mtime": "2026-04-08T19:30:51.431Z"
+    }
+  ],
+  "sanity": {
+    "exitCode": 0
+  },
+  "gates": {
+    "typecheckExitCode": 0,
+    "lintExitCode": 0,
+    "buildExitCode": 0,
+    "testRunExitCode": 0
+  }
+}

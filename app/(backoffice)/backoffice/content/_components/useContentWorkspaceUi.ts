@@ -7,14 +7,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
+import { usePathname } from "next/navigation";
 import {
   useBellissimaEntityWorkspaceViewState,
   useBellissimaWorkspacePresentationState,
   useBellissimaWorkspaceShellState,
 } from "@/components/backoffice/ContentBellissimaWorkspaceContext";
+import { resolveBackofficeContentRoute } from "@/lib/cms/backofficeContentRoute";
 import type { ContentBellissimaInspectorSectionId } from "@/lib/cms/backofficeWorkspaceContextModel";
 import type { Block } from "./editorBlockTypes";
 import type { BodyMode } from "./contentWorkspace.blocks";
+
+/** Detail `/content/[id]`: center er enten struktur (liste) eller visuell (canvas) — uavhengig av blokkvalg. */
+export type ContentDetailEditorMode = "structure" | "visual";
 
 export type UseContentWorkspaceUiParams = {
   /** Canonical editable block list (single source of truth for values + save). */
@@ -33,8 +38,15 @@ export function useContentWorkspaceUi({
   editorCanvasRef,
   deleteBlockCore,
 }: UseContentWorkspaceUiParams) {
+  const pathname = usePathname() ?? "";
+  const detailRouteEntityId = useMemo(() => {
+    const r = resolveBackofficeContentRoute(pathname);
+    return r.kind === "detail" ? r.entityId : null;
+  }, [pathname]);
+
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [hoverBlockId, setHoverBlockId] = useState<string | null>(null);
+  const [detailEditorMode, setDetailEditorMode] = useState<ContentDetailEditorMode>("structure");
 
   const { activeView: mainView, setActiveView: setMainView } =
     useBellissimaEntityWorkspaceViewState();
@@ -123,7 +135,14 @@ export function useContentWorkspaceUi({
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
   }, [canvasMode, editorCanvasRef]);
 
+  /** Ny detail-side / annen node: struktur som utgangspunkt (ikke bland med Bellissima workspace-view). */
+  useEffect(() => {
+    if (detailRouteEntityId) setDetailEditorMode("structure");
+  }, [detailRouteEntityId]);
+
   return {
+    detailEditorMode,
+    setDetailEditorMode,
     selectedBlockId,
     setSelectedBlockId,
     hoverBlockId,

@@ -2,10 +2,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/* agents-ci: JSON responses include ok: true, rid: (success) and ok: false, rid: (errors) via jsonOrderWrite*. */
+
 import type { NextRequest } from "next/server";
 
 import { isIsoDate } from "@/lib/date/oslo";
-import { jsonErr, jsonOk } from "@/lib/http/respond";
+import { coerceOrderWriteErrorResponse, jsonOrderWriteErr, jsonOrderWriteOk, orderWriteStatusFromDb } from "@/lib/http/respond";
 import { companyIdFromCtx, readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 import { getPublishedMenuForDate } from "@/lib/cms/menuContent";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
@@ -13,6 +15,7 @@ import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreemen
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { auditLog, buildAuditEventFromAuthedCtx } from "@/lib/audit/log";
 import { supabaseServer } from "@/lib/supabase/server";
+import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 
 type OrderSetBody = {
   date?: string;
@@ -71,12 +74,12 @@ function extractRpcPayload(data: unknown): RpcOrderSetData {
 
 export async function POST(req: NextRequest) {
   const auth = await scopeOr401(req);
-  if (auth.ok === false) return auth.response;
+  if (auth.ok === false) return await coerceOrderWriteErrorResponse(auth.res ?? auth.response);
 
   const { rid } = auth.ctx;
 
   const denyRole = requireRoleOr403(auth.ctx, "api.orders.set.POST", ["employee"]);
-  if (denyRole) return denyRole;
+  if (denyRole) return await coerceOrderWriteErrorResponse(denyRole);
 
   const body = (await readJson(req)) as OrderSetBody;
   const date = safeStr(body?.date);
@@ -85,11 +88,11 @@ export async function POST(req: NextRequest) {
   const slot = normalizeOrderTableSlot(body?.slot ?? "");
 
   if (!isIsoDate(date)) {
-    return jsonErr(rid, "Ugyldig dato. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
+    return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Ugyldig dato. Bruk YYYY-MM-DD.");
   }
 
   if (!action) {
-    return jsonErr(rid, "Ugyldig action. Bruk ORDER eller CANCEL.", 400, "BAD_ACTION");
+    return jsonOrderWriteErr(rid, 400, "BAD_ACTION", "Ugyldig action. Bruk ORDER eller CANCEL.");
   }
 
   // Fail-closed menu gate: ordering is blocked unless menu is published for date.
@@ -97,37 +100,38 @@ export async function POST(req: NextRequest) {
   try {
     const menu = await getPublishedMenuForDate(date);
     if (!menu) {
-      return jsonErr(rid, "Meny er ikke publisert for datoen.", 409, "MENU_NOT_PUBLISHED");
+      return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert for datoen.");
     }
   } catch {
-    return jsonErr(rid, "Kunne ikke verifisere meny-status.", 409, "MENU_NOT_PUBLISHED");
+    return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Kunne ikke verifisere meny-status.");
   }
 
   const pricingGuard = assertEmployeeOrderBodyHasNoPricingOverrides(body, auth.ctx.scope.role);
   if ("code" in pricingGuard) {
-    return jsonErr(rid, "Du kan ikke overstyre pris eller plan i bestillingen.", 403, pricingGuard.code);
+    return jsonOrderWriteErr(rid, 403, pricingGuard.code, "Du kan ikke overstyre pris eller plan i bestillingen.");
   }
 
   const sb = await supabaseServer();
   const companyId = companyIdFromCtx(auth.ctx);
-  if (action === "ORDER") {
+  if (action === "ORDER" || action === "CANCEL") {
     if (!companyId) {
-      return jsonErr(rid, "Mangler firmatilknytning for bestilling.", 403, "COMPANY_SCOPE_REQUIRED");
+      return jsonOrderWriteErr(rid, 403, "COMPANY_SCOPE_REQUIRED", "Mangler firmatilknytning for bestilling.");
     }
     const hold = await assertCompanyOrderWriteAllowed(sb, companyId, rid);
     if (hold.ok === false) {
-      return jsonErr(rid, hold.message, hold.status, hold.code);
+      return jsonOrderWriteErr(rid, hold.status, hold.code, hold.message);
     }
     const pre = await assertOrderWithinAgreementPreflight({
       sb,
       companyId,
+      locationId: safeStr(auth.ctx.scope.locationId) || null,
       orderIsoDate: date,
       agreementRuleSlot: agreementRuleSlotForOrderTableSlot(slot),
       rid,
-      action: "SET",
+      action: action === "CANCEL" ? "CANCEL" : "SET",
     });
     if (pre.ok === false) {
-      return jsonErr(rid, pre.message, pre.status, pre.code);
+      return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
     }
   }
 
@@ -140,30 +144,37 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     const mapped = mapRpcErrorToHttp(error.message);
-    return jsonErr(rid, "Bestilling kunne ikke lagres.", mapped.status, mapped.code, {
-      message: error.message,
-    });
+    return jsonOrderWriteErr(rid, mapped.status, mapped.code, "Bestilling kunne ikke lagres.");
   }
 
   const rpc = extractRpcPayload(data);
+  const orderId = safeStr(rpc?.order_id);
+  if (!orderId) {
+    return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Bestilling kunne ikke verifiseres etter lagring.");
+  }
+
   const outStatus = safeStr(rpc?.status).toUpperCase() || (action === "ORDER" ? "ORDERED" : "CANCELED");
 
   auditLog(
     buildAuditEventFromAuthedCtx(auth.ctx, {
       action: action === "ORDER" ? "CREATE" : "UPDATE",
       resource: "orders:set",
-      resourceId: rpc?.order_id ?? null,
+      resourceId: orderId,
       metadata: { date, orderAction: action },
     }),
   );
 
-  return jsonOk(rid, {
-    status: outStatus,
-    receipt: {
-      orderId: rpc?.order_id ?? null,
-      timestamp: rpc?.receipt ?? null,
-      rid: safeStr(rpc?.rid) || rid,
-    },
-    date: rpc?.date ?? date,
+  const rpcDate = safeStr(rpc?.date) || date;
+  await fanoutLpOrderSetOutboxBestEffort({
+    userId: auth.ctx.scope.userId,
+    date: rpcDate,
+    slot,
+  });
+
+  return jsonOrderWriteOk(rid, {
+    orderId,
+    status: orderWriteStatusFromDb(outStatus),
+    date: rpcDate,
+    timestamp: new Date().toISOString(),
   });
 }

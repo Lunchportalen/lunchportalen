@@ -2,6 +2,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/**
+ * Canonical ledger-reject (public.agreements PENDING → REJECTED).
+ * Gate: scopeOr401 → requireRoleOr403(..., ["superadmin"]) — ingen andre roller.
+ * Mutasjon: runLedgerAgreementReject → RPC lp_agreement_reject_pending (service_role).
+ */
 import "server-only";
 
 import type { NextRequest } from "next/server";

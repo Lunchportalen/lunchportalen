@@ -89,7 +89,7 @@ export default async function AdminOrdersPage() {
         {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Admin – Ordrer</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Firmaadmin – Ordrer</h1>
             <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Oversikt per dag. Kontroll, ikke støy.</p>
           </div>
 

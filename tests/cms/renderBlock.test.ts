@@ -91,7 +91,7 @@ describe("renderBlock — display text normalization (no literal \\r\\n)", () =>
 });
 
 describe("renderBlock — key block types (block editor behavior)", () => {
-  test("form block without formId shows amber message", () => {
+  test("form block without formId shows guidance message", () => {
     const out = renderBlock(
       { id: "f1", type: "form", data: { title: "Skjema" } },
       "prod",
@@ -99,7 +99,7 @@ describe("renderBlock — key block types (block editor behavior)", () => {
     );
     expect(out).not.toBeNull();
     const html = renderToStaticMarkup(React.createElement(React.Fragment, null, out));
-    expect(html).toContain("Skjema-blokk mangler formId");
+    expect(html).toContain("Skjemablokken mangler kilde");
   });
 
   test("form block with formId renders (FormBlock)", () => {

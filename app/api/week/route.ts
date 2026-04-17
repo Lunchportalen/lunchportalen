@@ -11,6 +11,7 @@ import { weekRangeISO } from "@/lib/date/week";
 import { addDaysISO, osloNowParts, osloTodayISODate } from "@/lib/date/oslo";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
+import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 import type { MenuContent } from "@/lib/sanity/queries";
 
@@ -130,6 +131,9 @@ export async function GET(req: Request) {
     });
     const deliveryDays = deliveryNorm.days as DayKey[];
 
+    const dayTiers = await fetchAgreementDayTiersForCompany(sb, companyId);
+    const tierByDay = Object.keys(dayTiers).length > 0 ? dayTiers : null;
+
     const cutoff = "08:00";
 
     const todayISO = osloTodayISODate();
@@ -145,6 +149,7 @@ export async function GET(req: Request) {
     }
 
     const menuByDate = new Map<string, MenuContent>();
+    let menuFetchFailed = false;
     try {
       const { getMenuForDates } = await import("@/lib/cms/menuContent");
       const menus = await getMenuForDates(dates);
@@ -153,13 +158,21 @@ export async function GET(req: Request) {
         if (dt) menuByDate.set(dt, m as MenuContent);
       }
     } catch (e: unknown) {
-      console.warn("[GET /api/week] getMenuForDates failed", String((e as { message?: string })?.message ?? e));
+      menuFetchFailed = true;
+      const detail = String((e as { message?: string })?.message ?? e);
+      opsLog("sanity.week.menu_fetch_failed", {
+        rid: _rid,
+        company_id: companyId,
+        weekOffset,
+        detail,
+      });
     }
 
     const days = buildEmployeeWeekDayRows({
       dates,
       deliveryDayKeys: deliveryDays,
       defaultTier: tier,
+      tierByDay,
       weekOffset,
       menuByDate,
     });
@@ -180,6 +193,8 @@ export async function GET(req: Request) {
         plan_tier: tier,
         price_per_cuvert_nok: agreement.price_per_cuvert_nok,
         delivery_days: deliveryDays,
+        /** Operativ tier per ukedag når daymap finnes (kilde for radene i `days`). */
+        day_tiers: tierByDay ?? undefined,
         start_date: agreement.start_date,
         end_date: agreement.end_date,
       },
@@ -187,6 +202,8 @@ export async function GET(req: Request) {
         currentStatus: null,
         nextStatus: null,
         weekPlanOperational: false,
+        /** True når Sanity-kall feilet (meny ukjent — ikke synonymt med «ingen meny publisert»). */
+        menuFetchFailed,
       },
       plan: null,
       days,

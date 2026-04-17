@@ -1,0 +1,1 @@
+cross-env PORT=3054 LP_CMS_RUNTIME_MODE=local_provider npm run dev

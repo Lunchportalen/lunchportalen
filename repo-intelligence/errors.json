@@ -1,0 +1,104 @@
+{
+  "gaps": [
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"v_company_current_agreement_daymap\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/admin/agreement/route.ts",
+        "lib/agreement/currentAgreement.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"v_receipt_rows\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/system/receipts/route.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"ai_autonomy_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/autonomy/autonomyLog.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"ai_ceo_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/ceo/ceoLog.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"ai_enterprise_revenue_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/enterprise/enterpriseLog.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"page_versions\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/backoffice/content/pageVersionsRepo.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"${tbl}\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/evolution/analyze.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"profile_company_status\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/guards/assertCompanyActive.ts"
+      ]
+    },
+    {
+      "type": "table_not_in_database_ts",
+      "description": "Table \"*\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "scripts/audit/auditCore.ts"
+      ]
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/backoffice/content/header-config/${encodeURIComponent(headerVariant)} but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/superadmin/company-status but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/superadmin/companies/${encodeURIComponent(companyId)}/restore but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/superadmin/companies/${companyId}/agreement but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/superadmin/companies/status but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/admin/audit but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/admin/quality but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "fetch_reference_unresolved",
+      "description": "fetch() references /api/superadmin/firms/${encodeURIComponent(companyId)}/status but no matching app/api/**/route.ts found at conventional path."
+    },
+    {
+      "type": "layout_without_pages",
+      "description": "Layout app/(portal)/layout.tsx has no nested page.tsx under its tree."
+    }
+  ]
+}

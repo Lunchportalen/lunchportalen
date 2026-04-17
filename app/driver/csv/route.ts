@@ -10,6 +10,8 @@ import { noStoreHeaders } from "@/lib/http/noStore";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { jsonErr } from "@/lib/http/respond";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
 function csvEscape(v: any) {
   const s = String(v ?? "");
@@ -110,31 +112,35 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Missing window param.", 400, "MISSING_WINDOW");
   }
 
-  // 2) Hent ordregrunnlag for dato + slot
-  // Alignér med driver-stops-fasit:
-  // - Kun integritets-godkjente ordre (integrity_status = "ok")
-  // - Status i ACTIVE/QUEUED/PACKED/DELIVERED (driver-visningens sannhet)
-  let ordersQ = admin
-    .from("orders")
-    .select("id, slot, note, company_id, location_id, user_id, date, status, integrity_status")
-    .eq("date", date)
-    .eq("integrity_status", "ok")
-    .in("status", ["ACTIVE", "QUEUED", "PACKED", "DELIVERED"])
-    .eq("slot", windowQ)
-    .eq("company_id", companyId);
+  const snap = await fetchProductionOperativeSnapshotAllowlist(admin as any, { dateISO: date, companyId });
+  const productionFreezeAllowlist = snap.found ? snap.orderIds : undefined;
 
-  if (locationId) ordersQ = ordersQ.eq("location_id", locationId);
-
-  const { data: orders, error: oErr } = await ordersQ;
-
-  if (oErr) {
+  const loaded = await loadOperativeKitchenOrders({
+    admin: admin as any,
+    dateISO: date,
+    tenant: { companyId, locationId: locationId || null },
+    productionFreezeAllowlist,
+  });
+  if (loaded.ok === false) {
     return jsonErr(rid, "Kunne ikke hente orders.", 500, {
       code: "DB_ERROR",
-      detail: { message: oErr.message, code: (oErr as any).code ?? null },
+      detail: { message: loaded.dbError.message, code: loaded.dbError.code ?? null },
     });
   }
 
-  const rows = orders ?? [];
+  const windowNorm = normKitchenSlot(windowQ);
+  const rows = loaded.operative
+    .filter((o) => normKitchenSlot(o.slot) === windowNorm)
+    .map((o) => ({
+      id: o.id,
+      slot: o.slot,
+      note: o.note,
+      company_id: o.company_id,
+      location_id: o.location_id,
+      user_id: o.user_id,
+      date,
+      status: o.status,
+    }));
   // Fail-closed: kun rader med entydig firma + lokasjon (speiler driver-stops)
   const safeRows = rows.filter((o: any) => safeStr(o.company_id) && safeStr(o.location_id));
 
@@ -154,9 +160,12 @@ export async function GET(req: NextRequest) {
 
   const companyIds = Array.from(new Set(safeRows.map((o: any) => o.company_id).filter(Boolean))).map(String);
   const locationIds = Array.from(new Set(safeRows.map((o: any) => o.location_id).filter(Boolean))).map(String);
-  const userIds = Array.from(new Set(safeRows.map((o: any) => o.user_id).filter(Boolean))).map(String);
+  const isDriver = role === "driver";
+  const userIds = isDriver
+    ? ([] as string[])
+    : Array.from(new Set(safeRows.map((o: any) => o.user_id).filter(Boolean))).map(String);
 
-  // 4) Metadata i parallell
+  // 4) Metadata i parallell (sjåfør: ingen profil-oppslag — unngår ansattnavn/avdeling i eksport)
   const [companiesRes, locationsRes, profilesRes] = await Promise.all([
     companyIds.length
       ? admin.from("companies").select("id, name").in("id", companyIds)
@@ -181,7 +190,9 @@ export async function GET(req: NextRequest) {
 
   const compMap = new Map((companiesRes.data ?? []).map((c: any) => [String(c.id), c]));
   const locMap = new Map((locationsRes.data ?? []).map((l: any) => [String(l.id), l]));
-  const profMap = new Map((profilesRes.data ?? []).map((p: any) => [String(p.user_id), p]));
+  const profMap = isDriver
+    ? new Map<string, { user_id?: string; full_name?: string; department?: string }>()
+    : new Map((profilesRes.data ?? []).map((p: any) => [String(p.user_id), p]));
 
   // 5) CSV bygg
   const csvRows = safeRows.map((o: any) => {
@@ -198,9 +209,9 @@ export async function GET(req: NextRequest) {
       safeStr((loc as any)?.name) || "",
       safeStr(contactName) || "",
       contactPhone,
-      safeStr((prof as any)?.full_name) || "",
-      safeStr((prof as any)?.department) || "",
-      safeStr(o.note) || "",
+      isDriver ? "" : safeStr((prof as any)?.full_name) || "",
+      isDriver ? "" : safeStr((prof as any)?.department) || "",
+      isDriver ? "" : safeStr(o.note) || "",
     ];
   });
 

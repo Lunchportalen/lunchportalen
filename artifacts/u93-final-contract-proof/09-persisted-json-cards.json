@@ -1,0 +1,31 @@
+{
+  "type": "cards",
+  "contentData": {
+    "title": "U93-CARDS-1775581620348",
+    "text": "Samme informasjon til alle, tydelige frister og sporbar bestilling."
+  },
+  "settingsData": {
+    "presentation": "plain"
+  },
+  "structureData": {
+    "items": [
+      {
+        "kicker": "Kontroll",
+        "title": "U93 kort rad",
+        "text": "Én cut-off, ett overblikk og færre avklaringer i hverdagen."
+      },
+      {
+        "kicker": "Ansatte",
+        "title": "Enkel hverdag",
+        "text": "Selvbetjening med tydelig meny og forutsigbare leveranser."
+      },
+      {
+        "kicker": "Drift",
+        "title": "Mindre svinn",
+        "text": "Bestillinger og avbestillinger som faktisk kan styres."
+      }
+    ],
+    "cta": []
+  },
+  "id": "blk_569f9aaf-5a79-49ed-9cb6-af028cc3872c"
+}

@@ -7,13 +7,13 @@ import Link from "next/link";
 type Item = { label: string; href: string };
 
 const items: Item[] = [
-  { label: "Dashboard", href: "/superadmin" },
+  { label: "Kontrollsenter", href: "/superadmin" },
   { label: "CFO", href: "/superadmin/cfo" },
   { label: "Konsern", href: "/superadmin/enterprise" },
   { label: "Firma", href: "/superadmin/companies" },
   { label: "ESG", href: "/superadmin/esg" },
-  { label: "Audit", href: "/superadmin/audit" },
-  { label: "System", href: "/superadmin/system" },
+  { label: "Revisjon", href: "/superadmin/audit" },
+  { label: "Systemhelse", href: "/superadmin/system" },
 ];
 
 export function SuperadminMobileMenu({ className = "" }: { className?: string }) {

@@ -1,6 +1,7 @@
 /**
  * Server-only: resolve CMS page + variant body by slug for public rendering.
  */
+import { opsLog } from "@/lib/ops/log";
 import {
   getLocalDevContentReservePageBySlug,
   isLocalDevContentReserveEnabled,
@@ -11,11 +12,25 @@ import {
 } from "@/lib/localRuntime/cmsProvider";
 import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
 
+/**
+ * Resolved live source before seed overlay.
+ * Public `getContentBySlug` never returns `live-supabase` — Supabase editorial rows are read only via {@link readSupabasePublishedContentPageBySlug} (internal/backoffice/tests).
+ */
+export type PublicContentLiveOrigin = "live-umbraco" | "live-supabase" | "local-cms" | "local-reserve";
+
+/** Full runtime label for DOM / verification: live sources + deterministic seeds. */
+export type PublicContentRuntimeOrigin =
+  | PublicContentLiveOrigin
+  | "seed-no-row"
+  | "seed-empty-body";
+
 export type ContentBySlugResult = {
   pageId: string;
   slug: string;
   title: string | null;
   body: unknown;
+  /** Which live source supplied this row (Umbraco Delivery, Supabase CMS, or local harness). */
+  publicContentOrigin: PublicContentLiveOrigin;
   /** Present when a running traffic experiment assigned a variant for this request. */
   experimentAssignment?: { experimentId: string; variantId: string } | null;
 };
@@ -41,7 +56,9 @@ export async function getContentBySlug(
   if (!normalized) return null;
 
   if (isLocalCmsRuntimeEnabled()) {
-    return getLocalCmsPublicContentBySlug(normalized, options ?? undefined);
+    const local = getLocalCmsPublicContentBySlug(normalized, options ?? undefined);
+    if (!local) return null;
+    return { ...local, publicContentOrigin: "local-cms" };
   }
 
   if (isLocalDevContentReserveEnabled()) {
@@ -53,45 +70,54 @@ export async function getContentBySlug(
       title: reservePage.title,
       body: reservePage.body,
       experimentAssignment: null,
+      publicContentOrigin: "local-reserve",
     };
   }
 
   await ensureRemoteBackendCmsHarnessContentIfEnabled();
 
-  const { supabaseAdmin } = await import("@/lib/supabase/admin");
-  const supabase = supabaseAdmin();
-  const { data: page, error: pageError } = await supabase
-    .from("content_pages")
-    .select("id, slug, title, status")
-    .eq("slug", normalized)
-    .eq("status", "published")
-    .maybeSingle();
-  if (pageError || !page?.id) return null;
-  const environment = options?.preview === true ? "preview" : "prod";
-  const { data: variant, error: variantError } = await supabase
-    .from("content_page_variants")
-    .select("id, body")
-    .eq("page_id", page.id)
-    .eq("locale", "nb")
-    .eq("environment", environment)
-    .maybeSingle();
-  if (variantError || !variant) return null;
-  const body = variant.body ?? null;
+  const umbracoBaseUrl = String(process.env.UMBRACO_DELIVERY_BASE_URL ?? "").trim();
 
-  const { overlayRunningExperimentOnBody } = await import("@/lib/experiments/overlayRunningExperiment");
-  const overlaid = await overlayRunningExperimentOnBody({
-    pageId: page.id,
-    baseBody: body,
-    preview: options?.preview === true,
-    experimentSubjectKey: options?.experimentSubjectKey,
-    experimentUseRandomSplit: options?.experimentUseRandomSplit === true,
-  });
+  const { fetchMarketingFromUmbracoBySlug, isMarketingSlugUmbracoAllowlisted } = await import(
+    "@/lib/cms/umbraco/marketingAdapter",
+  );
 
-  return {
-    pageId: page.id,
-    slug: String(page.slug ?? normalized),
-    title: page.title ?? null,
-    body: overlaid.body,
-    experimentAssignment: overlaid.assignment ?? null,
-  };
+  if (isMarketingSlugUmbracoAllowlisted(normalized)) {
+    if (!umbracoBaseUrl) {
+      opsLog("cms_marketing_umbraco_delivery_missing_fail_closed", { slug: normalized });
+      return null;
+    }
+    try {
+      const u = await fetchMarketingFromUmbracoBySlug(normalized, options);
+      if (u) {
+        const { overlayRunningExperimentOnBody } = await import("@/lib/experiments/overlayRunningExperiment");
+        const overlaid = await overlayRunningExperimentOnBody({
+          pageId: u.pageId,
+          baseBody: u.body,
+          preview: options?.preview === true,
+          experimentSubjectKey: options?.experimentSubjectKey,
+          experimentUseRandomSplit: options?.experimentUseRandomSplit === true,
+        });
+        return {
+          pageId: u.pageId,
+          slug: u.slug,
+          title: u.title,
+          body: overlaid.body,
+          experimentAssignment: overlaid.assignment ?? null,
+          publicContentOrigin: "live-umbraco",
+        };
+      }
+    } catch (err) {
+      opsLog("cms_marketing_umbraco_read_failed", {
+        slug: normalized,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    /** Allowlisted public routes: no Supabase editorial substitute — Umbraco Delivery must serve content. */
+    opsLog("cms_marketing_umbraco_allowlisted_miss_fail_closed", { slug: normalized });
+    return null;
+  }
+
+  /** Non-allowlisted slugs: public resolver does not read Supabase (operational/editorial DB is not public marketing truth). */
+  return null;
 }

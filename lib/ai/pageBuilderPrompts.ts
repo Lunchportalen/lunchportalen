@@ -56,7 +56,10 @@ Mappings after save (for your awareness only — still output the AI field names
 - grid_2 / grid_3 → grid (card fields → items[]); optional subtitle is merged into section title text
 - feature_grid → cards (three feature rows)
 - faq_block → zigzag (three Q/A steps, text-only)
-- testimonial_block → cards (single testimonial card)
+- quote_block → persisted as quote_block (editorial pull-quote; not testimonial_block)
+- newsletter_signup → persisted as newsletter_signup (email + submit; not generic cta_block)
+- form_embed → persisted as form_embed (iframe / internt skjema / lagret snippet — ikke newsletter_signup)
+- testimonial_block → persisted as testimonial_block with testimonialsJson (array of quote/author/role/company/image/alt/logo rows); legacy AI fields quote/author/role/image still map to a single-row JSON
 - hero_bleed.backgroundImage / banner.backgroundImage / image_block.image / grid images: URL, path, or cms:* key
 - \`variant\`: "left" | "right" | "center" | "minimal" — \`minimal\` maps to centered layout where the editor has no separate token; banner is always rendered with system-owned center layout but you must still send \`variant\`.
 

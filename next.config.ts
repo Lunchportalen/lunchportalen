@@ -21,5 +21,24 @@ export default function nextConfig(phase: string): NextConfig {
   return {
     ...sharedConfig,
     distDir: resolveNextDistDir(phase),
+    async redirects() {
+      return [
+        {
+          source: "/registrer-firma",
+          destination: "/registrering",
+          permanent: true,
+        },
+        {
+          source: "/public/demo",
+          destination: "/ai-motor-demo",
+          permanent: true,
+        },
+        {
+          source: "/public/demo/:path*",
+          destination: "/ai-motor-demo",
+          permanent: true,
+        },
+      ];
+    },
   };
 }

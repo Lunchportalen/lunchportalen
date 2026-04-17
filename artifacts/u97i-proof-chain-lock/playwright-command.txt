@@ -1,0 +1,1 @@
+cross-env U97I_RUN_MARK=u97i-1775662928806 CI=1 PLAYWRIGHT_BASE_URL=http://localhost:3054 npx playwright test e2e/u97i-proof-chain-lock.e2e.ts --project=chromium --workers=1 --retries=0

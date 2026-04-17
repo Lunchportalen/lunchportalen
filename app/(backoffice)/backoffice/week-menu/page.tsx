@@ -66,7 +66,7 @@ export default async function BackofficeWeekMenuPage() {
             Runtime-oversikt
           </Link>
           <Link className={pill} href="/backoffice/content">
-            Content (Postgres)
+            Redaksjonelle sider (public)
           </Link>
         </>
       }

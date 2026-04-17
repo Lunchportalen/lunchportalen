@@ -212,8 +212,9 @@ describe("Order create — POST /api/orders", () => {
     const json = await readJson(res);
     expect(json.ok).toBe(true);
     expect(json.orderId).toBe("ord-1");
-    expect(json.status).toBe("ACTIVE");
-    expect(json.data?.orderId).toBe("ord-1");
+    expect(json.status).toBe("active");
+    expect(json.timestamp).toBeTruthy();
+    expect(json.slot).toBe("lunch");
   });
 
   test("invalid date → 400 BAD_DATE", async () => {
@@ -225,7 +226,7 @@ describe("Order create — POST /api/orders", () => {
     expect(res.status).toBe(400);
     const json = await readJson(res);
     expect(json.ok).toBe(false);
-    expect(String(json.error?.code ?? json.status)).toMatch(/BAD_DATE|400/);
+    expect(String(json.code ?? json.status)).toMatch(/BAD_DATE|400/);
   });
 
   test("invalid action → 400 BAD_ACTION", async () => {
@@ -237,7 +238,7 @@ describe("Order create — POST /api/orders", () => {
     expect(res.status).toBe(400);
     const json = await readJson(res);
     expect(json.ok).toBe(false);
-    expect(String(json.error?.code ?? json.message)).toMatch(/BAD_ACTION|gyldig/);
+    expect(String(json.code ?? json.message)).toMatch(/BAD_ACTION|gyldig/);
   });
 
   test("RPC NO_ACTIVE_AGREEMENT → 409 with clear code", async () => {
@@ -251,7 +252,7 @@ describe("Order create — POST /api/orders", () => {
     expect(res.status).toBe(409);
     const json = await readJson(res);
     expect(json.ok).toBe(false);
-    expect(String(json.error?.code ?? json.error)).toBe("NO_ACTIVE_AGREEMENT");
+    expect(String(json.code ?? json.error)).toBe("NO_ACTIVE_AGREEMENT");
     expect(json.message).toBeTruthy();
   });
 
@@ -265,7 +266,7 @@ describe("Order create — POST /api/orders", () => {
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(409);
     const json = await readJson(res);
-    expect(String(json.error?.code ?? json.error)).toBe("OUTSIDE_DELIVERY_DAYS");
+    expect(String(json.code ?? json.error)).toBe("OUTSIDE_DELIVERY_DAYS");
   });
 
   test("RPC CUTOFF_PASSED → 409", async () => {
@@ -278,7 +279,7 @@ describe("Order create — POST /api/orders", () => {
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(409);
     const json = await readJson(res);
-    expect(String(json.error?.code ?? json.error)).toBe("CUTOFF_PASSED");
+    expect(String(json.code ?? json.error)).toBe("CUTOFF_PASSED");
   });
 
   test("RPC returns empty order_id → 500 ORDER_SET_BAD_RESPONSE (no silent success)", async () => {
@@ -292,7 +293,7 @@ describe("Order create — POST /api/orders", () => {
     expect(res.status).toBe(500);
     const json = await readJson(res);
     expect(json.ok).toBe(false);
-    expect(String(json.error?.code ?? json.error)).toMatch(/ORDER_SET_BAD_RESPONSE|500/);
+    expect(String(json.code ?? json.error)).toMatch(/ORDER_SET_BAD_RESPONSE|500/);
   });
 });
 

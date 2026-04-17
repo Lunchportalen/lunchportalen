@@ -1,6 +1,7 @@
 // lib/orders/agreementContractFallback.ts
 import "server-only";
 
+import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import type { DayKey } from "@/lib/agreements/normalize";
 import { fallbackBasisChoicesClient, fallbackLuxusChoicesClient } from "@/lib/cms/mealTierFallback";
@@ -22,6 +23,11 @@ export async function resolveTierForOrderDay(
 ): Promise<OrderContractTier | null> {
   const direct = existingWeekTier?.[dayKey];
   if (direct) return direct;
+
+  const dayMap = await fetchAgreementDayTiersForCompany(admin, companyId);
+  const mapped = dayMap[dayKey];
+  if (mapped === "LUXUS") return "PREMIUM";
+  if (mapped === "BASIS") return "BASIS";
 
   const { data: agr } = await admin
     .from("agreements")

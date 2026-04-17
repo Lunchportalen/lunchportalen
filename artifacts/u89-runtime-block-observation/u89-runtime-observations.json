@@ -1,0 +1,79 @@
+{
+  "page": "/backoffice/content/00000000-0000-4000-8000-00000000c001",
+  "baseURL": "http://localhost:3041",
+  "addedBlocks": [],
+  "runtimeObservations": {
+    "hero": {
+      "alias": "hero",
+      "propertyEditorComponent": "HeroPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "hero_full": {
+      "alias": "hero_full",
+      "propertyEditorComponent": "HeroFullPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "hero_bleed": {
+      "alias": "hero_bleed",
+      "propertyEditorComponent": "HeroBleedPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "cards": {
+      "alias": "cards",
+      "propertyEditorComponent": "CardsPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "zigzag": {
+      "alias": "zigzag",
+      "propertyEditorComponent": "StepsPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "pricing": {
+      "alias": "pricing",
+      "propertyEditorComponent": "PricingPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "grid": {
+      "alias": "grid",
+      "propertyEditorComponent": "GridPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "cta": {
+      "alias": "cta",
+      "propertyEditorComponent": "CtaPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    },
+    "relatedLinks": {
+      "alias": "relatedLinks",
+      "propertyEditorComponent": "RelatedLinksPropertyEditor",
+      "contentLayer": true,
+      "settingsLayer": true,
+      "structureLayer": true,
+      "directRuntimeProven": true
+    }
+  }
+}

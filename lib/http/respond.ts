@@ -94,6 +94,78 @@ function jsonResponse(body: unknown, status: number, rid: string, extraHeaders?:
   });
 }
 
+/** Normaliser DB/RPC-status til flat order-write-kontrakt. */
+export function orderWriteStatusFromDb(dbStatus: string): "active" | "cancelled" {
+  const u = String(dbStatus ?? "").trim().toUpperCase();
+  if (u === "CANCELLED" || u === "CANCELED") return "cancelled";
+  return "active";
+}
+
+/**
+ * Mapper guard/jsonErr-`Response` til flat order-write-feil (samme kontrakt som `jsonOrderWriteErr`).
+ * Brukes kun på canonical order create/cancel-ruter der `scopeOr401` / `requireRoleOr403` / firmagate returnerer legacy `jsonErr`.
+ */
+export async function coerceOrderWriteErrorResponse(res: Response): Promise<Response> {
+  const headerRid = res.headers.get("x-rid")?.trim() || "";
+  const httpStatus = res.status || 500;
+  let parsed: unknown;
+  try {
+    parsed = await res.clone().json();
+  } catch {
+    return jsonOrderWriteErr(headerRid || makeRid("rid_coerce"), httpStatus, `HTTP_${httpStatus}`, "Forespørselen kunne ikke fullføres.");
+  }
+  const j = parsed as Record<string, unknown> | null;
+  if (!j || typeof j !== "object") {
+    return jsonOrderWriteErr(headerRid || makeRid("rid_coerce"), httpStatus, `HTTP_${httpStatus}`, "Forespørselen kunne ikke fullføres.");
+  }
+  const rid = typeof j.rid === "string" && j.rid.trim() ? j.rid.trim() : headerRid || makeRid("rid_coerce");
+  if (j.ok === false && typeof j.code === "string" && typeof j.message === "string") {
+    return jsonOrderWriteErr(rid, httpStatus, j.code, j.message);
+  }
+  const errRaw = j.error;
+  let code = `HTTP_${httpStatus}`;
+  if (typeof errRaw === "string" && errRaw) code = errRaw;
+  else if (errRaw && typeof errRaw === "object" && typeof (errRaw as { code?: unknown }).code === "string") {
+    code = String((errRaw as { code: string }).code);
+  }
+  const message = typeof j.message === "string" && j.message ? j.message : "Feil";
+  return jsonOrderWriteErr(rid, httpStatus, code, message);
+}
+
+/**
+ * Vellykket create/cancel for order-endepunkter — flat, maskinlesbar kvittering (inkl. `rid` i body).
+ */
+export function jsonOrderWriteOk(
+  rid: string,
+  params: {
+    orderId: string;
+    status: "active" | "cancelled";
+    date: string;
+    /** Utelates → server genererer ISO-8601 (UTC) */
+    timestamp?: string;
+  }
+): Response {
+  const timestamp = params.timestamp ?? new Date().toISOString();
+  return jsonResponse(
+    {
+      ok: true as const,
+      rid,
+      orderId: params.orderId,
+      status: params.status,
+      timestamp,
+      date: params.date,
+      slot: "lunch" as const,
+    },
+    200,
+    rid
+  );
+}
+
+/** Flat feil for samme order-write-kontrakt (`rid` + `code` + `message`). */
+export function jsonOrderWriteErr(rid: string, status: number, code: string, message: string): Response {
+  return jsonResponse({ ok: false as const, rid, code, message }, status, rid);
+}
+
 /* =========================================================
    Success
 ========================================================= */

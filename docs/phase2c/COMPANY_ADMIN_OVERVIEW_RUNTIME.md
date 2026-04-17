@@ -15,6 +15,11 @@
 | Bestillinger denne uken | `orders` innen ukevindu, `ACTIVE` |
 | Firma/avtalestatus | `companies.status` (som før) |
 
+### Firmastatus (company_admin)
+
+- Oversikten viser **lesbar** firmastatus (operativ sannhet).
+- **company_admin** muterer ikke `companies.status`; skrivebane er **superadmin** (`/api/superadmin/companies/set-status`).
+
 ## Tall som ikke vises som «økonomisk sannhet»
 
 - Ingen **beløps-KPI** på oversikten — fakturaøkonomi er **CSV-eksport** og eventuelt innsikt-sider, ikke aggregert omsetning på dashboard uten eksplisitt API.

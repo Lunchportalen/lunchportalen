@@ -24,6 +24,8 @@ import type { ContentGovernedPosture, WorkspaceHistoryStatus } from "@/lib/cms/b
 import type { GlobalSubView } from "./useContentWorkspaceShell";
 import type { HistoryPreviewPayload, RestoredPagePayload } from "./ContentPageVersionHistory";
 
+export type ContentWorkspacePageEditorShellDetailMode = "default" | "document";
+
 /** Rå felter for Editor2-mount beholdes kun som typed input for shell-modellen. */
 export type ContentWorkspaceEditor2MountInput = {
   page: ContentPage | null;
@@ -80,6 +82,8 @@ export type ContentWorkspacePageEditorShellProps = {
     onApplyHistoryPreview: (payload: HistoryPreviewPayload) => void;
     onApplyRestoredPage: (page: RestoredPagePayload) => void;
   };
+  /** `/backoffice/content/[id]`: ingen store statuskort — kun korte statuslinjer ved last/feil. */
+  detailStatusPresentation?: ContentWorkspacePageEditorShellDetailMode;
 };
 
 /**
@@ -99,24 +103,49 @@ export function ContentWorkspacePageEditorShell(props: ContentWorkspacePageEdito
     hasConflict,
     guardPush,
     conflictShellProps,
+    detailStatusPresentation = "default",
   } = props;
+
+  const docDetail = detailStatusPresentation === "document";
 
   return (
     <>
       {pendingNavigationHref ? (
         <ContentWorkspacePendingNavigationBanner onConfirm={confirmPendingNavigation} onCancel={cancelPendingNavigation} />
       ) : !selectedId ? (
-        <ContentWorkspaceEmptySelectionShell />
+        docDetail ? null : <ContentWorkspaceEmptySelectionShell />
       ) : pageNotFound ? (
         <ContentWorkspacePageNotFoundShell onBackToOverview={() => guardPush("/backoffice/content")} />
       ) : detailLoading ? (
-        <ContentWorkspaceDetailLoadingShell />
+        docDetail ? (
+          <p className="text-sm text-slate-500" data-lp-detail-status="loading">
+            Laster side…
+          </p>
+        ) : (
+          <ContentWorkspaceDetailLoadingShell />
+        )
       ) : detailError ? (
-        <ContentWorkspaceDetailErrorShell message={detailError} />
+        docDetail ? (
+          <div
+            className="border-b border-red-200 bg-red-50/90 px-2 py-2 text-sm text-red-800"
+            data-lp-detail-status="error"
+            role="alert"
+          >
+            {String(detailError ?? "")}
+          </div>
+        ) : (
+          <ContentWorkspaceDetailErrorShell message={detailError} />
+        )
       ) : page && hasConflict ? (
         <ContentWorkspaceConflictStatusShell {...conflictShellProps} />
       ) : page ? null : selectedId ? (
-        <ContentWorkspaceEditorAreaLoadingShell />
+        docDetail ? (
+          <p className="text-sm text-slate-500" data-lp-detail-status="editor-loading">
+            Laster redigeringsdata…
+          </p>
+        ) : (
+          <ContentWorkspaceEditorAreaLoadingShell />
+        )
       ) : null}
     </>
   );

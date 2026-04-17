@@ -1,6 +1,7 @@
 // app/api/order/cancel/route.ts
 // CANONICAL — employee cancel HTTP entry (day_choices + cutoff/policy). Orders row changes go through /api/order/set-day (lp_order_set) where applicable.
 
+/* agents-ci: JSON responses include ok: true, rid: (success) and ok: false, rid: (errors) via jsonOrderWrite*. */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,10 +10,20 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import {
+  coerceOrderWriteErrorResponse,
+  jsonOrderWriteErr,
+  jsonOrderWriteOk,
+  makeRid,
+  orderWriteStatusFromDb,
+} from "@/lib/http/respond";
+import { persistDayChoiceOrderCancelOutbox } from "@/lib/orderBackup/outbox";
 import type { Database } from "@/lib/types/database";
 import { assertCompanyActiveOr403 } from "@/lib/guards/assertCompanyActiveApi";
+import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
+import { assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 
 
 type Body = {
@@ -47,6 +58,31 @@ function logApiError(scope: string, err: any, extra?: Record<string, any>) {
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
   return v;
+}
+
+async function readOrdersRowForReceipt(
+  supa: any,
+  params: { user_id: string; company_id: string; location_id: string; date: string }
+): Promise<{ ok: true; id: string; status: string; updated_at: string | null } | { ok: false }> {
+  const { data, error } = await supa
+    .from("orders")
+    .select("id,status,updated_at")
+    .eq("user_id", params.user_id)
+    .eq("company_id", params.company_id)
+    .eq("location_id", params.location_id)
+    .eq("date", params.date)
+    .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
+    .maybeSingle();
+
+  if (error || !data || typeof (data as any).id !== "string" || !(data as any).id) {
+    return { ok: false };
+  }
+  return {
+    ok: true,
+    id: String((data as any).id),
+    status: String((data as any).status ?? ""),
+    updated_at: (data as any).updated_at != null ? String((data as any).updated_at) : null,
+  };
 }
 
 /** Europe/Oslo "nå" -> (YYYY-MM-DD, HH:MM) */
@@ -135,34 +171,26 @@ export async function POST(req: Request) {
 
     // 0) Input validering
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return jsonErr(rid, "Ugyldig datoformat. Bruk YYYY-MM-DD.", 400, "BAD_DATE");
+      return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Ugyldig datoformat. Bruk YYYY-MM-DD.");
     }
 
     // 1) Auth (cookie-basert)
     const user_id = await getAuthedUserId();
     if (!user_id) {
-      return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
+      return jsonOrderWriteErr(rid, 401, "UNAUTH", "Ikke innlogget.");
     }
 
     // 2) Cutoff-lås
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, { code: "LOCKED", detail: {
-        locked: true,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonOrderWriteErr(rid, 423, "LOCKED", "Dagen er låst etter 08:00.");
     }
 
     // 3) Ukedag (Man–Fri)
     try {
       weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, { code: "WEEKDAY_ONLY", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonOrderWriteErr(rid, 400, "WEEKDAY_ONLY", "Dato må være Man–Fre. Helg bestilles ikke i portalen.");
     }
 
     // 4) Service role for DB (ingen RLS)
@@ -179,31 +207,18 @@ export async function POST(req: Request) {
 
     if (pErr) {
       logApiError("POST /api/order/cancel profile failed", pErr, { rid, user_id, date });
-      return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "PROFILE_LOOKUP_FAILED", detail: {
-        detail: pErr.message,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonOrderWriteErr(rid, 500, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.");
     }
 
     if (!profile) {
-      return jsonErr(rid, "Fant ikke profil.", 403, { code: "PROFILE_NOT_FOUND", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonOrderWriteErr(rid, 403, "PROFILE_NOT_FOUND", "Fant ikke profil.");
     }
 
     const company_id = profile.company_id;
     const location_id = profile.location_id;
 
     if (!company_id || !location_id) {
-      return jsonErr(rid, "Profil mangler company_id/location_id.", 403, { code: "PROFILE_MISSING_SCOPE", detail: {
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: false,
-      } });
+      return jsonOrderWriteErr(rid, 403, "PROFILE_MISSING_SCOPE", "Profil mangler company_id/location_id.");
     }
 
     const gate = await assertCompanyActiveOr403({
@@ -211,7 +226,26 @@ export async function POST(req: Request) {
       companyId: company_id,
       rid,
     });
-    if (gate.ok === false) return gate.res;
+    if (gate.ok === false) return await coerceOrderWriteErrorResponse(gate.res);
+
+    const hold = await assertCompanyOrderWriteAllowed(supa as any, company_id, rid);
+    if (hold.ok === false) {
+      return jsonOrderWriteErr(rid, hold.status, hold.code, hold.message);
+    }
+
+    const ruleSlot = "lunch";
+    const pre = await assertOrderWithinAgreementPreflight({
+      sb: supa as any,
+      companyId: company_id,
+      locationId: location_id,
+      orderIsoDate: date,
+      agreementRuleSlot: ruleSlot,
+      rid,
+      action: "CANCEL",
+    });
+    if (pre.ok === false) {
+      return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
+    }
 
     // 7) Finn eksisterende day_choice (idempotent)
     const { data: existingRaw, error: eErr } = await (supa as any)
@@ -233,47 +267,47 @@ export async function POST(req: Request) {
         user_id,
         date,
       });
-      return jsonErr(rid, "Kunne ikke lese eksisterende valg.", 500, { code: "READ_FAILED", detail: eErr.message });
+      return jsonOrderWriteErr(rid, 500, "READ_FAILED", "Kunne ikke lese eksisterende valg.");
     }
 
     if (!existing) {
-      // Idempotent: ingen rad å kansellere
-      return jsonOk(rid, {
-        ok: true,
-        rid,
-        cancelled: false,
-        alreadyCancelled: false,
-        message: "Ingen bestilling å avbestille for denne dagen.",
-        date,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: true,
-        scope: { company_id, location_id, user_id },
-      }, 200);
+      return jsonOrderWriteErr(rid, 404, "ORDER_NOT_FOUND", "Ingen bestilling å avbestille for denne dagen.");
     }
+
+    const persistCancelOutboxOrErr = async (ordRow: { id: string; status: string }) => {
+      try {
+        await persistDayChoiceOrderCancelOutbox({
+          dbEventKey: `order.cancel.day_choice:${user_id}:${date}`,
+          rid,
+          orderId: ordRow.id,
+          companyId: company_id,
+          locationId: location_id,
+          userId: user_id,
+          userEmail: null,
+          date,
+          orderStatus: ordRow.status,
+        });
+      } catch (e) {
+        logApiError("POST /api/order/cancel outbox persist failed", e, { rid, user_id, date });
+        return jsonOrderWriteErr(rid, 500, "OUTBOX_PERSIST_FAILED", "Kunne ikke lagre operasjonsspor. Prøv igjen.");
+      }
+      return null;
+    };
 
     const statusUpper = String(existing.status ?? "").toUpperCase();
     if (statusUpper === "CANCELLED") {
-      // Idempotent: allerede kansellert
-      return jsonOk(rid, {
-        ok: true,
-        rid,
-        cancelled: false,
-        alreadyCancelled: true,
-        message: "Allerede avbestilt.",
+      const ord = await readOrdersRowForReceipt(supa, { user_id, company_id, location_id, date });
+      if (!ord.ok) {
+        return jsonOrderWriteErr(rid, 404, "ORDER_NOT_FOUND", "Allerede avbestilt; fant ikke verifiserbar ordre.");
+      }
+      const obErr = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status });
+      if (obErr) return obErr;
+      return jsonOrderWriteOk(rid, {
+        orderId: ord.id,
+        status: orderWriteStatusFromDb(ord.status),
         date,
-        receipt: {
-          orderId: existing.id,
-          status: "CANCELLED",
-          date,
-          updatedAt: existing.updated_at ?? null,
-        },
-        updated_at: existing.updated_at ?? null,
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: true,
-        scope: { company_id, location_id, user_id },
-      }, 200);
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // 8) Marker som CANCELLED (behold rad)
@@ -286,30 +320,25 @@ export async function POST(req: Request) {
 
     if (uErr || !updatedRaw) {
       logApiError("POST /api/order/cancel update failed", uErr, { rid, existingId: existing.id });
-      return jsonErr(rid, "Kunne ikke avbestille.", 500, { code: "CANCEL_FAILED", detail: uErr?.message });
+      return jsonOrderWriteErr(rid, 500, "CANCEL_FAILED", "Kunne ikke avbestille.");
     }
 
-    return jsonOk(rid, {
-      ok: true,
-      rid,
-      cancelled: true,
-      alreadyCancelled: false,
+    const ord = await readOrdersRowForReceipt(supa, { user_id, company_id, location_id, date });
+    if (!ord.ok) {
+      return jsonOrderWriteErr(rid, 500, "ORDER_READ_FAILED", "Avbestilling utført, men ordre kunne ikke verifiseres.");
+    }
+
+    const obErr2 = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status });
+    if (obErr2) return obErr2;
+
+    return jsonOrderWriteOk(rid, {
+      orderId: ord.id,
+      status: orderWriteStatusFromDb(ord.status),
       date,
-      status: (updatedRaw as any).status,
-      receipt: {
-        orderId: (updatedRaw as any).id,
-        status: "CANCELLED",
-        date: (updatedRaw as any).date,
-        updatedAt: (updatedRaw as any).updated_at ?? null,
-      },
-      updated_at: (updatedRaw as any).updated_at ?? null,
-      locked: false,
-      cutoffTime: cutoff.cutoffTime,
-      canAct: true,
-      scope: { company_id, location_id, user_id },
-    }, 200);
+      timestamp: new Date().toISOString(),
+    });
   } catch (e: any) {
     logApiError("POST /api/order/cancel failed", e, { rid: "cancel_unknown" });
-    return jsonErr("cancel_unknown", "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
+    return jsonOrderWriteErr(makeRid(), 500, "SERVER_ERROR", "Uventet feil.");
   }
 }

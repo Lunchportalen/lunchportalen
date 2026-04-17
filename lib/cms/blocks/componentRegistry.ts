@@ -1,5 +1,5 @@
 /**
- * Hard-locked AI + page-builder component registry (44 types).
+ * Hard-locked AI + page-builder component registry (see {@link CORE_COMPONENT_KEYS} for count).
  * Field kinds: text | textarea | media | link | select (variant enum).
  *
  * Sync: {@link CORE_COMPONENT_KEYS} in `componentGroups.ts` must list exactly these keys.
@@ -69,6 +69,15 @@ export const COMPONENT_REGISTRY = {
     ctaHref: "link",
     variant: V,
   }),
+  /** Multi-slide marketing strip (Umbraco `banners` + nested `bannerItem` rows). */
+  banner_carousel: L("Bannerkarusell", {
+    slidesJson: "textarea",
+    autoRotateMs: "text",
+    showArrows: "text",
+    showDots: "text",
+    disableCarousel: "text",
+    variant: V,
+  }),
   promo_strip: L("Promostripe", {
     text: "text",
     ctaLabel: "text",
@@ -91,11 +100,16 @@ export const COMPONENT_REGISTRY = {
     ctaHref: "link",
     variant: V,
   }),
-  newsletter_signup: L("Nyhetsbrev", {
+  /** E-post påmelding — native form (not `form_embed` / generic `cta_block`). */
+  newsletter_signup: L("Nyhetsbrev påmelding", {
+    eyebrow: "text",
     title: "text",
-    body: "textarea",
+    lede: "textarea",
     ctaLabel: "text",
     ctaHref: "link",
+    disclaimer: "textarea",
+    submitMethod: ["get", "post"],
+    contentWidth: ["narrow", "normal", "wide"],
     variant: V,
   }),
   alert_bar: L("Varselstripe", {
@@ -115,10 +129,23 @@ export const COMPONENT_REGISTRY = {
     body: "textarea",
     variant: V,
   }),
-  quote_block: L("Sitat", {
+
+  /** Section chrome: kicker + H2 + short lede (no long body; use `text_block` / `rich_text` for prose). */
+  section_intro: L("Seksjonsintro", {
+    eyebrow: "text",
+    title: "text",
+    lede: "textarea",
+    contentWidth: ["narrow", "normal", "wide"],
+    variant: V,
+  }),
+
+  /** Editorial pull-quote — not `testimonial_block` (trust) or `highlight_block` (callout). */
+  quote_block: L("Redaksjonelt sitat", {
     quote: "textarea",
     author: "text",
+    role: "text",
     source: "text",
+    contentWidth: ["narrow", "normal", "wide"],
     variant: V,
   }),
   highlight_block: L("Fremheving", {
@@ -146,14 +173,12 @@ export const COMPONENT_REGISTRY = {
     e3Body: "textarea",
     variant: V,
   }),
+  /** KPI grid: JSON rows `{ id?, value, label, subtext?, icon?, emphasis? }` (legacy `s1Value`/`s1Label`… migrate at render). */
   stats_block: L("Nøkkeltall", {
     title: "text",
-    s1Value: "text",
-    s1Label: "text",
-    s2Value: "text",
-    s2Label: "text",
-    s3Value: "text",
-    s3Label: "text",
+    kpisJson: "textarea",
+    density: ["compact", "comfortable", "airy"],
+    columns: ["2", "3", "4"],
     variant: V,
   }),
   code_block: L("Kode", {
@@ -185,6 +210,15 @@ export const COMPONENT_REGISTRY = {
     rightBody: "textarea",
     variant: V,
   }),
+
+  /** Umbraco `dualPromoCardsBlock` + nested `promoCardItem` rows (two-column promo, not generic split). */
+  dual_promo_cards: L("Dobbelt promokort", {
+    sectionId: "text",
+    maxWidthVariant: "text",
+    cardsJson: "textarea",
+    variant: V,
+  }),
+
   grid_2: L("Rutenett (2)", {
     title: "text",
     subtitle: "textarea",
@@ -236,19 +270,18 @@ export const COMPONENT_REGISTRY = {
     variant: V,
   }),
 
+  /** One or more customer quotes; rows in `testimonialsJson` (legacy flat `quote`/`author`/… migrate at render). */
   testimonial_block: L("Kundesitat", {
-    quote: "textarea",
-    author: "text",
-    role: "text",
-    image: "media",
+    sectionTitle: "text",
+    testimonialsJson: "textarea",
+    density: ["compact", "comfortable", "airy"],
     variant: V,
   }),
+  /** Trust / partner logos: JSON array of `{ id, image, label?, href? }` (see `logosFromLogoCloudData`). Legacy `l1`–`l4` migrate at render. */
   logo_cloud: L("Logoserie", {
     title: "text",
-    l1: "media",
-    l2: "media",
-    l3: "media",
-    l4: "media",
+    logosJson: "textarea",
+    density: ["compact", "comfortable", "airy"],
     variant: V,
   }),
   faq_block: L("FAQ", {
@@ -259,6 +292,15 @@ export const COMPONENT_REGISTRY = {
     a2: "textarea",
     q3: "text",
     a3: "textarea",
+    variant: V,
+  }),
+  /** Umbraco `accordionOrTab` + nested items; accordion vs tabs from `displayMode`. */
+  accordion_tabs: L("Accordion eller faner", {
+    sectionTitle: "text",
+    displayMode: "text",
+    itemsJson: "textarea",
+    defaultOpenIndex: "text",
+    rememberOpen: "text",
     variant: V,
   }),
   pricing_table: L("Pris tabell", {
@@ -350,9 +392,17 @@ export const COMPONENT_REGISTRY = {
     variant: V,
   }),
 
-  form_embed: L("Skjema (embed)", {
+  /**
+   * Eksternt skjema (https iframe), internt LP-skjema (`formId`), eller lagret HTML-snippet (kun forhåndsvisning).
+   * Ikke nyhetsbrev — bruk `newsletter_signup`. Ikke ren CTA — bruk `cta_block`.
+   */
+  form_embed: L("Skjema (iframe / embed)", {
     formId: "text",
+    iframeSrc: "link",
     title: "text",
+    lede: "textarea",
+    embedHtml: "textarea",
+    contentWidth: ["narrow", "normal", "wide"],
     variant: V,
   }),
 
@@ -367,6 +417,16 @@ export const COMPONENT_REGISTRY = {
   zigzag_block: L("Zigzag (prosess)", {
     title: "text",
     zigzagSteps: "textarea",
+    variant: V,
+  }),
+
+  /** Umbraco `anchorNavigation` + nested `anchorNavigationLink` rows (TOC / in-page nav). */
+  anchor_navigation: L("Anker-navigasjon", {
+    title: "text",
+    itemsJson: "textarea",
+    linkStyle: "text",
+    navigationAlignment: "text",
+    mobileStyle: "text",
     variant: V,
   }),
 

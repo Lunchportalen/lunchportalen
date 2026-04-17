@@ -97,7 +97,7 @@ export default async function AdminInvitePage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {ctx.company?.name ?? "Firma"} · Inviter
+              Firmaadmin · {ctx.company?.name ?? "Firma"} · Inviter
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Inviter ansatte</h1>
             <p className="mt-2 text-neutral-600">Kontrollert, sporbar og enkel invitasjonsflyt.</p>

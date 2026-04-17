@@ -1,4 +1,5 @@
 // app/api/order/set-day/route.ts
+/* agents-ci: JSON responses include ok: true, rid: (success) and ok: false, rid: (errors) via jsonOrderWrite*. */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,10 +9,13 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { jsonOrderWriteErr, jsonOrderWriteOk, makeRid, orderWriteStatusFromDb } from "@/lib/http/respond";
 import type { Database } from "@/lib/types/database";
 import { ensureMealChoicesPresent, resolveTierForOrderDay } from "@/lib/orders/agreementContractFallback";
-import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
+import { assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
+import { agreementRuleSlotForOrderTableSlot, lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 
@@ -154,25 +158,22 @@ export async function POST(req: NextRequest) {
     const note = cleanNote(body?.note);
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return jsonErr(rid, "Ugyldig datoformat (YYYY-MM-DD).", 400, "BAD_DATE");
+      return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Ugyldig datoformat (YYYY-MM-DD).");
     }
 
     const user_id = await getAuthedUserId();
-    if (!user_id) return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTH");
+    if (!user_id) return jsonOrderWriteErr(rid, 401, "UNAUTH", "Ikke innlogget.");
 
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonErr(rid, "Dagen er låst etter 08:00.", 423, {
-        code: "LOCKED",
-        detail: { locked: true, cutoffTime: cutoff.cutoffTime, canAct: false },
-      });
+      return jsonOrderWriteErr(rid, 423, "LOCKED", "Dagen er låst etter 08:00.");
     }
 
     let dayKey: DayKey;
     try {
       dayKey = weekdayKeyOslo(date);
     } catch {
-      return jsonErr(rid, "Dato må være Man–Fre. Helg bestilles ikke i portalen.", 400, "WEEKDAY_ONLY");
+      return jsonOrderWriteErr(rid, 400, "WEEKDAY_ONLY", "Dato må være Man–Fre. Helg bestilles ikke i portalen.");
     }
 
     const supa = supabaseAdmin();
@@ -187,11 +188,29 @@ export async function POST(req: NextRequest) {
     const profile = (profileRaw ?? null) as ProfileRow | null;
 
     if (pErr || !profile?.company_id || !profile?.location_id) {
-      return jsonErr(rid, "Fant ikke profil/scope.", 403, "PROFILE_MISSING_SCOPE");
+      return jsonOrderWriteErr(rid, 403, "PROFILE_MISSING_SCOPE", "Fant ikke profil/scope.");
     }
 
     const company_id = profile.company_id;
     const location_id = profile.location_id;
+
+    const hold = await assertCompanyOrderWriteAllowed(supa as any, company_id, rid);
+    if (hold.ok === false) {
+      return jsonOrderWriteErr(rid, hold.status, hold.code, hold.message);
+    }
+
+    const pre = await assertOrderWithinAgreementPreflight({
+      sb: supa as any,
+      companyId: company_id,
+      locationId: location_id,
+      orderIsoDate: date,
+      agreementRuleSlot: agreementRuleSlotForOrderTableSlot(ORDER_TABLE_SLOT_DEFAULT),
+      rid,
+      action: wantsLunch ? "SET" : "CANCEL",
+    });
+    if (pre.ok === false) {
+      return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
+    }
 
     // contract -> day tier + allowed choices
     const { data: companyRaw, error: cErr } = await (supa as any)
@@ -201,7 +220,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (cErr || !companyRaw) {
-      return jsonErr(rid, "Fant ikke kontrakt.", 403, "COMPANY_CONTRACT_NOT_FOUND");
+      return jsonOrderWriteErr(rid, 403, "COMPANY_CONTRACT_NOT_FOUND", "Fant ikke kontrakt.");
     }
 
     const weekTier = ((companyRaw as any).contract_week_tier as Record<string, Tier>) ?? {};
@@ -214,7 +233,7 @@ export async function POST(req: NextRequest) {
     const tier =
       (await resolveTierForOrderDay(supa as any, company_id, location_id, dayKey, weekTier)) ?? null;
     if (!tier) {
-      return jsonErr(rid, "Denne dagen er ikke aktiv i avtalen.", 403, "DAY_NOT_ENABLED");
+      return jsonOrderWriteErr(rid, 403, "DAY_NOT_ENABLED", "Denne dagen er ikke aktiv i avtalen.");
     }
     const premiumChoices = mergeChoices(basisChoices, premiumRaw);
     const allowed = tier === "BASIS" ? basisChoices : premiumChoices;
@@ -227,7 +246,7 @@ export async function POST(req: NextRequest) {
       if (!ok) {
         const fallback = allowed.find((c) => c.key === "varmmat")?.key ?? allowed[0]?.key ?? null;
         finalChoiceKey = fallback;
-        if (!finalChoiceKey) return jsonErr(rid, "Firmaavtalen mangler menyvalg.", 400, "NO_CHOICES");
+        if (!finalChoiceKey) return jsonOrderWriteErr(rid, 400, "NO_CHOICES", "Firmaavtalen mangler menyvalg.");
       }
     }
 
@@ -237,7 +256,7 @@ export async function POST(req: NextRequest) {
       const ck = String(finalChoiceKey ?? "").toLowerCase();
       if (!t || t !== ck) {
         const label = displayLabelForMealTypeKey(ck, null);
-        return jsonErr(rid, `Velg variant for ${label}.`, 400, "MISSING_VARIANT");
+        return jsonOrderWriteErr(rid, 400, "MISSING_VARIANT", `Velg variant for ${label}.`);
       }
     }
 
@@ -249,10 +268,7 @@ export async function POST(req: NextRequest) {
       : await lpOrderCancel(supa as any, { p_date: date, p_slot: ORDER_TABLE_SLOT_DEFAULT });
 
     if (!writeRes.ok) {
-      return jsonErr(rid, "Kunne ikke lagre.", 500, {
-        code: writeRes.code ?? "ORDER_RPC_FAILED",
-        detail: writeRes.error?.message ?? null,
-      });
+      return jsonOrderWriteErr(rid, 500, writeRes.code ?? "ORDER_RPC_FAILED", "Kunne ikke lagre.");
     }
 
     const { data: savedOrder, error: oErr } = await (supa as any)
@@ -266,7 +282,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (oErr || !savedOrder) {
-      return jsonErr(rid, "Kunne ikke lese ordre etter lagring.", 500, { code: "ORDER_READ_FAILED", detail: oErr?.message ?? null });
+      return jsonOrderWriteErr(rid, 500, "ORDER_READ_FAILED", "Kunne ikke lese ordre etter lagring.");
     }
 
     // keep day_choices aligned
@@ -287,41 +303,37 @@ export async function POST(req: NextRequest) {
         );
 
       if (dcErr) {
-        return jsonErr(rid, "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen.", 500, {
-          code: "DAY_CHOICE_SAVE_FAILED",
-          detail: dcErr?.message ?? null,
-        });
+        return jsonOrderWriteErr(
+          rid,
+          500,
+          "DAY_CHOICE_SAVE_FAILED",
+          "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen."
+        );
       }
     }
 
-    const updatedAt = (savedOrder as any).updated_at ?? (savedOrder as any).created_at ?? null;
+    const orderId = String((savedOrder as any).id ?? "").trim();
+    if (!orderId) {
+      return jsonOrderWriteErr(rid, 500, "ORDER_READ_FAILED", "Kunne ikke verifisere ordre-ID etter lagring.");
+    }
 
-    return jsonOk(
-      rid,
-      {
-        ok: true,
-        rid,
-        receipt: {
-          orderId: (savedOrder as any).id,
-          status: wantsLunch ? "ACTIVE" : "CANCELLED",
-          date: (savedOrder as any).date,
-          updatedAt,
-        },
-        date: (savedOrder as any).date,
-        status: wantsLunch ? "ACTIVE" : "CANCELLED",
-        wants_lunch: wantsLunch,
-        choice_key: wantsLunch ? finalChoiceKey : null,
-        note: wantsLunch ? (note ?? null) : null,
-        pricing: { tier, unit_price: tier === "BASIS" ? 90 : 130 },
-        locked: false,
-        cutoffTime: cutoff.cutoffTime,
-        canAct: true,
-        scope: { company_id, location_id, user_id },
-      },
-      200
-    );
+    const savedDate = String((savedOrder as any).date ?? date);
+    const status = orderWriteStatusFromDb(String((savedOrder as any).status ?? (wantsLunch ? "ACTIVE" : "CANCELLED")));
+
+    await fanoutLpOrderSetOutboxBestEffort({
+      userId: user_id,
+      date: savedDate,
+      slot: ORDER_TABLE_SLOT_DEFAULT,
+    });
+
+    return jsonOrderWriteOk(rid, {
+      orderId,
+      status,
+      date: savedDate,
+      timestamp: new Date().toISOString(),
+    });
   } catch (e: any) {
-    return jsonErr(rid, "Uventet feil.", 500, { code: "SERVER_ERROR", detail: String(e?.message ?? e) });
+    return jsonOrderWriteErr(rid, 500, "SERVER_ERROR", "Uventet feil.");
   }
 }
 

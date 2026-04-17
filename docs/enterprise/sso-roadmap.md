@@ -1,5 +1,7 @@
 # SSO Roadmap
 
+**Inngang til full enterprise-pakke:** [README.md](./README.md)
+
 ## Phase 1: SAML (Entra ID / Okta)
 - SAML-basert SSO for enterprise-kunder.
 - Sentral konfigurasjon og rolle-tilordning.

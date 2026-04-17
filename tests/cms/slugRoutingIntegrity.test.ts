@@ -9,7 +9,7 @@
 // @ts-nocheck
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { readSupabasePublishedContentPageBySlug } from "@/lib/cms/supabase/readPublishedContentPageBySlug";
 
 type Page = { id: string; slug: string; title: string | null } | null;
 type Variant = { id: string; body: unknown } | null;
@@ -80,7 +80,7 @@ vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
   };
 });
 
-describe("getContentBySlug — slug normalization and routing integrity", () => {
+describe("readSupabasePublishedContentPageBySlug — slug normalization and routing integrity", () => {
   beforeEach(() => {
     mockPagesBySlug = {};
     mockVariantsByKey = new Map();
@@ -95,7 +95,7 @@ describe("getContentBySlug — slug normalization and routing integrity", () => 
     const body = { version: 1, blocks: [{ id: "b1", type: "richText", data: { heading: "Published" } }] };
     mockVariantsByKey.set(variantKey(pageId, "nb", "prod"), { id: "v-prod", body });
 
-    const result = await getContentBySlug("My-Slug");
+    const result = await readSupabasePublishedContentPageBySlug("My-Slug");
     expect(result).not.toBeNull();
     expect(result!.pageId).toBe(pageId);
     // Slug from DB is preserved; lookup was still successful despite mixed-case URL.
@@ -104,7 +104,7 @@ describe("getContentBySlug — slug normalization and routing integrity", () => 
 
   test("fails closed (returns null) when page lookup returns an error", async () => {
     forcePageError = true;
-    const result = await getContentBySlug("any-slug");
+    const result = await readSupabasePublishedContentPageBySlug("any-slug");
     expect(result).toBeNull();
   });
 
@@ -114,7 +114,7 @@ describe("getContentBySlug — slug normalization and routing integrity", () => 
     // No need to add variant; we force a variant error instead.
     forceVariantError = true;
 
-    const result = await getContentBySlug("error-variant");
+    const result = await readSupabasePublishedContentPageBySlug("error-variant");
     expect(result).toBeNull();
   });
 });

@@ -12,6 +12,8 @@ import ArchivePanel from "./ArchivePanel";
 import InvoiceBasisPanel from "./InvoiceBasisPanel";
 import EsgSummaryPanel from "./EsgSummaryPanel";
 import AgreementCard from "./AgreementCard";
+import type { ContractOverview } from "@/lib/agreements/contractBindingCompute";
+import type { AgreementDocumentOverview } from "@/lib/agreements/buildAgreementDocumentOverview";
 
 type CompanyStatus = "active" | "paused" | "closed" | "pending";
 
@@ -35,6 +37,8 @@ type CompanyDetails = {
     slot_end: string | null;
     updated_at: string | null;
   };
+  contract_overview: ContractOverview | null;
+  agreement_documents: AgreementDocumentOverview[];
   employees: Array<{
     id: string;
     name: string | null;
@@ -56,6 +60,15 @@ type CompanyDetails = {
     orders_30d: number;
     delivered_30d: number;
     cancel_30d: number;
+  };
+  registration_pipeline: {
+    registration_exists: boolean;
+    ledger_pending_agreement_id: string | null;
+    ledger_active_agreement_id: string | null;
+    pipeline_stage_label: string;
+    pipeline_next_label: string;
+    pipeline_next_href: string | null;
+    pipeline_primary_href: string;
   };
 };
 
@@ -138,10 +151,38 @@ function normalizeAgreement(raw: any): CompanyDetails["agreement"] {
   };
 }
 
+function defaultRegistrationPipeline(companyId: string): CompanyDetails["registration_pipeline"] {
+  return {
+    registration_exists: false,
+    ledger_pending_agreement_id: null,
+    ledger_active_agreement_id: null,
+    pipeline_stage_label: "—",
+    pipeline_next_label: "—",
+    pipeline_next_href: null,
+    pipeline_primary_href: `/superadmin/companies/${encodeURIComponent(companyId)}`,
+  };
+}
+
 function normalizeCompanyDetails(raw: any): CompanyDetails {
   const companyRaw = raw?.company ?? {};
   const employeesRaw = Array.isArray(raw?.employees) ? raw.employees : [];
   const locationsRaw = Array.isArray(raw?.locations) ? raw.locations : [];
+  const cid = safeStr(companyRaw.id);
+  const rp = raw?.registration_pipeline;
+  const registration_pipeline: CompanyDetails["registration_pipeline"] =
+    rp && typeof rp === "object"
+      ? {
+          registration_exists: Boolean(rp.registration_exists),
+          ledger_pending_agreement_id: rp.ledger_pending_agreement_id ?? null,
+          ledger_active_agreement_id: rp.ledger_active_agreement_id ?? null,
+          pipeline_stage_label: safeStr(rp.pipeline_stage_label) || "—",
+          pipeline_next_label: safeStr(rp.pipeline_next_label) || "—",
+          pipeline_next_href: rp.pipeline_next_href != null ? safeStr(rp.pipeline_next_href) || null : null,
+          pipeline_primary_href: safeStr(rp.pipeline_primary_href) || (cid ? `/superadmin/companies/${encodeURIComponent(cid)}` : "/superadmin/companies"),
+        }
+      : cid
+        ? defaultRegistrationPipeline(cid)
+        : defaultRegistrationPipeline("");
 
   return {
     company: {
@@ -159,6 +200,8 @@ function normalizeCompanyDetails(raw: any): CompanyDetails {
       deleted_at: null,
     },
     agreement: normalizeAgreement(raw?.agreement),
+    contract_overview: (raw?.contract_overview ?? null) as ContractOverview | null,
+    agreement_documents: Array.isArray(raw?.agreement_documents) ? (raw.agreement_documents as AgreementDocumentOverview[]) : [],
     employees: employeesRaw.map((e: any) => ({
       id: safeStr(e?.id),
       name: safeStr(e?.name) || null,
@@ -177,6 +220,7 @@ function normalizeCompanyDetails(raw: any): CompanyDetails {
       slot: safeStr(l?.slot) || null,
     })),
     kpi: undefined,
+    registration_pipeline,
   };
 }
 
@@ -312,6 +356,7 @@ export default async function SuperadminCompanyDetailPage(props: {
   const ok = res as ApiOk;
   const data = ok.data;
   const company = data.company;
+  const pipe = data.registration_pipeline;
   const employees = Array.isArray(data.employees) ? data.employees : [];
   const locations = Array.isArray(data.locations) ? data.locations : [];
   const employeesCount = employees.filter((e) => safeStr(e.role).toLowerCase() === "employee").length;
@@ -341,6 +386,69 @@ export default async function SuperadminCompanyDetailPage(props: {
         </Link>
       </header>
 
+      <section
+        id="operativ-pipeline"
+        className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]"
+      >
+        <h2 className="text-sm font-semibold text-neutral-900">Operativ status (registrering → avtale → drift)</h2>
+        <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+          Lesning fra <span className="font-mono">companies</span>, <span className="font-mono">company_registrations</span> og{" "}
+          <span className="font-mono">agreements</span>. Firmastatus styrer driftstilgang; ledger-avtale styrer kontraktsleddet. Ingen ny
+          arbeidsflyt — samme logikk som innboks og firmaliste.
+        </p>
+        <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+          <div>
+            <dt className="text-xs text-[rgb(var(--lp-muted))]">Firmastatus</dt>
+            <dd>
+              <span className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusPill(company.status)].join(" ")}>
+                {statusLabel(company.status)}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[rgb(var(--lp-muted))]">Registrering</dt>
+            <dd className="font-medium">{pipe.registration_exists ? "Ja" : "Nei"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[rgb(var(--lp-muted))]">Ledger-utkast (PENDING)</dt>
+            <dd className="font-medium">{pipe.ledger_pending_agreement_id ? "Ja" : "Nei"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[rgb(var(--lp-muted))]">Aktiv ledger-avtale (ACTIVE)</dt>
+            <dd className="font-medium">{pipe.ledger_active_agreement_id ? "Ja" : "Nei"}</dd>
+          </div>
+        </dl>
+        <div className="mt-4 rounded-2xl bg-neutral-50/90 px-3 py-3 text-sm ring-1 ring-black/5">
+          <p>
+            <span className="text-xs font-semibold text-neutral-600">Fase: </span>
+            <span className="text-neutral-900">{pipe.pipeline_stage_label}</span>
+          </p>
+          <p className="mt-2">
+            <span className="text-xs font-semibold text-neutral-600">Neste steg: </span>
+            <span className="text-neutral-900">{pipe.pipeline_next_label}</span>
+            {pipe.pipeline_next_href ? (
+              <>
+                {" "}
+                <Link
+                  href={pipe.pipeline_next_href}
+                  className="font-medium text-neutral-900 underline underline-offset-2"
+                >
+                  Åpne
+                </Link>
+              </>
+            ) : null}
+          </p>
+          <div className="mt-3">
+            <Link
+              href={pipe.pipeline_primary_href}
+              className="inline-flex rounded-2xl border bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
+            >
+              Åpne anbefalt neste steg →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="mt-6 grid gap-3 md:grid-cols-3">
         <div className="rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-xs text-[rgb(var(--lp-muted))]">Ansatte</div>
@@ -360,6 +468,9 @@ export default async function SuperadminCompanyDetailPage(props: {
       </section>
 
       <nav className="mt-6 flex flex-wrap gap-2 text-sm">
+        <a href="#operativ-pipeline" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
+          Operativ status
+        </a>
         <a href="#firma" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
           Firma
         </a>
@@ -403,7 +514,12 @@ export default async function SuperadminCompanyDetailPage(props: {
       </section>
 
       <section id="okonomi" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-        <AgreementCard companyId={companyId} initialAgreement={data.agreement} />
+        <AgreementCard
+          companyId={companyId}
+          initialAgreement={data.agreement}
+          contractOverview={data.contract_overview}
+          agreementDocuments={data.agreement_documents}
+        />
       </section>
 
       <section id="fakturagrunnlag" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">

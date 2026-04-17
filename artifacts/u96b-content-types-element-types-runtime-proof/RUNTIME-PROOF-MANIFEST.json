@@ -1,0 +1,42 @@
+{
+  "baseURL": "http://localhost:3047",
+  "documentTypeWorkspaceUrls": {
+    "overview": "http://localhost:3047/backoffice/settings/document-types",
+    "compact_page": "http://localhost:3047/backoffice/settings/document-types/workspace/compact_page",
+    "micro_landing": "http://localhost:3047/backoffice/settings/document-types/workspace/micro_landing"
+  },
+  "elementTypeWorkspaceUrls": {
+    "overview": "http://localhost:3047/backoffice/settings/element-types",
+    "cta": "http://localhost:3047/backoffice/settings/element-types/workspace/cta"
+  },
+  "adminChanges": {
+    "documentType_compact_page": {
+      "group": "U96B Kompakt gruppe",
+      "bodyTitle": "U96B Body property tittel",
+      "bodyDescription": "U96B Property beskrivelse (document type)"
+    },
+    "elementType_cta": {
+      "title": "U96B CTA (element runtime)",
+      "description": "U96B CTA beskrivelse fra element workspace",
+      "editorHelpText": "U96B Editor-hjelp synlig i library"
+    }
+  },
+  "screenshots": [
+    "01-document-types-workspace-overview.png",
+    "02-compact-page-document-type-workspace.png",
+    "03-micro-landing-document-type-workspace.png",
+    "04-document-type-workspace-dirty-save.png",
+    "05-content-editor-before-document-type-change.png",
+    "06-content-editor-after-document-type-change.png",
+    "07-element-types-overview.png",
+    "08-element-type-detail-workspace.png",
+    "09-element-type-workspace-dirty-save.png",
+    "10-block-library-before-element-type-change.png",
+    "11-block-library-after-element-type-change.png",
+    "12-document-type-binding-proof.png",
+    "13-data-type-binding-proof.png",
+    "14-changed-property-label-proof.png",
+    "15-changed-element-type-label-proof.png",
+    "16-full-canvas-after-config-change.png"
+  ]
+}

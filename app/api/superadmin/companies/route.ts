@@ -8,6 +8,13 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
+import { osloTodayISODate } from "@/lib/date/oslo";
+import { buildContractOverviewFromLedger, pickBestAgreementLedgerRow } from "@/lib/agreements/contractBindingCompute";
+import {
+  deriveSuperadminRegistrationPipelineNext,
+  deriveSuperadminRegistrationPipelinePrimaryHref,
+  indexLedgerAgreementsByCompanyId,
+} from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
 
 /**
  * ✅ FASIT
@@ -242,6 +249,46 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     /* ---------------------------------------------------------
+       2b) Registrering + ledger-avtaler (samme semantikk som registreringsdetalj)
+    --------------------------------------------------------- */
+    const registrationCompanyIds = new Set<string>();
+    let pendingIdByCompany = new Map<string, string>();
+    let activeIdByCompany = new Map<string, string>();
+
+    if (ids.length) {
+      const { data: regData, error: regError } = await admin.from("company_registrations").select("company_id").in("company_id", ids);
+
+      if (regError) {
+        if (!isMissingRelation(regError) && !isMissingColumn(regError)) {
+          console.error("SUPABASE company_registrations list query failed", regError);
+          return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
+        }
+      } else {
+        for (const row of regData ?? []) {
+          const cid = safeStr((row as any)?.company_id);
+          if (cid) registrationCompanyIds.add(cid);
+        }
+      }
+
+      const { data: agrLedgerRows, error: agrLedgerErr } = await admin
+        .from("agreements")
+        .select("id,company_id,status,created_at")
+        .in("company_id", ids)
+        .in("status", ["PENDING", "ACTIVE"]);
+
+      if (agrLedgerErr) {
+        if (!isMissingRelation(agrLedgerErr) && !isMissingColumn(agrLedgerErr)) {
+          console.error("SUPABASE agreements pipeline query failed", agrLedgerErr);
+          return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
+        }
+      } else {
+        const idx = indexLedgerAgreementsByCompanyId((agrLedgerRows ?? []) as Record<string, unknown>[]);
+        pendingIdByCompany = idx.pendingIdByCompany;
+        activeIdByCompany = idx.activeIdByCompany;
+      }
+    }
+
+    /* ---------------------------------------------------------
        3) Agreement snapshot (best-effort)
        - Optional view/table: company_current_agreement
        - Never blocks list if missing
@@ -276,11 +323,74 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     }
 
+    /* ---------------------------------------------------------
+       3b) Ledger-rader (company_agreements) for kontrakt/binding
+       - Samme operative grunnlag som firmadetalj
+       - Fail-soft ved manglende tabell/kolonner
+    --------------------------------------------------------- */
+    const ledgerBestByCompany = new Map<string, any>();
+
+    if (ids.length) {
+      const { data: ledData, error: ledError } = await admin
+        .from("company_agreements")
+        .select(
+          "id,company_id,status,start_date,end_date,binding_months,notice_months,plan_tier,delivery_days,updated_at,created_at"
+        )
+        .in("company_id", ids);
+
+      if (!ledError && Array.isArray(ledData)) {
+        const byC = new Map<string, any[]>();
+        for (const r of ledData) {
+          const cid = safeStr((r as any).company_id);
+          if (!cid) continue;
+          const arr = byC.get(cid) ?? [];
+          arr.push(r);
+          byC.set(cid, arr);
+        }
+        for (const [cid, arr] of byC.entries()) {
+          const best = pickBestAgreementLedgerRow(arr);
+          if (best) ledgerBestByCompany.set(cid, best);
+        }
+      } else if (ledError && !isMissingRelation(ledError) && !isMissingColumn(ledError)) {
+        console.error("SUPABASE company_agreements list query failed", ledError);
+        return jsonErr(ctx.rid, "Kunne ikke hente data.", 500, "DB_ERROR");
+      }
+    }
+
     const items = companies.map((c) => {
       const st = toClientCompanyStatus(c.status);
       const counts = countsByCompany.get(c.id) ?? { employeesCount: 0, adminsCount: 0 };
       const agr = agreementByCompany.get(c.id) ?? null;
-      const planLabel = computePlanLabel(agr?.plan_tier ?? null, agr?.delivery_days ?? null);
+      const led = ledgerBestByCompany.get(c.id) ?? null;
+      const overview = led ? buildContractOverviewFromLedger(led, osloTodayISODate()) : null;
+
+      const planLabelFromOverview =
+        overview?.plan_tier === "LUXUS" || overview?.plan_tier === "BASIS" ? overview.plan_tier : null;
+      const planLabel =
+        planLabelFromOverview ?? computePlanLabel(agr?.plan_tier ?? null, agr?.delivery_days ?? null) ?? null;
+
+      const agreementStatus = overview?.status ?? (agr ? safeStr(agr.status).toUpperCase() : null);
+      const contractStartDate = overview?.start_date ?? (agr?.start_date != null ? safeStr(agr.start_date) : null);
+      const contractEndDate = overview?.end_date ?? (agr?.end_date != null ? safeStr(agr.end_date) : null);
+      const bindingMonthsRemaining = overview?.binding_months_remaining ?? null;
+      const effectiveBindingEndDate = overview?.effective_binding_end_date ?? null;
+
+      const registrationExists = registrationCompanyIds.has(c.id);
+      const ledgerPendingAgreementId = pendingIdByCompany.get(c.id) ?? null;
+      const ledgerActiveAgreementId = activeIdByCompany.get(c.id) ?? null;
+      const pipe = deriveSuperadminRegistrationPipelineNext({
+        company_status: safeStr(c.status) || null,
+        ledger_pending_agreement_id: ledgerPendingAgreementId,
+        ledger_active_agreement_id: ledgerActiveAgreementId,
+      });
+      const pipelinePrimaryHref = deriveSuperadminRegistrationPipelinePrimaryHref({
+        company_id: c.id,
+        company_status: safeStr(c.status) || null,
+        ledger_pending_agreement_id: ledgerPendingAgreementId,
+        ledger_active_agreement_id: ledgerActiveAgreementId,
+        registration_exists: registrationExists,
+        pipe,
+      });
 
       return {
         id: c.id,
@@ -288,11 +398,23 @@ export async function GET(req: NextRequest): Promise<Response> {
         orgnr: c.orgnr ?? null,
         status: st,
         planLabel: planLabel ?? null,
+        agreementStatus: agreementStatus || null,
+        contractStartDate: contractStartDate || null,
+        contractEndDate: contractEndDate || null,
+        bindingMonthsRemaining: bindingMonthsRemaining ?? null,
+        effectiveBindingEndDate: effectiveBindingEndDate || null,
         employeesCount: counts.employeesCount,
         adminsCount: counts.adminsCount,
         createdAt: c.created_at ?? null,
         updatedAt: (c as any).updated_at ?? null,
         archivedAt: null,
+        registrationExists,
+        ledgerPendingAgreementId,
+        ledgerActiveAgreementId,
+        pipelineStageLabel: pipe.stage_label,
+        pipelineNextLabel: pipe.next_label,
+        pipelineNextHref: pipe.next_href,
+        pipelinePrimaryHref,
       };
     });
 
@@ -308,6 +430,9 @@ export async function GET(req: NextRequest): Promise<Response> {
           companies: "companies",
           profiles: "profiles",
           agreement: "company_current_agreement",
+          ledger: "company_agreements",
+          company_registrations: "company_registrations",
+          agreements_ledger: "agreements",
         },
         filters: {
           q: q || null,

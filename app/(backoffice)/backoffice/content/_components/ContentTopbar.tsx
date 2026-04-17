@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { BackofficeOverflowActionBar } from "@/components/backoffice/BackofficeOverflowActionBar";
+import { resolveBackofficeContentRoute } from "@/lib/cms/backofficeContentRoute";
 import type { StatusLineState, SupportSnapshot } from "./types";
 import type { PageStatus } from "./contentTypes";
 
@@ -35,10 +37,10 @@ type Props = {
 };
 
 export function ContentTopbar({
-  title,
-  slug,
-  statusLabel,
-  statusBadgeClass,
+  title: _title,
+  slug: _slug,
+  statusLabel: _statusLabel,
+  statusBadgeClass: _statusBadgeClass,
   statusLine,
   supportSnapshot,
   supportCopyFeedback,
@@ -46,8 +48,8 @@ export function ContentTopbar({
   pageExists,
   isOffline,
   statusFeedback,
-  publishedAt,
-  formatDate,
+  publishedAt: _publishedAt,
+  formatDate: _formatDate,
   inScheduledRelease,
   onCopySupportSnapshot,
   onRetrySave,
@@ -55,46 +57,40 @@ export function ContentTopbar({
   onPublish: _onPublish,
   onUnpublish: _onUnpublish,
 }: Props) {
+  const pathname = usePathname() ?? "";
+  const isContentDetailEditor = resolveBackofficeContentRoute(pathname).kind === "detail";
+
   const canRetry = statusLine.actions.retry && !isOffline;
   const canReload = statusLine.actions.reload && !isOffline;
   const disableRetry = !selectedId || !pageExists || isOffline;
-  const formattedPublished = publishedAt != null && formatDate ? formatDate(publishedAt) : null;
+
+  const hasDetailOverflowActions = Boolean(supportSnapshot || canRetry || canReload);
+  const hasDetailSecondarySignals = Boolean(statusFeedback || inScheduledRelease);
+
+  if (isContentDetailEditor && !hasDetailOverflowActions && !hasDetailSecondarySignals) {
+    return null;
+  }
+
+  const detailOnlyActions =
+    isContentDetailEditor && hasDetailOverflowActions && !hasDetailSecondarySignals;
 
   return (
     <div
       role="status"
-      className="font-ui sticky top-0 z-20 flex flex-col gap-3 border-b border-[rgb(var(--lp-border))] bg-white px-3 py-3 text-sm text-[rgb(var(--lp-text))] shadow-sm sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4"
+      className={`font-ui sticky top-0 z-20 flex flex-col gap-2 border-b border-[rgb(var(--lp-border))] bg-white text-sm text-[rgb(var(--lp-text))] shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 ${
+        isContentDetailEditor ? "px-2 py-1" : "px-3 py-2"
+      } ${detailOnlyActions ? "sm:justify-end" : "sm:justify-between"}`}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-[min(100%,42rem)]">
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold ${statusBadgeClass}`}
-            data-lp-publish-state={statusLabel}
-          >
-            {statusLabel === "published" ? "Publisert" : "Kladd"}
-          </span>
-          {inScheduledRelease ? (
-            <span
-              className="shrink-0 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
-              title="Denne varianten er med i en planlagt release"
-            >
-              Planlagt release
-            </span>
-          ) : null}
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-base font-semibold text-[rgb(var(--lp-text))]">{title || "Untitled"}</div>
-          <div className="truncate text-sm text-[rgb(var(--lp-muted))]">{slug || "—"}</div>
-          {statusLabel === "published" && formattedPublished ? (
-            <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Sist publisert {formattedPublished}</div>
-          ) : statusLabel === "draft" ? (
-            <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Ikke synlig på nettsiden før publisering</div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-2 sm:items-end" aria-live="polite" aria-atomic="true">
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      {/*
+        Tittel, slug og publiseringsstatus vises i BellissimaWorkspaceHeader over.
+        Her: lagring/sync-linje, release-hint og sekundær diagnose — uten duplikat av dokumentmetadata.
+      */}
+      {!isContentDetailEditor ? (
+        <div
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 sm:max-w-[min(100%,48rem)]"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <span className={`rounded-md px-2 py-1 text-xs font-medium ${statusLine.tone}`} key={statusLine.key}>
             {statusLine.label}
             {statusLine.detail ? (
@@ -110,7 +106,38 @@ export function ContentTopbar({
               {statusFeedback}
             </span>
           ) : null}
+          {inScheduledRelease ? (
+            <span
+              className="shrink-0 rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700"
+              title="Denne varianten er med i en planlagt release"
+            >
+              Planlagt release
+            </span>
+          ) : null}
         </div>
+      ) : hasDetailSecondarySignals ? (
+        <div
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 sm:max-w-[min(100%,48rem)]"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {statusFeedback ? (
+            <span className="text-xs font-medium text-green-700" role="status">
+              {statusFeedback}
+            </span>
+          ) : null}
+          {inScheduledRelease ? (
+            <span
+              className="shrink-0 rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-slate-700"
+              title="Denne varianten er med i en planlagt release"
+            >
+              Planlagt release
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex min-w-0 shrink-0 flex-col gap-2 sm:items-end">
         <BackofficeOverflowActionBar
           summaryLabel="Support og diagnose"
           hasSecondary={Boolean(supportSnapshot || canRetry || canReload)}

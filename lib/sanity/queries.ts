@@ -1,5 +1,6 @@
 // lib/sanity/queries.ts
 import { sanity } from "./client";
+import { menuContentHasDisplayableCopy } from "@/lib/sanity/menuContentGuards";
 
 /* =========================================================
    Types
@@ -94,7 +95,7 @@ export async function getMenuForDate(date: string): Promise<MenuContent | null> 
     );
   }
 
-  return sanity.fetch(
+  const row = await sanity.fetch(
     `*[
       _type == "menuContent" &&
       date == $date &&
@@ -118,8 +119,10 @@ export async function getMenuForDate(date: string): Promise<MenuContent | null> 
         (approvedForPublish == true && customerVisible == true)
       ) && !(_id in path("drafts.**"))
     }`,
-    { date }
+    { date },
   );
+  if (!row || !menuContentHasDisplayableCopy(row)) return null;
+  return row;
 }
 
 /**
@@ -147,7 +150,7 @@ export async function getMenuForDates(dates: string[]): Promise<MenuContent[]> {
     }
   }
 
-  return sanity.fetch(
+  const rows = await sanity.fetch(
     `*[
       _type == "menuContent" &&
       date in $dates &&
@@ -171,8 +174,10 @@ export async function getMenuForDates(dates: string[]): Promise<MenuContent[]> {
         (approvedForPublish == true && customerVisible == true)
       ) && !(_id in path("drafts.**"))
     }`,
-    { dates: cleaned }
+    { dates: cleaned },
   );
+  const list = Array.isArray(rows) ? rows : [];
+  return list.filter((m: MenuContent) => m.isPublished === true && menuContentHasDisplayableCopy(m));
 }
 
 /* =========================================================
@@ -198,7 +203,7 @@ export async function getMenuForRange(
     );
   }
 
-  return sanity.fetch(
+  const rows = await sanity.fetch(
     `*[
       _type == "menuContent" &&
       date >= $from && date <= $to &&
@@ -222,8 +227,10 @@ export async function getMenuForRange(
         (approvedForPublish == true && customerVisible == true)
       ) && !(_id in path("drafts.**"))
     }`,
-    { from, to }
+    { from, to },
   );
+  const list = Array.isArray(rows) ? rows : [];
+  return list.filter((m: MenuContent) => m.isPublished === true && menuContentHasDisplayableCopy(m));
 }
 
 /* =========================================================

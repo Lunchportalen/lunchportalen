@@ -9,7 +9,7 @@ import type { NextRequest } from "next/server";
 
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId } from "@/lib/http/routeGuard";
 
 function isUuid(v: any) {
   return (
@@ -41,6 +41,10 @@ export async function GET(req: NextRequest) {
   const denyRole = requireRoleOr403(ctx, "admin.locations.audit", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
 
+  const tenant = resolveAdminTenantCompanyId(ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const myCompanyId = tenant.companyId;
+
   const supabase = await supabaseServer();
   const url = new URL(req.url);
 
@@ -52,11 +56,7 @@ export async function GET(req: NextRequest) {
     return jsonErr(ctx.rid, "Mangler/ugyldig location_id.", 400, "bad_request");
   }
 
-  // 3) Tenant lock: location must belong to own company
-  const denyScope = requireCompanyScopeOr403(ctx);
-  if (denyScope) return denyScope;
-
-  const myCompanyId = safeStr(ctx.scope.companyId);
+  // 3) Tenant lock: location must belong to resolved company
 
   const { data: loc, error: locErr } = await supabase
     .from("company_locations")

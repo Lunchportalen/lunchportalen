@@ -1,0 +1,1602 @@
+[
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "../../capabilityRegistry",
+        "severity": "high",
+        "detail": "imported in 198 files",
+        "metrics": {
+          "files": 198
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "../../capabilityRegistry",
+      "severity": "high",
+      "detail": "imported in 198 files",
+      "metrics": {
+        "files": 198
+      }
+    },
+    "ts": "2026-03-25T21:25:37.557Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "./types",
+        "severity": "high",
+        "detail": "imported in 90 files",
+        "metrics": {
+          "files": 90
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "./types",
+      "severity": "high",
+      "detail": "imported in 90 files",
+      "metrics": {
+        "files": 90
+      }
+    },
+    "ts": "2026-03-25T21:25:37.562Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/date/oslo",
+        "severity": "high",
+        "detail": "imported in 94 files",
+        "metrics": {
+          "files": 94
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/date/oslo",
+      "severity": "high",
+      "detail": "imported in 94 files",
+      "metrics": {
+        "files": 94
+      }
+    },
+    "ts": "2026-03-25T21:25:37.565Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/http/respond",
+        "severity": "high",
+        "detail": "imported in 533 files",
+        "metrics": {
+          "files": 533
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/http/respond",
+      "severity": "high",
+      "detail": "imported in 533 files",
+      "metrics": {
+        "files": 533
+      }
+    },
+    "ts": "2026-03-25T21:25:37.568Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/http/routeGuard",
+        "severity": "high",
+        "detail": "imported in 318 files",
+        "metrics": {
+          "files": 318
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/http/routeGuard",
+      "severity": "high",
+      "detail": "imported in 318 files",
+      "metrics": {
+        "files": 318
+      }
+    },
+    "ts": "2026-03-25T21:25:37.571Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/http/withApiAiEntrypoint",
+        "severity": "high",
+        "detail": "imported in 140 files",
+        "metrics": {
+          "files": 140
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/http/withApiAiEntrypoint",
+      "severity": "high",
+      "detail": "imported in 140 files",
+      "metrics": {
+        "files": 140
+      }
+    },
+    "ts": "2026-03-25T21:25:37.574Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/ops/log",
+        "severity": "high",
+        "detail": "imported in 215 files",
+        "metrics": {
+          "files": 215
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/ops/log",
+      "severity": "high",
+      "detail": "imported in 215 files",
+      "metrics": {
+        "files": 215
+      }
+    },
+    "ts": "2026-03-25T21:25:37.581Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Introduce a narrow abstraction or facades for the hot import; reduce direct fan-in",
+      "impact": "scalability",
+      "risk": "medium",
+      "issue": {
+        "type": "coupling",
+        "target": "@/lib/supabase/admin",
+        "severity": "high",
+        "detail": "imported in 290 files",
+        "metrics": {
+          "files": 290
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "coupling",
+      "target": "@/lib/supabase/admin",
+      "severity": "high",
+      "detail": "imported in 290 files",
+      "metrics": {
+        "files": 290
+      }
+    },
+    "ts": "2026-03-25T21:25:37.584Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "actions.ts",
+        "severity": "high",
+        "detail": "13 files named actions.ts",
+        "metrics": {
+          "count": 13
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "actions.ts",
+      "severity": "high",
+      "detail": "13 files named actions.ts",
+      "metrics": {
+        "count": 13
+      }
+    },
+    "ts": "2026-03-25T21:25:37.587Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Centralize table access in a thin repository module per bounded context",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "repeated_db_pattern",
+        "target": "ai_activity_log",
+        "severity": "high",
+        "detail": ".from(\"ai_activity_log\") ~90 times",
+        "metrics": {
+          "from_calls": 90
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "repeated_db_pattern",
+      "target": "ai_activity_log",
+      "severity": "high",
+      "detail": ".from(\"ai_activity_log\") ~90 times",
+      "metrics": {
+        "from_calls": 90
+      }
+    },
+    "ts": "2026-03-25T21:25:37.590Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(app)/week/EmployeeWeekClient.tsx",
+        "severity": "high",
+        "detail": "1291 lines",
+        "metrics": {
+          "lines": 1291
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(app)/week/EmployeeWeekClient.tsx",
+      "severity": "high",
+      "detail": "1291 lines",
+      "metrics": {
+        "lines": 1291
+      }
+    },
+    "ts": "2026-03-25T21:25:37.597Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/BlockInspectorFields.tsx",
+        "severity": "high",
+        "detail": "1418 lines",
+        "metrics": {
+          "lines": 1418
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/BlockInspectorFields.tsx",
+      "severity": "high",
+      "detail": "1418 lines",
+      "metrics": {
+        "lines": 1418
+      }
+    },
+    "ts": "2026-03-25T21:25:37.600Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/ContentAiTools.tsx",
+        "severity": "high",
+        "detail": "1358 lines",
+        "metrics": {
+          "lines": 1358
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/ContentAiTools.tsx",
+      "severity": "high",
+      "detail": "1358 lines",
+      "metrics": {
+        "lines": 1358
+      }
+    },
+    "ts": "2026-03-25T21:25:37.605Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx",
+        "severity": "high",
+        "detail": "10359 lines",
+        "metrics": {
+          "lines": 10359
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx",
+      "severity": "high",
+      "detail": "10359 lines",
+      "metrics": {
+        "lines": 10359
+      }
+    },
+    "ts": "2026-03-25T21:25:37.609Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/useContentWorkspaceAi.ts",
+        "severity": "high",
+        "detail": "1070 lines",
+        "metrics": {
+          "lines": 1070
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/useContentWorkspaceAi.ts",
+      "severity": "high",
+      "detail": "1070 lines",
+      "metrics": {
+        "lines": 1070
+      }
+    },
+    "ts": "2026-03-25T21:25:37.613Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/superadmin/system/repairs/run/route.ts",
+        "severity": "high",
+        "detail": "1158 lines",
+        "metrics": {
+          "lines": 1158
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/superadmin/system/repairs/run/route.ts",
+      "severity": "high",
+      "detail": "1158 lines",
+      "metrics": {
+        "lines": 1158
+      }
+    },
+    "ts": "2026-03-25T21:25:37.614Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/driver/DriverClient.tsx",
+        "severity": "high",
+        "detail": "1025 lines",
+        "metrics": {
+          "lines": 1025
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/driver/DriverClient.tsx",
+      "severity": "high",
+      "detail": "1025 lines",
+      "metrics": {
+        "lines": 1025
+      }
+    },
+    "ts": "2026-03-25T21:25:37.615Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/superadmin/companies/companies-client.tsx",
+        "severity": "high",
+        "detail": "1210 lines",
+        "metrics": {
+          "lines": 1210
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/superadmin/companies/companies-client.tsx",
+      "severity": "high",
+      "detail": "1210 lines",
+      "metrics": {
+        "lines": 1210
+      }
+    },
+    "ts": "2026-03-25T21:25:37.616Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/superadmin/growth/social/actions.ts",
+        "severity": "high",
+        "detail": "1189 lines",
+        "metrics": {
+          "lines": 1189
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/superadmin/growth/social/actions.ts",
+      "severity": "high",
+      "detail": "1189 lines",
+      "metrics": {
+        "lines": 1189
+      }
+    },
+    "ts": "2026-03-25T21:25:37.617Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/superadmin/growth/social/SocialEngineClient.tsx",
+        "severity": "high",
+        "detail": "3180 lines",
+        "metrics": {
+          "lines": 3180
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/superadmin/growth/social/SocialEngineClient.tsx",
+      "severity": "high",
+      "detail": "3180 lines",
+      "metrics": {
+        "lines": 3180
+      }
+    },
+    "ts": "2026-03-25T21:25:37.622Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/superadmin/sales/SalesCockpitClient.tsx",
+        "severity": "high",
+        "detail": "1709 lines",
+        "metrics": {
+          "lines": 1709
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/superadmin/sales/SalesCockpitClient.tsx",
+      "severity": "high",
+      "detail": "1709 lines",
+      "metrics": {
+        "lines": 1709
+      }
+    },
+    "ts": "2026-03-25T21:25:37.626Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/superadmin/system/SystemClient.tsx",
+        "severity": "high",
+        "detail": "1203 lines",
+        "metrics": {
+          "lines": 1203
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/superadmin/system/SystemClient.tsx",
+      "severity": "high",
+      "detail": "1203 lines",
+      "metrics": {
+        "lines": 1203
+      }
+    },
+    "ts": "2026-03-25T21:25:37.629Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Centralize table access in a thin repository module per bounded context",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "repeated_db_pattern",
+        "target": "companies",
+        "severity": "high",
+        "detail": ".from(\"companies\") ~110 times",
+        "metrics": {
+          "from_calls": 110
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "repeated_db_pattern",
+      "target": "companies",
+      "severity": "high",
+      "detail": ".from(\"companies\") ~110 times",
+      "metrics": {
+        "from_calls": 110
+      }
+    },
+    "ts": "2026-03-25T21:25:37.630Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "engine.ts",
+        "severity": "high",
+        "detail": "14 files named engine.ts",
+        "metrics": {
+          "count": 14
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "engine.ts",
+      "severity": "high",
+      "detail": "14 files named engine.ts",
+      "metrics": {
+        "count": 14
+      }
+    },
+    "ts": "2026-03-25T21:25:37.631Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Standardize on lib/api/client or lib/core/fetchSafe for new call sites; migrate gradually",
+      "impact": "consistency",
+      "risk": "low",
+      "issue": {
+        "type": "repeated_api_pattern",
+        "target": "fetch(…)",
+        "severity": "high",
+        "detail": "~459 fetch( calls in scanned tree",
+        "metrics": {
+          "fetch_calls": 459
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "repeated_api_pattern",
+      "target": "fetch(…)",
+      "severity": "high",
+      "detail": "~459 fetch( calls in scanned tree",
+      "metrics": {
+        "fetch_calls": 459
+      }
+    },
+    "ts": "2026-03-25T21:25:37.632Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "index.ts",
+        "severity": "high",
+        "detail": "13 files named index.ts",
+        "metrics": {
+          "count": 13
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "index.ts",
+      "severity": "high",
+      "detail": "13 files named index.ts",
+      "metrics": {
+        "count": 13
+      }
+    },
+    "ts": "2026-03-25T21:25:37.633Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "lib/ai/recommendationActions.ts",
+        "severity": "high",
+        "detail": "1028 lines",
+        "metrics": {
+          "lines": 1028
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "lib/ai/recommendationActions.ts",
+      "severity": "high",
+      "detail": "1028 lines",
+      "metrics": {
+        "lines": 1028
+      }
+    },
+    "ts": "2026-03-25T21:25:37.635Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Centralize table access in a thin repository module per bounded context",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "repeated_db_pattern",
+        "target": "profiles",
+        "severity": "high",
+        "detail": ".from(\"profiles\") ~134 times",
+        "metrics": {
+          "from_calls": 134
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "repeated_db_pattern",
+      "target": "profiles",
+      "severity": "high",
+      "detail": ".from(\"profiles\") ~134 times",
+      "metrics": {
+        "from_calls": 134
+      }
+    },
+    "ts": "2026-03-25T21:25:37.638Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "run.ts",
+        "severity": "high",
+        "detail": "12 files named run.ts",
+        "metrics": {
+          "count": 12
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "run.ts",
+      "severity": "high",
+      "detail": "12 files named run.ts",
+      "metrics": {
+        "count": 12
+      }
+    },
+    "ts": "2026-03-25T21:25:37.640Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "types.ts",
+        "severity": "high",
+        "detail": "39 files named types.ts",
+        "metrics": {
+          "count": 39
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "types.ts",
+      "severity": "high",
+      "detail": "39 files named types.ts",
+      "metrics": {
+        "count": 39
+      }
+    },
+    "ts": "2026-03-25T21:25:37.645Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Extract shared module or consolidate same-named files after review",
+      "impact": "maintainability",
+      "risk": "low",
+      "issue": {
+        "type": "duplication",
+        "target": "anomaly.ts",
+        "severity": "medium",
+        "detail": "5 files named anomaly.ts",
+        "metrics": {
+          "count": 5
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.12,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "duplication",
+      "target": "anomaly.ts",
+      "severity": "medium",
+      "detail": "5 files named anomaly.ts",
+      "metrics": {
+        "count": 5
+      }
+    },
+    "ts": "2026-03-25T21:25:37.647Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/ai/overview/page.tsx",
+        "severity": "medium",
+        "detail": "940 lines",
+        "metrics": {
+          "lines": 940
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/ai/overview/page.tsx",
+      "severity": "medium",
+      "detail": "940 lines",
+      "metrics": {
+        "lines": 940
+      }
+    },
+    "ts": "2026-03-25T21:25:37.649Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/AiCeoPanel.tsx",
+        "severity": "medium",
+        "detail": "805 lines",
+        "metrics": {
+          "lines": 805
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/AiCeoPanel.tsx",
+      "severity": "medium",
+      "detail": "805 lines",
+      "metrics": {
+        "lines": 805
+      }
+    },
+    "ts": "2026-03-25T21:25:37.651Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/BlockPickerOverlay.tsx",
+        "severity": "medium",
+        "detail": "502 lines",
+        "metrics": {
+          "lines": 502
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/BlockPickerOverlay.tsx",
+      "severity": "medium",
+      "detail": "502 lines",
+      "metrics": {
+        "lines": 502
+      }
+    },
+    "ts": "2026-03-25T21:25:37.653Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/ContentSeoPanel.tsx",
+        "severity": "medium",
+        "detail": "677 lines",
+        "metrics": {
+          "lines": 677
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/ContentSeoPanel.tsx",
+      "severity": "medium",
+      "detail": "677 lines",
+      "metrics": {
+        "lines": 677
+      }
+    },
+    "ts": "2026-03-25T21:25:37.657Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/contentWorkspace.blocks.ts",
+        "severity": "medium",
+        "detail": "628 lines",
+        "metrics": {
+          "lines": 628
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/contentWorkspace.blocks.ts",
+      "severity": "medium",
+      "detail": "628 lines",
+      "metrics": {
+        "lines": 628
+      }
+    },
+    "ts": "2026-03-25T21:25:37.662Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/EditorAiPanel.tsx",
+        "severity": "medium",
+        "detail": "598 lines",
+        "metrics": {
+          "lines": 598
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/EditorAiPanel.tsx",
+      "severity": "medium",
+      "detail": "598 lines",
+      "metrics": {
+        "lines": 598
+      }
+    },
+    "ts": "2026-03-25T21:25:37.664Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/EditorAiUnifiedSuggestions.tsx",
+        "severity": "medium",
+        "detail": "683 lines",
+        "metrics": {
+          "lines": 683
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/EditorAiUnifiedSuggestions.tsx",
+      "severity": "medium",
+      "detail": "683 lines",
+      "metrics": {
+        "lines": 683
+      }
+    },
+    "ts": "2026-03-25T21:25:37.667Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/OutboundPanel.tsx",
+        "severity": "medium",
+        "detail": "748 lines",
+        "metrics": {
+          "lines": 748
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/OutboundPanel.tsx",
+      "severity": "medium",
+      "detail": "748 lines",
+      "metrics": {
+        "lines": 748
+      }
+    },
+    "ts": "2026-03-25T21:25:37.669Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/content/_components/SocialContentCalendar.tsx",
+        "severity": "medium",
+        "detail": "604 lines",
+        "metrics": {
+          "lines": 604
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/content/_components/SocialContentCalendar.tsx",
+      "severity": "medium",
+      "detail": "604 lines",
+      "metrics": {
+        "lines": 604
+      }
+    },
+    "ts": "2026-03-25T21:25:37.671Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/design/page.tsx",
+        "severity": "medium",
+        "detail": "769 lines",
+        "metrics": {
+          "lines": 769
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/design/page.tsx",
+      "severity": "medium",
+      "detail": "769 lines",
+      "metrics": {
+        "lines": 769
+      }
+    },
+    "ts": "2026-03-25T21:25:37.673Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/forms/[id]/page.tsx",
+        "severity": "medium",
+        "detail": "551 lines",
+        "metrics": {
+          "lines": 551
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/forms/[id]/page.tsx",
+      "severity": "medium",
+      "detail": "551 lines",
+      "metrics": {
+        "lines": 551
+      }
+    },
+    "ts": "2026-03-25T21:25:37.678Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(backoffice)/backoffice/media/page.tsx",
+        "severity": "medium",
+        "detail": "748 lines",
+        "metrics": {
+          "lines": 748
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(backoffice)/backoffice/media/page.tsx",
+      "severity": "medium",
+      "detail": "748 lines",
+      "metrics": {
+        "lines": 748
+      }
+    },
+    "ts": "2026-03-25T21:25:37.681Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/(public)/hvordan/page.tsx",
+        "severity": "medium",
+        "detail": "594 lines",
+        "metrics": {
+          "lines": 594
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/(public)/hvordan/page.tsx",
+      "severity": "medium",
+      "detail": "594 lines",
+      "metrics": {
+        "lines": 594
+      }
+    },
+    "ts": "2026-03-25T21:25:37.683Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/admin/control-tower/OperationsTowerClient.tsx",
+        "severity": "medium",
+        "detail": "743 lines",
+        "metrics": {
+          "lines": 743
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/admin/control-tower/OperationsTowerClient.tsx",
+      "severity": "medium",
+      "detail": "743 lines",
+      "metrics": {
+        "lines": 743
+      }
+    },
+    "ts": "2026-03-25T21:25:37.685Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/cron/invoices/generate/route.ts",
+        "severity": "medium",
+        "detail": "535 lines",
+        "metrics": {
+          "lines": 535
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/cron/invoices/generate/route.ts",
+      "severity": "medium",
+      "detail": "535 lines",
+      "metrics": {
+        "lines": 535
+      }
+    },
+    "ts": "2026-03-25T21:25:37.688Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/onboarding/complete/route.ts",
+        "severity": "medium",
+        "detail": "748 lines",
+        "metrics": {
+          "lines": 748
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/onboarding/complete/route.ts",
+      "severity": "medium",
+      "detail": "748 lines",
+      "metrics": {
+        "lines": 748
+      }
+    },
+    "ts": "2026-03-25T21:25:37.691Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/order/window/route.ts",
+        "severity": "medium",
+        "detail": "794 lines",
+        "metrics": {
+          "lines": 794
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/order/window/route.ts",
+      "severity": "medium",
+      "detail": "794 lines",
+      "metrics": {
+        "lines": 794
+      }
+    },
+    "ts": "2026-03-25T21:25:37.695Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/orders/today/route.ts",
+        "severity": "medium",
+        "detail": "511 lines",
+        "metrics": {
+          "lines": 511
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/orders/today/route.ts",
+      "severity": "medium",
+      "detail": "511 lines",
+      "metrics": {
+        "lines": 511
+      }
+    },
+    "ts": "2026-03-25T21:25:37.696Z"
+  },
+  {
+    "proposal": {
+      "proposal": "Split large file by concern (UI vs data vs helpers) without changing public APIs",
+      "impact": "maintainability",
+      "risk": "medium",
+      "issue": {
+        "type": "large_file",
+        "target": "app/api/superadmin/invoices/generate/route.ts",
+        "severity": "medium",
+        "detail": "666 lines",
+        "metrics": {
+          "lines": 666
+        }
+      }
+    },
+    "result": {
+      "success": true,
+      "improvement": 0.07,
+      "notes": "simulated: deterministic score from risk; no production mutation"
+    },
+    "decision": "apply",
+    "issue": {
+      "type": "large_file",
+      "target": "app/api/superadmin/invoices/generate/route.ts",
+      "severity": "medium",
+      "detail": "666 lines",
+      "metrics": {
+        "lines": 666
+      }
+    },
+    "ts": "2026-03-25T21:25:37.698Z"
+  }
+]

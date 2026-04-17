@@ -13,6 +13,7 @@
     "lint": "next lint",
     "lint:ci": "next lint",
     "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
+    "verify:production-public-cms": "node scripts/verify-production-public-cms.mjs",
     "test": "vitest --config vitest.config.ts",
     "test:run": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",

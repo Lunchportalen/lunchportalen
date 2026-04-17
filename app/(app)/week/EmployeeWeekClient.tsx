@@ -1,16 +1,16 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
-import { addDaysISO, cutoffStatusForDate, osloTodayISODate } from "@/lib/date/oslo";
+import { addDaysISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   findRecommendedDateInWindow,
   getTopWeekdayKey,
   getWeekdayOrderCount,
-  isOsloUrgencyHourBefore0800,
   pickDefaultDateFromPatterns,
   readOrderPatterns,
   recordSuccessfulOrder,
@@ -49,6 +49,13 @@ type WindowPayload = {
   days?: unknown[];
   agreement?: { status?: string; message?: string | null; delivery_days?: string[] };
   company?: { name?: string };
+  /** Serverfasit — ikke utled bestillbarhet i klient utenom dette + dag-rader. */
+  serverOsloDate?: string;
+  weekOrderingAllowed?: boolean;
+  todayCutoffStatus?: "PAST" | "TODAY_OPEN" | "TODAY_LOCKED" | "FUTURE_OPEN";
+  orderingUrgencyHint?: boolean;
+  /** Sanity meny-fetch krasjet — skal ikke forveksles med tom publisert meny. */
+  menuSanityFetchFailed?: boolean;
   error?: string;
   message?: string;
 };
@@ -663,7 +670,6 @@ function stickyCtaForDay(
 export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [days, setDays] = useState<DayRow[]>([]);
-  const [agreementStatus, setAgreementStatus] = useState<string | null>(null);
   const [agreementMessage, setAgreementMessage] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -679,6 +685,13 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
   const [stickyBarHidden, setStickyBarHidden] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
+  const [serverOsloDate, setServerOsloDate] = useState<string | null>(null);
+  const [weekOrderingAllowed, setWeekOrderingAllowed] = useState(false);
+  const [todayCutoffStatus, setTodayCutoffStatus] = useState<
+    "PAST" | "TODAY_OPEN" | "TODAY_LOCKED" | "FUTURE_OPEN" | null
+  >(null);
+  const [orderingUrgencyHint, setOrderingUrgencyHint] = useState(false);
+  const [menuSanityFetchFailed, setMenuSanityFetchFailed] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -710,8 +723,8 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     [sortedDays, preferredWeekday],
   );
   const todayRowForNudge = useMemo(
-    () => sortedDays.find((d) => d.date === osloTodayISODate()),
-    [sortedDays],
+    () => (serverOsloDate ? sortedDays.find((d) => d.date === serverOsloDate) : undefined),
+    [sortedDays, serverOsloDate],
   );
   const showHabitNudge = useMemo(
     () => shouldShowHabitNudge(todayRowForNudge, patterns, preferredWeekday),
@@ -759,6 +772,8 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     if (!silent) {
       setLoading(true);
       setLoadError(null);
+      setForbidden(false);
+      setMenuSanityFetchFailed(false);
     }
 
     try {
@@ -767,17 +782,39 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
       const payload = unwrapWindow(raw);
 
       if (!res.ok || !payload) {
+        if (res.status === 403) {
+          if (!silent) {
+            setForbidden(true);
+            setLoadError(null);
+            setDays([]);
+            setServerOsloDate(null);
+            setWeekOrderingAllowed(false);
+            setTodayCutoffStatus(null);
+            setOrderingUrgencyHint(false);
+            setMenuSanityFetchFailed(false);
+          } else {
+            setErrorBanner("Sesjonen er utløpt eller du har ikke tilgang. Last siden på nytt.");
+          }
+          return false;
+        }
         const msg =
           (raw && typeof raw === "object" && String((raw as any).message || "").trim()) ||
           "Kunne ikke hente ukeplanen.";
         if (!silent) {
           setLoadError(msg);
           setDays([]);
+          setServerOsloDate(null);
+          setWeekOrderingAllowed(false);
+          setTodayCutoffStatus(null);
+          setOrderingUrgencyHint(false);
+          setMenuSanityFetchFailed(false);
         } else {
           setErrorBanner("Noe gikk galt. Prøv igjen.");
         }
         return false;
       }
+
+      setForbidden(false);
 
       const rawDays = Array.isArray(payload.days) ? payload.days : [];
       const mapped = rawDays.map(mapDay).filter(Boolean) as DayRow[];
@@ -791,15 +828,30 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
       }
 
       setDays(mapped);
-      setAgreementStatus(payload.agreement?.status ? String(payload.agreement.status) : null);
       setAgreementMessage(payload.agreement?.message ? String(payload.agreement.message) : null);
       setCompanyName(payload.company?.name ? String(payload.company.name) : null);
+
+      const sod = payload.serverOsloDate != null ? String(payload.serverOsloDate).slice(0, 10) : "";
+      setServerOsloDate(sod || null);
+      setWeekOrderingAllowed(payload.weekOrderingAllowed === true);
+      const tcs = payload.todayCutoffStatus;
+      setTodayCutoffStatus(
+        tcs === "PAST" || tcs === "TODAY_OPEN" || tcs === "TODAY_LOCKED" || tcs === "FUTURE_OPEN" ? tcs : null,
+      );
+      setOrderingUrgencyHint(payload.orderingUrgencyHint === true);
+      setMenuSanityFetchFailed(payload.menuSanityFetchFailed === true);
+
       return true;
     } catch (e: any) {
       if (e?.name === "AbortError") return false;
       if (!silent) {
         setLoadError("Kunne ikke hente ukeplanen.");
         setDays([]);
+        setServerOsloDate(null);
+        setWeekOrderingAllowed(false);
+        setTodayCutoffStatus(null);
+        setOrderingUrgencyHint(false);
+        setMenuSanityFetchFailed(false);
       } else {
         setErrorBanner("Noe gikk galt. Prøv igjen.");
       }
@@ -1008,11 +1060,21 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
           body: JSON.stringify({ date, wants_lunch: wantsLunch }),
         });
 
-        const json = (await res.json().catch(() => null)) as any;
-        const inner = json?.data && typeof json.data === "object" ? json.data : json;
-        const ok = res.ok && inner && inner.ok === true;
+        const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+        const orderId = json && typeof json.orderId === "string" ? json.orderId.trim() : "";
+        const st = json && (json.status === "active" || json.status === "cancelled") ? json.status : null;
+        const ok =
+          res.ok &&
+          json &&
+          json.ok === true &&
+          orderId.length > 0 &&
+          st !== null;
         if (!ok) {
-          setErrorBanner("Noe gikk galt. Prøv igjen.");
+          const serverMsg =
+            json && typeof json === "object" && typeof (json as { message?: unknown }).message === "string"
+              ? String((json as { message: string }).message).trim()
+              : "";
+          setErrorBanner(serverMsg || "Noe gikk galt. Prøv igjen.");
           return false;
         }
         const refreshed = await loadWindow({ silent: true });
@@ -1068,10 +1130,8 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     setConfirm({ date, action: "cancel" });
   }, []);
 
-  const agreementActive = agreementStatus === "ACTIVE";
-  const blocked = !agreementActive || !canAct;
+  const blocked = !canAct || !weekOrderingAllowed;
   const globalBusy = busyDate !== null;
-  const todayCut = cutoffStatusForDate(osloTodayISODate());
 
   const selectedDay = selectedDate ? days.find((d) => d.date === selectedDate) : undefined;
 
@@ -1087,7 +1147,18 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     return (
       <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
-          Ingen tilgang
+          <p className="font-semibold">Ingen tilgang til ukeplan</p>
+          <p className="mt-2 text-neutral-600">
+            Du er logget inn med en rolle eller et scope som ikke kan hente denne visningen, eller sesjonen er utløpt.
+          </p>
+          <p className="mt-4">
+            <Link
+              href="/login?next=/week"
+              className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4"
+            >
+              Logg inn på nytt
+            </Link>
+          </p>
         </div>
       </div>
     );
@@ -1111,6 +1182,26 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
               ? billingHoldReason || "Firmaet tillater ikke bestilling akkurat nå."
               : agreementMessage || "Avtalen er ikke aktiv. Kontakt firmadministrator."}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (sortedDays.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+        <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
+          <p className="font-semibold">Ingen synlige dager akkurat nå</p>
+          <p className="mt-2 text-neutral-600">
+            Uken kunne ikke vises som forventet. Dette er ikke det samme som «ingen meny publisert» — prøv å hente på nytt.
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadWindow()}
+            className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 ${BTN_TOUCH}`}
+          >
+            Prøv igjen
+          </button>
         </div>
       </div>
     );
@@ -1149,6 +1240,15 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
 
       {companyName ? <p className="mb-3 text-center text-sm text-neutral-600">{companyName}</p> : null}
 
+      {menuSanityFetchFailed ? (
+        <div
+          className="mb-3 rounded-2xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-950 ring-1 ring-amber-200"
+          role="status"
+        >
+          Menytekst kunne ikke lastes akkurat nå. Ordrestatus og bestilling/avbestilling vises som vanlig.
+        </div>
+      ) : null}
+
       {patterns.streakCount >= 2 ? (
         <p className="mb-2 text-center text-xs font-medium text-neutral-700" aria-live="polite">
           🔥 {patterns.streakCount} uker på rad
@@ -1163,14 +1263,14 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
         <p className="mb-2 text-center text-xs text-neutral-500">{demandHintLine}</p>
       ) : null}
 
-      {todayCut === "TODAY_OPEN" ? (
+      {todayCutoffStatus === "TODAY_OPEN" ? (
         <div className="mb-3 text-center">
           <p className="text-xs text-neutral-500">Frist i dag kl. 08:00</p>
-          {isOsloUrgencyHourBefore0800() ? (
+          {orderingUrgencyHint ? (
             <p className="mt-1 text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
           ) : null}
         </div>
-      ) : todayCut === "TODAY_LOCKED" ? (
+      ) : todayCutoffStatus === "TODAY_LOCKED" ? (
         <div className="mb-3 text-center">
           <p className="text-xs font-medium text-neutral-600">Stengt for bestilling</p>
           <p className="mt-1 text-xs text-neutral-500">Neste mulighet i morgen</p>

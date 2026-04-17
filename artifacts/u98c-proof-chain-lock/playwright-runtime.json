@@ -1,0 +1,45 @@
+{
+  "usedNodeId": "00000000-0000-4000-8000-00000000c001",
+  "languages": [
+    {
+      "alias": "nb-no",
+      "title": "Norsk (bokmål)",
+      "isDefault": true
+    },
+    {
+      "alias": "en-gb",
+      "title": "English (UK) — U98C 1775676551442",
+      "isDefault": false
+    }
+  ],
+  "runtimeValues": {
+    "documentTypeAlias": "page",
+    "cultureA": "nb",
+    "cultureB": "en",
+    "invariantFieldAlias": "structure_key",
+    "cultureFieldAlias": "intro_kicker",
+    "valueCultureA": "cult-nb-u98c-1775676622404",
+    "valueCultureB": "cult-en-u98c-1775676626023",
+    "invariantValue": "inv-u98c-1775676622404",
+    "publishStateBefore": "draft",
+    "publishStateAfter": "published",
+    "changedLanguageTitle": "English (UK) — U98C 1775676551442"
+  },
+  "screenshotFiles": [
+    "01-languages-overview.png",
+    "02-language-workspace.png",
+    "03-language-dirty-save-state.png",
+    "04-document-type-variation-proof.png",
+    "05-content-editor-culture-a.png",
+    "06-content-editor-culture-b.png",
+    "07-invariant-vs-culture-field-proof.png",
+    "08-dirty-save-proof.png",
+    "09-publish-state-before.png",
+    "10-publish-state-after.png",
+    "11-reload-persist-proof.png",
+    "12-current-culture-binding-proof.png",
+    "13-full-editor-after-variant-changes.png"
+  ],
+  "playwrightCommand": "cross-env LP_E2E_EXTERNAL_SERVER=1 LP_CMS_RUNTIME_MODE=local_provider PLAYWRIGHT_BASE_URL=http://localhost:3056 npx playwright test e2e/u98c-proof-chain-lock.e2e.ts --project=chromium --workers=1 --retries=0",
+  "baseUrl": "http://localhost:3056"
+}

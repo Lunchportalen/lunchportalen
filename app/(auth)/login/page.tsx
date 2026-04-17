@@ -21,9 +21,17 @@ export default function LoginPage() {
       title="Logg inn"
       subtitle="Bruk e-post og passord for å åpne riktig arbeidsflate."
       footer={
-        <Link href="/forgot-password" className="underline underline-offset-4">
-          Glemt passord?
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-sm">
+          <Link href="/registrering" className="underline underline-offset-4">
+            Registrer firma
+          </Link>
+          <span className="text-neutral-400" aria-hidden>
+            ·
+          </span>
+          <Link href="/forgot-password" className="underline underline-offset-4">
+            Glemt passord?
+          </Link>
+        </div>
       }
     >
       <Suspense fallback={null}>

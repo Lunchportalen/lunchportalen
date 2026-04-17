@@ -4,11 +4,18 @@ import { sanity } from "@/lib/sanity/client";
 import type { CmsMenuByMealType } from "@/lib/cms/types";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import { normalizeMenuDoc } from "@/lib/cms/normalizeMenuDoc";
+import { opsLog } from "@/lib/ops/log";
 
-export async function getMenusByMealTypes(mealTypes: string[]): Promise<Map<string, CmsMenuByMealType>> {
+export type MenusByMealTypesFetchResult = {
+  map: Map<string, CmsMenuByMealType>;
+  /** True when Sanity fetch threw — map may be empty; callers should not treat as «ingen meny publisert». */
+  fetchFailed: boolean;
+};
+
+export async function getMenusByMealTypesWithFetchStatus(mealTypes: string[]): Promise<MenusByMealTypesFetchResult> {
   const out = new Map<string, CmsMenuByMealType>();
   const keys = Array.from(new Set(mealTypes.map((x) => normalizeMealTypeKey(x)).filter(Boolean)));
-  if (!keys.length) return out;
+  if (!keys.length) return { map: out, fetchFailed: false };
 
   try {
     const rows = await sanity.fetch(
@@ -29,9 +36,19 @@ export async function getMenusByMealTypes(mealTypes: string[]): Promise<Map<stri
       const m = normalizeMenuDoc(row);
       if (m) out.set(m.mealType, m);
     }
+    return { map: out, fetchFailed: false };
   } catch (e: any) {
-    console.warn("[cms/getMenusByMealTypes] fetch failed", { detail: String(e?.message ?? e) });
+    const detail = String(e?.message ?? e);
+    opsLog("cms.menu.fetch_failed", {
+      surface: "getMenusByMealTypes",
+      mealTypeKeyCount: keys.length,
+      detail,
+    });
+    return { map: out, fetchFailed: true };
   }
+}
 
-  return out;
+export async function getMenusByMealTypes(mealTypes: string[]): Promise<Map<string, CmsMenuByMealType>> {
+  const { map } = await getMenusByMealTypesWithFetchStatus(mealTypes);
+  return map;
 }

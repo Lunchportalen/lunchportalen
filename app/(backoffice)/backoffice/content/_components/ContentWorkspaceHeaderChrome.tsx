@@ -5,6 +5,8 @@
  * Presentation only — props from parent shell.
  */
 
+import { usePathname } from "next/navigation";
+import { resolveBackofficeContentRoute } from "@/lib/cms/backofficeContentRoute";
 import { ContentTopbar } from "./ContentTopbar";
 import { ContentWorkspaceOutboxRecoveryBanner } from "./ContentWorkspaceOutboxRecoveryBanner";
 import { ContentWorkspaceEditorModeStrip } from "./ContentWorkspaceEditorModeStrip";
@@ -57,8 +59,11 @@ export function ContentWorkspaceHeaderChrome(props: ContentWorkspaceHeaderChrome
     publishReadiness,
   } = props;
 
+  const pathname = usePathname() ?? "";
+  const isContentDetailEditor = resolveBackofficeContentRoute(pathname).kind === "detail";
+
   return (
-    <div className="min-w-0 w-full space-y-2">
+    <div className={`min-w-0 w-full ${isContentDetailEditor ? "space-y-1" : "space-y-2"}`}>
       <ContentTopbar
         statusBadgeClass={statusTone(statusLabel)}
         statusLabel={statusLabel}

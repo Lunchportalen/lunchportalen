@@ -1,6 +1,9 @@
 # E0 — Enterprise live limitations
 
-**Dato:** 2026-03-29
+**Dato:** 2026-03-29  
+**Sist verifisert mot repo:** 2026-04-17 (Master Blueprint residual **Closeout 12**). Rad-for-rad status: `ENTERPRISE_LIVE_E0_CLOSEOUT_12.md`. **Samlet NO-GO for ubetinget enterprise-live** er uendret inntil enkeltpunkter lukkes med konkret bevis.
+
+**Operativ bevis-sjekkliste (kjørbar arbeidsordre):** `ENTERPRISE_PROOF_CHECKLIST.md`
 
 | Limitation | Impact | Acceptable for unconditional enterprise live? | Owner | Required closure |
 |------------|--------|-------------------------------------------------|-------|------------------|

@@ -5,6 +5,21 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
+import { osloTodayISODate } from "@/lib/date/oslo";
+import {
+  buildContractOverviewFromLedger,
+  pickBestAgreementLedgerRow,
+  type ContractOverview,
+} from "@/lib/agreements/contractBindingCompute";
+import {
+  buildAgreementDocumentOverview,
+  type AgreementDocumentOverview,
+} from "@/lib/agreements/buildAgreementDocumentOverview";
+import {
+  deriveSuperadminRegistrationPipelineNext,
+  deriveSuperadminRegistrationPipelinePrimaryHref,
+  indexLedgerAgreementsByCompanyId,
+} from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
@@ -35,6 +50,10 @@ type CompanyDetails = {
     adminsCount: number;
   };
   agreement: AgreementSnapshot | null;
+  /** Operativt avtalegrunnlag (company_agreements) — kun superadmin via denne ruten. */
+  contract_overview: ContractOverview | null;
+  /** Avtaledokumenter / vilkårsregistrering — kun operativt lag som allerede finnes. */
+  agreement_documents: AgreementDocumentOverview[];
   employees: Array<{
     id: string;
     email: string | null;
@@ -49,6 +68,16 @@ type CompanyDetails = {
     address: string | null;
     active: boolean | null;
   }>;
+  /** Samme operative kjede som firmaliste / registreringsinnboks (kun visning). */
+  registration_pipeline: {
+    registration_exists: boolean;
+    ledger_pending_agreement_id: string | null;
+    ledger_active_agreement_id: string | null;
+    pipeline_stage_label: string;
+    pipeline_next_label: string;
+    pipeline_next_href: string | null;
+    pipeline_primary_href: string;
+  };
 };
 
 function safeStr(v: unknown) {
@@ -82,32 +111,6 @@ function normalizeDays(v: unknown): string[] {
     .filter((x) => x === "MON" || x === "TUE" || x === "WED" || x === "THU" || x === "FRI");
 }
 
-function rankAgreementStatus(v: unknown) {
-  const s = safeStr(v).toUpperCase();
-  if (s === "ACTIVE") return 3;
-  if (s === "PENDING") return 2;
-  if (s === "TERMINATED") return 1;
-  return 0;
-}
-
-function pickBestAgreement(rows: any[]): any | null {
-  let best: any = null;
-  let bestRank = -1;
-  let bestTs = 0;
-
-  for (const row of rows) {
-    const r = rankAgreementStatus(row?.status);
-    const ts = row?.updated_at ? Date.parse(String(row.updated_at)) : 0;
-    if (r > bestRank || (r === bestRank && ts >= bestTs)) {
-      best = row;
-      bestRank = r;
-      bestTs = ts;
-    }
-  }
-
-  return best;
-}
-
 function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
   if (s?.res) return s.res as Response;
@@ -135,7 +138,7 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
 
     const companyRes = await admin
       .from("companies")
-      .select("id,name,orgnr,status,updated_at,created_at")
+      .select("id,name,orgnr,status,updated_at,created_at,agreement_json")
       .eq("id", companyId)
       .maybeSingle();
 
@@ -185,16 +188,69 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
       adminsCount: employees.filter((e) => safeStr(e.role).toLowerCase() === "company_admin").length,
     };
 
-    const agreementsRes = await admin
-      .from("agreements")
-      .select("id,status,tier,delivery_days,starts_at,slot_start,slot_end,updated_at")
-      .eq("company_id", companyId)
-      .order("updated_at", { ascending: false })
-      .limit(10);
+    const [agreementsRes, ledgerRes, termsAccRes, regRes] = await Promise.all([
+      admin
+        .from("agreements")
+        .select("id,company_id,status,created_at,tier,delivery_days,starts_at,slot_start,slot_end,updated_at")
+        .eq("company_id", companyId)
+        .order("updated_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("company_agreements")
+        .select(
+          "id,status,start_date,end_date,binding_months,notice_months,plan_tier,delivery_days,updated_at,created_at"
+        )
+        .eq("company_id", companyId)
+        .order("updated_at", { ascending: false })
+        .limit(20),
+      admin
+        .from("company_terms_acceptance")
+        .select("id, version, accepted_at, credit_check_system, binding_months, notice_months, created_at")
+        .eq("company_id", companyId)
+        .order("accepted_at", { ascending: false })
+        .limit(50),
+      admin.from("company_registrations").select("company_id").eq("company_id", companyId).maybeSingle(),
+    ]);
+
+    if (regRes.error) {
+      return jsonErr(rid, "Kunne ikke sjekke firmaregistrering.", 500, "REGISTRATION_LOOKUP_FAILED");
+    }
+    const registration_exists = !!regRes.data?.company_id;
+
+    const statusForPipeline = safeStr((companyRes.data as any).status) || null;
+    let ledger_pending_agreement_id: string | null = null;
+    let ledger_active_agreement_id: string | null = null;
+    if (!agreementsRes.error && Array.isArray(agreementsRes.data)) {
+      const idx = indexLedgerAgreementsByCompanyId(agreementsRes.data as Record<string, unknown>[]);
+      ledger_pending_agreement_id = idx.pendingIdByCompany.get(companyId) ?? null;
+      ledger_active_agreement_id = idx.activeIdByCompany.get(companyId) ?? null;
+    }
+    const pipe = deriveSuperadminRegistrationPipelineNext({
+      company_status: statusForPipeline,
+      ledger_pending_agreement_id,
+      ledger_active_agreement_id,
+    });
+    const pipeline_primary_href = deriveSuperadminRegistrationPipelinePrimaryHref({
+      company_id: companyId,
+      company_status: statusForPipeline,
+      ledger_pending_agreement_id,
+      ledger_active_agreement_id,
+      registration_exists,
+      pipe,
+    });
+    const registration_pipeline = {
+      registration_exists,
+      ledger_pending_agreement_id,
+      ledger_active_agreement_id,
+      pipeline_stage_label: pipe.stage_label,
+      pipeline_next_label: pipe.next_label,
+      pipeline_next_href: pipe.next_href,
+      pipeline_primary_href,
+    };
 
     let agreement: AgreementSnapshot | null = null;
     if (!agreementsRes.error && Array.isArray(agreementsRes.data) && agreementsRes.data.length) {
-      const best = pickBestAgreement(agreementsRes.data);
+      const best = pickBestAgreementLedgerRow(agreementsRes.data);
       if (best?.id) {
         agreement = {
           id: safeStr(best.id),
@@ -209,12 +265,32 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
       }
     }
 
+    let contract_overview: ContractOverview | null = null;
+    let ledgerAgreementId: string | null = null;
+    if (!ledgerRes.error && Array.isArray(ledgerRes.data) && ledgerRes.data.length) {
+      const bestLedger = pickBestAgreementLedgerRow(ledgerRes.data);
+      ledgerAgreementId = bestLedger?.id ? safeStr(bestLedger.id) : null;
+      contract_overview = buildContractOverviewFromLedger(bestLedger, osloTodayISODate());
+    }
+
+    const termsRows = !termsAccRes.error && Array.isArray(termsAccRes.data) ? termsAccRes.data : [];
+    const agreement_documents = buildAgreementDocumentOverview({
+      companyId,
+      agreementJson: (companyRes.data as any)?.agreement_json ?? null,
+      termsAcceptanceRows: termsRows as any[],
+      companyAgreementId: ledgerAgreementId,
+      legacyAgreementId: agreement?.id ?? null,
+    });
+
     const data: CompanyDetails = {
       company,
       counts,
       agreement,
+      contract_overview,
+      agreement_documents,
       employees,
       locations,
+      registration_pipeline,
     };
 
     return jsonOk(rid, data, 200);

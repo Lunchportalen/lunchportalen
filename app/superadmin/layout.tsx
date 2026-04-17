@@ -11,6 +11,7 @@ import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import ControlHeader from "./_components/ControlHeader";
 import ControlTowerNav from "./_components/ControlTowerNav";
+import OperationalStatusStrip from "./_components/OperationalStatusStrip";
 import DemoStory from "./_components/DemoStory";
 import DemoToggle from "./_components/DemoToggle";
 
@@ -54,6 +55,7 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
         <div className="lp-glass-card lp-superadmin-motion-shell rounded-card p-4 sm:p-6">
           <ControlHeader />
           <ControlTowerNav />
+          <OperationalStatusStrip />
           {children}
         </div>
       </div>

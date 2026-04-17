@@ -1,0 +1,318 @@
+{
+  "generated_at": "2026-03-26T05:58:24.567Z",
+  "repo_root": "C:\\prosjekter\\lunchportalen",
+  "roots_scanned": [
+    "app",
+    "lib",
+    "supabase",
+    "components",
+    "scripts"
+  ],
+  "critical_blockers": [],
+  "missing": [
+    {
+      "id": "AUD_4b4fe601ead440d8",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"v_company_current_agreement_daymap\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/admin/agreement/route.ts",
+        "lib/agreement/currentAgreement.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_f621565d68bf4c65",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"v_receipt_rows\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/system/receipts/route.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_282f52952f253009",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"ai_autonomy_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/autonomy/autonomyLog.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_5e8c84481e2c62d1",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"ai_ceo_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/ceo/ceoLog.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_f51a532a21848c2f",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"ai_enterprise_revenue_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/ai/enterprise/enterpriseLog.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_b0e4fb60b27a62af",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"page_versions\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/backoffice/content/pageVersionsRepo.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_07f2afa85c52019d",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"${tbl}\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/evolution/analyze.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_dc9d05ba5d74cff2",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"profile_company_status\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/guards/assertCompanyActive.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_0dfd32eb5c1892e8",
+      "code": "TABLE_NOT_IN_DATABASE_TS",
+      "severity": "high",
+      "message": "Table \"*\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "scripts/audit/auditCore.ts"
+      ],
+      "evidence": "table_not_in_database_ts"
+    },
+    {
+      "id": "AUD_e93e8f22519b5449",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/superadmin/company-status but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_41dfbd545963a69b",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/superadmin/companies/${encodeURIComponent(companyId)}/restore but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_a7a6ea4ee1cb90bf",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/superadmin/companies/${companyId}/agreement but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_137e2c771f575447",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/superadmin/companies/status but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_fddfc2b8de2175d7",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/admin/audit but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_453909cb07a490c9",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/admin/quality but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    },
+    {
+      "id": "AUD_18047923fcae9b45",
+      "code": "FETCH_REFERENCE_UNRESOLVED",
+      "severity": "high",
+      "message": "fetch() references /api/superadmin/firms/${encodeURIComponent(companyId)}/status but no matching app/api/**/route.ts found at conventional path.",
+      "evidence": "fetch_reference_unresolved"
+    }
+  ],
+  "partial": [
+    {
+      "id": "AUD_04d1c8defe1f4037",
+      "code": "LAYOUT_WITHOUT_PAGES",
+      "severity": "medium",
+      "message": "Layout app/(portal)/layout.tsx has no nested page.tsx under its tree.",
+      "evidence": "layout_without_pages"
+    },
+    {
+      "id": "AUD_420d9eb6c285b3bf",
+      "code": "POTENTIALLY_UNUSED_DEV_API",
+      "severity": "low",
+      "message": "Dev/example/template API routes with no in-repo fetch() reference (heuristic).",
+      "files": [
+        "/api/_template",
+        "/api/debug/cookie-test",
+        "/api/debug/cookies",
+        "/api/debug/whoami",
+        "/api/dev/test-order-status",
+        "/api/example"
+      ],
+      "evidence": "Dynamic callers not counted; safe to ignore if called externally."
+    },
+    {
+      "id": "AUD_7470842677154c0b",
+      "code": "API_NO_DB_HINT",
+      "severity": "medium",
+      "message": "Route modules with no .from() / .rpc() in-file (proxy, static, or intentional).",
+      "files": [
+        "app/api/_template/route.ts",
+        "app/api/acquire/route.ts",
+        "app/api/acquire/strategy/route.ts",
+        "app/api/address/resolve/route.ts",
+        "app/api/address/search/route.ts",
+        "app/api/admin/agreements/route.ts",
+        "app/api/admin/auth/login/route.ts",
+        "app/api/admin/deliveries/status/route.ts",
+        "app/api/admin/employees/invites/route.ts",
+        "app/api/admin/invites/resolve/route.ts",
+        "app/api/ai/analyze/route.ts",
+        "app/api/ai/automation/route.ts",
+        "app/api/ai/block/route.ts",
+        "app/api/ai/block/score/route.ts",
+        "app/api/ai/business-engine/route.ts",
+        "app/api/ai/continue/route.ts",
+        "app/api/ai/copilot/route.ts",
+        "app/api/ai/decision/route.ts",
+        "app/api/ai/design/analyze/route.ts",
+        "app/api/ai/design/generate/route.ts",
+        "app/api/ai/experiments/route.ts",
+        "app/api/ai/generate/route.ts",
+        "app/api/ai/growth/ads/route.ts",
+        "app/api/ai/growth/funnel/route.ts",
+        "app/api/ai/growth/seo/route.ts",
+        "app/api/ai/image/route.ts",
+        "app/api/ai/inline/route.ts",
+        "app/api/ai/layout/route.ts",
+        "app/api/ai/learn/route.ts",
+        "app/api/ai/optimize/route.ts",
+        "app/api/ai/page/audit/route.ts",
+        "app/api/ai/page/build/route.ts",
+        "app/api/ai/page/route.ts",
+        "app/api/ai/recommendation/apply/route.ts",
+        "app/api/ai/rewrite/route.ts",
+        "app/api/ai/swarm/route.ts",
+        "app/api/ai/track/route.ts",
+        "app/api/alerts/run/route.ts",
+        "app/api/auth/debug-cookies/route.ts",
+        "app/api/auth/login-debug/route.ts",
+        "app/api/auth/login/route.ts",
+        "app/api/auth/session/route.ts",
+        "app/api/automation/mode/route.ts",
+        "app/api/autonomy/revenue/route.ts",
+        "app/api/autonomy/run/route.ts",
+        "app/api/backoffice/ai/auto-improve/route.ts",
+        "app/api/backoffice/ai/capability/route.ts",
+        "app/api/backoffice/ai/health/scan/route.ts",
+        "app/api/backoffice/ai/intelligence/dashboard/route.ts",
+        "app/api/backoffice/ai/intelligence/events/route.ts",
+        "app/api/backoffice/ai/intelligence/query/route.ts",
+        "app/api/backoffice/ai/jobs/run/route.ts",
+        "app/api/backoffice/ai/screenshot-builder/route.ts",
+        "app/api/backoffice/ai/status/route.ts",
+        "app/api/backoffice/autonomy/feedback/route.ts",
+        "app/api/backoffice/autonomy/optimize/route.ts",
+        "app/api/backoffice/autonomy/recommendations/route.ts",
+        "app/api/backoffice/autonomy/run/route.ts",
+        "app/api/backoffice/ceo/feedback/route.ts",
+        "app/api/backoffice/ceo/run/route.ts"
+      ],
+      "evidence": "Confirm each route is intentionally DB-free or delegates to another module."
+    },
+    {
+      "id": "AUD_1d819872b42e6fdc",
+      "code": "AI_SOCIAL_PERSIST_HEURISTIC",
+      "severity": "medium",
+      "message": "Social API routes with mutating methods but no obvious insert/upsert/update/audit pattern in the route file.",
+      "files": [
+        "app/api/social/autonomous/run/route.ts",
+        "app/api/social/run/route.ts",
+        "app/api/social/unified/generate/route.ts"
+      ],
+      "evidence": "Heuristic only — may persist via shared helpers."
+    },
+    {
+      "id": "AUD_d99a7410245fc923",
+      "code": "CONSOLE_ERROR_USAGE",
+      "severity": "low",
+      "message": "console.error(...) occurrences in production source (excludes tests and scripts/ci).",
+      "files": [
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3472",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3480",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3488",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3507",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3545",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3553",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3566",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3595",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3602",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3627",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3635",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3649",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3733",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3740",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3758",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3827",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3837",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3862",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3881",
+        "app/(backoffice)/backoffice/content/_components/ContentWorkspace.tsx:3919",
+        "app/admin/error.tsx:16",
+        "app/admin/kjokken/page.tsx:132",
+        "app/api/auth/login-debug/route.ts:147",
+        "app/api/auth/login/route.ts:256",
+        "app/api/backoffice/ai/jobs/route.ts:24",
+        "app/api/backoffice/ai/jobs/route.ts:30",
+        "app/api/backoffice/content/home/route.ts:139",
+        "app/api/backoffice/content/pages/route.ts:158",
+        "app/api/backoffice/settings/route.ts:57",
+        "app/api/backoffice/settings/route.ts:77",
+        "app/api/backoffice/settings/route.ts:78",
+        "app/api/backoffice/settings/route.ts:86",
+        "app/api/backoffice/settings/route.ts:119",
+        "app/api/ceo/run/route.ts:56",
+        "app/api/ceo/run/route.ts:60",
+        "app/api/contact/route.ts:68",
+        "app/api/contact/route.ts:132",
+        "app/api/contact/route.ts:157",
+        "app/api/contact/route.ts:206",
+        "app/api/contact/route.ts:211",
+        "app/api/contact/route.ts:277",
+        "app/api/order/bulk-set/route.ts:53",
+        "app/api/order/bulk-set/route.ts:56",
+        "app/api/order/cancel/route.ts:41",
+        "app/api/order/cancel/route.ts:43",
+        "app/api/order/set-choice/route.ts:75",
+        "app/api/order/set-choice/route.ts:77",
+        "app/api/order/window/route.ts:788",
+        "app/api/orders/[orderId]/cancel/route.ts:42",
+        "app/api/orders/[orderId]/cancel/route.ts:44"
+      ],
+      "evidence": "Prefer structured logging (opsLog / logApiError) where applicable."
+    }
+  ]
+}

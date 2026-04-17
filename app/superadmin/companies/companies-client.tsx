@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 
-import { formatDateTimeNO } from "@/lib/date/format";
+import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
+import { isIsoDate } from "@/lib/date/oslo";
 import { buildCleanQuery } from "@/lib/url/qs";
 
 /* =========================================================
@@ -24,11 +25,24 @@ type CompanyRow = {
   orgnr: string | null;
   status: CompanyStatus | null;
   planLabel?: string | null;
+  agreementStatus?: string | null;
+  contractStartDate?: string | null;
+  contractEndDate?: string | null;
+  bindingMonthsRemaining?: number | null;
+  effectiveBindingEndDate?: string | null;
   employeesCount?: number | null;
   adminsCount?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   archivedAt?: string | null;
+  /** Samme operative felt som superadmin registreringsdetalj (`company_registrations` + `agreements`). */
+  registrationExists?: boolean;
+  ledgerPendingAgreementId?: string | null;
+  ledgerActiveAgreementId?: string | null;
+  pipelineStageLabel?: string | null;
+  pipelineNextLabel?: string | null;
+  pipelineNextHref?: string | null;
+  pipelinePrimaryHref?: string | null;
 };
 
 type AgreementSnapshot = {
@@ -144,6 +158,36 @@ function fmtTs(ts?: string | null) {
   return formatDateTimeNO(ts);
 }
 
+function fmtDay(iso?: string | null) {
+  if (!iso) return "—";
+  const day = iso.slice(0, 10);
+  if (isIsoDate(day)) return formatDateNO(day);
+  try {
+    return formatDateTimeNO(iso);
+  } catch {
+    return iso;
+  }
+}
+
+function agreementStatusLabel(s: string | null | undefined) {
+  const u = safeStr(s).toUpperCase();
+  if (u === "ACTIVE") return "Aktiv";
+  if (u === "PENDING") return "Venter";
+  if (u === "PAUSED") return "Pauset";
+  if (u === "TERMINATED") return "Avsluttet";
+  if (u === "CLOSED") return "Stengt";
+  return u || "—";
+}
+
+function agreementBadgeClass(s: string | null | undefined) {
+  const u = safeStr(s).toUpperCase();
+  if (u === "ACTIVE") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
+  if (u === "PENDING") return "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
+  if (u === "PAUSED") return "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
+  if (u === "TERMINATED" || u === "CLOSED") return "bg-rose-50 text-rose-900 ring-1 ring-rose-200";
+  return "bg-neutral-50 text-neutral-700 ring-1 ring-neutral-200";
+}
+
 function badgeClass(status: CompanyStatus) {
   if (status === "active") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
   if (status === "paused") return "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
@@ -198,17 +242,32 @@ function normalizeRow(x: any): CompanyRow | null {
     : Number.isFinite(Number(x?.admins_count)) ? Number(x?.admins_count)
     : null;
 
+  const bmr = x?.bindingMonthsRemaining ?? x?.binding_months_remaining;
+  const bindingMonthsRemaining = Number.isFinite(Number(bmr)) ? Math.floor(Number(bmr)) : null;
+
   return {
     id,
     name: safeStr(x?.name) || "Ukjent firma",
     orgnr: x?.orgnr ?? null,
     status: normStatus(x?.status ?? x?.company_status ?? x?.companyStatus),
     planLabel: x?.planLabel ?? x?.plan ?? null,
+    agreementStatus: x?.agreementStatus ?? x?.agreement_status ?? null,
+    contractStartDate: x?.contractStartDate ?? x?.contract_start_date ?? null,
+    contractEndDate: x?.contractEndDate ?? x?.contract_end_date ?? null,
+    bindingMonthsRemaining,
+    effectiveBindingEndDate: x?.effectiveBindingEndDate ?? x?.effective_binding_end_date ?? null,
     employeesCount: employees,
     adminsCount: admins,
     createdAt: x?.createdAt ?? x?.created_at ?? null,
     updatedAt: x?.updatedAt ?? x?.updated_at ?? null,
     archivedAt: x?.archivedAt ?? x?.archived_at ?? x?.deleted_at ?? null,
+    registrationExists: Boolean(x?.registrationExists ?? x?.registration_exists),
+    ledgerPendingAgreementId: x?.ledgerPendingAgreementId ?? x?.ledger_pending_agreement_id ?? null,
+    ledgerActiveAgreementId: x?.ledgerActiveAgreementId ?? x?.ledger_active_agreement_id ?? null,
+    pipelineStageLabel: x?.pipelineStageLabel ?? x?.pipeline_stage_label ?? null,
+    pipelineNextLabel: x?.pipelineNextLabel ?? x?.pipeline_next_label ?? null,
+    pipelineNextHref: x?.pipelineNextHref ?? x?.pipeline_next_href ?? null,
+    pipelinePrimaryHref: x?.pipelinePrimaryHref ?? x?.pipeline_primary_href ?? null,
   };
 }
 
@@ -1062,12 +1121,16 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] text-left text-sm">
+          <table className="w-full min-w-[1240px] text-left text-sm">
             <thead className="bg-white/70 text-xs text-[rgb(var(--lp-muted))]">
               <tr className="border-b border-[rgb(var(--lp-border))]">
                 <th className="px-5 py-3">Firma</th>
                 <th className="px-5 py-3">Org.nr</th>
-                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Firmastatus</th>
+                <th className="px-5 py-3 max-w-[220px]">Registrering → avtale (ledger)</th>
+                <th className="px-5 py-3">Avtale</th>
+                <th className="px-5 py-3">Kontrakt (fra–til)</th>
+                <th className="px-5 py-3">Binding</th>
                 <th className="px-5 py-3">Plan</th>
                 <th className="px-5 py-3">Ansatte</th>
                 <th className="px-5 py-3">Sist endret</th>
@@ -1078,13 +1141,13 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
             <tbody>
               {loading && visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={11}>
                     Laster…
                   </td>
                 </tr>
               ) : visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={7}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={11}>
                     <div className="font-medium">{emptyStateTitle}</div>
                     {emptyStateText ? <div className="mt-1 text-xs">{emptyStateText}</div> : null}
                   </td>
@@ -1094,6 +1157,15 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                   const st = normStatus(c?.status);
                   const busy = statusBusyId === c?.id;
                   const employeesCount = Number.isFinite(Number(c?.employeesCount)) ? Number(c?.employeesCount) : 0;
+                  const agrSt = c.agreementStatus ? safeStr(c.agreementStatus) : "";
+                  const periodFrom = fmtDay(c.contractStartDate ?? null);
+                  const periodTo = fmtDay(c.contractEndDate ?? null);
+                  const period =
+                    periodFrom === "—" && periodTo === "—" ? "—" : periodFrom === "—" ? periodTo : periodTo === "—" ? periodFrom : `${periodFrom}–${periodTo}`;
+                  const bindN = c.bindingMonthsRemaining;
+                  const bindingText =
+                    bindN === null || bindN === undefined ? "—" : `${bindN} mnd`;
+                  const effEnd = c.effectiveBindingEndDate ? fmtDay(c.effectiveBindingEndDate) : null;
 
                   return (
                     <tr
@@ -1115,6 +1187,15 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                       <td className="px-5 py-4">
                         <div className="font-medium">{c.name}</div>
                         <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
+                        <div className="mt-2">
+                          <Link
+                            href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
+                            className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
+                            onClick={(e) => stop(e as any)}
+                          >
+                            Firmaside →
+                          </Link>
+                        </div>
                       </td>
                       <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
                       <td className="px-5 py-4">
@@ -1122,6 +1203,61 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                           {statusLabel(st)}
                         </span>
                       </td>
+                      <td className="max-w-[220px] px-5 py-4 align-top text-xs leading-snug text-neutral-800">
+                        <div className="space-y-1">
+                          <div>
+                            Reg:{" "}
+                            <span className="font-semibold tabular-nums">{c.registrationExists ? "Ja" : "Nei"}</span>
+                          </div>
+                          <div>
+                            Utkast (PENDING):{" "}
+                            <span className="font-semibold tabular-nums">{c.ledgerPendingAgreementId ? "Ja" : "Nei"}</span>
+                          </div>
+                          <div>
+                            Aktiv (ACTIVE):{" "}
+                            <span className="font-semibold tabular-nums">{c.ledgerActiveAgreementId ? "Ja" : "Nei"}</span>
+                          </div>
+                          {c.pipelineStageLabel ? (
+                            <div className="pt-1 text-[11px] text-neutral-700">
+                              <span className="font-semibold text-neutral-600">Fase: </span>
+                              {c.pipelineStageLabel}
+                            </div>
+                          ) : null}
+                          {c.pipelineNextLabel ? (
+                            <div className="text-[11px] text-neutral-700">
+                              <span className="font-semibold text-neutral-600">Neste: </span>
+                              {c.pipelineNextLabel}
+                            </div>
+                          ) : null}
+                          {c.pipelinePrimaryHref ? (
+                            <div className="pt-1">
+                              <Link
+                                href={c.pipelinePrimaryHref}
+                                className="inline-flex rounded-xl border bg-white px-2 py-1 text-[11px] font-semibold hover:bg-neutral-50"
+                                onClick={(e) => stop(e as any)}
+                              >
+                                Åpne anbefalt steg →
+                              </Link>
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        {agrSt ? (
+                          <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", agreementBadgeClass(agrSt)].join(" ")}>
+                            {agreementStatusLabel(agrSt)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[rgb(var(--lp-muted))]">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="text-sm">{period}</div>
+                        {effEnd && effEnd !== "—" ? (
+                          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Utløp binding: {effEnd}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-5 py-4 text-sm">{bindingText}</td>
                       <td className="px-5 py-4">{safeStr(c.planLabel) || "—"}</td>
                       <td className="px-5 py-4">{employeesCount}</td>
                       <td className="px-5 py-4">{fmtTs(c.updatedAt)}</td>

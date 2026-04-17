@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
   const a: any = await scopeOr401(req);
   if (!a?.ok) return pickResponse(a) ?? new Response("Unauthorized", { status: 401 });
 
-  const b: any = requireRoleOr403(a.ctx, ["driver", "superadmin"]);
-  if (!b?.ok) return pickResponse(b) ?? new Response("Forbidden", { status: 403 });
+  const denied = requireRoleOr403(a.ctx, ["driver", "superadmin"]);
+  if (denied) return denied;
 
-  const ctx = b.ctx;
+  const ctx = a.ctx;
 
   const body = await readJson(req);
 
@@ -114,6 +114,18 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return jsonErr(ctx.rid, "Failed to confirm delivery.", 500, { code: "db_error", detail: error });
+  }
+
+  if (role === "driver" && data) {
+    return jsonOk(ctx.rid, {
+      confirmation: {
+        id: data.id,
+        delivery_date: data.delivery_date,
+        slot: data.slot,
+        location_id: data.location_id,
+        confirmed_at: data.confirmed_at,
+      },
+    });
   }
 
   return jsonOk(ctx.rid, { confirmation: data });

@@ -1,0 +1,354 @@
+{
+  "page": "/backoffice/content/00000000-0000-4000-8000-00000000c001",
+  "baseURL": "http://localhost:3044",
+  "credentialSource": "canonical_local_provider",
+  "email": "superadmin@lunchportalen.no",
+  "fieldsChanged": {
+    "hero_bleed": {
+      "contentTitle": "U93-BLEED-1775581620002",
+      "settingsLayout": "left"
+    },
+    "cards": {
+      "contentTitle": "U93-CARDS-1775581620348",
+      "settingsPresentation": "plain",
+      "structureCardTitle": "U93 kort rad"
+    }
+  },
+  "addedBlocks": [
+    "hero_bleed",
+    "cards"
+  ],
+  "library": {
+    "hero_bleed": {
+      "title": "Hero (kant til kant)",
+      "description": "Kant-til-kant med bakgrunnsbilde, mørk lesbarhetsflate, valgfritt forgrunnsbilde og opptil to CTA-er. Layout-variant styrer tekst og overlay.",
+      "whenToUse": "Bruk til kampanje og sterke forsider når du trenger dramatikk, to knapper og kant-til-kant bildeflate — ikke til rolig innholds-hero.",
+      "differsFrom": "vs hero: Full bleed med overlay og sekundær CTA — ikke den enkle innholdsbredden. · vs hero_full: Mørkere, kampanjeorientert — ikke den åpne full-bredde-gradient-heroen.",
+      "canonTitle": "Hero (kant til kant)"
+    },
+    "cards": {
+      "title": "Kort-seksjon",
+      "description": "Tre verdi-kort med ingress og valgfrie seksjons-CTA-er — for budskap i rader, ikke lokasjonsbevis (bruk «Lokasjonsrutenett» for celler med meta per sted) og ikke hero (bruk hero-variantene øverst).",
+      "whenToUse": "Når du vil forklare fordeler eller temaer i like kort, ikke lokasjonsbevis per celle.",
+      "differsFrom": "vs grid: Verdikort med samme mønster — ikke lokasjonsrutenett med meta per sted. · vs zigzag: Statiske kort — ikke nummerert prosess eller FAQ-steg.",
+      "canonTitle": "Kort-seksjon"
+    }
+  },
+  "legacyVsNew": {
+    "alternative": "A_runtime_legacy_migrated_by_full_save",
+    "legacyBlockId": "home-hero-full",
+    "persistedShapeBeforeSave": {
+      "id": "home-hero-full",
+      "type": "hero_full",
+      "data": {
+        "title": "Firmalunsj med kontroll - lokal preview uten overlays.",
+        "subtitle": "Denne preview-varianten er seedet for a vise publisering, diff og historikk i lokal runtime.",
+        "imageId": "",
+        "imageAlt": "",
+        "ctaLabel": "Aapne content-editor",
+        "ctaHref": "/backoffice/content",
+        "useGradient": true
+      },
+      "config": {
+        "theme": "default",
+        "layout": "full"
+      }
+    },
+    "persistedShapeAfterSaveSameId": {
+      "id": "home-hero-full",
+      "type": "hero_full",
+      "contentData": {
+        "title": "Firmalunsj med kontroll - lokal preview uten overlays.",
+        "subtitle": "Denne preview-varianten er seedet for a vise publisering, diff og historikk i lokal runtime.",
+        "ctaLabel": "Aapne content-editor",
+        "ctaHref": "/backoffice/content"
+      },
+      "settingsData": {
+        "useGradient": true
+      },
+      "config": {
+        "theme": "default",
+        "layout": "full"
+      }
+    },
+    "interpretation": "Før lagring: kanonisk seed i preview-variant er BlockNode ({ type, data }) uten contentData. Etter full variant-lagring fra editoren: samme blokk-id er skrevet tilbake med contentData/settingsData (entry-lag); `data` er borte. Dette er runtime-persistens via samme PATCH/GET som editoren bruker — ikke syntetisk JSON.",
+    "datasetAuditBeforeSave": [
+      {
+        "index": 0,
+        "id": "home-hero-full",
+        "type": "hero_full",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 1,
+        "id": "home-value-cards",
+        "type": "cards",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 2,
+        "id": "home-zigzag",
+        "type": "zigzag",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 3,
+        "id": "home-pricing",
+        "type": "pricing",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 4,
+        "id": "home-trust-grid",
+        "type": "grid",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 5,
+        "id": "home-close-cta",
+        "type": "cta",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      },
+      {
+        "index": 6,
+        "id": "home-related",
+        "type": "relatedLinks",
+        "keys": [
+          "config",
+          "data",
+          "id",
+          "type"
+        ],
+        "hasContentData": false,
+        "hasSettingsData": false,
+        "hasData": true,
+        "legacyNode": true
+      }
+    ],
+    "datasetAuditAfterSave": [
+      {
+        "index": 0,
+        "id": "home-hero-full",
+        "type": "hero_full",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 1,
+        "id": "home-value-cards",
+        "type": "cards",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 2,
+        "id": "home-zigzag",
+        "type": "zigzag",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 3,
+        "id": "home-pricing",
+        "type": "pricing",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 4,
+        "id": "home-trust-grid",
+        "type": "grid",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 5,
+        "id": "home-close-cta",
+        "type": "cta",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 6,
+        "id": "home-related",
+        "type": "relatedLinks",
+        "keys": [
+          "config",
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 7,
+        "id": "blk_e94305d1-cb2a-40cd-836a-1be03d1fedff",
+        "type": "hero_bleed",
+        "keys": [
+          "contentData",
+          "id",
+          "settingsData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      },
+      {
+        "index": 8,
+        "id": "blk_569f9aaf-5a79-49ed-9cb6-af028cc3872c",
+        "type": "cards",
+        "keys": [
+          "contentData",
+          "id",
+          "settingsData",
+          "structureData",
+          "type"
+        ],
+        "hasContentData": true,
+        "hasSettingsData": true,
+        "hasData": false,
+        "legacyNode": false
+      }
+    ]
+  },
+  "markers": {
+    "bleedTitle": "U93-BLEED-1775581620002",
+    "cardsTitle": "U93-CARDS-1775581620348"
+  },
+  "artifacts": {
+    "01-full-canvas-inspector.png": "full canvas + inspector (tri-pane)",
+    "02-simple-block-created.png": "ny hero_bleed etter innsetting",
+    "03-structure-block-created.png": "ny cards etter innsetting",
+    "04-defaults-proof.png": "defaults (hero_bleed property editor)",
+    "05-validation-proof.png": "validation (tom tittel)",
+    "06-dirty-save-proof.png": "dirty / før lagre",
+    "07-reload-persist-proof.png": "reload + persisterte felt",
+    "08-persisted-json-hero-bleed.json": "persisted entry shape enkel",
+    "08-persisted-json-hero-bleed.png": "screenshot av JSON enkel",
+    "09-persisted-json-cards.json": "persisted entry shape struktur",
+    "09-persisted-json-cards.png": "screenshot av JSON struktur",
+    "10-legacy-migration-runtime-proof.json": "runtime legacy → entry for samme blokk-id",
+    "10-legacy-migration-runtime-proof.png": "screenshot av legacy-proof JSON",
+    "u93-final-contract-proof.json": "full rapport"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "runStartedAt": "2026-04-08T15:42:08.805Z",
+  "runFinishedAt": "2026-04-08T16:00:04.131Z",
+  "baseUrl": "http://localhost:3054",
+  "playwrightCommand": "cross-env U97I_RUN_MARK=u97i-1775662928806 CI=1 PLAYWRIGHT_BASE_URL=http://localhost:3054 npx playwright test e2e/u97i-proof-chain-lock.e2e.ts --project=chromium --workers=1 --retries=0",
+  "playwrightExitCode": 0,
+  "testName": "U97I proof chain lock — single run browser proof",
+  "createdNodes": {
+    "parentNodeId": "overlays",
+    "compactPageId": "4e9e83be-1a89-4274-a003-0dffd4f4d07d",
+    "microLandingId": "239bf8f1-fcc0-4a74-8147-ded2eb1afec1"
+  },
+  "runtimeValues": {
+    "compactPageDocumentTypeAlias": "compact_page",
+    "microLandingDocumentTypeAlias": "micro_landing",
+    "compactPageTemplateAlias": "compact_landing_default",
+    "microLandingTemplateAlias": "micro_landing_default",
+    "changedPropertyTitle": "Kompakte blokker · u97i-1775662928806",
+    "changedPropertyDescriptionOrGroup": "U97I property-beskrivelse u97i-1775662928806"
+  },
+  "screenshots": [
+    {
+      "file": "01-document-types-overview.png",
+      "sha256": "75b0c5fe77a7ca9239820e1f05d6fe134bd65b6e967936ed531084f3f2aa6805",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 172523,
+      "mtime": "2026-04-08T15:43:20.577Z"
+    },
+    {
+      "file": "02-compact-page-document-type-workspace.png",
+      "sha256": "e7957ff79c17e56205511ac8fe92becfcf11d140f67c30636d9f54c6c0a9d11f",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 178579,
+      "mtime": "2026-04-08T15:43:32.508Z"
+    },
+    {
+      "file": "03-document-type-dirty-save-state.png",
+      "sha256": "a1aa394c47f5d7e34691e9370bf6e2f0a393610d12a50a7c8f2e9c699a194fab",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 164273,
+      "mtime": "2026-04-08T15:43:33.021Z"
+    },
+    {
+      "file": "04-create-dialog-parent-to-compact-page.png",
+      "sha256": "8af7775a16039f91df053b873baa79863edd8afed5d7b52d10fdca84c472da2e",
+      "width": 480,
+      "height": 454,
+      "bytes": 37507,
+      "mtime": "2026-04-08T15:44:10.329Z"
+    },
+    {
+      "file": "05-compact-page-created-visible-in-tree.png",
+      "sha256": "11498f9f6f1f0ee4f0b8652ad84a5059c1ce743c0206fa8b78e1d689566b06b3",
+      "width": 678,
+      "height": 455,
+      "bytes": 30823,
+      "mtime": "2026-04-08T15:44:26.271Z"
+    },
+    {
+      "file": "06-compact-page-editor.png",
+      "sha256": "968a56c048c78e66ceee57e11746b6947e2726822ecdf8542470214b4cf39b3a",
+      "width": 1160,
+      "height": 1175,
+      "bytes": 146359,
+      "mtime": "2026-04-08T15:44:27.619Z"
+    },
+    {
+      "file": "07-create-dialog-compact-page-to-micro-landing.png",
+      "sha256": "51db6db494f9ff72145f0edaca299c664cab44bad90b1de8056bc1f2ce9a5f8e",
+      "width": 480,
+      "height": 368,
+      "bytes": 30755,
+      "mtime": "2026-04-08T15:44:31.476Z"
+    },
+    {
+      "file": "08-micro-landing-created-visible-in-tree-editor.png",
+      "sha256": "87c8fe8afaeee09cbe784456b384fa2b20ee43a68e17d11f41d4db1232249990",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 200979,
+      "mtime": "2026-04-08T15:44:40.648Z"
+    },
+    {
+      "file": "09-structure-allowed-disallowed-child-proof.png",
+      "sha256": "83e441bbded45cabbb6b2fa5cd13d40dcbea6079ba3fbaa6a1a5e87e202cd10f",
+      "width": 1536,
+      "height": 191,
+      "bytes": 15084,
+      "mtime": "2026-04-08T15:44:46.733Z"
+    },
+    {
+      "file": "10-document-type-composition-effect-proof.png",
+      "sha256": "dd4a9d447aab7958b5bfb3560277d74d17d51d2aeba305a3285e8e78543eb96d",
+      "width": 346,
+      "height": 1141,
+      "bytes": 43714,
+      "mtime": "2026-04-08T15:44:57.790Z"
+    },
+    {
+      "file": "11-template-rendering-binding-proof.png",
+      "sha256": "c49b8a15525c1605861ba6f199b844d5db4c8699f58c6d261486eec029f3c409",
+      "width": 237,
+      "height": 15,
+      "bytes": 2026,
+      "mtime": "2026-04-08T15:44:59.104Z"
+    },
+    {
+      "file": "12-current-document-type-binding-proof.png",
+      "sha256": "626168098cb02126c24c3ac79ddd338e6fd154948dc75b934e7eb8a02b4394bd",
+      "width": 71,
+      "height": 15,
+      "bytes": 1256,
+      "mtime": "2026-04-08T15:44:59.781Z"
+    },
+    {
+      "file": "13-full-content-tree-editor-after-create-flow.png",
+      "sha256": "4352b629f6d3cd3604f9563e035f99d3b1ab5df0a80fbd0a01fc06b44457c55d",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 211752,
+      "mtime": "2026-04-08T15:45:43.683Z"
+    }
+  ],
+  "sanity": {
+    "exitCode": 0
+  },
+  "gates": {
+    "typecheckExitCode": 0,
+    "lintExitCode": 0,
+    "buildExitCode": 0,
+    "testRunExitCode": 0
+  }
+}

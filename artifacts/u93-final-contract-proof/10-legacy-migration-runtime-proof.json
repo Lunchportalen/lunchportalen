@@ -1,0 +1,297 @@
+{
+  "alternative": "A_runtime_legacy_migrated_by_full_save",
+  "legacyBlockId": "home-hero-full",
+  "persistedShapeBeforeSave": {
+    "id": "home-hero-full",
+    "type": "hero_full",
+    "data": {
+      "title": "Firmalunsj med kontroll - lokal preview uten overlays.",
+      "subtitle": "Denne preview-varianten er seedet for a vise publisering, diff og historikk i lokal runtime.",
+      "imageId": "",
+      "imageAlt": "",
+      "ctaLabel": "Aapne content-editor",
+      "ctaHref": "/backoffice/content",
+      "useGradient": true
+    },
+    "config": {
+      "theme": "default",
+      "layout": "full"
+    }
+  },
+  "persistedShapeAfterSaveSameId": {
+    "id": "home-hero-full",
+    "type": "hero_full",
+    "contentData": {
+      "title": "Firmalunsj med kontroll - lokal preview uten overlays.",
+      "subtitle": "Denne preview-varianten er seedet for a vise publisering, diff og historikk i lokal runtime.",
+      "ctaLabel": "Aapne content-editor",
+      "ctaHref": "/backoffice/content"
+    },
+    "settingsData": {
+      "useGradient": true
+    },
+    "config": {
+      "theme": "default",
+      "layout": "full"
+    }
+  },
+  "interpretation": "Før lagring: kanonisk seed i preview-variant er BlockNode ({ type, data }) uten contentData. Etter full variant-lagring fra editoren: samme blokk-id er skrevet tilbake med contentData/settingsData (entry-lag); `data` er borte. Dette er runtime-persistens via samme PATCH/GET som editoren bruker — ikke syntetisk JSON.",
+  "datasetAuditBeforeSave": [
+    {
+      "index": 0,
+      "id": "home-hero-full",
+      "type": "hero_full",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 1,
+      "id": "home-value-cards",
+      "type": "cards",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 2,
+      "id": "home-zigzag",
+      "type": "zigzag",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 3,
+      "id": "home-pricing",
+      "type": "pricing",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 4,
+      "id": "home-trust-grid",
+      "type": "grid",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 5,
+      "id": "home-close-cta",
+      "type": "cta",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    },
+    {
+      "index": 6,
+      "id": "home-related",
+      "type": "relatedLinks",
+      "keys": [
+        "config",
+        "data",
+        "id",
+        "type"
+      ],
+      "hasContentData": false,
+      "hasSettingsData": false,
+      "hasData": true,
+      "legacyNode": true
+    }
+  ],
+  "datasetAuditAfterSave": [
+    {
+      "index": 0,
+      "id": "home-hero-full",
+      "type": "hero_full",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 1,
+      "id": "home-value-cards",
+      "type": "cards",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 2,
+      "id": "home-zigzag",
+      "type": "zigzag",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 3,
+      "id": "home-pricing",
+      "type": "pricing",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 4,
+      "id": "home-trust-grid",
+      "type": "grid",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 5,
+      "id": "home-close-cta",
+      "type": "cta",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 6,
+      "id": "home-related",
+      "type": "relatedLinks",
+      "keys": [
+        "config",
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 7,
+      "id": "blk_e94305d1-cb2a-40cd-836a-1be03d1fedff",
+      "type": "hero_bleed",
+      "keys": [
+        "contentData",
+        "id",
+        "settingsData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    },
+    {
+      "index": 8,
+      "id": "blk_569f9aaf-5a79-49ed-9cb6-af028cc3872c",
+      "type": "cards",
+      "keys": [
+        "contentData",
+        "id",
+        "settingsData",
+        "structureData",
+        "type"
+      ],
+      "hasContentData": true,
+      "hasSettingsData": true,
+      "hasData": false,
+      "legacyNode": false
+    }
+  ]
+}

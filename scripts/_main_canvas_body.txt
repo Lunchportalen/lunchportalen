@@ -1,0 +1,464 @@
+    <AnimatePresence mode="wait">
+      {canvasMode === "preview" ? (
+        <motion.div
+          key="canvas-full-preview"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+          className="min-w-0 cursor-default"
+        >
+          <PreviewCanvas
+            device={previewDevice}
+            blocks={historyPreviewBlocks ?? displayBlocks}
+            title={(historyVersionPreview?.title ?? title).trim()}
+            meta={{
+              slug: String(historyVersionPreview?.slug ?? slug ?? page?.slug ?? ""),
+            }}
+            pageId={effectiveId}
+          />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="canvas-editor"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+          className="min-w-0"
+        >
+    <div
+      className={`min-w-0 space-y-3 ${
+        showPreview
+          ? previewLayoutMode === "split"
+            ? "lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-4 lg:items-start"
+            : "flex flex-col gap-4"
+          : ""
+      }`}
+    >
+      <div className="min-w-0 space-y-4">
+    {/* Main content / blocks */}
+    <section className="space-y-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
+            Main content
+          </h3>
+          <p className="mt-0.5 text-[11px] text-[rgb(var(--lp-muted))]">
+            Bygg siden blokk for blokk. Rekkefølgen her er rekkefølgen på den offentlige siden.
+          </p>
+        </div>
+        {showBlocks && (
+          <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+            <button
+              type="button"
+              onClick={() =>
+                setShowPreviewColumn((v) => {
+                  const next = !v;
+                  if (!next) setPreviewLayoutMode("split");
+                  return next;
+                })
+              }
+              className="whitespace-nowrap text-xs text-[rgb(var(--lp-muted))] underline hover:text-[rgb(var(--lp-text))]"
+            >
+              {showPreviewColumn ? "Skjul forhåndsvisning" : "Vis forhåndsvisning"}
+            </button>
+            {showPreviewColumn ? (
+              <div
+                className="flex rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/40 p-0.5"
+                role="group"
+                aria-label="Forhåndsvisning layout"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPreviewLayoutMode("split")}
+                  className={`min-h-[36px] rounded-md px-3 py-1.5 text-[11px] font-medium transition-opacity duration-150 ${
+                    previewLayoutMode === "split"
+                      ? "bg-white text-[rgb(var(--lp-text))] shadow-sm"
+                      : "text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))]"
+                  }`}
+                >
+                  Delt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewLayoutMode("full")}
+                  className={`min-h-[36px] rounded-md px-3 py-1.5 text-[11px] font-medium transition-opacity duration-150 ${
+                    previewLayoutMode === "full"
+                      ? "bg-white text-[rgb(var(--lp-text))] shadow-sm"
+                      : "text-[rgb(var(--lp-muted))] hover:text-[rgb(var(--lp-text))]"
+                  }`}
+                >
+                  Full bredde
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+      <div className="border-b border-[rgb(var(--lp-border))]" aria-hidden />
+      <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/40 p-4 pt-4">
+
+        {bodyMode === "legacy" && (
+          <div className="mt-3 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p>Legacy body detected. Convert to blocks to use builder.</p>
+            <button
+              type="button"
+              onClick={onConvertLegacyBody}
+              className="min-h-[36px] rounded-lg border border-amber-300 bg-white px-3 text-sm font-medium"
+            >
+              Convert to blocks
+            </button>
+          </div>
+        )}
+
+        {bodyMode === "invalid" && (
+          <div className="mt-3 space-y-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <p>{bodyParseError || "Invalid body format."}</p>
+            {!invalidBodyResetConfirmOpen ? (
+              <button
+                type="button"
+                onClick={onResetInvalidBodyRequest}
+                className="min-h-[36px] rounded-lg border border-red-300 bg-white px-3 text-sm font-medium"
+              >
+                Reset to blocks
+              </button>
+            ) : (
+              <div
+                role="group"
+                aria-label="Bekreft reset av body"
+                className="flex flex-col gap-2 rounded-lg border border-red-300 bg-white p-3 text-red-900"
+              >
+                <p className="text-sm font-medium">
+                  Reset body til blokker? Dette kan ikke angres. Er du sikker?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={executeResetInvalidBody}
+                    className="min-h-[40px] rounded-lg border border-red-600 bg-red-600 px-3 text-sm font-medium text-white hover:bg-red-700"
+                  >
+                    Ja
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelInvalidBodyReset}
+                    className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                  >
+                    Avbryt
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showBlocks && (
+          <PageContainer maxWidth="narrow" className="space-y-3">
+            <EditorSmartHintsBanner blocks={blocks} />
+            {displayBlocks.length === 0 ? (
+              <>
+                {isForsidePage() ? (
+                  <div className="rounded-xl border border-[rgb(var(--lp-border))] bg-slate-50/90 p-5 shadow-sm">
+                    <p className="text-sm font-medium leading-relaxed text-[rgb(var(--lp-text))]">
+                      Denne siden tilsvarer forsiden. Ett klikk fyller ut hero full, verdikort, steg (zigzag), priser, tillitsrutenett, avsluttende CTA og relaterte sider.
+                    </p>
+                    <DsButton
+                      variant="ghost"
+                      type="button"
+                      disabled={buildHomeFromRepoBusy || isOffline}
+                      onClick={() => void onFillForsideFromRepo()}
+                      className="mt-4 min-h-[44px] border border-[rgb(var(--lp-border))] bg-white px-4 shadow-sm hover:-translate-y-px hover:shadow-md"
+                      aria-label="Bygg forside fra repo"
+                      aria-busy={buildHomeFromRepoBusy}
+                    >
+                      {buildHomeFromRepoBusy ? "Bygger …" : "Bygg forside fra repo"}
+                    </DsButton>
+                  </div>
+                ) : null}
+                <div className="text-center py-16 md:py-20">
+                  <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">
+                    Start med en seksjon
+                  </h2>
+                  <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+                    Legg til en blokk nedenfor — rediger direkte i listen eller i forhåndsvisning. AI finner du under AI-fanen.
+                  </p>
+                  <DsButton
+                    variant="secondary"
+                    type="button"
+                    className="mt-6 min-h-[48px] text-sm font-semibold"
+                    onClick={() => {
+                      addInsertIndexRef.current = blocks.length;
+                      setBlockPickerOpen(true);
+                    }}
+                  >
+                    <span className="text-lg leading-none" aria-hidden>
+                      +
+                    </span>{" "}
+                    Legg til første blokk
+                  </DsButton>
+                </div>
+              </>
+            ) : (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndReorder}>
+                <SortableContext items={displayBlocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                  {displayBlocks.map((block, index) => {
+                    const open = selectedBlockId === block.id;
+
+                    return (
+                      <Fragment key={block.id}>
+                        <div className="flex min-h-[36px] items-center justify-center px-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addInsertIndexRef.current = index;
+                              setBlockPickerOpen(true);
+                            }}
+                            className="flex min-h-[40px] w-full max-w-xl items-center justify-center gap-2 rounded-xl border border-dashed border-[rgb(var(--lp-border))]/80 bg-[rgb(var(--lp-card))]/25 px-3 py-2 text-xs font-medium text-[rgb(var(--lp-muted))] transition-transform duration-200 will-change-transform hover:-translate-y-0.5 hover:border-pink-400/40 hover:bg-[rgb(var(--lp-card))]/50 hover:text-[rgb(var(--lp-text))] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/25"
+                            aria-label={`Sett inn ny blokk på posisjon ${index + 1}`}
+                          >
+                            <span className="text-base leading-none" aria-hidden>
+                              +
+                            </span>
+                            Legg til blokk
+                          </button>
+                        </div>
+                        <SortableBlockWrapper id={block.id} disabled={!canReorderBlocks}>
+                          {(dragHandleProps) => (
+                            <motion.div
+                              initial={newBlockAnimationIds.has(block.id) ? { y: 20, opacity: 0 } : false}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                              className="will-change-transform"
+                            >
+                              <BlockCard
+                                domId={`lp-editor-block-${block.id}`}
+                                blockId={block.id}
+                                tabIndex={selectedBlockId === block.id ? 0 : -1}
+                                selected={selectedBlockId === block.id}
+                                hoverSync={hoverBlockId === block.id}
+                                pulse={blockPulseId === block.id}
+                                onMouseEnter={() => setHoverBlockId(block.id)}
+                                onMouseLeave={() => setHoverBlockId(null)}
+                              >
+                                {canReorderBlocks && dragHandleProps ? (
+                                  <BlockDragHandle
+                                    dragHandleProps={dragHandleProps}
+                                    alwaysVisible={open}
+                                  />
+                                ) : null}
+                                <BlockToolbar
+                                  ariaLabel={`Verktøy for blokk ${index + 1}`}
+                                  disabledMoveUp={index === 0}
+                                  disabledMoveDown={index === displayBlocks.length - 1}
+                                  onMoveUp={() => onMoveBlock(block.id, -1)}
+                                  onMoveDown={() => onMoveBlock(block.id, 1)}
+                                  onDuplicate={() => onDuplicateBlock(block.id)}
+                                  onEdit={() => {
+                                    setEditIndex(index);
+                                    setEditOpen(true);
+                                  }}
+                                  onDelete={() => onDeleteBlock(block.id)}
+                                  revealOnGroupHover={!open}
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedBlockId(block.id);
+                                    setExpandedBlockId(block.id);
+                                  }}
+                                  className={`flex w-full items-start gap-2 rounded-lg border-0 bg-transparent py-2 pr-[7rem] text-left outline-none transition-colors duration-200 hover:bg-pink-50/20 focus-visible:ring-2 focus-visible:ring-pink-500/35 sm:pr-[6.75rem] ${canReorderBlocks ? "pl-12" : "pl-1"}`}
+                                >
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/45">
+                                    <BlockTypeIcon type={block.type} />
+                                  </div>
+                                  <div className="min-w-0 flex-1 text-left">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                      <DsBadge variant="muted" className="rounded-full font-medium">
+                                        Blokk {index + 1}
+                                      </DsBadge>
+                                      <DsBadge variant="outline" className="rounded-md font-semibold">
+                                        {getBlockShortLabel(block.type)}
+                                      </DsBadge>
+                                      <span className="min-w-0 truncate text-sm font-medium text-[rgb(var(--lp-text))]">
+                                        {getBlockLabel(block.type)}
+                                      </span>
+                                      <span
+                                        className={`ml-auto shrink-0 text-xs text-[rgb(var(--lp-muted))] transition-opacity duration-200 ${open ? "opacity-100" : "opacity-60"}`}
+                                        aria-hidden
+                                      >
+                                        {open ? "▼" : "▶"}
+                                      </span>
+                                    </div>
+                                    {!open ? (
+                                      <div className="mt-1.5 origin-top opacity-[0.85] [transform:translateZ(0)_scale(0.98)] transition-[opacity,transform] duration-200 ease-out will-change-[opacity,transform]">
+                                        <BlockPreview block={block} />
+                                      </div>
+                                    ) : (
+                                      <p className="mt-1 text-[10px] uppercase tracking-wide text-[rgb(var(--lp-muted))] transition-opacity duration-200 ease-out">
+                                        {blockTypeSubtitle(block.type, block)}
+                                      </p>
+                                    )}
+                                  </div>
+                                </button>
+
+                                <div
+                                  className={`grid overflow-clip transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                                >
+                                  <div className="min-h-0">
+                                    {open ? (
+                                      <motion.div
+                                        initial={{ opacity: 0.6, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.18 }}
+                                        className="origin-top will-change-[opacity,transform]"
+                                      >
+                                        {selectedBlockId != null && selectedBlockId !== block.id ? (
+                                          <div className="border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/15 px-3 py-3 text-center transition-opacity duration-200">
+                                            <p className="text-xs text-[rgb(var(--lp-muted))]">
+                                              En annen blokk er valgt. Klikk på denne raden for å gjøre den aktiv, eller rediger den valgte blokken i panelet til høyre.
+                                            </p>
+                                          </div>
+                                        ) : selectedBlockId === block.id ? (
+                                          <div className="border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/20 px-3 py-3 text-center transition-opacity duration-200">
+                                            <p className="text-xs text-[rgb(var(--lp-muted))]">
+                                              Egenskaper for denne blokken redigeres i panelet til høyre.
+                                            </p>
+                                          </div>
+                                        ) : (
+                                          <div className="border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))]/30 px-3 py-2 transition-opacity duration-200">
+                                            <BlockInspectorFields block={block} ctx={blockInspectorCtx} />
+                                          </div>
+                                        )}
+                                      </motion.div>
+                                    ) : null}
+                                  </div>
+                                </div>
+
+                                {selectedBlockId === block.id && block.type === "richText" ? (
+                      <div className="animate-fade-in mt-2 rounded-lg border border-rose-200 bg-rose-50 p-3 transition-all duration-150 ease-out">
+                        <div className="mb-1 text-xs font-semibold text-rose-700">AI forslag</div>
+                        {aiSuggestLoading ? (
+                          <div className="text-sm text-gray-700">Jobber...</div>
+                        ) : aiSuggestion ? (
+                          <>
+                            <div className="text-sm text-gray-800">{aiSuggestion}</div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const suggestion = aiSuggestion;
+                                if (!suggestion) return;
+                                setBlockById(block.id, (current) => {
+                                  if (current.type === "richText") return { ...current, body: suggestion };
+                                  return current;
+                                });
+                                setAiSuggestion(null);
+                                setExpandedBlockId(block.id);
+                              }}
+                              className="mt-2 text-xs font-medium text-rose-700 transition-all duration-150 ease-out hover:underline"
+                            >
+                              Bruk forslag
+                            </button>
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-700">Ingen forslag enda</div>
+                        )}
+
+                        {aiScore !== null ? (
+                          <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
+                            <div className="text-xs font-semibold text-gray-500">AI score</div>
+                            <div className="text-lg font-bold">
+                              {aiScore}/100
+                            </div>
+                            {aiHints.length > 0 ? (
+                              <ul className="mt-1 ml-4 list-disc text-xs text-gray-700">
+                                {aiHints.map((h, i) => (
+                                  <li key={i}>{h}</li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {selectedBlockId === block.id &&
+                    (block.type === "hero" || block.type === "image") &&
+                    aiImageLoading ? (
+                      <div className="mt-2 animate-fade-in">
+                        <div className="h-40 animate-pulse rounded bg-gray-200" />
+                      </div>
+                    ) : null}
+                              </BlockCard>
+                            </motion.div>
+                          )}
+                        </SortableBlockWrapper>
+                      </Fragment>
+                    );
+                  })}
+                </SortableContext>
+              </DndContext>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                addInsertIndexRef.current = blocks.length;
+                setBlockPickerOpen(true);
+              }}
+              className="mx-auto mt-1 flex min-h-[52px] w-full max-w-2xl items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[rgb(var(--lp-border))] bg-white py-4 text-base font-semibold text-[rgb(var(--lp-text))] shadow-sm transition-transform duration-200 will-change-transform hover:-translate-y-0.5 hover:border-pink-400/45 hover:bg-[rgb(var(--lp-card))]/25 hover:shadow-md active:scale-[0.99]"
+            >
+              <span className="text-xl leading-none">+</span>
+              Legg til innhold
+            </button>
+          </PageContainer>
+        )}
+      </div>
+    </section>
+  </div>
+
+  {showPreview && canvasMode === "edit" && (
+    <div className="mt-4 rounded-lg border-t border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/60 py-2 pl-3 pr-2 lg:mt-0 lg:border-t-0 lg:border-l">
+      {historyVersionPreview ? (
+        <div
+          className="mb-2 flex flex-col gap-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-xs font-medium text-amber-950">
+            Forhåndsvisning av historikk · {historyVersionPreview.versionLabel}
+          </p>
+          <button
+            type="button"
+            onClick={() => setHistoryVersionPreview(null)}
+            className="min-h-11 shrink-0 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-950 shadow-sm outline-none ring-pink-400/40 transition hover:bg-amber-100 focus-visible:ring-2"
+            aria-label="Avslutt forhåndsvisning av historikk"
+          >
+            Avslutt
+          </button>
+        </div>
+      ) : null}
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Forhåndsvisning</h3>
+      <LivePreviewPanel
+        pageTitle={historyVersionPreview?.title ?? title}
+        blocks={blocksForLivePreview}
+        pageId={effectiveId ?? undefined}
+        variantId={undefined}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={(id) => setSelectedBlockId(id)}
+        hoverBlockId={hoverBlockId}
+        onHoverBlock={(id) => setHoverBlockId(id)}
+        visualInlineEdit={visualInlineEditApi}
+      />
+    </div>
+  )}
+
+  {(bodyMode === "legacy" || bodyMode === "invalid") && (
+    <aside className="lg:sticky lg:top-4 flex h-fit items-center rounded-xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-4" aria-label="Forhåndsvisning">
+      <p className="text-sm text-[rgb(var(--lp-muted))]">{bodyMode === "legacy" ? "Konverter til blokker for å se live forhåndsvisning." : "Ugyldig body. Bruk  ««Reset to blocks «» for å se forhåndsvisning."}</p>
+    </aside>
+  )}
+</div>
+        </motion.div>
+      )}
+    </AnimatePresence>

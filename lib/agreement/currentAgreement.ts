@@ -15,8 +15,8 @@ export type AgreementState = {
 
   // NOTE:
   // - status is "system view" for the app (week + order window)
-  // - ACTIVE is allowed if daymap exists (even if agreement snapshot isn't ACTIVE),
-  //   because daymap = operational truth in your system
+  // - ACTIVE is allowed if operative per-day tiers exist (even if agreement snapshot isn't ACTIVE),
+  //   because daymap (`v_company_current_agreement_daymap`) is the operational truth (materialisert fra agreement_json ved avtale-opprettelse)
   status: "ACTIVE" | "PAUSED" | "CLOSED" | "MISSING";
   statusReason?: "NO_ACTIVE_AGREEMENT" | "MISSING_DAYMAP" | "MISSING_DELIVERY_DAYS";
 
@@ -84,6 +84,24 @@ function pickAnyUserId(u: any): string {
   return id;
 }
 
+/** Operativ BASIS/LUXUS per dag — rader fra `v_company_current_agreement_daymap` (materialisert i DB). */
+export async function fetchAgreementDayTiersForCompany(sb: any, companyId: string): Promise<Record<DayKey, Tier>> {
+  const daymapRes = await sb
+    .from("v_company_current_agreement_daymap")
+    .select("company_id,day_key,tier,slot,updated_at")
+    .eq("company_id", companyId);
+
+  const dayRows = Array.isArray(daymapRes?.data) ? daymapRes.data : [];
+  const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
+
+  for (const row of dayRows) {
+    const dk = normDayKey((row as any)?.day_key);
+    const t = normTier((row as any)?.tier);
+    if (dk && t) dayTiers[dk] = t;
+  }
+  return dayTiers;
+}
+
 /* =========================================================
    Main: Current agreement state (server truth)
 ========================================================= */
@@ -134,21 +152,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     return { ok: false, rid: ridVal, error: "AGREEMENT_LOOKUP_FAILED", message: "Kunne ikke hente avtale.", status: 500 };
   }
 
-  // Daymap MUST be from "v_company_current_agreement_daymap"
-  // (mock may return thenable; await works)
-  const daymapRes = await sb
-    .from("v_company_current_agreement_daymap")
-    .select("company_id,day_key,tier,slot,updated_at")
-    .eq("company_id", companyId);
-
-  const dayRows = Array.isArray(daymapRes?.data) ? daymapRes.data : [];
-  const dayTiers: Record<DayKey, Tier> = {} as any;
-
-  for (const row of dayRows) {
-    const dk = normDayKey((row as any)?.day_key);
-    const t = normTier((row as any)?.tier);
-    if (dk && t) dayTiers[dk] = t;
-  }
+  const dayTiers = await fetchAgreementDayTiersForCompany(sb, companyId);
 
   const deliveryDaysRaw = Object.keys(dayTiers) as DayKey[];
   deliveryDaysRaw.sort(dayKeySort);
@@ -158,7 +162,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const basisDays = Object.values(dayTiers).filter((t) => t === "BASIS").length;
   const luxusDays = Object.values(dayTiers).filter((t) => t === "LUXUS").length;
 
-  const hasDaymap = Object.keys(dayTiers).length > 0;
+  const hasOperativeDayTiers = Object.keys(dayTiers).length > 0;
   const hasDeliveryDays = deliveryNorm.days.length > 0;
 
   const agreementId = agreement?.id ? String(agreement.id) : null;
@@ -169,7 +173,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const updatedAt = agreement?.updated_at ?? null;
 
   // Status resolution
-  if (!hasDaymap) {
+  if (!hasOperativeDayTiers) {
     return {
       ok: true,
       companyId,

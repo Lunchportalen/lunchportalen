@@ -1,0 +1,6453 @@
+{
+  "endpoints": [
+    {
+      "route": "/admin/employees/invites/bulk",
+      "file": "app/admin/employees/invites/bulk/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/admin/kjokken/orders",
+      "file": "app/admin/kjokken/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "get_kitchen_orders"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/_template",
+      "file": "app/api/_template/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/accept-invite/complete",
+      "file": "app/api/accept-invite/complete/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/acquire",
+      "file": "app/api/acquire/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/acquire/strategy",
+      "file": "app/api/acquire/strategy/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/address/resolve",
+      "file": "app/api/address/resolve/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/address/search",
+      "file": "app/api/address/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/accept-invite/complete",
+      "file": "app/api/admin/accept-invite/complete/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/agreement",
+      "file": "app/api/admin/agreement/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "company_current_agreement",
+        "company_locations",
+        "orders",
+        "profiles",
+        "v_company_current_agreement_daymap"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/agreements",
+      "file": "app/api/admin/agreements/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/agreements/current",
+      "file": "app/api/admin/agreements/current/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/auth",
+      "file": "app/api/admin/auth/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/auth/login",
+      "file": "app/api/admin/auth/login/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/company/status/set",
+      "file": "app/api/admin/company/status/set/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/dashboard",
+      "file": "app/api/admin/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/deliveries",
+      "file": "app/api/admin/deliveries/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/deliveries/status",
+      "file": "app/api/admin/deliveries/status/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/demand-insights",
+      "file": "app/api/admin/demand-insights/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "day_choices",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees",
+      "file": "app/api/admin/employees/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/[userId]/disable",
+      "file": "app/api/admin/employees/[userId]/disable/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "employee_audit",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/activity",
+      "file": "app/api/admin/employees/activity/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/audit",
+      "file": "app/api/admin/employees/audit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "employee_audit",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/export",
+      "file": "app/api/admin/employees/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invite",
+      "file": "app/api/admin/employees/invite/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invites",
+      "file": "app/api/admin/employees/invites/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invites/link",
+      "file": "app/api/admin/employees/invites/link/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invites/resend",
+      "file": "app/api/admin/employees/invites/resend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invites/revoke",
+      "file": "app/api/admin/employees/invites/revoke/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/invites/stats",
+      "file": "app/api/admin/employees/invites/stats/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/list",
+      "file": "app/api/admin/employees/list/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/resend-invite",
+      "file": "app/api/admin/employees/resend-invite/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_audit",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/employees/set-disabled",
+      "file": "app/api/admin/employees/set-disabled/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/esg/latest-monthly",
+      "file": "app/api/admin/esg/latest-monthly/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_monthly"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/esg/report/executive/pdf",
+      "file": "app/api/admin/esg/report/executive/pdf/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_monthly_snapshots",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/esg/report/pdf",
+      "file": "app/api/admin/esg/report/pdf/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_monthly_snapshots",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/esg/report/technical/pdf",
+      "file": "app/api/admin/esg/report/technical/pdf/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/esg/summary",
+      "file": "app/api/admin/esg/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_monthly_snapshots",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/insight",
+      "file": "app/api/admin/insight/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/insights",
+      "file": "app/api/admin/insights/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invite",
+      "file": "app/api/admin/invite/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites",
+      "file": "app/api/admin/invites/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/[id]",
+      "file": "app/api/admin/invites/[id]/route.ts",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/create",
+      "file": "app/api/admin/invites/create/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/lookup",
+      "file": "app/api/admin/invites/lookup/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/register",
+      "file": "app/api/admin/invites/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/resend",
+      "file": "app/api/admin/invites/resend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/resolve",
+      "file": "app/api/admin/invites/resolve/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invites/revoke",
+      "file": "app/api/admin/invites/revoke/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "company_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/invoices/csv",
+      "file": "app/api/admin/invoices/csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "company_locations",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/locations",
+      "file": "app/api/admin/locations/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_locations"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/locations/audit",
+      "file": "app/api/admin/locations/audit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "location_audit"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/locations/export",
+      "file": "app/api/admin/locations/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_locations"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/locations/status",
+      "file": "app/api/admin/locations/status/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/me",
+      "file": "app/api/admin/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/metrics",
+      "file": "app/api/admin/metrics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/metrics/daily",
+      "file": "app/api/admin/metrics/daily/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/metrics/summary",
+      "file": "app/api/admin/metrics/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/metrics/weekly",
+      "file": "app/api/admin/metrics/weekly/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/operations-tower",
+      "file": "app/api/admin/operations-tower/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "day_choices",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/orders",
+      "file": "app/api/admin/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/people",
+      "file": "app/api/admin/people/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/support/report",
+      "file": "app/api/admin/support/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "support_reports"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/admin/users",
+      "file": "app/api/admin/users/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/agreements",
+      "file": "app/api/agreements/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/agreements/my-latest",
+      "file": "app/api/agreements/my-latest/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/analyze",
+      "file": "app/api/ai/analyze/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/automation",
+      "file": "app/api/ai/automation/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/block",
+      "file": "app/api/ai/block/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/block/score",
+      "file": "app/api/ai/block/score/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/business-engine",
+      "file": "app/api/ai/business-engine/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/continue",
+      "file": "app/api/ai/continue/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/copilot",
+      "file": "app/api/ai/copilot/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/dashboard",
+      "file": "app/api/ai/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/decision",
+      "file": "app/api/ai/decision/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/design/analyze",
+      "file": "app/api/ai/design/analyze/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/design/generate",
+      "file": "app/api/ai/design/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/experiments",
+      "file": "app/api/ai/experiments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/generate",
+      "file": "app/api/ai/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/growth/ads",
+      "file": "app/api/ai/growth/ads/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/growth/funnel",
+      "file": "app/api/ai/growth/funnel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/growth/seo",
+      "file": "app/api/ai/growth/seo/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/image",
+      "file": "app/api/ai/image/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/inline",
+      "file": "app/api/ai/inline/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/insights",
+      "file": "app/api/ai/insights/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/layout",
+      "file": "app/api/ai/layout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/learn",
+      "file": "app/api/ai/learn/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/optimize",
+      "file": "app/api/ai/optimize/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/page",
+      "file": "app/api/ai/page/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/page/audit",
+      "file": "app/api/ai/page/audit/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/page/build",
+      "file": "app/api/ai/page/build/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/recommendation/apply",
+      "file": "app/api/ai/recommendation/apply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/recommendation/history",
+      "file": "app/api/ai/recommendation/history/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_governance_apply_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/rewrite",
+      "file": "app/api/ai/rewrite/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/swarm",
+      "file": "app/api/ai/swarm/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/track",
+      "file": "app/api/ai/track/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ai/usage",
+      "file": "app/api/ai/usage/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/alerts/run",
+      "file": "app/api/alerts/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/accept-invite",
+      "file": "app/api/auth/accept-invite/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/debug-cookies",
+      "file": "app/api/auth/debug-cookies/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/forgot-password",
+      "file": "app/api/auth/forgot-password/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/login",
+      "file": "app/api/auth/login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/login-debug",
+      "file": "app/api/auth/login-debug/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/logout",
+      "file": "app/api/auth/logout/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/me",
+      "file": "app/api/auth/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/post-login",
+      "file": "app/api/auth/post-login/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/profile",
+      "file": "app/api/auth/profile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/redirect",
+      "file": "app/api/auth/redirect/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/auth/session",
+      "file": "app/api/auth/session/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/automation/mode",
+      "file": "app/api/automation/mode/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/autonomy/revenue",
+      "file": "app/api/autonomy/revenue/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/autonomy/run",
+      "file": "app/api/autonomy/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/apply",
+      "file": "app/api/backoffice/ai/apply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/auto-improve",
+      "file": "app/api/backoffice/ai/auto-improve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/block-builder",
+      "file": "app/api/backoffice/ai/block-builder/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/build-home-from-intent",
+      "file": "app/api/backoffice/ai/build-home-from-intent/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/capability",
+      "file": "app/api/backoffice/ai/capability/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/cms-menu",
+      "file": "app/api/backoffice/ai/cms-menu/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/cta-improve",
+      "file": "app/api/backoffice/ai/cta-improve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/design-optimizer/analyze",
+      "file": "app/api/backoffice/ai/design-optimizer/analyze/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/design-optimizer/apply",
+      "file": "app/api/backoffice/ai/design-optimizer/apply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/design-optimizer/revert",
+      "file": "app/api/backoffice/ai/design-optimizer/revert/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/design-suggestion/log-apply",
+      "file": "app/api/backoffice/ai/design-suggestion/log-apply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/health/latest",
+      "file": "app/api/backoffice/ai/health/latest/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_health"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/health/scan",
+      "file": "app/api/backoffice/ai/health/scan/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/image-generator",
+      "file": "app/api/backoffice/ai/image-generator/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "media_items"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/image-metadata",
+      "file": "app/api/backoffice/ai/image-metadata/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/intelligence/dashboard",
+      "file": "app/api/backoffice/ai/intelligence/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/intelligence/events",
+      "file": "app/api/backoffice/ai/intelligence/events/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/intelligence/query",
+      "file": "app/api/backoffice/ai/intelligence/query/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/jobs",
+      "file": "app/api/backoffice/ai/jobs/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_jobs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/jobs/run",
+      "file": "app/api/backoffice/ai/jobs/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/layout-suggestions",
+      "file": "app/api/backoffice/ai/layout-suggestions/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/page-builder",
+      "file": "app/api/backoffice/ai/page-builder/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/page-intelligence",
+      "file": "app/api/backoffice/ai/page-intelligence/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/screenshot-builder",
+      "file": "app/api/backoffice/ai/screenshot-builder/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/seo-intelligence",
+      "file": "app/api/backoffice/ai/seo-intelligence/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/status",
+      "file": "app/api/backoffice/ai/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/suggest",
+      "file": "app/api/backoffice/ai/suggest/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log",
+        "ai_suggestions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/suggestions",
+      "file": "app/api/backoffice/ai/suggestions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_suggestions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/suggestions/[id]",
+      "file": "app/api/backoffice/ai/suggestions/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_suggestions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/suggestions/[id]/status",
+      "file": "app/api/backoffice/ai/suggestions/[id]/status/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "ai_suggestions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ai/text-improve",
+      "file": "app/api/backoffice/ai/text-improve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/autonomy/feedback",
+      "file": "app/api/backoffice/autonomy/feedback/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/autonomy/optimize",
+      "file": "app/api/backoffice/autonomy/optimize/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/autonomy/recommendations",
+      "file": "app/api/backoffice/autonomy/recommendations/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/autonomy/run",
+      "file": "app/api/backoffice/autonomy/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ceo/feedback",
+      "file": "app/api/backoffice/ceo/feedback/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ceo/recommendations",
+      "file": "app/api/backoffice/ceo/recommendations/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/ceo/run",
+      "file": "app/api/backoffice/ceo/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/cms/menu-draft",
+      "file": "app/api/backoffice/cms/menu-draft/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/company/control-tower",
+      "file": "app/api/backoffice/company/control-tower/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/build-home",
+      "file": "app/api/backoffice/content/build-home/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/home",
+      "file": "app/api/backoffice/content/home/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages",
+      "file": "app/api/backoffice/content/pages/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]",
+      "file": "app/api/backoffice/content/pages/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]/check-release",
+      "file": "app/api/backoffice/content/pages/[id]/check-release/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]/insights",
+      "file": "app/api/backoffice/content/pages/[id]/insights/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_analytics_events"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]/published-body",
+      "file": "app/api/backoffice/content/pages/[id]/published-body/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_page_variants"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]/variant/publish",
+      "file": "app/api/backoffice/content/pages/[id]/variant/publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_audit_log",
+        "content_page_variants"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/[id]/workflow",
+      "file": "app/api/backoffice/content/pages/[id]/workflow/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/pages/by-slug",
+      "file": "app/api/backoffice/content/pages/by-slug/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/publish-home",
+      "file": "app/api/backoffice/content/publish-home/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/tree",
+      "file": "app/api/backoffice/content/tree/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/content/tree/move",
+      "file": "app/api/backoffice/content/tree/move/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/control-tower",
+      "file": "app/api/backoffice/control-tower/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/enterprise/page-insights",
+      "file": "app/api/backoffice/enterprise/page-insights/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments",
+      "file": "app/api/backoffice/experiments/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments/[id]",
+      "file": "app/api/backoffice/experiments/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments/create",
+      "file": "app/api/backoffice/experiments/create/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments/event",
+      "file": "app/api/backoffice/experiments/event/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments/resolve",
+      "file": "app/api/backoffice/experiments/resolve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/experiments/stats",
+      "file": "app/api/backoffice/experiments/stats/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/forms",
+      "file": "app/api/backoffice/forms/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "forms"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/forms/[id]",
+      "file": "app/api/backoffice/forms/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "forms"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/forms/[id]/submissions",
+      "file": "app/api/backoffice/forms/[id]/submissions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "form_submissions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/growth/summary",
+      "file": "app/api/backoffice/growth/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "experiment_revenue",
+        "experiment_sessions",
+        "experiments"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/media/items",
+      "file": "app/api/backoffice/media/items/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "media_items"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/media/items/[id]",
+      "file": "app/api/backoffice/media/items/[id]/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "media_items"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/media/upload",
+      "file": "app/api/backoffice/media/upload/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "media_items"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases",
+      "file": "app/api/backoffice/releases/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases/[id]",
+      "file": "app/api/backoffice/releases/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases/[id]/execute",
+      "file": "app/api/backoffice/releases/[id]/execute/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases/[id]/items",
+      "file": "app/api/backoffice/releases/[id]/items/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases/[id]/items/[variantId]",
+      "file": "app/api/backoffice/releases/[id]/items/[variantId]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/releases/[id]/schedule",
+      "file": "app/api/backoffice/releases/[id]/schedule/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_releases"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/revenue/insights",
+      "file": "app/api/backoffice/revenue/insights/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/settings",
+      "file": "app/api/backoffice/settings/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "system_settings"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/translation/summary",
+      "file": "app/api/backoffice/translation/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_page_variants"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/backoffice/users",
+      "file": "app/api/backoffice/users/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/board",
+      "file": "app/api/board/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/business/run",
+      "file": "app/api/business/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ceo/brain",
+      "file": "app/api/ceo/brain/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ceo/run",
+      "file": "app/api/ceo/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ceo/snapshot",
+      "file": "app/api/ceo/snapshot/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/chaos/load",
+      "file": "app/api/chaos/load/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/chaos/test",
+      "file": "app/api/chaos/test/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/company/create",
+      "file": "app/api/company/create/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [
+        "lp_create_company_with_location"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/contact",
+      "file": "app/api/contact/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/content/global/footer",
+      "file": "app/api/content/global/footer/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/content/global/header",
+      "file": "app/api/content/global/header/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/content/global/settings",
+      "file": "app/api/content/global/settings/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/control-tower",
+      "file": "app/api/control-tower/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/control-tower/snapshot",
+      "file": "app/api/control-tower/snapshot/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/crm/lead",
+      "file": "app/api/crm/lead/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ai",
+      "file": "app/api/cron/ai/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ai-ceo",
+      "file": "app/api/cron/ai-ceo/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ai-experiment-generator",
+      "file": "app/api/cron/ai-experiment-generator/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ai-governance-auto",
+      "file": "app/api/cron/ai-governance-auto/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ai-optimize",
+      "file": "app/api/cron/ai-optimize/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/attribution",
+      "file": "app/api/cron/attribution/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/autonomous",
+      "file": "app/api/cron/autonomous/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/autonomy",
+      "file": "app/api/cron/autonomy/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/blackbox",
+      "file": "app/api/cron/blackbox/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_learning"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/boardroom",
+      "file": "app/api/cron/boardroom/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/budget-execution",
+      "file": "app/api/cron/budget-execution/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/business",
+      "file": "app/api/cron/business/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/capital-allocation",
+      "file": "app/api/cron/capital-allocation/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/ceo",
+      "file": "app/api/cron/ceo/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/cleanup-invites",
+      "file": "app/api/cron/cleanup-invites/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/credit-check",
+      "file": "app/api/cron/credit-check/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/daily-sanity",
+      "file": "app/api/cron/daily-sanity/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/daily",
+      "file": "app/api/cron/esg/daily/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "esg_build_daily"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/generate",
+      "file": "app/api/cron/esg/generate/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_monthly",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/lock/monthly",
+      "file": "app/api/cron/esg/lock/monthly/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "esg_lock_monthly"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/lock/yearly",
+      "file": "app/api/cron/esg/lock/yearly/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "esg_lock_yearly"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/monthly",
+      "file": "app/api/cron/esg/monthly/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "esg_build_monthly"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/esg/yearly",
+      "file": "app/api/cron/esg/yearly/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "esg_build_yearly"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/experiments",
+      "file": "app/api/cron/experiments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/forecast",
+      "file": "app/api/cron/forecast/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "cron_runs"
+      ],
+      "rpc_calls": [
+        "lp_generate_forecast_range"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/global-learning",
+      "file": "app/api/cron/global-learning/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/god-mode",
+      "file": "app/api/cron/god-mode/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/invoice-companies",
+      "file": "app/api/cron/invoice-companies/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/invoices/generate",
+      "file": "app/api/cron/invoices/generate/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements",
+        "invoice_periods",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/kitchen-print",
+      "file": "app/api/cron/kitchen-print/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/lock-weekplans",
+      "file": "app/api/cron/lock-weekplans/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/market",
+      "file": "app/api/cron/market/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/monitor",
+      "file": "app/api/cron/monitor/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/monitoring",
+      "file": "app/api/cron/monitoring/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/monopoly",
+      "file": "app/api/cron/monopoly/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/omniscient",
+      "file": "app/api/cron/omniscient/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/org",
+      "file": "app/api/cron/org/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/outbox",
+      "file": "app/api/cron/outbox/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "cron_runs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/pipeline",
+      "file": "app/api/cron/pipeline/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/preprod",
+      "file": "app/api/cron/preprod/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "cron_runs"
+      ],
+      "rpc_calls": [
+        "lp_generate_signals_for_date"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/profit",
+      "file": "app/api/cron/profit/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/reality",
+      "file": "app/api/cron/reality/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/realtime-monitor",
+      "file": "app/api/cron/realtime-monitor/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/resolve-experiments",
+      "file": "app/api/cron/resolve-experiments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "experiments"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/retrain",
+      "file": "app/api/cron/retrain/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/retrain-sequence",
+      "file": "app/api/cron/retrain-sequence/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/revenue",
+      "file": "app/api/cron/revenue/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/revenue-mode",
+      "file": "app/api/cron/revenue-mode/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/scaling",
+      "file": "app/api/cron/scaling/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/singularity",
+      "file": "app/api/cron/singularity/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/social",
+      "file": "app/api/cron/social/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/strategy",
+      "file": "app/api/cron/strategy/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_memory"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/system-motor",
+      "file": "app/api/cron/system-motor/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/train-model",
+      "file": "app/api/cron/train-model/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/train-sequence",
+      "file": "app/api/cron/train-sequence/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/week-scheduler",
+      "file": "app/api/cron/week-scheduler/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cron/week-visibility",
+      "file": "app/api/cron/week-visibility/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "menu_visibility_days"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/cto/run",
+      "file": "app/api/cto/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/customers/register",
+      "file": "app/api/customers/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/debug/cookie-test",
+      "file": "app/api/debug/cookie-test/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/debug/cookies",
+      "file": "app/api/debug/cookies/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/debug/whoami",
+      "file": "app/api/debug/whoami/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/dev/test-order-status",
+      "file": "app/api/dev/test-order-status/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/driver/bulk-set",
+      "file": "app/api/driver/bulk-set/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/driver/confirm",
+      "file": "app/api/driver/confirm/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "delivery_confirmations"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/driver/orders",
+      "file": "app/api/driver/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/driver/stops",
+      "file": "app/api/driver/stops/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "delivery_confirmations",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/driver/today",
+      "file": "app/api/driver/today/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/edge/ai",
+      "file": "app/api/edge/ai/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/edge/metrics",
+      "file": "app/api/edge/metrics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/editor-ai/metrics",
+      "file": "app/api/editor-ai/metrics/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/events/publish",
+      "file": "app/api/events/publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/example",
+      "file": "app/api/example/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/execution/approve",
+      "file": "app/api/execution/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/execution/create",
+      "file": "app/api/execution/create/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/execution/queue",
+      "file": "app/api/execution/queue/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/execution/run",
+      "file": "app/api/execution/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/exit",
+      "file": "app/api/exit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/exit/execute",
+      "file": "app/api/exit/execute/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/exit/now",
+      "file": "app/api/exit/now/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/exit/sell",
+      "file": "app/api/exit/sell/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/experiments/assign",
+      "file": "app/api/experiments/assign/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "experiment_variants",
+        "experiments"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/experiments/results",
+      "file": "app/api/experiments/results/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/experiments/rollout",
+      "file": "app/api/experiments/rollout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/experiments/track",
+      "file": "app/api/experiments/track/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "experiment_variants",
+        "experiments"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/experiments/winner",
+      "file": "app/api/experiments/winner/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/global/expand",
+      "file": "app/api/global/expand/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/global/markets",
+      "file": "app/api/global/markets/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/global/run",
+      "file": "app/api/global/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/growth/multichannel",
+      "file": "app/api/growth/multichannel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/growth/optimize",
+      "file": "app/api/growth/optimize/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/health",
+      "file": "app/api/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/health/live",
+      "file": "app/api/health/live/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/health/ready",
+      "file": "app/api/health/ready/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "system_settings"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/integrations/execute",
+      "file": "app/api/integrations/execute/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/internal/scheduler/run",
+      "file": "app/api/internal/scheduler/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_releases"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/investor/valuation",
+      "file": "app/api/investor/valuation/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ipo",
+      "file": "app/api/ipo/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen",
+      "file": "app/api/kitchen/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "day_choices",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch",
+      "file": "app/api/kitchen/batch/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "delivery_batches",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/get",
+      "file": "app/api/kitchen/batch/get/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "kitchen_batch"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/list",
+      "file": "app/api/kitchen/batch/list/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "kitchen_batch"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/reset",
+      "file": "app/api/kitchen/batch/reset/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "kitchen_batch",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/set",
+      "file": "app/api/kitchen/batch/set/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_locations",
+        "kitchen_batch"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/start",
+      "file": "app/api/kitchen/batch/start/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_current_agreement",
+        "company_locations",
+        "kitchen_batch",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/summary",
+      "file": "app/api/kitchen/batch/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/batch/upsert",
+      "file": "app/api/kitchen/batch/upsert/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/companies",
+      "file": "app/api/kitchen/companies/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "kitchen_batches",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/company",
+      "file": "app/api/kitchen/company/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "kitchen_batches",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/day",
+      "file": "app/api/kitchen/day/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/demand-forecast",
+      "file": "app/api/kitchen/demand-forecast/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/orders",
+      "file": "app/api/kitchen/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/orders.csv",
+      "file": "app/api/kitchen/orders.csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/orders/batch-status",
+      "file": "app/api/kitchen/orders/batch-status/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/report",
+      "file": "app/api/kitchen/report/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/report.csv",
+      "file": "app/api/kitchen/report.csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/kitchen/today",
+      "file": "app/api/kitchen/today/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/market",
+      "file": "app/api/market/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/market/domination",
+      "file": "app/api/market/domination/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/me",
+      "file": "app/api/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/me/agreement",
+      "file": "app/api/me/agreement/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_current_agreement",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/observability",
+      "file": "app/api/observability/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/observability/edge",
+      "file": "app/api/observability/edge/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/onboarding/complete",
+      "file": "app/api/onboarding/complete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements",
+        "company_locations",
+        "company_terms_acceptance",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/onboarding/terms-pdf",
+      "file": "app/api/onboarding/terms-pdf/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ops",
+      "file": "app/api/ops/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/ops/global",
+      "file": "app/api/ops/global/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order",
+      "file": "app/api/order/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/bulk-set",
+      "file": "app/api/order/bulk-set/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "day_choices"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/cancel",
+      "file": "app/api/order/cancel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "day_choices",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/set-choice",
+      "file": "app/api/order/set-choice/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "day_choices",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/set-day",
+      "file": "app/api/order/set-day/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "day_choices",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/week-demand-hints",
+      "file": "app/api/order/week-demand-hints/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/order/window",
+      "file": "app/api/order/window/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_current_agreement",
+        "day_choices",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders",
+      "file": "app/api/orders/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "experiment_revenue",
+        "orders"
+      ],
+      "rpc_calls": [
+        "lp_order_set"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/[orderId]",
+      "file": "app/api/orders/[orderId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/[orderId]/cancel",
+      "file": "app/api/orders/[orderId]/cancel/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/[orderId]/toggle",
+      "file": "app/api/orders/[orderId]/toggle/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/cancel",
+      "file": "app/api/orders/cancel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/choice",
+      "file": "app/api/orders/choice/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/export",
+      "file": "app/api/orders/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/my",
+      "file": "app/api/orders/my/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/set",
+      "file": "app/api/orders/set/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "lp_order_set"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/today",
+      "file": "app/api/orders/today/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/toggle",
+      "file": "app/api/orders/toggle/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/upsert",
+      "file": "app/api/orders/upsert/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "idem_get",
+        "idem_put",
+        "rate_limit_allow"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/orders/week",
+      "file": "app/api/orders/week/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/outbound/generate",
+      "file": "app/api/outbound/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/outbox/process",
+      "file": "app/api/outbox/process/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "email_outbox",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/outbox/retry",
+      "file": "app/api/outbox/retry/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "order_outbox"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/page/rollback",
+      "file": "app/api/page/rollback/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/page/version/[id]",
+      "file": "app/api/page/version/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/page/versions",
+      "file": "app/api/page/versions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/pipeline/actions",
+      "file": "app/api/pipeline/actions/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/pipeline/deals",
+      "file": "app/api/pipeline/deals/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/pipeline/update-stage",
+      "file": "app/api/pipeline/update-stage/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "lead_pipeline"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/pitch",
+      "file": "app/api/pitch/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/profile",
+      "file": "app/api/profile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/profile/set-scope",
+      "file": "app/api/profile/set-scope/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/ai-demo-cta/assign",
+      "file": "app/api/public/ai-demo-cta/assign/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_demo_ab_context_state",
+        "ai_demo_cta_ab_state"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/analytics",
+      "file": "app/api/public/analytics/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "content_analytics_events"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/demo-interest",
+      "file": "app/api/public/demo-interest/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "demo_interest_leads"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/forms/[id]",
+      "file": "app/api/public/forms/[id]/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "form_submissions",
+        "forms"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/forms/[id]/schema",
+      "file": "app/api/public/forms/[id]/schema/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "forms"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/onboarding/create-admin",
+      "file": "app/api/public/onboarding/create-admin/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/onboarding/register",
+      "file": "app/api/public/onboarding/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "lp_company_register"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/register",
+      "file": "app/api/public/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/register-company",
+      "file": "app/api/public/register-company/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "lp_company_register"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/search",
+      "file": "app/api/public/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_analytics_events"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/public/track-event",
+      "file": "app/api/public/track-event/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "experiment_sessions",
+        "experiment_variants",
+        "experiments"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/queue/add",
+      "file": "app/api/queue/add/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/register",
+      "file": "app/api/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue",
+      "file": "app/api/revenue/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue/autopilot",
+      "file": "app/api/revenue/autopilot/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue/brain",
+      "file": "app/api/revenue/brain/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue/lead",
+      "file": "app/api/revenue/lead/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue/live",
+      "file": "app/api/revenue/live/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/revenue/pipeline",
+      "file": "app/api/revenue/pipeline/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/agent/run",
+      "file": "app/api/sales/agent/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/ai",
+      "file": "app/api/sales/ai/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/closing/execute",
+      "file": "app/api/sales/closing/execute/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/closing/ready",
+      "file": "app/api/sales/closing/ready/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/cockpit/log",
+      "file": "app/api/sales/cockpit/log/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/lead",
+      "file": "app/api/sales/lead/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/loop/run",
+      "file": "app/api/sales/loop/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/objection/reply",
+      "file": "app/api/sales/objection/reply/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "lead_pipeline"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/objection/send",
+      "file": "app/api/sales/objection/send/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/run",
+      "file": "app/api/sales/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/scale",
+      "file": "app/api/sales/scale/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/send",
+      "file": "app/api/sales/send/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/sequence/inbound",
+      "file": "app/api/sales/sequence/inbound/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "lead_pipeline"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sales/sequence/timeline",
+      "file": "app/api/sales/sequence/timeline/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "lead_pipeline"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/scope/options",
+      "file": "app/api/scope/options/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sdr/queue",
+      "file": "app/api/sdr/queue/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sdr/run",
+      "file": "app/api/sdr/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/security/alerts",
+      "file": "app/api/security/alerts/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/security/audit",
+      "file": "app/api/security/audit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "audit_logs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/ab/analytics",
+      "file": "app/api/social/ab/analytics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/ab/decisions",
+      "file": "app/api/social/ab/decisions/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/ai",
+      "file": "app/api/social/ai/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/ai/generate",
+      "file": "app/api/social/ai/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/analytics",
+      "file": "app/api/social/analytics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/autonomous/run",
+      "file": "app/api/social/autonomous/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/posts",
+      "file": "app/api/social/posts/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "social_posts"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/posts/save",
+      "file": "app/api/social/posts/save/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "social_posts"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/recommendations",
+      "file": "app/api/social/recommendations/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/redirect",
+      "file": "app/api/social/redirect/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/run",
+      "file": "app/api/social/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/track",
+      "file": "app/api/social/track/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "social_posts"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/social/unified/generate",
+      "file": "app/api/social/unified/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/something",
+      "file": "app/api/something/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sre/metrics",
+      "file": "app/api/sre/metrics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/sre/uptime",
+      "file": "app/api/sre/uptime/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/strategy/run",
+      "file": "app/api/strategy/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/stream",
+      "file": "app/api/stream/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/_gate",
+      "file": "app/api/superadmin/_gate/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements",
+      "file": "app/api/superadmin/agreements/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [
+        "lp_agreement_create_pending"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/activate",
+      "file": "app/api/superadmin/agreements/[agreementId]/activate/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/approve",
+      "file": "app/api/superadmin/agreements/[agreementId]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/close",
+      "file": "app/api/superadmin/agreements/[agreementId]/close/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/pause",
+      "file": "app/api/superadmin/agreements/[agreementId]/pause/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/pause-ledger",
+      "file": "app/api/superadmin/agreements/[agreementId]/pause-ledger/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/reject",
+      "file": "app/api/superadmin/agreements/[agreementId]/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/[agreementId]/resume",
+      "file": "app/api/superadmin/agreements/[agreementId]/resume/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/agreements/list",
+      "file": "app/api/superadmin/agreements/list/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/ai-config",
+      "file": "app/api/superadmin/ai-config/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "ai_config"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/ai-prompts",
+      "file": "app/api/superadmin/ai-prompts/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "ai_config"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/audit",
+      "file": "app/api/superadmin/audit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/audit-meta/recent",
+      "file": "app/api/superadmin/audit-meta/recent/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "audit_meta_events"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/audit-write",
+      "file": "app/api/superadmin/audit-write/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "audit_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/audit/[id]",
+      "file": "app/api/superadmin/audit/[id]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "audit_logs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/autonomy",
+      "file": "app/api/superadmin/autonomy/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/autonomy/run",
+      "file": "app/api/superadmin/autonomy/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/billing-accounts",
+      "file": "app/api/superadmin/billing-accounts/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_billing_accounts"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/billing/export",
+      "file": "app/api/superadmin/billing/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/break-glass",
+      "file": "app/api/superadmin/break-glass/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_meta_events",
+        "break_glass_sessions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/cfo/summary",
+      "file": "app/api/superadmin/cfo/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies",
+      "file": "app/api/superadmin/companies/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "companies",
+        "company_current_agreement",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]",
+      "file": "app/api/superadmin/companies/[companyId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "company_locations",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/agreement/status",
+      "file": "app/api/superadmin/companies/[companyId]/agreement/status/route.ts",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "uses_tables": [
+        "audit_meta_events",
+        "companies",
+        "company_agreements"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/archive",
+      "file": "app/api/superadmin/companies/[companyId]/archive/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/archive/orders",
+      "file": "app/api/superadmin/companies/[companyId]/archive/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/archive/summary",
+      "file": "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_deletions",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/esg",
+      "file": "app/api/superadmin/companies/[companyId]/esg/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/invoice-basis",
+      "file": "app/api/superadmin/companies/[companyId]/invoice-basis/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/[companyId]/orders",
+      "file": "app/api/superadmin/companies/[companyId]/orders/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/agreement",
+      "file": "app/api/superadmin/companies/agreement/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/invoices",
+      "file": "app/api/superadmin/companies/invoices/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "invoices"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/set-status",
+      "file": "app/api/superadmin/companies/set-status/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/companies/stats",
+      "file": "app/api/superadmin/companies/stats/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/company/[companyId]/activate",
+      "file": "app/api/superadmin/company/[companyId]/activate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "outbox"
+      ],
+      "rpc_calls": [
+        "lp_company_activate"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/control-tower/data",
+      "file": "app/api/superadmin/control-tower/data/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/control-tower/snapshot",
+      "file": "app/api/superadmin/control-tower/snapshot/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/dashboard",
+      "file": "app/api/superadmin/dashboard/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/diagnostics",
+      "file": "app/api/superadmin/diagnostics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/diagnostics/repair",
+      "file": "app/api/superadmin/diagnostics/repair/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/employees/[userId]",
+      "file": "app/api/superadmin/employees/[userId]/route.ts",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "uses_tables": [
+        "employee_invites",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/enterprise",
+      "file": "app/api/superadmin/enterprise/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "enterprise_groups"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/enterprise/[groupId]",
+      "file": "app/api/superadmin/enterprise/[groupId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "enterprise_groups"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/benchmark",
+      "file": "app/api/superadmin/esg/benchmark/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/export/yearly/csv",
+      "file": "app/api/superadmin/esg/export/yearly/csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/export/yearly/json",
+      "file": "app/api/superadmin/esg/export/yearly/json/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/latest-monthly",
+      "file": "app/api/superadmin/esg/latest-monthly/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_monthly"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/report/pdf",
+      "file": "app/api/superadmin/esg/report/pdf/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "esg_monthly_snapshots",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/esg/summary",
+      "file": "app/api/superadmin/esg/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "esg_monthly_snapshots",
+        "esg_yearly_snapshots"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/experiments",
+      "file": "app/api/superadmin/experiments/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/firms/[companyId]/employees",
+      "file": "app/api/superadmin/firms/[companyId]/employees/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/firms/[companyId]/employees/delete",
+      "file": "app/api/superadmin/firms/[companyId]/employees/delete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/global-intelligence/summary",
+      "file": "app/api/superadmin/global-intelligence/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/growth-optimization",
+      "file": "app/api/superadmin/growth-optimization/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/csv",
+      "file": "app/api/superadmin/invoices/csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_agreements",
+        "company_locations",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/export",
+      "file": "app/api/superadmin/invoices/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "tripletex_export_by_run"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/exports",
+      "file": "app/api/superadmin/invoices/exports/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "invoice_exports",
+        "invoice_lines"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/exports/retry",
+      "file": "app/api/superadmin/invoices/exports/retry/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "invoice_lines",
+        "outbox"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/generate",
+      "file": "app/api/superadmin/invoices/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "agreements",
+        "billing_products",
+        "billing_tax_codes",
+        "companies",
+        "daily_company_rollup",
+        "invoice_lines",
+        "orders",
+        "outbox"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/mapping",
+      "file": "app/api/superadmin/invoices/mapping/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/mapping/bulk",
+      "file": "app/api/superadmin/invoices/mapping/bulk/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "company_billing_accounts"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/reconcile",
+      "file": "app/api/superadmin/invoices/reconcile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "daily_company_rollup",
+        "invoice_lines"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/reverse",
+      "file": "app/api/superadmin/invoices/reverse/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "invoice_lines",
+        "outbox"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/runs",
+      "file": "app/api/superadmin/invoices/runs/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "invoice_runs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/runs/[runId]",
+      "file": "app/api/superadmin/invoices/runs/[runId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_billing_accounts",
+        "invoice_lines",
+        "invoice_runs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/invoices/runs/[runId]/exports",
+      "file": "app/api/superadmin/invoices/runs/[runId]/exports/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "invoice_exports"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/menu-publish",
+      "file": "app/api/superadmin/menu-publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/menus-week",
+      "file": "app/api/superadmin/menus-week/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "menu_visibility_days",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/outbox/list",
+      "file": "app/api/superadmin/outbox/list/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/outbox/run",
+      "file": "app/api/superadmin/outbox/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/overview",
+      "file": "app/api/superadmin/overview/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "orders"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/profiles/assign",
+      "file": "app/api/superadmin/profiles/assign/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [
+        "superadmin_assign_profile_to_company"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/profiles/link-company",
+      "file": "app/api/superadmin/profiles/link-company/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/profiles/remove",
+      "file": "app/api/superadmin/profiles/remove/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/profiles/update",
+      "file": "app/api/superadmin/profiles/update/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/quality",
+      "file": "app/api/superadmin/quality/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "quality_reports"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/quality/update",
+      "file": "app/api/superadmin/quality/update/route.ts",
+      "methods": [
+        "PATCH"
+      ],
+      "uses_tables": [
+        "quality_reports",
+        "superadmin_audit_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/self-heal",
+      "file": "app/api/superadmin/self-heal/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system",
+      "file": "app/api/superadmin/system/route.ts",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "uses_tables": [
+        "audit_meta_events",
+        "break_glass_sessions",
+        "system_settings"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system-alerts",
+      "file": "app/api/superadmin/system-alerts/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ai_activity_log"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system-graph/data",
+      "file": "app/api/superadmin/system-graph/data/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/cleanup-check",
+      "file": "app/api/superadmin/system/cleanup-check/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "content_page_variants",
+        "content_pages"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/codex-prompt",
+      "file": "app/api/superadmin/system/codex-prompt/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/flow/diagnostics",
+      "file": "app/api/superadmin/system/flow/diagnostics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_current_agreement",
+        "company_locations",
+        "delivery_confirmations",
+        "kitchen_batch",
+        "ops_events",
+        "orders",
+        "profiles",
+        "system_incidents"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/health",
+      "file": "app/api/superadmin/system/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/incidents",
+      "file": "app/api/superadmin/system/incidents/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "system_incidents"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/orders/integrity/summary",
+      "file": "app/api/superadmin/system/orders/integrity/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ops_events",
+        "orders",
+        "system_incidents"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/repairs/jobs",
+      "file": "app/api/superadmin/system/repairs/jobs/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "repair_jobs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/repairs/ops",
+      "file": "app/api/superadmin/system/repairs/ops/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ops_events"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/repairs/run",
+      "file": "app/api/superadmin/system/repairs/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "delivery_confirmations",
+        "ops_events",
+        "orders",
+        "profiles",
+        "repair_jobs",
+        "system_incidents"
+      ],
+      "rpc_calls": [
+        "claim_repair_jobs"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/repairs/summary",
+      "file": "app/api/superadmin/system/repairs/summary/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "ops_events",
+        "repair_jobs"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/system/status",
+      "file": "app/api/superadmin/system/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/user-disable",
+      "file": "app/api/superadmin/user-disable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/user-role",
+      "file": "app/api/superadmin/user-role/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users",
+      "file": "app/api/superadmin/users/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/cleanup",
+      "file": "app/api/superadmin/users/cleanup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/delete",
+      "file": "app/api/superadmin/users/delete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "employee_invites",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/disable",
+      "file": "app/api/superadmin/users/disable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/enable",
+      "file": "app/api/superadmin/users/enable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/set-company-admin",
+      "file": "app/api/superadmin/users/set-company-admin/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/superadmin/users/set-scope",
+      "file": "app/api/superadmin/users/set-scope/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "profiles"
+      ],
+      "rpc_calls": [
+        "superadmin_set_user_scope"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/support/report",
+      "file": "app/api/support/report/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "audit_events",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/ai/diagnostics",
+      "file": "app/api/system/ai/diagnostics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/ai/health",
+      "file": "app/api/system/ai/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/control-plane",
+      "file": "app/api/system/control-plane/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/freeze",
+      "file": "app/api/system/freeze/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/health",
+      "file": "app/api/system/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/outbox/process",
+      "file": "app/api/system/outbox/process/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "billing_products",
+        "billing_tax_codes",
+        "companies",
+        "invoice_periods",
+        "outbox",
+        "tripletex_customers",
+        "tripletex_exports"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/receipts",
+      "file": "app/api/system/receipts/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "v_receipt_rows"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/run",
+      "file": "app/api/system/run/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/snapshot",
+      "file": "app/api/system/snapshot/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/system/time",
+      "file": "app/api/system/time/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/saas/billing",
+      "file": "app/api/saas/billing/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "saas_subscriptions"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/saas/billing/webhook",
+      "file": "app/api/saas/billing/webhook/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/saas/onboarding",
+      "file": "app/api/saas/onboarding/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/saas/tenant",
+      "file": "app/api/saas/tenant/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/user/gdpr/delete",
+      "file": "app/api/user/gdpr/delete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/user/gdpr/export",
+      "file": "app/api/user/gdpr/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/week",
+      "file": "app/api/week/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "company_current_agreement",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/weekplan",
+      "file": "app/api/weekplan/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/weekplan/next",
+      "file": "app/api/weekplan/next/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/weekplan/publish",
+      "file": "app/api/weekplan/publish/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/api/worker/run",
+      "file": "app/api/worker/run/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/auth/login",
+      "file": "app/auth/login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/auth/post-login",
+      "file": "app/auth/post-login/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/auth/profile",
+      "file": "app/auth/profile/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/auth/session",
+      "file": "app/auth/session/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/driver/csv",
+      "file": "app/driver/csv/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "orders",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    },
+    {
+      "route": "/onboarding/complete",
+      "file": "app/onboarding/complete/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "uses_tables": [
+        "companies",
+        "profiles"
+      ],
+      "rpc_calls": [],
+      "confidence": "confirmed"
+    }
+  ]
+}

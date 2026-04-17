@@ -1,0 +1,1414 @@
+{
+  "tables": {
+    "companies": {
+      "used_in": [
+        "app/(app)/week/page.tsx",
+        "app/api/admin/agreement/route.ts",
+        "app/api/admin/company/status/set/route.ts",
+        "app/api/admin/dashboard/route.ts",
+        "app/api/admin/demand-insights/route.ts",
+        "app/api/admin/employees/invite/route.ts",
+        "app/api/admin/esg/report/executive/pdf/route.ts",
+        "app/api/admin/esg/report/pdf/route.ts",
+        "app/api/admin/esg/report/technical/pdf/route.ts",
+        "app/api/admin/invite/route.ts",
+        "app/api/admin/invites/route.ts",
+        "app/api/admin/invoices/csv/route.ts",
+        "app/api/admin/me/route.ts",
+        "app/api/admin/metrics/daily/route.ts",
+        "app/api/admin/metrics/summary/route.ts",
+        "app/api/admin/metrics/weekly/route.ts",
+        "app/api/admin/operations-tower/route.ts",
+        "app/api/admin/people/route.ts",
+        "app/api/admin/support/report/route.ts",
+        "app/api/admin/users/route.ts",
+        "app/api/agreements/my-latest/route.ts",
+        "app/api/ai/usage/route.ts",
+        "app/api/auth/profile/route.ts",
+        "app/api/company/create/route.ts",
+        "app/api/cron/credit-check/route.ts",
+        "app/api/cron/invoice-companies/route.ts",
+        "app/api/driver/stops/route.ts",
+        "app/api/driver/today/route.ts",
+        "app/api/kitchen/companies/route.ts",
+        "app/api/kitchen/company/route.ts",
+        "app/api/kitchen/demand-forecast/route.ts",
+        "app/api/kitchen/route.ts",
+        "app/api/onboarding/complete/route.ts",
+        "app/api/order/bulk-set/route.ts",
+        "app/api/order/set-choice/route.ts",
+        "app/api/order/set-day/route.ts",
+        "app/api/order/window/route.ts",
+        "app/api/orders/[orderId]/cancel/route.ts",
+        "app/api/orders/[orderId]/toggle/route.ts",
+        "app/api/orders/cancel/route.ts",
+        "app/api/orders/choice/route.ts",
+        "app/api/orders/my/route.ts",
+        "app/api/orders/today/route.ts",
+        "app/api/orders/toggle/route.ts",
+        "app/api/profile/route.ts",
+        "app/api/profile/set-scope/route.ts",
+        "app/api/saas/billing/route.ts",
+        "app/api/scope/options/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/activate/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/close/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/pause/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/resume/route.ts",
+        "app/api/superadmin/agreements/route.ts",
+        "app/api/superadmin/billing/export/route.ts",
+        "app/api/superadmin/cfo/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/agreement/status/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/route.ts",
+        "app/api/superadmin/companies/agreement/route.ts",
+        "app/api/superadmin/companies/route.ts",
+        "app/api/superadmin/companies/set-status/route.ts",
+        "app/api/superadmin/companies/stats/route.ts",
+        "app/api/superadmin/dashboard/route.ts",
+        "app/api/superadmin/diagnostics/repair/route.ts",
+        "app/api/superadmin/diagnostics/route.ts",
+        "app/api/superadmin/enterprise/[groupId]/route.ts",
+        "app/api/superadmin/esg/benchmark/route.ts",
+        "app/api/superadmin/esg/latest-monthly/route.ts",
+        "app/api/superadmin/esg/report/pdf/route.ts",
+        "app/api/superadmin/invoices/csv/route.ts",
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/superadmin/invoices/reconcile/route.ts",
+        "app/api/superadmin/overview/route.ts",
+        "app/api/superadmin/profiles/link-company/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/users/set-company-admin/route.ts",
+        "app/api/superadmin/users/set-scope/route.ts",
+        "app/api/system/outbox/process/route.ts",
+        "app/api/weekplan/route.ts",
+        "app/driver/csv/route.ts",
+        "app/onboarding/complete/route.ts",
+        "app/superadmin/firms/[companyId]/actions.ts",
+        "app/superadmin/firms/[companyId]/employees/page.tsx",
+        "app/superadmin/firms/[companyId]/page.tsx",
+        "app/superadmin/overview/page.tsx",
+        "lib/admin/loadAdminContext.ts",
+        "lib/agreement/loadAgreementContext.ts",
+        "lib/ai/billing.ts",
+        "lib/ai/entitlements.ts",
+        "lib/ai/governanceApplySafety.ts",
+        "lib/ai/recommendationActions.ts",
+        "lib/ai/resolveRunnerCompanyForBackoffice.ts",
+        "lib/ai/runnerGovernance.ts",
+        "lib/ai/segmentation/engine.ts",
+        "lib/ai/usageOverview.ts",
+        "lib/auth/getScopeServer.ts",
+        "lib/auth/scope.ts",
+        "lib/billing/enforcementEngine.ts",
+        "lib/guards/assertCompanyActive.ts",
+        "lib/invites/createEmployeeSingleInvite.ts",
+        "lib/kitchen/dayData.ts",
+        "lib/kitchen/ordersFeed.ts",
+        "lib/kitchen/report.ts",
+        "lib/orders/backupContext.ts",
+        "lib/orders/companyOrderEligibility.ts",
+        "lib/saas/billing.ts",
+        "lib/saas/onboarding.ts",
+        "lib/server/agreements/ledgerAgreementApproval.ts",
+        "lib/superadmin/queries.ts",
+        "scripts/system-test/steps/createCompany.ts",
+        "scripts/system-test/utils/cleanup.ts"
+      ]
+    },
+    "profiles": {
+      "used_in": [
+        "app/(app)/week/page.tsx",
+        "app/admin/audit/page.tsx",
+        "app/admin/companies/page.tsx",
+        "app/admin/employees/invites/bulk/route.ts",
+        "app/admin/invite/actions.ts",
+        "app/admin/kjokken/page.tsx",
+        "app/admin/menus/page.tsx",
+        "app/admin/orders/page.tsx",
+        "app/admin/users/page.tsx",
+        "app/api/accept-invite/complete/route.ts",
+        "app/api/admin/accept-invite/complete/route.ts",
+        "app/api/admin/agreement/route.ts",
+        "app/api/admin/auth/route.ts",
+        "app/api/admin/dashboard/route.ts",
+        "app/api/admin/employees/[userId]/disable/route.ts",
+        "app/api/admin/employees/activity/route.ts",
+        "app/api/admin/employees/audit/route.ts",
+        "app/api/admin/employees/export/route.ts",
+        "app/api/admin/employees/invite/route.ts",
+        "app/api/admin/employees/list/route.ts",
+        "app/api/admin/employees/resend-invite/route.ts",
+        "app/api/admin/employees/route.ts",
+        "app/api/admin/employees/set-disabled/route.ts",
+        "app/api/admin/insight/route.ts",
+        "app/api/admin/insights/route.ts",
+        "app/api/admin/invite/route.ts",
+        "app/api/admin/invites/register/route.ts",
+        "app/api/admin/invites/route.ts",
+        "app/api/admin/me/route.ts",
+        "app/api/admin/people/route.ts",
+        "app/api/admin/users/route.ts",
+        "app/api/agreements/my-latest/route.ts",
+        "app/api/auth/accept-invite/route.ts",
+        "app/api/auth/me/route.ts",
+        "app/api/auth/profile/route.ts",
+        "app/api/auth/redirect/route.ts",
+        "app/api/auth/scope.ts",
+        "app/api/backoffice/users/route.ts",
+        "app/api/cron/daily-sanity/route.ts",
+        "app/api/debug/whoami/route.ts",
+        "app/api/health/route.ts",
+        "app/api/kitchen/batch/reset/route.ts",
+        "app/api/kitchen/batch/route.ts",
+        "app/api/kitchen/company/route.ts",
+        "app/api/kitchen/day/route.ts",
+        "app/api/kitchen/demand-forecast/route.ts",
+        "app/api/kitchen/route.ts",
+        "app/api/me/agreement/route.ts",
+        "app/api/me/route.ts",
+        "app/api/observability/route.ts",
+        "app/api/onboarding/complete/route.ts",
+        "app/api/order/cancel/route.ts",
+        "app/api/order/set-choice/route.ts",
+        "app/api/order/set-day/route.ts",
+        "app/api/orders/[orderId]/cancel/route.ts",
+        "app/api/orders/[orderId]/toggle/route.ts",
+        "app/api/outbox/process/route.ts",
+        "app/api/profile/route.ts",
+        "app/api/profile/set-scope/route.ts",
+        "app/api/scope/options/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/orders/route.ts",
+        "app/api/superadmin/companies/[companyId]/route.ts",
+        "app/api/superadmin/companies/route.ts",
+        "app/api/superadmin/diagnostics/repair/route.ts",
+        "app/api/superadmin/diagnostics/route.ts",
+        "app/api/superadmin/employees/[userId]/route.ts",
+        "app/api/superadmin/firms/[companyId]/employees/delete/route.ts",
+        "app/api/superadmin/firms/[companyId]/employees/route.ts",
+        "app/api/superadmin/menus-week/route.ts",
+        "app/api/superadmin/profiles/link-company/route.ts",
+        "app/api/superadmin/profiles/remove/route.ts",
+        "app/api/superadmin/profiles/update/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts",
+        "app/api/superadmin/user-disable/route.ts",
+        "app/api/superadmin/user-role/route.ts",
+        "app/api/superadmin/users/cleanup/route.ts",
+        "app/api/superadmin/users/delete/route.ts",
+        "app/api/superadmin/users/disable/route.ts",
+        "app/api/superadmin/users/enable/route.ts",
+        "app/api/superadmin/users/route.ts",
+        "app/api/superadmin/users/set-company-admin/route.ts",
+        "app/api/superadmin/users/set-scope/route.ts",
+        "app/api/support/report/route.ts",
+        "app/api/user/gdpr/export/route.ts",
+        "app/api/week/route.ts",
+        "app/api/weekplan/route.ts",
+        "app/auth/post-login/route.ts",
+        "app/auth/profile/route.ts",
+        "app/driver/csv/route.ts",
+        "app/driver/page.tsx",
+        "app/kitchen/page.tsx",
+        "app/kitchen/report/page.tsx",
+        "app/menus/week/page.tsx",
+        "app/onboarding/complete/route.ts",
+        "app/outbox/page.tsx",
+        "app/superadmin/audit/page.tsx",
+        "app/superadmin/companies/[companyId]/agreement/page.tsx",
+        "app/superadmin/esg/[companyId]/page.tsx",
+        "app/superadmin/firms/[companyId]/employees/page.tsx",
+        "app/superadmin/firms/[companyId]/page.tsx",
+        "app/superadmin/firms/page.tsx",
+        "app/superadmin/invoices/[runId]/page.tsx",
+        "app/superadmin/invoices/page.tsx",
+        "app/superadmin/invoices/reconcile/page.tsx",
+        "app/superadmin/orders-today/page.tsx",
+        "app/superadmin/users/page.tsx",
+        "app/system/[section]/page.tsx",
+        "app/system/kvittering/page.tsx",
+        "lib/admin/loadAdminContext.ts",
+        "lib/agreement/currentAgreement.ts",
+        "lib/agreement/loadAgreementContext.ts",
+        "lib/ai/segmentation/engine.ts",
+        "lib/auth/getRoleForUser.ts",
+        "lib/auth/getScopeServer.ts",
+        "lib/auth/membershipLookup.ts",
+        "lib/auth/requireRole.ts",
+        "lib/auth/scope.ts",
+        "lib/db/profileLookup.ts",
+        "lib/guards/requireSuperadmin.ts",
+        "lib/invites/createEmployeeSingleInvite.ts",
+        "lib/kitchen/batchSummary.ts",
+        "lib/kitchen/dayData.ts",
+        "lib/kitchen/ordersFeed.ts",
+        "lib/kitchen/report.ts",
+        "lib/metrics/collect.ts",
+        "lib/observability/graphMetrics.ts",
+        "lib/saas/onboarding.ts",
+        "lib/saas/tenant.ts",
+        "lib/superadmin/queries.ts",
+        "lib/system/health.ts",
+        "lib/system/systemHealthAggregator.ts",
+        "scripts/system-test/steps/createEmployee.ts",
+        "scripts/system-test/utils/cleanup.ts"
+      ]
+    },
+    "content_page_variants": {
+      "used_in": [
+        "app/(backoffice)/backoffice/preview/[id]/page.tsx",
+        "app/api/backoffice/ai/build-home-from-intent/route.ts",
+        "app/api/backoffice/content/build-home/route.ts",
+        "app/api/backoffice/content/home/route.ts",
+        "app/api/backoffice/content/pages/[id]/published-body/route.ts",
+        "app/api/backoffice/content/pages/[id]/route.ts",
+        "app/api/backoffice/content/pages/[id]/variant/publish/route.ts",
+        "app/api/backoffice/content/pages/[id]/workflow/route.ts",
+        "app/api/backoffice/content/pages/route.ts",
+        "app/api/backoffice/content/publish-home/route.ts",
+        "app/api/backoffice/translation/summary/route.ts",
+        "app/api/cron/ai-optimize/route.ts",
+        "app/api/internal/scheduler/run/route.ts",
+        "app/api/page/rollback/route.ts",
+        "app/api/superadmin/system/cleanup-check/route.ts",
+        "lib/ai/agents/contentHealthDaily.ts",
+        "lib/ai/automationEngine.ts",
+        "lib/backoffice/content/pageVersionsRepo.ts",
+        "lib/backoffice/content/releasesRepo.ts",
+        "lib/cms/public/getContentBySlug.ts",
+        "lib/cms/public/getOverlayByKey.ts",
+        "lib/content/update.ts",
+        "lib/experiment/growthExperiment.ts",
+        "lib/experiments/applyWinnerToCms.ts",
+        "lib/experiments/createHomeTrafficExperimentCore.ts",
+        "scripts/seedAppOverlaysFromHardcoded.ts",
+        "scripts/seedCmsHomeAndOverlays.ts"
+      ]
+    },
+    "content_pages": {
+      "used_in": [
+        "app/(backoffice)/backoffice/preview/[id]/page.tsx",
+        "app/api/backoffice/ai/build-home-from-intent/route.ts",
+        "app/api/backoffice/content/build-home/route.ts",
+        "app/api/backoffice/content/home/route.ts",
+        "app/api/backoffice/content/pages/[id]/route.ts",
+        "app/api/backoffice/content/pages/by-slug/route.ts",
+        "app/api/backoffice/content/pages/route.ts",
+        "app/api/backoffice/content/publish-home/route.ts",
+        "app/api/backoffice/content/tree/move/route.ts",
+        "app/api/backoffice/content/tree/route.ts",
+        "app/api/cron/ai-optimize/route.ts",
+        "app/api/cron/autonomous/route.ts",
+        "app/api/page/rollback/route.ts",
+        "app/api/superadmin/system/cleanup-check/route.ts",
+        "lib/ai/automationEngine.ts",
+        "lib/ai/ceo/decisionEngine.ts",
+        "lib/ai/context/systemContext.ts",
+        "lib/backoffice/content/pageVersionsRepo.ts",
+        "lib/cms/public/getContentBySlug.ts",
+        "lib/cms/public/getOverlayByKey.ts",
+        "lib/cms/public/getPageIdBySlug.ts",
+        "lib/experiments/applyWinnerToCms.ts",
+        "lib/experiments/createHomeTrafficExperimentCore.ts",
+        "lib/experiments/publicLayoutExperiment.ts",
+        "scripts/seedAppOverlaysFromHardcoded.ts",
+        "scripts/seedCmsHomeAndOverlays.ts"
+      ]
+    },
+    "company_locations": {
+      "used_in": [
+        "app/admin/employees/invites/bulk/route.ts",
+        "app/api/admin/agreement/route.ts",
+        "app/api/admin/employees/invite/route.ts",
+        "app/api/admin/invite/route.ts",
+        "app/api/admin/invites/route.ts",
+        "app/api/admin/invoices/csv/route.ts",
+        "app/api/admin/locations/audit/route.ts",
+        "app/api/admin/locations/export/route.ts",
+        "app/api/admin/locations/route.ts",
+        "app/api/admin/locations/status/route.ts",
+        "app/api/admin/operations-tower/route.ts",
+        "app/api/driver/bulk-set/route.ts",
+        "app/api/driver/confirm/route.ts",
+        "app/api/driver/stops/route.ts",
+        "app/api/driver/today/route.ts",
+        "app/api/kitchen/batch/get/route.ts",
+        "app/api/kitchen/batch/list/route.ts",
+        "app/api/kitchen/batch/reset/route.ts",
+        "app/api/kitchen/batch/route.ts",
+        "app/api/kitchen/batch/set/route.ts",
+        "app/api/kitchen/batch/start/route.ts",
+        "app/api/kitchen/company/route.ts",
+        "app/api/kitchen/route.ts",
+        "app/api/onboarding/complete/route.ts",
+        "app/api/profile/set-scope/route.ts",
+        "app/api/scope/options/route.ts",
+        "app/api/superadmin/companies/[companyId]/route.ts",
+        "app/api/superadmin/enterprise/[groupId]/route.ts",
+        "app/api/superadmin/invoices/csv/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/users/set-company-admin/route.ts",
+        "app/api/superadmin/users/set-scope/route.ts",
+        "app/driver/csv/route.ts",
+        "app/superadmin/firms/[companyId]/employees/page.tsx",
+        "app/superadmin/firms/[companyId]/page.tsx",
+        "lib/invites/createEmployeeSingleInvite.ts",
+        "lib/kitchen/batchSummary.ts",
+        "lib/kitchen/dayData.ts",
+        "lib/kitchen/ordersFeed.ts",
+        "lib/kitchen/report.ts",
+        "lib/orders/backupContext.ts",
+        "lib/server/agreements/ledgerAgreementApproval.ts",
+        "scripts/system-test/steps/createLocation.ts",
+        "scripts/system-test/utils/cleanup.ts"
+      ]
+    },
+    "employee_invites": {
+      "used_in": [
+        "app/admin/employees/invites/bulk/route.ts",
+        "app/api/accept-invite/complete/route.ts",
+        "app/api/admin/accept-invite/complete/route.ts",
+        "app/api/admin/employees/invite/route.ts",
+        "app/api/admin/employees/invites/link/route.ts",
+        "app/api/admin/employees/invites/resend/route.ts",
+        "app/api/admin/employees/invites/revoke/route.ts",
+        "app/api/admin/employees/invites/stats/route.ts",
+        "app/api/admin/invite/route.ts",
+        "app/api/admin/invites/[id]/route.ts",
+        "app/api/admin/invites/resend/route.ts",
+        "app/api/admin/invites/route.ts",
+        "app/api/admin/people/route.ts",
+        "app/api/auth/accept-invite/route.ts",
+        "app/api/cron/cleanup-invites/route.ts",
+        "app/api/superadmin/employees/[userId]/route.ts",
+        "app/api/superadmin/users/cleanup/route.ts",
+        "app/api/superadmin/users/delete/route.ts",
+        "lib/invites/createEmployeeSingleInvite.ts"
+      ]
+    },
+    "orders": {
+      "used_in": [
+        "app/admin/kjokken/page.tsx",
+        "app/api/admin/agreement/route.ts",
+        "app/api/admin/dashboard/route.ts",
+        "app/api/admin/deliveries/route.ts",
+        "app/api/admin/demand-insights/route.ts",
+        "app/api/admin/insight/route.ts",
+        "app/api/admin/insights/route.ts",
+        "app/api/admin/invoices/csv/route.ts",
+        "app/api/admin/metrics/daily/route.ts",
+        "app/api/admin/metrics/summary/route.ts",
+        "app/api/admin/metrics/weekly/route.ts",
+        "app/api/admin/operations-tower/route.ts",
+        "app/api/admin/orders/route.ts",
+        "app/api/cron/daily-sanity/route.ts",
+        "app/api/cron/esg/generate/route.ts",
+        "app/api/cron/invoices/generate/route.ts",
+        "app/api/dev/test-order-status/route.ts",
+        "app/api/driver/bulk-set/route.ts",
+        "app/api/driver/orders/route.ts",
+        "app/api/driver/stops/route.ts",
+        "app/api/driver/today/route.ts",
+        "app/api/health/route.ts",
+        "app/api/kitchen/batch/start/route.ts",
+        "app/api/kitchen/companies/route.ts",
+        "app/api/kitchen/company/route.ts",
+        "app/api/kitchen/demand-forecast/route.ts",
+        "app/api/kitchen/orders/batch-status/route.ts",
+        "app/api/kitchen/route.ts",
+        "app/api/order/set-day/route.ts",
+        "app/api/order/week-demand-hints/route.ts",
+        "app/api/order/window/route.ts",
+        "app/api/orders/[orderId]/cancel/route.ts",
+        "app/api/orders/[orderId]/route.ts",
+        "app/api/orders/[orderId]/toggle/route.ts",
+        "app/api/orders/cancel/route.ts",
+        "app/api/orders/choice/route.ts",
+        "app/api/orders/export/route.ts",
+        "app/api/orders/my/route.ts",
+        "app/api/orders/route.ts",
+        "app/api/orders/today/route.ts",
+        "app/api/orders/toggle/route.ts",
+        "app/api/orders/week/route.ts",
+        "app/api/superadmin/billing/export/route.ts",
+        "app/api/superadmin/cfo/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/orders/route.ts",
+        "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/esg/route.ts",
+        "app/api/superadmin/companies/[companyId]/invoice-basis/route.ts",
+        "app/api/superadmin/companies/[companyId]/orders/route.ts",
+        "app/api/superadmin/dashboard/route.ts",
+        "app/api/superadmin/diagnostics/route.ts",
+        "app/api/superadmin/employees/[userId]/route.ts",
+        "app/api/superadmin/invoices/csv/route.ts",
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/superadmin/overview/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/system/orders/integrity/summary/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts",
+        "app/driver/csv/route.ts",
+        "components/admin/AgreementBlock.tsx",
+        "lib/billing/invoiceEngine.ts",
+        "lib/controlTower/aggregator.ts",
+        "lib/cto/data.ts",
+        "lib/finance/runInvestorValuation.ts",
+        "lib/growth/aggregateGrowth.ts",
+        "lib/growth/channelPerformance.ts",
+        "lib/kitchen/batchSummary.ts",
+        "lib/kitchen/dayData.ts",
+        "lib/kitchen/ordersFeed.ts",
+        "lib/kitchen/report.ts",
+        "lib/metrics/collect.ts",
+        "lib/metrics/live.ts",
+        "lib/mvo/persistOrderMvo.ts",
+        "lib/mvo/runMvoEvaluation.ts",
+        "lib/observability/graphMetrics.ts",
+        "lib/predictive/data.ts",
+        "lib/revenue/applyLeadPipelineOrderAttribution.ts",
+        "lib/revenue/collect.ts",
+        "lib/revenue/getRevenueByPost.ts",
+        "lib/revenue/persistOrderAttribution.ts",
+        "lib/strategy/collect.ts",
+        "scripts/ci-guard.mjs",
+        "scripts/system-test/utils/cleanup.ts",
+        "scripts/testSocialFlow.ts"
+      ]
+    },
+    "agreements": {
+      "used_in": [
+        "app/api/admin/agreement/route.ts",
+        "app/api/admin/agreements/current/route.ts",
+        "app/api/admin/invoices/csv/route.ts",
+        "app/api/agreements/my-latest/route.ts",
+        "app/api/agreements/route.ts",
+        "app/api/cron/invoices/generate/route.ts",
+        "app/api/superadmin/agreements/list/route.ts",
+        "app/api/superadmin/companies/[companyId]/route.ts",
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/kitchen/page.tsx",
+        "app/superadmin/agreements/page.tsx",
+        "lib/agreement/loadAgreementContext.ts",
+        "lib/auth/getScopeServer.ts",
+        "lib/auth/scope.ts",
+        "lib/billing/invoiceEngine.ts",
+        "lib/kitchen/report.ts",
+        "lib/orders/agreementContractFallback.ts",
+        "lib/server/agreements/ledgerAgreementApproval.ts",
+        "scripts/system-test/steps/createAgreement.ts",
+        "scripts/system-test/steps/createOrder.ts",
+        "scripts/system-test/utils/cleanup.ts"
+      ]
+    },
+    "company_current_agreement": {
+      "used_in": [
+        "app/api/admin/agreement/route.ts",
+        "app/api/kitchen/batch/start/route.ts",
+        "app/api/me/agreement/route.ts",
+        "app/api/order/window/route.ts",
+        "app/api/superadmin/companies/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/week/route.ts",
+        "lib/agreement/currentAgreement.ts",
+        "lib/agreement/requireRule.ts",
+        "lib/pricing/priceForDate.ts",
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "v_company_current_agreement_daymap": {
+      "used_in": [
+        "app/api/admin/agreement/route.ts",
+        "lib/agreement/currentAgreement.ts"
+      ]
+    },
+    "day_choices": {
+      "used_in": [
+        "app/api/admin/demand-insights/route.ts",
+        "app/api/admin/operations-tower/route.ts",
+        "app/api/kitchen/route.ts",
+        "app/api/order/bulk-set/route.ts",
+        "app/api/order/cancel/route.ts",
+        "app/api/order/set-choice/route.ts",
+        "app/api/order/set-day/route.ts",
+        "app/api/order/window/route.ts",
+        "lib/kitchen/dayData.ts"
+      ]
+    },
+    "employee_audit": {
+      "used_in": [
+        "app/api/admin/employees/[userId]/disable/route.ts",
+        "app/api/admin/employees/audit/route.ts",
+        "app/api/admin/employees/resend-invite/route.ts"
+      ]
+    },
+    "esg_monthly": {
+      "used_in": [
+        "app/api/admin/esg/latest-monthly/route.ts",
+        "app/api/cron/esg/generate/route.ts",
+        "app/api/superadmin/esg/latest-monthly/route.ts"
+      ]
+    },
+    "esg_monthly_snapshots": {
+      "used_in": [
+        "app/api/admin/esg/report/executive/pdf/route.ts",
+        "app/api/admin/esg/report/pdf/route.ts",
+        "app/api/admin/esg/summary/route.ts",
+        "app/api/superadmin/esg/report/pdf/route.ts",
+        "app/api/superadmin/esg/summary/route.ts"
+      ]
+    },
+    "esg_yearly_snapshots": {
+      "used_in": [
+        "app/api/admin/esg/report/executive/pdf/route.ts",
+        "app/api/admin/esg/report/pdf/route.ts",
+        "app/api/admin/esg/report/technical/pdf/route.ts",
+        "app/api/admin/esg/summary/route.ts",
+        "app/api/superadmin/esg/benchmark/route.ts",
+        "app/api/superadmin/esg/export/yearly/csv/route.ts",
+        "app/api/superadmin/esg/export/yearly/json/route.ts",
+        "app/api/superadmin/esg/report/pdf/route.ts",
+        "app/api/superadmin/esg/summary/route.ts"
+      ]
+    },
+    "company_invites": {
+      "used_in": [
+        "app/api/admin/invites/create/route.ts",
+        "app/api/admin/invites/lookup/route.ts",
+        "app/api/admin/invites/register/route.ts",
+        "app/api/admin/invites/revoke/route.ts"
+      ]
+    },
+    "location_audit": {
+      "used_in": [
+        "app/api/admin/locations/audit/route.ts"
+      ]
+    },
+    "support_reports": {
+      "used_in": [
+        "app/api/admin/support/report/route.ts"
+      ]
+    },
+    "ai_governance_apply_log": {
+      "used_in": [
+        "app/api/ai/recommendation/history/route.ts",
+        "lib/ai/autoExecutorMetrics.ts",
+        "lib/ai/recommendationActions.ts"
+      ]
+    },
+    "ai_activity_log": {
+      "used_in": [
+        "app/api/backoffice/ai/apply/route.ts",
+        "app/api/backoffice/ai/block-builder/route.ts",
+        "app/api/backoffice/ai/cms-menu/route.ts",
+        "app/api/backoffice/ai/cta-improve/route.ts",
+        "app/api/backoffice/ai/design-optimizer/analyze/route.ts",
+        "app/api/backoffice/ai/design-optimizer/apply/route.ts",
+        "app/api/backoffice/ai/design-optimizer/revert/route.ts",
+        "app/api/backoffice/ai/design-suggestion/log-apply/route.ts",
+        "app/api/backoffice/ai/image-metadata/route.ts",
+        "app/api/backoffice/ai/layout-suggestions/route.ts",
+        "app/api/backoffice/ai/page-builder/route.ts",
+        "app/api/backoffice/ai/page-intelligence/route.ts",
+        "app/api/backoffice/ai/seo-intelligence/route.ts",
+        "app/api/backoffice/ai/suggest/route.ts",
+        "app/api/backoffice/ai/text-improve/route.ts",
+        "app/api/backoffice/company/control-tower/route.ts",
+        "app/api/backoffice/experiments/event/route.ts",
+        "app/api/backoffice/revenue/insights/route.ts",
+        "app/api/ceo/run/route.ts",
+        "app/api/cto/run/route.ts",
+        "app/api/editor-ai/metrics/route.ts",
+        "app/api/sales/cockpit/log/route.ts",
+        "app/api/superadmin/experiments/route.ts",
+        "app/api/superadmin/self-heal/route.ts",
+        "app/api/superadmin/system-alerts/route.ts",
+        "lib/ai/agents/contentHealthDaily.ts",
+        "lib/ai/agents/registry.ts",
+        "lib/ai/agents/runner.ts",
+        "lib/ai/company/lastCompanyAct.ts",
+        "lib/ai/design/lastDesignApply.ts",
+        "lib/ai/jobs/runner.ts",
+        "lib/ai/learning.ts",
+        "lib/ai/logActivity.ts",
+        "lib/ai/logging/aiExecutionLog.ts",
+        "lib/ai/performance.ts",
+        "lib/ai/runner.ts",
+        "lib/ai/signals.ts",
+        "lib/ai/suggestMotor.ts",
+        "lib/ai/tracking.ts",
+        "lib/ai/usage.ts",
+        "lib/ai/usageOverview.ts",
+        "lib/audit/aiActivityAudit.ts",
+        "lib/autonomy/audit.ts",
+        "lib/autonomy/override.ts",
+        "lib/autonomy/runRevenue.ts",
+        "lib/business/runEngine.ts",
+        "lib/controlTower/aggregator.ts",
+        "lib/cto/data.ts",
+        "lib/evolution/persistDb.server.ts",
+        "lib/experiment/auditLog.ts",
+        "lib/experiment/contentPromote.ts",
+        "lib/experiment/growthExperiment.ts",
+        "lib/experiment/promote.ts",
+        "lib/experiment/rollback.ts",
+        "lib/experiment/runSocialAbEvaluations.ts",
+        "lib/experiment/socialAb.ts",
+        "lib/finance/runInvestorValuation.ts",
+        "lib/global/expansionLog.ts",
+        "lib/global/globalAudit.ts",
+        "lib/global/intelligenceSnapshot.ts",
+        "lib/global/learningStore.ts",
+        "lib/global/runGlobalLearningCycle.ts",
+        "lib/growth/aggregateGrowth.ts",
+        "lib/growth/getGrowthHintsForPrompt.ts",
+        "lib/growth/multiChannelLog.ts",
+        "lib/growth/profitOptimizationPipeline.ts",
+        "lib/growth/runGrowthLoop.ts",
+        "lib/learning/boosts.ts",
+        "lib/monitoring/alerts.ts",
+        "lib/monitoring/history.ts",
+        "lib/monitoring/run.ts",
+        "lib/mvo/runMvoEvaluation.ts",
+        "lib/observability/graphMetrics.ts",
+        "lib/pipeline/logPipelineAi.ts",
+        "lib/pipeline/runPrediction.ts",
+        "lib/pos/signalCollector.ts",
+        "lib/revenue/applyLeadPipelineOrderAttribution.ts",
+        "lib/revenue/data.ts",
+        "lib/revenue/revenueAutopilotLog.ts",
+        "lib/sales/closingAudit.ts",
+        "lib/sales/logOutreach.ts",
+        "lib/sales/objectionAudit.ts",
+        "lib/sales/salesLoopLog.ts",
+        "lib/sales/sendLog.ts",
+        "lib/sales/sequenceAudit.ts",
+        "lib/sales/sequenceVariant.ts",
+        "lib/salesAutonomy/audit.ts",
+        "lib/selfheal/audit.ts",
+        "lib/selfheal/cooldown.ts",
+        "lib/social/aiActivitySocial.ts",
+        "lib/strategy/collect.ts",
+        "lib/strategy/log.ts",
+        "lib/system/health.ts",
+        "scripts/autoFix.ts",
+        "scripts/testSocialFlow.ts"
+      ]
+    },
+    "content_health": {
+      "used_in": [
+        "app/api/backoffice/ai/health/latest/route.ts",
+        "lib/ai/agents/contentHealthDaily.ts"
+      ]
+    },
+    "media_items": {
+      "used_in": [
+        "app/api/backoffice/ai/image-generator/route.ts",
+        "app/api/backoffice/media/items/[id]/route.ts",
+        "app/api/backoffice/media/items/route.ts",
+        "app/api/backoffice/media/upload/route.ts",
+        "lib/media/loaders.ts",
+        "lib/social/mediaAdapter.ts"
+      ]
+    },
+    "ai_jobs": {
+      "used_in": [
+        "app/api/backoffice/ai/jobs/route.ts",
+        "lib/ai/agents/registry.ts",
+        "lib/ai/jobs/runner.ts",
+        "lib/system/systemHealthAggregator.ts"
+      ]
+    },
+    "ai_suggestions": {
+      "used_in": [
+        "app/api/backoffice/ai/suggest/route.ts",
+        "app/api/backoffice/ai/suggestions/[id]/route.ts",
+        "app/api/backoffice/ai/suggestions/[id]/status/route.ts",
+        "app/api/backoffice/ai/suggestions/route.ts",
+        "lib/ai/suggestMotor.ts"
+      ]
+    },
+    "content_analytics_events": {
+      "used_in": [
+        "app/api/backoffice/content/pages/[id]/insights/route.ts",
+        "app/api/public/analytics/route.ts",
+        "app/api/public/search/route.ts",
+        "lib/ai/ceo/decisionEngine.ts",
+        "lib/ai/context/systemContext.ts",
+        "lib/ai/enterprise/pageInsights.ts",
+        "lib/ai/revenue/attribution.ts",
+        "lib/analytics/loadPageRevenueEvents.ts",
+        "lib/pos/signalCollector.ts",
+        "lib/server/demoCtaAb/rebalance.ts"
+      ]
+    },
+    "content_audit_log": {
+      "used_in": [
+        "app/api/backoffice/content/pages/[id]/variant/publish/route.ts",
+        "lib/backoffice/content/releasesRepo.ts",
+        "lib/backoffice/content/workflowRepo.ts"
+      ]
+    },
+    "forms": {
+      "used_in": [
+        "app/api/backoffice/forms/[id]/route.ts",
+        "app/api/backoffice/forms/route.ts",
+        "app/api/public/forms/[id]/route.ts",
+        "app/api/public/forms/[id]/schema/route.ts"
+      ]
+    },
+    "form_submissions": {
+      "used_in": [
+        "app/api/backoffice/forms/[id]/submissions/route.ts",
+        "app/api/public/forms/[id]/route.ts"
+      ]
+    },
+    "experiment_revenue": {
+      "used_in": [
+        "app/api/backoffice/growth/summary/route.ts",
+        "app/api/orders/route.ts",
+        "lib/ai/businessMetrics.ts",
+        "lib/ai/experimentWinnerDecision.ts",
+        "lib/ai/revenue/attribution.ts"
+      ]
+    },
+    "experiment_sessions": {
+      "used_in": [
+        "app/api/backoffice/growth/summary/route.ts",
+        "app/api/public/track-event/route.ts"
+      ]
+    },
+    "experiments": {
+      "used_in": [
+        "app/api/backoffice/growth/summary/route.ts",
+        "app/api/cron/resolve-experiments/route.ts",
+        "app/api/experiments/assign/route.ts",
+        "app/api/experiments/track/route.ts",
+        "app/api/public/track-event/route.ts",
+        "lib/ai/businessMetrics.ts",
+        "lib/ai/ceo/decisionEngine.ts",
+        "lib/ai/context/systemContext.ts",
+        "lib/ai/experimentWinnerDecision.ts",
+        "lib/experiments/applyWinnerToCms.ts",
+        "lib/experiments/createHomeTrafficExperimentCore.ts",
+        "lib/experiments/overlayRunningExperiment.ts",
+        "lib/experiments/render.ts",
+        "lib/experiments/rollout.ts"
+      ]
+    },
+    "content_releases": {
+      "used_in": [
+        "app/api/backoffice/releases/[id]/schedule/route.ts",
+        "app/api/internal/scheduler/run/route.ts",
+        "lib/backoffice/content/releasesRepo.ts"
+      ]
+    },
+    "system_settings": {
+      "used_in": [
+        "app/api/backoffice/settings/route.ts",
+        "app/api/health/ready/route.ts",
+        "app/api/superadmin/system/route.ts",
+        "lib/settings/getSettings.ts",
+        "lib/system/settings.ts"
+      ]
+    },
+    "ai_memory": {
+      "used_in": [
+        "app/api/cron/autonomous/route.ts",
+        "app/api/cron/god-mode/route.ts",
+        "app/api/cron/market/route.ts",
+        "app/api/cron/monopoly/route.ts",
+        "app/api/cron/omniscient/route.ts",
+        "app/api/cron/org/route.ts",
+        "app/api/cron/reality/route.ts",
+        "app/api/cron/revenue-mode/route.ts",
+        "app/api/cron/singularity/route.ts",
+        "app/api/cron/strategy/route.ts",
+        "lib/ai/attribution/getAttribution.ts",
+        "lib/ai/experienceModel.ts",
+        "lib/ai/learning/getLearning.ts",
+        "lib/ai/memory/aiMemory.ts"
+      ]
+    },
+    "ai_learning": {
+      "used_in": [
+        "app/api/cron/blackbox/route.ts",
+        "lib/ai/learningEngine.ts"
+      ]
+    },
+    "cron_runs": {
+      "used_in": [
+        "app/api/cron/forecast/route.ts",
+        "app/api/cron/outbox/route.ts",
+        "app/api/cron/preprod/route.ts",
+        "lib/observability/sli.ts",
+        "lib/superadmin/queries.ts",
+        "lib/system/systemHealthAggregator.ts"
+      ]
+    },
+    "invoice_periods": {
+      "used_in": [
+        "app/api/cron/invoices/generate/route.ts",
+        "app/api/system/outbox/process/route.ts"
+      ]
+    },
+    "menu_visibility_days": {
+      "used_in": [
+        "app/api/cron/week-visibility/route.ts",
+        "app/api/superadmin/menus-week/route.ts"
+      ]
+    },
+    "delivery_confirmations": {
+      "used_in": [
+        "app/api/driver/confirm/route.ts",
+        "app/api/driver/stops/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts"
+      ]
+    },
+    "experiment_variants": {
+      "used_in": [
+        "app/api/experiments/assign/route.ts",
+        "app/api/experiments/track/route.ts",
+        "app/api/public/track-event/route.ts",
+        "lib/ai/experimentWinnerDecision.ts",
+        "lib/ai/learning.ts",
+        "lib/experiments/applyWinnerToCms.ts",
+        "lib/experiments/createHomeTrafficExperimentCore.ts",
+        "lib/experiments/evaluator.ts",
+        "lib/experiments/overlayRunningExperiment.ts",
+        "lib/experiments/render.ts",
+        "lib/experiments/rollout.ts"
+      ]
+    },
+    "kitchen_batch": {
+      "used_in": [
+        "app/api/kitchen/batch/get/route.ts",
+        "app/api/kitchen/batch/list/route.ts",
+        "app/api/kitchen/batch/reset/route.ts",
+        "app/api/kitchen/batch/set/route.ts",
+        "app/api/kitchen/batch/start/route.ts",
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "lib/kitchen/batchSummary.ts",
+        "lib/kitchen/dayData.ts"
+      ]
+    },
+    "delivery_batches": {
+      "used_in": [
+        "app/api/kitchen/batch/route.ts"
+      ]
+    },
+    "kitchen_batches": {
+      "used_in": [
+        "app/api/kitchen/companies/route.ts",
+        "app/api/kitchen/company/route.ts"
+      ]
+    },
+    "company_agreements": {
+      "used_in": [
+        "app/api/onboarding/complete/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/activate/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/close/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/pause/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/resume/route.ts",
+        "app/api/superadmin/companies/[companyId]/agreement/status/route.ts",
+        "app/api/superadmin/invoices/csv/route.ts"
+      ]
+    },
+    "company_terms_acceptance": {
+      "used_in": [
+        "app/api/onboarding/complete/route.ts"
+      ]
+    },
+    "email_outbox": {
+      "used_in": [
+        "app/api/outbox/process/route.ts"
+      ]
+    },
+    "order_outbox": {
+      "used_in": [
+        "app/api/outbox/retry/route.ts",
+        "lib/outbox/orderBackup.ts"
+      ]
+    },
+    "lead_pipeline": {
+      "used_in": [
+        "app/api/pipeline/update-stage/route.ts",
+        "app/api/sales/objection/reply/route.ts",
+        "app/api/sales/sequence/inbound/route.ts",
+        "app/api/sales/sequence/timeline/route.ts",
+        "lib/cto/data.ts",
+        "lib/db/growthAdminRead.ts",
+        "lib/finance/runInvestorValuation.ts",
+        "lib/growth/aggregateGrowth.ts",
+        "lib/pipeline/applyProbability.ts",
+        "lib/pipeline/buildPipelineActions.ts",
+        "lib/pipeline/executeActions.ts",
+        "lib/pipeline/progress.ts",
+        "lib/pipeline/runPrediction.ts",
+        "lib/pipeline/upsertLead.ts",
+        "lib/revenue/applyLeadPipelineOrderAttribution.ts",
+        "lib/revenue/collect.ts",
+        "lib/sales/closeDeal.ts",
+        "lib/sales/runSequence.ts",
+        "lib/sales/saveDraftMessage.ts",
+        "lib/sales/updateSequence.ts",
+        "lib/strategy/collect.ts",
+        "scripts/testSocialFlow.ts"
+      ]
+    },
+    "ai_demo_ab_context_state": {
+      "used_in": [
+        "app/api/public/ai-demo-cta/assign/route.ts",
+        "lib/server/demoCtaAb/rebalance.ts"
+      ]
+    },
+    "ai_demo_cta_ab_state": {
+      "used_in": [
+        "app/api/public/ai-demo-cta/assign/route.ts",
+        "lib/server/demoCtaAb/rebalance.ts"
+      ]
+    },
+    "demo_interest_leads": {
+      "used_in": [
+        "app/api/public/demo-interest/route.ts"
+      ]
+    },
+    "saas_subscriptions": {
+      "used_in": [
+        "app/api/saas/billing/route.ts",
+        "lib/ai/billing.ts",
+        "lib/saas/billing.ts"
+      ]
+    },
+    "audit_logs": {
+      "used_in": [
+        "app/api/security/audit/route.ts",
+        "app/api/superadmin/audit/[id]/route.ts",
+        "lib/audit/query.ts",
+        "lib/ipo/governance.ts",
+        "lib/ops/signals.ts",
+        "lib/security/audit.ts"
+      ]
+    },
+    "social_posts": {
+      "used_in": [
+        "app/api/social/posts/route.ts",
+        "app/api/social/posts/save/route.ts",
+        "app/api/social/track/route.ts",
+        "app/superadmin/growth/social/actions.ts",
+        "lib/db/growthAdminRead.ts",
+        "lib/experiment/contentPromote.ts",
+        "lib/experiment/promote.ts",
+        "lib/experiment/rollback.ts",
+        "lib/experiment/socialAb.ts",
+        "lib/growth/channelPerformance.ts",
+        "lib/growth/loadGrowthOptimization.ts",
+        "lib/growth/runGrowthLoop.ts",
+        "lib/pipeline/runPrediction.ts",
+        "lib/pipeline/upsertLead.ts",
+        "lib/revenue/applyLeadPipelineOrderAttribution.ts",
+        "lib/revenue/collect.ts",
+        "lib/social/savePost.ts",
+        "lib/social/track.ts",
+        "scripts/testSocialFlow.ts"
+      ]
+    },
+    "ai_config": {
+      "used_in": [
+        "app/api/superadmin/ai-config/route.ts",
+        "app/api/superadmin/ai-prompts/route.ts",
+        "lib/ai/config.ts"
+      ]
+    },
+    "audit_meta_events": {
+      "used_in": [
+        "app/api/superadmin/audit-meta/recent/route.ts",
+        "app/api/superadmin/break-glass/route.ts",
+        "app/api/superadmin/companies/[companyId]/agreement/status/route.ts",
+        "app/api/superadmin/system/route.ts",
+        "lib/audit/idempotency.ts"
+      ]
+    },
+    "audit_events": {
+      "used_in": [
+        "app/api/superadmin/audit-write/route.ts",
+        "app/api/superadmin/audit/[id]/route.ts",
+        "app/api/superadmin/companies/route.ts",
+        "app/api/superadmin/profiles/link-company/route.ts",
+        "app/api/superadmin/users/cleanup/route.ts",
+        "app/api/support/report/route.ts",
+        "lib/audit/auditWrite.ts",
+        "lib/audit/log.ts",
+        "lib/audit/write.ts",
+        "lib/enforce.ts",
+        "lib/ipo/governance.ts",
+        "lib/ops/logOpsEvent.ts",
+        "lib/ops/signals.ts",
+        "lib/security/dashboardAudit.ts"
+      ]
+    },
+    "audit_log": {
+      "used_in": [
+        "app/api/superadmin/audit-write/route.ts",
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "company_billing_accounts": {
+      "used_in": [
+        "app/api/superadmin/billing-accounts/route.ts",
+        "app/api/superadmin/invoices/mapping/bulk/route.ts",
+        "app/api/superadmin/invoices/runs/[runId]/route.ts",
+        "lib/auth/getScopeServer.ts",
+        "lib/auth/scope.ts"
+      ]
+    },
+    "break_glass_sessions": {
+      "used_in": [
+        "app/api/superadmin/break-glass/route.ts",
+        "app/api/superadmin/system/route.ts",
+        "lib/superadmin/breakGlass.ts",
+        "lib/superadmin/rootMode.ts"
+      ]
+    },
+    "company_deletions": {
+      "used_in": [
+        "app/api/superadmin/companies/[companyId]/archive/summary/route.ts"
+      ]
+    },
+    "invoices": {
+      "used_in": [
+        "app/api/superadmin/companies/invoices/route.ts"
+      ]
+    },
+    "outbox": {
+      "used_in": [
+        "app/api/superadmin/company/[companyId]/activate/route.ts",
+        "app/api/superadmin/invoices/exports/retry/route.ts",
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/superadmin/invoices/reverse/route.ts",
+        "app/api/system/outbox/process/route.ts",
+        "lib/orderBackup/admin.ts",
+        "lib/orderBackup/outbox.ts",
+        "lib/outbox/invoiceReady.ts",
+        "lib/system/systemHealthAggregator.ts"
+      ]
+    },
+    "enterprise_groups": {
+      "used_in": [
+        "app/api/superadmin/enterprise/[groupId]/route.ts",
+        "app/api/superadmin/enterprise/route.ts"
+      ]
+    },
+    "invoice_lines": {
+      "used_in": [
+        "app/api/superadmin/invoices/exports/retry/route.ts",
+        "app/api/superadmin/invoices/exports/route.ts",
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/superadmin/invoices/reconcile/route.ts",
+        "app/api/superadmin/invoices/reverse/route.ts",
+        "app/api/superadmin/invoices/runs/[runId]/route.ts"
+      ]
+    },
+    "invoice_exports": {
+      "used_in": [
+        "app/api/superadmin/invoices/exports/route.ts",
+        "app/api/superadmin/invoices/runs/[runId]/exports/route.ts"
+      ]
+    },
+    "billing_products": {
+      "used_in": [
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/system/outbox/process/route.ts",
+        "lib/billing/invoiceEngine.ts",
+        "lib/integrations/tripletex/client.ts"
+      ]
+    },
+    "billing_tax_codes": {
+      "used_in": [
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/system/outbox/process/route.ts",
+        "lib/billing/invoiceEngine.ts",
+        "lib/integrations/tripletex/client.ts"
+      ]
+    },
+    "daily_company_rollup": {
+      "used_in": [
+        "app/api/superadmin/invoices/generate/route.ts",
+        "app/api/superadmin/invoices/reconcile/route.ts"
+      ]
+    },
+    "invoice_runs": {
+      "used_in": [
+        "app/api/superadmin/invoices/runs/[runId]/route.ts",
+        "app/api/superadmin/invoices/runs/route.ts"
+      ]
+    },
+    "quality_reports": {
+      "used_in": [
+        "app/api/superadmin/quality/route.ts",
+        "app/api/superadmin/quality/update/route.ts",
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "superadmin_audit_log": {
+      "used_in": [
+        "app/api/superadmin/quality/update/route.ts"
+      ]
+    },
+    "ops_events": {
+      "used_in": [
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/system/orders/integrity/summary/route.ts",
+        "app/api/superadmin/system/repairs/ops/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts",
+        "app/api/superadmin/system/repairs/summary/route.ts",
+        "lib/ops/logOpsEvent.ts"
+      ]
+    },
+    "system_incidents": {
+      "used_in": [
+        "app/api/superadmin/system/flow/diagnostics/route.ts",
+        "app/api/superadmin/system/incidents/route.ts",
+        "app/api/superadmin/system/orders/integrity/summary/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts",
+        "lib/observability/sli.ts",
+        "lib/observability/statusAggregator.ts"
+      ]
+    },
+    "repair_jobs": {
+      "used_in": [
+        "app/api/superadmin/system/repairs/jobs/route.ts",
+        "app/api/superadmin/system/repairs/run/route.ts",
+        "app/api/superadmin/system/repairs/summary/route.ts"
+      ]
+    },
+    "tripletex_customers": {
+      "used_in": [
+        "app/api/system/outbox/process/route.ts",
+        "lib/billing/invoiceEngine.ts",
+        "lib/integrations/tripletex/client.ts",
+        "lib/integrations/tripletexStatusEngine.ts"
+      ]
+    },
+    "tripletex_exports": {
+      "used_in": [
+        "app/api/system/outbox/process/route.ts",
+        "lib/billing/invoiceEngine.ts"
+      ]
+    },
+    "v_receipt_rows": {
+      "used_in": [
+        "app/api/system/receipts/route.ts"
+      ]
+    },
+    "company_current_agreement_rules": {
+      "used_in": [
+        "lib/agreement/requireRule.ts"
+      ]
+    },
+    "ai_autonomy_log": {
+      "used_in": [
+        "lib/ai/autonomy/autonomyLog.ts"
+      ]
+    },
+    "experiment_events": {
+      "used_in": [
+        "lib/ai/businessMetrics.ts",
+        "lib/ai/experimentWinnerDecision.ts",
+        "lib/experiments/evaluator.ts",
+        "lib/experiments/tracker.ts"
+      ]
+    },
+    "ai_ceo_log": {
+      "used_in": [
+        "lib/ai/ceo/ceoLog.ts"
+      ]
+    },
+    "ai_action_memory": {
+      "used_in": [
+        "lib/ai/control/actionMemoryPersist.ts"
+      ]
+    },
+    "ai_enterprise_revenue_log": {
+      "used_in": [
+        "lib/ai/enterprise/enterpriseLog.ts"
+      ]
+    },
+    "ai_experiment_results": {
+      "used_in": [
+        "lib/ai/experiments/aiExperimentsRepo.ts"
+      ]
+    },
+    "ai_experiments": {
+      "used_in": [
+        "lib/ai/experiments/aiExperimentsRepo.ts"
+      ]
+    },
+    "experiment_results": {
+      "used_in": [
+        "lib/ai/experiments/analytics.ts"
+      ]
+    },
+    "ai_experiment_memory": {
+      "used_in": [
+        "lib/ai/experiments/experimentMemory.ts"
+      ]
+    },
+    "ai_platform_governance": {
+      "used_in": [
+        "lib/ai/governanceApplySafety.ts",
+        "lib/ai/recommendationActions.ts",
+        "lib/ai/runnerGovernance.ts"
+      ]
+    },
+    "ai_intelligence_events": {
+      "used_in": [
+        "lib/ai/intelligence/store.ts",
+        "lib/system/health.ts"
+      ]
+    },
+    "entities": {
+      "used_in": [
+        "lib/ai/knowledge/graphBuilder.ts"
+      ]
+    },
+    "entity_relations": {
+      "used_in": [
+        "lib/ai/knowledge/graphBuilder.ts"
+      ]
+    },
+    "ai_learning_patterns": {
+      "used_in": [
+        "lib/ai/learning.ts",
+        "lib/pos/posAdaptivePersistence.ts"
+      ]
+    },
+    "audit_rows": {
+      "used_in": [
+        "lib/audit/auditWrite.ts"
+      ]
+    },
+    "ab_experiments": {
+      "used_in": [
+        "lib/autonomy/runRevenue.ts",
+        "lib/experiment/runSocialAbEvaluations.ts",
+        "lib/experiment/socialAb.ts",
+        "lib/growth/abAssign.ts",
+        "lib/revenue/applyLoop.ts"
+      ]
+    },
+    "ab_variants": {
+      "used_in": [
+        "lib/autonomy/runRevenue.ts",
+        "lib/experiment/runSocialAbEvaluations.ts",
+        "lib/experiment/socialAb.ts",
+        "lib/growth/abAssign.ts",
+        "lib/revenue/applyLoop.ts"
+      ]
+    },
+    "page_versions": {
+      "used_in": [
+        "lib/backoffice/content/pageVersionsRepo.ts"
+      ]
+    },
+    "content_release_items": {
+      "used_in": [
+        "lib/backoffice/content/releasesRepo.ts"
+      ]
+    },
+    "content_workflow_state": {
+      "used_in": [
+        "lib/backoffice/content/workflowRepo.ts"
+      ]
+    },
+    "content_experiments": {
+      "used_in": [
+        "lib/backoffice/experiments/experimentsRepo.ts"
+      ]
+    },
+    "global_content": {
+      "used_in": [
+        "lib/cms/globalSettingsAdmin.ts",
+        "lib/cms/publishGlobal.ts",
+        "lib/cms/writeGlobal.ts"
+      ]
+    },
+    "idempotency": {
+      "used_in": [
+        "lib/core/idempotency.ts",
+        "lib/idempotency/store.ts"
+      ]
+    },
+    "${tbl}": {
+      "used_in": [
+        "lib/evolution/analyze.ts"
+      ]
+    },
+    "profile_company_status": {
+      "used_in": [
+        "lib/guards/assertCompanyActive.ts"
+      ]
+    },
+    "daily_employee_orders": {
+      "used_in": [
+        "lib/kitchen/ordersFeed.ts"
+      ]
+    },
+    "ai_metrics_history": {
+      "used_in": [
+        "lib/ml/loadDataset.ts",
+        "lib/observability/loadMetricHistory.ts",
+        "lib/observability/storeMetric.ts"
+      ]
+    },
+    "ai_models": {
+      "used_in": [
+        "lib/ml/loadModel.ts",
+        "lib/ml/loadSequenceModel.ts",
+        "lib/ml/saveModel.ts",
+        "lib/ml/saveSequenceModel.ts"
+      ]
+    },
+    "incidents": {
+      "used_in": [
+        "lib/observability/incident.ts"
+      ]
+    },
+    "ai_observability": {
+      "used_in": [
+        "lib/observability/opsLogPersist.ts"
+      ]
+    },
+    "system_health_snapshots": {
+      "used_in": [
+        "lib/observability/sli.ts"
+      ]
+    },
+    "ai_alerts": {
+      "used_in": [
+        "lib/observability/storeAlert.ts"
+      ]
+    },
+    "deliveries": {
+      "used_in": [
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "forecast_daily": {
+      "used_in": [
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "waste_signals": {
+      "used_in": [
+        "lib/superadmin/queries.ts"
+      ]
+    },
+    "*": {
+      "used_in": [
+        "scripts/audit/auditCore.ts"
+      ]
+    }
+  }
+}

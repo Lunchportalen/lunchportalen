@@ -1,5 +1,7 @@
 # Security & compliance documentation
 
+**Enterprise-inngang (salgs-/due diligence-pakke):** [docs/enterprise/README.md](../enterprise/README.md)
+
 | Document | Purpose |
 |----------|---------|
 | [SOC2_CONTROL_MATRIX.md](./SOC2_CONTROL_MATRIX.md) | TSC-style mapping to code and status |

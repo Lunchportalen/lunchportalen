@@ -144,12 +144,10 @@ function buildListUrl(opts: {
 }
 
 /**
- * STATUS API
- * Repoet har nå: POST /api/superadmin/companies/status  { companyId, status }
- * (ikke /api/superadmin/companies/[id]/status)
+ * STATUS API — canonical: POST /api/superadmin/companies/set-status { companyId, status }
  */
 async function setStatusViaApi(companyId: string, status: CompanyStatus, reason?: string) {
-  const res = await fetch(`/api/superadmin/companies/status`, {
+  const res = await fetch(`/api/superadmin/companies/set-status`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     cache: "no-store",

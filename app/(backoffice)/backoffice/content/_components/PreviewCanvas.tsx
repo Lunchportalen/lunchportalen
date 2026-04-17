@@ -268,7 +268,14 @@ export type PreviewCanvasProps = {
   pageId?: string | null;
   variantId?: string | null;
   className?: string;
-};
+  /** Fyll vertikal arbeidsflate (valgt-modul i midtkolonne) — uten fast max-h på scroll-innslag. */
+  fillContainer?: boolean;
+} & Partial<
+  Pick<
+    PublicPageRendererProps,
+    "onSelectBlock" | "selectedBlockId" | "hoverBlockId" | "onHoverBlock" | "visualInlineEdit"
+  >
+>;
 
 /** Full-width preview shell with device frame; inner page uses real public renderer. */
 export function PreviewCanvas({
@@ -280,18 +287,32 @@ export function PreviewCanvas({
   pageId,
   variantId,
   className,
+  fillContainer = false,
+  onSelectBlock,
+  selectedBlockId = null,
+  hoverBlockId = null,
+  onHoverBlock,
+  visualInlineEdit = null,
 }: PreviewCanvasProps) {
   return (
     <div
       className={cn(
         "w-full overflow-clip rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-bg))]/35 transition-all duration-300",
+        fillContainer && "flex h-full min-h-0 flex-1 flex-col",
         device === "tablet" && "mx-auto max-w-[768px]",
         device === "mobile" && "mx-auto max-w-[390px]",
         className,
       )}
       data-lp-preview-canvas
+      data-lp-preview-fill-container={fillContainer ? "true" : undefined}
     >
-      <div className="max-h-[min(78vh,900px)] cursor-default overflow-y-auto bg-white" style={{ scrollbarGutter: "stable" }}>
+      <div
+        className={cn(
+          "cursor-default overflow-y-auto bg-white",
+          fillContainer ? "min-h-0 flex-1 max-h-none" : "max-h-[min(78vh,900px)]",
+        )}
+        style={{ scrollbarGutter: "stable" }}
+      >
         <PublicPageRenderer
           blocks={blocks}
           title={title}
@@ -299,6 +320,11 @@ export function PreviewCanvas({
           pageCmsMeta={pageCmsMeta}
           pageId={pageId}
           variantId={variantId}
+          onSelectBlock={onSelectBlock}
+          selectedBlockId={selectedBlockId}
+          hoverBlockId={hoverBlockId}
+          onHoverBlock={onHoverBlock}
+          visualInlineEdit={visualInlineEdit}
         />
       </div>
     </div>

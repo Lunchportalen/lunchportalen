@@ -9,6 +9,8 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { loadOperativeKitchenOrders } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
 const allowedRoles = ["driver", "superadmin"] as const;
 
@@ -27,8 +29,7 @@ export async function GET(req: NextRequest) {
 
   const { rid, scope } = s.ctx;
 
-  // ✅ Send ctx (AuthedCtx) for å matche din routeGuard-typing
-  const roleBlock = requireRoleOr403(s.ctx, scope.role ?? null, allowedRoles);
+  const roleBlock = requireRoleOr403(s.ctx, [...allowedRoles]);
   if (roleBlock) return roleBlock;
 
   const u = new URL(req.url);
@@ -63,6 +64,46 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
   }
 
+  const operativeDate = role === "driver" ? today : date && isISODate(date) ? date : null;
+
+  if (operativeDate) {
+    const snap = await fetchProductionOperativeSnapshotAllowlist(admin as any, {
+      dateISO: operativeDate,
+      companyId,
+    });
+    const productionFreezeAllowlist = snap.found ? snap.orderIds : undefined;
+
+    const loaded = await loadOperativeKitchenOrders({
+      admin: admin as any,
+      dateISO: operativeDate,
+      tenant: { companyId, locationId: locationId || null },
+      productionFreezeAllowlist,
+    });
+    if (loaded.ok === false) {
+      return jsonErr(rid, "Kunne ikke hente driver-ordre.", 500, { code: "DB_ERROR", detail: {
+        code: loaded.dbError.code,
+        message: loaded.dbError.message,
+      } });
+    }
+
+    const rows = loaded.operative
+      .map((r) => ({
+        id: r.id,
+        date: operativeDate,
+        slot: r.slot,
+        status: r.status,
+        company_id: r.company_id,
+        location_id: r.location_id,
+      }))
+      .sort((a, b) => {
+        const s = String(a.slot ?? "").localeCompare(String(b.slot ?? ""), "nb");
+        if (s !== 0) return s;
+        return String(a.id).localeCompare(String(b.id), "nb");
+      });
+
+    return jsonOk(rid, { rows }, 200);
+  }
+
   let q = admin
     .from("orders")
     .select("id,date,slot,status,company_id,location_id")
@@ -71,8 +112,6 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: true });
 
   if (locationId) q = q.eq("location_id", locationId);
-  if (role === "driver") q = q.eq("date", today);
-  if (date && role !== "driver") q = q.eq("date", date);
 
   const { data, error } = await q;
   if (error) {

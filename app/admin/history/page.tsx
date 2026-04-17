@@ -10,6 +10,11 @@ import {
   isAdminContextBlocked,
   type AdminContextBlocked,
 } from "@/lib/admin/loadAdminContext";
+import { formatDateNO } from "@/lib/date/format";
+import {
+  formatCompanyOperativeHistoryWhenNb,
+  loadCompanyOperativeRecentHistory,
+} from "@/lib/server/admin/loadCompanyOperativeRecentHistory";
 
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
@@ -161,6 +166,8 @@ export default async function AdminHistoryPage() {
 
   const companyName = ctx.company?.name ?? "Firma";
 
+  const operativeHistory = await loadCompanyOperativeRecentHistory({ companyId: ctx.companyId });
+
   return (
     <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
@@ -168,7 +175,7 @@ export default async function AdminHistoryPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Admin · {companyName} · Historikk
+              Firmaadmin · {companyName} · Historikk
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Historikk</h1>
             <p className="mt-2 text-neutral-600">
@@ -182,6 +189,75 @@ export default async function AdminHistoryPage() {
             <PrimaryLink href="/admin/orders">Ordreoversikt</PrimaryLink>
           </div>
         </div>
+
+        <SectionCard
+          title="Siste operative endringer"
+          subtitle={`Gjelder firma: ${companyName}. Lesing fra audit_events (firmascopet filter) og siste ordre-rader for eget firma — samme kilder som drift bruker, uten ny logikkmotor.`}
+        >
+          {operativeHistory.warning_nb ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
+              {operativeHistory.warning_nb}
+            </div>
+          ) : null}
+          {operativeHistory.items.length === 0 ? (
+            <p className="text-center text-sm text-neutral-700 sm:text-left">
+              Ingen registrerte operative hendelser eller ordreoppdateringer i siste vindu for dette firmaet.
+            </p>
+          ) : (
+            <ul className="mx-auto flex max-w-3xl flex-col gap-3">
+              {operativeHistory.items.map((it, idx) => (
+                <li
+                  key={`${it.source_kind}-${it.sort_at}-${idx}`}
+                  className="rounded-2xl bg-white/90 p-4 text-center ring-1 ring-black/5 sm:text-left"
+                >
+                  <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">{it.source_label_nb}</div>
+                      <div className="mt-1 text-sm font-semibold text-neutral-900">{it.title_nb}</div>
+                      <p className="mt-1 text-sm text-neutral-700">{it.body_nb}</p>
+                    </div>
+                    <div className="shrink-0 text-xs font-medium text-neutral-600">
+                      {formatCompanyOperativeHistoryWhenNb(it.sort_at)}
+                    </div>
+                  </div>
+                  <dl className="mt-3 grid gap-2 text-xs text-neutral-600 sm:grid-cols-2">
+                    {it.operative_date_iso ? (
+                      <div>
+                        <dt className="font-semibold text-neutral-500">Leveringsdato</dt>
+                        <dd className="text-neutral-900">{formatDateNO(it.operative_date_iso)}</dd>
+                      </div>
+                    ) : null}
+                    {it.location_label_nb ? (
+                      <div>
+                        <dt className="font-semibold text-neutral-500">Lokasjon</dt>
+                        <dd className="text-neutral-900">{it.location_label_nb}</dd>
+                      </div>
+                    ) : null}
+                    {it.slot_label_nb ? (
+                      <div>
+                        <dt className="font-semibold text-neutral-500">Vindu</dt>
+                        <dd className="text-neutral-900">{it.slot_label_nb}</dd>
+                      </div>
+                    ) : null}
+                    {it.actor_hint_nb ? (
+                      <div>
+                        <dt className="font-semibold text-neutral-500">Aktør</dt>
+                        <dd className="break-all text-neutral-900">{it.actor_hint_nb}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-6 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <GhostLink href="/admin/orders">Ordrehistorikk</GhostLink>
+            <GhostLink href="/week">Ukeplan</GhostLink>
+            <GhostLink href="/admin/dagens-brukere">Dagens brukere</GhostLink>
+            <GhostLink href="/admin/dagens-levering">Dagens levering</GhostLink>
+            <GhostLink href="/admin">Oversikt</GhostLink>
+          </div>
+        </SectionCard>
 
         <SectionCard
           title="Eksport"

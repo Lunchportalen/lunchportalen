@@ -14,6 +14,7 @@ import { systemRoleByEmail as systemRoleByEmailCore } from "@/lib/system/emails"
  * - scopeOr401(req) -> { ok:false, res, response, ctx } | { ok:true, ctx }
  * - requireRoleOr403(...) -> Response | null
  * - requireCompanyScopeOr403(...) -> Response | null
+ * - resolveAdminTenantCompanyId(ctx, req) -> operativt firma for admin-ruter (company_admin låst; superadmin fra query)
  * - readJson(req) -> safe parse, never throws
  *
  * Viktig:
@@ -432,14 +433,86 @@ export function requireCompanyScopeOr403(...args: any[]): Response | null {
       return null;
     }
 
-    // (ctx, companyIdOverride)
-    const cidOverride = safeStr(args[1]);
-    if (!cidOverride) return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
-    return null;
+    // (ctx, companyIdExpected) — må matche scope for company_admin; superadmin tillates
+    const cidExpected = safeStr(args[1]);
+    if (!cidExpected) {
+      return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
+    }
+
+    if (!role) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
+
+    if (role === "company_admin") {
+      if (!cidFromCtx) {
+        return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
+      }
+      if (cidFromCtx !== cidExpected) {
+        return jsonErr(rid, "Forespurt firma matcher ikke tilknyttet firma.", 403, "COMPANY_SCOPE_MISMATCH", {
+          path: ctx.route,
+        });
+      }
+      return null;
+    }
+
+    if (role === "superadmin") return null;
+
+    return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role });
   } catch {
     const rid = ridFallback();
     return jsonErr(rid, "requireCompanyScopeOr403 feilet uventet.", 500, "MISCONFIGURED_ROUTE");
   }
+}
+
+/**
+ * Canonical firma for admin-API som tillater både `company_admin` og `superadmin`:
+ * - `company_admin`: alltid `ctx.scope.companyId` (query `company_id`/`companyId` ignoreres med mindre den matcher — ellers 403).
+ * - `superadmin`: `company_id` / `companyId` i URL, ellers `ctx.scope.companyId` om satt; minst én kilde kreves.
+ */
+export function resolveAdminTenantCompanyId(
+  ctx: AuthedCtx,
+  req: NextRequest
+): { ok: true; companyId: string } | { ok: false; res: Response } {
+  const rid = safeStr(ctx?.rid) || ridFallback();
+  const role = normRole(ctx?.scope?.role);
+  const scoped = safeStr(ctx?.scope?.companyId);
+
+  let fromQuery = "";
+  try {
+    fromQuery = safeStr(req.nextUrl?.searchParams?.get("company_id") ?? req.nextUrl?.searchParams?.get("companyId"));
+  } catch {
+    fromQuery = "";
+  }
+
+  if (!role) {
+    return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null }) };
+  }
+
+  if (role === "company_admin") {
+    if (!scoped) {
+      return { ok: false, res: jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role }) };
+    }
+    if (fromQuery && fromQuery !== scoped) {
+      return {
+        ok: false,
+        res: jsonErr(rid, "Forespurt firma matcher ikke din tilknytning.", 403, "COMPANY_SCOPE_MISMATCH", {
+          path: ctx.route,
+        }),
+      };
+    }
+    return { ok: true, companyId: scoped };
+  }
+
+  if (role === "superadmin") {
+    const cid = fromQuery || scoped || "";
+    if (!cid) {
+      return {
+        ok: false,
+        res: jsonErr(rid, "Mangler company_id (query).", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role }),
+      };
+    }
+    return { ok: true, companyId: cid };
+  }
+
+  return { ok: false, res: jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role }) };
 }
 
 /* =========================================================

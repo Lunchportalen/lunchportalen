@@ -15,4 +15,6 @@ export {
   getMenuForDatesAdmin,
 } from "@/lib/sanity/queries";
 
+export { menuContentHasDisplayableCopy } from "@/lib/sanity/menuContentGuards";
+
 export { getClosedDatesForDate } from "@/lib/sanity/getClosedDatesForDate";

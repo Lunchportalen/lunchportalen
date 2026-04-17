@@ -70,13 +70,16 @@ const WEEKPLAN_PROJECTION = `{
   }
 }`;
 
+/** Live reads: exclude Sanity drafts; require same publish flags as POST /api/weekplan/publish. */
+const WEEKPLAN_LIVE_FILTER = `!(_id in path("drafts.**")) && approvedForPublish == true && customerVisible == true`;
+
 export async function fetchCurrentWeekPlan(todayISO: string): Promise<WeekPlanDoc | null> {
   // current er fasit: status=="current"
-  // fallback: hvis ingen current, ta nyeste som er customerVisible==true
+  // fallback: nyeste godkjent + synlig (aldri utkast)
   const q = `
     coalesce(
-      *[_type=="weekPlan" && status=="current"][0]${WEEKPLAN_PROJECTION},
-      *[_type=="weekPlan" && customerVisible==true] | order(weekStart desc)[0]${WEEKPLAN_PROJECTION},
+      *[_type=="weekPlan" && status=="current" && ${WEEKPLAN_LIVE_FILTER}][0]${WEEKPLAN_PROJECTION},
+      *[_type=="weekPlan" && ${WEEKPLAN_LIVE_FILTER}] | order(weekStart desc)[0]${WEEKPLAN_PROJECTION},
       null
     )
   `;
@@ -92,7 +95,8 @@ export async function fetchNextOpenWeekPlan(todayISO: string): Promise<WeekPlanD
       _type=="weekPlan" &&
       status=="open" &&
       defined(weekStart) &&
-      weekStart > $todayISO
+      weekStart > $todayISO &&
+      ${WEEKPLAN_LIVE_FILTER}
     ] | order(weekStart asc)[0]${WEEKPLAN_PROJECTION}
   `;
 

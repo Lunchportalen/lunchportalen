@@ -3,6 +3,9 @@
  */
 
 export type KitchenRow = {
+  orderId: string;
+  slot: string;
+  orderStatus: string;
   company: string;
   location: string;
   employeeName: string;
@@ -22,6 +25,12 @@ export type KitchenResp = {
   rows: KitchenRow[];
   reason?: "NO_ORDERS" | "NOT_DELIVERY_DAY" | "COMPANIES_PAUSED" | "AUTH_REQUIRED" | "ERROR";
   detail?: string;
+  /** Satt av GET /api/kitchen for kjøkkenrolle når materialisert snapshot er aktivt filter. */
+  production_operative_snapshot?: {
+    active: true;
+    frozen_at: string | null;
+    captured_order_ids: number;
+  };
 };
 
 function readJsonSafe<T = unknown>(t: string): T | null {
@@ -77,7 +86,23 @@ export function normalizeKitchenApiResponse(dateISO: string, raw: unknown): Kitc
   const reason = inner?.reason as KitchenResp["reason"] | undefined;
   const detail = inner?.detail != null ? String(inner.detail) : undefined;
 
-  return { ok: true, date, cutoff, summary, rows, reason, detail };
+  const snapRaw = inner?.production_operative_snapshot;
+  const production_operative_snapshot =
+    snapRaw &&
+    typeof snapRaw === "object" &&
+    (snapRaw as { active?: unknown }).active === true &&
+    "captured_order_ids" in (snapRaw as object)
+      ? {
+          active: true as const,
+          frozen_at:
+            (snapRaw as { frozen_at?: unknown }).frozen_at != null
+              ? String((snapRaw as { frozen_at: unknown }).frozen_at)
+              : null,
+          captured_order_ids: Number((snapRaw as { captured_order_ids?: unknown }).captured_order_ids ?? 0),
+        }
+      : undefined;
+
+  return { ok: true, date, cutoff, summary, rows, reason, detail, production_operative_snapshot };
 }
 
 export async function fetchKitchenList(dateISO: string): Promise<KitchenResp> {

@@ -29,7 +29,15 @@ function isValidVariant(v: unknown): v is BlockVariant {
  * - No valid persisted `variant` → derive `variant` from textPosition for labels only; do not move overlay/text.
  */
 export function enforceBlockComponentSafety(type: string, data: Record<string, unknown>): void {
-  if (type === "banner") {
+  if (
+    type === "banner" ||
+    type === "banner_carousel" ||
+    type === "accordion_tabs" ||
+    type === "anchor_navigation" ||
+    type === "anchorNavigation" ||
+    type === "dual_promo_cards" ||
+    type === "dualPromoCardsBlock"
+  ) {
     data.variant = "center";
     return;
   }

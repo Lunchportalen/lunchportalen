@@ -2,6 +2,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/**
+ * Canonical ledger-pause (public.agreements ACTIVE → PAUSED).
+ * Gate: scopeOr401 → requireRoleOr403(..., ["superadmin"]) — ingen andre roller.
+ * Mutasjon: runLedgerAgreementPause → RPC lp_agreement_pause_ledger_active.
+ * Ledger-gjenopptak: ingen definert resume-RPC i canonical migrasjoner — ikke eksponeres her.
+ */
 import "server-only";
 
 import type { NextRequest } from "next/server";

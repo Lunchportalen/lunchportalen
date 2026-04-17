@@ -2,9 +2,12 @@
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
-const COMPANY_ID = "11111111-1111-1111-1111-111111111111";
-const LOCATION_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-const OTHER_LOCATION = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+/** RFC-variant (8–9–a–b i pos. 19) + versjon 4 (pos. 14) — samme som loadOperativeKitchenOrders.isUuid */
+const COMPANY_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const LOCATION_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const OTHER_LOCATION = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const USER_ID_1 = "11111111-1111-4111-8111-111111111111";
+const USER_ID_2 = "22222222-2222-4222-8222-222222222222";
 const SLOT = "lunch";
 
 let mockCutoff: "TODAY_LOCKED" | "TODAY_OPEN" | "FUTURE_OPEN" | "PAST" = "TODAY_LOCKED";
@@ -26,10 +29,10 @@ vi.mock("@/lib/http/routeGuard", async () => {
         route: "/api/cron/kitchen-print",
         method: "GET",
         scope: {
-          userId: "u1",
+          userId: USER_ID_1,
           role: mockRole,
-          companyId: "cA",
-          locationId: "l1",
+          companyId: COMPANY_ID,
+          locationId: LOCATION_ID,
           email: "superadmin.test@lunchportalen.no",
         },
       },
@@ -50,6 +53,7 @@ function makeAdminMock(seed?: {
   orders?: any[];
   profiles?: any[];
   companies?: any[];
+  day_choices?: any[];
 }) {
   const db = {
     company_locations: seed?.company_locations ?? [],
@@ -57,6 +61,7 @@ function makeAdminMock(seed?: {
     orders: seed?.orders ?? [],
     profiles: seed?.profiles ?? [],
     companies: seed?.companies ?? [],
+    day_choices: seed?.day_choices ?? [],
   };
 
   function applyFilters(
@@ -167,14 +172,58 @@ beforeEach(() => {
     company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
     kitchen_batch: [{ id: "b1", delivery_date: "2026-02-02", delivery_window: SLOT, company_location_id: LOCATION_ID, status: "PACKED", packed_at: "t", delivered_at: null }],
     orders: [
-      { id: "o1", slot: SLOT, location_id: LOCATION_ID, company_id: COMPANY_ID, user_id: "u1", date: "2026-02-02", status: "ACTIVE", integrity_status: "ok", created_at: "2026-02-02T07:00:00Z", note: null },
-      { id: "o2", slot: SLOT, location_id: LOCATION_ID, company_id: COMPANY_ID, user_id: "u2", date: "2026-02-02", status: "ACTIVE", integrity_status: "ok", created_at: "2026-02-02T07:05:00Z", note: "uten n�tter" },
+      {
+        id: "00000001-0001-4001-8001-000000000001",
+        slot: SLOT,
+        location_id: LOCATION_ID,
+        company_id: COMPANY_ID,
+        user_id: USER_ID_1,
+        date: "2026-02-02",
+        status: "ACTIVE",
+        integrity_status: "ok",
+        created_at: "2026-02-02T07:00:00Z",
+        note: null,
+      },
+      {
+        id: "00000002-0002-4002-8002-000000000002",
+        slot: SLOT,
+        location_id: LOCATION_ID,
+        company_id: COMPANY_ID,
+        user_id: USER_ID_2,
+        date: "2026-02-02",
+        status: "ACTIVE",
+        integrity_status: "ok",
+        created_at: "2026-02-02T07:05:00Z",
+        note: "uten nøtter",
+      },
     ],
     profiles: [
-      { user_id: "u1", full_name: "Ansatt 1", department: "Salg", company_id: COMPANY_ID },
-      { user_id: "u2", full_name: "Ansatt 2", department: "IT", company_id: COMPANY_ID },
+      { user_id: USER_ID_1, full_name: "Ansatt 1", department: "Salg", company_id: COMPANY_ID },
+      { user_id: USER_ID_2, full_name: "Ansatt 2", department: "IT", company_id: COMPANY_ID },
     ],
     companies: [{ id: COMPANY_ID, name: "Firma A" }],
+    day_choices: [
+      {
+        company_id: COMPANY_ID,
+        location_id: LOCATION_ID,
+        user_id: USER_ID_1,
+        date: "2026-02-02",
+        choice_key: "basis",
+        note: null,
+        status: "ACTIVE",
+        updated_at: "2026-02-02T07:00:00Z",
+      },
+      {
+        company_id: COMPANY_ID,
+        location_id: LOCATION_ID,
+        user_id: USER_ID_2,
+        date: "2026-02-02",
+        choice_key: "basis",
+        note: null,
+        status: "ACTIVE",
+        updated_at: "2026-02-02T07:05:00Z",
+      },
+    ],
   });
 });
 

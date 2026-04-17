@@ -14,6 +14,8 @@ import {
   isAdminContextBlocked,
   type AdminContextBlocked,
 } from "@/lib/admin/loadAdminContext";
+import { loadCompanyOperationalBrief } from "@/lib/server/admin/loadCompanyOperationalBrief";
+import CompanyOperationalBriefPanel from "@/components/admin/CompanyOperationalBriefPanel";
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
 
@@ -160,6 +162,7 @@ function blockedTitle(b: AdminContextBlocked) {
   if (b.blocked === "MISSING_COMPANY_ID") return "Mangler firmatilknytning";
   if (b.blocked === "COMPANY_INACTIVE") return "Firma er ikke aktivt";
   if (b.blocked === "COUNTS_FAILED") return "Kunne ikke hente nøkkeltall";
+  if (b.blocked === "FORBIDDEN") return "Ikke firmaadmin-flate for denne rollen";
   return "Systemfeil";
 }
 
@@ -168,6 +171,8 @@ function blockedBody(b: AdminContextBlocked) {
   if (b.blocked === "MISSING_COMPANY_ID") return "Kontoen er registrert som company_admin, men mangler company_id.";
   if (b.blocked === "COMPANY_INACTIVE") return "Tilgang er begrenset fordi firma ikke er aktivt.";
   if (b.blocked === "COUNTS_FAILED") return "Vi klarte ikke å hente nøkkeltall akkurat nå. Prøv igjen om litt.";
+  if (b.blocked === "FORBIDDEN")
+    return "/admin er firmaadmin-rammeflate (ett firma, operativ sannhet). System- og tverrfirmastyring skjer i superadmin — ikke her.";
   return "Vi klarte ikke å hente nødvendig oversikt akkurat nå.";
 }
 
@@ -252,6 +257,12 @@ export default async function AdminCommandCenterPage() {
   const companyName = ctx.company?.name ?? "Firma";
   const counts: any = ctx.counts ?? {};
 
+  const operationalBrief = await loadCompanyOperationalBrief({
+    companyId: ctx.companyId,
+    locationId: ctx.profile?.location_id ?? null,
+    companyStatusUpper: String(ctx.company?.status ?? "ACTIVE").toUpperCase(),
+  });
+
   const employeesTotal = Number(counts.employeesTotal ?? 0);
   const employeesActive = Number(counts.employeesActive ?? 0);
   const employeesDisabled = Number(counts.employeesDisabled ?? 0);
@@ -295,7 +306,7 @@ export default async function AdminCommandCenterPage() {
   return (
     <AdminPageShell
       title="Oversikt"
-      subtitle="Kontroll, status og neste handling — uten støy."
+      subtitle="Oversikt over avtalerammer og status — ikke operativ unntaksflate."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <HealthPill health={health} />
@@ -305,11 +316,14 @@ export default async function AdminCommandCenterPage() {
     >
       {topBanner ? <div className="mb-3">{topBanner}</div> : null}
       {headerSlot ? <div className="mb-3">{headerSlot}</div> : null}
+      <div className="mb-6">
+        <CompanyOperationalBriefPanel brief={operationalBrief} />
+      </div>
       {/* Row 1 — Header (1–3–1) */}
       <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <div className="text-xs font-semibold tracking-wide lp-muted">
-            Admin · {companyName} · {ctx.profile?.location_id ? "Lokasjon valgt" : "Lokasjon ikke satt"}
+            Firmaadmin · {companyName} · {ctx.profile?.location_id ? "Lokasjon valgt" : "Lokasjon ikke satt"}
           </div>
           <div className="mt-2 text-sm font-semibold text-neutral-900">
             Neste levering: {nextDeliveryLabel} <span className="lp-muted">•</span> {nextDeliveryHint}
@@ -338,7 +352,15 @@ export default async function AdminCommandCenterPage() {
         />
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KpiCard label="Avtale (status)" value={companyStatus} hint="Firma- og avtalestatus (systemfasit)." />
+        <KpiCard
+          label="Avtale (ledger)"
+          value={operationalBrief.ledger_pipeline_label_nb}
+          hint={
+            operationalBrief.snapshot_agreement_status_upper
+              ? `Snapshot: ${operationalBrief.snapshot_agreement_status_upper}`
+              : "Ingen snapshot-rad (company_current_agreement)."
+          }
+        />
         <KpiCard
           label="Bestillinger i dag"
           value={String(ordersTodayActive)}
@@ -405,7 +427,9 @@ export default async function AdminCommandCenterPage() {
                 <div className="mt-2">
                   <StatusPill label={companyStatus} />
                 </div>
-                <div className="mt-2 text-sm lp-muted">Styrer tilgang og drift uten unntak.</div>
+                <div className="mt-2 text-sm lp-muted">
+                  Operativ sannhet fra systemet (lesbar). Endring av firmastatus skjer kun i superadmin-flyt — ikke her.
+                </div>
               </div>
 
               <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">

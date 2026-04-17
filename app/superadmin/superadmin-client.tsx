@@ -740,7 +740,6 @@ export default function SuperadminClient({
                           <StatusDropdown
                             companyId={c.id}
                             status={toLowerStatus(c.status)}
-                            endpoint={`/api/superadmin/firms/${encodeURIComponent(c.id)}/status`}
                             onChanged={(next) => {
                               const up = fromLowerStatus(next);
                               setCompanies((prev) =>

@@ -68,7 +68,8 @@ export const BACKOFFICE_SECTIONS: readonly BackofficeSectionDefinition[] = [
   {
     id: "content",
     label: BACKOFFICE_NAV_GROUP_LABEL.content,
-    description: "Tree-first innhold, media, publishing og Bellissima-lignende arbeidsflater.",
+    description:
+      "Redaksjon for public nettsider og innhold (blueprint: Umbraco-spor) — tre, media, forhåndsvisning; ikke operativ eller meny-sannhet.",
     primaryHref: BACKOFFICE_CONTENT_BASE_PATH,
     plane: "delivery",
   },

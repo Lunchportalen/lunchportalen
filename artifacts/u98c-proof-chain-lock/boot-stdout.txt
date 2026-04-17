@@ -1,0 +1,411 @@
+
+> lunchportalen@1.0.0 dev
+> node scripts/dev-singleton.mjs
+
+   ▲ Next.js 15.5.10
+   - Local:        http://localhost:3056
+   - Network:      http://192.168.10.205:3056
+   - Environments: .env.local
+
+ ✓ Starting...
+ ○ Compiling /instrumentation ...
+ ✓ Compiled /instrumentation in 763ms (116 modules)
+ ✓ Ready in 6.5s
+ ✓ Compiled /middleware in 312ms (218 modules)
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 3.2s (375 modules)
+ GET /api/health 200 in 5850ms
+ GET /api/health 200 in 686ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1808ms (769 modules)
+ GET /login?next=%2Fbackoffice%2Fsettings%2Flanguages 200 in 4578ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 1999ms (813 modules)
+[auth.login] start {
+  rid: 'rid_mnqfyp4n_l7x9xvh4qjy5bymw',
+  nextFromBody: '/backoffice/settings/languages',
+  nextFromQuery: null,
+  nextSafe: '/backoffice/settings/languages',
+  email: 'su***@lunchportalen.no',
+  localRuntime: true
+}
+ POST /api/auth/login 200 in 2730ms
+ ○ Compiling /api/auth/post-login ...
+ ✓ Compiled /api/auth/post-login in 1098ms (900 modules)
+{"ts":"2026-04-08T19:28:59.210Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":"rid_mnqfyqfd_jf3ypava10lmubhy"}
+[auth] {
+  rid: 'rid_mnqfyqfd_jf3ypava10lmubhy',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  step: 'post-login:get',
+  rid: 'rid_mnqfyqfd_jf3ypava10lmubhy',
+  role: 'superadmin',
+  target: '/backoffice/settings/languages'
+}
+{"ts":"2026-04-08T19:28:59.214Z","scope":"lp.observability.event","type":"auth.post_login.GET","source":"/api/auth/post-login","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":303},"status":"success","durationMs":5,"rid":"rid_mnqfyqfd_jf3ypava10lmubhy"}
+ GET /api/auth/post-login?next=%2Fbackoffice%2Fsettings%2Flanguages 303 in 1608ms
+ ○ Compiling /backoffice/settings/languages ...
+ ✓ Compiled /backoffice/settings/languages in 2.3s (1051 modules)
+[auth] {
+  rid: 'rid_auth_mnqfysv7_24f9795ykbr94a12',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/settings/languages?rid=rid_mnqfyqfd_jf3ypava10lmubhy 200 in 3661ms
+ ○ Compiling /api/backoffice/cms/language-definitions ...
+ ✓ Compiled /api/backoffice/cms/language-definitions in 1772ms (1096 modules)
+[auth] {
+  rid: 'rid_auth_mnqfyw59_ktfy53k6n3nxtw2j',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/language-definitions 200 in 2540ms
+[auth] {
+  rid: 'rid_auth_mnqfyw6x_qeugl41ohhms13gz',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 2589ms
+ ○ Compiling /backoffice/settings/languages/workspace/[alias] ...
+ ✓ Compiled /backoffice/settings/languages/workspace/[alias] in 614ms (1108 modules)
+ GET /backoffice/settings/languages/workspace/en-gb 200 in 2697ms
+[auth] {
+  rid: 'rid_auth_mnqfyzfx_i5xf9f3bjm1zc7v8',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/language-definitions 200 in 665ms
+[auth] {
+  rid: 'rid_auth_mnqfyzon_lsh412ypji2vh15q',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/language-definitions 200 in 954ms
+[auth] {
+  rid: 'rid_auth_mnqfz0pb_5p51seafuoalu3e1',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ PUT /api/backoffice/cms/language-definitions 200 in 489ms
+[auth] {
+  rid: 'rid_auth_mnqfz1es_4ut838m10txoyf38',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/settings/languages/workspace/en-gb 200 in 1471ms
+[auth] {
+  rid: 'rid_auth_mnqfz3nx_xjz7gwxkbhcwo4tc',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 442ms
+[auth] {
+  rid: 'rid_auth_mnqfz3qe_6ndxsj6o2hhfu99m',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/language-definitions 200 in 528ms
+[auth] {
+  rid: 'rid_auth_mnqfz46h_0nt7xjzvcghgsuev',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/language-definitions 200 in 200ms
+ ○ Compiling /backoffice/settings/document-types/workspace/[alias] ...
+ ✓ Compiled /backoffice/settings/document-types/workspace/[alias] in 1350ms (1129 modules)
+[auth] {
+  rid: 'rid_auth_mnqfz6fs_wdjh8ehawovgw0lj',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/settings/document-types/workspace/page 200 in 3508ms
+[auth] {
+  rid: 'rid_auth_mnqfz7wq_r38tddniddrjyvzn',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 318ms
+ ○ Compiling /api/backoffice/cms/document-type-definitions ...
+ ✓ Compiled /api/backoffice/cms/document-type-definitions in 884ms (1179 modules)
+[auth] {
+  rid: 'rid_auth_mnqfz91p_qfd3hrcpwnvan9lk',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/document-type-definitions 200 in 1570ms
+ ○ Compiling /api/backoffice/content/pages ...
+ ✓ Compiled /api/backoffice/content/pages in 1191ms (1185 modules)
+[auth] {
+  rid: 'rid_auth_mnqfzaqu_j28998evs55s0zpm',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages 200 in 1843ms
+ ○ Compiling /backoffice/content/[id] ...
+ ✓ Compiled /backoffice/content/[id] in 12.8s (2972 modules)
+[auth] {
+  rid: 'rid_auth_mnqfznuz_xkfz9zz09gr3mucv',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 18316ms
+[auth] {
+  rid: 'rid_auth_mnqfzsds_6ya6jtlk1v0e9foa',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 1016ms
+ ○ Compiling /api/backoffice/content/pages/[id] ...
+ ✓ Compiled /api/backoffice/ai/capability in 25.1s (3015 modules)
+[auth] {
+  rid: 'rid_auth_mnqg0bzd_5zivy9kjsf84yzg5',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  rid: 'rid_auth_mnqg0c00_87xonmofwyiuiz6j',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages 200 in 26231ms
+ GET /api/backoffice/cms/document-type-definitions 200 in 26463ms
+{"ts":"2026-04-08T19:30:14.097Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_mnqg0c7l_029phanftx0ykhzj',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  rid: 'rid_auth_mnqg0caj_lg80fk4isk7f6u2q',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/tree 200 in 26810ms
+{"ts":"2026-04-08T19:30:14.469Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnqg0chx_j1q0v6n94nwzoeml',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[AI_PROVIDER] capability { provider: 'op***', enabled: true, errorCode: null }
+[EDITOR_AI_CAPABILITY] route {
+  hasAiProvider: true,
+  hasAiApiKey: false,
+  hasOpenaiApiKey: true,
+  enabled: true,
+  runtime: {
+    mode: 'local_provider',
+    source: 'LP_CMS_RUNTIME_MODE',
+    explicit: true,
+    usesLocalProvider: true,
+    usesReserve: false,
+    requiresRemoteBackend: false
+  },
+  hint: undefined
+}
+{"ts":"2026-04-08T19:30:14.471Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":2,"rid":null}
+ GET /api/backoffice/ai/capability 200 in 25828ms
+{"ts":"2026-04-08T19:30:15.008Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":912,"rid":null}
+ GET /api/auth/me 200 in 27382ms
+ ○ Compiling /api/editor-ai/metrics ...
+[auth] {
+  rid: 'rid_auth_mnqg0eh7_1e6tgpgm20w4khsj',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=nb&environment=preview 200 in 29383ms
+ ✓ Compiled /api/backoffice/cms/block-editor-data-types in 6.4s (2994 modules)
+[auth] {
+  rid: 'rid_auth_mnqg0iam_sf6rfqr75h1vvazr',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/document-type-definitions 200 in 7320ms
+[auth] {
+  rid: 'rid_auth_mnqg0iiw_i7i9rlhf82s4el9a',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/element-type-runtime 200 in 7730ms
+{"ts":"2026-04-08T19:30:22.342Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnqg0ikn_vlmirkicec2hxt2r',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  rid: 'rid_auth_mnqg0imb_ms6zr9ikf7au31hn',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/block-editor-data-types 200 in 7578ms
+[auth] {
+  rid: 'rid_auth_mnqg0io4_f9sa8dxwzwimdhyr',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 4049ms
+[auth] {
+  rid: 'rid_auth_mnqg0jfc_b144g30fe2x154e0',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 7774ms
+{"ts":"2026-04-08T19:30:23.828Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":1486,"rid":null}
+ POST /api/editor-ai/metrics 200 in 9271ms
+[auth] {
+  rid: 'rid_auth_mnqg0kjh_u9ipw9e9qh2kcdfm',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=en&environment=preview 200 in 797ms
+[auth] {
+  rid: 'rid_auth_mnqg0lzh_pj8top2uetjwgmno',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 1453ms
+[auth] {
+  rid: 'rid_auth_mnqg0nam_weo21b4oh86qcv3f',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ PATCH /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001 200 in 362ms
+[auth] {
+  rid: 'rid_auth_mnqg0ppf_ujug4q0zcalt0ckp',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ PATCH /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001 200 in 244ms
+[auth] {
+  rid: 'rid_auth_mnqg0svv_zpxcfo1o2nu2sctv',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ PATCH /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001 200 in 917ms
+[auth] {
+  rid: 'rid_auth_mnqg0vla_j84bdb4dfia4n9s8',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /backoffice/content/00000000-0000-4000-8000-00000000c001 200 in 1453ms
+[auth] {
+  rid: 'rid_auth_mnqg0yz9_2rxe2o4gbfo7pyib',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=12 200 in 851ms
+[auth] {
+  rid: 'rid_auth_mnqg0z9s_3k1tgec7u9kszoh0',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/tree 200 in 1231ms
+[auth] {
+  rid: 'rid_auth_mnqg0za8_w46zqejdtbxvd6ba',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/document-type-definitions 200 in 1245ms
+{"ts":"2026-04-08T19:30:44.032Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_mnqg0zb4_yswy6a96p4focswo',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  rid: 'rid_auth_mnqg0zco_e5t6k5xupxw9vfr2',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages 200 in 1333ms
+[auth] {
+  rid: 'rid_auth_mnqg0zdd_prjkbeasljwx5p8z',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=en&environment=preview 200 in 1198ms
+{"ts":"2026-04-08T19:30:45.133Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/auth/me","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":1101,"rid":null}
+ GET /api/auth/me 200 in 2379ms
+{"ts":"2026-04-08T19:30:46.677Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnqg11cl_2gkfdgxk1n6ty959',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[AI_PROVIDER] capability { provider: 'op***', enabled: true, errorCode: null }
+[EDITOR_AI_CAPABILITY] route {
+  hasAiProvider: true,
+  hasAiApiKey: false,
+  hasOpenaiApiKey: true,
+  enabled: true,
+  runtime: {
+    mode: 'local_provider',
+    source: 'LP_CMS_RUNTIME_MODE',
+    explicit: true,
+    usesLocalProvider: true,
+    usesReserve: false,
+    requiresRemoteBackend: false
+  },
+  hint: undefined
+}
+{"ts":"2026-04-08T19:30:46.678Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/backoffice/ai/capability","userId":null,"companyId":null,"metadata":{"method":"GET","httpStatus":200},"status":"success","durationMs":1,"rid":null}
+ GET /api/backoffice/ai/capability 200 in 2533ms
+[auth] {
+  rid: 'rid_auth_mnqg11mt_qbbd6kgg69dh209b',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/element-type-runtime 200 in 1976ms
+[auth] {
+  rid: 'rid_auth_mnqg11nf_vm3inr6k5j9bw3pm',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/document-type-definitions 200 in 2005ms
+{"ts":"2026-04-08T19:30:47.092Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST"},"status":"start","durationMs":0,"rid":null}
+[auth] {
+  rid: 'rid_auth_mnqg11o5_jpumn2297cs5yqzl',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+[auth] {
+  rid: 'rid_auth_mnqg11ou_c4jukqrlkuqerlzr',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/cms/block-editor-data-types 200 in 2040ms
+{"ts":"2026-04-08T19:30:47.287Z","scope":"lp.observability.event","type":"api.ai.entrypoint","source":"/api/editor-ai/metrics","userId":null,"companyId":null,"metadata":{"method":"POST","httpStatus":200},"status":"success","durationMs":194,"rid":null}
+ POST /api/editor-ai/metrics 200 in 2192ms
+[auth] {
+  rid: 'rid_auth_mnqg11ym_tygs62flb6w4bpim',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 351ms
+[auth] {
+  rid: 'rid_auth_mnqg1287_m4r9h9nrcc8u34yv',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=nb&environment=preview 200 in 345ms
+[auth] {
+  rid: 'rid_auth_mnqg12qk_ki5lj3gpzr5oep1e',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 427ms
+[auth] {
+  rid: 'rid_auth_mnqg13rf_vqxbx1ezw158wnqh',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/pages/00000000-0000-4000-8000-00000000c001?locale=en&environment=preview 200 in 319ms
+[auth] {
+  rid: 'rid_auth_mnqg14aj_409svxvi50tlqkdi',
+  event: 'dev_bypass',
+  email: 'su***@lunchportalen.no'
+}
+ GET /api/backoffice/content/audit-log?limit=1 200 in 479ms

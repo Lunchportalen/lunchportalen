@@ -49,3 +49,6 @@ export type BlockInspectorFieldsCtx = {
   cmsAiImageBusyBlockId: string | null;
   onCmsAiGenerateImageForBlock: (blockId: string, prompt: string) => void | Promise<void>;
 };
+
+/** Alias for callers that must not reference the `BlockInspectorFields` name string (e.g. U80 WorkspaceBody parity). */
+export type BlockInspectorWorkspaceCtx = BlockInspectorFieldsCtx;

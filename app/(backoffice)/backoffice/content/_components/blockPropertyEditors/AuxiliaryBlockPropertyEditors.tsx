@@ -323,13 +323,34 @@ export function FormPropertyEditor(props: { block: FormBlock; ctx: BlockInspecto
   );
 }
 
-export function DividerPropertyEditor(props: { block: DividerBlock }) {
+export function DividerPropertyEditor(props: { block: DividerBlock; ctx: BlockInspectorFieldsCtx }) {
+  const { block, ctx } = props;
+  const { commit } = useBlockDatasetAdapter(block, ctx.setBlockById);
+
   return (
-    <div data-lp-property-editor-root="divider">
-      <PropertyEditorSection section="content" overline="Innhold">
-        <div className="rounded-lg border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] px-3 py-2 text-sm text-[rgb(var(--lp-muted))]">
-          Skillelinje har ingen redigerbare felter. Slett blokk om du vil fjerne den.
-        </div>
+    <div className="grid gap-3" data-lp-property-editor-root="divider">
+      <PropertyEditorPreviewHint blockType={block.type} />
+      <PropertyEditorSection section="content" overline="Presentasjon">
+        <label className="grid gap-1 text-sm">
+          <span className="text-[rgb(var(--lp-muted))]">Stil</span>
+          <select
+            value={block.style ?? "line"}
+            onChange={(e) =>
+              commit((c) =>
+                c.type === "divider"
+                  ? { ...c, style: e.target.value as DividerBlock["style"] }
+                  : c,
+              )
+            }
+            className="h-10 rounded-lg border border-[rgb(var(--lp-border))] bg-white px-3 text-sm"
+          >
+            <option value="line">Linje</option>
+            <option value="space">Luft (tom rom)</option>
+          </select>
+        </label>
+        <p className="text-[11px] text-[rgb(var(--lp-muted))]">
+          Skillelinjen har ikke eget innhold — juster stil eller slett blokken om du vil fjerne den.
+        </p>
       </PropertyEditorSection>
     </div>
   );

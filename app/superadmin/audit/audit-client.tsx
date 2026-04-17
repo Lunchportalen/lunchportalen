@@ -4,6 +4,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
+import { resolveSuperadminAuditContextLinks } from "@/lib/audit/operativeAuditStream";
+
 type AuditItem = {
   id: string;
   created_at: string;
@@ -193,6 +195,7 @@ export default function AuditClient() {
   const [err, setErr] = useState<string | null>(null);
 
   const [preset, setPreset] = useState<"critical" | "all">("critical");
+  const [operativeStream, setOperativeStream] = useState(false);
 
   const [companyId, setCompanyId] = useState("");
   const [action, setAction] = useState("");
@@ -262,9 +265,13 @@ export default function AuditClient() {
     if (untilIso) p.set("until", untilIso);
     if (auditSourceDeb) p.set("auditSource", auditSourceDeb);
     if (cursor) p.set("cursor", cursor);
+    if (operativeStream) {
+      p.set("stream", "operative");
+      p.set("withEnterprise", "0");
+    }
 
     return p.toString();
-  }, [companyIdDeb, actionDeb, qDeb, sinceDeb, untilDeb, auditSourceDeb, cursor]);
+  }, [companyIdDeb, actionDeb, qDeb, sinceDeb, untilDeb, auditSourceDeb, cursor, operativeStream]);
 
   async function load(opts?: { resetCursor?: boolean; clearCursorBeforeFetch?: boolean }) {
     const resetCursor = !!opts?.resetCursor;
@@ -293,6 +300,10 @@ export default function AuditClient() {
         const uIso = datetimeLocalToIso(untilDeb);
         if (uIso) p.set("until", uIso);
         if (auditSourceDeb) p.set("auditSource", auditSourceDeb);
+        if (operativeStream) {
+          p.set("stream", "operative");
+          p.set("withEnterprise", "0");
+        }
         url += "?" + p.toString();
       } else {
         url += "?" + qs;
@@ -412,6 +423,7 @@ export default function AuditClient() {
           <div>
             <div className="text-[22px] font-semibold">Audit</div>
             <div className="text-xs text-[rgb(var(--lp-muted))]">
+              {operativeStream ? "Filter: operative hendelser (audit_events · avtale / firma-status). " : null}
               {loading ? "Laster…" : `${viewItems.length} vist • ${critCount} kritiske (heuristikk)`}{" "}
               <span className="text-[rgb(var(--lp-muted))]">•</span>{" "}
               <span className="text-[rgb(var(--lp-muted))]">Tastatur: ↑/↓, Enter, Esc</span>
@@ -451,6 +463,22 @@ export default function AuditClient() {
               ].join(" ")}
             >
               Alle
+            </button>
+
+            <button
+              onClick={() => {
+                setOperativeStream((v) => !v);
+                setCursor(null);
+                setSelectedIdx(-1);
+              }}
+              className={[
+                "rounded-lg border px-3 py-2 text-xs font-semibold",
+                operativeStream
+                  ? "border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] text-[rgb(var(--lp-text))]"
+                  : "border-[rgba(var(--lp-border),0.6)] text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface))]",
+              ].join(" ")}
+            >
+              Operativ drift
             </button>
 
             <button
@@ -533,6 +561,7 @@ export default function AuditClient() {
               setAuditSourceLocal("");
               setCursor(null);
               setPreset("critical");
+              setOperativeStream(false);
               setSelectedIdx(-1);
               load({ resetCursor: true, clearCursorBeforeFetch: true });
               showToast("ok", "Filtre nullstilt");
@@ -635,7 +664,7 @@ export default function AuditClient() {
 
                 {previewBeforeAfter(it.detail)}
 
-                <div className="mt-2">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Link
                     href={`/superadmin/audit/${it.id}`}
                     className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
@@ -643,6 +672,16 @@ export default function AuditClient() {
                   >
                     Åpne detalj →
                   </Link>
+                  {resolveSuperadminAuditContextLinks(it).map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {l.label} →
+                    </Link>
+                  ))}
                 </div>
               </div>
 

@@ -1,3 +1,5 @@
+"use client";
+
 // components/seo/RelatedLinks.tsx
 import Link from "next/link";
 
@@ -19,7 +21,7 @@ function cx(...s: Array<string | false | null | undefined>) {
  * Her ligger en enkel fallback-liste som matcher det du viser på skjermbildet.
  * Bytt gjerne til din eksisterende "getLinksByTags" om du har den.
  */
-function getRelatedLinksByTags(tags: string[], currentPath: string): RelatedLink[] {
+function getRelatedLinksByTags(tags: string[], currentPath: string, maxItems: number): RelatedLink[] {
   const all: RelatedLink[] = [
     {
       href: "/lunsjordning",
@@ -66,7 +68,8 @@ function getRelatedLinksByTags(tags: string[], currentPath: string): RelatedLink
   // Her returnerer vi alle som “relevante”.
   void tags;
 
-  return out.slice(0, 8);
+  const cap = Math.min(12, Math.max(1, maxItems));
+  return out.slice(0, cap);
 }
 
 export default function RelatedLinks({
@@ -74,15 +77,36 @@ export default function RelatedLinks({
   tags,
   title = "Relaterte sider",
   subtitle = "Utforsk mer om lunsjordning, alternativ til kantine, system og lokale sider.",
+  maxItems = 8,
+  emptyFallbackText,
 }: {
   currentPath: string;
   tags: string[];
   title?: string;
   subtitle?: string;
+  maxItems?: number;
+  emptyFallbackText?: string;
 }) {
-  const links = getRelatedLinksByTags(tags, currentPath);
+  const links = getRelatedLinksByTags(tags, currentPath, maxItems);
 
-  if (!links.length) return null;
+  if (!links.length) {
+    if (!emptyFallbackText?.trim()) return null;
+    return (
+      <section className="lp-related" aria-label="Relaterte sider">
+        <div className="lp-container">
+          <div className="lp-related-head">
+            <div>
+              <h2 className="lp-h2 lp-related-title">{title}</h2>
+              <p className="lp-sub lp-related-sub">{subtitle}</p>
+            </div>
+          </div>
+          <p className="lp-sub mx-auto max-w-xl text-center text-sm text-[rgb(var(--lp-muted))]">
+            {emptyFallbackText.trim()}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="lp-related" aria-label="Relaterte sider">

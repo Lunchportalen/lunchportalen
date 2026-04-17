@@ -1,12 +1,10 @@
 /**
- * PHASE 5: Preview/public/publish parity.
- * - Public route uses published (prod) content via getContentBySlug.
- * - Preview uses draft (preview variant).
- * - Same renderBlock pipeline; variant selection is the only divergence.
+ * PHASE 5: Preview/public/publish parity for **Supabase-stored** pages (internal reader).
+ * Public marketing routes resolve via Umbraco only — see `getContentBySlug` + docs.
  */
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { getContentBySlug } from "@/lib/cms/public/getContentBySlug";
+import { readSupabasePublishedContentPageBySlug } from "@/lib/cms/supabase/readPublishedContentPageBySlug";
 
 let mockPagesBySlug: Record<string, { id: string; slug: string; title: string | null; status?: string | null } | null> = {};
 let mockVariantsByKey: Map<string, { id: string; body: unknown } | null> = new Map();
@@ -82,7 +80,7 @@ vi.mock(import("@/lib/supabase/admin"), async (importOriginal) => {
   } as unknown as typeof import("@/lib/supabase/admin");
 });
 
-describe("getContentBySlug — public uses published (prod) content", () => {
+describe("readSupabasePublishedContentPageBySlug — published (prod) variant selection", () => {
   beforeEach(() => {
     mockPagesBySlug = {};
     mockVariantsByKey = new Map();
@@ -90,19 +88,19 @@ describe("getContentBySlug — public uses published (prod) content", () => {
   });
 
   test("returns null when slug is empty or invalid", async () => {
-    expect(await getContentBySlug("")).toBeNull();
-    expect(await getContentBySlug("   ")).toBeNull();
+    expect(await readSupabasePublishedContentPageBySlug("")).toBeNull();
+    expect(await readSupabasePublishedContentPageBySlug("   ")).toBeNull();
   });
 
   test("returns null when page does not exist", async () => {
     mockPagesBySlug["missing-page"] = null;
-    expect(await getContentBySlug("missing-page")).toBeNull();
+    expect(await readSupabasePublishedContentPageBySlug("missing-page")).toBeNull();
   });
 
   test("returns null when page exists but is draft (status not published)", async () => {
     const pageId = "page-draft";
     mockPagesBySlug["draft-page"] = { id: pageId, slug: "draft-page", title: "Draft", status: "draft" };
-    const result = await getContentBySlug("draft-page");
+    const result = await readSupabasePublishedContentPageBySlug("draft-page");
     expect(result).toBeNull();
   });
 
@@ -114,7 +112,7 @@ describe("getContentBySlug — public uses published (prod) content", () => {
       body: { version: 1, blocks: [{ id: "b1", type: "richText", data: { heading: "Draft" } }] },
     });
     // No prod variant
-    const result = await getContentBySlug("my-slug");
+    const result = await readSupabasePublishedContentPageBySlug("my-slug");
     expect(result).toBeNull();
   });
 
@@ -126,12 +124,13 @@ describe("getContentBySlug — public uses published (prod) content", () => {
       id: "v-prod",
       body: prodBody,
     });
-    const result = await getContentBySlug("published-page");
+    const result = await readSupabasePublishedContentPageBySlug("published-page");
     expect(result).not.toBeNull();
     expect(result!.pageId).toBe(pageId);
     expect(result!.slug).toBe("published-page");
     expect(result!.title).toBe("Published");
     expect(result!.body).toEqual(prodBody);
+    expect(result!.publicContentOrigin).toBe("live-supabase");
   });
 
   test("public route uses published content: prod variant only, not preview", async () => {
@@ -145,24 +144,26 @@ describe("getContentBySlug — public uses published (prod) content", () => {
       id: "v-prod",
       body: { version: 1, blocks: [{ id: "pub", type: "richText", data: { heading: "Published content" } }] },
     });
-    const result = await getContentBySlug("parity");
+    const result = await readSupabasePublishedContentPageBySlug("parity");
     expect(result).not.toBeNull();
+    expect(result!.publicContentOrigin).toBe("live-supabase");
     const blocks = (result!.body as { blocks?: unknown[] })?.blocks ?? [];
     const heading = blocks[0] && typeof blocks[0] === "object" && "data" in blocks[0] ? (blocks[0].data as { heading?: string }).heading : undefined;
     expect(heading).toBe("Published content");
   });
 
-  test("getContentBySlug with preview:true returns preview variant body (no prod fallback)", async () => {
+  test("readSupabase with preview:true returns preview variant body (no prod fallback)", async () => {
     const pageId = "page-preview-flag";
     mockPagesBySlug["preview-flag"] = { id: pageId, slug: "preview-flag", title: "PF", status: "published" };
     mockVariantsByKey.set(variantKey(pageId, "nb", "preview"), {
       id: "v-preview-only",
       body: { version: 1, blocks: [{ id: "pv", type: "richText", data: { heading: "Preview only" } }] },
     });
-    const prodResult = await getContentBySlug("preview-flag");
+    const prodResult = await readSupabasePublishedContentPageBySlug("preview-flag");
     expect(prodResult).toBeNull();
-    const previewResult = await getContentBySlug("preview-flag", { preview: true });
+    const previewResult = await readSupabasePublishedContentPageBySlug("preview-flag", { preview: true });
     expect(previewResult).not.toBeNull();
+    expect(previewResult!.publicContentOrigin).toBe("live-supabase");
     const blocks = (previewResult!.body as { blocks?: unknown[] })?.blocks ?? [];
     const heading = blocks[0] && typeof blocks[0] === "object" && "data" in blocks[0] ? (blocks[0].data as { heading?: string }).heading : undefined;
     expect(heading).toBe("Preview only");
@@ -173,20 +174,20 @@ describe("preview uses draft content", () => {
   // Preview page fetches variants with .eq("page_id").eq("locale","nb") then picks environment==="preview" ?? variants[0].
   // We test the selection logic: getContentBySlug (public) does NOT return preview variant; only prod.
   // So "preview uses draft" is guaranteed by: public uses prod (tested above); preview page code explicitly prefers environment==="preview".
-  test("public getContentBySlug ignores preview variant", async () => {
+  test("readSupabase ignores preview variant for public-style prod read", async () => {
     const pageId = "page-4";
     mockPagesBySlug["draft-only"] = { id: pageId, slug: "draft-only", title: "Draft", status: "published" };
     mockVariantsByKey.set(variantKey(pageId, "nb", "preview"), {
       id: "v-preview",
       body: { version: 1, blocks: [{ id: "d", type: "richText", data: { heading: "Draft" } }] },
     });
-    const result = await getContentBySlug("draft-only");
+    const result = await readSupabasePublishedContentPageBySlug("draft-only");
     expect(result).toBeNull();
   });
 });
 
 describe("publish action changes visible state deterministically", () => {
-  test("when prod variant has body X, getContentBySlug returns X", async () => {
+  test("when prod variant has body X, readSupabase returns X", async () => {
     const pageId = "page-5";
     const publishedBody = { version: 1, blocks: [{ id: "after-publish", type: "hero", data: { title: "Live" } }] };
     mockPagesBySlug["live"] = { id: pageId, slug: "live", title: "Live", status: "published" };
@@ -194,8 +195,9 @@ describe("publish action changes visible state deterministically", () => {
       id: "v-prod",
       body: publishedBody,
     });
-    const result = await getContentBySlug("live");
+    const result = await readSupabasePublishedContentPageBySlug("live");
     expect(result).not.toBeNull();
     expect(result!.body).toEqual(publishedBody);
+    expect(result!.publicContentOrigin).toBe("live-supabase");
   });
 });

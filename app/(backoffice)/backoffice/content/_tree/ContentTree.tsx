@@ -691,6 +691,22 @@ export default function ContentTree({
     return q.includes("recycle") || q.includes("papirkurv") || (q.length >= 3 && q.includes("bin"));
   }, [treeFilter]);
 
+  const hasTreeDiagnosticPayload =
+    Boolean(
+      schemaHint ||
+        operatorMessage ||
+        operatorAction ||
+        technicalDetail ||
+        missingColumns.length > 0 ||
+        technicalCode,
+    );
+  const isContentDetailEditor = routeState.kind === "detail";
+  /** På `/backoffice/content/[id]`: ikke stor gul schema/diagnoseflate når det ikke er mutasjonslås. */
+  const showFullTreeDiagnosticsPanel =
+    hasTreeDiagnosticPayload && !loadError && !isContentDetailEditor;
+  const showCompactTreeDiagnosticsDetail =
+    !loadError && isContentDetailEditor && mutationsLocked;
+
   return (
     <div className="flex flex-col py-2" role="tree" aria-label="Innhold" data-lp-content-tree>
       <div className="px-3 pb-2 pt-1">
@@ -719,7 +735,7 @@ export default function ContentTree({
           </button>
         </div>
       ) : null}
-      {(schemaHint || operatorMessage || operatorAction || technicalDetail || missingColumns.length > 0 || technicalCode) && !loadError ? (
+      {showFullTreeDiagnosticsPanel ? (
         <div
           className={`mx-3 mb-2 rounded-xl border px-3 py-3 text-[11px] leading-snug ${
             treeDegraded
@@ -785,6 +801,37 @@ export default function ContentTree({
             </details>
           ) : null}
         </div>
+      ) : null}
+      {showCompactTreeDiagnosticsDetail ? (
+        <details className="mx-3 mb-2 rounded-lg border border-amber-200/90 bg-amber-50/70 px-2 py-1 text-[10px] leading-snug text-amber-950">
+          <summary className="cursor-pointer list-none font-medium marker:content-none [&::-webkit-details-marker]:hidden">
+            Tre — begrenset (mutasjoner låst)
+          </summary>
+          <div className="mt-2 space-y-1.5 border-t border-amber-200/50 pt-2">
+            {formatTreeDegradedReason(degradedReason) ? (
+              <p className="text-[10px] text-amber-900/90">{formatTreeDegradedReason(degradedReason)}</p>
+            ) : null}
+            {operatorMessage || schemaHint ? (
+              <p>{operatorMessage ?? schemaHint}</p>
+            ) : (
+              <p className="text-amber-900/85">Opprett, omdøp og flytt i treet er midlertidig deaktivert.</p>
+            )}
+            {operatorAction ? (
+              <p className="rounded border border-amber-300/50 bg-white/50 px-2 py-1 text-[10px]">
+                Neste steg: {operatorAction}
+              </p>
+            ) : null}
+            {technicalDetail ? (
+              <details className="text-[10px] text-amber-900/85">
+                <summary className="cursor-pointer font-medium">Teknisk detalj</summary>
+                {technicalCode ? (
+                  <p className="mt-1 break-words font-mono">Kode: {technicalCode}</p>
+                ) : null}
+                <p className="mt-1 break-words font-mono">{technicalDetail}</p>
+              </details>
+            ) : null}
+          </div>
+        </details>
       ) : null}
       {loading && !roots.length ? (
         <div className="px-3 py-2 text-xs text-slate-500" aria-live="polite">

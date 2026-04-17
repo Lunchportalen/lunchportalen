@@ -1,0 +1,7 @@
+checkedAt: 2026-04-08T19:28:16.777Z
+canonicalBase: http://localhost:3056
+port: 3056
+Get-NetTCPConnection -State Listen (win) / ss grep :3056 (unix):
+(no output — no listeners or query empty)
+
+VERDICT: Port 3056 is FREE before boot.

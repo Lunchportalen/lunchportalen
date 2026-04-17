@@ -48,11 +48,12 @@ async function readBody(req: NextRequest): Promise<Record<string, any>> {
 
 async function handleRevoke(ctx: any, code: string) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const role = safeStr(ctx?.scope?.role).toLowerCase();
   const ctxCompanyId = safeStr(ctx?.scope?.companyId);
 
-  const denyScope = requireCompanyScopeOr403(ctx);
-  if (denyScope) return denyScope;
-  if (!ctxCompanyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  if (role === "company_admin" && !ctxCompanyId) {
+    return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  }
 
   const admin = supabaseAdmin();
 
@@ -68,8 +69,8 @@ async function handleRevoke(ctx: any, code: string) {
 
   const inviteCompanyId = safeStr((row as any).company_id);
 
-  // company_admin kan bare revoke egen company
-  if (inviteCompanyId && ctxCompanyId && inviteCompanyId !== ctxCompanyId) {
+  // company_admin kan bare revoke egen company; superadmin uten firmascope kan krysse tenant (drift)
+  if (role === "company_admin" && inviteCompanyId && ctxCompanyId && inviteCompanyId !== ctxCompanyId) {
     return jsonErr(ctx.rid, "Du kan ikke tilbakekalle invitasjoner for andre firma.", 403, { code: "forbidden", detail: { code } });
   }
 
@@ -113,6 +114,10 @@ export async function POST(req: NextRequest) {
   const denyRole = requireRoleOr403(ctx, "admin.invites.revoke", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
 
+  const isSuper = safeStr(ctx.scope?.role).toLowerCase() === "superadmin";
+  const denyScope = isSuper ? requireCompanyScopeOr403(ctx, { allowSuperadminGlobal: true }) : requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
+
   const body = await readBody(req);
   const code = safeStr(body.code ?? body.invite ?? pickCodeFromReq(req));
 
@@ -130,6 +135,10 @@ export async function GET(req: NextRequest) {
   // Role gate (403)
   const denyRole = requireRoleOr403(ctx, "admin.invites.revoke", ["superadmin", "company_admin"]);
   if (denyRole) return denyRole;
+
+  const isSuper = safeStr(ctx.scope?.role).toLowerCase() === "superadmin";
+  const denyScope = isSuper ? requireCompanyScopeOr403(ctx, { allowSuperadminGlobal: true }) : requireCompanyScopeOr403(ctx);
+  if (denyScope) return denyScope;
 
   const code = pickCodeFromReq(req);
   if (!code) return jsonErr(ctx.rid, "Mangler invitasjonskode (code).", 400, "missing_code");

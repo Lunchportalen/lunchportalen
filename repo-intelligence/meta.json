@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "last_scan": "2026-03-26T05:48:37.360Z",
+  "files_scanned": 3117,
+  "roots": [
+    "app",
+    "lib",
+    "supabase",
+    "components",
+    "scripts"
+  ]
+}

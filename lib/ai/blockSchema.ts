@@ -212,16 +212,41 @@ export function normalizeValidatedBlocksToCmsFlat(
     }
 
     if (type === "testimonial_block") {
+      const v = persistTriVariant(block.variant, "center");
+      const dens = str(block.density).toLowerCase();
+      const density = dens === "compact" || dens === "airy" ? dens : "comfortable";
+      const tj = str(block.testimonialsJson);
+      if (tj) {
+        return {
+          id,
+          type: "testimonial_block",
+          sectionTitle: str(block.sectionTitle),
+          testimonialsJson: tj,
+          density,
+          variant: v,
+        };
+      }
       const quote = str(block.quote);
       const author = str(block.author);
       const role = str(block.role);
-      const cardTitle = role ? `${author} – ${role}`.trim() : author || "Kunde";
+      const image = str(block.image) || str(block.imageUrl) || str(block.src);
+      const row = {
+        id: "t-1",
+        quote,
+        author,
+        role,
+        company: str(block.company) || str(block.source),
+        image,
+        alt: str(block.alt),
+        logo: str(block.logo) || str(block.logoUrl),
+      };
       return {
         id,
-        type: "cards",
-        title: "",
-        text: quote,
-        items: [{ title: cardTitle, text: quote || role }],
+        type: "testimonial_block",
+        sectionTitle: str(block.sectionTitle),
+        testimonialsJson: JSON.stringify([row]),
+        density,
+        variant: v,
       };
     }
 
@@ -258,12 +283,58 @@ export function normalizeValidatedBlocksToCmsFlat(
       };
     }
 
-    if (type === "form_embed") {
+    if (type === "newsletter_signup") {
+      const v = persistTriVariant(block.variant, "center");
+      const cw = str(block.contentWidth).toLowerCase();
+      const contentWidth = cw === "wide" || cw === "normal" ? cw : "narrow";
+      const sm = str(block.submitMethod).toLowerCase();
+      const submitMethod = sm === "post" ? "post" : "get";
+      const lede = str(block.lede) || str(block.body);
       return {
         id,
-        type: "form",
+        type: "newsletter_signup",
+        eyebrow: str(block.eyebrow),
+        title: str(block.title),
+        lede,
+        ctaLabel: str(block.ctaLabel),
+        ctaHref: str(block.ctaHref),
+        disclaimer: str(block.disclaimer),
+        submitMethod,
+        contentWidth,
+        variant: v,
+      };
+    }
+
+    if (type === "quote_block") {
+      const v = persistTriVariant(block.variant, "center");
+      const cw = str(block.contentWidth).toLowerCase();
+      const contentWidth = cw === "wide" || cw === "normal" ? cw : "narrow";
+      return {
+        id,
+        type: "quote_block",
+        quote: str(block.quote),
+        author: str(block.author),
+        role: str(block.role),
+        source: str(block.source),
+        contentWidth,
+        variant: v,
+      };
+    }
+
+    if (type === "form_embed") {
+      const v = persistTriVariant(block.variant, "center");
+      const cw = str(block.contentWidth).toLowerCase();
+      const contentWidth = cw === "wide" || cw === "narrow" ? cw : "normal";
+      return {
+        id,
+        type: "form_embed",
         formId: str(block.formId),
-        title: str(block.title) || "Form",
+        iframeSrc: str(block.iframeSrc),
+        title: str(block.title),
+        lede: str(block.lede),
+        embedHtml: str(block.embedHtml),
+        contentWidth,
+        variant: v,
       };
     }
 

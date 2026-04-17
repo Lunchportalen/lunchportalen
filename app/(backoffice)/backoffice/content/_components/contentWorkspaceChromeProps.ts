@@ -65,6 +65,8 @@ export type ContentWorkspaceChromeBuildInput = {
   title: string;
   slug: string | null;
   setTitle: (v: string) => void;
+  setSlug: (v: string) => void;
+  setSlugTouched: (v: boolean) => void;
   setCanvasMode: (m: "preview" | "edit") => void;
   previewDevice: PreviewDeviceId;
   setPreviewDevice: (d: PreviewDeviceId) => void;
@@ -276,7 +278,9 @@ export function buildContentWorkspaceChromeProps(i: ContentWorkspaceChromeBuildI
     setMeta: i.setMeta,
     page: p,
     title: i.title,
-    slug: i.slug,
+    slug: i.slug ?? "",
+    setSlug: i.setSlug,
+    setSlugTouched: i.setSlugTouched,
     showBlocks: i.showBlocks,
     selectedBlockForInspector: i.selectedBlockForInspector,
     blocks: i.blocks,

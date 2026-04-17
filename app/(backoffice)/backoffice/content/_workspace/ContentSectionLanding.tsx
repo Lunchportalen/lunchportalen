@@ -122,7 +122,9 @@ export default function ContentSectionLanding() {
     <div className="min-h-0 space-y-6 px-4 py-6 md:px-8">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">CMS · innhold</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[rgb(var(--lp-muted))]">
+            Public innhold · redaksjon
+          </p>
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-[rgb(var(--lp-text))] md:text-3xl">Innhold</h1>
           <p className="text-sm leading-relaxed text-[rgb(var(--lp-muted))]">
             {section.description} Velg side i treet til venstre for å redigere. Denne flaten er kontrollpunktet for opprettelse,

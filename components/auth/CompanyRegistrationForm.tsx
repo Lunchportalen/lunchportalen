@@ -3,12 +3,21 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  parseRegistrationPlanPayload,
+  REGISTRATION_WEEKDAYS,
+  type RegistrationWeekday,
+  type WeekdayMealTiers,
+} from "@/lib/registration/weekdayMealTiers";
+
 type RegisterResponse = {
   ok?: boolean;
   rid?: string;
   companyId?: string;
+  registrationId?: string;
+  persisted?: boolean;
   message?: string;
-  receipt?: { message?: string };
+  receipt?: { message?: string; createdAt?: string };
   error?: string | { code?: string; detail?: unknown };
 };
 
@@ -28,6 +37,19 @@ export type CompanyRegistrationFormState = {
   postalCode: string;
   postalCity: string;
   confirmAuthority: boolean;
+  weekdayTiers: WeekdayMealTiers;
+  deliveryWindowFrom: string;
+  deliveryWindowTo: string;
+  termsBindingMonths: string;
+  termsNoticeMonths: string;
+};
+
+const DAY_LABELS: Record<RegistrationWeekday, string> = {
+  mon: "Mandag",
+  tue: "Tirsdag",
+  wed: "Onsdag",
+  thu: "Torsdag",
+  fri: "Fredag",
 };
 
 export function onlyDigits(value: string) {
@@ -65,11 +87,28 @@ export function validateCompanyRegistrationForm(state: CompanyRegistrationFormSt
   if (!state.postalCity.trim()) return "Poststed må fylles ut.";
   if (!state.confirmAuthority) return "Du må bekrefte fullmakt før innsending.";
 
+  const plan = parseRegistrationPlanPayload({
+    weekday_meal_tiers: state.weekdayTiers,
+    delivery_window_from: state.deliveryWindowFrom,
+    delivery_window_to: state.deliveryWindowTo,
+    terms_binding_months: Number(state.termsBindingMonths),
+    terms_notice_months: Number(state.termsNoticeMonths),
+  });
+  if (plan.ok === false) return plan.message;
+
   return null;
 }
 
 export default function CompanyRegistrationForm({ blocked = false, blockedReason = null }: CompanyRegistrationFormProps) {
   const router = useRouter();
+
+  const defaultTiers: WeekdayMealTiers = {
+    mon: "BASIS",
+    tue: "BASIS",
+    wed: "BASIS",
+    thu: "BASIS",
+    fri: "BASIS",
+  };
 
   const [state, setState] = useState<CompanyRegistrationFormState>({
     companyName: "",
@@ -82,6 +121,11 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
     postalCode: "",
     postalCity: "",
     confirmAuthority: false,
+    weekdayTiers: defaultTiers,
+    deliveryWindowFrom: "",
+    deliveryWindowTo: "",
+    termsBindingMonths: "",
+    termsNoticeMonths: "",
   });
 
   const [pending, setPending] = useState(false);
@@ -126,6 +170,12 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
           address_line: state.addressLine.trim(),
           postal_code: onlyDigits(state.postalCode),
           postal_city: state.postalCity.trim(),
+          consent_accepted: true,
+          weekday_meal_tiers: state.weekdayTiers,
+          delivery_window_from: state.deliveryWindowFrom.trim(),
+          delivery_window_to: state.deliveryWindowTo.trim(),
+          terms_binding_months: Number(state.termsBindingMonths),
+          terms_notice_months: Number(state.termsNoticeMonths),
         }),
       });
 
@@ -137,12 +187,12 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
       setReceipt(json);
 
-      if (!res.ok || !json.ok) {
+      if (!res.ok || !json.ok || json.persisted !== true) {
         setError(json.message || "Registreringen feilet.");
         return;
       }
 
-      const companyId = String(json.companyId ?? "").trim();
+      const companyId = String(json.companyId ?? json.registrationId ?? "").trim();
       const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
       router.push(`/registrering/mottatt${query}`);
     } catch {
@@ -161,6 +211,74 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
         <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
           Fyll ut firmainfo og kontaktperson. Registreringen blir lagret når alle felt er gyldige.
         </p>
+
+        <div className="mt-6 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] p-4">
+          <h3 className="text-sm font-semibold">Lunsjplan (Basis = 3 valg, Luxus = 6 valg)</h3>
+          <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+            Velg nivå per ukedag. Dette lagres som del av firmaregistreringen og brukes senere i avtale og for ansatte.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {REGISTRATION_WEEKDAYS.map((d) => (
+              <label key={d} className="text-sm">
+                {DAY_LABELS[d]} *
+                <select
+                  className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.35)]"
+                  value={state.weekdayTiers[d]}
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      weekdayTiers: {
+                        ...prev.weekdayTiers,
+                        [d]: e.target.value === "LUXUS" ? "LUXUS" : "BASIS",
+                      },
+                    }))
+                  }
+                >
+                  <option value="BASIS">Basis</option>
+                  <option value="LUXUS">Luxus</option>
+                </select>
+              </label>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">
+              Levering fra (HH:MM) *
+              <input
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.35)]"
+                placeholder="11:00"
+                value={state.deliveryWindowFrom}
+                onChange={(e) => setState((prev) => ({ ...prev, deliveryWindowFrom: e.target.value }))}
+              />
+            </label>
+            <label className="text-sm">
+              Levering til (HH:MM) *
+              <input
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.35)]"
+                placeholder="13:00"
+                value={state.deliveryWindowTo}
+                onChange={(e) => setState((prev) => ({ ...prev, deliveryWindowTo: e.target.value }))}
+              />
+            </label>
+            <label className="text-sm">
+              Binding (måneder) *
+              <input
+                inputMode="numeric"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.35)]"
+                value={state.termsBindingMonths}
+                onChange={(e) => setState((prev) => ({ ...prev, termsBindingMonths: onlyDigits(e.target.value) }))}
+              />
+            </label>
+            <label className="text-sm">
+              Oppsigelse (måneder) *
+              <input
+                inputMode="numeric"
+                className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[rgba(var(--lp-ring),0.35)]"
+                value={state.termsNoticeMonths}
+                onChange={(e) => setState((prev) => ({ ...prev, termsNoticeMonths: onlyDigits(e.target.value) }))}
+              />
+            </label>
+          </div>
+        </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="text-sm">

@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, resolveAdminTenantCompanyId } from "@/lib/http/routeGuard";
 import { jsonErr, makeRid } from "@/lib/http/respond";
 
 function csvEscape(v: unknown) {
@@ -60,11 +60,9 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const q = String(url.searchParams.get("q") ?? "").trim().slice(0, 80);
 
-  const cg = requireCompanyScopeOr403(ctx);
-  if (cg instanceof Response) return cg;
-
-  const companyId = String(ctx.scope.companyId ?? "").trim() || null;
-  if (!companyId) return jsonErr(ctx.rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE");
+  const tenant = resolveAdminTenantCompanyId(ctx, req);
+  if (tenant.ok === false) return tenant.res;
+  const companyId = tenant.companyId;
 
   try {
     const admin = supabaseAdmin();
