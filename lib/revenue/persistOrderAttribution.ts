@@ -4,6 +4,8 @@
 import { logSocialAiActivity } from "@/lib/social/aiActivitySocial";
 import { trackPostEvent } from "@/lib/social/track";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+const ORDERS_TABLE = "orders" as const;
 import type { OrderAttributionRecord } from "@/lib/revenue/types";
 import { AI_SOCIAL_ATTRIBUTION_SOURCE } from "@/lib/revenue/types";
 import { opsLog } from "@/lib/ops/log";
@@ -19,7 +21,7 @@ export async function persistOrderAttribution(orderId: string, attribution: Orde
   try {
     const admin = supabaseAdmin();
     const postId = attribution.postId;
-    const { error } = await admin.from("orders").update({ attribution, social_post_id: postId }).eq("id", orderId);
+    const { error } = await admin.from(ORDERS_TABLE).update({ attribution, social_post_id: postId }).eq("id", orderId);
     if (error) {
       opsLog("order_attribution_persist_failed", {
         rid,

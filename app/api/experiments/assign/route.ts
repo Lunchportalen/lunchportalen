@@ -1,6 +1,6 @@
 import { assignVariant } from "@/lib/experiments/assign";
 import { makeRid } from "@/lib/http/rid";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -44,12 +44,10 @@ export async function GET(req: Request) {
     );
   }
 
-  let supabase;
-  try {
-    supabase = supabaseAdmin();
-  } catch {
-    return errJson(requestId, "Missing env: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY", 500);
+  if (!hasSupabaseAdminConfig()) {
+    return errJson(requestId, "Missing Supabase admin configuration", 500);
   }
+  const supabase = supabaseAdmin();
 
   try {
     const { data: exp, error: e1 } = await supabase

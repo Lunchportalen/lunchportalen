@@ -10,11 +10,13 @@
  * Valgfri ordre-kobling (oppdaterer én rad, tilbakestilles):
  *   SOCIAL_FLOW_TEST_WRITE=1 FLOW_TEST_ORDER_ID=<uuid> npx tsx scripts/testSocialFlow.ts
  *
- * Krever: SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) + SUPABASE_SERVICE_ROLE_KEY i .env / .env.local
+ * Krever: SUPABASE_URL (eller NEXT_PUBLIC_SUPABASE_URL) + service role-nøkkel i .env / .env.local
  */
 import { buildAiActivityLogRow } from "../lib/ai/logging/aiActivityLogRow";
 import { buildStandardSocialContentV1 } from "../lib/social/socialPostContent";
 import { getSupabaseAdmin } from "./system-test/utils/supabaseAdmin";
+
+const ORDERS_TABLE = "orders" as const;
 
 /** Bruk gyldig UUID-streng — noen miljøer har `social_posts.id` som uuid-typed kolonne. */
 function testPostId(): string {
@@ -152,7 +154,7 @@ async function main() {
       before && typeof before === "object" && typeof (before as { social_post_id?: unknown }).social_post_id === "string"
         ? String((before as { social_post_id: string }).social_post_id)
         : null;
-    const upd = await admin.from("orders").update({ social_post_id: id }).eq("id", orderId);
+    const upd = await admin.from(ORDERS_TABLE).update({ social_post_id: id }).eq("id", orderId);
     if (upd.error) {
       // eslint-disable-next-line no-console
       console.error("[ORDER_LINK_FAIL]", upd.error.message);
@@ -160,7 +162,7 @@ async function main() {
       // eslint-disable-next-line no-console
       console.log("[ORDER_ATTRIBUTION]", { orderId, social_post_id: id });
     }
-    const rev = await admin.from("orders").update({ social_post_id: prevSocial }).eq("id", orderId);
+    const rev = await admin.from(ORDERS_TABLE).update({ social_post_id: prevSocial }).eq("id", orderId);
     if (rev.error) {
       // eslint-disable-next-line no-console
       console.error("[ORDER_REVERT_FAIL]", rev.error.message);

@@ -5,7 +5,7 @@ import type { PosImpactScores, PosTriggerHints } from "@/lib/pos/posAdaptive";
 import type { PosAdaptiveKnobsLoaded } from "@/lib/pos/posAdaptiveKnobs";
 import type { PosSignalPriority, PosStabilizeStats } from "@/lib/pos/posStabilizer";
 import type { ProductSurface } from "@/lib/pos/surfaceRegistry";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 
 const KEY_MIN = "pos_adapt:min_conf";
 const KEY_MAX = "pos_adapt:max_active";
@@ -13,9 +13,7 @@ const KEY_OUTCOME = "pos_adapt:cycle_outcome_ewma";
 const SURF_PREFIX = "pos_adapt:mult:";
 
 function hasServiceEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
-  );
+  return hasSupabaseAdminConfig();
 }
 
 function adaptiveEnabled(): boolean {

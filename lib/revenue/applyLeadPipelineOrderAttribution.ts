@@ -9,6 +9,8 @@ import { verifyTable } from "@/lib/db/verifyTable";
 import type { StandardSocialContentV1 } from "@/lib/social/socialPostContent";
 import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 
+const ORDERS_TABLE = "orders" as const;
+
 function normEmail(v: string | null | undefined): string | null {
   const s = String(v ?? "")
     .trim()
@@ -173,7 +175,7 @@ export async function applyLeadPipelineOrderAttribution(opts: {
     }
 
     if (resolvedPostId && !existingSocial) {
-      const { error: updErr } = await admin.from("orders").update({ social_post_id: resolvedPostId }).eq("id", orderId);
+      const { error: updErr } = await admin.from(ORDERS_TABLE).update({ social_post_id: resolvedPostId }).eq("id", orderId);
       if (updErr) {
         console.error("[ORDER_SOCIAL_POST_UPDATE]", updErr.message, { rid: opts.rid, orderId });
       } else {

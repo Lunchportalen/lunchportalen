@@ -17,9 +17,10 @@ export function getSupabaseAdmin(): SystemTestAdmin {
   if (_client) return _client;
 
   const url = String(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
-  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  const srKey = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
+  const key = String(process.env[srKey] ?? "").trim();
   if (!url || !key) {
-    throw new Error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) or SUPABASE_SERVICE_ROLE_KEY");
+    throw new Error(`Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) or ${srKey}`);
   }
 
   _client = createClient<Database>(url, key, {

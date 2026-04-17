@@ -1,47 +1,12 @@
 import "server-only";
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
 import { saveLocalCmsGlobalDraft } from "@/lib/localRuntime/cmsProvider";
 import { getCmsRuntimeStatus } from "@/lib/localRuntime/runtime";
-import type { Database } from "@/lib/types/database";
+import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 
 type StoreKey = "header" | "footer" | "settings";
 
 type GlobalContentKey = "header" | "footer" | "settings";
-
-function envTrim(name: string): string {
-  return String(process.env[name] ?? "").trim();
-}
-
-function supabaseUrl(): string | null {
-  const server = envTrim("SUPABASE_URL");
-  if (server) return server;
-  const pub = envTrim("NEXT_PUBLIC_SUPABASE_URL");
-  return pub || null;
-}
-
-function supabaseServiceRoleKey(): string | null {
-  const k = envTrim("SUPABASE_SERVICE_ROLE_KEY");
-  return k || null;
-}
-
-let _service: SupabaseClient | null | undefined;
-
-function serviceClient(): SupabaseClient | null {
-  if (_service !== undefined) return _service;
-  const url = supabaseUrl();
-  const key = supabaseServiceRoleKey();
-  if (!url || !key) {
-    _service = null;
-    return null;
-  }
-  _service = createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    global: { headers: { "X-Client-Info": "lunchportalen-cms-write-global" } },
-  });
-  return _service;
-}
 
 function normalizeKey(key: string): StoreKey | null {
   if (key === "header" || key === "footer" || key === "settings") return key;
@@ -88,8 +53,9 @@ export async function saveGlobalDraft(
       return { ok: false, message: reserveWriteBlockedMessage() };
     }
 
-    const admin = serviceClient();
-    if (!admin) return { ok: false, message: "Mangler database-konfigurasjon." };
+    if (!hasSupabaseAdminConfig()) return { ok: false, message: "Mangler database-konfigurasjon." };
+
+    const admin = supabaseAdmin();
 
     const saved = cloneRecord(data);
 

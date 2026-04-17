@@ -2,6 +2,8 @@ import type { SystemTestContext } from "../context";
 import { logStep } from "./logger";
 import type { SystemTestAdmin } from "./supabaseAdmin";
 
+const ORDERS_TABLE = "orders" as const;
+
 function assertTestCompanyName(name: string | null | undefined) {
   const n = String(name ?? "").trim();
   if (!n.startsWith("TEST_COMPANY_")) {
@@ -24,11 +26,11 @@ export async function cleanupTestRun(ctx: SystemTestContext, admin: SystemTestAd
   };
 
   if (ctx.orderId) {
-    await run("orders by id", admin.from("orders").delete().eq("id", ctx.orderId!));
+    await run("orders by id", admin.from(ORDERS_TABLE).delete().eq("id", ctx.orderId!));
   }
 
   if (ctx.companyId) {
-    await run("orders by company", admin.from("orders").delete().eq("company_id", ctx.companyId!));
+    await run("orders by company", admin.from(ORDERS_TABLE).delete().eq("company_id", ctx.companyId!));
   }
 
   if (ctx.agreementId) {

@@ -9,7 +9,7 @@ import type { DecisionInputData } from "@/lib/ai/decisionEngine";
 import { runAIAnalysis } from "@/lib/ai/engine";
 import type { AiAnalysisEngineResult } from "@/lib/ai/types";
 import { getPlatformAiBillingOverview, type PlatformAiBillingOverview } from "@/lib/ai/usageOverview";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 
 export type PosSignalCollectionContext = {
   /** UTC calendar month for platform objective (`YYYY-MM`) or omit for current month. */
@@ -57,9 +57,7 @@ function daysAgoIso(days: number): string {
 }
 
 function hasServiceEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
-  );
+  return hasSupabaseAdminConfig();
 }
 
 /**
