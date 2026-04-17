@@ -32,10 +32,19 @@ describe("BlockInspectorEditorialParity (U75)", () => {
     .join("\n");
 
   it("inspektoren har stabile hook og type-spesifikke røtter (ikke bare generisk feltstakk)", () => {
-    expect(src).toContain("data-lp-inspector-fields");
-    expect(src).toContain("data-lp-inspector-type={block.type}");
-    expect(src).toContain("data-lp-property-editor-contract={block.type}");
-    expect(src).toContain("data-lp-inspector-lead");
+    expect(src).toContain("data-lp-inspector");
+    expect(src).toContain("data-lp-block-type={block.type}");
+    expect(src).toContain("data-lp-property-editor-surface");
+    const identityPath = path.join(
+      root,
+      "app",
+      "(backoffice)",
+      "backoffice",
+      "content",
+      "_components",
+      "BlockInspectorFieldsIdentity.tsx",
+    );
+    expect(fs.readFileSync(identityPath, "utf8")).toContain("data-lp-inspector-lead");
     expect(peCombined).toContain("data-lp-inspector-pricing-root");
     expect(peCombined).toContain("data-lp-inspector-cards-root");
     expect(peCombined).toContain("data-lp-inspector-zigzag-root");

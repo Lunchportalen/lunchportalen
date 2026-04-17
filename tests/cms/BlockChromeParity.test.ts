@@ -42,10 +42,10 @@ describe("Block chrome parity (Umbraco-grade structure)", () => {
     expect(blockToolbar).toContain("data-lp-block-actions");
   });
 
-  it("U82B: legacy BlockCanvas list component removed — canonical canvas is WorkspaceBody + blockCanvas/frames", () => {
+  it("U82B: legacy BlockCanvas list component removed — canonical canvas er WorkspaceBody + UmbracoBlockPropertyField", () => {
     const legacyPath = path.join(root, "app", "(backoffice)", "backoffice", "content", "_components", "BlockCanvas.tsx");
     expect(fs.existsSync(legacyPath)).toBe(false);
-    expect(workspaceBody).toContain("data-lp-canvas-selected-scan");
-    expect(workspaceBody).toContain("BlockCard");
+    expect(workspaceBody).toContain("UmbracoBlockPropertyField");
+    expect(workspaceBody).toContain("data-lp-detail-selected-module-canvas");
   });
 });

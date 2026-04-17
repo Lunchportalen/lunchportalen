@@ -41,21 +41,14 @@ describe("BlockFrameParity (U78)", () => {
     expect(editorCanvasFrameKind(b("richText"))).toBe("default");
   });
 
-  it("WorkspaceBody bruker ramme-switch (ikke én generisk mal for alle)", () => {
+  it("WorkspaceBody bruker modulliste + preview (ikke én generisk canvas-frame-switch i denne filen)", () => {
     const body = fs.readFileSync(
       path.join(root, "app", "(backoffice)", "backoffice", "content", "_components", "WorkspaceBody.tsx"),
       "utf8",
     );
-    expect(body).toContain("editorCanvasFrameKind(block)");
-    expect(body).toContain("HeroCanvasFrame");
-    expect(body).toContain("CardsCanvasFrame");
-    expect(body).toContain("StepsCanvasFrame");
-    expect(body).toContain("PricingCanvasFrame");
-    expect(body).toContain("CtaCanvasFrame");
-    expect(body).toContain("RelatedCanvasFrame");
-    expect(body).toContain("GridCanvasFrame");
-    expect(body).toContain("DefaultCanvasFrame");
-    expect(body).toContain("defaultCanvasSurface");
+    expect(body).toContain("UmbracoBlockPropertyField");
+    expect(body).toContain("PreviewCanvas");
+    expect(body).toContain("ContentDetailDocumentEditor");
   });
 
   it("editorielle rammer har egen kropp-markør under chrome (preview utenfor identity-kolonnen)", () => {

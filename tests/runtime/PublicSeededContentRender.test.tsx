@@ -75,10 +75,10 @@ describe("Public seeded content render", () => {
   });
 
   it("renders seeded public content instead of the empty fallback when seeded body exists", async () => {
-    const { default: PublicCmsPage } = await import("@/app/(public)/[slug]/page");
+    const { PublicCmsSlugPageView } = await import("@/lib/cms/public/publicCmsSlugRoute");
 
-    const node = await PublicCmsPage({
-      params: Promise.resolve({ slug: "bestilling-og-sporsmal" }),
+    const node = await PublicCmsSlugPageView({
+      slug: "bestilling-og-sporsmal",
       searchParams: Promise.resolve({}),
     });
 

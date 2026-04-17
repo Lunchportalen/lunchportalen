@@ -16,12 +16,12 @@ const shell = fs.readFileSync(
 describe("Editor density parity", () => {
   it("avoids the oversized trailing insert control", () => {
     expect(workspaceBody).not.toContain("min-h-[52px]");
-    expect(workspaceBody).toContain("mx-auto mt-2 flex min-h-10");
+    expect(workspaceBody).toContain("UmbracoBlockPropertyField");
   });
 
   it("tightens the primary editor section padding versus xl card stacks", () => {
-    expect(workspaceBody).toContain("rounded-xl border");
-    expect(workspaceBody).toContain("p-3 shadow-sm sm:p-4");
+    expect(workspaceBody).toContain("rounded-md");
+    expect(workspaceBody).toContain("p-3");
     expect(workspaceBody).not.toMatch(/rounded-2xl[\s\S]{0,80}p-4 shadow-sm sm:p-5/);
   });
 

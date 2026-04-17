@@ -13,12 +13,12 @@ describe("NoDeadCanvasPath (U82B)", () => {
     expect(fs.existsSync(legacy)).toBe(false);
   });
 
-  it("WorkspaceBody wires Hero/Cards/Steps frames from components/cms/blockCanvas", () => {
+  it("WorkspaceBody wires preview + detail editor (frames lever i PreviewCanvas / blockCanvas)", () => {
     const body = fs.readFileSync(
       path.join(root, "app", "(backoffice)", "backoffice", "content", "_components", "WorkspaceBody.tsx"),
       "utf8",
     );
-    expect(body).toContain("@/components/cms/blockCanvas/frames");
-    expect(body).toContain("HeroCanvasFrame");
+    expect(body).toContain("PreviewCanvas");
+    expect(body).toContain("ContentDetailDocumentEditor");
   });
 });

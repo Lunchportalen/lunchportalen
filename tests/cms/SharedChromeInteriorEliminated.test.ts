@@ -15,9 +15,8 @@ describe("SharedChromeInteriorEliminated (U80B)", () => {
     );
     expect(body).not.toMatch(/\bchromeInterior\b/);
     expect(body).not.toContain("chromeChildren=");
-    expect(body).toContain("frameProps");
-    expect(body).toContain("<HeroCanvasFrame");
-    expect(body).toContain("{...frameProps}");
+    expect(body).toContain("UmbracoBlockPropertyField");
+    expect(body).toContain("PreviewCanvas");
   });
 
   it("nøkkelblokk-rammer importerer ikke chrome fra WorkspaceBody — eget layoutansvar", () => {

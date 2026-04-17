@@ -26,7 +26,8 @@ describe("SingleInspectorPathParity (U82B)", () => {
   });
 
   it("BlockInspectorFields remains the canonical property editor surface", () => {
-    expect(fields).toContain("data-lp-inspector-fields");
-    expect(fields).toContain("data-lp-property-editor-contract");
+    expect(fields).toContain("data-lp-inspector");
+    expect(fields).toContain("data-lp-property-editor-surface");
+    expect(fields).toContain("BlockPropertyEditorRouter");
   });
 });

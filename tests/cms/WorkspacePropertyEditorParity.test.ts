@@ -34,11 +34,10 @@ describe("WorkspacePropertyEditorParity (U76)", () => {
     "ContentWorkspacePropertiesInspectorCard.tsx",
   );
 
-  it("BlockInspectorFields bruker PropertyEditorSection + router; nøkkel-editorer dekker content/settings/structure", () => {
+  it("BlockInspectorFields bruker BlockPropertyEditorRouter; nøkkel-editorer dekker content/settings/structure", () => {
     const src = fs.readFileSync(fieldsPath, "utf8");
-    expect(src).toContain('import { PropertyEditorSection } from "./PropertyEditorSection"');
-    expect(src).toContain('BlockPropertyEditorRouter');
-    expect(src).toContain('PropertyEditorSection section="content"');
+    expect(src).toContain("BlockPropertyEditorRouter");
+    expect(src).toContain("data-lp-property-editor-surface");
     const peDir = path.join(
       root,
       "app",
@@ -57,8 +56,8 @@ describe("WorkspacePropertyEditorParity (U76)", () => {
 
   it("WorkspaceBody beskriver canvas vs egenskapseditor eksplisitt", () => {
     const src = fs.readFileSync(workspacePath, "utf8");
-    expect(src).toContain("Egenskaper redigeres i inspektoren");
-    expect(src).toContain("egenskapseditor");
+    expect(src).toContain("UmbracoBlockPropertyField");
+    expect(src).toContain("renderInlineEditor");
   });
 
   it("Properties inspector-kort merket som egenskapseditor", () => {
@@ -81,9 +80,9 @@ describe("WorkspacePropertyEditorParity (U76)", () => {
     expect(hero?.groups?.some((g) => g.section === "settings")).toBe(true);
   });
 
-  it("U80: WorkspaceBody har ikke skjemafelter i canvas — kun egenskapseditor i rail", () => {
+  it("U80: detail-route embedder egenskapseditor inline under rad når ikke pageBuilder-variant", () => {
     const src = fs.readFileSync(workspacePath, "utf8");
-    expect(src).not.toContain("BlockInspectorFields");
-    expect(src).toContain("data-lp-canvas-selected-scan");
+    expect(src).toContain("BlockInspectorFields");
+    expect(src).toContain("data-lp-detail-selected-module-canvas");
   });
 });

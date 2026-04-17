@@ -15,10 +15,11 @@ const searchParamsState = {
 };
 
 const pushMock = vi.fn();
+const replaceMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: (key: string) => (key === "next" ? searchParamsState.next : null) }),
-  useRouter: () => ({ push: pushMock }),
+  useRouter: () => ({ push: pushMock, replace: replaceMock }),
   redirect: vi.fn(),
 }));
 
@@ -61,6 +62,7 @@ function setInputValue(input: HTMLInputElement, value: string) {
 beforeEach(() => {
   process.env.LP_LOCAL_CMS_RUNTIME = "1";
   pushMock.mockReset();
+  replaceMock.mockReset();
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => ({
@@ -154,7 +156,7 @@ describe("Content access after login", () => {
       await Promise.resolve();
     });
 
-    expect(container.textContent).toContain("Content");
+    expect(container.querySelector('[aria-label="Åpner redigeringsvisning"]')).toBeTruthy();
     document.body.removeChild(container);
   });
 

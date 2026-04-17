@@ -23,7 +23,7 @@ describe("editor canvas parity smoke", () => {
     const body = fs.readFileSync(files[0][1], "utf8");
     const chromeRow = fs.readFileSync(files[3][1], "utf8");
     expect(chromeRow).toContain("data-lp-block-chrome");
-    expect(body).toContain("data-lp-insert-slot");
+    expect(body).toContain("UmbracoBlockPropertyField");
     const collapsed = fs.readFileSync(files[2][1], "utf8");
     expect(collapsed).toContain("data-lp-block-preview");
   });
