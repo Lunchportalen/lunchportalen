@@ -40,6 +40,8 @@ queue.json
 
 # Local temp / artifacts
 .tmp/
+# Root-only hyphenated temp files (e.g. curl/debug .tmp-*.html / .tmp-*.headers)
+/.tmp-*
 *.log
 *.tsbuildinfo
 .tmp_*.sql
