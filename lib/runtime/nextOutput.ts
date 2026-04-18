@@ -5,7 +5,8 @@ import {
 } from "next/constants";
 
 export const NEXT_DEV_DIST_DIR = ".next/dev-runtime";
-export const NEXT_BUILD_DIST_DIR = ".next/build-runtime";
+/** Production must use the default `.next` dir so Vercel’s Next deploy step finds `routes-manifest.json` and siblings at `.next/*`. */
+export const NEXT_BUILD_DIST_DIR = ".next";
 
 export function resolveNextDistDir(phase: string): string {
   if (phase === PHASE_DEVELOPMENT_SERVER) {

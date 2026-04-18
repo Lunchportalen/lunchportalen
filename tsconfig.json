@@ -65,7 +65,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/**/types/**/*.ts",
-    ".next/build-runtime/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
     ".next/dev-runtime/types/**/*.ts"
