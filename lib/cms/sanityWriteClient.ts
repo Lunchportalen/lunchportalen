@@ -3,5 +3,5 @@
  */
 import "server-only";
 
-export { requireSanityWrite, sanityWrite } from "@/lib/sanity/client";
+export { requireSanityWrite } from "@/lib/sanity/client";
 export { sanityServer } from "@/lib/sanity/server";

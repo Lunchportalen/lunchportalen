@@ -1,17 +1,7 @@
 // lib/sanity/weekplan.ts
 // Sanity `weekPlan`-type: redaksjonell ukeplan (Studio/cron). Ikke operativ employee-sannhet — se GET /api/week + menuContent.
 import "server-only";
-import { createClient } from "@sanity/client";
-import { getSanityReadConfig } from "@/lib/config/env";
-
-const { projectId, dataset, apiVersion } = getSanityReadConfig();
-
-const sanityRead = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: true,
-});
+import { sanity as sanityRead } from "./client";
 
 export type WeekPlanStatus = "draft" | "open" | "current" | "archived";
 
