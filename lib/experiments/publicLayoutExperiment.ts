@@ -22,32 +22,38 @@ export async function getPublicLayoutExperimentAssignment(pathname: string): Pro
   if (isLocalCmsRuntimeEnabled()) {
     return null;
   }
-  const slug = slugFromPathname(pathname);
-  const supabase = supabaseAdmin();
-  const { data: page, error } = await supabase
-    .from("content_pages")
-    .select("id")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
-  if (error) {
-    opsLog("growth.layout_experiment.page_error", { pathname, slug, message: error.message });
+  try {
+    const slug = slugFromPathname(pathname);
+    const supabase = supabaseAdmin();
+    const { data: page, error } = await supabase
+      .from("content_pages")
+      .select("id")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (error) {
+      opsLog("growth.layout_experiment.page_error", { pathname, slug, message: error.message });
+      return null;
+    }
+    if (!page?.id) return null;
+
+    const assignment = await getRunningExperimentAssignmentForPage({
+      pageId: page.id as string,
+      preview: false,
+    });
+    if (assignment) {
+      opsLog("growth.layout_experiment.assignment", {
+        pathname,
+        slug,
+        pageId: page.id,
+        experimentId: assignment.experimentId,
+        variantId: assignment.variantId,
+      });
+    }
+    return assignment;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    opsLog("growth.layout_experiment.unavailable", { pathname, message });
     return null;
   }
-  if (!page?.id) return null;
-
-  const assignment = await getRunningExperimentAssignmentForPage({
-    pageId: page.id as string,
-    preview: false,
-  });
-  if (assignment) {
-    opsLog("growth.layout_experiment.assignment", {
-      pathname,
-      slug,
-      pageId: page.id,
-      experimentId: assignment.experimentId,
-      variantId: assignment.variantId,
-    });
-  }
-  return assignment;
 }
