@@ -99,6 +99,10 @@ function assertIntentLinks(path: string, intentLinks: MarketingIntentLink[], reg
       throw new Error(`SEO_REGISTRY_INTENT_HREF_NOT_INTERNAL:${path}:${link.href}`);
     }
 
+    if (String(link.href).includes(":")) {
+      throw new Error(`SEO_REGISTRY_INTENT_HREF_CORRUPT:${path}:${link.href}`);
+    }
+
     const normalizedHref = normalizePath(link.href);
 
     if (normalizedHref === path) {
@@ -163,63 +167,94 @@ function assertIsoDate(path: string, lastmod: string) {
   }
 }
 
+function validateMarketingRegistryEntry(
+  key: string,
+  entry: MarketingPage,
+  registryKeys: ReadonlySet<string>
+): void {
+  const normalizedKey = normalizePath(key);
+  const normalizedPath = normalizePath(entry.path);
+
+  if (normalizedKey !== normalizedPath) {
+    throw new Error(`SEO_REGISTRY_PATH_MISMATCH:${key}:${entry.path}`);
+  }
+
+  assertNonEmpty(entry.title, `SEO_REGISTRY_TITLE_MISSING:${key}`);
+  assertNonEmpty(entry.description, `SEO_REGISTRY_DESCRIPTION_MISSING:${key}`);
+  assertNonEmpty(entry.ogImage, `SEO_REGISTRY_OG_IMAGE_MISSING:${key}`);
+
+  if (!entry.ogImage.startsWith("/og/")) {
+    throw new Error(`SEO_REGISTRY_OG_IMAGE_INVALID:${key}:${entry.ogImage}`);
+  }
+
+  if (entry.priority < 0.1 || entry.priority > 1.0) {
+    throw new Error(`SEO_REGISTRY_PRIORITY_INVALID:${key}:${entry.priority}`);
+  }
+
+  if (!CHANGEFREQ_SET.has(entry.changefreq)) {
+    throw new Error(`SEO_REGISTRY_CHANGEFREQ_INVALID:${key}:${entry.changefreq}`);
+  }
+
+  assertIsoDate(normalizedPath, entry.lastmod || "auto");
+  assertBreadcrumbs(normalizedPath, entry.breadcrumbs);
+  assertIntentLinks(normalizedPath, entry.intentLinks, registryKeys);
+  assertFaq(normalizedPath, entry.faqKey);
+
+  if (KEY_LANDING_PATHS.has(normalizedPath)) {
+    assertCta(normalizedPath, entry.primaryCta, "primary");
+    assertCta(normalizedPath, entry.secondaryCta, "secondary");
+  }
+}
+
 export function assertMarketingRegistry(registry: MarketingRegistry = MARKETING_REGISTRY): MarketingRegistry {
   const entries = Object.entries(registry);
   if (entries.length === 0) {
     throw new Error("SEO_REGISTRY_EMPTY");
   }
-  const normalizedKeys = entries.map(([key]) => normalizePath(key));
-  const registryKeys = Object.freeze(new Set(normalizedKeys)) as ReadonlySet<string>;
+  const registryKeys = Object.freeze(new Set(entries.map(([k]) => normalizePath(k)))) as ReadonlySet<string>;
 
   for (const [key, entry] of entries) {
-    const normalizedKey = normalizePath(key);
-    const normalizedPath = normalizePath(entry.path);
-
-    if (normalizedKey !== normalizedPath) {
-      throw new Error(`SEO_REGISTRY_PATH_MISMATCH:${key}:${entry.path}`);
-    }
-
-    assertNonEmpty(entry.title, `SEO_REGISTRY_TITLE_MISSING:${key}`);
-    assertNonEmpty(entry.description, `SEO_REGISTRY_DESCRIPTION_MISSING:${key}`);
-    assertNonEmpty(entry.ogImage, `SEO_REGISTRY_OG_IMAGE_MISSING:${key}`);
-
-    if (!entry.ogImage.startsWith("/og/")) {
-      throw new Error(`SEO_REGISTRY_OG_IMAGE_INVALID:${key}:${entry.ogImage}`);
-    }
-
-    if (entry.priority < 0.1 || entry.priority > 1.0) {
-      throw new Error(`SEO_REGISTRY_PRIORITY_INVALID:${key}:${entry.priority}`);
-    }
-
-    if (!CHANGEFREQ_SET.has(entry.changefreq)) {
-      throw new Error(`SEO_REGISTRY_CHANGEFREQ_INVALID:${key}:${entry.changefreq}`);
-    }
-
-    assertIsoDate(normalizedPath, entry.lastmod || "auto");
-    assertBreadcrumbs(normalizedPath, entry.breadcrumbs);
-    assertIntentLinks(normalizedPath, entry.intentLinks, registryKeys);
-    assertFaq(normalizedPath, entry.faqKey);
-
-    if (KEY_LANDING_PATHS.has(normalizedPath)) {
-      assertCta(normalizedPath, entry.primaryCta, "primary");
-      assertCta(normalizedPath, entry.secondaryCta, "secondary");
-    }
+    validateMarketingRegistryEntry(key, entry, registryKeys);
   }
 
   return registry;
 }
 
+/**
+ * Collects registry pages that pass validation. Invalid entries are skipped with console.warn
+ * so sitemap/build does not hard-fail on a single bad row (deploy safety).
+ */
+export function collectValidMarketingPages(registry: MarketingRegistry): MarketingPage[] {
+  const entries = Object.entries(registry);
+  if (entries.length === 0) return [];
+  const registryKeys = Object.freeze(new Set(entries.map(([k]) => normalizePath(k)))) as ReadonlySet<string>;
+
+  const out: MarketingPage[] = [];
+  for (const [key, entry] of entries) {
+    try {
+      validateMarketingRegistryEntry(key, entry, registryKeys);
+      out.push(entry);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn(`[seo/marketingRegistry] Skipping invalid registry entry ${JSON.stringify(key)}: ${message}`);
+    }
+  }
+  return out.sort((a, b) => a.path.localeCompare(b.path));
+}
+
 export function getMarketingPage(path: string): MarketingPage {
   const normalized = normalizePath(path);
-  const registry = assertMarketingRegistry();
-  const entry = registry[normalized];
-  if (!entry) {
+  const entries = Object.entries(MARKETING_REGISTRY);
+  const registryKeys = new Set(entries.map(([k]) => normalizePath(k))) as ReadonlySet<string>;
+  const pair = entries.find(([k]) => normalizePath(k) === normalized);
+  if (!pair) {
     throw new Error(`SEO_REGISTRY_MISSING_FOR_PATH:${normalized}`);
   }
+  const [rawKey, entry] = pair;
+  validateMarketingRegistryEntry(rawKey, entry, registryKeys);
   return entry;
 }
 
 export function listMarketingPages(): MarketingPage[] {
-  const registry = assertMarketingRegistry();
-  return Object.values(registry).sort((a, b) => a.path.localeCompare(b.path));
+  return collectValidMarketingPages(MARKETING_REGISTRY);
 }

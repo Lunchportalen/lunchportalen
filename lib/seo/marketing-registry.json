@@ -436,7 +436,7 @@
       { "name": "Forside", "item": "/" },
       { "name": "Pitch", "item": "/pitch" }
     ],
-    "intentLinks": [{ "href": "/", "label": "Forside" }],
+    "intentLinks": [{ "href": "/kontakt", "label": "Kontakt oss" }],
     "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
     "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
   },
@@ -454,7 +454,7 @@
       { "name": "Forside", "item": "/" },
       { "name": "Investor", "item": "/investor" }
     ],
-    "intentLinks": [{ "href": "/", "label": "Forside" }],
+    "intentLinks": [{ "href": "/kontakt", "label": "Kontakt oss" }],
     "primaryCta": { "href": "/kontakt", "label": "Kontakt oss" },
     "secondaryCta": { "href": "/om-oss", "label": "Om oss" }
   },
@@ -473,8 +473,8 @@
       { "name": "AI-motoren demo", "item": "/ai-motor-demo" }
     ],
     "intentLinks": [
-      { "href": "/", "label": "Forside" },
-      { "href": "/registrering", "label": "Registrer firma" }
+      { "href": "/kontakt", "label": "Kontakt oss" },
+      { "href": "/lunsjordning", "label": "Lunsjordning for bedrifter" }
     ],
     "primaryCta": { "href": "/registrering", "label": "Registrer firma" },
     "secondaryCta": { "href": "/kontakt", "label": "Kontakt oss" }
