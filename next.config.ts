@@ -31,6 +31,17 @@ export default function nextConfig(phase: string): NextConfig {
     distDir: resolveNextDistDir(phase),
     async redirects() {
       return [
+        // Production alias: Umbraco CMS uses /umbraco; map to the existing Next backoffice surface.
+        {
+          source: "/umbraco",
+          destination: "/backoffice",
+          permanent: true,
+        },
+        {
+          source: "/umbraco/:path*",
+          destination: "/backoffice/:path*",
+          permanent: true,
+        },
         {
           source: "/registrer-firma",
           destination: "/registrering",

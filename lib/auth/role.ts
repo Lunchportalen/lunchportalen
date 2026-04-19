@@ -69,7 +69,11 @@ export function allowNextForRole(role: Role, nextPath: string | null): string | 
   if (!nextPath) return null;
 
   if (role === "superadmin") {
-    return nextPath.startsWith("/superadmin") || nextPath.startsWith("/backoffice") ? nextPath : null;
+    return nextPath.startsWith("/superadmin") ||
+      nextPath.startsWith("/backoffice") ||
+      nextPath.startsWith("/umbraco")
+      ? nextPath
+      : null;
   }
   if (role === "company_admin") return nextPath.startsWith("/admin") ? nextPath : null;
   if (role === "driver") return nextPath.startsWith("/driver") ? nextPath : null;
