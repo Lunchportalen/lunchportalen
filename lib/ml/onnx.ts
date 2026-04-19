@@ -9,9 +9,24 @@ import { opsLog } from "@/lib/ops/log";
 const DEFAULT_INPUT = "input";
 const DEFAULT_OUTPUT = "output";
 
-let session: import("onnxruntime-node").InferenceSession | null = null;
-let sessionPromise: Promise<import("onnxruntime-node").InferenceSession | null> | null = null;
+/** Structural type only — avoids pulling `onnxruntime-node` into the serverless trace via `import("…").Type`. */
+type OnnxInferenceSession = {
+  run(feeds: Record<string, unknown>): Promise<Record<string, unknown>>;
+};
+
+type OrtModule = {
+  Tensor: new (type: string, data: Float32Array, dims: readonly number[]) => unknown;
+  InferenceSession: { create: (path: string) => Promise<OnnxInferenceSession> };
+};
+
+let session: OnnxInferenceSession | null = null;
+let sessionPromise: Promise<OnnxInferenceSession | null> | null = null;
 let lastLoadError: string | null = null;
+
+/** ONNX native bindings are not shipped on Vercel serverless (size limit); optional ONNX is skipped there. */
+function isOnnxRuntimeEnvironmentSupported(): boolean {
+  return process.env.VERCEL !== "1";
+}
 
 export function isOnnxFeatureEnabled(): boolean {
   return String(process.env.LP_ONNX_ENABLED ?? "").trim() === "true";
@@ -27,8 +42,11 @@ function modelPath(): string {
  * Loads ONNX model once (fail-soft: returns null if disabled, missing file, or load error).
  * All failures are logged for SOC2 traceability; callers must fall back to deterministic predictors.
  */
-export async function loadModel(): Promise<import("onnxruntime-node").InferenceSession | null> {
+export async function loadModel(): Promise<OnnxInferenceSession | null> {
   if (!isOnnxFeatureEnabled()) {
+    return null;
+  }
+  if (!isOnnxRuntimeEnvironmentSupported()) {
     return null;
   }
   if (session) return session;
@@ -42,7 +60,7 @@ export async function loadModel(): Promise<import("onnxruntime-node").InferenceS
       return null;
     }
     try {
-      const ort = await import("onnxruntime-node");
+      const ort = (await import("onnxruntime-node")) as OrtModule;
       const s = await ort.InferenceSession.create(mp);
       session = s;
       lastLoadError = null;
@@ -71,7 +89,7 @@ export async function runModel(input: Float32Array): Promise<Float32Array | null
   const s = await loadModel();
   if (!s) return null;
 
-  const ort = await import("onnxruntime-node");
+  const ort = (await import("onnxruntime-node")) as OrtModule;
   const inputName = String(process.env.LP_ONNX_INPUT_NAME ?? DEFAULT_INPUT).trim() || DEFAULT_INPUT;
   const outputName = String(process.env.LP_ONNX_OUTPUT_NAME ?? DEFAULT_OUTPUT).trim() || DEFAULT_OUTPUT;
 
@@ -79,11 +97,11 @@ export async function runModel(input: Float32Array): Promise<Float32Array | null
   try {
     const results = await s.run({ [inputName]: tensor });
     const out = results[outputName];
-    if (!out || !("data" in out)) {
+    if (!out || typeof out !== "object" || !("data" in out)) {
       opsLog("onnx_run", { ok: false, reason: "missing_output", outputName });
       return null;
     }
-    const data = out.data;
+    const data = (out as { data: unknown }).data;
     if (data instanceof Float32Array) return data;
     if (data instanceof Float64Array) return Float32Array.from(data);
     opsLog("onnx_run", { ok: false, reason: "unexpected_output_dtype" });

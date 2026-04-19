@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
 const sharedConfig: NextConfig = {
+  /** Native ORT binaries are huge; keep them out of Vercel serverless traces (250 MB cap). */
+  serverExternalPackages: ["onnxruntime-node"],
+  outputFileTracingExcludes: {
+    "/*": [
+      "node_modules/onnxruntime-node/**",
+      "node_modules/onnxruntime-common/**",
+    ],
+  },
   async headers() {
     return [
       {
