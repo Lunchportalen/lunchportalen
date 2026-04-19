@@ -381,7 +381,7 @@ export default async function AdminCommandCenterPage() {
             subtitle="Ukesplan og bestillingsstatus (maks 2 uker)."
             right={
               <div className="flex flex-wrap items-center gap-2">
-                <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus lp-neon-glow-hover">
+                <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus">
                   Bestill lunsj
                 </Link>
                 <Link href="/admin/invite" className="lp-btn lp-btn--ghost">
