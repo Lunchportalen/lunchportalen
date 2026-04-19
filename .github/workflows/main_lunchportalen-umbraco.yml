@@ -1,5 +1,9 @@
 # Umbraco CMS — Azure App Service (lunchportalen-umbraco)
 # Builds and deploys only ./Umbraco/Umbraco.csproj (not Next.js / repo root).
+#
+# OIDC (azure/login): App registration must have a federated identity credential for GitHub
+# (issuer https://token.actions.githubusercontent.com). If missing, Azure returns AADSTS70025
+# and the deploy job fails at "Azure login" with no webapps-deploy.
 name: Umbraco CMS — Azure Web App deploy
 
 on:
@@ -45,6 +49,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Download umbraco-app artifact
         uses: actions/download-artifact@v4
