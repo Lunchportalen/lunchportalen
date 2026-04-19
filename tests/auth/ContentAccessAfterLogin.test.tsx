@@ -93,6 +93,10 @@ describe("Content access after login", () => {
     expect(allowNextForRole("superadmin", "/backoffice/content")).toBe("/backoffice/content");
   });
 
+  it("superadmin allow-list allows /umbraco (proxied Umbraco CMS — not Next /backoffice)", () => {
+    expect(allowNextForRole("superadmin", "/umbraco")).toBe("/umbraco");
+  });
+
   it("successful login path redirects through post-login with backoffice next", async () => {
     const localRuntimeCredentials = getLocalRuntimeLoginCredentials();
     expect(localRuntimeCredentials).toEqual({

@@ -90,6 +90,27 @@ describe("POST-login redirect safety (/api/auth/post-login GET)", () => {
     expect(location.includes("/admin")).toBe(false);
   });
 
+  test("superadmin next=/umbraco is preserved (Umbraco CMS path — E5 allowNextForRole)", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: true,
+      reason: "OK",
+      mode: "DB_LOOKUP",
+      user: { id: "u1", email: "sa@test.no" },
+      role: "superadmin",
+      company_id: null,
+      location_id: null,
+      rid: "rid_sa_umbraco",
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login?next=/umbraco");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location.includes("/umbraco")).toBe(true);
+  });
+
   test("superadmin unsafe next=/week falls back to landing (E5 — /superadmin*)", async () => {
     getAuthContextMock.mockResolvedValue({
       ok: true,
