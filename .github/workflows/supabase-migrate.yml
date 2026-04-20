@@ -79,7 +79,7 @@ jobs:
       - name: Typegen (staging)
         run: |
           mkdir -p "$EVIDENCE_DIR/typegen"
-          supabase gen types typescript --project-ref "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
+          supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
 
       - name: Upload evidence artifact (staging)
@@ -174,7 +174,7 @@ jobs:
       - name: Typegen (prod)
         run: |
           mkdir -p "$EVIDENCE_DIR/typegen"
-          supabase gen types typescript --project-ref "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
+          supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
 
       - name: Upload evidence artifact (prod)
