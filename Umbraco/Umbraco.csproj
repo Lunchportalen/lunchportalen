@@ -8,7 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" />
-    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" />
+    <!-- InMemoryAuto + dev backoffice: Debug builds only. Release/Azure must not ship this assembly. -->
+    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="uSync" />
   </ItemGroup>
 
