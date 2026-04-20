@@ -48,20 +48,29 @@ jobs:
           git log -1 --oneline
           git rev-parse HEAD
           echo "::endgroup::"
-          echo "::group::Publish folder sample (first 50 lines of ls -la)"
-          ls -la "$PUBLISH_DIR" | head -50
+
+          if [[ ! -d "$PUBLISH_DIR" ]]; then
+            echo "::error::Publish directory is missing or not a directory: $PUBLISH_DIR"
+            exit 1
+          fi
+
+          echo "::group::Publish folder sample (first 50 entries, best-effort listing)"
+          # Do not let diagnostic listing fail the job: ls|head under pipefail can exit 2 (ls) or break on SIGPIPE.
+          ls -la "$PUBLISH_DIR" 2>&1 | head -n 50 || true
           echo "::endgroup::"
+
           if [[ -f "$PUBLISH_DIR/Umbraco.Cms.DevelopmentMode.Backoffice.dll" ]]; then
             echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
             exit 1
           fi
-          if [[ ! -f "$PUBLISH_DIR/Umbraco.deps.json" ]]; then
+          DEPS="$PUBLISH_DIR/Umbraco.deps.json"
+          if [[ ! -f "$DEPS" ]]; then
             echo "::error::Missing Umbraco.deps.json in publish output."
             exit 1
           fi
-          if grep -qF "DevelopmentMode.Backoffice" "$PUBLISH_DIR/Umbraco.deps.json"; then
+          if grep -qF -- "DevelopmentMode.Backoffice" "$DEPS"; then
             echo "::error::Umbraco.deps.json must not reference DevelopmentMode.Backoffice in Release."
-            grep -n "DevelopmentMode" "$PUBLISH_DIR/Umbraco.deps.json" | head -20 || true
+            grep -n "DevelopmentMode" "$DEPS" | head -20 || true
             exit 1
           fi
           echo "OK: Release publish artifact is clean of Umbraco.Cms.DevelopmentMode.Backoffice."
