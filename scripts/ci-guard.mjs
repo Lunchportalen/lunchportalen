@@ -69,6 +69,42 @@ const ORDERS_WRITE_PATTERNS = ORDERS_FROM_PATTERNS.flatMap((p) =>
 const MOJIBAKE_MARKDOWN_PATTERN = "\u00C3|\u00E2\u20AC\u2013|\u00E2\u20AC\u2014|\u00E2\u20AC\u2122|\u00E2\u20AC\u0153|\u00E2\u20AC\u009D|\u00C2 ";
 const MOJIBAKE_DOCS_ARGS = ["-n", MOJIBAKE_MARKDOWN_PATTERN, "docs", "-g", "**/*.md"];
 
+function walkMarkdownUnderDocs(dir, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, ent.name);
+    if (ent.isDirectory()) walkMarkdownUnderDocs(full, out);
+    else if (ent.name.toLowerCase().endsWith(".md")) out.push(full);
+  }
+  return out;
+}
+
+/** Same rule as rg mojibake scan when ripgrep is unavailable (e.g. minimal CI images). */
+function runMojibakeMarkdownGuardFs() {
+  const docsDir = path.join(ROOT, "docs");
+  const mdFiles = walkMarkdownUnderDocs(docsDir);
+  const re = new RegExp(MOJIBAKE_MARKDOWN_PATTERN);
+  let found = false;
+
+  for (const full of mdFiles) {
+    let text;
+    try {
+      text = fs.readFileSync(full, "utf8");
+    } catch {
+      continue;
+    }
+    if (!re.test(text)) continue;
+    found = true;
+    const rel = toRel(path.relative(ROOT, full));
+    console.error(`- [MOJIBAKE_MARKDOWN] ${rel}`);
+  }
+
+  if (found) {
+    console.error("\nCI GUARD FAILED - mojibake funnet i docs markdown.\n");
+    process.exit(1);
+  }
+}
+
 function toRel(p) {
   return p.split(path.sep).join("/");
 }
@@ -142,11 +178,24 @@ function runMojibakeMarkdownGuard() {
   for (const check of checks) {
     const res = spawnSync("rg", check.args, { cwd: ROOT, encoding: "utf8" });
 
-    if (res.error || (res.status !== 0 && res.status !== 1)) {
-      console.error(`CI GUARD FAILED - mojibake check error (${check.label}).`);
-      if (res.error) console.error(String(res.error));
+    const missingRg = Boolean(res.error && res.error.code === "ENOENT");
+    const rgOk = !res.error && (res.status === 0 || res.status === 1);
+
+    if (missingRg) {
+      console.warn(
+        "CI GUARD: ripgrep (rg) not found — mojibake markdown scan using Node fs fallback."
+      );
+      runMojibakeMarkdownGuardFs();
+      return;
+    }
+
+    if (!rgOk) {
+      console.warn(
+        `CI GUARD: mojibake check (rg) failed (${check.label}); using Node fs fallback. ${res.error ? String(res.error) : `exit ${res.status}`}`
+      );
       if (res.stderr) process.stderr.write(res.stderr);
-      process.exit(1);
+      runMojibakeMarkdownGuardFs();
+      return;
     }
 
     if (res.status === 0) {
