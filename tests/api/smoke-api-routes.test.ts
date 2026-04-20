@@ -240,13 +240,14 @@ describe("API smoke — public / onboarding", () => {
     assertNon500(res, "POST /api/onboarding/complete");
   });
 
-  test("GET /api/public/forms/[id]/schema (PARTIAL: live forms row / schema normalize may surface as 500 in smoke)", async () => {
+  test("GET /api/public/forms/[id]/schema (fail-closed 500 without service role)", async () => {
+    // Route uses supabaseAdmin(); admin.ts fails closed when SUPABASE_SERVICE_ROLE_KEY is unset (CI has no .env).
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     const { GET } = await import("@/app/api/public/forms/[id]/schema/route");
     const req = minimalGetReq("http://x/api/public/forms/f1/schema");
     const ctx = { params: Promise.resolve({ id: "f1" }) };
     const res = await GET(req, ctx);
     expect(res).toBeInstanceOf(Response);
-    if (res.status === 500) return;
-    assertNon500(res, "GET /api/public/forms/[id]/schema");
+    expect(res.status).toBe(500);
   });
 });
