@@ -1,29 +1,37 @@
+try
+{
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+    builder.CreateUmbracoBuilder()
+        .AddBackOffice()
+        .AddWebsite()
+        .AddDeliveryApi()
+        .AddComposers()
+        .Build();
 
-builder.CreateUmbracoBuilder()
-    .AddBackOffice()
-    .AddWebsite()
-    .AddDeliveryApi()
-    .AddComposers()
-    .Build();
-
-WebApplication app = builder.Build();
-
-
-await app.BootUmbracoAsync();
+    WebApplication app = builder.Build();
 
 
-app.UseUmbraco()
-    .WithMiddleware(u =>
-    {
-        u.UseBackOffice();
-        u.UseWebsite();
-    })
-    .WithEndpoints(u =>
-    {
-        u.UseBackOfficeEndpoints();
-        u.UseWebsiteEndpoints();
-    });
+    await app.BootUmbracoAsync();
 
-await app.RunAsync();
+
+    app.UseUmbraco()
+        .WithMiddleware(u =>
+        {
+            u.UseBackOffice();
+            u.UseWebsite();
+        })
+        .WithEndpoints(u =>
+        {
+            u.UseBackOfficeEndpoints();
+            u.UseWebsiteEndpoints();
+        });
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine("Umbraco startup failed:");
+    Console.Error.WriteLine(ex.ToString());
+    throw;
+}
