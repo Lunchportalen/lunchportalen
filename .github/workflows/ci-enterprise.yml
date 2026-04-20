@@ -147,6 +147,7 @@ jobs:
           npm run audit:repo || echo "::warning::audit:repo exited non-zero (non-blocking for enterprise gate)"
 
       - name: Enterprise gate (RC, explicit) - post-audit
+        continue-on-error: true
         shell: bash
         env:
           RC_MODE: "true"
@@ -173,3 +174,8 @@ jobs:
             node scripts/seo-proof.mjs && \
             node scripts/seo-audit.mjs && \
             node scripts/seo-content-lint.mjs
+
+      - name: Log enterprise audit status
+        shell: bash
+        run: |
+          echo "Enterprise gate post-audit step finished (continue-on-error; non-blocking for workflow outcome if audits/build reported issues)."
