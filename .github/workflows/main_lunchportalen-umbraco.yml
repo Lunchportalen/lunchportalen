@@ -37,6 +37,35 @@ jobs:
       - name: dotnet publish (Release)
         run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output "${{ github.workspace }}/publish/umbraco-app"
 
+      # Fail before artifact upload if publish graph still included dev backoffice (matches Kudu checks).
+      - name: Verify publish output (no DevelopmentMode backoffice)
+        shell: bash
+        env:
+          PUBLISH_DIR: ${{ github.workspace }}/publish/umbraco-app
+        run: |
+          set -euo pipefail
+          echo "::group::Git commit deployed by this build"
+          git log -1 --oneline
+          git rev-parse HEAD
+          echo "::endgroup::"
+          echo "::group::Publish folder sample (first 50 lines of ls -la)"
+          ls -la "$PUBLISH_DIR" | head -50
+          echo "::endgroup::"
+          if [[ -f "$PUBLISH_DIR/Umbraco.Cms.DevelopmentMode.Backoffice.dll" ]]; then
+            echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
+            exit 1
+          fi
+          if [[ ! -f "$PUBLISH_DIR/Umbraco.deps.json" ]]; then
+            echo "::error::Missing Umbraco.deps.json in publish output."
+            exit 1
+          fi
+          if grep -qF "DevelopmentMode.Backoffice" "$PUBLISH_DIR/Umbraco.deps.json"; then
+            echo "::error::Umbraco.deps.json must not reference DevelopmentMode.Backoffice in Release."
+            grep -n "DevelopmentMode" "$PUBLISH_DIR/Umbraco.deps.json" | head -20 || true
+            exit 1
+          fi
+          echo "OK: Release publish artifact is clean of Umbraco.Cms.DevelopmentMode.Backoffice."
+
       - name: Upload umbraco-app artifact
         uses: actions/upload-artifact@v4
         with:
@@ -55,6 +84,11 @@ jobs:
         with:
           name: umbraco-app
           path: ${{ github.workspace }}/umbraco-app
+
+      - name: Deploy context (triggering commit + run)
+        run: |
+          echo "Triggering commit SHA: ${GITHUB_SHA}"
+          echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Azure login
         uses: azure/login@v2
