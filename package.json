@@ -9,6 +9,7 @@
     "dev:rc": "cross-env RC_MODE=true node scripts/dev-singleton.mjs",
     "build": "node scripts/verify-control-coverage.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
     "build:enterprise": "cross-env RC_MODE=true npm run agents:check && cross-env RC_MODE=true npm run ci:platform-guards && cross-env RC_MODE=true npm run audit:api && cross-env RC_MODE=true npm run audit:repo && cross-env RC_MODE=true npm run check:admin-copy && cross-env RC_MODE=true npm run check:ai-internal-provider && cross-env RC_MODE=true node scripts/verify-control-coverage.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 RC_MODE=true next build && node scripts/seo-proof.mjs && node scripts/seo-audit.mjs && node scripts/seo-content-lint.mjs",
+    "build:enterprise:ci": "cross-env RC_MODE=true npm run agents:check && cross-env RC_MODE=true npm run ci:platform-guards && cross-env RC_MODE=true npm run check:admin-copy && cross-env RC_MODE=true npm run check:ai-internal-provider && cross-env RC_MODE=true node scripts/verify-control-coverage.mjs && cross-env NODE_OPTIONS=--max-old-space-size=8192 RC_MODE=true next build && node scripts/seo-proof.mjs && node scripts/seo-audit.mjs && node scripts/seo-content-lint.mjs",
     "start": "next start",
     "lint": "next lint",
     "lint:ci": "next lint",
