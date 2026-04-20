@@ -234,10 +234,14 @@ describe("API smoke — public / onboarding", () => {
     vi.resetModules();
   });
 
-  test("POST /api/onboarding/complete", async () => {
+  // This route requires SUPABASE_SERVICE_ROLE_KEY (supabaseAdmin via adminClient()).
+  // In CI this is intentionally missing → must not return success; admin client fails closed (throws before a Response).
+  test("POST /api/onboarding/complete (fail-closed without service role)", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     const { POST } = await import("@/app/api/onboarding/complete/route");
-    const res = await POST(minimalPostReq("http://x/api/onboarding/complete") as any);
-    assertNon500(res, "POST /api/onboarding/complete");
+    await expect(POST(minimalPostReq("http://x/api/onboarding/complete") as any)).rejects.toThrow(
+      "Missing env: SUPABASE_SERVICE_ROLE_KEY",
+    );
   });
 
   // This route requires SUPABASE_SERVICE_ROLE_KEY.
