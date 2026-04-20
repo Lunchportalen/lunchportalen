@@ -216,12 +216,16 @@ describe("API smoke — kitchen / driver", () => {
 describe("API smoke — cron / internal", () => {
   beforeEach(() => {
     vi.resetModules();
+    // Deterministic: local .env may set CRON_SECRET (would yield 403 without header); empty env = misconfigured 500.
+    vi.stubEnv("CRON_SECRET", "");
   });
 
-  test("POST /api/internal/scheduler/run (no secret)", async () => {
+  test("POST /api/internal/scheduler/run (no CRON_SECRET in env — fail-closed 500)", async () => {
     const { POST } = await import("@/app/api/internal/scheduler/run/route");
     const res = await POST(minimalPostReq("http://x/api/internal/scheduler/run"));
-    assertNon500(res, "POST /api/internal/scheduler/run");
+    expect(res, "POST /api/internal/scheduler/run should return Response").toBeInstanceOf(Response);
+    // requireCronAuth throws cron_secret_missing when CRON_SECRET is unset; route maps to jsonErr 500 (misconfigured).
+    expect(res.status, "missing server cron secret must not succeed").toBe(500);
   });
 });
 

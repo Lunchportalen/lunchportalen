@@ -79,6 +79,17 @@ function walkMarkdownUnderDocs(dir, out = []) {
   return out;
 }
 
+/** True when spawnSync could not start `rg` (minimal CI images, Windows, or rg not in PATH). */
+function isRipgrepSpawnMissing(error) {
+  if (!error) return false;
+  const code = error.code;
+  if (code === "ENOENT") return true;
+  const errno = typeof error.errno === "number" ? error.errno : null;
+  if (errno === -2 || errno === -4058) return true;
+  const msg = String(error.message || error);
+  return /\bENOENT\b/i.test(msg) || /spawnSync\s+rg\b/i.test(msg);
+}
+
 /** Same rule as rg mojibake scan when ripgrep is unavailable (e.g. minimal CI images). */
 function runMojibakeMarkdownGuardFs() {
   const docsDir = path.join(ROOT, "docs");
@@ -176,9 +187,19 @@ function runMojibakeMarkdownGuard() {
   let found = false;
 
   for (const check of checks) {
-    const res = spawnSync("rg", check.args, { cwd: ROOT, encoding: "utf8" });
+    let res;
+    try {
+      res = spawnSync("rg", check.args, { cwd: ROOT, encoding: "utf8" });
+    } catch (e) {
+      console.warn(
+        "CI GUARD: ripgrep (rg) spawn threw — mojibake markdown scan using Node fs fallback.",
+        e
+      );
+      runMojibakeMarkdownGuardFs();
+      return;
+    }
 
-    const missingRg = Boolean(res.error && res.error.code === "ENOENT");
+    const missingRg = Boolean(res.error && isRipgrepSpawnMissing(res.error));
     const rgOk = !res.error && (res.status === 0 || res.status === 1);
 
     if (missingRg) {
