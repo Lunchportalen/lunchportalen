@@ -1,5 +1,6 @@
 /**
  * Phase-1 Umbraco marketing read: Delivery API → legacy body for parseBody / CmsBlockRenderer.
+ * Browser-facing public HTML is owned by Umbraco; delegation vs app: `docs/architecture/PUBLIC_SITE_AND_APP_BOUNDARIES.md`.
  */
 import registryData from "@/lib/seo/marketing-registry.json";
 import {
@@ -84,6 +85,13 @@ function deliveryHeaders(preview: boolean): Headers {
   return h;
 }
 
+/** Bounded wait so `/` (home) never blocks past postdeploy smoke (12s); fail-closed → seed via getContentBySlug catch. */
+function deliveryFetchTimeoutMs(): number {
+  const raw = Number(envTrim("UMBRACO_DELIVERY_FETCH_TIMEOUT_MS"));
+  if (Number.isFinite(raw) && raw >= 500) return Math.min(raw, 60_000);
+  return 8_000;
+}
+
 /**
  * Fetches one marketing page from Umbraco Delivery API and maps to `ContentBySlugResult`, or null on miss/error.
  */
@@ -96,10 +104,13 @@ export async function fetchMarketingFromUmbracoBySlug(
 
   const preview = options?.preview === true;
   const url = buildItemUrl(slug, preview);
+  const ms = deliveryFetchTimeoutMs();
+  const signal = AbortSignal.timeout(ms);
   const res = await fetch(url, {
     method: "GET",
     headers: deliveryHeaders(preview),
     cache: "no-store",
+    signal,
   });
 
   if (!res.ok) return null;
