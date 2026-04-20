@@ -32,7 +32,9 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: dotnet restore
-        run: dotnet restore "${{ env.UMBRACO_CSPROJ }}"
+        # Align NuGet restore with Release build/publish so conditional Debug-only packages
+        # (e.g. Umbraco.Cms.DevelopmentMode.Backoffice) are not part of the dependency graph.
+        run: dotnet restore "${{ env.UMBRACO_CSPROJ }}" /p:Configuration=Release
 
       - name: dotnet build
         run: dotnet build "${{ env.UMBRACO_CSPROJ }}" --configuration Release --no-restore
