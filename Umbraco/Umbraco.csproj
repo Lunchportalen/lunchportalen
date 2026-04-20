@@ -9,9 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" />
-    <!-- InMemoryAuto + dev backoffice: Debug builds only. Release/Azure must not ship this assembly. -->
-    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="uSync" />
+  </ItemGroup>
+
+  <!-- Debug only: must not appear in Release project.assets / Umbraco.deps.json (Azure uses Release publish). -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" />
   </ItemGroup>
 
   <ItemGroup>
