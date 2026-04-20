@@ -12,9 +12,12 @@
     <PackageReference Include="uSync" />
   </ItemGroup>
 
-  <!-- Debug only: must not appear in Release project.assets / Umbraco.deps.json (Azure uses Release publish). -->
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" />
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" Version="*" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <PackageReference Update="Umbraco.Cms.DevelopmentMode.Backoffice" ExcludeAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
