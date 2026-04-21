@@ -38,4 +38,12 @@
     <RazorCompileOnPublish>false</RazorCompileOnPublish>
   </PropertyGroup>
 
+  <!-- Azure / clean clone: publish must include umbraco/Data so |DataDirectory|/Umbraco.sqlite.db can be created (see Umbraco-CMS #19948). -->
+  <ItemGroup>
+    <Content Include="umbraco\Data\.gitkeep">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
