@@ -1,4 +1,4 @@
-// /studio/schemas/index.ts
+// /studio/schemaTypes/index.ts
 
 import announcement from "./announcement";
 import menuContent from "./menuContent";
@@ -8,15 +8,19 @@ import weekTemplate from "./weekTemplate";
 import closedDate from "./closedDate";
 import page from "./page";
 import pricingInfo from "./pricingInfo";
+import mealIdea from "./mealIdea";
+import menuDay from "./menuDay";
 
 /**
  * =========================================================
- * SANITY SCHEMA TYPES – LUNCHPORTALEN (FASET)
+ * SANITY SCHEMA TYPES – LUNCHPORTALEN
  * ---------------------------------------------------------
- * menuContent:
- *  - Dag-basert meny
- *  - Manuell godkjenning (approvedForPublish)
- *  - Automatisk kundesynlighet (customerVisible via cron)
+ * mealIdea:
+ *  - Varmmatbank / basebank
+ *
+ * menuDay:
+ *  - Dagkort brukt av WeekPlanner
+ *  - Må være registrert fordi WeekPlanner oppretter _type: "menuDay"
  * =========================================================
  */
 export const schemaTypes = [
@@ -28,4 +32,6 @@ export const schemaTypes = [
   closedDate,
   page,
   pricingInfo,
+  mealIdea,
+  menuDay,
 ];

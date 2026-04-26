@@ -22,11 +22,11 @@
 
 `LP_MARKETING_CMS_SOURCE` styrer **ikke** public marketing-read; Delivery aktiveres av `UMBRACO_DELIVERY_BASE_URL` alene.
 
-uSync-filer leses **ikke** av Next; de mater kun Umbraco-instansen ved import.
+Public Next-appen leser **kun** Umbraco via Delivery (eller lokale dev-harness), ikke filer fra webroot.
 
-## 2. Umbraco-node i repo (redaksjonell sannhet i CMS, ikke i Next)
+## 2. Umbraco-node (redaksjonell sannhet i CMS, ikke i Next)
 
-`Umbraco/uSync/v17/Content/home.config` — dokument `home`, `marketingPage`, publisert `bodyBlocks`. **Next** henter det kun via **Delivery** for allowlistet `home`.
+`home` som `marketingPage` med publisert `bodyBlocks` lever i **Umbraco-databasen**. **Next** henter det kun via **Delivery** for allowlistet `home`.
 
 ## 3. Seed på `/` (kun `home`)
 

@@ -13,10 +13,59 @@ const STATUSES: { title: string; value: string }[] = [
   { title: "Archived (historikk)", value: "archived" },
 ];
 
+const ALLERGENS: { title: string; value: string }[] = [
+  { title: "Gluten", value: "gluten" },
+  { title: "Melk", value: "melk" },
+  { title: "Egg", value: "egg" },
+  { title: "Fisk", value: "fisk" },
+  { title: "Skalldyr", value: "skalldyr" },
+  { title: "Bløtdyr", value: "bløtdyr" },
+  { title: "Soya", value: "soya" },
+  { title: "Selleri", value: "selleri" },
+  { title: "Sennep", value: "sennep" },
+  { title: "Sesam", value: "sesam" },
+  { title: "Peanøtter", value: "peanøtter" },
+  { title: "Nøtter", value: "nøtter" },
+  { title: "Sulfitt", value: "sulfitt" },
+  { title: "Lupin", value: "lupin" },
+];
+
+const MAY_CONTAIN: { title: string; value: string }[] = [
+  { title: "Spor av gluten", value: "spor av gluten" },
+  { title: "Spor av melk", value: "spor av melk" },
+  { title: "Spor av egg", value: "spor av egg" },
+  { title: "Spor av fisk", value: "spor av fisk" },
+  { title: "Spor av skalldyr", value: "spor av skalldyr" },
+  { title: "Spor av soya", value: "spor av soya" },
+  { title: "Spor av selleri", value: "spor av selleri" },
+  { title: "Spor av sennep", value: "spor av sennep" },
+  { title: "Spor av sesam", value: "spor av sesam" },
+  { title: "Spor av peanøtter", value: "spor av peanøtter" },
+  { title: "Spor av nøtter", value: "spor av nøtter" },
+];
+
+const KITCHEN_STYLES: { title: string; value: string }[] = [
+  { title: "Norsk / skandinavisk", value: "norwegian" },
+  { title: "Italiensk / middelhav", value: "italian" },
+  { title: "Asiatisk", value: "asian" },
+  { title: "Indisk / Midtøsten", value: "indian" },
+  { title: "Meksikansk", value: "mexican" },
+  { title: "Middelhav", value: "mediterranean" },
+  { title: "Internasjonal", value: "international" },
+  { title: "Annet", value: "other" },
+];
+
+const COST_TIERS: { title: string; value: string }[] = [
+  { title: "Budsjett", value: "BUDGET" },
+  { title: "Standard", value: "STANDARD" },
+  { title: "Premium", value: "PREMIUM" },
+];
+
 export default defineType({
   name: "weekPlan",
   title: "Ukeplan",
   type: "document",
+
   fields: [
     defineField({
       name: "weekKey",
@@ -41,13 +90,13 @@ export default defineType({
       validation: (Rule) => Rule.required(),
     }),
 
-    // Publiserings-/synlighetskontroll
     defineField({
       name: "approvedForPublish",
       title: "Godkjent for publisering",
       type: "boolean",
       initialValue: false,
     }),
+
     defineField({
       name: "customerVisible",
       title: "Synlig for kunder/ansatte",
@@ -55,31 +104,34 @@ export default defineType({
       initialValue: false,
     }),
 
-    // Systemfelter (cron setter disse)
     defineField({
       name: "visibleFrom",
       title: "Synlig fra (ansatte)",
       type: "datetime",
       readOnly: true,
     }),
+
     defineField({
       name: "becomesCurrentAt",
       title: "Blir aktiv uke (fredag 15:00)",
       type: "datetime",
       readOnly: true,
     }),
+
     defineField({
       name: "publishedAt",
       title: "Publisert tidspunkt",
       type: "datetime",
       readOnly: true,
     }),
+
     defineField({
       name: "lockedAt",
       title: "Låst tidspunkt",
       type: "datetime",
       readOnly: true,
     }),
+
     defineField({
       name: "locked",
       title: "Låst (ingen endringer)",
@@ -97,6 +149,7 @@ export default defineType({
           type: "object",
           name: "weekDay",
           title: "Dag",
+
           fields: [
             defineField({
               name: "date",
@@ -104,6 +157,7 @@ export default defineType({
               type: "date",
               validation: (Rule) => Rule.required(),
             }),
+
             defineField({
               name: "level",
               title: "Nivå",
@@ -111,25 +165,224 @@ export default defineType({
               options: { list: LEVELS, layout: "radio" },
               validation: (Rule) => Rule.required(),
             }),
+
+            defineField({
+              name: "mealRef",
+              title: "Varmrett fra basebank",
+              type: "reference",
+              to: [{ type: "mealIdea" }],
+              description:
+                "Referanse til original rett. Snapshot-feltene under beholdes for historikk.",
+            }),
+
+            defineField({
+              name: "mealTitle",
+              title: "Rettens navn",
+              type: "string",
+              validation: (Rule) => Rule.required().min(3),
+            }),
+
+            defineField({
+              name: "description",
+              title: "Beskrivelse",
+              type: "text",
+              rows: 3,
+            }),
+
+            defineField({
+              name: "allergens",
+              title: "Allergener",
+              type: "array",
+              of: [{ type: "string" }],
+              options: {
+                layout: "grid",
+                list: ALLERGENS,
+              },
+            }),
+
+            defineField({
+              name: "mayContain",
+              title: "Kan inneholde spor av",
+              type: "array",
+              of: [{ type: "string" }],
+              options: {
+                layout: "grid",
+                list: MAY_CONTAIN,
+              },
+            }),
+
+            defineField({
+              name: "nutritionPer100g",
+              title: "Næringsinnhold per 100 g",
+              type: "object",
+              fields: [
+                defineField({
+                  name: "per",
+                  title: "Per",
+                  type: "string",
+                  initialValue: "100g",
+                  readOnly: true,
+                }),
+                defineField({
+                  name: "energyKcal",
+                  title: "Energi kcal",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "proteinG",
+                  title: "Protein g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "carbohydratesG",
+                  title: "Karbohydrater g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "sugarsG",
+                  title: "Sukkerarter g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "fatG",
+                  title: "Fett g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "saturatedFatG",
+                  title: "Mettet fett g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "fiberG",
+                  title: "Fiber g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+                defineField({
+                  name: "saltG",
+                  title: "Salt g",
+                  type: "number",
+                  validation: (Rule) => Rule.min(0),
+                }),
+              ],
+            }),
+
+            defineField({
+              name: "kitchenStyle",
+              title: "Kjøkkenstil",
+              type: "string",
+              options: {
+                list: KITCHEN_STYLES,
+                layout: "dropdown",
+              },
+            }),
+
+            defineField({
+              name: "costTier",
+              title: "Kostnadsnivå",
+              type: "string",
+              options: {
+                list: COST_TIERS,
+                layout: "radio",
+              },
+            }),
+
+            defineField({
+              name: "estimatedCostPerPortion",
+              title: "Estimert råvarekost per porsjon",
+              type: "number",
+              validation: (Rule) => Rule.min(0).max(90),
+            }),
+
+            defineField({
+              name: "isFishDish",
+              title: "Fiskerett",
+              type: "boolean",
+              initialValue: false,
+            }),
+
+            defineField({
+              name: "isSoup",
+              title: "Suppe",
+              type: "boolean",
+              initialValue: false,
+            }),
+
+            defineField({
+              name: "isVegetarian",
+              title: "Vegetar",
+              type: "boolean",
+              initialValue: false,
+            }),
+
+            defineField({
+              name: "approved",
+              title: "Godkjent",
+              type: "boolean",
+              initialValue: false,
+            }),
+
+            defineField({
+              name: "hidden",
+              title: "Skjult",
+              type: "boolean",
+              initialValue: false,
+            }),
+
             defineField({
               name: "dishes",
-              title: "Retter",
+              title: "Retter (legacy)",
               type: "array",
               of: [{ type: "reference", to: [{ type: "dish" }] }],
-              validation: (Rule) => Rule.required().min(1).max(6),
+              hidden: true,
+              description:
+                "Legacy-felt. Ikke bruk til ny ukeplan. Beholdes for bakoverkompatibilitet.",
             }),
+
             defineField({
               name: "kitchenNote",
               title: "Notat til kjøkken",
               type: "string",
             }),
           ],
+
           preview: {
-            select: { date: "date", level: "level" },
+            select: {
+              date: "date",
+              level: "level",
+              mealTitle: "mealTitle",
+              allergens: "allergens",
+              nutrition: "nutritionPer100g",
+              approved: "approved",
+              hidden: "hidden",
+            },
             prepare(sel) {
+              const flags = [
+                sel.level === "LUXUS" ? "Luxus" : "Basis",
+                sel.approved ? "Godkjent" : "Ikke godkjent",
+                sel.hidden ? "Skjult" : "Synlig",
+              ].join(" • ");
+
+              const kcal =
+                sel.nutrition && typeof sel.nutrition.energyKcal === "number"
+                  ? ` • ${sel.nutrition.energyKcal} kcal/100g`
+                  : "";
+
+              const allergens =
+                Array.isArray(sel.allergens) && sel.allergens.length
+                  ? ` • allergener: ${sel.allergens.join(", ")}`
+                  : "";
+
               return {
-                title: sel.date ? sel.date : "Ukjent dato",
-                subtitle: sel.level === "LUXUS" ? "Luxus" : "Basis",
+                title: `${sel.date || "Ukjent dato"} — ${sel.mealTitle || "Ingen rett"}`,
+                subtitle: `${flags}${kcal}${allergens}`,
               };
             },
           },
@@ -137,11 +390,40 @@ export default defineType({
       ],
       validation: (Rule) =>
         Rule.custom((days) => {
-          if (!days || !Array.isArray(days)) return "Du må legge inn 5 dager (Man–Fre).";
-          if (days.length !== 5) return "Ukeplan må ha nøyaktig 5 dager (Man–Fre).";
+          if (!days || !Array.isArray(days)) {
+            return "Du må legge inn 5 dager (Man–Fre).";
+          }
+
+          if (days.length !== 5) {
+            return "Ukeplan må ha nøyaktig 5 dager (Man–Fre).";
+          }
+
           const dates = days.map((d: any) => String(d?.date ?? ""));
-          const unique = new Set(dates.filter(Boolean));
-          if (unique.size !== 5) return "Hver dag må ha unik dato (ingen duplikater).";
+          const uniqueDates = new Set(dates.filter(Boolean));
+
+          if (uniqueDates.size !== 5) {
+            return "Hver dag må ha unik dato (ingen duplikater).";
+          }
+
+          const mealTitles = days.map((d: any) =>
+            String(d?.mealTitle ?? "").trim().toLowerCase()
+          );
+          const uniqueMealTitles = new Set(mealTitles.filter(Boolean));
+
+          if (uniqueMealTitles.size !== 5) {
+            return "Hver dag må ha unik varmrett.";
+          }
+
+          const fishCount = days.filter((d: any) => d?.isFishDish === true).length;
+          if (fishCount > 1) {
+            return "Ukeplan kan maks ha én fiskerett.";
+          }
+
+          const soupCount = days.filter((d: any) => d?.isSoup === true).length;
+          if (soupCount > 1) {
+            return "Ukeplan kan maks ha én suppe.";
+          }
+
           return true;
         }),
     }),
@@ -161,6 +443,7 @@ export default defineType({
       approved: "approvedForPublish",
       visible: "customerVisible",
       locked: "locked",
+      days: "days",
     },
     prepare(sel) {
       const flags = [
@@ -170,9 +453,15 @@ export default defineType({
         sel.locked ? "Låst" : "Åpen",
       ].join(" • ");
 
+      const dayCount = Array.isArray(sel.days) ? sel.days.length : 0;
+
       return {
-        title: sel.weekKey ? `Ukeplan: ${sel.weekKey}` : sel.weekStart ? `Ukeplan: ${sel.weekStart}` : "Ukeplan",
-        subtitle: flags,
+        title: sel.weekKey
+          ? `Ukeplan: ${sel.weekKey}`
+          : sel.weekStart
+            ? `Ukeplan: ${sel.weekStart}`
+            : "Ukeplan",
+        subtitle: `${flags} • ${dayCount}/5 dager`,
       };
     },
   },

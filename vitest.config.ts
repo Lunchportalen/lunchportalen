@@ -31,6 +31,7 @@ for (const key of [
   "UMBRACO_DELIVERY_BASE_URL",
   "UMBRACO_DELIVERY_API_KEY",
   "UMBRACO_DELIVERY_START_ITEM",
+  "UMBRACO_PUBLIC_SITE_URL",
 ] as const) {
   delete process.env[key];
 }

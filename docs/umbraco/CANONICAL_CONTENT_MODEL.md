@@ -56,7 +56,7 @@ Alle sider over (unntatt settings) bruker **samme innholdsfelt**: `pageTitle`, `
 | CTA band | `lpCta` eller `banners` |
 | FAQ | `accordionOrTab` |
 | Quote / testimonial | Utvidelse: egne elementer kan mappes i `UMBRACO_ELEMENT_ALIAS_TO_BLOCK_TYPE` når Delivery-kontrakt er klar (`testimonial_block`, `quote_block` i kodebase). |
-| Logo grid | `logo_cloud` (når tilsvarende element legges inn i uSync og mapper). |
+| Logo grid | `logo_cloud` (når tilsvarende element er opprettet i Umbraco og mapper). |
 | Contact info | Redaksjonell tekst i blokker + ev. `contactPage`; ikke operativ kundekontekst. |
 
 ## Header / navigasjon / footer
@@ -64,11 +64,10 @@ Alle sider over (unntatt settings) bruker **samme innholdsfelt**: `pageTitle`, `
 - **Global settings** har faner for bl.a. globale komponenter (`topComponents`, `bottomComponents`, `pods`) — samme block catalogue som `mainContent` der det er aktivert.
 - Next leser design/global via eksisterende design-pipeline (ikke beskrevet her som operativ logikk).
 
-## Repo-filer (uSync v17)
+## Kilde for typer og innhold
 
-- Dokumenttyper: `Umbraco/uSync/v17/ContentTypes/*.config`
-- Datatyper (Block List-katalog): `Umbraco/uSync/v17/DataTypes/LPMarketingPhase1BodyBlocks.config`, `LPMainContentBlocks.config`
-- Stabile nøkler: `Umbraco/MarketingPhase1/MarketingPhase1Guids.cs`
+- Dokument- og datatyper lever i **Umbraco-databasen** (Azure SQL i produksjon), ikke som sync-filer i repo.
+- Stabile nøkler (kode / seed): `Umbraco/MarketingPhase1/MarketingPhase1Guids.cs`
 - Delivery → legacy body: `lib/cms/umbraco/mapDeliveryItemToLegacyMarketingBody.ts`
 
 ## Hvorfor dette er riktig grunnmur

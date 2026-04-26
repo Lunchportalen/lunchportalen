@@ -1,671 +1,635 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, Stack, Text, Button, Grid, Flex, Badge, Spinner } from "@sanity/ui";
+import { Badge, Button, Card, Flex, Grid, Spinner, Stack, Text } from "@sanity/ui";
 import { useClient } from "sanity";
 import { IntentLink } from "sanity/router";
 
-type MenuDoc = {
-  _id: string;
-  date: string; // YYYY-MM-DD
-  description?: string;
-  allergens?: string[];
-  isPublished?: boolean;
-};
+import { generateWeekMenu, type Meal, type NutritionPer100g } from "./generateWeekMenu";
 
-type Meal = {
+const TARGET_PRICE = 90;
+
+function normalizeTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/\s+med\b.*$/, "")
+    .replace(/\s+\d+$/, "");
+}
+
+type DayDoc = {
   _id: string;
-  title: string;
-  tags: string[];
-  costTier: "BUDGET" | "STANDARD" | "PREMIUM";
-  nutritionScore?: number;
+  date: string;
+  description?: string;
+  mealTitle?: string;
+  mealRef?: { _ref: string; _type: "reference" };
   allergens?: string[];
-  isActive?: boolean;
-  season?: string[];
+  mayContain?: string[];
+  nutritionPer100g?: NutritionPer100g | null;
+  kitchenStyle?: string;
+  costTier?: string;
+  estimatedCostPerPortion?: number;
+  isFishDish?: boolean;
+  isSoup?: boolean;
+  isVegetarian?: boolean;
+  approvedForPublish?: boolean;
+  approvedAt?: string;
+  customerVisible?: boolean;
+  customerVisibleSetAt?: string;
 };
 
 function isoFromDate(d: Date) {
-  const yyyy = d.getUTCFullYear();
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate()
+  ).padStart(2, "0")}`;
 }
 
-/** ✅ Studio-visning: ISO (YYYY-MM-DD) -> DD-MM-YYYY */
-function formatNordicDate(iso: string) {
-  if (!iso) return "";
-  const [yyyy, mm, dd] = iso.split("-");
-  if (!yyyy || !mm || !dd) return iso;
-  return `${dd}-${mm}-${yyyy}`;
-}
-
-/** ✅ Studio-visning: ISO datetime (YYYY-MM-DDTHH:mm...) -> DD-MM-YYYYTHH:mm */
-function formatNordicDateTime(isoDT: string) {
-  if (!isoDT) return "";
-  const date = isoDT.slice(0, 10);
-  const time = isoDT.slice(11, 16);
-  const d = formatNordicDate(date);
-  return time ? `${d} ${time}` : d;
-}
-
-/** Oslo "i dag" som YYYY-MM-DD */
-function osloTodayISO(): string {
-  const fmt = new Intl.DateTimeFormat("en-GB", {
+function osloTodayISO() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Oslo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  });
-  const parts = fmt.formatToParts(new Date());
+  }).formatToParts(new Date());
+
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-/** Ukedag-index (Mon=0..Sun=6) i Oslo basert på dateISO */
-function osloWeekdayIndex(dateISO: string): number {
-  const d = new Date(`${dateISO}T12:00:00Z`);
-  const wd = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Oslo",
-    weekday: "short",
-  }).format(d);
-  const map: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
-  return map[wd] ?? 0;
+function startOfWeekISO(osloISO: string) {
+  const d = new Date(`${osloISO}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return isoFromDate(d);
 }
 
-function addDaysISO(dateISO: string, days: number) {
-  const d = new Date(`${dateISO}T12:00:00Z`);
+function addDaysISO(iso: string, days: number) {
+  const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return isoFromDate(d);
 }
 
-function weekStartMondayISO(todayISO: string) {
-  const idx = osloWeekdayIndex(todayISO);
-  return addDaysISO(todayISO, -idx);
-}
-
-function weekDates(mondayISO: string) {
+function weekdayDates(mondayISO: string) {
   return [0, 1, 2, 3, 4].map((i) => addDaysISO(mondayISO, i));
 }
 
-/** ✅ Label: "man. · DD-MM-YYYY" */
-function labelForISO(dateISO: string) {
-  const d = new Date(`${dateISO}T12:00:00Z`);
-  const wd = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
-  return `${wd} · ${formatNordicDate(dateISO)}`;
+function docIdForDate(date: string) {
+  return `menuDay-${date}`;
 }
 
-/** Uke 2 unlock: torsdag 08:00 i uke 1 (Europe/Oslo) */
-function unlockAtForWeek2(mondayISO: string) {
-  const thuISO = addDaysISO(mondayISO, 3);
-  return `${thuISO}T08:00`;
+function formatNordicDate(iso: string) {
+  const [yyyy, mm, dd] = iso.split("-");
+  return yyyy && mm && dd ? `${dd}.${mm}.${yyyy}` : iso;
 }
 
-function nowOsloHM() {
-  const fmt = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Oslo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = fmt.formatToParts(new Date());
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-  const dateISO = `${get("year")}-${get("month")}-${get("day")}`;
-  const timeHM = `${get("hour")}:${get("minute")}`;
-  return { dateISO, timeHM };
+function formatList(values?: string[]) {
+  return Array.isArray(values) && values.length ? values.join(", ") : "—";
 }
 
-function isWeek2Unlocked(mondayISO: string) {
-  const { dateISO, timeHM } = nowOsloHM();
-  const thuISO = addDaysISO(mondayISO, 3);
-  if (dateISO < thuISO) return false;
-  if (dateISO > thuISO) return true;
-  return timeHM >= "08:00";
+function formatMoney(value?: number) {
+  return typeof value === "number" ? `${value} kr` : "—";
 }
 
-function docIdForDate(dateISO: string) {
-  return `menuContent-${dateISO}`;
+function formatMargin(cost?: number) {
+  return typeof cost === "number" ? `${TARGET_PRICE - cost} kr` : "—";
 }
 
-function hasTag(m: Meal, tag: string) {
-  return Array.isArray(m.tags) && m.tags.includes(tag);
+function renderNutrition(nutrition?: NutritionPer100g | null) {
+  if (!nutrition) return "Næring: —";
+
+  const kcal =
+    typeof nutrition.energyKcal === "number" ? `${nutrition.energyKcal} kcal` : "— kcal";
+  const protein =
+    typeof nutrition.proteinG === "number" ? `protein ${nutrition.proteinG}g` : "protein —";
+  const carbs =
+    typeof nutrition.carbohydratesG === "number"
+      ? `karbohydrat ${nutrition.carbohydratesG}g`
+      : "karbohydrat —";
+  const fat = typeof nutrition.fatG === "number" ? `fett ${nutrition.fatG}g` : "fett —";
+  const salt = typeof nutrition.saltG === "number" ? `salt ${nutrition.saltG}g` : "salt —";
+
+  return `Næring pr. 100g: ${kcal} · ${protein} · ${carbs} · ${fat} · ${salt}`;
 }
 
-function pickRandom<T>(arr: T[]): T | null {
-  if (!arr.length) return null;
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function pickUnique(list: Meal[], usedTitles: Set<string>) {
-  const candidates = list.filter((m) => !!m?.title && !usedTitles.has(m.title));
-  return pickRandom(candidates);
-}
-
-function currentSeason(): "winter" | "spring" | "summer" | "autumn" {
-  const m = new Date().getMonth() + 1;
-  if (m === 12 || m === 1 || m === 2) return "winter";
-  if (m >= 3 && m <= 5) return "spring";
-  if (m >= 6 && m <= 8) return "summer";
-  return "autumn";
-}
-
-/**
- * Idiotsikker ukeplan med Fredagsregel:
- * - Tir=fisk, Ons=suppe, Tor=veg
- * - Man = suppler (base)
- * - Fre = suppler (fredagspool) – prøver PREMIUM først
- */
-function buildWeekPlan5WithFriday(mealsBase: Meal[], mealsFriday: Meal[], avoidTitles: Set<string>) {
-  const used = new Set<string>(avoidTitles);
-
-  const fish = mealsBase.filter((m) => hasTag(m, "fish"));
-  const soup = mealsBase.filter((m) => hasTag(m, "soup"));
-  const veg = mealsBase.filter((m) => hasTag(m, "veg"));
-
-  const restBase = mealsBase.filter((m) => !hasTag(m, "fish") && !hasTag(m, "soup") && !hasTag(m, "veg"));
-  const restFriday = mealsFriday.filter((m) => !hasTag(m, "fish") && !hasTag(m, "soup") && !hasTag(m, "veg"));
-
-  // Hard-validering
-  if (fish.length < 5) throw new Error("Rett-bank: for få fiskeretter (base).");
-  if (soup.length < 5) throw new Error("Rett-bank: for få supperetter (base).");
-  if (veg.length < 5) throw new Error("Rett-bank: for få vegetarretter (base).");
-  if (restBase.length < 10) throw new Error("Rett-bank: for få suppleringsretter (base).");
-  if (restFriday.length < 10) throw new Error("Rett-bank: for få suppleringsretter (fredag).");
-
-  const fishPick = pickUnique(fish, used);
-  if (!fishPick) throw new Error("Kunne ikke velge fisk (cooldown).");
-  used.add(fishPick.title);
-
-  const soupPick = pickUnique(soup, used);
-  if (!soupPick) throw new Error("Kunne ikke velge suppe (cooldown).");
-  used.add(soupPick.title);
-
-  const vegPick = pickUnique(veg, used);
-  if (!vegPick) throw new Error("Kunne ikke velge vegetar (cooldown).");
-  used.add(vegPick.title);
-
-  const monPick = pickUnique(restBase, used);
-  if (!monPick) throw new Error("Kunne ikke velge suppleringsrett (mandag).");
-  used.add(monPick.title);
-
-  // Fredagsregel: prøv PREMIUM først, ellers fredagspool, ellers base-pool
-  const fridayPremium = restFriday.filter((m) => m.costTier === "PREMIUM");
-  let friPick = pickUnique(fridayPremium, used);
-
-  if (!friPick) friPick = pickUnique(restFriday, used);
-  if (!friPick) friPick = pickUnique(restBase, used);
-  if (!friPick) throw new Error("Kunne ikke velge suppleringsrett (fredag).");
-  used.add(friPick.title);
-
-  // Man, Tir, Ons, Tor, Fre
-  return [monPick, fishPick, soupPick, vegPick, friPick];
-}
-
-export default function WeekPlannerTool() {
+export default function WeekPlanner() {
   const client = useClient({ apiVersion: "2024-01-01" });
 
-  const todayISO = useMemo(() => osloTodayISO(), []);
-  const mondayA = useMemo(() => weekStartMondayISO(todayISO), [todayISO]);
-  const mondayB = useMemo(() => addDaysISO(mondayA, 7), [mondayA]);
-  const mondayC = useMemo(() => addDaysISO(mondayA, 14), [mondayA]);
-
-  const weekA = useMemo(() => weekDates(mondayA), [mondayA]);
-  const weekB = useMemo(() => weekDates(mondayB), [mondayB]);
-  const weekC = useMemo(() => weekDates(mondayC), [mondayC]);
-
-  const unlockAt = useMemo(() => unlockAtForWeek2(mondayA), [mondayA]);
-  const unlocked = useMemo(() => isWeek2Unlocked(mondayA), [mondayA]);
-
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [docs, setDocs] = useState<Record<string, MenuDoc | undefined>>({});
+  const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [week1, setWeek1] = useState<DayDoc[]>([]);
+  const [week2, setWeek2] = useState<DayDoc[]>([]);
 
-  const [bankStats, setBankStats] = useState<{
-    totalBase: number;
-    fish: number;
-    soup: number;
-    veg: number;
-    restBase: number;
-    fridayTotal: number;
-    fridayPremium: number;
-  } | null>(null);
+  const lastPicked = React.useRef<{ uke1: Set<string>; uke2: Set<string> }>({
+    uke1: new Set(),
+    uke2: new Set(),
+  });
 
-  const allDates = useMemo(() => [...weekA, ...weekB, ...weekC], [weekA, weekB, weekC]);
+  const ranges = useMemo(() => {
+    const week1Start = startOfWeekISO(osloTodayISO());
+    const week2Start = addDaysISO(week1Start, 7);
 
-  const fetchDocs = useCallback(async () => {
+    return {
+      week1: { dates: weekdayDates(week1Start) },
+      week2: { dates: weekdayDates(week2Start) },
+    };
+  }, []);
+
+  const fetchWeeks = useCallback(async () => {
     setLoading(true);
     setMsg(null);
 
     try {
-      const q = `*[_type=="menuContent" && date in $dates]{
-        _id, date, description, allergens, isPublished
+      const query = `*[
+        _type == "menuDay" &&
+        date in $dates &&
+        !(_id in path("drafts.**"))
+      ] | order(date asc) {
+        _id,
+        date,
+        description,
+        mealTitle,
+        mealRef,
+        allergens,
+        mayContain,
+        nutritionPer100g,
+        kitchenStyle,
+        costTier,
+        estimatedCostPerPortion,
+        isFishDish,
+        isSoup,
+        isVegetarian,
+        approvedForPublish,
+        approvedAt,
+        customerVisible,
+        customerVisibleSetAt
       }`;
-      const res = await client.fetch<MenuDoc[]>(q, { dates: allDates });
-      const map: Record<string, MenuDoc> = {};
-      for (const d of res) map[d.date] = d;
-      setDocs(map);
-    } catch (e: any) {
-      setMsg("Kunne ikke hente meny-dokumenter. Sjekk konsollen.");
-      console.error(e);
+
+      const [w1, w2] = await Promise.all([
+        client.fetch<DayDoc[]>(query, { dates: ranges.week1.dates }),
+        client.fetch<DayDoc[]>(query, { dates: ranges.week2.dates }),
+      ]);
+
+      setWeek1(w1 || []);
+      setWeek2(w2 || []);
+    } catch (error: any) {
+      console.error(error);
+      setMsg(`Kunne ikke hente ukeplan: ${error?.message || String(error)}`);
     } finally {
       setLoading(false);
     }
-  }, [client, allDates]);
+  }, [client, ranges]);
 
   useEffect(() => {
-    fetchDocs();
-  }, [fetchDocs]);
+    void fetchWeeks();
+  }, [fetchWeeks]);
 
-  const ensureDates = useCallback(
-    async (dates: string[]) => {
-      for (const dateISO of dates) {
-        const _id = docIdForDate(dateISO);
-        await client.createIfNotExists({
+  const fetchMealBank = useCallback(
+    async (_includePremium: boolean): Promise<Meal[]> => {
+      return client.fetch<Meal[]>(
+        `*[
+          _type == "mealIdea" &&
+          !(_id in path("drafts.**")) &&
+          isActive == true &&
+          defined(nutritionPer100g.energyKcal)
+        ] {
           _id,
-          _type: "menuContent",
-          date: dateISO,
+          title,
+          description,
+          tags,
+          costTier,
+          productionComplexity,
+          nutritionScore,
+          allergens,
+          mayContain,
+          nutritionPer100g,
+          nutritionNote,
+          isActive,
+          season,
+          kitchenStyle,
+          method,
+          estimatedCostPerPortion,
+          targetPricePerPortion,
+          isFishDish,
+          isSoup,
+          isVegetarian,
+          lastUsedDate,
+          usageCount
+        }`
+      );
+    },
+    [client]
+  );
+
+  const fetchCooldownTitles = useCallback(
+    async (mondayISO: string): Promise<Set<string>> => {
+      const from = addDaysISO(mondayISO, -28);
+      const to = addDaysISO(mondayISO, -1);
+
+      const rows = await client.fetch<Array<{ mealTitle?: string; description?: string }>>(
+        `*[
+          _type == "menuDay" &&
+          date >= $from &&
+          date <= $to &&
+          !(_id in path("drafts.**"))
+        ] { mealTitle, description }`,
+        { from, to }
+      );
+
+      return new Set(
+        (rows || [])
+          .map((r) => normalizeTitle(r.mealTitle || r.description || ""))
+          .filter(Boolean)
+      );
+    },
+    [client]
+  );
+
+  const ensureWeek = useCallback(
+    async (dates: string[]) => {
+      for (const date of dates) {
+        await client.createIfNotExists({
+          _id: docIdForDate(date),
+          _type: "menuDay",
+          date,
           description: "",
+          mealTitle: "",
           allergens: [],
-          isPublished: false,
+          mayContain: [],
+          approvedForPublish: false,
+          customerVisible: false,
         });
       }
     },
     [client]
   );
 
-  // 🔒 LOCK HELPERS
-  const isWeekPublished = useCallback(
-    (dates: string[]) => dates.some((d) => !!docs[d]?.isPublished),
-    [docs]
-  );
-
-  const canGenerateWeek3Now = useMemo(() => isWeek2Unlocked(mondayA), [mondayA]);
-
-  // Base-bank (man–tor): BUDGET+STANDARD
-  const fetchMealBankBase = useCallback(async () => {
-    const season = currentSeason();
-    const q = `*[_type=="mealIdea"
-      && isActive == true
-      && costTier in ["BUDGET","STANDARD"]
-      && (nutritionScore >= 7 || !defined(nutritionScore))
-      && (!defined(season) || $season in season)
-    ]{
-      _id, title, tags, costTier, nutritionScore, allergens, season
-    }`;
-    return (await client.fetch<Meal[]>(q, { season })) ?? [];
-  }, [client]);
-
-  // Friday-bank: BUDGET+STANDARD+PREMIUM (kun brukt på fredag)
-  const fetchMealBankFriday = useCallback(async () => {
-    const season = currentSeason();
-    const q = `*[_type=="mealIdea"
-      && isActive == true
-      && costTier in ["BUDGET","STANDARD","PREMIUM"]
-      && (nutritionScore >= 7 || !defined(nutritionScore))
-      && (!defined(season) || $season in season)
-    ]{
-      _id, title, tags, costTier, nutritionScore, allergens, season
-    }`;
-    return (await client.fetch<Meal[]>(q, { season })) ?? [];
-  }, [client]);
-
-  const fetchCooldownTitles = useCallback(
-    async (mondayISO: string, weeksBack: number) => {
-      const from = addDaysISO(mondayISO, -7 * weeksBack);
-      const to = addDaysISO(mondayISO, -3);
-      const q = `*[_type=="menuContent" && date >= $from && date <= $to]{ description }`;
-      const rows = await client.fetch<Array<{ description?: string }>>(q, { from, to });
-      const titles = rows?.map((r) => (r.description ?? "").trim()).filter(Boolean) ?? [];
-      return new Set(titles);
-    },
-    [client]
-  );
-
-  const refreshStats = useCallback(async () => {
-    try {
-      const base = await fetchMealBankBase();
-      const fri = await fetchMealBankFriday();
-
-      const fish = base.filter((m) => hasTag(m, "fish")).length;
-      const soup = base.filter((m) => hasTag(m, "soup")).length;
-      const veg = base.filter((m) => hasTag(m, "veg")).length;
-      const restBase = base.filter((m) => !hasTag(m, "fish") && !hasTag(m, "soup") && !hasTag(m, "veg")).length;
-
-      const fridayPremium = fri.filter((m) => m.costTier === "PREMIUM").length;
-
-      setBankStats({
-        totalBase: base.length,
-        fish,
-        soup,
-        veg,
-        restBase,
-        fridayTotal: fri.length,
-        fridayPremium,
-      });
-    } catch {
-      // ignore
-    }
-  }, [fetchMealBankBase, fetchMealBankFriday]);
-
-  useEffect(() => {
-    void refreshStats();
-  }, [refreshStats]);
-
-  const validateWeekBeforePublish = useCallback(
-    async (dates: string[]) => {
-      const weekDocs = dates.map((d) => docs[d]).filter(Boolean) as MenuDoc[];
-      if (weekDocs.length !== 5) throw new Error("Uken mangler dager (må ha 5 hverdager).");
-
-      const titles = weekDocs.map((d) => (d.description ?? "").trim());
-      if (titles.some((t) => !t || t.length < 8)) throw new Error("Alle dager må ha meny (min 8 tegn).");
-      if (new Set(titles).size !== 5) throw new Error("Duplikate retter i samme uke.");
-
-      const base = await fetchMealBankBase();
-      const byTitle = new Map(base.map((m) => [m.title, m]));
-      const tagsFor = (title: string) => byTitle.get(title)?.tags ?? null;
-
-      const hasFish = titles.some((t) => tagsFor(t)?.includes("fish")) || titles.some((t) => /fisk|laks|torsk|sei|ørret|skrei|hyse|kveite/i.test(t));
-      const hasSoup = titles.some((t) => tagsFor(t)?.includes("soup")) || titles.some((t) => /suppe/i.test(t));
-      const hasVeg = titles.some((t) => tagsFor(t)?.includes("veg")) || titles.some((t) => /vegetar|linse|kikert|bønne|tofu/i.test(t));
-
-      if (!hasFish) throw new Error("Uken mangler fisk.");
-      if (!hasSoup) throw new Error("Uken mangler suppe.");
-      if (!hasVeg) throw new Error("Uken mangler vegetar.");
-
-      return true;
-    },
-    [docs, fetchMealBankBase]
-  );
-
-  const publishWeek = useCallback(
-    async (dates: string[]) => {
-      setBusy(true);
+  const autoFillWeek = useCallback(
+    async (dates: string[], label: "uke1" | "uke2") => {
+      setBusy(`autofill-${label}`);
       setMsg(null);
 
       try {
-        await ensureDates(dates);
-        await fetchDocs();
+        await ensureWeek(dates);
 
-        await validateWeekBeforePublish(dates);
-
-        for (const dateISO of dates) {
-          const _id = docIdForDate(dateISO);
-          await client.patch(_id).set({ isPublished: true }).commit({ autoGenerateArrayKeys: true });
+        const existingDocs = label === "uke1" ? week1 : week2;
+        if (existingDocs.some((d) => d.approvedForPublish)) {
+          throw new Error("Uken er allerede godkjent. Auto-fyll er sperret.");
         }
 
-        setMsg("✅ Uke publisert – bestilling aktivert for alle 5 dager.");
-        await fetchDocs();
-      } catch (e: any) {
-        setMsg(`❌ Publisering stoppet: ${e?.message || String(e)}`);
-        console.error(e);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [client, ensureDates, fetchDocs, validateWeekBeforePublish]
-  );
+        const [baseMeals, fridayMeals, avoidTitles] = await Promise.all([
+          fetchMealBank(false),
+          fetchMealBank(true),
+          fetchCooldownTitles(dates[0]),
+        ]);
 
-  const autofillWeek = useCallback(
-    async (dates: string[], force = false, label = "uke") => {
-      setBusy(true);
-      setMsg(null);
+        const otherLabel = label === "uke1" ? "uke2" : "uke1";
+        const otherWeekDocs = label === "uke1" ? week2 : week1;
 
-      try {
-        if (isWeekPublished(dates)) {
-          throw new Error(`${label} er allerede publisert (helt eller delvis). Auto-fyll er sperret.`);
+        for (const doc of otherWeekDocs) {
+          const title = normalizeTitle(doc.mealTitle || doc.description || "");
+          if (title) avoidTitles.add(title);
         }
 
-        if (label === "uke 3" && !canGenerateWeek3Now) {
-          throw new Error("Uke 3 kan ikke genereres før torsdag kl 08:00 i uke 1 (pipeline-lås).");
+        for (const title of lastPicked.current[otherLabel]) {
+          avoidTitles.add(title);
         }
 
-        await ensureDates(dates);
+        const picked = generateWeekMenu({ baseMeals, fridayMeals, avoidTitles });
 
-        const base = await fetchMealBankBase();
-        const fri = await fetchMealBankFriday();
+        if (picked.length !== 5) {
+          throw new Error("Generator returnerte ikke 5 hverdager.");
+        }
 
-        if (base.length < 50) throw new Error("Base-bank for liten etter filter (minst 50).");
-        if (fri.length < 50) throw new Error("Fredags-bank for liten etter filter (minst 50).");
+        lastPicked.current[label] = new Set(picked.map((m) => normalizeTitle(m.title)));
 
-        const mondayISO = dates[0];
-        const avoid = await fetchCooldownTitles(mondayISO, 4);
+        const now = new Date().toISOString();
+        let transaction = client.transaction();
 
-        const picked = buildWeekPlan5WithFriday(base, fri, avoid);
-
-        for (let i = 0; i < dates.length; i++) {
-          const dateISO = dates[i];
-          const existing = docs[dateISO];
-          const hasText = !!existing?.description?.trim();
-          if (hasText && !force) continue;
-
+        for (let i = 0; i < dates.length; i += 1) {
+          const date = dates[i];
           const meal = picked[i];
-          const _id = docIdForDate(dateISO);
 
-          await client
-            .patch(_id)
-            .set({
-              description: meal.title,
-              allergens: Array.isArray(meal.allergens) ? meal.allergens : [],
-              isPublished: false,
+          transaction = transaction
+            .patch(docIdForDate(date), {
+              unset: ["nutritionPer100g", "approvedAt", "customerVisibleSetAt"],
             })
-            .commit({ autoGenerateArrayKeys: true });
+            .patch(docIdForDate(date), {
+              set: {
+                description: meal.description?.trim() || meal.title,
+                mealTitle: meal.title,
+                mealRef: {
+                  _type: "reference",
+                  _ref: meal._id,
+                },
+                allergens: meal.allergens ?? [],
+                mayContain: meal.mayContain ?? [],
+                nutritionPer100g: meal.nutritionPer100g,
+                kitchenStyle: meal.kitchenStyle,
+                costTier: meal.costTier,
+                estimatedCostPerPortion: meal.estimatedCostPerPortion,
+                isFishDish: meal.isFishDish === true,
+                isSoup: meal.isSoup === true,
+                isVegetarian: meal.isVegetarian === true,
+                approvedForPublish: false,
+                customerVisible: false,
+              },
+            });
+
+          transaction = transaction.patch(meal._id, {
+            set: { lastUsedDate: date },
+            inc: { usageCount: 1 },
+          });
         }
 
-        setMsg(
-          `✅ Auto-fyll fullført (${label}): 1 suppe + 1 fisk + 1 vegetar + 1 suppler + Fredagsløft • cooldown 4 uker • sesongfilter.`
-        );
-        await fetchDocs();
-        await refreshStats();
-      } catch (e: any) {
-        setMsg(`❌ Auto-fyll stoppet: ${e?.message || String(e)}`);
-        console.error(e);
+        await transaction.commit({ autoGenerateArrayKeys: true });
+
+        setMsg(`Auto-fyll fullført ${now}: næring og allergener er kopiert automatisk.`);
+        await fetchWeeks();
+      } catch (error: any) {
+        console.error(error);
+        setMsg(`Auto-fyll stoppet: ${error?.message || String(error)}`);
       } finally {
-        setBusy(false);
+        setBusy(null);
       }
     },
-    [
-      client,
-      docs,
-      ensureDates,
-      fetchDocs,
-      fetchMealBankBase,
-      fetchMealBankFriday,
-      fetchCooldownTitles,
-      refreshStats,
-      isWeekPublished,
-      canGenerateWeek3Now,
-    ]
+    [client, ensureWeek, fetchWeeks, fetchMealBank, fetchCooldownTitles, week1, week2]
   );
 
-  const renderWeek = (title: string, dates: string[], lockedBanner?: React.ReactNode) => (
-    <Card padding={4} radius={3} border>
-      <Stack space={3}>
-        <Flex align="center" justify="space-between">
-          <Text weight="semibold" size={2}>
-            {title}
-          </Text>
-          <Badge tone="default">
-            {formatNordicDate(dates[0])} → {formatNordicDate(dates[4])}
-          </Badge>
-        </Flex>
+  const approveWeek2 = useCallback(async () => {
+    setBusy("approve");
+    setMsg(null);
 
-        {lockedBanner}
+    try {
+      await ensureWeek(ranges.week2.dates);
 
-        <Grid columns={1} gap={2}>
-          {dates.map((d) => {
-            const doc = docs[d];
-            const exists = !!doc?._id;
+      const docs = await client.fetch<DayDoc[]>(
+        `*[
+          _type == "menuDay" &&
+          date in $dates &&
+          !(_id in path("drafts.**"))
+        ] | order(date asc) {
+          _id,
+          date,
+          description,
+          mealTitle,
+          allergens,
+          nutritionPer100g
+        }`,
+        { dates: ranges.week2.dates }
+      );
+
+      if ((docs || []).length !== 5) throw new Error("Uke 2 må ha nøyaktig 5 hverdager.");
+
+      if (docs.some((day) => !day.description || day.description.trim().length < 8)) {
+        throw new Error("Alle dager i uke 2 må ha menybeskrivelse før godkjenning.");
+      }
+
+      if (docs.some((day) => !day.nutritionPer100g?.energyKcal)) {
+        throw new Error("Alle dager i uke 2 må ha næringsinnhold før godkjenning.");
+      }
+
+      const now = new Date().toISOString();
+      let transaction = client.transaction();
+
+      for (const day of docs) {
+        transaction = transaction.patch(day._id, {
+          set: { approvedForPublish: true, approvedAt: now },
+        });
+      }
+
+      await transaction.commit({ autoGenerateArrayKeys: true });
+      setMsg("Uke 2 er godkjent. Synlighet styres videre av automatikk/cron.");
+      await fetchWeeks();
+    } catch (error: any) {
+      console.error(error);
+      setMsg(`Godkjenning stoppet: ${error?.message || String(error)}`);
+    } finally {
+      setBusy(null);
+    }
+  }, [client, ensureWeek, fetchWeeks, ranges.week2.dates]);
+
+  const revokeWeek2 = useCallback(async () => {
+    setBusy("revoke");
+    setMsg(null);
+
+    try {
+      let transaction = client.transaction();
+
+      for (const day of week2) {
+        transaction = transaction.patch(day._id, {
+          set: { approvedForPublish: false, customerVisible: false },
+          unset: ["approvedAt", "customerVisibleSetAt"],
+        });
+      }
+
+      await transaction.commit({ autoGenerateArrayKeys: true });
+      setMsg("Godkjenning for uke 2 er trukket tilbake.");
+      await fetchWeeks();
+    } catch (error: any) {
+      console.error(error);
+      setMsg(`Kunne ikke trekke godkjenning: ${error?.message || String(error)}`);
+    } finally {
+      setBusy(null);
+    }
+  }, [client, week2, fetchWeeks]);
+
+  const createWeek = useCallback(
+    async (dates: string[], label: string) => {
+      setBusy(`create-${label}`);
+      setMsg(null);
+
+      try {
+        await ensureWeek(dates);
+        setMsg(`${label} er opprettet.`);
+        await fetchWeeks();
+      } catch (error: any) {
+        console.error(error);
+        setMsg(`Kunne ikke opprette ${label}: ${error?.message || String(error)}`);
+      } finally {
+        setBusy(null);
+      }
+    },
+    [ensureWeek, fetchWeeks]
+  );
+
+  const stats = useMemo(
+    () => ({
+      w1Approved: week1.filter((d) => d.approvedForPublish).length,
+      w1Visible: week1.filter((d) => d.customerVisible).length,
+      w2Approved: week2.filter((d) => d.approvedForPublish).length,
+      w2Visible: week2.filter((d) => d.customerVisible).length,
+    }),
+    [week1, week2]
+  );
+
+  const renderWeek = (title: string, docs: DayDoc[], dates: string[]) => {
+    const byDate = new Map(docs.map((day) => [day.date, day]));
+
+    return (
+      <Card padding={3} radius={2} shadow={1}>
+        <Stack space={2}>
+          <Text weight="semibold">{title}</Text>
+
+          {dates.map((date) => {
+            const day = byDate.get(date);
 
             return (
-              <Card key={d} padding={3} radius={2} border>
-                <Flex align="center" justify="space-between" gap={3}>
-                  <Stack space={2}>
-                    <Text size={1} weight="semibold">
-                      {labelForISO(d)}
-                    </Text>
-
-                    {exists ? (
-                      <Text size={1} muted>
-                        {doc?.description?.trim() ? doc.description : "— (ingen beskrivelse enda)"}
-                      </Text>
-                    ) : (
-                      <Text size={1} muted>
-                        Ikke opprettet ennå
-                      </Text>
-                    )}
+              <Card key={date} padding={3} radius={2} tone="transparent" border>
+                <Stack space={3}>
+                  <Flex justify="space-between" align="center" gap={3}>
+                    <Text weight="semibold">{formatNordicDate(date)}</Text>
 
                     <Flex gap={2} wrap="wrap">
-                      <Badge tone={exists ? "positive" : "caution"}>{exists ? "Klar" : "Mangler"}</Badge>
-                      <Badge tone={doc?.isPublished ? "positive" : "default"}>
-                        {doc?.isPublished ? "Publisert" : "Ikke publisert"}
+                      <Badge tone={day?.approvedForPublish ? "positive" : "caution"}>
+                        {day?.approvedForPublish ? "Godkjent" : "Ikke godkjent"}
+                      </Badge>
+                      <Badge tone={day?.customerVisible ? "positive" : "default"}>
+                        {day?.customerVisible ? "Synlig" : "Skjult"}
                       </Badge>
                     </Flex>
+                  </Flex>
+
+                  <Stack space={2}>
+                    <Text size={1} weight="semibold">
+                      {day?.mealTitle || "Ingen rett valgt"}
+                    </Text>
+
+                    <Text size={1}>{day?.description || "—"}</Text>
+
+                    <Text size={1} muted>
+                      Allergener: {formatList(day?.allergens)}
+                    </Text>
+
+                    <Text size={1} muted>
+                      Kan inneholde spor av: {formatList(day?.mayContain)}
+                    </Text>
+
+                    <Text size={1} muted>
+                      {renderNutrition(day?.nutritionPer100g)}
+                    </Text>
+
+                    <Text size={1} muted>
+                      Kjøkkenstil: {day?.kitchenStyle || "—"} · Kostnadsnivå:{" "}
+                      {day?.costTier || "—"}
+                    </Text>
+
+                    <Text size={1} muted>
+                      Råvarekost: {formatMoney(day?.estimatedCostPerPortion)} · Margin mot 90 kr:{" "}
+                      {formatMargin(day?.estimatedCostPerPortion)}
+                    </Text>
                   </Stack>
 
-                  {exists ? (
-                    <IntentLink intent="edit" params={{ id: doc!._id, type: "menuContent" }}>
+                  {day?._id ? (
+                    <IntentLink intent="edit" params={{ id: day._id, type: "menuDay" }}>
                       <Button text="Rediger" mode="ghost" />
                     </IntentLink>
-                  ) : null}
-                </Flex>
+                  ) : (
+                    <Text size={1} muted>
+                      Dagen er ikke opprettet ennå.
+                    </Text>
+                  )}
+                </Stack>
               </Card>
             );
           })}
-        </Grid>
-      </Stack>
-    </Card>
-  );
+        </Stack>
+      </Card>
+    );
+  };
 
   return (
     <Stack space={4} padding={4}>
-      <Card padding={4} radius={3} border>
-        <Flex align="center" justify="space-between" gap={3}>
-          <Stack space={2}>
-            <Text size={3} weight="bold">
-              Ukeplan (2-ukers pipeline)
-            </Text>
-            <Text size={1} muted>
-              Uke 2 blir synlig automatisk {formatNordicDate(addDaysISO(mondayA, 3))} kl 08:00 (Europe/Oslo).
-            </Text>
+      <Card padding={4} radius={2} shadow={1} tone="transparent">
+        <Stack space={3}>
+          <Flex justify="space-between" align="center" gap={4} wrap="wrap">
+            <Stack space={1}>
+              <Text weight="semibold" size={2}>
+                Ukeplan
+              </Text>
+              <Text size={1} muted>
+                Lunchportalen bruker kun mandag–fredag. Helg bestilles via Melhus Catering.
+              </Text>
+            </Stack>
 
-            {bankStats ? (
-              <Flex gap={2} wrap="wrap">
-                <Badge tone="default">Base: {bankStats.totalBase}</Badge>
-                <Badge tone="default">Fisk: {bankStats.fish}</Badge>
-                <Badge tone="default">Suppe: {bankStats.soup}</Badge>
-                <Badge tone="default">Veg: {bankStats.veg}</Badge>
-                <Badge tone="default">Suppler: {bankStats.restBase}</Badge>
-                <Badge tone="default">Fredag: {bankStats.fridayTotal}</Badge>
-                <Badge tone="default">Premium-fredag: {bankStats.fridayPremium}</Badge>
-                <Badge tone="default">Sesong: {currentSeason()}</Badge>
-              </Flex>
-            ) : null}
-          </Stack>
+            <Flex gap={2} wrap="wrap">
+              <Button
+                text="Opprett uke 1"
+                disabled={!!busy || loading}
+                onClick={() => createWeek(ranges.week1.dates, "Uke 1")}
+              />
+              <Button
+                text="Opprett uke 2"
+                disabled={!!busy || loading}
+                onClick={() => createWeek(ranges.week2.dates, "Uke 2")}
+              />
+              <Button
+                text={busy === "autofill-uke1" ? "Fyller uke 1..." : "Auto-fyll uke 1"}
+                disabled={!!busy || loading}
+                onClick={() => autoFillWeek(ranges.week1.dates, "uke1")}
+              />
+              <Button
+                text={busy === "autofill-uke2" ? "Fyller uke 2..." : "Auto-fyll uke 2"}
+                disabled={!!busy || loading}
+                onClick={() => autoFillWeek(ranges.week2.dates, "uke2")}
+              />
+              <Button
+                tone="positive"
+                text={busy === "approve" ? "Godkjenner..." : "Godkjenn uke 2"}
+                disabled={!!busy || loading}
+                onClick={approveWeek2}
+              />
+              <Button
+                tone="critical"
+                text={busy === "revoke" ? "Opphever..." : "Trekk godkjenning"}
+                disabled={!!busy || loading || week2.length === 0}
+                onClick={revokeWeek2}
+              />
+              <Button text="Oppdater" disabled={!!busy || loading} onClick={fetchWeeks} />
+            </Flex>
+          </Flex>
 
           <Flex gap={2} wrap="wrap">
-            <Button
-              text="Opprett 2 uker"
-              tone="primary"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setMsg(null);
-                try {
-                  await ensureDates([...weekA, ...weekB]);
-                  setMsg("✅ Opprettet uke 1 + uke 2.");
-                  await fetchDocs();
-                  await refreshStats();
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            />
-
-            <Button
-              text="Opprett neste uke"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setMsg(null);
-                try {
-                  await ensureDates([...weekC]);
-                  setMsg("✅ Opprettet uke 3.");
-                  await fetchDocs();
-                  await refreshStats();
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            />
-
-            <Button text="Auto-fyll uke 1" disabled={busy} onClick={() => autofillWeek(weekA, false, "uke 1")} />
-            <Button text="Auto-fyll uke 2" disabled={busy} onClick={() => autofillWeek(weekB, false, "uke 2")} />
-            <Button text="Auto-fyll uke 3" disabled={busy} onClick={() => autofillWeek(weekC, false, "uke 3")} />
-
-            <Button text="Force auto-fyll uke 1" tone="caution" disabled={busy} onClick={() => autofillWeek(weekA, true, "uke 1")} />
-
-            <Button text="Publiser uke 1" tone="positive" disabled={busy} onClick={() => publishWeek(weekA)} />
-            <Button text="Publiser uke 2" tone="positive" disabled={busy} onClick={() => publishWeek(weekB)} />
-            <Button text="Publiser uke 3" tone="positive" disabled={busy} onClick={() => publishWeek(weekC)} />
-
-            <Button
-              text="Oppdater"
-              mode="ghost"
-              disabled={busy}
-              onClick={() => {
-                fetchDocs();
-                refreshStats();
-              }}
-            />
+            <Badge tone={stats.w1Approved === 5 ? "positive" : "caution"}>
+              Uke 1 godkjent: {stats.w1Approved}/5
+            </Badge>
+            <Badge tone={stats.w1Visible > 0 ? "positive" : "default"}>
+              Uke 1 synlig: {stats.w1Visible}/5
+            </Badge>
+            <Badge tone={stats.w2Approved === 5 ? "positive" : "caution"}>
+              Uke 2 godkjent: {stats.w2Approved}/5
+            </Badge>
+            <Badge tone={stats.w2Visible > 0 ? "positive" : "default"}>
+              Uke 2 synlig: {stats.w2Visible}/5
+            </Badge>
+            <Badge>
+              Uke 1: {formatNordicDate(ranges.week1.dates[0])} →{" "}
+              {formatNordicDate(ranges.week1.dates[4])}
+            </Badge>
+            <Badge>
+              Uke 2: {formatNordicDate(ranges.week2.dates[0])} →{" "}
+              {formatNordicDate(ranges.week2.dates[4])}
+            </Badge>
           </Flex>
-        </Flex>
 
-        {msg ? (
-          <Card padding={3} radius={2} tone="transparent" marginTop={4} border>
-            <Text size={1}>{msg}</Text>
-          </Card>
-        ) : null}
-      </Card>
-
-      {loading ? (
-        <Card padding={4} radius={3} border>
-          <Flex align="center" gap={3}>
-            <Spinner />
-            <Text size={1} muted>
-              Henter ukeplan…
-            </Text>
-          </Flex>
-        </Card>
-      ) : (
-        <Stack space={4}>
-          {renderWeek("Denne uken (Uke 1)", weekA)}
-
-          {renderWeek(
-            "Neste uke (Uke 2)",
-            weekB,
-            !unlocked ? (
-              <Card padding={3} radius={2} border tone="caution">
-                <Text size={1}>
-                  🔒 Uke 2 er låst for ansatte frem til <b>{formatNordicDateTime(unlockAt)}</b> (torsdag uke 1 kl 08:00).
-                </Text>
-              </Card>
-            ) : (
-              <Card padding={3} radius={2} border tone="positive">
-                <Text size={1}>✅ Uke 2 er nå synlig for ansatte.</Text>
-              </Card>
-            )
-          )}
-
-          {!canGenerateWeek3Now ? (
-            <Card padding={3} radius={2} border tone="caution">
-              <Text size={1}>🔒 Uke 3 kan ikke auto-fylles før torsdag kl 08:00 i uke 1 (pipeline-lås).</Text>
+          {msg ? (
+            <Card padding={3} radius={2} border tone="transparent">
+              <Text size={1}>{msg}</Text>
             </Card>
           ) : null}
 
-          {renderWeek("Uke etter (Uke 3 – klargjøring)", weekC)}
+          {loading ? (
+            <Flex align="center" gap={2}>
+              <Spinner muted />
+              <Text size={1} muted>
+                Laster ukeplan…
+              </Text>
+            </Flex>
+          ) : (
+            <Grid columns={[1, 1, 2]} gap={4}>
+              {renderWeek("Denne uken (Uke 1)", week1, ranges.week1.dates)}
+              {renderWeek("Neste uke (Uke 2)", week2, ranges.week2.dates)}
+            </Grid>
+          )}
         </Stack>
-      )}
+      </Card>
     </Stack>
   );
 }

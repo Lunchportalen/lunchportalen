@@ -5,6 +5,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
+import { maybeRedirectPublicMarketingToUmbracoHostedSite } from "@/lib/routing/maybeRedirectPublicMarketingToUmbraco";
 import { updateSession } from "@/utils/supabase/proxy";
 
 function isBypassPath(pathname: string) {
@@ -70,6 +71,24 @@ function copyDebugHeaders(from: NextResponse, to: NextResponse) {
 
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
+
+  /**
+   * Umbraco backoffice under `/umbraco` is proxied via `next.config.ts` rewrites to `UMBRACO_CMS_ORIGIN`
+   * (or `UMBRACO_DELIVERY_BASE_URL` origin). Do not run Supabase session refresh here — avoids interfering
+   * with Umbraco cookies and reduces accidental coupling to app auth.
+   */
+  if (pathname === "/umbraco" || pathname.startsWith("/umbraco/")) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-pathname", pathname);
+    requestHeaders.set("x-url", req.nextUrl.href);
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    res.headers.set("x-lp-mw", "1");
+    res.headers.set("x-lp-mw-bypass", "1");
+    return res;
+  }
+
+  const delegated = maybeRedirectPublicMarketingToUmbracoHostedSite(req);
+  if (delegated) return delegated;
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);

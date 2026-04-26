@@ -1,13 +1,12 @@
-import { CalendarIcon } from "@sanity/icons";
+import { CalendarIcon, ComposeIcon, ControlsIcon, DocumentIcon } from "@sanity/icons";
 import type { StructureResolver } from "sanity/structure";
 
 import WeekPlannerTool from "./tools/weekPlanner/WeekPlanner";
 
 export const structure: StructureResolver = (S) =>
   S.list()
-    .title("Content")
+    .title("Lunchportalen")
     .items([
-      // ✅ Ukeplan i venstremenyen
       S.listItem()
         .title("Ukeplan")
         .icon(CalendarIcon)
@@ -15,6 +14,19 @@ export const structure: StructureResolver = (S) =>
 
       S.divider(),
 
-      // Resten av dokumenttypene
-      ...S.documentTypeListItems(),
+      S.documentTypeListItem("menuContent")
+        .title("Menyinnhold")
+        .icon(ComposeIcon),
+
+      S.documentTypeListItem("menu")
+        .title("Menytyper")
+        .icon(ControlsIcon),
+
+      S.documentTypeListItem("closedDate")
+        .title("Stengte dager")
+        .icon(CalendarIcon),
+
+      S.documentTypeListItem("announcement")
+        .title("Driftsmeldinger")
+        .icon(DocumentIcon),
     ]);

@@ -5,24 +5,28 @@ import { cookies } from "next/headers";
 import { createClient as createSsrCookieClient } from "@/utils/supabase/server";
 import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
 
-function hasSupabaseSsrAuthCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+type CookieStore = Awaited<ReturnType<typeof cookies>>;
+
+function hasSupabaseSsrAuthCookie(cookieStore: CookieStore): boolean {
   return hasSupabaseSsrAuthCookieInJar(cookieStore.getAll());
 }
 
 export type SupabaseSessionSource = "SSR_COOKIE" | "NONE";
 
-/** Cookie-jar signal only — use for auth tracing. Bearer/API flows use `getAuthContext({ reqHeaders })`. */
-export function getSupabaseSessionSource(
-  cookieStore: Awaited<ReturnType<typeof cookies>>
-): SupabaseSessionSource {
-  if (hasSupabaseSsrAuthCookie(cookieStore)) return "SSR_COOKIE";
-  return "NONE";
+/**
+ * Cookie-jar signal only.
+ * Brukes til auth-tracing/logging.
+ * Bearer/API-flyt skal fortsatt gå via getAuthContext({ reqHeaders }).
+ */
+export function getSupabaseSessionSource(cookieStore: CookieStore): SupabaseSessionSource {
+  return hasSupabaseSsrAuthCookie(cookieStore) ? "SSR_COOKIE" : "NONE";
 }
 
 /**
- * Cookie-bound SSR Supabase client (refresh via middleware). No cookie-stored bearer fallback here.
+ * Cookie-bound SSR Supabase client.
+ * Session refresh håndteres av middleware.
+ * Ingen cookie-stored bearer fallback her.
  */
 export async function supabaseServer() {
   return createSsrCookieClient();
 }
-
