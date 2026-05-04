@@ -35,8 +35,9 @@ jobs:
       # restore + build --no-restore + publish --no-build: default restore (Debug)
       # with --no-restore/--no-build leaves Umbraco.Cms.DevelopmentMode.Backoffice in deps.json.
       - name: dotnet publish (Release)
-        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output
-          "${{ github.workspace }}/publish/umbraco-app"
+        working-directory: ./umbraco17/lunchportalen
+        run: dotnet publish "lunchportalen.csproj" --configuration Release --output "${{
+          github.workspace }}/publish/umbraco-app"
 
       # Fail before artifact upload if publish graph still included dev backoffice (matches Kudu checks).
       - name: Verify publish output (no DevelopmentMode backoffice)
