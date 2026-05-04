@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  UMBRACO_CSPROJ: ./Umbraco/Umbraco.csproj
+  UMBRACO_CSPROJ: ./umbraco17/lunchportalen/lunchportalen.csproj
 
 jobs:
   build:
@@ -35,7 +35,8 @@ jobs:
       # restore + build --no-restore + publish --no-build: default restore (Debug)
       # with --no-restore/--no-build leaves Umbraco.Cms.DevelopmentMode.Backoffice in deps.json.
       - name: dotnet publish (Release)
-        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output "${{ github.workspace }}/publish/umbraco-app"
+        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output
+          "${{ github.workspace }}/publish/umbraco-app"
 
       # Fail before artifact upload if publish graph still included dev backoffice (matches Kudu checks).
       - name: Verify publish output (no DevelopmentMode backoffice)
@@ -63,7 +64,7 @@ jobs:
             echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
             exit 1
           fi
-          DEPS="$PUBLISH_DIR/Umbraco.deps.json"
+          DEPS="$PUBLISH_DIR/lunchportalen.deps.json"
           if [[ ! -f "$DEPS" ]]; then
             echo "::error::Missing Umbraco.deps.json in publish output."
             exit 1
