@@ -1,5 +1,5 @@
 # Umbraco CMS — Azure App Service (lunchportalen-umbraco)
-# Builds and deploys only ./Umbraco/Umbraco.csproj (not Next.js / repo root).
+# Builds and deploys only ./umbraco17/lunchportalen/lunchportalen.csproj (not Next.js / repo root).
 #
 # OIDC (azure/login): App registration must have a federated identity credential for GitHub
 # (issuer https://token.actions.githubusercontent.com). If missing, Azure returns AADSTS70025
@@ -31,15 +31,10 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      # Single publish aligns NuGet restore with Release. Do NOT split into
-      # restore + build --no-restore + publish --no-build: default restore (Debug)
-      # with --no-restore/--no-build leaves Umbraco.Cms.DevelopmentMode.Backoffice in deps.json.
       - name: dotnet publish (Release)
-        working-directory: ./umbraco17/lunchportalen
-        run: dotnet publish "lunchportalen.csproj" --configuration Release --output "${{
-          github.workspace }}/publish/umbraco-app"
+        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output
+          "${{ github.workspace }}/publish/umbraco-app"
 
-      # Fail before artifact upload if publish graph still included dev backoffice (matches Kudu checks).
       - name: Verify publish output (no DevelopmentMode backoffice)
         shell: bash
         env:
@@ -57,7 +52,6 @@ jobs:
           fi
 
           echo "::group::Publish folder sample (first 50 entries, best-effort listing)"
-          # Do not let diagnostic listing fail the job: ls|head under pipefail can exit 2 (ls) or break on SIGPIPE.
           ls -la "$PUBLISH_DIR" 2>&1 | head -n 50 || true
           echo "::endgroup::"
 
@@ -67,11 +61,11 @@ jobs:
           fi
           DEPS="$PUBLISH_DIR/lunchportalen.deps.json"
           if [[ ! -f "$DEPS" ]]; then
-            echo "::error::Missing Umbraco.deps.json in publish output."
+            echo "::error::Missing lunchportalen.deps.json in publish output."
             exit 1
           fi
           if grep -qF -- "DevelopmentMode.Backoffice" "$DEPS"; then
-            echo "::error::Umbraco.deps.json must not reference DevelopmentMode.Backoffice in Release."
+            echo "::error::lunchportalen.deps.json must not reference DevelopmentMode.Backoffice in Release."
             grep -n "DevelopmentMode" "$DEPS" | head -20 || true
             exit 1
           fi
