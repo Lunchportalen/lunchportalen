@@ -40,7 +40,8 @@ jobs:
         run: dotnet restore "${{ env.UMBRACO_CSPROJ }}"
 
       - name: Publish Umbraco CMS
-        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release
+        run: >
+          dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release
           --no-restore --output "${{ env.PUBLISH_DIR }}"
 
       - name: Verify publish output
@@ -117,10 +118,15 @@ jobs:
       - name: Deploy context
         shell: bash
         run: |
+          set -euo pipefail
+
           echo "Triggering commit SHA: ${GITHUB_SHA}"
           echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "Deploying to Azure Web App: ${{ env.AZURE_WEBAPP_NAME }}"
-          ls -la "${{ github.workspace }}/umbraco-app" | head -n 120
+
+          echo "::group::Downloaded artifact sample"
+          ls -la "${{ github.workspace }}/umbraco-app" | head -n 120 || true
+          echo "::endgroup::"
 
       - name: Azure login
         uses: azure/login@v2
