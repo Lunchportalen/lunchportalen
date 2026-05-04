@@ -13,6 +13,7 @@ function buildBaseDelegatedPaths(): Set<string> {
     s.add(path.startsWith("/") ? path : `/${path}`);
   }
   s.add("/faq");
+  s.add("/registrering");
   return s;
 }
 
