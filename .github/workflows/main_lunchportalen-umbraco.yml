@@ -40,7 +40,8 @@ jobs:
         run: dotnet restore "${{ env.UMBRACO_CSPROJ }}"
 
       - name: Publish Umbraco CMS
-        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --no-restore --output "${{ env.PUBLISH_DIR }}"
+        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release
+          --no-restore --output "${{ env.PUBLISH_DIR }}"
 
       - name: Verify publish output
         shell: bash
@@ -52,33 +53,39 @@ jobs:
           git rev-parse HEAD
           echo "::endgroup::"
 
-          if [[ ! -d "${{ env.PUBLISH_DIR }}" ]]; then
-            echo "::error::Publish directory is missing: ${{ env.PUBLISH_DIR }}"
+          PUBLISH_DIR="${{ env.PUBLISH_DIR }}"
+
+          if [[ ! -d "$PUBLISH_DIR" ]]; then
+            echo "::error::Publish directory is missing: $PUBLISH_DIR"
             exit 1
           fi
 
           echo "::group::Publish folder sample"
-          ls -la "${{ env.PUBLISH_DIR }}" | head -n 80
+          ls -la "$PUBLISH_DIR" | head -n 120
           echo "::endgroup::"
 
-          if [[ ! -f "${{ env.PUBLISH_DIR }}/lunchportalen.dll" ]]; then
-            echo "::error::Missing lunchportalen.dll in publish output."
+          APP_DLL="$(find "$PUBLISH_DIR" -maxdepth 1 -type f -iname "lunchportalen.dll" | head -n 1 || true)"
+          if [[ -z "$APP_DLL" ]]; then
+            echo "::error::Missing lunchportalen.dll / Lunchportalen.dll in publish output."
             exit 1
           fi
+          echo "Found app dll: $APP_DLL"
 
-          if [[ ! -f "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json" ]]; then
-            echo "::error::Missing lunchportalen.deps.json in publish output."
+          DEPS_FILE="$(find "$PUBLISH_DIR" -maxdepth 1 -type f -iname "*.deps.json" | head -n 1 || true)"
+          if [[ -z "$DEPS_FILE" ]]; then
+            echo "::error::No .deps.json file found in publish output."
             exit 1
           fi
+          echo "Found deps file: $DEPS_FILE"
 
-          if [[ -f "${{ env.PUBLISH_DIR }}/Umbraco.Cms.DevelopmentMode.Backoffice.dll" ]]; then
+          if find "$PUBLISH_DIR" -maxdepth 1 -type f -iname "Umbraco.Cms.DevelopmentMode.Backoffice.dll" | grep -q .; then
             echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
             exit 1
           fi
 
-          if grep -qF -- "DevelopmentMode.Backoffice" "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json"; then
-            echo "::error::lunchportalen.deps.json must not reference DevelopmentMode.Backoffice in Release."
-            grep -n "DevelopmentMode" "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json" | head -20 || true
+          if grep -qF -- "DevelopmentMode.Backoffice" "$DEPS_FILE"; then
+            echo "::error::.deps.json must not reference DevelopmentMode.Backoffice in Release."
+            grep -n "DevelopmentMode" "$DEPS_FILE" | head -20 || true
             exit 1
           fi
 
@@ -113,7 +120,7 @@ jobs:
           echo "Triggering commit SHA: ${GITHUB_SHA}"
           echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "Deploying to Azure Web App: ${{ env.AZURE_WEBAPP_NAME }}"
-          ls -la "${{ github.workspace }}/umbraco-app" | head -n 80
+          ls -la "${{ github.workspace }}/umbraco-app" | head -n 120
 
       - name: Azure login
         uses: azure/login@v2
