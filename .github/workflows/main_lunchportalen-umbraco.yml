@@ -1,15 +1,16 @@
 # Umbraco CMS — Azure App Service (lunchportalen-umbraco)
-# Builds and deploys only ./umbraco17/lunchportalen/lunchportalen.csproj (not Next.js / repo root).
-#
-# OIDC (azure/login): App registration must have a federated identity credential for GitHub
-# (issuer https://token.actions.githubusercontent.com). If missing, Azure returns AADSTS70025
-# and the deploy job fails at "Azure login" with no webapps-deploy.
+# Builds and deploys only ./umbraco17/lunchportalen/lunchportalen.csproj
+# Does NOT build or deploy Next.js / Vercel app.
+
 name: Umbraco CMS — Azure Web App deploy
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "umbraco17/lunchportalen/**"
+      - ".github/workflows/main_lunchportalen-umbraco.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,10 +19,14 @@ permissions:
 
 env:
   UMBRACO_CSPROJ: ./umbraco17/lunchportalen/lunchportalen.csproj
+  PUBLISH_DIR: ${{ github.workspace }}/publish/umbraco-app
+  AZURE_WEBAPP_NAME: lunchportalen-umbraco
 
 jobs:
   build:
+    name: Build Umbraco CMS
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,58 +36,70 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: dotnet publish (Release)
-        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --output
-          "${{ github.workspace }}/publish/umbraco-app"
+      - name: Restore
+        run: dotnet restore "${{ env.UMBRACO_CSPROJ }}"
 
-      - name: Verify publish output (no DevelopmentMode backoffice)
+      - name: Publish Umbraco CMS
+        run: dotnet publish "${{ env.UMBRACO_CSPROJ }}" --configuration Release --no-restore --output "${{ env.PUBLISH_DIR }}"
+
+      - name: Verify publish output
         shell: bash
-        env:
-          PUBLISH_DIR: ${{ github.workspace }}/publish/umbraco-app
         run: |
           set -euo pipefail
+
           echo "::group::Git commit deployed by this build"
           git log -1 --oneline
           git rev-parse HEAD
           echo "::endgroup::"
 
-          if [[ ! -d "$PUBLISH_DIR" ]]; then
-            echo "::error::Publish directory is missing or not a directory: $PUBLISH_DIR"
+          if [[ ! -d "${{ env.PUBLISH_DIR }}" ]]; then
+            echo "::error::Publish directory is missing: ${{ env.PUBLISH_DIR }}"
             exit 1
           fi
 
-          echo "::group::Publish folder sample (first 50 entries, best-effort listing)"
-          ls -la "$PUBLISH_DIR" 2>&1 | head -n 50 || true
+          echo "::group::Publish folder sample"
+          ls -la "${{ env.PUBLISH_DIR }}" | head -n 80
           echo "::endgroup::"
 
-          if [[ -f "$PUBLISH_DIR/Umbraco.Cms.DevelopmentMode.Backoffice.dll" ]]; then
-            echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
+          if [[ ! -f "${{ env.PUBLISH_DIR }}/lunchportalen.dll" ]]; then
+            echo "::error::Missing lunchportalen.dll in publish output."
             exit 1
           fi
-          DEPS="$PUBLISH_DIR/lunchportalen.deps.json"
-          if [[ ! -f "$DEPS" ]]; then
+
+          if [[ ! -f "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json" ]]; then
             echo "::error::Missing lunchportalen.deps.json in publish output."
             exit 1
           fi
-          if grep -qF -- "DevelopmentMode.Backoffice" "$DEPS"; then
-            echo "::error::lunchportalen.deps.json must not reference DevelopmentMode.Backoffice in Release."
-            grep -n "DevelopmentMode" "$DEPS" | head -20 || true
+
+          if [[ -f "${{ env.PUBLISH_DIR }}/Umbraco.Cms.DevelopmentMode.Backoffice.dll" ]]; then
+            echo "::error::Umbraco.Cms.DevelopmentMode.Backoffice.dll must not be in Release publish output."
             exit 1
           fi
-          echo "OK: Release publish artifact is clean of Umbraco.Cms.DevelopmentMode.Backoffice."
+
+          if grep -qF -- "DevelopmentMode.Backoffice" "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json"; then
+            echo "::error::lunchportalen.deps.json must not reference DevelopmentMode.Backoffice in Release."
+            grep -n "DevelopmentMode" "${{ env.PUBLISH_DIR }}/lunchportalen.deps.json" | head -20 || true
+            exit 1
+          fi
+
+          echo "OK: Umbraco Release publish artifact is valid."
 
       - name: Upload umbraco-app artifact
         uses: actions/upload-artifact@v4
         with:
           name: umbraco-app
-          path: ${{ github.workspace }}/publish/umbraco-app
+          path: ${{ env.PUBLISH_DIR }}
+          if-no-files-found: error
 
   deploy:
+    name: Deploy Umbraco CMS to Azure
     runs-on: ubuntu-latest
     needs: build
+
     permissions:
       id-token: write
       contents: read
+
     steps:
       - name: Download umbraco-app artifact
         uses: actions/download-artifact@v4
@@ -90,10 +107,13 @@ jobs:
           name: umbraco-app
           path: ${{ github.workspace }}/umbraco-app
 
-      - name: Deploy context (triggering commit + run)
+      - name: Deploy context
+        shell: bash
         run: |
           echo "Triggering commit SHA: ${GITHUB_SHA}"
           echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "Deploying to Azure Web App: ${{ env.AZURE_WEBAPP_NAME }}"
+          ls -la "${{ github.workspace }}/umbraco-app" | head -n 80
 
       - name: Azure login
         uses: azure/login@v2
@@ -105,5 +125,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "lunchportalen-umbraco"
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ github.workspace }}/umbraco-app

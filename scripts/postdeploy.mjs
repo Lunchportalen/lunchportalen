@@ -1,57 +1,76 @@
 // scripts/postdeploy.mjs
 /* =========================================================
-   POST-DEPLOY GATE (PROD SMOKE) — UI deploy safe gate
+   POST-DEPLOY GATE (UMBRACO PROD SMOKE)
    - No auth. No behavior changes. Pure external checks.
+   - Default checks only "/" for Umbraco public site.
    - FAIL => exit(1) for CI/ops safety.
 ========================================================= */
 
 const BASE_URL = (process.env.POSTDEPLOY_BASE_URL || "").replace(/\/$/, "");
+
 if (!BASE_URL) {
-  console.error("FAIL: POSTDEPLOY_BASE_URL is required (e.g. https://example.com)");
+  console.error("FAIL: POSTDEPLOY_BASE_URL is required, e.g. https://www.lunchportalen.no");
   process.exit(1);
 }
 
 const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 12000);
-const EXPECTED_TEXT = process.env.POSTDEPLOY_EXPECTED_TEXT || ""; // optional
-const ROUTES = (process.env.POSTDEPLOY_ROUTES || "/,/login,/status,/system")
+const EXPECTED_TEXT = process.env.POSTDEPLOY_EXPECTED_TEXT || "";
+
+const ROUTES = (process.env.POSTDEPLOY_ROUTES || "/")
   .split(",")
-  .map(s => s.trim())
+  .map((s) => s.trim())
   .filter(Boolean);
 
-const JSON_ROUTES = (process.env.POSTDEPLOY_JSON_ROUTES || "/api/health,/api/system/health")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-
-// Allow turning off JSON checks if routes don't exist
 const JSON_CHECKS_ENABLED = process.env.POSTDEPLOY_JSON_CHECKS === "1";
+
+const JSON_ROUTES = (process.env.POSTDEPLOY_JSON_ROUTES || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 function now() {
   return new Date().toISOString();
 }
 
+function buildUrl(path) {
+  return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 async function fetchWithTimeout(url, opts = {}) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   try {
-    const res = await fetch(url, { ...opts, signal: controller.signal, headers: { "cache-control": "no-store", ...(opts.headers || {}) }});
-    return res;
+    return await fetch(url, {
+      ...opts,
+      signal: controller.signal,
+      headers: {
+        "cache-control": "no-store",
+        "user-agent": "lunchportalen-postdeploy-gate/1.0",
+        ...(opts.headers || {}),
+      },
+    });
   } finally {
     clearTimeout(id);
   }
 }
 
 async function checkHtml(path) {
-  const url = `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = buildUrl(path);
   const t0 = Date.now();
+
   try {
     const res = await fetchWithTimeout(url, { method: "GET" });
     const ms = Date.now() - t0;
 
-    const ok = res.ok;
-    const ct = res.headers.get("content-type") || "";
-    const isHtmlish = ct.includes("text/html") || ct.includes("text/plain") || ct === "";
+    const contentType = res.headers.get("content-type") || "";
     const body = await res.text();
+
+    const statusOk = res.status >= 200 && res.status < 400;
+    const contentOk =
+      contentType.includes("text/html") ||
+      contentType.includes("text/plain") ||
+      contentType === "";
 
     const textOk = EXPECTED_TEXT ? body.includes(EXPECTED_TEXT) : true;
 
@@ -59,94 +78,144 @@ async function checkHtml(path) {
       kind: "HTML",
       path,
       url,
-      ok: ok && isHtmlish && textOk,
+      ok: statusOk && contentOk && textOk,
       status: res.status,
       ms,
-      detail: !ok
+      detail: !statusOk
         ? `HTTP ${res.status}`
-        : !isHtmlish
-          ? `Unexpected content-type: ${ct}`
+        : !contentOk
+          ? `Unexpected content-type: ${contentType}`
           : !textOk
             ? `Missing EXPECTED_TEXT: ${EXPECTED_TEXT}`
             : "OK",
     };
-  } catch (e) {
+  } catch (error) {
     const ms = Date.now() - t0;
-    return { kind: "HTML", path, url, ok: false, status: 0, ms, detail: e?.name === "AbortError" ? `TIMEOUT ${TIMEOUT_MS}ms` : String(e) };
+
+    return {
+      kind: "HTML",
+      path,
+      url,
+      ok: false,
+      status: 0,
+      ms,
+      detail:
+        error?.name === "AbortError"
+          ? `TIMEOUT ${TIMEOUT_MS}ms`
+          : String(error),
+    };
   }
 }
 
 async function checkJson(path) {
-  const url = `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = buildUrl(path);
   const t0 = Date.now();
+
   try {
     const res = await fetchWithTimeout(url, { method: "GET" });
     const ms = Date.now() - t0;
 
-    const ct = res.headers.get("content-type") || "";
+    const contentType = res.headers.get("content-type") || "";
     const body = await res.text();
 
     let json = null;
-    try { json = body ? JSON.parse(body) : null; } catch {}
 
-    const ok = res.ok && json && typeof json === "object";
+    try {
+      json = body ? JSON.parse(body) : null;
+    } catch {
+      json = null;
+    }
 
-    // If your API uses { ok: true/false }, we validate it softly (optional but useful)
-    const okContract =
-      json && typeof json.ok === "boolean" ? true : true; // keep non-blocking
+    const statusOk = res.status >= 200 && res.status < 400;
+    const jsonOk = json && typeof json === "object";
 
     return {
       kind: "JSON",
       path,
       url,
-      ok: ok && okContract,
+      ok: statusOk && jsonOk,
       status: res.status,
       ms,
-      detail: !res.ok
+      detail: !statusOk
         ? `HTTP ${res.status}`
-        : !json
-          ? `Invalid JSON (content-type: ${ct})`
+        : !jsonOk
+          ? `Invalid JSON (content-type: ${contentType})`
           : "OK",
-      sample: json && typeof json === "object" ? json : undefined,
+      sample: jsonOk ? json : undefined,
     };
-  } catch (e) {
+  } catch (error) {
     const ms = Date.now() - t0;
-    return { kind: "JSON", path, url, ok: false, status: 0, ms, detail: e?.name === "AbortError" ? `TIMEOUT ${TIMEOUT_MS}ms` : String(e) };
+
+    return {
+      kind: "JSON",
+      path,
+      url,
+      ok: false,
+      status: 0,
+      ms,
+      detail:
+        error?.name === "AbortError"
+          ? `TIMEOUT ${TIMEOUT_MS}ms`
+          : String(error),
+    };
   }
 }
 
-function printResult(r) {
-  const badge = r.ok ? "PASS" : "FAIL";
-  console.log(`[${badge}] ${r.kind} ${r.path}  (${r.status || "-"})  ${r.ms}ms  — ${r.detail}`);
-  if (!r.ok && r.sample) {
-    console.log(`       sample: ${JSON.stringify(r.sample).slice(0, 200)}${JSON.stringify(r.sample).length > 200 ? "…" : ""}`);
+function printResult(result) {
+  const badge = result.ok ? "PASS" : "FAIL";
+
+  console.log(
+    `[${badge}] ${result.kind} ${result.path} (${result.status || "-"}) ${result.ms}ms — ${result.detail}`,
+  );
+
+  if (!result.ok && result.sample) {
+    const sample = JSON.stringify(result.sample);
+    console.log(`       sample: ${sample.slice(0, 200)}${sample.length > 200 ? "…" : ""}`);
   }
 }
 
-(async () => {
+async function main() {
   console.log(`\nPOST-DEPLOY GATE @ ${now()}`);
   console.log(`Base: ${BASE_URL}`);
   console.log(`Timeout: ${TIMEOUT_MS}ms`);
-  console.log(`Routes: ${ROUTES.join(", ")}`);
-  console.log(`JSON routes: ${JSON_CHECKS_ENABLED ? JSON_ROUTES.join(", ") : "(disabled)"}`);
-  if (EXPECTED_TEXT) console.log(`Expected text: "${EXPECTED_TEXT}"`);
+  console.log(`HTML routes: ${ROUTES.join(", ")}`);
+  console.log(`JSON routes: ${JSON_CHECKS_ENABLED ? JSON_ROUTES.join(", ") || "(none)" : "(disabled)"}`);
+
+  if (EXPECTED_TEXT) {
+    console.log(`Expected text: "${EXPECTED_TEXT}"`);
+  }
+
   console.log("");
 
   const results = [];
 
-  for (const p of ROUTES) results.push(await checkHtml(p));
+  for (const route of ROUTES) {
+    results.push(await checkHtml(route));
+  }
+
   if (JSON_CHECKS_ENABLED) {
-    for (const p of JSON_ROUTES) results.push(await checkJson(p));
+    for (const route of JSON_ROUTES) {
+      results.push(await checkJson(route));
+    }
   }
 
   results.forEach(printResult);
 
-  const failed = results.filter(r => !r.ok);
+  const failed = results.filter((result) => !result.ok);
+
   console.log("");
-  if (failed.length) {
+
+  if (failed.length > 0) {
     console.error(`POST-DEPLOY RESULT: FAIL (${failed.length} failed)`);
     process.exit(1);
   }
+
   console.log("POST-DEPLOY RESULT: PASS");
   process.exit(0);
-})();
+}
+
+main().catch((error) => {
+  console.error("POST-DEPLOY RESULT: FAIL");
+  console.error(error);
+  process.exit(1);
+});

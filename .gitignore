@@ -79,3 +79,8 @@ cua/*.egg-info/
 
 Umbraco/bin/
 Umbraco/obj/
+
+# Umbraco local publish output
+umbraco17/lunchportalen/publish/
+umbraco17/lunchportalen/publish.zip
+*.zip
