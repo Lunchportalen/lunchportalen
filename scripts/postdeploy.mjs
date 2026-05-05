@@ -3,6 +3,7 @@
    POST-DEPLOY GATE (UMBRACO PROD SMOKE)
    - No auth. No behavior changes. Pure external checks.
    - Default checks only "/" for Umbraco public site.
+   - Cold-start tolerant for Azure App Service / Umbraco.
    - FAIL => exit(1) for CI/ops safety.
 ========================================================= */
 
@@ -13,7 +14,9 @@ if (!BASE_URL) {
   process.exit(1);
 }
 
-const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 12000);
+const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 30000);
+const RETRIES = Number(process.env.POSTDEPLOY_RETRIES || 3);
+const RETRY_DELAY_MS = Number(process.env.POSTDEPLOY_RETRY_DELAY_MS || 8000);
 const EXPECTED_TEXT = process.env.POSTDEPLOY_EXPECTED_TEXT || "";
 
 const ROUTES = (process.env.POSTDEPLOY_ROUTES || "/")
@@ -32,6 +35,10 @@ function now() {
   return new Date().toISOString();
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function buildUrl(path) {
   return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
@@ -44,6 +51,7 @@ async function fetchWithTimeout(url, opts = {}) {
     return await fetch(url, {
       ...opts,
       signal: controller.signal,
+      redirect: "follow",
       headers: {
         "cache-control": "no-store",
         "user-agent": "lunchportalen-postdeploy-gate/1.0",
@@ -55,14 +63,51 @@ async function fetchWithTimeout(url, opts = {}) {
   }
 }
 
-async function checkHtml(path) {
+function isTransient(result) {
+  return (
+    result.status === 0 ||
+    result.status === 408 ||
+    result.status === 425 ||
+    result.status === 429 ||
+    result.status === 500 ||
+    result.status === 502 ||
+    result.status === 503 ||
+    result.status === 504
+  );
+}
+
+async function withRetries(fn) {
+  let last = null;
+
+  for (let attempt = 1; attempt <= RETRIES; attempt += 1) {
+    const result = await fn(attempt);
+    last = result;
+
+    if (result.ok) {
+      return result;
+    }
+
+    if (attempt < RETRIES && isTransient(result)) {
+      console.log(
+        `[RETRY] ${result.kind} ${result.path} attempt ${attempt}/${RETRIES} failed: ${result.detail}. Waiting ${RETRY_DELAY_MS}ms...`,
+      );
+      await sleep(RETRY_DELAY_MS);
+      continue;
+    }
+
+    return result;
+  }
+
+  return last;
+}
+
+async function checkHtml(path, attempt = 1) {
   const url = buildUrl(path);
   const t0 = Date.now();
 
   try {
     const res = await fetchWithTimeout(url, { method: "GET" });
     const ms = Date.now() - t0;
-
     const contentType = res.headers.get("content-type") || "";
     const body = await res.text();
 
@@ -81,6 +126,7 @@ async function checkHtml(path) {
       ok: statusOk && contentOk && textOk,
       status: res.status,
       ms,
+      attempt,
       detail: !statusOk
         ? `HTTP ${res.status}`
         : !contentOk
@@ -99,27 +145,26 @@ async function checkHtml(path) {
       ok: false,
       status: 0,
       ms,
+      attempt,
       detail:
         error?.name === "AbortError"
           ? `TIMEOUT ${TIMEOUT_MS}ms`
-          : String(error),
+          : String(error?.message || error),
     };
   }
 }
 
-async function checkJson(path) {
+async function checkJson(path, attempt = 1) {
   const url = buildUrl(path);
   const t0 = Date.now();
 
   try {
     const res = await fetchWithTimeout(url, { method: "GET" });
     const ms = Date.now() - t0;
-
     const contentType = res.headers.get("content-type") || "";
     const body = await res.text();
 
     let json = null;
-
     try {
       json = body ? JSON.parse(body) : null;
     } catch {
@@ -127,7 +172,7 @@ async function checkJson(path) {
     }
 
     const statusOk = res.status >= 200 && res.status < 400;
-    const jsonOk = json && typeof json === "object";
+    const jsonOk = json !== null && typeof json === "object";
 
     return {
       kind: "JSON",
@@ -136,6 +181,7 @@ async function checkJson(path) {
       ok: statusOk && jsonOk,
       status: res.status,
       ms,
+      attempt,
       detail: !statusOk
         ? `HTTP ${res.status}`
         : !jsonOk
@@ -153,10 +199,11 @@ async function checkJson(path) {
       ok: false,
       status: 0,
       ms,
+      attempt,
       detail:
         error?.name === "AbortError"
           ? `TIMEOUT ${TIMEOUT_MS}ms`
-          : String(error),
+          : String(error?.message || error),
     };
   }
 }
@@ -165,7 +212,7 @@ function printResult(result) {
   const badge = result.ok ? "PASS" : "FAIL";
 
   console.log(
-    `[${badge}] ${result.kind} ${result.path} (${result.status || "-"}) ${result.ms}ms — ${result.detail}`,
+    `[${badge}] ${result.kind} ${result.path} (${result.status || "-"}) ${result.ms}ms attempt ${result.attempt}/${RETRIES} — ${result.detail}`,
   );
 
   if (!result.ok && result.sample) {
@@ -178,6 +225,8 @@ async function main() {
   console.log(`\nPOST-DEPLOY GATE @ ${now()}`);
   console.log(`Base: ${BASE_URL}`);
   console.log(`Timeout: ${TIMEOUT_MS}ms`);
+  console.log(`Retries: ${RETRIES}`);
+  console.log(`Retry delay: ${RETRY_DELAY_MS}ms`);
   console.log(`HTML routes: ${ROUTES.join(", ")}`);
   console.log(`JSON routes: ${JSON_CHECKS_ENABLED ? JSON_ROUTES.join(", ") || "(none)" : "(disabled)"}`);
 
@@ -190,15 +239,16 @@ async function main() {
   const results = [];
 
   for (const route of ROUTES) {
-    results.push(await checkHtml(route));
+    results.push(await withRetries((attempt) => checkHtml(route, attempt)));
   }
 
   if (JSON_CHECKS_ENABLED) {
     for (const route of JSON_ROUTES) {
-      results.push(await checkJson(route));
+      results.push(await withRetries((attempt) => checkJson(route, attempt)));
     }
   }
 
+  console.log("");
   results.forEach(printResult);
 
   const failed = results.filter((result) => !result.ok);
