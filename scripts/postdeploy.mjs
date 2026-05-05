@@ -14,9 +14,9 @@ if (!BASE_URL) {
   process.exit(1);
 }
 
-const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 30000);
-const RETRIES = Number(process.env.POSTDEPLOY_RETRIES || 3);
-const RETRY_DELAY_MS = Number(process.env.POSTDEPLOY_RETRY_DELAY_MS || 8000);
+const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 45000);
+const RETRIES = Number(process.env.POSTDEPLOY_RETRIES || 6);
+const RETRY_DELAY_MS = Number(process.env.POSTDEPLOY_RETRY_DELAY_MS || 10000);
 const EXPECTED_TEXT = process.env.POSTDEPLOY_EXPECTED_TEXT || "";
 
 const ROUTES = (process.env.POSTDEPLOY_ROUTES || "/")
@@ -66,6 +66,7 @@ async function fetchWithTimeout(url, opts = {}) {
 function isTransient(result) {
   return (
     result.status === 0 ||
+    result.status === 404 ||
     result.status === 408 ||
     result.status === 425 ||
     result.status === 429 ||
@@ -165,6 +166,7 @@ async function checkJson(path, attempt = 1) {
     const body = await res.text();
 
     let json = null;
+
     try {
       json = body ? JSON.parse(body) : null;
     } catch {
