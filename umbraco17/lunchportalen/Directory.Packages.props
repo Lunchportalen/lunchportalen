@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageFloatingVersionsEnabled>false</CentralPackageFloatingVersionsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Umbraco.Cms" Version="17.3.4" />
+    <PackageVersion Include="SeoToolkit.Umbraco" Version="6.2.2" />
+    <PackageVersion Include="SeoToolkit.Umbraco.Sitemap" Version="6.2.1" />
+    <PackageVersion Include="Microsoft.ICU.ICU4C.Runtime" Version="72.1.0.3" />
+  </ItemGroup>
+</Project>

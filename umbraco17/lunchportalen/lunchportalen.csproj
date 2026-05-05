@@ -5,26 +5,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <!-- Disable .NET compression for Umbraco/backoffice static files -->
     <CompressionEnabled>false</CompressionEnabled>
 
-    <!-- Razor files are needed for Umbraco views/backoffice -->
     <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
-
-    <!-- Compile Razor views for Azure production -->
     <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <PreserveCompilationReferences>true</PreserveCompilationReferences>
+
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Umbraco.Cms" />
     <PackageReference Include="SeoToolkit.Umbraco" />
     <PackageReference Include="SeoToolkit.Umbraco.Sitemap" />
-    <PackageReference Include="Umbraco.Cms" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- App-local ICU gives consistent globalization behavior across Azure/Linux/Windows -->
     <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" />
     <RuntimeHostConfigurationOption
       Include="System.Globalization.AppLocalIcu"
