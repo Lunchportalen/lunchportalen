@@ -1,0 +1,45 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var heading    = Model.Value<string>("heading");
+    var subheading = Model.Value<string>("subheading");
+    var steps      = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("steps");
+    int stepNumber = 1;
+}
+<section class="lp-steps-block ds-fade-up">
+    <div class="lp-steps-inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-steps-heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subheading))
+        {
+            <p class="lp-steps-subheading">@subheading</p>
+        }
+        @if (steps != null && steps.Any())
+        {
+            <div class="lp-steps-grid">
+                @foreach (var step in steps)
+                {
+                    var title       = step.Content.Value<string>("title");
+                    var description = step.Content.Value<string>("description");
+                    var icon        = step.Content.Value<IPublishedContent>("icon");
+                    <div class="lp-step-item">
+                        <div class="lp-step-number">@stepNumber</div>
+                        @if (icon != null)
+                        {
+                            <img class="lp-step-icon" src="@icon.Url()" alt="@title" />
+                        }
+                        <h3 class="lp-step-title">@title</h3>
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="lp-step-desc">@description</p>
+                        }
+                    </div>
+                    stepNumber++;
+                }
+            </div>
+        }
+    </div>
+</section>

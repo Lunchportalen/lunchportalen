@@ -1,0 +1,583 @@
+﻿@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridModel>
+
+@functions {
+    private Link? GetFirstLink(object? value)
+    {
+        if (value == null) return null;
+        if (value is Link singleLink) return singleLink;
+        if (value is IEnumerable<Link> manyLinks) return manyLinks.FirstOrDefault();
+        return null;
+    }
+
+    private string? GetImageUrl(IPublishedContent? image)
+    {
+        if (image == null) return null;
+        var url = image.Url();
+        return string.IsNullOrWhiteSpace(url) ? null : url;
+    }
+}
+
+@{
+    if (Model?.Any() != true)
+    {
+        return;
+    }
+}
+
+<div class="lp-block-grid">
+
+@foreach (var block in Model)
+{
+    var content = block?.Content;
+    if (content == null) { continue; }
+
+    var alias = content.ContentType.Alias;
+
+    @* ============================================================
+       LANDING / DEMO PARTIAL BLOCKS
+       ============================================================ *@
+
+    if (alias == "landingPageHeroBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LandingPageHeroBlock.cshtml", block)
+    }
+    else if (alias == "demoPreviewBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoPreviewBlock.cshtml", block)
+    }
+    else if (alias == "demoStepsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoStepsBlock.cshtml", block)
+    }
+    else if (alias == "demoVideoBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoVideoBlock.cshtml", block)
+    }
+    else if (alias == "demoTestimonialBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoTestimonialBlock.cshtml", block)
+    }
+    else if (alias == "demoBookingBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoBookingBlock.cshtml", block)
+    }
+    else if (alias == "demoCtaEndBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_DemoCtaEndBlock.cshtml", block)
+    }
+
+    @* ============================================================
+       LOSNINGEN PAGE BLOCKS
+       ============================================================ *@
+
+    else if (alias == "losningenLogosBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenLogosBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenValuePropsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenValuePropsBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenHowItWorksBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenHowItWorksBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenFeaturesBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenFeaturesBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenTestimonialBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenTestimonialBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenFaqBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenFaqBlock.cshtml", block.Content)
+    }
+    else if (alias == "losningenCtaBandBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_LosningenCtaBandBlock.cshtml", block.Content)
+    }
+
+    @* ============================================================
+       PRISER PAGE BLOCKS
+       ============================================================ *@
+
+    else if (alias == "priserPlansBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_PriserPlansBlock.cshtml", block.Content)
+    }
+    else if (alias == "priserHowItWorksBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_PriserHowItWorksBlock.cshtml", block.Content)
+    }
+    else if (alias == "priserFeaturesBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_PriserFeaturesBlock.cshtml", block.Content)
+    }
+    else if (alias == "priserFaqBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_PriserFaqBlock.cshtml", block.Content)
+    }
+    else if (alias == "priserCtaBandBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_PriserCtaBandBlock.cshtml", block.Content)
+    }
+
+    @* ============================================================
+       OM OSS PAGE BLOCKS
+       ============================================================ *@
+
+    else if (alias == "omOssWhyBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssWhyBlock.cshtml", block.Content)
+    }
+    else if (alias == "omOssModelBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssModelBlock.cshtml", block.Content)
+    }
+    else if (alias == "omOssValuesBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssValuesBlock.cshtml", block.Content)
+    }
+    else if (alias == "omOssSustainabilityBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssSustainabilityBlock.cshtml", block.Content)
+    }
+    else if (alias == "omOssPositioningBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssPositioningBlock.cshtml", block.Content)
+    }
+    else if (alias == "omOssCtaBandBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_OmOssCtaBandBlock.cshtml", block.Content)
+    }
+
+    @* ============================================================
+       FORDELER PAGE BLOCKS
+       ============================================================ *@
+
+    else if (alias == "fordelerLedelseBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerLedelseBlock.cshtml", block.Content)
+    }
+    else if (alias == "fordelerAnsatteBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerAnsatteBlock.cshtml", block.Content)
+    }
+    else if (alias == "fordelerKjokkenBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerKjokkenBlock.cshtml", block.Content)
+    }
+    else if (alias == "fordelererLeveringBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerLeveringBlock.cshtml", block.Content)
+    }
+    else if (alias == "fordelerOkonomiBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerOkonomiBlock.cshtml", block.Content)
+    }
+    else if (alias == "fordelerCtaBandBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerCtaBandBlock.cshtml", block.Content)
+    }
+
+    @* ============================================================
+       HERO BLOCK
+       ============================================================ *@
+
+    else if (alias == "heroBlock")
+    {
+        var heading    = content.Value<string>("heading");
+        var subheading = content.Value<string>("subheading");
+        var bodyText   = content.Value<string>("bodyText");
+        var eyebrow    = content.Value<string>("eyebrow");
+        var image      = content.Value<IPublishedContent>("backgroundImage");
+        var imageUrl   = GetImageUrl(image);
+
+        var ctaLinks  = content.Value<IEnumerable<Link>>("ctaUrl");
+        var ctaLink   = ctaLinks?.FirstOrDefault();
+        var ctaLabel  = content.Value<string>("ctaLabel");
+        if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
+        var ctaHref   = ctaLink?.Url ?? "#";
+        var ctaTarget = ctaLink?.Target ?? "";
+
+        var trustPills = content.Value<IEnumerable<string>>("trustPills");
+
+        <section class="lp-hero ds-fade-up">
+            @if (!string.IsNullOrEmpty(imageUrl))
+            {
+                <div class="lp-hero__bg">
+                    <img src="@imageUrl" alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+                </div>
+            }
+
+            <div class="lp-hero__overlay" aria-hidden="true"></div>
+
+            <div class="lp-container">
+                <div class="lp-hero__inner">
+                    <div class="lp-hero__content">
+
+                        @if (!string.IsNullOrWhiteSpace(eyebrow))
+                        {
+                            <div class="lp-eyebrow">
+                                <span class="lp-eyebrow__dot"></span>
+                                @eyebrow
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(heading))
+                        {
+                            <h1 class="lp-hero__heading">@heading</h1>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(subheading))
+                        {
+                            <p class="lp-hero__sub">@subheading</p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(bodyText))
+                        {
+                            <p class="lp-hero__body">@bodyText</p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(ctaLabel))
+                        {
+                            <div class="lp-hero__actions">
+                                <a class="ds-btn ds-btn--primary"
+                                   href="@ctaHref"
+                                   @(string.IsNullOrEmpty(ctaTarget) ? "" : $"target=\"{ctaTarget}\"")>
+                                    @ctaLabel
+                                </a>
+                            </div>
+                        }
+
+                        @if (trustPills != null && trustPills.Any())
+                        {
+                            <div class="lp-hero__trust">
+                                @foreach (var pill in trustPills)
+                                {
+                                    <span class="lp-trust-pill">✓ @pill</span>
+                                }
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       HERO BANNER BLOCK
+       ============================================================ *@
+
+    else if (alias == "heroBannerBlock")
+    {
+        var heading  = content.Value<string>("heading");
+        var leadText = content.Value<string>("leadText");
+        var eyebrow  = content.Value<string>("eyebrow");
+        var image    = content.Value<IPublishedContent>("image");
+        var imageUrl = GetImageUrl(image);
+
+        var ctaLink  = GetFirstLink(content.Value("ctaLink"));
+        var ctaLabel = ctaLink?.Name ?? "Kom i gang";
+        var ctaUrl   = ctaLink?.Url ?? "/registrer-firma/";
+
+        <section class="lp-hero">
+            <div class="ds-container lp-hero__inner">
+
+                <div class="lp-hero__content">
+                    @if (!string.IsNullOrWhiteSpace(eyebrow))
+                    {
+                        <p class="lp-hero__eyebrow">
+                            <span class="lp-hero__eyebrow-dot"></span>
+                            @eyebrow
+                        </p>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(heading))
+                    {
+                        <h1 class="lp-hero__title">@heading</h1>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(leadText))
+                    {
+                        <p class="lp-hero__lead">@leadText</p>
+                    }
+
+                    <div class="lp-hero__actions">
+                        <a class="lp-hero__btn lp-hero__btn--primary" href="@ctaUrl">@ctaLabel</a>
+                        <a class="lp-hero__btn lp-hero__btn--secondary" href="/login/">Logg inn</a>
+                    </div>
+
+                    <div class="lp-hero__trust">
+                        <div class="lp-hero__trust-item">
+                            <span class="lp-hero__trust-num">✔</span>
+                            <span class="lp-hero__trust-label">Mindre matsvinn</span>
+                        </div>
+                        <div class="lp-hero__trust-item">
+                            <span class="lp-hero__trust-num">✔</span>
+                            <span class="lp-hero__trust-label">Full kontroll</span>
+                        </div>
+                        <div class="lp-hero__trust-item">
+                            <span class="lp-hero__trust-num">✔</span>
+                            <span class="lp-hero__trust-label">Levering til avtalt tid</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    <div class="lp-hero__visual lp-hero__visual--image">
+                        <img src="@imageUrl" alt="@heading" />
+                    </div>
+                }
+
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       SOCIAL PROOF BLOCK
+       ============================================================ *@
+
+    else if (alias == "socialProofBlock")
+    {
+        var items = content.Value<IEnumerable<BlockListItem>>("items");
+
+        <section class="lp-social-proof">
+            <div class="lp-social-proof__inner">
+                <div class="lp-social-proof__facts">
+                    @if (items != null)
+                    {
+                        foreach (var blockItem in items)
+                        {
+                            var value = blockItem.Content.Value<string>("value");
+                            var label = blockItem.Content.Value<string>("label");
+
+                            if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+                            {
+                                continue;
+                            }
+
+                            <div class="lp-social-proof__fact">
+                                @if (!string.IsNullOrWhiteSpace(value))
+                                {
+                                    <strong>@value</strong>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(label))
+                                {
+                                    <span>@label</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       HOW IT WORKS BLOCK
+       ============================================================ *@
+
+    else if (alias == "howItWorksBlock")
+    {
+        var eyebrow = content.Value<string>("eyebrow");
+        var heading = content.Value<string>("heading");
+        var steps   = content.Value<IEnumerable<BlockListItem>>("steps");
+
+        <section class="ds-section" id="howitworks">
+            <div class="ds-container">
+
+                <div class="ds-text-limit ds-fade-up">
+                    @if (!string.IsNullOrWhiteSpace(eyebrow))
+                    {
+                        <p class="ds-eyebrow">@eyebrow</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(heading))
+                    {
+                        <h2 class="ds-h2">@heading</h2>
+                    }
+                </div>
+
+                <ul class="ds-how-list">
+                    @if (steps != null)
+                    {
+                        var stepList = steps.ToList();
+                        for (int i = 0; i < stepList.Count; i++)
+                        {
+                            var s          = stepList[i].Content;
+                            var stepNum    = s.Value<string>("stepNumber") ?? $"0{i + 1}";
+                            var title      = s.Value<string>("title");
+                            var text       = s.Value<string>("text");
+                            var stepImage  = s.Value<IPublishedContent>("image");
+                            var stepImgUrl = GetImageUrl(stepImage);
+
+                            var stepCtaLinks  = s.Value<IEnumerable<Link>>("ctaUrl");
+                            var stepCtaLink   = stepCtaLinks?.FirstOrDefault();
+                            var stepCtaLabel  = s.Value<string>("ctaLabel");
+                            if (string.IsNullOrWhiteSpace(stepCtaLabel)) stepCtaLabel = stepCtaLink?.Name ?? "";
+                            var stepCtaHref   = stepCtaLink?.Url ?? "#";
+                            var stepCtaTarget = stepCtaLink?.Target ?? "";
+
+                            var rowClass = i % 2 == 1
+                                ? "ds-how-row ds-how-row--reverse ds-fade-up"
+                                : "ds-how-row ds-fade-up";
+
+                            <li class="@rowClass">
+                                <div class="ds-how-text">
+                                    <div class="ds-step__number">@stepNum</div>
+                                    @if (!string.IsNullOrWhiteSpace(title))
+                                    {
+                                        <h3 class="ds-how-title">@title</h3>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(text))
+                                    {
+                                        <p class="ds-how-body">@text</p>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(stepCtaLabel))
+                                    {
+                                        <div class="ds-how-button">
+                                            <a class="ds-btn ds-btn--primary"
+                                               href="@stepCtaHref"
+                                               @(string.IsNullOrEmpty(stepCtaTarget) ? "" : $"target=\"{stepCtaTarget}\"")>
+                                                @stepCtaLabel
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(stepImgUrl))
+                                {
+                                    <div class="ds-how-media">
+                                        <img src="@stepImgUrl" alt="@title" />
+                                    </div>
+                                }
+                            </li>
+                        }
+                    }
+                </ul>
+
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       VALUE PROPS BLOCK
+       ============================================================ *@
+
+    else if (alias == "valuePropsBlock")
+    {
+        var eyebrow = content.Value<string>("eyebrow");
+        var heading = content.Value<string>("heading");
+        var items   = content.Value<IEnumerable<BlockListItem>>("items");
+
+        <section class="lp-value-props">
+            <div class="lp-value-props__inner">
+                @if (!string.IsNullOrWhiteSpace(eyebrow))
+                {
+                    <p class="lp-value-props__eyebrow">@eyebrow</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(heading))
+                {
+                    <h2 class="lp-value-props__heading">@heading</h2>
+                }
+                <div class="lp-value-props__grid">
+                    @if (items != null)
+                    {
+                        foreach (var item in items)
+                        {
+                            var i     = item.Content;
+                            var title = i.Value<string>("title");
+                            var text  = i.Value<string>("text");
+                            <div class="lp-value-prop-item">
+                                @if (!string.IsNullOrWhiteSpace(title))
+                                {
+                                    <h3 class="lp-value-prop-item__title">@title</h3>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    <p class="lp-value-prop-item__text">@text</p>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       CTA BAND BLOCK
+       ============================================================ *@
+
+    else if (alias == "ctaBandBlock")
+    {
+        var heading  = content.Value<string>("heading");
+        var leadText = content.Value<string>("leadText");
+        var ctaLinks = content.Value<IEnumerable<Link>>("ctaUrl");
+        var ctaLink  = ctaLinks?.FirstOrDefault();
+        var ctaLabel = content.Value<string>("ctaLabel");
+        if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
+        var ctaHref   = ctaLink?.Url ?? "#";
+        var ctaTarget = ctaLink?.Target ?? "";
+
+        <section class="lp-cta-band">
+            <div class="lp-cta-band__inner">
+                @if (!string.IsNullOrWhiteSpace(heading))
+                {
+                    <h2 class="lp-cta-band__heading">@heading</h2>
+                }
+                @if (!string.IsNullOrWhiteSpace(leadText))
+                {
+                    <p class="lp-cta-band__text">@leadText</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(ctaLabel))
+                {
+                    <a class="ds-btn ds-btn--primary"
+                       href="@ctaHref"
+                       @(string.IsNullOrEmpty(ctaTarget) ? "" : $"target=\"{ctaTarget}\"")>
+                        @ctaLabel
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @* ============================================================
+       KOM I GANG PAGE BLOCKS
+       ============================================================ *@
+
+    else if (alias == "komIGangHeroBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangHeroBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangStatsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangStatsBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangContractBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangContractBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangStepsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangStepsBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangTestimonialBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangTestimonialBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangFormBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangFormBlock.cshtml", block.Content)
+    }
+}
+
+</div>

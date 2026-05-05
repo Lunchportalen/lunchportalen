@@ -1,0 +1,62 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "For levering";
+    var heading = Model.Value<string>("heading") ?? "Levert ryddig – rett inn i arbeidsdagen";
+    var text = Model.Value<string>("text") ?? "Lunchportalen gjør leveringen enkel, presis og forutsigbar. Lunsjen kommer ferdig pakket, tydelig merket og klar til bruk – uten kantinekø, intern koordinering eller unødvendig avbrudd.";
+
+    var image = Model.Value<IPublishedContent>("imagePosition");
+    var imageUrl = image?.Url();
+
+    var points = new[]
+    {
+        new { Title = "Tydelig levering", Text = "Lunsjen leveres til avtalt sted og tidspunkt, slik at bedriften slipper intern oppfølging." },
+        new { Title = "Ryddig overlevering", Text = "Maten kommer strukturert, merket og klar – tilpasset bestillingene som faktisk er registrert." },
+        new { Title = "Mindre avbrudd", Text = "Ansatte får lunsjen enkelt inn i arbeidsdagen uten kø, venting eller usikkerhet." }
+    };
+}
+
+<section class="lp-benefits-section lp-benefits-section--delivery">
+    <div class="lp-benefits-section__inner">
+
+        <div class="lp-benefits-section__content">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="lp-benefits-section__eyebrow">@eyebrow</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="lp-benefits-section__heading">@heading</h2>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(text))
+            {
+                <p class="lp-benefits-section__text">@text</p>
+            }
+
+            <div class="lp-benefits-points">
+                @foreach (var point in points)
+                {
+                    <article class="lp-benefits-point">
+                        <span class="lp-benefits-point__dot"></span>
+                        <div>
+                            <h3 class="lp-benefits-point__title">@point.Title</h3>
+                            <p class="lp-benefits-point__text">@point.Text</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            <div class="lp-benefits-section__media">
+                <img src="@imageUrl" alt="@heading" loading="lazy" />
+            </div>
+        }
+
+    </div>
+</section>

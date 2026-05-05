@@ -1,0 +1,32 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@{
+    var heading            = Model.Value<string>("heading");
+    var text               = Model.Value<string>("text");
+    var ctaLabel           = Model.Value<string>("ctaLabel");
+    var ctaUrl             = Model.Value<string>("ctaUrl");
+    var ctaSecondaryLabel  = Model.Value<string>("ctaSecondaryLabel");
+    var ctaSecondaryUrl    = Model.Value<string>("ctaSecondaryUrl");
+}
+<section class="lp-cta-band ds-fade-up">
+    <div class="lp-cta-band__inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-cta-band__heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(text))
+        {
+            <p class="lp-cta-band__text">@text</p>
+        }
+        <div class="lp-cta-band__actions">
+            @if (!string.IsNullOrWhiteSpace(ctaLabel) && !string.IsNullOrWhiteSpace(ctaUrl))
+            {
+                <a href="@ctaUrl" class="ds-btn ds-btn--primary">@ctaLabel</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(ctaSecondaryLabel) && !string.IsNullOrWhiteSpace(ctaSecondaryUrl))
+            {
+                <a href="@ctaSecondaryUrl" class="ds-btn ds-btn--outline ds-btn--outline-light">@ctaSecondaryLabel</a>
+            }
+        </div>
+    </div>
+</section>

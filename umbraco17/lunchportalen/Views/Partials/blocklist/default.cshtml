@@ -1,0 +1,53 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockListModel>
+@using System.Linq
+@using Umbraco.Cms.Core.Models.Blocks
+
+@if (Model == null || !Model.Any())
+{
+    return;
+}
+
+@foreach (var block in Model)
+{
+    if (block?.Content == null)
+    {
+        continue;
+    }
+
+    var alias = block.Content.ContentType.Alias;
+
+    if (alias == "fordelelerLeveringBlock" || alias == "fordelererLeveringBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_FordelerLeveringBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangHeroBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangHeroBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangStatsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangStatsBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangContractBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangContractBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangStepsBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangStepsBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangTestimonialBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangTestimonialBlock.cshtml", block.Content)
+    }
+    else if (alias == "komIGangFormBlock")
+    {
+        @await Html.PartialAsync("~/Views/Partials/_KomIGangFormBlock.cshtml", block.Content)
+    }
+    else
+    {
+        var pascalAlias = char.ToUpper(alias[0]) + alias.Substring(1);
+        var viewPath = $"~/Views/Partials/_{pascalAlias}.cshtml";
+        @await Html.PartialAsync(viewPath, block.Content)
+    }
+}

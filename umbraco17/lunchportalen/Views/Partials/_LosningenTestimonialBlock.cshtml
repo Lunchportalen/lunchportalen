@@ -1,0 +1,215 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var quote     = Model.Value<string>("quote")  ?? "Vi brukte å sende rundt en Excel-liste hver morgen. Nå gjør systemet alt selv – og vi betaler bare for det som faktisk spises.";
+    var name      = Model.Value<string>("qName")  ?? "Kari Andersen";
+    var role      = Model.Value<string>("role")   ?? "Kontorsjef, Hydro ASA";
+    var showStars = Model.Value<bool>("showStars");
+
+    var logoImage = Model.Value<IPublishedContent>("companyLogo");
+    var logoUrl   = logoImage?.Url() ?? "";
+
+    var avatarImage = Model.Value<IPublishedContent>("avatar");
+    var avatarUrl   = avatarImage?.Url() ?? "";
+
+    var initials = "LP";
+    if (!string.IsNullOrWhiteSpace(name))
+    {
+        var nameParts = name.Trim().Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        if (nameParts.Length >= 2)
+            initials = $"{nameParts[0][0]}{nameParts[^1][0]}".ToUpperInvariant();
+        else if (nameParts.Length == 1 && nameParts[0].Length > 0)
+            initials = nameParts[0][0].ToString().ToUpperInvariant();
+    }
+
+    var statBlocks = Model.Value<BlockListModel>("stats");
+    var defaultStats = new[]
+    {
+        new { Value = "2 400+",  Label = "bedrifter",      CountTo = 2400,  Suffix = "+", Prefix = "" },
+        new { Value = "18 000+", Label = "ansatte daglig", CountTo = 18000, Suffix = "+", Prefix = "" },
+        new { Value = "−32%",    Label = "matsvinn",       CountTo = 32,    Suffix = "%", Prefix = "−" },
+    };
+    bool hasStats = statBlocks != null && statBlocks.Any();
+}
+
+<style>
+.ls-stat-card {
+    padding: 28px;
+    border-radius: 24px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform .28s cubic-bezier(.22,.8,.22,1), border-color .28s ease;
+}
+.ls-stat-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(245,197,24,.08) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity .4s ease;
+}
+.ls-stat-card:hover::before { opacity: 1; }
+.ls-stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(245,197,24,.30);
+}
+.ls-stat-card__val {
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -.06em;
+    color: #f5c518;
+    line-height: 1;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+    display: block;
+}
+.ls-stat-card__lbl {
+    font-size: .84rem;
+    color: rgba(255,255,255,.55);
+    font-weight: 600;
+    letter-spacing: .02em;
+    display: block;
+}
+@@keyframes lsStatPop {
+    0%   { transform: scale(.85); opacity: 0; }
+    60%  { transform: scale(1.06); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.ls-stat-card.is-counted .ls-stat-card__val {
+    animation: lsStatPop .5s cubic-bezier(.22,.8,.22,1) both;
+}
+</style>
+
+<section class="ls-testimonial" aria-label="Kundeuttalelse">
+    <div class="ls-inner">
+        <div class="ls-testimonial__grid ls-reveal">
+
+            <blockquote class="ls-testimonial__quote">
+
+                @if (!string.IsNullOrWhiteSpace(logoUrl))
+                {
+                    <img class="ls-testimonial__logo"
+                         src="@logoUrl"
+                         alt=""
+                         width="120" height="36"
+                         loading="lazy"
+                         aria-hidden="true" />
+                }
+
+                @if (showStars)
+                {
+                    <div class="ls-testimonial__stars" aria-label="5 av 5 stjerner">
+                        <span aria-hidden="true">★★★★★</span>
+                    </div>
+                }
+
+                <p class="ls-testimonial__text">@quote</p>
+
+                <footer class="ls-testimonial__attribution">
+                    <div class="ls-testimonial__avatar" aria-hidden="true">
+                        @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                        {
+                            <img src="@avatarUrl" alt="" width="48" height="48" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span>@initials</span>
+                        }
+                    </div>
+                    <div>
+                        <strong class="ls-testimonial__name">@name</strong>
+                        <span class="ls-testimonial__role">@role</span>
+                    </div>
+                </footer>
+
+            </blockquote>
+
+            <div class="ls-testimonial__stats" id="ls-stat-grid">
+                @if (hasStats)
+                {
+                    foreach (var block in statBlocks)
+                    {
+                        var val = block.Content.Value<string>("title") ?? "";
+                        var lbl = block.Content.Value<string>("text")  ?? "";
+                        <div class="ls-stat-card">
+                            <span class="ls-stat-card__val">@val</span>
+                            <span class="ls-stat-card__lbl">@lbl</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    foreach (var stat in defaultStats)
+                    {
+                        <div class="ls-stat-card"
+                             data-count-to="@stat.CountTo"
+                             data-suffix="@stat.Suffix"
+                             data-prefix="@stat.Prefix">
+                            <span class="ls-stat-card__val" aria-live="polite">@stat.Value</span>
+                            <span class="ls-stat-card__lbl">@stat.Label</span>
+                        </div>
+                    }
+                }
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+(function () {
+    var grid = document.getElementById('ls-stat-grid');
+    if (!grid) return;
+    var cards = grid.querySelectorAll('[data-count-to]');
+    if (!cards.length) return;
+    var counted = false;
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function animateCard(card) {
+        var target = parseInt(card.dataset.countTo, 10);
+        var suffix = card.dataset.suffix || '';
+        var prefix = card.dataset.prefix || '';
+        var valEl  = card.querySelector('.ls-stat-card__val');
+        if (!valEl) return;
+        var duration = 1400;
+        var start    = performance.now();
+        function tick(now) {
+            var progress = Math.min((now - start) / duration, 1);
+            var current  = Math.round(easeOut(progress) * target);
+            valEl.textContent = prefix + current.toLocaleString('nb-NO') + suffix;
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                card.classList.add('is-counted');
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function runCounters() {
+        if (counted) return;
+        counted = true;
+        cards.forEach(function (card, i) {
+            setTimeout(function () { animateCard(card); }, i * 180);
+        });
+    }
+
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) { runCounters(); io.disconnect(); }
+            });
+        }, { threshold: 0.3 });
+        io.observe(grid);
+    } else {
+        runCounters();
+    }
+})();
+</script>

@@ -1,0 +1,82 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Slik fungerer det";
+    var heading = Model.Value<string>("heading") ?? "Fra avtale til ferdig levert lunsj";
+    var text    = Model.Value<string>("text")    ?? "Fire steg. Null administrasjon i hverdagen.";
+
+    var stepBlocks = Model.Value<BlockListModel>("steps");
+
+    var defaultSteps = new[]
+    {
+        new {
+            Number = "01",
+            Title  = "Bedriften setter rammer",
+            Body   = "Leveringsdager, antall ansatte og valgt pakke settes én gang. Ingen daglig oppfølging."
+        },
+        new {
+            Number = "02",
+            Title  = "Ansatte bestiller selv",
+            Body   = "Menyen er tilgjengelig to uker frem. Ansatte bestiller og avbestiller fra mobil – helt på egenhånd."
+        },
+        new {
+            Number = "03",
+            Title  = "Kjøkkenet produserer",
+            Body   = "Produksjonen baseres på faktiske bestillinger – ikke estimater. Mindre svinn, bedre forutsigbarhet."
+        },
+        new {
+            Number = "04",
+            Title  = "Lunsjen leveres",
+            Body   = "Dere betaler kun for det som faktisk blir levert. Ingen overraskelser på fakturaen."
+        },
+    };
+
+    bool hasBlocks = stepBlocks != null && stepBlocks.Any();
+}
+
+<section class="pr-how-it-works">
+    <div class="pr-inner">
+
+        <div class="pr-reveal">
+            <p class="pr-eyebrow">@eyebrow</p>
+            <h2 class="pr-h2">@heading</h2>
+            <p class="pr-lead">@text</p>
+        </div>
+
+        <div class="pr-hiw-grid pr-reveal-group">
+
+            @if (hasBlocks)
+            {
+                int i = 1;
+                foreach (var block in stepBlocks)
+                {
+                    var title  = block.Content.Value<string>("title")  ?? "";
+                    var body   = block.Content.Value<string>("body")   ?? "";
+                    var number = i.ToString("D2");
+
+                    <div class="pr-hiw-step">
+                        <span class="pr-hiw-step__number" aria-hidden="true">@number</span>
+                        <h3 class="pr-hiw-step__title">@title</h3>
+                        <p class="pr-hiw-step__body">@body</p>
+                    </div>
+
+                    i++;
+                }
+            }
+            else
+            {
+                foreach (var step in defaultSteps)
+                {
+                    <div class="pr-hiw-step">
+                        <span class="pr-hiw-step__number" aria-hidden="true">@step.Number</span>
+                        <h3 class="pr-hiw-step__title">@step.Title</h3>
+                        <p class="pr-hiw-step__body">@step.Body</p>
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+</section>

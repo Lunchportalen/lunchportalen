@@ -1,0 +1,82 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Slik fungerer det";
+    var heading = Model.Value<string>("heading") ?? "Fra avtale til ferdig levert lunsj";
+    var text    = Model.Value<string>("text")    ?? "Fire enkle steg – satt opp én gang, driftet automatisk hver dag.";
+
+    var stepBlocks = Model.Value<BlockListModel>("steps");
+
+    var defaultSteps = new[]
+    {
+        new { Title = "Bedriften setter rammer",       Body = "Dere bestemmer leveringsdager, antall ansatte, lokasjon og budsjett. Settes én gang." },
+        new { Title = "Ansatte bestiller fra mobil",   Body = "Hver ansatt velger sin lunsj direkte i appen. Avbestilling er mulig frem til kl. 08:00." },
+        new { Title = "Kjøkkenet lager riktig mengde", Body = "Systemet sender automatisk faktiske bestillinger til kjøkkenet – ingen manuelle lister." },
+        new { Title = "Lunsjen leveres til kontoret",  Body = "Dere betaler kun for det som faktisk ble bestilt. Ingen estimater, ingen svinn." },
+    };
+
+    bool hasBlocks = stepBlocks != null && stepBlocks.Any();
+}
+
+<section class="ls-how" id="howitworks">
+    <div class="ls-inner">
+
+        <div class="ls-reveal">
+            <p class="ls-eyebrow">@eyebrow</p>
+            <h2 class="ls-h2">@heading</h2>
+            <p class="ls-lead">@text</p>
+        </div>
+
+        <div class="ls-steps ls-reveal-group">
+            @{
+                int stepNum = 1;
+
+                if (hasBlocks)
+                {
+                    int total = stepBlocks.Count();
+                    foreach (var block in stepBlocks)
+                    {
+                        var title  = block.Content.Value<string>("title") ?? "";
+                        var body   = block.Content.Value<string>("body")  ?? "";
+                        bool isLast = stepNum == total;
+
+                        <div class="ls-step">
+                            <div class="ls-step__left">
+                                <div class="ls-step__badge" aria-hidden="true">@stepNum</div>
+                                @if (!isLast) { <div class="ls-step__line" aria-hidden="true"></div> }
+                            </div>
+                            <div class="ls-step__content">
+                                <h3 class="ls-step__title">@title</h3>
+                                <p class="ls-step__body">@body</p>
+                            </div>
+                        </div>
+
+                        stepNum++;
+                    }
+                }
+                else
+                {
+                    foreach (var step in defaultSteps)
+                    {
+                        bool isLast = stepNum == defaultSteps.Length;
+
+                        <div class="ls-step">
+                            <div class="ls-step__left">
+                                <div class="ls-step__badge" aria-hidden="true">@stepNum</div>
+                                @if (!isLast) { <div class="ls-step__line" aria-hidden="true"></div> }
+                            </div>
+                            <div class="ls-step__content">
+                                <h3 class="ls-step__title">@step.Title</h3>
+                                <p class="ls-step__body">@step.Body</p>
+                            </div>
+                        </div>
+
+                        stepNum++;
+                    }
+                }
+            }
+        </div>
+    </div>
+</section>

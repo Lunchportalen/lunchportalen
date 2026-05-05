@@ -1,0 +1,84 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockListItem>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow         = Model.Content.Value<string>("eyebrow");
+    var heading         = Model.Content.Value<string>("heading");
+    var subheading      = Model.Content.Value<string>("subheading");
+    var bodyText        = Model.Content.Value<string>("bodyText");
+    var backgroundImage = Model.Content.Value<IPublishedContent>("backgroundImage");
+    var trustPills      = Model.Content.Value<IEnumerable<string>>("trustPills");
+    var ctaLinks        = Model.Content.Value<IEnumerable<Link>>("ctaUrl");
+    var cta             = ctaLinks?.FirstOrDefault();
+}
+
+<section class="lp-hero ds-fade-up">
+
+    @* Bakgrunnsbilde *@
+    @if (backgroundImage != null)
+    {
+        <div class="lp-hero__bg">
+            <img src="@backgroundImage.Url()" alt="" role="presentation" loading="eager" fetchpriority="high" />
+        </div>
+    }
+
+    @* Overlay *@
+    <div class="lp-hero__overlay" aria-hidden="true"></div>
+
+    @* Innhold *@
+    <div class="lp-container">
+        <div class="lp-hero__inner">
+            <div class="lp-hero__content">
+
+                @if (!string.IsNullOrWhiteSpace(eyebrow))
+                {
+                    <div class="lp-eyebrow">
+                        <span class="lp-eyebrow__dot"></span>
+                        @eyebrow
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(heading))
+                {
+                    <h1 class="lp-hero__heading">@heading</h1>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(subheading))
+                {
+                    <p class="lp-hero__sub">@subheading</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(bodyText))
+                {
+                    <p class="lp-hero__body">@bodyText</p>
+                }
+
+                @if (cta != null && !string.IsNullOrWhiteSpace(cta.Url))
+                {
+                    <div class="lp-hero__actions">
+                        <a href="@cta.Url"
+                           class="ds-btn ds-btn--primary"
+                           @(cta.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                            @(!string.IsNullOrWhiteSpace(cta.Name) ? cta.Name : "Kom i gang")
+                        </a>
+                    </div>
+                }
+
+                @if (trustPills != null && trustPills.Any())
+                {
+                    <div class="lp-hero__trust">
+                        @foreach (var pill in trustPills)
+                        {
+                            <span class="lp-trust-pill">✓ @pill</span>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+</section>

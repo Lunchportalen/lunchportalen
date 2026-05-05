@@ -1,0 +1,76 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "For økonomi";
+    var heading = Model.Value<string>("heading") ?? "Forutsigbare kostnader – ingen overraskelser";
+    var introText = Model.Value<string>("introText") ?? "Fast struktur og tydelige rammer gir full kontroll på lunsjkostnader. Med presise bestillinger og mindre svinn unngår bedriften unødvendige utgifter.";
+    var image = Model.Value<IPublishedContent>("image");
+    var imageUrl = image?.Url();
+
+    var cards = new[]
+    {
+        new {
+            Label = "Tradisjonell kantine",
+            Before = "Fast kostnad uansett forbruk og svinn.",
+            After = "Dere betaler for ",
+            Gold = "det som faktisk leveres."
+        },
+        new {
+            Label = "Manuell administrasjon",
+            Before = "Tid brukt på koordinering, lister og avklaringer.",
+            After = "Mindre tid brukt på ",
+            Gold = "lunsjadministrasjon."
+        },
+        new {
+            Label = "Uforutsigbar faktura",
+            Before = "Kostnader som varierer uten tydelig kontroll.",
+            After = "Tydelige rammer og ",
+            Gold = "forutsigbar økonomi."
+        }
+    };
+}
+
+<section class="lp-benefits-section lp-benefits-section--economy">
+    <div class="lp-benefits-section__inner">
+
+        <div class="lp-benefits-section__content">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="lp-benefits-section__eyebrow">@eyebrow</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="lp-benefits-section__heading">@heading</h2>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(introText))
+            {
+                <p class="lp-benefits-section__text">@introText</p>
+            }
+
+            <div class="lp-benefits-compare">
+                @foreach (var card in cards)
+                {
+                    <article class="lp-benefits-compare__card">
+                        <span class="lp-benefits-compare__label">@card.Label</span>
+                        <p class="lp-benefits-compare__before">@card.Before</p>
+                        <p class="lp-benefits-compare__after">
+                            @card.After<span>@card.Gold</span>
+                        </p>
+                    </article>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            <div class="lp-benefits-section__media">
+                <img src="@imageUrl" alt="@heading" loading="lazy" />
+            </div>
+        }
+
+    </div>
+</section>

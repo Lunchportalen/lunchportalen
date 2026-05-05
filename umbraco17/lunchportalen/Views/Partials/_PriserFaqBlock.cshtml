@@ -1,0 +1,111 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow   = Model.Value<string>("eyebrow") ?? "Spørsmål og svar";
+    var heading   = Model.Value<string>("heading") ?? "Alt du trenger å vite";
+    var faqBlocks = Model.Value<BlockListModel>("items");
+
+    var defaultFaqs = new[]
+    {
+        new {
+            Q = "Hva betaler vi for?",
+            A = "Dere betaler 90,- (Basis) eller 130,- (Luxus) per ansatt per dag – kun for dagene det faktisk leveres lunsj. Ingen månedlig fastpris, ingen overraskelser på fakturaen."
+        },
+        new {
+            Q = "Kan ansatte avbestille samme dag?",
+            A = "Ja. Avbestilling kan gjøres helt frem til kl. 08:00 samme dag. Ansatte gjør dette selv fra mobilen – ingen manuell håndtering for ledelsen. Dere betaler ikke for avbestilte porsjoner."
+        },
+        new {
+            Q = "Hva er forskjellen på Basis og Luxus?",
+            A = "Basis gir 3 valg daglig – Salatbar, Påsmurt og Varmmat. Luxus gir 6 valg med Sushi, Pokebowl og Thaimat i tillegg, samt premium råvarer og prioritert levering. Begge pakkene inkluderer full selvbetjening for ansatte uten administrasjon for ledelsen."
+        },
+        new {
+            Q = "Hvordan ser menyen ut?",
+            A = "Neste ukes meny er tilgjengelig hver torsdag. Ansatte kan se og bestille for hele uken på én gang. Varmmat rullerer ukentlig, og dere ser alltid hva som serveres – ikke bare en generisk kategori."
+        },
+        new {
+            Q = "Hvordan faktureres vi?",
+            A = "Fakturering skjer automatisk hver 14. dag, basert på faktiske leveringer. Alle priser er eksklusive mva. Bedriften kredittsjekkes ved oppstart av avtale."
+        },
+        new {
+            Q = "Er det binding?",
+            A = "Nei. Alle avtaler kan avsluttes når som helst. Vi tror løsningen snakker for seg selv – ikke at dere skal bli værende fordi dere er bundet til det."
+        },
+        new {
+            Q = "Hva skiller Lunchportalen fra kantine?",
+            A = "Ingen kjøkken, ingen bemanning, ingen daglig drift. Alt produseres eksternt og leveres klart til arbeidsplassen – lavere kostnader, mindre ansvar og full fleksibilitet for bedriften."
+        },
+        new {
+            Q = "Hvordan fungerer Lunchportalen i praksis?",
+            A = "Bedriften setter rammer én gang – leveringsdager, antall ansatte og valgt pakke. Deretter styrer ansatte alt selv fra mobil: bestilling, endring og avbestilling frem til kl. 08:00 samme dag. Ledelsen trenger ikke gjøre noe i hverdagen."
+        },
+    };
+
+    bool hasBlocks = faqBlocks != null && faqBlocks.Any();
+}
+
+<section class="pr-faq">
+    <div class="pr-inner">
+
+        <div class="pr-faq__header pr-reveal">
+            <p class="pr-eyebrow">@eyebrow</p>
+            <h2 class="pr-h2">@heading</h2>
+        </div>
+
+        <div class="pr-faq__list" role="list">
+            @{
+                int idx = 0;
+
+                if (hasBlocks)
+                {
+                    foreach (var block in faqBlocks)
+                    {
+                        var q      = block.Content.Value<string>("question") ?? "";
+                        var a      = block.Content.Value<string>("answer")   ?? "";
+                        var itemId = $"pr-faq-{idx}";
+
+                        <div class="pr-faq__item pr-reveal" role="listitem">
+                            <button class="pr-faq__q"
+                                    type="button"
+                                    aria-expanded="false"
+                                    aria-controls="@itemId">
+                                <span>@q</span>
+                                <span class="pr-faq__icon" aria-hidden="true"></span>
+                            </button>
+                            <div class="pr-faq__a" id="@itemId" role="region">
+                                <p>@a</p>
+                            </div>
+                        </div>
+
+                        idx++;
+                    }
+                }
+                else
+                {
+                    foreach (var faq in defaultFaqs)
+                    {
+                        var itemId = $"pr-faq-{idx}";
+
+                        <div class="pr-faq__item pr-reveal" role="listitem">
+                            <button class="pr-faq__q"
+                                    type="button"
+                                    aria-expanded="false"
+                                    aria-controls="@itemId">
+                                <span>@faq.Q</span>
+                                <span class="pr-faq__icon" aria-hidden="true"></span>
+                            </button>
+                            <div class="pr-faq__a" id="@itemId" role="region">
+                                <p>@faq.A</p>
+                            </div>
+                        </div>
+
+                        idx++;
+                    }
+                }
+            }
+        </div>
+
+    </div>
+</section>

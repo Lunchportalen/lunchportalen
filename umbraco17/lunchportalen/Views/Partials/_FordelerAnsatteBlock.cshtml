@@ -1,0 +1,67 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "For ansatte";
+    var heading = Model.Value<string>("heading") ?? "Frihet til å velge – uten unødvendig styr";
+    var introText = Model.Value<string>("introText") ?? "Ansatte bestiller og avbestiller selv direkte fra mobilen – innenfor rammene bedriften har satt. Enkelt, fleksibelt og tilpasset hverdagen.";
+    var image = Model.Value<IPublishedContent>("image");
+    var imageUrl = image?.Url();
+}
+
+<section class="lp-benefits-section lp-benefits-section--employees">
+    <div class="lp-benefits-section__inner">
+        
+        <div class="lp-benefits-section__content">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="lp-benefits-section__eyebrow">@eyebrow</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="lp-benefits-section__heading">@heading</h2>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(introText))
+            {
+                <p class="lp-benefits-section__text">@introText</p>
+            }
+
+            <div class="lp-benefits-cards lp-benefits-cards--two">
+                <article class="lp-benefits-card lp-benefits-card--dark">
+                    <span class="lp-benefits-card__tag">Fleksibilitet</span>
+                    <h3 class="lp-benefits-card__title">De velger. De bestemmer.</h3>
+                    <ul class="lp-benefits-list">
+                        <li>Bestill fra mobilen frem til kl. 08:00</li>
+                        <li>Avbestill samme dag uten å spørre noen</li>
+                        <li>Se hele uken frem i tid og planlegg i fred</li>
+                        <li>Hopp over dager uten konsekvenser</li>
+                        <li>Meny tilgjengelig hver torsdag for neste uke</li>
+                    </ul>
+                </article>
+
+                <article class="lp-benefits-card">
+                    <span class="lp-benefits-card__tag">Variasjon</span>
+                    <h3 class="lp-benefits-card__title">Noe for enhver smak.</h3>
+                    <ul class="lp-benefits-list">
+                        <li>Basis: Salatbar, påsmurt og varmmat daglig</li>
+                        <li>Luxus: 6 valg inkl. sushi, pokebowl og thaimat</li>
+                        <li>Varmmat rullerer ukentlig</li>
+                        <li>Tydelig beskrivelse av hva som serveres</li>
+                        <li>Premium råvarer og høyere kvalitet på Luxus</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            <div class="lp-benefits-section__media">
+                <img src="@imageUrl" alt="@heading" loading="lazy" />
+            </div>
+        }
+
+    </div>
+</section>

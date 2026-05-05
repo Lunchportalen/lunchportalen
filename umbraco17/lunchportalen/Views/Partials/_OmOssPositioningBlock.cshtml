@@ -1,0 +1,53 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Hva vi faktisk er";
+    var heading = Model.Value<string>("heading") ?? "Vi er ikke en lunsjleverandør. Vi er en ny måte å organisere firmalunsj på.";
+    var text    = Model.Value<string>("text")    ?? "Forskjellen er ikke hva vi leverer — det er hvordan hele systemet fungerer.";
+
+    var cards = new[]
+    {
+        new {
+            Label  = "Administrasjon",
+            Before = "Daglige lister, avklaringer og oppfølging",
+            After  = "Null administrasjon. Alt skjer ",
+            Gold   = "automatisk."
+        },
+        new {
+            Label  = "Kostnader",
+            Before = "Fast månedspris uansett forbruk og svinn",
+            After  = "Betaler kun for ",
+            Gold   = "det som faktisk leveres."
+        },
+        new {
+            Label  = "Ansattes opplevelse",
+            Before = "Spis det som er der — eller la være",
+            After  = "Velger selv, avbestiller selv. ",
+            Gold   = "Reell frihet."
+        },
+    };
+}
+
+<section class="oa-positioning">
+    <div class="oa-inner">
+
+        <div class="oa-reveal">
+            <p class="oa-eyebrow">@eyebrow</p>
+            <h2 class="oa-h2 oa-h2--light">@heading</h2>
+            <p class="oa-lead" style="color: rgba(255,255,255,.50)">@text</p>
+        </div>
+
+        <div class="oa-positioning__grid oa-reveal-group">
+            @foreach (var card in cards)
+            {
+                <div class="oa-pos-card">
+                    <span class="oa-pos-card__label">@card.Label</span>
+                    <p class="oa-pos-card__before">@card.Before</p>
+                    <p class="oa-pos-card__after">@card.After<span>@card.Gold</span></p>
+                </div>
+            }
+        </div>
+
+    </div>
+</section>

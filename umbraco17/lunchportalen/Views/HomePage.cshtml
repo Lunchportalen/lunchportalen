@@ -1,0 +1,25 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var grid = Model.Value<BlockGridModel>("contentBlocks");
+}
+
+@if (grid != null && grid.Any())
+{
+    @await Html.GetBlockGridHtmlAsync(Model, "contentBlocks")
+}
+else
+{
+    <section class="ds-section">
+        <div class="ds-container">
+            <div class="ds-surface">
+                <h1>Home OK</h1>
+                <p>Ingen blokker funnet i contentBlocks.</p>
+            </div>
+        </div>
+    </section>
+}

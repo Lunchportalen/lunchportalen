@@ -1,0 +1,74 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Bærekraft — konkret, ikke fluff";
+    var heading = Model.Value<string>("heading") ?? "Mindre svinn er ikke bare snilt.";
+    var text    = Model.Value<string>("text")    ?? "Det er god økonomi, lavere klimaavtrykk og rett ressursbruk for kjøkkenet som produserer. Smilehull i begge ender.";
+
+    var stats = new[]
+    {
+        new { Number = "0 kr",    Label = "Betalt for mat som ikke leveres" },
+        new { Number = "100%",    Label = "Av produksjonen er faktisk bestilt" },
+        new { Number = "↓ CO₂",  Label = "Lavere klimaavtrykk enn tradisjonell kantine" },
+        new { Number = "Rett jobb", Label = "Kjøkkenet produserer det de vet de skal lage" },
+    };
+
+    var points = new[]
+    {
+        new {
+            Title = "Kun produsert mat som faktisk er bestilt",
+            Text  = "Kjøkkenet får eksakt antall porsjoner per rett. Ingen estimater, ingen overproduksjon, ingen svinn."
+        },
+        new {
+            Title = "Lavere klimaavtrykk enn kantine",
+            Text  = "Ingen fast kjøkkendrift, ingen daglig bemanning, ingen overproduksjon. Ressursene brukes der det trengs."
+        },
+        new {
+            Title = "Rett jobb for kjøkkenet",
+            Text  = "Leverandøren vet nøyaktig hva som skal lages. Det gir bedre kvalitet, mindre stress og en stoltere lunsjopplevelse."
+        },
+        new {
+            Title = "Bedre økonomi for bedriften",
+            Text  = "Ingen sløsing med penger på mat som ikke spises. Forutsigbar kostnad fra dag én — som faktisk stemmer."
+        },
+    };
+}
+
+<section class="oa-sustainability">
+    <div class="oa-inner">
+
+        <div class="oa-reveal">
+            <p class="oa-eyebrow">@eyebrow</p>
+            <h2 class="oa-h2">@heading</h2>
+            <p class="oa-lead">@text</p>
+        </div>
+
+        <div class="oa-sustainability__grid oa-reveal-group">
+
+            <div class="oa-sustainability__stats">
+                @foreach (var stat in stats)
+                {
+                    <div class="oa-stat-card">
+                        <span class="oa-stat-card__number">@stat.Number</span>
+                        <span class="oa-stat-card__label">@stat.Label</span>
+                    </div>
+                }
+            </div>
+
+            <div class="oa-sustainability__points">
+                @foreach (var point in points)
+                {
+                    <div class="oa-sustain-point">
+                        <div class="oa-sustain-point__dot"></div>
+                        <div>
+                            <p class="oa-sustain-point__title">@point.Title</p>
+                            <p class="oa-sustain-point__text">@point.Text</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</section>

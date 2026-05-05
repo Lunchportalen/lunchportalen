@@ -1,0 +1,62 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow  = Model.Value<string>("eyebrow") ?? "Hvorfor vi finnes";
+    var heading  = Model.Value<string>("heading") ?? "Tradisjonell kantine er bygget for en annen tid";
+    var text     = Model.Value<string>("text")    ?? "Bedrifter bruker timer på koordinering, betaler for mat ingen spiser, og ansatte har ingenting å si. Vi ble til fordi det måtte finnes en bedre måte.";
+    var statement        = Model.Value<string>("statement")        ?? "Firmalunsj skal ikke kreve administrasjon, svinn eller kantinedrift.";
+    var statementSubtext = Model.Value<string>("statementSubtext") ?? "Vi bygget Lunchportalen for å gi bedrifter full kontroll — uten å måtte tenke på det. Ansatte styrer sin egen lunsj. Kjøkkenet produserer kun det som faktisk er bestilt. Og ledelsen slipper å følge opp noe som helst.";
+}
+
+<section class="oa-why">
+    <div class="oa-inner">
+
+        <div class="oa-reveal">
+            <p class="oa-eyebrow">@eyebrow</p>
+            <h2 class="oa-h2">@heading</h2>
+            <p class="oa-lead">@text</p>
+        </div>
+
+        <div class="oa-why__grid oa-reveal-group">
+
+            <div class="oa-why__problems">
+                <div class="oa-problem-card">
+                    <div class="oa-problem-card__icon">🏗️</div>
+                    <div>
+                        <p class="oa-problem-card__title">Tung kantinedrift</p>
+                        <p class="oa-problem-card__text">Eget kjøkken, bemanning, innkjøp og daglig logistikk. Enorme faste kostnader uavhengig av forbruk.</p>
+                    </div>
+                </div>
+                <div class="oa-problem-card">
+                    <div class="oa-problem-card__icon">📋</div>
+                    <div>
+                        <p class="oa-problem-card__title">Administrasjon uten ende</p>
+                        <p class="oa-problem-card__text">Lister, avklaringer, e-poster og manuelle tellinger. Noen må alltid bruke tid på dette.</p>
+                    </div>
+                </div>
+                <div class="oa-problem-card">
+                    <div class="oa-problem-card__icon">🗑️</div>
+                    <div>
+                        <p class="oa-problem-card__title">Svinn og uforutsigbarhet</p>
+                        <p class="oa-problem-card__text">Mat produseres på estimater. Halvparten havner i søpla. Regningen er lik uansett.</p>
+                    </div>
+                </div>
+                <div class="oa-problem-card">
+                    <div class="oa-problem-card__icon">🔒</div>
+                    <div>
+                        <p class="oa-problem-card__title">Ansatte uten valgfrihet</p>
+                        <p class="oa-problem-card__text">Spis det som er der, eller hopp over. Ingen fleksibilitet, ingen reell kontroll.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="oa-why__statement">
+                <span class="oa-why__statement-label">Vår overbevisning</span>
+                <p class="oa-why__statement-text">@statement</p>
+                <p class="oa-why__statement-sub">@statementSubtext</p>
+            </div>
+
+        </div>
+    </div>
+</section>

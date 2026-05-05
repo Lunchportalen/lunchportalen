@@ -1,0 +1,73 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+
+@{
+    var eyebrow        = Model.Value<string>("eyebrow");
+    var heading        = Model.Value<string>("heading");
+    var headingOutline = Model.Value<string>("headingOutline");
+    var headingYellow  = Model.Value<string>("headingYellow");
+    var subheading     = Model.Value<string>("subheading");
+    var primaryLabel   = Model.Value<string>("primaryCtaLabel");
+    var primaryLinks   = Model.Value<IEnumerable<Link>>("primaryCtaUrl");
+    var primaryUrl     = primaryLinks?.FirstOrDefault()?.Url ?? "#";
+    var secondaryLabel = Model.Value<string>("secondaryCtaLabel");
+    var secondaryLinks = Model.Value<IEnumerable<Link>>("secondaryCtaUrl");
+    var secondaryUrl   = secondaryLinks?.FirstOrDefault()?.Url ?? "#";
+}
+
+<section class="kig-hero">
+    <div class="kig-container">
+        <div class="kig-hero__inner">
+            <div class="kig-hero__content">
+
+                @if (!string.IsNullOrWhiteSpace(eyebrow))
+                {
+                    <div class="kig-eyebrow">@eyebrow</div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(heading) || !string.IsNullOrWhiteSpace(headingOutline) || !string.IsNullOrWhiteSpace(headingYellow))
+                {
+                    <h1 class="kig-hero__heading">
+                        @if (!string.IsNullOrWhiteSpace(heading))
+                        {
+                            <span class="kig-hero__heading--solid">@heading</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(headingOutline))
+                        {
+                            <span class="kig-hero__heading--outline">@headingOutline</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(headingYellow))
+                        {
+                            <span class="kig-hero__heading--yellow">@headingYellow</span>
+                        }
+                    </h1>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(subheading))
+                {
+                    <p class="kig-hero__sub">@subheading</p>
+                }
+
+                <div class="kig-hero__actions">
+                    @if (!string.IsNullOrWhiteSpace(primaryLabel))
+                    {
+                        <a href="@primaryUrl" class="kig-btn kig-btn--dark">@primaryLabel</a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(secondaryLabel))
+                    {
+                        <a href="@secondaryUrl" class="kig-btn kig-btn--outline">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                <circle cx="7" cy="7" r="6" fill="#1A1A1A"/>
+                                <path d="M5.5 4.5l4 2.5-4 2.5V4.5z" fill="#F5B800"/>
+                            </svg>
+                            @secondaryLabel
+                        </a>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>

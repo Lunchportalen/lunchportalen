@@ -1,0 +1,72 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var eyebrow = Model.Value<string>("eyebrow");
+    var heading = Model.Value<string>("heading");
+    var steps   = Model.Value<IEnumerable<BlockListItem>>("steps");
+}
+<section class="ds-section" id="howitworks">
+    <div class="ds-container">
+        <div class="ds-text-limit ds-fade-up">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="ds-eyebrow">@eyebrow</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="ds-h2">@heading</h2>
+            }
+        </div>
+        <ul class="ds-how-list">
+            @if (steps != null)
+            {
+                var stepList = steps.ToList();
+                for (int i = 0; i < stepList.Count; i++)
+                {
+                    var s         = stepList[i].Content;
+                    var stepNum   = s.Value<string>("stepNumber") ?? $"0{i + 1}";
+                    var title     = s.Value<string>("title");
+                    var text      = s.Value<string>("text");
+                    var stepImage = s.Value<IPublishedContent>("image");
+                    var stepImgUrl = stepImage?.Url();
+                    var ctaLinks  = s.Value<IEnumerable<Link>>("ctaUrl");
+                    var ctaLink   = ctaLinks?.FirstOrDefault();
+                    var ctaLabel  = s.Value<string>("ctaLabel");
+                    if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
+                    var ctaHref   = ctaLink?.Url ?? "#";
+                    var ctaTarget = ctaLink?.Target ?? "";
+                    var rowClass  = i % 2 == 1 ? "ds-how-row ds-how-row--reverse ds-fade-up" : "ds-how-row ds-fade-up";
+                    <li class="@rowClass">
+                        <div class="ds-how-text">
+                            <div class="ds-step__number">@stepNum</div>
+                            <h3 class="ds-how-title">@title</h3>
+                            @if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                <p class="ds-how-body">@text</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(ctaLabel))
+                            {
+                                <div class="ds-how-button">
+                                    <a class="ds-btn ds-btn--primary" href="@ctaHref"
+                                       @(string.IsNullOrEmpty(ctaTarget) ? "" : $"target=\"{ctaTarget}\"")>
+                                        @ctaLabel
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(stepImgUrl))
+                        {
+                            <div class="ds-how-media">
+                                <img src="@stepImgUrl" alt="@title" />
+                            </div>
+                        }
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+</section>

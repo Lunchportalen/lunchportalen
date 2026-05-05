@@ -1,0 +1,66 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Slik fungerer det";
+    var heading = Model.Value<string>("heading") ?? "Fra avtale til ferdig levert lunsj";
+
+    var stepBlocks = Model.Value<BlockListModel>("steps");
+
+    var defaultSteps = new[]
+    {
+        new { Title = "Bedriften setter avtale",        Body = "Leveringsdager, antall ansatte, lokasjon og rammer settes én gang." },
+        new { Title = "Ansatte styrer selv",             Body = "Bestilling og avbestilling skjer automatisk fra mobil." },
+        new { Title = "Kjøkkenet får riktig grunnlag",  Body = "Produksjonen baseres på faktiske registrerte bestillinger." },
+        new { Title = "Lunsjen leveres",                Body = "Mindre manuelt arbeid, mindre matsvinn og bedre forutsigbarhet." },
+    };
+
+    bool hasBlocks = stepBlocks != null && stepBlocks.Any();
+}
+
+<section class="lp-demo-steps">
+    <div class="lp-demo-inner">
+
+        <div class="lp-reveal">
+            <p class="lp-demo-eyebrow">@eyebrow</p>
+            <h2>@heading</h2>
+        </div>
+
+        <div class="lp-demo-steps-grid lp-reveal-group">
+
+            @if (hasBlocks)
+            {
+                int i = 1;
+                foreach (var block in stepBlocks)
+                {
+                    var title = block.Content.Value<string>("title") ?? "";
+                    var body  = block.Content.Value<string>("body")  ?? "";
+
+                    <div class="lp-demo-step">
+                        <strong class="lp-demo-step__badge" aria-hidden="true">@i</strong>
+                        <h3>@title</h3>
+                        <p>@body</p>
+                    </div>
+
+                    i++;
+                }
+            }
+            else
+            {
+                int i = 1;
+                foreach (var step in defaultSteps)
+                {
+                    <div class="lp-demo-step">
+                        <strong class="lp-demo-step__badge" aria-hidden="true">@i</strong>
+                        <h3>@step.Title</h3>
+                        <p>@step.Body</p>
+                    </div>
+
+                    i++;
+                }
+            }
+
+        </div>
+    </div>
+</section>

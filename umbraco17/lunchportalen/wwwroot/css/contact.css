@@ -1,0 +1,377 @@
+/* ============================================================
+   LUNCHPORTALEN — CONTACT PAGE
+   Scope: /kontakt/
+   ============================================================ */
+
+body:has(.lp-contact-page) {
+    background: #f6f3ed;
+}
+
+.lp-contact-page {
+    background: #f6f3ed;
+    overflow: hidden;
+}
+
+/* ============================================================
+   HERO FIX — contact page only
+   ============================================================ */
+
+.lp-contact-page .lp-page-hero__heading,
+.lp-contact-page .lp-hero__heading {
+    max-width: 720px;
+}
+
+.lp-contact-page .lp-page-hero__subheading,
+.lp-contact-page .lp-page-hero__lead,
+.lp-contact-page .lp-page-hero__body,
+.lp-contact-page .lp-page-hero__text > p,
+.lp-contact-page .lp-hero__subheading,
+.lp-contact-page .lp-hero__lead,
+.lp-contact-page .lp-hero__body,
+.lp-contact-page .lp-hero__content > p {
+    max-width: 680px !important;
+    margin-top: 1.25rem !important;
+    font-size: clamp(1.1rem, 1.45vw, 1.35rem) !important;
+    line-height: 1.45 !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.02em !important;
+    color: rgba(17, 17, 17, 0.72) !important;
+    -webkit-text-stroke: 0 !important;
+    text-stroke: 0 !important;
+    text-shadow: none !important;
+}
+
+/* ============================================================
+   CONTACT INFO / FEATURE BLOCK
+   ============================================================ */
+
+.lp-contact-page .lp-feature {
+    position: relative;
+    padding: clamp(56px, 7vw, 96px) clamp(20px, 5vw, 72px);
+    background: #f6f3ed;
+}
+
+.lp-contact-page .lp-feature__inner {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.lp-contact-page .lp-feature__content {
+    max-width: 760px;
+}
+
+.lp-contact-page .lp-feature__heading {
+    margin: 0 0 1.25rem;
+    font-size: clamp(2.1rem, 4vw, 4rem);
+    line-height: 0.95;
+    letter-spacing: -0.06em;
+    color: #0d0d0d;
+}
+
+.lp-contact-page .lp-feature__text {
+    max-width: 640px;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: rgba(17, 17, 17, 0.68);
+    white-space: pre-line;
+}
+
+/* ============================================================
+   CONTACT FORM BLOCK
+   ============================================================ */
+
+.lp-contact-form-block {
+    position: relative;
+    padding: clamp(72px, 8vw, 120px) clamp(20px, 5vw, 72px);
+    background: #f6f3ed;
+}
+
+.lp-contact-form-block::before {
+    content: "";
+    position: absolute;
+    width: clamp(220px, 24vw, 420px);
+    height: clamp(220px, 24vw, 420px);
+    right: -10vw;
+    top: -6vw;
+    border-radius: 999px;
+    background: rgba(240, 188, 0, 0.16);
+    pointer-events: none;
+}
+
+.lp-contact-form-block__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+    gap: clamp(40px, 7vw, 96px);
+    align-items: start;
+}
+
+.lp-contact-form-block__eyebrow {
+    margin: 0 0 1rem;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #f0bc00;
+}
+
+.lp-contact-form-block__content h2 {
+    max-width: 560px;
+    margin: 0;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+    color: #0d0d0d;
+}
+
+.lp-contact-form-block__content > p {
+    max-width: 520px;
+    margin: 1.5rem 0 0;
+    font-size: 1.08rem;
+    line-height: 1.65;
+    color: rgba(17, 17, 17, 0.68);
+}
+
+.lp-contact-form-block__details {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 2rem;
+    font-weight: 850;
+}
+
+.lp-contact-form-block__details a,
+.lp-contact-form-block__details span {
+    color: #111;
+    text-decoration: none;
+}
+
+.lp-contact-form-block__details a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+
+.lp-contact-form {
+    padding: clamp(24px, 4vw, 40px);
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.74);
+    box-shadow: 0 28px 80px rgba(17, 17, 17, 0.08);
+    backdrop-filter: blur(18px);
+}
+
+.lp-contact-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.lp-contact-form label {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.lp-contact-form label span {
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: rgba(17, 17, 17, 0.72);
+}
+
+.lp-contact-form input,
+.lp-contact-form textarea {
+    width: 100%;
+    border: 1px solid rgba(17, 17, 17, 0.12);
+    border-radius: 18px;
+    background: #fff;
+    padding: 1rem 1.05rem;
+    font: inherit;
+    color: #111;
+    outline: none;
+    transition:
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        transform 180ms ease;
+}
+
+.lp-contact-form textarea {
+    resize: vertical;
+    min-height: 150px;
+}
+
+.lp-contact-form input:focus,
+.lp-contact-form textarea:focus {
+    border-color: #f0bc00;
+    box-shadow: 0 0 0 4px rgba(240, 188, 0, 0.18);
+}
+
+.lp-contact-form__message {
+    margin-top: 1rem;
+}
+
+.lp-contact-form button {
+    margin-top: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 54px;
+    padding: 0 1.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: #0d0d0d;
+    color: #f0bc00;
+    font-weight: 950;
+    cursor: pointer;
+    box-shadow: 0 18px 38px rgba(17, 17, 17, 0.18);
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease;
+}
+
+.lp-contact-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 22px 46px rgba(17, 17, 17, 0.22);
+}
+
+.lp-contact-form button:focus-visible {
+    outline: 3px solid rgba(240, 188, 0, 0.45);
+    outline-offset: 4px;
+}
+
+/* ============================================================
+   CTA BAND — contact page only
+   ============================================================ */
+
+.lp-contact-page .lp-cta-band {
+    margin-top: clamp(24px, 5vw, 64px);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 980px) {
+    .lp-contact-form-block__inner {
+        grid-template-columns: 1fr;
+    }
+
+    .lp-contact-form-block__content h2 {
+        max-width: 720px;
+    }
+}
+
+@media (max-width: 720px) {
+    .lp-contact-page .lp-page-hero,
+    .lp-contact-page .lp-hero {
+        padding-top: clamp(88px, 18vw, 120px);
+    }
+
+    .lp-contact-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lp-contact-form {
+        border-radius: 24px;
+    }
+
+    .lp-contact-form-block__content h2 {
+        font-size: clamp(2.25rem, 14vw, 4rem);
+    }
+}
+/* ============================================================
+   PAGE TYPOGRAPHY HIERARCHY
+   H1 dominant, H2 controlled, H3 calm, body readable
+============================================================ */
+
+/* Hero / H1 */
+.lp-lp-hero__title,
+.lp-page-hero__heading,
+.lp-contact-hero h1,
+.lp-benefits-hero h1,
+.lp-pricing-hero h1 {
+    font-size: clamp(3.1rem, 6.2vw, 6.4rem);
+    line-height: .88;
+    letter-spacing: -0.072em;
+}
+
+/* Section / H2 */
+.lp-demo-preview h2,
+.lp-demo-steps h2,
+.lp-demo-video h2,
+.lp-demo-booking h2,
+.lp-demo-final h2,
+.lp-value-props__heading,
+.lp-cta-band__heading,
+.ds-h2,
+.lp-contact-section h2,
+.lp-benefits-section h2,
+.lp-pricing-section h2 {
+    font-size: clamp(2rem, 3.4vw, 3.5rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+    font-weight: 950;
+}
+
+/* Card / H3 */
+.lp-demo-card h3,
+.lp-demo-step h3,
+.lp-value-prop-item__title,
+.ds-how-title,
+.lp-contact-card h3,
+.lp-benefit-card h3,
+.lp-pricing-card h3 {
+    font-size: clamp(1.05rem, 1.15vw, 1.22rem);
+    line-height: 1.22;
+    letter-spacing: -0.015em;
+}
+
+/* Body / Lead */
+.lp-lp-hero__lead,
+.lp-page-hero__lead,
+.lp-demo-lead,
+.lp-demo-card p,
+.lp-demo-step p,
+.lp-value-prop-item__text,
+.lp-cta-band__text,
+.ds-how-body,
+.lp-contact-card p,
+.lp-benefit-card p,
+.lp-pricing-card p {
+    font-size: clamp(1rem, 1.05vw, 1.14rem);
+    line-height: 1.65;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .lp-lp-hero__title,
+    .lp-page-hero__heading,
+    .lp-contact-hero h1,
+    .lp-benefits-hero h1,
+    .lp-pricing-hero h1 {
+        font-size: clamp(2.65rem, 11.5vw, 4rem);
+        line-height: .9;
+    }
+
+    .lp-demo-preview h2,
+    .lp-demo-steps h2,
+    .lp-demo-video h2,
+    .lp-demo-booking h2,
+    .lp-demo-final h2,
+    .lp-value-props__heading,
+    .lp-cta-band__heading,
+    .ds-h2,
+    .lp-contact-section h2,
+    .lp-benefits-section h2,
+    .lp-pricing-section h2 {
+        font-size: clamp(1.9rem, 8.5vw, 3rem);
+        line-height: 1;
+    }
+}

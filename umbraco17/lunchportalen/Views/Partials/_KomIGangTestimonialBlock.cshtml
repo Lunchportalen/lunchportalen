@@ -1,0 +1,36 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var quote       = Model.Value<string>("quote");
+    var initials    = Model.Value<string>("avatarInitials");
+    var srcTitle    = Model.Value<string>("sourceTitle");
+    var srcSubtitle = Model.Value<string>("sourceSubtitle");
+}
+
+<div class="kig-testimonial">
+    <div class="kig-container">
+        <div class="kig-testimonial__inner">
+            @if (!string.IsNullOrWhiteSpace(quote))
+            {
+                <blockquote class="kig-testimonial__quote">«@quote»</blockquote>
+            }
+            <div class="kig-testimonial__source">
+                @if (!string.IsNullOrWhiteSpace(initials))
+                {
+                    <div class="kig-testimonial__avatar">@initials</div>
+                }
+                <div class="kig-testimonial__meta">
+                    @if (!string.IsNullOrWhiteSpace(srcTitle))
+                    {
+                        <div class="kig-testimonial__meta-title">@srcTitle</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(srcSubtitle))
+                    {
+                        <div class="kig-testimonial__meta-sub">@srcSubtitle</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

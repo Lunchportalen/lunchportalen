@@ -1,0 +1,60 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Hvorfor Lunchportalen";
+    var heading = Model.Value<string>("heading") ?? "Lunsj som styrer seg selv";
+    var text    = Model.Value<string>("text")    ?? "Vi fjerner administrasjonen fra firmalunsj. Ansatte bestiller selv, kjøkkenet vet hva de skal lage, og dere betaler kun for det som spises.";
+
+    var cardBlocks = Model.Value<BlockListModel>("cards");
+
+    var defaultCards = new[]
+    {
+        new { Icon = "⏱", Title = "Avbestilling innen 08:00",    Body = "Ansatte avbestiller selv fra mobilen. Ingen e-poster, ingen lister, ingen daglig oppfølging." },
+        new { Icon = "📊", Title = "Kun faktisk forbruk",         Body = "Bedriften betaler for det som faktisk spises. Ikke for estimater eller bufferbestillinger." },
+        new { Icon = "🔒", Title = "Full kontroll til bedriften", Body = "Sett rammer én gang. Lunchportalen håndterer resten – og du har alltid oversikt." },
+    };
+
+    bool hasBlocks = cardBlocks != null && cardBlocks.Any();
+}
+
+<section class="ls-value-props">
+    <div class="ls-inner">
+
+        <div class="ls-reveal">
+            <p class="ls-eyebrow">@eyebrow</p>
+            <h2 class="ls-h2">@heading</h2>
+            <p class="ls-lead">@text</p>
+        </div>
+
+        <div class="ls-value-grid ls-reveal-group">
+            @if (hasBlocks)
+            {
+                foreach (var block in cardBlocks)
+                {
+                    var icon  = block.Content.Value<string>("icon")  ?? "✦";
+                    var title = block.Content.Value<string>("title") ?? "";
+                    var body  = block.Content.Value<string>("body")  ?? "";
+
+                    <div class="ls-value-card">
+                        <div class="ls-value-card__icon" aria-hidden="true">@icon</div>
+                        <h3 class="ls-value-card__title">@title</h3>
+                        <p class="ls-value-card__body">@body</p>
+                    </div>
+                }
+            }
+            else
+            {
+                foreach (var card in defaultCards)
+                {
+                    <div class="ls-value-card">
+                        <div class="ls-value-card__icon" aria-hidden="true">@card.Icon</div>
+                        <h3 class="ls-value-card__title">@card.Title</h3>
+                        <p class="ls-value-card__body">@card.Body</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

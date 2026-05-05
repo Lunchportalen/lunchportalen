@@ -1,0 +1,68 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Dette får du se";
+    var heading = Model.Value<string>("heading") ?? "En komplett gjennomgang – på under 15 minutter";
+    var text    = Model.Value<string>("text")    ?? "Vi viser hele flyten fra avtale til levering. Du ser hvordan ansatte bestiller selv fra mobil, hvordan avbestilling før klokken 08:00 fungerer i praksis, og hvordan systemet gir bedriften full kontroll uten manuelle lister, e-poster eller daglige avklaringer.";
+
+    // Editable cards from Umbraco — falls back to hardcoded defaults
+    var cardBlocks = Model.Value<BlockListModel>("cards");
+
+    // Default cards shown when no blocks are configured in Umbraco
+    var defaultCards = new[]
+    {
+        new { Number = "01", Title = "Ansatte bestiller selv",     Body = "Hver ansatt bestiller lunsj direkte fra egen telefon innenfor avtalen bedriften har godkjent." },
+        new { Number = "02", Title = "Avbestilling før 08:00",     Body = "Rekker ikke kontoret? Den ansatte kan selv avbestille før klokken 08:00 samme dag." },
+        new { Number = "03", Title = "Leder slipper oppfølging",   Body = "Sjefen trenger ikke samle inn bestillinger, endringer eller avklaringer." },
+        new { Number = "04", Title = "Full kontroll",              Body = "Bedriften har oversikt over avtale, levering, ansatte og faktisk behov." },
+    };
+
+    bool hasBlocks = cardBlocks != null && cardBlocks.Any();
+}
+
+<section class="lp-demo-preview">
+    <div class="lp-demo-inner">
+
+        <div class="lp-reveal">
+            <p class="lp-demo-eyebrow">@eyebrow</p>
+            <h2>@heading</h2>
+            <p class="lp-demo-lead">@text</p>
+        </div>
+
+        <div class="lp-demo-card-grid lp-reveal-group">
+
+            @if (hasBlocks)
+            {
+                int i = 1;
+                foreach (var block in cardBlocks)
+                {
+                    var num   = block.Content.Value<string>("number") ?? i.ToString("D2");
+                    var title = block.Content.Value<string>("title")  ?? "";
+                    var body  = block.Content.Value<string>("body")   ?? "";
+
+                    <article class="lp-demo-card">
+                        <span class="lp-demo-card__badge" aria-hidden="true">@num</span>
+                        <h3>@title</h3>
+                        <p>@body</p>
+                    </article>
+
+                    i++;
+                }
+            }
+            else
+            {
+                foreach (var card in defaultCards)
+                {
+                    <article class="lp-demo-card">
+                        <span class="lp-demo-card__badge" aria-hidden="true">@card.Number</span>
+                        <h3>@card.Title</h3>
+                        <p>@card.Body</p>
+                    </article>
+                }
+            }
+
+        </div>
+    </div>
+</section>

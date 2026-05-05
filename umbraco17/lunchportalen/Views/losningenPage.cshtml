@@ -1,0 +1,149 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+
+    var metaTitle       = Model.Value<string>("metaTitle")
+                          ?? "Løsningen – Lunchportalen";
+    var metaDescription = Model.Value<string>("metaDescription")
+                          ?? "Se hvordan Lunchportalen fungerer: ansatte bestiller selv, bedriften får full kontroll, og dere betaler kun for det som faktisk spises. Ingen matsvinn, ingen manuelle lister.";
+    var canonicalUrl    = "https://www.lunchportalen.no/loesningen/";
+
+    ViewData["MetaTitle"]       = metaTitle;
+    ViewData["MetaDescription"] = metaDescription;
+    ViewData["CanonicalUrl"]    = canonicalUrl;
+    ViewData["BodyClass"]       = "page-losningen";
+}
+
+@section Head {
+    <link rel="stylesheet" href="/css/losningen-page-blocks.css" />
+    
+
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "SoftwareApplication",
+      "name": "Lunchportalen",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "description": "@metaDescription",
+      "url": "@canonicalUrl",
+      "aggregateRating": {
+        "@@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "reviewCount": "1200",
+        "bestRating": "5"
+      },
+      "offers": {
+        "@@type": "Offer",
+        "priceCurrency": "NOK",
+        "price": "0",
+        "description": "Gratis i 5 dager",
+        "availability": "https://schema.org/InStock"
+      },
+      "provider": {
+        "@@type": "Organization",
+        "name": "Lunchportalen",
+        "address": {
+          "@@type": "PostalAddress",
+          "addressLocality": "Trondheim",
+          "addressCountry": "NO"
+        },
+        "contactPoint": {
+          "@@type": "ContactPoint",
+          "email": "post@@lunchportalen.no",
+          "contactType": "customer support"
+        }
+      }
+    }
+    </script>
+}
+
+@if (blocks != null && blocks.Any())
+{
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+}
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    var supportsScrollTimeline = (function () {
+        try { return CSS.supports('animation-timeline', 'view()'); } catch (e) { return false; }
+    })();
+
+    if (!supportsScrollTimeline) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                io.unobserve(entry.target);
+            });
+        }, { threshold: 0.07, rootMargin: '0px 0px -48px 0px' });
+
+        document.querySelectorAll('.ls-reveal').forEach(function (el) { io.observe(el); });
+
+        document.querySelectorAll('.ls-reveal-group').forEach(function (group) {
+            group.querySelectorAll(':scope > *').forEach(function (child, i) {
+                child.style.setProperty('--i', i);
+            });
+            io.observe(group);
+        });
+    }
+
+    // FAQ accordion
+    document.querySelectorAll('.ls-faq__item').forEach(function (item) {
+        var btn    = item.querySelector('.ls-faq__q');
+        var answer = item.querySelector('.ls-faq__a');
+        if (!btn || !answer) return;
+
+        btn.addEventListener('click', function () {
+            var isOpen = item.classList.contains('is-open');
+
+            document.querySelectorAll('.ls-faq__item.is-open').forEach(function (open) {
+                open.classList.remove('is-open');
+                open.querySelector('.ls-faq__a').style.maxHeight = '0';
+                open.querySelector('.ls-faq__q').setAttribute('aria-expanded', 'false');
+            });
+
+            if (!isOpen) {
+                item.classList.add('is-open');
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    // Smooth scroll for #howitworks anchor
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // will-change cleanup
+    if ('IntersectionObserver' in window) {
+        var wcIo = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setTimeout(function () { entry.target.style.willChange = 'auto'; }, 800);
+                    wcIo.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.ls-feature__media, .ls-value-card, .ls-step').forEach(function (el) {
+            wcIo.observe(el);
+        });
+    }
+})();
+</script>
+}

@@ -1,0 +1,52 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@{
+    var heading    = Model.Value<string>("heading");
+    var subheading = Model.Value<string>("subheading");
+    var items      = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+    int faqIndex   = 0;
+}
+<section class="lp-faq-block ds-fade-up">
+    <div class="lp-faq-inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-faq-heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subheading))
+        {
+            <p class="lp-faq-subheading">@subheading</p>
+        }
+        @if (items != null && items.Any())
+        {
+            <div class="lp-faq-list">
+                @foreach (var item in items)
+                {
+                    var question = item.Content.Value<string>("question");
+                    var answer   = item.Content.Value<string>("answer");
+                    var id       = "faq-" + faqIndex;
+                    <div class="lp-faq-item">
+                        <button class="lp-faq-question" aria-expanded="false" aria-controls="@id" onclick="lpToggleFaq(this)">
+                            @question
+                            <span class="lp-faq-icon" aria-hidden="true">+</span>
+                        </button>
+                        <div class="lp-faq-answer" id="@id" hidden>
+                            <p>@answer</p>
+                        </div>
+                    </div>
+                    faqIndex++;
+                }
+            </div>
+        }
+    </div>
+</section>
+<script>
+    function lpToggleFaq(btn) {
+        var expanded = btn.getAttribute('aria-expanded') === 'true';
+        var answerId = btn.getAttribute('aria-controls');
+        var answer   = document.getElementById(answerId);
+        var icon     = btn.querySelector('.lp-faq-icon');
+        btn.setAttribute('aria-expanded', !expanded);
+        if (expanded) { answer.hidden = true; icon.textContent = '+'; }
+        else          { answer.hidden = false; icon.textContent = '−'; }
+    }
+</script>

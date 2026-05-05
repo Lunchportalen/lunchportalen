@@ -1,0 +1,57 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using System.Linq
+
+@{
+    var eyebrow     = Model.Value<string>("eyebrow")     ?? "Kom i gang i dag";
+    var heading     = Model.Value<string>("heading")     ?? "Få kontroll på firmalunsjen – uten administrasjon";
+    var text        = Model.Value<string>("text")        ?? "La ansatte håndtere bestillingene selv, reduser matsvinn og få en forutsigbar kostnad fra dag én. Klar på få dager.";
+    var trustSignal = Model.Value<string>("trustSignal") ?? "Ingen binding · Fakturering hver 14. dag · Klar på få dager";
+
+    var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
+    var primaryCta      = primaryCtaLinks?.FirstOrDefault();
+    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Kom i gang →";
+    var primaryUrl      = !string.IsNullOrWhiteSpace(primaryCta?.Url) ? primaryCta.Url : "/kom-i-gang/";
+
+    var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
+    var secCta      = secCtaLinks?.FirstOrDefault();
+    var secCtaText  = Model.Value<string>("secCtaText") ?? "Se en demo";
+    var secUrl      = !string.IsNullOrWhiteSpace(secCta?.Url) ? secCta.Url : "/demo/";
+
+    bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
+}
+
+<section class="pr-cta-band">
+    <div class="pr-inner">
+        <div class="pr-cta-band__card pr-reveal">
+
+            <p class="pr-eyebrow pr-eyebrow--light">@eyebrow</p>
+            <h2 class="pr-cta-band__heading">@heading</h2>
+            <p class="pr-cta-band__text">@text</p>
+
+            <div class="pr-cta-band__actions">
+                <a href="@primaryUrl"
+                   class="pr-cta-band__btn-primary"
+                   @(primaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                    @primaryCtaText
+                </a>
+
+                @if (hasSecCta)
+                {
+                    <a href="@secUrl"
+                       class="pr-cta-band__btn-sec"
+                       @(secCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                        @secCtaText
+                    </a>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(trustSignal))
+            {
+                <p class="pr-cta-band__trust">@trustSignal</p>
+            }
+
+        </div>
+    </div>
+</section>

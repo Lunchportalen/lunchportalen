@@ -1,0 +1,73 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var metaTitle       = Model.Value<string>("seoTitle")
+                          ?? Model.Name + " – Lunchportalen";
+    var metaDescription = Model.Value<string>("seoDescription")
+                          ?? "Kom i gang med Lunchportalen – firmalunsj uten manuell oppfølging.";
+    var canonicalUrl    = Model.Url(mode: UrlMode.Absolute);
+
+    ViewData["MetaTitle"]       = metaTitle;
+    ViewData["MetaDescription"] = metaDescription;
+    ViewData["CanonicalUrl"]    = canonicalUrl;
+    ViewData["OgType"]          = "website";
+    ViewData["BodyClass"]       = "page-kom-i-gang";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+}
+
+@section Head {
+    <link rel="canonical" href="@canonicalUrl" />
+    <meta name="description"        content="@metaDescription" />
+    <meta property="og:title"       content="@metaTitle" />
+    <meta property="og:description" content="@metaDescription" />
+    <meta property="og:url"         content="@canonicalUrl" />
+    <meta property="og:type"        content="website" />
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="@metaTitle" />
+    <meta name="twitter:description" content="@metaDescription" />
+    <link rel="stylesheet" href="/css/kom-i-gang.css" />
+}
+
+@if (blocks != null && blocks.Any())
+{
+    foreach (var block in blocks)
+    {
+        if (block?.Content == null) { continue; }
+
+        var alias = block.Content.ContentType.Alias;
+
+        if (alias == "landingPageHeroBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_LandingPageHeroBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangHeroBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangHeroBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangStatsBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangStatsBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangContractBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangContractBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangStepsBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangStepsBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangTestimonialBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangTestimonialBlock.cshtml", block.Content)
+        }
+        else if (alias == "komIGangFormBlock")
+        {
+            @await Html.PartialAsync("~/Views/Partials/_KomIGangFormBlock.cshtml", block.Content)
+        }
+    }
+}

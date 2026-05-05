@@ -1,0 +1,68 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Kontakt";
+    var heading = Model.Value<string>("heading") ?? "Snakk med oss om firmalunsj";
+    var text = Model.Value<string>("text") ?? "Få en rask gjennomgang av hvordan Lunchportalen gir dere full kontroll på bestilling, avbestilling og levering – uten unødvendig administrasjon.";
+
+    var primaryLabel = Model.Value<string>("primaryCtaLabel") ?? "Send forespørsel";
+    var primaryUrl = Model.Value<string>("primaryCtaUrl") ?? "#kontakt";
+
+    var secondaryLabel = Model.Value<string>("secondaryCtaLabel") ?? "Se hvordan det fungerer";
+    var secondaryUrl = Model.Value<string>("secondaryCtaUrl") ?? "/Demo/";
+
+    var trustOne = Model.Value<string>("trustOne") ?? "Svar innen 24 timer";
+    var trustTwo = Model.Value<string>("trustTwo") ?? "Ingen forpliktelser";
+    var trustThree = Model.Value<string>("trustThree") ?? "For bedrifter med fast lunsjbehov";
+}
+
+<section class="lp-contact-hero">
+    <div class="lp-contact-hero__inner">
+
+        <div class="lp-contact-hero__content">
+            <p class="lp-contact-hero__eyebrow">@eyebrow</p>
+            <h1>@heading</h1>
+            <p class="lp-contact-hero__lead">@text</p>
+
+            <div class="lp-contact-hero__actions">
+                <a class="lp-contact-hero__btn lp-contact-hero__btn--primary" href="@primaryUrl">
+                    @primaryLabel <span aria-hidden="true">→</span>
+                </a>
+
+                <a class="lp-contact-hero__btn lp-contact-hero__btn--secondary" href="@secondaryUrl">
+                    @secondaryLabel
+                </a>
+            </div>
+
+            <div class="lp-contact-hero__trust">
+                <span>✓ @trustOne</span>
+                <span>✓ @trustTwo</span>
+                <span>✓ @trustThree</span>
+            </div>
+        </div>
+
+        <div class="lp-contact-hero__card" aria-label="Kontaktinformasjon">
+            <div class="lp-contact-hero__card-top">
+                <span></span><span></span><span></span>
+            </div>
+
+            <p class="lp-contact-hero__card-label">Kontakt Lunchportalen</p>
+            <h2>Vi hjelper dere videre</h2>
+
+            <div class="lp-contact-hero__card-list">
+                <a href="mailto:post@lunchportalen.no">post@lunchportalen.no</a>
+                <a href="tel:+4748155481">481 55 481</a>
+                <span>Trondheim · Norge</span>
+            </div>
+
+            <div class="lp-contact-hero__badge">
+                <strong>08:00</strong>
+                <span>Kontroll på bestilling og avbestilling</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+

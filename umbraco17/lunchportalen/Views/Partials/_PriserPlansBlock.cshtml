@@ -1,0 +1,199 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow    = Model.Value<string>("eyebrow")  ?? "Enkelt. Forutsigbart. Kontroll.";
+    var heading    = Model.Value<string>("heading")  ?? "Velg en løsning som passer din bedrift";
+    var text       = Model.Value<string>("text")     ?? "Pris per ansatt. Dere betaler kun for det som faktisk blir levert – ingen skjulte kostnader, ingen binding.";
+    var showToggle = Model.Value<bool>("showToggle");
+
+    var planBlocks = Model.Value<BlockListModel>("plans");
+
+    var defaultPlans = new[]
+    {
+        new {
+            Name           = "Basis",
+            Badge          = "",
+            Description    = "For bedrifter som vil ha en enkel og forutsigbar lunsjløsning – uten administrasjon og oppfølging.",
+            PriceMonthly   = "90,-",
+            PriceYearly    = "75,-",
+            PriceUnit      = "per ansatt / dag eks. mva.",
+            PriceMonthEst  = "Ca. 1 980,- per ansatt / mnd",
+            CtaText        = "Kom i gang",
+            CtaUrl         = "/kom-i-gang/",
+            Featured       = false,
+            Features       = new[] {
+                "Lunsj levert til arbeidsplassen",
+                "3 valg hver dag – Salatbar, Påsmurt og Varmmat",
+                "Ansatte bestiller selv fra mobil",
+                "Avbestilling frem til kl. 08:00 samme dag",
+                "Meny synlig to uker frem i tid",
+                "Ingen administrasjon for ledelsen",
+                "Redusert matsvinn og bedre kontroll"
+            }
+        },
+        new {
+            Name           = "Luxus",
+            Badge          = "Mest populær",
+            Description    = "For bedrifter som ønsker mer variasjon og høyere kvalitet – uten mer administrasjon.",
+            PriceMonthly   = "130,-",
+            PriceYearly    = "108,-",
+            PriceUnit      = "per ansatt / dag eks. mva.",
+            PriceMonthEst  = "Ca. 2 860,- per ansatt / mnd",
+            CtaText        = "Velg Luxus",
+            CtaUrl         = "/kom-i-gang/",
+            Featured       = true,
+            Features       = new[] {
+                "Alt fra Basis inkludert",
+                "6 valg – inkl. Sushi, Pokebowl og Thaimat",
+                "Utvidet meny og større variasjon",
+                "Premium råvarer og høyere kvalitet",
+                "Prioritert levering og oppfølging",
+                "Optimalisert for trivsel og medarbeidertilfredshet"
+            }
+        }
+    };
+
+    bool hasPlans = planBlocks != null && planBlocks.Any();
+}
+
+<section class="pr-plans" id="priser">
+    <div class="pr-inner">
+
+        <div class="pr-reveal">
+            <p class="pr-eyebrow">@eyebrow</p>
+            <h2 class="pr-h2">@heading</h2>
+            <p class="pr-lead">@text</p>
+        </div>
+
+        @if (showToggle)
+        {
+            <div class="pr-billing-toggle pr-reveal" style="--delay:100ms">
+                <span class="pr-billing-toggle__lbl">Månedlig</span>
+                <label class="pr-toggle-track" aria-label="Bytt til årlig fakturering">
+                    <input type="checkbox" id="pr-billing-toggle" />
+                    <span class="pr-toggle-thumb"></span>
+                </label>
+                <span class="pr-billing-toggle__lbl">
+                    Årlig
+                    <span class="pr-billing-toggle__save">Spar 17%</span>
+                </span>
+            </div>
+        }
+
+        <div class="pr-plans__grid pr-reveal-group">
+
+            @if (hasPlans)
+            {
+                foreach (var block in planBlocks)
+                {
+                    var name          = block.Content.Value<string>("qname")       ?? "";
+                    var badge         = block.Content.Value<string>("badge")        ?? "";
+                    var description   = block.Content.Value<string>("description")  ?? "";
+                    var priceMonthly  = block.Content.Value<string>("price")        ?? "";
+                    var priceYearly   = block.Content.Value<string>("price")        ?? "";
+                    var priceUnit     = block.Content.Value<string>("priceUnit")    ?? "";
+                    var priceMonthEst = block.Content.Value<string>("billingInfo")  ?? "";
+                    var ctaText       = block.Content.Value<string>("ctaText")      ?? "Kom i gang";
+                    var ctaUrl        = block.Content.Value<string>("ctaUrl")       ?? "/kom-i-gang/";
+                    var featured      = block.Content.Value<bool>("featured");
+                    var featuresRaw   = block.Content.Value<string>("features")     ?? "";
+                    var featureList   = featuresRaw.Split('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+                    <div class="pr-plan @(featured ? "pr-plan--featured" : "")">
+                        @if (!string.IsNullOrWhiteSpace(badge))
+                        {
+                            <div class="pr-plan__badge">@badge</div>
+                        }
+                        <div class="pr-plan__header">
+                            <h3 class="pr-plan__name">@name</h3>
+                            <p class="pr-plan__desc">@description</p>
+                        </div>
+                        <div class="pr-plan__price">
+                            <div class="pr-plan__price-monthly">
+                                <span class="pr-plan__amount">@priceMonthly</span>
+                                @if (!string.IsNullOrWhiteSpace(priceUnit))
+                                {
+                                    <span class="pr-plan__unit">@priceUnit</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(priceMonthEst))
+                                {
+                                    <span class="pr-plan__month-est">@priceMonthEst</span>
+                                }
+                            </div>
+                            <div class="pr-plan__price-yearly" style="display:none">
+                                <span class="pr-plan__amount">@priceYearly</span>
+                                @if (!string.IsNullOrWhiteSpace(priceUnit))
+                                {
+                                    <span class="pr-plan__unit">@priceUnit</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(priceMonthEst))
+                                {
+                                    <span class="pr-plan__month-est">@priceMonthEst</span>
+                                }
+                                <span class="pr-plan__badge-save">Spar 17%</span>
+                            </div>
+                        </div>
+                        <a href="@ctaUrl" class="pr-plan__cta @(featured ? "pr-plan__cta--featured" : "")">
+                            @ctaText
+                        </a>
+                        @if (featureList.Any())
+                        {
+                            <ul class="pr-plan__features">
+                                @foreach (var f in featureList)
+                                {
+                                    <li>@f</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                foreach (var plan in defaultPlans)
+                {
+                    <div class="pr-plan @(plan.Featured ? "pr-plan--featured" : "")">
+                        @if (!string.IsNullOrWhiteSpace(plan.Badge))
+                        {
+                            <div class="pr-plan__badge">@plan.Badge</div>
+                        }
+                        <div class="pr-plan__header">
+                            <h3 class="pr-plan__name">@plan.Name</h3>
+                            <p class="pr-plan__desc">@plan.Description</p>
+                        </div>
+                        <div class="pr-plan__price">
+                            <div class="pr-plan__price-monthly">
+                                <span class="pr-plan__amount">@plan.PriceMonthly</span>
+                                <span class="pr-plan__unit">@plan.PriceUnit</span>
+                                <span class="pr-plan__month-est">@plan.PriceMonthEst</span>
+                            </div>
+                            <div class="pr-plan__price-yearly" style="display:none">
+                                <span class="pr-plan__amount">@plan.PriceYearly</span>
+                                <span class="pr-plan__unit">@plan.PriceUnit</span>
+                                <span class="pr-plan__month-est">@plan.PriceMonthEst</span>
+                                <span class="pr-plan__badge-save">Spar 17%</span>
+                            </div>
+                        </div>
+                        <a href="@plan.CtaUrl" class="pr-plan__cta @(plan.Featured ? "pr-plan__cta--featured" : "")">
+                            @plan.CtaText
+                        </a>
+                        <ul class="pr-plan__features">
+                            @foreach (var f in plan.Features)
+                            {
+                                <li>@f</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+
+        </div>
+
+        <p class="pr-plans__footer pr-reveal" style="--delay:200ms">
+            Alle priser er eks. mva. · Ingen binding · Avbestill når som helst · Fakturering hver 14. dag
+        </p>
+
+    </div>
+</section>

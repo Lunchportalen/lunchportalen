@@ -1,0 +1,70 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockListItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var quote    = Model.Content.Value<string>("quote");
+    var initials = Model.Content.Value<string>("initials") ?? "LP";
+    var name     = Model.Content.Value<string>("name");
+    var role     = Model.Content.Value<string>("role");
+    var facts    = Model.Content.Value<IEnumerable<BlockListItem>>("items");
+}
+
+<section class="lp-social-proof">
+    <div class="lp-social-proof__inner">
+        <div class="lp-social-proof__grid">
+
+            <article class="lp-social-proof__quote-card">
+                <div class="lp-social-proof__quote-mark">"</div>
+
+                @if (!string.IsNullOrWhiteSpace(quote))
+                {
+                    <blockquote class="lp-social-proof__quote">@quote</blockquote>
+                }
+
+                <div class="lp-social-proof__person">
+                    <div class="lp-social-proof__avatar">@initials</div>
+                    <div>
+                        @if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            <div class="lp-social-proof__name">@name</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(role))
+                        {
+                            <div class="lp-social-proof__role">@role</div>
+                        }
+                    </div>
+                </div>
+            </article>
+
+            @if (facts != null && facts.Any())
+            {
+                <div class="lp-social-proof__facts">
+                    @foreach (var item in facts)
+                    {
+                        var value = item.Content.Value<string>("value");
+                        var label = item.Content.Value<string>("label");
+
+                        @* Hopp over items uten verdi *@
+                        @if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+                        {
+                            continue;
+                        }
+
+                        <div class="lp-social-proof__fact">
+                            @if (!string.IsNullOrWhiteSpace(value))
+                            {
+                                <strong>@value</strong>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(label))
+                            {
+                                <span>@label</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </div>
+</section>

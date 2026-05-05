@@ -1,0 +1,92 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Spørsmål og svar";
+    var heading = Model.Value<string>("heading") ?? "Vanlige spørsmål";
+
+    var faqBlocks = Model.Value<BlockListModel>("items");
+
+    var defaultFaqs = new[]
+    {
+        new { Q = "Hva koster det å komme i gang?",
+              A = "Det er gratis å starte. De første 5 dagene er en prøveperiode uten forpliktelser. Etter det avtaler dere pris basert på antall ansatte og leveringsdager." },
+        new { Q = "Hva skjer hvis en ansatt glemmer å avbestille?",
+              A = "Bestillingen gjelder frem til kl. 08:00 samme dag. Etter det er den låst – kjøkkenet trenger tid til å klargjøre. Dette sikrer at dere kun betaler for det som faktisk spises." },
+        new { Q = "Fungerer det med vår eksisterende leverandør?",
+              A = "Ja. Lunchportalen er leverandøragnostisk – vi integrerer med de fleste lunsjleverandører i Norge. Ta kontakt så sjekker vi om din leverandør er støttet." },
+        new { Q = "Hvor lang tid tar oppsettet?",
+              A = "Typisk 15–30 minutter. Dere setter leveringsdager, antall ansatte og lokasjon én gang. Deretter inviteres ansatte via e-post og kan bestille med én gang." },
+        new { Q = "Kan vi eksportere data til lønnssystemet?",
+              A = "Ja. Lunchportalen støtter eksport til de vanligste norske lønnssystemene. Kontakt oss for å bekrefte integrasjon med deres system." },
+        new { Q = "Hva med personvern og GDPR?",
+              A = "Lunchportalen er GDPR-compliant og driftes på norske servere. Data behandles i samsvar med norsk personvernlovgivning og slettes etter avtalt periode." },
+    };
+
+    bool hasBlocks = faqBlocks != null && faqBlocks.Any();
+}
+
+<section class="ls-faq">
+    <div class="ls-inner">
+
+        <div class="ls-faq__header ls-reveal">
+            <p class="ls-eyebrow">@eyebrow</p>
+            <h2 class="ls-h2">@heading</h2>
+        </div>
+
+        <div class="ls-faq__list" role="list">
+            @{
+                int faqIndex = 0;
+
+                if (hasBlocks)
+                {
+                    foreach (var block in faqBlocks)
+                    {
+                        var q      = block.Content.Value<string>("question") ?? "";
+                        var a      = block.Content.Value<string>("answer")   ?? "";
+                        var itemId = $"faq-{faqIndex}";
+
+                        <div class="ls-faq__item ls-reveal" role="listitem">
+                            <button class="ls-faq__q"
+                                    type="button"
+                                    aria-expanded="false"
+                                    aria-controls="@itemId">
+                                <span>@q</span>
+                                <span class="ls-faq__icon" aria-hidden="true"></span>
+                            </button>
+                            <div class="ls-faq__a" id="@itemId" role="region">
+                                <p>@a</p>
+                            </div>
+                        </div>
+
+                        faqIndex++;
+                    }
+                }
+                else
+                {
+                    foreach (var faq in defaultFaqs)
+                    {
+                        var itemId = $"faq-{faqIndex}";
+
+                        <div class="ls-faq__item ls-reveal" role="listitem">
+                            <button class="ls-faq__q"
+                                    type="button"
+                                    aria-expanded="false"
+                                    aria-controls="@itemId">
+                                <span>@faq.Q</span>
+                                <span class="ls-faq__icon" aria-hidden="true"></span>
+                            </button>
+                            <div class="ls-faq__a" id="@itemId" role="region">
+                                <p>@faq.A</p>
+                            </div>
+                        </div>
+
+                        faqIndex++;
+                    }
+                }
+            }
+        </div>
+
+    </div>
+</section>

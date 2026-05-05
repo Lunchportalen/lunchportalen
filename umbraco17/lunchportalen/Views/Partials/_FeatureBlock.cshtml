@@ -1,0 +1,36 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var heading       = Model.Value<string>("heading");
+    var text          = Model.Value<string>("text");
+    var image         = Model.Value<IPublishedContent>("image");
+    var imagePosition = Model.Value<string>("imagePosition") ?? "right";
+    var ctaLabel      = Model.Value<string>("ctaLabel");
+    var ctaUrl        = Model.Value<string>("ctaUrl");
+    var modifier      = imagePosition == "left" ? "lp-feature-block--image-left" : "lp-feature-block--image-right";
+}
+<section class="lp-feature-block @modifier ds-fade-up">
+    <div class="lp-feature-inner">
+        <div class="lp-feature-text">
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="lp-feature-heading">@heading</h2>
+            }
+            @if (!string.IsNullOrWhiteSpace(text))
+            {
+                <p class="lp-feature-text-body">@text</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(ctaLabel) && !string.IsNullOrWhiteSpace(ctaUrl))
+            {
+                <a href="@ctaUrl" class="ds-btn ds-btn--primary">@ctaLabel</a>
+            }
+        </div>
+        @if (image != null)
+        {
+            <div class="lp-feature-image">
+                <img src="@image.Url()" alt="@heading" loading="lazy" />
+            </div>
+        }
+    </div>
+</section>

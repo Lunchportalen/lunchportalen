@@ -1,0 +1,99 @@
+﻿@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Web.Common
+@inject UmbracoHelper UmbracoHelper
+
+@{
+    var currentUrl = ViewContext.HttpContext.Request.Path.ToString().TrimEnd('/');
+    if (string.IsNullOrWhiteSpace(currentUrl)) { currentUrl = "/"; }
+
+    var siteSettings = UmbracoHelper.ContentAtRoot()
+        .FirstOrDefault(x => x.ContentType.Alias == "siteSettings");
+
+    var ctaLabel = siteSettings?.Value<string>("ctaTekst") ?? "Kom i gang";
+    var ctaUrl = siteSettings?.Value<string>("ctaLenke") ?? "/kom-i-gang/";
+    var orderUrl = "/login";
+
+    bool IsActive(string url)
+    {
+        var clean = url.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(clean)) clean = "/";
+        return clean == "/" ? currentUrl == "/" : currentUrl.StartsWith(clean);
+    }
+
+    var navItems = new[]
+    {
+        new { Label = "Hjem", Url = "/" },
+        new { Label = "Løsningen", Url = "/loesningen/" },
+        new { Label = "Priser", Url = "/priser/" },
+        new { Label = "Om oss", Url = "/om-oss/" },
+        new { Label = "Kontakt", Url = "/kontakt/" }
+    };
+}
+
+<header class="lp-header" id="lp-header" role="banner">
+    <div class="lp-header__inner">
+
+        <a class="lp-header__logo" href="/" aria-label="Lunchportalen – til forsiden">
+            <img src="/media/zs5pbb1n/logo-lunchportalen-uten-bakgrunn.png"
+                 alt="Lunchportalen"
+                 class="lp-logo-img"
+                 width="180"
+                 height="40"
+                 loading="eager"
+                 decoding="async" />
+        </a>
+
+        <nav class="lp-nav" aria-label="Hovednavigasjon">
+            <ul class="lp-nav__list" role="list">
+                @foreach (var item in navItems)
+                {
+                    <li>
+                        <a class="lp-nav__link@(IsActive(item.Url) ? " is-active" : "")" href="@item.Url">
+                            @item.Label
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <div class="lp-header__actions">
+            <a class="lp-header__login" href="@orderUrl">Til lunsjbestilling</a>
+
+            <a class="lp-header__cta" href="@ctaUrl" aria-label="@ctaLabel">
+                <span>@ctaLabel</span>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                    <path d="M2 6.5h9M7.5 2.5l4 4-4 4"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linecap="round"
+                          stroke-linejoin="round" />
+                </svg>
+            </a>
+
+            <button class="lp-hamburger"
+                    type="button"
+                    aria-label="Åpne meny"
+                    aria-expanded="false"
+                    aria-controls="lp-mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="lp-mobile-menu" id="lp-mobile-menu" aria-hidden="true">
+        <nav class="lp-mobile-menu__nav" aria-label="Mobilnavigasjon">
+            @foreach (var item in navItems)
+            {
+                <a class="lp-mobile-menu__link@(IsActive(item.Url) ? " is-active" : "")" href="@item.Url">
+                    @item.Label
+                </a>
+            }
+
+            <a class="lp-mobile-menu__login" href="@orderUrl">Til lunsjbestilling</a>
+            <a class="lp-mobile-menu__cta" href="@ctaUrl">@ctaLabel</a>
+        </nav>
+    </div>
+</header>

@@ -1,0 +1,82 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var quote   = Model.Value<string>("quote") ?? "Lunchportalen viste oss hvordan firmalunsj kan styres uten manuelle lister, e-poster og daglige avklaringer. Vi sparer minst to timer hver uke.";
+    var name    = Model.Value<string>("qName") ?? "Maria Haugen";
+    var role    = Model.Value<string>("role")  ?? "HR-ansvarlig, Kongsberg Digital";
+    var showStars = Model.Value<bool>("showStars");
+
+    // Optional: logo image picked in Umbraco
+    var logoImage  = Model.Value<IPublishedContent>("companyLogo");
+    var logoUrl    = logoImage?.Url() ?? "";
+    var logoAlt    = logoImage?.Name ?? name;
+
+    // Optional: avatar
+    var avatarImage = Model.Value<IPublishedContent>("avatar");
+    var avatarUrl   = avatarImage?.Url() ?? "";
+
+    // Initials fallback for avatar
+    var nameParts = name.Split(' ');
+    var initials  = nameParts.Length >= 2
+        ? $"{nameParts[0][0]}{nameParts[^1][0]}"
+        : name[..1];
+    initials = initials.ToUpperInvariant();
+}
+
+<section class="lp-demo-testimonial" aria-label="Kundeuttalelse">
+    <div class="lp-demo-inner">
+
+        <div class="lp-demo-quote lp-reveal" role="blockquote">
+
+            @* Optional: company logo top *@
+            @if (!string.IsNullOrEmpty(logoUrl))
+            {
+                <img class="lp-demo-quote__logo"
+                     src="@logoUrl"
+                     alt="@logoAlt"
+                     width="120"
+                     height="36"
+                     loading="lazy" />
+            }
+
+            @* Optional: star rating *@
+            @if (showStars)
+            {
+                <div class="lp-demo-quote__stars" aria-label="5 av 5 stjerner">
+                    <span aria-hidden="true">★★★★★</span>
+                </div>
+            }
+
+            @* Quote text — screen readers get the quotes via CSS, not markup *@
+            <p class="lp-demo-quote__text">@quote</p>
+
+            @* Attribution row *@
+            <div class="lp-demo-quote__attribution">
+
+                @* Avatar *@
+                <div class="lp-demo-quote__avatar" aria-hidden="true">
+                    @if (!string.IsNullOrEmpty(avatarUrl))
+                    {
+                        <img src="@avatarUrl"
+                             alt=""
+                             width="48"
+                             height="48"
+                             loading="lazy" />
+                    }
+                    else
+                    {
+                        <span>@initials</span>
+                    }
+                </div>
+
+                <div class="lp-demo-quote__meta">
+                    <strong>@name</strong>
+                    <span>@role</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>

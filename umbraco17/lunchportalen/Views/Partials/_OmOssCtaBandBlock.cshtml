@@ -1,0 +1,57 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using System.Linq
+
+@{
+    var eyebrow     = Model.Value<string>("eyebrow")     ?? "Klar for neste steg?";
+    var heading     = Model.Value<string>("heading")     ?? "Enklere. Smartere. Mer bærekraftig.";
+    var text        = Model.Value<string>("text")        ?? "La oss vise deg hvordan Lunchportalen fungerer i praksis — på under 15 minutter, uten forpliktelser.";
+    var trustSignal = Model.Value<string>("trustSignal") ?? "Ingen binding · Klar på få dager · Trondheim, Norge";
+
+    var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
+    var primaryCta      = primaryCtaLinks?.FirstOrDefault();
+    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Book en demo →";
+    var primaryUrl      = !string.IsNullOrWhiteSpace(primaryCta?.Url) ? primaryCta.Url : "/demo/";
+
+    var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
+    var secCta      = secCtaLinks?.FirstOrDefault();
+    var secCtaText  = Model.Value<string>("secCtaText") ?? "Se priser";
+    var secUrl      = !string.IsNullOrWhiteSpace(secCta?.Url) ? secCta.Url : "/priser/";
+
+    bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
+}
+
+<section class="oa-cta-band">
+    <div class="oa-inner">
+        <div class="oa-cta-band__card oa-reveal">
+
+            <p class="oa-eyebrow oa-eyebrow--light">@eyebrow</p>
+            <h2 class="oa-cta-band__heading">@heading</h2>
+            <p class="oa-cta-band__text">@text</p>
+
+            <div class="oa-cta-band__actions">
+                <a href="@primaryUrl"
+                   class="oa-btn-primary"
+                   @(primaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                    @primaryCtaText
+                </a>
+
+                @if (hasSecCta)
+                {
+                    <a href="@secUrl"
+                       class="oa-btn-sec"
+                       @(secCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                        @secCtaText
+                    </a>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(trustSignal))
+            {
+                <p class="oa-cta-band__trust">@trustSignal</p>
+            }
+
+        </div>
+    </div>
+</section>

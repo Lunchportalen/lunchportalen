@@ -1,0 +1,89 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "For kjøkken og leveranse";
+    var heading = Model.Value<string>("heading") ?? "Presis produksjon – uten gjetting";
+    var introText = Model.Value<string>("introText") ?? "Når kjøkkenet vet nøyaktig hva som skal lages, kan de fokusere på det som faktisk betyr noe – god mat.";
+    var image = Model.Value<IPublishedContent>("image");
+    var imageUrl = image?.Url();
+
+    var points = new[]
+    {
+        new {
+            Title = "Eksakt produksjonsliste",
+            Text = "Kjøkkenet får oversikt over antall porsjoner per rett – basert på faktiske bestillinger, ikke estimater."
+        },
+        new {
+            Title = "Ingen overproduksjon",
+            Text = "Det produseres kun det som er bestilt. Mindre svinn, mindre gjetting og bedre ressursbruk."
+        },
+        new {
+            Title = "Bedre planlegging",
+            Text = "Forutsigbare bestillinger gjør innkjøp, bemanning og produksjon enklere å planlegge."
+        },
+        new {
+            Title = "Høyere kvalitet",
+            Text = "Når flyten er tydelig, kan kjøkkenet bruke mer tid på kvalitet, presisjon og gode råvarer."
+        }
+    };
+}
+
+<section class="lp-benefits-section lp-benefits-section--kitchen">
+    <div class="lp-benefits-section__inner">
+
+        <div class="lp-benefits-section__content">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="lp-benefits-section__eyebrow">@eyebrow</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="lp-benefits-section__heading">@heading</h2>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(introText))
+            {
+                <p class="lp-benefits-section__text">@introText</p>
+            }
+
+            <div class="lp-benefits-stats">
+                <div class="lp-benefits-stat">
+                    <span class="lp-benefits-stat__number">100%</span>
+                    <span class="lp-benefits-stat__label">Basert på faktisk bestilling</span>
+                </div>
+                <div class="lp-benefits-stat">
+                    <span class="lp-benefits-stat__number">0</span>
+                    <span class="lp-benefits-stat__label">Unødvendige estimater</span>
+                </div>
+                <div class="lp-benefits-stat">
+                    <span class="lp-benefits-stat__number">08:00</span>
+                    <span class="lp-benefits-stat__label">Tydelig bestillingsfrist</span>
+                </div>
+            </div>
+
+            <div class="lp-benefits-points">
+                @foreach (var point in points)
+                {
+                    <article class="lp-benefits-point">
+                        <span class="lp-benefits-point__dot"></span>
+                        <div>
+                            <h3 class="lp-benefits-point__title">@point.Title</h3>
+                            <p class="lp-benefits-point__text">@point.Text</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            <div class="lp-benefits-section__media">
+                <img src="@imageUrl" alt="@heading" loading="lazy" />
+            </div>
+        }
+
+    </div>
+</section>

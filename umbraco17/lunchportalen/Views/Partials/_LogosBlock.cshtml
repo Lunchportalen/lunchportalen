@@ -1,0 +1,41 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var heading    = Model.Value<string>("heading");
+    var logosItems = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("logos");
+}
+<section class="lp-logos-block ds-fade-up">
+    <div class="lp-logos-inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <p class="lp-logos-heading">@heading</p>
+        }
+        @if (logosItems != null && logosItems.Any())
+        {
+            <div class="lp-logos-grid">
+                @foreach (var item in logosItems)
+                {
+                    var logo    = item.Content.Value<IPublishedContent>("logo");
+                    var altText = item.Content.Value<string>("altText");
+                    var url     = item.Content.Value<string>("url");
+                    if (logo != null)
+                    {
+                        <div class="lp-logo-item">
+                            @if (!string.IsNullOrWhiteSpace(url))
+                            {
+                                <a href="@url" target="_blank" rel="noopener">
+                                    <img src="@logo.Url()" alt="@altText" loading="lazy" />
+                                </a>
+                            }
+                            else
+                            {
+                                <img src="@logo.Url()" alt="@altText" loading="lazy" />
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+</section>

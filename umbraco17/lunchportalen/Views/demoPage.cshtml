@@ -1,0 +1,199 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+
+    // ── SEO / meta ───────────────────────────────────────────
+    var metaTitle       = Model.Value<string>("metaTitle")
+                          ?? Model.Name + " – Lunchportalen";
+    var metaDescription = Model.Value<string>("metaDescription")
+                          ?? "Se hvordan Lunchportalen fjerner kaoset rundt firmalunsj. Ansatte bestiller selv, bedriften får full kontroll – uten manuelle lister eller daglig oppfølging.";
+    var canonicalUrl    = Model.Url(mode: UrlMode.Absolute);
+    var ogImage         = Model.Value<IPublishedContent>("ogImage");
+    var ogImageUrl      = ogImage?.GetCropUrl(width: 1200, height: 630)
+                          ?? "/assets/og-demo.jpg";
+
+    // Expose to layout via ViewData so _Layout.cshtml can render <head>
+    ViewData["MetaTitle"]       = metaTitle;
+    ViewData["MetaDescription"] = metaDescription;
+    ViewData["CanonicalUrl"]    = canonicalUrl;
+    ViewData["OgImageUrl"]      = ogImageUrl;
+    ViewData["OgType"]          = "website";
+    ViewData["BodyClass"]       = "page-demo";
+}
+
+@* ── JSON-LD structured data ──────────────────────────────── *@
+@section Head {
+    <link rel="canonical" href="@canonicalUrl" />
+    <meta name="description"        content="@metaDescription" />
+    <meta property="og:title"       content="@metaTitle" />
+    <meta property="og:description" content="@metaDescription" />
+    <meta property="og:image"       content="@ogImageUrl" />
+    <meta property="og:url"         content="@canonicalUrl" />
+    <meta property="og:type"        content="website" />
+    <meta name="twitter:card"       content="summary_large_image" />
+    <meta name="twitter:title"      content="@metaTitle" />
+    <meta name="twitter:description" content="@metaDescription" />
+    <meta name="twitter:image"      content="@ogImageUrl" />
+
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "SoftwareApplication",
+      "name": "Lunchportalen",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@@type": "Offer",
+        "priceCurrency": "NOK",
+        "availability": "https://schema.org/InStock"
+      },
+      "description": "@metaDescription",
+      "url": "@canonicalUrl",
+      "provider": {
+        "@@type": "Organization",
+        "name": "Lunchportalen",
+        "address": {
+          "@@type": "PostalAddress",
+          "addressLocality": "Trondheim",
+          "addressCountry": "NO"
+        },
+        "contactPoint": {
+          "@@type": "ContactPoint",
+          "email": "post@@lunchportalen.no",
+          "contactType": "customer support"
+        }
+      }
+    }
+    </script>
+}
+
+@* ── Content blocks ────────────────────────────────────────── *@
+@if (blocks != null && blocks.Any())
+{
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+}
+
+@* ── Scroll-reveal + video init ───────────────────────────── *@
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    // ── Scroll-reveal ──────────────────────────────────────
+    // Skips setup when browser supports native animation-timeline: view()
+    // (Chrome 115+, Edge 115+) — CSS handles it natively there.
+    var supportsScrollTimeline = (function () {
+        try {
+            return CSS.supports('animation-timeline', 'view()');
+        } catch (e) {
+            return false;
+        }
+    })();
+
+    if (!supportsScrollTimeline) {
+        var revealObserver = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('is-visible');
+                    revealObserver.unobserve(entry.target);
+                });
+            },
+            { threshold: 0.07, rootMargin: '0px 0px -48px 0px' }
+        );
+
+        // Single-element reveals
+        document.querySelectorAll('.lp-reveal').forEach(function (el) {
+            revealObserver.observe(el);
+        });
+
+        // Staggered grid groups — stamp --i on each child
+        document.querySelectorAll('.lp-reveal-group').forEach(function (group) {
+            var children = group.querySelectorAll(':scope > *');
+            children.forEach(function (child, i) {
+                child.style.setProperty('--i', i);
+            });
+            revealObserver.observe(group);
+        });
+    }
+
+    // ── Auto-add reveal classes to known block elements ────
+    // Lets partials work without manually adding classes in Razor,
+    // but classes in Razor take priority (already present = no-op).
+    var autoRevealSingle = [
+        '.lp-demo-video__text',
+        '.lp-demo-quote',
+        '.lp-demo-final-card',
+        '.lp-demo-booking-grid > :first-child'
+    ];
+
+    var autoRevealGroups = [
+        '.lp-demo-card-grid',
+        '.lp-demo-steps-grid'
+    ];
+
+    autoRevealSingle.forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (el) {
+            if (!el.classList.contains('lp-reveal')) {
+                el.classList.add('lp-reveal');
+                if (!supportsScrollTimeline) revealObserver.observe(el);
+            }
+        });
+    });
+
+    autoRevealGroups.forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (group) {
+            if (!group.classList.contains('lp-reveal-group')) {
+                group.classList.add('lp-reveal-group');
+                var children = group.querySelectorAll(':scope > *');
+                children.forEach(function (child, i) {
+                    child.style.setProperty('--i', i);
+                });
+                if (!supportsScrollTimeline) revealObserver.observe(group);
+            }
+        });
+    });
+
+    // ── Smooth scroll for in-page anchors ─────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Push to history without jump
+            history.pushState(null, '', a.getAttribute('href'));
+        });
+    });
+
+    // ── will-change cleanup after animation ───────────────
+    // Removes will-change from animated cards after first paint
+    // to free GPU memory on long pages.
+    if ('IntersectionObserver' in window) {
+        var wcObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setTimeout(function () {
+                        entry.target.style.willChange = 'auto';
+                    }, 800);
+                    wcObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll(
+            '.lp-demo-card, .lp-demo-step, .lp-demo-video-frame, .lp-hero__visual'
+        ).forEach(function (el) {
+            wcObserver.observe(el);
+        });
+    }
+
+})();
+</script>
+}

@@ -1,0 +1,194 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var content           = Model;
+    var eyebrow           = content.Value<string>("eyebrow")        ?? "Lunsj til bedrifter i Norge";
+    var heading           = content.Value<string>("heading")        ?? "Lunsj";
+    var headingOutline    = content.Value<string>("headingOutline") ?? "uten";
+    var headingGold       = content.Value<string>("headingGold")    ?? "matsvinn.";
+    var leadText          = content.Value<string>("leadText")
+        ?? "Ansatte bestiller selv innen kl. 08:00 — vi leverer etter avtale med bedriften. Dere betaler kun for det som faktisk spises.";
+    var primaryCtaText    = content.Value<string>("primaryCtaText")  ?? "Prøv gratis i 5 dager";
+    var primaryCtaLinks   = content.Value<IEnumerable<Link>>("primaryCtaLink");
+    var primaryCta        = primaryCtaLinks?.FirstOrDefault();
+    var secondaryCtaText  = content.Value<string>("secondaryCtaText") ?? "Se hvordan det fungerer";
+    var secondaryCtaLinks = content.Value<IEnumerable<Link>>("secondaryCtaLink");
+    var secondaryCta      = secondaryCtaLinks?.FirstOrDefault();
+    var heroImage         = content.Value<IPublishedContent>("heroImage");
+    var heroImageUrl      = heroImage?.Url() ?? "";
+    var primaryUrl        = !string.IsNullOrWhiteSpace(primaryCta?.Url)   ? primaryCta.Url   : "/kom-i-gang/";
+    var secondaryUrl      = !string.IsNullOrWhiteSpace(secondaryCta?.Url) ? secondaryCta.Url : "/losningen/";
+    var stats             = content.Value<IEnumerable<BlockListItem>>("stats");
+    var logos             = content.Value<IEnumerable<string>>("logos");
+}
+
+<section class="lp-lp-hero">
+  <div class="lp-lp-deco-circle" style="width:480px;height:480px;background:rgba(245,197,24,.07);top:-160px;right:-80px;"></div>
+  <div class="lp-lp-deco-circle" style="width:200px;height:200px;background:rgba(245,197,24,.05);bottom:-60px;left:20%;"></div>
+
+  <div class="lp-lp-hero__inner">
+
+    <div class="lp-lp-hero__left">
+
+      <div class="lp-lp-tag">
+        <span class="lp-lp-tag__dot"></span>
+        <span class="lp-lp-tag__text">@eyebrow</span>
+      </div>
+
+      <h1 class="lp-lp-hero__title">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+          @Html.Raw(heading)<br/>
+        }
+        @if (!string.IsNullOrWhiteSpace(headingOutline))
+        {
+          <span class="lp-lp-hero__title-outline">@headingOutline</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(headingGold))
+        {
+          <span class="lp-lp-hero__title-gold">@headingGold</span>
+        }
+      </h1>
+
+      @if (!string.IsNullOrWhiteSpace(leadText))
+      {
+        <p class="lp-lp-hero__lead">@leadText</p>
+      }
+
+      <div class="lp-lp-hero__cta-row">
+        <a href="@primaryUrl"
+           class="lp-lp-btn-primary"
+           @(primaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+          @primaryCtaText
+          <span class="lp-lp-btn-arrow">→</span>
+        </a>
+        <a href="@secondaryUrl"
+           class="lp-lp-btn-ghost"
+           @(secondaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+          <span class="lp-lp-play-icon">▶</span>
+          @secondaryCtaText
+        </a>
+      </div>
+
+      @if (stats != null && stats.Any())
+      {
+        <div class="lp-lp-stats">
+          @foreach (var stat in stats)
+          {
+            var val = stat.Content.Value<string>("value");
+            var lbl = stat.Content.Value<string>("label");
+            if (string.IsNullOrWhiteSpace(val) && string.IsNullOrWhiteSpace(lbl)) { continue; }
+            <div class="lp-lp-stat">
+              <div class="lp-lp-stat__val">@val</div>
+              <div class="lp-lp-stat__lbl">@lbl</div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+
+    <div class="lp-lp-hero__visual">
+      @if (!string.IsNullOrWhiteSpace(heroImageUrl))
+      {
+        <img src="@heroImageUrl" alt="@heading" class="lp-lp-hero__image" />
+      }
+      else
+      {
+        <div class="lp-lp-mockup-wrap">
+
+          <div class="lp-lp-badge lp-lp-badge--tl">
+            <div class="lp-lp-badge__num">4.9 &#9733;</div>
+            <div class="lp-lp-badge__lbl">Snitt &middot; 1&nbsp;200+ bedrifter</div>
+          </div>
+
+          <div class="lp-lp-app-window">
+            <div class="lp-lp-win-bar">
+              <div class="lp-lp-win-dot" style="background:#FF5F57"></div>
+              <div class="lp-lp-win-dot" style="background:#FEBC2E"></div>
+              <div class="lp-lp-win-dot" style="background:#28C840"></div>
+              <div class="lp-lp-win-url">app.lunchportalen.no</div>
+            </div>
+            <div class="lp-lp-win-body">
+              <div class="lp-lp-win-head">
+                <span class="lp-lp-win-title">Dagens lunsj</span>
+                <span class="lp-lp-win-date">Onsdag 30. april</span>
+              </div>
+              <div class="lp-lp-win-deadline">
+                <span class="lp-lp-deadline-lbl">Bestillingsfrist</span>
+                <span class="lp-lp-deadline-val">kl. 08:00 i dag</span>
+              </div>
+              <div class="lp-lp-menu-section">
+                <div class="lp-lp-menu-label">Velg din lunsj</div>
+                <div class="lp-lp-menu-item lp-lp-menu-item--selected">
+                  <div class="lp-lp-menu-left">
+                    <div class="lp-lp-menu-icon">&#x1F957;</div>
+                    <div>
+                      <div class="lp-lp-menu-name">Salatbar</div>
+                      <div class="lp-lp-menu-sub">Fersk salat med dagens tilbehør</div>
+                    </div>
+                  </div>
+                  <div class="lp-lp-menu-check">&#10003;</div>
+                </div>
+                <div class="lp-lp-menu-item">
+                  <div class="lp-lp-menu-left">
+                    <div class="lp-lp-menu-icon">&#x1F96A;</div>
+                    <div>
+                      <div class="lp-lp-menu-name">P&aring;smurt</div>
+                      <div class="lp-lp-menu-sub">Dagens br&oslash;dskiver med p&aring;legg</div>
+                    </div>
+                  </div>
+                  <div class="lp-lp-menu-check"></div>
+                </div>
+                <div class="lp-lp-menu-item">
+                  <div class="lp-lp-menu-left">
+                    <div class="lp-lp-menu-icon">&#x1F372;</div>
+                    <div>
+                      <div class="lp-lp-menu-name">Varmmat</div>
+                      <div class="lp-lp-menu-sub">Dagens varme rett</div>
+                    </div>
+                  </div>
+                  <div class="lp-lp-menu-check"></div>
+                </div>
+              </div>
+              <div class="lp-lp-win-cta">
+                <button class="lp-lp-win-cta__order" type="button">Bestill</button>
+                <button class="lp-lp-win-cta__cancel" type="button">Avbestill</button>
+              </div>
+              <div class="lp-lp-win-delivery">
+                <span class="lp-lp-delivery-dot"></span>
+                <span class="lp-lp-delivery-txt">Levering etter avtale med din bedrift</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lp-lp-badge lp-lp-badge--br">
+            <div class="lp-lp-badge__num">&minus;32%</div>
+            <div class="lp-lp-badge__lbl">matsvinn vs. kantine</div>
+          </div>
+
+        </div>
+      }
+    </div>
+
+  </div>
+
+  @if (logos != null && logos.Any())
+  {
+    <div class="lp-lp-logos">
+      <div class="lp-lp-logos__lbl">Brukt av ledende norske bedrifter</div>
+      <div class="lp-lp-logos__pills">
+        @foreach (var logo in logos)
+        {
+          <span class="lp-lp-logo-pill">@logo</span>
+        }
+      </div>
+    </div>
+  }
+
+</section>

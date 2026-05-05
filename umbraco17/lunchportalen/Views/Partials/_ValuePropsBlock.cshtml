@@ -1,0 +1,44 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var eyebrow = Model.Value<string>("eyebrow");
+    var heading = Model.Value<string>("heading");
+    var items   = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+}
+<section class="lp-value-props ds-fade-up">
+    <div class="lp-value-props__inner">
+        @if (!string.IsNullOrWhiteSpace(eyebrow))
+        {
+            <p class="lp-value-props__eyebrow">@eyebrow</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-value-props__heading">@heading</h2>
+        }
+        @if (items != null && items.Any())
+        {
+            <div class="lp-value-props__grid">
+                @foreach (var item in items)
+                {
+                    var title = item.Content.Value<string>("title");
+                    var text  = item.Content.Value<string>("text");
+                    var icon  = item.Content.Value<IPublishedContent>("icon");
+                    <div class="lp-value-prop-item">
+                        @if (icon != null)
+                        {
+                            <div class="lp-value-prop-item__icon">
+                                <img src="@icon.Url()" alt="@title" />
+                            </div>
+                        }
+                        <h3 class="lp-value-prop-item__title">@title</h3>
+                        @if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            <p class="lp-value-prop-item__text">@text</p>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

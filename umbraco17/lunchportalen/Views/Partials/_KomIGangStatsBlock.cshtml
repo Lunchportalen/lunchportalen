@@ -1,0 +1,23 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+
+@{
+    var stats = new[]
+    {
+        new { Value = Model.Value<string>("stat1Value"), Label = Model.Value<string>("stat1Label") },
+        new { Value = Model.Value<string>("stat2Value"), Label = Model.Value<string>("stat2Label") },
+        new { Value = Model.Value<string>("stat3Value"), Label = Model.Value<string>("stat3Label") },
+        new { Value = Model.Value<string>("stat4Value"), Label = Model.Value<string>("stat4Label") },
+    }.Where(s => !string.IsNullOrWhiteSpace(s.Value));
+}
+
+<div class="kig-stats">
+    @foreach (var stat in stats)
+    {
+        <div class="kig-stats__cell">
+            <div class="kig-stats__value">@stat.Value</div>
+            <div class="kig-stats__label">@stat.Label</div>
+        </div>
+    }
+</div>

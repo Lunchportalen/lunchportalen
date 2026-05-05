@@ -1,0 +1,49 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var sectionTag = Model.Value<string>("sectionTag");
+    var heading    = Model.Value<string>("heading");
+    var steps      = Model.Value<IEnumerable<BlockListItem>>("steps");
+}
+
+<section class="kig-steps">
+    <div class="kig-container">
+
+        @if (!string.IsNullOrWhiteSpace(sectionTag))
+        {
+            <div class="kig-section-tag">@sectionTag</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="kig-section-heading">@heading</h2>
+        }
+
+        @if (steps != null && steps.Any())
+        {
+            <div class="kig-steps__grid">
+                @foreach (var step in steps)
+                {
+                    var number      = step.Content.Value<string>("number");
+                    var stepTitle   = step.Content.Value<string>("title");
+                    var description = step.Content.Value<string>("description");
+
+                    <div class="kig-step-card">
+                        <div class="kig-step-card__num">@number</div>
+                        @if (!string.IsNullOrWhiteSpace(stepTitle))
+                        {
+                            <div class="kig-step-card__title">@stepTitle</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="kig-step-card__desc">@description</p>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</section>

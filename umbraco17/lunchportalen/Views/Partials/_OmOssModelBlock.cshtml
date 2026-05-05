@@ -1,0 +1,52 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow     = Model.Value<string>("eyebrow")     ?? "En ny modell";
+    var heading     = Model.Value<string>("heading")     ?? "Ikke en tjeneste. Et system.";
+    var text        = Model.Value<string>("text")        ?? "Tre steg. Ingen manuell håndtering. Ingen misforståelser.";
+    var resultText  = Model.Value<string>("resultText")  ?? "Ingen manuell håndtering. Ingen oppfølging. Ingen misforståelser.";
+    var resultSub   = Model.Value<string>("resultSub")   ?? "Du betaler kun for det som faktisk blir levert.";
+}
+
+<section class="oa-model">
+    <div class="oa-inner">
+
+        <div class="oa-reveal">
+            <p class="oa-eyebrow">@eyebrow</p>
+            <h2 class="oa-h2">@heading</h2>
+            <p class="oa-lead">@text</p>
+        </div>
+
+        <div class="oa-model__steps oa-reveal-group">
+
+            <div class="oa-model-step">
+                <span class="oa-model-step__num">01</span>
+                <h3 class="oa-model-step__title">Bedriften setter rammene</h3>
+                <p class="oa-model-step__text">Leveringsdager, antall ansatte og valgt pakke settes én gang. Ingen daglig involvering.</p>
+            </div>
+
+            <div class="oa-model-step">
+                <span class="oa-model-step__num">02</span>
+                <h3 class="oa-model-step__title">Ansatte styrer selv</h3>
+                <p class="oa-model-step__text">Bestill og avbestill frem til kl. 08:00 samme dag – direkte fra mobilen. Ingen trenger å godkjenne noe.</p>
+            </div>
+
+            <div class="oa-model-step">
+                <span class="oa-model-step__num">03</span>
+                <h3 class="oa-model-step__title">Alt skjer automatisk</h3>
+                <p class="oa-model-step__text">Kjøkkenet får eksakt produksjonsliste. Lunsjen leveres. Fakturaen stemmer. Ingen overraskelser.</p>
+            </div>
+
+        </div>
+
+        <div class="oa-model__result oa-reveal" style="--delay:200ms">
+            <div class="oa-model__result-icon">✓</div>
+            <div>
+                <p class="oa-model__result-text">@resultText</p>
+                <p class="oa-model__result-sub">@resultSub</p>
+            </div>
+        </div>
+
+    </div>
+</section>

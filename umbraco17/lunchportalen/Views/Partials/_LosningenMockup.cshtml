@@ -1,0 +1,181 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<string>
+
+@{
+    var type = Model ?? "order";
+}
+
+@if (type == "order")
+{
+    @* ── Bestillingsapp-mockup ──────────────────────────── *@
+    <div class="ls-mockup ls-mockup--order" aria-hidden="true">
+        <div class="ls-mockup__chrome">
+            <div class="ls-mockup__dots">
+                <span style="background:#FF5F57"></span>
+                <span style="background:#FEBC2E"></span>
+                <span style="background:#28C840"></span>
+            </div>
+            <div class="ls-mockup__url">app.lunchportalen.no</div>
+        </div>
+        <div class="ls-mockup__body">
+            <div class="ls-mockup__topbar">
+                <span class="ls-mockup__label">Dagens lunsj</span>
+                <span class="ls-mockup__date">Onsdag 30. april</span>
+            </div>
+            <div class="ls-mockup__deadline">
+                <span>Bestillingsfrist</span>
+                <span class="ls-mockup__deadline-val">kl. 08:00 i dag</span>
+            </div>
+            <div class="ls-mockup__section-label">Velg din lunsj</div>
+            <div class="ls-mockup__item ls-mockup__item--selected">
+                <div class="ls-mockup__item-left">
+                    <div class="ls-mockup__emoji">🥗</div>
+                    <div>
+                        <div class="ls-mockup__item-name">Salatbar</div>
+                        <div class="ls-mockup__item-sub">Fersk salat med dagens tilbehør</div>
+                    </div>
+                </div>
+                <div class="ls-mockup__check">✓</div>
+            </div>
+            <div class="ls-mockup__item">
+                <div class="ls-mockup__item-left">
+                    <div class="ls-mockup__emoji">🥪</div>
+                    <div>
+                        <div class="ls-mockup__item-name">Påsmurt</div>
+                        <div class="ls-mockup__item-sub">Dagens brødskiver med pålegg</div>
+                    </div>
+                </div>
+                <div class="ls-mockup__check ls-mockup__check--empty"></div>
+            </div>
+            <div class="ls-mockup__item">
+                <div class="ls-mockup__item-left">
+                    <div class="ls-mockup__emoji">🍲</div>
+                    <div>
+                        <div class="ls-mockup__item-name">Varmmat</div>
+                        <div class="ls-mockup__item-sub">Dagens varme rett</div>
+                    </div>
+                </div>
+                <div class="ls-mockup__check ls-mockup__check--empty"></div>
+            </div>
+            <div class="ls-mockup__cta-row">
+                <button class="ls-mockup__btn-primary" type="button">Bestill</button>
+                <button class="ls-mockup__btn-ghost" type="button">Avbestill</button>
+            </div>
+        </div>
+    </div>
+}
+else if (type == "dashboard")
+{
+    @* ── Dashboard-mockup ───────────────────────────────── *@
+    <div class="ls-mockup ls-mockup--dashboard" aria-hidden="true">
+        <div class="ls-mockup__chrome">
+            <div class="ls-mockup__dots">
+                <span style="background:#FF5F57"></span>
+                <span style="background:#FEBC2E"></span>
+                <span style="background:#28C840"></span>
+            </div>
+            <div class="ls-mockup__url">admin.lunchportalen.no</div>
+        </div>
+        <div class="ls-mockup__body">
+            <div class="ls-mockup__topbar">
+                <span class="ls-mockup__label">Oversikt</span>
+                <span class="ls-mockup__date">I dag</span>
+            </div>
+            <div class="ls-mockup__stat-row">
+                <div class="ls-mockup__stat">
+                    <div class="ls-mockup__stat-num">142</div>
+                    <div class="ls-mockup__stat-lbl">Bestillinger</div>
+                </div>
+                <div class="ls-mockup__stat">
+                    <div class="ls-mockup__stat-num">18</div>
+                    <div class="ls-mockup__stat-lbl">Avbestilte</div>
+                </div>
+                <div class="ls-mockup__stat">
+                    <div class="ls-mockup__stat-num ls-mockup__stat-num--gold">124</div>
+                    <div class="ls-mockup__stat-lbl">Leveres</div>
+                </div>
+            </div>
+            <div class="ls-mockup__section-label">Ansatte i dag</div>
+            <div class="ls-mockup__row-item">
+                <div class="ls-mockup__avatar">KA</div>
+                <div class="ls-mockup__row-name">Kari Andersen</div>
+                <div class="ls-mockup__badge ls-mockup__badge--green">Bestilt</div>
+            </div>
+            <div class="ls-mockup__row-item">
+                <div class="ls-mockup__avatar">OB</div>
+                <div class="ls-mockup__row-name">Ole Berg</div>
+                <div class="ls-mockup__badge ls-mockup__badge--green">Bestilt</div>
+            </div>
+            <div class="ls-mockup__row-item">
+                <div class="ls-mockup__avatar">MH</div>
+                <div class="ls-mockup__row-name">Marie Holm</div>
+                <div class="ls-mockup__badge ls-mockup__badge--gray">Avbestilt</div>
+            </div>
+            <div class="ls-mockup__row-item">
+                <div class="ls-mockup__avatar">TN</div>
+                <div class="ls-mockup__row-name">Thomas Nygård</div>
+                <div class="ls-mockup__badge ls-mockup__badge--green">Bestilt</div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @* ── Kjøkkenliste-mockup ────────────────────────────── *@
+    <div class="ls-mockup ls-mockup--kitchen" aria-hidden="true">
+        <div class="ls-mockup__chrome">
+            <div class="ls-mockup__dots">
+                <span style="background:#FF5F57"></span>
+                <span style="background:#FEBC2E"></span>
+                <span style="background:#28C840"></span>
+            </div>
+            <div class="ls-mockup__url">app.lunchportalen.no/produksjon</div>
+        </div>
+        <div class="ls-mockup__body">
+            <div class="ls-mockup__topbar">
+                <span class="ls-mockup__label">Produksjonsliste</span>
+                <span class="ls-mockup__date">30. april</span>
+            </div>
+            <div class="ls-mockup__section-label">Levering kl. 11:30</div>
+            <div class="ls-mockup__kitchen-item">
+                <div class="ls-mockup__kitchen-left">
+                    <div class="ls-mockup__emoji">🥗</div>
+                    <span class="ls-mockup__kitchen-name">Salatbar</span>
+                </div>
+                <div class="ls-mockup__kitchen-count">
+                    <span class="ls-mockup__count-num">68</span>
+                    <span class="ls-mockup__count-lbl">porsjoner</span>
+                </div>
+            </div>
+            <div class="ls-mockup__kitchen-item">
+                <div class="ls-mockup__kitchen-left">
+                    <div class="ls-mockup__emoji">🥪</div>
+                    <span class="ls-mockup__kitchen-name">Påsmurt</span>
+                </div>
+                <div class="ls-mockup__kitchen-count">
+                    <span class="ls-mockup__count-num">31</span>
+                    <span class="ls-mockup__count-lbl">porsjoner</span>
+                </div>
+            </div>
+            <div class="ls-mockup__kitchen-item">
+                <div class="ls-mockup__kitchen-left">
+                    <div class="ls-mockup__emoji">🍲</div>
+                    <span class="ls-mockup__kitchen-name">Varmmat</span>
+                </div>
+                <div class="ls-mockup__kitchen-count">
+                    <span class="ls-mockup__count-num">25</span>
+                    <span class="ls-mockup__count-lbl">porsjoner</span>
+                </div>
+            </div>
+            <div class="ls-mockup__kitchen-footer">
+                <div class="ls-mockup__kitchen-total">
+                    <span>Totalt</span>
+                    <span class="ls-mockup__kitchen-total-num">124 porsjoner</span>
+                </div>
+                <div class="ls-mockup__svinn-badge">
+                    <span>−32%</span>
+                    <span>matsvinn vs. kantine</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}

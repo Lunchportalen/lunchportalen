@@ -1,0 +1,46 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var label      = Model.Value<string>("label") ?? "Brukt av ledende norske bedrifter";
+    var logoBlocks = Model.Value<BlockListModel>("logos");
+    bool hasLogos  = logoBlocks != null && logoBlocks.Any();
+}
+
+<section class="ls-logos ls-reveal" aria-label="@label">
+    <div class="ls-inner">
+        <p class="ls-logos__label">@label</p>
+
+        <div class="ls-logos__track">
+            @if (hasLogos)
+            {
+                foreach (var block in logoBlocks)
+                {
+                    var img  = block.Content.Value<IPublishedContent>("logo");
+                    var name = block.Content.Value<string>("companyName") ?? "";
+                    if (img == null) continue;
+
+                    <div class="ls-logos__item">
+                        <img src="@img.Url()"
+                             alt="@name"
+                             width="120"
+                             height="40"
+                             loading="lazy" />
+                    </div>
+                }
+            }
+            else
+            {
+                var placeholders = new[] { "Bedrift A", "Bedrift B", "Bedrift C", "Bedrift D", "Bedrift E" };
+                foreach (var name in placeholders)
+                {
+                    <div class="ls-logos__item ls-logos__item--placeholder">
+                        <span>@name</span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

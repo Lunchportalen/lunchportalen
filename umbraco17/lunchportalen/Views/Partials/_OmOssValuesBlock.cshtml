@@ -1,0 +1,65 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "For alle i bedriften";
+    var heading = Model.Value<string>("heading") ?? "Ro i hverdagen. Frihet for den enkelte.";
+    var text    = Model.Value<string>("text")    ?? "To perspektiver. Én løsning som treffer begge.";
+
+    var leadershipItems = new[]
+    {
+        "Forutsigbar kostnad per ansatt per dag",
+        "Ingen «hvem har bestilt / ikke bestilt»-avklaringer",
+        "Ingen kantinedrift, bemanning eller logistikk",
+        "Automatisk fakturering — kun for det som leveres",
+        "Full oversikt i dashbordet, uten daglig oppfølging",
+        "Klar på få dager, ingen opplæring nødvendig"
+    };
+
+    var employeeItems = new[]
+    {
+        "Velg og avbestill fra mobilen — helt på egenhånd",
+        "Se menyen to uker frem og planlegg i fred",
+        "Avbestill frem til kl. 08:00 — ingen spørsmål",
+        "Ingen tvang, ingen straff for å hoppe over",
+        "Mer variasjon med Luxus — Sushi, Pokebowl, Thaimat",
+        "Lunsjen føles som et gode, ikke et system"
+    };
+}
+
+<section class="oa-values">
+    <div class="oa-inner">
+
+        <div class="oa-reveal">
+            <p class="oa-eyebrow">@eyebrow</p>
+            <h2 class="oa-h2">@heading</h2>
+            <p class="oa-lead">@text</p>
+        </div>
+
+        <div class="oa-values__grid oa-reveal-group">
+
+            <div class="oa-value-card oa-value-card--dark">
+                <span class="oa-value-card__tag">For ledelsen</span>
+                <h3 class="oa-value-card__title">Full kontroll — uten å gjøre noe</h3>
+                <ul class="oa-value-list">
+                    @foreach (var item in leadershipItems)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            </div>
+
+            <div class="oa-value-card">
+                <span class="oa-value-card__tag">For ansatte</span>
+                <h3 class="oa-value-card__title">Frihet, ikke system</h3>
+                <ul class="oa-value-list">
+                    @foreach (var item in employeeItems)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</section>

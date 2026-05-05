@@ -1,0 +1,61 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using System.Linq
+
+@{
+    var eyebrow = Model.Value<string>("eyebrow") ?? "Kom i gang";
+    var heading = Model.Value<string>("heading") ?? "Klar for en enklere lunsjhverdag?";
+    var text = Model.Value<string>("text") ?? "Se hvordan Lunchportalen fungerer i praksis, eller ta kontakt for en uforpliktende gjennomgang tilpasset deres bedrift.";
+
+    var primaryLinks = Model.Value<IEnumerable<Link>>("primaryCta");
+    var primary = primaryLinks?.FirstOrDefault();
+    var primaryText = primary?.Name ?? "Kom i gang";
+    var primaryUrl = !string.IsNullOrWhiteSpace(primary?.Url) ? primary.Url : "/kom-i-gang/";
+    var primaryTarget = primary?.Target;
+
+    var secondaryLinks = Model.Value<IEnumerable<Link>>("secondaryCta");
+    var secondary = secondaryLinks?.FirstOrDefault();
+    var secondaryText = secondary?.Name ?? "Kontakt oss";
+    var secondaryUrl = !string.IsNullOrWhiteSpace(secondary?.Url) ? secondary.Url : "/kontakt/";
+    var secondaryTarget = secondary?.Target;
+
+    var trustSignal = "Ingen binding · Klar på få dager · Trondheim, Norge";
+}
+
+<section class="lp-benefits-cta">
+    <div class="lp-benefits-cta__inner">
+
+        @if (!string.IsNullOrWhiteSpace(eyebrow))
+        {
+            <p class="lp-benefits-cta__eyebrow">@eyebrow</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-benefits-cta__heading">@heading</h2>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(text))
+        {
+            <p class="lp-benefits-cta__text">@text</p>
+        }
+
+        <div class="lp-benefits-cta__actions">
+            <a href="@primaryUrl"
+               class="lp-benefits-cta__btn lp-benefits-cta__btn--primary"
+               @(primaryTarget == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                @primaryText
+            </a>
+
+            <a href="@secondaryUrl"
+               class="lp-benefits-cta__btn lp-benefits-cta__btn--secondary"
+               @(secondaryTarget == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                @secondaryText
+            </a>
+        </div>
+
+        <p class="lp-benefits-cta__trust">@trustSignal</p>
+
+    </div>
+</section>

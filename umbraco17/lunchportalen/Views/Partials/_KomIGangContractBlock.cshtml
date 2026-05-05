@@ -1,0 +1,70 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var kicker   = Model.Value<string>("kicker");
+    var title    = Model.Value<string>("title");
+    var bodyText = Model.Value<string>("bodyText");
+    var terms    = Model.Value<IEnumerable<BlockListItem>>("terms");
+}
+
+<div class="kig-contract">
+    <div class="kig-container">
+        <div class="kig-contract__inner">
+            <div class="kig-contract__body">
+
+                @if (!string.IsNullOrWhiteSpace(kicker))
+                {
+                    <div class="kig-contract__kicker">@kicker</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(title))
+                {
+                    <div class="kig-contract__title">@title</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(bodyText))
+                {
+                    <div class="kig-contract__text">@bodyText</div>
+                }
+
+                @if (terms != null && terms.Any())
+                {
+                    <div class="kig-contract__terms">
+                        @foreach (var term in terms)
+                        {
+                            var isHighlighted = term.Content.Value<bool>("isHighlighted");
+                            var termValue     = term.Content.Value<string>("value");
+                            var termLabel     = term.Content.Value<string>("label");
+                            var termNote      = term.Content.Value<string>("note");
+                            var highlightText = term.Content.Value<string>("highlightText");
+
+                            if (isHighlighted)
+                            {
+                                <div class="kig-contract__term kig-contract__term--highlighted">
+                                    <svg class="kig-contract__term-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <circle cx="8" cy="8" r="7" stroke="#1A1A1A" stroke-width="1.3"/>
+                                        <path d="M8 7v3.5M8 5.5h.01" stroke="#1A1A1A" stroke-width="1.3" stroke-linecap="round"/>
+                                    </svg>
+                                    <p class="kig-contract__term-highlight">@highlightText</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="kig-contract__term">
+                                    <div class="kig-contract__term-value">@termValue</div>
+                                    <div class="kig-contract__term-label">@termLabel</div>
+                                    @if (!string.IsNullOrWhiteSpace(termNote))
+                                    {
+                                        <div class="kig-contract__term-note">@termNote</div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>

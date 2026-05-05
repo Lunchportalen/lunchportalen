@@ -1,0 +1,63 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@{
+    var heading    = Model.Value<string>("heading");
+    var subheading = Model.Value<string>("subheading");
+    var items      = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+}
+<section class="lp-testimonials-block ds-fade-up">
+    <div class="lp-testimonials-inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-testimonials-heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subheading))
+        {
+            <p class="lp-testimonials-subheading">@subheading</p>
+        }
+        @if (items != null && items.Any())
+        {
+            <div class="lp-testimonials-grid">
+                @foreach (var item in items)
+                {
+                    var quote      = item.Content.Value<string>("quote");
+                    var authorName = item.Content.Value<string>("authorName");
+                    var title      = item.Content.Value<string>("title");
+                    var avatar     = item.Content.Value<IPublishedContent>("avatar");
+                    var logo       = item.Content.Value<IPublishedContent>("logo");
+                    var rating     = item.Content.Value<int>("rating");
+                    <div class="lp-testimonial-card">
+                        @if (rating > 0)
+                        {
+                            <div class="lp-testimonial-stars">
+                                @for (int i = 0; i < rating; i++) { <span>★</span> }
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(quote))
+                        {
+                            <blockquote class="lp-testimonial-quote">"@quote"</blockquote>
+                        }
+                        <div class="lp-testimonial-author">
+                            @if (avatar != null)
+                            {
+                                <img class="lp-testimonial-avatar" src="@avatar.Url()" alt="@authorName" />
+                            }
+                            <div class="lp-testimonial-meta">
+                                <strong class="lp-testimonial-name">@authorName</strong>
+                                @if (!string.IsNullOrWhiteSpace(title))
+                                {
+                                    <span class="lp-testimonial-title">@title</span>
+                                }
+                            </div>
+                            @if (logo != null)
+                            {
+                                <img class="lp-testimonial-logo" src="@logo.Url()" alt="" />
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,149 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@{
+    var eyebrow  = Model.Value<string>("eyebrow") ?? "Produktdemo";
+    var heading  = Model.Value<string>("heading") ?? "Slik ser det ut for ansatte og bedrift";
+    var text     = Model.Value<string>("text")    ?? "En kort gjennomgang av hvordan ansatte bestiller selv fra mobilen, hvordan avbestilling før klokken 08:00 fungerer, og hvordan bedriften får full kontroll uten manuelle prosesser.";
+    var chipText = Model.Value<string>("chipText") ?? "Se demo på 20 sekunder";
+
+    var videoUrl = Model.Value<string>("videoUrl") ?? "";
+
+    var posterImage = Model.Value<IPublishedContent>("image");
+    var posterUrl   = posterImage?.Url() ?? "";
+    var posterAlt   = posterImage?.Value<string>("altText") ?? "Forhåndsvisning av Lunchportalen-demo";
+
+    var blockId = $"lp-video-{Guid.NewGuid():N}";
+    var vidId   = $"{blockId}-vid";
+    var durId   = $"{blockId}-dur";
+
+    bool hasVideo  = !string.IsNullOrWhiteSpace(videoUrl);
+    bool hasPoster = !string.IsNullOrWhiteSpace(posterUrl);
+}
+
+<section class="lp-demo-video" id="demo-video">
+    <div class="lp-demo-inner lp-demo-video-grid">
+
+        <div class="lp-demo-video__text lp-reveal">
+            <p class="lp-demo-eyebrow">@eyebrow</p>
+            <h2>@heading</h2>
+            <p class="lp-demo-lead">@text</p>
+        </div>
+
+        <div class="lp-demo-video-frame lp-reveal" style="--delay: 120ms">
+
+            @if (hasVideo)
+            {
+                <div class="lp-demo-video__player" id="@blockId" data-playing="false">
+
+                    @if (hasPoster)
+                    {
+                        <video id="@vidId"
+                               class="lp-demo-video__el"
+                               poster="@posterUrl"
+                               preload="metadata"
+                               playsinline
+                               aria-label="@heading">
+                            <source src="@videoUrl" type="video/mp4" />
+                            <p>Nettleseren din støtter ikke videoavspilling. <a href="@videoUrl">Last ned videoen</a>.</p>
+                        </video>
+                    }
+                    else
+                    {
+                        <video id="@vidId"
+                               class="lp-demo-video__el"
+                               preload="metadata"
+                               playsinline
+                               aria-label="@heading">
+                            <source src="@videoUrl" type="video/mp4" />
+                            <p>Nettleseren din støtter ikke videoavspilling. <a href="@videoUrl">Last ned videoen</a>.</p>
+                        </video>
+                    }
+
+                    <button class="lp-demo-video__play-btn"
+                            type="button"
+                            aria-label="Spill av: @heading"
+                            onclick="lpPlayVideo('@blockId')">
+                        <span class="lp-demo-video__play-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <polygon points="5,3 17,10 5,17" fill="currentColor" />
+                            </svg>
+                        </span>
+                        <span class="lp-demo-video__chip-text">@chipText</span>
+                    </button>
+
+                    <div class="lp-demo-video__duration" id="@durId" aria-hidden="true"></div>
+
+                </div>
+            }
+            else if (hasPoster)
+            {
+                <img src="@posterUrl"
+                     alt="@posterAlt"
+                     loading="lazy"
+                     width="800"
+                     height="500" />
+            }
+            else
+            {
+                <div class="lp-demo-fake-screen" aria-hidden="true">
+                    <div class="lp-demo-fake-top"></div>
+                    <div class="lp-demo-fake-line large"></div>
+                    <div class="lp-demo-fake-line"></div>
+                    <div class="lp-demo-fake-row"></div>
+                    <div class="lp-demo-fake-row"></div>
+                    <div class="lp-demo-fake-row"></div>
+                </div>
+            }
+
+        </div>
+    </div>
+</section>
+
+@if (hasVideo)
+{
+    <script>
+    (function () {
+        if (window.__lpVideoInit) return;
+        window.__lpVideoInit = true;
+
+        window.lpPlayVideo = function (blockId) {
+            var wrapper = document.getElementById(blockId);
+            var vid     = document.getElementById(blockId + '-vid');
+            var btn     = wrapper && wrapper.querySelector('.lp-demo-video__play-btn');
+            if (!vid) return;
+
+            wrapper.dataset.playing = 'true';
+            if (btn) btn.style.display = 'none';
+
+            vid.controls = true;
+            vid.play().catch(function () {
+                vid.controls = true;
+            });
+
+            vid.addEventListener('pause', function () {
+                wrapper.dataset.playing = 'false';
+                if (btn) btn.style.display = '';
+            });
+
+            vid.addEventListener('ended', function () {
+                wrapper.dataset.playing = 'false';
+                if (btn) btn.style.display = '';
+                vid.controls = false;
+            });
+        };
+
+        document.querySelectorAll('.lp-demo-video__el').forEach(function (vid) {
+            var durEl = document.getElementById(vid.id.replace('-vid', '-dur'));
+            if (!durEl) return;
+            vid.addEventListener('loadedmetadata', function () {
+                var s   = Math.round(vid.duration);
+                var m   = Math.floor(s / 60);
+                var sec = String(s % 60).padStart(2, '0');
+                durEl.textContent = m + ':' + sec;
+            });
+        });
+    })();
+    </script>
+}

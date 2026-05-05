@@ -1,0 +1,194 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var eyebrow    = Model.Value<string>("eyebrow")    ?? "Priser";
+    var heading    = Model.Value<string>("heading")    ?? "Enkelt og forutsigbart";
+    var text       = Model.Value<string>("text")       ?? "Dere betaler kun for det som faktisk spises. Ingen oppstartskostnad, ingen binding.";
+    var showToggle = Model.Value<bool>("showToggle");
+
+    var planBlocks = Model.Value<BlockListModel>("plans");
+    bool hasPlans  = planBlocks != null && planBlocks.Any();
+}
+
+<section class="pr-plans" id="priser">
+    <div class="pr-inner">
+
+        <div class="pr-reveal">
+            <p class="pr-eyebrow">@eyebrow</p>
+            <h2 class="pr-h2">@heading</h2>
+            <p class="pr-lead">@text</p>
+        </div>
+
+        @if (showToggle)
+        {
+            <div class="pr-billing-toggle pr-reveal" style="--delay:100ms">
+                <span class="pr-billing-toggle__lbl">Månedlig</span>
+                <label class="pr-toggle-track" aria-label="Bytt til årlig fakturering">
+                    <input type="checkbox" id="pr-billing-toggle" />
+                    <span class="pr-toggle-thumb"></span>
+                </label>
+                <span class="pr-billing-toggle__lbl">
+                    Årlig
+                    <span class="pr-billing-toggle__save">Spar 17%</span>
+                </span>
+            </div>
+        }
+
+        <div class="pr-plans__grid pr-reveal-group">
+
+            @if (hasPlans)
+            {
+                foreach (var block in planBlocks)
+                {
+                    var name         = block.Content.Value<string>("name")         ?? "";
+                    var badge        = block.Content.Value<string>("badge")        ?? "";
+                    var description  = block.Content.Value<string>("description")  ?? "";
+                    var priceMonthly = block.Content.Value<string>("priceMonthly") ?? "";
+                    var priceYearly  = block.Content.Value<string>("priceYearly")  ?? "";
+                    var priceUnit    = block.Content.Value<string>("priceUnit")    ?? "";
+                    var ctaText      = block.Content.Value<string>("ctaText")      ?? "Kom i gang";
+                    var ctaUrl       = block.Content.Value<string>("ctaUrl")       ?? "/kom-i-gang/";
+                    var featured     = block.Content.Value<bool>("featured");
+                    var featuresRaw  = block.Content.Value<string>("features")     ?? "";
+                    var featureList  = featuresRaw.Split('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+                    <div class="pr-plan @(featured ? "pr-plan--featured" : "")">
+                        @if (!string.IsNullOrWhiteSpace(badge))
+                        {
+                            <div class="pr-plan__badge">@badge</div>
+                        }
+                        <div class="pr-plan__header">
+                            <h3 class="pr-plan__name">@name</h3>
+                            <p class="pr-plan__desc">@description</p>
+                        </div>
+                        <div class="pr-plan__price">
+                            <div class="pr-plan__price-monthly">
+                                <span class="pr-plan__amount">@priceMonthly</span>
+                                @if (!string.IsNullOrWhiteSpace(priceUnit))
+                                {
+                                    <span class="pr-plan__unit">@priceUnit</span>
+                                }
+                            </div>
+                            <div class="pr-plan__price-yearly" style="display:none">
+                                <span class="pr-plan__amount">@priceYearly</span>
+                                @if (!string.IsNullOrWhiteSpace(priceUnit))
+                                {
+                                    <span class="pr-plan__unit">@priceUnit</span>
+                                }
+                                <span class="pr-plan__badge-save" style="opacity:0">Spar 17%</span>
+                            </div>
+                        </div>
+                        <a href="@ctaUrl" class="pr-plan__cta @(featured ? "pr-plan__cta--featured" : "")">
+                            @ctaText
+                        </a>
+                        @if (featureList.Any())
+                        {
+                            <ul class="pr-plan__features">
+                                @foreach (var f in featureList)
+                                {
+                                    <li>@f</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                @* ── Starter ──────────────────────────────────────── *@
+                <div class="pr-plan">
+                    <div class="pr-plan__header">
+                        <h3 class="pr-plan__name">Starter</h3>
+                        <p class="pr-plan__desc">Perfekt for bedrifter som vil prøve Lunchportalen uten risiko.</p>
+                    </div>
+                    <div class="pr-plan__price">
+                        <div class="pr-plan__price-monthly">
+                            <span class="pr-plan__amount">Gratis</span>
+                            <span class="pr-plan__unit">5 dager prøveperiode</span>
+                        </div>
+                        <div class="pr-plan__price-yearly" style="display:none">
+                            <span class="pr-plan__amount">Gratis</span>
+                            <span class="pr-plan__unit">5 dager prøveperiode</span>
+                            <span class="pr-plan__badge-save" style="opacity:0">Spar 17%</span>
+                        </div>
+                    </div>
+                    <a href="/kom-i-gang/" class="pr-plan__cta">Prøv gratis</a>
+                    <ul class="pr-plan__features">
+                        <li>Opp til 25 ansatte</li>
+                        <li>Selvbetjening for ansatte</li>
+                        <li>Avbestilling før 08:00</li>
+                        <li>Grunnleggende oversikt</li>
+                        <li>E-poststøtte</li>
+                    </ul>
+                </div>
+
+                @* ── Vekst (featured) ─────────────────────────────── *@
+                <div class="pr-plan pr-plan--featured">
+                    <div class="pr-plan__badge">Mest populær</div>
+                    <div class="pr-plan__header">
+                        <h3 class="pr-plan__name">Vekst</h3>
+                        <p class="pr-plan__desc">For voksende bedrifter som vil ha full kontroll og automatisering.</p>
+                    </div>
+                    <div class="pr-plan__price">
+                        <div class="pr-plan__price-monthly">
+                            <span class="pr-plan__amount">kr 29</span>
+                            <span class="pr-plan__unit">per ansatt / per dag</span>
+                        </div>
+                        <div class="pr-plan__price-yearly" style="display:none">
+                            <span class="pr-plan__amount">kr 24</span>
+                            <span class="pr-plan__unit">per ansatt / per dag</span>
+                            <span class="pr-plan__badge-save" style="opacity:0">Spar 17%</span>
+                        </div>
+                    </div>
+                    <a href="/kom-i-gang/" class="pr-plan__cta pr-plan__cta--featured">Kom i gang</a>
+                    <ul class="pr-plan__features">
+                        <li>Ubegrenset antall ansatte</li>
+                        <li>Selvbetjening for ansatte</li>
+                        <li>Avbestilling før 08:00</li>
+                        <li>Sanntids dashboard</li>
+                        <li>Automatisk fakturering</li>
+                        <li>Produksjonsliste til kjøkken</li>
+                        <li>Prioritert support</li>
+                    </ul>
+                </div>
+
+                @* ── Enterprise ───────────────────────────────────── *@
+                <div class="pr-plan">
+                    <div class="pr-plan__header">
+                        <h3 class="pr-plan__name">Enterprise</h3>
+                        <p class="pr-plan__desc">Skreddersydd for store organisasjoner med spesielle behov.</p>
+                    </div>
+                    <div class="pr-plan__price">
+                        <div class="pr-plan__price-monthly">
+                            <span class="pr-plan__amount">Kontakt oss</span>
+                            <span class="pr-plan__unit">tilpasset avtale</span>
+                        </div>
+                        <div class="pr-plan__price-yearly" style="display:none">
+                            <span class="pr-plan__amount">Kontakt oss</span>
+                            <span class="pr-plan__unit">tilpasset avtale</span>
+                            <span class="pr-plan__badge-save" style="opacity:0">Spar 17%</span>
+                        </div>
+                    </div>
+                    <a href="/kontakt/" class="pr-plan__cta">Ta kontakt</a>
+                    <ul class="pr-plan__features">
+                        <li>Ubegrenset antall ansatte</li>
+                        <li>Alt i Vekst</li>
+                        <li>Eksport til lønnssystem</li>
+                        <li>SSO-integrasjon</li>
+                        <li>Dedikert kundeansvarlig</li>
+                        <li>SLA-avtale</li>
+                        <li>Egendefinerte rapporter</li>
+                    </ul>
+                </div>
+            }
+
+        </div>
+
+        <p class="pr-plans__footer pr-reveal" style="--delay:200ms">
+            Alle priser er eks. mva. · Ingen binding · Avbestill når som helst
+        </p>
+
+    </div>
+</section>

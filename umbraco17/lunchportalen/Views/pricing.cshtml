@@ -1,0 +1,170 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+
+    var metaTitle       = Model.Value<string>("metaTitle")
+                          ?? "Priser – Lunchportalen";
+    var metaDescription = Model.Value<string>("metaDescription")
+                          ?? "Enkle og forutsigbare priser for firmalunsj. Ingen skjulte kostnader – dere betaler kun for det som faktisk leveres.";
+    var canonicalUrl    = "https://www.lunchportalen.no/priser/";
+
+    ViewData["MetaTitle"]       = metaTitle;
+    ViewData["MetaDescription"] = metaDescription;
+    ViewData["CanonicalUrl"]    = canonicalUrl;
+    ViewData["BodyClass"]       = "page-priser";
+}
+
+@section Head {
+    <link rel="stylesheet" href="/css/priser-page-blocks.css" />
+
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "SoftwareApplication",
+      "name": "Lunchportalen",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "description": "@metaDescription",
+      "url": "@canonicalUrl",
+      "offers": [
+        {
+          "@@type": "Offer",
+          "name": "Basis",
+          "priceCurrency": "NOK",
+          "price": "90",
+          "description": "90,- per ansatt per dag eks. mva.",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@@type": "Offer",
+          "name": "Luxus",
+          "priceCurrency": "NOK",
+          "price": "130",
+          "description": "130,- per ansatt per dag eks. mva.",
+          "availability": "https://schema.org/InStock"
+        }
+      ],
+      "provider": {
+        "@@type": "Organization",
+        "name": "Lunchportalen",
+        "address": {
+          "@@type": "PostalAddress",
+          "addressLocality": "Trondheim",
+          "addressCountry": "NO"
+        },
+        "contactPoint": {
+          "@@type": "ContactPoint",
+          "email": "post@@lunchportalen.no",
+          "contactType": "sales"
+        }
+      }
+    }
+    </script>
+}
+
+@if (blocks != null && blocks.Any())
+{
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+}
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    var supportsScrollTimeline = (function () {
+        try { return CSS.supports('animation-timeline', 'view()'); } catch (e) { return false; }
+    })();
+
+    if (!supportsScrollTimeline) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                io.unobserve(entry.target);
+            });
+        }, { threshold: 0.07, rootMargin: '0px 0px -48px 0px' });
+
+        document.querySelectorAll('.pr-reveal').forEach(function (el) { io.observe(el); });
+
+        document.querySelectorAll('.pr-reveal-group').forEach(function (group) {
+            group.querySelectorAll(':scope > *').forEach(function (child, i) {
+                child.style.setProperty('--i', i);
+            });
+            io.observe(group);
+        });
+    }
+
+    // FAQ accordion
+    document.querySelectorAll('.pr-faq__item').forEach(function (item) {
+        var btn    = item.querySelector('.pr-faq__q');
+        var answer = item.querySelector('.pr-faq__a');
+        if (!btn || !answer) return;
+
+        btn.addEventListener('click', function () {
+            var isOpen = item.classList.contains('is-open');
+
+            document.querySelectorAll('.pr-faq__item.is-open').forEach(function (open) {
+                open.classList.remove('is-open');
+                open.querySelector('.pr-faq__a').style.maxHeight = '0';
+                open.querySelector('.pr-faq__q').setAttribute('aria-expanded', 'false');
+            });
+
+            if (!isOpen) {
+                item.classList.add('is-open');
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    // Plan toggle: monthly / yearly
+    var toggle = document.getElementById('pr-billing-toggle');
+    if (toggle) {
+        toggle.addEventListener('change', function () {
+            var yearly = toggle.checked;
+            document.querySelectorAll('.pr-plan__price-monthly').forEach(function (el) {
+                el.style.display = yearly ? 'none' : 'block';
+            });
+            document.querySelectorAll('.pr-plan__price-yearly').forEach(function (el) {
+                el.style.display = yearly ? 'block' : 'none';
+            });
+            document.querySelectorAll('.pr-plan__badge-save').forEach(function (el) {
+                el.style.opacity = yearly ? '1' : '0';
+            });
+        });
+    }
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // will-change cleanup
+    if ('IntersectionObserver' in window) {
+        var wcIo = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setTimeout(function () { entry.target.style.willChange = 'auto'; }, 800);
+                    wcIo.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.pr-plan, .pr-feature__row').forEach(function (el) {
+            wcIo.observe(el);
+        });
+    }
+})();
+</script>
+}

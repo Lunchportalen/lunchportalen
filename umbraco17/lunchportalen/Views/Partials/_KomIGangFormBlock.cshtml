@@ -1,0 +1,150 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var kicker                = Model.Value<string>("sectionKicker");
+    var heading               = Model.Value<string>("heading");
+    var headingEmphasis       = Model.Value<string>("headingEmphasis");
+    var subheading            = Model.Value<string>("subheading");
+    var checklistItems        = Model.Value<IEnumerable<BlockListItem>>("checklistItems");
+    var contractNoticeHeading = Model.Value<string>("contractNoticeHeading");
+    var contractTerms         = Model.Value<IEnumerable<BlockListItem>>("contractTerms");
+    var formTitle             = Model.Value<string>("formTitle");
+    var submitLabel           = Model.Value<string>("submitLabel");
+    var submitNote            = Model.Value<string>("submitNote");
+}
+
+<section class="kig-form-section" id="kig-form">
+    <div class="kig-container">
+        <div class="kig-form-section__inner">
+
+            <div class="kig-form-section__left">
+
+                @if (!string.IsNullOrWhiteSpace(kicker))
+                {
+                    <div class="kig-eyebrow">@kicker</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(heading) || !string.IsNullOrWhiteSpace(headingEmphasis))
+                {
+                    <h2 class="kig-form-section__heading">
+                        @heading<br>
+                        @if (!string.IsNullOrWhiteSpace(headingEmphasis))
+                        {
+                            <em class="kig-form-section__heading--em">@headingEmphasis</em>
+                        }
+                    </h2>
+                }
+                @if (!string.IsNullOrWhiteSpace(subheading))
+                {
+                    <p class="kig-form-section__sub">@subheading</p>
+                }
+
+                @if (checklistItems != null && checklistItems.Any())
+                {
+                    <ul class="kig-checklist">
+                        @foreach (var item in checklistItems)
+                        {
+                            var itemText = item.Content.Value<string>("text");
+                            <li class="kig-checklist__item">
+                                <span class="kig-checklist__icon" aria-hidden="true">
+                                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                        <path d="M1 4.5l3 3 6-6" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                @itemText
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (contractTerms != null && contractTerms.Any())
+                {
+                    <div class="kig-notice-box">
+                        @if (!string.IsNullOrWhiteSpace(contractNoticeHeading))
+                        {
+                            <div class="kig-notice-box__heading">@contractNoticeHeading</div>
+                        }
+                        <div class="kig-notice-box__rows">
+                            @foreach (var term in contractTerms)
+                            {
+                                var termLabel = term.Content.Value<string>("label");
+                                var termValue = term.Content.Value<string>("value");
+                                <div class="kig-notice-box__row">
+                                    <span class="kig-notice-box__lbl">@termLabel</span>
+                                    <span class="kig-notice-box__val">@termValue</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+            <div class="kig-form-card">
+                <div id="kig-form-fields">
+                    @if (!string.IsNullOrWhiteSpace(formTitle))
+                    {
+                        <div class="kig-form-card__title">@formTitle</div>
+                    }
+                    <form class="kig-form" id="kigBookingForm" novalidate>
+                        <div class="kig-form__field">
+                            <label class="kig-form__label" for="kig-name">Navn</label>
+                            <input class="kig-form__input" id="kig-name" name="name" type="text" placeholder="Ditt navn" required />
+                        </div>
+                        <div class="kig-form__field">
+                            <label class="kig-form__label" for="kig-firma">Firma</label>
+                            <input class="kig-form__input" id="kig-firma" name="firma" type="text" placeholder="Firmanavn" required />
+                        </div>
+                        <div class="kig-form__field">
+                            <label class="kig-form__label" for="kig-ansatte">Antall ansatte</label>
+                            <input class="kig-form__input" id="kig-ansatte" name="ansatte" type="text" placeholder="F.eks. 45" />
+                        </div>
+                        <div class="kig-form__field">
+                            <label class="kig-form__label" for="kig-kontakt">Telefon eller e-post</label>
+                            <input class="kig-form__input" id="kig-kontakt" name="kontakt" type="text" placeholder="Hvordan kan vi nå deg?" required />
+                        </div>
+                        <button class="kig-btn kig-btn--yellow kig-btn--full" type="submit">
+                            @(string.IsNullOrWhiteSpace(submitLabel) ? "Book demo" : submitLabel)
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(submitNote))
+                        {
+                            <div class="kig-form__note">@submitNote</div>
+                        }
+                    </form>
+                </div>
+                <div id="kig-form-success" class="kig-form-success" hidden>
+                    <div class="kig-form-success__icon" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M5 14l7 7 11-11" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="kig-form-success__title">Vi er i gang!</div>
+                    <p class="kig-form-success__text">Vi kontakter deg innen 24 timer. Din utløpsdato og varslingsfrist vil alltid være synlig i portalen.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+(function () {
+    var form    = document.getElementById('kigBookingForm');
+    var fields  = document.getElementById('kig-form-fields');
+    var success = document.getElementById('kig-form-success');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var valid = true;
+        form.querySelectorAll('[required]').forEach(function (el) {
+            if (!el.value.trim()) { el.classList.add('kig-form__input--error'); valid = false; }
+            else { el.classList.remove('kig-form__input--error'); }
+        });
+        if (!valid) return;
+        fields.hidden  = true;
+        success.hidden = false;
+    });
+})();
+</script>

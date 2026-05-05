@@ -1,0 +1,18 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+
+@{
+    Layout = "~/Views/Partials/_Layout.cshtml";
+}
+
+@section Head {
+    <link rel="stylesheet" href="/css/contact.css" />
+}
+
+@if (Model?.Value<BlockGridModel>("contentBlocks")?.Any() == true)
+{
+    <div class="lp-contact-page">
+        @await Html.GetBlockGridHtmlAsync(Model, "contentBlocks")
+    </div>
+}

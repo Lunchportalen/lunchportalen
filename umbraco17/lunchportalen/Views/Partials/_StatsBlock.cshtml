@@ -1,0 +1,38 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using Umbraco.Extensions
+@{
+    var heading    = Model.Value<string>("heading");
+    var subheading = Model.Value<string>("subheading");
+    var items      = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+}
+<section class="lp-stats-block ds-fade-up">
+    <div class="lp-stats-inner">
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-stats-heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subheading))
+        {
+            <p class="lp-stats-subheading">@subheading</p>
+        }
+        @if (items != null && items.Any())
+        {
+            <div class="lp-stats-grid">
+                @foreach (var item in items)
+                {
+                    var value       = item.Content.Value<string>("value");
+                    var label       = item.Content.Value<string>("label");
+                    var description = item.Content.Value<string>("description");
+                    <div class="lp-stat-item">
+                        <span class="lp-stat-value">@value</span>
+                        <span class="lp-stat-label">@label</span>
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <span class="lp-stat-desc">@description</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
