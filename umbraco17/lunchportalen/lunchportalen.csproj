@@ -11,6 +11,7 @@
     <RazorCompileOnBuild>true</RazorCompileOnBuild>
     <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <PreserveCompilationReferences>true</PreserveCompilationReferences>
+    <CopyRefAssembliesToPublishDirectory>true</CopyRefAssembliesToPublishDirectory>
 
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
