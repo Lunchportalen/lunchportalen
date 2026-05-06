@@ -233,7 +233,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
   return (
     <form onSubmit={onSubmit} className="w-full" aria-busy={pending ? "true" : "false"}>
-      <section className="rounded-[2.5rem] bg-[linear-gradient(135deg,#fffdf8_0%,#f8efdf_48%,#fffaf1_100%)] p-3 shadow-[0_24px_70px_rgba(64,49,27,0.08)] sm:p-4">
+      <section className="rounded-[2.25rem] bg-[linear-gradient(135deg,#fffdf8_0%,#f8efdf_48%,#fffaf1_100%)] p-2 shadow-[0_18px_52px_rgba(64,49,27,0.07)] sm:p-3">
         <div className="grid min-w-0 rounded-[2rem] bg-white/62 backdrop-blur lg:grid-cols-[216px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)]">
           <aside className="p-5 sm:p-6 lg:pr-2">
             <div className="flex items-center gap-3">
@@ -293,8 +293,8 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
             </div>
           </aside>
 
-          <div className="min-w-0 p-4 sm:p-6 xl:p-8">
-            <div className="rounded-[1.75rem] bg-white/86 p-5 sm:p-7 xl:p-9">
+          <div className="min-w-0 p-3 sm:p-4 xl:p-5">
+            <div className="rounded-[1.75rem] bg-white/86 p-5 sm:p-6 xl:p-8">
               <div className="flex flex-col gap-9 xl:flex-row xl:items-start">
                 <main className="min-w-0 flex-1">
                   <div className="flex flex-col gap-7 pb-8">
