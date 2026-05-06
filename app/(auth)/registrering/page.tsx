@@ -10,7 +10,6 @@ import { canonicalPathForPublicEditorialSlug } from "@/lib/cms/public/canonicalP
 import {
   generatePublicCmsSlugMetadata,
 } from "@/lib/cms/public/publicCmsSlugRoute";
-import { EDITORIAL_FAIL_CLOSED_DESCRIPTION } from "@/lib/cms/public/editorialFailClosedMetadata";
 import { loadPublicPageWithTrustFallback } from "@/lib/cms/public/loadPublicPageWithTrustFallback";
 
 const ENV: "prod" | "staging" =
@@ -79,35 +78,33 @@ export default async function RegistrationPage({
         />
       ) : null}
       <PageShell>
-      <div
-        className="lp-container mx-auto max-w-5xl px-4 py-7 sm:py-9"
-        data-lp-public-cms-slug="registrering"
-        data-lp-public-cms-origin={cmsOrigin}
-      >
-        {content?.title ? (
-          <header className="mb-6">
-            <h1 className="lp-h1 mb-2 text-[rgb(var(--lp-text))]">{content.title}</h1>
-          </header>
-        ) : null}
-        {blocks.length > 0 ? (
-          <div className="mb-8 flex flex-col gap-6">
-            <CmsBlockRenderer
-              blocks={blocks}
-              env={ENV}
-              locale={LOCALE}
-              enableLivePricing={false}
-              blockWrapperClassName="w-full"
-              pageCmsMeta={content?.meta ?? {}}
-            />
-          </div>
-        ) : cmsOrigin === "seed-no-row" || cmsOrigin === "seed-empty-body" ? (
-          <p className="mb-6 text-sm text-slate-600">{EDITORIAL_FAIL_CLOSED_DESCRIPTION}</p>
-        ) : null}
-        <Suspense fallback={<LoadingShell />}>
-          <PublicRegistrationFlow />
-        </Suspense>
-      </div>
-    </PageShell>
+        <div
+          className="lp-container mx-auto max-w-5xl px-4 py-7 sm:py-9"
+          data-lp-public-cms-slug="registrering"
+          data-lp-public-cms-origin={cmsOrigin}
+        >
+          {content?.title ? (
+            <header className="mb-6">
+              <h1 className="lp-h1 mb-2 text-[rgb(var(--lp-text))]">{content.title}</h1>
+            </header>
+          ) : null}
+          {blocks.length > 0 ? (
+            <div className="mb-8 flex flex-col gap-6">
+              <CmsBlockRenderer
+                blocks={blocks}
+                env={ENV}
+                locale={LOCALE}
+                enableLivePricing={false}
+                blockWrapperClassName="w-full"
+                pageCmsMeta={content?.meta ?? {}}
+              />
+            </div>
+          ) : null}
+          <Suspense fallback={<LoadingShell />}>
+            <PublicRegistrationFlow />
+          </Suspense>
+        </div>
+      </PageShell>
     </>
   );
 }

@@ -17,34 +17,47 @@ type RoleGateProps = {
  */
 export default function RoleGate({ onSelectCompanyAdmin, companyAdminDisabled = false, children }: RoleGateProps) {
   return (
-    <div className="mx-auto flex min-h-[60vh] w-full max-w-xl flex-col justify-center px-4 py-8">
-      <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/80 p-6 shadow-sm">
-        <h1 className="text-lg font-semibold text-[rgb(var(--lp-text))]">Kom i gang med Lunchportalen</h1>
-        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-          Registrering gjøres av en bedriftsadministrator. Du kan legge til ansatte og lokasjoner etter at avtalen er
-          opprettet.
-        </p>
+    <section className="lp-registration-page">
+      <div className="lp-registration-inner">
+        <div className="lp-registration-card">
+          <p className="lp-registration-eyebrow">For bedrifter</p>
+          <h1 className="lp-registration-title">Kom i gang med Lunchportalen</h1>
+          <p className="lp-registration-lead">
+            Samle firmalunsj, ansatte og bestillingsfrister i én rolig arbeidsflate. Start registreringen som
+            bedriftsadministrator, så kan ansatte og lokasjoner legges til etterpå.
+          </p>
 
-        <div className="mt-6 space-y-3">
-          <button
-            type="button"
-            onClick={companyAdminDisabled ? undefined : onSelectCompanyAdmin}
-            disabled={companyAdminDisabled}
-            className="inline-flex w-full items-center justify-center rounded-full bg-black px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-500"
-          >
-            Start som bedriftsadministrator
-          </button>
+          <div className="lp-registration-actions">
+            <button
+              type="button"
+              onClick={companyAdminDisabled ? undefined : onSelectCompanyAdmin}
+              disabled={companyAdminDisabled}
+              className="lp-registration-button disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Start som bedriftsadministrator
+            </button>
 
-        {companyAdminDisabled ? (
-            <p className="text-xs text-[rgb(var(--lp-muted))]">
-              Registrering for nye bedriftskunder er midlertidig stengt. Ta kontakt med oss dersom du har spørsmål.
+            <p className="lp-registration-note">
+              For firma-admin. Ansatte logger inn med eksisterende konto når bedriften er klar.
             </p>
-          ) : null}
-        </div>
 
-        {children ? <div className="mt-6 text-xs text-[rgb(var(--lp-muted))]">{children}</div> : null}
+            {companyAdminDisabled ? (
+              <p className="lp-registration-note">
+                Registrering for nye bedriftskunder er midlertidig stengt. Ta kontakt med oss dersom du har spørsmål.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="lp-registration-pills" aria-label="Fordeler">
+            <span className="lp-registration-pill">Mindre manuelt arbeid</span>
+            <span className="lp-registration-pill">Full kontroll</span>
+            <span className="lp-registration-pill">Bestilling før kl. 08:00</span>
+          </div>
+
+          {children ? <div className="mt-6 text-xs text-[rgb(var(--lp-muted))]">{children}</div> : null}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
