@@ -116,14 +116,14 @@ export default function LoginForm({
   }
 
   return (
-    <form className="space-y-4" onSubmit={onLoginSubmit} noValidate>
+    <form className="space-y-5" onSubmit={onLoginSubmit} noValidate>
       <div>
-        <label className="block text-sm font-medium" htmlFor="login-email">
+        <label className="block text-sm font-bold text-[rgb(var(--lp-text))]" htmlFor="login-email">
           E-post
         </label>
         <input
           id="login-email"
-          className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
+          className="mt-2 h-14 w-full rounded-2xl border border-white/70 bg-white/85 px-4 text-base text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-inset)] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgb(var(--lp-gold)/0.20)] disabled:bg-white/55 disabled:text-[rgb(var(--lp-muted))]"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={busy}
@@ -133,12 +133,12 @@ export default function LoginForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium" htmlFor="login-password">
+        <label className="block text-sm font-bold text-[rgb(var(--lp-text))]" htmlFor="login-password">
           Passord
         </label>
         <input
           id="login-password"
-          className="mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm"
+          className="mt-2 h-14 w-full rounded-2xl border border-white/70 bg-white/85 px-4 text-base text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-inset)] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgb(var(--lp-gold)/0.20)] disabled:bg-white/55 disabled:text-[rgb(var(--lp-muted))]"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -161,7 +161,7 @@ export default function LoginForm({
 
       <button
         type="submit"
-        className="w-full rounded-xl bg-black px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+        className="min-h-14 w-full rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(17_17_17)_0%,rgb(36_28_40)_100%)] px-6 py-4 text-base font-extrabold tracking-tight text-white shadow-[0_18px_44px_rgb(17_17_17/0.24),inset_0_1px_0_rgb(255_255_255/0.14)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_58px_rgb(17_17_17/0.30),inset_0_1px_0_rgb(255_255_255/0.18)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--lp-gold)/0.65)] disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
         disabled={loginDisabled}
       >
         {busyAction === "login" ? "Logger inn…" : "Logg inn"}
