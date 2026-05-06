@@ -40,65 +40,23 @@ export default function AuthShell({
 
   if (variant === "loginPremium") {
     return (
-      <main className="relative min-h-screen w-full overflow-hidden bg-[rgb(var(--lp-bg))] px-4 py-10 text-[rgb(var(--lp-text))] sm:px-6 sm:py-12">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 12% 8%, rgb(var(--lp-gold) / 0.14) 0%, transparent 30%), radial-gradient(circle at 88% 18%, rgb(var(--lp-text) / 0.06) 0%, transparent 32%), linear-gradient(180deg, rgb(248 244 234) 0%, rgb(242 236 224) 100%)",
-          }}
-        />
+      <main className="lp-registration-page">
+        <div className="lp-registration-inner">
+          <div className="lp-registration-card">
+            <AuthBrand subtitle={brandSubtitle} />
 
-        <div className="relative mx-auto flex min-h-[calc(100svh-80px)] w-full max-w-[760px] items-center justify-center">
-          <div className="w-full">
-            <div
-              className="rounded-[32px] border border-white/60 p-px shadow-[var(--lp-shadow-card)]"
-              style={{
-                background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.88), rgba(245,197,24,0.22) 42%, rgba(255,255,255,0.56))",
-              }}
-            >
-              <div className="relative overflow-hidden rounded-[31px] border border-white/60 bg-white/70 px-6 py-8 shadow-[var(--lp-shadow-inset)] backdrop-blur-xl sm:px-10 sm:py-11 lg:px-12">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -left-24 -top-28 h-72 w-72 rounded-full bg-[rgb(var(--lp-gold)/0.16)] blur-3xl"
-                />
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-28 -bottom-32 h-80 w-80 rounded-full bg-[rgb(var(--lp-text)/0.07)] blur-3xl"
-                />
+            <div className="mt-8">
+              {title ? <h1 className="lp-registration-title font-heading">{title}</h1> : null}
+              {subtitle ? <p className="lp-registration-lead font-body">{subtitle}</p> : null}
+            </div>
 
-                <div className="relative">
-                  <AuthBrand subtitle={brandSubtitle} centered />
+            <div>{children}</div>
 
-                  <div className="mt-8 text-center sm:text-left">
-                    {title ? (
-                      <h1 className="font-heading text-4xl font-black leading-[0.98] tracking-[-0.055em] text-[rgb(var(--lp-text))] sm:text-5xl">
-                        {title}
-                      </h1>
-                    ) : null}
-                    {subtitle ? (
-                      <p className="font-body mx-auto mt-4 max-w-xl text-base leading-relaxed text-[rgb(var(--lp-muted))] sm:mx-0 sm:text-[1.05rem]">
-                        {subtitle}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-8">{children}</div>
-
-                  {footer ? (
-                    <div className="mt-7 border-t border-[rgb(var(--lp-text)/0.08)] pt-5 text-center text-sm text-[rgb(var(--lp-muted))]">
-                      {footer}
-                    </div>
-                  ) : null}
-                </div>
+            {footer ? (
+              <div className="mt-7 border-t border-[rgb(var(--lp-text)/0.08)] pt-5 text-center text-sm text-[rgb(var(--lp-muted))]">
+                {footer}
               </div>
-            </div>
-
-            <div className="mt-6 text-center text-xs font-medium text-[rgb(var(--lp-text)/0.55)]">
-              Én sannhetskilde · Cut-off 08:00 · Admin-kontroll
-            </div>
+            ) : null}
           </div>
         </div>
       </main>
