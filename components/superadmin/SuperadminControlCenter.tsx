@@ -20,6 +20,13 @@ const QUICK_LINKS: { label: string; href: string }[] = [
   { label: "Backoffice", href: "/backoffice/content" },
 ];
 
+const SECTION_COPY: Record<string, string> = {
+  core: "Selskaper, avtaler, brukere og økonomisk grunnlag.",
+  operations: "Daglig drift, systemkjøring og operativ oppfølging.",
+  growth: "Innhold, vekst og kontrollert kommersiell produksjon.",
+  system: "Systemhelse, revisjon og ledelsesflater.",
+};
+
 function SignalCard({
   label,
   value,
@@ -36,10 +43,15 @@ function SignalCard({
       ? "rounded-2xl border border-amber-200 bg-amber-50/90 p-4 shadow-sm"
       : "rounded-2xl border border-[rgb(var(--lp-border))] bg-white/90 p-4 shadow-sm";
   return (
-    <Link href={href} className={`block transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${shell}`}>
-      <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">{label}</div>
-      <div className="mt-1 font-heading text-2xl font-semibold tabular-nums text-[rgb(var(--lp-fg))]">{value}</div>
-      <div className="mt-2 text-xs font-medium text-[rgb(var(--lp-muted))]">Åpne →</div>
+    <Link
+      href={href}
+      className={`block transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${shell}`}
+    >
+      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[rgb(var(--lp-muted))]">{label}</div>
+      <div className="mt-2 font-heading text-3xl font-semibold tabular-nums text-[rgb(var(--lp-fg))]">{value}</div>
+      <div className="mt-3 inline-flex min-h-[34px] items-center rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 text-xs font-semibold text-[rgb(var(--lp-fg))]">
+        Åpne
+      </div>
     </Link>
   );
 }
@@ -49,61 +61,69 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
   const s = signals.ok ? signals.data : null;
 
   return (
-    <div className="space-y-10">
-      <PageSection title="Superadmin" subtitle="Kontrollflate — godkjenning, selskaper, drift og systemstatus (lesing først).">
-        <div className="flex flex-wrap gap-2 border-b border-[rgb(var(--lp-border))] pb-6">
+    <div className="space-y-7">
+      <PageSection title="Superadmin" subtitle="Kontrollflate for drift, avtaler, selskaper og systemstatus.">
+        <div className="rounded-[2rem] border border-[rgb(var(--lp-border))] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,244,234,0.72))] p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgb(var(--lp-muted))]">Kontrollhode</p>
+              <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Raske innganger til de viktigste superadmin-flatene.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
           {QUICK_LINKS.map((q) => (
             <Link
               key={q.href}
               href={q.href}
-              className="inline-flex min-h-[44px] items-center rounded-full border border-[rgb(var(--lp-border))] bg-white/90 px-4 py-2 text-sm font-medium text-[rgb(var(--lp-fg))] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[42px] items-center rounded-full border border-[rgb(var(--lp-border))] bg-white/90 px-4 py-2 text-sm font-medium text-[rgb(var(--lp-fg))] transition-shadow hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
             >
               {q.label}
             </Link>
           ))}
+          </div>
         </div>
       </PageSection>
 
       {s ? (
-        <section aria-labelledby="superadmin-signals-heading" className="space-y-4">
-          <h2 id="superadmin-signals-heading" className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
-            Kontrollsignaler
-          </h2>
-          <p className="text-sm text-[rgb(var(--lp-muted))]">
-            Tall fra samme grunnlag som driftssiden (firmastatus, ordre, ventende avtaler). Ingen nye sannheter — kun lesing.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <SignalCard
-              label="Firma (venter)"
-              value={s.companies.pending}
-              href="/superadmin/companies"
-              variant={s.companies.pending > 0 ? "attention" : "default"}
-            />
-            <SignalCard
-              label="Avtaler (venter godkjenning)"
-              value={s.pendingAgreements}
-              href="/superadmin/agreements"
-              variant={s.pendingAgreements > 0 ? "attention" : "default"}
-            />
-            <SignalCard label="Ordre i dag" value={s.orders.today} href="/superadmin/overview" />
-            <SignalCard label="Ordre denne uken" value={s.orders.week} href="/superadmin/overview" />
-          </div>
-          <div className="flex flex-wrap gap-2 text-sm text-[rgb(var(--lp-muted))]">
-            <span>
-              Pausede firma: <strong className="text-[rgb(var(--lp-fg))]">{s.companies.paused}</strong>
-            </span>
-            <span aria-hidden="true">
-              ·
-            </span>
-            <span>
-              Stengte: <strong className="text-[rgb(var(--lp-fg))]">{s.companies.closed}</strong>
-            </span>
-            <span aria-hidden="true">
-              ·
-            </span>
-            <Link href="/superadmin/system" className="font-medium text-[rgb(var(--lp-fg))] underline-offset-4 hover:underline">
-              Systemhelse og flytdiagnostikk
-            </Link>
+        <section aria-labelledby="superadmin-signals-heading" className="lp-card lp-card--elevated">
+          <div className="lp-card-pad space-y-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 id="superadmin-signals-heading" className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
+                  Kontrollsignaler
+                </h2>
+                <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+                  Tall fra samme grunnlag som driftssiden. Ingen nye sannheter, kun lesing.
+                </p>
+              </div>
+              <Link href="/superadmin/system" className="text-sm font-semibold text-[rgb(var(--lp-fg))] underline-offset-4 hover:underline">
+                Systemhelse og flytdiagnostikk
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <SignalCard
+                label="Firma venter"
+                value={s.companies.pending}
+                href="/superadmin/companies"
+                variant={s.companies.pending > 0 ? "attention" : "default"}
+              />
+              <SignalCard
+                label="Avtaler venter godkjenning"
+                value={s.pendingAgreements}
+                href="/superadmin/agreements"
+                variant={s.pendingAgreements > 0 ? "attention" : "default"}
+              />
+              <SignalCard label="Ordre i dag" value={s.orders.today} href="/superadmin/overview" />
+              <SignalCard label="Ordre denne uken" value={s.orders.week} href="/superadmin/overview" />
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm text-[rgb(var(--lp-muted))]">
+              <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1">
+                Pausede firma: <strong className="text-[rgb(var(--lp-fg))]">{s.companies.paused}</strong>
+              </span>
+              <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1">
+                Stengte: <strong className="text-[rgb(var(--lp-fg))]">{s.companies.closed}</strong>
+              </span>
+            </div>
           </div>
         </section>
       ) : (
@@ -113,10 +133,17 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
       )}
 
       {sections.map(({ group, label, items }) => (
-        <section key={group} aria-labelledby={`superadmin-group-${group}`} className="space-y-4">
-          <h2 id={`superadmin-group-${group}`} className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
-            {label}
-          </h2>
+        <section
+          key={group}
+          aria-labelledby={`superadmin-group-${group}`}
+          className="rounded-[1.75rem] border border-[rgb(var(--lp-border))] bg-white/55 p-4 shadow-sm sm:p-5"
+        >
+          <div className="mb-4">
+            <h2 id={`superadmin-group-${group}`} className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
+              {label}
+            </h2>
+            <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{SECTION_COPY[group] ?? "Kontrollflater for superadmin."}</p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((c) => (
               <SuperadminCard

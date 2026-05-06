@@ -121,7 +121,7 @@ export const capabilities: SuperadminCapability[] = [
   },
   {
     id: "bo-social-calendar",
-    label: "Social kalender",
+    label: "Sosial kalender",
     description: "Lunchportalen — utkast, gjennomgang og plan (CMS).",
     href: "/backoffice/social",
     group: "growth",

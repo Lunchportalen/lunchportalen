@@ -41,6 +41,10 @@ export default async function OperationalStatusStrip() {
         : p.level === "BLOCKED_GLOBAL_CLOSED"
           ? p.global_closed_reason || p.detail
           : p.detail;
+  const errorDetail =
+    p.level === "ERROR" && p.detail
+      ? `Teknisk: ${p.detail}`
+      : null;
 
   return (
     <div
@@ -53,7 +57,10 @@ export default async function OperationalStatusStrip() {
     >
       <div className="min-w-0">
         <div className="font-semibold leading-snug">{pres.label}</div>
-        <div className="mt-0.5 text-xs opacity-90 leading-snug">{sub}</div>
+        <div className="mt-0.5 text-xs opacity-90 leading-snug">
+          {p.level === "ERROR" ? "Kunne ikke hente produksjonsstatus akkurat nå. Se produksjonssjekk for detaljer." : sub}
+        </div>
+        {errorDetail ? <div className="mt-1 max-w-full truncate font-mono text-[11px] opacity-75">{errorDetail}</div> : null}
       </div>
       <div className="flex shrink-0 items-center gap-3">
         <span className="font-mono text-xs opacity-80">{date}</span>
