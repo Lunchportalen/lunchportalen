@@ -228,7 +228,14 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
       ? `${state.termsBindingMonths || "0"} mnd binding / ${state.termsNoticeMonths || "0"} mnd oppsigelse`
       : "Ikke valgt";
   const summaryStatus = !validationError ? "Klar til innsending" : "Mangler påkrevd info";
-  const sidebarItems = ["Dashboard", "Bestillinger", "Leveranser", "Lunsjplan", "Faktura", "Innstillinger"];
+  const sidebarItems = [
+    "Firmaregistrering",
+    "Avtalegrunnlag",
+    "Firmaopplysninger",
+    "Kontaktperson",
+    "Leveringsinformasjon",
+    "Bekreftelse",
+  ];
   const steps = ["Avtale", "Bedrift", "Kontakt", "Bekreftelse"];
 
   return (
@@ -249,13 +256,13 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#181715]">Lunchportalen</p>
-                <p className="text-xs text-[#7a705f]">Onboarding</p>
+                <p className="text-xs text-[#7a705f]">Firmaregistrering</p>
               </div>
             </div>
 
             <div className="mt-8 hidden gap-1.5 lg:grid" aria-label="Visuell onboarding-navigasjon">
               {sidebarItems.map((item) => {
-                const active = item === "Innstillinger";
+                const active = item === "Firmaregistrering";
                 return (
                   <div
                     key={item}
@@ -277,7 +284,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                   key={item}
                   className={[
                     "rounded-full px-3 py-2 text-xs font-medium",
-                    item === "Innstillinger"
+                    item === "Firmaregistrering"
                       ? "bg-[#181715] text-white"
                       : "bg-white/60 text-[#6f6657]",
                   ].join(" ")}
@@ -288,8 +295,10 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
             </div>
 
             <div className="mt-9 max-w-[18rem] text-sm text-[#746a5a]">
-              <p className="font-semibold text-[#25231f]">Rolig start</p>
-              <p className="mt-2 leading-6">Informasjonen brukes til å klargjøre en trygg bedriftsavtale.</p>
+              <p className="font-semibold text-[#25231f]">Trygg registrering</p>
+              <p className="mt-2 leading-6">
+                Vi bruker informasjonen til å klargjøre avtalen før bedriften aktiveres i Lunchportalen.
+              </p>
             </div>
           </aside>
 
