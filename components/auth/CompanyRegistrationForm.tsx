@@ -101,12 +101,12 @@ export function validateCompanyRegistrationForm(state: CompanyRegistrationFormSt
 }
 
 const inputClass =
-  "mt-2 min-h-12 w-full rounded-2xl border border-[#e8dfcf] bg-white px-4 py-3 text-base text-[#1f1f1f] shadow-[0_1px_0_rgba(20,20,20,0.03)] outline-none transition placeholder:text-[#a69a86] focus:border-[#d7ad42] focus:ring-4 focus:ring-[#f3d77d]/30";
+  "mt-2 min-h-12 w-full rounded-[1.25rem] border border-[#eadfce] bg-[#fffdf9] px-4 py-3 text-base text-[#1f1f1f] outline-none transition placeholder:text-[#a69a86] focus:border-[#d7ad42] focus:bg-white focus:ring-4 focus:ring-[#f3d77d]/25";
 
 const labelClass = "text-sm font-medium text-[#34302a]";
-const sectionClass = "border-t border-[#eee5d6] pt-7";
+const sectionClass = "border-t border-[#f0e7d8] pt-9";
 const sectionKickerClass = "text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a32]";
-const sectionTitleClass = "mt-2 text-lg font-semibold text-[#181715]";
+const sectionTitleClass = "mt-2 text-xl font-semibold tracking-[-0.02em] text-[#181715]";
 const sectionTextClass = "mt-1 text-sm leading-6 text-[#756b5c]";
 
 export default function CompanyRegistrationForm({ blocked = false, blockedReason = null }: CompanyRegistrationFormProps) {
@@ -233,11 +233,11 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
   return (
     <form onSubmit={onSubmit} className="w-full" aria-busy={pending ? "true" : "false"}>
-      <section className="rounded-[2rem] border border-[#eadfce] bg-[#fbf7ef] shadow-[0_30px_90px_rgba(63,47,24,0.12)]">
-        <div className="grid min-w-0 lg:grid-cols-[232px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)]">
-          <aside className="border-b border-[#eadfce] bg-[#f5ecdc] p-5 sm:p-6 lg:border-b-0 lg:border-r">
+      <section className="rounded-[2.5rem] bg-[linear-gradient(135deg,#fffdf8_0%,#f8efdf_48%,#fffaf1_100%)] p-3 shadow-[0_24px_70px_rgba(64,49,27,0.08)] sm:p-4">
+        <div className="grid min-w-0 rounded-[2rem] bg-white/62 backdrop-blur lg:grid-cols-[216px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)]">
+          <aside className="p-5 sm:p-6 lg:pr-2">
             <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white shadow-sm">
+              <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white/75">
                 <Image
                   src="/brand/LP-logo-uten-bakgrunn.png"
                   alt="Lunchportalen"
@@ -253,15 +253,15 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               </div>
             </div>
 
-            <div className="mt-6 hidden gap-2 lg:grid" aria-label="Visuell onboarding-navigasjon">
+            <div className="mt-8 hidden gap-1.5 lg:grid" aria-label="Visuell onboarding-navigasjon">
               {sidebarItems.map((item) => {
                 const active = item === "Innstillinger";
                 return (
                   <div
                     key={item}
                     className={[
-                      "rounded-2xl px-4 py-3 text-sm transition",
-                      active ? "bg-[#181715] font-semibold text-white shadow-sm" : "text-[#6f6657]",
+                      "rounded-full px-4 py-3 text-sm transition",
+                      active ? "bg-[#181715] font-semibold text-white" : "text-[#746a5a]",
                     ].join(" ")}
                     aria-current={active ? "step" : undefined}
                   >
@@ -271,15 +271,15 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               })}
             </div>
 
-            <div className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:hidden" aria-label="Visuell onboarding-navigasjon">
+            <div className="mt-5 flex flex-wrap gap-2 lg:hidden" aria-label="Visuell onboarding-navigasjon">
               {sidebarItems.map((item) => (
                 <span
                   key={item}
                   className={[
-                    "whitespace-nowrap rounded-full border px-3 py-2 text-xs font-medium",
+                    "rounded-full px-3 py-2 text-xs font-medium",
                     item === "Innstillinger"
-                      ? "border-[#181715] bg-[#181715] text-white"
-                      : "border-[#e3d7c3] bg-white/70 text-[#6f6657]",
+                      ? "bg-[#181715] text-white"
+                      : "bg-white/60 text-[#6f6657]",
                   ].join(" ")}
                 >
                   {item}
@@ -287,43 +287,43 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               ))}
             </div>
 
-            <div className="mt-7 rounded-3xl border border-white/70 bg-white/55 p-4 text-sm text-[#6f6657]">
+            <div className="mt-9 max-w-[18rem] text-sm text-[#746a5a]">
               <p className="font-semibold text-[#25231f]">Rolig start</p>
-              <p className="mt-2 leading-6">Vi bruker informasjonen til å klargjøre en trygg bedriftsavtale.</p>
+              <p className="mt-2 leading-6">Informasjonen brukes til å klargjøre en trygg bedriftsavtale.</p>
             </div>
           </aside>
 
-          <div className="min-w-0 bg-[#fffdf9] p-4 sm:p-6 xl:p-8">
-            <div className="rounded-[1.6rem] bg-white p-4 shadow-[0_18px_60px_rgba(36,28,18,0.08)] sm:p-6 xl:p-8">
-              <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          <div className="min-w-0 p-4 sm:p-6 xl:p-8">
+            <div className="rounded-[1.75rem] bg-white/86 p-5 sm:p-7 xl:p-9">
+              <div className="flex flex-col gap-9 xl:flex-row xl:items-start">
                 <main className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-5 border-b border-[#eee5d6] pb-7">
+                  <div className="flex flex-col gap-7 pb-8">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a7a32]">Firmaregistrering</p>
-                      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#181715] sm:text-3xl">
+                      <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.045em] text-[#181715] sm:text-4xl">
                         Opprett ny lunsjordning
                       </h2>
-                      <p className="mt-3 max-w-2xl text-sm leading-6 text-[#756b5c]">
+                      <p className="mt-4 max-w-2xl text-base leading-7 text-[#756b5c]">
                         Fyll ut firmainfo og kontaktperson. Registreringen blir lagret når alle felt er gyldige.
                       </p>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-4">
                       {steps.map((step, index) => {
                         const active = index === 0;
                         return (
                           <div
                             key={step}
                             className={[
-                              "flex items-center gap-3 rounded-2xl border px-3 py-3",
-                              active ? "border-[#e0b64d] bg-[#fff7df]" : "border-[#eee5d6] bg-[#fbf8f1]",
+                              "flex items-center gap-3 border-t pt-3",
+                              active ? "border-[#d7ad42]" : "border-[#eee5d6]",
                             ].join(" ")}
                             aria-current={active ? "step" : undefined}
                           >
                             <span
                               className={[
                                 "grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold",
-                                active ? "bg-[#f1c75b] text-[#181715]" : "bg-white text-[#8d806d]",
+                                active ? "bg-[#f1c75b] text-[#181715]" : "bg-[#f8f1e5] text-[#8d806d]",
                               ].join(" ")}
                             >
                               {index + 1}
@@ -335,14 +335,14 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                     </div>
                   </div>
 
-                  <div className="space-y-8 pt-7">
+                  <div className="space-y-10 pt-2">
                     <div>
                       <p className={sectionKickerClass}>Avtale</p>
                       <h3 className={sectionTitleClass}>Avtaledetaljer / Lunsjplan</h3>
                       <p className={sectionTextClass}>
                         Lunsjplan (Basis = 3 valg, Luxus = 6 valg). Velg nivå per ukedag og ønsket leveringsvindu.
                       </p>
-                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {REGISTRATION_WEEKDAYS.map((d) => (
               <label key={d} className={labelClass}>
                 {DAY_LABELS[d]} *
@@ -365,7 +365,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               </label>
             ))}
                       </div>
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                      <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>
               Levering fra (HH:MM) *
               <input
@@ -409,7 +409,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                       <p className={sectionKickerClass}>Bedrift</p>
                       <h3 className={sectionTitleClass}>Firmaopplysninger</h3>
                       <p className={sectionTextClass}>Grunnlaget for avtalen og riktig bedriftsidentitet.</p>
-                      <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <div className="mt-6 grid gap-4 md:grid-cols-2">
           <label className={labelClass}>
             Firmanavn *
             <input
@@ -453,7 +453,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                       <p className={sectionKickerClass}>Kontakt</p>
                       <h3 className={sectionTitleClass}>Kontaktperson</h3>
                       <p className={sectionTextClass}>Personen som bekrefter registreringen på vegne av firmaet.</p>
-                      <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <div className="mt-6 grid gap-4 md:grid-cols-2">
           <label className={labelClass}>
             Kontaktperson *
             <input
@@ -515,7 +515,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                     <div className={sectionClass}>
                       <p className={sectionKickerClass}>Bekreftelse</p>
                       <h3 className={sectionTitleClass}>Fullmakt og innsending</h3>
-                      <label className="mt-5 flex items-start gap-4 rounded-3xl border border-[#eadfce] bg-[#fbf7ef] p-4 text-sm leading-6 text-[#34302a]">
+                      <label className="mt-6 flex items-start gap-4 rounded-[1.5rem] bg-[#fbf7ef] p-4 text-sm leading-6 text-[#34302a]">
           <input
             type="checkbox"
             className="mt-1 h-5 w-5 shrink-0 rounded border-[#cdbfaa] text-[#d7ad42] accent-[#d7ad42]"
@@ -545,7 +545,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
         <button
           type="submit"
           disabled={!canSubmit}
-          className="mt-6 min-h-14 w-full rounded-2xl bg-[#f1c75b] px-5 py-4 text-base font-semibold text-[#181715] shadow-[0_14px_30px_rgba(179,130,24,0.25)] transition hover:bg-[#e8bb44] focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40 disabled:cursor-not-allowed disabled:bg-[#eadfce] disabled:text-[#8b8170] disabled:shadow-none"
+          className="mt-7 min-h-14 w-full rounded-full bg-[#f1c75b] px-6 py-4 text-base font-semibold text-[#181715] shadow-[0_12px_28px_rgba(179,130,24,0.2)] transition hover:bg-[#e8bb44] focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40 disabled:cursor-not-allowed disabled:bg-[#eee5d6] disabled:text-[#8b8170] disabled:shadow-none"
         >
           {pending ? "Sender registrering..." : "Send registrering"}
         </button>
@@ -553,35 +553,35 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                   </div>
                 </main>
 
-                <aside className="w-full shrink-0 rounded-[1.5rem] border border-[#eee5d6] bg-[#fbf7ef] p-5 xl:sticky xl:top-6 xl:w-[300px]">
+                <aside className="w-full shrink-0 rounded-[1.75rem] bg-[#fbf7ef]/85 p-5 xl:sticky xl:top-6 xl:w-[300px]">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a32]">Oppsummering</p>
                       <h3 className="mt-2 text-xl font-semibold text-[#181715]">Registrering</h3>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#6f6657]">Utkast</span>
+                    <span className="rounded-full bg-white/70 px-3 py-2 text-xs font-semibold text-[#6f6657]">Utkast</span>
                   </div>
 
-                  <dl className="mt-6 space-y-4">
-                    <div className="rounded-2xl bg-white p-4">
+                  <dl className="mt-6 divide-y divide-[#eadfce]">
+                    <div className="py-4">
                       <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#9d927f]">Antall ansatte</dt>
                       <dd className="mt-1 text-lg font-semibold text-[#181715]">{state.employeesCount || "Ikke valgt"}</dd>
                     </div>
-                    <div className="rounded-2xl bg-white p-4">
+                    <div className="py-4">
                       <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#9d927f]">Lunsjmodell</dt>
                       <dd className="mt-1 text-lg font-semibold text-[#181715]">{lunchModel}</dd>
                     </div>
-                    <div className="rounded-2xl bg-white p-4">
+                    <div className="py-4">
                       <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#9d927f]">Leveringstid</dt>
                       <dd className="mt-1 text-sm font-semibold text-[#181715]">{deliveryWindow}</dd>
                     </div>
-                    <div className="rounded-2xl bg-white p-4">
+                    <div className="py-4">
                       <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#9d927f]">Binding/oppsigelse</dt>
                       <dd className="mt-1 text-sm font-semibold text-[#181715]">{termsSummary}</dd>
                     </div>
                   </dl>
 
-                  <div className="mt-5 rounded-2xl border border-[#e7d7ac] bg-[#fff7df] p-4">
+                  <div className="mt-5 rounded-[1.5rem] bg-[#fff7df] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9a7a32]">Status</p>
                     <p className="mt-2 text-sm font-semibold text-[#181715]">{summaryStatus}</p>
                     <p className="mt-1 text-xs leading-5 text-[#756b5c]">
