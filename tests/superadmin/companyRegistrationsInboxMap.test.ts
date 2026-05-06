@@ -10,6 +10,53 @@ import {
 } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
 
 describe("mapCompanyRegistrationInboxRow", () => {
+  it("beviser Pending til Superadmin: company_registrations-rad kan leses og mappes som ny pending registrering", () => {
+    const registrationId = "11111111-1111-4111-8111-111111111111";
+    const rowFromCompanyRegistrations = {
+      company_id: registrationId,
+      employee_count: 28,
+      contact_name: "Ola Nordmann",
+      contact_email: "ola@example.no",
+      contact_phone: "99887766",
+      address_line: "Gate 1",
+      postal_code: "0123",
+      city: "Oslo",
+      created_at: "2026-01-02T10:00:00Z",
+      updated_at: "2026-01-02T10:00:00Z",
+      companies: {
+        id: registrationId,
+        name: "Pending Test AS",
+        orgnr: "123456789",
+        status: "PENDING",
+      },
+    };
+
+    const mapped = mapCompanyRegistrationInboxRow(rowFromCompanyRegistrations);
+    expect(mapped).not.toBeNull();
+    expect(mapped?.company_id).toBe(registrationId);
+    expect(mapped?.company_name).toBe("Pending Test AS");
+    expect(mapped?.company_status).toBe("PENDING");
+    expect(mapped?.created_at).toBe(rowFromCompanyRegistrations.created_at);
+
+    const pipe = deriveSuperadminRegistrationPipelineNext({
+      company_status: mapped?.company_status ?? null,
+      ledger_pending_agreement_id: null,
+      ledger_active_agreement_id: null,
+    });
+    const inboxPrimaryHref = deriveSuperadminRegistrationPipelinePrimaryHref({
+      company_id: mapped?.company_id ?? "",
+      company_status: mapped?.company_status ?? null,
+      ledger_pending_agreement_id: null,
+      ledger_active_agreement_id: null,
+      registration_exists: true,
+      pipe,
+    });
+
+    expect(pipe.stage_label).toContain("Registrert");
+    expect(pipe.next_label).toContain("Opprett");
+    expect(inboxPrimaryHref).toBe(`/superadmin/registrations/${registrationId}`);
+  });
+
   it("mapper nested companies-objekt", () => {
     const m = mapCompanyRegistrationInboxRow({
       company_id: "c1",

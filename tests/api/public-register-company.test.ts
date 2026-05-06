@@ -3,6 +3,11 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const rpcMock = vi.fn();
 const fromMock = vi.fn();
+const registeredCompanyId = "11111111-1111-4111-8111-111111111111";
+const persistedRegistrationRow = {
+  company_id: registeredCompanyId,
+  created_at: "2026-01-01T00:00:00Z",
+};
 
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
@@ -32,7 +37,7 @@ describe("POST /api/public/register-company", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     rpcMock.mockResolvedValue({
-      data: { company_id: "11111111-1111-1111-1111-111111111111", status: "PENDING", receipt: "2026-01-01T00:00:00Z" },
+      data: { company_id: registeredCompanyId, status: "PENDING", receipt: "2026-01-01T00:00:00Z" },
       error: null,
     });
     fromMock.mockImplementation((table: string) => {
@@ -43,7 +48,7 @@ describe("POST /api/public/register-company", () => {
         select: () => ({
           eq: () => ({
             maybeSingle: async () => ({
-              data: { company_id: "11111111-1111-1111-1111-111111111111", created_at: "2026-01-01T00:00:00Z" },
+              data: persistedRegistrationRow,
               error: null,
             }),
           }),
@@ -155,8 +160,10 @@ describe("POST /api/public/register-company", () => {
     const j = await readJson(res);
     expect(j?.ok).toBe(true);
     expect(j?.persisted).toBe(true);
-    expect(j?.registrationId).toBe("11111111-1111-1111-1111-111111111111");
-    expect(j?.companyId).toBe("11111111-1111-1111-1111-111111111111");
+    expect(j?.registrationId).toBe(registeredCompanyId);
+    expect(j?.companyId).toBe(registeredCompanyId);
+    expect(j?.registrationId).toBe(persistedRegistrationRow.company_id);
+    expect(j?.receipt?.createdAt).toBe(persistedRegistrationRow.created_at);
     expect(rpcMock).toHaveBeenCalled();
     expect(fromMock).toHaveBeenCalledWith("company_registrations");
   });
