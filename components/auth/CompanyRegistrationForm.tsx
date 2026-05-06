@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 import {
   parseRegistrationPlanPayload,
@@ -17,6 +16,8 @@ type RegisterResponse = {
   companyId?: string;
   registrationId?: string;
   persisted?: boolean;
+  requestId?: string;
+  code?: string;
   message?: string;
   receipt?: { message?: string; createdAt?: string };
   error?: string | { code?: string; detail?: unknown };
@@ -108,10 +109,63 @@ const sectionClass = "border-t border-[#f0e7d8] pt-9";
 const sectionKickerClass = "text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a32]";
 const sectionTitleClass = "mt-2 text-xl font-semibold tracking-[-0.02em] text-[#181715]";
 const sectionTextClass = "mt-1 text-sm leading-6 text-[#756b5c]";
+const unknownSubmitError =
+  "Noe gikk galt under innsendingen. Prøv igjen, eller kontakt oss dersom problemet vedvarer.";
+const networkSubmitError =
+  "Vi fikk ikke kontakt med registreringstjenesten. Sjekk nettverket og prøv igjen.";
+
+function getRegisterErrorCode(response: RegisterResponse | null) {
+  const candidates = [
+    response?.code,
+    typeof response?.error === "string" ? response.error : response?.error?.code,
+  ];
+  return candidates.map((value) => value?.trim()).find(Boolean) || "";
+}
+
+function isUserSafeRegisterMessage(message: string) {
+  if (!message || message.length > 220) return false;
+  return !/(stack|trace|exception|postgres|supabase|sql|database|constraint|duplicate key|relation|column|pgrst|errno)/i.test(
+    message,
+  );
+}
+
+function getRegisterErrorMessage(response: RegisterResponse | null) {
+  const code = getRegisterErrorCode(response);
+  const friendlyMessages: Record<string, string> = {
+    CONSENT_REQUIRED: "Du må bekrefte fullmakt før registreringen kan sendes.",
+    INVALID_PAYLOAD: "Registreringen mangler gyldig informasjon. Kontroller feltene og prøv igjen.",
+    REGISTER_PERSISTENCE_FAILED:
+      "Registreringen ble sendt, men kunne ikke lagres korrekt. Dette kan skyldes en midlertidig system- eller databasefeil.",
+    SERVER_ERROR: "Registreringen kunne ikke fullføres på grunn av en serverfeil.",
+    DATABASE_ERROR: "Registreringen kunne ikke fullføres på grunn av en databasefeil.",
+    SUPABASE_ERROR: "Registreringen kunne ikke fullføres mot databasen akkurat nå.",
+    UNKNOWN: unknownSubmitError,
+  };
+
+  if (friendlyMessages[code]) return friendlyMessages[code];
+
+  const message = typeof response?.message === "string" ? response.message.trim() : "";
+  if (isUserSafeRegisterMessage(message)) return message;
+
+  return unknownSubmitError;
+}
+
+function isRegisterReference(value: string | undefined) {
+  const normalized = value?.trim();
+  return Boolean(normalized && normalized !== "undefined" && normalized !== "null" && /^[a-z0-9_.:-]{2,120}$/i.test(normalized));
+}
+
+function getRegisterErrorReference(response: RegisterResponse | null) {
+  const candidates = [
+    response?.rid,
+    response?.requestId,
+    response?.code,
+    typeof response?.error === "string" ? response.error : response?.error?.code,
+  ];
+  return candidates.map((value) => value?.trim()).find((value) => isRegisterReference(value)) || null;
+}
 
 export default function CompanyRegistrationForm({ blocked = false, blockedReason = null }: CompanyRegistrationFormProps) {
-  const router = useRouter();
-
   const defaultTiers: WeekdayMealTiers = {
     mon: "BASIS",
     tue: "BASIS",
@@ -140,6 +194,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorReference, setErrorReference] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<RegisterResponse | null>(null);
 
   const validationError = useMemo(() => validateCompanyRegistrationForm(state), [state]);
@@ -148,6 +203,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setErrorReference(null);
     setReceipt(null);
 
     if (blocked) {
@@ -191,22 +247,19 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
       const json = (await res.json().catch(() => null)) as RegisterResponse | null;
       if (!json) {
-        setError("Uventet svar fra server.");
+        setError(unknownSubmitError);
+        return;
+      }
+
+      if (!res.ok || !json.ok || json.persisted !== true) {
+        setError(getRegisterErrorMessage(json));
+        setErrorReference(getRegisterErrorReference(json));
         return;
       }
 
       setReceipt(json);
-
-      if (!res.ok || !json.ok || json.persisted !== true) {
-        setError(json.message || "Registreringen feilet.");
-        return;
-      }
-
-      const companyId = String(json.companyId ?? json.registrationId ?? "").trim();
-      const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
-      router.push(`/registrering/mottatt${query}`);
     } catch {
-      setError("Nettverksfeil. Prøv igjen.");
+      setError(networkSubmitError);
     } finally {
       setPending(false);
     }
@@ -228,6 +281,57 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
       ? `${state.termsBindingMonths || "0"} mnd binding / ${state.termsNoticeMonths || "0"} mnd oppsigelse`
       : "Ikke valgt";
   const summaryStatus = !validationError ? "Klar til innsending" : "Mangler påkrevd info";
+  const formNotice = receipt?.ok && receipt.persisted === true
+    ? {
+        tone: "success",
+        title: "Registreringen er mottatt",
+        message: "Vi har lagret firmaregistreringen og går gjennom avtalegrunnlaget før aktivering.",
+        detail: receipt.receipt?.message?.trim() || null,
+      }
+    : error
+      ? {
+          tone: "error",
+          title: "Registreringen kunne ikke sendes",
+          message: error,
+          detail: errorReference ? `Teknisk referanse: ${errorReference}` : null,
+        }
+      : blocked
+        ? {
+            tone: "error",
+            title: "Registrering er midlertidig stoppet",
+            message: blockedReason || "Registrering er midlertidig blokkert.",
+            detail: null,
+          }
+        : pending
+          ? {
+              tone: "ready",
+              title: "Sender registreringen",
+              message: "Vi sender informasjonen sikkert. Dette tar vanligvis bare et øyeblikk.",
+              detail: null,
+            }
+          : validationError
+            ? {
+                tone: "warning",
+                title: "Mangler informasjon",
+                message: validationError,
+                detail: null,
+              }
+            : {
+                tone: "ready",
+                title: "Klar til innsending",
+                message: "Alle påkrevde felt er fylt ut. Du kan sende registreringen når du er klar.",
+                detail: null,
+              };
+  const formNoticeClass =
+    formNotice.tone === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+      : formNotice.tone === "error"
+        ? "border-rose-200 bg-rose-50 text-rose-950"
+        : formNotice.tone === "warning"
+          ? "border-[#ecd89c] bg-[#fff8df] text-[#3b3223]"
+          : "border-[#eadfce] bg-[#fffaf1] text-[#34302a]";
+  const formNoticeRole = formNotice.tone === "error" || formNotice.tone === "warning" ? "alert" : "status";
+  const formNoticeLive = formNotice.tone === "error" || formNotice.tone === "warning" ? "assertive" : "polite";
   const sidebarItems = [
     "Firmaregistrering",
     "Avtalegrunnlag",
@@ -246,7 +350,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white/75">
                 <Image
-                  src="/brand/lunchportalen-logo.svg"
+                  src="/brand/lunchportalen-logo.png"
                   alt="Lunchportalen"
                   fill
                   sizes="48px"
@@ -522,22 +626,11 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
           <span>Jeg bekrefter at jeg registrerer på vegne av firmaet.</span>
         </label>
 
-        {blocked ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
-            {blockedReason || "Registrering er midlertidig blokkert."}
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
-            {error}
-          </div>
-        ) : null}
-
-        {receipt?.ok ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900" role="status" aria-live="polite">
-            {receipt.receipt?.message || "Registreringen er mottatt."}</div>
-        ) : null}
+        <div className={`mt-5 rounded-[1.5rem] border p-4 text-sm ${formNoticeClass}`} role={formNoticeRole} aria-live={formNoticeLive}>
+          <p className="font-semibold">{formNotice.title}</p>
+          <p className="mt-1 leading-6">{formNotice.message}</p>
+          {formNotice.detail ? <p className="mt-2 text-xs leading-5 opacity-80">{formNotice.detail}</p> : null}
+        </div>
 
         <button
           type="submit"
