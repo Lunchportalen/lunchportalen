@@ -332,14 +332,6 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
           : "border-[#eadfce] bg-[#fffaf1] text-[#34302a]";
   const formNoticeRole = formNotice.tone === "error" || formNotice.tone === "warning" ? "alert" : "status";
   const formNoticeLive = formNotice.tone === "error" || formNotice.tone === "warning" ? "assertive" : "polite";
-  const sidebarItems = [
-    "Firmaregistrering",
-    "Avtalegrunnlag",
-    "Firmaopplysninger",
-    "Kontaktperson",
-    "Leveringsinformasjon",
-    "Bekreftelse",
-  ];
   const steps = ["Avtale", "Bedrift", "Kontakt", "Bekreftelse"];
 
   return (
@@ -364,45 +356,25 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
               </div>
             </div>
 
-            <div className="mt-8 hidden gap-1.5 lg:grid" aria-label="Visuell onboarding-navigasjon">
-              {sidebarItems.map((item) => {
-                const active = item === "Firmaregistrering";
-                return (
-                  <div
-                    key={item}
-                    className={[
-                      "rounded-full px-4 py-3 text-sm transition",
-                      active ? "bg-[#181715] font-semibold text-white" : "text-[#746a5a]",
-                    ].join(" ")}
-                    aria-current={active ? "step" : undefined}
-                  >
-                    {item}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2 lg:hidden" aria-label="Visuell onboarding-navigasjon">
-              {sidebarItems.map((item) => (
-                <span
-                  key={item}
-                  className={[
-                    "rounded-full px-3 py-2 text-xs font-medium",
-                    item === "Firmaregistrering"
-                      ? "bg-[#181715] text-white"
-                      : "bg-white/60 text-[#6f6657]",
-                  ].join(" ")}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-9 max-w-[18rem] text-sm text-[#746a5a]">
-              <p className="font-semibold text-[#25231f]">Trygg registrering</p>
+            <div className="mt-5 max-w-[20rem] text-sm text-[#746a5a] lg:mt-9">
+              <p className="text-base font-semibold tracking-[-0.01em] text-[#25231f]">Trygg firmaregistrering</p>
               <p className="mt-2 leading-6">
-                Vi bruker informasjonen til å klargjøre avtalen før bedriften aktiveres i Lunchportalen.
+                Fyll ut avtalegrunnlaget én gang. Superadmin går gjennom registreringen før bedriften aktiveres.
               </p>
+              <ul className="mt-5 space-y-3 text-sm leading-6 text-[#5f5649]">
+                <li className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d7ad42]" aria-hidden="true" />
+                  <span>Minimum 20 ansatte</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d7ad42]" aria-hidden="true" />
+                  <span>Avtale vurderes før aktivering</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d7ad42]" aria-hidden="true" />
+                  <span>Ingen bestilling før firmaet er godkjent</span>
+                </li>
+              </ul>
             </div>
           </aside>
 
