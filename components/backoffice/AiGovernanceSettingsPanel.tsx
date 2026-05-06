@@ -45,7 +45,7 @@ export function AiGovernanceSettingsPanel() {
 
   if (error) {
     return (
-      <section className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
+      <section className="rounded-[24px] border border-amber-200 bg-amber-50/90 p-5 text-sm text-amber-950 shadow-[var(--lp-shadow-sm)]">
         {error}
       </section>
     );
@@ -53,33 +53,33 @@ export function AiGovernanceSettingsPanel() {
 
   if (!data) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Laster AI-status…</section>
+      <section className="lp-card p-5 text-sm text-[rgb(var(--lp-muted))]">Laster AI-status…</section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">AI-innstillinger (operativ status)</h2>
-      <p className="mt-2 text-sm leading-relaxed text-slate-600">
-        Viser <strong className="font-medium text-slate-800">ikke</strong> API-nøkler. Modell/leverandør kommer fra
+    <section className="lp-card p-6">
+      <h2 className="lp-h2 text-[rgb(var(--lp-text))]">Operativ AI-status</h2>
+      <p className="lp-lead mt-2 text-sm">
+        Viser <strong className="font-black text-[rgb(var(--lp-text))]">ikke</strong> API-nøkler. Modell/leverandør kommer fra
         sikre miljøvariabler og eksisterende runner — samme sannhet som drift.
       </p>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Aktivert</dt>
-          <dd className="mt-1 font-mono text-sm text-slate-900">{data.enabled ? "ja" : "nei"}</dd>
+        <div className="rounded-2xl border border-[rgb(var(--lp-border))]/70 bg-[rgb(var(--lp-surface-alt))]/70 px-4 py-3">
+          <dt className="lp-k">Aktivert</dt>
+          <dd className="mt-1 font-mono text-sm font-black text-[rgb(var(--lp-text))]">{data.enabled ? "ja" : "nei"}</dd>
         </div>
-        <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Leverandør</dt>
-          <dd className="mt-1 font-mono text-sm text-slate-900">{data.provider ?? "—"}</dd>
+        <div className="rounded-2xl border border-[rgb(var(--lp-border))]/70 bg-[rgb(var(--lp-surface-alt))]/70 px-4 py-3">
+          <dt className="lp-k">Leverandør</dt>
+          <dd className="mt-1 font-mono text-sm font-black text-[rgb(var(--lp-text))]">{data.provider ?? "—"}</dd>
         </div>
-        <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 sm:col-span-2">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Modell</dt>
-          <dd className="mt-1 break-all font-mono text-sm text-slate-900">{data.model ?? "—"}</dd>
+        <div className="rounded-2xl border border-[rgb(var(--lp-border))]/70 bg-[rgb(var(--lp-surface-alt))]/70 px-4 py-3 sm:col-span-2">
+          <dt className="lp-k">Modell</dt>
+          <dd className="mt-1 break-all font-mono text-sm font-black text-[rgb(var(--lp-text))]">{data.model ?? "—"}</dd>
         </div>
         {data.errorCode ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50/90 px-3 py-2 sm:col-span-2">
-            <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-900">Konfigurasjonskode</dt>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 sm:col-span-2">
+            <dt className="text-[11px] font-black uppercase tracking-wide text-amber-900">Konfigurasjonskode</dt>
             <dd className="mt-1 font-mono text-sm text-amber-950">{data.errorCode}</dd>
           </div>
         ) : null}

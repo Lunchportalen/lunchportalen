@@ -10,18 +10,18 @@ import {
 
 function actionClass(look: "primary" | "secondary" | "outline" | undefined): string {
   if (look === "primary") {
-    return "inline-flex min-h-11 items-center rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800";
+    return "lp-btn lp-btn--primary";
   }
   if (look === "secondary") {
-    return "inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100";
+    return "lp-btn lp-btn--secondary";
   }
-  return "inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50";
+  return "lp-btn lp-btn--ghost";
 }
 
 function signalToneClass(tone: "neutral" | "success" | "warning" | undefined): string {
   if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-950";
   if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-950";
-  return "border-slate-200 bg-white text-slate-900";
+  return "border-[rgb(var(--lp-border))]/75 bg-[rgba(var(--lp-surface-rgb),0.82)] text-[rgb(var(--lp-text))]";
 }
 
 export function BackofficeManagementWorkspaceFrame({
@@ -33,28 +33,28 @@ export function BackofficeManagementWorkspaceFrame({
 }) {
   return (
     <div className="space-y-8 p-6 lg:p-8">
-      <header className="flex flex-col gap-4 border-b border-slate-200/90 pb-6 xl:flex-row xl:items-end xl:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[rgb(var(--lp-border))]/75 pb-6 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-4xl">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="text-[11px] font-black uppercase tracking-wider text-[rgb(var(--lp-gold-dark))]">
             CMS innstillinger · {model.collection.groupLabel}
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 lg:text-3xl">
+          <h1 className="lp-h1 mt-2 text-[rgb(var(--lp-text))]">
             {model.title}
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
+          <p className="lp-lead mt-3 max-w-3xl text-sm">
             {model.description}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-wide">
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700">
+            <span className="lp-chip lp-chip-neutral">
               {backofficeSettingsKindLabel(model.routeKind)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-700">
+            <span className="lp-chip lp-chip-neutral">
               {backofficeSettingsHonestyLabel(model.collection.honesty)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-700">
+            <span className="lp-chip lp-chip-neutral">
               {backofficeSettingsObjectClassLabel(model.collection.objectClass)}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-700">
+            <span className="lp-chip lp-chip-neutral">
               {backofficeSettingsFlowLabel(model.collection.flowKind)}
             </span>
           </div>
@@ -93,8 +93,8 @@ export function BackofficeManagementWorkspaceFrame({
       ) : null}
 
       {model.relatedLinks.length > 0 ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <section className="lp-card p-5">
+          <p className="lp-k">
             Relaterte arbeidsflater
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -108,7 +108,7 @@ export function BackofficeManagementWorkspaceFrame({
       ) : null}
 
       {model.note ? (
-        <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-relaxed text-slate-700">
+        <section className="lp-empty text-sm leading-relaxed text-[rgb(var(--lp-text))]">
           {model.note}
         </section>
       ) : null}

@@ -5,8 +5,8 @@ import type { WorkspaceStatusChip } from "@/lib/cms/backofficeWorkspaceContextMo
 function chipToneClass(tone: WorkspaceStatusChip["tone"]): string {
   if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-950";
   if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-950";
-  if (tone === "muted") return "border-slate-200 bg-slate-100 text-slate-700";
-  return "border-slate-200 bg-white text-slate-800";
+  if (tone === "muted") return "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-alt))] text-[rgb(var(--lp-muted))]";
+  return "border-[rgb(var(--lp-border))] bg-white text-[rgb(var(--lp-text))]";
 }
 
 /**
@@ -24,8 +24,8 @@ export function WorkspaceContextChrome({
   return (
     <div className="mt-3 grid gap-2">
       {contextSummary ? (
-        <div className="rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-xs leading-relaxed text-slate-800 shadow-sm">
-          <span className="font-semibold text-slate-900">Kontekst · </span>
+        <div className="rounded-2xl border border-[rgb(var(--lp-border))]/75 bg-[rgba(var(--lp-surface-rgb),0.78)] px-3 py-2 text-xs leading-relaxed text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-sm)]">
+          <span className="font-semibold text-[rgb(var(--lp-text))]">Kontekst · </span>
           {contextSummary}
         </div>
       ) : null}

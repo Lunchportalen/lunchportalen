@@ -21,13 +21,13 @@ export default function BackofficeShell({ children, statusStrip, historyStrip }:
   const isContentDetailEditor = contentRoute.kind === "detail";
 
   return (
-    <div className="flex h-screen flex-col bg-[rgb(var(--lp-bg))]">
+    <div className="lp-page flex h-screen flex-col overflow-hidden">
       <TopBar />
       {isContentDetailEditor ? (
         /* Ingen beige «shelf» under TopBar — Cmd+K-palett monteres fortsatt (åpen state er egen overlay). */
         <BackofficeCommandPalette />
       ) : (
-        <div className="shrink-0 space-y-2 border-b border-[rgb(var(--lp-border))]/60 bg-[rgb(var(--lp-bg))]/92 px-3 py-3 backdrop-blur-sm sm:px-4">
+        <div className="shrink-0 space-y-2 border-b border-[rgb(var(--lp-border))]/60 bg-[rgba(var(--lp-surface-rgb),0.54)] px-3 py-3 backdrop-blur-sm sm:px-4">
           <BackofficeExtensionContextStrip />
           <BackofficeCommandPalette />
           {statusStrip}
@@ -38,14 +38,14 @@ export default function BackofficeShell({ children, statusStrip, historyStrip }:
         className={
           isContentDetailEditor
             ? "flex min-h-0 flex-1 px-0 pb-0 pt-0"
-            : "flex min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-4"
+            : "flex min-h-0 flex-1 px-3 pb-4 pt-4 sm:px-4"
         }
       >
         <div
           className={
             isContentDetailEditor
               ? "min-h-0 flex-1 overflow-hidden bg-[rgb(var(--lp-bg))]"
-              : "min-h-0 flex-1 overflow-hidden rounded-[26px] bg-white/55 shadow-[0_18px_40px_rgba(15,23,42,0.08)] ring-1 ring-black/5"
+              : "min-h-0 flex-1 overflow-hidden rounded-[30px] border border-[rgb(var(--lp-border))]/75 bg-[rgba(var(--lp-surface-rgb),0.72)] shadow-[var(--lp-shadow-soft)]"
           }
         >
           {children}

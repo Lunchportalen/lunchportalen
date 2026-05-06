@@ -40,7 +40,7 @@ export function BackofficeWorkspaceViewTabs({
   const navClassName =
     surface === "subtle"
       ? "flex flex-wrap gap-1 rounded-xl border border-[rgb(var(--lp-border))]/60 bg-[rgb(var(--lp-card))]/35 p-1"
-      : "flex flex-wrap gap-1 rounded-xl border border-[rgb(var(--lp-border))] bg-white/90 p-1 shadow-sm";
+      : "flex flex-wrap gap-1 rounded-2xl border border-[rgb(var(--lp-border))]/75 bg-[rgba(var(--lp-surface-rgb),0.82)] p-1 shadow-[var(--lp-shadow-sm)]";
   return (
     <nav
       className={navClassName}
@@ -51,12 +51,12 @@ export function BackofficeWorkspaceViewTabs({
           item.active ?? (pathname && item.href ? activeFor(pathname, item.href, item.exact) : false);
         const activeClassName =
           surface === "subtle"
-            ? "bg-white text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-pink-500/20"
-            : "bg-[rgb(var(--lp-card))] text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-pink-500/25";
+            ? "bg-white text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-[rgb(var(--lp-gold))]/35"
+            : "bg-[rgb(var(--lp-card))] text-[rgb(var(--lp-text))] shadow-sm ring-1 ring-[rgb(var(--lp-gold))]/35";
         const idleClassName =
           surface === "subtle"
             ? "text-[rgb(var(--lp-muted))] hover:bg-white/80 hover:text-[rgb(var(--lp-text))]"
-            : "text-[rgb(var(--lp-muted))] hover:bg-slate-50 hover:text-[rgb(var(--lp-text))]";
+            : "text-[rgb(var(--lp-muted))] hover:bg-[rgb(var(--lp-surface-alt))] hover:text-[rgb(var(--lp-text))]";
         const className = `min-h-10 rounded-lg px-3 py-2 text-sm font-medium transition ${
           active ? activeClassName : idleClassName
         }`;

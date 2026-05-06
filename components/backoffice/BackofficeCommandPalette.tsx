@@ -98,7 +98,7 @@ export function BackofficeCommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/45 px-4 pt-[12vh] backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="backoffice-cmd-palette-title"
@@ -107,13 +107,13 @@ export function BackofficeCommandPalette() {
       }}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+        className="lp-card w-full max-w-lg overflow-hidden"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <h2 id="backoffice-cmd-palette-title" className="sr-only">
           Hopp til backoffice-modul
         </h2>
-        <div className="border-b border-slate-100 px-3 py-2">
+        <div className="border-b border-[rgb(var(--lp-border))]/70 px-3 py-3">
           <input
             ref={inputRef}
             type="search"
@@ -121,21 +121,20 @@ export function BackofficeCommandPalette() {
             placeholder="Søk modul, alias, sti eller hurtiglenke…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+            className="lp-input w-full px-3 py-2 text-sm"
             aria-label="Filtrer moduler"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Ctrl+K / ⌘K · Enter åpner · Esc lukker · manifest (U19) + sider/media ved søk (U20) — ikke en ekstern
-            søkemotorplattform
+          <p className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
+            Ctrl+K / ⌘K · Enter åpner · Esc lukker.
           </p>
         </div>
         <ul className="max-h-[60vh] overflow-y-auto py-1" role="listbox">
           {filtered.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-slate-500">Ingen treff.</li>
+            <li className="px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">Ingen treff.</li>
           ) : (
             grouped.map((g) => (
               <Fragment key={g.groupId}>
-                <li className="list-none px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                <li className="list-none px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-wide text-[rgb(var(--lp-muted))]">
                   {g.label}
                 </li>
                 {g.items.map((item) => {
@@ -146,14 +145,16 @@ export function BackofficeCommandPalette() {
                       <button
                         type="button"
                         className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                          i === highlight ? "bg-slate-100 text-slate-900" : "text-slate-800 hover:bg-slate-50"
+                          i === highlight
+                            ? "bg-[rgb(var(--lp-gold-soft))] text-[rgb(var(--lp-text))]"
+                            : "text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-alt))]"
                         }`}
                         onMouseEnter={() => setHighlight(i)}
                         onClick={() => go(item.href)}
                       >
                         <Icon name={item.iconName} size="sm" />
                         <span className="font-medium">{item.label}</span>
-                        <span className="ml-auto truncate font-mono text-xs text-slate-400">{item.href}</span>
+                        <span className="ml-auto truncate font-mono text-xs text-[rgb(var(--lp-muted))]">{item.href}</span>
                       </button>
                     </li>
                   );

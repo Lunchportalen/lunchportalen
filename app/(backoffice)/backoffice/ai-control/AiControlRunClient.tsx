@@ -47,12 +47,17 @@ export function AiControlRunClient() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">Kjør autonom syklus</h2>
-      <p className="mt-1 text-sm text-slate-600">
+    <div className="lp-card p-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="lp-h2 text-[rgb(var(--lp-text))]">Kjør autonom syklus</h2>
+          <p className="lp-lead mt-1 text-sm">
         Maks to sikre logg-rader per kjøring. Ingen publisering eller kodeendring.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+          </p>
+        </div>
+        <span className="lp-chip lp-chip-neutral shrink-0">Sporbar kjøring</span>
+      </div>
+      <div className="lp-actions mt-5">
         <DsButton type="button" variant="primary" disabled={busy} onClick={() => run({ force: false, eventDriven: false })}>
           {busy ? "Kjører…" : "Kjør nå"}
         </DsButton>
@@ -63,8 +68,8 @@ export function AiControlRunClient() {
           Med hendelser
         </DsButton>
       </div>
-      {msg ? <p className="mt-2 text-sm text-slate-800">{msg}</p> : null}
-      {rid ? <p className="mt-1 font-mono text-xs text-slate-500">RID: {rid}</p> : null}
+      {msg ? <p className="mt-4 text-sm font-semibold text-[rgb(var(--lp-text))]">{msg}</p> : null}
+      {rid ? <p className="lp-rid mt-1">RID: {rid}</p> : null}
     </div>
   );
 }

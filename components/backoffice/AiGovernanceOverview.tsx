@@ -8,41 +8,46 @@ import { MODULE_LIVE_POSTURE_REGISTRY } from "@/lib/cms/moduleLivePosture";
  */
 export function AiGovernanceOverview() {
   return (
-    <section className="rounded-xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">Governance & modulposture</h2>
-      <p className="mt-2 max-w-3xl text-sm text-slate-600">
-        CMS står stabilt; AI og vekstmoduler er <strong className="font-medium text-slate-800">valgfrie</strong>,{" "}
-        <strong className="font-medium text-slate-800">review-first</strong> der det trengs, og styrt av faktisk
-        backend-atferd. Tabellen under er samme sannhet som drift og dokumentasjon — ikke en egen «grønn» visning.
-      </p>
-      <ul className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+    <section className="lp-card soft p-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="lp-h2 text-[rgb(var(--lp-text))]">Governance & modulstatus</h2>
+          <p className="lp-lead mt-2 max-w-3xl">
+            CMS står stabilt; AI og vekstmoduler er <strong className="font-black text-[rgb(var(--lp-text))]">valgfrie</strong>,{" "}
+            <strong className="font-black text-[rgb(var(--lp-text))]">review-first</strong> der det trengs, og styrt av faktisk
+            backend-atferd. Oversikten viser samme sannhet som drift og dokumentasjon.
+          </p>
+        </div>
+        <span className="lp-chip lp-chip-ok shrink-0">System truth</span>
+      </div>
+      <ul className="mt-5 divide-y divide-[rgb(var(--lp-divider))]/80">
         {MODULE_LIVE_POSTURE_REGISTRY.map((row) => (
-          <li key={row.id} className="px-4 py-3">
+          <li key={row.id} className="py-4 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-sm font-medium text-slate-900">{row.label}</span>
-              <span className="rounded border border-slate-200 bg-slate-50 px-3 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-slate-700">
-                {row.posture}
+              <span className="text-sm font-black text-[rgb(var(--lp-text))]">{row.label}</span>
+              <span className="lp-chip lp-chip-neutral font-mono text-[10px] uppercase tracking-wide">
+                {row.posture === "STUB" ? "Ikke aktiv" : row.posture}
               </span>
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">{row.note}</p>
+            <p className="mt-1 text-xs leading-relaxed text-[rgb(var(--lp-muted))]">{row.note}</p>
           </li>
         ))}
       </ul>
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-slate-900">
-        <span className="text-slate-500">Hurtiglenker:</span>
-        <Link className="underline underline-offset-2" href="/backoffice/content">
+      <div className="lp-actions mt-5 border-t border-[rgb(var(--lp-border))]/70 pt-4 text-sm font-medium">
+        <span className="text-[rgb(var(--lp-muted))]">Hurtiglenker:</span>
+        <Link className="lp-link" href="/backoffice/content">
           Content
         </Link>
-        <Link className="underline underline-offset-2" href="/backoffice/media">
+        <Link className="lp-link" href="/backoffice/media">
           Media
         </Link>
-        <Link className="underline underline-offset-2" href="/backoffice/seo-growth">
+        <Link className="lp-link" href="/backoffice/seo-growth">
           SEO
         </Link>
-        <Link className="underline underline-offset-2" href="/backoffice/social">
+        <Link className="lp-link" href="/backoffice/social">
           Social
         </Link>
-        <Link className="underline underline-offset-2" href="/backoffice/week-menu">
+        <Link className="lp-link" href="/backoffice/week-menu">
           Uke & meny
         </Link>
       </div>

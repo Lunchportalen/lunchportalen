@@ -11,15 +11,23 @@ import { getDomainActionSurfaceById } from "@/lib/cms/controlPlaneDomainActionSu
 import { getModuleLivePostureEntry } from "@/lib/cms/moduleLivePosture";
 
 function postureTone(posture: string): string {
-  if (posture === "LIVE") return "text-emerald-800";
-  if (posture === "LIMITED") return "text-amber-900";
-  return "text-slate-700";
+  if (posture === "LIVE") return "border-emerald-200 bg-emerald-50 text-emerald-950";
+  if (posture === "LIMITED") return "border-amber-200 bg-amber-50 text-amber-950";
+  return "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-alt))] text-[rgb(var(--lp-muted))]";
 }
 
 function extensionKindLabel(kind: "workspace" | "surface" | "tool"): string {
   if (kind === "workspace") return "Workspace";
   if (kind === "surface") return "Surface";
   return "Verktøy";
+}
+
+function postureLabel(posture: string): string {
+  if (posture === "LIVE") return "Live";
+  if (posture === "LIMITED") return "Begrenset";
+  if (posture === "DRY_RUN") return "Test";
+  if (posture === "STUB") return "Ikke aktiv";
+  return posture;
 }
 
 /**
@@ -37,38 +45,38 @@ export function BackofficeExtensionContextStrip() {
 
   return (
     <div
-      className="shrink-0 border-b border-slate-200/80 bg-white/85 px-4 py-1 text-[10px] leading-snug text-slate-600 backdrop-blur-sm sm:px-6"
+      className="shrink-0 rounded-2xl border border-[rgb(var(--lp-border))]/75 bg-[rgba(var(--lp-surface-rgb),0.78)] px-4 py-2 text-[11px] leading-snug text-[rgb(var(--lp-muted))] shadow-[var(--lp-shadow-sm)] backdrop-blur-sm"
       role="region"
       aria-label="Workspace-kontekst"
     >
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="min-w-0 shrink font-semibold text-slate-900">
+        <span className="min-w-0 shrink font-semibold text-[rgb(var(--lp-text))]">
           {ext.label}
-          <span className="font-normal text-slate-500"> · {section.label}</span>
+          <span className="font-normal text-[rgb(var(--lp-muted))]"> · {section.label}</span>
         </span>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
+        <span className="lp-chip lp-chip-neutral text-[10px]">
           {section.plane === "management" ? "Styringsplan" : "Leveranseflate"}
         </span>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+        <span className="lp-chip lp-chip-neutral text-[10px]">
           {extensionKindLabel(ext.kind)}
         </span>
         {posture ? (
-          <span className={`max-w-[min(100%,28rem)] truncate font-medium ${postureTone(posture.posture)}`} title={posture.note}>
-            {posture.posture}
+          <span className={`rounded-full border px-2 py-0.5 font-semibold ${postureTone(posture.posture)}`} title={posture.note}>
+            {postureLabel(posture.posture)}
           </span>
         ) : null}
-        <span className="min-w-0 max-w-[min(100%,28rem)] truncate text-slate-500" title={section.description}>
+        <span className="min-w-0 max-w-[min(100%,28rem)] truncate text-[rgb(var(--lp-muted))]" title={section.description}>
           {section.description}
         </span>
         {domain ? (
-          <span className="min-w-0 max-w-[min(100%,36rem)] truncate text-slate-600" title={domain.sourceOfTruth}>
-            <span className="font-medium text-slate-800">Styring:</span>{" "}
+          <span className="min-w-0 max-w-[min(100%,36rem)] truncate text-[rgb(var(--lp-muted))]" title={domain.sourceOfTruth}>
+            <span className="font-medium text-[rgb(var(--lp-text))]">Styring:</span>{" "}
             {domain.mutationPosture === "read_only" ? "Lesing" : domain.mutationPosture === "review" ? "Review" : "Runtime-ruting"}
           </span>
         ) : null}
         {domain?.actions?.[0] ? (
           <Link
-            className="shrink-0 font-semibold text-slate-900 underline underline-offset-2"
+            className="lp-link shrink-0 px-2 py-1 text-[11px]"
             href={domain.actions[0].href}
             {...(domain.actions[0].external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           >
