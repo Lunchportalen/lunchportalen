@@ -188,8 +188,8 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
     weekdayTiers: defaultTiers,
     deliveryWindowFrom: "",
     deliveryWindowTo: "",
-    termsBindingMonths: "",
-    termsNoticeMonths: "",
+    termsBindingMonths: "12",
+    termsNoticeMonths: "1",
   });
 
   const [pending, setPending] = useState(false);
@@ -457,24 +457,13 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                 onChange={(e) => setState((prev) => ({ ...prev, deliveryWindowTo: e.target.value }))}
               />
             </label>
-            <label className={labelClass}>
-              Binding (måneder) *
-              <input
-                inputMode="numeric"
-                className={inputClass}
-                value={state.termsBindingMonths}
-                onChange={(e) => setState((prev) => ({ ...prev, termsBindingMonths: onlyDigits(e.target.value) }))}
-              />
-            </label>
-            <label className={labelClass}>
-              Oppsigelse (måneder) *
-              <input
-                inputMode="numeric"
-                className={inputClass}
-                value={state.termsNoticeMonths}
-                onChange={(e) => setState((prev) => ({ ...prev, termsNoticeMonths: onlyDigits(e.target.value) }))}
-              />
-            </label>
+                      </div>
+                      <div className="mt-6 rounded-[1.25rem] bg-[#fffaf1] px-4 py-4 text-sm text-[#34302a]">
+                        <p className="font-semibold text-[#181715]">Avtalevilkår</p>
+                        <p className="mt-1">12 måneder binding · 1 måned oppsigelse</p>
+                        <p className="mt-1 text-xs leading-5 text-[#756b5c]">
+                          Standardvilkår for firmalunsj i Lunchportalen.
+                        </p>
                       </div>
                     </div>
 
