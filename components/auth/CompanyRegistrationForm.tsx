@@ -308,30 +308,18 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
                       </p>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-4">
-                      {steps.map((step, index) => {
-                        const active = index === 0;
-                        return (
-                          <div
-                            key={step}
-                            className={[
-                              "flex items-center gap-3 border-t pt-3",
-                              active ? "border-[#d7ad42]" : "border-[#eee5d6]",
-                            ].join(" ")}
-                            aria-current={active ? "step" : undefined}
-                          >
-                            <span
-                              className={[
-                                "grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold",
-                                active ? "bg-[#f1c75b] text-[#181715]" : "bg-[#f8f1e5] text-[#8d806d]",
-                              ].join(" ")}
-                            >
-                              {index + 1}
-                            </span>
-                            <span className="text-sm font-medium text-[#34302a]">{step}</span>
-                          </div>
-                        );
-                      })}
+                    <div className="border-t border-[#eee5d6] pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a32]">
+                        Registreringen består av
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-[#34302a]">
+                        {steps.map((step) => (
+                          <span key={step} className="inline-flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#d7ad42]" aria-hidden="true" />
+                            {step}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
