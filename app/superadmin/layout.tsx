@@ -9,11 +9,7 @@ import { redirect } from "next/navigation";
 
 import BlockedAccess from "@/components/auth/BlockedAccess";
 
-import ControlHeader from "./_components/ControlHeader";
 import ControlTowerNav from "./_components/ControlTowerNav";
-import OperationalStatusStrip from "./_components/OperationalStatusStrip";
-import DemoStory from "./_components/DemoStory";
-import DemoToggle from "./_components/DemoToggle";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { roleHome } from "@/lib/auth/roleHome";
@@ -50,17 +46,16 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
   }
 
   return (
-    <div className="min-h-[calc(100vh-0px)] bg-[rgb(var(--lp-bg))]" style={{ padding: 20 }}>
-      <div className="mx-auto max-w-7xl px-4 pt-[27px] pb-16">
-        <div className="lp-glass-card lp-superadmin-motion-shell rounded-card p-4 sm:p-6">
-          <ControlHeader />
-          <ControlTowerNav />
-          <OperationalStatusStrip />
-          {children}
+    <div className="min-h-screen overflow-x-hidden bg-[#f7f1e7] px-3 py-4 sm:px-5 lg:px-6">
+      <div className="mx-auto max-w-[1500px] pt-[27px] pb-16">
+        <div className="grid gap-3 rounded-[2rem] bg-[#f5ecdf] p-2 shadow-[0_24px_80px_rgba(35,28,18,0.08)] ring-1 ring-black/[0.04] lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside className="rounded-[1.65rem] bg-white/74 p-3 ring-1 ring-white/85 lg:sticky lg:top-6 lg:self-start">
+            <ControlTowerNav />
+          </aside>
+
+          <main className="min-w-0 rounded-[1.75rem] bg-white/86 p-4 sm:p-6">{children}</main>
         </div>
       </div>
-      <DemoStory />
-      <DemoToggle />
     </div>
   );
 }

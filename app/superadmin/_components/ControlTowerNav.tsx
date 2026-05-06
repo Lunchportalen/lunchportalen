@@ -1,7 +1,39 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+const PRIMARY_NAV = [
+  { label: "Kontrollsenter", href: "/superadmin" },
+  { label: "Morgenoversikt", href: "/superadmin/daily-brief" },
+  { label: "Driftsoversikt", href: "/superadmin/overview" },
+  { label: "Firma", href: "/superadmin/companies" },
+  { label: "Avtaler", href: "/superadmin/agreements" },
+  { label: "Brukere", href: "/superadmin/users" },
+  { label: "Kjøkken", href: "/kitchen" },
+  { label: "Backoffice", href: "/backoffice/content" },
+  { label: "Systemhelse", href: "/superadmin/system" },
+];
+
+const SECONDARY_NAV = [
+  { label: "Kontrolltårn", href: "/superadmin/control-tower" },
+  { label: "Operasjoner", href: "/superadmin/operations" },
+  { label: "Global", href: "/superadmin/global" },
+  { label: "Vekst", href: "/superadmin/growth/social" },
+  { label: "Pipeline", href: "/superadmin/pipeline" },
+  { label: "Investor", href: "/superadmin/investor" },
+  { label: "AI CTO", href: "/superadmin/cto" },
+  { label: "Salg", href: "/superadmin/sales" },
+  { label: "Salgsloop", href: "/superadmin/sales-loop" },
+  { label: "Salgsagent", href: "/superadmin/sales-agent" },
+  { label: "Produksjonssjekk", href: "/superadmin/production-check" },
+  { label: "Systemgraf", href: "/superadmin/system-graph" },
+  { label: "AI-strategi", href: "/superadmin/strategy" },
+  { label: "Autonomi", href: "/superadmin/autonomy" },
+  { label: "Eksperimenter", href: "/superadmin/experiments" },
+  { label: "Revisjon", href: "/superadmin/audit" },
+];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/superadmin") {
@@ -40,93 +72,52 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function navClass(active: boolean, compact = false): string {
+  return [
+    "flex items-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400",
+    compact ? "min-h-[36px] px-3 text-xs" : "min-h-[44px] px-3 text-sm",
+    active ? "bg-neutral-950 text-white shadow-sm" : "text-[rgb(var(--lp-muted))] hover:bg-white/90 hover:text-[rgb(var(--lp-fg))]",
+  ].join(" ");
+}
+
 export default function ControlTowerNav() {
   const path = usePathname();
 
-  const linkStyle = (href: string) => ({
-    padding: "6px 10px",
-    borderRadius: 6,
-    background: isActive(path, href) ? "#111" : "#eee",
-    color: isActive(path, href) ? "#fff" : "#000",
-    textDecoration: "none",
-    fontSize: 14,
-  });
-
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 10,
-        marginBottom: 20,
-        flexWrap: "wrap",
-      }}
-    >
-      <Link href="/superadmin" style={linkStyle("/superadmin")}>
-        Kontrollsenter
+    <>
+      <Link
+        href="/"
+        className="flex min-h-[64px] items-center rounded-[1.25rem] px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        aria-label="Lunchportalen hjem"
+      >
+        <Image
+          src="/brand/LP-logo-uten-bakgrunn.png"
+          alt="Lunchportalen"
+          width={160}
+          height={64}
+          className="h-12 w-auto object-contain"
+          priority
+        />
       </Link>
-      <Link href="/superadmin/overview" style={linkStyle("/superadmin/overview")}>
-        Driftsoversikt
-      </Link>
-      <Link href="/superadmin/daily-brief" style={linkStyle("/superadmin/daily-brief")}>
-        Morgenoversikt
-      </Link>
-      <Link href="/superadmin/control-tower" style={linkStyle("/superadmin/control-tower")}>
-        Kontrolltårn
-      </Link>
-      <Link href="/superadmin/global" style={linkStyle("/superadmin/global")}>
-        Global
-      </Link>
-      <Link href="/superadmin/growth/social" style={linkStyle("/superadmin/growth/social")}>
-        Vekst
-      </Link>
-      <Link href="/superadmin/pipeline" style={linkStyle("/superadmin/pipeline")}>
-        Pipeline
-      </Link>
-      <Link href="/superadmin/investor" style={linkStyle("/superadmin/investor")}>
-        Investor
-      </Link>
-      <Link href="/superadmin/cto" style={linkStyle("/superadmin/cto")}>
-        AI CTO
-      </Link>
-      <Link href="/superadmin/sales" style={linkStyle("/superadmin/sales")}>
-        Salg
-      </Link>
-      <Link href="/superadmin/sales-loop" style={linkStyle("/superadmin/sales-loop")}>
-        Salgsloop
-      </Link>
-      <Link href="/superadmin/sales-agent" style={linkStyle("/superadmin/sales-agent")}>
-        Salgsagent
-      </Link>
-      <Link href="/superadmin/operations" style={linkStyle("/superadmin/operations")}>
-        Operasjoner
-      </Link>
-      <Link href="/superadmin/production-check" style={linkStyle("/superadmin/production-check")}>
-        Produksjonssjekk
-      </Link>
-      <Link href="/superadmin/system-graph" style={linkStyle("/superadmin/system-graph")}>
-        Systemgraf
-      </Link>
-      <Link href="/superadmin/strategy" style={linkStyle("/superadmin/strategy")}>
-        AI-strategi
-      </Link>
-      <Link href="/superadmin/autonomy" style={linkStyle("/superadmin/autonomy")}>
-        Autonomi
-      </Link>
-      <Link href="/superadmin/experiments" style={linkStyle("/superadmin/experiments")}>
-        Eksperimenter
-      </Link>
-      <Link href="/superadmin/agreements" style={linkStyle("/superadmin/agreements")}>
-        Avtaler
-      </Link>
-      <Link href="/superadmin/companies" style={linkStyle("/superadmin/companies")}>
-        Firma
-      </Link>
-      <Link href="/superadmin/audit" style={linkStyle("/superadmin/audit")}>
-        Revisjon
-      </Link>
-      <Link href="/superadmin/system" style={linkStyle("/superadmin/system")}>
-        Systemhelse
-      </Link>
-    </div>
+
+      <nav aria-label="Superadmin hovedmeny" className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
+        {PRIMARY_NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={navClass(isActive(path, item.href))}>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="mt-4 border-t border-black/[0.06] pt-3">
+        <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgb(var(--lp-muted))]">Flere</p>
+        <nav aria-label="Flere superadmin-innganger" className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-4 lg:grid-cols-1">
+          {SECONDARY_NAV.map((item) => (
+            <Link key={item.href} href={item.href} className={navClass(isActive(path, item.href), true)}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }

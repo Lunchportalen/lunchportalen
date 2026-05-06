@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import OperationalStatusStrip from "@/app/superadmin/_components/OperationalStatusStrip";
@@ -6,18 +5,6 @@ import { capabilities, capabilitiesByGroup } from "@/lib/superadmin/capabilities
 import type { LoadSuperadminHomeSignalsResult } from "@/lib/superadmin/loadSuperadminHomeSignals";
 
 import SuperadminCard from "./SuperadminCard";
-
-const SIDEBAR_LINKS: { label: string; href: string }[] = [
-  { label: "Kontrollsenter", href: "/superadmin" },
-  { label: "Morgenoversikt", href: "/superadmin/daily-brief" },
-  { label: "Driftsoversikt", href: "/superadmin/overview" },
-  { label: "Firma", href: "/superadmin/companies" },
-  { label: "Avtaler", href: "/superadmin/agreements" },
-  { label: "Brukere", href: "/superadmin/users" },
-  { label: "Kjøkken", href: "/kitchen" },
-  { label: "Backoffice", href: "/backoffice/content" },
-  { label: "Systemhelse", href: "/superadmin/system" },
-];
 
 const PRESERVED_LINKS: { label: string; href: string }[] = [
   { label: "Registreringer", href: "/superadmin/registrations" },
@@ -119,53 +106,8 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
   const healthLabel = signals.ok ? "OK" : "Krever sjekk";
 
   return (
-    <>
-      <style>{`
-        .lp-superadmin-motion-shell:has(> .lp-superadmin-app-surface) > :nth-child(1),
-        .lp-superadmin-motion-shell:has(> .lp-superadmin-app-surface) > :nth-child(2),
-        .lp-superadmin-motion-shell:has(> .lp-superadmin-app-surface) > [data-superadmin-operational-strip="layout"] {
-          display: none !important;
-        }
-        body:has(.lp-superadmin-app-surface) button[style*="position: fixed"][style*="bottom: 20px"][style*="right: 20px"] {
-          display: none !important;
-        }
-      `}</style>
-      <div className="lp-superadmin-app-surface overflow-hidden rounded-[2rem] bg-[#f6efe3] p-2 shadow-[0_24px_80px_rgba(35,28,18,0.08)] ring-1 ring-black/[0.04]">
-      <div className="grid gap-2 lg:grid-cols-[205px_minmax(0,1fr)_276px]">
-        <aside className="rounded-[1.65rem] bg-white/72 p-3 ring-1 ring-white/80 lg:sticky lg:top-6 lg:self-start">
-          <Link
-            href="/"
-            className="flex min-h-[64px] items-center rounded-[1.25rem] px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-            aria-label="Lunchportalen hjem"
-          >
-            <Image
-              src="/brand/LP-logo-uten-bakgrunn.png"
-              alt="Lunchportalen"
-              width={160}
-              height={64}
-              className="h-12 w-auto object-contain"
-              priority
-            />
-          </Link>
-          <nav aria-label="Superadmin hovedmeny" className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
-            {SIDEBAR_LINKS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  "flex min-h-[44px] items-center rounded-full px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400",
-                  item.href === "/superadmin"
-                    ? "bg-neutral-950 text-white shadow-sm"
-                    : "text-[rgb(var(--lp-muted))] hover:bg-white/90 hover:text-[rgb(var(--lp-fg))]",
-                ].join(" ")}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        <main className="min-w-0 rounded-[1.75rem] bg-white/86 p-4 sm:p-6">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_276px]">
+        <div className="min-w-0">
           <section aria-labelledby="superadmin-title">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-2xl">
@@ -319,7 +261,7 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
               </div>
             </section>
           </section>
-        </main>
+        </div>
 
         <aside className="rounded-[1.75rem] bg-white/76 p-4 ring-1 ring-white/85 lg:sticky lg:top-6 lg:self-start">
           <div>
@@ -358,7 +300,5 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
           </div>
         </aside>
       </div>
-      </div>
-    </>
   );
 }
