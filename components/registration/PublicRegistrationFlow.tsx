@@ -26,7 +26,7 @@ export default function PublicRegistrationFlow() {
       <Suspense fallback={null}>
         <RegistrationDemoFunnelBeacon />
       </Suspense>
-      <Container className="max-w-3xl py-6">
+      <Container className="max-w-7xl py-6 sm:py-8">
         <CompanyRegistrationForm />
       </Container>
     </>
