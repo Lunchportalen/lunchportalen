@@ -246,7 +246,7 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 shrink-0 rounded-2xl bg-white/75">
                 <Image
-                  src="/brand/LP-logo-uten-bakgrunn.png"
+                  src="/brand/lunchportalen-logo.svg"
                   alt="Lunchportalen"
                   fill
                   sizes="48px"
