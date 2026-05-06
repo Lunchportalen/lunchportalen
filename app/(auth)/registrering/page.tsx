@@ -79,17 +79,17 @@ export default async function RegistrationPage({
       ) : null}
       <PageShell>
         <div
-          className="lp-container mx-auto max-w-5xl px-4 py-7 sm:py-9"
+          className="w-full max-w-none px-0 py-0"
           data-lp-public-cms-slug="registrering"
           data-lp-public-cms-origin={cmsOrigin}
         >
           {content?.title ? (
-            <header className="mb-6">
+            <header className="px-4 pt-4 pb-2">
               <h1 className="lp-h1 mb-2 text-[rgb(var(--lp-text))]">{content.title}</h1>
             </header>
           ) : null}
           {blocks.length > 0 ? (
-            <div className="mb-8 flex flex-col gap-6">
+            <div className="px-4 pb-4">
               <CmsBlockRenderer
                 blocks={blocks}
                 env={ENV}
