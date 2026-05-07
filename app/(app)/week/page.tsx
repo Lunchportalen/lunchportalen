@@ -143,79 +143,83 @@ function hasPublishedMenusForDate(menusByDate: Map<string, MenuContent[]>, date:
   return (menusByDate.get(date) ?? []).some((menu) => menu.isPublished === true);
 }
 
+function publishedCountForBlock(menusByDate: Map<string, MenuContent[]>, block: SuperadminWeekBlock) {
+  return block.dates.filter((date) => hasPublishedMenusForDate(menusByDate, date)).length;
+}
+
 function SuperadminDayPreview({ date, menus }: { date: string; menus: MenuContent[] }) {
   const publishedMenus = menus.filter((menu) => menu.isPublished === true);
   const isPublished = publishedMenus.length > 0;
   const weekday = capitalizeFirst(formatWeekdayNO(date));
 
+  if (!isPublished) {
+    return (
+      <li className="flex min-h-[52px] items-center justify-between gap-3 px-4 py-3">
+        <p className="min-w-0 text-sm font-medium text-neutral-800">
+          {weekday} <span className="text-neutral-300">-</span> {formatDateNO(date)}
+        </p>
+        <span className="shrink-0 rounded-full bg-[#fff3c8] px-3 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
+          Ikke publisert
+        </span>
+      </li>
+    );
+  }
+
   return (
-    <li className="rounded-[1.35rem] bg-white/85 px-4 py-4 ring-1 ring-black/10">
+    <li className="px-4 py-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="text-center sm:text-left">
+        <div className="min-w-0 text-center sm:text-left">
           <p className="text-sm font-semibold text-neutral-950">
-            {weekday} <span className="text-neutral-400">·</span> {formatDateNO(date)}
+            {weekday} <span className="text-neutral-300">-</span> {formatDateNO(date)}
           </p>
         </div>
-        <span
-          className={`mx-auto inline-flex min-h-[32px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ring-1 sm:mx-0 ${
-            isPublished
-              ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-              : "bg-[#fff3c8] text-amber-950 ring-amber-200"
-          }`}
-        >
-          {isPublished ? "Publisert" : "Ikke publisert"}
+        <span className="mx-auto inline-flex min-h-[30px] items-center justify-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-950 ring-1 ring-emerald-200 sm:mx-0">
+          Publisert
         </span>
       </div>
 
-      {isPublished ? (
-        <div className="mt-4 space-y-3">
-          {publishedMenus.map((menu) => {
-            const choices = menuChoices(menu);
-            return (
-              <article key={menu._id} className="rounded-2xl bg-[#fffaf0] px-4 py-4 ring-1 ring-amber-200/70">
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  <span className="inline-flex rounded-full bg-[#f2c94c]/25 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200">
-                    {tierPreviewLabel(menu)}
-                  </span>
+      <div className="mt-3 space-y-4">
+        {publishedMenus.map((menu) => {
+          const choices = menuChoices(menu);
+          return (
+            <article key={menu._id} className="border-t border-black/5 pt-3 first:border-t-0 first:pt-0">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <span className="rounded-full bg-[#f2c94c]/20 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/70">
+                  {tierPreviewLabel(menu)}
+                </span>
+              </div>
+              {menu.title?.trim() ? (
+                <h3 className="mt-2 text-center text-base font-semibold leading-snug text-neutral-950 sm:text-left">
+                  {menu.title}
+                </h3>
+              ) : null}
+              {menu.description?.trim() ? (
+                <p className="mt-1.5 whitespace-pre-wrap text-center text-sm leading-6 text-neutral-700 sm:text-left">
+                  {menu.description}
+                </p>
+              ) : null}
+              {choices.length ? (
+                <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+                  {choices.map((choice) => (
+                    <span
+                      key={choice.key}
+                      className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-neutral-800 ring-1 ring-black/10"
+                    >
+                      {choice.label}
+                    </span>
+                  ))}
                 </div>
-                {menu.title?.trim() ? (
-                  <h2 className="mt-3 text-center text-base font-semibold leading-snug text-neutral-950 sm:text-left">
-                    {menu.title}
-                  </h2>
-                ) : null}
-                {menu.description?.trim() ? (
-                  <p className="mt-2 whitespace-pre-wrap text-center text-sm leading-6 text-neutral-700 sm:text-left">
-                    {menu.description}
-                  </p>
-                ) : null}
-                {choices.length ? (
-                  <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-                    {choices.map((choice) => (
-                      <span
-                        key={choice.key}
-                        className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-800 ring-1 ring-black/10"
-                      >
-                        {choice.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {Array.isArray(menu.allergens) && menu.allergens.length ? (
-                  <p className="mt-3 text-center text-xs text-neutral-600 sm:text-left">
-                    <span className="font-semibold">Allergener: </span>
-                    {menu.allergens.map((item) => String(item)).join(", ")}
-                  </p>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="mt-4 rounded-2xl bg-[#fffaf0] px-4 py-4 text-center ring-1 ring-amber-200/70">
-          <p className="text-sm font-semibold text-neutral-950">Ikke publisert</p>
-          <p className="mt-1 text-sm text-neutral-600">Meny mangler for denne dagen.</p>
-        </div>
-      )}
+              ) : null}
+              {Array.isArray(menu.allergens) && menu.allergens.length ? (
+                <p className="mt-3 text-center text-xs text-neutral-600 sm:text-left">
+                  <span className="font-semibold">Allergener: </span>
+                  {menu.allergens.map((item) => String(item)).join(", ")}
+                </p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
     </li>
   );
 }
@@ -227,38 +231,33 @@ function SuperadminWeekPreviewCard({
   block: SuperadminWeekBlock;
   menusByDate: Map<string, MenuContent[]>;
 }) {
-  const complete = block.dates.every((date) => hasPublishedMenusForDate(menusByDate, date));
   const hasAnyPublished = block.dates.some((date) => hasPublishedMenusForDate(menusByDate, date));
+  const publishedCount = publishedCountForBlock(menusByDate, block);
 
   return (
-    <section className="rounded-[2rem] bg-white/90 p-4 shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/10 sm:p-5">
-      <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">Ukesblokk</p>
-        <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-neutral-950">{block.title}</h2>
-        <p className="mt-1 text-sm text-neutral-600">
-          {formatDateNO(block.dates[0] ?? "")} - {formatDateNO(block.dates[block.dates.length - 1] ?? "")}
-        </p>
-        <span
-          className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-            complete
-              ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-              : "bg-[#fff3c8] text-amber-950 ring-amber-200"
-          }`}
-        >
-          {complete ? "Publisering: komplett" : "Publisering: ikke komplett"}
+    <section className="rounded-[2rem] bg-white/75 p-3 shadow-[0_16px_45px_rgba(24,20,16,0.06)] ring-1 ring-white/70 backdrop-blur sm:p-4">
+      <div className="flex items-start justify-between gap-4 px-1 py-2">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.025em] text-neutral-950">{block.title}</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            {formatDateNO(block.dates[0] ?? "")} - {formatDateNO(block.dates[block.dates.length - 1] ?? "")}
+          </p>
+        </div>
+        <span className="rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
+          {publishedCount}/5
         </span>
       </div>
 
       {!hasAnyPublished ? (
-        <div className="mt-5 rounded-2xl bg-[#fff8e7] px-4 py-4 text-center ring-1 ring-amber-200">
-          <p className="text-sm font-semibold text-neutral-950">{block.emptyTitle}</p>
-          <p className="mt-1 text-sm text-neutral-600">
+        <div className="mt-3 rounded-[1.5rem] bg-[#fff8e7]/85 px-4 py-4 text-center ring-1 ring-amber-200/70">
+          <p className="text-base font-semibold tracking-[-0.01em] text-neutral-950">{block.emptyTitle}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-neutral-600">
             Publiser meny i systemadministrasjon før ansatte kan se den.
           </p>
         </div>
       ) : null}
 
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-3 divide-y divide-black/5 rounded-[1.5rem] bg-white/65 ring-1 ring-black/5">
         {block.dates.map((date) => (
           <SuperadminDayPreview key={date} date={date} menus={menusByDate.get(date) ?? []} />
         ))}
@@ -301,30 +300,55 @@ async function renderSuperadminWeekPreview() {
   const allComplete = weekBlocks.every((block) =>
     block.dates.every((date) => hasPublishedMenusForDate(menusByDate, date)),
   );
+  const thisWeekCount = publishedCountForBlock(menusByDate, weekBlocks[0]!);
+  const nextWeekCount = publishedCountForBlock(menusByDate, weekBlocks[1]!);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-8">
+    <section className="mx-auto w-full max-w-[1180px] px-3 py-5 sm:px-4 sm:py-8">
+      <div className="rounded-[2.25rem] bg-[#f8f4ea] px-3 py-5 shadow-[0_24px_80px_rgba(24,20,16,0.08)] ring-1 ring-white/70 sm:px-6 sm:py-7">
       <div className="text-center">
         <WeekBrandMark />
-        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Superadmin</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 md:text-5xl">
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Superadmin</p>
+        <h1 className="mt-2 text-3xl font-semibold leading-[0.95] tracking-[-0.045em] text-neutral-950 md:text-5xl">
           Publisert ukesmeny
         </h1>
-        <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-neutral-600">
+        <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-6 text-neutral-600 sm:text-base sm:leading-7">
           Forhåndsvisning av meny som ansatte får se etter avtale, nivå og tilgang.
         </p>
       </div>
 
-      <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-center sm:grid-cols-3">
-        <div className="rounded-2xl bg-white/85 px-4 py-3 text-sm font-semibold text-neutral-950 ring-1 ring-black/10">
-          Denne uken
+      <div className="mx-auto mt-5 grid max-w-3xl grid-cols-2 gap-2 rounded-[1.75rem] bg-white/72 p-2 text-center shadow-[0_14px_45px_rgba(24,20,16,0.05)] ring-1 ring-white/80 backdrop-blur sm:grid-cols-3">
+        <div className="rounded-[1.25rem] px-2 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Denne uken</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.035em] text-neutral-950">{thisWeekCount}/5</p>
+          <p className="text-[11px] text-neutral-500">publisert</p>
         </div>
-        <div className="rounded-2xl bg-white/85 px-4 py-3 text-sm font-semibold text-neutral-950 ring-1 ring-black/10">
-          Neste uke
+        <div className="rounded-[1.25rem] px-2 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Neste uke</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.035em] text-neutral-950">{nextWeekCount}/5</p>
+          <p className="text-[11px] text-neutral-500">publisert</p>
         </div>
-        <div className="rounded-2xl bg-[#fff8e7] px-4 py-3 text-sm font-semibold text-neutral-950 ring-1 ring-amber-200">
-          {menuDataError ? "Menydata kunne ikke leses" : allComplete ? "Publisering: komplett" : "Publisering: ikke komplett"}
+        <div className="col-span-2 rounded-[1.25rem] bg-[#fff8e7] px-2 py-3 ring-1 ring-amber-200/70 sm:col-span-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Status</p>
+          <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
+            {menuDataError ? "Menydata mangler" : allComplete ? "Publisering komplett" : "Publisering mangler"}
+          </p>
         </div>
+      </div>
+
+      <div className="mx-auto mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
+        <Link
+          href="/superadmin"
+          className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(24,20,16,0.18)] transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+        >
+          G&aring; til systemadministrasjon
+        </Link>
+        <Link
+          href="/kitchen"
+          className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-white/85 px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/10 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+        >
+          Se kj&oslash;kkenoversikt
+        </Link>
       </div>
 
       {menuDataError ? (
@@ -333,25 +357,11 @@ async function renderSuperadminWeekPreview() {
         </div>
       ) : null}
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {weekBlocks.map((block) => (
           <SuperadminWeekPreviewCard key={block.title} block={block} menusByDate={menusByDate} />
         ))}
       </div>
-
-      <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
-        <Link
-          href="/superadmin"
-          className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm"
-        >
-          G&aring; til systemadministrasjon
-        </Link>
-        <Link
-          href="/kitchen"
-          className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/15"
-        >
-          Se kj&oslash;kkenoversikt
-        </Link>
       </div>
     </section>
   );
