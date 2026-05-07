@@ -70,6 +70,7 @@ type WindowPayload = {
 };
 
 type ConfirmPayload = { date: string; action: "order" | "cancel" };
+type PreviewMode = "basis" | "luxus" | "mixed";
 
 function clientRid() {
   try {
@@ -259,6 +260,47 @@ function canOrderDay(day: DayRow, canAct: boolean, globalBusy: boolean) {
   return canAct && day.isEnabled && !day.isLocked && !globalBusy;
 }
 
+function previewTierForDay(mode: PreviewMode, index: number): DayRow["tier"] {
+  if (mode === "luxus") return "LUXUS";
+  if (mode === "mixed") return index < 3 ? "BASIS" : "LUXUS";
+  return "BASIS";
+}
+
+function choicesForTier(tier: DayRow["tier"]): MealChoice[] {
+  if (!tier) return [];
+  return (tier === "LUXUS" ? LUXUS_CATEGORY_LABELS : BASIS_CATEGORY_LABELS).map((label) => ({
+    key: label.toLowerCase().replace(/\s+/g, "-"),
+    label,
+  }));
+}
+
+function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
+  const dates = ["2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08"];
+  return dates.map((date, index) => {
+    const tier = previewTierForDay(mode, index);
+    return {
+      date,
+      weekday: formatWeekdayNO(date),
+      tier,
+      allowedChoices: choicesForTier(tier),
+      selectedChoiceKey: null,
+      isLocked: false,
+      isEnabled: true,
+      lockReason: null,
+      orderStatus: null,
+      wantsLunch: false,
+      menuTitle: null,
+      menuDescription: null,
+      allergens: [],
+      menuImages: [],
+    };
+  });
+}
+
+function ReadOnlyPreviewHint({ className = "" }: { className?: string }) {
+  return <p className={`mt-1 text-xs font-medium text-neutral-500 ${className}`}>Kun forhåndsvisning</p>;
+}
+
 function selectedChoiceLabel(day: DayRow) {
   if (!day.selectedChoiceKey) return null;
   const selected = day.allowedChoices.find((c) => c.key.toLowerCase() === day.selectedChoiceKey?.toLowerCase());
@@ -328,6 +370,8 @@ function WeekLoadingSkeleton({ mobileLayout }: { mobileLayout: boolean }) {
 type Props = {
   canAct: boolean;
   billingHoldReason?: string | null;
+  previewMode?: PreviewMode;
+  readOnlyPreview?: boolean;
 };
 
 function WeekConfirmModal({
@@ -406,6 +450,7 @@ type RowBase = {
   /** Prediktiv markering — kun UI, ingen auto-handling. */
   insightRecommended?: boolean;
   insightPreferredMotion?: boolean;
+  readOnlyPreview?: boolean;
 };
 
 function WeekDayRowDesktop({
@@ -419,6 +464,7 @@ function WeekDayRowDesktop({
   onRequestCancel,
   insightRecommended,
   insightPreferredMotion,
+    readOnlyPreview,
 }: RowBase) {
   const ordered = day.orderStatus === "ACTIVE";
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
@@ -505,8 +551,10 @@ function WeekDayRowDesktop({
           <div className="flex w-full flex-col sm:w-full md:w-auto">
             <button
               type="button"
-              disabled={!canClick}
-              onClick={onRequestCancel}
+              disabled={readOnlyPreview || !canClick}
+              aria-disabled={readOnlyPreview || !canClick}
+              title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+              onClick={readOnlyPreview ? undefined : onRequestCancel}
               className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
             >
               {busyThis ? (
@@ -518,14 +566,16 @@ function WeekDayRowDesktop({
                 "Avbestill lunsj"
               )}
             </button>
-            <CutoffSafetyHint day={day} className="text-center md:text-left" />
+            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
           </div>
         ) : (
           <div className="flex w-full flex-col sm:w-full md:w-auto">
             <button
               type="button"
-              disabled={!canClick}
-              onClick={onRequestOrder}
+              disabled={readOnlyPreview || !canClick}
+              aria-disabled={readOnlyPreview || !canClick}
+              title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+              onClick={readOnlyPreview ? undefined : onRequestOrder}
               className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
             >
               {busyThis ? (
@@ -537,7 +587,7 @@ function WeekDayRowDesktop({
             "Bestill lunsj"
               )}
             </button>
-            <CutoffSafetyHint day={day} className="text-center md:text-left" />
+            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
           </div>
         )}
       </div>
@@ -564,6 +614,7 @@ const WeekDayCardMobile = memo(
     onRequestCancel,
     insightRecommended,
     insightPreferredMotion,
+    readOnlyPreview,
   }: MobileCardProps) {
     const ordered = day.orderStatus === "ACTIVE";
     const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
@@ -603,11 +654,14 @@ const WeekDayCardMobile = memo(
             <span className="inline-flex items-center rounded-full bg-[#fff6d6] px-3 py-1 text-xs font-bold text-neutral-950 ring-1 ring-[#f5c518]/45">
               {tierLabel(day)}
             </span>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${badgeClassForStatus(statusLabel)}`}
-            >
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${badgeClassForStatus(statusLabel)}`}>
               {displayStatus}
             </span>
+            {readOnlyPreview ? (
+              <span className="inline-flex items-center rounded-full bg-neutral-950 px-3 py-1 text-xs font-bold text-white">
+                Forhåndsvisning
+              </span>
+            ) : null}
           </div>
 
           <div className="mt-5">
@@ -685,8 +739,10 @@ const WeekDayCardMobile = memo(
             <>
               <button
                 type="button"
-                disabled={!canClick}
-                onClick={onRequestCancel}
+                disabled={readOnlyPreview || !canClick}
+                aria-disabled={readOnlyPreview || !canClick}
+                title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+                onClick={readOnlyPreview ? undefined : onRequestCancel}
                 className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
@@ -698,14 +754,16 @@ const WeekDayCardMobile = memo(
                   "Avbestill lunsj"
                 )}
               </button>
-              <CutoffSafetyHint day={day} className="text-center" />
+              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
             </>
           ) : (
             <>
               <button
                 type="button"
-                disabled={!canClick}
-                onClick={onRequestOrder}
+                disabled={readOnlyPreview || !canClick}
+                aria-disabled={readOnlyPreview || !canClick}
+                title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+                onClick={readOnlyPreview ? undefined : onRequestOrder}
                 className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
@@ -717,7 +775,7 @@ const WeekDayCardMobile = memo(
                   "Bestill lunsj"
                 )}
               </button>
-              <CutoffSafetyHint day={day} className="text-center" />
+              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
             </>
           )}
         </div>
@@ -742,7 +800,8 @@ const WeekDayCardMobile = memo(
     prev.weekdayLabel === next.weekdayLabel &&
     prev.statusLabel === next.statusLabel &&
     prev.insightRecommended === next.insightRecommended &&
-    prev.insightPreferredMotion === next.insightPreferredMotion,
+    prev.insightPreferredMotion === next.insightPreferredMotion &&
+    prev.readOnlyPreview === next.readOnlyPreview,
 );
 
 function stickyCtaForDay(
@@ -752,6 +811,7 @@ function stickyCtaForDay(
   busyThis: boolean,
   onRequestOrder: () => void,
   onRequestCancel: () => void,
+  readOnlyPreview?: boolean,
 ) {
   const ordered = day.orderStatus === "ACTIVE";
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
@@ -786,8 +846,10 @@ function stickyCtaForDay(
       <>
         <button
           type="button"
-          disabled={!canClick}
-          onClick={onRequestCancel}
+          disabled={readOnlyPreview || !canClick}
+          aria-disabled={readOnlyPreview || !canClick}
+          title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+          onClick={readOnlyPreview ? undefined : onRequestCancel}
           className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
         >
           {busyThis ? (
@@ -799,7 +861,7 @@ function stickyCtaForDay(
             "Avbestill lunsj"
           )}
         </button>
-        <CutoffSafetyHint day={day} className="text-center" />
+        {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
       </>
     );
   }
@@ -807,8 +869,10 @@ function stickyCtaForDay(
     <>
       <button
         type="button"
-        disabled={!canClick}
-        onClick={onRequestOrder}
+        disabled={readOnlyPreview || !canClick}
+        aria-disabled={readOnlyPreview || !canClick}
+        title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+        onClick={readOnlyPreview ? undefined : onRequestOrder}
         className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
       >
         {busyThis ? (
@@ -820,19 +884,25 @@ function stickyCtaForDay(
           "Bestill lunsj"
         )}
       </button>
-      <CutoffSafetyHint day={day} className="text-center" />
+      {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
     </>
   );
 }
 
-export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props) {
+export default function EmployeeWeekClient({
+  canAct,
+  billingHoldReason,
+  previewMode = "basis",
+  readOnlyPreview = false,
+}: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [days, setDays] = useState<DayRow[]>([]);
+  const previewDays = useMemo(() => buildPreviewDays(previewMode), [previewMode]);
+  const [days, setDays] = useState<DayRow[]>(() => (readOnlyPreview ? previewDays : []));
   const [agreementMessage, setAgreementMessage] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(readOnlyPreview ? "Lunchportalen demo" : null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!readOnlyPreview);
   const [busyDate, setBusyDate] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [toastSuccess, setToastSuccess] = useState<string | null>(null);
@@ -843,8 +913,8 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
   const [stickyBarHidden, setStickyBarHidden] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
-  const [serverOsloDate, setServerOsloDate] = useState<string | null>(null);
-  const [weekOrderingAllowed, setWeekOrderingAllowed] = useState(false);
+  const [serverOsloDate, setServerOsloDate] = useState<string | null>(readOnlyPreview ? previewDays[0]?.date ?? null : null);
+  const [weekOrderingAllowed, setWeekOrderingAllowed] = useState(readOnlyPreview);
   const [todayCutoffStatus, setTodayCutoffStatus] = useState<
     "PAST" | "TODAY_OPEN" | "TODAY_LOCKED" | "FUTURE_OPEN" | null
   >(null);
@@ -890,10 +960,33 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
   );
 
   useEffect(() => {
+    if (!readOnlyPreview) return;
+    setDays(previewDays);
+    setCompanyName("Lunchportalen demo");
+    setLoadError(null);
+    setForbidden(false);
+    setLoading(false);
+    setServerOsloDate(previewDays[0]?.date ?? null);
+    setWeekOrderingAllowed(true);
+    setTodayCutoffStatus(null);
+    setOrderingUrgencyHint(false);
+    setMenuSanityFetchFailed(false);
+    setDemandHintLine(null);
+    setErrorBanner(null);
+    setToastSuccess(null);
+    setConfirm(null);
+    setBusyDate(null);
+    setConfirmSubmitting(false);
+    navSourceRef.current = "init";
+    setSelectedDate(previewDays[0]?.date ?? null);
+  }, [previewDays, readOnlyPreview]);
+
+  useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
 
   useEffect(() => {
+    if (readOnlyPreview) return;
     if (loading || forbidden || loadError || days.length === 0) return;
     let alive = true;
     void (async () => {
@@ -909,7 +1002,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     return () => {
       alive = false;
     };
-  }, [loading, forbidden, loadError, days.length]);
+  }, [loading, forbidden, loadError, days.length, readOnlyPreview]);
 
   const guardedAction = useCallback(async (date: string, action: () => Promise<void>) => {
     if (inFlightRef.current.has(date)) return;
@@ -922,6 +1015,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
   }, []);
 
   const loadWindow = useCallback(async (opts?: { silent?: boolean }): Promise<boolean> => {
+    if (readOnlyPreview) return true;
     const silent = Boolean(opts?.silent);
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -1017,12 +1111,13 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     } finally {
       if (!silent) setLoading(false);
     }
-  }, []);
+  }, [readOnlyPreview]);
 
   useEffect(() => {
+    if (readOnlyPreview) return;
     void loadWindow();
     return () => abortRef.current?.abort();
-  }, [loadWindow]);
+  }, [loadWindow, readOnlyPreview]);
 
   useEffect(() => {
     return () => {
@@ -1059,6 +1154,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
 
   /** Stille prefetch når anbefalt dag er kjent (samme kontrakt som øvrig /window). */
   useEffect(() => {
+    if (readOnlyPreview) return;
     if (loading || sortedDays.length === 0 || !recommendedDate) return;
     const key = sortedDays.map((d) => d.date).join("|");
     if (predictedPrefetchKeyRef.current === key) return;
@@ -1067,7 +1163,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     if (prefetchGateRef.current.can) {
       void fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store" }).catch(() => {});
     }
-  }, [loading, sortedDays, recommendedDate]);
+  }, [loading, sortedDays, recommendedDate, readOnlyPreview]);
 
   /** Synk scroll-posisjon med valgt dag (init / tap — ikke under IO-styrt swipe). */
   useLayoutEffect(() => {
@@ -1130,6 +1226,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
 
   /** Prediktiv prefetch ved dagbytte (stille, ingen setState). */
   useEffect(() => {
+    if (readOnlyPreview) return;
     if (!selectedDate || loading || days.length === 0) return;
     if (prefetchSelectTimerRef.current) clearTimeout(prefetchSelectTimerRef.current);
     prefetchSelectTimerRef.current = setTimeout(() => {
@@ -1144,7 +1241,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     return () => {
       if (prefetchSelectTimerRef.current) clearTimeout(prefetchSelectTimerRef.current);
     };
-  }, [selectedDate, days.length, loading]);
+  }, [selectedDate, days.length, loading, readOnlyPreview]);
 
   /** Sticky bar: skjul ved scroll ned, vis ved scroll opp (kun mobil). */
   useEffect(() => {
@@ -1181,6 +1278,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
    * getNextWeekStartISO brukes som deterministisk fasit for neste ukes start (samme som server nextWeekStart).
    */
   useEffect(() => {
+    if (readOnlyPreview) return;
     if (loading) return;
     const g = prefetchGateRef.current;
     if (!g.can || !g.weekStart) return;
@@ -1188,7 +1286,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
     prefetchDoneKeyRef.current = g.weekStart;
     void getNextWeekStartISO(g.weekStart);
     void fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store" }).catch(() => {});
-  }, [days, loading]);
+  }, [days, loading, readOnlyPreview]);
 
   const selectDayFromTap = useCallback((date: string) => {
     navSourceRef.current = "tap";
@@ -1207,6 +1305,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
 
   const postSetDayInner = useCallback(
     async (date: string, wantsLunch: boolean): Promise<boolean> => {
+      if (readOnlyPreview) return false;
       const rid = clientRid();
       setErrorBanner(null);
 
@@ -1258,10 +1357,11 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
         return false;
       }
     },
-    [loadWindow, showSuccessToast],
+    [loadWindow, readOnlyPreview, showSuccessToast],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
+    if (readOnlyPreview) return;
     if (!confirm) return;
     safeVibrate(10);
     const { date, action } = confirm;
@@ -1276,19 +1376,21 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
         setConfirmSubmitting(false);
       }
     });
-  }, [confirm, guardedAction, postSetDayInner]);
+  }, [confirm, guardedAction, postSetDayInner, readOnlyPreview]);
 
   const requestOrder = useCallback((date: string) => {
+    if (readOnlyPreview) return;
     setErrorBanner(null);
     setConfirm({ date, action: "order" });
-  }, []);
+  }, [readOnlyPreview]);
 
   const requestCancel = useCallback((date: string) => {
+    if (readOnlyPreview) return;
     setErrorBanner(null);
     setConfirm({ date, action: "cancel" });
-  }, []);
+  }, [readOnlyPreview]);
 
-  const blocked = !canAct || !weekOrderingAllowed;
+  const blocked = !readOnlyPreview && (!canAct || !weekOrderingAllowed);
   const globalBusy = busyDate !== null;
 
   const selectedDay = selectedDate ? days.find((d) => d.date === selectedDate) : undefined;
@@ -1377,10 +1479,14 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
 
   return (
     <div
-      className={`mx-auto min-h-dvh w-full max-w-lg bg-[#fbf8f1] px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 md:max-w-2xl ${isMobile ? "pb-32" : ""} ${contentVisible ? "opacity-100" : "opacity-0"}`}
+      className={`mx-auto w-full px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 ${
+        readOnlyPreview
+          ? "max-w-[430px] rounded-[2rem] bg-[#fbf8f1] shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5"
+          : `min-h-dvh max-w-lg bg-[#fbf8f1] md:max-w-2xl ${isMobile ? "pb-32" : ""}`
+      } ${contentVisible ? "opacity-100" : "opacity-0"}`}
     >
       <WeekConfirmModal
-        open={Boolean(confirm)}
+        open={!readOnlyPreview && Boolean(confirm)}
         title={confirm ? confirmTitle : ""}
         onCancel={() => {
           if (confirmSubmitting) return;
@@ -1429,16 +1535,16 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
             Menytekst kunne ikke lastes akkurat nå. Ordrestatus og bestilling/avbestilling vises som vanlig.
           </div>
         ) : null}
-        {patterns.streakCount >= 2 ? (
+        {!readOnlyPreview && patterns.streakCount >= 2 ? (
           <p className="text-center text-xs font-medium text-neutral-700">{patterns.streakCount} uker på rad</p>
         ) : null}
-        {showHabitNudge ? (
+        {!readOnlyPreview && showHabitNudge ? (
           <p className="text-center text-xs text-neutral-500">Du pleier å bestille denne dagen</p>
         ) : null}
-        {demandHintLine ? <p className="text-center text-xs text-neutral-500">{demandHintLine}</p> : null}
-        {todayCutoffStatus === "TODAY_OPEN" && orderingUrgencyHint ? (
+        {!readOnlyPreview && demandHintLine ? <p className="text-center text-xs text-neutral-500">{demandHintLine}</p> : null}
+        {!readOnlyPreview && todayCutoffStatus === "TODAY_OPEN" && orderingUrgencyHint ? (
           <p className="text-center text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
-        ) : todayCutoffStatus === "TODAY_LOCKED" ? (
+        ) : !readOnlyPreview && todayCutoffStatus === "TODAY_LOCKED" ? (
           <p className="text-center text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
         ) : null}
         {errorBanner ? (
@@ -1484,8 +1590,9 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
             onSelectDay={() => selectDayFromTap(activeDay.date)}
             onRequestOrder={() => requestOrder(activeDay.date)}
             onRequestCancel={() => requestCancel(activeDay.date)}
-            insightRecommended={Boolean(recommendedDate && activeDay.date === recommendedDate && preferredWeekday)}
+            insightRecommended={Boolean(!readOnlyPreview && recommendedDate && activeDay.date === recommendedDate && preferredWeekday)}
             insightPreferredMotion={false}
+            readOnlyPreview={readOnlyPreview}
           />
         </section>
       ) : null}
@@ -1525,7 +1632,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
         </div>
       </section>
 
-      {selectedDay ? (
+      {!readOnlyPreview && selectedDay ? (
         <div
           className={`fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white/95 px-4 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm motion-safe:transition-[transform,opacity] motion-safe:duration-200 motion-safe:ease-out ${
             stickyBarHidden ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
@@ -1541,6 +1648,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
               busyDate === selectedDay.date,
               () => requestOrder(selectedDay.date),
               () => requestCancel(selectedDay.date),
+              readOnlyPreview,
             )}
           </div>
         </div>

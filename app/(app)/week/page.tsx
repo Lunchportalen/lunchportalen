@@ -119,6 +119,14 @@ type SuperadminWeekBlock = {
   dates: string[];
 };
 
+type EmployeePreviewMode = "basis" | "luxus" | "mixed";
+
+function parseEmployeePreviewMode(value: unknown): EmployeePreviewMode {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === "luxus" || raw === "mixed") return raw;
+  return "basis";
+}
+
 function capitalizeFirst(value: string) {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -405,7 +413,60 @@ function SuperadminWeekPreviewCard({
   );
 }
 
-async function renderSuperadminWeekPreview() {
+function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: EmployeePreviewMode }) {
+  const tabs: { mode: EmployeePreviewMode; label: string; description: string }[] = [
+    { mode: "basis", label: "Basis-demo", description: "Salatbar, Påsmurt og Varmmat" },
+    { mode: "luxus", label: "Luxus-demo", description: "Alle seks kategorier" },
+    { mode: "mixed", label: "Blandet uke-demo", description: "Basis mandag-onsdag, Luxus torsdag-fredag" },
+  ];
+
+  return (
+    <section className="mt-6 rounded-[2rem] bg-white/85 p-5 shadow-[0_12px_34px_rgba(24,20,16,0.045)] ring-1 ring-black/5 sm:p-6">
+      <div className="mx-auto max-w-2xl text-center">
+        <span className="inline-flex rounded-full bg-neutral-950 px-3 py-1 text-xs font-semibold text-white">
+          Kun visning
+        </span>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-neutral-950">
+          Forhåndsvis ansattvisning
+        </h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-600">
+          Kontroller hvordan Basis, Luxus og blandet uke ser ut for ansatte. Dette er kun visning og kan ikke sende bestilling.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-5 grid max-w-3xl gap-2 sm:grid-cols-3">
+        {tabs.map((tab) => {
+          const active = tab.mode === previewMode;
+          return (
+            <Link
+              key={tab.mode}
+              href={`/week?preview=${tab.mode}`}
+              className={`min-h-[58px] rounded-2xl px-4 py-3 text-center ring-1 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/50 ${
+                active
+                  ? "bg-[#fff6d6] text-neutral-950 ring-[#f5c518] shadow-[0_10px_30px_rgba(245,197,24,0.2)]"
+                  : "bg-white text-neutral-800 ring-black/10"
+              }`}
+            >
+              <span className="block text-sm font-semibold">{tab.label}</span>
+              <span className="mt-1 block text-xs leading-5 text-neutral-500">{tab.description}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mx-auto mt-6 max-w-[430px] rounded-[2rem] bg-white p-3 shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5">
+        <EmployeeWeekClient
+          canAct={false}
+          billingHoldReason={null}
+          previewMode={previewMode}
+          readOnlyPreview
+        />
+      </div>
+    </section>
+  );
+}
+
+async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
   const weekBlocks: SuperadminWeekBlock[] = [
     {
       title: "Denne uken",
@@ -506,12 +567,20 @@ async function renderSuperadminWeekPreview() {
             <SuperadminWeekPreviewCard key={block.title} block={block} menusByDate={menusByDate} />
           ))}
         </div>
+
+        <SuperadminEmployeePreviewSection previewMode={previewMode} />
       </div>
     </section>
   );
 }
 
-export default async function EmployeeWeekPage() {
+export default async function EmployeeWeekPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const employeePreviewMode = parseEmployeePreviewMode(params.preview);
   const cookieStore = await cookies();
   const devBypass = readLocalDevAuthSession(cookieStore);
   if (!devBypass && !hasSupabaseSsrAuthCookieInJar(cookieStore.getAll())) {
@@ -531,7 +600,7 @@ export default async function EmployeeWeekPage() {
   const role: Role = (emailRole ?? metaRole) as Role;
 
   if (role === "superadmin") {
-    return renderSuperadminWeekPreview();
+    return renderSuperadminWeekPreview(employeePreviewMode);
   }
 
   await requireActiveAgreement();
