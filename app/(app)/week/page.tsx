@@ -88,27 +88,29 @@ type SuperadminMenuChoice = {
   label: string;
 };
 
-type SuperadminMenuTier = "BASIS" | "LUXUS";
+const BASIS_MENU_TYPES = ["Salatbar", "Påsmurt", "Varmmat"] as const;
+const LUXUS_MENU_TYPES = ["Salatbar", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"] as const;
+const LUXUS_EXTRA_MENU_TYPES = ["Sushi", "Pokebowl", "Thaimat"] as const;
 
-type SuperadminTierDayStatus = {
-  tier: SuperadminMenuTier;
-  label: "Basis" | "Luxus";
-  choiceLimit: 3 | 6;
-  publishedMenus: MenuContent[];
+type SuperadminMenuCategory = (typeof LUXUS_MENU_TYPES)[number];
+
+type SuperadminCategoryDayStatus = {
+  category: SuperadminMenuCategory;
+  menu: MenuContent | null;
   choices: SuperadminMenuChoice[];
 };
 
 type SuperadminDayStatus = {
-  basis: SuperadminTierDayStatus;
-  luxus: SuperadminTierDayStatus;
-  unscopedPublishedMenus: MenuContent[];
+  basis: SuperadminCategoryDayStatus[];
+  luxusExtra: SuperadminCategoryDayStatus[];
+  uncategorizedPublishedMenus: MenuContent[];
 };
 
 type SuperadminWeekTierCounts = {
-  basisPublished: number;
-  luxusPublished: number;
+  basisComplete: number;
+  luxusComplete: number;
   isComplete: boolean;
-  hasRecognizedPublishedMenu: boolean;
+  hasPublishedMenu: boolean;
 };
 
 type SuperadminWeekBlock = {
@@ -120,21 +122,6 @@ type SuperadminWeekBlock = {
 function capitalizeFirst(value: string) {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function normalizeMenuTier(menu: MenuContent): SuperadminMenuTier | null {
-  const tier = String(menu.tier ?? "").trim().toUpperCase();
-  if (tier === "BASIS") return "BASIS";
-  if (tier === "LUXUS" || tier === "PREMIUM") return "LUXUS";
-  return null;
-}
-
-function tierChoiceLimit(tier: SuperadminMenuTier): 3 | 6 {
-  return tier === "BASIS" ? 3 : 6;
-}
-
-function tierDisplayLabel(tier: SuperadminMenuTier): "Basis" | "Luxus" {
-  return tier === "BASIS" ? "Basis" : "Luxus";
 }
 
 function safeChoiceLabel(raw: unknown): string {
@@ -153,113 +140,182 @@ function menuChoices(menu: MenuContent): SuperadminMenuChoice[] {
     (Array.isArray(row.items) && row.items) ||
     (Array.isArray(row.meals) && row.meals) ||
     [];
-  const tier = normalizeMenuTier(menu);
-  const limit = tier ? tierChoiceLimit(tier) : raw.length;
   return raw
     .map((choice, index) => {
       const label = safeChoiceLabel(choice);
       return label ? { key: `${menu._id}-${index}-${label}`, label } : null;
     })
     .filter(Boolean)
-    .slice(0, limit || raw.length) as SuperadminMenuChoice[];
+    .slice(0, raw.length) as SuperadminMenuChoice[];
 }
 
-function getPublishedMenusForDateAndTier(
-  menusByDate: Map<string, MenuContent[]>,
-  date: string,
-  tier: SuperadminMenuTier,
+function normalizeCategoryText(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/æ/g, "ae")
+    .replace(/ø/g, "o")
+    .replace(/å/g, "a");
+}
+
+function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
+  const text = normalizeCategoryText(value);
+  if (!text) return null;
+  if (/\bsushi\b/.test(text)) return "Sushi";
+  if (/\bpoke\s*bowl\b|\bpokebowl\b|\bpoke\b/.test(text)) return "Pokebowl";
+  if (/\bthai\b|\bthaimat\b/.test(text)) return "Thaimat";
+  if (/\bpasmurt\b|\bsandwich\b/.test(text)) return "Påsmurt";
+  if (/\bvarm\b|\bvarmmat\b/.test(text)) return "Varmmat";
+  if (/\bsalat\b|\bsalatbar\b/.test(text)) return "Salatbar";
+  return null;
+}
+
+function normalizeMenuCategory(menu: MenuContent): SuperadminMenuCategory | null {
+  const row = menu as MenuContent & Record<string, unknown>;
+  const directSources = [row.category, row.menuType, row.type, row.kind, row.title];
+  for (const source of directSources) {
+    const category = matchMenuCategory(source);
+    if (category) return category;
+  }
+
+  const choiceLabels = menuChoices(menu).map((choice) => choice.label);
+  for (const label of choiceLabels) {
+    const category = matchMenuCategory(label);
+    if (category) return category;
+  }
+
+  return null;
+}
+
+function publishedMenusForDate(menusByDate: Map<string, MenuContent[]>, date: string) {
+  return (menusByDate.get(date) ?? []).filter((menu) => menu.isPublished === true);
+}
+
+function menuByCategoryForDate(menusByDate: Map<string, MenuContent[]>, date: string) {
+  const menusByCategory = new Map<SuperadminMenuCategory, MenuContent>();
+  const uncategorizedPublishedMenus: MenuContent[] = [];
+
+  for (const menu of publishedMenusForDate(menusByDate, date)) {
+    const category = normalizeMenuCategory(menu);
+    if (!category) {
+      uncategorizedPublishedMenus.push(menu);
+      continue;
+    }
+    if (!menusByCategory.has(category)) {
+      menusByCategory.set(category, menu);
+    }
+  }
+
+  return { menusByCategory, uncategorizedPublishedMenus };
+}
+
+function buildCategoryStatuses(
+  categories: readonly SuperadminMenuCategory[],
+  menusByCategory: Map<SuperadminMenuCategory, MenuContent>,
+): SuperadminCategoryDayStatus[] {
+  return categories.map((category) => {
+    const menu = menusByCategory.get(category) ?? null;
+    return {
+      category,
+      menu,
+      choices: menu ? menuChoices(menu) : [],
+    };
+  });
+}
+
+function dayCategoryStatus(date: string, menusByDate: Map<string, MenuContent[]>): SuperadminDayStatus {
+  const { menusByCategory, uncategorizedPublishedMenus } = menuByCategoryForDate(menusByDate, date);
+
+  return {
+    basis: buildCategoryStatuses(BASIS_MENU_TYPES, menusByCategory),
+    luxusExtra: buildCategoryStatuses(LUXUS_EXTRA_MENU_TYPES, menusByCategory),
+    uncategorizedPublishedMenus,
+  };
+}
+
+function hasAllCategories(
+  categories: readonly SuperadminMenuCategory[],
+  menusByCategory: Map<SuperadminMenuCategory, MenuContent>,
 ) {
-  return (menusByDate.get(date) ?? []).filter(
-    (menu) => menu.isPublished === true && normalizeMenuTier(menu) === tier,
-  );
-}
-
-function buildTierDayStatus(
-  menusByDate: Map<string, MenuContent[]>,
-  date: string,
-  tier: SuperadminMenuTier,
-): SuperadminTierDayStatus {
-  const choiceLimit = tierChoiceLimit(tier);
-  const publishedMenus = getPublishedMenusForDateAndTier(menusByDate, date, tier);
-  const choices = publishedMenus.flatMap((menu) => menuChoices(menu)).slice(0, choiceLimit);
-
-  return {
-    tier,
-    label: tierDisplayLabel(tier),
-    choiceLimit,
-    publishedMenus,
-    choices,
-  };
-}
-
-function dayTierStatus(date: string, menusByDate: Map<string, MenuContent[]>): SuperadminDayStatus {
-  return {
-    basis: buildTierDayStatus(menusByDate, date, "BASIS"),
-    luxus: buildTierDayStatus(menusByDate, date, "LUXUS"),
-    unscopedPublishedMenus: (menusByDate.get(date) ?? []).filter(
-      (menu) => menu.isPublished === true && normalizeMenuTier(menu) === null,
-    ),
-  };
+  return categories.every((category) => menusByCategory.has(category));
 }
 
 function weekTierCounts(
   block: SuperadminWeekBlock,
   menusByDate: Map<string, MenuContent[]>,
 ): SuperadminWeekTierCounts {
-  const basisPublished = block.dates.filter(
-    (date) => getPublishedMenusForDateAndTier(menusByDate, date, "BASIS").length > 0,
+  const dailyCategoryMaps = block.dates.map((date) => menuByCategoryForDate(menusByDate, date).menusByCategory);
+  const basisComplete = dailyCategoryMaps.filter((menusByCategory) =>
+    hasAllCategories(BASIS_MENU_TYPES, menusByCategory),
   ).length;
-  const luxusPublished = block.dates.filter(
-    (date) => getPublishedMenusForDateAndTier(menusByDate, date, "LUXUS").length > 0,
+  const luxusComplete = dailyCategoryMaps.filter((menusByCategory) =>
+    hasAllCategories(LUXUS_MENU_TYPES, menusByCategory),
   ).length;
+  const hasPublishedMenu = block.dates.some((date) => publishedMenusForDate(menusByDate, date).length > 0);
 
   return {
-    basisPublished,
-    luxusPublished,
-    isComplete: basisPublished === block.dates.length && luxusPublished === block.dates.length,
-    hasRecognizedPublishedMenu: basisPublished > 0 || luxusPublished > 0,
+    basisComplete,
+    luxusComplete,
+    isComplete: basisComplete === block.dates.length && luxusComplete === block.dates.length,
+    hasPublishedMenu,
   };
 }
 
-function SuperadminTierLine({ status }: { status: SuperadminTierDayStatus }) {
-  const isPublished = status.publishedMenus.length > 0;
-  const hasChoices = status.choices.length > 0;
-  const chipClass = isPublished
-    ? hasChoices
-      ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-      : "bg-[#fff3c8] text-amber-950 ring-amber-200/80"
-    : "bg-[#fff3c8] text-amber-950 ring-amber-200/80";
-  const chipText = isPublished ? (hasChoices ? "Publisert" : "Publisert uten valg") : "Mangler";
-  const summary = isPublished
-    ? hasChoices
-      ? `${status.label} - ${status.choices.length} valg: ${status.choices
-          .map((choice) => choice.label)
-          .join(", ")}`
-      : `${status.label} - valg mangler`
-    : `${status.label}: Mangler`;
+function SuperadminCategoryLine({ status }: { status: SuperadminCategoryDayStatus }) {
+  const isPublished = status.menu !== null;
+  const title = safeStr(status.menu?.title);
+  const details = [title, ...status.choices.map((choice) => choice.label)].filter(Boolean).join(", ");
 
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-      <p className="min-w-0 text-sm leading-6 text-neutral-700 sm:truncate">{summary}</p>
+      <p className="min-w-0 text-sm leading-6 text-neutral-700 sm:truncate">
+        <span className="font-semibold text-neutral-900">{status.category}</span>
+        {details ? <span className="text-neutral-500"> - {details}</span> : null}
+      </p>
       <span
-        className={`inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${chipClass}`}
+        className={`inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+          isPublished
+            ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
+            : "bg-[#fff3c8] text-amber-950 ring-amber-200/80"
+        }`}
       >
-        {chipText}
+        {isPublished ? "Publisert" : "Mangler"}
       </span>
     </div>
   );
 }
 
-function SuperadminUnscopedMenuLine({ menus }: { menus: MenuContent[] }) {
+function SuperadminCategoryGroup({
+  title,
+  statuses,
+}: {
+  title: string;
+  statuses: SuperadminCategoryDayStatus[];
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">{title}</p>
+      <div className="space-y-1">
+        {statuses.map((status) => (
+          <SuperadminCategoryLine key={status.category} status={status} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SuperadminUncategorizedMenuLine({ menus }: { menus: MenuContent[] }) {
   if (!menus.length) return null;
 
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <p className="min-w-0 text-sm leading-6 text-neutral-700 sm:truncate">
-        Publisert meny uten nivå{menus.length > 1 ? ` (${menus.length})` : ""}
+        Publisert meny uten kategori{menus.length > 1 ? ` (${menus.length})` : ""}
       </p>
       <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-[#fff3c8] px-2.5 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
-        Uten nivå
+        Uten kategori
       </span>
     </div>
   );
@@ -272,7 +328,7 @@ function SuperadminDayPreview({
   date: string;
   menusByDate: Map<string, MenuContent[]>;
 }) {
-  const status = dayTierStatus(date, menusByDate);
+  const status = dayCategoryStatus(date, menusByDate);
   const weekday = capitalizeFirst(formatWeekdayNO(date));
 
   return (
@@ -282,10 +338,12 @@ function SuperadminDayPreview({
           {weekday} <span className="text-neutral-300">-</span> {formatDateNO(date)}
         </p>
       </div>
-      <div className="mt-2 space-y-1.5">
-        <SuperadminTierLine status={status.basis} />
-        <SuperadminTierLine status={status.luxus} />
-        <SuperadminUnscopedMenuLine menus={status.unscopedPublishedMenus} />
+      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <SuperadminCategoryGroup title="Basis" statuses={status.basis} />
+        <SuperadminCategoryGroup title="Luxus ekstra" statuses={status.luxusExtra} />
+      </div>
+      <div className="mt-1.5">
+        <SuperadminUncategorizedMenuLine menus={status.uncategorizedPublishedMenus} />
       </div>
     </li>
   );
@@ -322,18 +380,18 @@ function SuperadminWeekPreviewCard({
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-neutral-800">
         <span className="rounded-full bg-neutral-50 px-3 py-1 ring-1 ring-black/5">
-          Basis {counts.basisPublished}/5
+          Basis komplett {counts.basisComplete}/5
         </span>
         <span className="rounded-full bg-neutral-50 px-3 py-1 ring-1 ring-black/5">
-          Luxus {counts.luxusPublished}/5
+          Luxus komplett {counts.luxusComplete}/5
         </span>
       </div>
 
-      {!counts.hasRecognizedPublishedMenu ? (
+      {!counts.hasPublishedMenu ? (
         <div className="mt-5 border-l-2 border-[#f5c518] pl-4">
           <p className="text-base font-semibold tracking-[-0.01em] text-neutral-950">{block.emptyTitle}</p>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            Basis og Luxus mangler for alle hverdager.
+            Publiser Salatbar, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.
           </p>
         </div>
       ) : null}
@@ -385,69 +443,69 @@ async function renderSuperadminWeekPreview() {
   return (
     <section className="w-full bg-[#fbf8f1] px-4 py-6 sm:py-8">
       <div className="mx-auto w-full max-w-[1120px]">
-      <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">SUPERADMIN</p>
-        <h1 className="mt-2 text-3xl font-semibold leading-[0.98] tracking-[-0.045em] text-neutral-950 md:text-5xl">
-          Publisert ukesmeny
-        </h1>
-        <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-6 text-neutral-600 sm:text-base sm:leading-7">
-          Forhåndsvisning av meny som ansatte får se etter avtale, nivå og tilgang.
-        </p>
-      </div>
-
-      <div className="mx-auto mt-5 grid max-w-3xl grid-cols-1 gap-3 rounded-[1.75rem] bg-white/75 px-4 py-4 text-center shadow-[0_12px_40px_rgba(24,20,16,0.04)] ring-1 ring-black/5 backdrop-blur sm:grid-cols-3 sm:px-5">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Denne uken</p>
-          <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
-            Basis {thisWeekCounts.basisPublished}/5
-          </p>
-          <p className="text-sm font-semibold leading-5 text-neutral-950">
-            Luxus {thisWeekCounts.luxusPublished}/5
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">SUPERADMIN</p>
+          <h1 className="mt-2 text-3xl font-semibold leading-[0.98] tracking-[-0.045em] text-neutral-950 md:text-5xl">
+            Publisert ukesmeny
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-6 text-neutral-600 sm:text-base sm:leading-7">
+            Forhåndsvisning av meny som ansatte får se etter avtale, nivå og tilgang.
           </p>
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Neste uke</p>
-          <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
-            Basis {nextWeekCounts.basisPublished}/5
-          </p>
-          <p className="text-sm font-semibold leading-5 text-neutral-950">
-            Luxus {nextWeekCounts.luxusPublished}/5
-          </p>
-        </div>
-        <div className="border-t border-black/5 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Status</p>
-          <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
-            {menuDataError ? "Menydata mangler" : allComplete ? "Publisering komplett" : "Publisering mangler"}
-          </p>
-        </div>
-      </div>
 
-      <div className="mx-auto mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
-        <Link
-          href="/superadmin"
-          className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
-        >
-          G&aring; til systemadministrasjon
-        </Link>
-        <Link
-          href="/kitchen"
-          className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/10 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
-        >
-          Se kj&oslash;kkenoversikt
-        </Link>
-      </div>
-
-      {menuDataError ? (
-        <div className="mx-auto mt-5 max-w-2xl border-l-2 border-[#f5c518] bg-white/55 px-4 py-3 text-sm text-amber-950">
-          Kunne ikke hente publisert meny akkurat nå. Superadmin-preview viser derfor trygge placeholders.
+        <div className="mx-auto mt-5 grid max-w-3xl grid-cols-1 gap-3 rounded-[1.75rem] bg-white/75 px-4 py-4 text-center shadow-[0_12px_40px_rgba(24,20,16,0.04)] ring-1 ring-black/5 backdrop-blur sm:grid-cols-3 sm:px-5">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Denne uken</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
+              Basis komplett {thisWeekCounts.basisComplete}/5
+            </p>
+            <p className="text-sm font-semibold leading-5 text-neutral-950">
+              Luxus komplett {thisWeekCounts.luxusComplete}/5
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Neste uke</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
+              Basis komplett {nextWeekCounts.basisComplete}/5
+            </p>
+            <p className="text-sm font-semibold leading-5 text-neutral-950">
+              Luxus komplett {nextWeekCounts.luxusComplete}/5
+            </p>
+          </div>
+          <div className="border-t border-black/5 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Status</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
+              {menuDataError ? "Menydata mangler" : allComplete ? "Publisering komplett" : "Publisering mangler"}
+            </p>
+          </div>
         </div>
-      ) : null}
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {weekBlocks.map((block) => (
-          <SuperadminWeekPreviewCard key={block.title} block={block} menusByDate={menusByDate} />
-        ))}
-      </div>
+        <div className="mx-auto mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
+          <Link
+            href="/superadmin"
+            className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+          >
+            G&aring; til systemadministrasjon
+          </Link>
+          <Link
+            href="/kitchen"
+            className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/10 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+          >
+            Se kj&oslash;kkenoversikt
+          </Link>
+        </div>
+
+        {menuDataError ? (
+          <div className="mx-auto mt-5 max-w-2xl border-l-2 border-[#f5c518] bg-white/55 px-4 py-3 text-sm text-amber-950">
+            Kunne ikke hente publisert meny akkurat nå. Superadmin-preview viser derfor trygge placeholders.
+          </div>
+        ) : null}
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {weekBlocks.map((block) => (
+            <SuperadminWeekPreviewCard key={block.title} block={block} menusByDate={menusByDate} />
+          ))}
+        </div>
       </div>
     </section>
   );
