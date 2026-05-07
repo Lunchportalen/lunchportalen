@@ -33,6 +33,9 @@ function safeVibrate(ms: number) {
 type DayRow = {
   date: string;
   weekday: string;
+  tier: "BASIS" | "LUXUS" | null;
+  allowedChoices: MealChoice[];
+  selectedChoiceKey: string | null;
   isLocked: boolean;
   isEnabled: boolean;
   lockReason?: string | null;
@@ -42,6 +45,11 @@ type DayRow = {
   menuDescription: string | null;
   allergens: string[];
   menuImages: string[];
+};
+
+type MealChoice = {
+  key: string;
+  label: string;
 };
 
 type WindowPayload = {
@@ -78,6 +86,21 @@ function asOrderStatus(v: unknown): "ACTIVE" | "CANCELLED" | null {
   return null;
 }
 
+function asTier(v: unknown): "BASIS" | "LUXUS" | null {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (s === "BASIS" || s === "LUXUS") return s;
+  return null;
+}
+
+function mapChoice(raw: unknown): MealChoice | null {
+  if (!raw || typeof raw !== "object") return null;
+  const c = raw as Record<string, unknown>;
+  const key = String(c.key ?? "").trim();
+  if (!key) return null;
+  const label = String(c.label ?? key).trim();
+  return { key, label: label || key };
+}
+
 function mapDay(raw: unknown): DayRow | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Record<string, unknown>;
@@ -94,6 +117,9 @@ function mapDay(raw: unknown): DayRow | null {
   return {
     date,
     weekday: String(d.weekday ?? ""),
+    tier: asTier(d.tier),
+    allowedChoices: Array.isArray(d.allowedChoices) ? (d.allowedChoices as unknown[]).map(mapChoice).filter(Boolean) as MealChoice[] : [],
+    selectedChoiceKey: d.selectedChoiceKey != null ? String(d.selectedChoiceKey).trim() || null : null,
     isLocked: Boolean(d.isLocked),
     isEnabled: Boolean(d.isEnabled),
     lockReason: (d.lockReason as string | null | undefined) ?? null,
@@ -144,21 +170,23 @@ const CARD_TRANSFORM =
   "motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:scale-[1.01] motion-safe:active:scale-[0.97] will-change-transform";
 
 /** Deterministisk status — samme rekkefølge som API-låser (CUTOFF / firma / avtale). */
-function statusLabelForDay(day: DayRow): "Ikke bestilt" | "Bestilt" | "Avbestilt" | "Stengt" {
+function statusLabelForDay(day: DayRow): "Kan bestilles" | "Bestilt" | "Avbestilt" | "Stengt" | "Ikke tilgjengelig" {
   const notInAgreement = !day.isEnabled;
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
-  if (notInAgreement || companyClosed || cutoffClosed) return "Stengt";
+  if (notInAgreement) return "Ikke tilgjengelig";
+  if (companyClosed || cutoffClosed) return "Stengt";
   if (day.orderStatus === "ACTIVE") return "Bestilt";
   if (day.orderStatus === "CANCELLED") return "Avbestilt";
-  return "Ikke bestilt";
+  return "Kan bestilles";
 }
 
 function badgeClassForStatus(s: ReturnType<typeof statusLabelForDay>) {
   if (s === "Bestilt") return "bg-emerald-50 text-emerald-900 ring-emerald-200";
   if (s === "Avbestilt") return "bg-amber-50 text-amber-950 ring-amber-200";
   if (s === "Stengt") return "bg-neutral-100 text-neutral-700 ring-black/10";
-  return "bg-white text-neutral-700 ring-black/15";
+  if (s === "Ikke tilgjengelig") return "bg-stone-100 text-stone-700 ring-black/10";
+  return "bg-[#fff7dc] text-neutral-900 ring-amber-200";
 }
 
 /** Under primær-CTA: tydeliggjør frist (samme semantikk som CUTOFF-lås fra API). */
@@ -167,8 +195,75 @@ function CutoffSafetyHint({ day, className = "" }: { day: DayRow; className?: st
   const isBeforeCutoff = !cutoffClosed;
   return (
     <p className={`mt-1 text-xs text-gray-500 ${className}`}>
-      {isBeforeCutoff ? "Kan endres frem til kl. 08:00" : "Frist er passert"}
+      {isBeforeCutoff ? "Kan endres frem til kl. 08:00" : "Fristen for dagens endring er passert."}
     </p>
+  );
+}
+
+function tierChoiceLimit(tier: DayRow["tier"]) {
+  if (tier === "LUXUS") return 6;
+  if (tier === "BASIS") return 3;
+  return 0;
+}
+
+function tierLabel(day: DayRow) {
+  const limit = tierChoiceLimit(day.tier);
+  if (day.tier === "LUXUS") return `Luxus - ${limit} valg`;
+  if (day.tier === "BASIS") return `Basis - ${limit} valg`;
+  return "Ikke tilgjengelig";
+}
+
+function visibleChoicesForDay(day: DayRow) {
+  const limit = tierChoiceLimit(day.tier);
+  if (!limit) return [];
+  return day.allowedChoices.slice(0, limit);
+}
+
+function selectedChoiceLabel(day: DayRow) {
+  if (!day.selectedChoiceKey) return null;
+  const selected = day.allowedChoices.find((c) => c.key.toLowerCase() === day.selectedChoiceKey?.toLowerCase());
+  return selected?.label ?? day.selectedChoiceKey;
+}
+
+function DayMenuSummary({ day, compact = false }: { day: DayRow; compact?: boolean }) {
+  const choices = visibleChoicesForDay(day);
+  const selected = selectedChoiceLabel(day);
+
+  return (
+    <div className={`${compact ? "mt-3" : "mt-4"} text-center`}>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200">
+          {tierLabel(day)}
+        </span>
+        {selected ? (
+          <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
+            Valgt: {selected}
+          </span>
+        ) : null}
+      </div>
+
+      {choices.length ? (
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {choices.map((choice) => (
+            <span
+              key={choice.key}
+              className={[
+                "rounded-full px-3 py-1 text-xs font-medium ring-1",
+                selected && choice.key.toLowerCase() === day.selectedChoiceKey?.toLowerCase()
+                  ? "bg-neutral-950 text-white ring-neutral-950"
+                  : "bg-white/80 text-neutral-800 ring-black/10",
+              ].join(" ")}
+            >
+              {choice.label}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm text-neutral-600 ring-1 ring-black/10">
+          Menyen er ikke publisert ennå.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -323,7 +418,7 @@ function WeekDayRowDesktop({
         </div>
       </div>
 
-      <div className="mt-3 border-t border-black/5 pt-3 text-left">
+      <div className="mt-3 border-t border-black/5 pt-3 text-center md:text-left">
         {day.menuImages.length ? (
           <div className="mb-2 flex flex-wrap justify-center gap-2 md:justify-start">
             {day.menuImages.map((src) => (
@@ -337,7 +432,7 @@ function WeekDayRowDesktop({
             ))}
           </div>
         ) : null}
-        <p className="text-sm font-semibold text-neutral-900">{day.menuTitle ?? ""}</p>
+        <p className="text-sm font-semibold text-neutral-900">{day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
         {day.menuDescription ? (
           <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{day.menuDescription}</p>
         ) : null}
@@ -347,6 +442,7 @@ function WeekDayRowDesktop({
             {day.allergens.join(", ")}
           </p>
         ) : null}
+        <DayMenuSummary day={day} />
       </div>
 
       <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center md:justify-start">
@@ -390,7 +486,7 @@ function WeekDayRowDesktop({
               type="button"
               disabled={!canClick}
               onClick={onRequestOrder}
-              className={`flex min-h-[48px] items-center justify-center rounded-full bg-neutral-900 px-6 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
+              className={`flex min-h-[48px] items-center justify-center rounded-full bg-[#f2c94c] px-6 text-sm font-semibold text-neutral-950 shadow-sm disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
             >
               {busyThis ? (
                 <>
@@ -398,7 +494,7 @@ function WeekDayRowDesktop({
                   Behandler…
                 </>
               ) : (
-                "Bestill lunsj"
+            "Bestill lunsj"
               )}
             </button>
             <CutoffSafetyHint day={day} className="text-center md:text-left" />
@@ -441,7 +537,7 @@ const WeekDayCardMobile = memo(
         aria-label={`${weekdayLabel} ${formatDateNO(day.date)}`}
         className={`rounded-2xl border bg-white/95 p-4 text-center shadow-sm transition-colors duration-100 active:bg-gray-100/80 ${CARD_TRANSFORM} ${
           isSelected
-            ? "motion-safe:scale-[1.02] border-pink-500/40 ring-2 ring-pink-500/30"
+            ? "motion-safe:scale-[1.02] border-amber-300 ring-2 ring-amber-200/80"
             : `border-black/10${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse" : ""}`
         }`}
       >
@@ -494,7 +590,7 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : null}
-            <p className="text-sm font-semibold text-neutral-900">{day.menuTitle ?? ""}</p>
+            <p className="text-sm font-semibold text-neutral-900">{day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
             {day.menuDescription ? (
               <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{day.menuDescription}</p>
             ) : null}
@@ -504,6 +600,7 @@ const WeekDayCardMobile = memo(
                 {day.allergens.join(", ")}
               </p>
             ) : null}
+            <DayMenuSummary day={day} compact />
           </div>
         </div>
 
@@ -548,7 +645,7 @@ const WeekDayCardMobile = memo(
                 type="button"
                 disabled={!canClick}
                 onClick={onRequestOrder}
-                className={`flex min-h-[48px] items-center justify-center rounded-full bg-neutral-900 px-6 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
+                className={`flex min-h-[48px] items-center justify-center rounded-full bg-[#f2c94c] px-6 text-sm font-semibold text-neutral-950 shadow-sm disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
               >
                 {busyThis ? (
                   <>
@@ -651,7 +748,7 @@ function stickyCtaForDay(
         type="button"
         disabled={!canClick}
         onClick={onRequestOrder}
-        className={`flex min-h-[48px] w-full items-center justify-center rounded-full bg-neutral-900 px-6 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
+        className={`flex min-h-[48px] w-full items-center justify-center rounded-full bg-[#f2c94c] px-6 text-sm font-semibold text-neutral-950 shadow-sm disabled:pointer-events-none disabled:opacity-50 ${BTN_TOUCH}`}
       >
         {busyThis ? (
           <>
@@ -1213,6 +1310,14 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
   const quickConfirmMotion =
     Boolean(confirm?.action === "order" && confirm?.date && getWeekdayOrderCount(patterns, confirm.date) >= 3);
 
+  const todayDay = (serverOsloDate ? sortedDays.find((d) => d.date === serverOsloDate) : undefined) ?? sortedDays[0];
+  const upcomingDays = todayDay ? sortedDays.filter((d) => d.date !== todayDay.date) : sortedDays;
+  const todayStatusLabel = todayDay ? statusLabelForDay(todayDay) : "Ikke tilgjengelig";
+  const todaySelectedChoice = todayDay ? selectedChoiceLabel(todayDay) : null;
+  const todayCutoffPassed = Boolean(
+    todayDay?.lockReason === "CUTOFF" || todayCutoffStatus === "TODAY_LOCKED",
+  );
+
   return (
     <div
       className={`mx-auto w-full max-w-lg px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 md:max-w-2xl ${isMobile ? "pb-32" : ""} ${contentVisible ? "opacity-100" : "opacity-0"}`}
@@ -1283,9 +1388,79 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
         </div>
       ) : null}
 
+      <section className="mb-4 rounded-[2rem] bg-[#fff8e7] px-4 py-5 text-center shadow-[0_18px_50px_rgba(24,20,16,0.07)] ring-1 ring-amber-200/70">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">Dagens status</p>
+        <div className="mt-3 grid gap-3 text-sm text-neutral-700 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white/75 px-3 py-3 ring-1 ring-black/10">
+            <p className="text-xs text-neutral-500">Dato</p>
+            <p className="mt-1 font-semibold text-neutral-950">
+              {todayDay ? `${formatWeekdayNO(todayDay.date) || todayDay.weekday} · ${formatDateNO(todayDay.date)}` : "Ikke tilgjengelig"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/75 px-3 py-3 ring-1 ring-black/10">
+            <p className="text-xs text-neutral-500">Bestilling</p>
+            <p className="mt-1 font-semibold text-neutral-950">{todayStatusLabel}</p>
+          </div>
+          <div className="rounded-2xl bg-white/75 px-3 py-3 ring-1 ring-black/10">
+            <p className="text-xs text-neutral-500">Frist</p>
+            <p className="mt-1 font-semibold text-neutral-950">
+              {todayCutoffPassed ? "Fristen er passert" : "Åpen til 08:00"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/75 px-3 py-3 ring-1 ring-black/10">
+            <p className="text-xs text-neutral-500">Valgt rett</p>
+            <p className="mt-1 font-semibold text-neutral-950">
+              {todaySelectedChoice ?? (todayDay?.orderStatus === "ACTIVE" ? "Registrert" : "Ikke bestilt")}
+            </p>
+          </div>
+        </div>
+        {todayCutoffPassed ? (
+          <p className="mt-3 text-sm font-medium text-neutral-700">Fristen for dagens endring er passert.</p>
+        ) : null}
+      </section>
+
+      {todayDay ? (
+        <section className="mb-5">
+          <h2 className="mb-3 text-center text-base font-semibold text-neutral-950">Dagens lunsjkort</h2>
+          {!isMobile ? (
+            <ul>
+              <WeekDayRowDesktop
+                day={todayDay}
+                canAct={canAct}
+                globalBusy={globalBusy}
+                busyThis={busyDate === todayDay.date}
+                weekdayLabel={formatWeekdayNO(todayDay.date) || todayDay.weekday}
+                statusLabel={statusLabelForDay(todayDay)}
+                onRequestOrder={() => requestOrder(todayDay.date)}
+                onRequestCancel={() => requestCancel(todayDay.date)}
+                insightRecommended={Boolean(recommendedDate && todayDay.date === recommendedDate && preferredWeekday)}
+                insightPreferredMotion={false}
+              />
+            </ul>
+          ) : (
+            <WeekDayCardMobile
+              day={todayDay}
+              canAct={canAct}
+              globalBusy={globalBusy}
+              busyThis={busyDate === todayDay.date}
+              weekdayLabel={formatWeekdayNO(todayDay.date) || todayDay.weekday}
+              statusLabel={statusLabelForDay(todayDay)}
+              isSelected={selectedDate === todayDay.date}
+              onSelectDay={() => selectDayFromTap(todayDay.date)}
+              onRequestOrder={() => requestOrder(todayDay.date)}
+              onRequestCancel={() => requestCancel(todayDay.date)}
+              insightRecommended={Boolean(recommendedDate && todayDay.date === recommendedDate && preferredWeekday)}
+              insightPreferredMotion={false}
+            />
+          )}
+        </section>
+      ) : null}
+
+      <h2 className="mb-3 text-center text-base font-semibold text-neutral-950">Kommende menyer</h2>
+
       {!isMobile ? (
         <ul className="flex flex-col gap-4">
-          {sortedDays.map((day) => {
+          {upcomingDays.map((day) => {
             const weekdayLabel = formatWeekdayNO(day.date) || day.weekday;
             const statusLabel = statusLabelForDay(day);
             const insightRec = Boolean(recommendedDate && day.date === recommendedDate && preferredWeekday);
@@ -1312,19 +1487,19 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
               />
             );
           })}
+          {upcomingDays.length === 0 ? (
+            <li className="rounded-2xl bg-white/80 px-4 py-4 text-center text-sm text-neutral-600 ring-1 ring-black/10">
+              Ingen flere menyer tilgjengelig denne uken.
+            </li>
+          ) : null}
         </ul>
       ) : (
         <>
           <div
-            ref={carouselRef}
-            className={`-mx-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [-ms-overflow-style:none] md:mx-0 [&::-webkit-scrollbar]:hidden ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`}
-            style={{
-              WebkitOverflowScrolling: "touch",
-              scrollBehavior: "smooth",
-            }}
-            aria-label="Dager"
+            className={`space-y-3 pb-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`}
+            aria-label="Kommende dager"
           >
-            {sortedDays.map((day) => {
+            {upcomingDays.map((day) => {
               const weekdayLabel = formatWeekdayNO(day.date) || day.weekday;
               const statusLabel = statusLabelForDay(day);
               const insightRec = Boolean(recommendedDate && day.date === recommendedDate && preferredWeekday);
@@ -1340,7 +1515,7 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
                   key={day.date}
                   data-date={day.date}
                   data-day-slide=""
-                  className="w-full min-w-full shrink-0 snap-center snap-always px-4"
+                  className="w-full"
                 >
                   <WeekDayCardMobile
                     day={day}
@@ -1359,6 +1534,13 @@ export default function EmployeeWeekClient({ canAct, billingHoldReason }: Props)
                 </div>
               );
             })}
+            {upcomingDays.length === 0 ? (
+              <div className="w-full">
+                <div className="rounded-2xl bg-white/80 px-4 py-4 text-center text-sm text-neutral-600 ring-1 ring-black/10">
+                  Ingen flere menyer tilgjengelig denne uken.
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {selectedDay ? (

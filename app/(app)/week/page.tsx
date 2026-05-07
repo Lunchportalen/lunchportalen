@@ -7,6 +7,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -64,6 +65,21 @@ async function adminClientOrNull() {
   }
 }
 
+function WeekBrandMark() {
+  return (
+    <Link href="/" className="inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40">
+      <Image
+        src="/brand/LP-logo-uten-bakgrunn.png"
+        alt="Lunchportalen"
+        width={190}
+        height={96}
+        priority
+        className="h-16 w-auto max-w-full object-contain md:h-24"
+      />
+    </Link>
+  );
+}
+
 export default async function EmployeeWeekPage() {
   const cookieStore = await cookies();
   const devBypass = readLocalDevAuthSession(cookieStore);
@@ -85,17 +101,32 @@ export default async function EmployeeWeekPage() {
 
   if (role === "superadmin") {
     return (
-      <>
-        <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
-        <div className="mx-auto mt-6 max-w-lg px-4 text-center text-sm text-neutral-700">
-          <p>Superadmin bruker systemflaten — ikke ansatt ukevisning.</p>
-          <p className="mt-4">
-            <Link href="/superadmin" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-              Gå til systemadministrasjon
-            </Link>
+      <section className="mx-auto w-full max-w-2xl px-4 py-8 text-center">
+        <WeekBrandMark />
+        <div className="mt-5 rounded-[2rem] bg-white/90 px-5 py-7 shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/10">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Systemrolle</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 md:text-4xl">
+            Superadmin bruker systemflaten
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-base text-neutral-600">
+            Superadmin bruker systemflaten &mdash; ikke ansatt ukevisning.
           </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/superadmin"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm"
+            >
+              G&aring; til systemadministrasjon
+            </Link>
+            <Link
+              href="/kitchen"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/15"
+            >
+              Se kj&oslash;kkenoversikt
+            </Link>
+          </div>
         </div>
-      </>
+      </section>
     );
   }
 
@@ -211,31 +242,16 @@ export default async function EmployeeWeekPage() {
 
   return (
     <>
-      <h1 className="lp-h1 text-center pt-6">Ukeplan</h1>
-      <p className="mx-auto mt-2 max-w-lg px-4 text-center text-sm text-neutral-600">
-        Forhåndsvalgt meny etter avtale. Bestilling og avbestilling stenger kl. 08:00 samme dag (Oslo).
-      </p>
-      <p className="mx-auto mt-3 max-w-lg px-4 text-center text-sm">
-        <Link href="/week/min-dag" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-          Min dag — status og synlige dager
-        </Link>
-        {" · "}
-        <Link href="/week/mine-lunsjendringer" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-          Mine lunsjendringer
-        </Link>
-        {" · "}
-        <Link href="/week/tidligere-lunsjdager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-          Tidligere lunsjdager
-        </Link>
-        {" · "}
-        <Link href="/week/mine-registrerte-dager" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-          Mine registrerte dager
-        </Link>
-        {" · "}
-        <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
-          Bestillingsprofil
-        </Link>
-      </p>
+      <section className="mx-auto w-full max-w-2xl px-4 pt-5 text-center">
+        <WeekBrandMark />
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl">
+          Bestill eller avbestill lunsj
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+          Frist for samme dags bestilling er 08:00.
+        </p>
+      </section>
       <EmployeeWeekClient canAct={hold.canAct} billingHoldReason={hold.reason} />
     </>
   );
