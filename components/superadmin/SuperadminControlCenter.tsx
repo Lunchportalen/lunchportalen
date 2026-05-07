@@ -1,46 +1,55 @@
 import Link from "next/link";
 
 import OperationalStatusStrip from "@/app/superadmin/_components/OperationalStatusStrip";
-import { capabilities, capabilitiesByGroup } from "@/lib/superadmin/capabilities";
+import { capabilities } from "@/lib/superadmin/capabilities";
 import type { LoadSuperadminHomeSignalsResult } from "@/lib/superadmin/loadSuperadminHomeSignals";
-
-import SuperadminCard from "./SuperadminCard";
-
-const PRESERVED_LINKS: { label: string; href: string }[] = [
-  { label: "Registreringer", href: "/superadmin/registrations" },
-  { label: "Revisjon", href: "/superadmin/audit" },
-  { label: "Gå til ukeplan", href: "/week" },
-  { label: "Kontrolltårn", href: "/superadmin/control-tower" },
-  { label: "Global", href: "/superadmin/global" },
-  { label: "Pipeline", href: "/superadmin/pipeline" },
-  { label: "Investor", href: "/superadmin/investor" },
-  { label: "AI CTO", href: "/superadmin/cto" },
-  { label: "Salg", href: "/superadmin/sales" },
-  { label: "Salgsloop", href: "/superadmin/sales-loop" },
-  { label: "Salgsagent", href: "/superadmin/sales-agent" },
-  { label: "Produksjonssjekk", href: "/superadmin/production-check" },
-  { label: "Systemgraf", href: "/superadmin/system-graph" },
-  { label: "AI-strategi", href: "/superadmin/strategy" },
-  { label: "Autonomi", href: "/superadmin/autonomy" },
-  { label: "Eksperimenter", href: "/superadmin/experiments" },
-];
-
-const SECTION_COPY: Record<string, string> = {
-  core: "Selskaper, avtaler, brukere og økonomisk grunnlag.",
-  operations: "Daglig drift, systemkjøring og operativ oppfølging.",
-  growth: "Innhold, vekst og kontrollert kommersiell produksjon.",
-  system: "Systemhelse, revisjon og ledelsesflater.",
-};
 
 const PROCESS_STEPS = ["Kontroll", "Drift", "Avtaler", "System"];
 
 const PRIORITY_LINKS = [
-  { id: "companies", fallbackLabel: "Firma", fallbackHref: "/superadmin/companies" },
-  { id: "agreements", fallbackLabel: "Avtaler", fallbackHref: "/superadmin/agreements" },
-  { id: "users", fallbackLabel: "Brukere", fallbackHref: "/superadmin/users" },
-  { id: "kitchen", fallbackLabel: "Kjøkken", fallbackHref: "/kitchen", description: "Produksjon og kjøkkenflate." },
-  { id: "overview-dashboard", fallbackLabel: "Driftsoversikt", fallbackHref: "/superadmin/overview" },
-  { id: "system", fallbackLabel: "Systemhelse", fallbackHref: "/superadmin/system" },
+  {
+    id: "companies",
+    fallbackLabel: "Firma",
+    fallbackHref: "/superadmin/companies",
+    description: "Firmaoversikt, firmadetaljer og ansatte per firma.",
+  },
+  {
+    id: "agreements",
+    fallbackLabel: "Avtaler",
+    fallbackHref: "/superadmin/agreements",
+    description: "Ventende avtaler, aktive avtaler og binding/oppsigelse.",
+  },
+  {
+    id: "users",
+    fallbackLabel: "Brukere",
+    fallbackHref: "/superadmin/users",
+    description: "Brukere, roller og invitasjoner.",
+  },
+  {
+    id: "kitchen",
+    fallbackLabel: "Kjøkken",
+    fallbackHref: "/kitchen",
+    description: "Dagens produksjon, kjøkkenoversikt og produksjonssjekk.",
+  },
+  {
+    id: "overview-dashboard",
+    fallbackLabel: "Driftsoversikt",
+    fallbackHref: "/superadmin/overview",
+    description: "Dagens status, varsler og viktigste tall.",
+  },
+  {
+    id: "system",
+    fallbackLabel: "Systemhelse",
+    fallbackHref: "/superadmin/system",
+    description: "Systemhelse, kontrolltårn og revisjon/audit.",
+  },
+];
+
+const ADVANCED_LINKS: { label: string; href: string; description: string }[] = [
+  { label: "Kontrolltårn", href: "/superadmin/control-tower", description: "Sanntidssignaler og operativ kontroll." },
+  { label: "Revisjon", href: "/superadmin/audit", description: "Auditlogg og sporbarhet." },
+  { label: "Backoffice", href: "/backoffice/content", description: "Innhold og publisering samlet ett sted." },
+  { label: "Global", href: "/superadmin/global", description: "Global styringsflate for avansert oppfølging." },
 ];
 
 function capabilityById(id: string) {
@@ -91,14 +100,13 @@ function StatusPill({ label, value, tone = "default" }: { label: string; value: 
 }
 
 export default function SuperadminControlCenter({ signals }: { signals: LoadSuperadminHomeSignalsResult }) {
-  const sections = capabilitiesByGroup();
   const s = signals.ok ? signals.data : null;
   const priorityCards = PRIORITY_LINKS.map((link) => {
     const capability = capabilityById(link.id);
     return {
       id: link.id,
       label: capability?.label ?? link.fallbackLabel,
-      description: link.description ?? capability?.description,
+      description: link.description,
       href: capability?.href ?? link.fallbackHref,
     };
   });
@@ -205,61 +213,29 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
             </div>
           </section>
 
-          <section aria-labelledby="superadmin-all-heading" className="mt-8 space-y-4">
-            <div>
-              <h2 id="superadmin-all-heading" className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
-                Flere innganger
-              </h2>
-              <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Kompakt tilgang til øvrige superadmin-flater.</p>
-            </div>
-
-            {sections.map(({ group, label, items }) => (
-              <section
-                key={group}
-                aria-labelledby={`superadmin-group-${group}`}
-                className="rounded-[1.35rem] bg-[#fbf8f0]/70 p-3 ring-1 ring-black/[0.035]"
-              >
-                <div className="mb-2 px-1">
-                  <h3 id={`superadmin-group-${group}`} className="font-heading text-base font-semibold text-[rgb(var(--lp-fg))]">
-                    {label}
-                  </h3>
-                  <p className="mt-0.5 text-sm text-[rgb(var(--lp-muted))]">{SECTION_COPY[group] ?? "Kontrollflater for superadmin."}</p>
-                </div>
-                <div className="grid gap-2">
-                  {items.map((c) => (
-                    <SuperadminCard
-                      key={c.id}
-                      id={c.id}
-                      title={c.label}
-                      description={c.description}
-                      href={c.href}
-                      primaryAction={c.id === "overview-dashboard"}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            <section className="rounded-[1.35rem] bg-[#fbf8f0]/70 p-3 ring-1 ring-black/[0.035]" aria-labelledby="superadmin-preserved-heading">
-              <div className="mb-2 px-1">
-                <h3 id="superadmin-preserved-heading" className="font-heading text-base font-semibold text-[rgb(var(--lp-fg))]">
-                  Beholdte snarveier
-                </h3>
-                <p className="mt-0.5 text-sm text-[rgb(var(--lp-muted))]">Tidligere toppnavigasjon er flyttet hit som diskrete rader.</p>
+          <section aria-labelledby="superadmin-advanced-heading" className="mt-8">
+            <div className="rounded-[1.35rem] bg-[#fbf8f0]/70 p-4 ring-1 ring-black/[0.035]">
+              <div className="mb-3">
+                <h2 id="superadmin-advanced-heading" className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
+                  Avanserte flater
+                </h2>
+                <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+                  Kompakt tilgang for dypere kontroll uten at hovedsiden blir et sitemap.
+                </p>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {PRESERVED_LINKS.map((item) => (
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {ADVANCED_LINKS.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex min-h-[44px] items-center justify-between rounded-2xl bg-white/80 px-3 text-sm font-medium text-[rgb(var(--lp-fg))] transition hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    className="flex min-h-[74px] flex-col justify-center rounded-2xl bg-white/80 px-3 py-3 text-sm text-[rgb(var(--lp-fg))] transition hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
                   >
-                    <span>{item.label}</span>
-                    <span aria-hidden>→</span>
+                    <span className="font-semibold">{item.label}</span>
+                    <span className="mt-1 text-xs leading-4 text-[rgb(var(--lp-muted))]">{item.description}</span>
                   </Link>
                 ))}
               </div>
-            </section>
+            </div>
           </section>
         </div>
 
