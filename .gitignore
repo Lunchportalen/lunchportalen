@@ -84,3 +84,8 @@ Umbraco/obj/
 umbraco17/lunchportalen/publish/
 umbraco17/lunchportalen/publish.zip
 *.zip
+
+# Local publish/build artifacts
+artifacts/
+build-output.txt
+umbraco17/*BACKUP*/
