@@ -61,11 +61,13 @@ function SignalCard({
   value,
   href,
   variant,
+  valueClassName,
 }: {
   label: string;
   value: string | number;
   href: string;
   variant?: "default" | "attention";
+  valueClassName?: string;
 }) {
   const shell =
     variant === "attention"
@@ -77,9 +79,21 @@ function SignalCard({
       className={`block transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${shell}`}
     >
       <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[rgb(var(--lp-muted))]">{label}</div>
-      <div className="mt-2 font-heading text-3xl font-semibold tabular-nums text-[rgb(var(--lp-fg))]">{value}</div>
+      <div className={`mt-2 font-heading text-3xl font-semibold tabular-nums ${valueClassName ?? "text-[rgb(var(--lp-fg))]"}`}>
+        {value}
+      </div>
     </Link>
   );
+}
+
+function pendingValueClass(value: number) {
+  if (value > 50) return "text-red-600";
+  if (value > 0) return "text-amber-600";
+  return "text-[rgb(var(--lp-fg))]";
+}
+
+function productionTodayValueClass(value: number) {
+  return value === 0 ? "text-amber-600" : "text-[rgb(var(--lp-fg))]";
 }
 
 function StatusPill({ label, value, tone = "default" }: { label: string; value: string | number; tone?: "default" | "live" | "warn" }) {
@@ -112,6 +126,9 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
   });
   const alertCount = s ? s.companies.pending + s.pendingAgreements : "—";
   const healthLabel = signals.ok ? "OK" : "Krever sjekk";
+  const pendingCompaniesClass = s ? pendingValueClass(s.companies.pending) : "text-[rgb(var(--lp-fg))]";
+  const pendingAgreementsClass = s ? pendingValueClass(s.pendingAgreements) : "text-[rgb(var(--lp-fg))]";
+  const productionTodayClass = s ? productionTodayValueClass(s.orders.today) : "text-[rgb(var(--lp-fg))]";
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_276px]">
@@ -166,14 +183,16 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
                   value={s.companies.pending}
                   href="/superadmin/companies"
                   variant={s.companies.pending > 0 ? "attention" : "default"}
+                  valueClassName={pendingCompaniesClass}
                 />
                 <SignalCard
                   label="Avtaler venter godkjenning"
                   value={s.pendingAgreements}
                   href="/superadmin/agreements"
                   variant={s.pendingAgreements > 0 ? "attention" : "default"}
+                  valueClassName={pendingAgreementsClass}
                 />
-                <SignalCard label="Ordre i dag" value={s.orders.today} href="/superadmin/overview" />
+                <SignalCard label="Ordre i dag" value={s.orders.today} href="/superadmin/overview" valueClassName={productionTodayClass} />
                 <SignalCard label="Ordre denne uken" value={s.orders.week} href="/superadmin/overview" />
               </div>
             </section>
@@ -246,11 +265,11 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#fbf8f0] px-3 py-2 text-sm">
                 <span className="text-[rgb(var(--lp-muted))]">Produksjon i dag</span>
-                <strong className="tabular-nums text-[rgb(var(--lp-fg))]">{s ? s.orders.today : "—"}</strong>
+                <strong className={`tabular-nums ${productionTodayClass}`}>{s ? s.orders.today : "—"}</strong>
               </div>
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#fbf8f0] px-3 py-2 text-sm">
                 <span className="text-[rgb(var(--lp-muted))]">Ventende avtaler</span>
-                <strong className="tabular-nums text-[rgb(var(--lp-fg))]">{s ? s.pendingAgreements : "—"}</strong>
+                <strong className={`tabular-nums ${pendingAgreementsClass}`}>{s ? s.pendingAgreements : "—"}</strong>
               </div>
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#fbf8f0] px-3 py-2 text-sm">
                 <span className="text-[rgb(var(--lp-muted))]">Systemhelse</span>
