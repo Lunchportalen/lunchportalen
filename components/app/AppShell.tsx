@@ -27,7 +27,7 @@ export function AppShell({
       { href: "/admin", label: "Dashboard" },
       { href: "/week", label: "Ukesplan" },
       { href: "/orders", label: "Bestillinger" },
-      { href: "/admin/users", label: "Ansatte" },
+      { href: "/admin/people", label: "Ansatte" },
       { href: "/admin/agreement", label: "Avtale" },
       { href: "/admin/billing", label: "Faktura" },
       { href: "/kitchen", label: "Kjøkken" },

@@ -160,13 +160,10 @@ export async function POST(req: NextRequest) {
     .update({
       email,
       full_name,
-      name: full_name,
-      department: inv.data.department ?? null,
       location_id: inv.data.location_id ?? null,
       role: "employee",
       is_active: true,
       disabled_at: null,
-      disabled_reason: null,
     })
     .eq("id", userId);
 

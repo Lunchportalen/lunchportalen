@@ -12,7 +12,7 @@ export type SystemSettingsRepositoryError = {
   hint?: string | null;
 };
 
-const SYSTEM_SETTINGS_COLUMNS = "id,toggles,killswitch,retention,updated_at,updated_by" as const;
+const SYSTEM_SETTINGS_COLUMNS = "id,toggles,killswitch,retention,autopilot_enabled,updated_at,updated_by" as const;
 
 /**
  * Single query contract for `public.system_settings` reads (no ad-hoc chains in feature code).

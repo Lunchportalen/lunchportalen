@@ -1,4 +1,4 @@
-// app/api/admin/orders/export/route.ts
+// app/api/orders/export/route.ts
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ function errDetail(e: any) {
 }
 
 /* =========================================================
-   GET /api/admin/orders/export (CSV)
+   GET /api/orders/export (CSV)
 ========================================================= */
 export async function GET(req: NextRequest) {
   

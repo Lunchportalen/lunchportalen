@@ -22,7 +22,7 @@ export default async function AdminAuditPage() {
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
     .select("role, disabled_at")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
   if (profErr || !profile || profile.disabled_at || profile.role !== "superadmin") {

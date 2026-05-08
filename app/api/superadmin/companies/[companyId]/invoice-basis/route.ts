@@ -79,7 +79,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .eq("company_id", companyId)
     .gte("date", from)
     .lte("date", to)
-    .in("status", ["DELIVERED", "delivered"]));
+    .in("status", ["ACTIVE"]));
 
   if (error && isMissingColumn(error)) {
     warning = "Manglende pris-snapshot";
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .eq("company_id", companyId)
       .gte("date", from)
       .lte("date", to)
-      .in("status", ["DELIVERED", "delivered"]));
+      .in("status", ["ACTIVE"]));
   }
 
   if (error) {

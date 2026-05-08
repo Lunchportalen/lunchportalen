@@ -173,19 +173,8 @@ export async function loadAdminContext(opts?: {
     q_counts: {},
   };
 
-  // 3) Robust profile load (prioritet: user_id → id → email)
+  // 3) Robust profile load (canonical: profiles.id === auth.users.id → email fallback)
   let profile: AdminProfile | null = null;
-
-  {
-    const r = await admin
-      .from("profiles")
-      .select("role, email, company_id, location_id, disabled_at")
-      .eq("user_id", authUserId)
-      .maybeSingle();
-
-    dbg.q_profile_user_id = { hasData: Boolean(r.data), error: r.error?.message ?? null };
-    if (r.data) profile = r.data as any;
-  }
 
   if (!profile) {
     const r = await admin
@@ -353,14 +342,14 @@ export async function loadAdminContext(opts?: {
   // Ansatte-tall (admin-relevant)
   const employeesTotalP = safeCountExact(
     "employees_total",
-    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
   );
 
   const employeesActiveP = safeCountExact(
     "employees_active",
     admin
       .from("profiles")
-      .select("user_id", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .eq("role", "employee")
       .is("disabled_at", null)
@@ -370,7 +359,7 @@ export async function loadAdminContext(opts?: {
     "employees_disabled",
     admin
       .from("profiles")
-      .select("user_id", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .eq("role", "employee")
       .not("disabled_at", "is", null)

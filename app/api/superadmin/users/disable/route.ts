@@ -45,14 +45,15 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const user_id = String(body.user_id ?? "");
     const reason = safeText(body.reason ?? "Disabled by superadmin", 200);
+    void reason;
 
     if (!isUuid(user_id)) return jsonErr(rid, "Ugyldig user_id.", 400, "invalid_user_id");
 
     // Hent profil
     const prof = await admin
       .from("profiles")
-      .select("user_id,email,role")
-      .eq("user_id", user_id)
+      .select("user_id:id,email,role")
+      .eq("id", user_id)
       .maybeSingle();
 
     if (prof.error) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "profile_read_failed", detail: prof.error });
@@ -67,11 +68,11 @@ export async function POST(req: Request) {
     const upd = await admin
       .from("profiles")
       .update({
+        active: false,
         is_active: false,
         disabled_at: new Date().toISOString(),
-        disabled_reason: reason,
       })
-      .eq("user_id", user_id);
+      .eq("id", user_id);
 
     if (upd.error) return jsonErr(rid, "Kunne ikke deaktivere bruker.", 500, { code: "disable_failed", detail: upd.error });
 

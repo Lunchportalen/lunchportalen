@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     if (!isUuid(user_id)) return jsonErr(rid, "Ugyldig user_id.", 400, "invalid_user_id");
 
     // Hent profil (for å sperre systemkontoer)
-    const prof = await admin.from("profiles").select("user_id,email").eq("user_id", user_id).maybeSingle();
+    const prof = await admin.from("profiles").select("user_id:id,email").eq("id", user_id).maybeSingle();
     if (prof.error) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "profile_read_failed", detail: prof.error });
     if (!prof.data) return jsonErr(rid, "Fant ikke bruker.", 404, "not_found");
 
@@ -59,11 +59,11 @@ export async function POST(req: Request) {
     const upd = await admin
       .from("profiles")
       .update({
+        active: true,
         is_active: true,
         disabled_at: null,
-        disabled_reason: null,
       })
-      .eq("user_id", user_id);
+      .eq("id", user_id);
 
     if (upd.error) return jsonErr(rid, "Kunne ikke aktivere bruker.", 500, { code: "enable_failed", detail: upd.error });
 

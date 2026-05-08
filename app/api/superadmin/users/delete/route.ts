@@ -46,8 +46,8 @@ export async function POST(req: Request) {
     // Les profil for å få epost (og sperre systemkonto)
     const prof = await admin
       .from("profiles")
-      .select("user_id,email,role,company_id")
-      .eq("user_id", user_id)
+      .select("user_id:id,email,role,company_id")
+      .eq("id", user_id)
       .maybeSingle();
 
     if (prof.error) return jsonErr(rid, "Kunne ikke lese profil.", 500, { code: "profile_read_failed", detail: prof.error });
@@ -67,13 +67,13 @@ export async function POST(req: Request) {
 
     // 2) Slett profil (hvis finnes)
     if (prof.data?.user_id) {
-      const delProf = await admin.from("profiles").delete().eq("user_id", user_id);
+      const delProf = await admin.from("profiles").delete().eq("id", user_id);
       if (delProf.error) {
         return jsonErr(rid, "Kunne ikke slette profil.", 500, { code: "profile_delete_failed", detail: delProf.error });
       }
     } else {
-      // Hvis ingen profil, forsøker vi likevel å slette eventuelle profiler med user_id
-      await admin.from("profiles").delete().eq("user_id", user_id);
+      // Hvis ingen profil, forsøker vi likevel idempotent slett mot kanonisk profil-id.
+      await admin.from("profiles").delete().eq("id", user_id);
     }
 
     // 3) Slett auth-user (kilden til “email exists”)

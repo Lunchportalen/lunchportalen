@@ -51,9 +51,9 @@ export async function GET(req: Request) {
       .from("profiles")
       .select(
         `
-        user_id,
+        user_id:id,
         email,
-        name,
+        full_name,
         role,
         company_id,
         is_active,
@@ -68,9 +68,9 @@ export async function GET(req: Request) {
     if (role !== "all") query = query.eq("role", role);
 
     if (q) {
-      // Søk på email, name, company_id, company name
+      // Søk på email, full_name, company_id, company name
       query = query.or(
-        `email.ilike.%${q}%,name.ilike.%${q}%,company_id::text.ilike.%${q}%,companies.name.ilike.%${q}%`
+        `email.ilike.%${q}%,full_name.ilike.%${q}%,company_id::text.ilike.%${q}%,companies.name.ilike.%${q}%`
       );
     }
 
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
       users: (data ?? []).map((r: any) => ({
         user_id: String(r.user_id),
         email: r.email ?? null,
-        name: r.name ?? null,
+        name: r.full_name ?? null,
         role: r.role ?? null,
         company_id: r.company_id ? String(r.company_id) : null,
         company_name: r.companies?.name ?? null,

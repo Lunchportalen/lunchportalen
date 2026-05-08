@@ -8,6 +8,7 @@ function mkReq(url: string, init?: RequestInit) {
 
 const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const requireRoleOr403Mock = vi.hoisted(() => vi.fn());
+const getAuthContextMock = vi.hoisted(() => vi.fn());
 
 let remotePageRow: Record<string, unknown> | null = null;
 let remoteVariantRow: Record<string, unknown> | null = null;
@@ -30,6 +31,7 @@ vi.mock("@/lib/supabase/admin", async () => {
             return {
               select: () => ({
                 eq: () => ({
+                  single: async () => ({ data: previewPageRow, error: null }),
                   maybeSingle: async () => ({ data: remotePageRow, error: null }),
                 }),
               }),
@@ -56,6 +58,10 @@ vi.mock("@/lib/supabase/admin", async () => {
       })) as any,
   };
 });
+
+vi.mock("@/lib/auth/getAuthContext", () => ({
+  getAuthContext: getAuthContextMock,
+}));
 
 vi.mock("@/components/PageShell", () => ({
   default: ({ children }: { children: React.ReactNode }) =>
@@ -117,6 +123,12 @@ describe.sequential("Content detail variant strictness", () => {
       },
     });
     requireRoleOr403Mock.mockReturnValue(null);
+    getAuthContextMock.mockResolvedValue({
+      ok: true,
+      sessionOk: true,
+      role: "superadmin",
+      rid: "rid_variant_strict",
+    });
 
     remotePageRow = {
       id: "page_1",

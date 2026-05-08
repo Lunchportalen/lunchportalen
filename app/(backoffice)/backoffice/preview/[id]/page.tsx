@@ -3,10 +3,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PageShell from "@/components/PageShell";
 import { CmsBlockRenderer } from "@/components/cms/CmsBlockRenderer";
+import { canAccessBackoffice } from "@/lib/auth/guards";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { parseBody, parseBodyMeta } from "@/lib/cms/public/renderPipeline";
 import { getLocalCmsPageDetail, isLocalCmsRuntimeError } from "@/lib/localRuntime/cmsProvider";
 import { isLocalCmsRuntimeEnabled } from "@/lib/localRuntime/runtime";
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // Preview uses staging env for blocks (forms, etc.) so that
 // draft content issues are visible without touching prod state.
@@ -63,6 +65,8 @@ function renderPreviewPage(params: {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
+  const auth = await getAuthContext();
+  if (!canAccessBackoffice(auth)) return { title: "Forhåndsvisning" };
 
   if (isLocalCmsRuntimeEnabled()) {
     try {
@@ -80,7 +84,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin();
   const { data: page } = await supabase.from("content_pages").select("title, slug").eq("id", id).single();
   if (!page) return { title: "Forhåndsvisning – Lunchportalen" };
   const title = (page.title as string)?.trim() || "Forhåndsvisning";
@@ -97,6 +101,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function BackofficePreviewPage({ params }: Props) {
   const { id } = await params;
+  const auth = await getAuthContext();
+  if (!canAccessBackoffice(auth)) notFound();
 
   if (isLocalCmsRuntimeEnabled()) {
     try {
@@ -121,7 +127,7 @@ export default async function BackofficePreviewPage({ params }: Props) {
     }
   }
 
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin();
 
   const { data: page, error: pageErr } = await supabase
     .from("content_pages")

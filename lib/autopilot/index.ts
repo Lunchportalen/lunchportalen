@@ -11,6 +11,7 @@ export type { AutopilotCycleResult, AutopilotIntelligence, AutopilotLoopResult }
 export { detectOpportunities, detectOpportunity } from "@/lib/autopilot/opportunities";
 export { evaluateAndPromote, createVersionFromExperiment } from "@/lib/autopilot/runner";
 export { isAutopilotEnabled, disableAutopilot, enableAutopilot, clearAutopilotRuntimeOverride } from "@/lib/autopilot/kill-switch";
+export { syncAutopilotRuntimeFromSystemSettings } from "@/lib/autopilot/settings-sync";
 export { logAutopilot } from "@/lib/autopilot/log";
 export type { AutopilotMetrics, AutopilotOpportunity, AutopilotExperimentProposal } from "@/lib/autopilot/types";
 export {

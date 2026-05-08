@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/components/ui/toast";
+import ConfirmDestructiveDialog from "@/components/superadmin/ConfirmDestructiveDialog";
 
 type Row = {
   user_id: string;
@@ -17,6 +19,7 @@ type Row = {
 
 type ApiOk = { ok: true; users: Row[]; total: number; page: number; limit: number };
 type ApiErr = { ok: false; error: string; message?: string; detail?: any };
+type PendingAction = { type: "delete" | "deactivate"; user: Row } | null;
 
 async function readJson(res: Response) {
   const t = await res.text();
@@ -25,6 +28,7 @@ async function readJson(res: Response) {
 }
 
 export default function SuperadminUsersClient() {
+  const { push: pushToast } = useToast();
   const [q, setQ] = useState("");
   const [role, setRole] = useState<string>("ALL");
   const [page, setPage] = useState(1);
@@ -35,6 +39,7 @@ export default function SuperadminUsersClient() {
   const [total, setTotal] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   async function load() {
     setLoading(true);
@@ -69,7 +74,6 @@ export default function SuperadminUsersClient() {
   const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   async function disableUser(user_id: string) {
-    if (!confirm("Deaktivere bruker?")) return;
     setBusyId(user_id);
     setErr(null);
     try {
@@ -82,15 +86,18 @@ export default function SuperadminUsersClient() {
       if (!res.ok || (json as any).ok !== true)
         throw new Error((json as ApiErr).message || (json as ApiErr).error || "Feil");
       await load();
+      pushToast({ kind: "success", message: "Brukeren er deaktivert." });
     } catch (e: any) {
-      setErr(e?.message ?? "Kunne ikke deaktivere.");
+      const message = e?.message ?? "Kunne ikke deaktivere.";
+      setErr(message);
+      pushToast({ kind: "error", message });
     } finally {
       setBusyId(null);
+      setPendingAction(null);
     }
   }
 
   async function enableUser(user_id: string) {
-    if (!confirm("Aktivere bruker igjen?")) return;
     setBusyId(user_id);
     setErr(null);
     try {
@@ -103,15 +110,17 @@ export default function SuperadminUsersClient() {
       if (!res.ok || (json as any).ok !== true)
         throw new Error((json as ApiErr).message || (json as ApiErr).error || "Feil");
       await load();
+      pushToast({ kind: "success", message: "Brukeren er aktivert." });
     } catch (e: any) {
-      setErr(e?.message ?? "Kunne ikke aktivere.");
+      const message = e?.message ?? "Kunne ikke aktivere.";
+      setErr(message);
+      pushToast({ kind: "error", message });
     } finally {
       setBusyId(null);
     }
   }
 
   async function deleteUser(user_id: string) {
-    if (!confirm("Slette bruker permanent?\nDette sletter auth + profil + invites.")) return;
     setBusyId(user_id);
     setErr(null);
     try {
@@ -124,12 +133,20 @@ export default function SuperadminUsersClient() {
       if (!res.ok || (json as any).ok !== true)
         throw new Error((json as ApiErr).message || (json as ApiErr).error || "Feil");
       await load();
+      pushToast({ kind: "success", message: "Brukeren er slettet permanent." });
     } catch (e: any) {
-      setErr(e?.message ?? "Kunne ikke slette.");
+      const message = e?.message ?? "Kunne ikke slette.";
+      setErr(message);
+      pushToast({ kind: "error", message });
     } finally {
       setBusyId(null);
+      setPendingAction(null);
     }
   }
+
+  const pendingUser = pendingAction?.user ?? null;
+  const pendingEmail = pendingUser?.email?.trim() ?? "";
+  const pendingName = pendingUser?.name?.trim() || "Ukjent bruker";
 
   return (
     <div>
@@ -226,7 +243,7 @@ export default function SuperadminUsersClient() {
                             ) : (
                               <button
                                 disabled={busyId === r.user_id}
-                                onClick={() => disableUser(r.user_id)}
+                                onClick={() => setPendingAction({ type: "deactivate", user: r })}
                                 className="rounded-2xl bg-white px-3 py-2 text-xs font-semibold ring-1 ring-[rgb(var(--lp-border))] disabled:opacity-50"
                               >
                                 Deaktiver
@@ -235,7 +252,7 @@ export default function SuperadminUsersClient() {
 
                             <button
                               disabled={busyId === r.user_id}
-                              onClick={() => deleteUser(r.user_id)}
+                              onClick={() => setPendingAction({ type: "delete", user: r })}
                               className="rounded-2xl bg-white px-3 py-2 text-xs font-semibold ring-1 ring-[rgb(var(--lp-border))] disabled:opacity-50"
                             >
                               Slett
@@ -273,6 +290,37 @@ export default function SuperadminUsersClient() {
           </div>
         </div>
       </div>
+
+      <ConfirmDestructiveDialog
+        open={pendingAction?.type === "deactivate" && Boolean(pendingUser)}
+        title="Deaktivere bruker?"
+        description={`Dette blokkerer innlogging for ${pendingName}${pendingEmail ? ` (${pendingEmail})` : ""}. Brukeren kan aktiveres igjen senere.`}
+        confirmLabel="Deaktiver"
+        variant="deactivate"
+        loading={Boolean(pendingUser && busyId === pendingUser.user_id)}
+        onCancel={() => {
+          if (!busyId) setPendingAction(null);
+        }}
+        onConfirm={() => {
+          if (pendingUser) void disableUser(pendingUser.user_id);
+        }}
+      />
+
+      <ConfirmDestructiveDialog
+        open={pendingAction?.type === "delete" && Boolean(pendingUser)}
+        title="Slette bruker permanent?"
+        description={`Dette sletter auth, profil og invites for ${pendingName}${pendingEmail ? ` (${pendingEmail})` : ""}. Operasjonen kan ikke angres.`}
+        confirmLabel="Slett permanent"
+        variant="delete"
+        expectedConfirmation={pendingEmail}
+        loading={Boolean(pendingUser && busyId === pendingUser.user_id)}
+        onCancel={() => {
+          if (!busyId) setPendingAction(null);
+        }}
+        onConfirm={() => {
+          if (pendingUser && pendingEmail) void deleteUser(pendingUser.user_id);
+        }}
+      />
     </div>
   );
 }

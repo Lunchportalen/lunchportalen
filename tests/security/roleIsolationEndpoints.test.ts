@@ -283,7 +283,7 @@ describe("Dag-11B – Role isolation (API routes)", () => {
   });
 
   test("kitchen/orders: company_admin skal få 403 (role gate via profiles)", async () => {
-    // kitchen/orders role gate er basert på cookie-user profilrolle (profiles.user_id = u_cookie)
+    // kitchen/orders role gate er basert på cookie-user profilrolle.
     adminDb = makeAdminDbMock({
       profiles: [{ id: "p_cookie", user_id: "u_cookie", role: "company_admin", disabled_at: null, is_active: true }],
       kitchen_batch: [],

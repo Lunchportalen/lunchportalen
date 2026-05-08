@@ -44,6 +44,19 @@ type Api = {
   message?: string;
 };
 
+type ExportApi = {
+  ok?: boolean;
+  rid?: string;
+  data?: {
+    csv?: string;
+    filename?: string;
+    contentType?: string;
+  };
+  error?: string;
+  detail?: any;
+  message?: string;
+};
+
 function isoTodayLocal(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -80,12 +93,32 @@ async function fetchAdminOrders(dateISO: string, status: string) {
   return j;
 }
 
-function downloadCsv(dateISO: string, status: string) {
-  const u = new URL("/api/admin/orders/export", window.location.origin);
+async function downloadCsv(dateISO: string, status: string) {
+  const u = new URL("/api/orders/export", window.location.origin);
   u.searchParams.set("date", dateISO);
   if (status) u.searchParams.set("status", status);
 
-  window.location.href = u.pathname + u.search;
+  const r = await fetch(u.pathname + u.search, { cache: "no-store" });
+  const j = (await r.json().catch(() => ({}))) as ExportApi;
+
+  if (!r.ok || j?.ok !== true || !j.data?.csv) {
+    const msg =
+      j?.message ||
+      j?.error ||
+      (typeof j?.detail === "string" ? j.detail : null) ||
+      "Kunne ikke laste ned CSV";
+    throw new Error(msg);
+  }
+
+  const blob = new Blob([j.data.csv], { type: j.data.contentType || "text/csv; charset=utf-8" });
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = j.data.filename || `orders_${dateISO}_${status || "ACTIVE"}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(href);
 }
 
 function fmtTime(ts: string | null | undefined) {
@@ -197,7 +230,16 @@ export default function OrdersTable() {
           </button>
 
           <button
-            onClick={() => downloadCsv(dateISO, status)}
+            onClick={() => {
+              startTransition(async () => {
+                try {
+                  setErr(null);
+                  await downloadCsv(dateISO, status);
+                } catch (e: any) {
+                  setErr(e?.message || "Feil ved CSV-eksport");
+                }
+              });
+            }}
             disabled={isPending}
             className="h-9 rounded-md border px-3 text-sm hover:bg-muted disabled:opacity-50"
             title="Last ned CSV for valgt dato og status"

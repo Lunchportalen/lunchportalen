@@ -91,7 +91,7 @@ async function getAgreementLocationId(sb: any, company_id: string | null): Promi
 
 /**
  * getScopeServer (FASIT)
- * - profiles.user_id is authoritative FK to auth.users.id in your schema.
+ * - profiles.id is authoritative FK to auth.users.id in the live schema.
  */
 export async function getScopeServer(): Promise<{ user: any; scope: Scope & { agreement_location_id?: string | null } }> {
   const auth = await getAuthContext();

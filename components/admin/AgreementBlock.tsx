@@ -157,7 +157,7 @@ export default async function AgreementBlock(props: {
       .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .eq("date", today)
-      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]);
+      .in("status", ["ACTIVE"]);
 
     if (!error) ordersTodayCount = Number(count ?? 0);
   } catch {

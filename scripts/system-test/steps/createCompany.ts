@@ -28,7 +28,7 @@ export async function createCompany(ctx: SystemTestContext, admin: SystemTestAdm
   if (res.error) {
     const msg = String(res.error.message ?? "");
     if (msg.includes("companies_status_check")) {
-      res = await admin.from("companies").insert({ ...payloadUpper, status: "active" } as never);
+      res = await admin.from("companies").insert({ ...payloadUpper, status: "ACTIVE" } as never);
     }
   }
   if (res.error) throw new Error(`createCompany: ${res.error.message}`);

@@ -49,7 +49,7 @@ export default async function AdminOrdersPage() {
 
   if (!user) redirect("/login?next=/admin/orders");
 
-  // robust profile load (user_id først, så id)
+  // Canonical profile load: profiles.id === auth.users.id.
   let profile:
     | { role: Role | null; company_id: string | null; location_id: string | null; full_name: string | null }
     | null = null;
@@ -58,18 +58,9 @@ export default async function AdminOrdersPage() {
     const { data: p } = await supabase
       .from("profiles")
       .select("role, company_id, location_id, full_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (p) profile = p as any;
-  }
-
-  if (!profile) {
-    const { data: p2 } = await supabase
-      .from("profiles")
-      .select("role, company_id, location_id, full_name")
       .eq("id", user.id)
       .maybeSingle();
-    if (p2) profile = p2 as any;
+    if (p) profile = p as any;
   }
 
   const role = computeRole(user, profile?.role);

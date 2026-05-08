@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     // Finn hva som finnes (før slett)
     const prof = await admin
       .from("profiles")
-      .select("user_id, email, company_id, role, created_at")
+      .select("user_id:id, email, company_id, role, created_at")
       .ilike("email", email)
       .order("created_at", { ascending: false })
       .limit(5);

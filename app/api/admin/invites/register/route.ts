@@ -198,12 +198,10 @@ export async function POST(req: NextRequest) {
       .from("profiles")
       .update({
         email,
-        name,
         full_name: name,
         role: "employee",
         is_active: true,
         disabled_at: null,
-        disabled_reason: null,
       })
       .eq("id", userId);
 

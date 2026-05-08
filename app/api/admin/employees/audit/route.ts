@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   try {
     const sb = await supabaseServer();
 
-    const { data: prof, error: pErr } = await sb.from("profiles").select("user_id,company_id,role").eq("user_id", userId).maybeSingle();
+    const { data: prof, error: pErr } = await sb.from("profiles").select("user_id:id,company_id,role").eq("id", userId).maybeSingle();
 
     if (pErr) return jsonErr(rid, "Databasefeil.", 500, { code: "DB_ERROR", detail: pErr });
     if (!prof) return jsonErr(rid, "Ansatt finnes ikke.", 404, "NOT_FOUND");

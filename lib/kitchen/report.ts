@@ -288,7 +288,7 @@ async function fetchAgreements(companyIds: string[], locationIds: string[]): Pro
       .select(select)
       .in("company_id", companyIds)
       .in("location_id", locationIds)
-      .in("status", ["ACTIVE", "active"]);
+      .eq("status", "ACTIVE");
 
     if (error) {
       if (isMissingSchemaError(error)) continue;

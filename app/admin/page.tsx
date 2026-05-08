@@ -19,9 +19,7 @@ import CompanyOperationalBriefPanel from "@/components/admin/CompanyOperationalB
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
 
-import { supabaseServer } from "@/lib/supabase/server";
-import { getRoleForUser } from "@/lib/auth/getRoleForUser";
-import { computeRole, hasRole, type Role } from "@/lib/auth/roles";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
 
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
@@ -184,36 +182,28 @@ function blockedLevel(b: AdminContextBlocked): "followup" | "critical" {
    Page
 ========================================================= */
 export default async function AdminCommandCenterPage() {
-  // ✅ Hard gate: must be logged in + must be company_admin or superadmin
-  {
-    const sb = await supabaseServer();
-    const { data, error } = await sb.auth.getUser();
-    const user = data?.user ?? null;
-
-    if (error || !user) {
-      // IMPORTANT: route via post-login eventually, but on SSR we send to login with next
+  // Hard gate: must be logged in + must be company_admin or superadmin.
+  const auth = await getAuthContext();
+  if (!auth.ok) {
+    if (auth.reason === "UNAUTHENTICATED") {
       redirect("/login?next=/admin&code=NO_SESSION");
     }
+    redirect("/status?state=blocked&next=/admin&code=AUTH_BLOCKED");
+  }
 
-    let profileRole: any = null;
-    try {
-      profileRole = await getRoleForUser(user.id);
-    } catch {
-      profileRole = null;
-    }
+  const role = auth.role;
+  if (role !== "company_admin" && role !== "superadmin") {
+    redirect("/status?state=blocked&next=/admin&code=ROLE_FORBIDDEN");
+  }
 
-    const role: Role = computeRole(user, profileRole);
-
-    if (!hasRole(role, ["company_admin", "superadmin"])) {
-      // Fail-closed: do not show admin surface
-      redirect("/status?state=blocked&next=/admin&code=ROLE_FORBIDDEN");
-    }
+  if (role === "superadmin" && !auth.company_id) {
+    redirect("/superadmin");
   }
 
   // ✅ Load admin context (fail-closed / blocked-state supported)
   const ctx = await loadAdminContext({
     nextPath: "/admin",
-    enforceCompanyAdmin: true,
+    enforceCompanyAdmin: role !== "superadmin",
     returnBlockedState: true,
   });
 

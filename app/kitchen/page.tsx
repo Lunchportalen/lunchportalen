@@ -74,7 +74,7 @@ export default async function Page() {
      🔐 ROLE GATE (Hard email først, deretter profiles.role)
      FASET:
      - profiles.id = auth.users.id (primary)
-     - fallback: profiles.user_id = auth.users.id (legacy)
+     - fallback: legacy profile user id column if present
   ========================= */
   const { data: profile, error: pErr } = (await supabase
     .from("profiles")

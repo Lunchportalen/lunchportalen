@@ -151,9 +151,9 @@ export async function loadCompanyOperativeRecentHistory(input: {
   if (userIds.size > 0) {
     const { data: profs, error: pErr } = await admin
       .from("profiles")
-      .select("user_id,email")
+      .select("user_id:id,email")
       .eq("company_id", companyId)
-      .in("user_id", [...userIds]);
+      .in("id", [...userIds]);
     if (!pErr && Array.isArray(profs)) {
       for (const p of profs as { user_id?: unknown; email?: unknown }[]) {
         const uid = safeStr(p.user_id);

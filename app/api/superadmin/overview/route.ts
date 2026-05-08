@@ -62,7 +62,7 @@ export async function GET() {
     for (const o of orders ?? []) {
       ordersTotal += 1;
       const st = String((o as any).status ?? "").toLowerCase();
-      if (st === "canceled") ordersCancelled += 1;
+      if (st === "canceled" || st === "cancelled") ordersCancelled += 1;
       else ordersActive += 1;
     }
 

@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
+import { CUTOFF_BUFFER_MINUTES } from "@/lib/kitchen/cutoff";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
@@ -28,10 +29,12 @@ function batchKey(date: string, slot: string, location_id: string) {
   return `${date}__${slot}__${location_id}`;
 }
 function cutoffAllowed(dateISO: string) {
+  const kitchenStartTime = `08:${String(CUTOFF_BUFFER_MINUTES).padStart(2, "0")}`;
+  // 08:00 locks employee order changes; the buffer ensures all orders are locked before kitchen starts production.
   const status = cutoffStatusForDate0805(dateISO);
   if (status === "TODAY_LOCKED") return { ok: true as const };
   if (status === "PAST") return { ok: false as const, code: "DATE_LOCKED_PAST", message: "Datoen er passert og kan ikke endres." };
-  return { ok: false as const, code: "LOCKED_BEFORE_0805", message: "Batch kan kun startes etter kl. 08:05 i dag." };
+  return { ok: false as const, code: "LOCKED_BEFORE_0805", message: `Batch kan kun startes etter kl. ${kitchenStartTime} i dag.` };
 }
 
 export async function POST(req: NextRequest) {
@@ -74,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     const cutoff = cutoffAllowed(date);
     if (!cutoff.ok) {
-      return jsonErr(rid, cutoff.message, 412, { code: cutoff.code, detail: { date, cutoff: "08:05" } });
+      return jsonErr(rid, cutoff.message, 412, { code: cutoff.code, detail: { date, cutoff: `08:${String(CUTOFF_BUFFER_MINUTES).padStart(2, "0")}` } });
     }
 
     const role = safeStr(scope?.role).toLowerCase();
@@ -162,7 +165,7 @@ export async function POST(req: NextRequest) {
       .eq("company_id", companyId)
       .eq("location_id", locationId)
       .eq("slot", slot)
-      .in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"])
+      .in("status", ["ACTIVE"])
       .limit(1);
 
     const { data: ordRows, error: oErr } = await ordersQ;

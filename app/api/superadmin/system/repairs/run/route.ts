@@ -8,6 +8,7 @@ import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsLog } from "@/lib/ops/log";
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
+import { writeAuditEvent } from "@/lib/audit/write";
 
 type OpsEventInput = {
   level: "info" | "warn" | "error";
@@ -38,6 +39,7 @@ type MotorResult = {
   done: number;
   failed: number;
   source: "manual" | "cron" | string;
+  repairJobIds: string[];
 };
 
 type OrderRow = {
@@ -1110,6 +1112,7 @@ export async function runSystemMotor(input: {
     done,
     failed,
     source: input.source,
+    repairJobIds: jobs.map((job) => job.id),
   };
 }
 
@@ -1131,6 +1134,28 @@ export async function POST(req: NextRequest): Promise<Response> {
       jobLimit: 10,
       enqueueLimit: 50,
       includeOrderIntegrity,
+    });
+
+    void writeAuditEvent({
+      scope: {
+        role: ctx.scope?.role,
+        user_id: ctx.scope?.userId,
+        email: ctx.scope?.email,
+      },
+      action: "repair_executed",
+      entity_type: "system_repair",
+      entity_id: result.repairJobIds[0] ?? ctx.rid,
+      summary: "Systemreparasjon kjørt manuelt",
+      detail: {
+        includeOrderIntegrity,
+        repairJobId: result.repairJobIds[0] ?? null,
+        repairJobIds: result.repairJobIds,
+        queued: result.queued,
+        claimed: result.claimed,
+        done: result.done,
+        failed: result.failed,
+        timestamp: new Date().toISOString(),
+      },
     });
 
     return jsonOk(

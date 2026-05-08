@@ -33,6 +33,7 @@ type SystemSettingsTable = {
     toggles: Json | null;
     killswitch: Json | null;
     retention: Json | null;
+    autopilot_enabled: boolean | null;
     updated_at: string | null;
     updated_by: string | null;
   };
@@ -41,6 +42,7 @@ type SystemSettingsTable = {
     toggles?: Json | null;
     killswitch?: Json | null;
     retention?: Json | null;
+    autopilot_enabled?: boolean | null;
     updated_at?: string | null;
     updated_by?: string | null;
   };
@@ -49,6 +51,7 @@ type SystemSettingsTable = {
     toggles: Json | null;
     killswitch: Json | null;
     retention: Json | null;
+    autopilot_enabled: boolean | null;
     updated_at: string | null;
     updated_by: string | null;
   }>;

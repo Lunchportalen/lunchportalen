@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     if (!authUser?.id) return jsonError(rid, 404, "auth_user_not_found", "Fant ikke auth-bruker på e-post.");
 
     // 4) Oppdater profile (service role bypasser RLS; trigger kan fortsatt stoppe, men dette er riktig vei i app)
-    //    NB: i deres schema bruker dere user_id for kobling (bekreftet i SQL).
+    //    Live schema bruker profiles.id som auth user-id.
     const { error: pErr } = await sb
       .from("profiles")
       .update({
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         company_id: company.id,
         location_id: loc.id,
       } as any)
-      .eq("user_id", authUser.id);
+      .eq("id", authUser.id);
 
     if (pErr) return jsonError(rid, 500, "profile_update_failed", "Kunne ikke oppdatere profile.", pErr);
 

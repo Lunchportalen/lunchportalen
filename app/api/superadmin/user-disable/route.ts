@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   const { data: actorProfile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("user_id", actor.id)
+    .eq("id", actor.id)
     .maybeSingle();
 
   if (actorProfile?.role !== "superadmin") {
@@ -46,18 +46,22 @@ export async function POST(req: Request) {
 
   const { data: existing } = await admin
     .from("profiles")
-    .select("user_id,is_disabled,email,full_name,company_id,role")
-    .eq("user_id", targetUserId)
+    .select("user_id:id,is_active,email,full_name,company_id,role")
+    .eq("id", targetUserId)
     .maybeSingle();
 
   if (!existing) return jsonErr(rid, "Fant ikke bruker.", 404, "NOT_FOUND");
 
-  const prev = Boolean((existing as any).is_disabled);
+  const prev = !Boolean((existing as any).is_active);
 
   const { error: upErr } = await admin
     .from("profiles")
-    .update({ is_disabled: disabled })
-    .eq("user_id", targetUserId);
+    .update({
+      active: !disabled,
+      is_active: !disabled,
+      disabled_at: disabled ? new Date().toISOString() : null,
+    })
+    .eq("id", targetUserId);
 
   if (upErr) return jsonErr(rid, "Kunne ikke oppdatere.", 500, { code: "UPDATE_FAILED", detail: upErr.message });
 

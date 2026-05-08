@@ -7,9 +7,11 @@ export const revalidate = 0;
 
 import "server-only";
 
+import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 
 type BatchStatus = "queued" | "packed" | "delivered";
 
@@ -66,7 +68,7 @@ function pickCompanyName(c: any): string {
  * GET /api/kitchen/companies?date=YYYY-MM-DD&cursor=<company_id>&limit=50&window=Standard
  * Cursor er company_id (uuid) – stabilt og lett.
  */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { supabaseServer } = await import("@/lib/supabase/server");
   const rid = makeRid();
 
@@ -75,6 +77,11 @@ export async function GET(req: Request) {
     const authClient = await supabaseServer();
     const { data: auth } = await authClient.auth.getUser();
     if (!auth?.user) return jsonErr(rid, "Ikke innlogget.", 401, "unauthorized");
+
+    const scoped = await scopeOr401(req);
+    if (scoped.ok === false) return scoped.res;
+    const denyRole = requireRoleOr403(scoped.ctx, "kitchen.companies.read", ["kitchen", "superadmin"]);
+    if (denyRole) return denyRole;
 
     const url = new URL(req.url);
     const dateParam = url.searchParams.get("date");

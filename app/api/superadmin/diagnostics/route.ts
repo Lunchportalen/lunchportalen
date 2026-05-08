@@ -79,7 +79,7 @@ async function runChecks(): Promise<{
   try {
     const [total, active] = await Promise.all([
       admin.from("companies").select("id", { count: "exact", head: true }),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
     ]);
     if (total.error || active.error) {
       checks.push({ key: "stats.aggregate", status: "FAIL", message: "Kunne ikke beregne stats." });

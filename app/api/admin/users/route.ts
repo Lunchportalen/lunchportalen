@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     let query = sb
       .from("profiles")
-      .select("id,full_name,department,created_at")
+      .select("id,full_name,created_at")
       .eq("company_id", companyId)
       .order("created_at", { ascending: true })
       .limit(limit);
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     return jsonOk(rid, {
       companyId,
       count: (rows ?? []).length,
-      users: rows ?? [],
+      users: (rows ?? []).map((row: any) => ({ ...row, department: null })),
     });
   } catch (e: any) {
     return jsonErr(rid, "Uventet feil.", 500, { code: "UNHANDLED", detail: { message: String(e?.message ?? e) } });

@@ -149,7 +149,7 @@ function normStatus(v: any): CompanyStatus {
   const s = String(v ?? "pending").toLowerCase().trim();
   if (s === "active") return "active";
   if (s === "paused") return "paused";
-  if (s === "closed") return "closed";
+  if (s === "closed" || s === "terminated") return "closed";
   return "pending";
 }
 
@@ -189,10 +189,10 @@ function agreementBadgeClass(s: string | null | undefined) {
 }
 
 function badgeClass(status: CompanyStatus) {
-  if (status === "active") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
-  if (status === "paused") return "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
-  if (status === "closed") return "bg-red-50 text-red-800 ring-1 ring-red-200";
-  return "bg-neutral-50 text-neutral-700 ring-1 ring-neutral-200";
+  if (status === "active") return "border border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (status === "paused") return "border border-yellow-200 bg-yellow-50 text-yellow-800";
+  if (status === "closed") return "border border-gray-200 bg-gray-100 text-gray-600";
+  return "border border-amber-200 bg-amber-50 text-amber-700";
 }
 
 function statusLabel(status: CompanyStatus) {

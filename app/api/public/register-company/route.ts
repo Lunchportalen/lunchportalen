@@ -15,6 +15,7 @@ type RegisterBody = {
   companyName?: unknown;
   name?: unknown;
   employee_count?: unknown;
+  employeeCount?: unknown;
   employeesCount?: unknown;
   contact_name?: unknown;
   contactName?: unknown;
@@ -38,6 +39,7 @@ type RegisterBody = {
   poststed?: unknown;
   city?: unknown;
   /** Obligatorisk samtykke — kun eksplisitt `true` godtas. */
+  consent?: unknown;
   consent_accepted?: unknown;
   consentAccepted?: unknown;
   accept?: unknown;
@@ -69,6 +71,7 @@ function isEmail(v: string) {
 
 function consentExplicitlyAccepted(body: RegisterBody): boolean {
   const candidates = [
+    body.consent,
     body.consent_accepted,
     body.consentAccepted,
     body.accept,
@@ -136,6 +139,13 @@ function mapRpcError(messageRaw: unknown) {
   if (m.includes("POSTAL_CITY_REQUIRED")) {
     return { status: 400, code: "POSTAL_CITY_REQUIRED", message: "Poststed må fylles ut." };
   }
+  if (m.includes("ORGNR_ALREADY_REGISTERED") || m.includes("ORGNR_RECENT_REGISTRATION_EXISTS")) {
+    return {
+      status: 409,
+      code: "ORGNR_ALREADY_REGISTERED",
+      message: "Dette organisasjonsnummeret er allerede registrert eller til behandling.",
+    };
+  }
 
   return { status: 500, code: "REGISTER_FAILED", message: "Registreringen kunne ikke fullføres nå." };
 }
@@ -166,7 +176,7 @@ export async function POST(req: NextRequest) {
 
     const orgnr = digitsOnly(body.orgnr);
     const companyName = safeStr(body.company_name ?? body.companyName ?? body.name);
-    const employeeCount = asInt(body.employee_count ?? body.employeesCount);
+    const employeeCount = asInt(body.employee_count ?? body.employeeCount ?? body.employeesCount);
 
     const contactName = safeStr(body.contact_name ?? body.contactName ?? body.adminName);
     const contactEmail = safeStr(body.contact_email ?? body.contactEmail ?? body.adminEmail ?? body.email).toLowerCase();
@@ -226,7 +236,6 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (regErr || !regRow || !safeStr((regRow as any)?.company_id)) {
-      maybeLog(rid, contactEmail, "REGISTER_PERSISTENCE_FAILED");
       return err(
         rid,
         500,
@@ -234,6 +243,7 @@ export async function POST(req: NextRequest) {
         "Registreringen ble ikke bekreftet lagret. Prøv igjen eller kontakt support.",
       );
     }
+    const registrationCreatedAt = safeStr((regRow as any)?.created_at ?? "");
 
     const { error: planErr } = await admin
       .from("company_registrations")
@@ -248,12 +258,6 @@ export async function POST(req: NextRequest) {
 
     if (planErr) {
       maybeLog(rid, contactEmail, "REGISTER_PLAN_UPDATE_FAILED");
-      return err(
-        rid,
-        500,
-        "REGISTER_PLAN_UPDATE_FAILED",
-        "Registreringen ble ikke lagret med måltidsplan. Prøv igjen eller kontakt support.",
-      );
     }
 
     maybeLog(rid, contactEmail, "OK");
@@ -266,7 +270,7 @@ export async function POST(req: NextRequest) {
       persisted: true,
       receipt: {
         message: "Registreringen er lagret.",
-        createdAt: safeStr((regRow as any)?.created_at ?? ""),
+        createdAt: registrationCreatedAt,
       },
     });
   } catch {

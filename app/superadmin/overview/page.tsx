@@ -135,9 +135,13 @@ type DashboardApiOk = {
   ok: true;
   rid: string;
   data: {
-    companies: { active: number; pending: number; paused: number; closed: number; total: number };
-    orders: { today: number; tomorrow: number; week: number };
-    alerts: { pendingCompanies: number; pausedCompanies: number };
+    ok: true;
+    rid: string;
+    data: {
+      companies: { active: number; pending: number; paused: number; closed: number; total: number };
+      orders: { today: number; tomorrow: number; week: number };
+      alerts: { pendingCompanies: number; pausedCompanies: number };
+    };
   };
 };
 type DashboardApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
@@ -172,7 +176,7 @@ async function fetchDashboardStats(
     }
 
     const ok = json as DashboardApiOk;
-    const c = ok.data.companies;
+    const c = ok.data.data.companies;
 
     const stats = normalizeSuperadminStats({
       companiesTotal: c.total,

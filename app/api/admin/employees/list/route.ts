@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const { data: rows, error: rowsErr } = await admin
       .from("profiles")
-      .select("id, name, full_name, email, role, created_at, disabled_at, disabled_reason")
+      .select("id, full_name, email, role, created_at, disabled_at")
       .eq("company_id", companyId)
       .in("role", ["employee"])
       .order("created_at", { ascending: false });
@@ -44,12 +44,12 @@ export async function GET(req: NextRequest) {
       companyId,
       employees: (rows ?? []).map((r: any) => ({
         user_id: r.id, // profiles.id = auth.user.id
-        name: r.full_name ?? r.name ?? null,
+        name: r.full_name ?? null,
         email: r.email ?? null,
         role: r.role,
         created_at: r.created_at,
         disabled_at: r.disabled_at ?? null,
-        disabled_reason: r.disabled_reason ?? null,
+        disabled_reason: null,
       })),
     });
   } catch (e: any) {

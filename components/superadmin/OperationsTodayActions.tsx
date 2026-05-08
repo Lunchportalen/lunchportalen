@@ -1,7 +1,24 @@
 // components/superadmin/OperationsTodayActions.tsx
 "use client";
 
-export default function OperationsTodayActions({ dateISO }: { dateISO: string }) {
+export type OperationsCsvDelivery = {
+  dato: string;
+  firma: string;
+  lokasjon: string;
+  vindu: string;
+  porsjoner: number;
+  forecast: string;
+  waste: string;
+  notater: string;
+};
+
+export default function OperationsTodayActions({
+  dateISO,
+  deliveries,
+}: {
+  dateISO: string;
+  deliveries: OperationsCsvDelivery[];
+}) {
   function download(filename: string, text: string) {
     const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -14,7 +31,7 @@ export default function OperationsTodayActions({ dateISO }: { dateISO: string })
     URL.revokeObjectURL(url);
   }
 
-  function csvEscape(value: string) {
+  function csvEscape(value: string | number) {
     // CSV trygghet: hvis komma/anførsel/linjeskift => wrap i "..."
     const v = String(value ?? "");
     if (/[",\n\r]/.test(v)) return `"${v.replaceAll('"', '""')}"`;
@@ -22,28 +39,19 @@ export default function OperationsTodayActions({ dateISO }: { dateISO: string })
   }
 
   function toCSV() {
-    // Leser fra DOM for å unngå duplisert datafetch (robust for MVP)
-    const cards = Array.from(document.querySelectorAll("[data-delivery-row]")) as HTMLElement[];
-    const lines = ["date,company,location,window,portions,notes"];
+    const lines = ["dato,firma,lokasjon,vindu,porsjoner,forecast,waste,notater"];
 
-    for (const el of cards) {
-      const date = el.dataset.date ?? "";
-      const company = el.dataset.company ?? "";
-      const location = el.dataset.location ?? "";
-      const windowLabel = el.dataset.window ?? "";
-      const portions = el.dataset.portions ?? "0";
-      const notes = el.dataset.notes ?? "";
-
-      lines.push(
-        [
-          csvEscape(date),
-          csvEscape(company),
-          csvEscape(location),
-          csvEscape(windowLabel),
-          csvEscape(portions),
-          csvEscape(notes),
-        ].join(",")
-      );
+    for (const delivery of deliveries) {
+      lines.push([
+        csvEscape(delivery.dato),
+        csvEscape(delivery.firma),
+        csvEscape(delivery.lokasjon),
+        csvEscape(delivery.vindu),
+        csvEscape(delivery.porsjoner),
+        csvEscape(delivery.forecast),
+        csvEscape(delivery.waste),
+        csvEscape(delivery.notater),
+      ].join(","));
     }
 
     download(`deliveries_${dateISO}.csv`, lines.join("\n"));

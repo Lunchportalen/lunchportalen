@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     // 2) Profil / rolle
     const { data: prof, error: profErr } = await sb
       .from("profiles")
-      .select("role, company_id, full_name, department, email")
+      .select("role, company_id, full_name, email")
       .eq("id", userId)
       .maybeSingle();
 
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         role,
         company_id: companyId,
         full_name: (prof as any)?.full_name ?? null,
-        department: (prof as any)?.department ?? null,
+        department: null,
       },
     });
   } catch (e: any) {

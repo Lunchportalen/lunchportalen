@@ -33,7 +33,7 @@ export async function getOrdersByTenant(tenantId: string, rid: string): Promise<
     .from("orders")
     .select("id, date, status, slot, line_total, company_id")
     .eq("company_id", tid)
-    .in("status", ["active", "ACTIVE"])
+    .in("status", ["ACTIVE"])
     .order("date", { ascending: false })
     .limit(500);
 

@@ -30,7 +30,7 @@ type NavItem = {
  */
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Oversikt", exact: true },
-  { href: "/admin/users", label: "Ansatte" },
+  { href: "/admin/people", label: "Ansatte" },
   { href: "/admin/locations", label: "Lokasjoner" },
   { href: "/admin/agreement", label: "Avtale" },
   { href: "/admin/leveringsgrunnlag", label: "Leveringsgrunnlag" },

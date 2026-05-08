@@ -151,12 +151,12 @@ async function buildPayload(
 
   let locQ = admin
     .from("company_locations")
-    .select("id,name,city")
+    .select("id,name")
     .eq("company_id", companyId)
     .order("name", { ascending: true });
   if (locationId) locQ = locQ.eq("id", locationId);
   const locRes = await locQ;
-  const locRows = (locRes.data ?? []) as { id: string; name: string | null; city: string | null }[];
+  const locRows = (locRes.data ?? []) as { id: string; name: string | null }[];
 
   const stops: RouteStopInput[] = locRows.map((l) => ({
     id: safeStr(l.id),
@@ -208,7 +208,7 @@ async function buildPayload(
     locations: locRows.map((l) => ({
       id: safeStr(l.id),
       name: safeStr(l.name) || "Lokasjon",
-      city: safeStr(l.city),
+      city: "",
     })),
     history,
     nextForecastPortions: nextForecast.predictedOrders,

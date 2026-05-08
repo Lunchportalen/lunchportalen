@@ -274,16 +274,25 @@ export async function GET(req: NextRequest) {
       // Fallback: agreements table
       const fb = await admin
         .from("agreements")
-        .select("id,company_id,status,tier as plan_tier,price_per_cuvert_nok,delivery_days,start_date,end_date,updated_at,weekplan")
+        .select("id,company_id,status,tier,price_per_meal_nok,delivery_days,starts_at,ends_at,created_at,updated_at")
         .eq("company_id", companyId)
-        .order("start_date", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (fb.error) {
         opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.fallback_agreements", companyId, error: fb.error });
       } else {
-        agreementRow = fb.data ?? null;
+        const row = fb.data as any;
+        agreementRow = row
+          ? {
+              ...row,
+              plan_tier: row.tier ?? null,
+              price_per_cuvert_nok: row.price_per_meal_nok ?? null,
+              start_date: row.starts_at ?? (String(row.created_at ?? "").slice(0, 10) || null),
+              end_date: row.ends_at ?? null,
+            }
+          : null;
       }
     } else {
       agreementRow = a.data ?? null;
@@ -367,13 +376,13 @@ export async function GET(req: NextRequest) {
   // Metrics (best effort)
   // ---------------------------------------------------------
   const employeesTotal = await countExact(
-    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee")
   );
   const employeesActive = await countExact(
-    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").is("disabled_at", null)
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").is("disabled_at", null)
   );
   const employeesDeactivated = await countExact(
-    admin.from("profiles").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").not("disabled_at", "is", null)
+    admin.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("role", "employee").not("disabled_at", "is", null)
   );
   const ordersToday = await countExact(
     admin.from("orders").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("date", todayISO).eq("status", "ACTIVE")

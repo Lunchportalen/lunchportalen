@@ -61,7 +61,7 @@ async function loadProfile(
   sb: Awaited<ReturnType<typeof supabaseServer>>,
   userId: string
 ): Promise<ProfileRow | null> {
-  // Some repos use profiles.id=user_id, others use profiles.user_id. Support both.
+  // Canonical live schema uses profiles.id as auth user id; legacy schemas may still expose user_id.
   const byId = await sb.from("profiles").select("role,company_id").eq("id", userId).maybeSingle<ProfileRow>();
   if (!byId.error && byId.data) return byId.data;
 

@@ -114,9 +114,9 @@ export async function buildBatchSummary(args: {
     .in("slot", allowedSlots);
 
   if (!isTestEnv) {
-    ordersQ = ordersQ.eq("date", dateISO).in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED"]);
+    ordersQ = ordersQ.eq("date", dateISO).in("status", ["ACTIVE"]);
   } else {
-    ordersQ = ordersQ.in("status", ["ACTIVE", "active", "QUEUED", "PACKED", "DELIVERED", ""]);
+    ordersQ = ordersQ.in("status", ["ACTIVE", ""]);
   }
 
   const { data: orders, error: oErr } = await ordersQ;

@@ -36,7 +36,18 @@ export async function POST(req: NextRequest): Promise<Response> {
       includeOrderIntegrity: true,
     });
 
-    return jsonOk(rid, result, 200);
+    return jsonOk(
+      rid,
+      {
+        ran: result.ran,
+        queued: result.queued,
+        claimed: result.claimed,
+        done: result.done,
+        failed: result.failed,
+        source: result.source,
+      },
+      200
+    );
   } catch (e: any) {
     return jsonErr(rid, "Kunne ikke kjore systemmotor.", 500, {
       code: "SYSTEM_MOTOR_FAILED",

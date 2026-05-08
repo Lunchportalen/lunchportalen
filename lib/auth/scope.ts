@@ -152,6 +152,13 @@ function normalizeStatus(v: unknown) {
   return s;
 }
 
+function isMissingRelationError(error: unknown, relation: string) {
+  const e = error as any;
+  const text = `${String(e?.code ?? "").trim()} ${String(e?.message ?? "").trim()} ${String(e?.details ?? "").trim()} ${String(e?.hint ?? "").trim()}`.toLowerCase();
+  const target = relation.toLowerCase();
+  return text.includes("42p01") || (text.includes(target) && (text.includes("does not exist") || text.includes("not found")));
+}
+
 /**
  * ENTERPRISE GATE:
  * - Tenant roles blocked unless companies.status === "active"
@@ -211,6 +218,9 @@ async function enforceAgreementAndBilling(
   const error = res?.error as any;
   const data = (res?.data ?? null) as BillingRow | null;
 
+  if (isMissingRelationError(error, "company_billing_accounts")) {
+    return { agreement_status: "unknown", billing_hold: false, billing_hold_reason: null, can_act: true };
+  }
   if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
   if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
 

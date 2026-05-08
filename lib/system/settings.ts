@@ -23,6 +23,8 @@ export type SystemToggles = {
   autonomy_allow_auto_procurement?: boolean;
   /** LLM-kall (runAI). Udefinert = på for bakoverkompatibilitet (RC). */
   ai_enabled?: boolean;
+  /** Persisted Control Tower autopilot master switch. */
+  autopilot_enabled?: boolean;
 };
 
 export type KillSwitch = {
@@ -45,6 +47,7 @@ export type SystemSettings = {
   toggles: SystemToggles;
   killswitch: KillSwitch;
   retention: Retention;
+  autopilot_enabled?: boolean;
   updated_at: string | null;
   updated_by: string | null;
 };
@@ -89,6 +92,7 @@ export function withDefaults(raw: Partial<SystemSettings> | null): SystemSetting
       autonomy_allow_auto_pricing: toggles.autonomy_allow_auto_pricing ?? false,
       autonomy_allow_auto_procurement: toggles.autonomy_allow_auto_procurement ?? false,
       ai_enabled: toggles.ai_enabled !== false,
+      autopilot_enabled: raw?.autopilot_enabled ?? toggles.autopilot_enabled ?? false,
     },
     killswitch: {
       orders: Boolean(killswitch.orders ?? false),
@@ -102,6 +106,7 @@ export function withDefaults(raw: Partial<SystemSettings> | null): SystemSetting
       orders_months: Number.isFinite(retention.orders_months) ? Number(retention.orders_months) : 18,
       audit_years: Number.isFinite(retention.audit_years) ? Number(retention.audit_years) : 5,
     },
+    autopilot_enabled: raw?.autopilot_enabled ?? toggles.autopilot_enabled ?? false,
     updated_at: raw?.updated_at ?? null,
     updated_by: raw?.updated_by ?? null,
   };

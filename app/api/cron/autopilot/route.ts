@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 
 import { isAutopilotEnabled } from "@/lib/autopilot/kill-switch";
 import { runAutopilotCycle } from "@/lib/autopilot/engine";
+import { syncAutopilotRuntimeFromSystemSettings } from "@/lib/autopilot/settings-sync";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { opsLog } from "@/lib/ops/log";
@@ -28,6 +29,12 @@ export async function GET(req: NextRequest): Promise<Response> {
       return jsonErr(rid, "Ugyldig cron-secret.", 403, "FORBIDDEN");
     }
     return jsonErr(rid, "Cron-gate feilet.", 500, "CRON_AUTH_ERROR");
+  }
+
+  const sync = await syncAutopilotRuntimeFromSystemSettings();
+  if ("message" in sync) {
+    opsLog("cron.autopilot.settings_sync_failed", { rid, message: sync.message });
+    return jsonErr(rid, "Kunne ikke lese autopilot-tilstand.", 500, "DB_ERROR");
   }
 
   if (!isAutopilotEnabled()) {

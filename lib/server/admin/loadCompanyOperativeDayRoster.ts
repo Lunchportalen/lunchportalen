@@ -172,9 +172,9 @@ async function fetchEmployeeNamesForUsers(
 
   const { data, error } = await admin
     .from("profiles")
-    .select("user_id,full_name,email,company_id")
+    .select("user_id:id,full_name,email,company_id")
     .eq("company_id", companyId)
-    .in("user_id", ids);
+    .in("id", ids);
 
   if (error || !Array.isArray(data)) return out;
 

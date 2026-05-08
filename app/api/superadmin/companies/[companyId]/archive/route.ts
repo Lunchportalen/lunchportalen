@@ -162,7 +162,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const companyUpdate = await admin
     .from("companies")
     .update({
-      status: "closed",
+      status: "CLOSED",
       deleted_at: now,
       deleted_by: a.scope?.userId ?? null,
       delete_reason: reason,

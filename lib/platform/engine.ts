@@ -29,7 +29,7 @@ export async function runPlatform(): Promise<{
         .from("orders")
         .select("line_total")
         .limit(8000)
-        .in("status", ["active", "ACTIVE"]);
+        .in("status", ["ACTIVE"]);
 
       if (!error && Array.isArray(orders)) {
         for (const row of orders) {

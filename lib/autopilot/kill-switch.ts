@@ -32,6 +32,10 @@ export function enableAutopilot(): void {
   runtimeOverride = true;
 }
 
+export function setAutopilotRuntimeOverride(enabled: boolean): void {
+  runtimeOverride = enabled;
+}
+
 export function clearAutopilotRuntimeOverride(): void {
   runtimeOverride = null;
 }

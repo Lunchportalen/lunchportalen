@@ -48,8 +48,8 @@ async function requireCompanyAdmin() {
 
   const { data: profile, error: perr } = await sb
     .from("profiles")
-    .select("user_id, company_id, role, email, disabled_at")
-    .eq("user_id", user.id)
+    .select("user_id:id, company_id, role, email, disabled_at")
+    .eq("id", user.id)
     .maybeSingle();
 
   if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });

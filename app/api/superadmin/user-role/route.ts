@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   const { data: actorProfile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("user_id", actor.id)
+    .eq("id", actor.id)
     .maybeSingle();
 
   if (actorProfile?.role !== "superadmin") {
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
   // Hent eksisterende (for audit)
   const { data: existing, error: exErr } = await admin
     .from("profiles")
-    .select("user_id, role, email, full_name, company_id")
-    .eq("user_id", targetUserId)
+    .select("user_id:id, role, email, full_name, company_id")
+    .eq("id", targetUserId)
     .maybeSingle();
 
   if (exErr) {
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   const { error: upErr } = await admin
     .from("profiles")
     .update({ role: newRole })
-    .eq("user_id", targetUserId);
+    .eq("id", targetUserId);
 
   if (upErr) {
     return jsonErr(rid, "Kunne ikke oppdatere rolle.", 500, { code: "UPDATE_FAILED", detail: upErr.message });

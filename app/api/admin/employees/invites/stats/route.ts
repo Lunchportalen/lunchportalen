@@ -11,6 +11,12 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
+function isMissingEmployeeInvitesTable(error: unknown) {
+  const e = error as any;
+  const text = `${String(e?.code ?? "")} ${String(e?.message ?? "")} ${String(e?.details ?? "")} ${String(e?.hint ?? "")}`.toLowerCase();
+  return text.includes("42p01") || (text.includes("employee_invites") && (text.includes("does not exist") || text.includes("not found")));
+}
+
 export async function GET(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -57,6 +63,12 @@ export async function GET(req: NextRequest) {
     const [totalR, activeR, usedR, expiredR] = await Promise.all([totalQ, activeQ, usedQ, expiredQ]);
 
     const anyErr = totalR.error || activeR.error || usedR.error || expiredR.error;
+    if (anyErr && isMissingEmployeeInvitesTable(anyErr)) {
+      return jsonOk(rid, {
+        companyId,
+        stats: { total: 0, active: 0, used: 0, expired: 0 },
+      });
+    }
     if (anyErr) return jsonErr(rid, "Kunne ikke hente invitasjonsstatistikk.", 500, { code: "DB_ERROR", detail: anyErr });
 
     return jsonOk(rid, {

@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     const { data: me, error: meErr } = await supabase
       .from("profiles")
       .select("role")
-      .or(`user_id.eq.${auth.user.id},id.eq.${auth.user.id}`)
+      .eq("id", auth.user.id)
       .maybeSingle();
 
     if (meErr) return jsonError(rid, 500, "profile_read_failed", "Kunne ikke lese profil.", meErr);

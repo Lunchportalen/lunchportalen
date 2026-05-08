@@ -207,7 +207,7 @@ export default async function DashboardPage() {
 
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <GhostCTA href="/week" label="Se ukesplan" />
-            <PrimaryCTA href="/admin/users" label="Oppdater ansatte" />
+            <PrimaryCTA href="/admin/people" label="Oppdater ansatte" />
           </div>
         </div>
       </section>

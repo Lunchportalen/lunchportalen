@@ -7,6 +7,7 @@ import { formatDateTimeNO } from "@/lib/date/format";
 import { deriveReasons, deriveSystemStatus } from "@/lib/system/healthStatus";
 import { Button } from "@/components/ui/button";
 import StatusPill from "@/components/admin/StatusPill";
+import ConfirmDestructiveDialog from "@/components/superadmin/ConfirmDestructiveDialog";
 
 type CheckStatus = "OK" | "WARN" | "FAIL";
 type SystemStatus = "normal" | "degraded";
@@ -225,6 +226,10 @@ function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 
+function makeUiRid() {
+  return crypto.randomUUID().slice(0, 8);
+}
+
 type PromptBuildInput = { rid: string | null; data: HealthData | null };
 type PromptBuildOutput = { prompt: string; itemsCount: number; missingEvidence: string[] };
 
@@ -323,6 +328,7 @@ export default function SystemClient() {
   const [repairing, setRepairing] = useState(false);
   const [checkingFlow, setCheckingFlow] = useState(false);
   const [runningIntegrity, setRunningIntegrity] = useState(false);
+  const [repairConfirmOpen, setRepairConfirmOpen] = useState(false);
 
   const [includeOrderIntegrity, setIncludeOrderIntegrity] = useState(false);
 
@@ -528,10 +534,17 @@ export default function SystemClient() {
       }
 
       setRid(nextRid ?? null);
-      if (errors.length) setErr(errors.join(" | "));
+      if (errors.length) {
+        const safeRid = nextRid ?? makeUiRid();
+        console.error("System status load failed", { rid: safeRid, errors });
+        setRid(safeRid);
+        setErr(`Noe gikk galt. Referanse: ${safeRid}`);
+      }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Kunne ikke hente systemstatus.";
-      setErr(String(msg));
+      const safeRid = makeUiRid();
+      console.error("System status load failed", { rid: safeRid, error: e });
+      setRid(safeRid);
+      setErr(`Noe gikk galt. Referanse: ${safeRid}`);
       setHealth(null);
       setIncidents(null);
       setRepairJobs(null);
@@ -560,6 +573,7 @@ export default function SystemClient() {
     setCodexErr(null);
   }, [flowChecks, health, incidentItems, jobItems, rid]);
   async function runRepairs() {
+    setRepairConfirmOpen(false);
     setRepairing(true);
     setRepairAction(null);
 
@@ -873,7 +887,7 @@ export default function SystemClient() {
             <div className="text-sm font-semibold text-neutral-900">Reparasjoner</div>
             <div className="mt-1 text-xs text-neutral-600">Kø: {jobTotal}</div>
           </div>
-          <Button disabled={repairing} onClick={runRepairs} className="lp-neon-focus lp-neon-glow-hover">
+          <Button disabled={repairing} onClick={() => setRepairConfirmOpen(true)} className="lp-neon-focus lp-neon-glow-hover">
             {repairing ? "Kjører…" : "Kjør trygg reparasjon"}
           </Button>
         </div>
@@ -1195,6 +1209,20 @@ export default function SystemClient() {
 
         <div className="mt-2 text-xs text-neutral-500">Oppdateres hvert 60. sekund.</div>
       </div>
+      <ConfirmDestructiveDialog
+        open={repairConfirmOpen}
+        title="Kjør systemreparasjon?"
+        description="Dette vil normalisere ordre og reparere inkonsistenser. Operasjonen er ikke reversibel."
+        confirmLabel="Kjør repair"
+        variant="deactivate"
+        loading={repairing}
+        onCancel={() => {
+          if (!repairing) setRepairConfirmOpen(false);
+        }}
+        onConfirm={() => {
+          if (!repairing) void runRepairs();
+        }}
+      />
     </div>
   );
 }

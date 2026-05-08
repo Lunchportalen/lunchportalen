@@ -21,6 +21,12 @@ function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 
+function isMissingInviteTableError(error: unknown) {
+  const e = error as any;
+  const text = `${safeStr(e?.code)} ${safeStr(e?.message)} ${safeStr(e?.details)} ${safeStr(e?.hint)}`.toLowerCase();
+  return text.includes("42p01") || (text.includes("company_invites") && (text.includes("does not exist") || text.includes("not found")));
+}
+
 export async function POST(req: NextRequest) {
   
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
@@ -54,6 +60,9 @@ export async function POST(req: NextRequest) {
       .is("revoked_at", null);
 
     if (revokeRes.error) {
+      if (isMissingInviteTableError(revokeRes.error)) {
+        return jsonErr(ctx.rid, "Invitasjonstabell mangler i live DB.", 503, "INVITES_TABLE_MISSING");
+      }
       return jsonErr(ctx.rid, "Kunne ikke deaktivere tidligere invitasjoner.", 400, { code: "invite_revoke_failed", detail: {
         message: revokeRes.error.message,
       } });
@@ -69,6 +78,9 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (iErr || !inv) {
+      if (isMissingInviteTableError(iErr)) {
+        return jsonErr(ctx.rid, "Invitasjonstabell mangler i live DB.", 503, "INVITES_TABLE_MISSING");
+      }
       return jsonErr(ctx.rid, "Kunne ikke opprette invitasjonslenke.", 400, { code: "invite_create_failed", detail: {
         message: iErr?.message ?? "unknown",
       } });

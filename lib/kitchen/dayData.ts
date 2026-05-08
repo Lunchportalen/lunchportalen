@@ -230,7 +230,7 @@ export async function fetchKitchenDayData(args: {
     .eq("date", dateISO)
     .eq("company_id", companyId)
     // only active orders for kitchen list
-    .in("status", ["active", "ACTIVE"])
+    .in("status", ["ACTIVE"])
     // default slot filter (kitchen is lunch unless explicitly asked)
     .eq("slot", slot ? slot : "lunch");
 

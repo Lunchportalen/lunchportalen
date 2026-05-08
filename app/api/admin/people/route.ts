@@ -12,6 +12,13 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
+function isMissingRelationError(error: unknown, relation: string) {
+  const e = error as any;
+  const text = `${safeStr(e?.code)} ${safeStr(e?.message)} ${safeStr(e?.details)} ${safeStr(e?.hint)}`.toLowerCase();
+  const target = relation.toLowerCase();
+  return text.includes("42p01") || (text.includes(target) && (text.includes("does not exist") || text.includes("not found")));
+}
+
 type CompanyRow = {
   id: string;
   name: string | null;
@@ -23,9 +30,7 @@ type EmployeeRow = {
   id: string;
   email: string | null;
   full_name: string | null;
-  name: string | null;
   role: string | null;
-  department: string | null;
   location_id: string | null;
   disabled_at: string | null;
   is_active: boolean | null;
@@ -80,9 +85,7 @@ export async function GET(req: NextRequest) {
 
     const employeesQ = admin
       .from("profiles")
-      .select(
-        "id,email,full_name,name,role,department,location_id,disabled_at,is_active,phone,created_at,updated_at"
-      )
+      .select("id,email,full_name,role,location_id,disabled_at,is_active,phone,created_at,updated_at")
       .eq("company_id", companyId)
       .eq("role", "employee")
       .order("created_at", { ascending: false });
@@ -100,17 +103,17 @@ export async function GET(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "DB_ERROR", detail: { message: companyRes.error.message } });
     if (employeesRes.error)
       return jsonErr(rid, "Kunne ikke hente ansatte.", 500, { code: "DB_ERROR", detail: { message: employeesRes.error.message } });
-    if (invitesRes.error)
+    if (invitesRes.error && !isMissingRelationError(invitesRes.error, "employee_invites"))
       return jsonErr(rid, "Kunne ikke hente invitasjoner.", 500, { code: "DB_ERROR", detail: { message: invitesRes.error.message } });
 
     const company = (companyRes.data ?? null) as CompanyRow | null;
     const employees = ((employeesRes.data ?? []) as EmployeeRow[]).map((row) => ({
       user_id: safeStr(row.id) || null,
       email: safeStr(row.email) || null,
-      name: safeStr(row.full_name) || safeStr(row.name) || null,
+      name: safeStr(row.full_name) || null,
       full_name: safeStr(row.full_name) || null,
       role: safeStr(row.role) || null,
-      department: safeStr(row.department) || null,
+      department: null,
       location_id: safeStr(row.location_id) || null,
       disabled_at: row.disabled_at ?? null,
       is_active: typeof row.is_active === "boolean" ? row.is_active : null,
@@ -125,7 +128,7 @@ export async function GET(req: NextRequest) {
       deactivated: employees.filter((r) => !!r.disabled_at).length,
     };
 
-    const invites = ((invitesRes.data ?? []) as InviteRow[]).map((row) => ({
+    const invites = ((invitesRes.error ? [] : invitesRes.data ?? []) as InviteRow[]).map((row) => ({
       id: safeStr(row.id),
       email: safeStr(row.email),
       full_name: safeStr(row.full_name) || null,

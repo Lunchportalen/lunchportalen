@@ -52,7 +52,7 @@ export default async function AdminMenusPage() {
   /**
    * ✅ FASIT:
    * profiles.id === auth.users.id
-   * Ingen fallback til profiles.user_id
+   * Ingen fallback til legacy profile user id column
    *
    * Hvis profilen ikke finnes ennå (trigger-delay), lar vi role falle tilbake til metadata/byEmail.
    */

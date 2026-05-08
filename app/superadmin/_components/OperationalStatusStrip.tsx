@@ -16,6 +16,10 @@ function variantClass(v: ReturnType<typeof operationalStatusStripPresentation>["
   return "bg-rose-50/85 text-rose-950 ring-1 ring-rose-200/70";
 }
 
+function makeUiRid() {
+  return crypto.randomUUID().slice(0, 8);
+}
+
 export default async function OperationalStatusStrip({ placement = "layout" }: { placement?: "layout" | "embedded" }) {
   let pathname = "";
   try {
@@ -48,7 +52,10 @@ export default async function OperationalStatusStrip({ placement = "layout" }: {
           ? p.global_closed_reason || p.detail
           : p.detail;
   const title = p.level === "ERROR" ? "Produksjon i dag: status utilgjengelig" : pres.label;
-  const errorDetail = p.level === "ERROR" && p.detail ? `Teknisk detalj: ${p.detail}` : null;
+  const errorRid = p.level === "ERROR" ? makeUiRid() : null;
+  if (p.level === "ERROR") {
+    console.error("OperationalStatusStrip failed", { rid: errorRid, detail: p.detail });
+  }
 
   return (
     <div
@@ -64,9 +71,8 @@ export default async function OperationalStatusStrip({ placement = "layout" }: {
       <div className="min-w-0">
         <div className="font-semibold leading-snug">{title}</div>
         <div className="mt-0.5 text-xs leading-snug opacity-80">
-          {p.level === "ERROR" ? "Kunne ikke hente produksjonsstatus akkurat nå. Se produksjonssjekk for detaljer." : sub}
+          {p.level === "ERROR" ? `Noe gikk galt. Referanse: ${errorRid}` : sub}
         </div>
-        {errorDetail ? <div className="mt-1 max-w-full truncate font-mono text-[11px] opacity-55">{errorDetail}</div> : null}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-xs">
         <span className="font-mono text-xs opacity-80">{date}</span>

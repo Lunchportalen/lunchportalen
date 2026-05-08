@@ -170,7 +170,7 @@ export async function GET(req: NextRequest) {
 
     const employeesTotalRes = await admin
       .from("profiles")
-      .select("user_id", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("company_id", companyId)
       .eq("role", "employee")
       .is("disabled_at", null);

@@ -59,7 +59,7 @@ export default async function DriverPage() {
      🔐 ROLE (email hard first, then profiles)
      FASET:
      - profiles.id = auth.users.id (primary)
-     - fallback: profiles.user_id = auth.users.id (legacy)
+     - fallback: legacy profile user id column if present
   ========================= */
   const { data: profile, error: pErr } = (await supabase
     .from("profiles")

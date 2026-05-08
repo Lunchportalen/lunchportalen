@@ -32,13 +32,20 @@ export async function GET(req: NextRequest) {
       .from("agreements")
       .select("*")
       .eq("company_id", companyId)
-      .order("start_date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error) return jsonErr(ctx.rid, "Kunne ikke hente avtale.", 400, { code: "DB_ERROR", detail: { message: error.message } });
 
-    return jsonOk(ctx.rid, { agreement: data ?? null });
+    const agreement = data
+      ? {
+          ...data,
+          start_date: (data as any).start_date ?? (data as any).starts_at ?? (String((data as any).created_at ?? "").slice(0, 10) || null),
+        }
+      : null;
+
+    return jsonOk(ctx.rid, { agreement });
   } catch (e: any) {
     const rid = makeRid();
     return jsonErr(rid, "Uventet feil.", 500, { code: "INTERNAL_ERROR", detail: { message: safeStr(e?.message ?? e) } });

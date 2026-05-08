@@ -9,13 +9,15 @@ import type { AutopilotLoopResult } from "@/lib/autopilot/engine";
 import { getLastAutopilotLoopRun } from "@/lib/autopilot/engine";
 import { getRunningExperimentsSnapshot } from "@/lib/autopilot/experiment";
 import {
-  disableAutopilot,
-  enableAutopilot,
   getAutopilotKillSwitchState,
+  setAutopilotRuntimeOverride,
 } from "@/lib/autopilot/kill-switch";
+import { syncAutopilotRuntimeFromSystemSettings } from "@/lib/autopilot/settings-sync";
+import { writeAuditEvent } from "@/lib/audit/write";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { denyResponse, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function summaryNbLoop(r: AutopilotLoopResult): string {
   switch (r.status) {
@@ -43,6 +45,11 @@ export async function GET(req: NextRequest): Promise<Response> {
     if (deny) return deny;
 
     const rid = gate.ctx.rid || makeRid("ct_autopilot");
+
+    const sync = await syncAutopilotRuntimeFromSystemSettings();
+    if ("message" in sync) {
+      return jsonErr(rid, sync.message, 500, "DB_ERROR");
+    }
 
     const ks = getAutopilotKillSwitchState();
     const running = getRunningExperimentsSnapshot();
@@ -99,12 +106,30 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
 
     const userId = gate.ctx.scope.userId ?? null;
-
-    if (action === "enable") {
-      enableAutopilot();
-    } else {
-      disableAutopilot();
+    const admin = supabaseAdmin();
+    const previousState = getAutopilotKillSwitchState();
+    const persistedBefore = await syncAutopilotRuntimeFromSystemSettings(admin);
+    if ("message" in persistedBefore) {
+      return jsonErr(rid, persistedBefore.message, 500, "DB_ERROR");
     }
+
+    const nextEnabled = action === "enable";
+    const now = new Date().toISOString();
+    const { error: updateError } = await admin
+      .from("system_settings")
+      .update({
+        autopilot_enabled: nextEnabled,
+        updated_at: now,
+        updated_by: userId,
+      } as any)
+      .eq("id", persistedBefore.rowId);
+
+    if (updateError) {
+      return jsonErr(rid, "Kunne ikke lagre autopilot-tilstand.", 500, "DB_ERROR");
+    }
+
+    setAutopilotRuntimeOverride(nextEnabled);
+    const newState = getAutopilotKillSwitchState();
 
     void logAiExecution({
       capability: "control_tower_autopilot_kill_switch",
@@ -113,12 +138,32 @@ export async function POST(req: NextRequest): Promise<Response> {
       metadata: {
         domain: "control_tower",
         action,
-        stateAfter: getAutopilotKillSwitchState(),
-        note: "Runtime override i prosess — ikke persistert som env. Ingen auto-deploy.",
+        previousState,
+        stateAfter: newState,
+        persisted: { table: "system_settings", id: persistedBefore.rowId, autopilot_enabled: nextEnabled },
+        note: "Autopilot-tilstand persistert i system_settings og synkronisert til runtime.",
       },
     });
 
-    const ks = getAutopilotKillSwitchState();
+    void writeAuditEvent({
+      scope: {
+        role: gate.ctx.scope.role,
+        user_id: userId,
+        email: gate.ctx.scope.email,
+      },
+      action: "autopilot_toggled",
+      entity_type: "system_settings",
+      entity_id: persistedBefore.rowId,
+      summary: `Autopilot ${nextEnabled ? "aktivert" : "deaktivert"}`,
+      detail: {
+        action,
+        previous_state: previousState,
+        new_state: newState,
+        updated_at: now,
+      },
+    });
+
+    const ks = newState;
     return jsonOk(
       rid,
       {

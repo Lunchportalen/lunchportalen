@@ -70,9 +70,8 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kun ansatte kan deaktiveres her.", 400, "INVALID_TARGET");
     }
 
-    const patch = disabled
-      ? { disabled_at: new Date().toISOString(), disabled_reason: reason ?? "Deaktivert av firma-admin" }
-      : { disabled_at: null, disabled_reason: null };
+    void reason;
+    const patch = disabled ? { disabled_at: new Date().toISOString() } : { disabled_at: null };
 
     const { error: uErr } = await admin.from("profiles").update(patch).eq("id", userId);
     if (uErr) return jsonErr(rid, "Kunne ikke oppdatere ansatt.", 500, { code: "DB_ERROR", detail: { message: uErr.message } });

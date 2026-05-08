@@ -219,7 +219,7 @@ export default async function CompanyAdminDashboardPage() {
                   Se egne ordrer
                 </Link>
                 <Link
-                  href="/admin/users"
+                  href="/admin/people"
                   className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-[rgb(var(--lp-text))] ring-1 ring-[rgb(var(--lp-border))] hover:bg-[rgb(var(--lp-surface))]"
                 >
                   Ansatte

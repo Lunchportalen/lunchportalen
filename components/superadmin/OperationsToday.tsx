@@ -8,7 +8,7 @@ import {
   type ForecastRow,
   type WasteSignalRow,
 } from "@/lib/superadmin/queries";
-import OperationsTodayActions from "./OperationsTodayActions";
+import OperationsTodayActions, { type OperationsCsvDelivery } from "./OperationsTodayActions";
 
 type Grouped = {
   companyId: string;
@@ -145,6 +145,29 @@ export default async function OperationsToday() {
   }
 
   const totalSignals = signals.length;
+  const csvDeliveries: OperationsCsvDelivery[] = [];
+  for (const c of groups) {
+    for (const l of c.locations) {
+      for (const w of l.windows) {
+        const uniqueNotes = Array.from(new Set(w.notes));
+        const k = key(c.companyId, l.locationId, w.windowLabel);
+        const f = forecastMap.get(k);
+        const sigs = signalMap.get(k) ?? [];
+        const worst = worstSignal(sigs);
+
+        csvDeliveries.push({
+          dato: todayISO,
+          firma: c.companyName,
+          lokasjon: l.locationName,
+          vindu: w.windowLabel,
+          porsjoner: w.portions,
+          forecast: f ? `${f.forecast_portions} (${f.low_portions}-${f.high_portions}) ${riskLabel(f.risk_level)}` : "",
+          waste: worst ? `${worst.severity}: ${worst.signal_type.replaceAll("_", " ")} - ${worst.message}` : "",
+          notater: uniqueNotes.join(" | "),
+        });
+      }
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -164,7 +187,7 @@ export default async function OperationsToday() {
         </div>
 
         {/* Client actions (print + CSV) */}
-        <OperationsTodayActions dateISO={todayISO} />
+        <OperationsTodayActions dateISO={todayISO} deliveries={csvDeliveries} />
       </div>
 
       {/* Body */}
@@ -205,13 +228,6 @@ export default async function OperationsToday() {
                           <div
                             key={w.windowLabel}
                             className="rounded-xl bg-bg p-3"
-                            data-delivery-row
-                            data-date={todayISO}
-                            data-company={c.companyName}
-                            data-location={l.locationName}
-                            data-window={w.windowLabel}
-                            data-portions={String(w.portions)}
-                            data-notes={uniqueNotes.join(" • ")}
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="text-sm font-semibold">{w.windowLabel}</div>

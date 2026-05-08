@@ -15,11 +15,11 @@ export default async function AdminCompaniesPage() {
 
   if (!user) redirect("/login?next=/admin/companies");
 
-  // ✅ Hos dere: profiles PK = user_id
+  // Canonical: profiles.id === auth.users.id
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
   const role = (profile?.role as Role | undefined) ?? undefined;

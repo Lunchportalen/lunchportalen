@@ -49,8 +49,8 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
     // 1) read target profile (must be same company and employee)
     const { data: target, error: terr } = await sb
       .from("profiles")
-      .select("user_id, company_id, role, disabled_at, email, full_name")
-      .eq("user_id", targetUserId)
+      .select("user_id:id, company_id, role, disabled_at, email, full_name")
+      .eq("id", targetUserId)
       .maybeSingle();
 
     if (terr) return jsonErr(rid, "Kunne ikke lese ansattprofil.", 500, { code: "DB_ERROR", detail: terr });
@@ -69,8 +69,8 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
     const { data: updated, error: uerr } = await sb
       .from("profiles")
       .update({ disabled_at: nextDisabledAt })
-      .eq("user_id", targetUserId)
-      .select("user_id, email, full_name, role, company_id, disabled_at")
+      .eq("id", targetUserId)
+      .select("user_id:id, email, full_name, role, company_id, disabled_at")
       .maybeSingle();
 
     if (uerr) return jsonErr(rid, "Kunne ikke oppdatere ansatt.", 500, { code: "UPDATE_FAILED", detail: uerr });

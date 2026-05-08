@@ -142,7 +142,7 @@ async function loadAgreementRow(admin: any, companyId: string) {
       .select("*")
       .eq("company_id", companyId)
       .eq("status", "ACTIVE")
-      .order("start_date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
