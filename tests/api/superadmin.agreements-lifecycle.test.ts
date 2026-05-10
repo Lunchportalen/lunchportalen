@@ -5,6 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { hasRemoteSupabaseIntegrationEnv } from "@/tests/_helpers/remoteSupabaseIntegration";
 
 const hasDb = hasRemoteSupabaseIntegrationEnv();
+// Live lifecycle proof remains opt-in because it writes companies/locations/agreements.
+// MEDIUM 7 adds mocked API-contract coverage for create/approve/activate/reject.
 const describeIfDb = hasDb ? describe : describe.skip;
 
 function isoFrom(offsetDays: number) {

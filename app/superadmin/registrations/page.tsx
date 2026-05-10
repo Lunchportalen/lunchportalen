@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { formatDateTimeNO } from "@/lib/date/format";
 import { loadCompanyRegistrationsInbox } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
+import RegistrationDecisionActions from "./RegistrationDecisionActions";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -32,6 +33,18 @@ function statusPillClass(raw: string | null) {
   return "bg-neutral-50 text-neutral-700 ring-1 ring-neutral-200";
 }
 
+function planLabel(plan: Record<string, string> | null) {
+  if (!plan) return "—";
+  const days = [
+    ["Man", plan.mon],
+    ["Tir", plan.tue],
+    ["Ons", plan.wed],
+    ["Tor", plan.thu],
+    ["Fre", plan.fri],
+  ];
+  return days.map(([day, tier]) => `${day}: ${safeStr(tier).toUpperCase() || "—"}`).join(" · ");
+}
+
 export default async function SuperadminRegistrationsInboxPage() {
   const bundle = await loadCompanyRegistrationsInbox();
 
@@ -44,8 +57,7 @@ export default async function SuperadminRegistrationsInboxPage() {
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
             Operativ liste fra <code className="rounded bg-white/80 px-1 text-xs">company_registrations</code>, firmastatus fra{" "}
             <code className="rounded bg-white/80 px-1 text-xs">companies</code> og ledger-status fra{" "}
-            <code className="rounded bg-white/80 px-1 text-xs">agreements</code>. Rader sorteres etter handlingsprioritet (ventende utkast
-            først, deretter manglende utkast). Kun lesing.
+            <code className="rounded bg-white/80 px-1 text-xs">agreements</code>. Viser innsendte avtaler i status PENDING.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -78,10 +90,9 @@ export default async function SuperadminRegistrationsInboxPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Firma</th>
                 <th className="px-4 py-3 font-medium">Firmastatus</th>
-                <th className="px-4 py-3 font-medium max-w-[200px]">Pipeline (ledger)</th>
+                <th className="px-4 py-3 font-medium max-w-[220px]">Avtalegrunnlag</th>
                 <th className="px-4 py-3 font-medium">Kontakt</th>
                 <th className="px-4 py-3 font-medium">E-post</th>
-                <th className="px-4 py-3 font-medium">Telefon</th>
                 <th className="px-4 py-3 font-medium">Ansatte</th>
                 <th className="px-4 py-3 font-medium">Opprettet</th>
                 <th className="px-4 py-3 font-medium text-right">Handling</th>
@@ -117,44 +128,30 @@ export default async function SuperadminRegistrationsInboxPage() {
                         {companyStatusLabel(st)}
                       </span>
                     </td>
-                    <td className="max-w-[200px] px-4 py-3 align-top text-xs leading-snug text-neutral-800">
+                    <td className="max-w-[220px] px-4 py-3 align-top text-xs leading-snug text-neutral-800">
                       <div className="space-y-1">
+                        <div>{planLabel(r.weekday_meal_tiers)}</div>
                         <div>
-                          Registrering: <span className="font-semibold tabular-nums">Ja</span>
+                          Levering:{" "}
+                          <span className="font-semibold">
+                            {r.delivery_window_from || "—"}-{r.delivery_window_to || "—"}
+                          </span>
                         </div>
                         <div>
-                          Utkast (PENDING):{" "}
-                          <span className="font-semibold tabular-nums">{r.ledger_pending_agreement_id ? "Ja" : "Nei"}</span>
-                        </div>
-                        <div>
-                          Aktiv (ACTIVE):{" "}
-                          <span className="font-semibold tabular-nums">{r.ledger_active_agreement_id ? "Ja" : "Nei"}</span>
-                        </div>
-                        <div className="pt-0.5 text-[11px] text-neutral-700">
-                          <span className="font-semibold text-neutral-600">Fase: </span>
-                          {r.pipeline_stage_label}
-                        </div>
-                        <div className="text-[11px] text-neutral-700">
-                          <span className="font-semibold text-neutral-600">Neste: </span>
-                          {r.pipeline_next_label}
-                        </div>
-                        <div className="pt-1">
-                          <Link
-                            href={r.pipeline_primary_href}
-                            className="inline-flex rounded-xl border bg-white px-2 py-1 text-[11px] font-semibold hover:bg-neutral-50"
-                          >
-                            Åpne anbefalt steg →
-                          </Link>
+                          Vilkår:{" "}
+                          <span className="font-semibold">
+                            {r.terms_binding_months ?? "—"} mnd / {r.terms_notice_months ?? "—"} mnd
+                          </span>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">{r.contact_name}</td>
                     <td className="px-4 py-3 break-all">{r.contact_email}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{r.contact_phone}</td>
                     <td className="px-4 py-3 tabular-nums">{r.employee_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs">{created}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-col items-end gap-2">
+                        <RegistrationDecisionActions agreementId={r.agreement_id ?? r.ledger_pending_agreement_id} />
                         <Link
                           href={`/superadmin/registrations/${encodeURIComponent(r.company_id)}`}
                           className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"

@@ -41,6 +41,16 @@ describe("POST /api/public/register-company", () => {
       error: null,
     });
     fromMock.mockImplementation((table: string) => {
+      if (table === "companies") {
+        const builder: any = {
+          select: () => builder,
+          eq: () => builder,
+          not: () => builder,
+          gt: async () => ({ count: 0, error: null }),
+          then: (resolve: any) => resolve({ count: 0, error: null }),
+        };
+        return builder;
+      }
       if (table !== "company_registrations") {
         return {};
       }
@@ -169,16 +179,28 @@ describe("POST /api/public/register-company", () => {
   });
 
   test("500 REGISTER_PERSISTENCE_FAILED når company_registrations mangler etter RPC", async () => {
-    fromMock.mockImplementation(() => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({ data: null, error: null }),
+    fromMock.mockImplementation((table: string) => {
+      if (table === "companies") {
+        const builder: any = {
+          select: () => builder,
+          eq: () => builder,
+          not: () => builder,
+          gt: async () => ({ count: 0, error: null }),
+          then: (resolve: any) => resolve({ count: 0, error: null }),
+        };
+        return builder;
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
         }),
-      }),
-      update: () => ({
-        eq: async () => ({ error: null }),
-      }),
-    }));
+        update: () => ({
+          eq: async () => ({ error: null }),
+        }),
+      };
+    });
     const { POST } = await import("@/app/api/public/register-company/route");
     const res = await POST(
       mkReq({

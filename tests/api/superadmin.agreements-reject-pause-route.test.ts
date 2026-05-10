@@ -10,6 +10,8 @@ import type { AuthedCtx } from "@/lib/http/routeGuard";
 const AID = "00000000-0000-4000-8000-0000000000c1";
 
 const scopeOr401Mock = vi.hoisted(() => vi.fn());
+const rpcMock = vi.hoisted(() => vi.fn());
+const fromMock = vi.hoisted(() => vi.fn());
 const runLedgerAgreementRejectMock = vi.hoisted(() => vi.fn());
 const runLedgerAgreementPauseMock = vi.hoisted(() => vi.fn());
 
@@ -24,6 +26,13 @@ vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
 vi.mock("@/lib/server/agreements/ledgerAgreementApproval", () => ({
   runLedgerAgreementReject: (...args: unknown[]) => runLedgerAgreementRejectMock(...args),
   runLedgerAgreementPause: (...args: unknown[]) => runLedgerAgreementPauseMock(...args),
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    rpc: (...args: unknown[]) => rpcMock(...args),
+    from: (...args: unknown[]) => fromMock(...args),
+  }),
 }));
 
 function authedOk(role: string): { ok: true; ctx: AuthedCtx } {
@@ -62,6 +71,32 @@ describe("superadmin agreements API — reject & pause-ledger gates", () => {
       ok: true,
       rid: "rid_mut",
       data: { agreementId: AID, status: "PAUSED", message: "ok" },
+    });
+    rpcMock.mockResolvedValue({
+      data: {
+        agreement_id: AID,
+        company_id: "00000000-0000-4000-8000-0000000000cc",
+        contact_email: "test@example.com",
+        contact_name: "Test Person",
+      },
+      error: null,
+    });
+    fromMock.mockImplementation((table: string) => {
+      if (table === "companies") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { name: "Test AS" }, error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === "outbox") {
+        return {
+          upsert: async () => ({ error: null }),
+        };
+      }
+      return {};
     });
   });
 
@@ -108,7 +143,7 @@ describe("superadmin agreements API — reject & pause-ledger gates", () => {
       expect(runLedgerAgreementRejectMock).not.toHaveBeenCalled();
     });
 
-    it("200 for superadmin and invokes runLedgerAgreementReject", async () => {
+    it("200 for superadmin and invokes reject RPC", async () => {
       scopeOr401Mock.mockResolvedValue(authedOk("superadmin"));
       const { POST } = await import("@/app/api/superadmin/agreements/[agreementId]/reject/route");
       const req = new NextRequest(`http://localhost/api/superadmin/agreements/${AID}/reject`, {
@@ -119,10 +154,11 @@ describe("superadmin agreements API — reject & pause-ledger gates", () => {
       expect(res.status).toBe(200);
       const body = await readJson(res);
       expect(body?.ok).toBe(true);
-      expect(runLedgerAgreementRejectMock).toHaveBeenCalledTimes(1);
-      const arg0 = runLedgerAgreementRejectMock.mock.calls[0][0];
-      expect(arg0.agreementId).toBe(AID);
-      expect(arg0.reason).toBe("test");
+      expect(rpcMock).toHaveBeenCalledWith("lp_agreement_reject_pending", {
+        p_agreement_id: AID,
+        p_actor_user_id: "user-1",
+        p_reason: "test",
+      });
     });
   });
 

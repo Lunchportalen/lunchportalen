@@ -204,6 +204,28 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = supabaseAdmin();
+
+    const { count: recentCount, error: recentErr } = await admin
+      .from("companies")
+      .select("id", { count: "exact", head: true })
+      .eq("orgnr", orgnr)
+      .not("status", "in", "(CLOSED,TERMINATED)")
+      .gt("created_at", new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString());
+    if (recentErr) return err(rid, 500, "REGISTER_DUPLICATE_CHECK_FAILED", "Registreringen kunne ikke fullføres nå.");
+    if ((recentCount ?? 0) > 0) {
+      return err(rid, 409, "ALREADY_REGISTERED", "En registrering med dette org.nummeret er allerede under behandling.");
+    }
+
+    const { count: activeCount, error: activeErr } = await admin
+      .from("companies")
+      .select("id", { count: "exact", head: true })
+      .eq("orgnr", orgnr)
+      .eq("status", "ACTIVE");
+    if (activeErr) return err(rid, 500, "REGISTER_DUPLICATE_CHECK_FAILED", "Registreringen kunne ikke fullføres nå.");
+    if ((activeCount ?? 0) > 0) {
+      return err(rid, 409, "ALREADY_ACTIVE", "Dette organisasjonsnummeret er allerede registrert som aktiv kunde.");
+    }
+
     const { data, error } = await admin.rpc("lp_company_register", {
       p_orgnr: orgnr,
       p_company_name: companyName,

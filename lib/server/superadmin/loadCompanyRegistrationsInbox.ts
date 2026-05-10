@@ -13,6 +13,8 @@ function isUuid(v: string) {
 
 /** Kjerne felter fra `company_registrations` (+ join `companies`). */
 export type CompanyRegistrationInboxCore = {
+  agreement_id: string | null;
+  registration_status: string | null;
   company_id: string;
   company_name: string | null;
   company_orgnr: string | null;
@@ -24,6 +26,11 @@ export type CompanyRegistrationInboxCore = {
   address_line: string;
   postal_code: string;
   city: string;
+  weekday_meal_tiers: WeekdayMealTiers | null;
+  delivery_window_from: string | null;
+  delivery_window_to: string | null;
+  terms_binding_months: number | null;
+  terms_notice_months: number | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -65,6 +72,8 @@ export function mapCompanyRegistrationInboxRow(raw: Record<string, unknown>): Co
   const employee_count = Number.isFinite(ec) ? Math.floor(ec) : 0;
 
   return {
+    agreement_id: safeStr(raw.agreement_id) || null,
+    registration_status: safeStr(raw.status).toUpperCase() || null,
     company_id,
     company_name,
     company_orgnr,
@@ -76,6 +85,11 @@ export function mapCompanyRegistrationInboxRow(raw: Record<string, unknown>): Co
     address_line: safeStr(raw.address_line) || "—",
     postal_code: safeStr(raw.postal_code) || "—",
     city: safeStr(raw.city) || "—",
+    weekday_meal_tiers: parseWeekdayMealTiersFromJson(raw.weekday_meal_tiers),
+    delivery_window_from: raw.delivery_window_from != null ? safeStr(raw.delivery_window_from) || null : null,
+    delivery_window_to: raw.delivery_window_to != null ? safeStr(raw.delivery_window_to) || null : null,
+    terms_binding_months: Number.isFinite(Number(raw.terms_binding_months)) ? Math.floor(Number(raw.terms_binding_months)) : null,
+    terms_notice_months: Number.isFinite(Number(raw.terms_notice_months)) ? Math.floor(Number(raw.terms_notice_months)) : null,
     created_at: safeStr(raw.created_at) || "",
     updated_at: raw.updated_at != null ? safeStr(raw.updated_at) : null,
   };
@@ -88,8 +102,9 @@ export async function loadCompanyRegistrationsInbox(): Promise<
   const { data, error } = await admin
     .from("company_registrations")
     .select(
-      "company_id,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status )"
+      "agreement_id,status,company_id,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status )"
     )
+    .eq("status", "PENDING")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -418,7 +433,7 @@ export async function loadCompanyRegistrationDetail(companyId: string): Promise<
   const { data, error } = await admin
     .from("company_registrations")
     .select(
-      "company_id,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status, created_at, updated_at )"
+      "agreement_id,status,company_id,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status, created_at, updated_at )"
     )
     .eq("company_id", id)
     .maybeSingle();
