@@ -15,7 +15,6 @@ export type OutboxListRow = {
   created_at: string;
   sent_at: string | null;
   last_error: string | null;
-  payload: any; // jsonb
 };
 
 export async function listOutbox(input: {
@@ -30,7 +29,7 @@ export async function listOutbox(input: {
 
   let query = admin
     .from("outbox")
-    .select("event_key,status,attempts,created_at,sent_at,last_error,payload")
+    .select("event_key,status,attempts,created_at,sent_at:delivered_at,last_error")
     .order("created_at", { ascending: false })
     .limit(limit);
 
