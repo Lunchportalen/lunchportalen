@@ -40,12 +40,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     const rows = await listOutbox({ status: statusRaw as any, q, limit });
     const counts = await outboxCounts();
 
-    return jsonOk(ctx.rid, {
-        ok: true,
-        rid: ctx.rid,
-        counts,
-        rows,
-      }, 200);
+    return jsonOk(ctx.rid, { counts, rows }, 200);
   } catch (e: any) {
     return jsonErr(ctx.rid, "Kunne ikke hente outbox.", 500, { code: "OUTBOX_LIST_FAILED", detail: {
       message: String(e?.message ?? e),

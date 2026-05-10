@@ -28,7 +28,10 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   try {
     const before = await outboxCounts();
-    const res = await processOutboxBatch(25);
+    const res = await processOutboxBatch(25, {
+      rid: ctx.rid,
+      worker: `superadmin-outbox:${ctx.rid}`,
+    });
     const after = await outboxCounts();
 
     // Varsling hvis FAILED > 0 etter run (best-effort)
@@ -48,13 +51,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       }
     }
 
-    return jsonOk(ctx.rid, {
-        ok: true,
-        rid: ctx.rid,
-        run: res,
-        before,
-        after,
-      }, 200);
+    return jsonOk(ctx.rid, { run: res, before, after }, 200);
   } catch (e: any) {
     return jsonErr(ctx.rid, "Kunne ikke kjøre outbox.", 500, { code: "OUTBOX_RUN_FAILED", detail: {
       message: String(e?.message ?? e),

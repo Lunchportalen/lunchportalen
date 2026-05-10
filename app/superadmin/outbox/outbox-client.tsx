@@ -105,8 +105,9 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
       return;
     }
 
-    setCounts((json?.counts || null) as Counts | null);
-    setRows((json?.rows || []) as Row[]);
+    const payload = json?.data ?? json;
+    setCounts((payload?.counts || null) as Counts | null);
+    setRows((payload?.rows || []) as Row[]);
     setLastUpdated(fmt(new Date().toISOString()));
   }
 
@@ -130,7 +131,8 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
       return;
     }
 
-    const run = json?.run ?? json;
+    const payload = json?.data ?? json;
+    const run = payload?.run ?? payload;
     const processed = run?.processed ?? 0;
     const sent = run?.sent ?? 0;
     const failed = run?.failed ?? 0;
