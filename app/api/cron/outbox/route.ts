@@ -33,7 +33,7 @@ async function logCronRun(
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handleOutboxCron(req: NextRequest) {
   const rid = makeRid();
 
   try {
@@ -112,4 +112,12 @@ export async function POST(req: NextRequest) {
       detail: { message },
     });
   }
+}
+
+export async function GET(req: NextRequest) {
+  return handleOutboxCron(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handleOutboxCron(req);
 }
