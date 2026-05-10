@@ -98,8 +98,8 @@ export async function POST(req: NextRequest) {
 
     const { data: existingProfile, error: profileReadErr } = await admin
       .from("profiles")
-      .select("id, company_id")
-      .eq("id", userId)
+      .select("id, user_id, company_id")
+      .or(`id.eq.${userId},user_id.eq.${userId}`)
       .maybeSingle();
     if (profileReadErr) return jsonErr(rid, "Kunne ikke lese profil.", 500, "PROFILE_READ_FAILED");
     if (existingProfile?.company_id && String(existingProfile.company_id) !== companyId) {
@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
 
     const profilePayload = {
       id: userId,
+      user_id: userId,
       email,
       full_name: fullName,
       role: "company_admin",
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
     };
 
     const profileWrite = existingProfile
-      ? await admin.from("profiles").update(profilePayload).eq("id", userId)
+      ? await admin.from("profiles").update(profilePayload).eq("id", existingProfile.id)
       : await admin.from("profiles").insert(profilePayload);
     if (profileWrite.error) return jsonErr(rid, "Kunne ikke lagre profil.", 500, "PROFILE_WRITE_FAILED");
 
