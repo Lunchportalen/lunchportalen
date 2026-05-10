@@ -14,6 +14,8 @@ import {
 
 const hasDb = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
 
+// Intentionally live Supabase Auth only: token reuse depends on real sign-in behavior
+// and should not be mocked in the default unit suite.
 describe("RLS fixtures token reuse", () => {
   test.skipIf(!hasDb)(
     "createAccessToken returns same token for same (email, password) without repeated sign-in",

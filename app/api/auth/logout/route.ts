@@ -14,6 +14,7 @@ import { clearLocalDevAuthSessionCookies } from "@/lib/auth/devBypass";
 import { getSupabasePublicConfig } from "@/lib/config/env";
 import { makeRid } from "@/lib/http/respond";
 import type { Database } from "@/lib/types/database";
+import { opsLog } from "@/lib/ops/log";
 
 /* =========================================================
    Headers
@@ -156,8 +157,7 @@ async function bestEffortSignOut(rid: string) {
     url = pub.url;
     anonKey = pub.anonKey;
   } catch (e: any) {
-    // eslint-disable-next-line no-console
-    console.warn(`[logout] missing Supabase public config rid=${rid}: ${safeStr(e?.message ?? e)}`);
+    opsLog("auth.logout.config_missing", { rid, message: safeStr(e?.message ?? e) });
     return;
   }
 
@@ -178,12 +178,10 @@ async function bestEffortSignOut(rid: string) {
     const { error } = await supabase.auth.signOut();
     if (error) {
       // Best effort only. Cookie clearing below is the actual loop-stopper.
-      // eslint-disable-next-line no-console
-      console.warn(`[logout] signOut error rid=${rid}: ${safeStr(error.message) || "Logout failed"}`);
+      opsLog("auth.logout.signout_error", { rid, message: safeStr(error.message) || "Logout failed" });
     }
   } catch (e: any) {
-    // eslint-disable-next-line no-console
-    console.warn(`[logout] signOut threw rid=${rid}: ${safeStr(e?.message ?? e)}`);
+    opsLog("auth.logout.signout_threw", { rid, message: safeStr(e?.message ?? e) });
   }
 }
 

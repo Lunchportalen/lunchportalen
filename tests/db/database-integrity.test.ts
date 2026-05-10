@@ -14,6 +14,8 @@ import {
 
 const hasDb = hasRemoteSupabaseIntegrationEnv();
 
+// Intentionally live-DB only: these tests verify real FK, CHECK, RLS and migration state.
+// Do not replace with mocks; unit-level route contracts are covered elsewhere.
 function adminClient(): SupabaseClient<Database> {
   const { url, serviceKey } = readRemoteSupabaseIntegrationEnv();
   return createClient<Database>(url, serviceKey, {

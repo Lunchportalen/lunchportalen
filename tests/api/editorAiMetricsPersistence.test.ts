@@ -17,6 +17,8 @@ import {
 
 const hasDb = hasRemoteSupabaseIntegrationEnv();
 
+// Intentionally live-DB only: proves actual persistence into ai_activity_log.
+// Mocked route-shape tests belong in the non-persistence API suites.
 function adminClient(): SupabaseClient<Database> {
   const { url, serviceKey } = readRemoteSupabaseIntegrationEnv();
   return createClient<Database>(url, serviceKey, {

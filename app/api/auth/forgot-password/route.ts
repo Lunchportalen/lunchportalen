@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 import nodemailer from "nodemailer";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { readJson } from "@/lib/http/routeGuard";
+import { getAppBaseUrl } from "@/lib/url/appUrl";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -18,23 +19,6 @@ function normEmail(v: unknown) {
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
-
-function getAppUrl(req: NextRequest) {
-  const env =
-    process.env.PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_VERCEL_URL;
-
-  if (env) {
-    const u = env.startsWith("http") ? env : `https://${env}`;
-    return u.replace(/\/+$/, "");
-  }
-
-  const origin = req.headers.get("origin");
-  if (origin) return origin.replace(/\/+$/, "");
-  return "http://localhost:3000";
 }
 
 type SmtpCfgOk = { ok: true; host: string; port: number; user: string; pass: string; from: string; secure: boolean };
@@ -108,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const admin = supabaseAdmin();
-    const appUrl = getAppUrl(req);
+    const appUrl = getAppBaseUrl();
     const redirectTo = `${appUrl}/reset-password`;
 
     const { data, error } = await admin.auth.admin.generateLink({

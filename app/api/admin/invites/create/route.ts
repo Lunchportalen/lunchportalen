@@ -11,6 +11,7 @@ import crypto from "node:crypto";
 // ✅ Dag-10 helpers
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { getAppBaseUrl } from "@/lib/url/appUrl";
 
 function randomCode(bytes = 18) {
   // URL-safe code (typisk 24 tegn)
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       } });
     }
 
-    const base = safeStr(process.env.NEXT_PUBLIC_SITE_URL).replace(/\/$/, "") || "http://localhost:3000";
+    const base = getAppBaseUrl();
     const url = `${base}/register?invite=${encodeURIComponent(inv.code)}`;
 
     return jsonOk(ctx.rid, {

@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import type { SupabasePublicConfigStatus } from "@/lib/config/env-public";
 
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: (_key: string) => null }),
 }));

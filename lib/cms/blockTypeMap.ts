@@ -56,11 +56,6 @@ export function resolveRegistryTypeFromLegacy(type: string, data: Record<string,
   return LEGACY_TO_REGISTRY[t] ?? t;
 }
 
-/** @deprecated Prefer {@link resolveRegistryTypeFromLegacy} with data when type is ambiguous. */
-export function mapLegacyBlockTypeToRegistry(type: string): string {
-  return resolveRegistryTypeFromLegacy(type, {});
-}
-
 function copyData(data: Record<string, unknown> | null | undefined): Record<string, unknown> {
   const d = data && typeof data === "object" && !Array.isArray(data) ? data : {};
   return { ...d };

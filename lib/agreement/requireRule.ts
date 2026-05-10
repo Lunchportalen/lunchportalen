@@ -17,6 +17,15 @@ export type AgreementRule = {
 
 export type RequireRuleOk = { ok: true; rule: AgreementRule };
 export type RequireRuleErr = { ok: false; status: number; error: string; message: string };
+export type RequireRuleArgs = {
+  /** Must be the service-role client from supabaseAdmin(). */
+  sb: SupabaseClient;
+  companyId: string;
+  dayKey: string;
+  slot?: string | null;
+  dateISO?: string | null;
+  rid?: string | null;
+};
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -36,14 +45,7 @@ function normTier(v: unknown): "BASIS" | "LUXUS" | null {
  *   - bruker dateISO hvis gitt (valid_from/valid_to)
  *   - tåler flere rader (historikk/duplikater) ved å velge nyeste valid_from
  */
-export async function requireRule(args: {
-  sb: SupabaseClient;
-  companyId: string;
-  dayKey: string;
-  slot?: string | null;
-  dateISO?: string | null; // YYYY-MM-DD (oslo-dato)
-  rid?: string | null;
-}): Promise<RequireRuleOk | RequireRuleErr> {
+export async function requireRule(args: RequireRuleArgs): Promise<RequireRuleOk | RequireRuleErr> {
   const companyId = safeStr(args.companyId);
   const dayKey = safeStr(args.dayKey).toLowerCase();
   const slot = safeStr(args.slot ?? "lunch").toLowerCase() || "lunch";
@@ -55,7 +57,7 @@ export async function requireRule(args: {
   }
 
   // 1) Aktiv avtale
-  const { data: agreementRow, error: aErr } = await (args.sb as any)
+  const { data: agreementRow, error: aErr } = await args.sb
     .from("company_current_agreement")
     .select("id,company_id,status,delivery_days")
     .eq("company_id", companyId)
@@ -94,7 +96,7 @@ export async function requireRule(args: {
   }
 
   // 3) Regler: deterministisk plukk 1 rad, tåler flere treff
-  let q = (args.sb as any)
+  let q = args.sb
     .from("company_current_agreement_rules")
     .select("id,company_id,day_key,slot,is_enabled,tier,price_ex_vat,price_inc_vat,valid_from,valid_to")
     .eq("company_id", companyId)
@@ -111,7 +113,7 @@ export async function requireRule(args: {
   }
 
   // Velg "nyeste" regel for dagens treff
-  q = q.order("valid_from", { ascending: false, nullsLast: true }).limit(1);
+  q = q.order("valid_from", { ascending: false, nullsFirst: false }).limit(1);
 
   const { data, error } = await q.maybeSingle();
 

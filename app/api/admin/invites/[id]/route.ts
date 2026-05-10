@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
+import { getAppBaseUrl } from "@/lib/url/appUrl";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -21,20 +22,6 @@ function safeUUID(v: unknown) {
   const ok =
     /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[1-5][0-9a-fA-F-]{3}-[89abAB][0-9a-fA-F-]{3}-[0-9a-fA-F-]{12}$/.test(s);
   return ok ? s : null;
-}
-
-function getPublicAppUrl(): string | null {
-  const env =
-    process.env.PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_VERCEL_URL;
-
-  const s = safeStr(env);
-  if (!s) return null;
-
-  const u = s.startsWith("http") ? s : `https://${s}`;
-  return u.replace(/\/+$/, "");
 }
 
 type SmtpCfgOk = { ok: true; host: string; port: number; user: string; pass: string; from: string; secure: boolean };
@@ -138,12 +125,7 @@ export async function PATCH(req: NextRequest, ctx: { params: { id: string } }) {
     }
 
     if (action === "resend" || action === "link") {
-      const appUrl = getPublicAppUrl();
-      if (!appUrl) {
-        return jsonErr(rid, "Mangler app-url konfigurasjon.", 500, { code: "CONFIG_ERROR", detail: {
-          missing: ["PUBLIC_APP_URL (eller NEXT_PUBLIC_APP_URL/NEXT_PUBLIC_SITE_URL/NEXT_PUBLIC_VERCEL_URL)"],
-        } });
-      }
+      const appUrl = getAppBaseUrl();
 
       const cur = await admin
         .from("employee_invites")

@@ -1,11 +1,13 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
+import { act } from "react";
 import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
 
 import UsersPage from "@/app/(backoffice)/backoffice/users/page";
+
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 type FetchMockResponse = {
   ok: boolean;

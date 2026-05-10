@@ -21,6 +21,7 @@ import {
 import { maskEmail } from "@/lib/security/pii";
 import { SUPPORT_EMAIL, SYSTEM_EMAIL_ALLOWLIST, normEmail } from "@/lib/system/emails";
 import { contactFormSchema } from "@/lib/validation/schemas";
+import { opsLog } from "@/lib/ops/log";
 
 /* =========================================================
    Types
@@ -65,7 +66,7 @@ async function readJson(req: NextRequest): Promise<any> {
   try {
     return await req.json();
   } catch (parseErr) {
-    console.error("[CONTACT_JSON_PARSE]", parseErr);
+    opsLog("contact.json_parse_failed", { message: String((parseErr as Error)?.message ?? parseErr) });
     return null;
   }
 }
@@ -129,7 +130,7 @@ async function auditSafe(action: string, rid: string) {
       entity_id: rid,
     });
   } catch (auditErr) {
-    console.error("[CONTACT_AUDIT_FAIL]", action, auditErr);
+    opsLog("contact.audit_failed", { rid, action, message: String((auditErr as Error)?.message ?? auditErr) });
   }
 }
 
@@ -154,7 +155,7 @@ export async function POST(req: NextRequest) {
   return runInstrumentedApi(req, { rid, route: "/api/contact" }, async () => {
     const body = (await readJson(req)) as Body | null;
     if (!body) {
-      console.error("[CONTACT_BODY_NULL]", "invalid or empty json body");
+      opsLog("contact.body_invalid", { rid });
       return jsonErr(rid, "Ugyldig forespørsel.", 400, "INVALID_JSON");
     }
 
@@ -182,8 +183,7 @@ export async function POST(req: NextRequest) {
     const { name, email, company, phone, subject, message } = parsed.data;
     const postRaw = safeStr(parsed.data.postId).trim() || safeStr(parsed.data.post_id).trim();
 
-    // eslint-disable-next-line no-console
-    console.log("[CONTACT_BEFORE_LEAD]", {
+    opsLog("contact.before_lead", {
       email: maskEmail(email),
       company: company || null,
       postId: postRaw || null,
@@ -202,18 +202,16 @@ export async function POST(req: NextRequest) {
       });
     } catch (leadErr: unknown) {
       const detail = leadErr instanceof Error ? leadErr.message : String(leadErr);
-      const stack = leadErr instanceof Error ? leadErr.stack : undefined;
-      console.error("[LEAD_INSERT_ERROR]", { rid, detail, stack });
+      opsLog("contact.lead_insert_failed", { rid, detail });
       return jsonErr(rid, "Kunne ikke lagre kontakt. Prøv igjen om litt.", 500, "LEAD_INSERT_FAILED", detail);
     }
 
     if (!lead || typeof lead.id !== "string" || !lead.id) {
-      console.error("[LEAD_INSERT_EMPTY]", { rid, lead });
+      opsLog("contact.lead_insert_empty", { rid });
       return jsonErr(rid, "Kunne ikke lagre kontakt. Prøv igjen om litt.", 500, "LEAD_EMPTY");
     }
 
-    // eslint-disable-next-line no-console
-    console.log("[LEAD_CREATED]", lead);
+    opsLog("contact.lead_created", { rid, leadId: lead.id });
 
     if (postRaw) {
       // eslint-disable-next-line no-console

@@ -213,7 +213,7 @@ export async function assertOrderWithinAgreementPreflight(params: {
   if (closed.ok === false) return closed;
 
   const rule = await requireRule({
-    sb: params.sb,
+    sb: supabaseAdmin(),
     companyId: params.companyId,
     dayKey,
     slot: params.agreementRuleSlot,

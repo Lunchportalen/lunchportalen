@@ -25,6 +25,7 @@ import type { AuditEvent } from "@/lib/audit/types";
 import { makeRid } from "@/lib/http/respond";
 import type { Database } from "@/lib/types/database";
 import { noStoreHeaders } from "@/lib/http/noStore";
+import { opsLog } from "@/lib/ops/log";
 
 type LoginBody = { email?: string; password?: string; next?: string | null };
 
@@ -332,8 +333,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // eslint-disable-next-line no-console
-    console.error("[api/auth/login]", e?.stack || e?.message || e, { rid });
+    opsLog("auth.login.unhandled", { rid, message: String(e?.message ?? e) });
     return err(rid, "Feil e-post eller passord.", 500, "server_error");
   }
 }

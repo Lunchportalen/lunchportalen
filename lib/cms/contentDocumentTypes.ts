@@ -20,7 +20,9 @@ export type DocumentTypeEntry = {
   allowAtRoot?: boolean;
   allowedChildTypes?: string[];
   /**
-   * @deprecated U97 compatibility alias.
+   * @deprecated since 2026-05-10 — owner: CMS document model.
+   * Fjernes i neste RC når legacy parity-tests og call-sites bruker `allowedChildTypes`.
+   * U97 compatibility alias.
    * Read-only mirror of `allowedChildTypes` for legacy call-sites.
    * Do not write business logic against this key.
    */

@@ -8,6 +8,7 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 (global as any).React = React;
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 import { createRoot } from "react-dom/client";
 import ContentPageRoute from "@/app/(backoffice)/backoffice/content/page";
 import ContentSectionLanding from "@/app/(backoffice)/backoffice/content/_workspace/ContentSectionLanding";

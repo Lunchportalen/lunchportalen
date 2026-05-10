@@ -43,6 +43,10 @@ function readJson(relativePath) {
 }
 
 const registry = readJson("lib/seo/marketing-registry.json");
+const sharedCmsRendererPath = path.join(root, "lib/cms/public/publicCmsSlugRoute.tsx");
+const sharedCmsRenderer = fs.existsSync(sharedCmsRendererPath)
+    ? fs.readFileSync(sharedCmsRendererPath, "utf8")
+    : "";
 
 if (registry) {
     for (const routePath of KEY_LANDING_PAGES) {
@@ -60,31 +64,35 @@ if (registry) {
         }
 
         const source = fs.readFileSync(fullFile, "utf8");
+        const isCmsWrapper = /PublicCmsSlugPageView/.test(source);
+        const auditSource = isCmsWrapper ? `${source}\n${sharedCmsRenderer}` : source;
 
-        const h1Count = (source.match(/<h1\b/g) || []).length;
+        const h1Count = (auditSource.match(/<h1\b/g) || []).length;
         if (h1Count !== 1) {
             fail(`[${routePath}] must have exactly one <h1>, found ${h1Count}`);
         }
 
-        const hasRegistreringCta = /href=["']\/registrering["']|href=\{primaryCta\.href\}/.test(source);
+        const hasRegistreringCta = /href=["']\/registrering["']|href=\{primaryCta\.href\}/.test(auditSource);
         if (!hasRegistreringCta) {
             fail(`[${routePath}] must include CTA to /registrering`);
         }
 
-        if (!/type=["']application\/ld\+json["']/.test(source)) {
+        if (!/type=["']application\/ld\+json["']/.test(auditSource) && !/PublicCmsStructuredData/.test(auditSource)) {
             fail(`[${routePath}] missing JSON-LD script tag`);
         }
 
         if (entry.faqKey) {
-            const hasFaqDom = /faqItems\.map|<details\b/.test(source);
+            const hasFaqDom = /faqItems\.map|<details\b/.test(auditSource);
             if (!hasFaqDom) {
                 fail(`[${routePath}] faqKey exists but FAQ DOM not detected`);
             }
         }
 
-        const hrefs = source.match(/href=["']\/[^"']+["']/g) || [];
-        if (hrefs.length < 5) {
-            fail(`[${routePath}] too few internal links in page source: ${hrefs.length}`);
+        const hrefs = auditSource.match(/href=["']\/[^"']+["']/g) || [];
+        const renderedRegistryLinks = /intentLinks\.map/.test(auditSource) ? (entry.intentLinks || []).length : 0;
+        const internalLinkCount = hrefs.length + renderedRegistryLinks;
+        if (internalLinkCount < 5) {
+            fail(`[${routePath}] too few internal links in page source: ${internalLinkCount}`);
         }
 
         const pairSet = new Set();

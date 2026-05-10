@@ -453,7 +453,11 @@ assertRegistryKeysMatchCore();
 
 export type AiComponentType = keyof typeof COMPONENT_REGISTRY;
 
-/** @deprecated Prefer {@link COMPONENT_REGISTRY}. */
+/**
+ * @deprecated since 2026-05-10 — owner: CMS/AI schema.
+ * Fjernes i neste RC når `lib/ai/blockSchema.ts` og tests leser COMPONENT_REGISTRY direkte.
+ * Prefer {@link COMPONENT_REGISTRY}.
+ */
 export const COMPONENTS = Object.fromEntries(
   (Object.keys(COMPONENT_REGISTRY) as AiComponentType[]).map((k) => [
     k,

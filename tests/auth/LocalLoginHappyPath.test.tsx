@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import { getLocalRuntimeLoginCredentials } from "@/lib/auth/localRuntimeAuth";
 import { SUPERADMIN_EMAIL } from "@/lib/system/emails";
 
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
 const searchParamsState = {
   next: "/backoffice/content" as string | null,
 };

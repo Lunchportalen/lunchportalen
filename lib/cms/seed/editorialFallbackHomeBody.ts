@@ -16,7 +16,3 @@ export function buildEditorialFallbackPublicBody(): BlockList {
   };
 }
 
-/** @deprecated Use {@link buildEditorialFallbackPublicBody} */
-export function buildEditorialFallbackHomeBody(): BlockList {
-  return buildEditorialFallbackPublicBody();
-}

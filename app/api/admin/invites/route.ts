@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
+import { getAppBaseUrl } from "@/lib/url/appUrl";
 import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
 
 function safeStr(v: unknown) {
@@ -57,24 +58,6 @@ function parseEmailLines(input: string): string[] {
     out.push(n);
   }
   return out;
-}
-
-function getPublicAppUrl(req: NextRequest): string {
-  const env =
-    process.env.PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_VERCEL_URL;
-
-  const s = safeStr(env);
-  if (s) {
-    const u = s.startsWith("http") ? s : `https://${s}`;
-    return u.replace(/\/+$/, "");
-  }
-
-  const origin = req.headers.get("origin");
-  if (origin) return origin.replace(/\/+$/, "");
-  return "http://localhost:3000";
 }
 
 type SmtpCfgOk = { ok: true; host: string; port: number; user: string; pass: string; from: string; secure: boolean };
@@ -312,7 +295,7 @@ export async function POST(req: NextRequest) {
       } });
     }
 
-    const appUrl = getPublicAppUrl(req);
+    const appUrl = getAppBaseUrl();
     const results: Array<{
       email: string;
       status: "created" | "already_exists" | "already_invited" | "invalid" | "failed";

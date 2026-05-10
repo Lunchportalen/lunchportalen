@@ -9,6 +9,7 @@ import ContentPageRoute from "@/app/(backoffice)/backoffice/content/page";
 import { SUPERADMIN_EMAIL } from "@/lib/system/emails";
 
 (global as any).React = React;
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 const searchParamsState = {
   next: "/backoffice/content" as string | null,

@@ -28,6 +28,7 @@ const TEXT_EXTS = new Set([
 
 const EMAIL_ALLOWLIST_PATH = path.join("lib", "system", "emails.ts").replaceAll("\\", "/");
 const EMAIL_REGEX = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const DEBT_MARKER_REGEX = /\bTODO\b|\bFIXME\b|\bTEMP\b|\bHACK\b/g;
 
 const issues = [];
 
@@ -55,6 +56,19 @@ function rel(filePath) {
 
 function addIssue(code, filePath, line, message) {
   issues.push({ code, filePath: rel(filePath), line, message });
+}
+
+function hasDebtMarker(line) {
+  DEBT_MARKER_REGEX.lastIndex = 0;
+  if (!DEBT_MARKER_REGEX.test(line)) return false;
+
+  // Ignore identifier declarations like `const TEMP_DIR = ...`.
+  // Comment markers such as `// TODO: ...` or `/* FIXME ... */` still fail.
+  const trimmed = line.trim();
+  if (/^(const|let|var|type|interface|enum|class|function)\s+[A-Za-z0-9_]*(TODO|FIXME|TEMP|HACK)[A-Za-z0-9_]*\b/.test(trimmed)) {
+    return false;
+  }
+  return true;
 }
 
 function hasUseClient(lines) {
@@ -125,11 +139,11 @@ for (const file of files) {
     }
   }
 
-  // 4) No TODO/FIXME in app/api and lib
+  // 4) No TODO/FIXME/TEMP/HACK markers in app/api and lib
   if (relPath.startsWith("app/api/") || relPath.startsWith("lib/")) {
     lines.forEach((line, idx) => {
-      if (/\b(TODO|FIXME)\b/.test(line)) {
-        addIssue("TODO_FIXME", file, idx + 1, "Remove TODO/FIXME in production-critical paths.");
+      if (hasDebtMarker(line)) {
+        addIssue("DEBT_MARKER", file, idx + 1, "Remove TODO/FIXME/TEMP/HACK markers in production-critical paths.");
       }
     });
   }

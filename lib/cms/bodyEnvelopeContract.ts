@@ -78,7 +78,11 @@ export function parseBodyEnvelope(body: unknown): ParsedBodyEnvelope {
 
 export function serializeBodyEnvelope(x: {
   documentType: string | null;
-  /** @deprecated Bruk invariantFields + cultureFields */
+  /**
+   * @deprecated since 2026-05-10 — owner: CMS editor.
+   * Fjernes i neste RC når create/local-dev/legacy-envelope flows skriver invariantFields + cultureFields.
+   * Bruk invariantFields + cultureFields.
+   */
   fields?: Record<string, unknown>;
   invariantFields?: Record<string, unknown>;
   cultureFields?: Record<string, unknown>;

@@ -84,14 +84,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  const supabase = supabaseAdmin();
-  const { data: page } = await supabase.from("content_pages").select("title, slug").eq("id", id).single();
-  if (!page) return { title: "Forhåndsvisning – Lunchportalen" };
-  const title = (page.title as string)?.trim() || "Forhåndsvisning";
-  return {
-    title: `${title} – Forhåndsvisning – Lunchportalen`,
-    robots: { index: false, follow: false },
-  };
+  try {
+    const supabase = supabaseAdmin();
+    const { data: page } = await supabase.from("content_pages").select("title, slug").eq("id", id).single();
+    if (!page) return { title: "Forhåndsvisning – Lunchportalen" };
+    const title = (page.title as string)?.trim() || "Forhåndsvisning";
+    return {
+      title: `${title} – Forhåndsvisning – Lunchportalen`,
+      robots: { index: false, follow: false },
+    };
+  } catch {
+    return { title: "Forhåndsvisning – Lunchportalen" };
+  }
 }
 
 /**
