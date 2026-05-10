@@ -223,14 +223,14 @@ export async function POST(req: NextRequest, ctx: { params: { orderId: string } 
       return jsonErr(r, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: existing.date } });
     }
 
-    let admin: any = null;
+    let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
     try {
       const { supabaseAdmin } = await import("@/lib/supabase/admin");
       admin = supabaseAdmin();
     } catch {
       return jsonErr(r, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
     }
-    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: ruleSlot, rid: r });
+    const ruleRes = await requireRule({ sb: admin, companyId, dayKey, slot: ruleSlot, rid: r });
     if (!ruleRes.ok) {
       const err = ruleRes as { status: number; error: string; message: string };
       return jsonErr(r, err.message, err.status ?? 400, err.error);

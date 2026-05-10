@@ -31,7 +31,27 @@ type Body = {
   note?: string | null; // for Salatbar/Påsmurt variants
 };
 
-type ProfileRow = { id: string; company_id: string | null; location_id: string | null };
+type ProfileRow = { id: string; company_id: string | null; location_id: string | null; role?: string | null };
+
+const RPC_ERROR_MESSAGES: Record<string, string> = {
+  CUTOFF_PASSED:
+    "Bestillingsfristen for i dag har gått ut (08:00). Du kan bestille for neste virkedag.",
+  NO_ACTIVE_AGREEMENT: "Firmaet ditt har ikke en aktiv lunsjavtale. Kontakt din administrator.",
+  OUTSIDE_DELIVERY_DAYS: "Det leveres ikke lunsj denne dagen. Sjekk avtalen din.",
+  AGREEMENT_NOT_ACTIVE: "Lunsjavtalen er ikke aktiv. Kontakt din administrator.",
+  ALREADY_ORDERED: "Du har allerede en aktiv bestilling for denne dagen.",
+  MENU_NOT_PUBLISHED: "Menyen for denne dagen er ikke publisert ennå.",
+  ORDER_NOT_FOUND: "Bestillingen ble ikke funnet.",
+  LOCATION_NOT_FOUND: "Leveringsstedet ble ikke funnet.",
+};
+
+function mapRpcError(code: string, fallback: string): string {
+  return RPC_ERROR_MESSAGES[code] ?? fallback;
+}
+
+function isOrderWriteRoleAllowed(role: string | null | undefined): boolean {
+  return role === "employee" || role === "company_admin";
+}
 
 function assertEnv(name: string, v: string | undefined) {
   if (!v) throw new Error(`Server mangler env: ${name}`);
@@ -166,7 +186,12 @@ export async function POST(req: NextRequest) {
 
     const cutoff = cutoffState(date);
     if (cutoff.locked) {
-      return jsonOrderWriteErr(rid, 423, "LOCKED", "Dagen er låst etter 08:00.");
+      return jsonOrderWriteErr(
+        rid,
+        423,
+        "LOCKED",
+        "Bestillingsfristen har gått ut (08:00). Du kan bestille for neste virkedag."
+      );
     }
 
     let dayKey: DayKey;
@@ -181,7 +206,7 @@ export async function POST(req: NextRequest) {
     // scope
     const { data: profileRaw, error: pErr } = await (supa as any)
       .from("profiles")
-      .select("id, company_id, location_id")
+      .select("id, company_id, location_id, role")
       .eq("id", user_id)
       .maybeSingle();
 
@@ -189,6 +214,10 @@ export async function POST(req: NextRequest) {
 
     if (pErr || !profile?.company_id || !profile?.location_id) {
       return jsonOrderWriteErr(rid, 403, "PROFILE_MISSING_SCOPE", "Fant ikke profil/scope.");
+    }
+
+    if (!isOrderWriteRoleAllowed(profile.role)) {
+      return jsonOrderWriteErr(rid, 403, "ROLE_FORBIDDEN", "Rollen din kan ikke endre bestillinger.");
     }
 
     const company_id = profile.company_id;
@@ -263,12 +292,40 @@ export async function POST(req: NextRequest) {
     // legacy note keeps supporting old clients + still lets window derive choice if day_choices missing
     const legacyNote = wantsLunch && finalChoiceKey ? `choice:${finalChoiceKey}` : null;
 
+    if (wantsLunch) {
+      const { data: existingOrder, error: existingOrderErr } = await (supa as any)
+        .from("orders")
+        .select("id,date,status")
+        .eq("user_id", user_id)
+        .eq("company_id", company_id)
+        .eq("location_id", location_id)
+        .eq("date", date)
+        .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+
+      if (existingOrderErr) {
+        return jsonOrderWriteErr(rid, 500, "ORDER_LOOKUP_FAILED", "Kunne ikke verifisere eksisterende bestilling.");
+      }
+
+      const existingOrderId = String((existingOrder as any)?.id ?? "").trim();
+      if (existingOrderId) {
+        return jsonOrderWriteOk(rid, {
+          orderId: existingOrderId,
+          status: "active",
+          date,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
     const writeRes = wantsLunch
       ? await lpOrderSet(supa as any, { p_date: date, p_slot: ORDER_TABLE_SLOT_DEFAULT, p_note: legacyNote })
       : await lpOrderCancel(supa as any, { p_date: date, p_slot: ORDER_TABLE_SLOT_DEFAULT });
 
     if (!writeRes.ok) {
-      return jsonOrderWriteErr(rid, 500, writeRes.code ?? "ORDER_RPC_FAILED", "Kunne ikke lagre.");
+      const code = writeRes.code ?? "ORDER_RPC_FAILED";
+      return jsonOrderWriteErr(rid, 500, code, mapRpcError(code, "Kunne ikke lagre."));
     }
 
     const { data: savedOrder, error: oErr } = await (supa as any)

@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
       let tierToday: "BASIS" | "LUXUS" | null = null;
 
       if (allowed) {
-        const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
+        const ruleRes = await requireRule({ sb: admin, companyId, dayKey, slot: "lunch", rid });
         if (!ruleRes.ok) {
           const err = ruleRes as { message: string };
           allowed = false;
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
       const dayKey = weekdayKeyOslo(dateISO);
       if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: dateISO } });
 
-      const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: "lunch", rid });
+      const ruleRes = await requireRule({ sb: admin, companyId, dayKey, slot: "lunch", rid });
       if (!ruleRes.ok) {
         const err = ruleRes as { message: string; status?: number; error?: string };
         return jsonErr(rid, err.message, err.status ?? 400, err.error);

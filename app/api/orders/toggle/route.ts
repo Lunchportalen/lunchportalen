@@ -15,6 +15,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { lpOrderCancel, lpOrderSet, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
+import { weekdayKeyFromOsloISODate } from "@/lib/date/weekdayKeyFromIso";
 
 // mocked in tests where relevant
 import { requireRule } from "@/lib/agreement/requireRule";
@@ -89,6 +90,11 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Endringer er låst etter kl. 08:00 i dag.", 403, "CUTOFF_LOCKED", { date });
     }
 
+    const dayKey = weekdayKeyFromOsloISODate(date);
+    if (!dayKey) {
+      return jsonErr(rid, "Datoen er ikke en leveringsdag.", 400, "INVALID_DELIVERY_DAY", { date });
+    }
+
     // 1) Company status gate
     const cs = await getCompanyStatus(companyId);
     if (!cs.ok) {
@@ -107,12 +113,12 @@ export async function POST(req: NextRequest) {
 
     // 2) Agreement rules gate (employee PLACE only) — must return 403, not 500
     if (action === "place" && role !== "company_admin") {
-      const rr: any = await (requireRule as any)({
+      const rr = await requireRule({
+        sb: supabaseAdmin(),
+        companyId,
+        dayKey,
+        dateISO: date,
         rid,
-        company_id: companyId,
-        location_id: locationId,
-        // tests only care that requireRule can block; day_key content is mocked there anyway
-        day_key: "thu",
         slot,
       });
 

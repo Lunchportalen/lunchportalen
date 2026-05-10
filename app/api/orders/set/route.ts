@@ -52,6 +52,22 @@ function sanitizeNote(note: unknown): string | null {
   return s.slice(0, 300);
 }
 
+const RPC_ERROR_MESSAGES: Record<string, string> = {
+  CUTOFF_PASSED:
+    "Bestillingsfristen for i dag har gått ut (08:00). Du kan bestille for neste virkedag.",
+  NO_ACTIVE_AGREEMENT: "Firmaet ditt har ikke en aktiv lunsjavtale. Kontakt din administrator.",
+  OUTSIDE_DELIVERY_DAYS: "Det leveres ikke lunsj denne dagen. Sjekk avtalen din.",
+  AGREEMENT_NOT_ACTIVE: "Lunsjavtalen er ikke aktiv. Kontakt din administrator.",
+  ALREADY_ORDERED: "Du har allerede en aktiv bestilling for denne dagen.",
+  MENU_NOT_PUBLISHED: "Menyen for denne dagen er ikke publisert ennå.",
+  ORDER_NOT_FOUND: "Bestillingen ble ikke funnet.",
+  LOCATION_NOT_FOUND: "Leveringsstedet ble ikke funnet.",
+};
+
+function mapRpcError(code: string, fallback: string): string {
+  return RPC_ERROR_MESSAGES[code] ?? fallback;
+}
+
 function mapRpcErrorToHttp(message: string) {
   const m = safeStr(message).toUpperCase();
   if (m.includes("UNAUTHENTICATED")) return { status: 401, code: "UNAUTHENTICATED" };
@@ -78,7 +94,7 @@ export async function POST(req: NextRequest) {
 
   const { rid } = auth.ctx;
 
-  const denyRole = requireRoleOr403(auth.ctx, "api.orders.set.POST", ["employee"]);
+  const denyRole = requireRoleOr403(auth.ctx, "api.orders.set.POST", ["employee", "company_admin"]);
   if (denyRole) return await coerceOrderWriteErrorResponse(denyRole);
 
   const body = (await readJson(req)) as OrderSetBody;
@@ -144,7 +160,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     const mapped = mapRpcErrorToHttp(error.message);
-    return jsonOrderWriteErr(rid, mapped.status, mapped.code, "Bestilling kunne ikke lagres.");
+    return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapRpcError(mapped.code, "Bestilling kunne ikke lagres."));
   }
 
   const rpc = extractRpcPayload(data);

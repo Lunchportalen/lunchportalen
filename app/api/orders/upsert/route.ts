@@ -3,7 +3,14 @@ import { NextResponse } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { supabaseServer } from "@/lib/supabase/server";
-import { lpOrderSet, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
+import { lpOrderSet, normalizeOrderTableSlot, type RpcClient } from "@/lib/orders/rpcWrite";
+
+type ScopeLike = {
+  companyId?: unknown;
+  locationId?: unknown;
+  userId?: unknown;
+  role?: unknown;
+};
 
 function mustISODate(s: string) {
   return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s);
@@ -15,10 +22,11 @@ export async function POST(req: NextRequest) {
 
   const { rid, scope } = a.ctx;
 
-  const companyId = String((scope as any)?.companyId ?? "").trim();
-  const locationId = String((scope as any)?.locationId ?? "").trim();
-  const userId = String((scope as any)?.userId ?? "").trim();
-  const role = String((scope as any)?.role ?? "").trim();
+  const scoped = scope as ScopeLike;
+  const companyId = String(scoped.companyId ?? "").trim();
+  const locationId = String(scoped.locationId ?? "").trim();
+  const userId = String(scoped.userId ?? "").trim();
+  const role = String(scoped.role ?? "").trim();
 
   const routeName = "POST /api/orders/upsert";
 
@@ -64,9 +72,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let body: any;
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    const parsed = await req.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return jsonErr(rid, "Ugyldig JSON.", 400, "BAD_JSON");
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return jsonErr(rid, "Ugyldig JSON.", 400, "BAD_JSON");
   }
@@ -79,7 +91,7 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Dato må være YYYY-MM-DD.", 400, "INVALID_DATE");
   }
 
-  const setRes = await lpOrderSet(supabase as any, {
+  const setRes = await lpOrderSet(supabase as unknown as RpcClient, {
     p_date: date,
     p_slot: slot,
     p_note: note,

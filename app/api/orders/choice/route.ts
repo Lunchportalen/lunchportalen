@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
   if (!dayKey) return jsonErr(rid, "Ugyldig ukedag.", 400, { code: "bad_date", detail: { date } });
 
   try {
-    const ruleRes = await requireRule({ sb: admin as any, companyId: norm.companyId, dayKey, slot: "lunch", rid });
+    const ruleRes = await requireRule({ sb: admin, companyId: norm.companyId, dayKey, slot: "lunch", rid });
 
     // If rule explicitly forbids, stop. Otherwise ignore errors.
     if (ruleRes && (ruleRes as any).ok === false && Number((ruleRes as any).status) === 403) {

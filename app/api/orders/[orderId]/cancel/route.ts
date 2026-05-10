@@ -6,6 +6,7 @@ export const revalidate = 0;
 import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { requireRule } from "@/lib/agreement/requireRule";
+import { opsLog } from "@/lib/ops/log";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { assertBeforeCutoffForDeliveryDate } from "@/lib/cutoff";
@@ -37,12 +38,12 @@ function weekdayKeyOslo(isoDate: string): "mon" | "tue" | "wed" | "thu" | "fri" 
 }
 
 // ✅ Konsistent logging + kontekst
-function logApiError(scope: string, err: any, extra?: Record<string, any>) {
-  try {
-    console.error(`[${scope}]`, err?.message || err, { ...extra, err });
-  } catch {
-    console.error(`[${scope}]`, err?.message || err);
-  }
+function logApiError(scope: string, err: unknown, extra?: Record<string, unknown>) {
+  opsLog("orders.cancel.error", {
+    scope,
+    message: String((err as { message?: unknown })?.message ?? err),
+    ...(extra ?? {}),
+  });
 }
 
 /* =========================================================
@@ -191,14 +192,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { orderId: s
       return jsonErr(r, "Ugyldig ukedag.", 400, { code: "INVALID_DAY", detail: { date: order.date } });
     }
 
-    let admin: any = null;
+    let admin: ReturnType<typeof import("@/lib/supabase/admin").supabaseAdmin>;
     try {
       const { supabaseAdmin } = await import("@/lib/supabase/admin");
       admin = supabaseAdmin();
     } catch {
       return jsonErr(r, "Mangler service role konfigurasjon for avtalerregler.", 500, "CONFIG_ERROR");
     }
-    const ruleRes = await requireRule({ sb: admin as any, companyId, dayKey, slot: ruleSlot, rid: r });
+    const ruleRes = await requireRule({ sb: admin, companyId, dayKey, slot: ruleSlot, rid: r });
     if (!ruleRes.ok) {
       const err = ruleRes as { status: number; error: string; message: string };
       return jsonErr(r, err.message, err.status ?? 400, err.error);

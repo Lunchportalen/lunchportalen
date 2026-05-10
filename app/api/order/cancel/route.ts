@@ -60,6 +60,10 @@ function assertEnv(name: string, v: string | undefined) {
   return v;
 }
 
+function isOrderWriteRoleAllowed(role: string | null | undefined): boolean {
+  return role === "employee" || role === "company_admin";
+}
+
 async function readOrdersRowForReceipt(
   supa: any,
   params: { user_id: string; company_id: string; location_id: string; date: string }
@@ -212,6 +216,10 @@ export async function POST(req: Request) {
 
     if (!profile) {
       return jsonOrderWriteErr(rid, 403, "PROFILE_NOT_FOUND", "Fant ikke profil.");
+    }
+
+    if (!isOrderWriteRoleAllowed(profile.role)) {
+      return jsonOrderWriteErr(rid, 403, "ROLE_FORBIDDEN", "Rollen din kan ikke endre bestillinger.");
     }
 
     const company_id = profile.company_id;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { ClockIcon, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -71,6 +71,7 @@ type WindowPayload = {
 
 type ConfirmPayload = { date: string; action: "order" | "cancel" };
 type PreviewMode = "basis" | "luxus" | "mixed";
+type ErrorBannerState = { message: string; code: string | null };
 
 function clientRid() {
   try {
@@ -79,6 +80,29 @@ function clientRid() {
     /* ignore */
   }
   return `rid_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function readApiError(json: Record<string, unknown> | null): { code: string | null; message: string } {
+  if (!json || typeof json !== "object") return { code: null, message: "" };
+  const message =
+    typeof json.message === "string" && json.message.trim()
+      ? json.message.trim()
+      : typeof json.error === "string" && json.error.trim()
+        ? json.error.trim()
+        : "";
+  const code =
+    typeof json.error === "string" && json.error.trim()
+      ? json.error.trim()
+      : typeof json.code === "string" && json.code.trim()
+        ? json.code.trim()
+        : null;
+  return { code, message };
+}
+
+function isCutoffApiError(code: string | null, message: string): boolean {
+  const c = String(code ?? "").toUpperCase();
+  const m = String(message ?? "").toUpperCase();
+  return c === "CUTOFF_PASSED" || c === "LOCKED" || m.includes("BESTILLINGSFRISTEN") || m.includes("FRISTEN");
 }
 
 function asOrderStatus(v: unknown): "ACTIVE" | "CANCELLED" | null {
@@ -183,9 +207,9 @@ function statusLabelForDay(day: DayRow): "Kan bestilles" | "Bestilt" | "Avbestil
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
   if (notInAgreement) return "Ikke tilgjengelig";
-  if (companyClosed || cutoffClosed) return "Stengt";
   if (day.orderStatus === "ACTIVE") return "Bestilt";
   if (day.orderStatus === "CANCELLED") return "Avbestilt";
+  if (companyClosed || cutoffClosed) return "Stengt";
   return "Kan bestilles";
 }
 
@@ -205,6 +229,16 @@ function CutoffSafetyHint({ day, className = "" }: { day: DayRow; className?: st
     <p className={`mt-1 text-xs text-gray-500 ${className}`}>
       {isBeforeCutoff ? "Kan endres frem til kl. 08:00" : "Fristen for dagens endring er passert."}
     </p>
+  );
+}
+
+function CutoffPassedBadge({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 ${className}`}
+    >
+      Frist passert 08:00
+    </span>
   );
 }
 
@@ -250,8 +284,8 @@ function selectedDayLabel(day: DayRow) {
 
 function orderStatusLabel(day: DayRow) {
   if (!day.isEnabled) return "Ikke tilgjengelig";
-  if (day.isLocked && day.lockReason === "CUTOFF") return "Frist passert";
   if (day.orderStatus === "ACTIVE") return "Bestilt";
+  if (day.isLocked && day.lockReason === "CUTOFF") return "Frist passert";
   if (day.isLocked) return "Ikke tilgjengelig";
   return "Ikke bestilt";
 }
@@ -485,12 +519,13 @@ function WeekDayRowDesktop({
           <div className="text-base font-semibold capitalize text-neutral-900">
             {weekdayLabel} · {formatDateNO(day.date)}
           </div>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
             <span
               className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClassForStatus(statusLabel)}`}
             >
               {statusLabel}
             </span>
+            {cutoffClosed ? <CutoffPassedBadge /> : null}
           </div>
           {insightRecommended ? (
             <div className="mt-2 max-w-md space-y-0.5 text-center md:text-left">
@@ -657,6 +692,7 @@ const WeekDayCardMobile = memo(
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${badgeClassForStatus(statusLabel)}`}>
               {displayStatus}
             </span>
+            {cutoffClosed ? <CutoffPassedBadge /> : null}
             {readOnlyPreview ? (
               <span className="inline-flex items-center rounded-full bg-neutral-950 px-3 py-1 text-xs font-bold text-white">
                 Forhåndsvisning
@@ -904,7 +940,7 @@ export default function EmployeeWeekClient({
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(!readOnlyPreview);
   const [busyDate, setBusyDate] = useState<string | null>(null);
-  const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<ErrorBannerState | null>(null);
   const [toastSuccess, setToastSuccess] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmPayload | null>(null);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
@@ -923,6 +959,7 @@ export default function EmployeeWeekClient({
 
   const abortRef = useRef<AbortController | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef<Set<string>>(new Set());
   const fallbackRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prefetchGateRef = useRef<{ weekStart: string | null; can: boolean }>({ weekStart: null, can: false });
@@ -1045,7 +1082,7 @@ export default function EmployeeWeekClient({
             setOrderingUrgencyHint(false);
             setMenuSanityFetchFailed(false);
           } else {
-            setErrorBanner("Sesjonen er utløpt eller du har ikke tilgang. Last siden på nytt.");
+            setErrorBanner({ code: null, message: "Sesjonen er utløpt eller du har ikke tilgang. Last siden på nytt." });
           }
           return false;
         }
@@ -1061,7 +1098,7 @@ export default function EmployeeWeekClient({
           setOrderingUrgencyHint(false);
           setMenuSanityFetchFailed(false);
         } else {
-          setErrorBanner("Noe gikk galt. Prøv igjen.");
+          setErrorBanner({ code: null, message: "Noe gikk galt – prøv igjen" });
         }
         return false;
       }
@@ -1105,7 +1142,7 @@ export default function EmployeeWeekClient({
         setOrderingUrgencyHint(false);
         setMenuSanityFetchFailed(false);
       } else {
-        setErrorBanner("Noe gikk galt. Prøv igjen.");
+        setErrorBanner({ code: null, message: "Noe gikk galt – prøv igjen" });
       }
       return false;
     } finally {
@@ -1124,6 +1161,9 @@ export default function EmployeeWeekClient({
       const st = successTimerRef.current;
       successTimerRef.current = null;
       if (st) clearTimeout(st);
+      const et = errorTimerRef.current;
+      errorTimerRef.current = null;
+      if (et) clearTimeout(et);
       const fb = fallbackRefreshRef.current;
       fallbackRefreshRef.current = null;
       if (fb) clearTimeout(fb);
@@ -1303,11 +1343,28 @@ export default function EmployeeWeekClient({
     }, 2000);
   }, []);
 
+  const showErrorBanner = useCallback((message: string, code: string | null = null) => {
+    const cutoff = isCutoffApiError(code, message);
+    setErrorBanner({
+      code: cutoff ? "CUTOFF_PASSED" : code,
+      message: cutoff ? "Fristen har gått ut" : "Noe gikk galt – prøv igjen",
+    });
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => {
+      setErrorBanner(null);
+      errorTimerRef.current = null;
+    }, 5000);
+  }, []);
+
   const postSetDayInner = useCallback(
     async (date: string, wantsLunch: boolean): Promise<boolean> => {
       if (readOnlyPreview) return false;
       const rid = clientRid();
       setErrorBanner(null);
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
+      }
 
       try {
         const res = await fetch(`${API_ORDER}/set-day`, {
@@ -1327,16 +1384,13 @@ export default function EmployeeWeekClient({
           orderId.length > 0 &&
           st !== null;
         if (!ok) {
-          const serverMsg =
-            json && typeof json === "object" && typeof (json as { message?: unknown }).message === "string"
-              ? String((json as { message: string }).message).trim()
-              : "";
-          setErrorBanner(serverMsg || "Noe gikk galt. Prøv igjen.");
+          const apiError = readApiError(json);
+          showErrorBanner(apiError.message, apiError.code);
           return false;
         }
         const refreshed = await loadWindow({ silent: true });
         if (!refreshed) {
-          setErrorBanner("Noe gikk galt. Prøv igjen.");
+          showErrorBanner("");
           return false;
         }
         if (fallbackRefreshRef.current) clearTimeout(fallbackRefreshRef.current);
@@ -1353,11 +1407,11 @@ export default function EmployeeWeekClient({
         showSuccessToast(wantsLunch ? "Bestilling registrert ✔" : "Avbestilling registrert ✔");
         return true;
       } catch {
-        setErrorBanner("Noe gikk galt. Prøv igjen.");
+        showErrorBanner("");
         return false;
       }
     },
-    [loadWindow, readOnlyPreview, showSuccessToast],
+    [loadWindow, readOnlyPreview, showErrorBanner, showSuccessToast],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
@@ -1381,12 +1435,20 @@ export default function EmployeeWeekClient({
   const requestOrder = useCallback((date: string) => {
     if (readOnlyPreview) return;
     setErrorBanner(null);
+    if (errorTimerRef.current) {
+      clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
     setConfirm({ date, action: "order" });
   }, [readOnlyPreview]);
 
   const requestCancel = useCallback((date: string) => {
     if (readOnlyPreview) return;
     setErrorBanner(null);
+    if (errorTimerRef.current) {
+      clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
     setConfirm({ date, action: "cancel" });
   }, [readOnlyPreview]);
 
@@ -1548,8 +1610,9 @@ export default function EmployeeWeekClient({
           <p className="text-center text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
         ) : null}
         {errorBanner ? (
-          <div className="rounded-2xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-900 ring-1 ring-rose-200">
-            {errorBanner}
+          <div className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-900 ring-1 ring-rose-200">
+            {errorBanner.code === "CUTOFF_PASSED" ? <ClockIcon className="h-4 w-4 shrink-0" aria-hidden /> : null}
+            <span>{errorBanner.message}</span>
           </div>
         ) : null}
       </div>
