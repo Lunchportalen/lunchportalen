@@ -19,7 +19,7 @@ export type OutboxListRow = {
   company_name: string | null;
 };
 
-function companyIdFromEventKey(eventKey: string): string | null {
+function registrationIdFromEventKey(eventKey: string): string | null {
   return eventKey.match(/:([a-f0-9-]{36})$/i)?.[1] ?? null;
 }
 
@@ -46,31 +46,37 @@ export async function listOutbox(input: {
   if (error) throw new Error(`outbox_list_failed: ${error.message}`);
 
   const rows = (data ?? []) as Array<Omit<OutboxListRow, "company_name">>;
-  const companyIds = Array.from(
-    new Set(rows.map((row) => companyIdFromEventKey(row.event_key)).filter((id): id is string => Boolean(id)))
+  const registrationIds = Array.from(
+    new Set(rows.map((row) => registrationIdFromEventKey(row.event_key)).filter((id): id is string => Boolean(id)))
   );
 
-  if (companyIds.length === 0) {
+  if (registrationIds.length === 0) {
     return rows.map((row) => ({ ...row, company_name: null }));
   }
 
-  const { data: companies, error: companyError } = await admin
-    .from("companies")
-    .select("id,name")
-    .in("id", companyIds);
+  const { data: registrations, error: registrationError } = await admin
+    .from("company_registrations")
+    .select("id,company_id,company_name,companies:company_id ( id, name )")
+    .in("id", registrationIds);
 
-  if (companyError) throw new Error(`outbox_company_lookup_failed: ${companyError.message}`);
+  if (registrationError) throw new Error(`outbox_registration_lookup_failed: ${registrationError.message}`);
 
   const companyMap = new Map<string, string | null>(
-    ((companies ?? []) as Array<{ id: string | null; name: string | null }>).map((company) => [
-      safeStr(company.id),
-      safeStr(company.name) || null,
+    ((registrations ?? []) as Array<{
+      id: string | null;
+      company_name: string | null;
+      companies?: { name?: string | null } | Array<{ name?: string | null }> | null;
+    }>).map((registration) => [
+      safeStr(registration.id),
+      safeStr(Array.isArray(registration.companies) ? registration.companies[0]?.name : registration.companies?.name) ||
+        safeStr(registration.company_name) ||
+        null,
     ])
   );
 
   return rows.map((row) => ({
     ...row,
-    company_name: companyMap.get(companyIdFromEventKey(row.event_key) ?? "") ?? null,
+    company_name: companyMap.get(registrationIdFromEventKey(row.event_key) ?? "") ?? null,
   }));
 }
 
