@@ -2,7 +2,6 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { PDFDocument, StandardFonts } from "pdf-lib";
 import { jsonErr, makeRid } from "@/lib/http/respond";
 
 type Body = {
@@ -26,6 +25,7 @@ export async function POST(req: Request) {
     const updatedAt = safeStr(body?.updatedAt) || "ukjent";
     const bullets = Array.isArray(body?.bullets) ? body!.bullets!.filter(Boolean) : [];
 
+    const { PDFDocument, StandardFonts } = await import("pdf-lib");
     const pdf = await PDFDocument.create();
     const page = pdf.addPage([595.28, 841.89]); // A4
 

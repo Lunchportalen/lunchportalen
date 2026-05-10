@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { analyzeDesign } from "@/lib/ai/designAnalyzer";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";

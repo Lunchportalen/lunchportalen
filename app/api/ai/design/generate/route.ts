@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { generateDesignFixes } from "@/lib/ai/designGenerator";
 import { getCmsDesignTokens } from "@/lib/ai/designTokens";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

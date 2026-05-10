@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { createExperiment } from "@/lib/ai/experiment";
 import { logActivity } from "@/lib/ai/logActivity";
 import { resolveAiTenantExecutionIds } from "@/lib/auth/resolveAiTenant";

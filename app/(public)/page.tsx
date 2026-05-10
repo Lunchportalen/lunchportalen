@@ -15,6 +15,7 @@ const ENV: "prod" | "staging" =
     ? "staging"
     : "prod";
 const LOCALE: "nb" | "en" = "nb";
+export const revalidate = 3600;
 
 /** CI: scripts/ci/cms-integrity.mjs string anchors — faktisk rendering: {@link CmsBlockRenderer} → normalizeBlockForRender( … ) → renderBlock( … ). */
 // getContentBySlug('home') — underlying resolver (Umbraco Delivery); entry: loadPublicPageWithTrustFallback("home")
@@ -32,22 +33,26 @@ export async function generateMetadata({
 }: {
   searchParams?: Promise<HomeSearchParams> | HomeSearchParams;
 }): Promise<Metadata> {
-  const sp = await Promise.resolve(searchParams ?? {});
-  const page = await loadPublicPageWithTrustFallback("home", { preview: isPreviewFromSearchParams(sp) });
-  if (!page) {
+  try {
+    const sp = await Promise.resolve(searchParams ?? {});
+    const page = await loadPublicPageWithTrustFallback("home", { preview: isPreviewFromSearchParams(sp) });
+    if (!page) {
+      return buildEditorialFailClosedMetadata("/", "seed-no-row");
+    }
+    if (page.publicContentOrigin === "seed-no-row" || page.publicContentOrigin === "seed-empty-body") {
+      return buildEditorialFailClosedMetadata("/", page.publicContentOrigin);
+    }
+    if (page.blocks.length === 0) {
+      return buildEditorialFailClosedMetadata("/", "seed-empty-body");
+    }
+    return buildCmsPageMetadata({
+      pageTitle: page.title ?? null,
+      slug: "",
+      body: page.body,
+    });
+  } catch {
     return buildEditorialFailClosedMetadata("/", "seed-no-row");
   }
-  if (page.publicContentOrigin === "seed-no-row" || page.publicContentOrigin === "seed-empty-body") {
-    return buildEditorialFailClosedMetadata("/", page.publicContentOrigin);
-  }
-  if (page.blocks.length === 0) {
-    return buildEditorialFailClosedMetadata("/", "seed-empty-body");
-  }
-  return buildCmsPageMetadata({
-    pageTitle: page.title ?? null,
-    slug: "",
-    body: page.body,
-  });
 }
 
 export default async function MarketingHome({

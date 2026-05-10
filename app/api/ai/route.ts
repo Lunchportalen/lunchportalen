@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /**

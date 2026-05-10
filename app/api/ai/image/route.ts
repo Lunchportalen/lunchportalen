@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { generateImage } from "@/lib/ai/image";
 import { resolveAiTenantExecutionIds } from "@/lib/auth/resolveAiTenant";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

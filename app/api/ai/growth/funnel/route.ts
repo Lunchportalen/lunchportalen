@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { buildFunnel, type FunnelAnalytics, type FunnelContent } from "@/lib/ai/funnelEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";

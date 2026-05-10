@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import type { NextRequest } from "next/server";
 import { makeDecision, type DecisionInputData } from "@/lib/ai/decisionEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

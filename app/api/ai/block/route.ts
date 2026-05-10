@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { logActivity } from "@/lib/ai/logActivity";
 import { AI_RUNNER_TOOL, AiRunnerError, runAi } from "@/lib/ai/runner";
 import { auditLog, buildAuditEvent } from "@/lib/audit/log";

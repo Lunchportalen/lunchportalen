@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { runCopilot } from "@/lib/ai/copilot";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { buildContext, sliceBlocksForFocus, type CopilotFullPageInput } from "@/lib/ai/context";

@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import type { NextRequest } from "next/server";
 import { runAutomation, type AutomationMode } from "@/lib/ai/automationEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { renderGhostText } from "@/lib/ai/ghostText";
 import { generateInlineCompletion, type InlineContext } from "@/lib/ai/inline";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

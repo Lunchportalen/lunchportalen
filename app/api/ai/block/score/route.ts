@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
 
 export async function POST(req: Request) {

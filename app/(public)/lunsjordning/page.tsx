@@ -12,8 +12,10 @@ import { canonicalPathForPublicEditorialSlug } from "@/lib/cms/public/canonicalP
 import { loadPublicPageWithTrustFallback } from "@/lib/cms/public/loadPublicPageWithTrustFallback";
 import { generatePublicCmsSlugMetadata } from "@/lib/cms/public/publicCmsSlugRoute";
 import { MARKETING_REGISTRY } from "@/lib/seo/marketingRegistry";
+import faqData from "@/lib/seo/faq-data.json";
 
 const SLUG = "lunsjordning";
+export const revalidate = 3600;
 
 const ENV: "prod" | "staging" =
   typeof process.env.NEXT_PUBLIC_APP_ENV === "string" && process.env.NEXT_PUBLIC_APP_ENV === "staging"
@@ -31,6 +33,8 @@ function isPreviewFromSearchParams(sp: SP): boolean {
 }
 
 const primaryCta = MARKETING_REGISTRY["/lunsjordning"].primaryCta!;
+const intentLinks = MARKETING_REGISTRY["/lunsjordning"].intentLinks;
+const faqItems = (faqData as Record<string, Array<{ q: string; a: string }>>)["/lunsjordning"] ?? [];
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   return generatePublicCmsSlugMetadata(SLUG, searchParams);
@@ -83,6 +87,31 @@ export default async function LunsjordningPage({ searchParams }: Props) {
               ? EDITORIAL_FAIL_CLOSED_DESCRIPTION
               : "Ingen innhold å vise."}
           </p>
+        ) : null}
+        {faqItems.length ? (
+          <section className="mt-10" aria-label="Vanlige spørsmål">
+            <h2 className="lp-h2 mb-4">Vanlige spørsmål</h2>
+            <div className="space-y-3">
+              {faqItems.map((item) => (
+                <details key={item.q} className="rounded-2xl border border-black/10 bg-white p-4">
+                  <summary className="cursor-pointer font-semibold text-[rgb(var(--lp-text))]">{item.q}</summary>
+                  <p className="mt-3 text-sm leading-6 text-[rgb(var(--lp-muted))]">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ) : null}
+        {intentLinks.length ? (
+          <nav className="mt-10" aria-label="Relaterte sider">
+            <h2 className="lp-h2 mb-4">Relaterte sider</h2>
+            <div className="flex flex-wrap gap-3">
+              {intentLinks.map((link) => (
+                <Link key={`${link.href}:${link.label}`} href={link.href} className="lp-btn lp-btn-ghost">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
         ) : null}
       </article>
     </PageShell>

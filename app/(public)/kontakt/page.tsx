@@ -18,6 +18,7 @@ const ENV: "prod" | "staging" =
     ? "staging"
     : "prod";
 const LOCALE: "nb" | "en" = "nb";
+export const revalidate = 3600;
 
 type SP = Record<string, string | string[] | undefined> | undefined;
 

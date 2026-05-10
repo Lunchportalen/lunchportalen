@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { generatePage } from "@/lib/ai/pageBuilder";
 import { resolveAiTenantExecutionIds } from "@/lib/auth/resolveAiTenant";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

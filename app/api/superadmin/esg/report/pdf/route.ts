@@ -6,7 +6,6 @@ export const revalidate = 0;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { scopeOr401, requireRoleOr403, denyResponse } from "@/lib/http/routeGuard";
-import { buildEsgPdf } from "@/lib/esg/pdf";
 import { formatMonthYearLongNO } from "@/lib/date/format";
 import { jsonErr } from "@/lib/http/respond";
 
@@ -110,6 +109,7 @@ export async function GET(req: NextRequest) {
       ? `Måned: ${formatMonthYearLongNO(`${month}-01`)}`
       : `År ${year}`;
 
+  const { buildEsgPdf } = await import("@/lib/esg/pdf");
   const bytes = await buildEsgPdf({
     title: "ESG-rapport",
     companyName,

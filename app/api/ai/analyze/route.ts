@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { runAIAnalysis } from "@/lib/ai/engine";
 import { logActivity } from "@/lib/ai/logActivity";
 import { makeRid } from "@/lib/http/rid";

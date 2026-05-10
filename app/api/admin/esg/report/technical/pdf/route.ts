@@ -9,7 +9,6 @@ import { NextResponse } from "next/server";
 
 import { jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
-import { buildTechnicalAppendixPdf } from "@/lib/esg/pdf-technical";
 
 function pdfResponse(bytes: Uint8Array, filename: string, rid: string) {
   return new NextResponse(Buffer.from(bytes), {
@@ -87,6 +86,7 @@ export async function GET(req: NextRequest) {
 
     const companyName = (cRow as any)?.name ?? null;
 
+    const { buildTechnicalAppendixPdf } = await import("@/lib/esg/pdf-technical");
     const bytes = await buildTechnicalAppendixPdf({
       companyName,
       companyId,

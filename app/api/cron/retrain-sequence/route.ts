@@ -9,10 +9,6 @@ import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { rid } from "@/lib/http/rid";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
-import { resolveCronBaseUrl } from "@/lib/ml/cronBaseUrl";
-import { computeSequenceDrift } from "@/lib/ml/retrainSequenceDrift";
-import { executeSequenceTrainingPipeline } from "@/lib/ml/sequenceTrainPipeline";
-import { SEQUENCE_DEFAULT_WINDOW } from "@/lib/ml/sequenceConstants";
 import { opsLog } from "@/lib/ops/log";
 
 function safeTrim(v: unknown): string {
@@ -42,6 +38,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       return jsonOk(requestId, { drift: false, retrained: false, skipped: true, reason: "kill_switch" }, 200);
     }
 
+    const { computeSequenceDrift } = await import("@/lib/ml/retrainSequenceDrift");
     const { drift, errors } = await computeSequenceDrift();
     opsLog("sequence_retrain_eval", { rid: requestId, drift, errorSamples: errors.length });
 
@@ -54,11 +51,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       return jsonOk(requestId, { drift: true, retrained: false, reason: "retrain_disabled" }, 200);
     }
 
+    const { resolveCronBaseUrl } = await import("@/lib/ml/cronBaseUrl");
     const base = resolveCronBaseUrl();
     const secret = safeTrim(process.env.SYSTEM_MOTOR_SECRET);
     let retrained = false;
 
     const urlObj = new URL(req.url);
+    const { SEQUENCE_DEFAULT_WINDOW } = await import("@/lib/ml/sequenceConstants");
     const w = Number(urlObj.searchParams.get("window"));
     const windowSize = Number.isFinite(w) && w >= 2 && w <= 30 ? Math.floor(w) : SEQUENCE_DEFAULT_WINDOW;
 
@@ -92,6 +91,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
 
     if (!retrained) {
+      const { executeSequenceTrainingPipeline } = await import("@/lib/ml/sequenceTrainPipeline");
       const pipeline = await executeSequenceTrainingPipeline(requestId, windowSize);
       retrained = pipeline.trained;
       opsLog("sequence_retrain_inline_pipeline", { rid: requestId, trained: pipeline.trained, reason: pipeline.reason });

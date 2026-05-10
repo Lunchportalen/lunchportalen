@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 
-import SocialEngineClient from "./SocialEngineClient";
+import SocialEngineClientLoader from "./SocialEngineClientLoader";
 
 export default async function SocialEnginePage() {
   const auth = await getAuthContext();
@@ -28,7 +28,7 @@ export default async function SocialEnginePage() {
           registrert (performance + sporbar ordreattributjon); ingen syntetisk ROI.
         </p>
       </div>
-      <SocialEngineClient />
+      <SocialEngineClientLoader />
     </main>
   );
 }

@@ -9,7 +9,6 @@ import { NextResponse } from "next/server";
 
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
-import { buildEsgPdf } from "@/lib/esg/pdf";
 import { formatMonthYearLongNO } from "@/lib/date/format";
 
 /* =========================================================
@@ -145,6 +144,7 @@ export async function GET(req: NextRequest) {
       : `År ${year}`;
 
   // 6) Build PDF
+  const { buildEsgPdf } = await import("@/lib/esg/pdf");
   const bytes = await buildEsgPdf({
     title: "ESG-rapport",
     companyName,

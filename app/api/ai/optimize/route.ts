@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { logActivity } from "@/lib/ai/logActivity";
 import { runAutoOptimization } from "@/lib/ai/optimizer";
 import { resolveAiTenantExecutionIds } from "@/lib/auth/resolveAiTenant";

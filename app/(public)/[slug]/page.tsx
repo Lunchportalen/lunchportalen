@@ -9,6 +9,7 @@ type Props = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<SP> | SP;
 };
+export const revalidate = 3600;
 
 export async function generateMetadata({ params, searchParams }: Props) {
   const { slug } = await params;

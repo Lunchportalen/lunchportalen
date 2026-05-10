@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { rewriteText } from "@/lib/ai/rewrite";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";

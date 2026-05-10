@@ -9,6 +9,7 @@ type SP = Record<string, string | string[] | undefined> | undefined;
 type Props = { searchParams?: Promise<SP> | SP };
 
 const SLUG = "pitch";
+export const revalidate = 3600;
 
 export async function generateMetadata({ searchParams }: Props) {
   return generatePublicCmsSlugMetadata(SLUG, searchParams);

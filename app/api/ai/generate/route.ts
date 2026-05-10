@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { generateFullPage, generateSection } from "@/lib/ai/generator";
 import { logActivity } from "@/lib/ai/logActivity";
 import { resolveAiTenantExecutionIds } from "@/lib/auth/resolveAiTenant";

@@ -9,7 +9,6 @@ import { NextResponse } from "next/server";
 
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 import { jsonErr } from "@/lib/http/respond";
-import { buildExecutiveOnePagerPdf } from "@/lib/esg/pdf-executive";
 
 function pdfResponse(bytes: Uint8Array, filename: string, rid: string) {
   return new NextResponse(Buffer.from(bytes), {
@@ -119,6 +118,7 @@ export async function GET(req: NextRequest) {
   const companyName = (cRow as any)?.name ?? null;
 
   // 6) Build PDF
+  const { buildExecutiveOnePagerPdf } = await import("@/lib/esg/pdf-executive");
   const bytes = await buildExecutiveOnePagerPdf({
     companyName,
     companyId,

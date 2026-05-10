@@ -9,8 +9,6 @@ import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { rid } from "@/lib/http/rid";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
-import { SEQUENCE_DEFAULT_WINDOW } from "@/lib/ml/sequenceConstants";
-import { executeSequenceTrainingPipeline } from "@/lib/ml/sequenceTrainPipeline";
 import { opsLog } from "@/lib/ops/log";
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -37,9 +35,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
 
     const url = new URL(req.url);
+    const { SEQUENCE_DEFAULT_WINDOW } = await import("@/lib/ml/sequenceConstants");
     const w = Number(url.searchParams.get("window"));
     const windowSize = Number.isFinite(w) && w >= 2 && w <= 30 ? Math.floor(w) : SEQUENCE_DEFAULT_WINDOW;
 
+    const { executeSequenceTrainingPipeline } = await import("@/lib/ml/sequenceTrainPipeline");
     const result = await executeSequenceTrainingPipeline(requestId, windowSize);
     return jsonOk(requestId, { trained: result.trained, ...result }, 200);
   });

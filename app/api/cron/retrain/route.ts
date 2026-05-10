@@ -9,9 +9,6 @@ import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { rid } from "@/lib/http/rid";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
-import { resolveCronBaseUrl } from "@/lib/ml/cronBaseUrl";
-import { computeConversionDrift } from "@/lib/ml/retrainDrift";
-import { executeModelTrainingPipeline } from "@/lib/ml/trainPipeline";
 import { opsLog } from "@/lib/ops/log";
 
 function safeTrim(v: unknown): string {
@@ -41,6 +38,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       return jsonOk(requestId, { drift: false, retrained: false, skipped: true, reason: "kill_switch" }, 200);
     }
 
+    const { computeConversionDrift } = await import("@/lib/ml/retrainDrift");
     const { drift, errors } = await computeConversionDrift();
     opsLog("ml_retrain_eval", { rid: requestId, drift, errorSamples: errors.length });
 
@@ -53,6 +51,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       return jsonOk(requestId, { drift: true, retrained: false, reason: "retrain_disabled" }, 200);
     }
 
+    const { resolveCronBaseUrl } = await import("@/lib/ml/cronBaseUrl");
     const base = resolveCronBaseUrl();
     const secret = safeTrim(process.env.SYSTEM_MOTOR_SECRET);
     let retrained = false;
@@ -87,6 +86,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
 
     if (!retrained) {
+      const { executeModelTrainingPipeline } = await import("@/lib/ml/trainPipeline");
       const pipeline = await executeModelTrainingPipeline(requestId);
       retrained = pipeline.trained;
       opsLog("ml_retrain_inline_pipeline", { rid: requestId, trained: pipeline.trained, reason: pipeline.reason });

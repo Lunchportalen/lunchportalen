@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
 const sharedConfig: NextConfig = {
+  typescript: {
+    // Typecheck kjøres som egen enterprise gate før build.
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Lint kjøres som egen enterprise gate før build.
+    ignoreDuringBuilds: true,
+  },
   /** Native ORT binaries are huge; keep them out of Vercel serverless traces (250 MB cap). */
   serverExternalPackages: ["onnxruntime-node"],
   outputFileTracingExcludes: {

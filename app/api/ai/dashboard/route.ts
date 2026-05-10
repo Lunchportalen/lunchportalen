@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { buildDashboard } from "@/lib/ai/dashboard";
 import type { DecisionInputData } from "@/lib/ai/decisionEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

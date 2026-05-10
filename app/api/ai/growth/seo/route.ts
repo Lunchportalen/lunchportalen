@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { runSeoEngine, type SiteData } from "@/lib/ai/seoEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";

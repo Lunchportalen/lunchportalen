@@ -1,3 +1,4 @@
+// @enterprise-exclude
 import { logActivity } from "@/lib/ai/logActivity";
 import { makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";

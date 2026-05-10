@@ -9,7 +9,6 @@ import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { rid } from "@/lib/http/rid";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
-import { executeModelTrainingPipeline } from "@/lib/ml/trainPipeline";
 import { opsLog } from "@/lib/ops/log";
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -35,6 +34,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       return jsonOk(requestId, { trained: false, skipped: true, reason: "kill_switch" }, 200);
     }
 
+    const { executeModelTrainingPipeline } = await import("@/lib/ml/trainPipeline");
     const result = await executeModelTrainingPipeline(requestId);
     return jsonOk(requestId, { trained: result.trained, ...result }, 200);
   });
