@@ -216,6 +216,10 @@ export type Database = {
           : LoosePublicTable;
     };
     Views: {
+      /**
+       * @deprecated — viewet finnes ikke i live DB.
+       * Bruk fetchAgreementDayTiersForCompany() i stedet.
+       */
       v_company_current_agreement_daymap: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Row: Record<string, any>;

@@ -1,6 +1,6 @@
 // lib/pricing/priceForDate.ts
 import "server-only";
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeAgreement, resolveTierForDate } from "@/lib/agreements/normalizeAgreement";
 
 /* =========================================================
@@ -50,7 +50,7 @@ function asPlanTier(v: any): PlanTier | null {
 
 /**
  * priceForCompanyDate(company_id, isoDate)
- * - Henter company_current_agreement
+ * - Henter aktiv avtale via service role
  * - Normaliserer avtale (samme fasit som resten av systemet)
  * - resolveTierForDate() avgjør tier for datoen
  * - returnerer unit_price basert på tier
@@ -64,12 +64,15 @@ export async function priceForCompanyDate(company_id: string, isoDate: string): 
   if (!cid) return { ok: false, error: "BAD_INPUT", message: "Mangler company_id" };
   if (!isIsoDate(day)) return { ok: false, error: "BAD_INPUT", message: "Ugyldig datoformat (forventer YYYY-MM-DD)" };
 
-  const sb = await supabaseServer();
+  const admin = supabaseAdmin();
 
-  const { data, error } = await sb
-    .from("company_current_agreement")
+  const { data, error } = await admin
+    .from("agreements")
     .select("*")
     .eq("company_id", cid)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) return { ok: false, error: "DB_ERROR", message: "Kunne ikke hente avtale", detail: error };

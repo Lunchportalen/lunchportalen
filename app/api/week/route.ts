@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { weekRangeISO } from "@/lib/date/week";
 import { addDaysISO, osloNowParts, osloTodayISODate } from "@/lib/date/oslo";
@@ -19,6 +20,7 @@ type Tier = "BASIS" | "LUXUS";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
 type AgreementRow = {
+  id?: string | null;
   company_id: string;
   status: "ACTIVE";
   plan_tier: Tier;
@@ -107,18 +109,30 @@ export async function GET(req: Request) {
     if (prof.is_active === false) return jsonError(403, _rid, "INACTIVE", "Kontoen er ikke aktiv ennå.");
 
     const companyId = String(prof.company_id);
+    const admin = supabaseAdmin();
 
-    const { data: agr, error: agrErr } = await sb
-      .from("company_current_agreement")
-      .select("company_id, status, plan_tier, price_per_cuvert_nok, delivery_days, start_date, end_date")
+    const { data: agr, error: agrErr } = await admin
+      .from("agreements")
+      .select("id,company_id,status,tier,price_per_meal_nok,delivery_days,starts_at,ends_at")
       .eq("company_id", companyId)
       .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (agrErr) return jsonError(500, _rid, "AGREEMENT_LOOKUP_FAILED", "Kunne ikke hente avtale (fasit).", agrErr);
     if (!agr?.company_id) return jsonError(409, _rid, "NO_ACTIVE_AGREEMENT", "Firmaet mangler aktiv avtale. Kontakt admin.");
 
-    const agreement = agr as AgreementRow;
+    const agreement = {
+      id: (agr as any).id ?? null,
+      company_id: (agr as any).company_id,
+      status: (agr as any).status,
+      plan_tier: (agr as any).tier,
+      price_per_cuvert_nok: (agr as any).price_per_meal_nok,
+      delivery_days: (agr as any).delivery_days,
+      start_date: (agr as any).starts_at,
+      end_date: (agr as any).ends_at,
+    } as AgreementRow;
     const tier: Tier = normalizeTier(agreement.plan_tier);
     const deliveryNorm = normalizeDeliveryDaysStrict(agreement.delivery_days);
     logDeliveryDaysWarning({
@@ -131,7 +145,7 @@ export async function GET(req: Request) {
     });
     const deliveryDays = deliveryNorm.days as DayKey[];
 
-    const dayTiers = await fetchAgreementDayTiersForCompany(sb, companyId);
+    const dayTiers = await fetchAgreementDayTiersForCompany(admin, companyId);
     const tierByDay = Object.keys(dayTiers).length > 0 ? dayTiers : null;
 
     const cutoff = "08:00";

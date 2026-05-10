@@ -1,6 +1,7 @@
 // lib/superadmin/queries.ts
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type {
   CompanyStatus as TCompanyStatus,
   FirmsQueryInput,
@@ -20,7 +21,7 @@ export type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED";
  * companies-tabellen hos dere er MINIMAL.
  * Derived felter hentes fra:
  * - profiles (ansattcount)
- * - company_current_agreement (plan + binding + delivery_days)
+ * - agreements (plan + binding + delivery_days)
  *
  * 🔒 FASIT: Firmaplan i oversikten = høyeste nivå som finnes i avtalen
  * - Hvis én eneste dag er LUXUS -> firmaplan = LUXUS
@@ -236,7 +237,7 @@ async function fetchEmployeeCounts(companyIds: string[]) {
 }
 
 /* =========================
-   Derived: Agreement (company_current_agreement)
+   Derived: Agreement (agreements)
    - Velg deterministisk hvis flere rader per company_id:
      1) status=ACTIVE
      2) høyest updated_at
@@ -265,12 +266,14 @@ async function fetchAgreements(companyIds: string[]) {
   const map = new Map<string, AgreementMeta>();
   if (!companyIds.length) return map;
 
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin();
 
   const res = await supabase
-    .from("company_current_agreement")
-    .select("company_id, status, plan_tier, delivery_days, binding_months, start_date, end_date, updated_at")
-    .in("company_id", companyIds);
+    .from("agreements")
+    .select("company_id,status,tier,delivery_days,binding_months,starts_at,ends_at,updated_at,created_at")
+    .in("company_id", companyIds)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false });
 
   if (res.error) return map;
 
@@ -290,11 +293,11 @@ async function fetchAgreements(companyIds: string[]) {
   }
 
   for (const [cid, r] of best.entries()) {
-    const planTier = (r as any).plan_tier ? String((r as any).plan_tier) : null;
+    const planTier = (r as any).tier ? String((r as any).tier) : null;
     const firmPlan = computeFirmPlan(planTier, (r as any).delivery_days);
 
-    const start = (r as any).start_date ? String((r as any).start_date) : null;
-    let end = (r as any).end_date ? String((r as any).end_date) : null;
+    const start = (r as any).starts_at ? String((r as any).starts_at) : null;
+    let end = (r as any).ends_at ? String((r as any).ends_at) : null;
 
     const bmRaw = (r as any).binding_months;
     const bindingMonths = Number.isFinite(Number(bmRaw)) ? Number(bmRaw) : null;

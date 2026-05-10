@@ -1,5 +1,6 @@
 // lib/agreement/currentAgreement.ts
 import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { opsLog } from "@/lib/ops/log";
@@ -84,20 +85,63 @@ function pickAnyUserId(u: any): string {
   return id;
 }
 
-/** Operativ BASIS/LUXUS per dag — rader fra `v_company_current_agreement_daymap` (materialisert i DB). */
-export async function fetchAgreementDayTiersForCompany(sb: any, companyId: string): Promise<Record<DayKey, Tier>> {
-  const daymapRes = await sb
-    .from("v_company_current_agreement_daymap")
-    .select("company_id,day_key,tier,slot,updated_at")
-    .eq("company_id", companyId);
+function tierFromDeliveryDayValue(value: unknown, fallbackTier: Tier | null): Tier | null {
+  const direct = normTier(value);
+  if (direct) return direct;
 
-  const dayRows = Array.isArray(daymapRes?.data) ? daymapRes.data : [];
+  if (value && typeof value === "object") {
+    const obj = value as { tier?: unknown; plan_tier?: unknown; meal_tier?: unknown };
+    return normTier(obj.tier) ?? normTier(obj.plan_tier) ?? normTier(obj.meal_tier) ?? fallbackTier;
+  }
+
+  if (value === true || value == null) return fallbackTier;
+  return fallbackTier;
+}
+
+/** Operativ BASIS/LUXUS per dag — hentes direkte fra agreements etter at daymap-viewet ble fjernet fra live DB. */
+export async function fetchAgreementDayTiersForCompany(_sb: any, companyId: string): Promise<Record<DayKey, Tier>> {
+  const admin = supabaseAdmin();
+  const cid = safeStr(companyId);
+  if (!cid) return {} as Record<DayKey, Tier>;
+
+  const { data: agreement, error } = await admin
+    .from("agreements")
+    .select("id,company_id,status,tier,delivery_days,created_at,updated_at")
+    .eq("company_id", cid)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
+  if (error || !agreement?.id) return dayTiers;
 
-  for (const row of dayRows) {
-    const dk = normDayKey((row as any)?.day_key);
-    const t = normTier((row as any)?.tier);
-    if (dk && t) dayTiers[dk] = t;
+  const fallbackTier = normTier((agreement as any).tier);
+  const rawDeliveryDays = (agreement as any).delivery_days;
+
+  if (rawDeliveryDays && typeof rawDeliveryDays === "object" && !Array.isArray(rawDeliveryDays)) {
+    for (const [key, value] of Object.entries(rawDeliveryDays)) {
+      const dk = normDayKey(key);
+      const tier = tierFromDeliveryDayValue(value, fallbackTier);
+      if (dk && tier) dayTiers[dk] = tier;
+    }
+    if (Object.keys(dayTiers).length > 0) return dayTiers;
+  }
+
+  const normalized = normalizeDeliveryDaysStrict(rawDeliveryDays);
+  for (const day of normalized.days) {
+    if (fallbackTier) dayTiers[day] = fallbackTier;
+  }
+  if (Object.keys(dayTiers).length > 0) return dayTiers;
+
+  const { data: dayRows } = await (admin as any)
+    .from("agreement_delivery_days")
+    .select("agreement_id,weekday")
+    .eq("agreement_id", (agreement as any).id);
+
+  for (const row of dayRows ?? []) {
+    const dk = normDayKey((row as any)?.weekday);
+    if (dk && fallbackTier) dayTiers[dk] = fallbackTier;
   }
   return dayTiers;
 }
@@ -141,11 +185,16 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     };
   }
 
-  // Agreement snapshot MUST be from "company_current_agreement"
-  const { data: agreement, error: aErr } = await sb
-    .from("company_current_agreement")
-    .select("id,company_id,status,delivery_days,plan_tier,price_per_cuvert_nok,start_date,end_date,updated_at")
+  const admin = supabaseAdmin();
+
+  // Agreement snapshot MUST be service-role scoped after public view grants were revoked.
+  const { data: agreement, error: aErr } = await admin
+    .from("agreements")
+    .select("id,company_id,status,delivery_days,tier,price_per_meal_nok,starts_at,ends_at,updated_at")
     .eq("company_id", companyId)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (aErr) {
@@ -166,10 +215,10 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const hasDeliveryDays = deliveryNorm.days.length > 0;
 
   const agreementId = agreement?.id ? String(agreement.id) : null;
-  const planTier = agreement?.plan_tier ?? null;
-  const pricePerCuvertNok = agreement?.price_per_cuvert_nok ?? null;
-  const startDate = agreement?.start_date ?? null;
-  const endDate = agreement?.end_date ?? null;
+  const planTier = agreement?.tier ?? null;
+  const pricePerCuvertNok = agreement?.price_per_meal_nok ?? null;
+  const startDate = agreement?.starts_at ?? null;
+  const endDate = agreement?.ends_at ?? null;
   const updatedAt = agreement?.updated_at ?? null;
 
   // Status resolution

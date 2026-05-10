@@ -9,6 +9,7 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, q, readJson } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
@@ -323,51 +324,20 @@ export async function GET(req: NextRequest) {
   }
 
   // ---------------------------------------------------------
-  // Daymap rules (FAIL-SOFT)
+  // Day rules (FAIL-SOFT)
   // ---------------------------------------------------------
   const rulesByDay = new Map<DayKey, { tier: Tier }>();
   try {
-    const rulesRes = await admin
-      .from("v_company_current_agreement_daymap")
-      .select("day_key,tier,slot,company_id")
-      .eq("company_id", companyId)
-      .eq("slot", "lunch");
-
-    if (rulesRes.error) {
-      opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.daymap", companyId, error: rulesRes.error });
-    } else {
-      const unknown_days: string[] = [];
-      const unknown_tiers: string[] = [];
-
-      for (const r of rulesRes.data ?? []) {
-        const dayKey = normDayKey((r as any)?.day_key);
-        const tier = normTier((r as any)?.tier);
-        if (!dayKey) {
-          const rawDay = (r as any)?.day_key;
-          if (rawDay != null) unknown_days.push(String(rawDay));
-          continue;
-        }
-        if (!tier) {
-          const rawTier = (r as any)?.tier;
-          if (rawTier != null) unknown_tiers.push(String(rawTier));
-          continue;
-        }
-        rulesByDay.set(dayKey, { tier });
-      }
-
-      if (unknown_days.length || unknown_tiers.length) {
-        opsLog("agreement.daymap.warning", {
-          rid: ctx.rid,
-          company_id: companyId,
-          agreement_id: agreementRow?.id ?? null,
-          unknown_days,
-          unknown_tiers,
-          raw: rulesRes.data ?? null,
-        });
+    const dayTiers = await fetchAgreementDayTiersForCompany(admin, companyId);
+    for (const [dayKey, tier] of Object.entries(dayTiers)) {
+      const normalizedDay = normDayKey(dayKey);
+      const normalizedTier = normTier(tier);
+      if (normalizedDay && normalizedTier) {
+        rulesByDay.set(normalizedDay, { tier: normalizedTier });
       }
     }
   } catch (e: any) {
-    opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.daymap.throw", companyId, error: String(e?.message ?? e) });
+    opsLog("incident", { rid: ctx.rid, scope: "admin.agreement.day_rules.throw", companyId, error: String(e?.message ?? e) });
   }
 
   const weekPlan = buildWeekPlan(agreementStatus, deliveryNorm.days, rulesByDay);
