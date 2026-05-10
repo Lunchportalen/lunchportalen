@@ -9,13 +9,19 @@ function safeStr(v: any) {
 }
 
 export type OutboxListRow = {
+  id: string;
   event_key: string;
   status: OutboxStatus;
   attempts: number;
   created_at: string;
   sent_at: string | null;
   last_error: string | null;
+  company_name: string | null;
 };
+
+function companyIdFromEventKey(eventKey: string): string | null {
+  return eventKey.match(/:([a-f0-9-]{36})$/i)?.[1] ?? null;
+}
 
 export async function listOutbox(input: {
   status?: OutboxStatus | "ALL";
@@ -29,7 +35,7 @@ export async function listOutbox(input: {
 
   let query = admin
     .from("outbox")
-    .select("event_key,status,attempts,created_at,sent_at:delivered_at,last_error")
+    .select("id,event_key,status,attempts,created_at,sent_at:delivered_at,last_error")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -39,7 +45,33 @@ export async function listOutbox(input: {
   const { data, error } = await query;
   if (error) throw new Error(`outbox_list_failed: ${error.message}`);
 
-  return (data ?? []) as OutboxListRow[];
+  const rows = (data ?? []) as Array<Omit<OutboxListRow, "company_name">>;
+  const companyIds = Array.from(
+    new Set(rows.map((row) => companyIdFromEventKey(row.event_key)).filter((id): id is string => Boolean(id)))
+  );
+
+  if (companyIds.length === 0) {
+    return rows.map((row) => ({ ...row, company_name: null }));
+  }
+
+  const { data: companies, error: companyError } = await admin
+    .from("companies")
+    .select("id,name")
+    .in("id", companyIds);
+
+  if (companyError) throw new Error(`outbox_company_lookup_failed: ${companyError.message}`);
+
+  const companyMap = new Map<string, string | null>(
+    ((companies ?? []) as Array<{ id: string | null; name: string | null }>).map((company) => [
+      safeStr(company.id),
+      safeStr(company.name) || null,
+    ])
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    company_name: companyMap.get(companyIdFromEventKey(row.event_key) ?? "") ?? null,
+  }));
 }
 
 export async function outboxCounts() {

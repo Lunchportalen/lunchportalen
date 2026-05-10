@@ -6,13 +6,14 @@ import { formatDateTimeNO } from "@/lib/date/format";
 type OutboxStatus = "ALL" | "PENDING" | "PROCESSING" | "FAILED" | "FAILED_PERMANENT" | "SENT";
 
 type Row = {
+  id: string;
   event_key: string;
+  company_name: string | null;
   status: "PENDING" | "PROCESSING" | "FAILED" | "FAILED_PERMANENT" | "SENT";
   attempts: number;
   created_at: string;
   sent_at: string | null;
   last_error: string | null;
-  payload: any;
 };
 
 type Counts = { PENDING: number; FAILED: number; SENT: number };
@@ -73,6 +74,7 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
   const [msg, setMsg] = useState<string>("");
   const [err, setErr] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const loginHref = useMemo(() => `/login?next=${encodeURIComponent(loginNext)}`, [loginNext]);
 
@@ -139,6 +141,35 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
 
     setMsg(`Kjøring OK: processed=${processed}, sent=${sent}, failed=${failed}`);
     await load();
+  }
+
+  async function resend(row: Row) {
+    setErr("");
+    setMsg("");
+    setResendingId(row.id);
+
+    try {
+      const res = await fetch(`${apiBase}/resend`, {
+        method: "POST",
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: row.id }),
+      });
+      const json = await readJsonSafe(res);
+
+      if (!res.ok) {
+        setErr(safeStr(json?.message) || "Kunne ikke resende outbox-rad.");
+        return;
+      }
+
+      const payload = json?.data ?? json;
+      setMsg(`Resend lagt i kø: ${payload?.id ?? row.id}`);
+      await load();
+    } finally {
+      setResendingId(null);
+    }
   }
 
   function onLimitChange(v: string) {
@@ -242,24 +273,27 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
           <thead>
             <tr className="border-b">
               <th className="p-3 text-left font-medium">event_key</th>
+              <th className="p-3 text-left font-medium">Firma</th>
               <th className="p-3 text-left font-medium">status</th>
               <th className="p-3 text-left font-medium">attempts</th>
               <th className="p-3 text-left font-medium">created</th>
               <th className="p-3 text-left font-medium">sent</th>
               <th className="p-3 text-left font-medium">last_error</th>
+              <th className="p-3 text-left font-medium">handling</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className="p-4 opacity-70" colSpan={6}>
+                <td className="p-4 opacity-70" colSpan={8}>
                   Ingen rader.
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.event_key} className="border-b last:border-b-0">
+                <tr key={r.id || r.event_key} className="border-b last:border-b-0">
                   <td className="p-3 font-mono text-xs">{r.event_key}</td>
+                  <td className="p-3">{r.company_name || "–"}</td>
                   <td className="p-3">
                     <span className={statusBadge(r.status)}>{r.status}</span>
                   </td>
@@ -268,6 +302,19 @@ export default function OutboxClient({ apiBase = "/api/superadmin/outbox", login
                   <td className="p-3">{fmt(r.sent_at)}</td>
                   <td className="p-3 max-w-xl truncate" title={r.last_error || ""}>
                     {r.last_error || "—"}
+                  </td>
+                  <td className="p-3">
+                    {r.status === "SENT" || r.status === "FAILED" ? (
+                      <button
+                        className="rounded-xl border px-3 py-2 text-xs"
+                        onClick={() => resend(r)}
+                        disabled={Boolean(resendingId)}
+                      >
+                        {resendingId === r.id ? "Sender..." : "Resend"}
+                      </button>
+                    ) : (
+                      <span className="text-xs opacity-50">–</span>
+                    )}
                   </td>
                 </tr>
               ))
