@@ -40,6 +40,7 @@ queue.json
 
 # Local temp / artifacts
 .tmp/
+tmp/
 # Root-only hyphenated temp files (e.g. curl/debug .tmp-*.html / .tmp-*.headers)
 /.tmp-*
 *.log
