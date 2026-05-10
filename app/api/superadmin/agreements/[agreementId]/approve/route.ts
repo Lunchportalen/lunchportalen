@@ -11,6 +11,7 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { buildCompanyApprovedEmail } from "@/lib/email/templates/companyApproved";
 
 type Ctx = {
   params: { agreementId: string } | Promise<{ agreementId: string }>;
@@ -28,15 +29,6 @@ function appBaseUrl(req: NextRequest) {
   const env = safeStr(process.env.NEXT_PUBLIC_APP_URL || process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL);
   if (env) return env.startsWith("http") ? env.replace(/\/+$/, "") : `https://${env}`.replace(/\/+$/, "");
   return req.nextUrl.origin.replace(/\/+$/, "");
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
@@ -81,7 +73,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const token = crypto.randomUUID();
     const tokenHash = await hashToken(token);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
-    const inviteLink = `${appBaseUrl(req)}/registrer-bruker?token=${encodeURIComponent(token)}`;
+    const activateUrl = `${appBaseUrl(req)}/registrer-bruker?token=${encodeURIComponent(token)}`;
 
     await admin.from("company_invites").update({ revoked_at: new Date().toISOString() }).eq("company_id", companyId).is("revoked_at", null);
 
@@ -102,26 +94,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     }
 
-    const subject = "Velkommen til Lunchportalen - fullfør opprettelsen av din konto";
-    const bodyText =
-      `Hei ${contactName},\n\n` +
-      `Vi er glad for å informere deg om at avtalen for ${companyName}\n` +
-      `er godkjent!\n\n` +
-      `For å komme i gang trenger du å opprette din innlogging.\n` +
-      `Klikk på lenken nedenfor for å fullføre registreringen:\n\n` +
-      `${inviteLink}\n\n` +
-      `Lenken er gyldig i 7 dager.\n\n` +
-      `Har du spørsmål? Svar på denne e-posten så hjelper vi deg.\n\n` +
-      `Med vennlig hilsen,\n` +
-      `Lunchportalen-teamet`;
-    const bodyHtml =
-      `<p>Hei ${escapeHtml(contactName)},</p>` +
-      `<p>Vi er glad for å informere deg om at avtalen for ${escapeHtml(companyName)} er godkjent!</p>` +
-      `<p>For å komme i gang trenger du å opprette din innlogging. Klikk på lenken nedenfor for å fullføre registreringen:</p>` +
-      `<p><a href="${escapeHtml(inviteLink)}">AKTIVER KONTO</a></p>` +
-      `<p>Lenken er gyldig i 7 dager.</p>` +
-      `<p>Har du spørsmål? Svar på denne e-posten så hjelper vi deg.</p>` +
-      `<p>Med vennlig hilsen,<br />Lunchportalen-teamet</p>`;
+    const { subject, html, text } = buildCompanyApprovedEmail({
+      contactName,
+      companyName,
+      activateUrl,
+    });
 
     const outboxRes = await admin.from("outbox").upsert(
       {
@@ -132,9 +109,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
           from: "Lunchportalen <no-reply@lunchportalen.no>",
           to: contactEmail,
           subject,
-          bodyText,
-          bodyHtml,
-          invite_link: inviteLink,
+          bodyText: text,
+          bodyHtml: html,
+          invite_link: activateUrl,
           company_id: companyId,
           agreement_id: agreementId,
         },
