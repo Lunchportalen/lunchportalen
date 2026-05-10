@@ -29,7 +29,7 @@ type Seed = {
   companies?: any[];
   company_locations?: any[];
   profiles?: any[];
-  delivery_confirmations?: any[];
+  kitchen_batches?: any[];
 };
 
 let seed: Required<Seed> = {
@@ -39,7 +39,7 @@ let seed: Required<Seed> = {
   companies: [],
   company_locations: [],
   profiles: [],
-  delivery_confirmations: [],
+  kitchen_batches: [],
 };
 
 function resetSeed(next: Seed) {
@@ -50,7 +50,7 @@ function resetSeed(next: Seed) {
     companies: next.companies ?? [],
     company_locations: next.company_locations ?? [],
     profiles: next.profiles ?? [],
-    delivery_confirmations: next.delivery_confirmations ?? [],
+    kitchen_batches: next.kitchen_batches ?? [],
   };
 }
 
@@ -214,7 +214,9 @@ function driverStopsOrderSig(stops: any[]) {
 
 /** Fasit: Stop i app/api/driver/stops/route.ts (JSON har alle nøkler). */
 const DRIVER_STOP_CONTRACT_KEYS = [
+  "address",
   "addressLine",
+  "batchStatus",
   "companyId",
   "companyName",
   "date",
@@ -231,6 +233,7 @@ const DRIVER_STOP_CONTRACT_KEYS = [
   "locationId",
   "locationName",
   "orderCount",
+  "packedAt",
   "slot",
 ].sort();
 
@@ -247,6 +250,7 @@ function driverStopParityPayload(stop: any) {
     companyName: stop.companyName ?? null,
     locationId: stop.locationId,
     locationName: stop.locationName ?? null,
+    address: stop.address ?? null,
     addressLine: stop.addressLine ?? null,
     deliveryWhere: stop.deliveryWhere ?? null,
     deliveryWhenNote: stop.deliveryWhenNote ?? null,
@@ -255,6 +259,8 @@ function driverStopParityPayload(stop: any) {
     deliveryWindowFrom: stop.deliveryWindowFrom ?? null,
     deliveryWindowTo: stop.deliveryWindowTo ?? null,
     orderCount: stop.orderCount,
+    batchStatus: stop.batchStatus ?? null,
+    packedAt: stop.packedAt ?? null,
     delivered: stop.delivered,
     deliveredAt: stop.deliveredAt ?? null,
     deliveredBy: stop.deliveredBy ?? null,

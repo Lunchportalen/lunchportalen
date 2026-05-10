@@ -11,6 +11,7 @@ import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
 import { CUTOFF_BUFFER_MINUTES } from "@/lib/kitchen/cutoff";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { enqueueBatchPackedOutbox } from "@/lib/kitchen/batchPackedOutbox";
 
 function isIsoDate(v: any) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
@@ -220,6 +221,8 @@ export async function POST(req: NextRequest) {
       } });
     }
     if (!saved) return jsonErr(rid, "Kunne ikke starte batch.", 500, "DB_ERROR");
+
+    await enqueueBatchPackedOutbox(admin, { rid, date, slot, companyId, locationId });
 
     return jsonOk(rid, {
         batch: {

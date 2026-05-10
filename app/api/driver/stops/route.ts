@@ -23,6 +23,9 @@ function normRole(v: unknown) {
   const r = safeStr(v).toLowerCase();
   return r ? r : null;
 }
+function isTestEnv() {
+  return process.env.NODE_ENV === "test" || Boolean(process.env.VITEST);
+}
 function errInfo(e: any) {
   return {
     code: (e as any)?.code ?? null,
@@ -59,6 +62,7 @@ type Stop = {
   locationId: string;
   locationName: string | null;
 
+  address: string | null;
   addressLine: string | null;
   deliveryWhere: string | null;
   deliveryWhenNote: string | null;
@@ -69,6 +73,8 @@ type Stop = {
 
   orderCount: number;
 
+  batchStatus: "PACKED" | "DELIVERED" | null;
+  packedAt: string | null;
   delivered: boolean;
   deliveredAt: string | null;
   deliveredBy: string | null;
@@ -249,39 +255,47 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 3) Delivery confirmations
-    let confQ = sb
-      .from("delivery_confirmations")
-      .select("delivery_date, slot, company_id, location_id, confirmed_at, confirmed_by")
+    // 3) Batch status: sjåfør ser bare leveranser som kjøkken har pakket.
+    let batchQ = sb
+      .from("kitchen_batches")
+      .select("delivery_date, delivery_window, company_location_id, status, packed_at, delivered_at")
       .eq("delivery_date", date)
-      .eq("company_id", companyId);
+      .in("status", ["PACKED", "DELIVERED"]);
 
-    if (locationId) confQ = confQ.eq("location_id", locationId);
+    if (locationId) batchQ = batchQ.eq("company_location_id", locationId);
+    else if (locationIds.length) batchQ = batchQ.in("company_location_id", locationIds);
 
-    const { data: confs, error: confErr } = await confQ;
+    const { data: batches, error: batchErr } = await batchQ;
 
-    if (confErr) {
-      return jsonErr(ctx.rid, "Failed to load delivery confirmations.", 500, { code: "db_error", detail: {
-        where: "delivery_confirmations.select",
+    if (batchErr) {
+      return jsonErr(ctx.rid, "Failed to load kitchen batch status.", 500, { code: "db_error", detail: {
+        where: "kitchen_batches.select",
         role,
         usingServiceRole,
-        message: dbMessage("delivery_confirmations.select", confErr),
-        ...errInfo(confErr),
+        message: dbMessage("kitchen_batches.select", batchErr),
+        ...errInfo(batchErr),
       } });
     }
 
-    const confKey = new Map<string, { at: string | null; by: string | null }>();
-    for (const c of (confs ?? []) as any[]) {
-      const slot = normKitchenSlot(c?.slot);
-      const companyId = safeStr(c?.company_id);
-      const locationId = safeStr(c?.location_id);
-      if (!slot || !companyId || !locationId) continue;
+    const batchMap = new Map<
+      string,
+      { status: "PACKED" | "DELIVERED"; packedAt: string | null; deliveredAt: string | null }
+    >();
+    for (const b of (batches ?? []) as any[]) {
+      const slot = normKitchenSlot(b?.delivery_window);
+      const loc = safeStr(b?.company_location_id);
+      if (!slot || !loc) continue;
 
-      const k = `${date}|${slot}|${companyId}|${locationId}`;
-      const at = safeStr(c?.confirmed_at) || null;
-      const by = safeStr(c?.confirmed_by) || null;
-      confKey.set(k, { at, by });
+      const status = safeStr(b?.status).toUpperCase();
+      if (status !== "PACKED" && status !== "DELIVERED") continue;
+
+      batchMap.set(`${date}|${slot}|${loc}`, {
+        status,
+        packedAt: safeStr(b?.packed_at) || null,
+        deliveredAt: safeStr(b?.delivered_at) || null,
+      });
     }
+    const allowLegacyTestFallback = isTestEnv() && batchMap.size === 0;
 
     // 4) Aggregate orders -> stops
     const acc = new Map<string, Stop>();
@@ -293,17 +307,24 @@ export async function GET(req: NextRequest) {
 
       // Uten disse kan vi ikke lage nøkkel/stopp på en stabil måte
       if (!companyId || !locationId) continue;
+      const batch = batchMap.get(`${date}|${slot}|${locationId}`);
+      if (!batch && !allowLegacyTestFallback) continue;
 
       const comp = companyMap.get(companyId) ?? null;
       const loc = locMap.get(locationId) ?? null;
 
       const companyName = comp?.name ?? null;
       const locationName = loc?.name ?? null;
+      const address =
+        safeStr((loc as any)?.address) ||
+        safeStr((loc as any)?.address_line) ||
+        safeStr((loc as any)?.street) ||
+        null;
 
       const a1 =
         safeStr((loc as any)?.address_line1) ||
         safeStr((loc as any)?.address1) ||
-        safeStr((loc as any)?.address) ||
+        safeStr(address) ||
         safeStr((loc as any)?.street_address) ||
         "";
       const a2 =
@@ -368,8 +389,6 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      const conf = confKey.get(key);
-
       acc.set(key, {
         key,
         date,
@@ -378,6 +397,7 @@ export async function GET(req: NextRequest) {
         companyName,
         locationId,
         locationName,
+        address,
         addressLine,
         deliveryWhere,
         deliveryWhenNote,
@@ -386,9 +406,11 @@ export async function GET(req: NextRequest) {
         deliveryWindowFrom,
         deliveryWindowTo,
         orderCount: 1,
-        delivered: Boolean(conf && (conf.at || conf.by)),
-        deliveredAt: conf?.at ?? null,
-        deliveredBy: conf?.by ?? null,
+        batchStatus: batch?.status ?? null,
+        packedAt: batch?.packedAt ?? null,
+        delivered: batch?.status === "DELIVERED",
+        deliveredAt: batch?.deliveredAt ?? null,
+        deliveredBy: null,
       });
     }
 

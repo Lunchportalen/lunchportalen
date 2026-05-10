@@ -126,6 +126,9 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<KitchenResp | null>(null);
   const [autoPicked, setAutoPicked] = useState(false);
+  const [packedSlots, setPackedSlots] = useState<Set<string>>(new Set());
+  const [packingSlot, setPackingSlot] = useState<string | null>(null);
+  const [packingError, setPackingError] = useState<string | null>(null);
 
   const [filterCompany, setFilterCompany] = useState<string>("all");
   const [filterLocation, setFilterLocation] = useState<string>("all");
@@ -136,8 +139,69 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
     try {
       const res = await fetchKitchenList(d);
       setData(res);
+      if (res.ok) await loadBatchState(d);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadBatchState(d: string) {
+    try {
+      const res = await fetch(`/api/kitchen/batch/list?date=${encodeURIComponent(d)}`, { cache: "no-store" });
+      const json = await res.json().catch(() => null);
+      const rows = Array.isArray(json?.data?.rows) ? json.data.rows : [];
+      setPackedSlots(
+        new Set(
+          rows
+            .filter((row: any) => {
+              const status = String(row?.status ?? "").toUpperCase();
+              return status === "PACKED" || status === "DELIVERED";
+            })
+            .map((row: any) => String(row?.delivery_window ?? "").toLowerCase())
+            .filter(Boolean)
+        )
+      );
+    } catch {
+      setPackedSlots(new Set());
+    }
+  }
+
+  async function markPacked(slot: string) {
+    const normalizedSlot = String(slot ?? "").trim().toLowerCase() || "lunch";
+    setPackingError(null);
+    setPackingSlot(normalizedSlot);
+    try {
+      const res = await fetch("/api/kitchen/batch/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ date: dateISO, slot: normalizedSlot }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        const code = String(json?.error ?? json?.data?.code ?? "").trim();
+        if (code !== "BATCH_EXISTS") {
+          throw new Error(String(json?.message ?? "Kunne ikke markere leveransen pakket."));
+        }
+
+        const setRes = await fetch("/api/kitchen/batch/set", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ date: dateISO, slot: normalizedSlot, status: "PACKED" }),
+        });
+        if (!setRes.ok) {
+          const setJson = await setRes.json().catch(() => null);
+          throw new Error(String(setJson?.message ?? "Kunne ikke markere leveransen pakket."));
+        }
+      }
+
+      await loadBatchState(dateISO);
+    } catch (error: any) {
+      setPackingError(String(error?.message ?? error ?? "Kunne ikke markere leveransen pakket."));
+    } finally {
+      setPackingSlot(null);
     }
   }
 
@@ -155,9 +219,11 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
           setAutoPicked(true);
           onDateISOChange(next.date);
           setData(next.res);
+          if (next.res.ok) await loadBatchState(next.date);
         } else {
           onDateISOChange(todayISO);
           setData(first);
+          if (first.ok) await loadBatchState(todayISO);
         }
       } finally {
         if (alive) setLoading(false);
@@ -508,6 +574,12 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
         </div>
       </div>
 
+      {packingError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          {packingError}
+        </div>
+      ) : null}
+
       {!data || loading ? (
         <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-5 text-sm text-slate-600 shadow-[var(--lp-shadow-soft)]">
           Laster produksjonsliste…
@@ -523,7 +595,17 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
           <div className="divide-y divide-[rgb(var(--lp-divider))]">
             {productionHierarchy.map((sl) => (
               <div key={sl.slot} className="bg-white">
-                <div className="bg-slate-100 px-4 py-2 text-sm font-extrabold text-slate-900">{slotHeading(sl.slot)}</div>
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100 px-4 py-2">
+                  <div className="text-sm font-extrabold text-slate-900">{slotHeading(sl.slot)}</div>
+                  <button
+                    type="button"
+                    onClick={() => void markPacked(sl.slot)}
+                    disabled={packingSlot === sl.slot || packedSlots.has(sl.slot)}
+                    className="min-h-[44px] rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-emerald-100 disabled:text-emerald-900"
+                  >
+                    {packedSlots.has(sl.slot) ? "Pakket ✓" : packingSlot === sl.slot ? "Pakker…" : "Pakket og klar"}
+                  </button>
+                </div>
                 {sl.companies.map((co) => (
                   <div key={`${sl.slot}-${co.company}`} className="border-t border-[rgb(var(--lp-divider))] first:border-t-0">
                     <div className="bg-[rgb(var(--lp-surface-2))] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-800">{co.company}</div>

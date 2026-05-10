@@ -11,6 +11,7 @@ import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { enqueueBatchPackedOutbox } from "@/lib/kitchen/batchPackedOutbox";
 
 /**
  * POST /api/kitchen/batch/set
@@ -19,18 +20,18 @@ import { loadProfileByUserId } from "@/lib/db/profileLookup";
  * - Status flow: QUEUED -> PACKED (idempotent on PACKED)
  */
 
-function isIsoDate(v: any) {
+function isIsoDate(v: unknown) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
 }
-function safeStr(v: any) {
+function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
-function normSlot(v: any) {
+function normSlot(v: unknown) {
   const s = safeStr(v).toLowerCase();
   return s || "lunch";
 }
 type BatchStatus = "QUEUED" | "PACKED" | "DELIVERED";
-function normStatus(v: any): BatchStatus | null {
+function normStatus(v: unknown): BatchStatus | null {
   const s = safeStr(v).toUpperCase();
   if (s === "QUEUED" || s === "PACKED" || s === "DELIVERED") return s;
   return null;
@@ -52,6 +53,25 @@ type KitchenBatchRow = {
   delivered_at: string | null;
 };
 
+type ScopeLike = {
+  rid: string;
+  scope: { userId?: unknown; email?: unknown; role?: unknown };
+};
+
+type BatchSetBody = {
+  date?: unknown;
+  slot?: unknown;
+  location_id?: unknown;
+  status?: unknown;
+};
+
+type KitchenProfileRow = {
+  company_id: string | null;
+  location_id: string | null;
+  disabled_at: string | null;
+  is_active: boolean | null;
+};
+
 function cutoffAllowed(dateISO: string) {
   const status = cutoffStatusForDate0805(dateISO);
   if (status === "TODAY_LOCKED") return { ok: true as const };
@@ -65,12 +85,12 @@ export async function POST(req: NextRequest) {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   // ? Guard: scope + rid
   const a = await scopeOr401(req);
-  if ((a as any)?.ok === false) return (a as any).res;
+  if (a.ok === false) return a.res;
 
-  const { rid, scope } = (a as any).ctx;
+  const { rid, scope } = a.ctx as ScopeLike;
 
   // ? Role gate (kitchen only)
-  const denyRole = requireRoleOr403((a as any).ctx, "kitchen.batch.set", ["kitchen"]);
+  const denyRole = requireRoleOr403(a.ctx, "kitchen.batch.set", ["kitchen"]);
   if (denyRole) return denyRole;
 
   // ? Confirm cookie-session (Avensia: fail closed)
@@ -90,7 +110,7 @@ export async function POST(req: NextRequest) {
     // ? Read body (kan returnere Response i ditt oppsett)
     const bodyOrRes = await readJson(req);
     if (bodyOrRes instanceof Response) return bodyOrRes;
-    const body = bodyOrRes as any;
+    const body = bodyOrRes as BatchSetBody;
 
     const dateRaw = safeStr(body?.date) || osloTodayISODate();
     const date = isIsoDate(dateRaw) ? dateRaw : "";
@@ -116,16 +136,17 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = safeStr(auth?.user?.id) || safeStr(scope?.userId);
-    const { data: prof, error: profErr } = await loadProfileByUserId(admin as any, userId, "company_id, location_id, disabled_at, is_active");
+    const { data: prof, error: profErr } = await loadProfileByUserId(admin, userId, "company_id, location_id, disabled_at, is_active");
 
     if (profErr) return jsonErr(rid, "Kunne ikke hente profil.", 500, { code: "DB_ERROR", detail: { message: profErr.message, code: (profErr as any).code ?? null } });
     if (!prof) return jsonErr(rid, "Mangler profil.", 403, "FORBIDDEN");
-    if ((prof as any).disabled_at || (prof as any).is_active === false) {
+    const profile = prof as KitchenProfileRow;
+    if (profile.disabled_at || profile.is_active === false) {
       return jsonErr(rid, "Bruker er deaktivert.", 403, "FORBIDDEN");
     }
 
-    const companyId = safeStr((prof as any).company_id);
-    const profileLocationId = safeStr((prof as any).location_id);
+    const companyId = safeStr(profile.company_id);
+    const profileLocationId = safeStr(profile.location_id);
     if (!companyId) return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY");
     if (profileLocationId && location_id !== profileLocationId) {
       return jsonErr(rid, "Ugyldig lokasjon.", 403, "FORBIDDEN");
@@ -203,8 +224,8 @@ export async function POST(req: NextRequest) {
       company_id: companyId,
       location_id,
       actor_user_id: userId,
-      actor_email: scope?.email ?? null,
-      actor_role: scope?.role ?? null,
+      actor_email: safeStr(scope?.email) || null,
+      actor_role: safeStr(scope?.role) || null,
       summary: "Batch set PACKED",
       detail: {
         route: "/api/kitchen/batch/set",
@@ -240,6 +261,8 @@ export async function POST(req: NextRequest) {
     if (!saved) {
       return jsonErr(rid, "Batch-status ble endret av en annen prosess.", 409, "RACE_CONDITION");
     }
+
+    await enqueueBatchPackedOutbox(admin, { rid, date, slot, companyId, locationId: location_id });
 
     return jsonOk(rid, {
         status: "PACKED",

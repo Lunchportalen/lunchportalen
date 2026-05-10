@@ -13,9 +13,17 @@ import { isAfterCutoff0805 } from "@/lib/kitchen/cutoff";
 import type { Role } from "@/lib/auth/role";
 import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 
-function safeStr(v: any) {
+function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
+
+type KitchenProfileRow = {
+  role: string | null;
+  disabled_at: string | null;
+  is_active: boolean | null;
+  company_id: string | null;
+  location_id: string | null;
+};
 
 export async function GET(req: NextRequest) {
   const rid = `kday_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -28,22 +36,22 @@ export async function GET(req: NextRequest) {
 
     // 2) Profile lookup (service role)
     const admin = supabaseAdmin();
-    const { data: profile, error: pErr } = await (admin as any)
+    const { data: profile, error: pErr } = await admin
       .from("profiles")
       .select("role, disabled_at, is_active, company_id, location_id")
       .or(`id.eq.${auth.user.id},user_id.eq.${auth.user.id}`)
-      .maybeSingle();
+      .maybeSingle<KitchenProfileRow>();
 
     if (pErr || !profile) return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
-    if ((profile as any).disabled_at || (profile as any).is_active === false) return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
+    if (profile.disabled_at || profile.is_active === false) return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
 
     // 3) Role gate
-    const role = normalizeRoleDefaultEmployee((profile as any).role);
+    const role = normalizeRoleDefaultEmployee(profile.role);
     if (role !== "kitchen" && role !== "superadmin") return jsonErr(rid, "Forbudt.", 403, "FORBIDDEN");
 
     // 4) Scope (company/location) - fail-closed
-    const companyId = safeStr((profile as any).company_id);
-    const locationId = safeStr((profile as any).location_id);
+    const companyId = safeStr(profile.company_id);
+    const locationId = safeStr(profile.location_id);
     if (!companyId || !locationId) {
       return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED", {
         companyIdPresent: Boolean(companyId),

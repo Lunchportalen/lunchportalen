@@ -1,9 +1,10 @@
 // app/driver/DriverClient.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { MapPin as MapPinIcon } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { formatDateTimeNO } from "@/lib/date/format";
 import {
   normalizeStopsResponse,
@@ -80,6 +81,24 @@ function fmtTS(iso?: string | null) {
   }
 }
 
+function fmtDeliveredAt(iso?: string | null) {
+  try {
+    if (!iso) return null;
+    return new Intl.DateTimeFormat("nb-NO", {
+      timeZone: "Europe/Oslo",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+      .format(new Date(iso))
+      .replace(",", " kl.");
+  } catch {
+    return null;
+  }
+}
+
 function todayISO() {
   const d = new Date();
   const y = d.getFullYear();
@@ -141,6 +160,12 @@ function normalizedName(v: string) {
   return safeStr(v).toLowerCase();
 }
 
+function googleMapsHref(addressLine: string) {
+  const address = safeStr(addressLine);
+  if (!address) return null;
+  return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+}
+
 function buildGroups(stops: Stop[]): SlotGroup[] {
   const slotMap = new Map<string, SlotGroup>();
   const slots: SlotGroup[] = [];
@@ -163,7 +188,7 @@ function buildGroups(stops: Stop[]): SlotGroup[] {
 
     const locationName = safeStr(s.locationName) || s.locationId;
     const locationKey = `${s.companyId}:${s.locationId}`;
-    const addressLine = safeStr(s.addressLine) || "Adresse: —";
+    const addressLine = safeStr(s.addressLine);
 
     const deliveryWindow =
       safeStr(s.deliveryWindowFrom) && safeStr(s.deliveryWindowTo)
@@ -310,10 +335,12 @@ function SecondaryBtn({
 export default function DriverClient() {
   const [date] = useState<string>(todayISO());
   const [data, setData] = useState<StopsOk | null>(null);
+  const packedNoticeTimerRef = useRef<number | null>(null);
 
   const [err, setErr] = useState<string | null>(null);
   const [lastApiErr, setLastApiErr] = useState<ApiErr | null>(null);
   const [showTech, setShowTech] = useState(false);
+  const [packedNotice, setPackedNotice] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
@@ -344,7 +371,7 @@ export default function DriverClient() {
   const groups = useMemo(() => buildGroups(filteredStops), [filteredStops]);
   const filterEmpty = stops.length > 0 && filteredStops.length === 0;
 
-  async function load(nextDate: string) {
+  const load = useCallback(async (nextDate: string) => {
     const d = safeStr(nextDate) || todayISO();
     setLoading(true);
     setErr(null);
@@ -402,23 +429,28 @@ export default function DriverClient() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function confirmStop(s: Stop) {
+    const confirmed = window.confirm(
+      `Marker ${safeStr(s.companyName) || safeStr(s.locationName) || "leveransen"} som levert? Dette kan ikke angres.`
+    );
+    if (!confirmed) return;
+
     setErr(null);
     setShowTech(false);
 
     startTransition(async () => {
       try {
         const rid = makeRid();
-        const res = await apiFetch("/api/driver/confirm", {
+        const res = await apiFetch("/api/driver/bulk-set", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-rid": rid },
           body: JSON.stringify({
             date: s.date,
             slot: s.slot,
-            companyId: s.companyId,
-            locationId: s.locationId,
+            status: "delivered",
+            locationIds: [s.locationId],
           }),
         });
 
@@ -517,7 +549,7 @@ export default function DriverClient() {
 
   async function performLogout() {
     try {
-      const sb = supabaseBrowser();
+      const sb = createBrowserClient();
       await sb.auth.signOut();
     } catch {
       // no-op
@@ -539,10 +571,53 @@ export default function DriverClient() {
     setLogoutConfirmOpen(false);
   }
 
+  function showPackedNotice() {
+    setPackedNotice(true);
+    if (packedNoticeTimerRef.current != null) {
+      window.clearTimeout(packedNoticeTimerRef.current);
+    }
+    packedNoticeTimerRef.current = window.setTimeout(() => {
+      setPackedNotice(false);
+      packedNoticeTimerRef.current = null;
+    }, 5000);
+  }
+
   useEffect(() => {
     void load(date);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date]);
+  }, [date, load]);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    const channel = supabase
+      .channel("driver-batches")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "kitchen_batches",
+          filter: `delivery_date=eq.${date}`,
+        },
+        (payload) => {
+          const nextStatus = safeStr((payload.new as { status?: unknown } | null)?.status).toUpperCase();
+          if (nextStatus === "PACKED") showPackedNotice();
+          void load(date);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [date, load]);
+
+  useEffect(() => {
+    return () => {
+      if (packedNoticeTimerRef.current != null) {
+        window.clearTimeout(packedNoticeTimerRef.current);
+      }
+    };
+  }, []);
 
   // ESC lukker sheet og avbryter utloggingsbekreftelse (ingen native dialoger)
   useEffect(() => {
@@ -570,9 +645,25 @@ export default function DriverClient() {
       {/* Sticky Topbar */}
       <div className="sticky top-0 z-40 lp-safe-top lp-glass-bar">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          {packedNotice ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900 ring-1 ring-blue-100"
+            >
+              Ny leveranse klar for henting
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between py-3">
             <div className="min-w-0">
-              <div className="text-lg sm:text-xl font-semibold text-slate-900">Dagens leveringer</div>
+              <div className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900 sm:text-xl">
+                <span>Dagens leveringer</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-900">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                  Live
+                </span>
+              </div>
               <div className="mt-1 text-sm text-slate-700">
                 {fmtDateLong(shownDateSafe)} • <span className="font-semibold text-slate-900">{count}</span> stopp •{" "}
                 <span className="font-semibold text-slate-900">{deliveredCount}</span> levert
@@ -775,13 +866,34 @@ export default function DriverClient() {
                         {c.locations.map((l) => (
                           <div key={l.locationKey} className="rounded-2xl bg-[rgb(var(--lp-surface-2))] p-4">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="text-sm font-semibold text-slate-900">{l.locationName}</div>
+                              <div>
+                                <div className="text-sm font-semibold text-slate-900">{l.locationName}</div>
+                                {l.delivered && l.deliveredAt ? (
+                                  <div className="mt-1 text-xs font-medium text-emerald-900">
+                                    Levert kl. {fmtDeliveredAt(l.deliveredAt)}
+                                  </div>
+                                ) : null}
+                              </div>
                               <div className="text-sm text-slate-700">
                                 Totalt lokasjon: <b>{l.orderCount}</b>
                               </div>
                             </div>
 
-                            <div className="mt-2 text-sm text-slate-700 lp-wrap-anywhere">{l.addressLine}</div>
+                            <div className="mt-2 lp-wrap-anywhere">
+                              {l.addressLine ? (
+                                <a
+                                  href={googleMapsHref(l.addressLine) ?? undefined}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-sm text-blue-700 underline underline-offset-2"
+                                >
+                                  <MapPinIcon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                                  {l.addressLine}
+                                </a>
+                              ) : (
+                                <span className="text-sm text-slate-500">Adresse mangler</span>
+                              )}
+                            </div>
 
                             <div className="mt-2 grid gap-1 text-xs text-slate-700">
                               {l.deliveryWindow ? <div>Tidsvindu: {l.deliveryWindow}</div> : null}

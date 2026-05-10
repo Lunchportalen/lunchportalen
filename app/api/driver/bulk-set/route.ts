@@ -174,19 +174,13 @@ export async function POST(req: NextRequest) {
   const BATCH_TABLE = "kitchen_batches";
   const now = new Date().toISOString();
 
-  // Bygg rows for upsert
-  const rows = finalIds.map((company_location_id) => ({
-    delivery_date: date,
-    delivery_window: slot, // samme nøkkel som kitchen/orders (slot)
-    company_location_id,
-    status,
-    packed_at: now,
-    delivered_at: now,
-  }));
-
   const { data: up, error: upErr } = await admin
     .from(BATCH_TABLE)
-    .upsert(rows, { onConflict: "delivery_date,delivery_window,company_location_id" })
+    .update({ status: "DELIVERED", delivered_at: now })
+    .eq("delivery_date", date)
+    .eq("delivery_window", slot)
+    .in("company_location_id", finalIds)
+    .eq("status", "PACKED")
     .select("delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at");
 
   if (upErr) {

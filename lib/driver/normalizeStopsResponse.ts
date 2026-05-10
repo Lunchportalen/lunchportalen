@@ -20,6 +20,7 @@ export type Stop = {
   companyName: string | null;
   locationId: string;
   locationName: string | null;
+  address: string | null;
   addressLine: string | null;
   deliveryWhere: string | null;
   deliveryWhenNote: string | null;
@@ -28,6 +29,8 @@ export type Stop = {
   deliveryWindowFrom: string | null;
   deliveryWindowTo: string | null;
   orderCount: number;
+  batchStatus: "PACKED" | "DELIVERED" | null;
+  packedAt: string | null;
   delivered: boolean;
   deliveredAt: string | null;
   deliveredBy: string | null;

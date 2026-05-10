@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import OperationalStatusStrip from "@/app/superadmin/_components/OperationalStatusStrip";
+import SuperadminDeviationIndicator from "@/components/superadmin/SuperadminDeviationIndicator";
+import SuperadminRealtimeFeed from "@/components/superadmin/SuperadminRealtimeFeed";
 import { capabilities } from "@/lib/superadmin/capabilities";
 import type { LoadSuperadminHomeSignalsResult } from "@/lib/superadmin/loadSuperadminHomeSignals";
 
@@ -201,6 +203,9 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
               Kontrollsignaler kunne ikke lastes ({signals.ok === false ? signals.reason : ""}). Bruk lenkene under og driftssider som vanlig.
             </div>
           )}
+
+          <SuperadminRealtimeFeed initialOrdersToday={s ? s.orders.today : 0} />
+          <SuperadminDeviationIndicator />
 
           <section aria-labelledby="superadmin-priority-heading" className="mt-7">
             <div className="mb-3 flex items-end justify-between gap-3">

@@ -5,19 +5,36 @@ import nodemailer from "nodemailer";
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-function requireEnv(name: string) {
-  const v = process.env[name];
-  if (!v || !safeStr(v)) throw new Error(`Missing env: ${name}`);
-  return safeStr(v);
+
+function requireResolvedEnv(value: unknown, names: string) {
+  const resolved = safeStr(value);
+  if (!resolved) throw new Error(`Missing env: ${names}`);
+  return resolved;
 }
 
 export function getSmtpTransport() {
-  const host = requireEnv("ORDER_SMTP_HOST");
-  const port = Number(requireEnv("ORDER_SMTP_PORT"));
-  const secure = safeStr(process.env.ORDER_SMTP_SECURE ?? "").toLowerCase() === "true";
+  const host = requireResolvedEnv(
+    process.env.ORDER_SMTP_HOST ?? process.env.LP_SMTP_HOST ?? process.env.SMTP_HOST,
+    "ORDER_SMTP_HOST or LP_SMTP_HOST or SMTP_HOST"
+  );
+  const port = parseInt(
+    process.env.ORDER_SMTP_PORT ?? process.env.LP_SMTP_PORT ?? process.env.SMTP_PORT ?? "587",
+    10
+  );
+  if (!Number.isFinite(port) || port <= 0) {
+    throw new Error("Invalid env: ORDER_SMTP_PORT or LP_SMTP_PORT or SMTP_PORT");
+  }
+  const secure =
+    (process.env.ORDER_SMTP_SECURE ?? process.env.LP_SMTP_SECURE ?? process.env.SMTP_SECURE) === "true";
 
-  const user = requireEnv("ORDER_SMTP_USER");
-  const pass = requireEnv("ORDER_SMTP_PASS");
+  const user = requireResolvedEnv(
+    process.env.ORDER_SMTP_USER ?? process.env.LP_SMTP_USER ?? process.env.SMTP_USER,
+    "ORDER_SMTP_USER or LP_SMTP_USER or SMTP_USER"
+  );
+  const pass = requireResolvedEnv(
+    process.env.ORDER_SMTP_PASS ?? process.env.LP_SMTP_PASS ?? process.env.SMTP_PASS,
+    "ORDER_SMTP_PASS or LP_SMTP_PASS or SMTP_PASS"
+  );
 
   return nodemailer.createTransport({
     host,

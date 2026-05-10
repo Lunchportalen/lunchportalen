@@ -278,46 +278,43 @@ beforeEach(() => {
 });
 
 describe("tenant isolation — driver stops", () => {
-  test("orders and confirmations are filtered by company_id", async () => {
+  test("orders are filtered by company_id and batches by location_id", async () => {
     const req = mkReq("http://localhost/api/driver/stops?date=2026-02-02", { method: "GET" });
     const res = await driverStopsGET(req);
     expect(res.status).toBe(200);
 
     const ordersCompany = eqCalls.find((c) => c.table === "orders" && c.key === "company_id");
-    const confCompany = eqCalls.find((c) => c.table === "delivery_confirmations" && c.key === "company_id");
+    const batchLocation = eqCalls.find((c) => c.table === "kitchen_batches" && c.key === "company_location_id");
 
     expect(ordersCompany?.value).toBe(TENANT_CO);
-    expect(confCompany?.value).toBe(TENANT_CO);
+    expect(batchLocation?.value).toBe(TENANT_LOC);
+    expect(eqCalls.some((c) => c.table === "delivery_confirmations")).toBe(false);
   });
 });
 
 describe("driver isolation — confirm/csv/bulk-set", () => {
-  test("driver cannot mark other company stop", async () => {
+  test("deprecated confirm endpoint returns 410", async () => {
     const req = mkReq("http://localhost/api/driver/confirm", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ date: "2026-02-02", slot: "lunch", companyId: TENANT_CO_OTHER, locationId: TENANT_LOC }),
     });
     const res = await driverConfirmPOST(req);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(410);
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: false, error: "DEPRECATED" });
   });
 
-  test("driver confirm ok returns minimal confirmation (no internal ids in payload)", async () => {
+  test("driver confirm endpoint no longer writes confirmations", async () => {
     const req = mkReq("http://localhost/api/driver/confirm", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ date: "2026-02-02", slot: "lunch", companyId: TENANT_CO, locationId: TENANT_LOC }),
     });
     const res = await driverConfirmPOST(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(410);
     const body = await res.json();
-    const c = body?.data?.confirmation;
-    expect(c).toBeTruthy();
-    expect(c.confirmed_by).toBeUndefined();
-    expect(c.note).toBeUndefined();
-    expect(c.rid).toBeUndefined();
-    expect(c.delivery_date).toBe("2026-02-02");
-    expect(c.slot).toBe("lunch");
+    expect(body).toMatchObject({ ok: false, error: "DEPRECATED" });
   });
 
   test("driver cannot fetch CSV for other date", async () => {
