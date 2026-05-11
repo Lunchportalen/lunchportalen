@@ -239,9 +239,7 @@ export async function GET(req: NextRequest) {
     async () => {
       try {
         const nextSafe = sanitizePostLoginNextPath(req.nextUrl.searchParams.get("next"));
-        // Use this request's Cookie header so session matches immediately after login navigation
-        // (avoids edge cases where cookies() lags the incoming GET).
-        const auth = await getAuthContext({ rid, reqHeaders: req.headers });
+        const auth = await getAuthContext({ rid });
 
         if (!auth.ok) {
           if (auth.reason === "UNAUTHENTICATED") {
