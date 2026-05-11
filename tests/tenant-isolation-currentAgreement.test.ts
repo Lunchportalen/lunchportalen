@@ -3,6 +3,19 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 let eqCalls: Array<{ table: string; key: string; value: string }> = [];
+let mockAgreement: any;
+
+const defaultAgreement = {
+  id: "ag_a",
+  company_id: "cA",
+  status: "ACTIVE",
+  delivery_days: ["mon", "tue"],
+  tier: "BASIS",
+  price_per_meal_nok: 95,
+  starts_at: "2026-01-01",
+  ends_at: null,
+  updated_at: "2026-01-31T12:00:00Z",
+};
 
 function makeAdminClient() {
   return {
@@ -18,17 +31,7 @@ function makeAdminClient() {
         maybeSingle: async () => {
           if (table === "agreements") {
             return {
-              data: {
-                id: "ag_a",
-                company_id: "cA",
-                status: "ACTIVE",
-                delivery_days: ["mon", "tue"],
-                tier: "BASIS",
-                price_per_meal_nok: 95,
-                starts_at: "2026-01-01",
-                ends_at: null,
-                updated_at: "2026-01-31T12:00:00Z",
-              },
+              data: mockAgreement,
               error: null,
             };
           }
@@ -80,6 +83,7 @@ import { getCurrentAgreementState } from "../lib/agreement/currentAgreement";
 
 beforeEach(() => {
   eqCalls = [];
+  mockAgreement = { ...defaultAgreement };
 });
 
 describe("tenant isolation – currentAgreement", () => {
@@ -94,5 +98,20 @@ describe("tenant isolation – currentAgreement", () => {
     expect(agreementFilter?.value).toBe("cA");
     expect(agreementStatusFilter?.value).toBe("ACTIVE");
     expect(daymapFilter).toBeUndefined();
+  });
+
+  test("ACTIVE agreement is active even when starts_at and delivery days are missing", async () => {
+    mockAgreement = {
+      ...defaultAgreement,
+      delivery_days: null,
+      starts_at: null,
+    };
+
+    const res = await getCurrentAgreementState({ rid: "rid_active_null_start" });
+
+    expect(res.ok).toBe(true);
+    expect(res.status).toBe("ACTIVE");
+    expect(res.agreementId).toBe("ag_a");
+    expect(res.startDate).toBeNull();
   });
 });

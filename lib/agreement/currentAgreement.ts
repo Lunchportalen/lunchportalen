@@ -211,9 +211,6 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const basisDays = Object.values(dayTiers).filter((t) => t === "BASIS").length;
   const luxusDays = Object.values(dayTiers).filter((t) => t === "LUXUS").length;
 
-  const hasOperativeDayTiers = Object.keys(dayTiers).length > 0;
-  const hasDeliveryDays = deliveryNorm.days.length > 0;
-
   const agreementId = agreement?.id ? String(agreement.id) : null;
   const planTier = agreement?.tier ?? null;
   const pricePerCuvertNok = agreement?.price_per_meal_nok ?? null;
@@ -222,49 +219,6 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   const updatedAt = agreement?.updated_at ?? null;
 
   // Status resolution
-  if (!hasOperativeDayTiers) {
-    return {
-      ok: true,
-      companyId,
-      locationId,
-      status: "MISSING",
-      statusReason: "MISSING_DAYMAP",
-      planTier,
-      pricePerCuvertNok,
-      deliveryDays: [],
-      slot: "lunch",
-      dayTiers,
-      basisDays,
-      luxusDays,
-      startDate,
-      endDate,
-      updatedAt,
-      agreementId,
-    };
-  }
-
-  if (!hasDeliveryDays) {
-    return {
-      ok: true,
-      companyId,
-      locationId,
-      status: "MISSING",
-      statusReason: "MISSING_DELIVERY_DAYS",
-      planTier,
-      pricePerCuvertNok,
-      deliveryDays: [],
-      slot: "lunch",
-      dayTiers,
-      basisDays,
-      luxusDays,
-      startDate,
-      endDate,
-      updatedAt,
-      agreementId,
-    };
-  }
-
-  // If agreement missing or not ACTIVE, keep ACTIVE by daymap but mark reason
   const active = isActiveStatus(agreement?.status);
   if (!agreement?.company_id || !active) {
     opsLog("agreement.current.not_active", {
@@ -278,7 +232,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
       ok: true,
       companyId,
       locationId,
-      status: "ACTIVE",
+      status: "MISSING",
       statusReason: "NO_ACTIVE_AGREEMENT",
       planTier,
       pricePerCuvertNok,
