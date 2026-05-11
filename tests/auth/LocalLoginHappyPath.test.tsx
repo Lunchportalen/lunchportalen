@@ -62,7 +62,7 @@ describe("Local login happy path", () => {
     else process.env.LP_LOCAL_CMS_RUNTIME = originalLocalRuntimeFlag;
   });
 
-  it("submits the normal login form with canonical seeded credentials and redirects to post-login", async () => {
+  it("submits the normal login form with canonical seeded credentials and redirects to superadmin", async () => {
     const credentials = getLocalRuntimeLoginCredentials();
     expect(credentials).toEqual({
       email: SUPERADMIN_EMAIL,
@@ -108,6 +108,6 @@ describe("Local login happy path", () => {
       password: credentials.password,
       next: "/backoffice/content",
     });
-    expect((global as any).window.location.assign).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fsuperadmin");
+    expect((global as any).window.location.assign).toHaveBeenCalledWith("/superadmin");
   });
 });

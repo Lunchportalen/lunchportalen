@@ -64,7 +64,7 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 describe("Login form submit flow", () => {
-  it("submit sends POST /api/auth/login then redirects via /api/auth/post-login", async () => {
+  it("submit sends POST /api/auth/login then redirects company admin directly to /admin", async () => {
     searchParamsState.next = "/backoffice/content";
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
@@ -102,7 +102,7 @@ describe("Login form submit flow", () => {
     expect(body.email).toBe("test@example.com");
     expect(body.password).toBe("secret123");
     expect(body.next).toBe("/backoffice/content");
-    expect(assignMock).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fadmin");
+    expect(assignMock).toHaveBeenCalledWith("/admin");
   });
 
   it("loading state is shown during request (button disabled and text)", async () => {

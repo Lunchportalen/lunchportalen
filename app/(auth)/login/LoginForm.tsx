@@ -55,6 +55,13 @@ function postLoginNextForRole(role: unknown, fallbackNext: unknown) {
   return fallback || null;
 }
 
+function getPostLoginTarget(role: unknown, fallbackNext: string | null) {
+  const r = safeStr(role).toLowerCase();
+  if (r === "company_admin") return "/admin";
+  if (r === "superadmin") return "/superadmin";
+  return buildPostLoginUrl(fallbackNext);
+}
+
 function mapLoginError(result: ApiLoginRes): string {
   if (!result || result.ok !== false) {
     return "Kunne ikke logge inn.";
@@ -119,7 +126,7 @@ export default function LoginForm({
       }
 
       const nextPath = postLoginNextForRole(loginJson.role, loginJson.next ?? nextRaw);
-      window.location.assign(buildPostLoginUrl(nextPath));
+      window.location.assign(getPostLoginTarget(loginJson.role, nextPath));
     } catch {
       setErr("Innloggingstjenesten svarte ikke. Kontroller lokal runtime og prøv igjen.");
     } finally {
