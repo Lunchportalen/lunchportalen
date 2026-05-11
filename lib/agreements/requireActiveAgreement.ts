@@ -12,6 +12,14 @@ export type ActiveAgreementContext = {
 
 export async function requireActiveAgreement(): Promise<ActiveAgreementContext> {
   const status = await getAgreementStatusForCurrentUser();
+  console.error("[DEBUG-requireActiveAgreement]", JSON.stringify({
+    ok: status.ok,
+    role: status.role,
+    status: status.ok ? status.status : "N/A",
+    statusReason: status.ok ? (status as any).statusReason : "N/A",
+    companyId: status.ok ? status.companyId : "N/A",
+    agreementId: status.ok ? status.agreementId : "N/A",
+  }));
   const role = status.role;
   const companyId = typeof status.companyId === "string" ? status.companyId : "";
 
