@@ -90,3 +90,4 @@ umbraco17/lunchportalen/publish.zip
 artifacts/
 build-output.txt
 umbraco17/*BACKUP*/
+.claude/
