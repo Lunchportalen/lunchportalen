@@ -54,6 +54,13 @@ async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: 
     .limit(1)
     .maybeSingle();
 
+  console.error("[SCOPE-DEBUG] agreements query", {
+    company_id,
+    data: JSON.stringify(data),
+    error: error?.message,
+    errorCode: error?.code,
+  });
+
   if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
   if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
 

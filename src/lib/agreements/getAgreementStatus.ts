@@ -62,7 +62,14 @@ export async function getAgreementStatusForCurrentUser(): Promise<AgreementStatu
       agreementId: state.agreementId ?? null,
       role,
     };
-  } catch {
+  } catch (e) {
+    console.error("[SCOPE-DEBUG] catch fallback", {
+      name: (e as any)?.name,
+      message: (e as any)?.message,
+      code: (e as any)?.code,
+      stack: String((e as any)?.stack ?? "").slice(0, 300),
+    });
+
     return {
       ok: false,
       status: "MISSING",
