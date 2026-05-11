@@ -433,6 +433,13 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
     }
 
     const cached = await getAuthCache(user.id);
+    console.error("[AUTH-CACHE-DEBUG]", {
+      userId: user.id,
+      hasCached: Boolean(cached),
+      cachedRole: cached?.role ?? null,
+      cachedCompanyId: cached?.company_id ?? null,
+      isUsable: cached ? isUsableCachedClaims(cached) : null,
+    });
     if (cached) {
       authLog(rid, "cache_hit", { user_id: user.id, status: cached.status ?? null });
       if (isUsableCachedClaims(cached)) {
