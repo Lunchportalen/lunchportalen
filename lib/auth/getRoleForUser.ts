@@ -19,7 +19,7 @@ export async function getRoleForUser(userId: string): Promise<Role | null> {
     const { data, error } = await sb
       .from("profiles")
       .select("role")
-      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .eq("id", userId)
       .maybeSingle<ProfileRow>();
 
     if (error || !data) return null;

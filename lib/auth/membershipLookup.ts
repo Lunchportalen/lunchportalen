@@ -21,7 +21,7 @@ export type MembershipLookupErr = {
 
 export type MembershipLookupResult = MembershipLookupOk | MembershipLookupErr;
 
-const PROFILE_SELECT_COLUMNS = "user_id, role, company_id, location_id";
+const PROFILE_SELECT_COLUMNS = "id, role, company_id, location_id";
 
 type RpcState = "unknown" | "available" | "missing";
 
@@ -105,7 +105,7 @@ async function viaProfiles(sb: any, userId: string): Promise<MembershipLookupRes
   const { data, error } = await sb
     .from("profiles")
     .select(PROFILE_SELECT_COLUMNS)
-    .eq("user_id", userId)
+    .eq("id", userId)
     .maybeSingle();
 
   if (error) {

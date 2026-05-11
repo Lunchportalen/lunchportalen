@@ -98,8 +98,8 @@ export async function POST(req: NextRequest) {
 
     const { data: existingProfile, error: profileReadErr } = await admin
       .from("profiles")
-      .select("id, user_id, company_id")
-      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .select("id, company_id")
+      .eq("id", userId)
       .maybeSingle();
     if (profileReadErr) return jsonErr(rid, "Kunne ikke lese profil.", 500, "PROFILE_READ_FAILED");
     if (existingProfile?.company_id && String(existingProfile.company_id) !== companyId) {
@@ -108,7 +108,6 @@ export async function POST(req: NextRequest) {
 
     const profilePayload = {
       id: userId,
-      user_id: userId,
       email,
       full_name: fullName,
       role: "company_admin",
