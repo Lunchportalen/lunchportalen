@@ -46,27 +46,25 @@ async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: 
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
   const { data, error } = await sb
-    .from("company_billing_accounts")
-    .select("company_id,status,billing_hold,billing_hold_reason")
+    .from("agreements")
+    .select("company_id,status")
     .eq("company_id", company_id)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
   if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
 
   const st = normalizeStatus(data.status);
-  if (st !== "active") {
-    if (st === "paused") throw new ScopeError("Firmaet er midlertidig pauset", 403, "AGREEMENT_PAUSED");
-    if (st === "closed") throw new ScopeError("Firmaet er stengt", 403, "AGREEMENT_CLOSED");
-    throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
-  }
+  if (st !== "active") throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
 
-  const hold = data.billing_hold === true;
   return {
     agreement_status: "active",
-    billing_hold: hold,
-    billing_hold_reason: data.billing_hold_reason ?? null,
-    can_act: !hold,
+    billing_hold: false,
+    billing_hold_reason: null,
+    can_act: true,
   };
 }
 
