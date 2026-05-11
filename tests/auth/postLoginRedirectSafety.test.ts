@@ -24,6 +24,50 @@ describe("POST-login redirect safety (/api/auth/post-login GET)", () => {
     vi.clearAllMocks();
   });
 
+  test("company_admin without next lands on /admin", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: true,
+      reason: "OK",
+      mode: "DB_LOOKUP",
+      user: { id: "u1", email: "admin@test.no" },
+      role: "company_admin",
+      company_id: "c1",
+      location_id: "l1",
+      rid: "rid_company_admin",
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location.includes("/admin")).toBe(true);
+    expect(location.includes("/week")).toBe(false);
+  });
+
+  test("legacy company admin role aliases land on /admin", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: true,
+      reason: "OK",
+      mode: "DB_LOOKUP",
+      user: { id: "u1", email: "admin@test.no" },
+      role: "companyadmin",
+      company_id: "c1",
+      location_id: "l1",
+      rid: "rid_companyadmin_alias",
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login?next=/week");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location.includes("/admin")).toBe(true);
+    expect(location.includes("/week")).toBe(false);
+  });
+
   test("rejects unsafe next (external-style) and falls back to role home", async () => {
     getAuthContextMock.mockResolvedValue({
       ok: true,

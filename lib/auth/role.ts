@@ -86,13 +86,14 @@ export function allowNextForRole(role: Role, nextPath: string | null): string | 
   return null;
 }
 
-export function resolvePostLoginTarget(role: Role | null, nextPath: string | null): string {
-  if (!role) return "/week";
-  return allowNextForRole(role, nextPath) ?? landingForRole(role);
+export function resolvePostLoginTarget(role: Role | string | null, nextPath: string | null): string {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return "/week";
+  return allowNextForRole(normalizedRole, nextPath) ?? landingForRole(normalizedRole);
 }
 
 export function resolvePostLoginTargetForAuth(input: {
-  role: Role | null;
+  role: Role | string | null;
   email?: string | null;
   nextPath: string | null;
 }): string {
