@@ -28,4 +28,28 @@ describe("maybeRedirectPublicMarketingToUmbracoHostedSite", () => {
     expect(res!.status).toBe(307);
     expect(res!.headers.get("location")).toBe("https://www.example.com/kontakt?x=1");
   });
+
+  it("does not redirect Next RSC requests to Umbraco", () => {
+    vi.stubEnv("UMBRACO_PUBLIC_SITE_URL", "https://www.example.com");
+
+    expect(
+      maybeRedirectPublicMarketingToUmbracoHostedSite(
+        new NextRequest(new URL("https://app.example.com/?_rsc=abc"))
+      )
+    ).toBeNull();
+
+    expect(
+      maybeRedirectPublicMarketingToUmbracoHostedSite(
+        new NextRequest(new URL("https://app.example.com/?rsc=abc"))
+      )
+    ).toBeNull();
+
+    expect(
+      maybeRedirectPublicMarketingToUmbracoHostedSite(
+        new NextRequest(new URL("https://app.example.com/"), {
+          headers: { rsc: "1" },
+        })
+      )
+    ).toBeNull();
+  });
 });

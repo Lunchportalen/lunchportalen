@@ -7,6 +7,15 @@ import {
   shouldRedirectPublicMarketingToUmbracoHostedSite,
 } from "@/lib/routing/publicMarketingSurface";
 
+function isNextRscRequest(req: NextRequest): boolean {
+  return (
+    req.nextUrl.searchParams.has("_rsc") ||
+    req.nextUrl.searchParams.has("rsc") ||
+    req.headers.get("rsc") === "1" ||
+    req.headers.get("next-router-prefetch") === "1"
+  );
+}
+
 /**
  * Redirect known public marketing/editorial pathnames from the app surface
  * to the configured Umbraco public origin.
@@ -24,6 +33,7 @@ export function maybeRedirectPublicMarketingToUmbracoHostedSite(
 ): NextResponse | null {
   if (!shouldRedirectPublicMarketingToUmbracoHostedSite()) return null;
   if (req.method !== "GET" && req.method !== "HEAD") return null;
+  if (isNextRscRequest(req)) return null;
 
   const pathname = req.nextUrl.pathname;
 
