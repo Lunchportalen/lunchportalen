@@ -16,8 +16,8 @@ export type AgreementState = {
 
   // NOTE:
   // - status is "system view" for the app (week + order window)
-  // - ACTIVE is allowed if operative per-day tiers exist (even if agreement snapshot isn't ACTIVE),
-  //   because daymap (`v_company_current_agreement_daymap`) is the operational truth (materialisert fra agreement_json ved avtale-opprettelse)
+  // - ACTIVE requires an ACTIVE agreement snapshot with at least one delivery day.
+  // - dayTiers are derived from agreements.delivery_days + agreements.tier.
   status: "ACTIVE" | "PAUSED" | "CLOSED" | "MISSING";
   statusReason?: "NO_ACTIVE_AGREEMENT" | "MISSING_DAYMAP" | "MISSING_DELIVERY_DAYS";
 
@@ -98,7 +98,31 @@ function tierFromDeliveryDayValue(value: unknown, fallbackTier: Tier | null): Ti
   return fallbackTier;
 }
 
-/** Operativ BASIS/LUXUS per dag — hentes direkte fra agreements etter at daymap-viewet ble fjernet fra live DB. */
+function buildDayTiersFromAgreementFields(agreement: any): Record<DayKey, Tier> {
+  const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
+  if (!agreement?.id) return dayTiers;
+
+  const fallbackTier = normTier((agreement as any).tier) ?? "BASIS";
+  const rawDeliveryDays = (agreement as any).delivery_days;
+
+  if (rawDeliveryDays && typeof rawDeliveryDays === "object" && !Array.isArray(rawDeliveryDays)) {
+    for (const [key, value] of Object.entries(rawDeliveryDays)) {
+      const dk = normDayKey(key);
+      const tier = tierFromDeliveryDayValue(value, fallbackTier);
+      if (dk && tier) dayTiers[dk] = tier;
+    }
+    if (Object.keys(dayTiers).length > 0) return dayTiers;
+  }
+
+  const normalized = normalizeDeliveryDaysStrict(rawDeliveryDays);
+  for (const day of normalized.days) {
+    dayTiers[day] = fallbackTier;
+  }
+
+  return dayTiers;
+}
+
+/** Operativ BASIS/LUXUS per dag — bygges fra agreements, uten krav om separat day-tier-tabell. */
 export async function fetchAgreementDayTiersForCompany(_sb: any, companyId: string): Promise<Record<DayKey, Tier>> {
   const admin = supabaseAdmin();
   const cid = safeStr(companyId);
@@ -113,37 +137,8 @@ export async function fetchAgreementDayTiersForCompany(_sb: any, companyId: stri
     .limit(1)
     .maybeSingle();
 
-  const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
-  if (error || !agreement?.id) return dayTiers;
-
-  const fallbackTier = normTier((agreement as any).tier);
-  const rawDeliveryDays = (agreement as any).delivery_days;
-
-  if (rawDeliveryDays && typeof rawDeliveryDays === "object" && !Array.isArray(rawDeliveryDays)) {
-    for (const [key, value] of Object.entries(rawDeliveryDays)) {
-      const dk = normDayKey(key);
-      const tier = tierFromDeliveryDayValue(value, fallbackTier);
-      if (dk && tier) dayTiers[dk] = tier;
-    }
-    if (Object.keys(dayTiers).length > 0) return dayTiers;
-  }
-
-  const normalized = normalizeDeliveryDaysStrict(rawDeliveryDays);
-  for (const day of normalized.days) {
-    if (fallbackTier) dayTiers[day] = fallbackTier;
-  }
-  if (Object.keys(dayTiers).length > 0) return dayTiers;
-
-  const { data: dayRows } = await (admin as any)
-    .from("agreement_delivery_days")
-    .select("agreement_id,weekday")
-    .eq("agreement_id", (agreement as any).id);
-
-  for (const row of dayRows ?? []) {
-    const dk = normDayKey((row as any)?.weekday);
-    if (dk && fallbackTier) dayTiers[dk] = fallbackTier;
-  }
-  return dayTiers;
+  if (error || !agreement?.id) return {} as Record<DayKey, Tier>;
+  return buildDayTiersFromAgreementFields(agreement);
 }
 
 /* =========================================================
@@ -207,6 +202,7 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
   deliveryDaysRaw.sort(dayKeySort);
 
   const deliveryNorm = normalizeDeliveryDaysStrict(deliveryDaysRaw);
+  const hasDeliveryDays = deliveryNorm.days.length > 0;
 
   const basisDays = Object.values(dayTiers).filter((t) => t === "BASIS").length;
   const luxusDays = Object.values(dayTiers).filter((t) => t === "LUXUS").length;
@@ -237,6 +233,27 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
       planTier,
       pricePerCuvertNok,
       deliveryDays: deliveryNorm.days,
+      slot: "lunch",
+      dayTiers,
+      basisDays,
+      luxusDays,
+      startDate,
+      endDate,
+      updatedAt,
+      agreementId,
+    };
+  }
+
+  if (!hasDeliveryDays) {
+    return {
+      ok: true,
+      companyId,
+      locationId,
+      status: "MISSING",
+      statusReason: "MISSING_DELIVERY_DAYS",
+      planTier,
+      pricePerCuvertNok,
+      deliveryDays: [],
       slot: "lunch",
       dayTiers,
       basisDays,

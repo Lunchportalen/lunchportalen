@@ -100,10 +100,10 @@ describe("tenant isolation – currentAgreement", () => {
     expect(daymapFilter).toBeUndefined();
   });
 
-  test("ACTIVE agreement is active even when starts_at and delivery days are missing", async () => {
+  test("ACTIVE agreement is active when starts_at is null and delivery_days exists", async () => {
     mockAgreement = {
       ...defaultAgreement,
-      delivery_days: null,
+      delivery_days: ["mon", "tue", "wed", "thu", "fri"],
       starts_at: null,
     };
 
@@ -113,5 +113,29 @@ describe("tenant isolation – currentAgreement", () => {
     expect(res.status).toBe("ACTIVE");
     expect(res.agreementId).toBe("ag_a");
     expect(res.startDate).toBeNull();
+    expect(res.deliveryDays).toEqual(["mon", "tue", "wed", "thu", "fri"]);
+    expect(res.dayTiers).toEqual({
+      mon: "BASIS",
+      tue: "BASIS",
+      wed: "BASIS",
+      thu: "BASIS",
+      fri: "BASIS",
+    });
+    expect(res.basisDays).toBe(5);
+    expect(res.luxusDays).toBe(0);
+  });
+
+  test("ACTIVE agreement without delivery_days is not operative", async () => {
+    mockAgreement = {
+      ...defaultAgreement,
+      delivery_days: null,
+      starts_at: null,
+    };
+
+    const res = await getCurrentAgreementState({ rid: "rid_active_missing_days" });
+
+    expect(res.ok).toBe(true);
+    expect(res.status).toBe("MISSING");
+    expect(res.statusReason).toBe("MISSING_DELIVERY_DAYS");
   });
 });
