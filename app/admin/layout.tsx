@@ -110,8 +110,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   if (!auth.ok) {
     if (auth.reason === "UNAUTHENTICATED") {
-      const next = encodeURIComponent(await currentPathFromHeaders("/admin"));
-      redirect(`/login?next=${next}`);
+      // No `next` here: /admin failing auth must not bounce back through
+      // /login → /admin → /login. `code` tells /login to stay on the form.
+      redirect("/login?code=NO_SESSION");
     }
     return <BlockedAccess reason={auth.reason} />;
   }

@@ -186,7 +186,10 @@ export default async function AdminCommandCenterPage() {
   const auth = await getAuthContext();
   if (!auth.ok) {
     if (auth.reason === "UNAUTHENTICATED") {
-      redirect("/login?next=/admin&code=NO_SESSION");
+      // No `next=/admin`: /login auto-redirects authenticated users to their
+      // role home, so adding next=/admin would create a /login ↔ /admin loop
+      // when something downstream fails. `code` makes /login stay on the form.
+      redirect("/login?code=NO_SESSION");
     }
     redirect("/status?state=blocked&next=/admin&code=AUTH_BLOCKED");
   }
