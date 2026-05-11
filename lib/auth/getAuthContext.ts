@@ -10,7 +10,7 @@ import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookie
 import { readLocalDevAuthSession } from "@/lib/auth/devBypass";
 import { normalizeRole } from "@/lib/auth/role";
 import { lookupMembership } from "@/lib/auth/membershipLookup";
-import { getAuthCache, setAuthCache, type CachedAuthClaims } from "@/lib/cache/authCache";
+import { getAuthCache, invalidateAuthCache, setAuthCache, type CachedAuthClaims } from "@/lib/cache/authCache";
 import { getSupabasePublicConfig } from "@/lib/config/env";
 import { makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -305,6 +305,15 @@ function needsLocation(role: AuthRole) {
   return role === "kitchen" || role === "driver";
 }
 
+function normalizeTenantId(v: unknown): string | null {
+  const s = safeStr(v);
+  return s.length >= 10 ? s : null;
+}
+
+function normalizeOptionalTenantId(v: unknown): string | null {
+  return safeStr(v) || null;
+}
+
 function normalizeStatus(raw: unknown): string | null {
   const status = safeStr(raw).toLowerCase();
   return status || null;
@@ -328,6 +337,15 @@ function isMissingRequestScopeError(error: unknown) {
   return false;
 }
 
+function isUsableCachedClaims(cached: CachedAuthClaims): boolean {
+  const role = mapMembershipRoleToAuthRole({ allowlistSuperadmin: false, membershipRoleRaw: cached.role });
+  if (!role) return false;
+  if (isBlockedStatus(cached.status)) return true;
+  if (needsCompany(role) && !normalizeTenantId(cached.company_id)) return false;
+  if (needsLocation(role) && !normalizeTenantId(cached.location_id)) return false;
+  return true;
+}
+
 function claimsFromCache(
   rid: string,
   user: { id: string; email: string | null },
@@ -341,8 +359,8 @@ function claimsFromCache(
     return blocked(user, rid, "CACHE", layer);
   }
 
-  const company_id = cached.company_id ?? null;
-  const location_id = cached.location_id ?? null;
+  const company_id = normalizeTenantId(cached.company_id);
+  const location_id = normalizeOptionalTenantId(cached.location_id);
 
   if (needsCompany(role) && !company_id) return noProfile(user, rid, "CACHE", layer);
   if (needsLocation(role) && !location_id) return noProfile(user, rid, "CACHE", layer);
@@ -369,8 +387,8 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
         "DEV_BYPASS",
         userRef,
         devBypass.role,
-        devBypass.company_id,
-        devBypass.location_id,
+        normalizeTenantId(devBypass.company_id),
+        normalizeOptionalTenantId(devBypass.location_id),
         buildAuthLayer({
           source: "DEV_BYPASS",
           user: userRef,
@@ -417,7 +435,11 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
     const cached = await getAuthCache(user.id);
     if (cached) {
       authLog(rid, "cache_hit", { user_id: user.id, status: cached.status ?? null });
-      return claimsFromCache(rid, userRef, cached, successLayer);
+      if (isUsableCachedClaims(cached)) {
+        return claimsFromCache(rid, userRef, cached, successLayer);
+      }
+      authLog(rid, "cache_invalid", { user_id: user.id });
+      await invalidateAuthCache(user.id);
     }
 
     authLog(rid, "cache_miss", { user_id: user.id });
@@ -440,8 +462,8 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
 
     if (isBlockedStatus(membership.status)) return blocked(userRef, rid, "DB_LOOKUP", successLayer);
 
-    const company_id = membership.company_id ?? null;
-    const location_id = membership.location_id ?? null;
+    const company_id = normalizeTenantId(membership.company_id);
+    const location_id = normalizeOptionalTenantId(membership.location_id);
 
     if (needsCompany(role) && !company_id) return noProfile(userRef, rid, "DB_LOOKUP", successLayer);
     if (needsLocation(role) && !location_id) return noProfile(userRef, rid, "DB_LOOKUP", successLayer);

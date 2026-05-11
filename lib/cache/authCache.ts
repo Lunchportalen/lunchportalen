@@ -177,3 +177,29 @@ export async function setAuthCache(userId: string, claims: CachedAuthClaims): Pr
   writeMemory(key, normalized);
   await writeRedis(key, normalized);
 }
+
+async function deleteRedis(key: string) {
+  const base = redisBaseUrl();
+  if (!base) return;
+
+  try {
+    await fetch(`${base}/del/${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: {
+        ...redisAuthHeaders(),
+      },
+      cache: "no-store",
+    });
+  } catch {
+    return;
+  }
+}
+
+export async function invalidateAuthCache(userId: string): Promise<void> {
+  const uid = safeStr(userId);
+  if (!uid) return;
+
+  const key = cacheKey(uid);
+  memoryCache.delete(key);
+  await deleteRedis(key);
+}
