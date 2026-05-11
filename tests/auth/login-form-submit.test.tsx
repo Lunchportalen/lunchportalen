@@ -68,7 +68,7 @@ describe("Login form submit flow", () => {
     searchParamsState.next = "/backoffice/content";
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
-        JSON.stringify({ ok: true, rid: "rid_login", next: "/backoffice/content" }),
+        JSON.stringify({ ok: true, rid: "rid_login", next: "/week", role: "company_admin" }),
         { status: 200, headers: { "content-type": "application/json" } },
       ),
     );
@@ -102,7 +102,7 @@ describe("Login form submit flow", () => {
     expect(body.email).toBe("test@example.com");
     expect(body.password).toBe("secret123");
     expect(body.next).toBe("/backoffice/content");
-    expect(assignMock).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fbackoffice%2Fcontent");
+    expect(assignMock).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fadmin");
   });
 
   it("loading state is shown during request (button disabled and text)", async () => {

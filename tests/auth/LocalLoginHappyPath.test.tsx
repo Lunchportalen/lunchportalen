@@ -71,7 +71,7 @@ describe("Local login happy path", () => {
 
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
-        JSON.stringify({ ok: true, rid: "rid_local", next: "/backoffice/content" }),
+        JSON.stringify({ ok: true, rid: "rid_local", next: "/backoffice/content", role: "superadmin" }),
         { status: 200, headers: { "content-type": "application/json" } },
       ),
     );
@@ -108,8 +108,6 @@ describe("Local login happy path", () => {
       password: credentials.password,
       next: "/backoffice/content",
     });
-    expect((global as any).window.location.assign).toHaveBeenCalledWith(
-      "/api/auth/post-login?next=%2Fbackoffice%2Fcontent",
-    );
+    expect((global as any).window.location.assign).toHaveBeenCalledWith("/api/auth/post-login?next=%2Fsuperadmin");
   });
 });

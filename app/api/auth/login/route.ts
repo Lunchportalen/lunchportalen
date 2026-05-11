@@ -20,6 +20,8 @@ import {
   isLocalRuntimeLoginMatch,
   resolveLocalRuntimeLoginNext,
 } from "@/lib/auth/localRuntimeAuth";
+import { lookupMembership } from "@/lib/auth/membershipLookup";
+import { normalizeRole } from "@/lib/auth/role";
 import { getSupabasePublicConfigStatus } from "@/lib/config/env-public";
 import type { AuditEvent } from "@/lib/audit/types";
 import { makeRid } from "@/lib/http/respond";
@@ -178,6 +180,7 @@ export async function POST(req: NextRequest) {
             ok: true,
             rid,
             next: localNext,
+            role: session.role,
             data: {
               session: {
                 access_token: LOCAL_DEV_AUTH_ACCESS_TOKEN,
@@ -251,6 +254,15 @@ export async function POST(req: NextRequest) {
 
     const session = data.session;
     const user = data.user;
+    let role: ReturnType<typeof normalizeRole> = null;
+    try {
+      const membership = await lookupMembership(supabase, user.id, { rid });
+      role = membership.ok ? normalizeRole(membership.role) : null;
+    } catch (e) {
+      authLog(rid, "membership_role_lookup_failed", {
+        message: String((e as Error)?.message ?? e),
+      });
+    }
 
     const res = applyNoStore(
       NextResponse.json(
@@ -258,6 +270,7 @@ export async function POST(req: NextRequest) {
           ok: true,
           rid,
           next: nextSafe,
+          role,
           data: {
             session: {
               access_token: session.access_token,
@@ -311,7 +324,7 @@ export async function POST(req: NextRequest) {
     const loginOk: AuditEvent = {
       action: "LOGIN",
       userId: user.id,
-      role: null,
+      role,
       companyId: null,
       locationId: null,
       resource: "auth:login",

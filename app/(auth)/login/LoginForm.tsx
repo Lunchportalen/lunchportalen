@@ -16,8 +16,11 @@ type ApiLoginOk = {
   ok: true;
   rid: string;
   next?: string | null;
+  role?: LoginRole | string | null;
   data?: unknown;
 };
+
+type LoginRole = "superadmin" | "company_admin" | "employee" | "driver" | "kitchen";
 
 type ApiLoginErr = {
   ok: false;
@@ -41,6 +44,15 @@ function buildPostLoginUrl(nextPath: string | null) {
   const next = safeStr(nextPath);
   if (!next) return "/api/auth/post-login";
   return `/api/auth/post-login?next=${encodeURIComponent(next)}`;
+}
+
+function postLoginNextForRole(role: unknown, fallbackNext: unknown) {
+  const r = safeStr(role).toLowerCase();
+  if (r === "company_admin") return "/admin";
+  if (r === "superadmin") return "/superadmin";
+  if (r === "employee") return "/week";
+  const fallback = safeStr(fallbackNext);
+  return fallback || null;
 }
 
 function mapLoginError(result: ApiLoginRes): string {
@@ -106,7 +118,7 @@ export default function LoginForm({
         return;
       }
 
-      const nextPath = safeStr(loginJson.next ?? nextRaw) || null;
+      const nextPath = postLoginNextForRole(loginJson.role, loginJson.next ?? nextRaw);
       window.location.assign(buildPostLoginUrl(nextPath));
     } catch {
       setErr("Innloggingstjenesten svarte ikke. Kontroller lokal runtime og prøv igjen.");
