@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   parseRegistrationPlanPayload,
@@ -371,18 +372,18 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
             </div>
           ) : null}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <a
+            <Link
               href="/"
               className="min-h-12 rounded-full bg-[#f1c75b] px-6 py-3 text-sm font-semibold text-[#181715] shadow-[0_10px_24px_rgba(179,130,24,0.18)] transition hover:bg-[#e8bb44] focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40"
             >
               Til forsiden
-            </a>
-            <a
+            </Link>
+            <Link
               href="/login"
               className="min-h-12 rounded-full border border-[#eadfce] bg-white/80 px-6 py-3 text-sm font-semibold text-[#34302a] transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40"
             >
               Til innlogging
-            </a>
+            </Link>
           </div>
         </div>
       </section>
