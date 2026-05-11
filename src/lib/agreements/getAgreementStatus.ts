@@ -8,6 +8,10 @@ type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
 type AgreementStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "MISSING";
 
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
 export type AgreementStatusForCurrentUser = {
   ok: boolean;
   status: AgreementStatus;
@@ -29,9 +33,9 @@ export async function getAgreementStatusForCurrentUser(): Promise<AgreementStatu
     const { scope } = await getScopeServer();
 
     const role = (scope.role ?? "employee") as Role;
-    const companyId = typeof scope.company_id === "string" ? scope.company_id : "";
+    const companyId = safeStr(scope.company_id);
 
-    if (!companyId) {
+    if (!companyId || companyId.length < 10) {
       return {
         ok: false,
         status: "MISSING",
@@ -62,14 +66,7 @@ export async function getAgreementStatusForCurrentUser(): Promise<AgreementStatu
       agreementId: state.agreementId ?? null,
       role,
     };
-  } catch (e) {
-    console.error("[SCOPE-DEBUG] catch fallback", {
-      name: (e as any)?.name,
-      message: (e as any)?.message,
-      code: (e as any)?.code,
-      stack: String((e as any)?.stack ?? "").slice(0, 300),
-    });
-
+  } catch {
     return {
       ok: false,
       status: "MISSING",

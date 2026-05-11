@@ -16,6 +16,14 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
+function requireTenantCompanyId(rawCompanyId: unknown) {
+  const company_id = safeStr(rawCompanyId);
+  if (!company_id || company_id.length < 10) {
+    throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
+  }
+  return company_id;
+}
+
 function normalizeStatus(v: unknown) {
   const s = safeStr(v).toLowerCase();
   if (!s) return "unknown";
@@ -53,13 +61,6 @@ async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: 
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-
-  console.error("[SCOPE-DEBUG] agreements query", {
-    company_id,
-    data: JSON.stringify(data),
-    error: error?.message,
-    errorCode: error?.code,
-  });
 
   if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
   if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
@@ -154,18 +155,21 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
   }
 
   const sb = await supabaseServer();
-  await enforceCompanyActive(sb, role, auth.company_id ?? null);
-  const billing = await enforceAgreementAndBilling(sb, role, auth.company_id ?? null);
+  const company_id = requireTenantCompanyId(auth.company_id);
+  const location_id = safeStr(auth.location_id) || null;
+
+  await enforceCompanyActive(sb, role, company_id);
+  const billing = await enforceAgreementAndBilling(sb, role, company_id);
 
   // ✅ agreement location truth (used for mismatch)
-  const agreement_location_id = await getAgreementLocationId(sb, auth.company_id ?? null);
+  const agreement_location_id = await getAgreementLocationId(sb, company_id);
 
   const scope: Scope & { agreement_location_id?: string | null } = {
     user_id: auth.userId,
     email: auth.email,
     role,
-    company_id: auth.company_id ?? null,
-    location_id: auth.location_id ?? null,
+    company_id,
+    location_id,
     is_active: true,
     agreement_status: billing.agreement_status,
     billing_hold: billing.billing_hold,

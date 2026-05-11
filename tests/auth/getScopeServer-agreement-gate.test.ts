@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 let tables: string[] = [];
 let agreementRow: any;
+let authCompanyId: string | null = null;
+let eqCalls: Array<{ table: string; key: string; value: string }> = [];
+
+const COMPANY_ID = "d60b2b4c-ac90-44a4-bbbe-45d3dfd89ea7";
 
 vi.mock("@/lib/auth/getAuthContext", () => ({
   getAuthContext: async () => ({
@@ -13,7 +17,7 @@ vi.mock("@/lib/auth/getAuthContext", () => ({
     userId: "u1",
     email: "admin@example.no",
     role: "company_admin",
-    company_id: "cA",
+    company_id: authCompanyId,
     location_id: "lA",
   }),
 }));
@@ -24,11 +28,14 @@ vi.mock("@/lib/supabase/server", () => ({
       tables.push(table);
       const q: any = {
         select: () => q,
-        eq: () => q,
+        eq: (key: string, value: any) => {
+          eqCalls.push({ table, key, value: String(value ?? "") });
+          return q;
+        },
         order: () => q,
         limit: () => q,
         maybeSingle: async () => {
-          if (table === "companies") return { data: { id: "cA", status: "ACTIVE" }, error: null };
+          if (table === "companies") return { data: { id: COMPANY_ID, status: "ACTIVE" }, error: null };
           if (table === "agreements") return { data: agreementRow, error: null };
           return { data: null, error: null };
         },
@@ -43,7 +50,9 @@ import { getScopeServer } from "@/lib/auth/getScopeServer";
 
 beforeEach(() => {
   tables = [];
-  agreementRow = { company_id: "cA", status: "ACTIVE" };
+  eqCalls = [];
+  authCompanyId = COMPANY_ID;
+  agreementRow = { company_id: COMPANY_ID, status: "ACTIVE" };
 });
 
 describe("getScopeServer agreement gate", () => {
@@ -51,7 +60,7 @@ describe("getScopeServer agreement gate", () => {
     const { scope } = await getScopeServer();
 
     expect(scope.role).toBe("company_admin");
-    expect(scope.company_id).toBe("cA");
+    expect(scope.company_id).toBe(COMPANY_ID);
     expect(scope.agreement_status).toBe("active");
     expect(scope.billing_hold).toBe(false);
     expect(scope.can_act).toBe(true);
@@ -63,5 +72,20 @@ describe("getScopeServer agreement gate", () => {
     agreementRow = null;
 
     await expect(getScopeServer()).rejects.toMatchObject({ code: "AGREEMENT_MISSING" });
+  });
+
+  test("trims company_id before agreement scope queries", async () => {
+    authCompanyId = ` ${COMPANY_ID} `;
+
+    const { scope } = await getScopeServer();
+
+    expect(scope.company_id).toBe(COMPANY_ID);
+    expect(eqCalls).toContainEqual({ table: "agreements", key: "company_id", value: COMPANY_ID });
+  });
+
+  test("fails closed when company_id is whitespace", async () => {
+    authCompanyId = " ";
+
+    await expect(getScopeServer()).rejects.toMatchObject({ code: "COMPANY_MISSING" });
   });
 });
