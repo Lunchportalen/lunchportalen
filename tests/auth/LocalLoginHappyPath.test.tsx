@@ -62,7 +62,7 @@ describe("Local login happy path", () => {
     else process.env.LP_LOCAL_CMS_RUNTIME = originalLocalRuntimeFlag;
   });
 
-  it("submits the normal login form with canonical seeded credentials and redirects to superadmin", async () => {
+  it("submits the normal login form with canonical seeded credentials and hands routing to /api/auth/post-login", async () => {
     const credentials = getLocalRuntimeLoginCredentials();
     expect(credentials).toEqual({
       email: SUPERADMIN_EMAIL,
@@ -108,6 +108,10 @@ describe("Local login happy path", () => {
       password: credentials.password,
       next: "/backoffice/content",
     });
-    expect((global as any).window.location.assign).toHaveBeenCalledWith("/superadmin");
+    // LoginForm no longer maps role → destination locally — all routing is
+    // server-side via /api/auth/post-login (single source of truth).
+    expect((global as any).window.location.assign).toHaveBeenCalledWith(
+      "/api/auth/post-login?next=%2Fbackoffice%2Fcontent",
+    );
   });
 });

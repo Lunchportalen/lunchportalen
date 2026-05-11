@@ -130,12 +130,27 @@ async function viaProfiles(sb: any, userId: string): Promise<MembershipLookupRes
   };
 }
 
-export async function lookupMembership(sb: any, userId: string, _input?: { rid?: string }): Promise<MembershipLookupResult> {
+export async function lookupMembership(sb: any, userId: string, input?: { rid?: string }): Promise<MembershipLookupResult> {
   const uid = safeStr(userId);
   if (!uid) {
     return { ok: false, source: "profiles", reason: "NO_PROFILE" };
   }
 
+  const result = await runMembershipLookup(sb, uid);
+
+  // Permanent debug log: emitted on every membership lookup so we can verify
+  // exactly what the DB returns for a given user after login. Do not remove
+  // without replacing with an equivalent observability signal first.
+  console.error("[MEMBERSHIP-LOOKUP-DEBUG]", {
+    rid: safeStr(input?.rid) || null,
+    userId: uid,
+    result,
+  });
+
+  return result;
+}
+
+async function runMembershipLookup(sb: any, uid: string): Promise<MembershipLookupResult> {
   const pref = preferredSource();
   if (pref === "profiles") {
     return viaProfiles(sb, uid);

@@ -12,9 +12,17 @@ import { createServerClient } from "@supabase/ssr";
 
 import { trackEvent } from "@/lib/experiments/tracker";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
-import { resolvePostLoginTargetForAuth, sanitizePostLoginNextPath } from "@/lib/auth/role";
+import {
+  allowNextForRole,
+  normalizeRole,
+  sanitizePostLoginNextPath,
+  type Role,
+} from "@/lib/auth/role";
+import { resolveLoginDestination } from "@/lib/auth/resolveLoginDestination";
+import { supabaseServer } from "@/lib/supabase/server";
 import { getSupabasePublicConfig } from "@/lib/config/env";
 import { makeRid } from "@/lib/http/respond";
+import { SYSTEM_EMAILS, normEmail } from "@/lib/system/emails";
 import type { Database } from "@/lib/types/database";
 import { observeResponse } from "@/lib/observability/eventLogger";
 import { opsLog } from "@/lib/ops/log";
@@ -59,6 +67,42 @@ function loginRedirect(req: NextRequest, rid: string, code: string) {
   u.searchParams.set("code", code);
   u.searchParams.set("rid", rid);
   return NextResponse.redirect(u, { status: 303 });
+}
+
+/**
+ * Lightweight presence check: does this company have an ACTIVE agreement?
+ * Uses the request-bound SSR client (RLS-scoped). On any DB error we
+ * fail closed (false) — caller will land on /avtale-ikke-aktiv, which is
+ * the same destination the /admin or /week guard would produce anyway.
+ */
+async function lookupHasActiveAgreement(companyId: string | null, rid: string): Promise<boolean> {
+  if (!companyId) return false;
+  try {
+    const sb = await supabaseServer();
+    const { data, error } = await sb
+      .from("agreements")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("status", "ACTIVE")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      opsLog("auth.post_login.agreement_lookup_failed", {
+        rid,
+        company_id: companyId,
+        error: safeStr((error as { message?: string }).message) || "UNKNOWN",
+      });
+      return false;
+    }
+    return Boolean(data?.id);
+  } catch (e) {
+    opsLog("auth.post_login.agreement_lookup_exception", {
+      rid,
+      company_id: companyId,
+      message: safeStr((e as Error)?.message) || "UNKNOWN",
+    });
+    return false;
+  }
 }
 
 export async function POST(req: Request) {
@@ -237,36 +281,108 @@ export async function GET(req: NextRequest) {
       metadata: { method: "GET" },
     },
     async () => {
+      const nextSafe = sanitizePostLoginNextPath(req.nextUrl.searchParams.get("next"));
+
+      let auth: Awaited<ReturnType<typeof getAuthContext>>;
       try {
-        const nextSafe = sanitizePostLoginNextPath(req.nextUrl.searchParams.get("next"));
-        const auth = await getAuthContext({ rid });
+        auth = await getAuthContext({ rid });
+      } catch (e) {
+        const message = safeStr((e as Error)?.message) || "EXCEPTION";
+        opsLog("auth.post_login.exception", { rid, message });
+        console.error("[POST-LOGIN-AUTH-FAIL]", {
+          rid,
+          reason: "EXCEPTION",
+          userId: null,
+          hasUser: false,
+          redirectTo: "/login?code=AUTH_ERROR",
+          message,
+        });
+        return loginRedirect(req, rid, "AUTH_ERROR");
+      }
 
-        if (!auth.ok) {
-          if (auth.reason === "UNAUTHENTICATED") {
-            authLog("post-login:get", { rid, error: "NO_SESSION" });
-            return loginRedirect(req, rid, "NO_SESSION");
-          }
+      if (!auth.ok) {
+        const reason = auth.reason;
+        const userId = auth.userId;
+        const hasUser = Boolean(userId);
 
-          const blocked = new URL("/week", req.nextUrl.origin);
-          blocked.searchParams.set("rid", rid);
-          return NextResponse.redirect(blocked, { status: 303 });
+        let code: string;
+        switch (reason) {
+          case "UNAUTHENTICATED":
+            code = "NO_SESSION";
+            break;
+          case "NO_PROFILE":
+            code = "NO_PROFILE";
+            break;
+          case "BLOCKED":
+            code = "BLOCKED";
+            break;
+          case "ERROR":
+          default:
+            code = "AUTH_ERROR";
+            opsLog("auth.post_login.error", { rid, reason, userId, hasUser });
+            break;
         }
 
-        const target = resolvePostLoginTargetForAuth({
-          role: auth.role,
-          email: auth.email,
-          nextPath: nextSafe,
-        });
-
-        authLog("post-login:get", { rid, role: auth.role, target });
-
-        const to = new URL(target, req.nextUrl.origin);
-        to.searchParams.set("rid", rid);
-        return NextResponse.redirect(to, { status: 303 });
-      } catch (e) {
-        authLog("post-login:get", { rid, error: safeStr((e as Error)?.message) || "NO_SESSION" });
-        return loginRedirect(req, rid, "NO_SESSION");
+        const redirectTo = `/login?code=${code}&rid=${rid}`;
+        // Permanent debug log: surfaces which auth.reason actually fired in
+        // the Vercel log so we can distinguish NO_PROFILE vs BLOCKED vs ERROR.
+        console.error("[POST-LOGIN-AUTH-FAIL]", { rid, reason, userId, hasUser, redirectTo });
+        authLog("post-login:get", { rid, reason, userId, hasUser, code });
+        return loginRedirect(req, rid, code);
       }
+
+      // auth.ok = true — resolve via canonical mapper.
+      const email = normEmail(auth.email);
+      const role = normalizeRole(auth.role);
+
+      // System mailbox stays special-cased; not a role-based destination.
+      if (email && email === SYSTEM_EMAILS.ORDER) {
+        const to = new URL("/outbox", req.nextUrl.origin);
+        to.searchParams.set("rid", rid);
+        console.error("[POST-LOGIN-RESOLVED]", {
+          rid,
+          userId: auth.userId,
+          resolvedRole: role,
+          hasActiveAgreement: null,
+          baseDest: "/outbox",
+          redirectTo: to.pathname + to.search,
+        });
+        return NextResponse.redirect(to, { status: 303 });
+      }
+
+      // Roles that require an active agreement: company_admin, employee.
+      const roleNeedsAgreement = role === "company_admin" || role === "employee";
+      const hasActiveAgreement = roleNeedsAgreement
+        ? await lookupHasActiveAgreement(auth.company_id, rid)
+        : true;
+
+      const baseDest = resolveLoginDestination({ role, hasActiveAgreement });
+
+      // Honor a safe `next=` only when no agreement gate is triggered and role is resolved.
+      let dest = baseDest;
+      const blockedDest = baseDest === "/avtale-ikke-aktiv" || baseDest.startsWith("/login?");
+      if (nextSafe && !blockedDest && role) {
+        const allowed = allowNextForRole(role as Role, nextSafe);
+        if (allowed) dest = allowed;
+      }
+
+      const to = new URL(dest, req.nextUrl.origin);
+      to.searchParams.set("rid", rid);
+
+      // Permanent debug log: records every successful resolution with the
+      // pieces needed to reconstruct routing decisions in Vercel logs.
+      console.error("[POST-LOGIN-RESOLVED]", {
+        rid,
+        userId: auth.userId,
+        resolvedRole: role,
+        hasActiveAgreement,
+        baseDest,
+        nextRequested: nextSafe,
+        redirectTo: to.pathname + to.search,
+      });
+      authLog("post-login:get", { rid, role, hasActiveAgreement, target: dest });
+
+      return NextResponse.redirect(to, { status: 303 });
     },
   );
 }

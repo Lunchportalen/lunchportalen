@@ -9,8 +9,28 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const getAuthContextMock = vi.hoisted(() => vi.fn());
+const supabaseServerMock = vi.hoisted(() => vi.fn());
+
 vi.mock("@/lib/auth/getAuthContext", () => ({
   getAuthContext: getAuthContextMock,
+}));
+
+vi.mock("@/lib/supabase/server", () => ({
+  supabaseServer: supabaseServerMock,
+}));
+
+supabaseServerMock.mockImplementation(async () => ({
+  from: (_table: string) => ({
+    select: (_cols: string) => ({
+      eq: (_col: string, _val: string) => ({
+        eq: (_col2: string, _val2: string) => ({
+          limit: (_n: number) => ({
+            maybeSingle: async () => ({ data: { id: "agreement_1" }, error: null }),
+          }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 function mkPostReq(body: object) {

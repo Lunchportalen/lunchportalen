@@ -15,33 +15,28 @@ function safeCompanyId(v: unknown) {
   return typeof v === "string" ? v.trim() : "";
 }
 
+/**
+ * Gate used by /week and other tenant surfaces.
+ *
+ * Bypass policy: only `superadmin` skips the agreement check. All other
+ * roles — including `company_admin` — must have an ACTIVE agreement on
+ * their company or get redirected to /avtale-ikke-aktiv. This matches
+ * the login-router contract: company_admin is sent to /admin only when
+ * an active agreement exists, and /admin's guard mirrors the same rule.
+ */
 export async function requireActiveAgreement(): Promise<ActiveAgreementContext> {
-  // Canonical role from auth context. getAgreementStatusForCurrentUser falls
-  // back to role="employee" on internal errors, which would otherwise route
-  // non-employee roles (e.g. company_admin) through the employee-only
-  // agreement gate and into /avtale-ikke-aktiv.
   const auth = await getAuthContext();
   const authRole = auth.ok ? auth.role : null;
 
-  if (authRole && authRole !== "employee") {
+  if (authRole === "superadmin") {
     return {
       companyId: safeCompanyId(auth.company_id),
       agreementId: null,
-      role: authRole,
+      role: "superadmin",
     };
   }
 
   const status = await getAgreementStatusForCurrentUser();
-  const role = status.role;
-  const companyId = safeCompanyId(status.companyId);
-
-  if (role && role !== "employee") {
-    return {
-      companyId,
-      agreementId: status.ok ? status.agreementId : null,
-      role,
-    };
-  }
 
   if (status.ok && status.status === "ACTIVE") {
     return {

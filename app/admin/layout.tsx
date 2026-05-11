@@ -16,6 +16,7 @@ import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { roleHome } from "@/lib/auth/roleHome";
+import { supabaseServer } from "@/lib/supabase/server";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -134,5 +135,26 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     return <BlockedAccess reason="BLOCKED" />;
   }
 
+  if (!(await hasActiveAgreement(auth.company_id))) {
+    redirect("/avtale-ikke-aktiv");
+  }
+
   return shell(children);
+}
+
+async function hasActiveAgreement(companyId: string): Promise<boolean> {
+  try {
+    const sb = await supabaseServer();
+    const { data, error } = await sb
+      .from("agreements")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("status", "ACTIVE")
+      .limit(1)
+      .maybeSingle();
+    if (error) return false;
+    return Boolean(data?.id);
+  } catch {
+    return false;
+  }
 }

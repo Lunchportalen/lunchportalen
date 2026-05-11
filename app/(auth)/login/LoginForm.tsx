@@ -16,11 +16,9 @@ type ApiLoginOk = {
   ok: true;
   rid: string;
   next?: string | null;
-  role?: LoginRole | string | null;
+  role?: string | null;
   data?: unknown;
 };
-
-type LoginRole = "superadmin" | "company_admin" | "employee" | "driver" | "kitchen";
 
 type ApiLoginErr = {
   ok: false;
@@ -40,26 +38,14 @@ function normEmail(v: unknown) {
   return safeStr(v).toLowerCase();
 }
 
+// All post-login routing is server-side via /api/auth/post-login. The client
+// never maps role → destination locally — that mapping lives in exactly one
+// place (lib/auth/resolveLoginDestination.ts) so the redirect is deterministic
+// and observable in the server log.
 function buildPostLoginUrl(nextPath: string | null) {
   const next = safeStr(nextPath);
   if (!next) return "/api/auth/post-login";
   return `/api/auth/post-login?next=${encodeURIComponent(next)}`;
-}
-
-function postLoginNextForRole(role: unknown, fallbackNext: unknown) {
-  const r = safeStr(role).toLowerCase();
-  if (r === "company_admin") return "/admin";
-  if (r === "superadmin") return "/superadmin";
-  if (r === "employee") return "/week";
-  const fallback = safeStr(fallbackNext);
-  return fallback || null;
-}
-
-function getPostLoginTarget(role: unknown, fallbackNext: string | null) {
-  const r = safeStr(role).toLowerCase();
-  if (r === "company_admin") return "/admin";
-  if (r === "superadmin") return "/superadmin";
-  return buildPostLoginUrl(fallbackNext);
 }
 
 function mapLoginError(result: ApiLoginRes): string {
@@ -125,8 +111,8 @@ export default function LoginForm({
         return;
       }
 
-      const nextPath = postLoginNextForRole(loginJson.role, loginJson.next ?? nextRaw);
-      window.location.assign(getPostLoginTarget(loginJson.role, nextPath));
+      const nextHint = safeStr(loginJson.next) || nextRaw;
+      window.location.assign(buildPostLoginUrl(nextHint));
     } catch {
       setErr("Innloggingstjenesten svarte ikke. Kontroller lokal runtime og prøv igjen.");
     } finally {

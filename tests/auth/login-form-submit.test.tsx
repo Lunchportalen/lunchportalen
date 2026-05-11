@@ -64,7 +64,7 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 describe("Login form submit flow", () => {
-  it("submit sends POST /api/auth/login then redirects company admin directly to /admin", async () => {
+  it("submit sends POST /api/auth/login then redirects through /api/auth/post-login (no inline role mapping)", async () => {
     searchParamsState.next = "/backoffice/content";
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
@@ -102,7 +102,11 @@ describe("Login form submit flow", () => {
     expect(body.email).toBe("test@example.com");
     expect(body.password).toBe("secret123");
     expect(body.next).toBe("/backoffice/content");
-    expect(assignMock).toHaveBeenCalledWith("/admin");
+    // LoginForm no longer maps role → destination locally. All routing decisions
+    // happen server-side in /api/auth/post-login (single source of truth).
+    expect(assignMock).toHaveBeenCalledWith(
+      "/api/auth/post-login?next=%2Fweek",
+    );
   });
 
   it("loading state is shown during request (button disabled and text)", async () => {

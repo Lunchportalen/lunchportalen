@@ -3,8 +3,32 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const getAuthContextMock = vi.hoisted(() => vi.fn());
+const supabaseServerMock = vi.hoisted(() => vi.fn());
+const hasActiveAgreementFlag = vi.hoisted(() => ({ value: true }));
+
 vi.mock("@/lib/auth/getAuthContext", () => ({
   getAuthContext: getAuthContextMock,
+}));
+
+vi.mock("@/lib/supabase/server", () => ({
+  supabaseServer: supabaseServerMock,
+}));
+
+supabaseServerMock.mockImplementation(async () => ({
+  from: (_table: string) => ({
+    select: (_cols: string) => ({
+      eq: (_col: string, _val: string) => ({
+        eq: (_col2: string, _val2: string) => ({
+          limit: (_n: number) => ({
+            maybeSingle: async () => ({
+              data: hasActiveAgreementFlag.value ? { id: "agreement_1" } : null,
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 function mkReq(url: string): any {
@@ -22,6 +46,7 @@ function mkReq(url: string): any {
 describe("POST-login redirect safety (/api/auth/post-login GET)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hasActiveAgreementFlag.value = true;
   });
 
   test("company_admin without next lands on /admin", async () => {
@@ -66,6 +91,29 @@ describe("POST-login redirect safety (/api/auth/post-login GET)", () => {
     const location = res.headers.get("location")!;
     expect(location.includes("/admin")).toBe(true);
     expect(location.includes("/week")).toBe(false);
+  });
+
+  test("company_admin without active agreement is short-circuited to /avtale-ikke-aktiv", async () => {
+    hasActiveAgreementFlag.value = false;
+    getAuthContextMock.mockResolvedValue({
+      ok: true,
+      reason: "OK",
+      mode: "DB_LOOKUP",
+      user: { id: "u1", email: "admin@test.no" },
+      role: "company_admin",
+      company_id: "c1",
+      location_id: null,
+      rid: "rid_ca_no_agreement",
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location.includes("/avtale-ikke-aktiv")).toBe(true);
+    expect(location.includes("/admin")).toBe(false);
   });
 
   test("rejects unsafe next (external-style) and falls back to role home", async () => {
@@ -175,5 +223,58 @@ describe("POST-login redirect safety (/api/auth/post-login GET)", () => {
     const location = res.headers.get("location")!;
     expect(location.includes("/superadmin")).toBe(true);
     expect(location.includes("/week")).toBe(false);
+  });
+
+  test("auth NO_PROFILE redirects to /login?code=NO_PROFILE (not /week)", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: false,
+      reason: "NO_PROFILE",
+      userId: "u1",
+      user: { id: "u1", email: "x@y.no" },
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location).toContain("/login");
+    expect(location).toContain("code=NO_PROFILE");
+    expect(location).not.toContain("/week");
+  });
+
+  test("auth BLOCKED redirects to /login?code=BLOCKED", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: false,
+      reason: "BLOCKED",
+      userId: "u1",
+      user: { id: "u1", email: "x@y.no" },
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location).toContain("code=BLOCKED");
+  });
+
+  test("auth ERROR redirects to /login?code=AUTH_ERROR", async () => {
+    getAuthContextMock.mockResolvedValue({
+      ok: false,
+      reason: "ERROR",
+      userId: null,
+      user: null,
+    });
+
+    const { GET } = await import("../../app/api/auth/post-login/route");
+    const req = mkReq("https://example.com/api/auth/post-login");
+
+    const res = await GET(req as any);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location")!;
+    expect(location).toContain("code=AUTH_ERROR");
   });
 });
