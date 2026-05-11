@@ -20,13 +20,19 @@ describe("maybeRedirectPublicMarketingToUmbracoHostedSite", () => {
     expect(maybeRedirectPublicMarketingToUmbracoHostedSite(req)).toBeNull();
   });
 
-  it("redirects to Umbraco public origin when hosts differ and path is delegated", () => {
-    vi.stubEnv("UMBRACO_PUBLIC_SITE_URL", "https://www.example.com");
-    const req = new NextRequest(new URL("https://app.example.com/kontakt?x=1"));
+  it("does not redirect from app subdomains", () => {
+    vi.stubEnv("UMBRACO_PUBLIC_SITE_URL", "https://www.lunchportalen.no");
+    const req = new NextRequest(new URL("https://app.lunchportalen.no/?x=1"));
+    expect(maybeRedirectPublicMarketingToUmbracoHostedSite(req)).toBeNull();
+  });
+
+  it("redirects normal browser requests on non-app public host when path is delegated", () => {
+    vi.stubEnv("UMBRACO_PUBLIC_SITE_URL", "https://www.lunchportalen.no");
+    const req = new NextRequest(new URL("https://lunchportalen.no/?x=1"));
     const res = maybeRedirectPublicMarketingToUmbracoHostedSite(req);
     expect(res).not.toBeNull();
     expect(res!.status).toBe(307);
-    expect(res!.headers.get("location")).toBe("https://www.example.com/kontakt?x=1");
+    expect(res!.headers.get("location")).toBe("https://www.lunchportalen.no/?x=1");
   });
 
   it("does not redirect Next RSC requests to Umbraco", () => {
@@ -48,6 +54,22 @@ describe("maybeRedirectPublicMarketingToUmbracoHostedSite", () => {
       maybeRedirectPublicMarketingToUmbracoHostedSite(
         new NextRequest(new URL("https://app.example.com/"), {
           headers: { rsc: "1" },
+        })
+      )
+    ).toBeNull();
+
+    expect(
+      maybeRedirectPublicMarketingToUmbracoHostedSite(
+        new NextRequest(new URL("https://lunchportalen.no/"), {
+          headers: { "next-router-state-tree": "%5B%5D" },
+        })
+      )
+    ).toBeNull();
+
+    expect(
+      maybeRedirectPublicMarketingToUmbracoHostedSite(
+        new NextRequest(new URL("https://lunchportalen.no/"), {
+          headers: { "next-router-prefetch": "2" },
         })
       )
     ).toBeNull();

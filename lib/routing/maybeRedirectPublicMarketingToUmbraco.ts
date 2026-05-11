@@ -7,12 +7,20 @@ import {
   shouldRedirectPublicMarketingToUmbracoHostedSite,
 } from "@/lib/routing/publicMarketingSurface";
 
+function isAppSubdomain(req: NextRequest): boolean {
+  const host = (req.headers.get("host") ?? req.nextUrl.hostname).toLowerCase();
+  return host === "app.lunchportalen.no" || host.startsWith("app.");
+}
+
 function isNextRscRequest(req: NextRequest): boolean {
   return (
     req.nextUrl.searchParams.has("_rsc") ||
     req.nextUrl.searchParams.has("rsc") ||
     req.headers.get("rsc") === "1" ||
-    req.headers.get("next-router-prefetch") === "1"
+    req.headers.has("next-router-state-tree") ||
+    req.headers.has("next-router-prefetch") ||
+    req.headers.has("next-router-segment-prefetch") ||
+    req.headers.has("next-url")
   );
 }
 
@@ -32,6 +40,7 @@ export function maybeRedirectPublicMarketingToUmbracoHostedSite(
   req: NextRequest
 ): NextResponse | null {
   if (!shouldRedirectPublicMarketingToUmbracoHostedSite()) return null;
+  if (isAppSubdomain(req)) return null;
   if (req.method !== "GET" && req.method !== "HEAD") return null;
   if (isNextRscRequest(req)) return null;
 
