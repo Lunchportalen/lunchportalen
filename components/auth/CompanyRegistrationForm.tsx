@@ -199,6 +199,12 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
 
   const validationError = useMemo(() => validateCompanyRegistrationForm(state), [state]);
   const canSubmit = !blocked && !pending && !validationError;
+  const submitted = receipt?.ok === true && receipt?.persisted === true;
+  const receiptReference =
+    (typeof receipt?.companyId === "string" && receipt.companyId.trim()) ||
+    (typeof receipt?.registrationId === "string" && receipt.registrationId.trim()) ||
+    (typeof receipt?.rid === "string" && receipt.rid.trim()) ||
+    "";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -333,6 +339,55 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
   const formNoticeRole = formNotice.tone === "error" || formNotice.tone === "warning" ? "alert" : "status";
   const formNoticeLive = formNotice.tone === "error" || formNotice.tone === "warning" ? "assertive" : "polite";
   const steps = ["Avtale", "Bedrift", "Kontakt", "Bekreftelse"];
+
+  if (submitted) {
+    return (
+      <section className="w-full max-w-none rounded-none bg-[linear-gradient(135deg,#fffdf8_0%,#f8efdf_48%,#fffaf1_100%)] p-0 shadow-none">
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-5 py-16 text-center sm:py-20">
+          <div className="relative h-16 w-16 shrink-0 rounded-2xl bg-white/75">
+            <Image
+              src="/brand/lunchportalen-logo.png"
+              alt="Lunchportalen"
+              fill
+              sizes="64px"
+              className="object-contain p-2"
+              priority={false}
+            />
+          </div>
+          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-[#9a7a32]">Firmaregistrering</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#181715] sm:text-4xl">
+            Registreringen er mottatt
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-7 text-[#5f5649]">
+            Vi har lagret firmaregistreringen for {state.companyName.trim() || "firmaet"} og går gjennom
+            avtalegrunnlaget før aktivering. Vi tar kontakt så snart alt er klart.
+          </p>
+          {receipt?.receipt?.message?.trim() ? (
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[#756b5c]">{receipt.receipt.message.trim()}</p>
+          ) : null}
+          {receiptReference ? (
+            <div className="mt-8 rounded-2xl border border-[#eadfce] bg-white/80 px-5 py-3 text-sm text-[#34302a]">
+              Referanse: <span className="font-mono">{receiptReference}</span>
+            </div>
+          ) : null}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="/"
+              className="min-h-12 rounded-full bg-[#f1c75b] px-6 py-3 text-sm font-semibold text-[#181715] shadow-[0_10px_24px_rgba(179,130,24,0.18)] transition hover:bg-[#e8bb44] focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40"
+            >
+              Til forsiden
+            </a>
+            <a
+              href="/login"
+              className="min-h-12 rounded-full border border-[#eadfce] bg-white/80 px-6 py-3 text-sm font-semibold text-[#34302a] transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#f3d77d]/40"
+            >
+              Til innlogging
+            </a>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className="w-full" aria-busy={pending ? "true" : "false"}>
