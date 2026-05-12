@@ -22,6 +22,12 @@ const EMPTY_DAY_TIERS: AgreementDayTiers = {
   thu: null,
   fri: null,
 };
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri"] as const;
+const TIERS: Tier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
+
+function emptyDayTiers(): AgreementDayTiers {
+  return { ...EMPTY_DAY_TIERS };
+}
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -31,6 +37,56 @@ function normalizeTier(v: unknown): AgreementStatusResult["tier"] {
   const s = safeStr(v).toUpperCase();
   if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
+}
+
+function isDayKey(v: unknown): v is DayKey {
+  return (DAY_KEYS as readonly string[]).includes(safeStr(v));
+}
+
+function isMissingTierDayRead(error: unknown) {
+  const e = error as any;
+  const code = safeStr(e?.code).toUpperCase();
+  return code === "42703" || code === "42P01";
+}
+
+function normalizeDayTiers(rows: unknown): AgreementDayTiers {
+  const dayTiers = emptyDayTiers();
+
+  if (!Array.isArray(rows)) return dayTiers;
+
+  for (const row of rows) {
+    const weekday = (row as any)?.weekday;
+    if (!isDayKey(weekday)) continue;
+
+    const tier = normalizeTier((row as any)?.tier);
+    if (!tier) continue;
+
+    dayTiers[weekday] = tier;
+  }
+
+  return dayTiers;
+}
+
+function primaryTierFromDayTiers(dayTiers: AgreementDayTiers): Tier | null {
+  const counts: Record<Tier, number> = {
+    BASIS: 0,
+    LUXUS: 0,
+    ENTERPRISE: 0,
+  };
+
+  for (const tier of Object.values(dayTiers)) {
+    if (tier) counts[tier] += 1;
+  }
+
+  let primary: Tier | null = null;
+  for (const tier of TIERS) {
+    if (counts[tier] === 0) continue;
+    if (!primary || counts[tier] >= counts[primary]) {
+      primary = tier;
+    }
+  }
+
+  return primary;
 }
 
 function normalizeStatus(v: unknown): AgreementStatusResult["status"] {
@@ -81,6 +137,31 @@ export async function getAgreementStatus(
     }
   }
 
+  const agreementId = safeStr(agreement?.agreement_id) || null;
+  let dayTiers = emptyDayTiers();
+
+  if (agreementId) {
+    try {
+      const { data: dayRows, error: dayErr } = await (supabase as any)
+        .from("agreement_delivery_days")
+        .select("weekday, tier")
+        .eq("agreement_id", agreementId);
+
+      if (dayErr) {
+        if (isMissingTierDayRead(dayErr)) {
+          console.warn("[agreementStatus] agreement_delivery_days tier read unavailable", dayErr);
+        }
+      } else {
+        dayTiers = normalizeDayTiers(dayRows);
+      }
+    } catch (error) {
+      if (isMissingTierDayRead(error)) {
+        console.warn("[agreementStatus] agreement_delivery_days tier read unavailable", error);
+      }
+      dayTiers = emptyDayTiers();
+    }
+  }
+
   let billingHold = false;
   if (cid) {
     try {
@@ -101,11 +182,12 @@ export async function getAgreementStatus(
   }
 
   const status = normalizeStatus(agreement?.status);
+  const primaryTier = primaryTierFromDayTiers(dayTiers) ?? normalizeTier(agreement?.tier);
 
   return {
-    agreementId: safeStr(agreement?.agreement_id) || null,
-    tier: normalizeTier(agreement?.tier),
-    dayTiers: { ...EMPTY_DAY_TIERS },
+    agreementId,
+    tier: primaryTier,
+    dayTiers,
     status,
     isActive: status === "ACTIVE",
     billingHold,

@@ -3,6 +3,8 @@ import { canCompanyOperate, getAgreementStatus } from "@/lib/auth/agreementStatu
 
 type Seed = {
   agreement?: Record<string, unknown> | null;
+  dayRows?: Array<Record<string, unknown>>;
+  dayError?: unknown;
   billing?: Record<string, unknown> | null;
   billingError?: unknown;
   billingThrows?: boolean;
@@ -25,11 +27,25 @@ function makeSupabase(seed: Seed) {
           }
           return { data: null, error: null };
         },
+        then: (resolve: any, reject: any) => {
+          if (table === "agreement_delivery_days") {
+            return Promise.resolve({ data: seed.dayRows ?? [], error: seed.dayError ?? null }).then(resolve, reject);
+          }
+          return Promise.resolve({ data: null, error: null }).then(resolve, reject);
+        },
       };
       return q;
     },
   } as any;
 }
+
+const nullDayTiers = {
+  mon: null,
+  tue: null,
+  wed: null,
+  thu: null,
+  fri: null,
+};
 
 describe("agreementStatus", () => {
   test("ACTIVE agreement and no billing hold allows company operations", async () => {
@@ -113,5 +129,162 @@ describe("agreementStatus", () => {
     expect(status.isActive).toBe(true);
     expect(status.billingHold).toBe(false);
     expect(canCompanyOperate(status)).toBe(true);
+  });
+
+  test("leser blandet tier fra agreement_delivery_days", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "ENTERPRISE", status: "ACTIVE" },
+        dayRows: [
+          { weekday: "mon", tier: "BASIS" },
+          { weekday: "tue", tier: "BASIS" },
+          { weekday: "wed", tier: "LUXUS" },
+          { weekday: "thu", tier: "BASIS" },
+          { weekday: "fri", tier: "LUXUS" },
+        ],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual({
+      mon: "BASIS",
+      tue: "BASIS",
+      wed: "LUXUS",
+      thu: "BASIS",
+      fri: "LUXUS",
+    });
+    expect(status.tier).toBe("BASIS");
+  });
+
+  test("håndterer alle BASIS", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "LUXUS", status: "ACTIVE" },
+        dayRows: [
+          { weekday: "mon", tier: "BASIS" },
+          { weekday: "tue", tier: "BASIS" },
+          { weekday: "wed", tier: "BASIS" },
+          { weekday: "thu", tier: "BASIS" },
+          { weekday: "fri", tier: "BASIS" },
+        ],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual({
+      mon: "BASIS",
+      tue: "BASIS",
+      wed: "BASIS",
+      thu: "BASIS",
+      fri: "BASIS",
+    });
+    expect(status.tier).toBe("BASIS");
+  });
+
+  test("håndterer ENTERPRISE i blandingen", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        dayRows: [
+          { weekday: "mon", tier: "BASIS" },
+          { weekday: "tue", tier: "BASIS" },
+          { weekday: "wed", tier: "ENTERPRISE" },
+          { weekday: "thu", tier: "LUXUS" },
+          { weekday: "fri", tier: "ENTERPRISE" },
+        ],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual({
+      mon: "BASIS",
+      tue: "BASIS",
+      wed: "ENTERPRISE",
+      thu: "LUXUS",
+      fri: "ENTERPRISE",
+    });
+    expect(status.tier).toBe("ENTERPRISE");
+  });
+
+  test("fail-closed når tier-kolonnen mangler (42703)", async () => {
+    await expect(
+      getAgreementStatus(
+        makeSupabase({
+          agreement: { agreement_id: "ag_1", tier: "LUXUS", status: "ACTIVE" },
+          dayError: { code: "42703", message: "column tier does not exist" },
+        }),
+        "company_1",
+      ),
+    ).resolves.toMatchObject({
+      dayTiers: nullDayTiers,
+      tier: "LUXUS",
+    });
+  });
+
+  test("fail-closed når agreement_delivery_days-relasjonen mangler (42P01)", async () => {
+    await expect(
+      getAgreementStatus(
+        makeSupabase({
+          agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+          dayError: { code: "42P01", message: "relation does not exist" },
+        }),
+        "company_1",
+      ),
+    ).resolves.toMatchObject({
+      dayTiers: nullDayTiers,
+      tier: "BASIS",
+    });
+  });
+
+  test("fail-closed når dayRows er tomt", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "ENTERPRISE", status: "ACTIVE" },
+        dayRows: [],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual(nullDayTiers);
+    expect(status.tier).toBe("ENTERPRISE");
+  });
+
+  test("filtrerer ugyldige weekday-verdier", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        dayRows: [
+          { weekday: "mon", tier: "BASIS" },
+          { weekday: "sat", tier: "BASIS" },
+          { weekday: "INVALID", tier: "BASIS" },
+        ],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual({
+      mon: "BASIS",
+      tue: null,
+      wed: null,
+      thu: null,
+      fri: null,
+    });
+    expect(status.tier).toBe("BASIS");
+  });
+
+  test("filtrerer ugyldige tier-verdier", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        dayRows: [
+          { weekday: "mon", tier: "premium" },
+          { weekday: "tue", tier: null },
+        ],
+      }),
+      "company_1",
+    );
+
+    expect(status.dayTiers).toEqual(nullDayTiers);
+    expect(status.tier).toBe("BASIS");
   });
 });
