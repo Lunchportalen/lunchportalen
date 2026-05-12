@@ -49,9 +49,31 @@ function formatPriceExVat(value: number | null) {
   return `${new Intl.NumberFormat("nb-NO").format(n)} kr eks. mva.`;
 }
 
-function formatTierLabel(value: AgreementPageData["pricing"]["planTier"]) {
-  if (!value) return "Ikke tilgjengelig";
-  return value === "LUXUS" ? "Luxus" : "Basis";
+function formatTierLabel(value: AgreementPageData["pricing"]["planTier"] | null | undefined) {
+  if (!value) return "Ikke spesifisert";
+  if (value === "BASIS") return "Basis";
+  if (value === "LUXUS") return "Luxus";
+  if (value === "ENTERPRISE") return "Enterprise";
+  return "Ikke spesifisert";
+}
+
+function formatTierCount(count: number, tier: NonNullable<AgreementPageData["pricing"]["planTier"]>) {
+  return `${count} ${count === 1 ? "dag" : "dager"} ${formatTierLabel(tier)}`;
+}
+
+function formatPlanTierLabel(data: AgreementPageData) {
+  const counts = data.weekPlan.reduce(
+    (acc, day) => {
+      if (day.active && day.tier) acc[day.tier] += 1;
+      return acc;
+    },
+    { BASIS: 0, LUXUS: 0, ENTERPRISE: 0 } satisfies Record<NonNullable<AgreementPageData["pricing"]["planTier"]>, number>,
+  );
+
+  const activeTiers = (["BASIS", "LUXUS", "ENTERPRISE"] as const).filter((tier) => counts[tier] > 0);
+  if (activeTiers.length === 0) return formatTierLabel(data.pricing.planTier);
+  if (activeTiers.length === 1) return formatTierLabel(activeTiers[0]);
+  return `Blandet (${activeTiers.map((tier) => formatTierCount(counts[tier], tier)).join(", ")})`;
 }
 
 function statusBadge(status: AgreementPageData["status"]) {
@@ -91,12 +113,12 @@ function DayStrip({ data }: { data: AgreementPageData }) {
     <div className="grid gap-2 sm:grid-cols-5">
       {DAY_KEYS.map((dayKey) => {
         const day = data.weekPlan.find((d) => d.dayKey === dayKey);
-        const hasTier = Boolean(day?.tier);
+        const active = Boolean(day?.active);
         return (
           <div key={dayKey} className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2">
             <div className="text-xs font-semibold text-[rgb(var(--lp-text))]">{day?.label ?? DAY_LABELS[dayKey]}</div>
             <div className="mt-1 text-[11px] text-[rgb(var(--lp-muted))]">
-              {hasTier ? (day?.tier === "LUXUS" ? "Luxus" : "Basis") : "Ikke i avtalen"}
+              {active ? formatTierLabel(day?.tier) : "Ikke i avtalen"}
             </div>
           </div>
         );
@@ -124,7 +146,7 @@ function WeekPreview({ data }: { data: AgreementPageData }) {
               <Badge variant={active ? "active" : "outline"}>{active ? "Aktiv" : "Ikke aktiv"}</Badge>
             </div>
             <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
-              {day?.tier ? (day.tier === "LUXUS" ? "Luxus" : "Basis") : "Ikke i avtalen"}
+              {active ? formatTierLabel(day?.tier) : "Ikke i avtalen"}
             </div>
             {active ? null : day?.reasonIfInactive ? (
               <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{day.reasonIfInactive}</div>
@@ -192,7 +214,7 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
             <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Plan og pris</div>
-            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Tier: {formatTierLabel(data.pricing.planTier)}</div>
+            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Tier: {formatPlanTierLabel(data)}</div>
             <div className="text-sm text-[rgb(var(--lp-text))]">
               Pris per dag: {formatPriceExVat(data.pricing.pricePerCuvertNok)}
             </div>
@@ -353,7 +375,7 @@ export default async function Page() {
     );
   }
 
-  const result = await fetchAgreementPageDataForAdmin(null);
+  const result = await fetchAgreementPageDataForAdmin(ctx.companyId);
 
   return (
     <AdminPageShell
