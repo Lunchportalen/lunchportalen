@@ -265,7 +265,7 @@ describe("api/kitchen – production visibility", () => {
           company_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
-          status: "active",
+          status: "ACTIVE",
           slot: "lunch",
           note: null,
         },

@@ -271,11 +271,30 @@ export async function POST(req: NextRequest) {
     let finalChoiceKey: string | null = wantsLunch ? choiceKeyIn : null;
 
     if (wantsLunch) {
-      const ok = finalChoiceKey && allowed.some((c) => c.key === finalChoiceKey);
-      if (!ok) {
-        const fallback = allowed.find((c) => c.key === "varmmat")?.key ?? allowed[0]?.key ?? null;
-        finalChoiceKey = fallback;
-        if (!finalChoiceKey) return jsonOrderWriteErr(rid, 400, "NO_CHOICES", "Firmaavtalen mangler menyvalg.");
+      if (!finalChoiceKey) {
+        if (allowed.length === 1) {
+          finalChoiceKey = allowed[0]?.key ?? null;
+        } else {
+          return jsonOrderWriteErr(
+            rid,
+            400,
+            "CHOICE_REQUIRED",
+            "Menyvalg er påkrevd. Velg en kategori før bestilling."
+          );
+        }
+      }
+
+      if (!finalChoiceKey) {
+        return jsonOrderWriteErr(rid, 400, "NO_CHOICES", "Firmaavtalen mangler menyvalg.");
+      }
+
+      if (!allowed.some((c) => c.key === finalChoiceKey)) {
+        return jsonOrderWriteErr(
+          rid,
+          400,
+          "INVALID_CHOICE",
+          `Valget '${finalChoiceKey}' er ikke tillatt for denne avtalen.`
+        );
       }
     }
 

@@ -29,6 +29,20 @@ export default defineType({
       validation: (Rule) => Rule.required().positive(),
     }),
     defineField({
+      name: "includesWarm",
+      title: "Inkluderer varmmat",
+      description: "Aktiverer varmmat-tab på /meny",
+      type: "boolean",
+      initialValue: true,
+    }),
+    defineField({
+      name: "tagline",
+      title: "Kort beskrivelse",
+      description: "Vises på /meny som ledetekst. Maks 120 tegn.",
+      type: "string",
+      validation: (Rule) => Rule.max(120),
+    }),
+    defineField({
       name: "allowedMeals",
       title: "Tillatte mealType-nøkler",
       description: "Må matche `menu.mealType` og bestillingsnøkler (f.eks. salatbar, paasmurt, varmmat).",

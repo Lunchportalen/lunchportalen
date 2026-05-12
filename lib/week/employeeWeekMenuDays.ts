@@ -1,11 +1,11 @@
 /**
- * Bygger dag-rader for employee week API uten Sanity weekPlan.
- * Kilde: leveringsdager + (helst) operativ tier per dag (`tierByDay` fra daymap), ellers `defaultTier` + menuContent per dato.
+ * Bygger dag-rader for employee week API.
+ * Kilde: leveringsdager + (helst) operativ tier per dag (`tierByDay` fra daymap), ellers `defaultTier` + menuDay per dato.
  */
-import type { MenuContent } from "@/lib/sanity/queries";
+import type { MenuDay } from "@/lib/cms/menuDay";
 
 const WEEKDAYS_NO = ["Man", "Tir", "Ons", "Tor", "Fre"] as const;
-type Tier = "BASIS" | "LUXUS";
+type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
 
@@ -31,7 +31,7 @@ export function buildEmployeeWeekDayRows(opts: {
   /** Når satt (operativ daymap / plan per dag), overstyrer ikke-leveringsdager også visnings-tier for konsistens. */
   tierByDay?: Partial<Record<DayKey, Tier>> | null;
   weekOffset: number;
-  menuByDate: Map<string, MenuContent | undefined>;
+  menuByDate: Map<string, MenuDay | undefined>;
 }): EmployeeWeekDayRow[] {
   const { dates, deliveryDayKeys, defaultTier, tierByDay, weekOffset, menuByDate } = opts;
 

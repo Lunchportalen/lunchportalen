@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
 
       let allowed = companyStatus === "ACTIVE" && !cutoff.locked;
       let reason: string | null = null;
-      let tierToday: "BASIS" | "LUXUS" | null = null;
+      let tierToday: "BASIS" | "LUXUS" | "ENTERPRISE" | null = null;
 
       if (allowed) {
         const ruleRes = await requireRule({ sb: admin, companyId, dayKey, slot: "lunch", rid });

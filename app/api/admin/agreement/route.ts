@@ -54,7 +54,7 @@ function normRole(v: unknown): "company_admin" | "superadmin" | null {
 
 function normTier(v: any): Tier | null {
   const s = safeStr(v).toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s as Tier;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s as Tier;
   return null;
 }
 

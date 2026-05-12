@@ -1,7 +1,7 @@
 // lib/agreements/types.ts
 export type AgreementStatus = "ACTIVE" | "PAUSED" | "CLOSED";
 
-export type PlanTier = "BASIS" | "LUXUS";
+export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 export type WeekdayKey = "MON" | "TUE" | "WED" | "THU" | "FRI";
 
 export type TierByDay = Partial<Record<WeekdayKey, PlanTier>>;
@@ -53,5 +53,5 @@ export function isWeekdayKey(v: any): v is WeekdayKey {
 }
 
 export function isPlanTier(v: any): v is PlanTier {
-  return v === "BASIS" || v === "LUXUS";
+  return v === "BASIS" || v === "LUXUS" || v === "ENTERPRISE";
 }

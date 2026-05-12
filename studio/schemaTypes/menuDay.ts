@@ -4,6 +4,31 @@ export default defineType({
   name: "menuDay",
   title: "Meny – Dag",
   type: "document",
+  validation: (Rule) =>
+    Rule.custom(async (doc, context) => {
+      if (!doc?.date || !doc?.planTier || !doc?.category) return true;
+      const client = context.getClient({ apiVersion: "2024-01-01" });
+      const existing = await client.fetch<string | null>(
+        `*[
+          _type == "menuDay" &&
+          date == $date &&
+          planTier == $planTier &&
+          category == $category &&
+          _id != $id &&
+          !(_id in path("drafts.**"))
+        ][0]._id`,
+        {
+          date: doc.date,
+          planTier: doc.planTier,
+          category: doc.category,
+          id: String(doc._id ?? "").replace(/^drafts\./, ""),
+        },
+      );
+
+      return existing
+        ? `Det finnes allerede en ${doc.category} for ${doc.planTier} på ${doc.date}`
+        : true;
+    }),
 
   fields: [
     defineField({
@@ -11,6 +36,41 @@ export default defineType({
       title: "Dato",
       type: "date",
       validation: (Rule) => Rule.required(),
+    }),
+
+    defineField({
+      name: "planTier",
+      title: "Plan",
+      type: "string",
+      description: "Hvilken plan denne retten tilhører",
+      options: {
+        list: [
+          { title: "Basis", value: "BASIS" },
+          { title: "Luxus", value: "LUXUS" },
+          { title: "Enterprise", value: "ENTERPRISE" },
+        ],
+        layout: "radio",
+      },
+      validation: (Rule) => Rule.required().error("Plan er påkrevd"),
+    }),
+
+    defineField({
+      name: "category",
+      title: "Kategori",
+      type: "string",
+      description: "Hvilken kategori retten dekker i menyen",
+      options: {
+        list: [
+          { title: "Påsmurt", value: "paasmurt" },
+          { title: "Salat", value: "salat" },
+          { title: "Sushi", value: "sushi" },
+          { title: "Pokébowl", value: "pokebowl" },
+          { title: "Thai", value: "thai" },
+          { title: "Varmrett", value: "varmrett" },
+        ],
+        layout: "dropdown",
+      },
+      validation: (Rule) => Rule.required().error("Kategori er påkrevd"),
     }),
 
     defineField({
@@ -205,6 +265,8 @@ export default defineType({
   preview: {
     select: {
       date: "date",
+      planTier: "planTier",
+      category: "category",
       mealTitle: "mealTitle",
       description: "description",
       approved: "approvedForPublish",
@@ -212,9 +274,10 @@ export default defineType({
       allergens: "allergens",
       nutrition: "nutritionPer100g",
     },
-    prepare({ date, mealTitle, description, approved, visible, allergens, nutrition }) {
+    prepare({ date, planTier, category, mealTitle, description, approved, visible, allergens, nutrition }) {
       const a = approved ? "✅ Godkjent" : "⛔ Ikke godkjent";
       const v = visible ? "👁️ Synlig" : "🙈 Skjult";
+      const scope = [planTier, category].filter(Boolean).join(" / ");
       const kcal =
         nutrition && typeof nutrition.energyKcal === "number"
           ? ` • ${nutrition.energyKcal} kcal/100g`
@@ -226,7 +289,7 @@ export default defineType({
 
       return {
         title: `${date || "Uten dato"} — ${mealTitle || description || "Ingen rett"}`,
-        subtitle: `${a} • ${v}${kcal}${allergenText}`,
+        subtitle: `${scope ? `${scope} • ` : ""}${a} • ${v}${kcal}${allergenText}`,
       };
     },
   },

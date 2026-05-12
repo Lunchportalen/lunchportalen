@@ -73,7 +73,7 @@ export async function loadOperativeKitchenOrders(args: {
     .from("orders")
     .select("id,user_id,company_id,location_id,note,status,slot")
     .eq("date", date)
-    .in("status", ["ACTIVE", "active"]);
+    .in("status", ["ACTIVE"]);
 
   if (tenant !== "system") {
     ordersQ = ordersQ.eq("company_id", safeStr(tenant.companyId));

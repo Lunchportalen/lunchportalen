@@ -11,9 +11,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
-function normTier(v: unknown): "BASIS" | "LUXUS" | null {
+function normTier(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const s = String(v ?? "").trim().toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 
@@ -29,7 +29,7 @@ export async function validateLedgerAgreementForApproval(opts: {
 }): Promise<LedgerAgreementValidationResult> {
   const tier = normTier(opts.tier);
   if (!tier) {
-    return { ok: false, code: "TIER_INVALID", message: "Ugyldig plan (forventet BASIS eller LUXUS)." };
+    return { ok: false, code: "TIER_INVALID", message: "Ugyldig plan (forventet BASIS, LUXUS eller ENTERPRISE)." };
   }
 
   const price = Number(String(opts.price_per_employee ?? "").replace(",", "."));

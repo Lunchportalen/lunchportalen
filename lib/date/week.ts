@@ -68,6 +68,17 @@ export function weekRangeISO(weekOffset: number = 0): string[] {
 }
 
 /**
+ * Ukedager (Man-Fre) for menyvisning.
+ * Mandag-fredag bruker inneværende uke; lørdag/søndag peker til neste uke.
+ */
+export function getCurrentWeekDates(date: Date = new Date()): string[] {
+  const osloNow = osloNowDate(date);
+  const day = osloNow.getDay();
+  const weekOffset = day === 0 || day === 6 ? 1 : 0;
+  return weekRangeISOFrom(formatOsloISO(osloNow), weekOffset);
+}
+
+/**
  * Samme som weekRangeISO, men lar deg velge en "anchor" dato (YYYY-MM-DD).
  * Brukes når du vil vise uken til en konkret dato.
  */

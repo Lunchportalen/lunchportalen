@@ -91,11 +91,11 @@ export function CmsHistoryDiscoveryStrip() {
             eier versjonshistorikk for menydokumenter.
           </li>
           <li>
-            <strong className="font-medium text-[rgb(var(--lp-text))]">Uke & meny (operativ vs redaksjonelt):</strong>{" "}
+            <strong className="font-medium text-[rgb(var(--lp-text))]">Uke & meny:</strong>{" "}
             <Link className="font-medium text-[rgb(var(--lp-text))] underline underline-offset-2" href="/backoffice/week-menu">
               Uke & meny
             </Link>{" "}
-            forklarer kildekjede og weekPlan som redaksjonelt spor der det gjelder.
+            forklarer den operative kildekjeden for meny.
           </li>
         </ul>
       </div>

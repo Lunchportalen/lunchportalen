@@ -12,8 +12,8 @@ import {
   getMenuForDate,
   getMenuForDates,
   type Announcement,
-  type MenuContent,
-} from "@/lib/cms/menuContent";
+  type MenuDay,
+} from "@/lib/cms/menuDay";
 
 function severityCard(sev: Announcement["severity"]) {
   if (sev === "critical") return "bg-red-50 border-red-200 text-red-900";
@@ -39,14 +39,14 @@ function relToToday(dateISO: string, todayISO: string) {
   return dateISO < todayISO ? -1 : 1;
 }
 
-function StatusChip({ m, todayISO }: { m: MenuContent; todayISO: string }) {
+function StatusChip({ m, todayISO }: { m: MenuDay; todayISO: string }) {
   const rel = relToToday(m.date, todayISO);
   if (rel < 0) return <span className="lp-chip">Gjennomført</span>;
   if (m.isPublished) return <span className="lp-chip lp-chip-ok">Klar</span>;
   return <span className="lp-chip">Ikke klar</span>;
 }
 
-function WeekListRow({ m, todayISO }: { m: MenuContent; todayISO: string }) {
+function WeekListRow({ m, todayISO }: { m: MenuDay; todayISO: string }) {
   const rel = relToToday(m.date, todayISO);
 
   return (
@@ -93,9 +93,9 @@ export default async function Page() {
   const nextWeekDates = weekRangeISO(1);
 
   let announcement: Announcement | null = null;
-  let todayMenu: MenuContent | null = null;
-  let thisWeekMenuRaw: MenuContent[] = [];
-  let nextWeekMenuRaw: MenuContent[] = [];
+  let todayMenu: MenuDay | null = null;
+  let thisWeekMenuRaw: MenuDay[] = [];
+  let nextWeekMenuRaw: MenuDay[] = [];
 
   try {
     const [a, t, w0, w1] = await Promise.all([
@@ -115,10 +115,10 @@ export default async function Page() {
 
   const todayPublished = Boolean(todayMenu?.isPublished);
 
-  const thisWeekMenu: MenuContent[] = (thisWeekMenuRaw || []).filter(
+  const thisWeekMenu: MenuDay[] = (thisWeekMenuRaw || []).filter(
     (m) => m.isPublished === true
   );
-  const nextWeekMenu: MenuContent[] = (nextWeekMenuRaw || []).filter(
+  const nextWeekMenu: MenuDay[] = (nextWeekMenuRaw || []).filter(
     (m) => m.isPublished === true
   );
 

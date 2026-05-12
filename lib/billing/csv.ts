@@ -12,7 +12,7 @@ export type InvoiceRow = {
   location_name: string | null;
   date: string; // YYYY-MM-DD
   slot: string | null;
-  plan_tier: "BASIS" | "LUXUS";
+  plan_tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   qty: number;
   unit_price_nok: number;
   amount_nok: number;

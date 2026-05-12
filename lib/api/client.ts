@@ -43,7 +43,7 @@ export type CancelResponse = {
     updated_at: string | null;
     saved_at: string;
   };
-  pricing: { tier: "BASIS" | "LUXUS"; unit_price: number };
+  pricing: { tier: "BASIS" | "LUXUS" | "ENTERPRISE"; unit_price: number };
   backup: { ok: boolean; [k: string]: any };
 };
 

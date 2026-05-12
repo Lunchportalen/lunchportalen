@@ -17,7 +17,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 ========================================================= */
 
 type Body = {
-  tier?: "BASIS" | "LUXUS";
+  tier?: "BASIS" | "LUXUS" | "ENTERPRISE";
   weekIndex?: 0 | 1;
   choice_key: string;
 };
@@ -30,7 +30,7 @@ type CompanyRow = {
   status?: CompanyStatus | null;
   paused_reason?: string | null;
   closed_reason?: string | null;
-  contract_week_tier: Record<string, "BASIS" | "LUXUS"> | null;
+  contract_week_tier: Record<string, "BASIS" | "LUXUS" | "ENTERPRISE"> | null;
   contract_basis_choices: Choice[] | null;
   contract_luxus_choices: Choice[] | null;
 };
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     const weekIndex = body?.weekIndex;
 
     if (!choice_key) return jsonErr(rid, "choice_key mangler.", 400, "MISSING_CHOICE_KEY");
-    if (tierFilter && tierFilter !== "BASIS" && tierFilter !== "LUXUS") {
+    if (tierFilter && tierFilter !== "BASIS" && tierFilter !== "LUXUS" && tierFilter !== "ENTERPRISE") {
       return jsonErr(rid, "Ugyldig tier.", 400, "BAD_TIER");
     }
     if (weekIndex !== undefined && weekIndex !== 0 && weekIndex !== 1) {
@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const tier = (weekTier as any)[dayKey] as "BASIS" | "LUXUS" | undefined;
+      const tier = (weekTier as any)[dayKey] as "BASIS" | "LUXUS" | "ENTERPRISE" | undefined;
       if (!tier) {
         skippedNotAllowed.push(date);
         continue;

@@ -108,10 +108,6 @@ describe("API smoke — order", () => {
     assertNon500(res, "GET /api/week");
   });
 
-  test("GET /api/weekplan (BLOCKED in vitest: cookies() outside request scope)", async () => {
-    const { GET } = await import("@/app/api/weekplan/route");
-    await expect(GET(minimalGetReq("http://x/api/weekplan"))).rejects.toThrow();
-  });
 });
 
 describe("API smoke — backoffice / CMS", () => {

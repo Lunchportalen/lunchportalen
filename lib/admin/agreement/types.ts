@@ -1,6 +1,6 @@
 // lib/admin/agreement/types.ts
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-export type Tier = "BASIS" | "LUXUS";
+export type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 export type AgreementStatus =
   | "ACTIVE"
   | "PAUSED"

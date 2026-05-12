@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildDayModel } from "@/app/api/order/window/route";
+import { buildDayModel, buildLegacyChoiceCategories, buildMenuDayCategories } from "@/app/api/order/window/route";
 
 describe("order/window – buildDayModel", () => {
   test("returns locked by cutoff when past", () => {
@@ -121,6 +121,45 @@ describe("order/window – buildDayModel", () => {
     expect(day.isLocked).toBe(true);
     expect(day.lockReason).toBe("CLOSED_DATE");
     expect(day.allowedChoices.length).toBeGreaterThan(0);
+  });
+
+  test("BASIS menuDay categories map to order-safe choice keys", () => {
+    const categories = buildMenuDayCategories({
+      planTier: "BASIS",
+      menus: [
+        { category: "paasmurt", mealTitle: "Rundstykke", description: "Med ost", allergens: ["melk"] },
+        { category: "salat", mealTitle: "Kyllingsalat", description: null, allergens: [] },
+        { category: "varmrett", mealTitle: "Lasagne", description: "Varm", allergens: ["gluten"] },
+      ],
+    });
+
+    expect(categories).toHaveLength(3);
+    expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatbar", "varmmat"]);
+    expect(categories.map((c) => c.available)).toEqual([true, true, true]);
+  });
+
+  test("LUXUS and ENTERPRISE expose six plan categories", () => {
+    const luxus = buildMenuDayCategories({ planTier: "LUXUS", menus: [] });
+    const enterprise = buildMenuDayCategories({ planTier: "ENTERPRISE", menus: [] });
+
+    expect(luxus).toHaveLength(6);
+    expect(enterprise).toHaveLength(6);
+    expect(luxus.every((c) => c.available === false)).toBe(true);
+  });
+
+  test("legacy fallback categories preserve existing meal-type choices", () => {
+    const categories = buildLegacyChoiceCategories(
+      [
+        { key: "salatbar", label: "Salat" },
+        { key: "varmmat", label: "Varmrett" },
+      ],
+      true,
+    );
+
+    expect(categories.map((c) => ({ key: c.key, label: c.label, available: c.available }))).toEqual([
+      { key: "salatbar", label: "Salat", available: true },
+      { key: "varmmat", label: "Varmrett", available: true },
+    ]);
   });
 });
 

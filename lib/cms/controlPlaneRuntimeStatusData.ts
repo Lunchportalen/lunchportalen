@@ -28,13 +28,7 @@ export const CONTROL_PLANE_RUNTIME_MODULES: ControlPlaneModuleStatus[] = [
     id: "week",
     label: "Ansatt uke (runtime)",
     badge: "LIVE",
-    detail: "GET /api/week + Sanity meny/agreement — ikke Sanity weekPlan som operativ sannhet.",
-  },
-  {
-    id: "weekplan_editorial",
-    label: "Redaksjonell ukeplan",
-    badge: "LIMITED",
-    detail: "Sanity weekPlan + publish API — editorial/marketing, separat spor.",
+    detail: "GET /api/week + Sanity meny/agreement.",
   },
   {
     id: "seo",

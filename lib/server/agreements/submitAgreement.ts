@@ -12,7 +12,7 @@ import {
 export type { StoredMealContract };
 
 export async function validateMealContractForAgreementWrite(opts: {
-  rpcTier: "BASIS" | "LUXUS";
+  rpcTier: "BASIS" | "LUXUS" | "ENTERPRISE";
   deliveryDays: string[];
   mealContract: unknown | undefined;
 }): Promise<

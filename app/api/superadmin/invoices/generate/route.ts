@@ -16,7 +16,7 @@ type SkipReason =
   | "LOCKED_PERIOD";
 
 type QuantitySource = "daily_company_rollup" | "orders";
-type AgreementTier = "BASIS" | "LUXUS";
+type AgreementTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type PriceColumn = "unit_price" | "price_per_employee" | "price_nok";
 
 type ParsedMonth = {
@@ -92,6 +92,7 @@ const CHUNK_SIZE = 200;
 const PRICE_PER_TIER: Record<AgreementTier, number> = {
   BASIS: 90,
   LUXUS: 130,
+  ENTERPRISE: 170,
 };
 
 function safeStr(v: unknown): string {
@@ -105,7 +106,7 @@ function safeNum(v: unknown): number {
 
 function normalizeTier(v: unknown): AgreementTier | null {
   const s = safeStr(v).toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
+import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
@@ -34,8 +34,10 @@ function safeVibrate(ms: number) {
 type DayRow = {
   date: string;
   weekday: string;
-  tier: "BASIS" | "LUXUS" | null;
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE" | null;
+  planTier: "BASIS" | "LUXUS" | "ENTERPRISE" | null;
   allowedChoices: MealChoice[];
+  categories: DayCategory[];
   selectedChoiceKey: string | null;
   isLocked: boolean;
   isEnabled: boolean;
@@ -51,6 +53,16 @@ type DayRow = {
 type MealChoice = {
   key: string;
   label: string;
+};
+
+type DayCategory = {
+  key: string;
+  category: "paasmurt" | "salat" | "sushi" | "pokebowl" | "thai" | "varmrett" | null;
+  label: string;
+  title: string | null;
+  description: string | null;
+  allergens: string[];
+  available: boolean;
 };
 
 type WindowPayload = {
@@ -112,9 +124,9 @@ function asOrderStatus(v: unknown): "ACTIVE" | "CANCELLED" | null {
   return null;
 }
 
-function asTier(v: unknown): "BASIS" | "LUXUS" | null {
+function asTier(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const s = String(v ?? "").trim().toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 
@@ -125,6 +137,32 @@ function mapChoice(raw: unknown): MealChoice | null {
   if (!key) return null;
   const label = String(c.label ?? key).trim();
   return { key, label: label || key };
+}
+
+function mapCategory(raw: unknown): DayCategory | null {
+  if (!raw || typeof raw !== "object") return null;
+  const c = raw as Record<string, unknown>;
+  const key = String(c.key ?? "").trim();
+  if (!key) return null;
+  const categoryRaw = String(c.category ?? "").trim();
+  const category =
+    categoryRaw === "paasmurt" ||
+    categoryRaw === "salat" ||
+    categoryRaw === "sushi" ||
+    categoryRaw === "pokebowl" ||
+    categoryRaw === "thai" ||
+    categoryRaw === "varmrett"
+      ? categoryRaw
+      : null;
+  return {
+    key,
+    category,
+    label: String(c.label ?? key).trim() || key,
+    title: c.title != null ? String(c.title).trim() || null : null,
+    description: c.description != null ? String(c.description).trim() || null : null,
+    allergens: Array.isArray(c.allergens) ? (c.allergens as unknown[]).map((x) => String(x)) : [],
+    available: c.available !== false,
+  };
 }
 
 function mapDay(raw: unknown): DayRow | null {
@@ -144,7 +182,9 @@ function mapDay(raw: unknown): DayRow | null {
     date,
     weekday: String(d.weekday ?? ""),
     tier: asTier(d.tier),
+    planTier: asTier(d.planTier ?? d.tier),
     allowedChoices: Array.isArray(d.allowedChoices) ? (d.allowedChoices as unknown[]).map(mapChoice).filter(Boolean) as MealChoice[] : [],
+    categories: Array.isArray(d.categories) ? (d.categories as unknown[]).map(mapCategory).filter(Boolean) as DayCategory[] : [],
     selectedChoiceKey: d.selectedChoiceKey != null ? String(d.selectedChoiceKey).trim() || null : null,
     isLocked: Boolean(d.isLocked),
     isEnabled: Boolean(d.isEnabled),
@@ -242,21 +282,22 @@ function CutoffPassedBadge({ className = "" }: { className?: string }) {
   );
 }
 
-function tierChoiceLimit(tier: DayRow["tier"]) {
-  if (tier === "LUXUS") return 6;
+export function tierChoiceLimit(tier: DayRow["tier"]) {
+  if (tier === "LUXUS" || tier === "ENTERPRISE") return 6;
   if (tier === "BASIS") return 3;
   return 0;
 }
 
 function tierLabel(day: DayRow) {
   const limit = tierChoiceLimit(day.tier);
+  if (day.tier === "ENTERPRISE") return `Enterprise - ${limit} valg`;
   if (day.tier === "LUXUS") return `Luxus - ${limit} valg`;
   if (day.tier === "BASIS") return `Basis - ${limit} valg`;
   return "Ikke tilgjengelig";
 }
 
 function fallbackCategoryLabels(day: DayRow) {
-  if (day.tier === "LUXUS") return LUXUS_CATEGORY_LABELS;
+  if (day.tier === "LUXUS" || day.tier === "ENTERPRISE") return LUXUS_CATEGORY_LABELS;
   if (day.tier === "BASIS") return BASIS_CATEGORY_LABELS;
   return [];
 }
@@ -278,8 +319,7 @@ function getTierCategories(day: DayRow) {
 }
 
 function selectedDayLabel(day: DayRow) {
-  const weekday = formatWeekdayNO(day.date) || day.weekday;
-  return `${weekday} ${formatDateNO(day.date)}`.trim();
+  return formatMenuDateNO(day.date);
 }
 
 function orderStatusLabel(day: DayRow) {
@@ -302,7 +342,7 @@ function previewTierForDay(mode: PreviewMode, index: number): DayRow["tier"] {
 
 function choicesForTier(tier: DayRow["tier"]): MealChoice[] {
   if (!tier) return [];
-  return (tier === "LUXUS" ? LUXUS_CATEGORY_LABELS : BASIS_CATEGORY_LABELS).map((label) => ({
+  return (tier === "BASIS" ? BASIS_CATEGORY_LABELS : LUXUS_CATEGORY_LABELS).map((label) => ({
     key: label.toLowerCase().replace(/\s+/g, "-"),
     label,
   }));
@@ -316,7 +356,17 @@ function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
       date,
       weekday: formatWeekdayNO(date),
       tier,
+      planTier: tier,
       allowedChoices: choicesForTier(tier),
+      categories: choicesForTier(tier).map((choice) => ({
+        key: choice.key,
+        category: null,
+        label: choice.label,
+        title: null,
+        description: null,
+        allergens: [],
+        available: true,
+      })),
       selectedChoiceKey: null,
       isLocked: false,
       isEnabled: true,
@@ -341,9 +391,74 @@ function selectedChoiceLabel(day: DayRow) {
   return selected?.label ?? day.selectedChoiceKey;
 }
 
-function DayMenuSummary({ day, compact = false }: { day: DayRow; compact?: boolean }) {
+function effectiveSelectedChoice(day: DayRow, selectedChoiceKey?: string | null) {
+  const explicit = String(selectedChoiceKey ?? day.selectedChoiceKey ?? "").trim();
+  if (explicit) return explicit;
+  const available = day.categories.filter((c) => c.available);
+  return available.length === 1 ? available[0]!.key : null;
+}
+
+function choiceRequired(day: DayRow) {
+  return day.categories.filter((c) => c.available).length > 1;
+}
+
+function canOrderWithChoice(day: DayRow, canAct: boolean, globalBusy: boolean, selectedChoiceKey?: string | null) {
+  return canOrderDay(day, canAct, globalBusy) && (!choiceRequired(day) || Boolean(effectiveSelectedChoice(day, selectedChoiceKey)));
+}
+
+function selectedChoiceLabelForKey(day: DayRow, selectedChoiceKey?: string | null) {
+  const key = effectiveSelectedChoice(day, selectedChoiceKey);
+  if (!key) return null;
+  const selectedCategory = day.categories.find((c) => c.key.toLowerCase() === key.toLowerCase());
+  if (selectedCategory) return selectedCategory.label;
+  const selected = day.allowedChoices.find((c) => c.key.toLowerCase() === key.toLowerCase());
+  return selected?.label ?? key;
+}
+
+export function WeekCategoryCards({
+  day,
+  selectedChoiceKey,
+  onSelect,
+  disabled,
+}: {
+  day: DayRow;
+  selectedChoiceKey: string | null;
+  onSelect: (choiceKey: string) => void;
+  disabled?: boolean;
+}) {
+  if (!day.categories.length) return null;
+  const selected = effectiveSelectedChoice(day, selectedChoiceKey);
+  return (
+    <div className="week-day__categories" aria-label="Velg kategori">
+      {day.categories.map((cat) => {
+        const isSelected = selected === cat.key;
+        return (
+          <button
+            key={cat.key}
+            type="button"
+            className={`week-category-card ${isSelected ? "is-selected" : ""}`}
+            onClick={() => onSelect(cat.key)}
+            disabled={disabled || !cat.available || !day.isEnabled}
+            aria-pressed={isSelected}
+            title={!cat.available ? "Ikke tilgjengelig" : undefined}
+          >
+            <span className="week-category-card__label">{cat.label}</span>
+            {cat.title ? <span className="week-category-card__title">{cat.title}</span> : null}
+            {cat.description ? <span className="week-category-card__desc">{cat.description}</span> : null}
+            {cat.allergens.length > 0 ? (
+              <span className="week-category-card__desc">Allergener: {cat.allergens.join(", ")}</span>
+            ) : null}
+            {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayMenuSummary({ day, selectedChoiceKey, compact = false }: { day: DayRow; selectedChoiceKey?: string | null; compact?: boolean }) {
   const choices = getTierCategories(day);
-  const selected = selectedChoiceLabel(day);
+  const selected = selectedChoiceLabelForKey(day, selectedChoiceKey);
 
   return (
     <div className={`${compact ? "mt-3" : "mt-4"} text-center`}>
@@ -477,10 +592,12 @@ type RowBase = {
   canAct: boolean;
   globalBusy: boolean;
   busyThis: boolean;
+  selectedChoiceKey: string | null;
   weekdayLabel: string;
   statusLabel: ReturnType<typeof statusLabelForDay>;
   onRequestOrder: () => void;
   onRequestCancel: () => void;
+  onSelectChoice: (choiceKey: string) => void;
   /** Prediktiv markering — kun UI, ingen auto-handling. */
   insightRecommended?: boolean;
   insightPreferredMotion?: boolean;
@@ -492,10 +609,11 @@ function WeekDayRowDesktop({
   canAct,
   globalBusy,
   busyThis,
-  weekdayLabel,
+  selectedChoiceKey,
   statusLabel,
   onRequestOrder,
   onRequestCancel,
+  onSelectChoice,
   insightRecommended,
   insightPreferredMotion,
     readOnlyPreview,
@@ -505,6 +623,7 @@ function WeekDayRowDesktop({
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const notInAgreement = !day.isEnabled;
   const canClick = canOrderDay(day, canAct, globalBusy);
+  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
 
   return (
     <li
@@ -517,7 +636,7 @@ function WeekDayRowDesktop({
       <div className="flex flex-col items-center gap-1 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="text-base font-semibold capitalize text-neutral-900">
-            {weekdayLabel} · {formatDateNO(day.date)}
+            {formatMenuDateNO(day.date)}
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
             <span
@@ -563,7 +682,13 @@ function WeekDayRowDesktop({
             {day.allergens.join(", ")}
           </p>
         ) : null}
-        <DayMenuSummary day={day} />
+        <WeekCategoryCards
+          day={day}
+          selectedChoiceKey={selectedChoiceKey}
+          onSelect={onSelectChoice}
+          disabled={readOnlyPreview || globalBusy}
+        />
+        <DayMenuSummary day={day} selectedChoiceKey={selectedChoiceKey} />
       </div>
 
       <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center md:justify-start">
@@ -607,9 +732,9 @@ function WeekDayRowDesktop({
           <div className="flex w-full flex-col sm:w-full md:w-auto">
             <button
               type="button"
-              disabled={readOnlyPreview || !canClick}
-              aria-disabled={readOnlyPreview || !canClick}
-              title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+              disabled={readOnlyPreview || !canOrderClick}
+              aria-disabled={readOnlyPreview || !canOrderClick}
+              title={readOnlyPreview ? "Kun forhåndsvisning" : choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoiceKey) ? "Velg en kategori først" : undefined}
               onClick={readOnlyPreview ? undefined : onRequestOrder}
               className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
             >
@@ -641,12 +766,13 @@ const WeekDayCardMobile = memo(
     canAct,
     globalBusy,
     busyThis,
-    weekdayLabel,
+    selectedChoiceKey,
     statusLabel,
     isSelected,
     onSelectDay,
     onRequestOrder,
     onRequestCancel,
+    onSelectChoice,
     insightRecommended,
     insightPreferredMotion,
     readOnlyPreview,
@@ -656,14 +782,15 @@ const WeekDayCardMobile = memo(
     const companyClosed = day.isLocked && day.lockReason === "COMPANY";
     const notInAgreement = !day.isEnabled;
     const canClick = canOrderDay(day, canAct, globalBusy);
+    const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
     const categories = getTierCategories(day);
-    const selected = selectedChoiceLabel(day);
+    const selected = selectedChoiceLabelForKey(day, selectedChoiceKey);
     const displayStatus = orderStatusLabel(day);
 
     return (
       <div
         role="group"
-        aria-label={`${weekdayLabel} ${formatDateNO(day.date)}`}
+        aria-label={formatMenuDateNO(day.date)}
         className={`rounded-[2rem] bg-white/85 p-5 text-center shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
             ? "motion-safe:scale-[1.01] ring-[#f5c518]/45"
@@ -732,7 +859,14 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : null}
-            {categories.length ? (
+            {day.categories.length ? (
+              <WeekCategoryCards
+                day={day}
+                selectedChoiceKey={selectedChoiceKey}
+                onSelect={onSelectChoice}
+                disabled={readOnlyPreview || globalBusy}
+              />
+            ) : categories.length ? (
               <div className="space-y-2 text-left">
                 {categories.map((category) => (
                   <div
@@ -796,9 +930,9 @@ const WeekDayCardMobile = memo(
             <>
               <button
                 type="button"
-                disabled={readOnlyPreview || !canClick}
-                aria-disabled={readOnlyPreview || !canClick}
-                title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+                disabled={readOnlyPreview || !canOrderClick}
+                aria-disabled={readOnlyPreview || !canOrderClick}
+                title={readOnlyPreview ? "Kun forhåndsvisning" : choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoiceKey) ? "Velg en kategori først" : undefined}
                 onClick={readOnlyPreview ? undefined : onRequestOrder}
                 className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
               >
@@ -829,6 +963,7 @@ const WeekDayCardMobile = memo(
     prev.day.menuDescription === next.day.menuDescription &&
     prev.day.menuImages.length === next.day.menuImages.length &&
     prev.day.allergens.length === next.day.allergens.length &&
+    prev.selectedChoiceKey === next.selectedChoiceKey &&
     prev.isSelected === next.isSelected &&
     prev.globalBusy === next.globalBusy &&
     prev.busyThis === next.busyThis &&
@@ -845,6 +980,7 @@ function stickyCtaForDay(
   canAct: boolean,
   globalBusy: boolean,
   busyThis: boolean,
+  selectedChoiceKey: string | null,
   onRequestOrder: () => void,
   onRequestCancel: () => void,
   readOnlyPreview?: boolean,
@@ -854,6 +990,7 @@ function stickyCtaForDay(
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const notInAgreement = !day.isEnabled;
   const canClick = canOrderDay(day, canAct, globalBusy);
+  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
 
   if (notInAgreement) {
     return (
@@ -905,9 +1042,9 @@ function stickyCtaForDay(
     <>
       <button
         type="button"
-        disabled={readOnlyPreview || !canClick}
-        aria-disabled={readOnlyPreview || !canClick}
-        title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
+        disabled={readOnlyPreview || !canOrderClick}
+        aria-disabled={readOnlyPreview || !canOrderClick}
+        title={readOnlyPreview ? "Kun forhåndsvisning" : choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoiceKey) ? "Velg en kategori først" : undefined}
         onClick={readOnlyPreview ? undefined : onRequestOrder}
         className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
       >
@@ -945,6 +1082,7 @@ export default function EmployeeWeekClient({
   const [confirm, setConfirm] = useState<ConfirmPayload | null>(null);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({});
   const [contentVisible, setContentVisible] = useState(false);
   const [stickyBarHidden, setStickyBarHidden] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
@@ -1014,6 +1152,7 @@ export default function EmployeeWeekClient({
     setConfirm(null);
     setBusyDate(null);
     setConfirmSubmitting(false);
+    setSelectedChoices({});
     navSourceRef.current = "init";
     setSelectedDate(previewDays[0]?.date ?? null);
   }, [previewDays, readOnlyPreview]);
@@ -1107,6 +1246,14 @@ export default function EmployeeWeekClient({
 
       const rawDays = Array.isArray(payload.days) ? payload.days : [];
       const mapped = rawDays.map(mapDay).filter(Boolean) as DayRow[];
+      setSelectedChoices((prev) => {
+        const next: Record<string, string | null> = {};
+        for (const day of mapped) {
+          const previous = prev[day.date];
+          next[day.date] = previous ?? effectiveSelectedChoice(day, null);
+        }
+        return next;
+      });
 
       const meta = parseWeekMetaFromWindowJson(raw);
       if (!silent) {
@@ -1334,6 +1481,10 @@ export default function EmployeeWeekClient({
     setSelectedDate(date);
   }, []);
 
+  const selectChoice = useCallback((date: string, choiceKey: string) => {
+    setSelectedChoices((prev) => ({ ...prev, [date]: choiceKey }));
+  }, []);
+
   const showSuccessToast = useCallback((msg: string) => {
     setToastSuccess(msg);
     if (successTimerRef.current) clearTimeout(successTimerRef.current);
@@ -1367,11 +1518,20 @@ export default function EmployeeWeekClient({
       }
 
       try {
+        const day = days.find((d) => d.date === date);
+        const choiceKey = day ? effectiveSelectedChoice(day, selectedChoices[date]) : null;
+        if (wantsLunch && day && choiceRequired(day) && !choiceKey) {
+          setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
+          return false;
+        }
+        const body: { date: string; wants_lunch: boolean; choice_key?: string } = { date, wants_lunch: wantsLunch };
+        if (wantsLunch && choiceKey) body.choice_key = choiceKey;
+
         const res = await fetch(`${API_ORDER}/set-day`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-rid": rid },
           cache: "no-store",
-          body: JSON.stringify({ date, wants_lunch: wantsLunch }),
+          body: JSON.stringify(body),
         });
 
         const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
@@ -1385,6 +1545,14 @@ export default function EmployeeWeekClient({
           st !== null;
         if (!ok) {
           const apiError = readApiError(json);
+          if (apiError.code === "CHOICE_REQUIRED") {
+            setErrorBanner({ code: apiError.code, message: "Velg en kategori før du bestiller." });
+            return false;
+          }
+          if (apiError.code === "INVALID_CHOICE") {
+            setErrorBanner({ code: apiError.code, message: "Valget er ikke tillatt for denne avtalen." });
+            return false;
+          }
           showErrorBanner(apiError.message, apiError.code);
           return false;
         }
@@ -1411,7 +1579,7 @@ export default function EmployeeWeekClient({
         return false;
       }
     },
-    [loadWindow, readOnlyPreview, showErrorBanner, showSuccessToast],
+    [days, loadWindow, readOnlyPreview, selectedChoices, showErrorBanner, showSuccessToast],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
@@ -1434,13 +1602,18 @@ export default function EmployeeWeekClient({
 
   const requestOrder = useCallback((date: string) => {
     if (readOnlyPreview) return;
+    const day = days.find((d) => d.date === date);
+    if (day && choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoices[date])) {
+      setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
+      return;
+    }
     setErrorBanner(null);
     if (errorTimerRef.current) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
     setConfirm({ date, action: "order" });
-  }, [readOnlyPreview]);
+  }, [days, readOnlyPreview, selectedChoices]);
 
   const requestCancel = useCallback((date: string) => {
     if (readOnlyPreview) return;
@@ -1647,12 +1820,14 @@ export default function EmployeeWeekClient({
             canAct={canAct}
             globalBusy={globalBusy}
             busyThis={busyDate === activeDay.date}
+            selectedChoiceKey={selectedChoices[activeDay.date] ?? null}
             weekdayLabel={formatWeekdayNO(activeDay.date) || activeDay.weekday}
             statusLabel={statusLabelForDay(activeDay)}
             isSelected
             onSelectDay={() => selectDayFromTap(activeDay.date)}
             onRequestOrder={() => requestOrder(activeDay.date)}
             onRequestCancel={() => requestCancel(activeDay.date)}
+            onSelectChoice={(choiceKey) => selectChoice(activeDay.date, choiceKey)}
             insightRecommended={Boolean(!readOnlyPreview && recommendedDate && activeDay.date === recommendedDate && preferredWeekday)}
             insightPreferredMotion={false}
             readOnlyPreview={readOnlyPreview}
@@ -1664,7 +1839,6 @@ export default function EmployeeWeekClient({
         <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende menyer</h2>
         <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
           {upcomingDays.map((day) => {
-            const weekdayLabel = formatWeekdayNO(day.date) || day.weekday;
             const status = orderStatusLabel(day);
             return (
               <button
@@ -1677,7 +1851,7 @@ export default function EmployeeWeekClient({
               >
                 <span className="min-w-0">
                   <span className="block truncate font-bold capitalize text-neutral-950">
-                    {weekdayLabel} {formatDateNO(day.date)}
+                    {formatMenuDateNO(day.date)}
                   </span>
                   <span className="mt-0.5 block truncate text-xs font-medium text-neutral-600">{tierLabel(day)}</span>
                 </span>
@@ -1709,6 +1883,7 @@ export default function EmployeeWeekClient({
               canAct,
               globalBusy,
               busyDate === selectedDay.date,
+              selectedChoices[selectedDay.date] ?? null,
               () => requestOrder(selectedDay.date),
               () => requestCancel(selectedDay.date),
               readOnlyPreview,

@@ -1,5 +1,6 @@
 // lib/agreement/requireRule.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { canCompanyOperate, getAgreementStatus } from "@/lib/auth/agreementStatus";
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 
@@ -8,7 +9,7 @@ export type AgreementRule = {
   company_id: string;
   day_key: string;
   slot: string;
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   price_ex_vat?: number | null;
   price_inc_vat?: number | null;
   valid_from?: string | null;
@@ -31,9 +32,9 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function normTier(v: unknown): "BASIS" | "LUXUS" | null {
+function normTier(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const s = safeStr(v).toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 
@@ -56,12 +57,20 @@ export async function requireRule(args: RequireRuleArgs): Promise<RequireRuleOk 
     return { ok: false, status: 403, error: "FORBIDDEN", message: "Mangler firmatilknytning eller dag." };
   }
 
-  // 1) Aktiv avtale
+  // 1) Aktiv avtale + separat billing hold
+  const agreementStatus = await getAgreementStatus(args.sb, companyId);
+  if (!agreementStatus.isActive) {
+    return { ok: false, status: 403, error: "AGREEMENT_MISSING", message: "Ingen aktiv avtale for firma." };
+  }
+  if (!canCompanyOperate(agreementStatus)) {
+    return { ok: false, status: 403, error: "BILLING_HOLD", message: "Bestilling er midlertidig blokkert på grunn av betalingshold." };
+  }
+
+  // 2) Avtalegrunnlag for leveringsdager
   const { data: agreementRow, error: aErr } = await args.sb
     .from("company_current_agreement")
     .select("id,company_id,status,delivery_days")
     .eq("company_id", companyId)
-    .eq("status", "ACTIVE")
     .maybeSingle();
 
   if (aErr) {
@@ -77,7 +86,7 @@ export async function requireRule(args: RequireRuleArgs): Promise<RequireRuleOk 
     return { ok: false, status: 403, error: "AGREEMENT_MISSING", message: "Ingen aktiv avtale for firma." };
   }
 
-  // 2) delivery_days må inneholde dayKey
+  // 3) delivery_days må inneholde dayKey
   const deliveryNorm = normalizeDeliveryDaysStrict((agreementRow as any)?.delivery_days);
 
   if (deliveryNorm.unknown.length) {
@@ -95,7 +104,7 @@ export async function requireRule(args: RequireRuleArgs): Promise<RequireRuleOk 
     return { ok: false, status: 403, error: "AGREEMENT_DAY_NOT_DELIVERY", message: "Dagen er ikke i avtalen." };
   }
 
-  // 3) Regler: deterministisk plukk 1 rad, tåler flere treff
+  // 4) Regler: deterministisk plukk 1 rad, tåler flere treff
   let q = args.sb
     .from("company_current_agreement_rules")
     .select("id,company_id,day_key,slot,is_enabled,tier,price_ex_vat,price_inc_vat,valid_from,valid_to")

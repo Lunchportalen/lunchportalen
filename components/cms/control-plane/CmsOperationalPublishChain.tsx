@@ -28,8 +28,8 @@ export function CmsOperationalPublishChain({ studioUrl }: CmsOperationalPublishC
         Operativ publish-kjede (én kjede)
       </h2>
       <p className="mt-1 text-xs text-slate-500">
-        Publish for operativ meny = Sanity (Studio og/eller in-CMS broker for menuContent — samme kilde). Runtime eier
-        avtale og ordre-API. Ingen duplikat publish-motor i Postgres.
+        Publish for operativ meny = Sanity Studio. Runtime eier avtale og ordre-API. Ingen duplikat publish-motor i
+        Postgres.
       </p>
       <ol className="mt-4 space-y-4">
         {OPERATIONAL_WEEK_MENU_PUBLISH_CHAIN.map((row) => {

@@ -4,7 +4,7 @@ import "server-only";
  * CMS AI — action surface for routes. No persistence; callers apply in editor explicitly.
  */
 export {
-  improveMenuContent,
+  improveMenuCopy,
   generateMenuFromIntent,
   validateMenuQuality,
   suggestWeeklyVariation,

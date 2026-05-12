@@ -181,7 +181,7 @@ export function NodeActionsMenu({
 
   if (!open) return null;
 
-  const menuContent = (
+  const menuOverlay = (
     <>
       <div
         className="fixed inset-0 z-[9998]"
@@ -232,5 +232,5 @@ export function NodeActionsMenu({
     </>
   );
 
-  return createPortal(menuContent, document.body);
+  return createPortal(menuOverlay, document.body);
 }

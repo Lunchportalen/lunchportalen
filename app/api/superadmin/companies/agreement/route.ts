@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 
-type PlanTier = "BASIS" | "LUXUS";
+type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type AgreementInput = {
   companyId: string;
   plan_tier: PlanTier;

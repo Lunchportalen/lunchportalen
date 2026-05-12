@@ -1,0 +1,85 @@
+.week-day__categories {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.week-category-card {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 2px solid var(--ds-line);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ds-ease),
+    background 0.2s var(--ds-ease);
+}
+
+.week-category-card:hover:not(:disabled) {
+  border-color: var(--ds-accent);
+}
+
+.week-category-card.is-selected {
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+}
+
+.week-category-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.week-category-card:focus-visible {
+  outline: 3px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+
+.week-category-card__label {
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.week-category-card__title {
+  color: var(--ds-text);
+  font-size: var(--ds-body);
+  font-weight: 500;
+}
+
+.week-category-card__desc {
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+}
+
+.week-category-card__empty {
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  font-style: italic;
+}
+
+@media (min-width: 640px) {
+  .week-day__categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .week-day__categories {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-category-card {
+    transition: none;
+  }
+}

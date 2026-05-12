@@ -20,7 +20,7 @@ export type FallbackLuxusMealKey = (typeof FALLBACK_LUXUS_MEAL_KEYS)[number];
 export type MealChoice = { key: string; label: string };
 
 export function fallbackChoicesForTier(
-  tier: "BASIS" | "LUXUS",
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE",
   menuByMealType?: Map<string, CmsMenuByMealType> | null
 ): MealChoice[] {
   const keys = tier === "BASIS" ? FALLBACK_BASIS_MEAL_KEYS : FALLBACK_LUXUS_MEAL_KEYS;

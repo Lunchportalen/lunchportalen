@@ -13,7 +13,7 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { enqueueInvoiceReadyOutbox, type InvoiceReadyOutboxInput } from "@/lib/outbox/invoiceReady";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type AgreementTier = "BASIS" | "LUXUS";
+type AgreementTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 type AgreementSummary = {
   companyId: string;
@@ -76,7 +76,7 @@ function normalizeStatus(value: unknown): string {
 
 function normalizeTier(value: unknown): AgreementTier | null {
   const tier = normalizeStatus(value);
-  if (tier === "BASIS" || tier === "LUXUS") return tier;
+  if (tier === "BASIS" || tier === "LUXUS" || tier === "ENTERPRISE") return tier;
   return null;
 }
 

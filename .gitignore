@@ -25,6 +25,7 @@ fullAudit.json
 dead-files.json
 prioritizedTasks.json
 structure.txt
+docs/audit/sanity-dump/
 
 # Build artifacts
 tsconfig.tsbuildinfo
@@ -41,6 +42,7 @@ queue.json
 # Local temp / artifacts
 .tmp/
 tmp/
+.backups/
 # Root-only hyphenated temp files (e.g. curl/debug .tmp-*.html / .tmp-*.headers)
 /.tmp-*
 *.log

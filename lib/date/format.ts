@@ -1,18 +1,39 @@
 // lib/date/format.ts
-// UI-formattering (NO): alltid DD-MM-YYYY, backend beholder ISO.
+// UI-formattering (NO): alltid dd.MM.yyyy, backend beholder ISO.
 
 const OSLO_TZ = "Europe/Oslo";
+const MENU_WEEKDAYS_NO = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"];
 
-function normalizeDatePart(input: string): { yyyy: string; mm: string; dd: string } | null {
+type DateInput = string | Date | null | undefined;
+type OsloDateParts = { yyyy: string; mm: string; dd: string };
+type OsloDateTimeParts = OsloDateParts & { hh: string; mi: string; ss: string };
+
+function normalizeDatePart(input: string): OsloDateParts | null {
   const s = String(input ?? "").trim();
   if (!s) return null;
   const datePart = s.includes("T") ? s.split("T")[0] : s;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
   if (!m) return null;
-  return { yyyy: m[1], mm: m[2], dd: m[3] };
+  const yyyy = m[1];
+  const mm = m[2];
+  const dd = m[3];
+  const localDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  if (
+    localDate.getFullYear() !== Number(yyyy) ||
+    localDate.getMonth() !== Number(mm) - 1 ||
+    localDate.getDate() !== Number(dd)
+  ) {
+    return null;
+  }
+  return { yyyy, mm, dd };
 }
 
-function toOsloParts(d: Date) {
+function isDateOnlyString(input: unknown): input is string {
+  return typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.trim());
+}
+
+function toOsloParts(d: Date): OsloDateTimeParts | null {
+  if (Number.isNaN(d.getTime())) return null;
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: OSLO_TZ,
     year: "numeric",
@@ -34,10 +55,41 @@ function toOsloParts(d: Date) {
   };
 }
 
-export function formatDateNO(isoYYYYMMDD: string): string {
-  const parts = normalizeDatePart(isoYYYYMMDD);
-  if (!parts) return String(isoYYYYMMDD ?? "");
-  return `${parts.dd}-${parts.mm}-${parts.yyyy}`;
+function datePartsForDisplay(input: DateInput): OsloDateParts | null {
+  if (input == null) return null;
+  if (input instanceof Date) return toOsloParts(input);
+
+  const s = String(input).trim();
+  if (!s) return null;
+  if (isDateOnlyString(s)) return normalizeDatePart(s);
+
+  const d = new Date(s);
+  return toOsloParts(d);
+}
+
+function dateTimePartsForDisplay(input: DateInput): OsloDateTimeParts | null {
+  if (input == null) return null;
+  if (input instanceof Date) return toOsloParts(input);
+
+  const s = String(input).trim();
+  if (!s) return null;
+  if (isDateOnlyString(s)) {
+    const parts = normalizeDatePart(s);
+    return parts ? { ...parts, hh: "00", mi: "00", ss: "00" } : null;
+  }
+
+  const d = new Date(s);
+  return toOsloParts(d);
+}
+
+function weekdayIndexFromParts(parts: OsloDateParts): number {
+  return new Date(Number(parts.yyyy), Number(parts.mm) - 1, Number(parts.dd)).getDay();
+}
+
+export function formatDateNO(value: DateInput): string {
+  const parts = datePartsForDisplay(value);
+  if (!parts) return "";
+  return `${parts.dd}.${parts.mm}.${parts.yyyy}`;
 }
 
 export function formatDateISO(isoYYYYMMDD: string): string {
@@ -46,12 +98,10 @@ export function formatDateISO(isoYYYYMMDD: string): string {
   return `${parts.yyyy}-${parts.mm}-${parts.dd}`;
 }
 
-export function formatDateTimeNO(isoDatetime: string): string {
-  if (!isoDatetime) return "";
-  const d = new Date(isoDatetime);
-  if (Number.isNaN(d.getTime())) return String(isoDatetime ?? "");
-  const p = toOsloParts(d);
-  return `${p.dd}-${p.mm}-${p.yyyy} ${p.hh}:${p.mi}`;
+export function formatDateTimeNO(value: DateInput): string {
+  const p = dateTimePartsForDisplay(value);
+  if (!p) return "";
+  return `${p.dd}.${p.mm}.${p.yyyy} ${p.hh}:${p.mi}`;
 }
 
 const WEEKDAYS_NO = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
@@ -86,15 +136,21 @@ export function formatTimeNO(isoDatetime: string): string {
   const d = new Date(isoDatetime);
   if (Number.isNaN(d.getTime())) return "";
   const p = toOsloParts(d);
+  if (!p) return "";
   return `${p.hh}:${p.mi}`;
 }
 
-export function formatDateTimeSecondsNO(isoDatetime: string): string {
-  if (!isoDatetime) return "";
-  const d = new Date(isoDatetime);
-  if (Number.isNaN(d.getTime())) return String(isoDatetime ?? "");
-  const p = toOsloParts(d);
-  return `${p.dd}-${p.mm}-${p.yyyy} ${p.hh}:${p.mi}:${p.ss}`;
+export function formatDateTimeSecondsNO(value: DateInput): string {
+  const p = dateTimePartsForDisplay(value);
+  if (!p) return "";
+  return `${p.dd}.${p.mm}.${p.yyyy} ${p.hh}:${p.mi}:${p.ss}`;
+}
+
+export function formatMenuDateNO(value: DateInput): string {
+  const parts = datePartsForDisplay(value);
+  if (!parts) return "";
+  const weekday = MENU_WEEKDAYS_NO[weekdayIndexFromParts(parts)] ?? "";
+  return weekday ? `${weekday} ${parts.dd}.${parts.mm}.${parts.yyyy}` : "";
 }
 
 export function formatMonthYearShortNO(input: string): string {

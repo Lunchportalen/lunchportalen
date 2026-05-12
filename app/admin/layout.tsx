@@ -9,9 +9,9 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import AdminFooter from "@/components/admin/AdminFooter";
-import NeonGuard from "@/components/admin/NeonGuard";
-import AdminNav from "./AdminNav";
+import AdminMobileNav from "./AdminMobileNav";
+import AdminSidebar from "./AdminSidebar";
+import AdminTopbar from "./AdminTopbar";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -90,18 +90,51 @@ async function currentPathFromHeaders(fallback: string) {
   return fallback;
 }
 
-function shell(children: ReactNode, opts?: { showCompanyAdminNav?: boolean }) {
+function titleForAdminPath(path: string) {
+  const pathname = safeNextPath(path).split("?")[0] || "/admin";
+  const items: Array<{ href: string; title: string; exact?: boolean }> = [
+    { href: "/admin", title: "Oversikt", exact: true },
+    { href: "/admin/dagens-brukere", title: "Dagens drift" },
+    { href: "/admin/dagens-levering", title: "Dagens levering" },
+    { href: "/admin/uke-bestillbarhet", title: "Uke og bestilling" },
+    { href: "/admin/people", title: "Ansatte" },
+    { href: "/admin/locations", title: "Lokasjoner" },
+    { href: "/admin/agreement", title: "Avtale og drift" },
+    { href: "/admin/leveringsgrunnlag", title: "Leveringsgrunnlag" },
+    { href: "/admin/insights", title: "Økonomi" },
+    { href: "/admin/orders", title: "Historikk" },
+    { href: "/admin/history", title: "Aktivitet" },
+    { href: "/admin/control-tower", title: "Kontrolltårn" },
+    { href: "/admin/invite", title: "Inviter ansatte" },
+  ];
+  const match = items.find((item) => (item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`)));
+  return match?.title ?? "Admin";
+}
+
+async function loadCompanyName(companyId: string) {
+  try {
+    const sb = await supabaseServer();
+    const { data, error } = await sb.from("companies").select("name").eq("id", companyId).maybeSingle();
+    if (error) return "Firma";
+    return safeStr(data?.name) || "Firma";
+  } catch {
+    return "Firma";
+  }
+}
+
+async function shell(
+  children: ReactNode,
+  opts?: { showCompanyAdminNav?: boolean; companyName?: string; userName?: string; pageTitle?: string },
+) {
   const showNav = opts?.showCompanyAdminNav !== false;
   return (
-    <div className="w-full">
-      <NeonGuard />
-      {showNav ? (
-        <div className="mx-auto w-full max-w-[1440px] px-4 pt-[27px]">
-          <AdminNav />
-        </div>
-      ) : null}
-      <main className="w-full">{children}</main>
-      <AdminFooter />
+    <div className="ds-admin-root">
+      {showNav ? <AdminSidebar companyName={opts?.companyName ?? "Firma"} userName={opts?.userName ?? "Firmaadmin"} /> : null}
+      <div className="ds-admin-main">
+        <AdminTopbar pageTitle={opts?.pageTitle ?? "Oversikt"} />
+        <main className="ds-admin-content">{children}</main>
+      </div>
+      {showNav ? <AdminMobileNav /> : null}
     </div>
   );
 }
@@ -123,8 +156,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     return <BlockedAccess reason="BLOCKED" />;
   }
 
+  const currentPath = await currentPathFromHeaders("/admin");
+  const pageTitle = titleForAdminPath(currentPath);
+
   if (role === "superadmin") {
-    return shell(children, { showCompanyAdminNav: false });
+    return shell(children, { showCompanyAdminNav: false, pageTitle });
   }
 
   if (role !== "company_admin") {
@@ -139,7 +175,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/avtale-ikke-aktiv");
   }
 
-  return shell(children);
+  const companyName = await loadCompanyName(auth.company_id);
+  const userName =
+    safeStr((auth as any).user?.user_metadata?.full_name) ||
+    safeStr((auth as any).user?.email) ||
+    safeStr((auth as any).email) ||
+    "Firmaadmin";
+
+  return shell(children, { companyName, userName, pageTitle });
 }
 
 async function hasActiveAgreement(companyId: string): Promise<boolean> {

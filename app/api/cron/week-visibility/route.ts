@@ -47,7 +47,7 @@ async function patchVisibilityForRange(opts: {
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
-      _type=="menuContent" &&
+      _type=="menuDay" &&
       date >= $from && date < $to &&
       !(_id in path("drafts.**")) &&
       (${onlyApproved ? "approvedForPublish==true" : "true"})
@@ -78,7 +78,7 @@ async function patchVisibilityForDate(opts: { dateISO: string; visible: boolean;
 
   const ids: string[] = await sanityWrite.fetch(
     `*[
-      _type=="menuContent" &&
+      _type=="menuDay" &&
       date == $date &&
       !(_id in path("drafts.**")) &&
       (${onlyApproved ? "approvedForPublish==true" : "true"})
@@ -332,7 +332,7 @@ export async function POST(req: Request) {
           actor_role: "superadmin",
           action: "menu.visibility_changed",
           severity: "info",
-          target_type: "menuContent",
+          target_type: "menuDay",
           target_id: dateISO,
           target_label: dateISO,
           before: null,
@@ -354,7 +354,7 @@ export async function POST(req: Request) {
         mirror,
         note:
           res.total === 0
-            ? "No menuContent found for date (or not approved)."
+            ? "No menuDay found for date (or not approved)."
             : res.changed === 0
               ? "No change (already in desired state)."
               : "Patched successfully.",

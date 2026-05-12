@@ -20,73 +20,42 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div
-      style={{
-        padding: 32,
-        maxWidth: 900,
-        margin: "0 auto",
-      }}
-    >
-      <h1 style={{ margin: 0, fontSize: 26 }}>
-        Det oppstod en feil i admin
-      </h1>
+    <div className="ds-admin-error">
+      <h1 className="ds-admin-error__title">Det oppstod en feil i admin</h1>
 
-      <p style={{ marginTop: 10, opacity: 0.8, lineHeight: 1.5 }}>
+      <p className="ds-admin-error__body">
         Systemet er oppe, men denne visningen fikk en uventet feil.
         Du kan forsøke å laste siden på nytt.
       </p>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+      <div className="ds-admin-error__actions">
         <button
           type="button"
           onClick={() => reset()}
-          style={{
-            padding: "10px 16px",
-            borderRadius: 12,
-            border: "1px solid rgba(0,0,0,0.15)",
-            background: "rgba(0,0,0,0.05)",
-            cursor: "pointer",
-            fontWeight: 600,
-          }}
+          className="ds-admin-error__button"
         >
           Last på nytt
         </button>
 
         <Link
           href="/admin"
-          style={{
-            padding: "10px 16px",
-            borderRadius: 12,
-            border: "1px solid rgba(0,0,0,0.15)",
-            textDecoration: "none",
-            color: "inherit",
-          }}
+          className="ds-admin-error__link"
         >
           Tilbake til dashboard
         </Link>
       </div>
 
-      <div
-        style={{
-          marginTop: 24,
-          padding: 16,
-          borderRadius: 14,
-          border: "1px solid rgba(255,0,0,0.25)",
-          background: "rgba(255,0,0,0.04)",
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          Teknisk informasjon
-        </div>
+      <div className="ds-admin-error__tech">
+        <div className="ds-admin-error__tech-title">Teknisk informasjon</div>
 
-        <div style={{ fontSize: 13, opacity: 0.85 }}>
+        <div className="ds-admin-error__tech-body">
           <div>
             <strong>Melding:</strong>{" "}
             {error?.message || "Ingen feilmelding tilgjengelig"}
           </div>
 
           {error?.digest ? (
-            <div style={{ marginTop: 6 }}>
+            <div>
               <strong>Digest:</strong> {error.digest}
             </div>
           ) : null}

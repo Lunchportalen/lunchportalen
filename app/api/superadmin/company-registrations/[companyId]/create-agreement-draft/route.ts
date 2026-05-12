@@ -5,11 +5,12 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { jsonOk, jsonErr } from "@/lib/http/respond";
+import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
-import { createAgreementDraftFromRegistration } from "@/lib/server/superadmin/createAgreementDraftFromRegistration";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
+
+void jsonOk;
 
 function denyResponse(s: any): Response {
   if (s?.response) return s.response as Response;
@@ -24,6 +25,7 @@ function denyResponse(s: any): Response {
  */
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   void req;
+  void ctx;
   const s: any = await scopeOr401(req);
   if (!s?.ok) return denyResponse(s);
 
@@ -31,31 +33,10 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   const deny = requireRoleOr403(authCtx, "superadmin.agreements.create", ["superadmin"]);
   if (deny) return deny;
 
-  const params = await Promise.resolve(ctx.params as { companyId?: string });
-  const companyId = String(params?.companyId ?? "").trim();
-
-  const result = await createAgreementDraftFromRegistration({
-    companyId,
-    rid: authCtx.rid,
-    scope: {
-      user_id: authCtx.scope.userId,
-      email: authCtx.scope.email,
-      role: authCtx.scope.role,
-    },
-  });
-
-  if (result.ok === false) {
-    return jsonErr(authCtx.rid, result.message, result.status, result.code);
-  }
-
-  return jsonOk(
+  return jsonErr(
     authCtx.rid,
-    {
-      agreementId: result.agreementId,
-      status: result.status,
-      message: "Avtaleutkast opprettet (Venter). Firmastatus er uendret.",
-      audit_ok: result.audit_ok,
-    },
-    200
+    "Opprettelse av agreement-utkast fra registrering er ikke lenger tillatt. Bruk approve/reject-knappene på registreringen direkte.",
+    410,
+    "FLOW_DEPRECATED"
   );
 }

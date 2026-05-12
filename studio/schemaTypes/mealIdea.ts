@@ -17,6 +17,24 @@ export default defineType({
     }),
 
     defineField({
+      name: "category",
+      title: "Kategori",
+      type: "string",
+      description: "Hvilken kategori denne rettidéen passer til. Brukes av auto-fyll og seed-scripts.",
+      options: {
+        list: [
+          { title: "Påsmurt", value: "paasmurt" },
+          { title: "Salat", value: "salat" },
+          { title: "Sushi", value: "sushi" },
+          { title: "Pokébowl", value: "pokebowl" },
+          { title: "Thai", value: "thai" },
+          { title: "Varmrett", value: "varmrett" },
+        ],
+        layout: "dropdown",
+      },
+    }),
+
+    defineField({
       name: "description",
       title: "Beskrivelse",
       type: "text",

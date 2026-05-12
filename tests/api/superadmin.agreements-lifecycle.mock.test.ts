@@ -80,12 +80,7 @@ describe("superadmin agreements lifecycle API contract (mocked)", () => {
     setupCommon();
   });
 
-  test("create pending returns ok:true with agreement id", async () => {
-    rpcMock.mockResolvedValueOnce({
-      data: { agreement_id: "ag_create", company_id: "company_1", status: "PENDING" },
-      error: null,
-    });
-
+  test("create pending is deprecated and returns 410", async () => {
     const route = await import("@/app/api/superadmin/agreements/route");
     const res = await route.POST(
       req("http://localhost/api/superadmin/agreements", {
@@ -103,11 +98,11 @@ describe("superadmin agreements lifecycle API contract (mocked)", () => {
     );
     const body = await json(res);
 
-    expect(res.status).toBe(200);
-    expect(body.ok).toBe(true);
+    expect(res.status).toBe(410);
+    expect(body.ok).toBe(false);
     expect(body.rid).toBe("rid_lifecycle_mock");
-    expect(body.data.agreementId).toBe("ag_create");
-    expect(body.data.status).toBe("PENDING");
+    expect(body.error).toBe("FLOW_DEPRECATED");
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
   test("approve returns ok:true and queues invite/outbox side effects", async () => {

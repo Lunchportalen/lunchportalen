@@ -6,6 +6,11 @@ import { IntentLink } from "sanity/router";
 import { generateWeekMenu, type Meal, type NutritionPer100g } from "./generateWeekMenu";
 
 const TARGET_PRICE = 90;
+const DEFAULT_PLAN_TIER = "BASIS";
+const DEFAULT_CATEGORY = "varmrett";
+
+type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
+type MenuCategory = "paasmurt" | "salat" | "sushi" | "pokebowl" | "thai" | "varmrett";
 
 function normalizeTitle(title: string): string {
   return title
@@ -18,6 +23,8 @@ function normalizeTitle(title: string): string {
 type DayDoc = {
   _id: string;
   date: string;
+  planTier?: PlanTier | null;
+  category?: MenuCategory | null;
   description?: string;
   mealTitle?: string;
   mealRef?: { _ref: string; _type: "reference" };
@@ -82,8 +89,8 @@ function weekdayDates(mondayISO: string) {
   return [0, 1, 2, 3, 4].map((i) => addDaysISO(mondayISO, i));
 }
 
-function docIdForDate(date: string) {
-  return `menuDay-${date}`;
+function docIdForDate(date: string, planTier: PlanTier = DEFAULT_PLAN_TIER, category: MenuCategory = DEFAULT_CATEGORY) {
+  return `menuDay-${date}-${planTier}-${category}`;
 }
 
 function currentSeason(): "winter" | "spring" | "summer" | "autumn" {
@@ -164,6 +171,8 @@ export default function WeekPlanner() {
       ] | order(date asc) {
         _id,
         date,
+        planTier,
+        category,
         description,
         mealTitle,
         mealRef,
@@ -291,6 +300,8 @@ export default function WeekPlanner() {
           _id: docIdForDate(date),
           _type: "menuDay",
           date,
+          planTier: DEFAULT_PLAN_TIER,
+          category: DEFAULT_CATEGORY,
           description: "",
           mealTitle: "",
           allergens: [],
@@ -378,6 +389,8 @@ export default function WeekPlanner() {
             .patch(docIdForDate(date), {
               set: {
                 description: meal.description?.trim() || meal.title,
+                planTier: DEFAULT_PLAN_TIER,
+                category: DEFAULT_CATEGORY,
                 mealTitle: meal.title,
                 mealRef: {
                   _type: "reference",

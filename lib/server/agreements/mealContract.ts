@@ -53,7 +53,7 @@ function allowedSet(plan: CmsProductPlan | null): Set<string> | null {
 }
 
 export function validateMealContractPayload(opts: {
-  rpcTier: "BASIS" | "LUXUS";
+  rpcTier: "BASIS" | "LUXUS" | "ENTERPRISE";
   deliveryDays: string[];
   payload: unknown;
   cmsBasis: CmsProductPlan | null;
@@ -75,6 +75,9 @@ export function validateMealContractPayload(opts: {
   }
   if (rpcTier === "LUXUS" && plan !== "luxus") {
     return { ok: false, code: "MEAL_PLAN_TIER_MISMATCH", message: "Avtalenivå LUXUS krever plan=luxus." };
+  }
+  if (rpcTier === "ENTERPRISE" && plan !== "luxus") {
+    return { ok: false, code: "MEAL_PLAN_TIER_MISMATCH", message: "Avtalenivå ENTERPRISE krever plan=luxus." };
   }
 
   const dd = deliveryDays.map(normContractDayKey).filter(Boolean) as string[];

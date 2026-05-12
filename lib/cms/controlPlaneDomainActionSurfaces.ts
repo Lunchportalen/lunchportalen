@@ -72,8 +72,8 @@ export const CONTROL_PLANE_DOMAIN_ACTION_SURFACES: ControlPlaneDomainActionSurfa
   {
     id: "week_menu",
     title: "Uke & meny (operativ kjede)",
-    description: "GET /api/week + Sanity menu/menuContent. weekPlan er eget editorial-spor.",
-    sourceOfTruth: "GET /api/week, Sanity menu/menuContent",
+    description: "GET /api/week + Sanity menu/menuDay.",
+    sourceOfTruth: "GET /api/week, Sanity menu/menuDay",
     cmsSurfaceHref: "/backoffice/week-menu",
     mutationPosture: "runtime_route",
     postureLabel: "Meny i Studio · ikke duplikat CMS-DB",
@@ -82,11 +82,10 @@ export const CONTROL_PLANE_DOMAIN_ACTION_SURFACES: ControlPlaneDomainActionSurfa
       { label: "Runtime-oversikt", href: "/backoffice/runtime" },
     ],
     actionRouting: {
-      reads: ["GET /api/week", "Sanity menu/menuContent", "company_current_agreement"],
-      writes: ["Sanity Studio (menydokumenter)", "POST /api/backoffice/sanity/menu-content/publish (superadmin + SANITY_WRITE_TOKEN)"],
+      reads: ["GET /api/week", "Sanity menu/menuDay", "company_current_agreement"],
+      writes: ["Sanity Studio (menydokumenter)"],
       affects: "Ansatte — synlig uke og bestilling",
-      publishControl:
-        "Operativ meny publiseres via Sanity (Studio eller server-broker) — samme Actions-kilde som API leser publisert",
+      publishControl: "Operativ meny publiseres via Sanity Studio — samme kilde som API leser publisert",
       whyMatters: "Uten publiserte menydokumenter og gyldig avtale får ikke ansatte riktig operativ meny.",
     },
   },

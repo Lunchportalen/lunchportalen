@@ -17,8 +17,8 @@ import { requireActiveAgreement } from "@/lib/agreements/requireActiveAgreement"
 import { readLocalDevAuthSession } from "@/lib/auth/devBypass";
 import type { Role } from "@/lib/auth/role";
 import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
-import { getMenuForDates, type MenuContent } from "@/lib/cms/menuContent";
-import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
+import { getMenuForDates, type MenuDay } from "@/lib/cms/menuDay";
+import { formatDateNO, formatMenuDateNO } from "@/lib/date/format";
 import { weekRangeISO } from "@/lib/date/week";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
@@ -96,14 +96,14 @@ type SuperadminMenuCategory = (typeof LUXUS_MENU_TYPES)[number];
 
 type SuperadminCategoryDayStatus = {
   category: SuperadminMenuCategory;
-  menu: MenuContent | null;
+  menu: MenuDay | null;
   choices: SuperadminMenuChoice[];
 };
 
 type SuperadminDayStatus = {
   basis: SuperadminCategoryDayStatus[];
   luxusExtra: SuperadminCategoryDayStatus[];
-  uncategorizedPublishedMenus: MenuContent[];
+  uncategorizedPublishedMenus: MenuDay[];
 };
 
 type SuperadminWeekTierCounts = {
@@ -127,11 +127,6 @@ function parseEmployeePreviewMode(value: unknown): EmployeePreviewMode {
   return "basis";
 }
 
-function capitalizeFirst(value: string) {
-  if (!value) return value;
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
 function safeChoiceLabel(raw: unknown): string {
   if (typeof raw === "string") return raw.trim();
   if (!raw || typeof raw !== "object") return "";
@@ -139,8 +134,8 @@ function safeChoiceLabel(raw: unknown): string {
   return String(row.label ?? row.title ?? row.name ?? row.key ?? "").trim();
 }
 
-function menuChoices(menu: MenuContent): SuperadminMenuChoice[] {
-  const row = menu as MenuContent & Record<string, unknown>;
+function menuChoices(menu: MenuDay): SuperadminMenuChoice[] {
+  const row = menu as MenuDay & Record<string, unknown>;
   const raw =
     (Array.isArray(row.choices) && row.choices) ||
     (Array.isArray(row.dishes) && row.dishes) ||
@@ -180,8 +175,8 @@ function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   return null;
 }
 
-function normalizeMenuCategory(menu: MenuContent): SuperadminMenuCategory | null {
-  const row = menu as MenuContent & Record<string, unknown>;
+function normalizeMenuCategory(menu: MenuDay): SuperadminMenuCategory | null {
+  const row = menu as MenuDay & Record<string, unknown>;
   const directSources = [row.category, row.menuType, row.type, row.kind, row.title];
   for (const source of directSources) {
     const category = matchMenuCategory(source);
@@ -197,13 +192,13 @@ function normalizeMenuCategory(menu: MenuContent): SuperadminMenuCategory | null
   return null;
 }
 
-function publishedMenusForDate(menusByDate: Map<string, MenuContent[]>, date: string) {
+function publishedMenusForDate(menusByDate: Map<string, MenuDay[]>, date: string) {
   return (menusByDate.get(date) ?? []).filter((menu) => menu.isPublished === true);
 }
 
-function menuByCategoryForDate(menusByDate: Map<string, MenuContent[]>, date: string) {
-  const menusByCategory = new Map<SuperadminMenuCategory, MenuContent>();
-  const uncategorizedPublishedMenus: MenuContent[] = [];
+function menuByCategoryForDate(menusByDate: Map<string, MenuDay[]>, date: string) {
+  const menusByCategory = new Map<SuperadminMenuCategory, MenuDay>();
+  const uncategorizedPublishedMenus: MenuDay[] = [];
 
   for (const menu of publishedMenusForDate(menusByDate, date)) {
     const category = normalizeMenuCategory(menu);
@@ -221,7 +216,7 @@ function menuByCategoryForDate(menusByDate: Map<string, MenuContent[]>, date: st
 
 function buildCategoryStatuses(
   categories: readonly SuperadminMenuCategory[],
-  menusByCategory: Map<SuperadminMenuCategory, MenuContent>,
+  menusByCategory: Map<SuperadminMenuCategory, MenuDay>,
 ): SuperadminCategoryDayStatus[] {
   return categories.map((category) => {
     const menu = menusByCategory.get(category) ?? null;
@@ -233,7 +228,7 @@ function buildCategoryStatuses(
   });
 }
 
-function dayCategoryStatus(date: string, menusByDate: Map<string, MenuContent[]>): SuperadminDayStatus {
+function dayCategoryStatus(date: string, menusByDate: Map<string, MenuDay[]>): SuperadminDayStatus {
   const { menusByCategory, uncategorizedPublishedMenus } = menuByCategoryForDate(menusByDate, date);
 
   return {
@@ -245,14 +240,14 @@ function dayCategoryStatus(date: string, menusByDate: Map<string, MenuContent[]>
 
 function hasAllCategories(
   categories: readonly SuperadminMenuCategory[],
-  menusByCategory: Map<SuperadminMenuCategory, MenuContent>,
+  menusByCategory: Map<SuperadminMenuCategory, MenuDay>,
 ) {
   return categories.every((category) => menusByCategory.has(category));
 }
 
 function weekTierCounts(
   block: SuperadminWeekBlock,
-  menusByDate: Map<string, MenuContent[]>,
+  menusByDate: Map<string, MenuDay[]>,
 ): SuperadminWeekTierCounts {
   const dailyCategoryMaps = block.dates.map((date) => menuByCategoryForDate(menusByDate, date).menusByCategory);
   const basisComplete = dailyCategoryMaps.filter((menusByCategory) =>
@@ -314,7 +309,7 @@ function SuperadminCategoryGroup({
   );
 }
 
-function SuperadminUncategorizedMenuLine({ menus }: { menus: MenuContent[] }) {
+function SuperadminUncategorizedMenuLine({ menus }: { menus: MenuDay[] }) {
   if (!menus.length) return null;
 
   return (
@@ -334,16 +329,14 @@ function SuperadminDayPreview({
   menusByDate,
 }: {
   date: string;
-  menusByDate: Map<string, MenuContent[]>;
+  menusByDate: Map<string, MenuDay[]>;
 }) {
   const status = dayCategoryStatus(date, menusByDate);
-  const weekday = capitalizeFirst(formatWeekdayNO(date));
-
   return (
     <li className="py-3">
       <div className="text-center sm:text-left">
         <p className="text-sm font-semibold text-neutral-950">
-          {weekday} <span className="text-neutral-300">-</span> {formatDateNO(date)}
+          {formatMenuDateNO(date)}
         </p>
       </div>
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -362,7 +355,7 @@ function SuperadminWeekPreviewCard({
   menusByDate,
 }: {
   block: SuperadminWeekBlock;
-  menusByDate: Map<string, MenuContent[]>;
+  menusByDate: Map<string, MenuDay[]>;
 }) {
   const counts = weekTierCounts(block, menusByDate);
 
@@ -481,7 +474,7 @@ async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
   ];
 
   const allDates = weekBlocks.flatMap((block) => block.dates);
-  const menusByDate = new Map<string, MenuContent[]>();
+  const menusByDate = new Map<string, MenuDay[]>();
   let menuDataError = false;
 
   try {

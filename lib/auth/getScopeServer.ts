@@ -1,6 +1,7 @@
 // lib/auth/getScopeServer.ts
 import "server-only";
 
+import { getAgreementStatus } from "@/lib/auth/agreementStatus";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { supabaseServer } from "@/lib/supabase/server";
 import { ScopeError, type Scope, type Role as ScopeRole } from "@/lib/auth/scope";
@@ -53,26 +54,19 @@ async function enforceAgreementAndBilling(sb: any, role: ScopeRole, company_id: 
   }
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
-  const { data, error } = await sb
-    .from("agreements")
-    .select("company_id,status")
-    .eq("company_id", company_id)
-    .eq("status", "ACTIVE")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
-  if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
-
-  const st = normalizeStatus(data.status);
-  if (st !== "active") throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
+  const agreementStatus = await getAgreementStatus(sb, company_id);
+  if (!agreementStatus.isActive) {
+    if (agreementStatus.status === "PAUSED") throw new ScopeError("Firmaet er midlertidig pauset", 403, "AGREEMENT_PAUSED");
+    if (agreementStatus.status === "CLOSED") throw new ScopeError("Firmaet er stengt", 403, "AGREEMENT_CLOSED");
+    if (!agreementStatus.agreementId) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
+    throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
+  }
 
   return {
     agreement_status: "active",
-    billing_hold: false,
-    billing_hold_reason: null,
-    can_act: true,
+    billing_hold: agreementStatus.billingHold,
+    billing_hold_reason: agreementStatus.billingHold ? "BILLING_HOLD" : null,
+    can_act: !agreementStatus.billingHold,
   };
 }
 

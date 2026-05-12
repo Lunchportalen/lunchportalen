@@ -42,6 +42,9 @@
     "evolution:run": "tsx lib/evolution/run.ts",
     "verify:control-coverage": "node scripts/verify-control-coverage.mjs",
     "sanity:live": "node scripts/sanity-live.mjs",
+    "sanity:dump-menu-state": "tsx scripts/sanity/dump-menu-state.ts",
+    "sanity:delete-menuContent": "tsx scripts/sanity/delete-menuContent.ts",
+    "sanity:seed-menu-week": "tsx scripts/sanity/seed-menu-week.ts",
     "agents:check": "node scripts/agents-ci.mjs",
     "ci:guard": "node scripts/ci-guard.mjs",
     "api:contract": "node scripts/ci/api-contract-enforcer.mjs",
@@ -65,6 +68,7 @@
     "test:social-flow": "tsx scripts/testSocialFlow.ts",
     "repo:scan": "tsx scripts/scanRepo.ts",
     "repo:update": "tsx scripts/updateRepoMemory.ts",
+    "seed:sanity-menu": "tsx scripts/seed-sanity-menu.ts",
     "worker:queue": "tsx workers/worker.ts"
   },
   "engines": {

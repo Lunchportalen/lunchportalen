@@ -17,9 +17,9 @@ function safeNum(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function normalizeTier(value: unknown): "BASIS" | "LUXUS" | null {
+function normalizeTier(value: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const tier = safeStr(value).toUpperCase();
-  if (tier === "BASIS" || tier === "LUXUS") return tier;
+  if (tier === "BASIS" || tier === "LUXUS" || tier === "ENTERPRISE") return tier;
   return null;
 }
 

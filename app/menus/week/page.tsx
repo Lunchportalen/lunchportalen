@@ -4,20 +4,11 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { weekRangeISO, weekRangeISOFrom } from "@/lib/date/week";
-import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/cms/menuContent";
-import { formatDateNO, formatDayMonthShortNO, formatWeekdayNO } from "@/lib/date/format";
+import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/cms/menuDay";
+import { formatMenuDateNO } from "@/lib/date/format";
 
 function isISODate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
-}
-
-function dayNameNO(dateISO: string) {
-  const name = formatWeekdayNO(dateISO);
-  return name ? name.charAt(0).toUpperCase() + name.slice(1) : "";
-}
-
-function prettyDateNO(dateISO: string) {
-  return formatDayMonthShortNO(dateISO);
 }
 
 function chipClass(kind: "ok" | "warn" | "crit" | "neutral") {
@@ -112,14 +103,8 @@ export default async function MenusWeekPage(props: {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium capitalize">
-                    {dayNameNO(dateISO)}{" "}
-                    <span className="text-[rgb(var(--lp-muted))]">
-                      • {prettyDateNO(dateISO)}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-                    {formatDateNO(dateISO)}
+                  <div className="text-sm font-medium">
+                    {formatMenuDateNO(dateISO)}
                   </div>
                 </div>
 

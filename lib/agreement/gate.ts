@@ -41,6 +41,14 @@ export function blockedReasonToUi(reason: string | null | undefined): {
     };
   }
 
+  if (code === "BILLING_HOLD") {
+    return {
+      title: "Bestilling er midlertidig blokkert",
+      body: "Avtalen er aktiv, men bestilling er satt på betalingshold.",
+      severity: "warning",
+    };
+  }
+
   if (code === "AGREEMENT_MISSING_OR_UNKNOWN") {
     return {
       title: "Avtale mangler",

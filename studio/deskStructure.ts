@@ -1,4 +1,4 @@
-import { CalendarIcon, ComposeIcon, ControlsIcon, DocumentIcon } from "@sanity/icons";
+import { CalendarIcon, ControlsIcon, DocumentIcon } from "@sanity/icons";
 import type { StructureResolver } from "sanity/structure";
 
 import WeekPlannerTool from "./tools/weekPlanner/WeekPlanner";
@@ -13,10 +13,6 @@ export const structure: StructureResolver = (S) =>
         .child(S.component(WeekPlannerTool).id("weekPlanner").title("Ukeplan")),
 
       S.divider(),
-
-      S.documentTypeListItem("menuContent")
-        .title("Menyinnhold")
-        .icon(ComposeIcon),
 
       S.documentTypeListItem("menu")
         .title("Menytyper")

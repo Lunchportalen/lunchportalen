@@ -29,33 +29,24 @@ export default async function BackofficeWeekMenuPage() {
         <>
           <strong>Operativ ansatt-sannhet:</strong> <code className="rounded bg-slate-100 px-1">GET /api/week</code> bruker{" "}
           <code className="rounded bg-slate-100 px-1">company_current_agreement</code> + Sanity{" "}
-          <code className="rounded bg-slate-100 px-1">menuContent</code> per dato — <strong>ikke</strong> Sanity{" "}
-          <code className="rounded bg-slate-100 px-1">weekPlan</code> som primær kilde for bestilling (se kodekommentarer).
-          <br />
-          <span className="mt-2 block">
-            <strong>Redaksjonell ukeplan:</strong> Sanity <code className="rounded bg-slate-100 px-1">weekPlan</code> + publish-API
-            er eget spor (marketing/policy) — merket LIMITED i kontrollplan-status.
-          </span>
+          <code className="rounded bg-slate-100 px-1">menuDay</code> per dato.
         </>
       }
       publishHistoryNote={
         <>
-          <strong>Publisering og historikk:</strong> operativ meny følger Sanity <code className="rounded bg-white px-1">menuContent</code>{" "}
-          og eksisterende publish-API. Full versjonshistorikk for Sanity ligger primært i Studio. Innholdssider i Postgres har egen
+          <strong>Publisering og historikk:</strong> operativ meny følger Sanity <code className="rounded bg-white px-1">menuDay</code>{" "}
+          og Studio publish. Full versjonshistorikk for Sanity ligger primært i Studio. Innholdssider i Postgres har egen
           recovery/gjennomgang i innholdsworkspace — det finnes ikke én samlet tidslinje på tvers av kildene i denne flaten.
         </>
       }
       contextSummary={
         <>
           <strong className="font-medium text-slate-900">Operativ meny</strong> for ansatte kommer fra Sanity{" "}
-          <code className="rounded bg-slate-100 px-1">menuContent</code> + avtale + <code className="rounded bg-slate-100 px-1">GET /api/week</code>.
-          <strong className="font-medium text-slate-900"> Redaksjonell weekPlan</strong> er et eget spor (marketing) — ikke duplikat
-          bestillingssannhet.
+          <code className="rounded bg-slate-100 px-1">menuDay</code> + avtale + <code className="rounded bg-slate-100 px-1">GET /api/week</code>.
         </>
       }
       statusChips={[
         { label: "Operativ kilde: Sanity meny", tone: "success" },
-        { label: "weekPlan: editorial / LIMITED", tone: "warning" },
       ]}
       toolbar={
         <>
@@ -77,8 +68,8 @@ export default async function BackofficeWeekMenuPage() {
       }
       footerApps={
         <>
-          <strong className="font-medium text-slate-900">Footer:</strong> publish av operativ meny skjer via Sanity (Studio eller
-          server-broker). Historikk for menydokumenter: Studio. Ukeplan-relaterte felt som ikke styrer <code className="rounded bg-white px-1">GET /api/week</code> er
+          <strong className="font-medium text-slate-900">Footer:</strong> publish av operativ meny skjer via Sanity Studio.
+          Historikk for menydokumenter: Studio. Ukeplan-relaterte felt som ikke styrer <code className="rounded bg-white px-1">GET /api/week</code> er
           merket tydelig i UI og i kontrollplan.
         </>
       }
@@ -89,12 +80,6 @@ export default async function BackofficeWeekMenuPage() {
 
       <div className="mt-8">
         <CmsWeekMenuPublishControlsPanel studioUrl={studioUrl} />
-      </div>
-
-      <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        <strong>Editorial-only:</strong> <code className="rounded bg-white px-1">weekPlan</code> i Sanity er ikke{" "}
-        <code className="rounded bg-white px-1">GET /api/week</code> for ansatte. Bruk Ukeplan i Studio-venstremeny for
-        redaksjonell plan — ikke for å tolke som bestillbar uke.
       </div>
 
       <div className="mt-8">

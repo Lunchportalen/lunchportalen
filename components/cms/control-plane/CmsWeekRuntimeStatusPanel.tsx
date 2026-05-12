@@ -15,11 +15,8 @@ export function CmsWeekRuntimeStatusPanel({ studioUrl }: CmsWeekRuntimeStatusPan
           <strong>Avtale:</strong> <code className="rounded bg-white px-1">company_current_agreement</code> (ACTIVE) styrer tier og leveringsdager.
         </li>
         <li>
-          <strong>Menydata:</strong> Sanity <code className="rounded bg-white px-1">menu</code> / <code className="rounded bg-white px-1">menuContent</code> per dato — lest av{" "}
+          <strong>Menydata:</strong> Sanity <code className="rounded bg-white px-1">menu</code> / <code className="rounded bg-white px-1">menuDay</code> per dato — lest av{" "}
           <code className="rounded bg-white px-1">GET /api/week</code>.
-        </li>
-        <li>
-          <strong>Redaksjonell ukeplan:</strong> Sanity <code className="rounded bg-white px-1">weekPlan</code> er <strong>ikke</strong> samme som employee-order truth — merket LIMITED.
         </li>
       </ol>
       <div className="mt-4 flex flex-wrap gap-2 text-sm">

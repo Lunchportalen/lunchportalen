@@ -55,7 +55,7 @@ function rid(prefix = "agreement_state") {
 
 function normTier(v: any): Tier | null {
   const s = String(v ?? "").trim().toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s as Tier;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s as Tier;
   return null;
 }
 

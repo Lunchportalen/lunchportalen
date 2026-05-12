@@ -13,12 +13,12 @@ import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
    Types
 ========================================================= */
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-type PlanTier = "BASIS" | "LUXUS";
+type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 type AgreementDay = {
   enabled: boolean;
   tier: PlanTier;
-  price_ex_vat: number; // ✅ FASIT: 90/130 (eks mva)
+  price_ex_vat: number; // FASIT: 90/130/170 (eks mva)
   price_inc_vat: number;
 };
 
@@ -71,11 +71,13 @@ function normalizeTier(v: any): PlanTier | null {
   const s = String(v ?? "").trim().toLowerCase();
   if (s === "basis") return "BASIS";
   if (s === "luxus" || s === "luksus" || s === "lux") return "LUXUS";
+  if (s === "enterprise") return "ENTERPRISE";
   return null;
 }
 
-// ✅ FASIT: 90/130 er EKS MVA
+// FASIT: 90/130/170 er EKS MVA
 function priceExVatForTier(tier: PlanTier): number {
+  if (tier === "ENTERPRISE") return 170;
   return tier === "BASIS" ? 90 : 130;
 }
 
@@ -272,7 +274,7 @@ function buildAgreementJsonSafe(params: {
     plan: {
       dominant_tier: dominantTier,
       days: daysNorm,
-      prices_ex_vat: { BASIS: 90, LUXUS: 130 },
+      prices_ex_vat: { BASIS: 90, LUXUS: 130, ENTERPRISE: 170 },
     },
   };
 }
@@ -544,7 +546,11 @@ export async function POST(req: NextRequest) {
   const nowISO = new Date().toISOString();
   const daysNorm = daysParsed.days;
 
-  const dominantTier: PlanTier = Object.values(daysNorm).some((d) => d.enabled && d.tier === "LUXUS") ? "LUXUS" : "BASIS";
+  const dominantTier: PlanTier = Object.values(daysNorm).some((d) => d.enabled && d.tier === "ENTERPRISE")
+    ? "ENTERPRISE"
+    : Object.values(daysNorm).some((d) => d.enabled && d.tier === "LUXUS")
+      ? "LUXUS"
+      : "BASIS";
 
   const agreement_json = buildAgreementJsonSafe({
     nowISO,

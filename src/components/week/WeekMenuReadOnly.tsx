@@ -1,6 +1,6 @@
 "use client";
 
-// STATUS: KEEP — henter neste uke via GET /api/week (menuContent), ikke Sanity weekPlan.
+// STATUS: KEEP — henter neste uke via GET /api/week (menuDay), ikke Sanity weekPlan.
 
 import { useEffect, useMemo, useState } from "react";
 import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
@@ -9,7 +9,7 @@ import { unwrapJsonOkData } from "@/lib/http/unwrapClientJson";
 type DayRow = {
   date: string;
   weekday: string;
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   title: string | null;
   description: string | null;
   allergens: string[];
@@ -116,7 +116,7 @@ export default function WeekMenuReadOnly() {
       <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm opacity-70">Neste uke (menuContent)</div>
+            <div className="text-sm opacity-70">Neste uke (menuDay)</div>
             <div className="text-lg font-semibold">Uke fra {weekStart ? formatDateNO(weekStart) : "—"}</div>
           </div>
         </div>

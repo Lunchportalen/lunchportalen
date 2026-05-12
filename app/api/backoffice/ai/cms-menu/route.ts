@@ -14,7 +14,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildAiActivityLogRow } from "@/lib/ai/logging/aiActivityLogRow";
 import {
   generateMenuFromIntent,
-  improveMenuContent,
+  improveMenuCopy,
   suggestWeeklyVariation,
   validateMenuQuality,
 } from "@/lib/ai/cmsAiActions";
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         allergens: safeAllergenList(m.allergens),
       };
       if (!menu.title) return jsonErr(ctx.rid, "title er påkrevd.", 422, "MISSING_TITLE");
-      const out = await improveMenuContent(menu, runCtx, locale);
+      const out = await improveMenuCopy(menu, runCtx, locale);
       if (out.ok === false) return jsonErr(ctx.rid, out.error, 500, out.code ?? "AI_ERROR");
       const prepared = prepareAiResponseForClient(out.data);
       if (!prepared.ok) {

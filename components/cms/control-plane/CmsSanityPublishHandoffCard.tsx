@@ -19,7 +19,7 @@ export function CmsSanityPublishHandoffCard({ studioUrl }: CmsSanityPublishHando
       <p className="mt-2 text-sm leading-relaxed text-emerald-950/90">
         Den operative menykilden er <strong>Sanity</strong>. Redigering og publisering av{" "}
         <code className="rounded bg-white/90 px-1 text-xs">menu</code> /{" "}
-        <code className="rounded bg-white/90 px-1 text-xs">menuContent</code> skjer i Studio — dette er den trygge
+        <code className="rounded bg-white/90 px-1 text-xs">menuDay</code> skjer i Studio — dette er den trygge
         handoffen fra CMS control plane uten duplikat motor i Lunchportalen.
       </p>
       <div className="mt-4 flex flex-wrap gap-3">

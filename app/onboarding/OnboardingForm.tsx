@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
-type Tier = "BASIS" | "LUXUS";
+type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 type DayRow = {
   key: DayKey;

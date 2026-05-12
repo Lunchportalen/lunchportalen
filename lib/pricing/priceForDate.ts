@@ -7,11 +7,12 @@ import { normalizeAgreement, resolveTierForDate } from "@/lib/agreements/normali
    Types + priser (fasit)
 ========================================================= */
 
-export type PlanTier = "BASIS" | "LUXUS";
+export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 export const PRICE_PER_TIER: Record<PlanTier, number> = {
   BASIS: 90,
   LUXUS: 130,
+  ENTERPRISE: 170,
 };
 
 export type PriceForDateOk = {
@@ -40,7 +41,7 @@ function isIsoDate(d: string) {
 
 function asPlanTier(v: any): PlanTier | null {
   const s = String(v ?? "").toUpperCase().trim();
-  if (s === "BASIS" || s === "LUXUS") return s as PlanTier;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s as PlanTier;
   return null;
 }
 
@@ -93,7 +94,7 @@ export async function priceForCompanyDate(company_id: string, isoDate: string): 
     return {
       ok: false,
       error: "BAD_TIER",
-      message: "Kunne ikke løse plan-tier for dato (forventet BASIS/LUXUS)",
+      message: "Kunne ikke løse plan-tier for dato (forventet BASIS/LUXUS/ENTERPRISE)",
       detail: { rawTier },
     };
   }

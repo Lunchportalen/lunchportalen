@@ -30,12 +30,6 @@ export const MODULE_LIVE_POSTURE_REGISTRY: ModuleLivePostureEntry[] = [
     note: "Kjede og readiness i backoffice; menypublisering skjer i Sanity Studio — samme kilde som runtime leser.",
   },
   {
-    id: "weekplan_editorial",
-    label: "Redaksjonell weekPlan",
-    posture: "LIMITED",
-    note: "Editorial/marketing — ikke GET /api/week for bestilling.",
-  },
-  {
     id: "company_agreement_location_surfaces",
     label: "Firma / avtale / lokasjon (CMS-flater)",
     posture: "LIVE",

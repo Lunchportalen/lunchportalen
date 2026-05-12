@@ -62,12 +62,13 @@ function expectOperativeRowFieldParityLiveVsFrozen(liveRows: OperativeKitchenOrd
 }
 
 /** Minimal thenable query builder: .eq + .in + .limit (+ snapshots: upsert som persisterer i db). */
-function makeChainAdmin(seed: { orders: any[]; day_choices?: any[] }) {
+function makeChainAdmin(seed: { orders: any[]; day_choices?: any[]; errors?: Record<string, { message: string; code?: string }> }) {
   const db = {
     orders: seed.orders,
     day_choices: seed.day_choices ?? [],
     production_operative_snapshots: [] as any[],
   };
+  const inCalls: { table: string; key: string; values: string[] }[] = [];
 
   function applyFilters(
     rows: any[],
@@ -101,13 +102,19 @@ function makeChainAdmin(seed: { orders: any[]; day_choices?: any[] }) {
         },
         in: (k: string, vals: unknown[]) => {
           st.ins[k] = (Array.isArray(vals) ? vals : [vals]).map(String);
+          inCalls.push({ table, key: k, values: st.ins[k] });
           return q;
         },
         limit: (n: number) => {
           st.lim = n;
           return q;
         },
-        then: (resolve: (v: { data: any[]; error: null }) => void) => {
+        then: (resolve: (v: { data: any[] | null; error: { message: string; code?: string } | null }) => void) => {
+          const error = seed.errors?.[table] ?? null;
+          if (error) {
+            resolve({ data: null, error });
+            return;
+          }
           const base = [...((db as Record<string, any[]>)[table] ?? [])];
           resolve({ data: applyFilters(base, st), error: null });
         },
@@ -131,6 +138,7 @@ function makeChainAdmin(seed: { orders: any[]; day_choices?: any[] }) {
 
       return q;
     },
+    __getInCallsForTest: () => inCalls.map((r) => ({ ...r, values: [...r.values] })),
     __getProductionOperativeSnapshotsForTest: () => db.production_operative_snapshots.map((r) => ({ ...r })),
     __appendSnapshotRowForTest: (row: Record<string, unknown>) => {
       db.production_operative_snapshots.push({ ...row });
@@ -143,6 +151,84 @@ describe("normKitchenSlot", () => {
     expect(normKitchenSlot(null)).toBe("lunch");
     expect(normKitchenSlot("")).toBe("lunch");
     expect(normKitchenSlot("Lunch")).toBe("lunch");
+  });
+});
+
+describe("loadOperativeKitchenOrders — order_status filter", () => {
+  it("returnerer ACTIVE-rader", async () => {
+    const admin = makeChainAdmin({
+      orders: [
+        {
+          id: O1,
+          user_id: U1,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          status: "ACTIVE",
+          slot: "lunch",
+          note: null,
+        },
+        {
+          id: O2,
+          user_id: U2,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          status: "CANCELLED",
+          slot: "lunch",
+          note: null,
+        },
+      ],
+      day_choices: [],
+    });
+
+    const loaded = await loadOperativeKitchenOrders({ admin, dateISO: DATE, tenant: { companyId: CID, locationId: LID } });
+
+    expect(loaded.ok).toBe(true);
+    if (loaded.ok !== true) return;
+    expect(loaded.operative.map((r) => r.id)).toEqual([O1]);
+  });
+
+  it("inkluderer ikke lowercase active i order_status-filteret", async () => {
+    const admin = makeChainAdmin({
+      orders: [
+        {
+          id: O1,
+          user_id: U1,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          status: "ACTIVE",
+          slot: "lunch",
+          note: null,
+        },
+      ],
+      day_choices: [],
+    });
+
+    await loadOperativeKitchenOrders({ admin, dateISO: DATE, tenant: { companyId: CID, locationId: LID } });
+
+    const statusIn = admin.__getInCallsForTest().find((c: any) => c.table === "orders" && c.key === "status");
+    expect(statusIn?.values).toEqual(["ACTIVE"]);
+  });
+
+  it("returnerer dbError når database-queryen feiler", async () => {
+    const admin = makeChainAdmin({
+      orders: [],
+      day_choices: [],
+      errors: {
+        orders: { message: 'invalid input value for enum order_status: "active"', code: "22P02" },
+      },
+    });
+
+    const loaded = await loadOperativeKitchenOrders({ admin, dateISO: DATE, tenant: { companyId: CID, locationId: LID } });
+
+    expect(loaded.ok).toBe(false);
+    if (loaded.ok !== false) return;
+    expect(loaded.dbError).toEqual({
+      message: 'invalid input value for enum order_status: "active"',
+      code: "22P02",
+    });
   });
 });
 
@@ -378,7 +464,7 @@ describe("materializeProductionOperativeSnapshot — live → upsert → lesing 
           company_id: CID,
           location_id: L2,
           date: DATE,
-          status: "active",
+          status: "ACTIVE",
           slot: "lunch",
           note: null,
         },
@@ -467,7 +553,7 @@ describe("materializeProductionOperativeSnapshot — live → upsert → lesing 
     expect([...snap.orderIds].sort()).toEqual([O1]);
   });
 
-  it("tar ikke med ordre med status utenfor ACTIVE/active", async () => {
+  it("tar ikke med ordre med status utenfor ACTIVE", async () => {
     const admin = makeChainAdmin({
       orders: [
         {
@@ -633,7 +719,7 @@ describe("materializeProductionOperativeSnapshot — idempotens og re-materialis
           company_id: CID,
           location_id: LID,
           date: DATE,
-          status: "active",
+          status: "ACTIVE",
           slot: "lunch",
           note: null,
         },

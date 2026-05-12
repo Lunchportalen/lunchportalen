@@ -9,7 +9,7 @@ import type { NextRequest } from "next/server";
 import { isIsoDate } from "@/lib/date/oslo";
 import { coerceOrderWriteErrorResponse, jsonOrderWriteErr, jsonOrderWriteOk, orderWriteStatusFromDb } from "@/lib/http/respond";
 import { companyIdFromCtx, readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
-import { getPublishedMenuForDate } from "@/lib/cms/menuContent";
+import { getPublishedMenuForDate } from "@/lib/cms/menuDay";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
 import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";

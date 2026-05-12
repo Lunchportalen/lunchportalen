@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import type { MenuContent } from "@/lib/cms/menuContent";
+import type { MenuDay } from "@/lib/cms/menuDay";
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -46,7 +46,7 @@ function hasAllergens(arr: unknown) {
  */
 export async function GET(req: Request) {
   const { supabaseServer } = await import("@/lib/supabase/server");
-  const { getMenuForDatesAdmin } = await import("@/lib/cms/menuContent");
+  const { getMenuForDatesAdmin } = await import("@/lib/cms/menuDay");
   const rid = makeRid();
 
   try {
@@ -91,8 +91,8 @@ export async function GET(req: Request) {
     const dates = days.map((d) => d.date);
 
     // 4) Sanity (admin): hent ALT (ikke drafts)
-    const sanityRows: MenuContent[] = await getMenuForDatesAdmin(dates);
-    const byDate = new Map<string, MenuContent>();
+    const sanityRows: MenuDay[] = await getMenuForDatesAdmin(dates);
+    const byDate = new Map<string, MenuDay>();
     for (const m of sanityRows) byDate.set(m.date, m);
 
     // 5) Visibility mirror (DB) – service role

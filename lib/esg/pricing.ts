@@ -1,8 +1,9 @@
 // STATUS: KEEP
 
-export type PlanTier = "BASIS" | "LUXUS";
+export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 export function priceForTierNok(tier: PlanTier): number {
+  if (tier === "ENTERPRISE") return 170;
   return tier === "LUXUS" ? 130 : 90;
 }
 

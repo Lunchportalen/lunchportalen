@@ -1,0 +1,1308 @@
+/* ============================================================
+   LUNCHPORTALEN — DEMO PAGE
+   Refreshed 2026: consolidated, animatable, accessible
+   
+   Changes from original:
+   - Single source of truth (no duplicate override blocks)
+   - font-weight capped at 900 (950 is non-standard)
+   - Scroll-reveal via Intersection Observer JS hook + CSS classes
+   - animation-timeline: view() kept as progressive enhancement
+   - Staggered grid animation via --i custom property
+   - will-change only where needed, removed after animation
+   - Glass with solid @supports fallback
+   - Sticky nav offset via --lp-nav-h variable
+   - Step numbers unified (single pattern)
+   - WCAG AA contrast on dark sections
+   - prefers-reduced-motion respected at root level
+============================================================ */
+
+/* ── Tokens ─────────────────────────────────────────────── */
+:root {
+    --lp-bg:            #f6f3ed;
+    --lp-cream:         #f8f4ea;
+    --lp-text:          #111111;
+    --lp-muted:         rgba(17, 17, 17, .65);
+    --lp-gold:          #f5c518;
+    --lp-gold-dark:     #a07c00;   /* darkened: was #c99d00, fails AA on cream */
+    --lp-gold-glow:     rgba(245, 197, 24, .32);
+    --lp-dark:          #111111;
+    --lp-dark-2:        #1a1a1a;
+    --lp-radius-sm:     16px;
+    --lp-radius:        24px;
+    --lp-radius-lg:     36px;
+    --lp-shadow-card:   0 20px 60px rgba(0, 0, 0, .09);
+    --lp-shadow-lift:   0 36px 100px rgba(0, 0, 0, .15);
+    --lp-nav-h:         72px;      /* matches sticky nav height */
+    --lp-section-py:    clamp(80px, 9vw, 140px);
+    --lp-gap:           18px;
+}
+
+/* ── Page atmosphere ─────────────────────────────────────── */
+body {
+    background-color: var(--lp-cream);
+    background-image:
+        radial-gradient(circle at 12% 8%,  rgba(245, 197, 24, .14) 0%, transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(17, 17, 17, .06)   0%, transparent 32%),
+        linear-gradient(180deg, #f8f4ea 0%, #f2ece0 100%);
+    background-attachment: fixed;
+}
+
+/* ── Layout container ───────────────────────────────────── */
+.lp-demo-inner {
+    width: min(1100px, calc(100% - 40px));
+    margin-inline: auto;
+}
+
+/* ── Section base ───────────────────────────────────────── */
+.lp-demo-preview,
+.lp-demo-steps,
+.lp-demo-video,
+.lp-demo-testimonial,
+.lp-demo-booking,
+.lp-demo-final {
+    position: relative;
+    padding-block: var(--lp-section-py);
+    background: var(--lp-bg);
+    overflow: hidden;
+}
+
+/* First section after hero needs less top padding */
+.lp-hero + .lp-demo-preview,
+.lp-page-hero + .lp-demo-preview {
+    padding-top: clamp(56px, 5.5vw, 88px);
+}
+
+/* Dark sections */
+.lp-demo-testimonial,
+.lp-demo-final {
+    background:
+        radial-gradient(circle at 78% 22%, rgba(245, 197, 24, .16) 0%, transparent 32%),
+        linear-gradient(145deg, #0e0e0e 0%, #1c1c1c 100%);
+}
+
+/* Booking section ambient glow */
+.lp-demo-booking {
+    isolation: isolate;
+}
+
+.lp-demo-booking::before {
+    content: "";
+    position: absolute;
+    inset: 40px 0;
+    background:
+        radial-gradient(circle at 80% 15%, rgba(245, 197, 24, .22) 0%, transparent 32%),
+        radial-gradient(circle at  8% 85%, rgba(17, 17, 17, .07)   0%, transparent 36%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ── Typography ─────────────────────────────────────────── */
+
+/* Eyebrow label */
+.lp-demo-eyebrow {
+    margin: 0 0 14px;
+    font-size: .75rem;
+    font-weight: 900;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--lp-gold-dark);
+}
+
+/* Hero H1 — biggest, most impact */
+.lp-hero__title,
+.lp-page-hero__heading {
+    font-size: clamp(3rem, 6vw, 6.2rem);
+    line-height: .88;
+    letter-spacing: -.072em;
+    font-weight: 900;
+    color: var(--lp-text);
+    margin: 0 0 20px;
+}
+
+/* Section H2 */
+.lp-demo-preview h2,
+.lp-demo-steps h2,
+.lp-demo-video h2,
+.lp-demo-booking h2,
+.lp-demo-final h2 {
+    margin: 0 0 18px;
+    max-width: 720px;
+    font-size: clamp(2rem, 3.4vw, 3.5rem);
+    line-height: 1;
+    letter-spacing: -.048em;
+    font-weight: 900;
+    color: var(--lp-text);
+}
+
+/* Card H3 */
+.lp-demo-card h3,
+.lp-demo-step h3 {
+    margin: 0 0 10px;
+    font-size: clamp(1rem, 1.1vw, 1.18rem);
+    line-height: 1.22;
+    letter-spacing: -.015em;
+    font-weight: 700;
+    color: var(--lp-text);
+}
+
+/* Lead / body */
+.lp-demo-lead {
+    max-width: 660px;
+    font-size: clamp(1rem, 1.2vw, 1.18rem);
+    line-height: 1.72;
+    color: var(--lp-muted);
+}
+
+.lp-demo-card p,
+.lp-demo-step p {
+    margin: 0;
+    font-size: clamp(1rem, 1.05vw, 1.1rem);
+    line-height: 1.62;
+    color: rgba(17, 17, 17, .62);
+}
+
+/* ── Glass card base ────────────────────────────────────── */
+.lp-demo-card,
+.lp-demo-step,
+.lp-demo-form,
+.lp-demo-video-frame,
+.lp-demo-quote,
+.lp-demo-final-card {
+    border-radius: var(--lp-radius);
+    box-shadow:
+        var(--lp-shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, .72);
+
+    /* Progressive glass: solid fallback first */
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(255, 255, 255, .62);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+    .lp-demo-card,
+    .lp-demo-step,
+    .lp-demo-form,
+    .lp-demo-video-frame,
+    .lp-demo-quote,
+    .lp-demo-final-card {
+        background: rgba(255, 255, 255, .55);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+}
+
+/* Dark section glass override */
+.lp-demo-quote,
+.lp-demo-final-card {
+    background: rgba(255, 255, 255, .06);
+    border-color: rgba(255, 255, 255, .13);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+    .lp-demo-quote,
+    .lp-demo-final-card {
+        background: rgba(255, 255, 255, .05);
+    }
+}
+
+/* ── Preview cards grid ─────────────────────────────────── */
+.lp-demo-card-grid {
+    margin-top: clamp(32px, 4vw, 44px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--lp-gap);
+}
+
+.lp-demo-card {
+    padding: 28px;
+    transition:
+        transform          .28s cubic-bezier(.22, .8, .22, 1),
+        box-shadow         .28s cubic-bezier(.22, .8, .22, 1),
+        border-color       .28s ease;
+    will-change: transform;
+}
+
+.lp-demo-card:hover {
+    transform: translateY(-7px);
+    border-color: rgba(245, 197, 24, .52);
+    box-shadow:
+        var(--lp-shadow-lift),
+        inset 0 1px 0 rgba(255, 255, 255, .88);
+}
+
+/* Step number badge — unified for both card sets */
+.lp-demo-card__badge,
+.lp-demo-step__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 22px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #111 0%, #2c2c2c 100%);
+    color: var(--lp-gold);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -.01em;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+
+    /* Stop old inline <span> / <strong> from breaking layout */
+    flex-shrink: 0;
+}
+
+/* Legacy markup support: bare <span> and <strong> inside cards */
+.lp-demo-card > span:first-child,
+.lp-demo-step > strong:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 22px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #111 0%, #2c2c2c 100%);
+    color: var(--lp-gold);
+    font-size: 1rem;
+    font-weight: 900;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+    flex-shrink: 0;
+}
+
+/* ── Steps grid ─────────────────────────────────────────── */
+.lp-demo-steps-grid {
+    margin-top: clamp(32px, 4vw, 44px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--lp-gap);
+}
+
+.lp-demo-step {
+    padding: 30px;
+    transition:
+        transform    .28s cubic-bezier(.22, .8, .22, 1),
+        box-shadow   .28s cubic-bezier(.22, .8, .22, 1),
+        border-color .28s ease;
+    will-change: transform;
+}
+
+.lp-demo-step:hover {
+    transform: translateY(-7px);
+    border-color: rgba(245, 197, 24, .52);
+    box-shadow:
+        var(--lp-shadow-lift),
+        inset 0 1px 0 rgba(255, 255, 255, .88);
+}
+
+/* ── Staggered scroll-reveal ────────────────────────────── */
+/*
+  JS adds .lp-reveal-group to the grid parent.
+  Each child gets style="--i: N" (0-based index).
+  When .is-visible is added by IntersectionObserver,
+  children animate in with staggered delay.
+*/
+
+.lp-reveal-group > * {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+        opacity   .55s cubic-bezier(.22, .8, .22, 1),
+        transform .55s cubic-bezier(.22, .8, .22, 1);
+    transition-delay: calc(var(--i, 0) * 80ms);
+}
+
+.lp-reveal-group.is-visible > * {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Single-element reveal (sections, headings, video frame) */
+.lp-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+        opacity   .6s cubic-bezier(.22, .8, .22, 1),
+        transform .6s cubic-bezier(.22, .8, .22, 1);
+    transition-delay: var(--delay, 0ms);
+}
+
+.lp-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Progressive enhancement: native scroll animation for
+   browsers that support it (Chrome 115+). The JS fallback
+   above still works — whichever fires first wins. */
+@supports (animation-timeline: view()) {
+    .lp-demo-card,
+    .lp-demo-step {
+        animation: lpFadeUp .65s ease both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 26%;
+        /* Remove will-change after native animation takes over */
+    }
+
+    .lp-demo-video-frame,
+    .lp-demo-form,
+    .lp-demo-quote,
+    .lp-demo-final-card {
+        animation: lpFadeUp .7s ease both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 24%;
+    }
+
+    /* Native animation handles it — JS class not needed */
+    .lp-reveal,
+    .lp-reveal-group > * {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+@keyframes lpFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Video section ──────────────────────────────────────── */
+.lp-demo-video-grid {
+    display: grid;
+    grid-template-columns: minmax(0, .92fr) minmax(340px, 1.08fr);
+    gap: clamp(32px, 5.5vw, 72px);
+    align-items: center;
+}
+
+.lp-demo-video-frame {
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
+    border-radius: var(--lp-radius-lg);
+    background: #111;
+    box-shadow:
+        0 48px 140px rgba(0, 0, 0, .30),
+        0 0 0 1px rgba(255, 255, 255, .30);
+    cursor: pointer;
+    will-change: transform;
+    transition: transform .4s cubic-bezier(.22, .8, .22, 1);
+}
+
+.lp-demo-video-frame:hover {
+    transform: scale(1.015);
+}
+
+/* Glass overlay inside dark video frame */
+.lp-demo-video-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .14) 0%, transparent 38%),
+        radial-gradient(circle at 78% 22%, rgba(245, 197, 24, .20) 0%, transparent 32%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* CTA chip */
+.lp-demo-video-frame::after {
+    content: "▶  Se demo på 20 sekunder";
+    position: absolute;
+    left: 22px;
+    bottom: 22px;
+    z-index: 3;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, .80);
+    color: var(--lp-gold);
+    font-size: .84rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    transition: background .2s ease, transform .2s ease;
+}
+
+.lp-demo-video-frame:hover::after {
+    background: rgba(17, 17, 17, .92);
+    transform: translateY(-2px);
+}
+
+.lp-demo-video-frame video,
+.lp-demo-video-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    object-fit: cover;
+}
+
+/* Placeholder screen (when no video) */
+.lp-demo-fake-screen {
+    padding: 32px;
+    min-height: 340px;
+    background: linear-gradient(145deg, #111, #252525);
+}
+
+.lp-demo-fake-top {
+    width: 148px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--lp-gold);
+    margin-bottom: 38px;
+}
+
+.lp-demo-fake-line {
+    height: 16px;
+    width: 56%;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .16);
+    margin-bottom: 14px;
+}
+
+.lp-demo-fake-line.large {
+    width: 76%;
+    height: 32px;
+}
+
+.lp-demo-fake-row {
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .08);
+    margin-bottom: 14px;
+}
+
+/* ── Testimonial / quote ────────────────────────────────── */
+.lp-demo-quote {
+    padding: clamp(32px, 6vw, 68px);
+    color: #fff;
+}
+
+.lp-demo-quote p {
+    max-width: 900px;
+    margin: 0 0 26px;
+    font-size: clamp(1.75rem, 3.8vw, 3.6rem);
+    line-height: 1.06;
+    letter-spacing: -.052em;
+    font-weight: 700;
+    /* Ensure WCAG AA on dark background */
+    color: rgba(255, 255, 255, .94);
+}
+
+.lp-demo-quote strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--lp-gold);
+    font-weight: 700;
+    font-size: .95rem;
+}
+
+.lp-demo-quote span {
+    color: rgba(255, 255, 255, .60);
+    font-size: .9rem;
+}
+
+/* ── Booking section ────────────────────────────────────── */
+.lp-demo-booking-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 500px);
+    gap: clamp(32px, 5.5vw, 72px);
+    align-items: start;
+}
+
+/* Checklist */
+.lp-demo-checks {
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 11px;
+}
+
+.lp-demo-checks li {
+    position: relative;
+    padding-left: 36px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--lp-text);
+    line-height: 1.4;
+}
+
+.lp-demo-checks li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--lp-gold);
+    color: #111;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .82rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+/* Form card */
+.lp-demo-form {
+    padding: 28px;
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 980px) {
+    .lp-demo-form {
+        position: sticky;
+        top: calc(var(--lp-nav-h) + 24px);
+    }
+}
+
+.lp-demo-form label {
+    display: grid;
+    gap: 7px;
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--lp-text);
+}
+
+.lp-demo-form input {
+    width: 100%;
+    height: 52px;
+    border: 1px solid rgba(17, 17, 17, .11);
+    border-radius: 14px;
+    padding: 0 15px;
+    font: inherit;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, .85);
+    color: var(--lp-text);
+    transition: border-color .18s ease, box-shadow .18s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.lp-demo-form input:focus {
+    outline: none;
+    border-color: var(--lp-gold);
+    box-shadow: 0 0 0 3px rgba(245, 197, 24, .28);
+}
+
+.lp-demo-form input::placeholder {
+    color: rgba(17, 17, 17, .35);
+}
+
+/* ── CTA buttons ────────────────────────────────────────── */
+.lp-demo-form button,
+.lp-demo-final-card a,
+.ds-btn--primary,
+.lp-hero__btn--primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 54px;
+    border-radius: 999px;
+    padding: 0 28px;
+    width: 100%;
+    background: linear-gradient(135deg, #f5c518 0%, #ffd43b 100%) !important;
+    color: #111 !important;
+    border: 1px solid rgba(255, 255, 255, .50) !important;
+    box-shadow:
+        0 16px 40px var(--lp-gold-glow),
+        inset 0 1px 0 rgba(255, 255, 255, .55);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: .01em;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform  .22s cubic-bezier(.22, .8, .22, 1),
+        box-shadow .22s ease,
+        filter     .22s ease;
+    will-change: transform;
+}
+
+.lp-demo-form button:hover,
+.lp-demo-final-card a:hover,
+.ds-btn--primary:hover,
+.lp-hero__btn--primary:hover {
+    transform: translateY(-3px) scale(1.022);
+    box-shadow:
+        0 24px 64px rgba(245, 197, 24, .40),
+        inset 0 1px 0 rgba(255, 255, 255, .75);
+    filter: saturate(1.08) brightness(1.04);
+}
+
+.lp-demo-form button:active,
+.lp-demo-final-card a:active {
+    transform: translateY(0) scale(.98);
+    transition-duration: .1s;
+}
+
+/* Secondary button */
+.lp-hero__btn--secondary,
+.ds-btn--secondary {
+    background: rgba(255, 255, 255, .52) !important;
+    color: #111 !important;
+    border: 1px solid rgba(17, 17, 17, .08) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.lp-hero__btn--secondary:hover,
+.ds-btn--secondary:hover {
+    background: rgba(255, 255, 255, .78) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08) !important;
+}
+
+/* ── Final CTA card ─────────────────────────────────────── */
+.lp-demo-final-card {
+    padding: clamp(36px, 6.5vw, 82px);
+    text-align: center;
+    color: #fff;
+}
+
+.lp-demo-final-card h2 {
+    margin-inline: auto;
+    color: #fff;
+}
+
+.lp-demo-final-card p {
+    max-width: 660px;
+    margin: 0 auto 28px;
+    color: rgba(255, 255, 255, .70);
+    font-size: clamp(1rem, 1.2vw, 1.15rem);
+    line-height: 1.64;
+}
+
+.lp-demo-final-card .lp-demo-form button,
+.lp-demo-final-card a {
+    width: auto;
+    padding: 0 36px;
+}
+
+/* ── Hero media card ────────────────────────────────────── */
+.lp-hero__visual,
+.lp-page-hero__media {
+    border-radius: var(--lp-radius-lg);
+    overflow: hidden;
+    background: rgba(255, 255, 255, .60);
+    border: 1px solid rgba(255, 255, 255, .62);
+    box-shadow:
+        0 36px 110px rgba(0, 0, 0, .17),
+        inset 0 1px 0 rgba(255, 255, 255, .70);
+    transition: transform .44s cubic-bezier(.22, .8, .22, 1), box-shadow .44s ease;
+    will-change: transform;
+}
+
+.lp-hero__visual:hover,
+.lp-page-hero__media:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 50px 140px rgba(0, 0, 0, .22);
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 980px) {
+    .lp-demo-card-grid,
+    .lp-demo-steps-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lp-demo-video-grid,
+    .lp-demo-booking-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --lp-section-py: 64px;
+        --lp-gap:        13px;
+    }
+
+    .lp-demo-inner {
+        width: calc(100% - 28px);
+    }
+
+    .lp-demo-card-grid,
+    .lp-demo-steps-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lp-demo-card,
+    .lp-demo-step,
+    .lp-demo-form {
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .lp-demo-video-frame,
+    .lp-demo-video-frame video,
+    .lp-demo-video-frame img {
+        min-height: 240px;
+    }
+
+    .lp-demo-video-frame {
+        border-radius: 24px;
+    }
+
+    .lp-demo-video-frame::after {
+        left: 14px;
+        bottom: 14px;
+        font-size: .78rem;
+    }
+
+    .lp-demo-form button,
+    .lp-demo-final-card a {
+        min-height: 50px;
+        font-size: .96rem;
+    }
+}
+
+/* ── Accessibility ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration:       0.01ms !important;
+        animation-iteration-count: 1     !important;
+        transition-duration:      0.01ms !important;
+        scroll-behavior:          auto   !important;
+    }
+
+    /* Re-show elements that would be hidden by reveal animations */
+    .lp-reveal,
+    .lp-reveal-group > * {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Focus-visible ring for keyboard nav */
+:focus-visible {
+    outline: 3px solid var(--lp-gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+
+/* ============================================================
+   SCROLL-REVEAL — minimal JS to paste in your <script> tag
+
+   const io = new IntersectionObserver(
+     (entries) => entries.forEach(e => {
+       if (e.isIntersecting) {
+         e.target.classList.add('is-visible');
+         io.unobserve(e.target);
+       }
+     }),
+     { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+   );
+
+   // Single elements
+   document.querySelectorAll('.lp-reveal').forEach(el => io.observe(el));
+
+   // Staggered grids
+   document.querySelectorAll('.lp-reveal-group').forEach(group => {
+     group.querySelectorAll(':scope > *').forEach((child, i) => {
+       child.style.setProperty('--i', i);
+     });
+     io.observe(group);
+   });
+============================================================ */
+/* ============================================================
+   TESTIMONIAL BLOCK — legg til i lunchportalen-demo.css
+============================================================ */
+
+/* Optional company logo above quote */
+.lp-demo-quote__logo {
+    display: block;
+    margin-bottom: 28px;
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    object-position: left center;
+    /* Invert to white since section is dark */
+    filter: brightness(0) invert(1);
+    opacity: .75;
+}
+
+/* Star rating */
+.lp-demo-quote__stars {
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    letter-spacing: .06em;
+    color: var(--lp-gold);
+}
+
+/* Quote text — opening " via CSS so screen readers skip it */
+.lp-demo-quote__text {
+    max-width: 900px;
+    margin: 0 0 32px;
+    font-size: clamp(1.6rem, 3.5vw, 3.4rem);
+    line-height: 1.07;
+    letter-spacing: -.052em;
+    font-weight: 700;
+    color: rgba(255, 255, 255, .94);
+    quotes: "\00ab" "\00bb";
+}
+
+.lp-demo-quote__text::before { content: open-quote;  }
+.lp-demo-quote__text::after  { content: close-quote; }
+
+/* Attribution row */
+.lp-demo-quote__attribution {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Avatar circle */
+.lp-demo-quote__avatar {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(245, 197, 24, .22);
+    border: 1.5px solid rgba(245, 197, 24, .40);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lp-demo-quote__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Initials fallback */
+.lp-demo-quote__avatar span {
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--lp-gold);
+    letter-spacing: .02em;
+}
+
+/* Name + role */
+.lp-demo-quote__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lp-demo-quote__meta strong {
+    display: block;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--lp-gold);
+    letter-spacing: -.01em;
+}
+
+.lp-demo-quote__meta span {
+    font-size: .88rem;
+    color: rgba(255, 255, 255, .58);
+    letter-spacing: .01em;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .lp-demo-quote__text {
+        font-size: clamp(1.45rem, 7.5vw, 2.4rem);
+        letter-spacing: -.04em;
+        margin-bottom: 24px;
+    }
+
+    .lp-demo-quote__logo {
+        height: 26px;
+        margin-bottom: 22px;
+    }
+
+    .lp-demo-quote__stars {
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+    }
+}
+/* ============================================================
+   VIDEO BLOCK — legg til i lunchportalen-demo.css
+   Erstatter den gamle .lp-demo-video-frame::after chip-hack
+============================================================ */
+
+/* Player wrapper */
+.lp-demo-video__player {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    border-radius: inherit;
+    overflow: hidden;
+    background: #111;
+}
+
+/* The <video> element itself */
+.lp-demo-video__el {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    object-fit: cover;
+    border-radius: inherit;
+
+    /* Hide native controls until user clicks play */
+    /* (controls attr is added via JS on play) */
+}
+
+/* ── Play button overlay ────────────────────────────────── */
+.lp-demo-video__play-btn {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;           /* chip sits at bottom-left */
+    justify-content: flex-start;
+    padding: 22px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 4;
+
+    /* Subtle dark vignette so poster image doesn't bleach */
+    background-image: linear-gradient(
+        to top,
+        rgba(0, 0, 0, .55) 0%,
+        rgba(0, 0, 0, .10) 42%,
+        transparent       70%
+    );
+    transition: background-image .25s ease;
+}
+
+.lp-demo-video__play-btn:hover {
+    background-image: linear-gradient(
+        to top,
+        rgba(0, 0, 0, .65) 0%,
+        rgba(0, 0, 0, .16) 42%,
+        transparent       70%
+    );
+}
+
+/* Chip (play icon + text) */
+.lp-demo-video__play-icon,
+.lp-demo-video__chip-text {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Combined pill */
+.lp-demo-video__play-btn > * {
+    pointer-events: none;
+}
+
+/* Pill container — icon + text together */
+.lp-demo-video__play-btn::before {
+    /* We build the pill via the flex children below instead */
+    content: none;
+}
+
+/* Style the chip as a flex row */
+.lp-demo-video__play-btn {
+    gap: 0;               /* children will form the pill */
+}
+
+/* Actual pill: wrap icon + text in a styled group */
+.lp-demo-video__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 18px 10px 12px;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, .82);
+    color: var(--lp-gold);
+    font-size: .86rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    transition: transform .22s cubic-bezier(.22, .8, .22, 1),
+                background .22s ease;
+}
+
+/* Since we can't add a wrapper div inside the <button> easily,
+   we restyle the two direct children as the pill pair */
+.lp-demo-video__play-btn {
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+
+.lp-demo-video__play-icon {
+    padding: 10px 0 10px 14px;
+    border-radius: 999px 0 0 999px;
+    background: rgba(17, 17, 17, .82);
+    color: var(--lp-gold);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    transition: transform .22s cubic-bezier(.22, .8, .22, 1);
+}
+
+.lp-demo-video__chip-text {
+    padding: 10px 16px 10px 10px;
+    border-radius: 0 999px 999px 0;
+    background: rgba(17, 17, 17, .82);
+    color: var(--lp-gold);
+    font-size: .86rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    transition: transform .22s cubic-bezier(.22, .8, .22, 1);
+}
+
+.lp-demo-video__play-btn:hover .lp-demo-video__play-icon,
+.lp-demo-video__play-btn:hover .lp-demo-video__chip-text {
+    transform: translateY(-2px);
+    background: rgba(17, 17, 17, .94);
+}
+
+/* Focus ring for keyboard navigation */
+.lp-demo-video__play-btn:focus-visible {
+    outline: 3px solid var(--lp-gold);
+    outline-offset: -3px;
+    border-radius: inherit;
+}
+
+/* Hide the old CSS ::after chip now that we have a real button */
+.lp-demo-video-frame::after {
+    display: none;
+}
+
+/* ── Duration chip ──────────────────────────────────────── */
+.lp-demo-video__duration {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 4;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .62);
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+/* ── Playing state ──────────────────────────────────────── */
+/* When playing, the native controls show — hide our overlay */
+[data-playing="true"] .lp-demo-video__play-btn {
+    display: none;
+}
+
+[data-playing="true"] .lp-demo-video__duration {
+    display: none;
+}
+
+/* ── Mobile ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .lp-demo-video__player,
+    .lp-demo-video__el {
+        min-height: 240px;
+    }
+
+    .lp-demo-video__play-icon,
+    .lp-demo-video__chip-text {
+        font-size: .78rem;
+    }
+}
+/* ============================================================
+   BOOKING BLOCK — legg til i lunchportalen-demo.css
+============================================================ */
+
+/* Error message under input */
+.lp-demo-form__err {
+    display: block;
+    min-height: 1.2em;
+    margin-top: 5px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #c0392b;
+    line-height: 1.3;
+}
+
+/* Input states */
+.lp-demo-form input.is-invalid {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, .18);
+}
+
+.lp-demo-form input.is-valid {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, .14);
+}
+
+/* Button loading state */
+.lp-demo-form__btn-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(17, 17, 17, .25);
+    border-top-color: #111;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+@keyframes lpSpin {
+    to { transform: rotate(360deg); }
+}
+
+button.is-loading .lp-demo-form__btn-spinner {
+    display: inline-block;
+    animation: lpSpin .7s linear infinite;
+}
+
+button.is-loading {
+    opacity: .75;
+    cursor: wait;
+}
+
+button.is-success {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+    box-shadow: 0 16px 40px rgba(39, 174, 96, .30) !important;
+}
+
+/* Status message */
+.lp-demo-form__status {
+    font-size: .9rem;
+    line-height: 1.5;
+    min-height: 1.4em;
+    color: var(--lp-muted);
+}
+
+.lp-demo-form__status.is-success {
+    color: #1e8449;
+    font-weight: 600;
+}
+
+.lp-demo-form__status.is-error {
+    color: #c0392b;
+}
+/* ============================================================
+   CTA END BLOCK — legg til i lunchportalen-demo.css
+============================================================ */
+
+/* Eyebrow på mørk bakgrunn — original #c99d00 feiler WCAG AA.
+   Bruker gull men øker brightness for å oppnå 4.5:1 mot #1a1a1a */
+.lp-demo-eyebrow--light {
+    color: var(--lp-gold);          /* #f5c518 gir ~8:1 mot #1a1a1a */
+}
+
+/* Actions row: primary + optional secondary side by side */
+.lp-demo-final-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+/* Primary CTA inherits .lp-demo-form button styles via shared selector.
+   Add width: auto override since form button is full-width */
+.lp-demo-final-card__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    border-radius: 999px;
+    padding: 0 36px;
+    background: linear-gradient(135deg, #f5c518 0%, #ffd43b 100%);
+    color: #111;
+    border: 1px solid rgba(255, 255, 255, .50);
+    box-shadow:
+        0 16px 40px rgba(245, 197, 24, .32),
+        inset 0 1px 0 rgba(255, 255, 255, .55);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: .01em;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform  .22s cubic-bezier(.22, .8, .22, 1),
+        box-shadow .22s ease,
+        filter     .22s ease;
+}
+
+.lp-demo-final-card__cta:hover {
+    transform: translateY(-3px) scale(1.022);
+    box-shadow:
+        0 24px 64px rgba(245, 197, 24, .42),
+        inset 0 1px 0 rgba(255, 255, 255, .75);
+    filter: saturate(1.08) brightness(1.04);
+}
+
+/* Secondary CTA — ghost style on dark background */
+.lp-demo-final-card__sec {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    border-radius: 999px;
+    padding: 0 28px;
+    background: rgba(255, 255, 255, .10);
+    color: rgba(255, 255, 255, .88);
+    border: 1px solid rgba(255, 255, 255, .22);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition:
+        background .22s ease,
+        transform  .22s cubic-bezier(.22, .8, .22, 1),
+        border-color .22s ease;
+}
+
+.lp-demo-final-card__sec:hover {
+    background: rgba(255, 255, 255, .18);
+    border-color: rgba(255, 255, 255, .38);
+    transform: translateY(-2px);
+}
+
+/* Trust signal — micro-copy below buttons */
+.lp-demo-final-card__trust {
+    margin: 0;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .45);
+    letter-spacing: .02em;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .lp-demo-final-card__actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .lp-demo-final-card__cta,
+    .lp-demo-final-card__sec {
+        width: 100%;
+        text-align: center;
+    }
+}

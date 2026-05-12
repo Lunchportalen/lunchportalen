@@ -19,6 +19,13 @@ import { canSeeNextWeek, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getProductPlan } from "@/lib/cms/getProductPlan";
 import { getMenusByMealTypesWithFetchStatus } from "@/lib/cms/getMenusByMealTypes";
+import {
+  CATEGORY_LABELS,
+  PLAN_CATEGORIES,
+  getMenuForDateAndPlan,
+  type Category,
+  type PlanTier,
+} from "@/lib/cms/menuDay";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -33,8 +40,17 @@ import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteG
 ========================================================= */
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-type Tier = "BASIS" | "LUXUS";
+type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type Choice = { key: string; label?: string };
+type DayCategory = {
+  key: string;
+  category: Category | null;
+  label: string;
+  title: string | null;
+  description: string | null;
+  allergens: string[];
+  available: boolean;
+};
 
 type AgreementStatusOut = "ACTIVE" | "PENDING_COMPANY" | "STARTS_LATER" | "NOT_READY" | "MISSING";
 type CompanyStatusNorm = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
@@ -141,7 +157,67 @@ function statusNorm(v: any): "ACTIVE" | "CANCELLED" | "NONE" | "OTHER" {
 
 function normTierStrict(v: any): Tier | null {
   const s = String(v ?? "").trim().toUpperCase();
-  return s === "BASIS" || s === "LUXUS" ? (s as Tier) : null;
+  return s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE" ? (s as Tier) : null;
+}
+
+function asPlanTier(v: unknown): PlanTier | null {
+  const tier = normTierStrict(v);
+  return tier === "BASIS" || tier === "LUXUS" || tier === "ENTERPRISE" ? tier : null;
+}
+
+const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
+  paasmurt: "paasmurt",
+  salat: "salatbar",
+  sushi: "sushi",
+  pokebowl: "pokebowl",
+  thai: "thaimat",
+  varmrett: "varmmat",
+};
+
+function categoryForOrderChoice(choiceKey: string): Category | null {
+  const normalized = normalizeMealTypeKey(choiceKey);
+  if (normalized === "paasmurt") return "paasmurt";
+  if (normalized === "salatbar" || normalized === "salat") return "salat";
+  if (normalized === "sushi") return "sushi";
+  if (normalized === "pokebowl") return "pokebowl";
+  if (normalized === "thaimat" || normalized === "thai") return "thai";
+  if (normalized === "varmmat" || normalized === "varmrett") return "varmrett";
+  return null;
+}
+
+export function buildLegacyChoiceCategories(choices: Choice[], enabled: boolean): DayCategory[] {
+  return choices.map((choice) => {
+    const key = normalizeMealTypeKey(choice.key) || String(choice.key ?? "").trim().toLowerCase();
+    const category = categoryForOrderChoice(key);
+    return {
+      key,
+      category,
+      label: String(choice.label ?? key).trim() || key,
+      title: null,
+      description: null,
+      allergens: [],
+      available: enabled,
+    };
+  });
+}
+
+export function buildMenuDayCategories(params: {
+  planTier: PlanTier;
+  menus: Array<{ category: Category | null; mealTitle?: string | null; title?: string | null; description?: string | null; allergens?: string[] | null }>;
+}): DayCategory[] {
+  const expectedCategories = PLAN_CATEGORIES[params.planTier] ?? [];
+  return expectedCategories.map((category) => {
+    const menu = params.menus.find((m) => m.category === category);
+    return {
+      key: MENU_DAY_CATEGORY_TO_ORDER_CHOICE[category],
+      category,
+      label: CATEGORY_LABELS[category],
+      title: menu?.mealTitle ?? menu?.title ?? null,
+      description: menu?.description ?? null,
+      allergens: Array.isArray(menu?.allergens) ? menu.allergens.map((a) => String(a)) : [],
+      available: menu !== undefined,
+    };
+  });
 }
 
 function normDayKeyStrict(v: any): DayKey | null {
@@ -233,7 +309,7 @@ function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized }
 }
 
 /** Fallback kun når CMS productPlan mangler (driftssikkert). */
-const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130 };
+const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130, ENTERPRISE: 170 };
 
 function choicesFromCmsTier(
   tier: Tier,
@@ -606,7 +682,9 @@ export function buildDayModel(ctx: DayContext) {
     lockReason,
 
     tier,
+    planTier: tier,
     allowedChoices,
+    categories: buildLegacyChoiceCategories(allowedChoices, isEnabled),
 
     wantsLunch,
     orderStatus: sNorm === "ACTIVE" ? "ACTIVE" : sNorm === "CANCELLED" ? "CANCELLED" : null,
@@ -755,7 +833,7 @@ export async function GET(req: NextRequest) {
     }
     const operativeClosedReasonByDate = closedRes.byDate;
 
-    const days = dates.map((date) =>
+    const legacyDays = dates.map((date) =>
       buildDayModel({
         date,
         company,
@@ -769,6 +847,39 @@ export async function GET(req: NextRequest) {
         menuByMealType,
         productPlans,
         operativeClosedReasonByDate,
+      })
+    );
+
+    const days = await Promise.all(
+      legacyDays.map(async (day) => {
+        const planTier = asPlanTier((day as any).planTier ?? (day as any).tier);
+        if (!planTier) return day;
+
+        try {
+          const menus = await getMenuForDateAndPlan(day.date, planTier);
+          if (menus.length > 0) {
+            return {
+              ...day,
+              planTier,
+              categories: buildMenuDayCategories({ planTier, menus }),
+            };
+          }
+        } catch (e: any) {
+          opsLog("window.menuDay.failed", {
+            rid,
+            company_id: sc.company_id,
+            date: day.date,
+            planTier,
+            detail: String(e?.message ?? e),
+          });
+        }
+
+        // Post-launch cleanup: Fjern legacy fallback når all produksjonsdata er migrert til menuDay.
+        return {
+          ...day,
+          planTier,
+          categories: Array.isArray((day as any).categories) ? (day as any).categories : [],
+        };
       })
     );
 

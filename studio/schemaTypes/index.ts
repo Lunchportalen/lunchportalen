@@ -1,7 +1,6 @@
 // /studio/schemaTypes/index.ts
 
 import announcement from "./announcement";
-import menuContent from "./menuContent";
 import menu from "./menu";
 import productPlan from "./productPlan";
 import weekTemplate from "./weekTemplate";
@@ -25,7 +24,6 @@ import menuDay from "./menuDay";
  */
 export const schemaTypes = [
   announcement,
-  menuContent,
   menu,
   productPlan,
   weekTemplate,

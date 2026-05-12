@@ -39,7 +39,7 @@ function safeStr(v: any) {
 }
 function asPlanTier(v: any): PlanTier | null {
   const s = String(v ?? "").toUpperCase().trim();
-  if (s === "BASIS" || s === "LUXUS") return s as PlanTier;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s as PlanTier;
   return null;
 }
 function asErrDetail(e: any) {
@@ -320,7 +320,7 @@ export async function GET(req: NextRequest) {
       const tier = asPlanTier(tierRaw);
       if (!tier) {
         // This is a true data/config error: keep as 500.
-        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS).", 500, {
+        return jsonErr(rid, "Kunne ikke løse plan-tier for dato (forventer BASIS/LUXUS/ENTERPRISE).", 500, {
           code: "BAD_TIER",
           detail: { date: dateISO, tier: tierRaw },
         });

@@ -10,7 +10,7 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type Tier = "BASIS" | "LUXUS";
+type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday";
 
 const DAYS: DayKey[] = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -32,6 +32,7 @@ function normalizeTier(v: unknown): Tier {
   const s = safeStr(v).toUpperCase();
   if (s === "BASIS") return "BASIS";
   if (s === "LUXUS") return "LUXUS";
+  if (s === "ENTERPRISE") return "ENTERPRISE";
   // accept common legacy variants
   if (s === "PREMIUM") return "LUXUS";
   if (s === "BASIC") return "BASIS";
@@ -115,7 +116,7 @@ function validateAgreement(agreement: Record<string, any>) {
     const tier = safeStr(row?.tier).toUpperCase();
     const price = Number(row?.price);
 
-    if (!(tier === "BASIS" || tier === "LUXUS")) {
+    if (!(tier === "BASIS" || tier === "LUXUS" || tier === "ENTERPRISE")) {
       return { ok: false as const, message: `Ugyldig nivå for ${day}.`, code: "AGREEMENT_VALIDATION" };
     }
     if (!Number.isFinite(price) || price <= 0) {

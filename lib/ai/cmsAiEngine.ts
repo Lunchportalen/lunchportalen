@@ -10,8 +10,8 @@ import {
 import type {
   CmsAiEngineResult,
   CmsAiRunContext,
-  CmsMenuContentImproved,
-  CmsMenuContentInput,
+  CmsMenuCopyImproved,
+  CmsMenuCopyInput,
   CmsMenuGenerated,
   CmsMenuQualityResult,
   CmsWeekVariationSuggestion,
@@ -33,14 +33,14 @@ function asAllergens(v: unknown): string[] {
   return v.map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 24);
 }
 
-export function heuristicImproveMenu(menu: CmsMenuContentInput): CmsMenuContentImproved {
+export function heuristicImproveMenu(menu: CmsMenuCopyInput): CmsMenuCopyImproved {
   const title = clampStr(menu.title, 120) || "Meny";
   const description = clampStr(menu.description, 2000) || "";
   const allergens = asAllergens(menu.allergens);
   return { title, description, allergens };
 }
 
-function parseImprovePayload(raw: unknown): CmsMenuContentImproved | null {
+function parseImprovePayload(raw: unknown): CmsMenuCopyImproved | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   const title = clampStr(o.title, 120);
@@ -104,7 +104,7 @@ async function runStructured(
 }
 
 /** Deterministic quality score + issues (always runs; no provider). */
-export function scoreMenuQuality(menu: CmsMenuContentInput): CmsMenuQualityResult {
+export function scoreMenuQuality(menu: CmsMenuCopyInput): CmsMenuQualityResult {
   const issues: string[] = [];
   let score = 100;
   const title = clampStr(menu.title, 200);
@@ -137,22 +137,22 @@ export function scoreMenuQuality(menu: CmsMenuContentInput): CmsMenuQualityResul
   return { score: Math.max(0, Math.min(100, score)), issues, heuristicOnly: true };
 }
 
-export async function improveMenuContent(
-  menu: CmsMenuContentInput,
+export async function improveMenuCopy(
+  menu: CmsMenuCopyInput,
   ctx: CmsAiRunContext,
   locale: "nb" | "en" = "nb"
-): Promise<CmsAiEngineResult<CmsMenuContentImproved>> {
+): Promise<CmsAiEngineResult<CmsMenuCopyImproved>> {
   const { system, user } = promptMenuImprove({ menu, locale });
   try {
     const { result, model, rid } = await runStructured(ctx, system, user, 1200);
     const parsed = parseImprovePayload(result);
     if (parsed) return { ok: true, data: parsed, model, rid };
-    console.warn("[cmsAiEngine] improveMenuContent: invalid AI JSON", { rid });
+    console.warn("[cmsAiEngine] improveMenuCopy: invalid AI JSON", { rid });
   } catch (e) {
     if (e instanceof AiRunnerError) {
       return { ok: false, error: e.message, code: e.code };
     }
-    console.warn("[cmsAiEngine] improveMenuContent failed", String(e instanceof Error ? e.message : e));
+    console.warn("[cmsAiEngine] improveMenuCopy failed", String(e instanceof Error ? e.message : e));
   }
   return { ok: true, data: heuristicImproveMenu(menu) };
 }
@@ -190,7 +190,7 @@ export async function generateMenuFromIntent(
 }
 
 export async function validateMenuQuality(
-  menu: CmsMenuContentInput,
+  menu: CmsMenuCopyInput,
   ctx: CmsAiRunContext,
   locale: "nb" | "en" = "nb"
 ): Promise<CmsMenuQualityResult> {

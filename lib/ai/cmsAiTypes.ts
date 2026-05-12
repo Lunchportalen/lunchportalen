@@ -8,20 +8,20 @@ export type CmsAiRunContext = {
   userId: string;
 };
 
-export type CmsMenuContentInput = {
+export type CmsMenuCopyInput = {
   mealType?: string | null;
   title: string;
   description?: string | null;
   allergens?: string[] | null;
 };
 
-export type CmsMenuContentImproved = {
+export type CmsMenuCopyImproved = {
   title: string;
   description: string;
   allergens: string[];
 };
 
-export type CmsMenuGenerated = CmsMenuContentImproved & {
+export type CmsMenuGenerated = CmsMenuCopyImproved & {
   mealType: string;
 };
 

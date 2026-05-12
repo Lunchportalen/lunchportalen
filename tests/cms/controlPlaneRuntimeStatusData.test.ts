@@ -13,8 +13,7 @@ describe("controlPlaneRuntimeStatusData", () => {
     expect(CONTROL_PLANE_RUNTIME_MODULES.find((m) => m.id === "worker")?.badge).toBe("STUB");
   });
 
-  it("skiller ansatt uke (LIVE) og redaksjonell ukeplan (LIMITED)", () => {
+  it("viser ansatt uke som live runtime-modul", () => {
     expect(CONTROL_PLANE_RUNTIME_MODULES.find((m) => m.id === "week")?.badge).toBe("LIVE");
-    expect(CONTROL_PLANE_RUNTIME_MODULES.find((m) => m.id === "weekplan_editorial")?.badge).toBe("LIMITED");
   });
 });

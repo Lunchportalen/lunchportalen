@@ -1,7 +1,7 @@
 /** Operativ registreringsmodell: firmaadmins BASIS/Luxus per ukedag (man–fre). */
 export const REGISTRATION_WEEKDAYS = ["mon", "tue", "wed", "thu", "fri"] as const;
 export type RegistrationWeekday = (typeof REGISTRATION_WEEKDAYS)[number];
-export type WeekdayMealTiers = Record<RegistrationWeekday, "BASIS" | "LUXUS">;
+export type WeekdayMealTiers = Record<RegistrationWeekday, "BASIS" | "LUXUS" | "ENTERPRISE">;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -11,9 +11,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
-function normTier(v: unknown): "BASIS" | "LUXUS" | null {
+function normTier(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const s = safeStr(v).toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 
@@ -49,11 +49,11 @@ export function parseRegistrationPlanPayload(body: Record<string, unknown>): {
 } | { ok: false; code: string; message: string } {
   const w = body.weekday_meal_tiers ?? body.weekdayMealTiers;
   if (!isPlainObject(w)) {
-    return { ok: false, code: "WEEKDAY_MEAL_TIERS_REQUIRED", message: "Velg Basis eller Luxus for alle ukedager (man–fre)." };
+    return { ok: false, code: "WEEKDAY_MEAL_TIERS_REQUIRED", message: "Velg Basis, Luxus eller Enterprise for alle ukedager (man–fre)." };
   }
   const tiers = parseWeekdayMealTiersFromJson(w);
   if (!tiers) {
-    return { ok: false, code: "WEEKDAY_MEAL_TIERS_INVALID", message: "Ugyldig ukedagsplan (forventet BASIS eller LUXUS per dag)." };
+    return { ok: false, code: "WEEKDAY_MEAL_TIERS_INVALID", message: "Ugyldig ukedagsplan (forventet BASIS, LUXUS eller ENTERPRISE per dag)." };
   }
 
   const wf = safeStr(body.delivery_window_from ?? body.deliveryWindowFrom);

@@ -1,5 +1,5 @@
 // app/api/week/route.ts
-// Employee week: operativ sannhet = company_current_agreement + menuContent (ingen Sanity weekPlan).
+// Employee week: operativ sannhet = company_current_agreement + menuDay.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,9 +14,9 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
-import type { MenuContent } from "@/lib/sanity/queries";
+import type { MenuDay } from "@/lib/cms/menuDay";
 
-type Tier = "BASIS" | "LUXUS";
+type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
 type AgreementRow = {
@@ -80,7 +80,7 @@ function isUnlocked(unlockDateISO: string, unlockTimeHM: string) {
 
 /* =========================================================
    GET /api/week
-   - weekOffset=0: inneværende uke (Man–Fre) — kalender + menuContent
+   - weekOffset=0: inneværende uke (Man–Fre) — kalender + menuDay
    - weekOffset=1: neste uke — låst til torsdag 08:00 Oslo (samme som order/window)
 ========================================================= */
 export async function GET(req: Request) {
@@ -162,14 +162,14 @@ export async function GET(req: Request) {
       return jsonError(500, _rid, "WEEK_RANGE_INVALID", "Ugyldig ukeintervall.");
     }
 
-    const menuByDate = new Map<string, MenuContent>();
+    const menuByDate = new Map<string, MenuDay>();
     let menuFetchFailed = false;
     try {
-      const { getMenuForDates } = await import("@/lib/cms/menuContent");
+      const { getMenuForDates } = await import("@/lib/cms/menuDay");
       const menus = await getMenuForDates(dates);
       for (const m of menus ?? []) {
-        const dt = String((m as MenuContent).date ?? "").slice(0, 10);
-        if (dt) menuByDate.set(dt, m as MenuContent);
+        const dt = String((m as MenuDay).date ?? "").slice(0, 10);
+        if (dt) menuByDate.set(dt, m as MenuDay);
       }
     } catch (e: unknown) {
       menuFetchFailed = true;
@@ -215,7 +215,6 @@ export async function GET(req: Request) {
       sanity: {
         currentStatus: null,
         nextStatus: null,
-        weekPlanOperational: false,
         /** True når Sanity-kall feilet (meny ukjent — ikke synonymt med «ingen meny publisert»). */
         menuFetchFailed,
       },

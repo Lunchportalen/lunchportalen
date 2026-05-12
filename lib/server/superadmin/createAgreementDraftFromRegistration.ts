@@ -36,7 +36,7 @@ type CreateRpcOut = {
 } | null;
 
 export type DerivedPendingAgreementRpc = {
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   delivery_days: AgreementWeekday[];
   slot_start: string;
   slot_end: string;
@@ -53,9 +53,9 @@ function normalizeHHMM(v: unknown): string | null {
   return null;
 }
 
-function normalizeTierRpc(v: unknown): "BASIS" | "LUXUS" | null {
+function normalizeTierRpc(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
   const s = String(v ?? "").trim().toUpperCase();
-  if (s === "BASIS" || s === "LUXUS") return s;
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
 }
 
@@ -121,7 +121,7 @@ function tryPlanDays(aj: Record<string, unknown>): { ok: true; params: Omit<Deri
   }
   const days = (aj.plan as { days: Record<string, unknown> }).days;
 
-  const enabled: { day: AgreementWeekday; tier: "BASIS" | "LUXUS"; price: number }[] = [];
+  const enabled: { day: AgreementWeekday; tier: "BASIS" | "LUXUS" | "ENTERPRISE"; price: number }[] = [];
 
   for (const day of WEEKDAYS) {
     if (!(day in days)) {
@@ -147,7 +147,7 @@ function tryPlanDays(aj: Record<string, unknown>): { ok: true; params: Omit<Deri
       return {
         ok: false,
         code: "AGREEMENT_TIER_INVALID",
-        message: `Ugyldig avtalenivå (BASIS/LUXUS) for ${day} i agreement_json.`,
+        message: `Ugyldig avtalenivå (BASIS/LUXUS/ENTERPRISE) for ${day} i agreement_json.`,
       };
     }
     const price = normalizePriceNum(
@@ -192,7 +192,7 @@ function tryScheduleTiers(aj: Record<string, unknown>): { ok: true; params: Omit
   const schedule = aj.schedule as Record<string, unknown>;
   const tiersRaw = aj.tiers as Record<string, unknown>;
 
-  const dayTiers: { day: AgreementWeekday; tier: "BASIS" | "LUXUS"; price: number }[] = [];
+  const dayTiers: { day: AgreementWeekday; tier: "BASIS" | "LUXUS" | "ENTERPRISE"; price: number }[] = [];
 
   for (const day of WEEKDAYS) {
     const cell = schedule[day];

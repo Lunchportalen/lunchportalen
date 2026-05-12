@@ -1,6 +1,6 @@
 // lib/agreements/normalize.ts
 
-export type Tier = "BASIS" | "LUXUS";
+export type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 export type AgreementStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED";
 
@@ -32,6 +32,7 @@ export function isDayKey(v: any): v is DayKey {
 
 export function normalizeTier(v: any): Tier {
   const s = String(v ?? "").trim().toUpperCase();
+  if (s === "ENTERPRISE") return "ENTERPRISE";
   return s === "LUXUS" ? "LUXUS" : "BASIS";
 }
 

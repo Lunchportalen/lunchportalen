@@ -1,5 +1,8 @@
 // app/layout.tsx
+import "./styles/ds/design-system.css";
 import "./globals.css";
+import "./styles/ds/admin-shell.css";
+import "./styles/employee-week.css";
 import "../lib/ui/motion.css";
 import "../lib/ui/design.css";
 

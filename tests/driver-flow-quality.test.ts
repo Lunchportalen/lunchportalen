@@ -365,7 +365,7 @@ function stopsDeliveryShape(stops: any[]) {
 }
 
 describe("driver day view – delivery truth", () => {
-  test("operative stopp bygger på loadOperativeKitchenOrders: ACTIVE/active, ikke CANCELLED-rader; kansellert dagvalg fjerner ordre", async () => {
+  test("operative stopp bygger på loadOperativeKitchenOrders: ACTIVE, ikke CANCELLED-rader; kansellert dagvalg fjerner ordre", async () => {
     resetSeed({
       profiles: defaultProfiles,
       companies: defaultCompanies,
@@ -441,7 +441,7 @@ describe("driver day view – delivery truth", () => {
     expectDriverStopFieldContract(stops[0]);
 
     const statusIn = inCalls.find((c) => c.table === "orders" && c.key === "status");
-    expect(statusIn?.values).toEqual(["ACTIVE", "active"]);
+    expect(statusIn?.values).toEqual(["ACTIVE"]);
   });
 });
 
@@ -465,7 +465,7 @@ describe("driver stops – live vs frozen (samme operative grunnlag som kitchen)
         user_id: U2,
         date: day,
         slot: "lunch",
-        status: "active",
+        status: "ACTIVE",
         company_id: CID,
         location_id: LID,
         note: "køkken-notat",
@@ -1203,7 +1203,7 @@ describe("driver stops – live vs frozen (samme operative grunnlag som kitchen)
 });
 
 describe("driver CSV export – aligned truth & malformed rows", () => {
-  test("CSV bruker samme loadOperativeKitchenOrders + vindu-filter som driver-stops (status in ACTIVE/active)", async () => {
+  test("CSV bruker samme loadOperativeKitchenOrders + vindu-filter som driver-stops (status in ACTIVE)", async () => {
     resetSeed({
       profiles: defaultProfiles,
       companies: defaultCompanies,
@@ -1238,7 +1238,7 @@ describe("driver CSV export – aligned truth & malformed rows", () => {
     expect(res.status).toBe(200);
 
     const statusIn = inCalls.find((c) => c.table === "orders" && c.key === "status");
-    expect(statusIn?.values).toEqual(["ACTIVE", "active"]);
+    expect(statusIn?.values).toEqual(["ACTIVE"]);
   });
 
   test("malformed rows without company/location are excluded and yield header-only CSV", async () => {

@@ -4,7 +4,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
-export type PlanTier = "BASIS" | "LUXUS";
+export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
 export type DayPlan = {
   enabled: boolean;

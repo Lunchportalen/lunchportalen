@@ -2,8 +2,9 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import { getAgreementStatusForCurrentUser } from "@/lib/agreements/getAgreementStatus";
+import { canCompanyOperate, getAgreementStatus } from "@/lib/auth/agreementStatus";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export type ActiveAgreementContext = {
   companyId: string;
@@ -36,13 +37,19 @@ export async function requireActiveAgreement(): Promise<ActiveAgreementContext> 
     };
   }
 
-  const status = await getAgreementStatusForCurrentUser();
+  const companyId = safeCompanyId(auth.company_id);
+  if (!auth.ok || !authRole || !companyId) {
+    redirect("/avtale-ikke-aktiv");
+  }
 
-  if (status.ok && status.status === "ACTIVE") {
+  const sb = await supabaseServer();
+  const status = await getAgreementStatus(sb as any, companyId);
+
+  if (canCompanyOperate(status)) {
     return {
-      companyId: status.companyId,
+      companyId,
       agreementId: status.agreementId,
-      role: status.role,
+      role: authRole,
     };
   }
 

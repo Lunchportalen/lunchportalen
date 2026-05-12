@@ -3,6 +3,7 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getAgreementStatus } from "@/lib/auth/agreementStatus";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import type { Database } from "@/lib/types/database";
 
@@ -18,9 +19,9 @@ export type Scope = {
 
   /**
    * Billing/Agreement (enterprise gate)
-   * - agreement_status: status i company_billing_accounts (active/paused/closed)
+   * - agreement_status: ACTIVE agreement from company_current_agreement (lowercase)
    * - billing_hold: true => write lock (UI read-only, API blocks POST/DELETE)
-   * - can_act: derived = !billing_hold
+   * - can_act: derived = active agreement AND !billing_hold
    */
   agreement_status?: "active" | "paused" | "closed" | "unknown";
   billing_hold?: boolean;
@@ -152,13 +153,6 @@ function normalizeStatus(v: unknown) {
   return s;
 }
 
-function isMissingRelationError(error: unknown, relation: string) {
-  const e = error as any;
-  const text = `${String(e?.code ?? "").trim()} ${String(e?.message ?? "").trim()} ${String(e?.details ?? "").trim()} ${String(e?.hint ?? "").trim()}`.toLowerCase();
-  const target = relation.toLowerCase();
-  return text.includes("42p01") || (text.includes(target) && (text.includes("does not exist") || text.includes("not found")));
-}
-
 /**
  * ENTERPRISE GATE:
  * - Tenant roles blocked unless companies.status === "active"
@@ -186,17 +180,10 @@ async function enforceCompanyActive(
   }
 }
 
-type BillingRow = {
-  company_id: string;
-  status: string | null;
-  billing_hold: boolean | null;
-  billing_hold_reason: string | null;
-};
-
 /**
- * AGREEMENT/BILLING GATE (fasit hos dere):
- * - Tenant roles require company_billing_accounts row
- * - company_billing_accounts.status must be "active"
+ * AGREEMENT/BILLING GATE:
+ * - Active agreement truth is company_current_agreement via getAgreementStatus()
+ * - billing_hold is separate from agreement activity
  * - billing_hold => scope.can_act=false (UI read-only)
  */
 async function enforceAgreementAndBilling(
@@ -209,34 +196,19 @@ async function enforceAgreementAndBilling(
   }
   if (!company_id) throw new ScopeError("Konto mangler firmatilknytning", 403, "COMPANY_MISSING");
 
-  const res = await supabase
-    .from("company_billing_accounts")
-    .select("company_id,status,billing_hold,billing_hold_reason")
-    .eq("company_id", company_id)
-    .maybeSingle();
-
-  const error = res?.error as any;
-  const data = (res?.data ?? null) as BillingRow | null;
-
-  if (isMissingRelationError(error, "company_billing_accounts")) {
-    return { agreement_status: "unknown", billing_hold: false, billing_hold_reason: null, can_act: true };
-  }
-  if (error) throw new ScopeError("Kunne ikke verifisere avtale", 503, "AGREEMENT_CHECK_FAILED");
-  if (!data?.company_id) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
-
-  const st = normalizeStatus(data.status);
-  if (st !== "active") {
-    if (st === "paused") throw new ScopeError("Firmaet er midlertidig pauset", 403, "AGREEMENT_PAUSED");
-    if (st === "closed") throw new ScopeError("Firmaet er stengt", 403, "AGREEMENT_CLOSED");
+  const agreementStatus = await getAgreementStatus(supabase as any, company_id);
+  if (!agreementStatus.isActive) {
+    if (agreementStatus.status === "PAUSED") throw new ScopeError("Firmaet er midlertidig pauset", 403, "AGREEMENT_PAUSED");
+    if (agreementStatus.status === "CLOSED") throw new ScopeError("Firmaet er stengt", 403, "AGREEMENT_CLOSED");
+    if (!agreementStatus.agreementId) throw new ScopeError("Firma mangler aktiv avtale", 403, "AGREEMENT_MISSING");
     throw new ScopeError("Avtale er ikke aktiv", 403, "AGREEMENT_NOT_ACTIVE");
   }
 
-  const hold = data.billing_hold === true;
   return {
     agreement_status: "active",
-    billing_hold: hold,
-    billing_hold_reason: data.billing_hold_reason ?? null,
-    can_act: !hold,
+    billing_hold: agreementStatus.billingHold,
+    billing_hold_reason: agreementStatus.billingHold ? "BILLING_HOLD" : null,
+    can_act: !agreementStatus.billingHold,
   };
 }
 
