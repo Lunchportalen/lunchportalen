@@ -21,6 +21,7 @@ import { opsLog } from "@/lib/ops/log";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { weekdayKeyFromOsloISODate } from "@/lib/date/weekdayKeyFromIso";
 import { GET as OrdersTodayGET } from "@/app/api/orders/today/route";
 import { trackOrderAiConversion } from "@/lib/revenue/trackOrderAiConversion";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
@@ -29,12 +30,15 @@ import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/l
 import { orderWriteBodySchema } from "@/lib/validation/schemas";
 import { persistMvoOnOrder } from "@/lib/mvo/persistOrderMvo";
 import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
+import { getAgreementStatus, type Tier } from "@/lib/auth/agreementStatus";
+import { PLAN_ORDER_CHOICE_KEYS } from "@/lib/cms/menuDayContract";
 
 type OrderBody = {
   date?: unknown;
   action?: unknown;
   note?: unknown;
   slot?: unknown;
+  choice_key?: unknown;
   attribution?: unknown;
 };
 
@@ -76,6 +80,10 @@ function sanitizeSlot(v: unknown) {
   const s = safeStr(v).toLowerCase();
   if (!s || s === "lunch") return "default";
   return s || "default";
+}
+
+function sanitizeChoiceKey(v: unknown) {
+  return safeStr(v).toLowerCase();
 }
 
 function mapRpcError(messageRaw: unknown) {
@@ -150,6 +158,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const action = forcedAction ?? normalizeAction(body?.action);
     const note = sanitizeNote(body?.note);
     const slot = sanitizeSlot(body?.slot);
+    const choiceKeyInput = sanitizeChoiceKey(body?.choice_key);
 
     if (!isIsoDate(date)) {
       return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Dato må være på formatet ÅÅÅÅ-MM-DD.");
@@ -157,6 +166,11 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (!action) {
       return jsonOrderWriteErr(rid, 400, "BAD_ACTION", "Du må velge en gyldig handling.");
+    }
+
+    const dayKey = weekdayKeyFromOsloISODate(date);
+    if (!dayKey) {
+      return jsonOrderWriteErr(rid, 422, "INVALID_DAY", "Dato må være mandag til fredag.", { date });
     }
 
     try {
@@ -193,6 +207,8 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     }
 
     const tableSlot = normalizeOrderTableSlot(slot);
+    let resolvedTier: Tier | null = null;
+    let finalChoiceKey: string | null = action === "SET" ? choiceKeyInput || null : null;
     if (action === "SET" || action === "CANCEL") {
       const cid = companyIdFromCtx(g.ctx);
       if (!cid) {
@@ -214,6 +230,35 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       });
       if (pre.ok === false) {
         return jsonOrderWriteErr(rid, pre.status, pre.code, pre.message);
+      }
+
+      const agreementStatus = await getAgreementStatus(sbPre as any, cid);
+      resolvedTier = agreementStatus.dayTiers[dayKey] ?? null;
+
+      if (action === "SET") {
+        if (!resolvedTier) {
+          return jsonOrderWriteErr(rid, 422, "NO_TIER_FOR_DAY", "Denne dagen er ikke tilgjengelig for bestilling.", {
+            date,
+          });
+        }
+
+        const availableChoices = PLAN_ORDER_CHOICE_KEYS[resolvedTier] ?? [];
+        if (availableChoices.length > 1 && !finalChoiceKey) {
+          return jsonOrderWriteErr(rid, 422, "CHOICE_REQUIRED", "Menyvalg er påkrevd. Velg en kategori før bestilling.", {
+            tier: resolvedTier,
+            available_choices: availableChoices,
+          });
+        }
+        if (availableChoices.length === 1 && !finalChoiceKey) {
+          finalChoiceKey = availableChoices[0] ?? null;
+        }
+        if (!finalChoiceKey || !availableChoices.includes(finalChoiceKey)) {
+          return jsonOrderWriteErr(rid, 422, "INVALID_CHOICE", "Valget er ikke tillatt for denne dagen.", {
+            tier: resolvedTier,
+            choice_key: finalChoiceKey,
+            available_choices: availableChoices,
+          });
+        }
       }
     }
 
@@ -343,11 +388,48 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       slot: tableSlot,
     });
 
+    if (action === "SET" && savedStatus === "ACTIVE" && finalChoiceKey) {
+      const adminChoices = supabaseAdmin();
+      const { error: dayChoiceErr } = await (adminChoices as any)
+        .from("day_choices")
+        .upsert(
+          {
+            company_id: safeStr(g.ctx.scope.companyId),
+            location_id: safeStr(g.ctx.scope.locationId),
+            user_id: safeStr(g.ctx.scope.userId),
+            date: savedDate,
+            choice_key: finalChoiceKey,
+            note,
+            status: "ACTIVE",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,location_id,user_id,date" }
+        );
+      if (dayChoiceErr) {
+        return jsonOrderWriteErr(rid, 500, "DAY_CHOICE_SAVE_FAILED", "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen.");
+      }
+    }
+
+    if (action === "CANCEL" && savedStatus === "CANCELLED") {
+      const adminChoices = supabaseAdmin();
+      const del = await (adminChoices as any)
+        .from("day_choices")
+        .delete()
+        .eq("company_id", safeStr(g.ctx.scope.companyId))
+        .eq("location_id", safeStr(g.ctx.scope.locationId))
+        .eq("user_id", safeStr(g.ctx.scope.userId))
+        .eq("date", savedDate);
+      if (del?.error) {
+        return jsonOrderWriteErr(rid, 500, "DAY_CHOICE_DELETE_FAILED", "Avbestilling lagret, men menyvalg kunne ikke ryddes. Prøv igjen.");
+      }
+    }
+
     return jsonOrderWriteOk(rid, {
       orderId,
       status: orderWriteStatusFromDb(savedStatus),
       date: savedDate,
       timestamp: new Date().toISOString(),
+      tier: resolvedTier,
     });
   } catch {
     return jsonOrderWriteErr(rid, 500, "ORDER_SET_FAILED", "Vi kunne ikke lagre bestillingen nå.");

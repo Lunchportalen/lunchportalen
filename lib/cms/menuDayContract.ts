@@ -19,6 +19,21 @@ export const PLAN_CATEGORIES: Record<PlanTier, Category[]> = {
   ENTERPRISE: ["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"],
 };
 
+export const ORDER_CHOICE_KEY_BY_CATEGORY: Record<Category, string> = {
+  paasmurt: "paasmurt",
+  salat: "salatbar",
+  sushi: "sushi",
+  pokebowl: "pokebowl",
+  thai: "thaimat",
+  varmrett: "varmmat",
+};
+
+export const PLAN_ORDER_CHOICE_KEYS: Record<PlanTier, string[]> = {
+  BASIS: PLAN_CATEGORIES.BASIS.map((category) => ORDER_CHOICE_KEY_BY_CATEGORY[category]),
+  LUXUS: PLAN_CATEGORIES.LUXUS.map((category) => ORDER_CHOICE_KEY_BY_CATEGORY[category]),
+  ENTERPRISE: PLAN_CATEGORIES.ENTERPRISE.map((category) => ORDER_CHOICE_KEY_BY_CATEGORY[category]),
+};
+
 export function asPlanTier(value: unknown): PlanTier | null {
   const tier = String(value ?? "").trim().toUpperCase();
   return PLAN_TIERS.includes(tier as PlanTier) ? (tier as PlanTier) : null;

@@ -27,6 +27,7 @@ export const orderWriteBodySchema = z
     action: z.string().optional(),
     note: z.union([z.string(), z.null()]).optional(),
     slot: z.union([z.string(), z.null()]).optional(),
+    choice_key: z.union([z.string(), z.null()]).optional(),
     attribution: z.unknown().optional(),
     mvo: z
       .object({

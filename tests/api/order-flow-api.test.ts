@@ -88,6 +88,21 @@ vi.mock("@/lib/orders/companyOrderEligibility", () => ({
   assertCompanyOrderWriteAllowed: async () => ({ ok: true }),
 }));
 
+vi.mock("@/lib/auth/agreementStatus", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/agreementStatus")>();
+  return {
+    ...actual,
+    getAgreementStatus: async () => ({
+      agreementId: "ag_1",
+      tier: "BASIS",
+      dayTiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+      status: "ACTIVE",
+      isActive: true,
+      billingHold: false,
+    }),
+  };
+});
+
 vi.mock("@/lib/orders/orderWriteGuard", async (importOriginal) => {
   const orig = await importOriginal<typeof import("@/lib/orders/orderWriteGuard")>();
   return {
@@ -99,6 +114,7 @@ vi.mock("@/lib/orders/orderWriteGuard", async (importOriginal) => {
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
     from: () => ({
+      upsert: async () => ({ error: null }),
       select: () => ({
         eq: () => ({
           maybeSingle: async () => ({ data: { line_total: 0 }, error: null }),
@@ -194,7 +210,7 @@ describe("Order create — POST /api/orders", () => {
     };
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(401);
@@ -205,7 +221,7 @@ describe("Order create — POST /api/orders", () => {
   test("valid create → 200 with orderId and status", async () => {
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(200);
@@ -246,7 +262,7 @@ describe("Order create — POST /api/orders", () => {
     rpcData = null;
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(409);
@@ -261,7 +277,7 @@ describe("Order create — POST /api/orders", () => {
     rpcData = null;
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(409);
@@ -274,7 +290,7 @@ describe("Order create — POST /api/orders", () => {
     rpcData = null;
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(409);
@@ -287,7 +303,7 @@ describe("Order create — POST /api/orders", () => {
     rpcData = [{ status: "ACTIVE", date: "2026-02-03" }]; // no order_id
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "place", slot: "lunch" },
+      body: { date: "2026-02-03", action: "place", slot: "lunch", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(500);

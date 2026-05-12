@@ -143,9 +143,12 @@ export function jsonOrderWriteOk(
     date: string;
     /** Utelates → server genererer ISO-8601 (UTC) */
     timestamp?: string;
+    tier?: string | null;
   }
 ): Response {
   const timestamp = params.timestamp ?? new Date().toISOString();
+  const extra: Record<string, unknown> = {};
+  if ("tier" in params) extra.tier = params.tier ?? null;
   return jsonResponse(
     {
       ok: true as const,
@@ -155,6 +158,7 @@ export function jsonOrderWriteOk(
       timestamp,
       date: params.date,
       slot: "lunch" as const,
+      ...extra,
     },
     200,
     rid
@@ -162,8 +166,14 @@ export function jsonOrderWriteOk(
 }
 
 /** Flat feil for samme order-write-kontrakt (`rid` + `code` + `message`). */
-export function jsonOrderWriteErr(rid: string, status: number, code: string, message: string): Response {
-  return jsonResponse({ ok: false as const, rid, code, message }, status, rid);
+export function jsonOrderWriteErr(
+  rid: string,
+  status: number,
+  code: string,
+  message: string,
+  extra?: Record<string, unknown>
+): Response {
+  return jsonResponse({ ok: false as const, rid, code, error: code, message, status, ...(extra ?? {}) }, status, rid);
 }
 
 /* =========================================================

@@ -49,9 +49,29 @@ vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/auth/agreementStatus", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/agreementStatus")>();
+  return {
+    ...actual,
+    getAgreementStatus: async () => ({
+      agreementId: "ag_1",
+      tier: "BASIS",
+      dayTiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+      status: "ACTIVE",
+      isActive: true,
+      billingHold: false,
+    }),
+  };
+});
+
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
     from: (table: string) => {
+      if (table === "day_choices") {
+        return {
+          upsert: async () => ({ error: null }),
+        };
+      }
       if (table === "closed_dates") {
         return {
           select: () => ({
@@ -181,7 +201,7 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
 
   test("returns 200 with orderId when RPC succeeds", async () => {
     scopeOr401Mock.mockResolvedValue({ ok: true, ctx: authCtx.ctx });
-    readJsonMock.mockResolvedValueOnce({ date: "2026-02-03", action: "SET" });
+    readJsonMock.mockResolvedValueOnce({ date: "2026-02-03", action: "SET", choice_key: "varmmat" });
     const { supabaseServer } = await supabaseServerMod();
     const rpcOk = vi.fn().mockResolvedValueOnce({
       data: { order_id: "ord-1", status: "ACTIVE", date: "2026-02-03", slot: "lunch", receipt: "2026-02-03T12:00:00Z" },
@@ -222,7 +242,7 @@ describe("Order API guards — orders create (POST /api/orders)", () => {
 
     const req = mkReq("http://localhost/api/orders", {
       method: "POST",
-      body: { date: "2026-02-03", action: "SET" },
+      body: { date: "2026-02-03", action: "SET", choice_key: "varmmat" },
     });
     const res = await ordersRoutePOST(req);
     expect(res.status).toBe(200);
