@@ -1,6 +1,7 @@
 // lib/admin/agreement/types.ts
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 export type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
+export type AgreementDayTiers = Record<DayKey, Tier | null>;
 export type AgreementStatus =
   | "ACTIVE"
   | "PAUSED"
@@ -29,7 +30,12 @@ export type AgreementPageData = {
   companies: AgreementPageCompany[];
   role: "company_admin" | "superadmin";
   status: AgreementStatus;
-  pricing: { planTier: Tier | null; pricePerCuvertNok: number | null; currency: "NOK" };
+  pricing: {
+    planTier: Tier | null;
+    dayTiers?: AgreementDayTiers;
+    pricePerCuvertNok: number | null;
+    currency: "NOK";
+  };
   binding: { startDate: string | null; endDate: string | null; remainingDays: number | null };
   /** Fra agreements.binding_months / notice_months når tilgjengelig (lesing). */
   terms?: { bindingMonths: number | null; noticeMonths: number | null } | null;

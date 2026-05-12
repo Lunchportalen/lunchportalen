@@ -2,12 +2,25 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
+export type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
+export type AgreementDayTiers = Record<DayKey, Tier | null>;
+
 export type AgreementStatusResult = {
   agreementId: string | null;
-  tier: "BASIS" | "LUXUS" | "ENTERPRISE" | null;
+  tier: Tier | null;
+  dayTiers: AgreementDayTiers;
   status: "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "REJECTED" | null;
   isActive: boolean;
   billingHold: boolean;
+};
+
+const EMPTY_DAY_TIERS: AgreementDayTiers = {
+  mon: null,
+  tue: null,
+  wed: null,
+  thu: null,
+  fri: null,
 };
 
 function safeStr(v: unknown) {
@@ -92,6 +105,7 @@ export async function getAgreementStatus(
   return {
     agreementId: safeStr(agreement?.agreement_id) || null,
     tier: normalizeTier(agreement?.tier),
+    dayTiers: { ...EMPTY_DAY_TIERS },
     status,
     isActive: status === "ACTIVE",
     billingHold,
