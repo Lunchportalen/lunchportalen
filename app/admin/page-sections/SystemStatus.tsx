@@ -1,8 +1,15 @@
 export type SystemStatusRow = {
   label: string;
   value: string;
-  kind?: "ok" | "warn" | "danger";
+  kind?: "ok" | "warn" | "danger" | "neutral";
 };
+
+function statusPillClass(kind: SystemStatusRow["kind"]) {
+  if (kind === "danger") return "ds-admin-status__pill is-danger";
+  if (kind === "warn") return "ds-admin-status__pill is-warn";
+  if (kind === "neutral") return "ds-admin-status__pill is-neutral";
+  return "ds-admin-status__pill";
+}
 
 export default function SystemStatus({ data }: { data: SystemStatusRow[] }) {
   return (
@@ -19,9 +26,7 @@ export default function SystemStatus({ data }: { data: SystemStatusRow[] }) {
             <div className="ds-admin-status__label">{row.label}</div>
             <div className="ds-admin-status__value">
               <span
-                className={`ds-admin-status__pill${
-                  row.kind === "danger" ? " is-danger" : row.kind === "warn" ? " is-warn" : ""
-                }`}
+                className={statusPillClass(row.kind)}
                 aria-hidden="true"
               />
               {row.value}

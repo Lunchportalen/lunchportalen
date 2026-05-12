@@ -699,6 +699,11 @@
   box-shadow: 0 0 0 3px rgba(176, 65, 65, .18);
 }
 
+.ds-admin-status__pill.is-neutral {
+  background: #8a8580;
+  box-shadow: 0 0 0 3px rgba(138, 133, 128, .16);
+}
+
 .ds-admin-people__list {
   display: flex;
   flex-direction: column;

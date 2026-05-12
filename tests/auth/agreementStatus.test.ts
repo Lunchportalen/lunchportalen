@@ -131,6 +131,45 @@ describe("agreementStatus", () => {
     expect(canCompanyOperate(status)).toBe(true);
   });
 
+  test("fail-closed når company_billing_accounts mangler (PGRST205)", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        billingError: {
+          code: "PGRST205",
+          message: "Could not find the table 'public.company_billing_accounts' in the schema cache",
+        },
+      }),
+      "company_1",
+    );
+
+    expect(status.billingHold).toBe(false);
+  });
+
+  test("fail-closed når company_billing_accounts har 42P01", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        billingError: { code: "42P01", message: 'relation "public.company_billing_accounts" does not exist' },
+      }),
+      "company_1",
+    );
+
+    expect(status.billingHold).toBe(false);
+  });
+
+  test("fail-closed når company_billing_accounts har ukjent feilkode", async () => {
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreement: { agreement_id: "ag_1", tier: "BASIS", status: "ACTIVE" },
+        billingError: { code: "UNKNOWN", message: "network timeout" },
+      }),
+      "company_1",
+    );
+
+    expect(status.billingHold).toBe(true);
+  });
+
   test("leser blandet tier fra agreement_delivery_days", async () => {
     const status = await getAgreementStatus(
       makeSupabase({

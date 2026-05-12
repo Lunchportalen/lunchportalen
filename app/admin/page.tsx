@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin/loadAdminContext";
 import { loadCompanyOperationalBrief } from "@/lib/server/admin/loadCompanyOperationalBrief";
 import { getAgreementStatus } from "@/lib/auth/agreementStatus";
+import { formatAgreementSystemLabel, formatSystemPaymentLabel } from "@/lib/admin/agreementLabel";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { supabaseServer } from "@/lib/supabase/server";
 import BlockedState from "@/components/admin/BlockedState";
@@ -247,7 +248,7 @@ export default async function AdminCommandCenterPage() {
   const systemStatus: SystemStatusRow[] = [
     {
       label: "Avtale",
-      value: `${agreementStatus.tier ?? "Ukjent"} · ${agreementStatus.status ?? "Ukjent"}`,
+      value: formatAgreementSystemLabel(agreementStatus),
       kind: agreementStatus.isActive ? "ok" : "warn",
     },
     {
@@ -262,8 +263,12 @@ export default async function AdminCommandCenterPage() {
     },
     {
       label: "Betaling",
-      value: agreementStatus.billingHold ? "Hold" : "OK",
-      kind: agreementStatus.billingHold ? "danger" : "ok",
+      // TODO: company_billing_accounts-tabellen er ikke en del av prod-DB ennå.
+      // Faktura-status koblet til invoices/invoice_runs/tripletex_invoices kommer i senere fase.
+      // Inntil da viser SystemStatus en nøytral "Ikke aktivert"-status.
+      // agreementStatus.billingHold brukes ikke i denne raden før ekte billing-kilde er koblet.
+      value: formatSystemPaymentLabel(),
+      kind: "neutral",
     },
     {
       label: "Invitasjoner",
