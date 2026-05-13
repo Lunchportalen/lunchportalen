@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import InvitesPanel from "@/components/admin/InvitesPanel";
 
 type Props = {
@@ -12,6 +12,18 @@ type InviteRow = {
   full_name: string | null;
   email: string;
   department: string | null;
+};
+
+type InvitePanelRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  department: string | null;
+  location_id: string | null;
+  created_at: string | null;
+  last_sent_at: string | null;
+  expires_at: string | null;
+  used_at: string | null;
 };
 
 type InviteResult = {
@@ -38,6 +50,19 @@ type ApiOk = {
 };
 
 type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
+
+type InvitesApiOk = {
+  ok: true;
+  rid: string;
+  data: { invites: InvitePanelRow[] };
+};
+
+type InvitesApiErr = {
+  ok: false;
+  rid?: string;
+  message?: string;
+  error?: string;
+};
 
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -100,10 +125,39 @@ export default function InviteClient({ companyId, companyName }: Props) {
   const [result, setResult] = useState<ApiOk["data"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rid, setRid] = useState<string | null>(null);
+  const [inviteRows, setInviteRows] = useState<InvitePanelRow[]>([]);
+  const [inviteLoading, setInviteLoading] = useState<boolean>(true);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const bulkRows = useMemo(() => parseBulkLines(bulkText), [bulkText]);
   const bulkValid = bulkRows.filter((r) => !r.error);
   const bulkInvalid = bulkRows.filter((r) => r.error);
+
+  const loadInvites = useCallback(async () => {
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      const res = await fetch("/api/admin/invites", {
+        headers: { "cache-control": "no-store" },
+      });
+      const json = (await res.json()) as InvitesApiOk | InvitesApiErr;
+      if (!res.ok || !json || (json as InvitesApiErr).ok === false) {
+        const j = json as InvitesApiErr;
+        throw new Error(j?.message || j?.error || `HTTP ${res.status}`);
+      }
+      const ok = json as InvitesApiOk;
+      setInviteRows(ok.data?.invites ?? []);
+    } catch (e) {
+      setInviteError(e instanceof Error ? e.message : "Kunne ikke hente invitasjoner.");
+      setInviteRows([]);
+    } finally {
+      setInviteLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInvites();
+  }, [loadInvites]);
 
   async function sendInvites(invites: InviteRow[]) {
     setBusy(true);
@@ -128,6 +182,7 @@ export default function InviteClient({ companyId, companyName }: Props) {
 
       setResult((json as ApiOk).data);
       setRid((json as ApiOk).rid || localRid);
+      await loadInvites();
     } catch (e: any) {
       setError(String(e?.message ?? "Kunne ikke sende invitasjon."));
       setRid(localRid);
@@ -331,7 +386,12 @@ export default function InviteClient({ companyId, companyName }: Props) {
 
       <section className="lp-glass-card rounded-3xl p-6">
         <div className="mb-3 text-sm font-semibold text-neutral-900">Siste invitasjoner</div>
-        <InvitesPanel />
+        <InvitesPanel
+          rows={inviteRows}
+          loading={inviteLoading}
+          error={inviteError}
+          onReload={loadInvites}
+        />
       </section>
 
       <div className="text-xs text-neutral-500">
