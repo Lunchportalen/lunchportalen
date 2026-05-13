@@ -41,10 +41,13 @@ export async function createEmployeeInvite(email: string): Promise<CreateEmploye
   const { data: profile, error: pErr } = await sb
     .from("profiles")
     .select("company_id, location_id")
-    .or(`id.eq.${userId},user_id.eq.${userId}`)
+    .eq("id", userId)
     .maybeSingle();
 
-  if (pErr || !profile?.company_id) {
+  if (pErr) {
+    return { ok: false, message: "Kunne ikke laste brukerdata.", code: "PROFILE_LOOKUP_FAILED" };
+  }
+  if (!profile?.company_id) {
     return { ok: false, message: "Mangler firmatilknytning.", code: "MISSING_COMPANY" };
   }
 

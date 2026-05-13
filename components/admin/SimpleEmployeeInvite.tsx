@@ -4,7 +4,14 @@ import { useState, useTransition } from "react";
 
 import { createEmployeeInvite } from "@/app/admin/invite/actions";
 
-export default function SimpleEmployeeInvite() {
+export default function SimpleEmployeeInvite({
+  companyId,
+  companyName,
+}: {
+  companyId: string;
+  companyName: string;
+}) {
+  void companyId;
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
@@ -37,6 +44,9 @@ export default function SimpleEmployeeInvite() {
     <section className="mb-10 rounded-3xl border border-black/10 bg-white/80 p-6 shadow-sm backdrop-blur">
       <h2 className="text-lg font-semibold text-neutral-900">Inviter én ansatt</h2>
       <p className="mt-1 text-sm text-neutral-600">Lenken er gyldig i 48 timer og kan bare brukes én gang.</p>
+      <p className="mt-1 text-xs text-neutral-500">
+        Inviterer til <strong className="text-neutral-700">{companyName}</strong>
+      </p>
 
       <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="flex-1 text-sm">

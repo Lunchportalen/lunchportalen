@@ -110,7 +110,10 @@ export default async function AdminInvitePage() {
           </div>
         </div>
 
-        <SimpleEmployeeInvite />
+        <SimpleEmployeeInvite
+          companyId={ctx.companyId}
+          companyName={ctx.company?.name ?? "Firma"}
+        />
 
         <InviteClient companyId={ctx.companyId} companyName={ctx.company?.name ?? "Firma"} />
       </div>
