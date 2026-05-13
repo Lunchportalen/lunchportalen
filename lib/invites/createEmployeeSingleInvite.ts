@@ -1,9 +1,9 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import nodemailer from "nodemailer";
 
 import { auditAdmin } from "@/lib/audit/actions";
+import { sendEmail } from "@/lib/email/send";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isSystemEmail as isSystemEmailCore, SYSTEM_EMAILS } from "@/lib/system/emails";
 
@@ -27,50 +27,45 @@ function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-function smtpConfig() {
-  const host = process.env.SMTP_HOST || process.env.LP_SMTP_HOST;
-  const portRaw = process.env.SMTP_PORT || process.env.LP_SMTP_PORT;
-  const user = process.env.SMTP_USER || process.env.LP_SMTP_USER;
-  const pass = process.env.SMTP_PASS || process.env.LP_SMTP_PASS;
-  const from = process.env.SMTP_FROM || process.env.LP_SMTP_FROM || user;
-
-  if (!host || !portRaw || !user || !pass || !from) return { ok: false as const, error: "smtp_not_configured" };
-  const port = Number(portRaw);
-  if (!Number.isFinite(port)) return { ok: false as const, error: "smtp_bad_port" };
-  return {
-    ok: true as const,
-    host: String(host),
-    port,
-    user: String(user),
-    pass: String(pass),
-    from: String(from),
-    secure: port === 465,
-  };
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 async function sendInviteEmailBestEffort(opts: { to: string; link: string; companyName: string }) {
-  const cfg = smtpConfig();
-  if (cfg.ok === false) return { ok: false as const, error: cfg.error };
-
   try {
-    const transport = nodemailer.createTransport({
-      host: cfg.host,
-      port: cfg.port,
-      secure: cfg.secure,
-      auth: { user: cfg.user, pass: cfg.pass },
-    });
-
     const subject = "Invitasjon til Lunchportalen";
     const text =
       `Du er invitert til Lunchportalen av ${opts.companyName}.\n\n` +
       `Åpne lenken for å opprette konto (ansatt):\n${opts.link}\n\n` +
       `Hvis du ikke forventet denne e-posten, kan du ignorere den.\n\n` +
       `Spørsmål? Kontakt ${SYSTEM_EMAILS.ORDER}.`;
+    const html = `
+      <p>Hei,</p>
+      <p>Du er invitert til Lunchportalen av ${escapeHtml(opts.companyName)}.</p>
+      <p>Åpne lenken for å opprette konto (ansatt):</p>
+      <p><a href="${escapeHtml(opts.link)}">${escapeHtml(opts.link)}</a></p>
+      <p>Hvis du ikke forventet denne e-posten, kan du ignorere den.</p>
+      <p>Spørsmål? Kontakt ${escapeHtml(SYSTEM_EMAILS.ORDER)}.</p>
+    `;
 
-    await transport.sendMail({ from: cfg.from, to: opts.to, subject, text });
-    return { ok: true as const };
-  } catch (e: any) {
-    return { ok: false as const, error: String(e?.message ?? e ?? "email_failed") };
+    const result = await sendEmail({
+      to: opts.to,
+      subject,
+      html,
+      // Transaksjonell e-post: firmaadmin har eksplisitt bedt om invitasjon via /admin/invite.
+      explicitApproval: true,
+    });
+
+    if (result.status === "sent") {
+      return { ok: true as const };
+    }
+    return { ok: false as const, error: result.reason ?? `Email status: ${result.status}` };
+  } catch (e) {
+    return { ok: false as const, error: e instanceof Error ? e.message : "Unknown error" };
   }
 }
 
