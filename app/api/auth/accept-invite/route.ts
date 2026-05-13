@@ -188,9 +188,7 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({
         email,
-        name: displayName,
         full_name: finalName,
-        department,
         location_id,
         role,
         is_active: true,
