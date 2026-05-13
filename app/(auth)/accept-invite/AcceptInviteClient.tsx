@@ -16,6 +16,12 @@ type ApiOk = {
   rid?: string;
   userId?: string;
   email?: string;
+  data?: {
+    ok?: true;
+    rid?: string;
+    email?: string;
+    userId?: string;
+  };
   needsLogin?: boolean;
   pendingProfile?: boolean;
   message?: string;
@@ -113,7 +119,7 @@ export default function AcceptInviteClient({ token }: Props) {
 
     try {
       // 1) Fullfør invite (auth opprettes/oppdateres)
-      const r = await fetch("/api/accept-invite/complete", {
+      const r = await fetch("/api/auth/accept-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
         cache: "no-store",
@@ -135,7 +141,7 @@ export default function AcceptInviteClient({ token }: Props) {
       }
 
       const ok = data as ApiOk;
-      const email = ok.email;
+      const email = ok.data?.email ?? ok.email;
 
       if (!email) {
         setErr("Konto opprettet, men mangler e-post for innlogging. Kontakt support.");
