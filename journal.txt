@@ -47,3 +47,64 @@ Utestått teknisk gjeld:
 - Designfix /admin/people og /admin/insights
 - Firma-admin lunsjbestilling (variant 3a)
 - CTA-knapp fra /admin oversikt til /week
+
+FASE 9B — /admin/invite canonical profile lookup (2026-05-13)
+
+Problem:
+- /admin/invite viste "Mangler firmatilknytning" for company_admin.
+- actions.ts brukte .or(id.eq.<uid>,user_id.eq.<uid>) — user_id-kolonne
+  finnes ikke i prod-schema.
+- Query feilet med 42703, error path triggert.
+
+Deployet (commit 5373d175):
+- actions.ts: canonical .eq("id", userId) lookup.
+- page.tsx: send companyId + companyName som props.
+- SimpleEmployeeInvite: vis "Inviterer til <firma>" i UI.
+- Differensierte feilkoder: PROFILE_LOOKUP_FAILED vs MISSING_COMPANY.
+
+Config-fix:
+- Vercel Production env: PUBLIC_APP_URL var satt til http://localhost:3000.
+- Endret til https://app.lunchportalen.no.
+- Trigger redeploy.
+- Resultat: invite-URLer peker nå til prod-domene.
+
+FASE 9C — InvitesPanel wiring (2026-05-13)
+
+Problem:
+- "Siste invitasjoner"-seksjon var tom selv med invitasjoner i DB.
+- "Oppdater"-knapp reagerte ikke ved klikk.
+- InvitesPanel ble rendret uten props (<InvitesPanel />).
+
+Deployet (commit e5abfb83):
+- InviteClient.tsx: fetcher /api/admin/invites på mount.
+- Følger /admin/people-mønsteret med load() + useEffect.
+- Refresh etter vellykket invite-send.
+- Pass rows/loading/error/onReload til InvitesPanel.
+
+ARKITEKTUR-INNSIKTER FRA DENNE SESJONEN
+- 10 filer har samme .or(id.eq,user_id.eq) bug-mønster (teknisk gjeld).
+- PUBLIC_APP_URL i Vercel manglet riktig verdi (config-svakhet).
+- getPublicAppUrlFromEnv() har silent fallback til localhost (latent bug).
+
+UTESTÅTT TEKNISK GJELD (PRIORITERT)
+
+HØY PRIORITET (blokkerer full automatisk flyt):
+1. SMTP-fix (queryA EBADNAME mail.lunchportalen.no)
+   - Option A: Fiks DNS for mail.lunchportalen.no
+   - Option B: Bytt til Resend (LP_RESEND_FROM allerede satt)
+   - Option C: Annen e-post-tjeneste
+2. NEXT_PUBLIC_APP_URL verdi i Vercel (sjekk og fiks om nødvendig)
+
+MIDDELS PRIORITET:
+3. 10 filer med .or(id.eq,user_id.eq)-mønster
+   - kitchen, driver, agreement, support, onboarding routes
+4. Defensiv kode-forbedring i getPublicAppUrlFromEnv
+   (kaste feil i prod hvis localhost, ikke silent-fail)
+5. Kitchen/driver/superadmin role-mapping
+
+LAV PRIORITET (designforbedringer):
+6. Designfix /admin/people (mørke kort)
+7. Designfix /admin/insights (grønnlig bakgrunn)
+8. Firma-admin lunsjbestilling (variant 3a)
+9. CTA-knapp fra /admin oversikt til /week
+10. location_memberships lifecycle (status-kolonne)
