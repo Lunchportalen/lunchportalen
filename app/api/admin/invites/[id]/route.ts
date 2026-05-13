@@ -5,12 +5,14 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
-import nodemailer from "nodemailer";
 
+import { sendEmail } from "@/lib/email/send";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { getAppBaseUrl } from "@/lib/url/appUrl";
+
+const INVITE_CONTACT_EMAIL = "post@lunchportalen.no";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -24,54 +26,42 @@ function safeUUID(v: unknown) {
   return ok ? s : null;
 }
 
-type SmtpCfgOk = { ok: true; host: string; port: number; user: string; pass: string; from: string; secure: boolean };
-
-type SmtpCfgErr = { ok: false; error: string };
-
-type SmtpCfg = SmtpCfgOk | SmtpCfgErr;
-
-function smtpConfig(): SmtpCfg {
-  const host = process.env.SMTP_HOST || process.env.LP_SMTP_HOST;
-  const portRaw = process.env.SMTP_PORT || process.env.LP_SMTP_PORT;
-  const user = process.env.SMTP_USER || process.env.LP_SMTP_USER;
-  const pass = process.env.SMTP_PASS || process.env.LP_SMTP_PASS;
-  const from = process.env.SMTP_FROM || process.env.LP_SMTP_FROM || user;
-
-  if (!host) return { ok: false, error: "Missing env SMTP_HOST" };
-  if (!portRaw) return { ok: false, error: "Missing env SMTP_PORT" };
-  if (!user) return { ok: false, error: "Missing env SMTP_USER" };
-  if (!pass) return { ok: false, error: "Missing env SMTP_PASS" };
-  if (!from) return { ok: false, error: "Missing env SMTP_FROM" };
-
-  const port = Number(portRaw);
-  if (!Number.isFinite(port)) return { ok: false, error: "Invalid SMTP_PORT" };
-
-  const secure = port === 465;
-  return { ok: true, host: String(host), port, user: String(user), pass: String(pass), from: String(from), secure };
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 async function sendInviteEmail(to: string, link: string) {
-  const cfg = smtpConfig();
-  if (cfg.ok === false) return { ok: false as const, error: cfg.error };
-
-  const transport = nodemailer.createTransport({
-    host: cfg.host,
-    port: cfg.port,
-    secure: cfg.secure,
-    auth: { user: cfg.user, pass: cfg.pass },
-  });
-
-  const subject = "Invitasjon til Lunchportalen";
-  const text =
-    `Du er invitert til Lunchportalen.\n\n` +
-    `Åpne denne lenken for å akseptere invitasjonen og sette passord:\n${link}\n\n` +
-    `Hvis du ikke forventet denne e-posten, kan du ignorere den.`;
-
   try {
-    await transport.sendMail({ from: cfg.from, to, subject, text });
-    return { ok: true as const };
-  } catch (e: any) {
-    return { ok: false as const, error: String(e?.message ?? e ?? "Email send failed") };
+    const subject = "Invitasjon til Lunchportalen";
+    const html = `
+      <p>Hei,</p>
+      <p>Du er invitert til Lunchportalen.</p>
+      <p>Åpne denne lenken for å akseptere invitasjonen og sette passord:</p>
+      <p><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>
+      <p>Lenken er gyldig i 48 timer og kan bare brukes én gang.</p>
+      <p>Hvis du ikke forventet denne e-posten, kan du ignorere den.</p>
+      <p>Spørsmål? Kontakt <a href="mailto:${INVITE_CONTACT_EMAIL}">${INVITE_CONTACT_EMAIL}</a>.</p>
+    `;
+
+    const result = await sendEmail({
+      to,
+      subject,
+      html,
+      // Transaksjonell e-post: firmaadmin har eksplisitt klikket "Send på nytt" i /admin/invite.
+      explicitApproval: true,
+    });
+
+    if (result.status === "sent") {
+      return { ok: true as const };
+    }
+    return { ok: false as const, error: result.reason ?? `Email status: ${result.status}` };
+  } catch (e) {
+    return { ok: false as const, error: e instanceof Error ? e.message : "Unknown error" };
   }
 }
 

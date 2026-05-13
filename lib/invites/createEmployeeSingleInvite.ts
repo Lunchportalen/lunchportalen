@@ -5,11 +5,12 @@ import crypto from "node:crypto";
 import { auditAdmin } from "@/lib/audit/actions";
 import { sendEmail } from "@/lib/email/send";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { isSystemEmail as isSystemEmailCore, SYSTEM_EMAILS } from "@/lib/system/emails";
+import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
 
 import { buildEmployeeInviteUrl, getPublicAppUrlFromEnv } from "@/lib/invites/employeeInviteUrl";
 
 export const EMPLOYEE_INVITE_TTL_MS = 1000 * 60 * 60 * 48;
+const INVITE_CONTACT_EMAIL = "post@lunchportalen.no";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -42,14 +43,14 @@ async function sendInviteEmailBestEffort(opts: { to: string; link: string; compa
       `Du er invitert til Lunchportalen av ${opts.companyName}.\n\n` +
       `Åpne lenken for å opprette konto (ansatt):\n${opts.link}\n\n` +
       `Hvis du ikke forventet denne e-posten, kan du ignorere den.\n\n` +
-      `Spørsmål? Kontakt ${SYSTEM_EMAILS.ORDER}.`;
+      `Spørsmål? Kontakt ${INVITE_CONTACT_EMAIL}.`;
     const html = `
       <p>Hei,</p>
       <p>Du er invitert til Lunchportalen av ${escapeHtml(opts.companyName)}.</p>
       <p>Åpne lenken for å opprette konto (ansatt):</p>
       <p><a href="${escapeHtml(opts.link)}">${escapeHtml(opts.link)}</a></p>
       <p>Hvis du ikke forventet denne e-posten, kan du ignorere den.</p>
-      <p>Spørsmål? Kontakt ${escapeHtml(SYSTEM_EMAILS.ORDER)}.</p>
+      <p>Spørsmål? Kontakt <a href="mailto:${INVITE_CONTACT_EMAIL}">${INVITE_CONTACT_EMAIL}</a>.</p>
     `;
 
     const result = await sendEmail({
