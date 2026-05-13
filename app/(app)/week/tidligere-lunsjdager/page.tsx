@@ -65,7 +65,7 @@ export default async function EmployeeTidligereLunsjdagerPage() {
 
   await requireActiveAgreement();
 
-  const pRes = await sb.from("profiles").select("company_id,location_id").maybeSingle();
+  const pRes = await sb.from("profiles").select("company_id,location_id").eq("id", authUserId).maybeSingle();
   if (pRes.error || !pRes.data?.company_id) {
     if (role === "employee") {
       redirect("/status?code=PROFILE_MISSING");
