@@ -151,10 +151,31 @@ export async function POST(req: Request) {
       return jsonError(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk. Sjekk DB-trigger på auth.users → public.profiles.", { userId });
     }
 
-    // 4) Sikkerhet: company_id må være satt av trigger, og matche invitasjonen
+    // 4) Profile-binding hvis trigger ikke satte scope (forventet)
     if (!profile.company_id) {
-      return jsonError(rid, 500, "profile_not_bound", "Profil ble opprettet, men er ikke knyttet til firma. Trigger må sette profiles.company_id ved INSERT.", { userId });
+      const { error: bindError } = await admin
+        .from("profiles")
+        .update({
+          company_id,
+          location_id,
+          role: "employee",
+        })
+        .eq("id", userId);
+
+      if (bindError) {
+        return jsonError(rid, 500, "profile_bind_failed", "Kunne ikke koble konto til firma.", { userId, error: bindError.message });
+      }
+
+      // Re-hent for å bekrefte
+      const refetch = await admin.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
+
+      if (!refetch.data?.company_id) {
+        return jsonError(rid, 500, "profile_bind_unverified", "Profile-binding kunne ikke verifiseres.", { userId });
+      }
+      profile.company_id = refetch.data.company_id;
     }
+
+    // 5) Sikkerhet: profile.company_id må matche invitasjonen
     if (String(profile.company_id) !== company_id) {
       return jsonError(rid, 409, "company_mismatch", "Kontoen finnes allerede og er knyttet til et annet firma. Kontakt superadmin.", {
         existingCompany: profile.company_id,
@@ -162,7 +183,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 5) Oppdater kun trygge felter (IKKE company_id)
+    // 6) Oppdater trygge profile-felter (company_id er allerede satt i step 4 om nødvendig)
     const profUpd = await admin
       .from("profiles")
       .update({
@@ -174,7 +195,6 @@ export async function POST(req: Request) {
         role,
         is_active: true,
         disabled_at: null,
-        disabled_reason: null,
       })
       .eq("id", userId);
 
