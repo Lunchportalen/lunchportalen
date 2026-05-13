@@ -1,0 +1,49 @@
+FASE 9A — RLS-grants + membership-lifecycle (2026-05-13)
+
+Problem:
+- Inger (firmaadmin på Melhus) ble blokkert fra /admin/people, /locations,
+  /orders, /insights med 503 Service Unavailable.
+- Root cause: tre lag brukte tre ulike sannhetskilder for tenant-tilhørighet:
+  * Appkode: profiles.company_id (dokumentert som "tenant source of truth")
+  * Private RLS-helpere: company_memberships.status='active'
+  * Legacy recompute-trigger: company_memberships.active=true (boolean)
+- Symptom: status='invited' på alle 4 prod-memberships blokkerte RLS.
+
+Deployet:
+1. GRANT EXECUTE på 16 private RLS-helpere for authenticated-rolle
+   (can_access_company, can_view_order, manage_location, etc.).
+2. project_profile_scope_from_memberships() endret til å respektere
+   status IN ('active', 'suspended') for company-scope.
+3. sync_memberships_from_legacy_profile() endret til å sette status korrekt:
+   - status='active' når profile aktiv, 'suspended' når deaktivert
+   - active=true ALLTID (lifecycle eies av status, ikke active)
+   - activated_at via COALESCE for å bevare original timestamp
+   - Trigger lytter også på is_active-kolonne
+4. Engangs-datafix for inger@melhuscatering.no:
+   - UPDATE company_memberships SET status='active', activated_at=now()
+   - Anvendt manuelt via Supabase MCP 12:54:33 UTC 2026-05-13
+   - Berørte 1 rad
+
+Skalerbarhet:
+- Nye firma-admin-registreringer får automatisk status='active' via
+  sync-trigger.
+- Ingen manuell DB-intervensjon nødvendig for fremtidige onboardinger.
+
+Arkitektur-prinsipper etablert:
+- company_memberships.active = "raden eksisterer" (alltid TRUE)
+- company_memberships.status = lifecycle (invited/active/suspended/revoked)
+- profiles.company_id bevares for status IN ('active', 'suspended')
+- RLS-helpere fortsetter å lese status='active'
+
+Lærdom:
+- Kjedetrigger-arkitekturen dokumentert (sync -> recompute -> sync-loop).
+- Rollback-tester via Supabase MCP gjorde trygg redesign mulig.
+- A/B-migrasjon ga isolert testbar fix.
+
+Utestått teknisk gjeld:
+- /admin/invite "Mangler firmatilknytning" (FASE 9B neste)
+- Kitchen/driver/superadmin membership-rolle-mapping
+- location_memberships lifecycle (legge til status-kolonne)
+- Designfix /admin/people og /admin/insights
+- Firma-admin lunsjbestilling (variant 3a)
+- CTA-knapp fra /admin oversikt til /week
