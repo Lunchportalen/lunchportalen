@@ -1,8 +1,9 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { canCompanyOperate, getAgreementStatus } from "@/lib/auth/agreementStatus";
 
 type Seed = {
   agreement?: Record<string, unknown> | null;
+  agreementError?: unknown;
   dayRows?: Array<Record<string, unknown>>;
   dayError?: unknown;
   billing?: Record<string, unknown> | null;
@@ -18,6 +19,7 @@ function makeSupabase(seed: Seed) {
         eq: () => q,
         maybeSingle: async () => {
           if (table === "company_current_agreement") {
+            if (seed.agreementError) return { data: null, error: seed.agreementError };
             return { data: seed.agreement ?? null, error: null };
           }
           if (table === "company_billing_accounts") {
@@ -114,6 +116,29 @@ describe("agreementStatus", () => {
     expect(status.status).toBeNull();
     expect(status.isActive).toBe(false);
     expect(canCompanyOperate(status)).toBe(false);
+  });
+
+  test("logger warning ved 42501 RLS error på company_current_agreement", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const status = await getAgreementStatus(
+      makeSupabase({
+        agreementError: { code: "42501", message: "permission denied for view" },
+      }),
+      "test-company-id",
+    );
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[agreementStatus] RLS/GRANT issue on company_current_agreement",
+      expect.objectContaining({
+        companyId: "test-company-id",
+        code: "42501",
+      }),
+    );
+    expect(status.agreementId).toBeNull();
+    expect(status.tier).toBeNull();
+
+    consoleSpy.mockRestore();
   });
 
   test("missing company_billing_accounts table does not throw and means no billing hold", async () => {

@@ -144,7 +144,26 @@ export async function getAgreementStatus(
         .eq("company_id", cid)
         .maybeSingle();
 
-      if (!error && data) {
+      if (error) {
+        const errCode = (error as any)?.code ?? "";
+        const errMsg = (error as any)?.message ?? "";
+        const isPermissionDenied = errCode === "42501" || errMsg.includes("permission denied");
+        const isMissingRelation = isMissingRelationError(error, "company_current_agreement");
+
+        if (isPermissionDenied) {
+          console.warn("[agreementStatus] RLS/GRANT issue on company_current_agreement", {
+            companyId: cid,
+            code: errCode,
+            message: errMsg,
+          });
+        } else if (!isMissingRelation) {
+          console.warn("[agreementStatus] unexpected error on company_current_agreement", {
+            companyId: cid,
+            code: errCode,
+            message: errMsg,
+          });
+        }
+      } else if (data) {
         agreement = data;
       }
     } catch {
