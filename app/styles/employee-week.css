@@ -1,3 +1,39 @@
+.ds-tier-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--ds-radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.ds-tier-pill.is-basis {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
+}
+
+.ds-tier-pill.is-luxus {
+  background: var(--ds-accent-soft);
+  color: #8a6800;
+  border: 1px solid rgba(245, 180, 0, 0.3);
+}
+
+.ds-tier-pill.is-enterprise {
+  background: rgba(160, 124, 0, 0.12);
+  color: var(--lp-gold-dark);
+  border: 1px solid rgba(160, 124, 0, 0.3);
+}
+
+.ds-tier-pill.is-unavailable {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
+}
+
 .week-day__categories {
   display: grid;
   grid-template-columns: 1fr;

@@ -48,6 +48,7 @@ type DayRow = {
   menuDescription: string | null;
   allergens: string[];
   menuImages: string[];
+  reason?: "NO_TIER_FOR_DAY" | string | null;
 };
 
 type MealChoice = {
@@ -199,6 +200,7 @@ function mapDay(raw: unknown): DayRow | null {
       : (d as any).menuImage
         ? [String((d as any).menuImage)]
         : [],
+    reason: d.reason != null ? String(d.reason) : null,
   };
 }
 
@@ -294,6 +296,45 @@ function tierLabel(day: DayRow) {
   if (day.tier === "LUXUS") return `Luxus - ${limit} valg`;
   if (day.tier === "BASIS") return `Basis - ${limit} valg`;
   return "Ikke tilgjengelig";
+}
+
+function tierPillText(tier: DayRow["tier"]) {
+  if (tier === "ENTERPRISE") return "Enterprise";
+  if (tier === "LUXUS") return "Luxus";
+  if (tier === "BASIS") return "Basis";
+  return "Ikke tilgjengelig";
+}
+
+export function tierPillClass(tier: DayRow["tier"]) {
+  if (tier === "ENTERPRISE") return "ds-tier-pill is-enterprise";
+  if (tier === "LUXUS") return "ds-tier-pill is-luxus";
+  if (tier === "BASIS") return "ds-tier-pill is-basis";
+  return "ds-tier-pill is-unavailable";
+}
+
+function TierPill({ tier }: { tier: DayRow["tier"] }) {
+  return <span className={tierPillClass(tier)}>{tierPillText(tier)}</span>;
+}
+
+function isNoTierForDay(day: DayRow) {
+  return day.reason === "NO_TIER_FOR_DAY";
+}
+
+function NoTierForDayNotice() {
+  return (
+    <div className="rounded-2xl bg-[#faf7ef] px-4 py-4 text-center ring-1 ring-black/5">
+      <p className="text-sm font-semibold text-neutral-900">Denne dagen er ikke tilgjengelig for bestilling.</p>
+      <p className="mt-1 text-sm text-neutral-600">Kontakt firmaadmin.</p>
+    </div>
+  );
+}
+
+export function buildOrderWriteBody(date: string, wantsLunch: boolean, choiceKey?: string | null) {
+  return {
+    date,
+    action: wantsLunch ? "set" : "cancel",
+    ...(wantsLunch && choiceKey ? { choice_key: choiceKey } : {}),
+  };
 }
 
 function fallbackCategoryLabels(day: DayRow) {
@@ -426,6 +467,7 @@ export function WeekCategoryCards({
   onSelect: (choiceKey: string) => void;
   disabled?: boolean;
 }) {
+  if (isNoTierForDay(day)) return null;
   if (!day.categories.length) return null;
   const selected = effectiveSelectedChoice(day, selectedChoiceKey);
   return (
@@ -457,15 +499,14 @@ export function WeekCategoryCards({
 }
 
 function DayMenuSummary({ day, selectedChoiceKey, compact = false }: { day: DayRow; selectedChoiceKey?: string | null; compact?: boolean }) {
+  if (isNoTierForDay(day)) return <div className={compact ? "mt-3" : "mt-4"}><NoTierForDayNotice /></div>;
   const choices = getTierCategories(day);
   const selected = selectedChoiceLabelForKey(day, selectedChoiceKey);
 
   return (
     <div className={`${compact ? "mt-3" : "mt-4"} text-center`}>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <span className="inline-flex items-center rounded-full bg-[#fff3c8] px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200">
-          {tierLabel(day)}
-        </span>
+        <TierPill tier={day.tier} />
         {selected ? (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
             Valgt: {selected}
@@ -622,6 +663,7 @@ function WeekDayRowDesktop({
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const notInAgreement = !day.isEnabled;
+  const noTierForDay = isNoTierForDay(day);
   const canClick = canOrderDay(day, canAct, globalBusy);
   const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
 
@@ -635,8 +677,11 @@ function WeekDayRowDesktop({
     >
       <div className="flex flex-col items-center gap-1 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="text-base font-semibold capitalize text-neutral-900">
-            {formatMenuDateNO(day.date)}
+          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+            <div className="text-base font-semibold capitalize text-neutral-900">
+              {formatMenuDateNO(day.date)}
+            </div>
+            <TierPill tier={day.tier} />
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
             <span
@@ -672,7 +717,7 @@ function WeekDayRowDesktop({
             ))}
           </div>
         ) : null}
-        <p className="text-sm font-semibold text-neutral-900">{day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
+        <p className="text-sm font-semibold text-neutral-900">{noTierForDay ? "Ikke tilgjengelig" : day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
         {day.menuDescription ? (
           <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{day.menuDescription}</p>
         ) : null}
@@ -682,17 +727,21 @@ function WeekDayRowDesktop({
             {day.allergens.join(", ")}
           </p>
         ) : null}
-        <WeekCategoryCards
-          day={day}
-          selectedChoiceKey={selectedChoiceKey}
-          onSelect={onSelectChoice}
-          disabled={readOnlyPreview || globalBusy}
-        />
+        {noTierForDay ? null : (
+          <WeekCategoryCards
+            day={day}
+            selectedChoiceKey={selectedChoiceKey}
+            onSelect={onSelectChoice}
+            disabled={readOnlyPreview || globalBusy}
+          />
+        )}
         <DayMenuSummary day={day} selectedChoiceKey={selectedChoiceKey} />
       </div>
 
       <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center md:justify-start">
-        {notInAgreement ? (
+        {noTierForDay ? (
+          <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
+        ) : notInAgreement ? (
           <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
         ) : cutoffClosed ? (
           <div className="flex w-full flex-col sm:w-full md:w-auto">
@@ -781,6 +830,7 @@ const WeekDayCardMobile = memo(
     const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
     const companyClosed = day.isLocked && day.lockReason === "COMPANY";
     const notInAgreement = !day.isEnabled;
+    const noTierForDay = isNoTierForDay(day);
     const canClick = canOrderDay(day, canAct, globalBusy);
     const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
     const categories = getTierCategories(day);
@@ -813,9 +863,7 @@ const WeekDayCardMobile = memo(
           className="cursor-pointer rounded-[1.5rem] outline-none transition-colors duration-100 active:bg-[#faf7ef] focus-visible:ring-2 focus-visible:ring-[#f5c518]/50"
         >
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-[#fff6d6] px-3 py-1 text-xs font-bold text-neutral-950 ring-1 ring-[#f5c518]/45">
-              {tierLabel(day)}
-            </span>
+            <TierPill tier={day.tier} />
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${badgeClassForStatus(statusLabel)}`}>
               {displayStatus}
             </span>
@@ -859,7 +907,9 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : null}
-            {day.categories.length ? (
+            {noTierForDay ? (
+              <NoTierForDayNotice />
+            ) : day.categories.length ? (
               <WeekCategoryCards
                 day={day}
                 selectedChoiceKey={selectedChoiceKey}
@@ -890,7 +940,9 @@ const WeekDayCardMobile = memo(
         </div>
 
         <div className="mt-4 flex flex-col items-stretch gap-2">
-          {notInAgreement ? (
+          {noTierForDay ? (
+            <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
+          ) : notInAgreement ? (
             <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
           ) : cutoffClosed ? (
             <>
@@ -989,9 +1041,13 @@ function stickyCtaForDay(
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
   const companyClosed = day.isLocked && day.lockReason === "COMPANY";
   const notInAgreement = !day.isEnabled;
+  const noTierForDay = isNoTierForDay(day);
   const canClick = canOrderDay(day, canAct, globalBusy);
   const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, selectedChoiceKey);
 
+  if (noTierForDay) {
+    return <p className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</p>;
+  }
   if (notInAgreement) {
     return (
       <p className="text-center text-sm text-neutral-500">Ikke leveringsdag for valgt dag.</p>
@@ -1524,10 +1580,9 @@ export default function EmployeeWeekClient({
           setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
           return false;
         }
-        const body: { date: string; wants_lunch: boolean; choice_key?: string } = { date, wants_lunch: wantsLunch };
-        if (wantsLunch && choiceKey) body.choice_key = choiceKey;
+        const body = buildOrderWriteBody(date, wantsLunch, choiceKey);
 
-        const res = await fetch(`${API_ORDER}/set-day`, {
+        const res = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-rid": rid },
           cache: "no-store",
@@ -1551,6 +1606,14 @@ export default function EmployeeWeekClient({
           }
           if (apiError.code === "INVALID_CHOICE") {
             setErrorBanner({ code: apiError.code, message: "Valget er ikke tillatt for denne avtalen." });
+            return false;
+          }
+          if (apiError.code === "NO_TIER_FOR_DAY") {
+            setErrorBanner({ code: apiError.code, message: "Denne dagen er ikke tilgjengelig" });
+            return false;
+          }
+          if (apiError.code === "INVALID_DAY") {
+            setErrorBanner({ code: apiError.code, message: "Ugyldig dato" });
             return false;
           }
           showErrorBanner(apiError.message, apiError.code);
@@ -1853,7 +1916,9 @@ export default function EmployeeWeekClient({
                   <span className="block truncate font-bold capitalize text-neutral-950">
                     {formatMenuDateNO(day.date)}
                   </span>
-                  <span className="mt-0.5 block truncate text-xs font-medium text-neutral-600">{tierLabel(day)}</span>
+                  <span className="mt-1 inline-flex">
+                    <TierPill tier={day.tier} />
+                  </span>
                 </span>
                 <span className="shrink-0 rounded-full bg-[#faf7ef] px-3 py-1 text-xs font-bold text-neutral-700 ring-1 ring-black/5">
                   {status}

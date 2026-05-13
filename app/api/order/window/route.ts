@@ -683,6 +683,7 @@ export function buildDayModel(ctx: DayContext) {
 
     tier,
     planTier: tier,
+    ...(tier === null ? { reason: "NO_TIER_FOR_DAY" as const } : {}),
     allowedChoices,
     categories: buildLegacyChoiceCategories(allowedChoices, isEnabled),
 

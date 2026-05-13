@@ -147,6 +147,35 @@ describe("order/window – buildDayModel", () => {
     expect(luxus.every((c) => c.available === false)).toBe(true);
   });
 
+  test("tier null gir eksplisitt NO_TIER_FOR_DAY reason uten å endre låselogikk", () => {
+    const date = "2030-06-03";
+    const day = buildDayModel({
+      date,
+      company: {
+        id: "c1",
+        name: "Test",
+        status: "ACTIVE",
+        canEditOrders: true,
+        lockReason: null,
+        paused_reason: null,
+        closed_reason: null,
+      },
+      agreementUsable: true,
+      deliveryDays: ["mon"],
+      dayTiers: { mon: null } as any,
+      ordersByDate: new Map(),
+      dayChoicesByDate: new Map(),
+      agreementForChoices: null,
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: { BASIS: null, LUXUS: null },
+    } as any);
+
+    expect(day.tier).toBeNull();
+    expect(day.reason).toBe("NO_TIER_FOR_DAY");
+    expect(day.isEnabled).toBe(false);
+  });
+
   test("legacy fallback categories preserve existing meal-type choices", () => {
     const categories = buildLegacyChoiceCategories(
       [
