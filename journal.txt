@@ -206,3 +206,62 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 **VIEW på prod:** `public.company_current_agreement_rules` opprettet med `round(price_ex_vat * 1.15)`; Melhus verifisert BASIS 90→104, LUXUS 130→150.
 
+---
+
+## 2026-05-14 → 2026-05-16 (over midnatt)
+
+### Commits (16, kronologisk etter commit-tidsstempel)
+
+1. da12237d — feat(cms): menuDay items[] med EU 1169/2011 presise allergener (26 oppføringer)
+2. a7050ad5 — feat(week): vis menuDay items[] med ekspanderbar velger og allergen-badges
+3. b35e7135 — chore: redeploy etter Sanity projectId-fiks til 4udoq5d8 (mismatch fra 4hl2r9he)
+4. 7032cbc1 — feat(orders): persister elementvalg på radnivå i day_choices
+5. 95f193c3 — refactor(week): felles category-card ekspander-UX på alle kategorier
+6. 9b066842 — refactor(week): fjern unit_price fra employee-vinduet (API + UI)
+7. 21ad4d28 — refactor(week): tre UI-rensk på /week
+8. b8a538fb — fix(week): behold «Bestill lunsj» i kort, fjern sticky bunn-CTA
+9. 3f1eb220 — refactor(api): fjern unit_price fra employee CancelResponse
+10. becf3acf — fix(superadmin): loadProductionReadiness alignet med reelt closed_dates-skjema
+11. b281a4d3 — fix(superadmin): fail-soft når tabell company_billing_accounts mangler
+12. 160939ba — fix(orders): instrumentering av writeOrder-feilstier for diagnose
+13. 9d10baf7 — fix(week): ekspanderpanel ved valgt kategori + toggler lukket
+14. 5bb7a511 — fix(db): opprett manglende view company_current_agreement_rules på prod
+15. 1fcbac1c — fix(db): null-sikker avtalevindu i orders hydrate-trigger (starts_at etc.)
+16. 557c2498 — fix(db): tg_order_defaults coalesce service_date fra date (RPC-/INSERT-gap)
+
+### 500-saga — avdekkede lag
+
+- Lag 1: Sanity projectId-mismatch (4hl2r9he → 4udoq5d8) — fikset/forankret deploy
+- Lag 2: menuDay items[] manglet i Sanity-skjema + data — CMS + innhold lukket inn
+- Lag 3: AGREEMENT_RULE_LOOKUP_FAILED — company_current_agreement_rules-view manglet på prod — migrering/view (5bb7a511)
+- Lag 4: starts_at NULL-bug i tg_orders_hydrate_core_fields — fikset (1fcbac1c)
+- Lag 5: service_date NULL-bug i tg_order_defaults — fikset (557c2498)
+- Lag 6 (åpen — blokkerer bestilling): menu_service_days tomt mangler opprettelsespipeline; i tillegg rapportert skjema-/sannhetsdrift mellom locations og company_locations på analysemiljø (se under)
+
+### Diagnose lag 6 (prod-kritisk)
+
+- Tabell menu_service_days: 0 rader totalt på diagnostiserte miljøer (ordering feiler før trigger finner meny-dag).
+- Fremmednøkkel menu_service_days.location_id peker på public.locations; denne kan være tom eller ikke speile reell operative lokasjon hvis drift bruker company_locations som autoritativ liste.
+- app/api/superadmin/menu-publish: audit-stub uten faktisk publiserings-/DB-logikk til menu_service_days.
+- Verken cron, Sanity-webhook eller synlig applikasjons-/migrationskode setter inn rader i menu_service_days på det spor som er gjennomgått (trigger tg_menu_service_day_defaults normaliserer når INSERT først finner sted — ingest mangler).
+- Konsekvens: ny install eller miljø uten legacy-seed kan ikke gjennomføre kundedrevet bestilling; tg_order_defaults krever publisert/locked meny-dag på (location_id, service_date).
+
+### Produksjonsklarhetsdiagnose (oppdatert)
+
+- Kitchen-relaterte croner/reporting: kjent tema at aggregering er per ordre, ikke konsistent utlevert per item_key (operativ presisjon).
+- Skjemadrift: locations vs company_locations, agreement_json-varianter, profiles.user_id vs id-mønstre mv. bør ryddes i egen fase.
+- MVA / pris-stier: fortsatt 25 % i flere firmapåvirkede filer (onboarding/registrering) mot 15 %-VIEW i kontraktregler — målrettede 4-fil endring (±15 %) står på listen.
+- E2E: suite finnes; full bestillingskorridor end-to-end er ikke dekning nok før lag 6 lukkes arkitekturmessig.
+- Lag 6 tilsier vesentlig grunnarbeid (ordre av størrelsesorden 2–4 uker) før bestilling kan regnes stabilt på tvers av aktive lokasjoner — «50K firma / 500K brukere» ramme krever betydelig mer enn kortsiktige plaster; lag 6 bekrefter at fundament for meny-dagers speil må inn før skalering.
+
+### PENDING (neste økt, prioritert)
+
+- P0 — KRITISK: Lag 6 — menu_service_days-arkitektur: avklar en sannhet for lokasjon (locations vs company_locations); bygg publish-pipeline (Sanity/supplement → menu_service_days [+ evt. menu_service_day_items]); implementer reell POST /api/superadmin/menu-publish eller tilsvarende kontrollpunkt.
+- P1 — Skjemadrift opprydning (agreement_json, profiles-lookup-mønstre, m.fl.).
+- P2 — 15 % MVA i de fire registrerte kodestiene (fra 2026-05-14-audit).
+- P3 — Kitchen-cron/strøm: aggregasjon/forsterkning ned til item_key der operasjonelt påkrevd.
+- P4 — Onboarding E2E-test.
+- P5 — Skalering-prep etter at P0 bestillingsfundament er dokumentert og grønn.
+
+(Speilet innhold: `docs/journal.txt`.)
+
