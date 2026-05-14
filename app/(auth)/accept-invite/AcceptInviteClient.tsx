@@ -242,7 +242,7 @@ export default function AcceptInviteClient({ token }: Props) {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full min-h-[48px] rounded-2xl bg-[rgb(var(--lp-cta))] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 active:opacity-90 disabled:opacity-60"
+        className="min-h-14 w-full rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(17_17_17)_0%,rgb(36_28_40)_100%)] px-6 py-4 text-base font-extrabold tracking-tight text-white shadow-[0_18px_44px_rgb(17_17_17/0.24),inset_0_1px_0_rgb(255_255_255/0.14)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_58px_rgb(17_17_17/0.30),inset_0_1px_0_rgb(255_255_255/0.18)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--lp-gold)/0.65)] disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
       >
         {submitting ? "Aktiverer…" : "Aktiver konto"}
       </button>
