@@ -6,7 +6,7 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
-import { isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
+import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   findRecommendedDateInWindow,
@@ -1197,6 +1197,24 @@ export default function EmployeeWeekClient({
     }
     return rows;
   }, [sortedDays]);
+  const placeholderCells = useMemo(() => {
+    const haveDates = new Set(sortedDays.map((d) => d.date));
+    const placeholders: Array<{
+      date: string;
+      weekdayKey: string;
+      weekStart: string;
+    }> = [];
+    for (const weekStart of selectorWeekRows) {
+      for (let offset = 0; offset < 5; offset++) {
+        const date = addDaysISO(weekStart, offset);
+        if (haveDates.has(date)) continue;
+        const weekdayKey = weekdayKeyFromDateISO(date);
+        if (!weekdayKey) continue;
+        placeholders.push({ date, weekdayKey, weekStart });
+      }
+    }
+    return placeholders;
+  }, [sortedDays, selectorWeekRows]);
 
   const preferredWeekday = useMemo(() => getTopWeekdayKey(patterns), [patterns]);
   const recommendedDate = useMemo(
@@ -1845,6 +1863,32 @@ export default function EmployeeWeekClient({
               <span className="block truncate text-xs font-bold capitalize">{weekday}</span>
               <span className="mt-1 block text-[11px] font-medium text-neutral-500">{formatDateNO(day.date).split(".")[0]}</span>
             </button>
+          );
+        })}
+        {/* Placeholder-celler for dager som ikke er bestillbare
+            (passerte eller utenfor synlig vindu). Dempet styling,
+            ikke klikkbar. Gir visuell ukestruktur slik at hver rad
+            leses som én komplett uke (Man-Fre). FASE 10A.6. */}
+        {placeholderCells.map((cell) => {
+          const gridColumnStart = WEEKDAY_GRID_COLUMN[cell.weekdayKey];
+          const gridRowStart = selectorWeekRows.indexOf(cell.weekStart) + 1;
+          if (!gridColumnStart || gridRowStart < 1) return null;
+          const weekdayShort = (formatWeekdayNO(cell.date) || cell.weekdayKey).slice(0, 3);
+          const dayNumber = parseInt(cell.date.slice(8, 10), 10);
+          return (
+            <div
+              key={`placeholder-${cell.date}`}
+              aria-hidden="true"
+              style={{ gridColumnStart, gridRowStart }}
+              className="min-h-[52px] min-w-0 rounded-2xl bg-neutral-50/60 px-2 py-3 text-center select-none"
+            >
+              <div className="text-xs uppercase tracking-wide text-neutral-400">
+                {weekdayShort}
+              </div>
+              <div className="text-base font-medium text-neutral-400">
+                {dayNumber}
+              </div>
+            </div>
           );
         })}
       </nav>
