@@ -7,7 +7,6 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -66,21 +65,6 @@ async function adminClientOrNull() {
   } catch {
     return null;
   }
-}
-
-function WeekBrandMark() {
-  return (
-    <Link href="/" className="inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40">
-      <Image
-        src="/brand/LP-logo-uten-bakgrunn.png"
-        alt="Lunchportalen"
-        width={190}
-        height={96}
-        priority
-        className="h-16 w-auto max-w-full object-contain md:h-24"
-      />
-    </Link>
-  );
 }
 
 type SuperadminMenuChoice = {
@@ -715,16 +699,6 @@ export default async function EmployeeWeekPage({
 
   return (
     <>
-      <section className="mx-auto w-full max-w-2xl px-4 pt-5 text-center">
-        <WeekBrandMark />
-        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl">
-          Bestill eller avbestill lunsj
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
-          Frist for samme dags bestilling er 08:00.
-        </p>
-      </section>
       <EmployeeWeekClient canAct={hold.canAct} billingHoldReason={hold.reason} />
     </>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { ClockIcon, Loader2 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -1789,24 +1788,26 @@ export default function EmployeeWeekClient({
         </div>
       ) : null}
 
+      {/* Kanonisk /week-header. Logo er allerede i global nav-header
+          (HeaderShell). Selskaps-navn er dynamisk fra /api/order/window.
+          Per-dag-status ("Fristen for dagens endring er passert") forblir
+          ved valgt-dag-kortet. FASE 10B.1. */}
       <header className="mb-6 text-center">
-        <Link href="/" className="inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/60">
-          <Image
-            src="/brand/LP-logo-uten-bakgrunn.png"
-            alt="Lunchportalen"
-            width={180}
-            height={64}
-            priority
-            className="h-12 w-auto object-contain"
-          />
-        </Link>
-        {companyName ? <p className="mt-2 text-sm font-medium text-neutral-600">{companyName}</p> : null}
-        <h1 className="mt-5 text-4xl font-bold tracking-[-0.05em] text-neutral-950">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">
+          Ansattflate
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl">
           Bestill eller avbestill lunsj
         </h1>
-        <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-neutral-600">
-          Frist for å endre bestilling er 08:00.
-        </p>
+        {companyName ? (
+          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+            {companyName} · Endringsfrist kl. 08:00
+          </p>
+        ) : (
+          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+            Endringsfrist kl. 08:00
+          </p>
+        )}
       </header>
 
       <div className="mb-5 space-y-2" aria-live="polite">
