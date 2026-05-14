@@ -670,7 +670,14 @@ export default async function EmployeeWeekPage({
 
   const cRes = await admin
     .from("companies")
-    .select("id,status,billing_hold,billing_hold_reason,hold_active,hold_reason,payment_hold")
+    // Billing/hold-kolonner (billing_hold, billing_hold_reason, hold_active,
+    // hold_reason, payment_hold) finnes ikke i prod-schema. Verifisert via
+    // information_schema.columns 2026-05-14, FASE 9J.4. computeBillingHold
+    // leser fortsatt feltene som Boolean(undefined)=false, så ACTIVE-companies
+    // forblir uten hold inntil en faktisk billing-hold-kilde introduseres.
+    // Company.status er autoritær gate her. Bredere migrasjon (billing/hold
+    // -> dedikert tabell eller felt) er flagget som arkitektonisk gjeld.
+    .select("id,status")
     .eq("id", companyId)
     .maybeSingle();
 
