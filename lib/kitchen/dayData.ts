@@ -163,8 +163,8 @@ function escapeRegExp(s: string) {
 /**
  * Variant parsing:
  * Accept:
- * - "variant||Salatbar: Skinke"
- * - "Salatbar: Skinke"
+ * - "variant||Salatboks: Skinke"
+ * - "Salatboks: Skinke"
  * Prefix matches CMS `menu.title` when present, else {@link displayLabelForMealTypeKey}.
  */
 function parseVariantFromNote(
@@ -179,7 +179,7 @@ function parseVariantFromNote(
   const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
 
   const nk = normalizeMealTypeKey(choiceKey);
-  if (nk !== "salatbar" && nk !== "paasmurt") return null;
+  if (nk !== "salatboks" && nk !== "paasmurt") return null;
 
   const label = displayLabelForMealTypeKey(nk, nk ? menuByMeal.get(nk) : null);
   if (!label) return null;
@@ -200,7 +200,7 @@ function buildKitchenNote(
 
   const nk = normalizeMealTypeKey(ck);
   const base = displayLabelForMealTypeKey(nk || ck, nk ? menuByMeal.get(nk) : null) || nk || ck;
-  if (nk === "salatbar" || nk === "paasmurt") {
+  if (nk === "salatboks" || nk === "paasmurt") {
     const v = parseVariantFromNote(nk, note, menuByMeal);
     if (v) return `${base} (${v})`;
     return base;

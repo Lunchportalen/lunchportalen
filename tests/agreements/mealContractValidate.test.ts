@@ -5,14 +5,14 @@ import type { CmsProductPlan } from "@/lib/cms/types";
 const basisPlan: CmsProductPlan = {
   name: "basis",
   price: 90,
-  allowedMeals: ["salatbar", "paasmurt", "varmmat"],
+  allowedMeals: ["salatboks", "paasmurt", "varmmat"],
   rules: { allowDailyVariation: false },
 };
 
 const luxusPlan: CmsProductPlan = {
   name: "luxus",
   price: 130,
-  allowedMeals: ["salatbar", "paasmurt", "varmmat", "sushi", "pokebowl", "thaimat"],
+  allowedMeals: ["salatboks", "paasmurt", "varmmat", "sushi", "pokebowl", "thaimat"],
   rules: { allowDailyVariation: true },
 };
 

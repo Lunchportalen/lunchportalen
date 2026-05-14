@@ -310,7 +310,7 @@ describe("loadOperativeKitchenOrders — day_choices (canonical dcMap)", () => {
           company_id: CID,
           location_id: LID,
           date: DATE,
-          choice_key: "salatbar",
+          choice_key: "salatboks",
           note: null,
           updated_at: "2026-02-02T10:00:00Z",
           status: "ACTIVE",
@@ -326,7 +326,7 @@ describe("loadOperativeKitchenOrders — day_choices (canonical dcMap)", () => {
     expect(loaded.ok).toBe(true);
     if (loaded.ok !== true) return;
     const k = `${CID}|${LID}|${U1}`;
-    expect(loaded.dcMap.get(k)?.choice_key).toBe("salatbar");
+    expect(loaded.dcMap.get(k)?.choice_key).toBe("salatboks");
     expect(loaded.operative).toHaveLength(1);
   });
 

@@ -45,7 +45,7 @@ export default defineType({
     defineField({
       name: "allowedMeals",
       title: "Tillatte mealType-nøkler",
-      description: "Må matche `menu.mealType` og bestillingsnøkler (f.eks. salatbar, paasmurt, varmmat).",
+      description: "Må matche `menu.mealType` og bestillingsnøkler (f.eks. salatboks, paasmurt, varmmat).",
       type: "array",
       of: [{ type: "string" }],
       validation: (Rule) =>

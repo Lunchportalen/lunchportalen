@@ -132,7 +132,7 @@ describe("POST /api/orders tier-per-day validation", () => {
 
     expect(res.status).toBe(422);
     expect(json.error).toBe("CHOICE_REQUIRED");
-    expect(json.available_choices).toEqual(["paasmurt", "salatbar", "varmmat"]);
+    expect(json.available_choices).toEqual(["paasmurt", "salatboks", "varmmat"]);
   });
 
   test("SET med ugyldig choice_key returnerer 422 INVALID_CHOICE", async () => {

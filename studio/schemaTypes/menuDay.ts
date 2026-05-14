@@ -62,7 +62,7 @@ export default defineType({
       options: {
         list: [
           { title: "Påsmurt", value: "paasmurt" },
-          { title: "Salat", value: "salat" },
+          { title: "Salatboks", value: "salat" },
           { title: "Sushi", value: "sushi" },
           { title: "Pokébowl", value: "pokebowl" },
           { title: "Thai", value: "thai" },

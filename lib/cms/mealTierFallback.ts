@@ -6,7 +6,7 @@ import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType } from "@/lib/cms/types";
 
-export const FALLBACK_BASIS_MEAL_KEYS = ["salatbar", "paasmurt", "varmmat"] as const;
+export const FALLBACK_BASIS_MEAL_KEYS = ["salatboks", "paasmurt", "varmmat"] as const;
 export const FALLBACK_LUXUS_MEAL_KEYS = [
   ...FALLBACK_BASIS_MEAL_KEYS,
   "sushi",

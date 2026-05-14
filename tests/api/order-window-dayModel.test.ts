@@ -23,7 +23,7 @@ describe("order/window – buildDayModel", () => {
       dayChoicesByDate: new Map(),
       agreementForChoices: {
         choicesByTier: {
-          BASIS: [{ key: "salatbar" }],
+          BASIS: [{ key: "salatboks" }],
         },
       },
       mealContract: null,
@@ -44,7 +44,7 @@ describe("order/window – buildDayModel", () => {
         {
           date,
           status: "active",
-          note: "choice:salatbar",
+          note: "choice:salatboks",
           updated_at: null,
           created_at: null,
           slot: "lunch",
@@ -73,7 +73,7 @@ describe("order/window – buildDayModel", () => {
       dayChoicesByDate: new Map(),
       agreementForChoices: {
         choicesByTier: {
-          BASIS: [{ key: "salatbar" }],
+          BASIS: [{ key: "salatboks" }],
         },
       },
       mealContract: null,
@@ -82,8 +82,8 @@ describe("order/window – buildDayModel", () => {
     } as any);
 
     expect(day.wantsLunch).toBe(true);
-    expect(day.selectedChoiceKey).toBe("salatbar");
-    expect(day.allowedChoices.some((c) => c.key === "salatbar")).toBe(true);
+    expect(day.selectedChoiceKey).toBe("salatboks");
+    expect(day.allowedChoices.some((c) => c.key === "salatboks")).toBe(true);
   });
 
   test("operative closed_dates blokkerer bestillbarhet uten å fjerne menykontekst (agreementDayOk)", () => {
@@ -134,7 +134,7 @@ describe("order/window – buildDayModel", () => {
     });
 
     expect(categories).toHaveLength(3);
-    expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatbar", "varmmat"]);
+    expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatboks", "varmmat"]);
     expect(categories.map((c) => c.available)).toEqual([true, true, true]);
   });
 
@@ -179,14 +179,14 @@ describe("order/window – buildDayModel", () => {
   test("legacy fallback categories preserve existing meal-type choices", () => {
     const categories = buildLegacyChoiceCategories(
       [
-        { key: "salatbar", label: "Salat" },
+        { key: "salatboks", label: "Salat" },
         { key: "varmmat", label: "Varmrett" },
       ],
       true,
     );
 
     expect(categories.map((c) => ({ key: c.key, label: c.label, available: c.available }))).toEqual([
-      { key: "salatbar", label: "Salat", available: true },
+      { key: "salatboks", label: "Salat", available: true },
       { key: "varmmat", label: "Varmrett", available: true },
     ]);
   });

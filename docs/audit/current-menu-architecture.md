@@ -700,8 +700,8 @@ Detaljer: `/week` importerer `getMenuForDates`, `formatDateNO`, `weekRangeISO`, 
 | Treff | `app/(app)/week/page.tsx:351` | `<SuperadminCategoryGroup title="Luxus ekstra" statuses={status.luxusExtra} />` |
 | Treff | `app/(app)/week/page.tsx:391` | `Basis komplett {counts.basisComplete}/5` |
 | Treff | `app/(app)/week/page.tsx:394` | `Luxus komplett {counts.luxusComplete}/5` |
-| Treff | `app/(app)/week/page.tsx:402` | `Publiser Salatbar, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.` |
-| Treff | `app/(app)/week/page.tsx:418` | `{ mode: "basis", label: "Basis-demo", description: "Salatbar, Påsmurt og Varmmat" },` |
+| Treff | `app/(app)/week/page.tsx:402` | `Publiser Salatboks, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.` |
+| Treff | `app/(app)/week/page.tsx:418` | `{ mode: "basis", label: "Basis-demo", description: "Salatboks, Påsmurt og Varmmat" },` |
 | Treff | `app/(app)/week/page.tsx:419` | `{ mode: "luxus", label: "Luxus-demo", description: "Alle seks kategorier" },` |
 | Treff | `app/(app)/week/page.tsx:420` | `{ mode: "mixed", label: "Blandet uke-demo", description: "Basis mandag-onsdag, Luxus torsdag-fredag" },` |
 | Treff | `app/(app)/week/page.tsx:433` | `Kontroller hvordan Basis, Luxus og blandet uke ser ut for ansatte. Dette er kun visning og kan ikke sende bestilling.` |

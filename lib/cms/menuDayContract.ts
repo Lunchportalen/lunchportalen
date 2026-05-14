@@ -21,7 +21,7 @@ export const PLAN_CATEGORIES: Record<PlanTier, Category[]> = {
 
 export const ORDER_CHOICE_KEY_BY_CATEGORY: Record<Category, string> = {
   paasmurt: "paasmurt",
-  salat: "salatbar",
+  salat: "salatboks",
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",

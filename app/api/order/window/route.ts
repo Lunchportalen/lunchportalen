@@ -167,7 +167,7 @@ function asPlanTier(v: unknown): PlanTier | null {
 
 const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
   paasmurt: "paasmurt",
-  salat: "salatbar",
+  salat: "salatboks",
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",
@@ -177,7 +177,7 @@ const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
 function categoryForOrderChoice(choiceKey: string): Category | null {
   const normalized = normalizeMealTypeKey(choiceKey);
   if (normalized === "paasmurt") return "paasmurt";
-  if (normalized === "salatbar" || normalized === "salat") return "salat";
+  if (normalized === "salatboks" || normalized === "salat") return "salat";
   if (normalized === "sushi") return "sushi";
   if (normalized === "pokebowl") return "pokebowl";
   if (normalized === "thaimat" || normalized === "thai") return "thai";

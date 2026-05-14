@@ -6,7 +6,7 @@ describe("/api/order/window menuDay categories", () => {
     const categories = buildMenuDayCategories({ planTier: "BASIS", menus: [] });
 
     expect(categories.map((c) => c.category)).toEqual(["paasmurt", "salat", "varmrett"]);
-    expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatbar", "varmmat"]);
+    expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatboks", "varmmat"]);
   });
 
   test("LUXUS company gets six categories", () => {

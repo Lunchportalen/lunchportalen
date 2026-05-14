@@ -392,7 +392,7 @@ describe("api/kitchen – production visibility", () => {
           company_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
-          choice_key: "salatbar",
+          choice_key: "salatboks",
           note: null,
           updated_at: "2026-02-02T12:00:00Z",
           status: "CANCELLED",
@@ -439,7 +439,7 @@ describe("api/kitchen – production visibility", () => {
           company_id: K_CID,
           location_id: K_LID,
           date: K_DATE,
-          choice_key: "salatbar",
+          choice_key: "salatboks",
           note: null,
           updated_at: "2026-02-02T10:00:00Z",
           status: "ACTIVE",
@@ -453,7 +453,7 @@ describe("api/kitchen – production visibility", () => {
     expect(body?.ok).toBe(true);
     const row = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O1);
     expect(row).toBeTruthy();
-    expect(String(row.menu_title ?? "").toLowerCase()).toContain("salatbar");
+    expect(String(row.menu_title ?? "").toLowerCase()).toContain("salatboks");
   });
 
   test("live: day_choices for annen user_id gir ikke valg på ordre for første bruker", async () => {
@@ -487,7 +487,7 @@ describe("api/kitchen – production visibility", () => {
           company_id: K_CID,
           location_id: K_LID,
           date: K_DATE,
-          choice_key: "salatbar",
+          choice_key: "salatboks",
           note: null,
           updated_at: "2026-02-02T10:00:00Z",
           status: "ACTIVE",
@@ -504,8 +504,8 @@ describe("api/kitchen – production visibility", () => {
     const r1 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O1);
     const r2 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O2);
     expect(r1 && r2).toBeTruthy();
-    expect(String(r1.menu_title ?? "").toLowerCase()).not.toContain("salatbar");
-    expect(String(r2.menu_title ?? "").toLowerCase()).toContain("salatbar");
+    expect(String(r1.menu_title ?? "").toLowerCase()).not.toContain("salatboks");
+    expect(String(r2.menu_title ?? "").toLowerCase()).toContain("salatboks");
   });
 
   test("frozen snapshot: samme menu_title + kitchenRowParityPayload-invarianter per orderId vs live (allowlist kun mengde)", async () => {

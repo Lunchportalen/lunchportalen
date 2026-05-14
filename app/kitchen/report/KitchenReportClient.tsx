@@ -78,7 +78,7 @@ function flagLabel(f: string) {
     case "missing_choice":
       return "Mangler menyvalg (day_choices)";
     case "missing_variant":
-      return `Mangler variant (${displayLabelForMealTypeKey("salatbar", null)}/${displayLabelForMealTypeKey("paasmurt", null)})`;
+      return `Mangler variant (${displayLabelForMealTypeKey("salatboks", null)}/${displayLabelForMealTypeKey("paasmurt", null)})`;
     default:
       return f;
   }

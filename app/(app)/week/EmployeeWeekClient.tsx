@@ -220,8 +220,8 @@ const BTN_TOUCH =
 const CARD_TRANSFORM =
   "motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:scale-[1.01] motion-safe:active:scale-[0.97] will-change-transform";
 
-const BASIS_CATEGORY_LABELS = ["Salatbar", "Påsmurt", "Varmmat"];
-const LUXUS_CATEGORY_LABELS = ["Salatbar", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"];
+const BASIS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Varmmat"];
+const LUXUS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"];
 const PRIMARY_CTA =
   "bg-gradient-to-r from-[#f5c518] to-[#ffd43b] text-neutral-950 shadow-[0_16px_40px_rgba(245,197,24,0.32)]";
 const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-[0_10px_26px_rgba(24,20,16,0.06)]";

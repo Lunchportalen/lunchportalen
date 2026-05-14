@@ -72,8 +72,8 @@ type SuperadminMenuChoice = {
   label: string;
 };
 
-const BASIS_MENU_TYPES = ["Salatbar", "Påsmurt", "Varmmat"] as const;
-const LUXUS_MENU_TYPES = ["Salatbar", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"] as const;
+const BASIS_MENU_TYPES = ["Salatboks", "Påsmurt", "Varmmat"] as const;
+const LUXUS_MENU_TYPES = ["Salatboks", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"] as const;
 const LUXUS_EXTRA_MENU_TYPES = ["Sushi", "Pokebowl", "Thaimat"] as const;
 
 type SuperadminMenuCategory = (typeof LUXUS_MENU_TYPES)[number];
@@ -155,7 +155,7 @@ function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   if (/\bthai\b|\bthaimat\b/.test(text)) return "Thaimat";
   if (/\bpasmurt\b|\bsandwich\b/.test(text)) return "Påsmurt";
   if (/\bvarm\b|\bvarmmat\b/.test(text)) return "Varmmat";
-  if (/\bsalat\b|\bsalatbar\b/.test(text)) return "Salatbar";
+  if (/\bsalat\b|\bsalatboks\b/.test(text)) return "Salatboks";
   return null;
 }
 
@@ -376,7 +376,7 @@ function SuperadminWeekPreviewCard({
         <div className="mt-5 border-l-2 border-[#f5c518] pl-4">
           <p className="text-base font-semibold tracking-[-0.01em] text-neutral-950">{block.emptyTitle}</p>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            Publiser Salatbar, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.
+            Publiser Salatboks, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.
           </p>
         </div>
       ) : null}
@@ -392,7 +392,7 @@ function SuperadminWeekPreviewCard({
 
 function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: EmployeePreviewMode }) {
   const tabs: { mode: EmployeePreviewMode; label: string; description: string }[] = [
-    { mode: "basis", label: "Basis-demo", description: "Salatbar, Påsmurt og Varmmat" },
+    { mode: "basis", label: "Basis-demo", description: "Salatboks, Påsmurt og Varmmat" },
     { mode: "luxus", label: "Luxus-demo", description: "Alle seks kategorier" },
     { mode: "mixed", label: "Blandet uke-demo", description: "Basis mandag-onsdag, Luxus torsdag-fredag" },
   ];

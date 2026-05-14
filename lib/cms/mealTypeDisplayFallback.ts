@@ -3,7 +3,7 @@
  * Canonical keys match DB `choice_key` / normalized mealType (ASCII: paasmurt).
  */
 export const MEAL_TYPE_DISPLAY_LABEL_FALLBACK: Record<string, string> = {
-  salatbar: "Salatbar",
+  salatboks: "Salatboks",
   paasmurt: "Påsmurt",
   varmmat: "Varmmat",
   sushi: "Sushi",
