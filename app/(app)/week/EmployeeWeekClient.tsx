@@ -6,6 +6,7 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
+import { isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   findRecommendedDateInWindow,
@@ -225,6 +226,39 @@ const LUXUS_CATEGORY_LABELS = ["Salatbar", "Påsmurt", "Sushi", "Pokebowl", "Tha
 const PRIMARY_CTA =
   "bg-gradient-to-r from-[#f5c518] to-[#ffd43b] text-neutral-950 shadow-[0_16px_40px_rgba(245,197,24,0.32)]";
 const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-[0_10px_26px_rgba(24,20,16,0.06)]";
+const WEEKDAY_GRID_COLUMN: Record<string, number> = {
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+};
+
+function fallbackSelectorGridPosition(index: number) {
+  return {
+    gridColumnStart: (index % 5) + 1,
+    gridRowStart: Math.floor(index / 5) + 1,
+  };
+}
+
+function selectorGridPosition(
+  day: DayRow,
+  weekRows: string[],
+  fallbackIndex: number,
+) {
+  if (!isIsoDate(day.date)) return fallbackSelectorGridPosition(fallbackIndex);
+  const weekdayKey = weekdayKeyFromDateISO(day.date);
+  const gridColumnStart = weekdayKey ? WEEKDAY_GRID_COLUMN[weekdayKey] : undefined;
+  const weekStart = startOfWeekISO(day.date);
+  const weekIndex = weekRows.indexOf(weekStart);
+  if (!gridColumnStart || weekIndex < 0) {
+    return fallbackSelectorGridPosition(fallbackIndex);
+  }
+  return {
+    gridColumnStart,
+    gridRowStart: weekIndex + 1,
+  };
+}
 
 /** Deterministisk status — samme rekkefølge som API-låser (CUTOFF / firma / avtale). */
 function statusLabelForDay(day: DayRow): "Kan bestilles" | "Bestilt" | "Avbestilt" | "Stengt" | "Ikke tilgjengelig" {
@@ -1154,6 +1188,15 @@ export default function EmployeeWeekClient({
   }, [patternTick]);
 
   const sortedDays = useMemo(() => [...days].sort((a, b) => a.date.localeCompare(b.date)), [days]);
+  const selectorWeekRows = useMemo(() => {
+    const rows: string[] = [];
+    for (const day of sortedDays) {
+      if (!isIsoDate(day.date)) continue;
+      const weekStart = startOfWeekISO(day.date);
+      if (!rows.includes(weekStart)) rows.push(weekStart);
+    }
+    return rows;
+  }, [sortedDays]);
 
   const preferredWeekday = useMemo(() => getTopWeekdayKey(patterns), [patterns]);
   const recommendedDate = useMemo(
@@ -1778,17 +1821,19 @@ export default function EmployeeWeekClient({
       </div>
 
       <nav className="mb-5 grid grid-cols-5 gap-2" aria-label="Velg dag">
-        {/* Viser alle dager i to-ukers-vinduet (maks 7 etter cutoff).
-            Server-side canSeeNextWeek() filtrerer hvilke dager som faktisk
-            inkluderes. grid-cols-5 lar 7 dager flyte over 2 rader.
-            Layout-optimering vurderes i FASE 10B (UX-pass). */}
-        {sortedDays.map((day) => {
+        {/* Hver dag plasseres i fast ukedagskolonne (Man-Fre), mens uke-start
+            styrer rad. Tomme celler for passerte dager rendres ikke; CSS Grid
+            lar hullene stå slik at denne uke og neste uke leses som egne
+            rader. Inline grid-placement er dynamisk basert på dato.
+            FASE 10A.4. */}
+        {sortedDays.map((day, index) => {
           const active = activeDay?.date === day.date;
           const weekday = (formatWeekdayNO(day.date) || day.weekday).slice(0, 3);
           return (
             <button
               key={day.date}
               type="button"
+              style={selectorGridPosition(day, selectorWeekRows, index)}
               onClick={() => selectDayFromTap(day.date)}
               className={`min-h-[52px] min-w-0 rounded-2xl px-2 py-3 text-center ring-1 transition-transform active:scale-[0.98] ${
                 active
