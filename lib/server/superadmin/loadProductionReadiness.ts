@@ -5,7 +5,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import {
+  loadOperativeKitchenOrders,
+  normKitchenSlot,
+  type OperativeKitchenOrderRow,
+} from "@/lib/server/kitchen/loadOperativeKitchenOrders";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -57,6 +61,35 @@ export type ProductionReadinessPayload = {
     kitchen_api: string;
   };
 };
+
+/**
+ * OR-filter for operative `closed_dates` på én dato: firma-/lokasjons-scope
+ * (ikke global — den håndteres egenrundt før ordrelesing).
+ * Speiler semantikk i `operativeClosedDatesOrFilter` (orderWriteGuard).
+ */
+function closedDatesCompanyLocationOrFilter(rows: OperativeKitchenOrderRow[]): string | null {
+  const parts: string[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const cid = safeStr(r.company_id);
+    const lid = safeStr(r.location_id);
+    if (!cid) continue;
+    const kCompany = `${cid}:c`;
+    if (!seen.has(kCompany)) {
+      seen.add(kCompany);
+      parts.push(`and(scope_company_id.eq.${cid},scope_location_id.is.null)`);
+    }
+    if (lid) {
+      const kLoc = `${cid}:l:${lid}`;
+      if (!seen.has(kLoc)) {
+        seen.add(kLoc);
+        parts.push(`and(scope_company_id.eq.${cid},scope_location_id.eq.${lid})`);
+      }
+    }
+  }
+  if (!parts.length) return null;
+  return parts.join(",");
+}
 
 function emptyPayload(date: string, level: ProductionReadinessLevel, headline: string, detail: string): ProductionReadinessPayload {
   return {
@@ -112,8 +145,8 @@ export async function loadProductionReadiness(dateISO: string): Promise<Producti
     .from("closed_dates")
     .select("reason")
     .eq("date", date)
-    .eq("scope_type", "global")
-    .is("scope_id", null)
+    .is("scope_company_id", null)
+    .is("scope_location_id", null)
     .limit(5);
 
   if (closedErr) {
@@ -147,6 +180,31 @@ export async function loadProductionReadiness(dateISO: string): Promise<Producti
 
   const companySet = new Set(list.map((r) => safeStr(r.company_id)));
   const locSet = new Set(list.map((r) => `${safeStr(r.company_id)}|${safeStr(r.location_id)}`));
+
+  let companyScopedClosedDetail = "";
+  const pairOr = closedDatesCompanyLocationOrFilter(list);
+  if (pairOr) {
+    const { data: scopedRows, error: scopedErr } = await admin
+      .from("closed_dates")
+      .select("reason")
+      .eq("date", date)
+      .or(pairOr)
+      .limit(50);
+
+    if (scopedErr) {
+      const msg = safeStr((scopedErr as { message?: unknown }).message).toLowerCase();
+      if (!msg.includes("does not exist") && !msg.includes("relation") && !msg.includes("schema cache")) {
+        return emptyPayload(date, "ERROR", "Kunne ikke lese stengte datoer", safeStr((scopedErr as { message?: unknown }).message));
+      }
+    } else if (Array.isArray(scopedRows) && scopedRows.length > 0) {
+      const reasons = scopedRows
+        .map((r) => safeStr((r as { reason?: unknown }).reason))
+        .filter((x) => x.length > 0);
+      if (reasons.length) {
+        companyScopedClosedDetail = `Stengt for operative firma/lokasjon(er): ${reasons.slice(0, 5).join("; ")}. `;
+      }
+    }
+  }
 
   const eventKeys = list.map((r) => buildOrderSetOutboxEventKey(safeStr(r.user_id), date, r.slot));
 
@@ -198,7 +256,9 @@ export async function loadProductionReadiness(dateISO: string): Promise<Producti
     outbox_order_set_without_active_order,
   };
 
+  const hasScopedClosedWarning = companyScopedClosedDetail.length > 0;
   const hasWarnings =
+    hasScopedClosedWarning ||
     orders_missing_scope > 0 ||
     ghost_active_orders_with_cancelled_day_choice > 0 ||
     operative_orders_missing_outbox > 0 ||
@@ -209,8 +269,10 @@ export async function loadProductionReadiness(dateISO: string): Promise<Producti
     level === "READY"
       ? "Produksjon klar"
       : "Produksjon klar med avvik";
+  const baseWarningDetail =
+    "Det finnes operative avvik — se tall under. Kjøkkenlisten filtrerer kansellerte dagvalg; outbox følger ordre-trigger.";
   const detail = hasWarnings
-    ? "Det finnes operative avvik — se tall under. Kjøkkenlisten filtrerer kansellerte dagvalg; outbox følger ordre-trigger."
+    ? `${companyScopedClosedDetail}${baseWarningDetail}`.trim()
     : "Ingen registrerte avvik mot dagens modell (ordre + day_choices + outbox for operative rader).";
 
   return {
