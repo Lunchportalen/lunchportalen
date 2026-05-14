@@ -43,7 +43,6 @@ export type CancelResponse = {
     updated_at: string | null;
     saved_at: string;
   };
-  pricing: { tier: "BASIS" | "LUXUS" | "ENTERPRISE"; unit_price: number };
   backup: { ok: boolean; [k: string]: any };
 };
 
@@ -225,7 +224,6 @@ export async function cancelOrder(
           updated_at: null,
           saved_at: savedAt,
         },
-        pricing: { tier: "BASIS", unit_price: 0 },
         backup: { ok: true, source: "order_cancel" },
       };
       return { ok: true, rid, data: mapped };
