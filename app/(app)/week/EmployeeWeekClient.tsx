@@ -6,7 +6,6 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
-import { addDaysISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   findRecommendedDateInWindow,
@@ -213,22 +212,6 @@ function unwrapWindow(json: unknown): WindowPayload | null {
   }
   if ("days" in o) return o as WindowPayload;
   return null;
-}
-
-function parseWeekMetaFromWindowJson(raw: unknown): { thisWeekStart: string | null; canSeeNextWeek: boolean } {
-  if (!raw || typeof raw !== "object") return { thisWeekStart: null, canSeeNextWeek: false };
-  const o = raw as Record<string, unknown>;
-  const data = o.data && typeof o.data === "object" ? (o.data as Record<string, unknown>) : null;
-  const week = data?.week && typeof data.week === "object" ? (data.week as Record<string, unknown>) : null;
-  return {
-    thisWeekStart: week?.thisWeekStart != null ? String(week.thisWeekStart).slice(0, 10) : null,
-    canSeeNextWeek: week?.canSeeNextWeek === true,
-  };
-}
-
-/** Neste ukes start (mandag) relativt til API sitt thisWeekStart — deterministisk, samme som addDaysISO(..., 7). */
-function getNextWeekStartISO(thisWeekStartISO: string): string {
-  return addDaysISO(thisWeekStartISO, 7);
 }
 
 const BTN_TOUCH =
@@ -1156,9 +1139,6 @@ export default function EmployeeWeekClient({
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef<Set<string>>(new Set());
   const fallbackRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prefetchGateRef = useRef<{ weekStart: string | null; can: boolean }>({ weekStart: null, can: false });
-  const prefetchDoneKeyRef = useRef<string | null>(null);
-  const prefetchSelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const navSourceRef = useRef<"init" | "tap" | "io">("init");
   const selectedDateRef = useRef<string | null>(null);
@@ -1166,7 +1146,6 @@ export default function EmployeeWeekClient({
   const lastScrollYRef = useRef(0);
   /** Under programmatisk scroll (init/tap): ikke la IO overskrive valgt dag midlertidig. */
   const suppressIoUntilRef = useRef(0);
-  const predictedPrefetchKeyRef = useRef<string | null>(null);
 
   const [patternTick, setPatternTick] = useState(0);
   const patterns = useMemo(() => {
@@ -1261,7 +1240,10 @@ export default function EmployeeWeekClient({
     }
 
     try {
-      const res = await fetch(`${API_ORDER}/window?weeks=1`, { cache: "no-store", signal: ac.signal });
+      // weeks=2 brukes som primær state-kilde. Server-side canSeeNextWeek()
+      // i lib/week/availability.ts avgjør om neste uke faktisk inkluderes;
+      // klienten ber alltid om begge, og server filtrerer. Fix fra FASE 10A.2.
+      const res = await fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store", signal: ac.signal });
       const raw = (await res.json().catch(() => null)) as unknown;
       const payload = unwrapWindow(raw);
 
@@ -1310,14 +1292,6 @@ export default function EmployeeWeekClient({
         }
         return next;
       });
-
-      const meta = parseWeekMetaFromWindowJson(raw);
-      if (!silent) {
-        prefetchGateRef.current = {
-          weekStart: meta.thisWeekStart ?? mapped[0]?.date ?? null,
-          can: meta.canSeeNextWeek,
-        };
-      }
 
       setDays(mapped);
       setAgreementMessage(payload.agreement?.message ? String(payload.agreement.message) : null);
@@ -1370,9 +1344,6 @@ export default function EmployeeWeekClient({
       const fb = fallbackRefreshRef.current;
       fallbackRefreshRef.current = null;
       if (fb) clearTimeout(fb);
-      const ps = prefetchSelectTimerRef.current;
-      prefetchSelectTimerRef.current = null;
-      if (ps) clearTimeout(ps);
     };
   }, []);
 
@@ -1394,19 +1365,6 @@ export default function EmployeeWeekClient({
       if (next) setSelectedDate(next);
     }
   }, [days, selectedDate, patterns]);
-
-  /** Stille prefetch når anbefalt dag er kjent (samme kontrakt som øvrig /window). */
-  useEffect(() => {
-    if (readOnlyPreview) return;
-    if (loading || sortedDays.length === 0 || !recommendedDate) return;
-    const key = sortedDays.map((d) => d.date).join("|");
-    if (predictedPrefetchKeyRef.current === key) return;
-    predictedPrefetchKeyRef.current = key;
-    void fetch(`${API_ORDER}/window?weeks=1`, { cache: "no-store" }).catch(() => {});
-    if (prefetchGateRef.current.can) {
-      void fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store" }).catch(() => {});
-    }
-  }, [loading, sortedDays, recommendedDate, readOnlyPreview]);
 
   /** Synk scroll-posisjon med valgt dag (init / tap — ikke under IO-styrt swipe). */
   useLayoutEffect(() => {
@@ -1467,25 +1425,6 @@ export default function EmployeeWeekClient({
     };
   }, [isMobile, loading, sortedDays]);
 
-  /** Prediktiv prefetch ved dagbytte (stille, ingen setState). */
-  useEffect(() => {
-    if (readOnlyPreview) return;
-    if (!selectedDate || loading || days.length === 0) return;
-    if (prefetchSelectTimerRef.current) clearTimeout(prefetchSelectTimerRef.current);
-    prefetchSelectTimerRef.current = setTimeout(() => {
-      prefetchSelectTimerRef.current = null;
-      void fetch(`${API_ORDER}/window?weeks=1`, { cache: "no-store" }).catch(() => {});
-      if (prefetchGateRef.current.can) {
-        const ws = prefetchGateRef.current.weekStart;
-        if (ws) void getNextWeekStartISO(ws);
-        void fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store" }).catch(() => {});
-      }
-    }, 140);
-    return () => {
-      if (prefetchSelectTimerRef.current) clearTimeout(prefetchSelectTimerRef.current);
-    };
-  }, [selectedDate, days.length, loading, readOnlyPreview]);
-
   /** Sticky bar: skjul ved scroll ned, vis ved scroll opp (kun mobil). */
   useEffect(() => {
     if (!isMobile) {
@@ -1515,21 +1454,6 @@ export default function EmployeeWeekClient({
     });
     return () => cancelAnimationFrame(id);
   }, [loading]);
-
-  /**
-   * Prefetch neste uke: GET weeks=2 (kun når API sier canSeeNextWeek). Ingen setState — kun HTTP-varmstart.
-   * getNextWeekStartISO brukes som deterministisk fasit for neste ukes start (samme som server nextWeekStart).
-   */
-  useEffect(() => {
-    if (readOnlyPreview) return;
-    if (loading) return;
-    const g = prefetchGateRef.current;
-    if (!g.can || !g.weekStart) return;
-    if (prefetchDoneKeyRef.current === g.weekStart) return;
-    prefetchDoneKeyRef.current = g.weekStart;
-    void getNextWeekStartISO(g.weekStart);
-    void fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store" }).catch(() => {});
-  }, [days, loading, readOnlyPreview]);
 
   const selectDayFromTap = useCallback((date: string) => {
     navSourceRef.current = "tap";

@@ -2,14 +2,14 @@ import { describe, expect, test } from "vitest";
 
 import { canSeeNextWeek, canSeeThisWeek } from "@/lib/week/availability";
 
-describe("week visibility (Oslo) — torsdag 08:00 / fredag 15:00", () => {
-  test("torsdag 07:59: neste uke ikke åpnet", () => {
-    const d = new Date("2026-03-26T06:59:00+01:00"); // tor CET
+describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
+  test("torsdag 13:59: neste uke ikke åpnet", () => {
+    const d = new Date("2026-03-26T13:59:00+01:00"); // tor CET
     expect(canSeeNextWeek(d)).toBe(false);
   });
 
-  test("torsdag 08:00: neste uke åpnet", () => {
-    const d = new Date("2026-03-26T08:00:00+01:00");
+  test("torsdag 14:00: neste uke åpnet", () => {
+    const d = new Date("2026-03-26T14:00:00+01:00");
     expect(canSeeNextWeek(d)).toBe(true);
   });
 

@@ -5,7 +5,7 @@ const OSLO_TZ = "Europe/Oslo";
  * RULES (OSLO TIME):
  * - Avbestilling samme dag: før 08:00
  * - Bestilling: for hele inneværende uke (Man–Fre), men ikke etter 08:00 på den aktuelle dagen
- * - Neste uke åpner: torsdag 08:00 (kan se/bestille neste uke)
+ * - Neste uke åpner: torsdag 14:00 (kan se/bestille neste uke)
  * - Denne uka skjules: fredag 15:00 (inneværende uke skal ikke vises etter dette)
  */
 
@@ -160,7 +160,7 @@ export function isAfterFriday1500(now: Date) {
 export const isAfterFriday1400 = isAfterFriday1500;
 
 /**
- * Thursday 08:00 gate (next week opens)
+ * Thursday 14:00 gate (next week opens)
  * IMPORTANT: Når den først er åpnet, skal den være åpen resten av helgen (fre/lør/søn).
  */
 export function nextWeekOpens(now: Date) {
@@ -170,8 +170,10 @@ export function nextWeekOpens(now: Date) {
   // weekday: 0=Sun, 4=Thu, 5=Fri, 6=Sat
   if (p.weekday === 5 || p.weekday === 6 || p.weekday === 0) return true;
 
-  // Thursday from 08:00
-  if (p.weekday === 4) return hhmmToMin(p) >= 8 * 60;
+  // Forretningsregel oppdatert FASE 10A.2: neste uke blir synlig kl 14:00
+  // torsdag (ikke 08:00 som tidligere). Fredag 15:00-skjuling av denne
+  // uka er uendret. Tidssonen er Europe/Oslo.
+  if (p.weekday === 4) return hhmmToMin(p) >= 14 * 60;
 
   // Mon–Wed: not open yet
   return false;
@@ -216,7 +218,7 @@ export function weekStartMon(now: Date) {
 /**
  * Visible week starts (Oslo local Mondays 00:00):
  * - This week if before Friday 15:00
- * - Next week if from Thursday 08:00 (and through weekend)
+ * - Next week if from Thursday 14:00 (and through weekend)
  */
 export function visibleWeekStarts(now: Date) {
   const thisStart = weekStartMon(now);
