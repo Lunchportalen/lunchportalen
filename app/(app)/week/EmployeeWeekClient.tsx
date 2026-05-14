@@ -1778,7 +1778,11 @@ export default function EmployeeWeekClient({
       </div>
 
       <nav className="mb-5 grid grid-cols-5 gap-2" aria-label="Velg dag">
-        {sortedDays.slice(0, 5).map((day) => {
+        {/* Viser alle dager i to-ukers-vinduet (maks 7 etter cutoff).
+            Server-side canSeeNextWeek() filtrerer hvilke dager som faktisk
+            inkluderes. grid-cols-5 lar 7 dager flyte over 2 rader.
+            Layout-optimering vurderes i FASE 10B (UX-pass). */}
+        {sortedDays.map((day) => {
           const active = activeDay?.date === day.date;
           const weekday = (formatWeekdayNO(day.date) || day.weekday).slice(0, 3);
           return (
@@ -1786,7 +1790,7 @@ export default function EmployeeWeekClient({
               key={day.date}
               type="button"
               onClick={() => selectDayFromTap(day.date)}
-              className={`min-w-0 rounded-2xl px-2 py-3 text-center ring-1 transition-transform active:scale-[0.98] ${
+              className={`min-h-[52px] min-w-0 rounded-2xl px-2 py-3 text-center ring-1 transition-transform active:scale-[0.98] ${
                 active
                   ? "bg-[#fff6d6] text-neutral-950 ring-[#f5c518] shadow-[0_10px_30px_rgba(245,197,24,0.2)]"
                   : "bg-white/80 text-neutral-700 ring-black/5"
