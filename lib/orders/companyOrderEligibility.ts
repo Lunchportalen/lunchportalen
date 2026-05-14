@@ -22,7 +22,19 @@ export async function assertCompanyOrderWriteAllowed(
     return { ok: false, status: 403, code: "COMPANY_SCOPE_REQUIRED", message: "Mangler firmatilknytning." };
   }
 
-  const { data, error } = await sb.from("companies").select("billing_hold,billing_hold_reason,status").eq("id", cid).maybeSingle();
+  const { data, error } = await sb
+    .from("companies")
+    // billing_hold og billing_hold_reason finnes ikke i prod-schema
+    // (verifisert 2026-05-14, FASE 9J.5). Samme grunn som 9J.4 i page.tsx.
+    // companies.status er autoritær gate. Hold-state defaultes til false
+    // for ACTIVE companies via Boolean(undefined) i downstream-logikk.
+    // Bredere migrasjon er flagget som arkitektonisk gjeld.
+    // Downstream `data.billing_hold === true` evaluerer til false når
+    // kolonnen er undefined (JS-spec), samme defensive default. Branch-
+    // strukturen bevares for når en faktisk billing-hold-kilde introduseres.
+    .select("status")
+    .eq("id", cid)
+    .maybeSingle();
 
   if (error) {
     return {
@@ -37,13 +49,13 @@ export async function assertCompanyOrderWriteAllowed(
     return { ok: false, status: 403, code: "COMPANY_NOT_FOUND", message: "Firma ikke funnet." };
   }
 
-  if (data.billing_hold === true) {
+  if ((data as any).billing_hold === true) {
     opsLog("order_rejected_company_hold", { rid, companyId: cid, reason: "billing_hold" });
     return {
       ok: false,
       status: 403,
       code: "BILLING_HOLD_ACTIVE",
-      message: safeStr(data.billing_hold_reason) || "Firmaet er midlertidig satt på hold grunnet utestående.",
+      message: safeStr((data as any).billing_hold_reason) || "Firmaet er midlertidig satt på hold grunnet utestående.",
     };
   }
 

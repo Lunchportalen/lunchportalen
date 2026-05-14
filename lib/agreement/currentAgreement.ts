@@ -156,11 +156,15 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     return { ok: false, rid: ridVal, error: "UNAUTHENTICATED", message: "Ikke innlogget.", status: 401 };
   }
 
-  // Profile (support both id and user_id for robustness)
+  // Profile
   const { data: profile, error: pErr } = await sb
     .from("profiles")
+    // Canonical profile lookup på id alene. user_id-kolonnen finnes ikke
+    // i prod-schema (verifisert 2026-05-14, FASE 9J.5). Samme fix-mønster
+    // som commit ae067e69 (7 filer). Denne filen var 8. forekomst og slap
+    // gjennom forrige audit fordi den ligger under lib/agreement/.
     .select("company_id,location_id")
-    .or(`id.eq.${authUserId},user_id.eq.${authUserId}`)
+    .eq("id", authUserId)
     .maybeSingle();
 
   if (pErr) {
