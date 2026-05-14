@@ -166,17 +166,17 @@ describe("statusPresentation", () => {
   });
 });
 
-describe("EmployeeWeekClient enkelt-CTA (WeekDayCardMobile)", () => {
-  test("WeekDayCardMobile rendrer ikke in-card «Bestill lunsj»; sticky beholder primær-CTA", () => {
+describe("EmployeeWeekClient in-card CTA (WeekDayCardMobile)", () => {
+  test("WeekDayCardMobile har in-card «Bestill lunsj»; ingen sticky bunn-CTA", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     const mobileStart = source.indexOf("const WeekDayCardMobile = memo(");
-    const stickyStart = source.indexOf("function stickyCtaForDay(");
+    const exportDefault = source.indexOf("export default function EmployeeWeekClient");
     expect(mobileStart).toBeGreaterThan(-1);
-    expect(stickyStart).toBeGreaterThan(mobileStart);
-    const mobileBlock = source.slice(mobileStart, stickyStart);
-    expect(mobileBlock).not.toContain('"Bestill lunsj"');
+    expect(exportDefault).toBeGreaterThan(mobileStart);
+    const mobileBlock = source.slice(mobileStart, exportDefault);
+    expect(mobileBlock).toContain('"Bestill lunsj"');
 
-    expect(source).toContain("ds-week-sticky-safe-bottom");
-    expect(source).toContain('"Bestill lunsj"');
+    expect(source).not.toContain("ds-week-sticky-safe-bottom");
+    expect(source).not.toContain("stickyCtaForDay");
   });
 });

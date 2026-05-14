@@ -863,7 +863,7 @@ function DayMenuSummary({
 
 function WeekLoadingSkeleton({ mobileLayout }: { mobileLayout: boolean }) {
   return (
-    <ul className={`flex flex-col gap-4 ${mobileLayout ? "pb-32" : ""}`} aria-busy="true" aria-label="Laster ukeplan">
+    <ul className="flex flex-col gap-4" aria-busy="true" aria-label="Laster ukeplan">
       {[0, 1, 2, 3, 4].map((i) => (
         <li
           key={i}
@@ -956,6 +956,7 @@ type RowBase = {
   globalBusy: boolean;
   busyThis: boolean;
   storedChoice: WeekChoiceStored;
+  onRequestOrder: () => void;
   onRequestCancel: () => void;
   onSelectCategory: (choiceKey: string) => void;
   onSelectItem: (categoryKey: string, itemKey: string, itemTitle: string) => void;
@@ -971,6 +972,7 @@ function WeekDayRowDesktop({
   globalBusy,
   busyThis,
   storedChoice,
+  onRequestOrder,
   onRequestCancel,
   onSelectCategory,
   onSelectItem,
@@ -984,6 +986,8 @@ function WeekDayRowDesktop({
   const notInAgreement = !day.isEnabled;
   const noTierForDay = isNoTierForDay(day);
   const canClick = canOrderDay(day, canAct, globalBusy);
+  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
+  const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
   const status = statusPresentation(day);
 
   return (
@@ -1097,6 +1101,23 @@ function WeekDayRowDesktop({
           </div>
         ) : (
           <div className="flex w-full flex-col sm:w-full md:w-auto">
+            <button
+              type="button"
+              disabled={readOnlyPreview || !canOrderClick}
+              aria-disabled={readOnlyPreview || !canOrderClick}
+              title={primaryTitle}
+              onClick={readOnlyPreview ? undefined : onRequestOrder}
+              className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
+            >
+              {busyThis ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  Behandler…
+                </>
+              ) : (
+                "Bestill lunsj"
+              )}
+            </button>
             {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
           </div>
         )}
@@ -1119,6 +1140,7 @@ const WeekDayCardMobile = memo(
     storedChoice,
     isSelected,
     onSelectDay,
+    onRequestOrder,
     onRequestCancel,
     onSelectCategory,
     onSelectItem,
@@ -1132,6 +1154,8 @@ const WeekDayCardMobile = memo(
     const notInAgreement = !day.isEnabled;
     const noTierForDay = isNoTierForDay(day);
     const canClick = canOrderDay(day, canAct, globalBusy);
+    const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
+    const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
     const categories = getTierCategories(day);
     const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
     const mobileChoiceLine =
@@ -1288,6 +1312,23 @@ const WeekDayCardMobile = memo(
             </>
           ) : (
             <>
+              <button
+                type="button"
+                disabled={readOnlyPreview || !canOrderClick}
+                aria-disabled={readOnlyPreview || !canOrderClick}
+                title={primaryTitle}
+                onClick={readOnlyPreview ? undefined : onRequestOrder}
+                className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
+              >
+                {busyThis ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Behandler…
+                  </>
+                ) : (
+                  "Bestill lunsj"
+                )}
+              </button>
               {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
             </>
           )}
@@ -1317,98 +1358,6 @@ const WeekDayCardMobile = memo(
     prev.readOnlyPreview === next.readOnlyPreview,
 );
 
-function stickyCtaForDay(
-  day: DayRow,
-  canAct: boolean,
-  globalBusy: boolean,
-  busyThis: boolean,
-  storedChoice: WeekChoiceStored,
-  onRequestOrder: () => void,
-  onRequestCancel: () => void,
-  readOnlyPreview?: boolean,
-) {
-  const ordered = day.orderStatus === "ACTIVE";
-  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
-  const companyClosed = day.isLocked && day.lockReason === "COMPANY";
-  const notInAgreement = !day.isEnabled;
-  const noTierForDay = isNoTierForDay(day);
-  const canClick = canOrderDay(day, canAct, globalBusy);
-  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
-  const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
-
-  if (noTierForDay) {
-    return <p className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</p>;
-  }
-  if (notInAgreement) {
-    return (
-      <p className="text-center text-sm text-neutral-500">Ikke leveringsdag for valgt dag.</p>
-    );
-  }
-  if (cutoffClosed) {
-    return (
-      <>
-        <button
-          type="button"
-          disabled
-          className={`flex min-h-[48px] w-full items-center justify-center rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 ${BTN_TOUCH}`}
-        >
-          Frist passert kl. 08:00
-        </button>
-        <CutoffSafetyHint day={day} className="text-center" />
-      </>
-    );
-  }
-  if (companyClosed) {
-    return <p className="text-center text-sm text-neutral-600">Bestilling stengt for firma</p>;
-  }
-  if (ordered) {
-    return (
-      <>
-        <button
-          type="button"
-          disabled={readOnlyPreview || !canClick}
-          aria-disabled={readOnlyPreview || !canClick}
-          title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
-          onClick={readOnlyPreview ? undefined : onRequestCancel}
-          className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
-        >
-          {busyThis ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-              Behandler…
-            </>
-          ) : (
-            "Avbestill lunsj"
-          )}
-        </button>
-        {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
-      </>
-    );
-  }
-  return (
-    <>
-              <button
-                type="button"
-                disabled={readOnlyPreview || !canOrderClick}
-                aria-disabled={readOnlyPreview || !canOrderClick}
-                title={primaryTitle}
-                onClick={readOnlyPreview ? undefined : onRequestOrder}
-                className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
-              >
-        {busyThis ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            Behandler…
-          </>
-        ) : (
-          "Bestill lunsj"
-        )}
-      </button>
-      {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
-    </>
-  );
-}
-
 export default function EmployeeWeekClient({
   canAct,
   billingHoldReason,
@@ -1431,7 +1380,6 @@ export default function EmployeeWeekClient({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<Record<string, WeekChoiceStored | null>>({});
   const [contentVisible, setContentVisible] = useState(false);
-  const [stickyBarHidden, setStickyBarHidden] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
   const [serverOsloDate, setServerOsloDate] = useState<string | null>(readOnlyPreview ? previewDays[0]?.date ?? null : null);
@@ -1451,7 +1399,6 @@ export default function EmployeeWeekClient({
   const navSourceRef = useRef<"init" | "tap" | "io">("init");
   const selectedDateRef = useRef<string | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
-  const lastScrollYRef = useRef(0);
   /** Under programmatisk scroll (init/tap): ikke la IO overskrive valgt dag midlertidig. */
   const suppressIoUntilRef = useRef(0);
 
@@ -1770,24 +1717,6 @@ export default function EmployeeWeekClient({
     };
   }, [isMobile, loading, sortedDays]);
 
-  /** Sticky bar: skjul ved scroll ned, vis ved scroll opp (kun mobil). */
-  useEffect(() => {
-    if (!isMobile) {
-      setStickyBarHidden(false);
-      return;
-    }
-    lastScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const d = y - lastScrollYRef.current;
-      lastScrollYRef.current = y;
-      if (d > 12) setStickyBarHidden(true);
-      else if (d < -12) setStickyBarHidden(false);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isMobile]);
-
   /** Innhold fade-in etter lasting (kun opacity). */
   useEffect(() => {
     if (loading) {
@@ -1989,7 +1918,7 @@ export default function EmployeeWeekClient({
 
   if (loading) {
     return (
-      <div className={`mx-auto w-full max-w-lg px-4 py-6 md:max-w-2xl ${isMobile ? "pb-32" : ""}`}>
+      <div className={`mx-auto w-full max-w-lg px-4 py-6 md:max-w-2xl`}>
         <WeekLoadingSkeleton mobileLayout={isMobile} />
       </div>
     );
@@ -2078,7 +2007,7 @@ export default function EmployeeWeekClient({
       className={`mx-auto w-full px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 ${
         readOnlyPreview
           ? "max-w-[430px] rounded-[2rem] bg-[#fbf8f1] shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5"
-          : `min-h-dvh max-w-lg bg-[#fbf8f1] md:max-w-2xl ${isMobile ? "pb-32" : ""}`
+          : `min-h-dvh max-w-lg bg-[#fbf8f1] md:max-w-2xl`
       } ${contentVisible ? "opacity-100" : "opacity-0"}`}
     >
       <WeekConfirmModal
@@ -2218,6 +2147,7 @@ export default function EmployeeWeekClient({
             storedChoice={selectedChoices[activeDay.date] ?? null}
             isSelected
             onSelectDay={() => selectDayFromTap(activeDay.date)}
+            onRequestOrder={() => requestOrder(activeDay.date)}
             onRequestCancel={() => requestCancel(activeDay.date)}
             onSelectCategory={(choiceKey) => selectCategory(activeDay.date, choiceKey)}
             onSelectItem={(categoryKey, itemKey, itemTitle) => selectItemForDay(activeDay.date, categoryKey, itemKey, itemTitle)}
@@ -2261,27 +2191,6 @@ export default function EmployeeWeekClient({
         </section>
       ) : null}
 
-      {!readOnlyPreview && selectedDay ? (
-        <div
-          className={`ds-week-sticky-safe-bottom fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white/95 px-4 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm motion-safe:transition-[transform,opacity] motion-safe:duration-200 motion-safe:ease-out ${
-            stickyBarHidden ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
-          }`}
-        >
-          <div className="mx-auto max-w-lg">
-            <p className="mb-2 text-center text-xs font-medium text-neutral-600">{selectedDayLabel(selectedDay)}</p>
-            {stickyCtaForDay(
-              selectedDay,
-              canAct,
-              globalBusy,
-              busyDate === selectedDay.date,
-              selectedChoices[selectedDay.date] ?? null,
-              () => requestOrder(selectedDay.date),
-              () => requestCancel(selectedDay.date),
-              readOnlyPreview,
-            )}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -282,7 +282,3 @@
     transform: none;
   }
 }
-
-.ds-week-sticky-safe-bottom {
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-}
