@@ -294,6 +294,26 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (error) {
       const mapped = mapRpcError(error.message);
+      if (mapped.status === 500 && mapped.code === "ORDER_SET_FAILED") {
+        const errAny = error as { message?: string; code?: string; details?: string; hint?: string };
+        opsLog("orders.lp_order_set.rpc_unmapped", {
+          rid,
+          level: "error",
+          msg: "lp_order_set RPC unrecognized or generic failure message",
+          err: {
+            message: errAny.message,
+            code: errAny.code,
+            details: errAny.details,
+            hint: errAny.hint,
+          },
+          context: {
+            date,
+            choiceKey: finalChoiceKey,
+            itemKey: persistedItemKey,
+            userId: g.ctx.scope.userId,
+          },
+        });
+      }
       return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapped.message);
     }
 
@@ -430,6 +450,24 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
           { onConflict: "company_id,location_id,user_id,date" }
         );
       if (dayChoiceErr) {
+        const dAny = dayChoiceErr as { message?: string; code?: string; details?: string; hint?: string };
+        opsLog("orders.day_choices.upsert_failed", {
+          rid,
+          level: "error",
+          msg: "day_choices upsert failed after successful order",
+          err: {
+            message: dAny.message,
+            code: dAny.code,
+            details: dAny.details,
+            hint: dAny.hint,
+          },
+          context: {
+            date: savedDate,
+            choiceKey: finalChoiceKey,
+            itemKey: persistedItemKey,
+            userId: g.ctx.scope.userId,
+          },
+        });
         return jsonOrderWriteErr(rid, 500, "DAY_CHOICE_SAVE_FAILED", "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen.");
       }
     }
@@ -455,7 +493,16 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       timestamp: new Date().toISOString(),
       tier: resolvedTier,
     });
-  } catch {
+  } catch (e: unknown) {
+    opsLog("orders.writeOrder.uncaught", {
+      rid,
+      level: "error",
+      msg: "writeOrder uncaught exception",
+      err:
+        e instanceof Error
+          ? { name: e.name, message: e.message, stack: e.stack }
+          : { value: String(e) },
+    });
     return jsonOrderWriteErr(rid, 500, "ORDER_SET_FAILED", "Vi kunne ikke lagre bestillingen nå.");
   }
   });
