@@ -261,7 +261,7 @@ function normCompanyStatus(v: any): CompanyStatusNorm {
 async function getCompanyPolicy(supa: SupabaseClient<any, any, any>, companyId: string): Promise<CompanyPolicyResult> {
   const { data, error } = await (supa as any)
     .from("companies")
-    .select("id,status,paused_reason,closed_reason,name")
+    .select("id,status,name")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -276,8 +276,12 @@ async function getCompanyPolicy(supa: SupabaseClient<any, any, any>, companyId: 
   }
 
   const status = normCompanyStatus((data as any).status);
-  const paused_reason = ((data as any).paused_reason as string | null) ?? null;
-  const closed_reason = ((data as any).closed_reason as string | null) ?? null;
+  // paused_reason and closed_reason: columns do not exist in companies schema
+  // (verified 2026-05-14, FASE 9J.2). Hardcoded null to preserve response shape.
+  // Add via migration if/when reason text becomes a product feature; consumers
+  // already handle null via existing string | null typing.
+  const paused_reason: string | null = null;
+  const closed_reason: string | null = null;
   const name = ((data as any).name as string | null) ?? null;
 
   if (status === "ACTIVE") {
