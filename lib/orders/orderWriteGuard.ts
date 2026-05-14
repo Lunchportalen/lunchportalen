@@ -35,9 +35,24 @@ export function assertEmployeeOrderBodyHasNoPricingOverrides(
 type PreflightAction = "SET" | "CANCEL" | "ORDER";
 
 function operativeClosedDatesOrFilter(companyId: string, locationId: string | null | undefined): string {
-  const parts = ["and(scope_type.eq.global,scope_id.is.null)", `and(scope_type.eq.company,scope_id.eq.${companyId})`];
+  // closed_dates-schema bruker scope_company_id og scope_location_id
+  // (separate FK-kolonner), IKKE en (scope_type, scope_id)-diskriminert union.
+  // Verifisert mot prod-schema 2026-05-14, FASE 9J.3.
+  // Beslutningstre:
+  //   global   -> begge NULL
+  //   company  -> scope_company_id=companyId, scope_location_id NULL
+  //   location -> scope_company_id=companyId, scope_location_id=locationId
+  // Rader uten company eller med location uten company ansees som ugyldig
+  // operativ data og matches ikke. Admin-flow som oppretter closed_dates
+  // må respektere dette (separat verifisering, ikke i scope for 9J.3).
+  const parts = [
+    "and(scope_company_id.is.null,scope_location_id.is.null)",
+    `and(scope_company_id.eq.${companyId},scope_location_id.is.null)`,
+  ];
   const lid = safeStr(locationId ?? "");
-  if (lid) parts.push(`and(scope_type.eq.location,scope_id.eq.${lid})`);
+  if (lid) {
+    parts.push(`and(scope_company_id.eq.${companyId},scope_location_id.eq.${lid})`);
+  }
   return parts.join(",");
 }
 

@@ -30,7 +30,7 @@ import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
-import { parseMealContractFromAgreementJson, type StoredMealContract } from "@/lib/server/agreements/mealContract";
+import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
@@ -788,12 +788,16 @@ export async function GET(req: NextRequest) {
     const fromISO = dates[0] ?? today;
     const toISO = dates[dates.length - 1] ?? today;
 
-    const [{ data: compJsonRow }, ppBasis, ppLuxus] = await Promise.all([
-      admin.from("companies").select("agreement_json").eq("id", sc.company_id).maybeSingle(),
+    const [ppBasis, ppLuxus] = await Promise.all([
       getProductPlan("basis"),
       getProductPlan("luxus"),
     ]);
-    const mealContract = parseMealContractFromAgreementJson((compJsonRow as any)?.agreement_json);
+    // companies.agreement_json finnes ikke i prod-schema (verifisert 2026-05-14,
+    // FASE 9J.3). Tidligere admin.from-kallet feilet stille i Promise.all og
+    // returnerte alltid effektivt null. Hardkodet null for å gjøre intensjonen
+    // eksplisitt. Bredere migrasjon (agreement_json -> normalized agreement-tabeller)
+    // er flagget som arkitektonisk gjeld for separat fase.
+    const mealContract: StoredMealContract | null = null;
     const productPlans = { BASIS: ppBasis, LUXUS: ppLuxus };
     const mealKeys = new Set<string>();
     for (const k of ppBasis?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
