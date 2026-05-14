@@ -27,6 +27,10 @@ describe("EmployeeWeekClient order write migration", () => {
       choice_key: "salatboks",
       itemKey: "kylling",
     });
+    expect(buildOrderWriteBody("2026-05-18", true, null, "kylling")).toEqual({
+      date: "2026-05-18",
+      action: "set",
+    });
   });
 
   test("sender CANCEL-body til /api/orders uten choice_key", () => {

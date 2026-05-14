@@ -2,7 +2,7 @@
 
 import { ClockIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
@@ -541,7 +541,8 @@ function parseStoredSelection(stored: WeekChoiceStored): DayChoiceSelection | nu
 }
 
 function choiceComparable(stored: WeekChoiceStored): string {
-  const p = parseStoredSelection(stored ?? null);
+  if (stored === null) return "";
+  const p = parseStoredSelection(stored);
   if (!p) return "";
   return `${p.categoryKey}\u001f${p.itemKey ?? ""}\u001f${p.itemTitle ?? ""}`;
 }
@@ -562,7 +563,8 @@ function tierChipMatchesSummary(summary: string | null, choiceLabel: string): bo
 }
 
 function effectiveSelectedChoice(day: DayRow, stored: WeekChoiceStored): string | null {
-  const parsed = parseStoredSelection(stored ?? null);
+  if (stored === null) return null;
+  const parsed = parseStoredSelection(stored);
   const explicit = String(parsed?.categoryKey ?? "").trim();
   if (explicit) return explicit;
   const available = day.categories.filter((c) => c.available);
@@ -582,7 +584,8 @@ function variantPickSatisfied(day: DayRow, stored: WeekChoiceStored): boolean {
 }
 
 function normalizeSelectionForDay(day: DayRow, prevRaw: WeekChoiceStored): WeekChoiceStored | null {
-  const parsed = parseStoredSelection(prevRaw ?? null);
+  if (prevRaw === null) return null;
+  const parsed = parseStoredSelection(prevRaw);
   const avail = day.categories.filter((c) => c.available);
   const singleAuto = avail.length === 1 ? avail[0]!.key : null;
 
@@ -611,7 +614,7 @@ function selectedChoiceSummaryLabel(day: DayRow, stored: WeekChoiceStored): stri
   const ck = effectiveSelectedChoice(day, stored);
   if (!ck) return null;
   const cat = day.categories.find((c) => c.key.toLowerCase() === ck.toLowerCase());
-  const p = parseStoredSelection(stored ?? null);
+  const p = parseStoredSelection(stored);
   const lab = cat?.label ?? ck;
   if (p?.itemTitle?.trim()) return `${lab} · ${p.itemTitle.trim()}`;
   return lab;
@@ -701,14 +704,91 @@ export function WeekCategoryCards({
 
   const titleDomId = selectedCat ? `week-items-title-${selectedCat.key}` : "week-items-title";
 
+  const expandSection =
+    showExpandedPanel && selectedCat ? (
+      <div
+        key={selectedCat.key}
+        className={`ds-week-items-section ds-week-items-section--inline${isSelectableItems ? "" : " ds-week-items-section--details"}`}
+        role={isSelectableItems ? "radiogroup" : "region"}
+        aria-labelledby={titleDomId}
+      >
+        <p id={titleDomId} className="ds-week-items-section__title">
+          {sectionHeading}
+        </p>
+        {isSelectableItems ? (
+          <div className="ds-week-items-grid">
+            {selectedCat.items.map((it) => {
+              const isItemSelected = Boolean(
+                selectedItemKey && String(it.key).toLowerCase() === String(selectedItemKey).toLowerCase(),
+              );
+              return (
+                <button
+                  key={it.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={isItemSelected}
+                  disabled={disabled || !day.isEnabled || !selectedCat.available}
+                  onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
+                  className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
+                  aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
+                >
+                  <span className="ds-week-item-btn__title">{it.title}</span>
+                  <span className="ds-week-item-btn__meta">
+                    {(it.allergens ?? []).map((slug) => (
+                      <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+                        <span aria-hidden="true">
+                          ⚠{" "}
+                        </span>
+                        {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
+                      </span>
+                    ))}
+                    {it.isVegetarian ? (
+                      <span className="ds-vegetarian-badge">
+                        <span aria-hidden="true">🌿 </span>
+                        Vegetar
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : showInfoCard ? (
+          <div className="ds-week-info-card">
+            {selectedCat.title ? (
+              <h3 className="ds-week-info-card__title">{String(selectedCat.title).trim()}</h3>
+            ) : (
+              <h3 className="ds-week-info-card__title">{selectedCat.label}</h3>
+            )}
+            {selectedCat.description ? (
+              <p className="ds-week-info-card__desc">{String(selectedCat.description).trim()}</p>
+            ) : null}
+            {selectedCat.allergens.length > 0 ? (
+              <div className="ds-week-info-card__meta">
+                {(selectedCat.allergens ?? []).map((slug) => (
+                  <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+                    <span aria-hidden="true">⚠ </span>
+                    {ALLERGEN_DISPLAY_LABELS[String(slug)] ?? String(slug)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : showEmptyMenuPlaceholder ? (
+          <p className="ds-week-info-card__placeholder" role="status">
+            Ingen meny lagt inn enda for {selectedCat.label}.
+          </p>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
-    <>
-      <div className="week-day__categories" aria-label="Velg kategori">
-        {day.categories.map((cat) => {
-          const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === cat.key.toLowerCase());
-          return (
+    <div className="week-day__categories" aria-label="Velg kategori">
+      {day.categories.map((cat) => {
+        const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === cat.key.toLowerCase());
+        return (
+          <Fragment key={cat.key}>
             <button
-              key={cat.key}
               type="button"
               className={`week-category-card ${isSelected ? "is-selected" : ""}`}
               onClick={() => onSelectCategory(cat.key)}
@@ -719,85 +799,11 @@ export function WeekCategoryCards({
               <span className="week-category-card__label">{cat.label}</span>
               {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
             </button>
-          );
-        })}
-      </div>
-      {showExpandedPanel && selectedCat ? (
-        <div
-          className={`ds-week-items-section${isSelectableItems ? "" : " ds-week-items-section--details"}`}
-          role={isSelectableItems ? "radiogroup" : "region"}
-          aria-labelledby={titleDomId}
-        >
-          <p id={titleDomId} className="ds-week-items-section__title">
-            {sectionHeading}
-          </p>
-          {isSelectableItems ? (
-            <div className="ds-week-items-grid">
-              {selectedCat.items.map((it) => {
-                const isItemSelected = Boolean(
-                  selectedItemKey && String(it.key).toLowerCase() === String(selectedItemKey).toLowerCase(),
-                );
-                return (
-                  <button
-                    key={it.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={isItemSelected}
-                    disabled={disabled || !day.isEnabled || !selectedCat.available}
-                    onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
-                    className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
-                    aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
-                  >
-                    <span className="ds-week-item-btn__title">{it.title}</span>
-                    <span className="ds-week-item-btn__meta">
-                      {(it.allergens ?? []).map((slug) => (
-                        <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                          <span aria-hidden="true">
-                            ⚠{" "}
-                          </span>
-                          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
-                        </span>
-                      ))}
-                      {it.isVegetarian ? (
-                        <span className="ds-vegetarian-badge">
-                          <span aria-hidden="true">🌿 </span>
-                          Vegetar
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : showInfoCard ? (
-            <div className="ds-week-info-card">
-              {selectedCat.title ? (
-                <h3 className="ds-week-info-card__title">{String(selectedCat.title).trim()}</h3>
-              ) : (
-                <h3 className="ds-week-info-card__title">{selectedCat.label}</h3>
-              )}
-              {selectedCat.description ? (
-                <p className="ds-week-info-card__desc">{String(selectedCat.description).trim()}</p>
-              ) : null}
-              {selectedCat.allergens.length > 0 ? (
-                <div className="ds-week-info-card__meta">
-                  {(selectedCat.allergens ?? []).map((slug) => (
-                    <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                      <span aria-hidden="true">⚠ </span>
-                      {ALLERGEN_DISPLAY_LABELS[String(slug)] ?? String(slug)}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : showEmptyMenuPlaceholder ? (
-            <p className="ds-week-info-card__placeholder" role="status">
-              Ingen meny lagt inn enda for {selectedCat.label}.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-    </>
+            {isSelected ? expandSection : null}
+          </Fragment>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1570,6 +1576,9 @@ export default function EmployeeWeekClient({
         const next: Record<string, WeekChoiceStored | null> = {};
         for (const day of mapped) {
           const prevChoice = prev[day.date];
+          const hadKey = Object.prototype.hasOwnProperty.call(prev, day.date);
+          const explicitCleared = hadKey && prevChoice === null;
+
           const serverHydrated =
             day.orderStatus === "ACTIVE" && day.selectedChoiceKey
               ? {
@@ -1579,7 +1588,12 @@ export default function EmployeeWeekClient({
                 }
               : null;
           const serverCat = day.selectedChoiceKey ? String(day.selectedChoiceKey).trim() : "";
-          const rawFallback = serverHydrated ?? prevChoice ?? (serverCat ? { categoryKey: serverCat, itemKey: null, itemTitle: null } : null);
+          if (explicitCleared && !serverHydrated) {
+            next[day.date] = null;
+            continue;
+          }
+          const rawFallback =
+            serverHydrated ?? (hadKey ? prevChoice : undefined) ?? (serverCat ? { categoryKey: serverCat, itemKey: null, itemTitle: null } : undefined);
           next[day.date] = normalizeSelectionForDay(day, rawFallback);
         }
         return next;
@@ -1735,12 +1749,22 @@ export default function EmployeeWeekClient({
     setSelectedDate(date);
   }, []);
 
-  const selectCategory = useCallback((date: string, choiceKey: string) => {
-    setSelectedChoices((prev) => ({
-      ...prev,
-      [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null },
-    }));
-  }, []);
+  const selectCategory = useCallback(
+    (date: string, choiceKey: string) => {
+      setSelectedChoices((prev) => {
+        const day = days.find((d) => d.date === date);
+        if (!day) {
+          return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
+        }
+        const currentEff = effectiveSelectedChoice(day, prev[date]);
+        if (currentEff && currentEff.toLowerCase() === choiceKey.toLowerCase()) {
+          return { ...prev, [date]: null };
+        }
+        return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
+      });
+    },
+    [days],
+  );
 
   const selectItemForDay = useCallback((date: string, categoryKey: string, itemKey: string, itemTitle: string) => {
     setSelectedChoices((prev) => ({
@@ -2144,7 +2168,7 @@ export default function EmployeeWeekClient({
             canAct={canAct}
             globalBusy={globalBusy}
             busyThis={busyDate === activeDay.date}
-            storedChoice={selectedChoices[activeDay.date] ?? null}
+            storedChoice={selectedChoices[activeDay.date]}
             isSelected
             onSelectDay={() => selectDayFromTap(activeDay.date)}
             onRequestOrder={() => requestOrder(activeDay.date)}

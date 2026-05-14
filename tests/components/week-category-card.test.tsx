@@ -49,6 +49,42 @@ describe("week category cards", () => {
     expect(source).toContain('isSelected ? "is-selected" : ""');
   });
 
+  test("category toggle: selectCategory clears same key and resets item (ghost guard)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("effectiveSelectedChoice(day, prev[date])");
+    expect(source).toContain("currentEff.toLowerCase() === choiceKey.toLowerCase()");
+    expect(source).toContain("[date]: null");
+    expect(source).toContain("itemKey: null");
+  });
+
+  test("expand renders inline: Fragment + expand sibling inside category map (no post-grid panel)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const fnStart = source.indexOf("export function WeekCategoryCards");
+    const fnEnd = source.indexOf("\nfunction DayMenuSummary", fnStart);
+    expect(fnStart).toBeGreaterThan(-1);
+    expect(fnEnd).toBeGreaterThan(fnStart);
+    const block = source.slice(fnStart, fnEnd);
+    expect(block).toContain("Fragment key={cat.key}");
+    expect(block).toContain("ds-week-items-section--inline");
+    expect(block).toContain("{isSelected ? expandSection : null}");
+    expect(block).toContain('className="week-day__categories"');
+    const closesCategories = block.lastIndexOf("</div>");
+    const expandInMap = block.indexOf("{isSelected ? expandSection : null}");
+    expect(expandInMap).toBeGreaterThan(-1);
+    expect(expandInMap).toBeLessThan(closesCategories);
+  });
+
+  test("explicit clear: effectiveSelectedChoice returns null only for stored === null", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toMatch(/if \(stored === null\) return null;\s*\n\s*const parsed = parseStoredSelection/);
+  });
+
+  test("CSS: inline expand spans full grid row on desktop", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toContain(".ds-week-items-section--inline");
+    expect(css).toContain("grid-column: 1 / -1");
+  });
+
   test("category cards disable when unavailable; CSS keeps 48px touch + motion/focus tokens", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     const css = readFileSync(CSS_PATH, "utf-8");

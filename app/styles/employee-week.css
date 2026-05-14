@@ -130,6 +130,12 @@
   border: 1px solid var(--ds-line);
 }
 
+/* Inline under selected category inside .week-day__categories grid (FASE 10C.2.2) */
+.ds-week-items-section--inline {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
 .ds-week-items-section__title {
   font-size: var(--ds-body-sm);
   font-weight: 600;
