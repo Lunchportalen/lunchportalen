@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
@@ -41,7 +42,18 @@ export async function POST(req: Request) {
     { onConflict: "company_id" }
   );
 
-  if (error) return jsonError(rid, 500, "UPSERT_FAILED", "Kunne ikke lagre mapping", error);
+  if (error) {
+    if (isMissingRelationError(error, "company_billing_accounts")) {
+      return jsonError(
+        rid,
+        503,
+        "FEATURE_NOT_CONFIGURED",
+        "Billing-accounts-feature er ikke konfigurert i denne installasjonen. Kontakt support for å aktivere.",
+        error,
+      );
+    }
+    return jsonError(rid, 500, "UPSERT_FAILED", "Kunne ikke lagre mapping", error);
+  }
 
   const { auditSuperadmin } = await import("@/lib/audit/actions");
   await auditSuperadmin({

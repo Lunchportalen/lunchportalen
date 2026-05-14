@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
@@ -95,12 +96,25 @@ export async function POST(req: Request) {
     .from("company_billing_accounts")
     .upsert(normalized, { onConflict: "company_id" });
 
-  if (error) return jsonErr(rid, "Kunne ikke bulk-lagre mapping", 500, { code: "DB", detail: error });
+  if (error) {
+    if (isMissingRelationError(error, "company_billing_accounts")) {
+      return jsonOk(rid, {
+        received: items.length,
+        upserted: 0,
+        failed: errors.length,
+        errors,
+        tripletex_mapping_available: false,
+        mappings: [],
+      });
+    }
+    return jsonErr(rid, "Kunne ikke bulk-lagre mapping", 500, { code: "DB", detail: error });
+  }
 
   return jsonOk(rid, {
     received: items.length,
     upserted: normalized.length,
     failed: errors.length,
     errors,
+    tripletex_mapping_available: true,
   });
 }

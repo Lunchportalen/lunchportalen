@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 export const revalidate = 0;
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
@@ -88,21 +89,35 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
       run: runRes.data,
       rows: [],
       totals: { companies: 0, billable: 0, amount: 0, missingCustomer: 0, missingPrice: 0 },
+      tripletex_mapping_available: true,
+      billing_mapping: null,
     });
   }
 
   const companyIds = Array.from(new Set(lines.map((l) => l.company_id)));
 
   // 3) Tripletex mapping pr firma
+  let tripletex_mapping_available = true;
+  let billing_mapping: Record<string, unknown> | null = null;
+
   const mapRes = await db
     .from("company_billing_accounts")
     .select("company_id, tripletex_customer_id, product_name, vat_code")
     .in("company_id", companyIds);
 
-  if (mapRes.error) return jsonErr(rid, "Kunne ikke hente billing mapping", 500, { code: "DB", detail: mapRes.error });
-
   const map = new Map<string, any>();
-  for (const m of mapRes.data ?? []) map.set(m.company_id, m);
+
+  if (mapRes.error) {
+    if (isMissingRelationError(mapRes.error, "company_billing_accounts")) {
+      tripletex_mapping_available = false;
+      billing_mapping = null;
+    } else {
+      return jsonErr(rid, "Kunne ikke hente billing mapping", 500, { code: "DB", detail: mapRes.error });
+    }
+  } else {
+    for (const m of mapRes.data ?? []) map.set(m.company_id, m);
+    billing_mapping = Object.fromEntries(map);
+  }
 
   const rows = lines.map((l) => {
     const m = map.get(l.company_id) ?? null;
@@ -134,5 +149,11 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
     { companies: 0, billable: 0, amount: 0, missingCustomer: 0, missingPrice: 0 }
   );
 
-  return jsonOk(rid, { run: runRes.data, rows, totals });
+  return jsonOk(rid, {
+    run: runRes.data,
+    rows,
+    totals,
+    tripletex_mapping_available,
+    billing_mapping,
+  });
 }

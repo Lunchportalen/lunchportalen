@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
+
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 export type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 export type AgreementDayTiers = Record<DayKey, Tier | null>;
@@ -93,28 +95,6 @@ function normalizeStatus(v: unknown): AgreementStatusResult["status"] {
   const s = safeStr(v).toUpperCase();
   if (s === "ACTIVE" || s === "PENDING" || s === "PAUSED" || s === "CLOSED" || s === "REJECTED") return s;
   return null;
-}
-
-function isMissingRelationError(error: unknown, relation: string) {
-  const e = error as any;
-  const code = safeStr(e?.code).toUpperCase();
-  const text = `${safeStr(e?.message)} ${safeStr(e?.details)} ${safeStr(e?.hint)}`.toLowerCase();
-  const target = relation.toLowerCase();
-
-  if (code === "42P01" || code === "PGRST205" || code === "PGRST204" || code === "42703") {
-    return true;
-  }
-
-  const mentionsTarget = text.includes(target) || text.includes(`public.${target}`);
-  const missingRelation =
-    (text.includes("relation") && text.includes("does not exist")) ||
-    (text.includes("schema cache") && text.includes("not found")) ||
-    text.includes("could not find the table") ||
-    text.includes("could not find table") ||
-    text.includes("could not find the column") ||
-    text.includes("could not find column");
-
-  return mentionsTarget && missingRelation;
 }
 
 /**
