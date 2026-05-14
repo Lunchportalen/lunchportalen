@@ -38,3 +38,38 @@ export function asPlanTier(value: unknown): PlanTier | null {
   const tier = String(value ?? "").trim().toUpperCase();
   return PLAN_TIERS.includes(tier as PlanTier) ? (tier as PlanTier) : null;
 }
+
+/** Sanity allergen slug → norsk EU 1169/2011-etikett (26 entries, FASE 10C.2). */
+export const ALLERGEN_DISPLAY_LABELS: Record<string, string> = {
+  hvete: "Hvete",
+  rug: "Rug",
+  bygg: "Bygg",
+  havre: "Havre",
+  spelt: "Spelt",
+  kamut: "Kamut",
+  krepsdyr: "Krepsdyr",
+  blotdyr: "Bløtdyr",
+  egg: "Egg",
+  fisk: "Fisk",
+  peanotter: "Peanøtter",
+  soya: "Soya",
+  melk: "Melk",
+  mandel: "Mandel",
+  hasselnott: "Hasselnøtt",
+  valnott: "Valnøtt",
+  kasjunott: "Kasjunøtt",
+  pekan: "Pekan",
+  paranott: "Paranøtt",
+  pistasj: "Pistasj",
+  makadamia: "Makadamia",
+  selleri: "Selleri",
+  sennep: "Sennep",
+  sesam: "Sesamfrø",
+  sulfitter: "Sulfitter",
+  lupin: "Lupin",
+};
+
+export function displayAllergens(keys: readonly string[]): string {
+  if (!Array.isArray(keys) || keys.length === 0) return "";
+  return keys.map((k) => ALLERGEN_DISPLAY_LABELS[k] ?? k).join(", ");
+}

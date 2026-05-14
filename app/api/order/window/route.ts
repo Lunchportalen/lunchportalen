@@ -24,6 +24,7 @@ import {
   PLAN_CATEGORIES,
   getMenuForDateAndPlan,
   type Category,
+  type MenuItemData,
   type PlanTier,
 } from "@/lib/cms/menuDay";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
@@ -42,6 +43,14 @@ import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteG
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type Choice = { key: string; label?: string };
+type DayCategoryItem = {
+  key: string;
+  title: string;
+  description?: string;
+  allergens: string[];
+  isVegetarian: boolean;
+};
+
 type DayCategory = {
   key: string;
   category: Category | null;
@@ -50,6 +59,7 @@ type DayCategory = {
   description: string | null;
   allergens: string[];
   available: boolean;
+  items: DayCategoryItem[];
 };
 
 type AgreementStatusOut = "ACTIVE" | "PENDING_COMPANY" | "STARTS_LATER" | "NOT_READY" | "MISSING";
@@ -197,13 +207,33 @@ export function buildLegacyChoiceCategories(choices: Choice[], enabled: boolean)
       description: null,
       allergens: [],
       available: enabled,
+      items: [],
     };
   });
 }
 
+function mapMenuDayItems(items: MenuItemData[] | null | undefined): DayCategoryItem[] {
+  return (items ?? [])
+    .filter((it) => it && it.available !== false && typeof it.key === "string" && String(it.key).trim().length > 0)
+    .map((it) => ({
+      key: String(it.key).trim(),
+      title: String(it.title ?? it.key ?? "").trim() || String(it.key).trim(),
+      description: typeof it.description === "string" && it.description.trim().length ? it.description.trim() : undefined,
+      allergens: Array.isArray(it.allergens) ? it.allergens.map((a) => String(a)) : [],
+      isVegetarian: it.isVegetarian === true,
+    }));
+}
+
 export function buildMenuDayCategories(params: {
   planTier: PlanTier;
-  menus: Array<{ category: Category | null; mealTitle?: string | null; title?: string | null; description?: string | null; allergens?: string[] | null }>;
+  menus: Array<{
+    category: Category | null;
+    mealTitle?: string | null;
+    title?: string | null;
+    description?: string | null;
+    allergens?: string[] | null;
+    items?: MenuItemData[] | null;
+  }>;
 }): DayCategory[] {
   const expectedCategories = PLAN_CATEGORIES[params.planTier] ?? [];
   return expectedCategories.map((category) => {
@@ -216,6 +246,7 @@ export function buildMenuDayCategories(params: {
       description: menu?.description ?? null,
       allergens: Array.isArray(menu?.allergens) ? menu.allergens.map((a) => String(a)) : [],
       available: menu !== undefined,
+      items: menu ? mapMenuDayItems(menu.items) : [],
     };
   });
 }

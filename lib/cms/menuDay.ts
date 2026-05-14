@@ -25,6 +25,15 @@ export type Announcement = {
   severity: "info" | "warning" | "critical";
 };
 
+export type MenuItemData = {
+  key: string;
+  title: string;
+  description?: string | null;
+  allergens: string[];
+  isVegetarian: boolean;
+  available: boolean;
+};
+
 export type MenuDay = {
   _id: string;
   _createdAt?: string;
@@ -47,6 +56,7 @@ export type MenuDay = {
   approvedAt?: string | null;
   customerVisible?: boolean | null;
   customerVisibleSetAt?: string | null;
+  items?: MenuItemData[] | null;
 };
 
 export type MenuContent = MenuDay;
@@ -83,6 +93,15 @@ const MENU_DAY_PROJECTION = `
   kitchenStyle,
   costTier,
   estimatedCostPerPortion,
+  items[]{
+    _key,
+    "key": key.current,
+    title,
+    description,
+    allergens,
+    isVegetarian,
+    available
+  },
   approvedForPublish,
   approvedAt,
   customerVisible,

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildLegacyChoiceCategories, buildMenuDayCategories } from "@/app/api/order/window/route";
+import type { MenuItemData } from "@/lib/cms/menuDay";
 
 describe("/api/order/window menuDay categories", () => {
   test("BASIS company gets three categories", () => {
@@ -40,7 +41,33 @@ describe("/api/order/window menuDay categories", () => {
         description: null,
         allergens: [],
         available: true,
+        items: [],
       },
     ]);
+  });
+
+  test("menuDay exposes items[], omits unavailable, defaults allergens", () => {
+    const items: MenuItemData[] = [
+      { key: "one", title: "One", allergens: ["melk"], isVegetarian: false, available: true },
+      { key: "two", title: "Hidden", allergens: ["egg"], isVegetarian: false, available: false },
+      // narrow doc without allergens (runtime guard)
+      { key: "three", title: "Three", allergens: [], isVegetarian: true, available: true },
+    ];
+    const categories = buildMenuDayCategories({
+      planTier: "LUXUS",
+      menus: [
+        {
+          category: "salat",
+          mealTitle: "Meny linje salat",
+          items: [...items.slice(0, 2), { ...items[2]!, allergens: undefined as unknown as string[] }],
+        },
+      ],
+    });
+    const salat = categories.find((c) => c.category === "salat");
+    expect(salat?.items.map((x) => x.key)).toEqual(["one", "three"]);
+    expect(salat?.items.find((x) => x.key === "one")?.allergens).toEqual(["melk"]);
+    expect(salat?.items.find((x) => x.key === "three")?.allergens).toEqual([]);
+    expect(salat?.items.find((x) => x.key === "three")?.isVegetarian).toBe(true);
+    expect(buildMenuDayCategories({ planTier: "BASIS", menus: [] }).every((c) => Array.isArray(c.items))).toBe(true);
   });
 });

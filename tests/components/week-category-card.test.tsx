@@ -16,10 +16,10 @@ describe("week category cards", () => {
     expect(source).toContain("Ikke tilgjengelig");
   });
 
-  test("clicking a card triggers onSelect and selected state uses aria-pressed", () => {
+  test("clicking a card triggers onSelectCategory and selected state uses aria-pressed", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
 
-    expect(source).toContain("onClick={() => onSelect(cat.key)}");
+    expect(source).toContain("onClick={() => onSelectCategory(cat.key)}");
     expect(source).toContain("aria-pressed={isSelected}");
     expect(source).toContain('isSelected ? "is-selected" : ""');
   });
