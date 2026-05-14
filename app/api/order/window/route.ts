@@ -345,8 +345,6 @@ function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized }
   return { ok: false };
 }
 
-/** Fallback kun når CMS productPlan mangler (driftssikkert). */
-const PRICE_PER_TIER_EX_VAT: Record<Tier, number> = { BASIS: 90, LUXUS: 130, ENTERPRISE: 170 };
 
 function choicesFromCmsTier(
   tier: Tier,
@@ -720,9 +718,6 @@ export function buildDayModel(ctx: DayContext) {
   });
   const headerMenu = agreementMealType ? menuByMealType.get(agreementMealType) : null;
 
-  const pp = tier ? (tier === "BASIS" ? productPlans.BASIS : productPlans.LUXUS) : null;
-  const unitPrice = tier ? (pp?.price && Number.isFinite(pp.price) && pp.price > 0 ? pp.price : PRICE_PER_TIER_EX_VAT[tier]) : null;
-
   const menuImages = Array.isArray(headerMenu?.images) ? headerMenu!.images : [];
   const cmsTitle = headerMenu?.title != null ? String(headerMenu.title).trim() : "";
   const fallbackTitle = agreementMealType ? agreementMealType : null;
@@ -760,8 +755,6 @@ export function buildDayModel(ctx: DayContext) {
       hhmmFromIso(savedOrder?.updated_at) ??
       hhmmFromIso(savedOrder?.created_at) ??
       null,
-
-    unit_price: unitPrice,
   };
 }
 

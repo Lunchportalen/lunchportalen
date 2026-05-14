@@ -253,4 +253,40 @@ describe("order/window – buildDayModel", () => {
       { key: "varmmat", label: "Varmrett", available: true },
     ]);
   });
+
+  test("employee window day model omits unit_price (pricing is employer-side only)", () => {
+    const date = "2030-01-07"; // Monday
+    const day = buildDayModel({
+      date,
+      company: {
+        id: "c1",
+        name: "Test",
+        status: "ACTIVE",
+        canEditOrders: true,
+        lockReason: null,
+        paused_reason: null,
+        closed_reason: null,
+      },
+      agreementUsable: true,
+      deliveryDays: ["mon"],
+      dayTiers: { mon: "LUXUS" } as any,
+      ordersByDate: new Map(),
+      dayChoicesByDate: new Map(),
+      agreementForChoices: {
+        choicesByTier: {
+          LUXUS: [{ key: "sushi" }],
+        },
+      },
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: {
+        BASIS: null,
+        LUXUS: { price: 199, allowedMeals: ["sushi"], title: null } as any,
+      },
+      operativeClosedReasonByDate: undefined,
+    } as any);
+
+    expect(Object.prototype.hasOwnProperty.call(day, "unit_price")).toBe(false);
+    expect((day as Record<string, unknown>)["unit_price"]).toBeUndefined();
+  });
 });

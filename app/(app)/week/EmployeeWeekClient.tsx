@@ -89,6 +89,7 @@ type DayCategory = {
 
 type WindowPayload = {
   ok?: boolean;
+  /** Til mapDay → DayRow. Ingen employer-priser (`unit_price`) i denne kanalen. */
   days?: unknown[];
   agreement?: { status?: string; message?: string | null; delivery_days?: string[] };
   company?: { name?: string };
