@@ -31,7 +31,7 @@ function safeVibrate(ms: number) {
   }
 }
 
-type DayRow = {
+export type DayRow = {
   date: string;
   weekday: string;
   tier: "BASIS" | "LUXUS" | "ENTERPRISE" | null;
@@ -312,24 +312,11 @@ function selectorGridPosition(
   };
 }
 
-/** Deterministisk status — samme rekkefølge som API-låser (CUTOFF / firma / avtale). */
-function statusLabelForDay(day: DayRow): "Kan bestilles" | "Bestilt" | "Avbestilt" | "Stengt" | "Ikke tilgjengelig" {
-  const notInAgreement = !day.isEnabled;
-  const companyClosed = day.isLocked && day.lockReason === "COMPANY";
-  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
-  if (notInAgreement) return "Ikke tilgjengelig";
-  if (day.orderStatus === "ACTIVE") return "Bestilt";
-  if (day.orderStatus === "CANCELLED") return "Avbestilt";
-  if (companyClosed || cutoffClosed) return "Stengt";
-  return "Kan bestilles";
-}
-
-function badgeClassForStatus(s: ReturnType<typeof statusLabelForDay>) {
-  if (s === "Bestilt") return "bg-emerald-50 text-emerald-900 ring-emerald-200";
-  if (s === "Avbestilt") return "bg-amber-50 text-amber-950 ring-amber-200";
-  if (s === "Stengt") return "bg-neutral-100 text-neutral-700 ring-black/10";
-  if (s === "Ikke tilgjengelig") return "bg-stone-100 text-stone-700 ring-black/10";
-  return "bg-[#fff7dc] text-neutral-900 ring-amber-200";
+export function isCalendarUpcoming(day: DayRow, osloToday: string | null): boolean {
+  if (!osloToday) return true;
+  if (day.date < osloToday) return false;
+  if (day.date === osloToday && day.isLocked && day.lockReason === "CUTOFF") return false;
+  return true;
 }
 
 /** Under primær-CTA: tydeliggjør frist (samme semantikk som CUTOFF-lås fra API). */
@@ -434,12 +421,40 @@ function selectedDayLabel(day: DayRow) {
   return formatMenuDateNO(day.date);
 }
 
-function orderStatusLabel(day: DayRow) {
+export function orderStatusLabel(day: DayRow) {
   if (!day.isEnabled) return "Ikke tilgjengelig";
   if (day.orderStatus === "ACTIVE") return "Bestilt";
+  if (day.orderStatus === "CANCELLED") return "Avbestilt";
   if (day.isLocked && day.lockReason === "CUTOFF") return "Frist passert";
   if (day.isLocked) return "Ikke tilgjengelig";
   return "Ikke bestilt";
+}
+
+export function statusPresentation(day: DayRow): { label: string; className: string } {
+  const label = orderStatusLabel(day);
+
+  if (label === "Bestilt") {
+    return {
+      label,
+      className: "bg-[var(--ds-green)] text-white ring-1 ring-emerald-700/30 font-bold",
+    };
+  }
+  if (label === "Ikke bestilt") {
+    return {
+      label: "Ikke bestilt",
+      className: "bg-[var(--ds-accent)] text-[var(--ds-text)] ring-1 ring-black/10 font-bold",
+    };
+  }
+  if (label === "Avbestilt") {
+    return {
+      label,
+      className: "bg-transparent text-neutral-700 ring-1 ring-neutral-300 font-semibold",
+    };
+  }
+  return {
+    label,
+    className: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200 font-semibold",
+  };
 }
 
 function canOrderDay(day: DayRow, canAct: boolean, globalBusy: boolean) {
@@ -941,9 +956,6 @@ type RowBase = {
   globalBusy: boolean;
   busyThis: boolean;
   storedChoice: WeekChoiceStored;
-  weekdayLabel: string;
-  statusLabel: ReturnType<typeof statusLabelForDay>;
-  onRequestOrder: () => void;
   onRequestCancel: () => void;
   onSelectCategory: (choiceKey: string) => void;
   onSelectItem: (categoryKey: string, itemKey: string, itemTitle: string) => void;
@@ -959,8 +971,6 @@ function WeekDayRowDesktop({
   globalBusy,
   busyThis,
   storedChoice,
-  statusLabel,
-  onRequestOrder,
   onRequestCancel,
   onSelectCategory,
   onSelectItem,
@@ -974,8 +984,7 @@ function WeekDayRowDesktop({
   const notInAgreement = !day.isEnabled;
   const noTierForDay = isNoTierForDay(day);
   const canClick = canOrderDay(day, canAct, globalBusy);
-  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
-  const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
+  const status = statusPresentation(day);
 
   return (
     <li
@@ -994,10 +1003,8 @@ function WeekDayRowDesktop({
             <TierPill tier={day.tier} />
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <span
-              className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${badgeClassForStatus(statusLabel)}`}
-            >
-              {statusLabel}
+            <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
+              {status.label}
             </span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
           </div>
@@ -1090,23 +1097,6 @@ function WeekDayRowDesktop({
           </div>
         ) : (
           <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled={readOnlyPreview || !canOrderClick}
-              aria-disabled={readOnlyPreview || !canOrderClick}
-              title={primaryTitle}
-              onClick={readOnlyPreview ? undefined : onRequestOrder}
-              className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
-            >
-              {busyThis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Behandler…
-                </>
-              ) : (
-            "Bestill lunsj"
-              )}
-            </button>
             {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
           </div>
         )}
@@ -1127,10 +1117,8 @@ const WeekDayCardMobile = memo(
     globalBusy,
     busyThis,
     storedChoice,
-    statusLabel,
     isSelected,
     onSelectDay,
-    onRequestOrder,
     onRequestCancel,
     onSelectCategory,
     onSelectItem,
@@ -1144,7 +1132,6 @@ const WeekDayCardMobile = memo(
     const notInAgreement = !day.isEnabled;
     const noTierForDay = isNoTierForDay(day);
     const canClick = canOrderDay(day, canAct, globalBusy);
-    const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
     const categories = getTierCategories(day);
     const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
     const mobileChoiceLine =
@@ -1153,8 +1140,7 @@ const WeekDayCardMobile = memo(
         : highlightLine.mode === "valgt_body"
           ? `Valgt: ${highlightLine.body}`
           : undefined;
-    const displayStatus = orderStatusLabel(day);
-    const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
+    const status = statusPresentation(day);
 
     return (
       <div
@@ -1183,8 +1169,8 @@ const WeekDayCardMobile = memo(
         >
           <div className="flex flex-wrap items-center justify-center gap-2">
             <TierPill tier={day.tier} />
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${badgeClassForStatus(statusLabel)}`}>
-              {displayStatus}
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
+              {status.label}
             </span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
             {readOnlyPreview ? (
@@ -1302,23 +1288,6 @@ const WeekDayCardMobile = memo(
             </>
           ) : (
             <>
-              <button
-                type="button"
-                disabled={readOnlyPreview || !canOrderClick}
-                aria-disabled={readOnlyPreview || !canOrderClick}
-        title={primaryTitle}
-        onClick={readOnlyPreview ? undefined : onRequestOrder}
-                className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
-              >
-                {busyThis ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                    Behandler…
-                  </>
-                ) : (
-                  "Bestill lunsj"
-                )}
-              </button>
               {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
             </>
           )}
@@ -1343,8 +1312,6 @@ const WeekDayCardMobile = memo(
     prev.globalBusy === next.globalBusy &&
     prev.busyThis === next.busyThis &&
     prev.canAct === next.canAct &&
-    prev.weekdayLabel === next.weekdayLabel &&
-    prev.statusLabel === next.statusLabel &&
     prev.insightRecommended === next.insightRecommended &&
     prev.insightPreferredMotion === next.insightPreferredMotion &&
     prev.readOnlyPreview === next.readOnlyPreview,
@@ -2100,7 +2067,11 @@ export default function EmployeeWeekClient({
 
   const todayDay = (serverOsloDate ? sortedDays.find((d) => d.date === serverOsloDate) : undefined) ?? sortedDays[0];
   const activeDay = selectedDay ?? todayDay;
-  const upcomingDays = activeDay ? sortedDays.filter((d) => d.date !== activeDay.date) : sortedDays;
+  const upcomingDays = activeDay
+    ? sortedDays.filter(
+        (d) => isCalendarUpcoming(d, serverOsloDate) && d.date !== activeDay.date,
+      )
+    : sortedDays.filter((d) => isCalendarUpcoming(d, serverOsloDate));
 
   return (
     <div
@@ -2245,11 +2216,8 @@ export default function EmployeeWeekClient({
             globalBusy={globalBusy}
             busyThis={busyDate === activeDay.date}
             storedChoice={selectedChoices[activeDay.date] ?? null}
-            weekdayLabel={formatWeekdayNO(activeDay.date) || activeDay.weekday}
-            statusLabel={statusLabelForDay(activeDay)}
             isSelected
             onSelectDay={() => selectDayFromTap(activeDay.date)}
-            onRequestOrder={() => requestOrder(activeDay.date)}
             onRequestCancel={() => requestCancel(activeDay.date)}
             onSelectCategory={(choiceKey) => selectCategory(activeDay.date, choiceKey)}
             onSelectItem={(categoryKey, itemKey, itemTitle) => selectItemForDay(activeDay.date, categoryKey, itemKey, itemTitle)}
@@ -2260,41 +2228,38 @@ export default function EmployeeWeekClient({
         </section>
       ) : null}
 
-      <section className="pb-2">
-        <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende menyer</h2>
-        <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
-          {upcomingDays.map((day) => {
-            const status = orderStatusLabel(day);
-            return (
-              <button
-                key={day.date}
-                type="button"
-                data-date={day.date}
-                data-day-slide=""
-                onClick={() => selectDayFromTap(day.date)}
-                className="flex min-h-[58px] w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-bold capitalize text-neutral-950">
-                    {formatMenuDateNO(day.date)}
+      {upcomingDays.length > 0 ? (
+        <section className="pb-2">
+          <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende menyer</h2>
+          <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
+            {upcomingDays.map((day) => {
+              const { label: statusLabel, className: statusClass } = statusPresentation(day);
+              return (
+                <button
+                  key={day.date}
+                  type="button"
+                  data-date={day.date}
+                  data-day-slide=""
+                  onClick={() => selectDayFromTap(day.date)}
+                  className="flex min-h-[58px] w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-bold capitalize text-neutral-950">
+                      {formatMenuDateNO(day.date)}
+                    </span>
+                    <span className="mt-1 inline-flex">
+                      <TierPill tier={day.tier} />
+                    </span>
                   </span>
-                  <span className="mt-1 inline-flex">
-                    <TierPill tier={day.tier} />
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs ring-1 ${statusClass}`}>
+                    {statusLabel}
                   </span>
-                </span>
-                <span className="shrink-0 rounded-full bg-[#faf7ef] px-3 py-1 text-xs font-bold text-neutral-700 ring-1 ring-black/5">
-                  {status}
-                </span>
-              </button>
-            );
-          })}
-          {upcomingDays.length === 0 ? (
-            <div className="rounded-2xl bg-white/80 px-4 py-4 text-center text-sm text-neutral-600 ring-1 ring-black/10">
-              Ingen flere menyer tilgjengelig denne uken.
-            </div>
-          ) : null}
-        </div>
-      </section>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {!readOnlyPreview && selectedDay ? (
         <div

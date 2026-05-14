@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
-import { buildOrderWriteBody, tierPillClass } from "@/app/(app)/week/EmployeeWeekClient";
+import {
+  buildOrderWriteBody,
+  isCalendarUpcoming,
+  statusPresentation,
+  tierPillClass,
+  type DayRow,
+} from "@/app/(app)/week/EmployeeWeekClient";
 
 const CLIENT_PATH = join(process.cwd(), "app", "(app)", "week", "EmployeeWeekClient.tsx");
 const CSS_PATH = join(process.cwd(), "app", "styles", "employee-week.css");
@@ -56,7 +62,7 @@ describe("EmployeeWeekClient tier pill", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
 
     expect(css).toContain(".ds-tier-pill");
-    expect(css).toContain("font-size: 11px");
+    expect(css).toContain("font-size: 10px");
     expect(css).toContain(".ds-tier-pill.is-basis");
     expect(css).toContain(".ds-tier-pill.is-luxus");
     expect(css).toContain(".ds-tier-pill.is-enterprise");
@@ -71,5 +77,106 @@ describe("EmployeeWeekClient NO_TIER_FOR_DAY UI", () => {
     expect(source).toContain("Denne dagen er ikke tilgjengelig for bestilling.");
     expect(source).toContain("Kontakt firmaadmin.");
     expect(source).toContain("if (isNoTierForDay(day)) return null;");
+  });
+});
+
+function dayFixture(partial: Partial<DayRow>): DayRow {
+  return {
+    date: "2026-05-14",
+    weekday: "Torsdag",
+    tier: "BASIS",
+    planTier: "BASIS",
+    allowedChoices: [],
+    categories: [],
+    selectedChoiceKey: null,
+    selectedItemKey: null,
+    selectedItemTitleSnapshot: null,
+    isLocked: false,
+    isEnabled: true,
+    lockReason: null,
+    orderStatus: null,
+    wantsLunch: false,
+    menuTitle: null,
+    menuDescription: null,
+    allergens: [],
+    menuImages: [],
+    ...partial,
+  };
+}
+
+describe("isCalendarUpcoming", () => {
+  test("dato før osloToday → false", () => {
+    expect(isCalendarUpcoming(dayFixture({ date: "2026-05-13" }), "2026-05-14")).toBe(false);
+  });
+
+  test("dato etter osloToday → true", () => {
+    expect(isCalendarUpcoming(dayFixture({ date: "2026-05-15" }), "2026-05-14")).toBe(true);
+  });
+
+  test("i dag med CUTOFF-lås → false", () => {
+    expect(
+      isCalendarUpcoming(
+        dayFixture({ date: "2026-05-14", isLocked: true, lockReason: "CUTOFF" }),
+        "2026-05-14",
+      ),
+    ).toBe(false);
+  });
+
+  test("i dag uten cutoff-lås → true", () => {
+    expect(isCalendarUpcoming(dayFixture({ date: "2026-05-14", isLocked: false, lockReason: null }), "2026-05-14")).toBe(
+      true,
+    );
+  });
+
+  test("osloToday null → true (fail-open filter)", () => {
+    expect(isCalendarUpcoming(dayFixture({ date: "2026-05-01" }), null)).toBe(true);
+  });
+});
+
+describe("statusPresentation", () => {
+  test("Bestilt → grønn pill", () => {
+    const p = statusPresentation(dayFixture({ orderStatus: "ACTIVE", isEnabled: true, isLocked: false }));
+    expect(p.label).toBe("Bestilt");
+    expect(p.className).toContain("ds-green");
+    expect(p.className).toContain("text-white");
+  });
+
+  test("Ikke bestilt → gul accent-pill og normalisert label", () => {
+    const p = statusPresentation(
+      dayFixture({ orderStatus: null, isEnabled: true, isLocked: false, lockReason: null }),
+    );
+    expect(p.label).toBe("Ikke bestilt");
+    expect(p.className).toContain("ds-accent");
+    expect(p.className).toContain("ds-text");
+  });
+
+  test("Avbestilt → transparent/outline", () => {
+    const p = statusPresentation(dayFixture({ orderStatus: "CANCELLED", isEnabled: true, isLocked: false }));
+    expect(p.label).toBe("Avbestilt");
+    expect(p.className).toContain("bg-transparent");
+    expect(p.className).toContain("ring-neutral-300");
+  });
+
+  test("Frist passert → nøytral grå", () => {
+    const p = statusPresentation(
+      dayFixture({ orderStatus: null, isEnabled: true, isLocked: true, lockReason: "CUTOFF" }),
+    );
+    expect(p.label).toBe("Frist passert");
+    expect(p.className).toContain("bg-neutral-100");
+  });
+});
+
+describe("EmployeeWeekClient enkelt-CTA (WeekDayCardMobile)", () => {
+  test("WeekDayCardMobile rendrer ikke in-card «Bestill lunsj»; sticky beholder primær-CTA", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const mobileStart = source.indexOf("const WeekDayCardMobile = memo(");
+    const stickyStart = source.indexOf("function stickyCtaForDay(");
+    expect(mobileStart).toBeGreaterThan(-1);
+    expect(stickyStart).toBeGreaterThan(mobileStart);
+    const mobileBlock = source.slice(mobileStart, stickyStart);
+    expect(mobileBlock).not.toContain('"Bestill lunsj"');
+
+    expect(source).toContain("ds-week-sticky-safe-bottom");
+    expect(source).toContain('"Bestill lunsj"');
   });
 });
