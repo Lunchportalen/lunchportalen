@@ -601,6 +601,25 @@ function selectedChoiceSummaryLabel(day: DayRow, stored: WeekChoiceStored): stri
   return lab;
 }
 
+type ChoiceHighlightLine =
+  | { mode: "none" }
+  | { mode: "variant_pending"; categoryLabel: string }
+  /** Full «Valgt: …» tekst uten prefiks «Valgt:» (brukes/emerald-chip). */
+  | { mode: "valgt_body"; body: string };
+
+function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighlightLine {
+  const ck = effectiveSelectedChoice(day, stored);
+  if (!ck) return { mode: "none" };
+  const cat = day.categories.find((c) => c.key.toLowerCase() === ck.toLowerCase());
+  if (!cat) return { mode: "none" };
+  const p = parseStoredSelection(stored ?? null);
+  if (variantPickRequired(cat) && !p?.itemKey?.trim()) {
+    return { mode: "variant_pending", categoryLabel: cat.label };
+  }
+  const body = selectedChoiceSummaryLabel(day, stored);
+  return body ? { mode: "valgt_body", body } : { mode: "none" };
+}
+
 function itemAriaLabel(title: string, allergens: readonly string[], isVegetarian: boolean): string {
   const allergensText = displayAllergens(allergens as string[]);
   const parts = [title.trim()];
@@ -642,9 +661,29 @@ export function WeekCategoryCards({
   const selectedCat = selectedKey
     ? day.categories.find((c) => c.key.toLowerCase() === selectedKey.toLowerCase())
     : undefined;
-  const showItems = Boolean(selectedCat && variantPickRequired(selectedCat));
+  const showExpandedPanel = Boolean(selectedCat && selectedCat.available && day.isEnabled && !disabled);
+
+  const itemCount = selectedCat?.items?.length ?? 0;
+  const hasCategoryHeadline =
+    !!(selectedCat && (String(selectedCat.title ?? "").trim() !== "" || String(selectedCat.description ?? "").trim() !== ""));
+  const isSelectableItems = selectedCat !== undefined && (itemCount >= 2 || itemCount === 1);
   const parsed = parseStoredSelection(storedChoice ?? null);
   const selectedItemKey = parsed?.itemKey ?? null;
+
+  /** Rett opp presedens — én menylinje må være tittel eller beskrivelse, ikke falsk «info» ved undefined. */
+  const showInfoCard =
+    !!selectedCat && itemCount === 0 && (String(selectedCat.title ?? "").trim() !== "" || String(selectedCat.description ?? "").trim() !== "");
+  const showEmptyMenuPlaceholder = !!selectedCat && itemCount === 0 && !hasCategoryHeadline;
+
+  let sectionHeading = "";
+  if (selectedCat) {
+    sectionHeading =
+      itemCount >= 2 || itemCount === 1
+        ? `Velg variant for ${selectedCat.label}`
+        : `Detaljer for ${selectedCat.label}`;
+  }
+
+  const titleDomId = selectedCat ? `week-items-title-${selectedCat.key}` : "week-items-title";
 
   return (
     <>
@@ -662,58 +701,84 @@ export function WeekCategoryCards({
               title={!cat.available ? "Ikke tilgjengelig" : undefined}
             >
               <span className="week-category-card__label">{cat.label}</span>
-              {cat.title ? <span className="week-category-card__title">{cat.title}</span> : null}
-              {cat.description ? <span className="week-category-card__desc">{cat.description}</span> : null}
-              {cat.allergens.length > 0 ? (
-                <span className="week-category-card__desc">Allergener: {cat.allergens.join(", ")}</span>
-              ) : null}
               {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
             </button>
           );
         })}
       </div>
-      {showItems && selectedCat ? (
-        <div className="ds-week-items-section" role="radiogroup" aria-label={`Velg variant for ${selectedCat.label}`}>
-          <p id={`week-items-title-${selectedCat.key}`} className="ds-week-items-section__title">
-            Velg variant for {selectedCat.label}
+      {showExpandedPanel && selectedCat ? (
+        <div
+          className={`ds-week-items-section${isSelectableItems ? "" : " ds-week-items-section--details"}`}
+          role={isSelectableItems ? "radiogroup" : "region"}
+          aria-labelledby={titleDomId}
+        >
+          <p id={titleDomId} className="ds-week-items-section__title">
+            {sectionHeading}
           </p>
-          <div className="ds-week-items-grid" aria-labelledby={`week-items-title-${selectedCat.key}`}>
-            {selectedCat.items.map((it) => {
-              const isItemSelected = Boolean(
-                selectedItemKey && String(it.key).toLowerCase() === String(selectedItemKey).toLowerCase(),
-              );
-              return (
-                <button
-                  key={it.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={isItemSelected}
-                  disabled={disabled || !day.isEnabled || !selectedCat.available}
-                  onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
-                  className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
-                  aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
-                >
-                  <span className="ds-week-item-btn__title">{it.title}</span>
-                  <span className="ds-week-item-btn__meta">
-                    {(it.allergens ?? []).map((slug) => (
-                      <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                        <span aria-hidden="true">
-                          ⚠{" "}
+          {isSelectableItems ? (
+            <div className="ds-week-items-grid">
+              {selectedCat.items.map((it) => {
+                const isItemSelected = Boolean(
+                  selectedItemKey && String(it.key).toLowerCase() === String(selectedItemKey).toLowerCase(),
+                );
+                return (
+                  <button
+                    key={it.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={isItemSelected}
+                    disabled={disabled || !day.isEnabled || !selectedCat.available}
+                    onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
+                    className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
+                    aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
+                  >
+                    <span className="ds-week-item-btn__title">{it.title}</span>
+                    <span className="ds-week-item-btn__meta">
+                      {(it.allergens ?? []).map((slug) => (
+                        <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+                          <span aria-hidden="true">
+                            ⚠{" "}
+                          </span>
+                          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
                         </span>
-                        {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
-                      </span>
-                    ))}
-                    {it.isVegetarian ? (
-                      <span className="ds-vegetarian-badge">
-                        <span aria-hidden="true">🌿 </span>
-                        Vegetar
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                      ))}
+                      {it.isVegetarian ? (
+                        <span className="ds-vegetarian-badge">
+                          <span aria-hidden="true">🌿 </span>
+                          Vegetar
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : showInfoCard ? (
+            <div className="ds-week-info-card">
+              {selectedCat.title ? (
+                <h3 className="ds-week-info-card__title">{String(selectedCat.title).trim()}</h3>
+              ) : (
+                <h3 className="ds-week-info-card__title">{selectedCat.label}</h3>
+              )}
+              {selectedCat.description ? (
+                <p className="ds-week-info-card__desc">{String(selectedCat.description).trim()}</p>
+              ) : null}
+              {selectedCat.allergens.length > 0 ? (
+                <div className="ds-week-info-card__meta">
+                  {(selectedCat.allergens ?? []).map((slug) => (
+                    <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+                      <span aria-hidden="true">⚠ </span>
+                      {ALLERGEN_DISPLAY_LABELS[String(slug)] ?? String(slug)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : showEmptyMenuPlaceholder ? (
+            <p className="ds-week-info-card__placeholder" role="status">
+              Ingen meny lagt inn enda for {selectedCat.label}.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
@@ -737,15 +802,20 @@ function DayMenuSummary({
     );
   }
   const choices = getTierCategories(day);
-  const selected = selectedChoiceSummaryLabel(day, storedChoice ?? null);
+  const chipSummary = selectedChoiceSummaryLabel(day, storedChoice ?? null);
+  const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
 
   return (
     <div className={`${compact ? "mt-3" : "mt-4"} text-center md:text-center`}>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <TierPill tier={day.tier} />
-        {selected ? (
+        {highlightLine.mode === "valgt_body" ? (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
-            Valgt: {selected}
+            Valgt: {highlightLine.body}
+          </span>
+        ) : highlightLine.mode === "variant_pending" ? (
+          <span className="inline-flex min-h-[32px] items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
+            Velg variant for {highlightLine.categoryLabel}
           </span>
         ) : null}
       </div>
@@ -757,7 +827,7 @@ function DayMenuSummary({
               key={choice}
               className={[
                 "rounded-full px-3 py-1 text-xs font-medium ring-1",
-                tierChipMatchesSummary(selected, choice)
+                tierChipMatchesSummary(chipSummary, choice)
                   ? "bg-neutral-950 text-white ring-neutral-950"
                   : "bg-white/80 text-neutral-800 ring-black/10",
               ].join(" ")}
@@ -1075,7 +1145,13 @@ const WeekDayCardMobile = memo(
     const canClick = canOrderDay(day, canAct, globalBusy);
     const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
     const categories = getTierCategories(day);
-    const selected = selectedChoiceSummaryLabel(day, storedChoice ?? null);
+    const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
+    const mobileChoiceLine =
+      highlightLine.mode === "variant_pending"
+        ? `Velg variant for ${highlightLine.categoryLabel}`
+        : highlightLine.mode === "valgt_body"
+          ? `Valgt: ${highlightLine.body}`
+          : undefined;
     const displayStatus = orderStatusLabel(day);
     const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
 
@@ -1122,7 +1198,9 @@ const WeekDayCardMobile = memo(
             <h2 className="mt-1 text-2xl font-bold capitalize tracking-[-0.03em] text-neutral-950">
               {selectedDayLabel(day)}
             </h2>
-            {selected ? <p className="mt-1 text-sm font-medium text-neutral-600">Valgt: {selected}</p> : null}
+            {mobileChoiceLine ? (
+              <p className="mt-1 text-sm font-medium text-neutral-600">{mobileChoiceLine}</p>
+            ) : null}
           </div>
 
           {insightRecommended ? (

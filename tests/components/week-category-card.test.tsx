@@ -6,25 +6,50 @@ const CLIENT_PATH = join(process.cwd(), "app", "(app)", "week", "EmployeeWeekCli
 const CSS_PATH = join(process.cwd(), "app", "styles", "employee-week.css");
 
 describe("week category cards", () => {
-  test("renders label, title, description and unavailable state hooks", () => {
+  test("category card markup is minimal: label + unavailable helper only (no legacy title/description on card)", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
-
     expect(source).toContain("export function WeekCategoryCards");
     expect(source).toContain("week-category-card__label");
-    expect(source).toContain("week-category-card__title");
-    expect(source).toContain("week-category-card__desc");
+    expect(source.includes("week-category-card__title")).toBe(false);
+    expect(source.includes("week-category-card__desc")).toBe(false);
+
     expect(source).toContain("Ikke tilgjengelig");
   });
 
-  test("clicking a card triggers onSelectCategory and selected state uses aria-pressed", () => {
+  test("expanded panel: radiogrid for selectable items and Velg-variant title", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("isSelectableItems");
+    expect(source).toContain(`Velg variant for ${"${selectedCat.label}"}`);
+    expect(source).toContain('role={isSelectableItems ? "radiogroup" : "region"}');
+    expect(source).toContain("ds-week-items-grid");
+    expect(source).toContain('role="radio"');
+  });
 
+  test("expanded panel: info card mode for zero items with title/description", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("showInfoCard");
+    expect(source).toContain("ds-week-info-card");
+    expect(source).toContain("ds-week-info-card__title");
+    expect(source).toContain("ds-week-info-card__desc");
+    expect(source).toContain("ds-week-info-card__meta");
+    expect(source).toContain("ds-allergen-badge");
+  });
+
+  test("empty CMS category shows placeholder status text", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("showEmptyMenuPlaceholder");
+    expect(source).toContain("ds-week-info-card__placeholder");
+    expect(source).toContain("Ingen meny lagt inn enda");
+  });
+
+  test("clicking a card triggers onSelectCategory and aria-pressed", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
     expect(source).toContain("onClick={() => onSelectCategory(cat.key)}");
     expect(source).toContain("aria-pressed={isSelected}");
     expect(source).toContain('isSelected ? "is-selected" : ""');
   });
 
-  test("category cards are disabled when unavailable and keep 48px touch target", () => {
+  test("category cards disable when unavailable; CSS keeps 48px touch + motion/focus tokens", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     const css = readFileSync(CSS_PATH, "utf-8");
 
@@ -32,5 +57,14 @@ describe("week category cards", () => {
     expect(css).toContain("min-height: 48px");
     expect(css).toContain(".week-category-card:focus-visible");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain(".ds-week-info-card");
+    expect(css).toContain(".ds-week-info-card__meta");
+  });
+
+  test("variant-pending line uses Velg variant (not Valgt-prefix)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain(`Velg variant for ${"${highlightLine.categoryLabel}"}`);
+    expect(source).toContain("choiceHighlightLine");
+    expect(source).toContain('highlightLine.mode === "variant_pending"');
   });
 });
