@@ -108,3 +108,101 @@ LAV PRIORITET (designforbedringer):
 8. Firma-admin lunsjbestilling (variant 3a)
 9. CTA-knapp fra /admin oversikt til /week
 10. location_memberships lifecycle (status-kolonne)
+
+---
+
+## 13.05.2026 — Sesjon kveld (fortsettelse av fase 9)
+
+### COMMITS DEPLOYET (6)
+- 92776952: fix(invites): nodemailer SMTP → Resend
+- 53837845: fix(invites): resend også migrert + post@-mail
+- 54eae52b: fix(accept-invite): canonical handler + nested email envelope
+- e8645638: fix(accept-invite): bind profile to company + fjern disabled_reason
+- 5b5b9194: fix(accept-invite): fjern name og department
+- ae067e69: fix(week): canonical profile lookup (7 filer)
+
+### RESEND-MIGRASJON [COMPLETED]
+- DNS verifisert (DKIM, MX, SPF) hos Domene.no
+- Domain status: Verified i Resend
+- Region: Ireland (eu-west-1)
+- API-key i Vercel env (Production+Preview)
+- Test-e-post bekreftet levering til inbox
+
+### ACCEPT-INVITE PROGRESJON
+Mellomstegs-test (etter commit 5b5b9194, FØR ae067e69) viste at:
+- Profile ble opprettet i DB med korrekt company_id og location_id
+- Invite ble markert used_at
+- Men /week redirected til /status?code=PROFILE_MISSING
+
+Det skyldtes uscoped profiles.maybeSingle()-mønster i 7 /week-filer
+(ae067e69 fix). Etter siste deploy + cleanup ble accept-flyten IKKE
+re-testet end-to-end før sesjonsavslutning.
+
+### IKKE-VERIFISERT ETTER SISTE DEPLOY
+- Om accept-flyten nå redirecter til /week istedenfor /status?code=PROFILE_MISSING
+- Om sofus898 kan logge inn manuelt etter accept
+
+### ÅPNE PUNKTER FOR FASE 9J (i morgen)
+
+PRIORITET 1 — VERIFISERING:
+- Test invite-lenken end-to-end i fresh incognito
+- Token: 337bf1de990a70606ec52215941167e4843a8c73ed5802dbe8a35914feb1d6da
+- Forventet: registreringsside → "Aktiver konto" → /week (Melhus-data)
+- Hvis feiler: ny diagnose
+- Verifiser i DB at invite_used_at settes OG profile er korrekt scoped
+
+PRIORITET 2 — KRITISK UX (besluttet 9H):
+- app.lunchportalen.no/ rotside skal være ren server-side redirect
+  - Anonym → /login
+  - Ansatt → /week
+  - Admin → /admin
+  - Superadmin → /superadmin
+- Slett app/(public)/page.tsx content, erstatt med redirect-logikk
+- LogoutClient (HeaderShellView linje 59-66) skal kun rendre når email finnes
+- Marketing-content (RelatedLinks) skal flyttes til Umbraco
+  → Bryter hardregel "Markedsinnhold → Umbraco"
+
+PRIORITET 3 — CSS-POLISH:
+- /register/employee container: max-w-md → max-w-[540px]
+- "Aktiver konto"-knapp: gjenbruke login-knappens svart/gradient-stil
+  → Referanse: components/auth/LoginForm.tsx linje 167-170
+
+PRIORITET 4 — TEKNISK GJELD:
+- handle_new_user-trigger setter ikke metadata.company_id
+  → Profile-binding gjøres eksplisitt i accept-invite handler
+  → Kan migreres til trigger-basert binding senere
+- Andre filer har sannsynligvis samme uscoped maybeSingle()-bug
+  → Søk: kitchen, driver, agreement, support, onboarding routes
+  → 10+ filer estimert
+- profiles-schema har felter handler-koden ikke vet om
+  → disabled_reason, name, department finnes IKKE
+  → Mulig andre handlers har samme antakelse
+
+### DB-STATE VED SESJONSAVSLUTNING
+- sofus898: ryddet (profiles=0, auth.users=0, invite.unused=1)
+- Invite token: 337bf1de... gyldig til ~22 timer fra cleanup-tid
+- Inger: aktiv som admin på Melhus
+
+### ARBEIDSDISIPLIN BEKREFTET
+- BOM-fri commits via [System.IO.File]::WriteAllText
+- A/B-fase-deling per commit-deploy-test
+- SELECT-only verifikasjon før DELETE-transaksjoner
+- Cleanup-transaksjon kjøres KUN etter Vercel deploy Ready
+- Hver commit isolert nok til separat rollback
+
+---
+
+## 2026-05-14 — Audit: 25% MVA / 1.25 i kodebase (10C.3-FIX-PHASE-3-APPLY, INFO)
+
+Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for mat/catering. Andre stier bruker fortsatt ofte **25%** — ikke endret i denne fasen.
+
+**Kontrakt / pris (eksplisitt 0.25 eller (1+vat) med default 0.25):**
+- `app/api/onboarding/complete/route.ts` — `normalizeDays(..., vat_rate = 0.25)`, `price_inc_vat = roundNok(price_ex_vat * (1 + vat_rate))`, `vatRate` fallback `0.25` (ca. 147–170, 529).
+- `app/onboarding/OnboardingForm.tsx` — `const vat = 0.25`, `price_inc_vat: ... (1 + vat)` (ca. 152–159, 188).
+- `lib/registration/weekdayMealTiers.ts` — default `opts.vatRate` `0.25`, `pEx * (1 + vat)` (ca. 96–113).
+- `lib/server/superadmin/createAgreementDraftFromRegistration.ts` — `vatRate: 0.25` (ca. 473).
+
+**Øvrige treff på `1.25` i grep (ikke MVA):** typisk `1.25rem`, design-spacing, `rgba(...,0.25)`, vekter i AI/ML — irrelevant for moms.
+
+**VIEW på prod:** `public.company_current_agreement_rules` opprettet med `round(price_ex_vat * 1.15)`; Melhus verifisert BASIS 90→104, LUXUS 130→150.
+
