@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { canSeeNextWeek, canSeeThisWeek } from "@/lib/week/availability";
+import { canSeeNextWeek, canSeeThisWeek, getVisibleWindow } from "@/lib/week/availability";
 
 describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
   test("torsdag 13:59: neste uke ikke åpnet", () => {
@@ -21,5 +21,50 @@ describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
   test("fredag 15:00: denne uke skjult", () => {
     const d = new Date("2026-03-27T15:00:00+01:00");
     expect(canSeeThisWeek(d)).toBe(false);
+  });
+
+  test("mandag 09:00: current + next, ikke third", () => {
+    const d = new Date("2026-03-23T09:00:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: false });
+  });
+
+  test("torsdag 13:59: current + next, ikke third", () => {
+    const d = new Date("2026-03-26T13:59:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: false });
+  });
+
+  test("torsdag 14:00: current + next + third", () => {
+    const d = new Date("2026-03-26T14:00:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: true });
+  });
+
+  test("torsdag 14:01: current + next + third", () => {
+    const d = new Date("2026-03-26T14:01:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: true });
+  });
+
+  test("fredag 14:59: current + next + third", () => {
+    const d = new Date("2026-03-27T14:59:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: true });
+  });
+
+  test("fredag 15:00: next + third, current skjult", () => {
+    const d = new Date("2026-03-27T15:00:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: false, showNext: true, showThird: true });
+  });
+
+  test("lørdag 10:00: next + third", () => {
+    const d = new Date("2026-03-28T10:00:00+01:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: false, showNext: true, showThird: true });
+  });
+
+  test("søndag 23:59: next + third", () => {
+    const d = new Date("2026-03-29T23:59:00+02:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: false, showNext: true, showThird: true });
+  });
+
+  test("mandag 00:00: ISO-uka shifter, third er false", () => {
+    const d = new Date("2026-03-30T00:00:00+02:00");
+    expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: false });
   });
 });

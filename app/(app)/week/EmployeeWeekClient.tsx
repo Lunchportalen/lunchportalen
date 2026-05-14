@@ -1283,10 +1283,10 @@ export default function EmployeeWeekClient({
     }
 
     try {
-      // weeks=2 brukes som primær state-kilde. Server-side canSeeNextWeek()
-      // i lib/week/availability.ts avgjør om neste uke faktisk inkluderes;
-      // klienten ber alltid om begge, og server filtrerer. Fix fra FASE 10A.2.
-      const res = await fetch(`${API_ORDER}/window?weeks=2`, { cache: "no-store", signal: ac.signal });
+      // weeks=3 brukes som primær state-kilde. Server-side getVisibleWindow()
+      // i lib/week/availability.ts avgjør om tredje uke faktisk inkluderes;
+      // klienten ber alltid om maks, og server filtrerer. Fix fra FASE 10A.5.
+      const res = await fetch(`${API_ORDER}/window?weeks=3`, { cache: "no-store", signal: ac.signal });
       const raw = (await res.json().catch(() => null)) as unknown;
       const payload = unwrapWindow(raw);
 

@@ -15,7 +15,7 @@ import { scopeOr401 } from "@/lib/http/routeGuard";
 import { formatTimeNO } from "@/lib/date/format";
 import { osloTodayISODate, addDaysISO, isIsoDate, cutoffStatusForDate } from "@/lib/date/oslo";
 import { opsLog } from "@/lib/ops/log";
-import { canSeeNextWeek, weekStartMon } from "@/lib/week/availability";
+import { getVisibleWindow, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getProductPlan } from "@/lib/cms/getProductPlan";
 import { getMenusByMealTypesWithFetchStatus } from "@/lib/cms/getMenusByMealTypes";
@@ -767,23 +767,26 @@ export async function GET(req: NextRequest) {
 
     // weeks
     const weeksParam = Number(new URL(req.url).searchParams.get("weeks") ?? "");
-    const wantsWeeks: 1 | 2 = weeksParam === 2 ? 2 : 1;
+    const wantsWeeks: 1 | 2 | 3 = weeksParam === 1 ? 1 : weeksParam === 2 ? 2 : 3;
 
-    const openNextWeek = canSeeNextWeek(now);
+    const window = getVisibleWindow(now);
     const thisWeekStartISO = isoFromDateOsloWall(weekStartMon(now));
     const nextWeekStartISO = addDaysISO(thisWeekStartISO, 7);
+    const thirdWeekStartISO = addDaysISO(thisWeekStartISO, 14);
 
     const thisWeekDatesAll = getWeekdaysMonFri(thisWeekStartISO);
     const nextWeekDatesAll = getWeekdaysMonFri(nextWeekStartISO);
+    const thirdWeekDatesAll = getWeekdaysMonFri(thirdWeekStartISO);
 
     const thisWeekDatesFiltered = thisWeekDatesAll.filter((d) => d >= today);
     const thisWeekHead = thisWeekDatesFiltered.length ? thisWeekDatesFiltered : thisWeekDatesAll;
 
     let dates: string[] = [];
-    if (wantsWeeks === 2 && openNextWeek) dates = [...thisWeekHead.slice(0, 5), ...nextWeekDatesAll.slice(0, 5)];
-    else dates = thisWeekHead.slice(0, 5);
+    if (window.showCurrent) dates.push(...thisWeekHead.slice(0, 5));
+    if (wantsWeeks >= 2 && window.showNext) dates.push(...nextWeekDatesAll.slice(0, 5));
+    if (wantsWeeks >= 3 && window.showThird) dates.push(...thirdWeekDatesAll.slice(0, 5));
 
-    dates = dates.slice(0, wantsWeeks === 2 ? 10 : 5);
+    dates = dates.slice(0, wantsWeeks === 3 ? 15 : wantsWeeks === 2 ? 10 : 5);
 
     const fromISO = dates[0] ?? today;
     const toISO = dates[dates.length - 1] ?? today;
@@ -936,7 +939,10 @@ export async function GET(req: NextRequest) {
         week: {
           thisWeekStart: thisWeekStartISO,
           nextWeekStart: nextWeekStartISO,
-          canSeeNextWeek: openNextWeek,
+          thirdWeekStart: thirdWeekStartISO,
+          canSeeNextWeek: window.showNext,
+          canSeeThirdWeek: window.showThird,
+          visibleWindow: window,
         },
 
         /** Klient skal skille «ingen CMS-data» fra «CMS-kall feilet». */

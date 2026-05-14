@@ -139,6 +139,12 @@ function addDaysOsloYMD(y: number, mo: number, d: number, addDays: number) {
 
 /** ---------- Rules ---------- */
 
+export type VisibleWindow = {
+  showCurrent: boolean;
+  showNext: boolean;
+  showThird: boolean;
+};
+
 /**
  * Friday 15:00 gate (and weekend) — én sannhet for ukesynlighet.
  *
@@ -185,6 +191,38 @@ export function canSeeThisWeek(now: Date) {
 
 export function canSeeNextWeek(now: Date) {
   return nextWeekOpens(now);
+}
+
+/**
+ * Beslutter hvilke uker (current/next/third) som skal vises på /week.
+ * Forretningsregel (Europe/Oslo):
+ * - 2 uker normalt kontinuerlig (current + next)
+ * - 3 uker i overlap Tor 14:00 → Fre 14:59 (current + next + third)
+ * - Etter Fre 15:00: current skjules → 2 uker (next + third)
+ * - Lør/Søn: 2 uker (next + third).
+ * - Man 00:00: ISO-uka shifter, third blir false til neste Tor 14:00.
+ *
+ * weekday-konvensjon: JS Date.getDay() → Søn=0, Man=1, ..., Lør=6.
+ * FASE 10A.5.
+ */
+export function getVisibleWindow(now: Date): VisibleWindow {
+  const p = osloParts(now);
+  const minutes = hhmmToMin(p);
+
+  // (weekday >= 1 && <= 4) ekskluderer søndag (weekday=0) — kritisk
+  // siden weekday < 5 hadde matchet søn=0 og gitt feil.
+  const showCurrent =
+    (p.weekday >= 1 && p.weekday <= 4) ||
+    (p.weekday === 5 && minutes < 15 * 60);
+
+  // Tor 14:00 → Søn 23:59. Matcher eksisterende nextWeekOpens semantikk.
+  const showThird =
+    (p.weekday === 4 && minutes >= 14 * 60) ||
+    p.weekday === 5 ||
+    p.weekday === 6 ||
+    p.weekday === 0;
+
+  return { showCurrent, showNext: true, showThird };
 }
 
 // Same-day cutoff 08:00
