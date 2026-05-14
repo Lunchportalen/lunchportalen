@@ -26,6 +26,7 @@ import { GET as OrdersTodayGET } from "@/app/api/orders/today/route";
 import { trackOrderAiConversion } from "@/lib/revenue/trackOrderAiConversion";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
 import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
+import { resolveOrderDayItemPersist } from "@/lib/orders/resolveOrderDayItemPersist";
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { orderWriteBodySchema } from "@/lib/validation/schemas";
 import { persistMvoOnOrder } from "@/lib/mvo/persistOrderMvo";
@@ -84,6 +85,12 @@ function sanitizeSlot(v: unknown) {
 
 function sanitizeChoiceKey(v: unknown) {
   return safeStr(v).toLowerCase();
+}
+
+function sanitizeItemKeyFromBody(body: Record<string, unknown>): string | null {
+  const raw = body.itemKey ?? body.item_key;
+  const s = safeStr(raw);
+  return s ? s.slice(0, 160) : null;
 }
 
 function mapRpcError(messageRaw: unknown) {
@@ -209,6 +216,8 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const tableSlot = normalizeOrderTableSlot(slot);
     let resolvedTier: Tier | null = null;
     let finalChoiceKey: string | null = action === "SET" ? choiceKeyInput || null : null;
+    let persistedItemKey: string | null = null;
+    let persistedItemTitleSnapshot: string | null = null;
     if (action === "SET" || action === "CANCEL") {
       const cid = companyIdFromCtx(g.ctx);
       if (!cid) {
@@ -259,6 +268,19 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
             available_choices: availableChoices,
           });
         }
+
+        const itemBody = validated.data as unknown as Record<string, unknown>;
+        const itemResolved = await resolveOrderDayItemPersist({
+          date,
+          planTier: resolvedTier,
+          choiceKey: finalChoiceKey,
+          clientItemKey: sanitizeItemKeyFromBody(itemBody),
+        });
+        if (itemResolved.ok === false) {
+          return jsonOrderWriteErr(rid, itemResolved.status, itemResolved.code, itemResolved.message);
+        }
+        persistedItemKey = itemResolved.item_key;
+        persistedItemTitleSnapshot = itemResolved.item_title_snapshot;
       }
     }
 
@@ -399,6 +421,8 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
             user_id: safeStr(g.ctx.scope.userId),
             date: savedDate,
             choice_key: finalChoiceKey,
+            item_key: persistedItemKey,
+            item_title_snapshot: persistedItemTitleSnapshot,
             note,
             status: "ACTIVE",
             updated_at: new Date().toISOString(),

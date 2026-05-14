@@ -18,6 +18,14 @@ let rpcStatus: "ACTIVE" | "CANCELLED";
 let upsertedDayChoice: any;
 let deletedDayChoiceFilters: Array<[string, string]>;
 
+const resolveOrderDayItemPersist = vi.hoisted(() =>
+  vi.fn(async () => ({ ok: true, item_key: null, item_title_snapshot: null })),
+);
+
+vi.mock("@/lib/orders/resolveOrderDayItemPersist", () => ({
+  resolveOrderDayItemPersist,
+}));
+
 vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/http/routeGuard")>();
   return {
@@ -112,6 +120,7 @@ beforeEach(() => {
   rpcStatus = "ACTIVE";
   upsertedDayChoice = null;
   deletedDayChoiceFilters = [];
+  resolveOrderDayItemPersist.mockResolvedValue({ ok: true, item_key: null, item_title_snapshot: null });
 });
 
 describe("POST /api/orders tier-per-day validation", () => {
@@ -151,6 +160,58 @@ describe("POST /api/orders tier-per-day validation", () => {
     expect(json.ok).toBe(true);
     expect(json.tier).toBe("BASIS");
     expect(upsertedDayChoice.choice_key).toBe("varmmat");
+    expect(upsertedDayChoice.item_key).toBeNull();
+  });
+
+  test("SET persist item_key/item_title_snapshot når resolver bekrefter valg", async () => {
+    resolveOrderDayItemPersist.mockResolvedValueOnce({
+      ok: true,
+      item_key: "kylling",
+      item_title_snapshot: "Kylling OG grønn salat",
+    });
+
+    const res = await POST(
+      mkReq({ date: "2026-05-18", action: "set", choice_key: "salatboks", itemKey: "kylling" }),
+    );
+    const json = await readJson(res);
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(upsertedDayChoice.choice_key).toBe("salatboks");
+    expect(upsertedDayChoice.item_key).toBe("kylling");
+    expect(upsertedDayChoice.item_title_snapshot).toBe("Kylling OG grønn salat");
+  });
+
+  test("SET returnerer 400 ITEM_CHOICE_REQUIRED når resolver sier manglende variant", async () => {
+    resolveOrderDayItemPersist.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      code: "ITEM_CHOICE_REQUIRED",
+      message: "Item-valg påkrevd for denne kategorien.",
+    });
+
+    const res = await POST(mkReq({ date: "2026-05-18", action: "set", choice_key: "salatboks" }));
+    const json = await readJson(res);
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("ITEM_CHOICE_REQUIRED");
+  });
+
+  test("SET returnerer 400 INVALID_ITEM_CHOICE ved gal itemKey", async () => {
+    resolveOrderDayItemPersist.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      code: "INVALID_ITEM_CHOICE",
+      message: "Ugyldig item-valg for kategorien.",
+    });
+
+    const res = await POST(
+      mkReq({ date: "2026-05-18", action: "set", choice_key: "salatboks", itemKey: "finnes-ikke" }),
+    );
+    const json = await readJson(res);
+
+    expect(res.status).toBe(400);
+    expect(json.error).toBe("INVALID_ITEM_CHOICE");
   });
 
   test("SET med gyldig choice_key for LUXUS returnerer 200", async () => {

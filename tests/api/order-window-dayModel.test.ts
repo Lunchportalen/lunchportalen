@@ -176,6 +176,69 @@ describe("order/window – buildDayModel", () => {
     expect(day.isEnabled).toBe(false);
   });
 
+  test("eksporter lagrede item-valg for aktiv dagvalg-row", () => {
+    const date = "2026-02-02"; // Mandag
+
+    const day = buildDayModel({
+      date,
+      company: {
+        id: "c1",
+        name: "Test",
+        status: "ACTIVE",
+        canEditOrders: true,
+        lockReason: null,
+        paused_reason: null,
+        closed_reason: null,
+      },
+      agreementUsable: true,
+      deliveryDays: ["mon"],
+      dayTiers: { mon: "BASIS" } as any,
+      ordersByDate: new Map([
+        [
+          date,
+          {
+            date,
+            status: "active",
+            note: null,
+            updated_at: null,
+            created_at: null,
+            slot: "default",
+            location_id: "l1",
+            company_id: "c1",
+            user_id: "u1",
+          },
+        ],
+      ] as any),
+      dayChoicesByDate: new Map([
+        [
+          date,
+          {
+            date,
+            choice_key: "pokebowl",
+            item_key: "laks",
+            item_title_snapshot: "Marinert laks",
+            note: null,
+            status: "ACTIVE",
+            updated_at: null,
+          },
+        ],
+      ] as any),
+      agreementForChoices: {
+        choicesByTier: {
+          BASIS: [{ key: "pokebowl" }, { key: "paasmurt" }],
+        },
+      },
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: { BASIS: null, LUXUS: null },
+    } as any);
+
+    expect(day.wantsLunch).toBe(true);
+    expect(day.selectedChoiceKey).toBe("pokebowl");
+    expect(day.selectedItemKey).toBe("laks");
+    expect(day.selectedItemTitleSnapshot).toBe("Marinert laks");
+  });
+
   test("legacy fallback categories preserve existing meal-type choices", () => {
     const categories = buildLegacyChoiceCategories(
       [
@@ -191,4 +254,3 @@ describe("order/window – buildDayModel", () => {
     ]);
   });
 });
-

@@ -28,6 +28,9 @@ export const orderWriteBodySchema = z
     note: z.union([z.string(), z.null()]).optional(),
     slot: z.union([z.string(), z.null()]).optional(),
     choice_key: z.union([z.string(), z.null()]).optional(),
+    /** Underkategori/item (slug) for kategorier med flere menuDay.items — valideres server-side. */
+    itemKey: z.union([z.string(), z.null()]).optional(),
+    item_key: z.union([z.string(), z.null()]).optional(),
     attribution: z.unknown().optional(),
     mvo: z
       .object({

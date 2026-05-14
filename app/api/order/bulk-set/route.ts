@@ -270,6 +270,8 @@ export async function POST(req: NextRequest) {
       user_id, // day_choices.user_id = auth.users.id
       date,
       choice_key,
+      item_key: null,
+      item_title_snapshot: null,
       note: null,
       status: "ACTIVE",
     }));

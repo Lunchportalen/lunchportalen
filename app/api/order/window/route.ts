@@ -80,6 +80,8 @@ type OrderRow = {
 type DayChoiceRow = {
   date: string;
   choice_key: string;
+  item_key?: string | null;
+  item_title_snapshot?: string | null;
   note: string | null;
   status: string | null;
   updated_at: string | null;
@@ -412,7 +414,7 @@ async function loadDayChoicesByDate(
   try {
     const dcBase = (admin as any)
       .from("day_choices")
-      .select("date,choice_key,note,status,updated_at")
+      .select("date,choice_key,item_key,item_title_snapshot,note,status,updated_at")
       .eq("user_id", sc.user_id)
       .eq("company_id", sc.company_id)
       .eq("location_id", sc.location_id);
@@ -670,6 +672,23 @@ export function buildDayModel(ctx: DayContext) {
 
   const dc = dayChoicesByDate.get(date);
   const dcChoice = dc?.choice_key ? String(dc.choice_key).trim().toLowerCase() : null;
+
+  const selectedItemFromDc =
+    wantsLunch &&
+    dc?.item_key !== undefined &&
+    dc?.item_key !== null &&
+    String(dc.item_key).trim().length > 0
+      ? String(dc.item_key).trim()
+      : null;
+
+  const selectedItemTitleSnapFromDc =
+    wantsLunch &&
+    dc?.item_title_snapshot !== undefined &&
+    dc?.item_title_snapshot !== null &&
+    String(dc.item_title_snapshot).trim().length > 0
+      ? String(dc.item_title_snapshot).trim()
+      : null;
+
   const legacyChoice = parseChoiceKeyFromNote(savedOrder?.note ?? null);
 
   const rawSelected = dcChoice || legacyChoice || null;
@@ -725,6 +744,8 @@ export function buildDayModel(ctx: DayContext) {
     wantsLunch,
     orderStatus: sNorm === "ACTIVE" ? "ACTIVE" : sNorm === "CANCELLED" ? "CANCELLED" : null,
     selectedChoiceKey: wantsLunch ? safeSelected : null,
+    selectedItemKey: wantsLunch ? selectedItemFromDc : null,
+    selectedItemTitleSnapshot: wantsLunch ? selectedItemTitleSnapFromDc : null,
 
     note: dcNote ?? legacyNote ?? null,
 

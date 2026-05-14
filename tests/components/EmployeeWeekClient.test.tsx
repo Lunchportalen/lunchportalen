@@ -8,13 +8,19 @@ const CLIENT_PATH = join(process.cwd(), "app", "(app)", "week", "EmployeeWeekCli
 const CSS_PATH = join(process.cwd(), "app", "styles", "employee-week.css");
 
 describe("EmployeeWeekClient order write migration", () => {
-  test("sender SET-body til /api/orders med choice_key", () => {
+  test("sender SET-body til /api/orders med choice_key og valgfri itemKey", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     const body = buildOrderWriteBody("2026-05-18", true, "varmmat");
 
     expect(source).toContain('fetch("/api/orders"');
     expect(source).not.toContain("/api/order/set-day");
     expect(body).toEqual({ date: "2026-05-18", action: "set", choice_key: "varmmat" });
+    expect(buildOrderWriteBody("2026-05-18", true, "salatboks", "kylling")).toEqual({
+      date: "2026-05-18",
+      action: "set",
+      choice_key: "salatboks",
+      itemKey: "kylling",
+    });
   });
 
   test("sender CANCEL-body til /api/orders uten choice_key", () => {

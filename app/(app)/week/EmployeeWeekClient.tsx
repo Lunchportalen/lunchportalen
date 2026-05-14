@@ -39,6 +39,9 @@ type DayRow = {
   allowedChoices: MealChoice[];
   categories: DayCategory[];
   selectedChoiceKey: string | null;
+  /** Persistert menyvariant (kun når aktiv bestilling og menuDay.items >= 2 for kategori). */
+  selectedItemKey: string | null;
+  selectedItemTitleSnapshot: string | null;
   isLocked: boolean;
   isEnabled: boolean;
   lockReason?: string | null;
@@ -229,6 +232,12 @@ function mapDay(raw: unknown): DayRow | null {
     allowedChoices: Array.isArray(d.allowedChoices) ? (d.allowedChoices as unknown[]).map(mapChoice).filter(Boolean) as MealChoice[] : [],
     categories: Array.isArray(d.categories) ? (d.categories as unknown[]).map(mapCategory).filter(Boolean) as DayCategory[] : [],
     selectedChoiceKey: d.selectedChoiceKey != null ? String(d.selectedChoiceKey).trim() || null : null,
+    selectedItemKey:
+      d.selectedItemKey != null && String(d.selectedItemKey).trim().length ? String(d.selectedItemKey).trim() : null,
+    selectedItemTitleSnapshot:
+      d.selectedItemTitleSnapshot != null && String(d.selectedItemTitleSnapshot).trim().length
+        ? String(d.selectedItemTitleSnapshot).trim()
+        : null,
     isLocked: Boolean(d.isLocked),
     isEnabled: Boolean(d.isEnabled),
     lockReason: (d.lockReason as string | null | undefined) ?? null,
@@ -388,11 +397,13 @@ function NoTierForDayNotice() {
   );
 }
 
-export function buildOrderWriteBody(date: string, wantsLunch: boolean, choiceKey?: string | null) {
+export function buildOrderWriteBody(date: string, wantsLunch: boolean, choiceKey?: string | null, itemKey?: string | null) {
+  const ik = typeof itemKey === "string" && itemKey.trim().length ? itemKey.trim() : null;
   return {
     date,
     action: wantsLunch ? "set" : "cancel",
     ...(wantsLunch && choiceKey ? { choice_key: choiceKey } : {}),
+    ...(wantsLunch && choiceKey && ik ? { itemKey: ik } : {}),
   };
 }
 
@@ -469,6 +480,8 @@ function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
         items: [],
       })),
       selectedChoiceKey: null,
+      selectedItemKey: null,
+      selectedItemTitleSnapshot: null,
       isLocked: false,
       isEnabled: true,
       lockReason: null,
@@ -1564,8 +1577,16 @@ export default function EmployeeWeekClient({
         const next: Record<string, WeekChoiceStored | null> = {};
         for (const day of mapped) {
           const prevChoice = prev[day.date];
+          const serverHydrated =
+            day.orderStatus === "ACTIVE" && day.selectedChoiceKey
+              ? {
+                  categoryKey: String(day.selectedChoiceKey).trim(),
+                  itemKey: day.selectedItemKey ? String(day.selectedItemKey).trim() : null,
+                  itemTitle: day.selectedItemTitleSnapshot ? String(day.selectedItemTitleSnapshot).trim() : null,
+                }
+              : null;
           const serverCat = day.selectedChoiceKey ? String(day.selectedChoiceKey).trim() : "";
-          const rawFallback = prevChoice ?? (serverCat || null);
+          const rawFallback = serverHydrated ?? prevChoice ?? (serverCat ? { categoryKey: serverCat, itemKey: null, itemTitle: null } : null);
           next[day.date] = normalizeSelectionForDay(day, rawFallback);
         }
         return next;
@@ -1796,7 +1817,10 @@ export default function EmployeeWeekClient({
           setErrorBanner({ code: "VARIANT_REQUIRED", message: "Velg variant før du bestiller." });
           return false;
         }
-        const body = buildOrderWriteBody(date, wantsLunch, choiceKey);
+        const pick = parseStoredSelection(selectedChoices[date] ?? null);
+        const itemKeyForOrder =
+          wantsLunch && typeof pick?.itemKey === "string" && pick.itemKey.trim().length ? pick.itemKey.trim() : null;
+        const body = buildOrderWriteBody(date, wantsLunch, choiceKey, itemKeyForOrder);
 
         const res = await fetch("/api/orders", {
           method: "POST",
@@ -1822,6 +1846,10 @@ export default function EmployeeWeekClient({
           }
           if (apiError.code === "INVALID_CHOICE") {
             setErrorBanner({ code: apiError.code, message: "Valget er ikke tillatt for denne avtalen." });
+            return false;
+          }
+          if (apiError.code === "ITEM_CHOICE_REQUIRED" || apiError.code === "INVALID_ITEM_CHOICE") {
+            setErrorBanner({ code: apiError.code, message: apiError.message || "Velg variant før du bestiller." });
             return false;
           }
           if (apiError.code === "NO_TIER_FOR_DAY") {
