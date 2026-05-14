@@ -1,4 +1,4 @@
-import { defineField, defineType } from "sanity";
+import { defineArrayMember, defineField, defineType } from "sanity";
 
 export default defineType({
   name: "menuDay",
@@ -84,6 +84,178 @@ export default defineType({
       name: "mealTitle",
       title: "Rettens navn",
       type: "string",
+    }),
+
+    defineField({
+      name: "items",
+      title: "Valgalternativer (valgfri)",
+      description:
+        "La stå TOM hvis kategorien har én rett som varierer (Varmmat) " +
+        "eller én sammensatt rett (Sushi: '6 Maki, 2 Nigiri og 1 Tempura') " +
+        "— bruk mealTitle/description for det.\n\n" +
+        "FYLL UT med 2+ alternativer når brukeren skal velge mellom flere " +
+        "varianter:\n" +
+        "• Salatboks: Kylling, Skinke, Vegetar\n" +
+        "• Påsmurt: Ost & skinke, Laks & Eggerøre, Kylling karri, Vegetar\n" +
+        "• Pokébowl: Laks, Kylling, Vegetar\n" +
+        "• Thaimat: Pad Thai, Biff peppersaus, Pad med mamuang\n\n" +
+        "⚠️ KRITISK: hver item MÅ ha presise allergener (EU 1169/2011). " +
+        "Spesifiser konkret kornslag (Hvete, Rug, Bygg, Havre, Spelt, Kamut) " +
+        "og konkret nøttetype (Mandel, Hasselnøtt, Valnøtt, Kasjunøtt, " +
+        "Pekan, Paranøtt, Pistasj, Makadamia).\n\n" +
+        "FASE 10C.1.",
+      type: "array",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "menuItem",
+          fields: [
+            defineField({
+              name: "key",
+              title: "Nøkkel",
+              description:
+                "Unik innenfor denne menuDay. Genereres automatisk fra " +
+                "tittelen (f.eks. ost-skinke, kylling-karri, pad-thai).",
+              type: "slug",
+              options: { source: "title", maxLength: 64 },
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: "title",
+              title: "Tittel",
+              type: "string",
+              validation: (Rule) => Rule.required().max(60),
+            }),
+            defineField({
+              name: "description",
+              title: "Beskrivelse",
+              type: "text",
+              rows: 2,
+            }),
+            defineField({
+              name: "allergens",
+              title: "Allergener",
+              description:
+                "EU 1169/2011 Vedlegg II: 14 hovedallergener. " +
+                "Glutenholdige kornslag og nøtter MÅ spesifiseres til " +
+                "konkret type. La stå tomt kun hvis retten er fri for " +
+                "ALLE 26 listede allergener — bevisst valg er påkrevd.",
+              type: "array",
+              of: [{ type: "string" }],
+              options: {
+                list: [
+                  // Glutenholdige kornslag (kilde må spesifiseres per EU 1169/2011)
+                  { title: "Hvete (glutenholdig)", value: "hvete" },
+                  { title: "Rug (glutenholdig)", value: "rug" },
+                  { title: "Bygg (glutenholdig)", value: "bygg" },
+                  { title: "Havre (glutenholdig)", value: "havre" },
+                  { title: "Spelt (glutenholdig)", value: "spelt" },
+                  { title: "Kamut (glutenholdig)", value: "kamut" },
+                  // Krepsdyr og bløtdyr (to separate allergener i EU-listen)
+                  {
+                    title: "Krepsdyr (reker, krabbe, hummer)",
+                    value: "krepsdyr",
+                  },
+                  {
+                    title: "Bløtdyr (blåskjell, blekksprut)",
+                    value: "blotdyr",
+                  },
+                  // Andre primære allergener
+                  { title: "Egg", value: "egg" },
+                  { title: "Fisk", value: "fisk" },
+                  { title: "Peanøtter", value: "peanotter" },
+                  { title: "Soya", value: "soya" },
+                  { title: "Melk (inkl. laktose)", value: "melk" },
+                  // Nøtter (type må spesifiseres per EU 1169/2011)
+                  { title: "Mandel (nøtt)", value: "mandel" },
+                  { title: "Hasselnøtt", value: "hasselnott" },
+                  { title: "Valnøtt", value: "valnott" },
+                  { title: "Kasjunøtt", value: "kasjunott" },
+                  { title: "Pekan (nøtt)", value: "pekan" },
+                  { title: "Paranøtt", value: "paranott" },
+                  { title: "Pistasj", value: "pistasj" },
+                  { title: "Makadamia", value: "makadamia" },
+                  // Krydder/tilsetninger
+                  { title: "Selleri", value: "selleri" },
+                  { title: "Sennep", value: "sennep" },
+                  { title: "Sesamfrø", value: "sesam" },
+                  {
+                    title: "Svoveldioksid og sulfitter",
+                    value: "sulfitter",
+                  },
+                  { title: "Lupin", value: "lupin" },
+                ],
+              },
+              validation: (Rule) =>
+                Rule.required().error(
+                  "Allergener må vurderes for hvert valg (EU 1169/2011). " +
+                    "Velg de som forekommer, eller bekreft 'fri for alle 26' " +
+                    "ved å legge til en tom liste.",
+                ),
+            }),
+            defineField({
+              name: "isVegetarian",
+              title: "Vegetar",
+              type: "boolean",
+              initialValue: false,
+            }),
+            defineField({
+              name: "available",
+              title: "Tilgjengelig",
+              description:
+                "Sett til false for å skjule midlertidig uten å slette.",
+              type: "boolean",
+              initialValue: true,
+            }),
+          ],
+          preview: {
+            select: {
+              title: "title",
+              subtitle: "description",
+              allergens: "allergens",
+            },
+            prepare({ title, subtitle, allergens }) {
+              const allergenText =
+                Array.isArray(allergens) && allergens.length > 0
+                  ? `⚠ ${allergens.join(", ")}`
+                  : "✓ Ingen allergener";
+              return {
+                title: title || "Uten tittel",
+                subtitle: subtitle
+                  ? `${subtitle} · ${allergenText}`
+                  : allergenText,
+              };
+            },
+          },
+        }),
+      ],
+      validation: (Rule) =>
+        Rule.custom(
+          (
+            items?: Array<{
+              key?: { current?: string };
+            }>,
+          ) => {
+            if (!items || items.length === 0) return true;
+            if (items.length === 1) {
+              return (
+                "Hvis items brukes, må det være minst 2 alternativer. " +
+                "La feltet stå tomt hvis kategorien har én rett."
+              );
+            }
+            const keys = items
+              .map((it) => it?.key?.current)
+              .filter((k): k is string => typeof k === "string" && k.length > 0);
+            const duplicates = keys.filter((k, i) => keys.indexOf(k) !== i);
+            if (duplicates.length > 0) {
+              return (
+                `Duplikate nøkler: ${[...new Set(duplicates)].join(", ")}. ` +
+                "Hver item må ha unik key."
+              );
+            }
+            return true;
+          },
+        ),
     }),
 
     defineField({
