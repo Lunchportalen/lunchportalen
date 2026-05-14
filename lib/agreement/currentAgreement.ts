@@ -85,38 +85,60 @@ function pickAnyUserId(u: any): string {
   return id;
 }
 
-function tierFromDeliveryDayValue(value: unknown, fallbackTier: Tier | null): Tier | null {
-  const direct = normTier(value);
-  if (direct) return direct;
+// Per-dag-tier hentes fra agreement_delivery_days-tabellen som autoritær
+// kilde. agreements.tier er bare aggregert/fallback. Tier kan variere per
+// ukedag (f.eks. BASIS mon/tue/thu, LUXUS wed/fri).
+// Verifisert 2026-05-14 mot prod for Melhus: ons + fre LUXUS, andre BASIS.
+// FASE 10A.1.
+type AgreementDeliveryDayRow = {
+  weekday: unknown;
+  tier: unknown;
+};
 
-  if (value && typeof value === "object") {
-    const obj = value as { tier?: unknown; plan_tier?: unknown; meal_tier?: unknown };
-    return normTier(obj.tier) ?? normTier(obj.plan_tier) ?? normTier(obj.meal_tier) ?? fallbackTier;
+async function fetchAgreementDeliveryDayRows(
+  admin: any,
+  params: { agreementId: string; companyId: string; rid: string },
+): Promise<AgreementDeliveryDayRow[]> {
+  const { data: rows, error: rowsErr } = await admin
+    .from("agreement_delivery_days")
+    .select("weekday,tier")
+    .eq("agreement_id", params.agreementId);
+
+  if (rowsErr) {
+    opsLog("agreement.current.delivery_days_lookup_failed", {
+      rid: params.rid,
+      company_id: params.companyId,
+      agreement_id: params.agreementId,
+      detail: String(rowsErr?.message ?? rowsErr),
+    });
+    // Fortsetter med fallback til aggregert tier.
+    return [];
   }
 
-  if (value === true || value == null) return fallbackTier;
-  return fallbackTier;
+  return Array.isArray(rows) ? rows : [];
 }
 
-function buildDayTiersFromAgreementFields(agreement: any): Record<DayKey, Tier> {
+function buildDayTiersFromAgreementFields(
+  agreement: any,
+  deliveryDayRows: AgreementDeliveryDayRow[] = [],
+): Record<DayKey, Tier> {
   const dayTiers: Record<DayKey, Tier> = {} as Record<DayKey, Tier>;
   if (!agreement?.id) return dayTiers;
 
   const fallbackTier = normTier((agreement as any).tier) ?? "BASIS";
   const rawDeliveryDays = (agreement as any).delivery_days;
-
-  if (rawDeliveryDays && typeof rawDeliveryDays === "object" && !Array.isArray(rawDeliveryDays)) {
-    for (const [key, value] of Object.entries(rawDeliveryDays)) {
-      const dk = normDayKey(key);
-      const tier = tierFromDeliveryDayValue(value, fallbackTier);
-      if (dk && tier) dayTiers[dk] = tier;
-    }
-    if (Object.keys(dayTiers).length > 0) return dayTiers;
-  }
-
   const normalized = normalizeDeliveryDaysStrict(rawDeliveryDays);
+
   for (const day of normalized.days) {
     dayTiers[day] = fallbackTier;
+  }
+
+  for (const row of deliveryDayRows) {
+    const day = normDayKey(row.weekday);
+    const tier = normTier(row.tier);
+    if (day && tier && normalized.days.includes(day)) {
+      dayTiers[day] = tier;
+    }
   }
 
   return dayTiers;
@@ -138,7 +160,12 @@ export async function fetchAgreementDayTiersForCompany(_sb: any, companyId: stri
     .maybeSingle();
 
   if (error || !agreement?.id) return {} as Record<DayKey, Tier>;
-  return buildDayTiersFromAgreementFields(agreement);
+  const deliveryDayRows = await fetchAgreementDeliveryDayRows(admin, {
+    agreementId: String(agreement.id),
+    companyId: cid,
+    rid: rid("agreement_day_tiers"),
+  });
+  return buildDayTiersFromAgreementFields(agreement, deliveryDayRows);
 }
 
 /* =========================================================
@@ -200,7 +227,16 @@ export async function getCurrentAgreementState(opts?: { rid?: string }): Promise
     return { ok: false, rid: ridVal, error: "AGREEMENT_LOOKUP_FAILED", message: "Kunne ikke hente avtale.", status: 500 };
   }
 
-  const dayTiers = await fetchAgreementDayTiersForCompany(sb, companyId);
+  let deliveryDayRows: AgreementDeliveryDayRow[] = [];
+  if (agreement?.id) {
+    deliveryDayRows = await fetchAgreementDeliveryDayRows(admin, {
+      agreementId: String(agreement.id),
+      companyId,
+      rid: ridVal,
+    });
+  }
+
+  const dayTiers = buildDayTiersFromAgreementFields(agreement, deliveryDayRows);
 
   const deliveryDaysRaw = Object.keys(dayTiers) as DayKey[];
   deliveryDaysRaw.sort(dayKeySort);
