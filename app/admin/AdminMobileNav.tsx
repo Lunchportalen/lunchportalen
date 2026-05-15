@@ -32,9 +32,20 @@ function MoreIcon() {
   );
 }
 
-export default function AdminMobileNav() {
+export default function AdminMobileNav({
+  companyDashboardHref = null,
+}: {
+  companyDashboardHref?: string | null;
+}) {
   const pathname = usePathname() || "/admin";
   const [open, setOpen] = useState(false);
+
+  const moreItems = [
+    ...(companyDashboardHref
+      ? ([{ href: companyDashboardHref, label: "Firmadashbord" }] as const)
+      : ([] as { href: string; label: string }[])),
+    ...MORE_ITEMS,
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -84,7 +95,7 @@ export default function AdminMobileNav() {
             </button>
           </div>
           <div className="ds-admin-more__list">
-            {MORE_ITEMS.map((item) =>
+            {moreItems.map((item) =>
               item.href.startsWith("/api/") ? (
                 // eslint-disable-next-line @next/next/no-html-link-for-pages
                 <a className="ds-admin-mobile-more-link" href={item.href} key={item.href}>

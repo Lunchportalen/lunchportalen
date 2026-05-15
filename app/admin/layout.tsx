@@ -92,6 +92,9 @@ async function currentPathFromHeaders(fallback: string) {
 
 function titleForAdminPath(path: string) {
   const pathname = safeNextPath(path).split("?")[0] || "/admin";
+  if (pathname.includes("/admin/company/") && pathname.includes("/dashboard")) {
+    return "Firmadashbord";
+  }
   const items: Array<{ href: string; title: string; exact?: boolean }> = [
     { href: "/admin", title: "Oversikt", exact: true },
     { href: "/admin/dagens-brukere", title: "Dagens drift" },
@@ -124,17 +127,27 @@ async function loadCompanyName(companyId: string) {
 
 async function shell(
   children: ReactNode,
-  opts?: { showCompanyAdminNav?: boolean; companyName?: string; userName?: string; pageTitle?: string },
+  opts?: {
+    showCompanyAdminNav?: boolean;
+    companyName?: string;
+    userName?: string;
+    pageTitle?: string;
+    companyId?: string | null;
+  },
 ) {
   const showNav = opts?.showCompanyAdminNav !== false;
   return (
     <div className="ds-admin-root">
-      {showNav ? <AdminSidebar companyName={opts?.companyName ?? "Firma"} userName={opts?.userName ?? "Firmaadmin"} /> : null}
+      {showNav ? (
+        <AdminSidebar companyName={opts?.companyName ?? "Firma"} userName={opts?.userName ?? "Firmaadmin"} companyId={opts?.companyId ?? null} />
+      ) : null}
       <div className="ds-admin-main">
         <AdminTopbar pageTitle={opts?.pageTitle ?? "Oversikt"} />
         <main className="ds-admin-content">{children}</main>
       </div>
-      {showNav ? <AdminMobileNav /> : null}
+      {showNav ? (
+        <AdminMobileNav companyDashboardHref={opts?.companyId ? `/admin/company/${opts.companyId}/dashboard` : null} />
+      ) : null}
     </div>
   );
 }
@@ -182,7 +195,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     safeStr((auth as any).email) ||
     "Firmaadmin";
 
-  return shell(children, { companyName, userName, pageTitle });
+  return shell(children, { companyName, userName, pageTitle, companyId: auth.company_id });
 }
 
 async function hasActiveAgreement(companyId: string): Promise<boolean> {

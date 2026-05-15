@@ -18,7 +18,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-const NAV_GROUPS: NavGroup[] = [
+const NAV_GROUPS_BASE: NavGroup[] = [
   {
     label: "Drift",
     items: [
@@ -35,11 +35,27 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/agreement", label: "Avtale og drift", icon: "document" },
     ],
   },
-  {
-    label: "Innsikt",
-    items: [{ href: "/admin/insights", label: "Økonomi", icon: "chart" }],
-  },
 ];
+
+function buildNavGroups(companyId: string | null | undefined): NavGroup[] {
+  const cid = String(companyId ?? "").trim();
+  const innsiktItems: NavItem[] = [];
+  if (cid) {
+    innsiktItems.push({
+      href: `/admin/company/${cid}/dashboard`,
+      label: "Firmadashbord",
+      icon: "document",
+    });
+  }
+  innsiktItems.push({ href: "/admin/insights", label: "Økonomi", icon: "chart" });
+  return [
+    ...NAV_GROUPS_BASE,
+    {
+      label: "Innsikt",
+      items: innsiktItems,
+    },
+  ];
+}
 
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
@@ -100,12 +116,13 @@ export function AdminIcon({ name }: { name: IconName }) {
   );
 }
 
-export function AdminSidebarNav() {
+export function AdminSidebarNav({ companyId }: { companyId?: string | null }) {
   const pathname = usePathname() || "/admin";
+  const groups = buildNavGroups(companyId);
 
   return (
     <nav className="ds-admin-sidebar__nav" aria-label="Hovednavigasjon">
-      {NAV_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div className="ds-admin-sidebar__group" key={group.label}>
           <div className="ds-admin-sidebar__group-label">{group.label}</div>
           {group.items.map((item) => {
