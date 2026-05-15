@@ -50,7 +50,7 @@ Kolonner: **Fil / mappe** | **Status** | **Hvorfor** | **Dependencies (utdrag)**
 | Fil / mappe | Status | Hvorfor | Dependencies | Risiko | Rekkefølge |
 |-------------|--------|---------|--------------|--------|------------|
 | `studio/schemas/weekPlan.ts` | **DEPRECATE (innhold)** / **KEEP (skjema til migrasjon ferdig)** | Dokumenterer `becomesCurrentAt` fredag 14:00; felt kan være **ønsket sannhet** men ikke konsistent med runtime. | Studio, GROQ, cron. | Middels. | Ikke slett før data migrert. |
-| `studio/tools/weekPlanner/WeekPlanner.tsx` | **SPLIT / MERGE** | Dublert konsept med `studio/src/tools/WeekPlanner.tsx`. | `deskStructure.ts` | Lav–middels. | Tidlig **etter** avklaring av hvilket verktøy som er fasit. |
+| `studio/src/tools/WeekPlanner.tsx` | **SPLIT / MERGE** | Dublert konsept med `studio/src/tools/WeekPlanner.tsx`. | `deskStructure.ts` | Lav–middels. | Tidlig **etter** avklaring av hvilket verktøy som er fasit. |
 | `studio/src/tools/WeekPlanner.tsx` | **SPLIT / MERGE** | Samme som over. | `studio/src/structure.ts` | Samme. | Samme. |
 
 ---

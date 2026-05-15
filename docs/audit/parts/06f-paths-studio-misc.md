@@ -172,9 +172,6 @@ Alle paths nedenfor finnes også i `docs/audit/02-file-manifest.json` og `03-fil
 - `studio/src/tools/WeekPlanner.tsx`
 - `studio/static`
 - `studio/static/.gitkeep`
-- `studio/tools`
-- `studio/tools/weekPlanner`
-- `studio/tools/weekPlanner/WeekPlanner.tsx`
 - `studio/tsconfig.json`
 - `studio/vite.config.ts`
 - `tailwind.config.cjs`

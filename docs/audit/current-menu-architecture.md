@@ -9,12 +9,12 @@
 ## 1. Sammendrag
 
 - Sanity Studio viser `Ukeplan` via custom `WeekPlannerTool`, ikke som dokumentliste; sidebaren peker til komponenten. `studio/deskStructure.ts:10-13`
-- Custom ukeplanverktøyet oppretter/muterer `menuDay`-dokumenter per dato, mens et eget `weekPlan`-skjema også finnes registrert som redaksjonell ukeplan. `studio/tools/weekPlanner/WeekPlanner.tsx:245-258`
+- Custom ukeplanverktøyet oppretter/muterer `menuDay`-dokumenter per dato, mens et eget `weekPlan`-skjema også finnes registrert som redaksjonell ukeplan. `studio/src/tools/WeekPlanner.tsx:245-258`
 - Next employee-uken (`/week`) sier selv at operativ sannhet er `company_current_agreement` + `menuContent`, ikke Sanity `weekPlan`. `app/api/week/route.ts:1-3`
 - Sanity read-client bruker `useCdn: true` og `perspective: published`; write-client krever token, `useCdn: false`. `lib/sanity/client.ts:13-19`
 - Supabase `agreements.tier` er `public.agreement_tier`, og enumverdiene som opprettes er `BASIS` og `LUXUS`. `supabase/migrations/20260218_enterprise_registration_agreement_order_guards.sql:34-39`
 - Datohelperen `formatDateNO` produserer `DD-MM-YYYY`, som avviker fra påkrevd `dd.MM.yyyy`. `lib/date/format.ts:37-40`
-- WeekPlanner-formatet `formatNordicDate` produserer `dd.MM.yyyy`, men uten tre-bokstavs ukedag i ukeplanvisning. `studio/tools/weekPlanner/WeekPlanner.tsx:77-80`
+- WeekPlanner-formatet `formatNordicDate` produserer `dd.MM.yyyy`, men uten tre-bokstavs ukedag i ukeplanvisning. `studio/src/tools/WeekPlanner.tsx:77-80`
 - Umbraco CSS ligger under `umbraco17/lunchportalen/wwwroot/css`; etterspurt `wwwroot/css/fordeler.css` ble ikke funnet som fil. `umbraco17/lunchportalen/wwwroot/css/design-system.css:1`
 - Eksisterende tier/plan-begreper finnes i Sanity, Supabase, Next og UI-copy (`BASIS`, `LUXUS`, `STANDARD`, `PREMIUM`). `studio/schemas/weekPlan.ts:4-7`
 - API-rutene for uke/order/kitchen/driver/agreement er kartlagt med metodefunn i §9. `app/api/week/route.ts:81-86`
@@ -179,19 +179,19 @@ Kilder: `studio/schemaTypes/menu.ts:8-64`, `studio/schemaTypes/menu.ts:65-93`. P
 ### 4.3 Custom actions
 | Knapp | Komponent | Handler | Muterer |
 |---|---|---|---|
-| Opprett uke 1 | `studio/tools/weekPlanner/WeekPlanner.tsx:553-557` | `createWeek` | `createIfNotExists` for `menuDay` med date/description/mealTitle/allergens/mayContain/approvedForPublish/customerVisible. `studio/tools/weekPlanner/WeekPlanner.tsx:245-258` |
-| Opprett uke 2 | `studio/tools/weekPlanner/WeekPlanner.tsx:558-562` | `createWeek` | samme som over. `studio/tools/weekPlanner/WeekPlanner.tsx:245-258` |
-| Auto-fyll uke 1 | `studio/tools/weekPlanner/WeekPlanner.tsx:563-567` | `autoFillWeek` | patcher `menuDay` og `mealIdea` usage/lastUsedDate. `studio/tools/weekPlanner/WeekPlanner.tsx:264-345` |
-| Auto-fyll uke 2 | `studio/tools/weekPlanner/WeekPlanner.tsx:568-572` | `autoFillWeek` | samme som over. `studio/tools/weekPlanner/WeekPlanner.tsx:264-345` |
-| Godkjenn uke 2 | `studio/tools/weekPlanner/WeekPlanner.tsx:573-578` | `approveWeek2` | setter `approvedForPublish: true`, `approvedAt`. `studio/tools/weekPlanner/WeekPlanner.tsx:356-399` |
-| Trekk godkjenning | `studio/tools/weekPlanner/WeekPlanner.tsx:579-584` | `revokeWeek2` | setter `approvedForPublish:false`, `customerVisible:false`, unsetter tidsstempler. `studio/tools/weekPlanner/WeekPlanner.tsx:409-424` |
-| Oppdater | `studio/tools/weekPlanner/WeekPlanner.tsx:585` | `fetchWeeks` | leser `menuDay`, muterer ikke. `studio/tools/weekPlanner/WeekPlanner.tsx:135-178` |
+| Opprett uke 1 | `studio/src/tools/WeekPlanner.tsx:553-557` | `createWeek` | `createIfNotExists` for `menuDay` med date/description/mealTitle/allergens/mayContain/approvedForPublish/customerVisible. `studio/src/tools/WeekPlanner.tsx:245-258` |
+| Opprett uke 2 | `studio/src/tools/WeekPlanner.tsx:558-562` | `createWeek` | samme som over. `studio/src/tools/WeekPlanner.tsx:245-258` |
+| Auto-fyll uke 1 | `studio/src/tools/WeekPlanner.tsx:563-567` | `autoFillWeek` | patcher `menuDay` og `mealIdea` usage/lastUsedDate. `studio/src/tools/WeekPlanner.tsx:264-345` |
+| Auto-fyll uke 2 | `studio/src/tools/WeekPlanner.tsx:568-572` | `autoFillWeek` | samme som over. `studio/src/tools/WeekPlanner.tsx:264-345` |
+| Godkjenn uke 2 | `studio/src/tools/WeekPlanner.tsx:573-578` | `approveWeek2` | setter `approvedForPublish: true`, `approvedAt`. `studio/src/tools/WeekPlanner.tsx:356-399` |
+| Trekk godkjenning | `studio/src/tools/WeekPlanner.tsx:579-584` | `revokeWeek2` | setter `approvedForPublish:false`, `customerVisible:false`, unsetter tidsstempler. `studio/src/tools/WeekPlanner.tsx:409-424` |
+| Oppdater | `studio/src/tools/WeekPlanner.tsx:585` | `fetchWeeks` | leser `menuDay`, muterer ikke. `studio/src/tools/WeekPlanner.tsx:135-178` |
 
-Validatorer: auto-fyll stopper hvis eksisterende docs har `approvedForPublish`, generator krever gyldige `mealIdea` med aktiv status og nutrition, og godkjenning krever 5 dager, menybeskrivelse og `nutritionPer100g.energyKcal`. `studio/tools/weekPlanner/WeekPlanner.tsx:272-299`, `studio/tools/weekPlanner/generateWeekMenu.ts:114-120`, `studio/tools/weekPlanner/WeekPlanner.tsx:379-387`
+Validatorer: auto-fyll stopper hvis eksisterende docs har `approvedForPublish`, generator krever gyldige `mealIdea` med aktiv status og nutrition, og godkjenning krever 5 dager, menybeskrivelse og `nutritionPer100g.energyKcal`. `studio/src/tools/WeekPlanner.tsx:272-299`, `lib/menu-publish/generateWeekMenu.ts:114-120`, `studio/src/tools/WeekPlanner.tsx:379-387`
 
 ### 4.4 Status-badges
-- Dag-badges `Godkjent/Ikke godkjent` og `Synlig/Skjult` rendres i WeekPlanner. `studio/tools/weekPlanner/WeekPlanner.tsx:480-486`
-- Uke-badges `Uke 1 godkjent`, `Uke 1 synlig`, `Uke 2 godkjent`, `Uke 2 synlig` rendres fra `stats`. `studio/tools/weekPlanner/WeekPlanner.tsx:453-460`, `studio/tools/weekPlanner/WeekPlanner.tsx:589-601`
+- Dag-badges `Godkjent/Ikke godkjent` og `Synlig/Skjult` rendres i WeekPlanner. `studio/src/tools/WeekPlanner.tsx:480-486`
+- Uke-badges `Uke 1 godkjent`, `Uke 1 synlig`, `Uke 2 godkjent`, `Uke 2 synlig` rendres fra `stats`. `studio/src/tools/WeekPlanner.tsx:453-460`, `studio/src/tools/WeekPlanner.tsx:589-601`
 - `menuDay` preview bruker `Ikke godkjent` og `Skjult`. `studio/schemaTypes/menuDay.ts:215-230`
 - `weekPlan` preview bruker `Ikke godkjent` og `Skjult`. `studio/schemas/weekPlan.ts:448-465`
 
@@ -201,7 +201,7 @@ Validatorer: auto-fyll stopper hvis eksisterende docs har `approvedForPublish`, 
 - `Næring`: menytype `studio/schemaTypes/menu.ts:56-64`, dagkort `studio/schemaTypes/menuDay.ts:52-112`, `weekPlan.days[]` `studio/schemas/weekPlan.ts:214-275`, basebank `studio/schemaTypes/mealIdea.ts:230-291`.
 - `Kjøkkenstil`: dagkort `studio/schemaTypes/menuDay.ts:114-131`, `weekPlan.days[]` `studio/schemas/weekPlan.ts:277-285`, basebank `studio/schemaTypes/mealIdea.ts:74-93`.
 - `Kostnadsnivå`: dagkort `studio/schemaTypes/menuDay.ts:133-145`, `weekPlan.days[]` `studio/schemas/weekPlan.ts:287-295`, basebank `studio/schemaTypes/mealIdea.ts:123-137`.
-- `Råvarekost` og `Margin mot 90 kr`: WeekPlanner-visning `studio/tools/weekPlanner/WeekPlanner.tsx:514-516`; basebank beregner margin mot `TARGET_PRICE_PER_PORTION = 90`. `studio/schemaTypes/mealIdea.ts:3-4`, `studio/schemaTypes/mealIdea.ts:455-458`
+- `Råvarekost` og `Margin mot 90 kr`: WeekPlanner-visning `studio/src/tools/WeekPlanner.tsx:514-516`; basebank beregner margin mot `TARGET_PRICE_PER_PORTION = 90`. `studio/schemaTypes/mealIdea.ts:3-4`, `studio/schemaTypes/mealIdea.ts:455-458`
 
 ## 5. GROQ-queries
 | Fil:linje | Brukt i | Kort beskrivelse |
@@ -220,7 +220,7 @@ Validatorer: auto-fyll stopper hvis eksisterende docs har `approvedForPublish`, 
 | `lib/sanity/weekPlanOps.ts:11` | `lib/sanity/weekPlanOps.ts` | L11 `*[_type=="weekPlan" && weekKey==$weekKey][0]{_id, stat |
 | `studio/schemaTypes/mealIdea.ts:388` | `studio/schemaTypes/mealIdea.ts` | L388 const query = `count(*[_type == "mealIdea" && title == ; L389 const count = await client.fetch(query, { |
 | `studio/src/tools/WeekPlanner.tsx:161` | `studio/src/tools/WeekPlanner.tsx` | L161 _type == "menuDay" &&; L186 client.fetch<DayDoc[]>(query, { dates: ranges.week1.dat; L187 client.fetch<DayDoc[]>(query, { dates: ranges.week2.dat |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:141` | `studio/tools/weekPlanner/WeekPlanner.tsx` | L141 _type == "menuDay" &&; L166 client.fetch<DayDoc[]>(query, { dates: ranges.week1.dat; L167 client.fetch<DayDoc[]>(query, { dates: ranges.week2.dat |
+| `studio/src/tools/WeekPlanner.tsx:141` | `studio/src/tools/WeekPlanner.tsx` | L141 _type == "menuDay" &&; L166 client.fetch<DayDoc[]>(query, { dates: ranges.week1.dat; L167 client.fetch<DayDoc[]>(query, { dates: ranges.week2.dat |
 
 Query-utdrag med linjer:
 
@@ -276,15 +276,15 @@ Query-utdrag med linjer:
   - `studio/src/tools/WeekPlanner.tsx:268`: `const rows = await client.fetch<Array<{ mealTitle?: string; description?: string }>>(`
   - `studio/src/tools/WeekPlanner.tsx:270`: `_type == "menuDay" &&`
   - `studio/src/tools/WeekPlanner.tsx:427`: `const docs = await client.fetch<DayDoc[]>(`
-- `studio/tools/weekPlanner/WeekPlanner.tsx`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:141`: `_type == "menuDay" &&`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:166`: `client.fetch<DayDoc[]>(query, { dates: ranges.week1.dates }),`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:167`: `client.fetch<DayDoc[]>(query, { dates: ranges.week2.dates }),`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:186`: `return client.fetch<Meal[]>(`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:188`: `_type == "mealIdea" &&`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:226`: `const rows = await client.fetch<Array<{ mealTitle?: string; description?: string }>>(`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:228`: `_type == "menuDay" &&`
-  - `studio/tools/weekPlanner/WeekPlanner.tsx:363`: `const docs = await client.fetch<DayDoc[]>(`
+- `studio/src/tools/WeekPlanner.tsx`
+  - `studio/src/tools/WeekPlanner.tsx:141`: `_type == "menuDay" &&`
+  - `studio/src/tools/WeekPlanner.tsx:166`: `client.fetch<DayDoc[]>(query, { dates: ranges.week1.dates }),`
+  - `studio/src/tools/WeekPlanner.tsx:167`: `client.fetch<DayDoc[]>(query, { dates: ranges.week2.dates }),`
+  - `studio/src/tools/WeekPlanner.tsx:186`: `return client.fetch<Meal[]>(`
+  - `studio/src/tools/WeekPlanner.tsx:188`: `_type == "mealIdea" &&`
+  - `studio/src/tools/WeekPlanner.tsx:226`: `const rows = await client.fetch<Array<{ mealTitle?: string; description?: string }>>(`
+  - `studio/src/tools/WeekPlanner.tsx:228`: `_type == "menuDay" &&`
+  - `studio/src/tools/WeekPlanner.tsx:363`: `const docs = await client.fetch<DayDoc[]>(`
 
 Sanity-client: read-client `createClient` bruker `projectId`, `dataset`, `apiVersion`, `useCdn:true`, `perspective:published`; write-client bruker token, `useCdn:false`, `perspective:published`. `lib/sanity/client.ts:13-19`, `lib/sanity/client.ts:54-63`
 
@@ -606,25 +606,25 @@ Detaljer: `/week` importerer `getMenuForDates`, `formatDateNO`, `weekRangeISO`, 
 ## 10. Forretningslogikk
 
 ### 10.1 Auto-fyll
-- Implementert i Sanity custom tool `WeekPlanner`, ikke funnet som Next API eller Supabase function. `studio/tools/weekPlanner/WeekPlanner.tsx:264-353`
-- Retter velges fra `mealIdea`-pool med `isActive == true` og `defined(nutritionPer100g.energyKcal)`. `studio/tools/weekPlanner/WeekPlanner.tsx:184-216`
-- Generatoren scorer margin, nutritionScore, AI learning, costTier, protein/kjøkkenstil/metode, brukshistorikk og allergenbelastning; den krever min. 50 gyldige retter, maks én fisk/suppe/vegetar, og 5 hverdager. `studio/tools/weekPlanner/generateWeekMenu.ts:64-73`, `studio/tools/weekPlanner/generateWeekMenu.ts:146-240`, `studio/tools/weekPlanner/generateWeekMenu.ts:526-562`
-- Auto-fyll sperres hvis en eksisterende dag i uken er godkjent. `studio/tools/weekPlanner/WeekPlanner.tsx:272-275`
-- Felter som fylles: description, mealTitle, mealRef, allergens, mayContain, nutritionPer100g, kitchenStyle, costTier, estimatedCostPerPortion, isFishDish/isSoup/isVegetarian, approvedForPublish false, customerVisible false. `studio/tools/weekPlanner/WeekPlanner.tsx:310-333`
+- Implementert i Sanity custom tool `WeekPlanner`, ikke funnet som Next API eller Supabase function. `studio/src/tools/WeekPlanner.tsx:264-353`
+- Retter velges fra `mealIdea`-pool med `isActive == true` og `defined(nutritionPer100g.energyKcal)`. `studio/src/tools/WeekPlanner.tsx:184-216`
+- Generatoren scorer margin, nutritionScore, AI learning, costTier, protein/kjøkkenstil/metode, brukshistorikk og allergenbelastning; den krever min. 50 gyldige retter, maks én fisk/suppe/vegetar, og 5 hverdager. `lib/menu-publish/generateWeekMenu.ts:64-73`, `lib/menu-publish/generateWeekMenu.ts:146-240`, `lib/menu-publish/generateWeekMenu.ts:526-562`
+- Auto-fyll sperres hvis en eksisterende dag i uken er godkjent. `studio/src/tools/WeekPlanner.tsx:272-275`
+- Felter som fylles: description, mealTitle, mealRef, allergens, mayContain, nutritionPer100g, kitchenStyle, costTier, estimatedCostPerPortion, isFishDish/isSoup/isVegetarian, approvedForPublish false, customerVisible false. `studio/src/tools/WeekPlanner.tsx:310-333`
 
 ### 10.2 Godkjenning
-- `Godkjenn uke 2` sikrer uke 2 finnes, henter 5 `menuDay`, krever 5 hverdager, beskrivelse min. 8 tegn og nutrition energyKcal. `studio/tools/weekPlanner/WeekPlanner.tsx:356-387`
-- Ved godkjenning settes `approvedForPublish: true` og `approvedAt: now`; dokumentet publiseres ikke som draft->published i koden som er funnet. `studio/tools/weekPlanner/WeekPlanner.tsx:389-399`
-- `Trekk godkjenning` setter `approvedForPublish:false`, `customerVisible:false` og unsetter `approvedAt/customerVisibleSetAt`. `studio/tools/weekPlanner/WeekPlanner.tsx:409-424`
+- `Godkjenn uke 2` sikrer uke 2 finnes, henter 5 `menuDay`, krever 5 hverdager, beskrivelse min. 8 tegn og nutrition energyKcal. `studio/src/tools/WeekPlanner.tsx:356-387`
+- Ved godkjenning settes `approvedForPublish: true` og `approvedAt: now`; dokumentet publiseres ikke som draft->published i koden som er funnet. `studio/src/tools/WeekPlanner.tsx:389-399`
+- `Trekk godkjenning` setter `approvedForPublish:false`, `customerVisible:false` og unsetter `approvedAt/customerVisibleSetAt`. `studio/src/tools/WeekPlanner.tsx:409-424`
 
 ### 10.3 Skjult-flagg
-- I WeekPlanner betyr `customerVisible` false badge `Skjult`. `studio/tools/weekPlanner/WeekPlanner.tsx:480-486`
+- I WeekPlanner betyr `customerVisible` false badge `Skjult`. `studio/src/tools/WeekPlanner.tsx:480-486`
 - Next `menuContent`-filteret skjuler data når verken legacy `isPublished` eller `approvedForPublish && customerVisible` er true. `lib/sanity/queries.ts:56-72`
 - `menuDay`-skjemaet har `customerVisible` readOnly og `customerVisibleSetAt`, mens `weekPlan.days[]` også har et separat `hidden` felt. `studio/schemaTypes/menuDay.ts:189-202`, `studio/schemas/weekPlan.ts:332-337`
 
 ### 10.4 Margin-beregning
-- Sanity WeekPlanner regner margin klient-side i Studio mot konstant `TARGET_PRICE = 90`. `studio/tools/weekPlanner/WeekPlanner.tsx:8-9`, `studio/tools/weekPlanner/WeekPlanner.tsx:90-92`
-- Generatoren regner margin mot `TARGET_PRICE = 90` og bruker default råvarekost 65 hvis verdi mangler/ugyldig. `studio/tools/weekPlanner/generateWeekMenu.ts:64-68`, `studio/tools/weekPlanner/generateWeekMenu.ts:83-95`
+- Sanity WeekPlanner regner margin klient-side i Studio mot konstant `TARGET_PRICE = 90`. `studio/src/tools/WeekPlanner.tsx:8-9`, `studio/src/tools/WeekPlanner.tsx:90-92`
+- Generatoren regner margin mot `TARGET_PRICE = 90` og bruker default råvarekost 65 hvis verdi mangler/ugyldig. `lib/menu-publish/generateWeekMenu.ts:64-68`, `lib/menu-publish/generateWeekMenu.ts:83-95`
 - `mealIdea` hardkoder `TARGET_PRICE_PER_PORTION = 90`, setter `targetPricePerPortion` readOnly og validerer råvarekost maks 90. `studio/schemaTypes/mealIdea.ts:3-4`, `studio/schemaTypes/mealIdea.ts:102-121`
 
 ## 11. Eksisterende tier-/plan-konsepter
@@ -1065,7 +1065,7 @@ Detaljer: `/week` importerer `getMenuForDates`, `formatDateNO`, `weekRangeISO`, 
 | `lib/date/format.ts:92` | `formatDateTimeSecondsNO` returnerer `DD-MM-YYYY HH:mm:ss` | dato-del `dd.MM.yyyy` |
 | `app/menus/week/page.tsx:115` | viser ukedag + kort dato `dd. mmm` og separat `DD-MM-YYYY` | meny/uke: tre-bokstavs ukedag + `dd.MM.yyyy` |
 | `app/(app)/week/page.tsx:345` | viser full ukedag + `formatDateNO` | meny/uke: tre-bokstavs ukedag + `dd.MM.yyyy` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:478` | viser bare `dd.MM.yyyy` uten ukedag | meny/uke: tre-bokstavs ukedag + `dd.MM.yyyy` |
+| `studio/src/tools/WeekPlanner.tsx:478` | viser bare `dd.MM.yyyy` uten ukedag | meny/uke: tre-bokstavs ukedag + `dd.MM.yyyy` |
 
 ## 13. CSS-filer og styling-system
 
@@ -1119,7 +1119,7 @@ Styling-system: Tailwind er konfigurert i `tailwind.config.cjs` og PostCSS i `po
 
 ## 15. Hull og uavklarte spørsmål
 - Det finnes to Sanity-modeller for uke/meny: `weekPlan`-skjema og `menuDay`/`menuContent`-basert operativ flyt; `/api/week` sier eksplisitt at `weekPlan` ikke er operativ sannhet. `studio/schemas/weekPlan.ts:64-67`, `studio/schemaTypes/menuDay.ts:3-7`, `app/api/week/route.ts:1-3`
-- Studio `Ukeplan` oppretter `menuDay`, mens Next employee API leser `menuContent`; sammenhengen mellom disse er ikke funnet i WeekPlanner-koden. `studio/tools/weekPlanner/WeekPlanner.tsx:245-258`, `app/api/week/route.ts:165-192`
+- Studio `Ukeplan` oppretter `menuDay`, mens Next employee API leser `menuContent`; sammenhengen mellom disse er ikke funnet i WeekPlanner-koden. `studio/src/tools/WeekPlanner.tsx:245-258`, `app/api/week/route.ts:165-192`
 - `menuContent` TypeScript-type inkluderer `title` og `tier`, men Sanity-skjemaet for `menuContent` definerer bare `date`, `description`, `allergens`, `isPublished`. `lib/sanity/queries.ts:15-24`, `studio/schemaTypes/menuContent.ts:8-55`
 - `formatDateNO`-navnet tilsier norsk dato, men produserer bindestrekformat; dette avviker fra datoformatregelen. `lib/date/format.ts:37-40`
 - `BASIS/LUXUS` finnes som agreement enum, mens `STANDARD/PREMIUM/BUDGET` finnes som Sanity kostnadsnivå; beslutning trengs før tier-begrep kobles på tvers. `supabase/migrations/20260218_enterprise_registration_agreement_order_guards.sql:34-39`, `studio/schemaTypes/mealIdea.ts:123-137`

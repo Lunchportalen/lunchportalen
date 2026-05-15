@@ -19,7 +19,7 @@
 | `app/api/cron/week-visibility/route.ts` | Cron | Synlighet (redaksjonell tidsplan) |
 | `app/api/cron/week-scheduler/route.ts` | Cron | Kaller interne cron-endepunkter |
 | `studio/schemas/weekPlan.ts` | CMS schema | Studio |
-| `studio/tools/weekPlanner/WeekPlanner` | Studio tool | Redaksjon |
+| `studio/src/tools/WeekPlanner` | Studio tool | Redaksjon |
 | `lib/sanity/weekPlanOps.ts` | Sanity ops | Vedlikehold |
 | `app/api/order/window/route.ts` | Operativ | **Legacy:** `agreement.weekplan?.tiers` — avtaledata i DB, ikke Sanity `weekPlan`-API for employee UI |
 | `app/admin/agreement/page.tsx` | Admin | Viser strukturert `weekPlan` fra **admin API** (firmaavtale) |

@@ -11,7 +11,7 @@
 - Aktiv Sanity Studio-konfigurasjon bruker `./schemaTypes`, der `menuContent` og `menuDay` er registrert, mens `weekPlan` ikke er i den aktive listen. `studio/sanity.config.ts:4-5`, `studio/sanity.config.ts:31-33`, `studio/schemaTypes/index.ts:26-37`
 - `weekPlan` finnes som eget skjema i `studio/schemas/weekPlan.ts`, og et separat eldre schema-index eksporterer `dish` og `weekPlan`. `studio/schemas/weekPlan.ts:64-68`, `studio/schemas/index.ts:3-6`
 - Aktiv Studio-sidebar viser `Ukeplan` som custom komponent (`WeekPlannerTool`) og `Menyinnhold` som `documentTypeListItem("menuContent")`. `studio/deskStructure.ts:4`, `studio/deskStructure.ts:10-18`
-- Aktiv `WeekPlannerTool` skriver `_type: "menuDay"` per dato, ikke `_type: "weekPlan"`. `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`
+- Aktiv `WeekPlannerTool` skriver `_type: "menuDay"` per dato, ikke `_type: "weekPlan"`. `studio/src/tools/WeekPlanner.tsx:256-269`
 - `GET /api/week` sier eksplisitt at operativ sannhet er `company_current_agreement + menuContent`, uten Sanity `weekPlan`. `app/api/week/route.ts:1-3`
 - `weekPlan` har likevel egne API- og cron-spor for lesing, publisering og låsing. `app/api/weekplan/route.ts:1-3`, `app/api/weekplan/publish/route.ts:116-127`, `app/api/cron/lock-weekplans/route.ts:1-2`
 - Det er ikke funnet kode som synkroniserer `weekPlan` til `menuDay` eller `menuContent`; cron-sporene opererer på hver sin modell. `app/api/cron/lock-weekplans/route.ts:11-18`, `app/api/cron/week-visibility/route.ts:48-56`
@@ -30,7 +30,7 @@
 | Aktiv schema-registrering | Ikke funnet i aktiv `studio/schemaTypes/index.ts`; aktiv `sanity.config.ts` bruker `./schemaTypes`. `studio/sanity.config.ts:4-5`, `studio/sanity.config.ts:31-33`, `studio/schemaTypes/index.ts:26-37` |
 | Eldre schema-registrering | `studio/schemas/index.ts` importerer `weekPlan` og eksporterer `[dish, weekPlan]`. `studio/schemas/index.ts:3-6` |
 | Aktiv desk-registrering | Ikke funnet som `documentTypeListItem("weekPlan")`; aktiv desk har `Ukeplan` som `S.component(WeekPlannerTool)` og `Menyinnhold` som `documentTypeListItem("menuContent")`. `studio/deskStructure.ts:10-18` |
-| Custom Studio-verktøy | Aktiv `WeekPlannerTool` heter `Ukeplan`, men verktøyet leser/skriver `menuDay`, ikke `weekPlan`. `studio/deskStructure.ts:4`, `studio/deskStructure.ts:10-13`, `studio/tools/weekPlanner/WeekPlanner.tsx:151-179`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269` |
+| Custom Studio-verktøy | Aktiv `WeekPlannerTool` heter `Ukeplan`, men verktøyet leser/skriver `menuDay`, ikke `weekPlan`. `studio/deskStructure.ts:4`, `studio/deskStructure.ts:10-13`, `studio/src/tools/WeekPlanner.tsx:151-179`, `studio/src/tools/WeekPlanner.tsx:256-269` |
 
 Toppnivåstruktur:
 
@@ -75,9 +75,9 @@ Toppnivåstruktur:
 | `menuContent` toppnivåfelter | `date`, `description`, `allergens`, `isPublished`. `studio/schemaTypes/menuContent.ts:8-55` |
 | Hierarki | `menuDay.mealRef` refererer til `mealIdea`; `menuContent` har ingen referansefelt i skjemaet. `studio/schemaTypes/menuDay.ts:16-21`, `studio/schemaTypes/menuContent.ts:8-55` |
 | Aktiv schema-registrering | `menuContent` importeres og ligger i `schemaTypes`; `menuDay` importeres og ligger i samme liste. `studio/schemaTypes/index.ts:3-12`, `studio/schemaTypes/index.ts:26-37` |
-| Aktiv desk-registrering | `menuContent` er `documentTypeListItem("menuContent")`; `menuDay` er ikke egen document-list i aktiv desk, men brukes via custom `Ukeplan`-komponenten. `studio/deskStructure.ts:10-18`, `studio/tools/weekPlanner/WeekPlanner.tsx:531-533` |
+| Aktiv desk-registrering | `menuContent` er `documentTypeListItem("menuContent")`; `menuDay` er ikke egen document-list i aktiv desk, men brukes via custom `Ukeplan`-komponenten. `studio/deskStructure.ts:10-18`, `studio/src/tools/WeekPlanner.tsx:531-533` |
 | Eldre desk-spor | `studio/src/structure.ts` skjuler først `menuDay` fra standardlisten og legger deretter til `S.documentTypeListItem("menuDay").title("Meny – Dager")`. `studio/src/structure.ts:13-18` |
-| Custom Studio-verktøy | Aktiv `WeekPlannerTool` leser, oppretter, autofyller, godkjenner og trekker tilbake `menuDay`. `studio/tools/weekPlanner/WeekPlanner.tsx:146-189`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`, `studio/tools/weekPlanner/WeekPlanner.tsx:275-418` |
+| Custom Studio-verktøy | Aktiv `WeekPlannerTool` leser, oppretter, autofyller, godkjenner og trekker tilbake `menuDay`. `studio/src/tools/WeekPlanner.tsx:146-189`, `studio/src/tools/WeekPlanner.tsx:256-269`, `studio/src/tools/WeekPlanner.tsx:275-418` |
 
 Toppnivåstruktur:
 
@@ -93,11 +93,11 @@ Toppnivåstruktur:
 
 | Filsti:linje | Kategori | Operasjon | Hvilke felter |
 |---|---|---|---|
-| `studio/tools/weekPlanner/WeekPlanner.tsx:256-269` | Studio-verktøy | `client.createIfNotExists` for `menuDay-${date}`. | `_type`, `date`, `description`, `mealTitle`, `allergens`, `mayContain`, `approvedForPublish`, `customerVisible` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:321-345` | Studio-verktøy | Autofyll patcher `menuDay`. | `description`, `mealTitle`, `mealRef`, `allergens`, `mayContain`, `nutritionPer100g`, `kitchenStyle`, `costTier`, `estimatedCostPerPortion`, `isFishDish`, `isSoup`, `isVegetarian`, `approvedForPublish`, `customerVisible` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:347-350` | Studio-verktøy | Autofyll patcher valgt `mealIdea`. | `lastUsedDate`, `usageCount` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:400-409` | Studio-verktøy | Godkjenner uke 2 ved å patche alle fem `menuDay`. | `approvedForPublish`, `approvedAt` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:424-434` | Studio-verktøy | Trekker godkjenning for uke 2. | `approvedForPublish`, `customerVisible`, unset `approvedAt`, `customerVisibleSetAt` |
+| `studio/src/tools/WeekPlanner.tsx:256-269` | Studio-verktøy | `client.createIfNotExists` for `menuDay-${date}`. | `_type`, `date`, `description`, `mealTitle`, `allergens`, `mayContain`, `approvedForPublish`, `customerVisible` |
+| `studio/src/tools/WeekPlanner.tsx:321-345` | Studio-verktøy | Autofyll patcher `menuDay`. | `description`, `mealTitle`, `mealRef`, `allergens`, `mayContain`, `nutritionPer100g`, `kitchenStyle`, `costTier`, `estimatedCostPerPortion`, `isFishDish`, `isSoup`, `isVegetarian`, `approvedForPublish`, `customerVisible` |
+| `studio/src/tools/WeekPlanner.tsx:347-350` | Studio-verktøy | Autofyll patcher valgt `mealIdea`. | `lastUsedDate`, `usageCount` |
+| `studio/src/tools/WeekPlanner.tsx:400-409` | Studio-verktøy | Godkjenner uke 2 ved å patche alle fem `menuDay`. | `approvedForPublish`, `approvedAt` |
+| `studio/src/tools/WeekPlanner.tsx:424-434` | Studio-verktøy | Trekker godkjenning for uke 2. | `approvedForPublish`, `customerVisible`, unset `approvedAt`, `customerVisibleSetAt` |
 | `app/api/cron/week-visibility/route.ts:48-72` | cron-job | Finner `menuContent` i datointervall og patcher synlighet. | `customerVisible`, `customerVisibleSetAt` |
 | `app/api/cron/week-visibility/route.ts:75-103` | cron-job/API-route | Finner `menuContent` for én dato og patcher synlighet. | `customerVisible`, `customerVisibleSetAt` |
 | `app/api/cron/week-visibility/route.ts:106-147` | cron-job/API-route | Speiler datonivå til Supabase. | `menu_visibility_days.date`, `is_published`, `updated_at`, `updated_by` |
@@ -108,9 +108,9 @@ Toppnivåstruktur:
 
 | Filsti:linje | Kategori | Operasjon | GROQ-mønster |
 |---|---|---|---|
-| `studio/tools/weekPlanner/WeekPlanner.tsx:146-179` | Studio-verktøy | Henter uke 1 og uke 2 `menuDay`. | `_type == "menuDay"`, `date in $dates`, ekskluderer drafts |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:232-245` | Studio-verktøy | Henter historiske `menuDay` for cooldown. | `_type == "menuDay"`, `date >= $from`, `date <= $to` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:374-388` | Studio-verktøy | Henter uke 2 før godkjenning. | `_type == "menuDay"`, `date in $dates` |
+| `studio/src/tools/WeekPlanner.tsx:146-179` | Studio-verktøy | Henter uke 1 og uke 2 `menuDay`. | `_type == "menuDay"`, `date in $dates`, ekskluderer drafts |
+| `studio/src/tools/WeekPlanner.tsx:232-245` | Studio-verktøy | Henter historiske `menuDay` for cooldown. | `_type == "menuDay"`, `date >= $from`, `date <= $to` |
+| `studio/src/tools/WeekPlanner.tsx:374-388` | Studio-verktøy | Henter uke 2 før godkjenning. | `_type == "menuDay"`, `date in $dates` |
 | `app/api/cron/meal-learning/route.ts:198-209` | cron-job | Matcher ordre-datoer mot `menuDay.mealRef`. | `_type == "menuDay"`, `date in $dates`, `defined(mealRef._ref)` |
 | `lib/sanity/queries.ts:91-125` | lib-helper | Henter synlig `menuContent` for én dato. | `_type == "menuContent"`, `date == $date`, `CUSTOMER_VISIBLE_FILTER` |
 | `lib/sanity/queries.ts:141-180` | lib-helper | Henter synlig `menuContent` for flere datoer. | `_type == "menuContent"`, `date in $dates`, `CUSTOMER_VISIBLE_FILTER` |
@@ -127,22 +127,22 @@ Toppnivåstruktur:
 
 | Capability | weekPlan | menuDay+menuContent |
 |---|---|---|
-| Ukestruktur (Mon-Fri som enhet) | Ja, `days` må ha nøyaktig 5 dager. `studio/schemas/weekPlan.ts:391-399` | Delvis: `WeekPlanner` beregner fem datoer per uke, men dokumenttypen er per dag. `studio/tools/weekPlanner/WeekPlanner.tsx:136-143`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269` |
+| Ukestruktur (Mon-Fri som enhet) | Ja, `days` må ha nøyaktig 5 dager. `studio/schemas/weekPlan.ts:391-399` | Delvis: `WeekPlanner` beregner fem datoer per uke, men dokumenttypen er per dag. `studio/src/tools/WeekPlanner.tsx:136-143`, `studio/src/tools/WeekPlanner.tsx:256-269` |
 | Dag-nivå metadata (allergener, mayContain) | Ja, i `days[]`. `studio/schemas/weekPlan.ts:192-212` | Ja i `menuDay`; `menuContent` har bare `allergens`. `studio/schemaTypes/menuDay.ts:36-50`, `studio/schemaTypes/menuContent.ts:28-36` |
 | Næringsinnhold per dag | Ja, `days[].nutritionPer100g`. `studio/schemas/weekPlan.ts:214-275` | Ja i `menuDay`; ikke funnet i `menuContent`. `studio/schemaTypes/menuDay.ts:52-112`, `studio/schemaTypes/menuContent.ts:8-55` |
 | Kjøkkenstil per dag | Ja, `days[].kitchenStyle`. `studio/schemas/weekPlan.ts:277-285` | Ja i `menuDay`; ikke funnet i `menuContent`. `studio/schemaTypes/menuDay.ts:114-131`, `studio/schemaTypes/menuContent.ts:8-55` |
 | Kostnadsnivå per dag | Ja, `days[].costTier`. `studio/schemas/weekPlan.ts:287-295` | Ja i `menuDay`; ikke funnet i `menuContent`. `studio/schemaTypes/menuDay.ts:133-145`, `studio/schemaTypes/menuContent.ts:8-55` |
 | Råvarekost per dag | Ja, `days[].estimatedCostPerPortion`. `studio/schemas/weekPlan.ts:297-302` | Ja i `menuDay`; ikke funnet i `menuContent`. `studio/schemaTypes/menuDay.ts:147-151`, `studio/schemaTypes/menuContent.ts:8-55` |
-| Margin-beregning | Ikke funnet i `weekPlan`-skjemaet; modellen har bare råvarekost. `studio/schemas/weekPlan.ts:297-302` | Ja i WeekPlanner UI (`90 - cost`) og generator-score. `studio/tools/weekPlanner/WeekPlanner.tsx:97-103`, `studio/tools/weekPlanner/generateWeekMenu.ts:64-95` |
+| Margin-beregning | Ikke funnet i `weekPlan`-skjemaet; modellen har bare råvarekost. `studio/schemas/weekPlan.ts:297-302` | Ja i WeekPlanner UI (`90 - cost`) og generator-score. `studio/src/tools/WeekPlanner.tsx:97-103`, `lib/menu-publish/generateWeekMenu.ts:64-95` |
 | Status (draft/open/current/archived) | Ja, `status` options. `studio/schemas/weekPlan.ts:9-14`, `studio/schemas/weekPlan.ts:84-90` | Nei som samme statusfelt; `menuDay` bruker godkjenning/synlighet, `menuContent` bruker `isPublished`. `studio/schemaTypes/menuDay.ts:175-202`, `studio/schemaTypes/menuContent.ts:38-54` |
-| Godkjenning per uke | Ja på toppnivå `approvedForPublish`; `publish`-API setter den. `studio/schemas/weekPlan.ts:93-98`, `app/api/weekplan/publish/route.ts:119-127` | Delvis: WeekPlanner godkjenner alle fem `menuDay` i uke 2, men feltet ligger per dag. `studio/tools/weekPlanner/WeekPlanner.tsx:367-409` |
+| Godkjenning per uke | Ja på toppnivå `approvedForPublish`; `publish`-API setter den. `studio/schemas/weekPlan.ts:93-98`, `app/api/weekplan/publish/route.ts:119-127` | Delvis: WeekPlanner godkjenner alle fem `menuDay` i uke 2, men feltet ligger per dag. `studio/src/tools/WeekPlanner.tsx:367-409` |
 | Skjult/customerVisible per dag | `customerVisible` finnes på toppnivå og `hidden` finnes per `days[]`. `studio/schemas/weekPlan.ts:100-105`, `studio/schemas/weekPlan.ts:332-337` | Ja, `menuDay.customerVisible`; `menuContent` runtime-filter forventer også `customerVisible` som bakoverkompatibelt kontrollfelt selv om skjemaet ikke definerer det. `studio/schemaTypes/menuDay.ts:189-202`, `lib/sanity/queries.ts:56-72` |
 | Locked-flag | Ja, `locked` og `lockedAt`. `studio/schemas/weekPlan.ts:128-141` | Ikke funnet i `menuDay` eller `menuContent` skjema. `studio/schemaTypes/menuDay.ts:8-203`, `studio/schemaTypes/menuContent.ts:8-55` |
-| Validering: unike datoer | Ja, `uniqueDates.size !== 5` gir feil. `studio/schemas/weekPlan.ts:401-406` | Ikke funnet i skjema; WeekPlanner bruker deterministisk `_id: menuDay-${date}` med `createIfNotExists`. `studio/tools/weekPlanner/WeekPlanner.tsx:74-76`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269` |
-| Validering: maks én fiskerett | Ja i `weekPlan.days[]` validering. `studio/schemas/weekPlan.ts:417-420` | Ja i auto-generator, ikke i `menuDay`-skjemaet. `studio/tools/weekPlanner/generateWeekMenu.ts:70-72`, `studio/tools/weekPlanner/generateWeekMenu.ts:285-295` |
-| Validering: maks én suppe | Ja i `weekPlan.days[]` validering. `studio/schemas/weekPlan.ts:422-425` | Ja i auto-generator, ikke i `menuDay`-skjemaet. `studio/tools/weekPlanner/generateWeekMenu.ts:70-72`, `studio/tools/weekPlanner/generateWeekMenu.ts:285-295` |
-| Validering: maks én vegetar | Ikke funnet i `weekPlan` validering; feltet finnes. `studio/schemas/weekPlan.ts:318-323`, `studio/schemas/weekPlan.ts:391-428` | Ja i auto-generator (`MAX_VEG_PER_WEEK`), ikke i `menuDay`-skjemaet. `studio/tools/weekPlanner/generateWeekMenu.ts:70-72`, `studio/tools/weekPlanner/generateWeekMenu.ts:285-295` |
-| Auto-fyll | Ikke funnet for `weekPlan`. `studio/schemas/weekPlan.ts:1-468` | Ja, `autoFillWeek` henter `mealIdea`, kjører `generateWeekMenu`, patcher `menuDay`. `studio/tools/weekPlanner/WeekPlanner.tsx:275-365` |
+| Validering: unike datoer | Ja, `uniqueDates.size !== 5` gir feil. `studio/schemas/weekPlan.ts:401-406` | Ikke funnet i skjema; WeekPlanner bruker deterministisk `_id: menuDay-${date}` med `createIfNotExists`. `studio/src/tools/WeekPlanner.tsx:74-76`, `studio/src/tools/WeekPlanner.tsx:256-269` |
+| Validering: maks én fiskerett | Ja i `weekPlan.days[]` validering. `studio/schemas/weekPlan.ts:417-420` | Ja i auto-generator, ikke i `menuDay`-skjemaet. `lib/menu-publish/generateWeekMenu.ts:70-72`, `lib/menu-publish/generateWeekMenu.ts:285-295` |
+| Validering: maks én suppe | Ja i `weekPlan.days[]` validering. `studio/schemas/weekPlan.ts:422-425` | Ja i auto-generator, ikke i `menuDay`-skjemaet. `lib/menu-publish/generateWeekMenu.ts:70-72`, `lib/menu-publish/generateWeekMenu.ts:285-295` |
+| Validering: maks én vegetar | Ikke funnet i `weekPlan` validering; feltet finnes. `studio/schemas/weekPlan.ts:318-323`, `studio/schemas/weekPlan.ts:391-428` | Ja i auto-generator (`MAX_VEG_PER_WEEK`), ikke i `menuDay`-skjemaet. `lib/menu-publish/generateWeekMenu.ts:70-72`, `lib/menu-publish/generateWeekMenu.ts:285-295` |
+| Auto-fyll | Ikke funnet for `weekPlan`. `studio/schemas/weekPlan.ts:1-468` | Ja, `autoFillWeek` henter `mealIdea`, kjører `generateWeekMenu`, patcher `menuDay`. `studio/src/tools/WeekPlanner.tsx:275-365` |
 | Referanse til `mealIdea`-pool | Ja, `days[].mealRef -> mealIdea`. `studio/schemas/weekPlan.ts:169-176` | Ja, `menuDay.mealRef -> mealIdea`. `studio/schemaTypes/menuDay.ts:16-21` |
 | Referanse til `dish` (legacy) | Ja, `days[].dishes -> dish`, hidden legacyfelt. `studio/schemas/weekPlan.ts:339-347` | Ikke funnet i `menuDay` eller `menuContent`. `studio/schemaTypes/menuDay.ts:8-203`, `studio/schemaTypes/menuContent.ts:8-55` |
 | Tidsfelt (visibleFrom, becomesCurrentAt, publishedAt, lockedAt) | Ja på toppnivå. `studio/schemas/weekPlan.ts:107-133` | Delvis: `menuDay` har `approvedAt` og `customerVisibleSetAt`; `menuContent` skjema har ikke tidsfeltene, men queries/projeksjon forventer dem. `studio/schemaTypes/menuDay.ts:182-202`, `lib/sanity/queries.ts:35-40` |
@@ -154,13 +154,13 @@ Forskjellen når samme capability finnes i begge: `weekPlan` modellerer en uke s
 ## 5. Aktuell dataflyt
 
 - Når redaktør åpner Studio-sidebaren `Ukeplan`, rendres `WeekPlannerTool` som custom component. `studio/deskStructure.ts:10-13`
-- Når redaktør oppretter uke i dette verktøyet, kaller verktøyet `ensureWeek`, som oppretter `menuDay-${date}` med `_type: "menuDay"`. `studio/tools/weekPlanner/WeekPlanner.tsx:445-452`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`
-- Når redaktør auto-fyller, skriver verktøyet snapshotfelter fra `mealIdea` til `menuDay` og oppdaterer `mealIdea` brukshistorikk. `studio/tools/weekPlanner/WeekPlanner.tsx:306-353`
+- Når redaktør oppretter uke i dette verktøyet, kaller verktøyet `ensureWeek`, som oppretter `menuDay-${date}` med `_type: "menuDay"`. `studio/src/tools/WeekPlanner.tsx:445-452`, `studio/src/tools/WeekPlanner.tsx:256-269`
+- Når redaktør auto-fyller, skriver verktøyet snapshotfelter fra `mealIdea` til `menuDay` og oppdaterer `mealIdea` brukshistorikk. `studio/src/tools/WeekPlanner.tsx:306-353`
 - `GET /api/week` leser aktiv avtale fra Supabase, leser `menuContent` via `getMenuForDates`, og returnerer `sanity.weekPlanOperational: false` og `plan: null`. `app/api/week/route.ts:114-149`, `app/api/week/route.ts:165-192`, `app/api/week/route.ts:215-223`
 - Den synlige `/week`-siden sier i filkommentaren at employee-ukevisning får meny fra `/api/order/window`, mens samme server component også leser `menuContent` for superadmin-preview. `app/(app)/week/page.tsx:1`, `app/(app)/week/page.tsx:479-483`
 - `/api/order/window` bruker avtale, `productPlan` og `menu` per måltidstype for header/valg, ikke `weekPlan`. `app/api/order/window/route.ts:20-24`, `app/api/order/window/route.ts:707-724`, `app/api/order/window/route.ts:586-620`
 - Kode som flytter data fra `weekPlan` til `menuDay` eller `menuContent` er ikke funnet; `lock-weekplans` leser/skriver bare `weekPlan`, mens `week-visibility` leser/skriver `menuContent`. `app/api/cron/lock-weekplans/route.ts:11-18`, `app/api/cron/lock-weekplans/route.ts:47-57`, `app/api/cron/week-visibility/route.ts:48-72`
-- Kode som flytter data fra `menuDay` til `menuContent` er ikke funnet; `WeekPlannerTool` skriver `menuDay`, mens `menuContent`-queries og publiseringscron står separat. `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`, `lib/sanity/queries.ts:91-180`, `app/api/cron/week-visibility/route.ts:48-72`
+- Kode som flytter data fra `menuDay` til `menuContent` er ikke funnet; `WeekPlannerTool` skriver `menuDay`, mens `menuContent`-queries og publiseringscron står separat. `studio/src/tools/WeekPlanner.tsx:256-269`, `lib/sanity/queries.ts:91-180`, `app/api/cron/week-visibility/route.ts:48-72`
 - Det betyr at `weekPlan`-dokumenter ikke brukes av `GET /api/week` sin ansattflyt i dag. `app/api/week/route.ts:1-3`, `app/api/week/route.ts:215-223`
 
 ## 6. Cron-jobber
@@ -179,7 +179,7 @@ Forskjellen når samme capability finnes i begge: `weekPlan` modellerer en uke s
 | Modell | Repo-basert anslag uten live-query |
 |---|---|
 | `weekPlan` | Kun live-data — krever Sanity-query for å verifisere. Seed/dump for `weekPlan` er ikke funnet; skjema finnes i `studio/schemas/weekPlan.ts`. `studio/schemas/weekPlan.ts:64-68` |
-| `menuDay` | Kun live-data — krever Sanity-query for å verifisere. Seed/dump for `menuDay` er ikke funnet; dokumenter opprettes dynamisk som `menuDay-${date}`. `studio/tools/weekPlanner/WeekPlanner.tsx:74-76`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269` |
+| `menuDay` | Kun live-data — krever Sanity-query for å verifisere. Seed/dump for `menuDay` er ikke funnet; dokumenter opprettes dynamisk som `menuDay-${date}`. `studio/src/tools/WeekPlanner.tsx:74-76`, `studio/src/tools/WeekPlanner.tsx:256-269` |
 | `menuContent` | Kun live-data — krever Sanity-query for å verifisere. `studio/seed/product-plans-and-menus.ndjson` seeder `productPlan` og `menu`, ikke `menuContent`. `studio/seed/product-plans-and-menus.ndjson:1-9`, `studio/schemaTypes/menuContent.ts:3-7` |
 | Relatert `mealIdea` | Det finnes seed/dump med 1000 `mealIdea`-linjer i repoet. `studio/mealIdea_1000.ndjson:1-5`, `studio/seed/varmmatbank-1000.ndjson:1-5` |
 
@@ -248,7 +248,7 @@ Type-definisjoner:
 | Filsti | Type-navn | Felt-liste |
 |---|---|---|
 | `lib/sanity/queries.ts:15-43` | `MenuContent`, `SanityMenuDay` | `_id`, `date`, `title`, `tier`, `description`, `allergens`, `isPublished`, `approvedForPublish`, `approvedAt`, `customerVisible`, `customerVisibleSetAt`; `SanityMenuDay` er alias til `MenuContent`. `lib/sanity/queries.ts:15-43` |
-| `studio/tools/weekPlanner/WeekPlanner.tsx:19-38` | `DayDoc` | `_id`, `date`, `description`, `mealTitle`, `mealRef`, `allergens`, `mayContain`, `nutritionPer100g`, `kitchenStyle`, `costTier`, `estimatedCostPerPortion`, rettetypeflagg, godkjennings- og synlighetsfelt. `studio/tools/weekPlanner/WeekPlanner.tsx:19-38` |
+| `studio/src/tools/WeekPlanner.tsx:19-38` | `DayDoc` | `_id`, `date`, `description`, `mealTitle`, `mealRef`, `allergens`, `mayContain`, `nutritionPer100g`, `kitchenStyle`, `costTier`, `estimatedCostPerPortion`, rettetypeflagg, godkjennings- og synlighetsfelt. `studio/src/tools/WeekPlanner.tsx:19-38` |
 | `lib/week/employeeWeekMenuDays.ts:12-25` | `EmployeeWeekDayRow` | `date`, `weekday`, `dayKey`, `tier`, `isDeliveryDay`, `dishes`, `kitchenNote`, `isPublished`, `description`, `title`, `allergens`, `weekOffset`. `lib/week/employeeWeekMenuDays.ts:12-25` |
 | `app/today/WeekPreview.tsx:7-22` | `MenuDayItem`, `WeekResp` | `date`, `weekday`, `isPublished`, `description`, `allergens`, `range`, `weekOffset`, `days`. `app/today/WeekPreview.tsx:7-22` |
 
@@ -307,7 +307,7 @@ Broken kodeflater hvis dokumenttypene/filer fjernes:
 
 | Fil/route | Hvorfor |
 |---|---|
-| `studio/tools/weekPlanner/WeekPlanner.tsx` | Leser, oppretter, autofyller, godkjenner og redigerer `menuDay`. `studio/tools/weekPlanner/WeekPlanner.tsx:146-189`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`, `studio/tools/weekPlanner/WeekPlanner.tsx:275-418`, `studio/tools/weekPlanner/WeekPlanner.tsx:531-533` |
+| `studio/src/tools/WeekPlanner.tsx` | Leser, oppretter, autofyller, godkjenner og redigerer `menuDay`. `studio/src/tools/WeekPlanner.tsx:146-189`, `studio/src/tools/WeekPlanner.tsx:256-269`, `studio/src/tools/WeekPlanner.tsx:275-418`, `studio/src/tools/WeekPlanner.tsx:531-533` |
 | `app/api/cron/meal-learning/route.ts` | Leser `menuDay` med `mealRef` for læringsoppdatering. `app/api/cron/meal-learning/route.ts:198-209` |
 | `lib/sanity/queries.ts` / `lib/cms/menuContent.ts` | Alle dato-baserte `menuContent`-reads og publisert-meny helperne forsvinner. `lib/sanity/queries.ts:91-278`, `lib/cms/menuContent.ts:1-20` |
 | `app/api/week/route.ts` | Leser `menuContent` for `days` og markerer `weekPlanOperational: false`. `app/api/week/route.ts:165-192`, `app/api/week/route.ts:215-223` |
@@ -403,14 +403,14 @@ Evidens for:
 
 Evidens mot:
 
-- Aktiv Studio `Ukeplan`-tool skriver `menuDay`, ikke `weekPlan`, selv om UI-navnet er `Ukeplan`. `studio/deskStructure.ts:10-13`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`
+- Aktiv Studio `Ukeplan`-tool skriver `menuDay`, ikke `weekPlan`, selv om UI-navnet er `Ukeplan`. `studio/deskStructure.ts:10-13`, `studio/src/tools/WeekPlanner.tsx:256-269`
 - `menuDay` har også redaksjonelle felt som godkjenning, synlighet, næring og råvarekost, som overlapper med `weekPlan.days[]`. `studio/schemaTypes/menuDay.ts:52-202`, `studio/schemas/weekPlan.ts:214-337`
 
 ### Hypotese D — Begge er forsøk på samme problem, og ingen ble fullført som én kanon
 
 Evidens for:
 
-- `weekPlan`, `menuDay`, `menuContent`, `menu`, Supabase-avtale og DB-speilet beskriver ulike deler av uke/meny-flyten samtidig. `app/api/week/route.ts:114-149`, `lib/sanity/queries.ts:91-180`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-345`, `supabase/migrations/20260509184900_create_menu_visibility_days.sql:1-8`
+- `weekPlan`, `menuDay`, `menuContent`, `menu`, Supabase-avtale og DB-speilet beskriver ulike deler av uke/meny-flyten samtidig. `app/api/week/route.ts:114-149`, `lib/sanity/queries.ts:91-180`, `studio/src/tools/WeekPlanner.tsx:256-345`, `supabase/migrations/20260509184900_create_menu_visibility_days.sql:1-8`
 - TypeScript-typen `SanityMenuDay` er alias til `MenuContent`, mens `menuDay` er en annen Sanity dokumenttype. `lib/sanity/queries.ts:42-43`, `studio/schemaTypes/menuDay.ts:3-7`
 - `menuContent` runtime-projeksjoner forventer kontrollfelt som ikke finnes i `menuContent`-skjemaet. `lib/sanity/queries.ts:35-40`, `studio/schemaTypes/menuContent.ts:8-55`
 
@@ -422,11 +422,11 @@ Evidens mot:
 
 - Hvilken Sanity Studio-instans er faktisk deployet: aktiv rot-`studio/sanity.config.ts` med `./schemaTypes`, eldre `studio/src`-spor, eller `studio/lunchportalen-studio` med tom schema-liste? `studio/sanity.config.ts:4-5`, `studio/src/structure.ts:1-19`, `studio/lunchportalen-studio/schemaTypes/index.ts:1`
 - Finnes det live `weekPlan`-dokumenter med historikk som må bevares før eventuell beslutning? `studio/schemas/weekPlan.ts:70-141`, `studio/schemas/weekPlan.ts:143-353`
-- Finnes det live `menuDay`-dokumenter som faktisk brukes av kjøkken/drift utenfor funnene i denne rapporten? `studio/tools/weekPlanner/WeekPlanner.tsx:146-189`, `app/api/cron/meal-learning/route.ts:198-209`
+- Finnes det live `menuDay`-dokumenter som faktisk brukes av kjøkken/drift utenfor funnene i denne rapporten? `studio/src/tools/WeekPlanner.tsx:146-189`, `app/api/cron/meal-learning/route.ts:198-209`
 - Hvorfor forventer `menuContent`-queries feltene `title`, `tier`, `approvedForPublish`, `approvedAt`, `customerVisible` og `customerVisibleSetAt` når skjemaet ikke definerer dem? `lib/sanity/queries.ts:15-40`, `studio/schemaTypes/menuContent.ts:8-55`
 - Skal `menu_visibility_days` være autoritativ publiseringsstatus for superadminstatus, eller bare observasjon/speil av Sanity? `app/api/superadmin/menus-week/route.ts:136-139`, `supabase/migrations/20260509184900_create_menu_visibility_days.sql:1-8`
 - Er `app/api/weekplan/*` fortsatt en offentlig/stabil kontrakt, eller kun bakoverkompatibel/deprecated fasade? `app/api/weekplan/route.ts:1-3`, `app/api/weekplan/next/route.ts:29-54`
-- Skal Studio-sidebarens `Ukeplan` forstås som `menuDay`-planlegging, mens Sanity-dokumenttypen `weekPlan` er et separat redaksjonelt dokument, eller er dette navnekollisjon? `studio/deskStructure.ts:10-13`, `studio/tools/weekPlanner/WeekPlanner.tsx:256-269`, `studio/schemas/weekPlan.ts:64-68`
+- Skal Studio-sidebarens `Ukeplan` forstås som `menuDay`-planlegging, mens Sanity-dokumenttypen `weekPlan` er et separat redaksjonelt dokument, eller er dette navnekollisjon? `studio/deskStructure.ts:10-13`, `studio/src/tools/WeekPlanner.tsx:256-269`, `studio/schemas/weekPlan.ts:64-68`
 
 ## 14. Status etter beslutning
 

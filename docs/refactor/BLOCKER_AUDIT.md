@@ -84,7 +84,7 @@ Ekstra klient/rolle-sjekk ved siden av server guards — må holdes konsistent m
 
 | Filsti |
 |--------|
-| `studio/deskStructure.ts` → `studio/tools/weekPlanner/WeekPlanner.tsx` |
+| `studio/deskStructure.ts` → `studio/src/tools/WeekPlanner.tsx` |
 | `studio/src/structure.ts` → `studio/src/tools/WeekPlanner.tsx` |
 
 **Konsekvens:** To innganger til lignende konsept i Studio; risiko for **dobbelt vedlikehold** og forvirring om hvilket verktøy som er fasit.

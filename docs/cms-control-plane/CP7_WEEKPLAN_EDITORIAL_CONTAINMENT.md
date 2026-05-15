@@ -6,7 +6,7 @@
 
 ## Hvilke skjermer viser weekPlan?
 
-- **Sanity Studio:** Ukeplan-verktøy (`studio/tools/weekPlanner/WeekPlanner.tsx`).
+- **Sanity Studio:** Ukeplan-verktøy (`studio/src/tools/WeekPlanner.tsx`).
 - **Backoffice:** Tekst og amber-panel på `/backoffice/week-menu` (CP6/CP7).
 
 ## Merking i UI (ingen forveksling med runtime)

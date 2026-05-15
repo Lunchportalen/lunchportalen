@@ -1675,7 +1675,7 @@ Tracked files: 1893. Classification is code-first; non-CMS files are still liste
 | studio/src/structure.ts | studio | source-module | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
 | studio/src/tools/WeekPlanner.tsx | studio | source-module | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
 | studio/static/.gitkeep | studio | asset-or-other | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
-| studio/tools/weekPlanner/WeekPlanner.tsx | studio | source-module | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
+| studio/src/tools/WeekPlanner.tsx | studio | source-module | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
 | studio/tsconfig.json | studio | config | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
 | studio/vite.config.ts | studio | source-module | INDIRECT_CMS | TRANSITIONAL | LOW | Relevant mainly as surrounding runtime or support context. |
 | supabase/.gitignore | repo-root | asset-or-other | NON_CMS | UNCLEAR | NONE | Relevant mainly as surrounding runtime or support context. |
