@@ -47,6 +47,7 @@
     "sanity:seed-menu-week": "tsx scripts/sanity/seed-menu-week.ts",
     "sanity:seed-menu-week-mix-2122": "tsx scripts/sanity/seed-menu-week-mix-2122.ts",
     "sanity:build": "npm run build --prefix studio",
+    "sanity:create-test-menuday": "tsx scripts/sanity/create-test-menuday-2026-05-18.ts",
     "sanity:delete-menuDay-weeks-2122": "tsx scripts/sanity/delete-menuDay-weeks-2122.ts",
     "sanity:seed-lunch-categories": "tsx scripts/sanity/seed-lunch-categories.ts",
     "sanity:migrate-mealidea-allowed-tiers": "tsx scripts/sanity/migrate-mealidea-allowed-tiers.ts",
