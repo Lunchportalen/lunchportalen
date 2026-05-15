@@ -20,6 +20,59 @@ export type OutboxRow = {
 
 const OUTBOX_MAX_ATTEMPTS = 10;
 
+/** Fan-out / state markers: no SMTP; row closed as SENT (noop until a dedicated consumer exists). */
+export const OUTBOX_STATE_EVENT_PREFIXES = ["order.set:", "rollup.rebuild:"] as const;
+
+/**
+ * Known SMTP-queue prefixes. Rows may still fail `payload_missing_fields` until from/to/subject resolve.
+ * Ad-hoc keys (e.g. legacy smoke tests) are allowed when the JSON payload already carries a full triplet.
+ */
+export const OUTBOX_DECLARED_EMAIL_PREFIXES = [
+  "company.approved:",
+  "company.rejected:",
+  "company.activated:",
+  "deviation:",
+  "batch_packed:",
+  "daily_order_summary:",
+  "daily_kitchen_production:",
+  "order.cancel.day_choice:",
+] as const;
+
+const OUTBOX_INVOICE_READY_PREFIX = "invoice.ready:";
+
+function extractOutboxEmailFields(p: unknown) {
+  const x: any = p ?? {};
+  const from = safeStr(x.from ?? x.from_email ?? x.fromEmail);
+  const to = safeStr(x.to ?? x.to_email ?? x.toEmail);
+  const subject = safeStr(x.subject);
+  return { from, to, subject };
+}
+
+export function isOutboxStateEventKey(eventKey: string): boolean {
+  const k = safeStr(eventKey);
+  return OUTBOX_STATE_EVENT_PREFIXES.some((pre) => k.startsWith(pre));
+}
+
+function isOutboxInvoiceReadyKey(eventKey: string): boolean {
+  return safeStr(eventKey).startsWith(OUTBOX_INVOICE_READY_PREFIX);
+}
+
+function matchesDeclaredOutboxEmailPrefix(eventKey: string): boolean {
+  const k = safeStr(eventKey);
+  return OUTBOX_DECLARED_EMAIL_PREFIXES.some((pre) => k.startsWith(pre));
+}
+
+/**
+ * Whether the row belongs on the SMTP worker path (not state noop, not Tripletex invoice.ready worker).
+ */
+export function isOutboxEmailRoutedEvent(eventKey: string, payload: unknown): boolean {
+  const k = safeStr(eventKey);
+  if (!k || isOutboxStateEventKey(k) || isOutboxInvoiceReadyKey(k)) return false;
+  const { from, to, subject } = extractOutboxEmailFields(payload);
+  if (from && to && subject) return true;
+  return matchesDeclaredOutboxEmailPrefix(k);
+}
+
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
@@ -213,6 +266,42 @@ export async function markOutboxSent(idOrEventKey: string, messageId: string | n
   }
 }
 
+async function markStateOutboxEventClosed(outboxId: string) {
+  await markOutboxSentById(outboxId, "state-noop");
+}
+
+/**
+ * `invoice.ready:%` rows are processed by `/api/system/outbox/process` with its own claim loop.
+ * If the SMTP worker claimed them first via `lp_outbox_claim`, release back to PENDING without burning attempts.
+ */
+async function releaseInvoiceReadyOutboxClaim(outboxId: string): Promise<boolean> {
+  let admin: any;
+  try {
+    admin = supabaseAdmin();
+  } catch {
+    return false;
+  }
+  const now = new Date().toISOString();
+  const { data, error } = await admin
+    .from("outbox")
+    .update({
+      status: "PENDING",
+      locked_at: null,
+      locked_by: null,
+      updated_at: now,
+    })
+    .eq("id", outboxId)
+    .eq("status", "PROCESSING")
+    .select("id")
+    .limit(1);
+
+  if (error) {
+    outboxLog("error", "invoice_ready_release_failed", { outbox_id: outboxId, message: errString(error) });
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+}
+
 async function markOutboxFailedById(outboxId: string, errorMsg: string) {
   return rpcWithParamFallbacks<any>("lp_outbox_mark_failed", [
     { p_id: outboxId, p_error: safeStr(errorMsg) || "unknown_error" },
@@ -299,6 +388,10 @@ export async function processOutboxBatch(
   const rows = await claimOutbox(limit, worker);
 
   let sent = 0;
+  /** Rows closed without SMTP (order.set / rollup.rebuild noop). */
+  let stateNoop = 0;
+  /** invoice.ready rows handed back to the Tripletex worker claim loop. */
+  let releasedInvoiceReady = 0;
   let failed = 0;
   let failedPermanent = 0;
   let timedOut = 0;
@@ -314,6 +407,58 @@ export async function processOutboxBatch(
     const key = safeStr(row.event_key) || outboxId;
 
     const p: any = row.payload;
+
+    if (isOutboxStateEventKey(key)) {
+      let marked = false;
+      try {
+        await markStateOutboxEventClosed(outboxId);
+        marked = true;
+      } catch (e1: any) {
+        try {
+          await markStateOutboxEventClosed(outboxId);
+          marked = true;
+        } catch (e2: any) {
+          outboxLog("error", "state_event_mark_sent_failed", {
+            rid,
+            outbox_id: outboxId,
+            event_key: key,
+            error: errString(e2),
+          });
+        }
+      }
+      if (marked) {
+        stateNoop += 1;
+        outboxLog("info", "state_event_noop", { rid, outbox_id: outboxId, event_key: key });
+      } else {
+        failed += 1;
+      }
+      continue;
+    }
+
+    if (isOutboxInvoiceReadyKey(key)) {
+      const released = await releaseInvoiceReadyOutboxClaim(outboxId);
+      if (released) {
+        releasedInvoiceReady += 1;
+        outboxLog("info", "invoice_ready_released_to_pending", { rid, outbox_id: outboxId, event_key: key });
+      } else {
+        failed += 1;
+        outboxLog("error", "invoice_ready_release_miss", { rid, outbox_id: outboxId, event_key: key });
+      }
+      continue;
+    }
+
+    if (!isOutboxEmailRoutedEvent(key, p)) {
+      try {
+        const mark = await markOutboxFailed(outboxId, `unknown_event_kind: ${key}`);
+        if (mark.status === "FAILED_PERMANENT") failedPermanent += 1;
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+      outboxLog("error", "unknown_event_kind", { rid, outbox_id: outboxId, event_key: key });
+      continue;
+    }
+
     const from = safeStr(p.from ?? p.from_email ?? p.fromEmail);
     const to = safeStr(p.to ?? p.to_email ?? p.toEmail);
     const subject = safeStr(p.subject);
@@ -378,6 +523,8 @@ export async function processOutboxBatch(
     ok: true as const,
     processed: rows.length,
     sent,
+    stateNoop,
+    releasedInvoiceReady,
     failed,
     failedPermanent,
     timedOut,
