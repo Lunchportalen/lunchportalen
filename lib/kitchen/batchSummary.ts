@@ -3,6 +3,7 @@ import "server-only";
 
 import type { supabaseAdmin as supabaseAdminType } from "@/lib/supabase/admin";
 import { isIsoDate } from "@/lib/date/oslo";
+import { KITCHEN_BATCH_SUMMARY_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { opsLog } from "@/lib/ops/log";
 
 function safeStr(v: any) {
@@ -106,9 +107,10 @@ export async function buildBatchSummary(args: {
   const allowedSlots = Array.from(new Set(bat.map((b) => normSlot(b.delivery_window)))).sort((a, b) => a.localeCompare(b, "nb"));
 
   const isTestEnv = process.env.NODE_ENV === "test";
+  // Service-role context, prices not needed (batch packing vs ordre).
   let ordersQ = admin
     .from("orders")
-    .select("slot, location_id, company_id, user_id, date")
+    .select(KITCHEN_BATCH_SUMMARY_ORDER_COLUMNS)
     .eq("company_id", companyId)
     .eq("location_id", locationId)
     .in("slot", allowedSlots);

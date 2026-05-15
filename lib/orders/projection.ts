@@ -26,6 +26,46 @@ const ADMIN_MSDI_COLUMNS = EMPLOYEE_MSDI_COLUMNS + ", offered_price_cents_ex_vat
 
 export const EMPLOYEE_ORDER_COLUMNS_WITH_LOCATION = EMPLOYEE_ORDER_COLUMNS + ", location_id";
 
+/**
+ * Service-role / supabaseAdmin reads der enhetsøkonomi ikke trengs (kitchen operative, driver, cron sanity).
+ * App-side projection — samme kontrollflate som employee-kolonner.
+ */
+export const KITCHEN_OPERATIVE_ORDER_COLUMNS =
+  "id, user_id, company_id, location_id, note, status, slot";
+
+/** Service-role driver-liste når operativ dato-path ikke brukes. */
+export const DRIVER_FALLBACK_ORDER_COLUMNS = "id, date, slot, status, company_id, location_id";
+
+/** Fallback fra `orders` når `daily_employee_orders` mangler (kjøkken-feed). */
+export const KITCHEN_FEED_ORDER_COLUMNS = "company_id, location_id, slot, user_id, note, status";
+
+/** Batch summary / kjøkken-print — grouping på slot og lokasjon. */
+export const KITCHEN_BATCH_SUMMARY_ORDER_COLUMNS = "slot, location_id, company_id, user_id, date";
+
+/** GET /api/kitchen/company — per ordre-rad uten pris. */
+export const KITCHEN_COMPANY_ORDERS_COLUMNS = "id, user_id, location_id, note, created_at";
+
+/** fetchKitchenDayData — hvem har bestilt (sanning for produksjon). */
+export const KITCHEN_DAY_DATA_ORDER_COLUMNS =
+  "id, user_id, company_id, location_id, date, note, created_at, status, slot";
+
+/** Ukesrapport (kitchen) — metadata for gruppering, ikke pris. */
+export const KITCHEN_REPORT_ORDER_COLUMNS =
+  "id, user_id, date, status, note, company_id, location_id, slot";
+
+/** Cron: daglig ordre-e-postsammendrag. */
+export const CRON_DAILY_ORDER_SUMMARY_COLUMNS = "id, company_id, location_id, user_id, slot";
+
+/** Cron: meal-learning felt for aggregat. */
+export const CRON_MEAL_LEARNING_ORDER_COLUMNS = "id, date, status, company_id, location_id";
+
+/** Cron daily-sanity: status histogram (ingen økonomi). */
+export const CRON_SANITY_ORDER_STATUS_COLUMNS = "status";
+
+/** Cron daily-sanity: felt-sjekk og nylige rader (ingen økonomi). */
+export const CRON_SANITY_ORDER_MISSING_FIELDS_COLUMNS = "id, date, slot, company_id, location_id";
+export const CRON_SANITY_ORDER_RECENT_COLUMNS = "id, created_at, updated_at, date";
+
 export const ORDER_PRICE_FIELDS_ONLY =
   "unit_price_nok, subtotal_cents_ex_vat, vat_cents, gross_cents_inc_vat";
 

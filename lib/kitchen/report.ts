@@ -2,6 +2,7 @@ import "server-only";
 
 import { writeAuditEvent } from "@/lib/audit/write";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { KITCHEN_REPORT_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type KitchenReportMode = "day" | "week";
@@ -174,9 +175,10 @@ function datesForWeek(weekStart: string): string[] {
 async function fetchOrders(input: BuildKitchenReportInput, dates: string[]): Promise<OrderRow[]> {
   const admin = supabaseAdmin();
 
+  // Service-role context, prices not needed (ukesrapport-gruppering).
   let query = admin
     .from("orders")
-    .select("id,user_id,date,status,note,company_id,location_id,slot")
+    .select(KITCHEN_REPORT_ORDER_COLUMNS)
     .in("date", dates)
     .in("status", [...ORDER_ALLOWLIST]);
 

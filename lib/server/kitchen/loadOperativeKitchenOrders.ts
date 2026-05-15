@@ -4,6 +4,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { KITCHEN_OPERATIVE_ORDER_COLUMNS } from "@/lib/orders/projection";
+
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
@@ -69,9 +71,10 @@ export async function loadOperativeKitchenOrders(args: {
   const { admin, dateISO, tenant, productionFreezeAllowlist } = args;
   const date = safeStr(dateISO);
 
+  // Service-role context, prices not needed (operative identity + tenant only).
   let ordersQ = admin
     .from("orders")
-    .select("id,user_id,company_id,location_id,note,status,slot")
+    .select(KITCHEN_OPERATIVE_ORDER_COLUMNS)
     .eq("date", date)
     .in("status", ["ACTIVE"]);
 

@@ -10,6 +10,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { KITCHEN_COMPANY_ORDERS_COLUMNS } from "@/lib/orders/projection";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
@@ -139,9 +140,10 @@ export async function GET(req: NextRequest) {
     if (cErr) return jsonErr(rid, "Kunne ikke hente firma.", 500, { code: "company_failed", detail: cErr.message });
 
     // orders for company + date
+    // Service-role context, prices not needed (kitchen company detail).
     const { data: orders, error: oErr } = await supabase
       .from("orders")
-      .select("id, user_id, location_id, note, created_at")
+      .select(KITCHEN_COMPANY_ORDERS_COLUMNS)
       .eq("date", date)
       .eq("integrity_status", "ok")
       .eq("company_id", company_id)

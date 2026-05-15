@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CRON_DAILY_ORDER_SUMMARY_COLUMNS,
+  CRON_MEAL_LEARNING_ORDER_COLUMNS,
+  CRON_SANITY_ORDER_MISSING_FIELDS_COLUMNS,
+  CRON_SANITY_ORDER_RECENT_COLUMNS,
+  CRON_SANITY_ORDER_STATUS_COLUMNS,
+  DRIVER_FALLBACK_ORDER_COLUMNS,
+  KITCHEN_BATCH_SUMMARY_ORDER_COLUMNS,
+  KITCHEN_COMPANY_ORDERS_COLUMNS,
+  KITCHEN_DAY_DATA_ORDER_COLUMNS,
+  KITCHEN_FEED_ORDER_COLUMNS,
+  KITCHEN_OPERATIVE_ORDER_COLUMNS,
+  KITCHEN_REPORT_ORDER_COLUMNS,
   ORDER_PRICE_FIELDS_ONLY,
   pickItemColumns,
   pickMenuItemColumns,
@@ -20,6 +32,31 @@ const FORBIDDEN_FOR_EMPLOYEE = [
   "vat_rate_snapshot",
   "offered_price_cents_ex_vat",
 ];
+
+describe("service-role order projections (no price tokens)", () => {
+  const lists = [
+    KITCHEN_OPERATIVE_ORDER_COLUMNS,
+    DRIVER_FALLBACK_ORDER_COLUMNS,
+    KITCHEN_FEED_ORDER_COLUMNS,
+    KITCHEN_BATCH_SUMMARY_ORDER_COLUMNS,
+    KITCHEN_COMPANY_ORDERS_COLUMNS,
+    KITCHEN_DAY_DATA_ORDER_COLUMNS,
+    KITCHEN_REPORT_ORDER_COLUMNS,
+    CRON_DAILY_ORDER_SUMMARY_COLUMNS,
+    CRON_MEAL_LEARNING_ORDER_COLUMNS,
+    CRON_SANITY_ORDER_STATUS_COLUMNS,
+    CRON_SANITY_ORDER_MISSING_FIELDS_COLUMNS,
+    CRON_SANITY_ORDER_RECENT_COLUMNS,
+  ];
+
+  it("operative / kitchen / driver / cron lists omit economic columns", () => {
+    for (const cols of lists) {
+      for (const t of FORBIDDEN_FOR_EMPLOYEE) {
+        expect(cols).not.toContain(t);
+      }
+    }
+  });
+});
 
 describe("pickOrderColumns", () => {
   it("employee projection omits all price tokens", () => {

@@ -1,5 +1,6 @@
 // lib/kitchen/dayData.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { KITCHEN_DAY_DATA_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { opsLog } from "@/lib/ops/log";
 import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
@@ -224,9 +225,10 @@ export async function fetchKitchenDayData(args: {
   // 1) Orders = SANNHET for hvem som har bestilt
   //    IMPORTANT: Do NOT query non-existent columns (e.g. integrity_status)
   // =========================================================
+  // Service-role context, prices not needed (produce who ordered what).
   let q = admin
     .from("orders")
-    .select("id, user_id, company_id, location_id, date, note, created_at, status, slot")
+    .select(KITCHEN_DAY_DATA_ORDER_COLUMNS)
     .eq("date", dateISO)
     .eq("company_id", companyId)
     // only active orders for kitchen list

@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { CRON_DAILY_ORDER_SUMMARY_COLUMNS } from "@/lib/orders/projection";
 import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
 
 const ORDER_TO = "ordre@lunchportalen.no";
@@ -112,9 +113,10 @@ export async function POST(req: NextRequest) {
     const prettyDate = formatDateNO(date);
     const from = safeStr(process.env.LP_RESEND_FROM) || `Lunchportalen <${ORDER_EMAIL}>`;
 
+    // Service-role context, prices not needed (cron e-postsammendrag).
     const { data: orderRows, error: orderErr } = await admin
       .from("orders")
-      .select("id, company_id, location_id, user_id, slot")
+      .select(CRON_DAILY_ORDER_SUMMARY_COLUMNS)
       .eq("date", date)
       .eq("status", "ACTIVE");
 

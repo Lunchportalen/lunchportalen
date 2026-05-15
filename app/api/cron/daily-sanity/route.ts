@@ -7,6 +7,11 @@ import { type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
+import {
+  CRON_SANITY_ORDER_MISSING_FIELDS_COLUMNS,
+  CRON_SANITY_ORDER_RECENT_COLUMNS,
+  CRON_SANITY_ORDER_STATUS_COLUMNS,
+} from "@/lib/orders/projection";
 import { opsLog } from "@/lib/ops/log";
 import { systemRoleByEmail } from "@/lib/system/emails";
 import { requireCronAuth as requireCronAuthShared } from "@/lib/http/cronAuth";
@@ -141,7 +146,8 @@ export async function GET(req: NextRequest) {
 
   // 1) Orders today by status
   try {
-    const { data, error } = await admin.from("orders").select("status").eq("date", today);
+    // Service-role context, prices not needed (tellinger).
+    const { data, error } = await admin.from("orders").select(CRON_SANITY_ORDER_STATUS_COLUMNS).eq("date", today);
     if (error) throw error;
 
     const counts: Record<string, number> = {};
@@ -159,9 +165,10 @@ export async function GET(req: NextRequest) {
 
   // 2) Orders missing fields
   try {
+    // Service-role context, prices not needed (datakvalitet).
     const { data, error } = await admin
       .from("orders")
-      .select("id, date, slot, company_id, location_id")
+      .select(CRON_SANITY_ORDER_MISSING_FIELDS_COLUMNS)
       .or("company_id.is.null,location_id.is.null,slot.is.null,date.is.null")
       .limit(20);
     if (error) throw error;
@@ -208,9 +215,10 @@ export async function GET(req: NextRequest) {
 
   // 4) Recent orders scan
   try {
+    // Service-role context, prices not needed (konsistens audit).
     const { data } = await admin
       .from("orders")
-      .select("id, created_at, updated_at, date")
+      .select(CRON_SANITY_ORDER_RECENT_COLUMNS)
       .order("created_at", { ascending: false })
       .limit(500);
 

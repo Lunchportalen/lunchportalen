@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSanityClient } from "@sanity/client";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+import { CRON_MEAL_LEARNING_ORDER_COLUMNS } from "@/lib/orders/projection";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -170,9 +172,10 @@ export async function GET(req: NextRequest) {
             useCdn: false,
         });
 
+        // Service-role context, prices not needed (CMS meal-korrelasjon).
         const { data: orders, error: ordersError } = await supabase
             .from("orders")
-            .select("id,date,status,company_id,location_id")
+            .select(CRON_MEAL_LEARNING_ORDER_COLUMNS)
             .gte("date", fromDate)
             .lte("date", toDate);
 

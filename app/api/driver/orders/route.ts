@@ -9,6 +9,7 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { osloTodayISODate } from "@/lib/date/oslo";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { DRIVER_FALLBACK_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { loadOperativeKitchenOrders } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
 import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
@@ -104,9 +105,10 @@ export async function GET(req: NextRequest) {
     return jsonOk(rid, { rows }, 200);
   }
 
+  // Service-role context, prices not needed (sjåførliste).
   let q = admin
     .from("orders")
-    .select("id,date,slot,status,company_id,location_id")
+    .select(DRIVER_FALLBACK_ORDER_COLUMNS)
     .eq("company_id", companyId)
     .order("slot", { ascending: true })
     .order("created_at", { ascending: true });

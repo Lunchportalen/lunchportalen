@@ -1,5 +1,6 @@
 import "server-only";
 
+import { KITCHEN_FEED_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type FlatOrderRow = {
@@ -88,9 +89,10 @@ async function fetchRowsFromDaily(date: string, scope: KitchenScope): Promise<Fl
 
 async function fetchRowsFromOrders(date: string, scope: KitchenScope): Promise<FlatOrderRow[]> {
   const admin = supabaseAdmin();
+  // Service-role context, prices not needed (kjøkken oversikt uten økonomi).
   let q = admin
     .from("orders")
-    .select("company_id,location_id,slot,user_id,note,status")
+    .select(KITCHEN_FEED_ORDER_COLUMNS)
     .eq("date", date);
 
   q = applyTenantScope(q, scope);
