@@ -32,12 +32,21 @@ function targetTiersFor(costTier: CostTier): Array<"BASIS" | "LUXUS" | "ENTERPRI
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
 
-  const token = safeEnv("SANITY_TOKEN");
-  if (!token) {
-    console.error("FAIL: SANITY_TOKEN mangler i env.");
-    console.error('Kjør: $env:SANITY_TOKEN="<token>"; npm run sanity:migrate-mealidea-allowed-tiers');
+  const tokenRaw =
+    process.env.SANITY_WRITE_TOKEN ??
+    process.env.SANITY_TOKEN ??
+    process.env.SANITY_API_TOKEN;
+
+  if (!tokenRaw || !tokenRaw.trim()) {
+    console.error("FAIL: Sanity write-token mangler i env.");
+    console.error(
+      "Set SANITY_WRITE_TOKEN, SANITY_TOKEN eller SANITY_API_TOKEN. Eksempel:",
+    );
+    console.error('$env:SANITY_WRITE_TOKEN="<token>"; npm run sanity:migrate-mealidea-allowed-tiers');
     process.exit(1);
   }
+
+  const token = tokenRaw.trim();
 
   const projectId = safeEnv("NEXT_PUBLIC_SANITY_PROJECT_ID") || safeEnv("SANITY_PROJECT_ID") || "4udoq5d8";
   const dataset = safeEnv("NEXT_PUBLIC_SANITY_DATASET") || safeEnv("SANITY_DATASET") || "production";
