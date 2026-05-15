@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import AdminTopbarUserMenu, { type AdminTopbarUserMenuProps } from "./AdminTopbarUserMenu.client";
+
 function osloNowParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Oslo",
@@ -61,7 +63,12 @@ function PlusIcon() {
   );
 }
 
-export default function AdminTopbar({ pageTitle = "Oversikt" }: { pageTitle?: string }) {
+export type AdminTopbarProps = {
+  pageTitle?: string;
+  userMenu?: AdminTopbarUserMenuProps | null;
+};
+
+export default function AdminTopbar({ pageTitle = "Oversikt", userMenu }: AdminTopbarProps) {
   return (
     <header className="ds-admin-topbar">
       <div className="ds-admin-topbar__title">
@@ -83,6 +90,7 @@ export default function AdminTopbar({ pageTitle = "Oversikt" }: { pageTitle?: st
           <PlusIcon />
           <span>Inviter ansatte</span>
         </Link>
+        {userMenu ? <AdminTopbarUserMenu {...userMenu} /> : null}
       </div>
     </header>
   );

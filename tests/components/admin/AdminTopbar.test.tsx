@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest";
 import { formatAdminTopbarDate } from "@/app/admin/AdminTopbar";
 
 const TOPBAR_PATH = join(process.cwd(), "app", "admin", "AdminTopbar.tsx");
+const USER_MENU_PATH = join(process.cwd(), "app", "admin", "AdminTopbarUserMenu.client.tsx");
 
 describe("AdminTopbar", () => {
   test("rendrer pageTitle som h1", () => {
@@ -26,8 +27,10 @@ describe("AdminTopbar", () => {
     expect(source).toContain('<Link href="/admin/invite"');
   });
 
-  test("Søk-knapp har aria-label", () => {
+  test("inneholder brukermeny-komponent for utlogging", () => {
     const source = readFileSync(TOPBAR_PATH, "utf-8");
-    expect(source).toContain('aria-label="Søk"');
+    expect(source).toContain("AdminTopbarUserMenu");
+    const menuSource = readFileSync(USER_MENU_PATH, "utf-8");
+    expect(menuSource).toContain('className="ds-admin-user-trigger"');
   });
 });

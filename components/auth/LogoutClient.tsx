@@ -1,5 +1,6 @@
 "use client";
 
+import type { ButtonHTMLAttributes } from "react";
 import { useEffect, useTransition } from "react";
 
 async function performLogoutRedirect() {
@@ -22,7 +23,11 @@ async function performLogoutRedirect() {
   }
 }
 
-export function LogoutClientButton({ className }: { className?: string }) {
+export type LogoutClientButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "onClick"> & {
+  className?: string;
+};
+
+export function LogoutClientButton({ className, ...rest }: LogoutClientButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   function onLogout() {
@@ -41,6 +46,7 @@ export function LogoutClientButton({ className }: { className?: string }) {
       onClick={onLogout}
       aria-busy={isPending}
       title={isPending ? "Logger ut..." : "Logg ut"}
+      {...rest}
     >
       {isPending ? "Logger ut..." : "Logg ut"}
     </button>

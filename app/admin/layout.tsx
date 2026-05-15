@@ -133,6 +133,7 @@ async function shell(
     userName?: string;
     pageTitle?: string;
     companyId?: string | null;
+    userMenu?: { displayName: string; email: string; roleLabel: string } | null;
   },
 ) {
   const showNav = opts?.showCompanyAdminNav !== false;
@@ -142,7 +143,7 @@ async function shell(
         <AdminSidebar companyName={opts?.companyName ?? "Firma"} userName={opts?.userName ?? "Firmaadmin"} companyId={opts?.companyId ?? null} />
       ) : null}
       <div className="ds-admin-main">
-        <AdminTopbar pageTitle={opts?.pageTitle ?? "Oversikt"} />
+        <AdminTopbar pageTitle={opts?.pageTitle ?? "Oversikt"} userMenu={opts?.userMenu ?? null} />
         <main className="ds-admin-content">{children}</main>
       </div>
       {showNav ? (
@@ -172,8 +173,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const currentPath = await currentPathFromHeaders("/admin");
   const pageTitle = titleForAdminPath(currentPath);
 
+  const userEmail = safeStr(auth.email) || safeStr(auth.user?.email) || "";
+  const userDisplayName =
+    safeStr((auth as { user?: { user_metadata?: { full_name?: string } } | null }).user?.user_metadata?.full_name) ||
+    userEmail ||
+    "Bruker";
+
   if (role === "superadmin") {
-    return shell(children, { showCompanyAdminNav: false, pageTitle });
+    return shell(children, {
+      showCompanyAdminNav: false,
+      pageTitle,
+      userMenu: {
+        displayName: userDisplayName,
+        email: userEmail,
+        roleLabel: "Superadmin",
+      },
+    });
   }
 
   if (role !== "company_admin") {
@@ -195,7 +210,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     safeStr((auth as any).email) ||
     "Firmaadmin";
 
-  return shell(children, { companyName, userName, pageTitle, companyId: auth.company_id });
+  const companyAdminUserMenu = {
+    displayName: userName,
+    email: userEmail,
+    roleLabel: "Firmaadmin",
+  };
+
+  return shell(children, {
+    companyName,
+    userName,
+    pageTitle,
+    companyId: auth.company_id,
+    userMenu: companyAdminUserMenu,
+  });
 }
 
 async function hasActiveAgreement(companyId: string): Promise<boolean> {
