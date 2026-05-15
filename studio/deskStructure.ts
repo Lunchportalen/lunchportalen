@@ -1,7 +1,7 @@
 import { CalendarIcon, ControlsIcon, DocumentIcon } from "@sanity/icons";
 import type { StructureResolver } from "sanity/structure";
 
-import WeekPlannerTool from "./tools/weekPlanner/WeekPlanner";
+import WeekPlannerTool from "./src/tools/WeekPlanner";
 
 export const structure: StructureResolver = (S) =>
   S.list()

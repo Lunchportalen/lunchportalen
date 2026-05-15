@@ -3,13 +3,12 @@ import { Badge, Button, Card, Flex, Grid, Spinner, Stack, Text } from "@sanity/u
 import { useClient } from "sanity";
 import { IntentLink } from "sanity/router";
 
-import { generateWeekMenu, type Meal, type NutritionPer100g } from "./generateWeekMenu";
+import { generateWeekMenu, type Meal, type NutritionPer100g, type PlanTier } from "./generateWeekMenu";
 
 const TARGET_PRICE = 90;
-const DEFAULT_PLAN_TIER = "BASIS";
 const DEFAULT_CATEGORY = "varmrett";
 
-type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
+const PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
 type MenuCategory = "paasmurt" | "salat" | "sushi" | "pokebowl" | "thai" | "varmrett";
 
 function normalizeTitle(title: string): string {
@@ -89,8 +88,28 @@ function weekdayDates(mondayISO: string) {
   return [0, 1, 2, 3, 4].map((i) => addDaysISO(mondayISO, i));
 }
 
-function docIdForDate(date: string, planTier: PlanTier = DEFAULT_PLAN_TIER, category: MenuCategory = DEFAULT_CATEGORY) {
+function docIdForDate(date: string, planTier: PlanTier, category: MenuCategory = DEFAULT_CATEGORY) {
   return `menuDay-${date}-${planTier}-${category}`;
+}
+
+function matchesMenuDayTier(doc: Pick<DayDoc, "_id" | "planTier" | "date">, tier: PlanTier, dates?: string[]) {
+  if (dates && !dates.includes(doc.date)) return false;
+  if (doc.planTier === tier) return true;
+  const t = doc.planTier;
+  if ((t === undefined || t === null) && tier === "BASIS") {
+    return doc._id.includes("-BASIS-");
+  }
+  return false;
+}
+
+function pickCacheKey(label: "uke1" | "uke2", tier: PlanTier) {
+  return `${label}:${tier}`;
+}
+
+function costTierClause(includePremium: boolean) {
+  return includePremium
+    ? `costTier in ["BUDGET", "STANDARD", "PREMIUM"]`
+    : `costTier in ["BUDGET", "STANDARD"]`;
 }
 
 function currentSeason(): "winter" | "spring" | "summer" | "autumn" {
@@ -143,12 +162,9 @@ export default function WeekPlanner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [week1, setWeek1] = useState<DayDoc[]>([]);
   const [week2, setWeek2] = useState<DayDoc[]>([]);
+  const [activeTier, setActiveTier] = useState<PlanTier>("BASIS");
 
-  const lastPicked = React.useRef<{ uke1: Set<string>; uke2: Set<string> }>({
-    uke1: new Set(),
-    uke2: new Set(),
-  });
-
+  const lastPicked = React.useRef<Record<string, Set<string>>>({});
   const ranges = useMemo(() => {
     const week1Start = startOfWeekISO(osloTodayISO());
     const week2Start = addDaysISO(week1Start, 7);
@@ -211,19 +227,25 @@ export default function WeekPlanner() {
   }, [fetchWeeks]);
 
   const fetchMealBank = useCallback(
-    async (includePremium: boolean): Promise<Meal[]> => {
+    async (tier: PlanTier, includePremium: boolean): Promise<Meal[]> => {
       const season = currentSeason();
+      const costPart = costTierClause(includePremium);
+      const enterpriseOnly =
+        tier === "ENTERPRISE"
+          ? `count(allowedPlanTiers) == 1 && allowedPlanTiers[0] == "ENTERPRISE"`
+          : `$tier in allowedPlanTiers`;
+      const costCap =
+        tier === "ENTERPRISE"
+          ? `defined(estimatedCostPerPortion)`
+          : `defined(estimatedCostPerPortion) && estimatedCostPerPortion < ${TARGET_PRICE}`;
 
       const meals = await client.fetch<Meal[]>(
         `*[
           _type == "mealIdea" &&
           isActive == true &&
-          defined(estimatedCostPerPortion) &&
-          estimatedCostPerPortion < 90 &&
-          ${includePremium
-          ? `costTier in ["BUDGET", "STANDARD", "PREMIUM"]`
-          : `costTier in ["BUDGET", "STANDARD"]`
-        } &&
+          ${costCap} &&
+          ${enterpriseOnly} &&
+          ${costPart} &&
           (!defined(season) || count(season) == 0 || $season in season)
         ] {
           _id,
@@ -249,13 +271,14 @@ export default function WeekPlanner() {
           lastUsedDate,
           usageCount
         }`,
-        { season }
+        tier === "ENTERPRISE" ? { season } : { season, tier }
       );
 
       const safeMeals = meals || [];
 
       if (process.env.NODE_ENV === "development") {
         console.log("[WeekPlanner] mealIdeas", {
+          tier,
           includePremium,
           count: safeMeals.length,
           withAllergens: safeMeals.filter((m) => (m.allergens || []).length > 0).length,
@@ -294,13 +317,13 @@ export default function WeekPlanner() {
   );
 
   const ensureWeek = useCallback(
-    async (dates: string[]) => {
+    async (dates: string[], tier: PlanTier) => {
       for (const date of dates) {
         await client.createIfNotExists({
-          _id: docIdForDate(date),
+          _id: docIdForDate(date, tier),
           _type: "menuDay",
           date,
-          planTier: DEFAULT_PLAN_TIER,
+          planTier: tier,
           category: DEFAULT_CATEGORY,
           description: "",
           mealTitle: "",
@@ -318,18 +341,20 @@ export default function WeekPlanner() {
     async (dates: string[], label: "uke1" | "uke2") => {
       setBusy(`autofill-${label}`);
       setMsg(null);
+      const tier = activeTier;
 
       try {
-        await ensureWeek(dates);
+        await ensureWeek(dates, tier);
 
         const existingDocs = label === "uke1" ? week1 : week2;
-        if (existingDocs.some((d) => d.approvedForPublish)) {
-          throw new Error("Uken er allerede godkjent. Auto-fyll er sperret.");
+        const tierDocs = existingDocs.filter((d) => matchesMenuDayTier(d, tier, dates));
+        if (tierDocs.some((d) => d.approvedForPublish)) {
+          throw new Error("Uken er allerede godkjent for valgt tier. Auto-fyll er sperret.");
         }
 
         const [baseMealsRaw, fridayMealsRaw, avoidTitles] = await Promise.all([
-          fetchMealBank(false),
-          fetchMealBank(true),
+          fetchMealBank(tier, false),
+          fetchMealBank(tier, true),
           fetchCooldownTitles(dates[0]),
         ]);
 
@@ -338,7 +363,7 @@ export default function WeekPlanner() {
 
         if (baseMeals.length < 50) {
           throw new Error(
-            `For få retter med komplett næringsinnhold: ${baseMeals.length}. Importer/oppdater varmmatbanken før auto-fyll.`
+            `For få retter med komplett næringsinnhold for ${tier}: ${baseMeals.length}. Importer/oppdater varmmatbanken før auto-fyll.`
           );
         }
 
@@ -346,15 +371,20 @@ export default function WeekPlanner() {
         const otherWeekDocs = label === "uke1" ? week2 : week1;
 
         for (const doc of otherWeekDocs) {
+          if (!matchesMenuDayTier(doc, tier)) continue;
           const title = normalizeTitle(doc.mealTitle || doc.description || "");
           if (title) avoidTitles.add(title);
         }
 
-        for (const title of lastPicked.current[otherLabel]) {
-          avoidTitles.add(title);
+        const otherKey = pickCacheKey(otherLabel, tier);
+        const otherPicked = lastPicked.current[otherKey];
+        if (otherPicked) {
+          for (const title of otherPicked) {
+            avoidTitles.add(title);
+          }
         }
 
-        const picked = generateWeekMenu({ baseMeals, fridayMeals, avoidTitles });
+        const picked = generateWeekMenu({ baseMeals, fridayMeals, avoidTitles, planTier: tier });
 
         if (picked.length !== 5) {
           throw new Error("Generator returnerte ikke 5 hverdager.");
@@ -365,10 +395,11 @@ export default function WeekPlanner() {
           throw new Error(`Retten "${missingNutrition.title}" mangler næringsinnhold per 100g.`);
         }
 
-        lastPicked.current[label] = new Set(picked.map((m) => normalizeTitle(m.title)));
+        const cacheKey = pickCacheKey(label, tier);
+        lastPicked.current[cacheKey] = new Set(picked.map((m) => normalizeTitle(m.title)));
 
         if (process.env.NODE_ENV === "development") {
-          console.log(`[WeekPlanner] valgt ${label}`, picked);
+          console.log(`[WeekPlanner] valgt ${label} tier=${tier}`, picked);
         }
 
         const now = new Date().toISOString();
@@ -377,19 +408,16 @@ export default function WeekPlanner() {
         for (let i = 0; i < dates.length; i += 1) {
           const date = dates[i];
           const meal = picked[i];
+          const docId = docIdForDate(date, tier);
 
           transaction = transaction
-            .patch(docIdForDate(date), {
-              unset: [
-                "nutritionPer100g",
-                "approvedAt",
-                "customerVisibleSetAt",
-              ],
+            .patch(docId, {
+              unset: ["nutritionPer100g", "approvedAt", "customerVisibleSetAt"],
             })
-            .patch(docIdForDate(date), {
+            .patch(docId, {
               set: {
                 description: meal.description?.trim() || meal.title,
-                planTier: DEFAULT_PLAN_TIER,
+                planTier: tier,
                 category: DEFAULT_CATEGORY,
                 mealTitle: meal.title,
                 mealRef: {
@@ -418,7 +446,7 @@ export default function WeekPlanner() {
 
         await transaction.commit({ autoGenerateArrayKeys: true });
 
-        setMsg(`Auto-fyll fullført ${now}: næring og allergener er kopiert automatisk.`);
+        setMsg(`Auto-fyll fullført (${tier}) ${now}: næring og allergener er kopiert automatisk.`);
         await fetchWeeks();
       } catch (error: any) {
         console.error(error);
@@ -427,7 +455,7 @@ export default function WeekPlanner() {
         setBusy(null);
       }
     },
-    [client, ensureWeek, fetchWeeks, fetchMealBank, fetchCooldownTitles, week1, week2]
+    [activeTier, client, ensureWeek, fetchWeeks, fetchMealBank, fetchCooldownTitles, week1, week2]
   );
 
   const approveWeek2 = useCallback(async () => {
@@ -435,9 +463,9 @@ export default function WeekPlanner() {
     setMsg(null);
 
     try {
-      await ensureWeek(ranges.week2.dates);
+      await ensureWeek(ranges.week2.dates, activeTier);
 
-      const docs = await client.fetch<DayDoc[]>(
+      const fetched = await client.fetch<DayDoc[]>(
         `*[
           _type == "menuDay" &&
           date in $dates &&
@@ -445,6 +473,7 @@ export default function WeekPlanner() {
         ] | order(date asc) {
           _id,
           date,
+          planTier,
           description,
           mealTitle,
           allergens,
@@ -453,7 +482,13 @@ export default function WeekPlanner() {
         { dates: ranges.week2.dates }
       );
 
-      if ((docs || []).length !== 5) throw new Error("Uke 2 må ha nøyaktig 5 hverdager.");
+      const docs = (fetched || []).filter((d) => matchesMenuDayTier(d, activeTier, ranges.week2.dates));
+
+      if (docs.length !== 5) {
+        throw new Error(
+          `Uke 2 må ha nøyaktig 5 hverdager for valgt tier (${activeTier}). Har ${docs.length}/5. Opprett manglende dager først.`
+        );
+      }
       if (docs.some((day) => !day.description || day.description.trim().length < 8)) {
         throw new Error("Alle dager i uke 2 må ha menybeskrivelse før godkjenning.");
       }
@@ -475,7 +510,7 @@ export default function WeekPlanner() {
       }
 
       await transaction.commit({ autoGenerateArrayKeys: true });
-      setMsg("Uke 2 er godkjent. Synlighet styres videre av automatikk/cron.");
+      setMsg(`Uke 2 er godkjent (${activeTier}). Synlighet styres videre av automatikk/cron.`);
       await fetchWeeks();
     } catch (error: any) {
       console.error(error);
@@ -483,16 +518,22 @@ export default function WeekPlanner() {
     } finally {
       setBusy(null);
     }
-  }, [client, ensureWeek, fetchWeeks, ranges.week2.dates]);
+  }, [activeTier, client, ensureWeek, fetchWeeks, ranges.week2.dates]);
 
   const revokeWeek2 = useCallback(async () => {
     setBusy("revoke");
     setMsg(null);
 
     try {
+      const tierDocs = week2.filter((d) => matchesMenuDayTier(d, activeTier, ranges.week2.dates));
+      if (tierDocs.length === 0) {
+        setMsg("Ingen menuDay-dokumenter for valgt tier i uke 2.");
+        return;
+      }
+
       let transaction = client.transaction();
 
-      for (const day of week2) {
+      for (const day of tierDocs) {
         transaction = transaction.patch(day._id, {
           set: { approvedForPublish: false, customerVisible: false },
           unset: ["approvedAt", "customerVisibleSetAt"],
@@ -500,7 +541,7 @@ export default function WeekPlanner() {
       }
 
       await transaction.commit({ autoGenerateArrayKeys: true });
-      setMsg("Godkjenning for uke 2 er trukket tilbake.");
+      setMsg(`Godkjenning for uke 2 (${activeTier}) er trukket tilbake.`);
       await fetchWeeks();
     } catch (error: any) {
       console.error(error);
@@ -508,7 +549,7 @@ export default function WeekPlanner() {
     } finally {
       setBusy(null);
     }
-  }, [client, week2, fetchWeeks]);
+  }, [activeTier, client, fetchWeeks, ranges.week2.dates, week2]);
 
   const createWeek = useCallback(
     async (dates: string[], label: string) => {
@@ -516,8 +557,8 @@ export default function WeekPlanner() {
       setMsg(null);
 
       try {
-        await ensureWeek(dates);
-        setMsg(`${label} er opprettet.`);
+        await ensureWeek(dates, activeTier);
+        setMsg(`${label} er opprettet for ${activeTier}.`);
         await fetchWeeks();
       } catch (error: any) {
         console.error(error);
@@ -526,17 +567,27 @@ export default function WeekPlanner() {
         setBusy(null);
       }
     },
-    [ensureWeek, fetchWeeks]
+    [activeTier, ensureWeek, fetchWeeks]
+  );
+
+  const filteredWeek1 = useMemo(
+    () => week1.filter((d) => matchesMenuDayTier(d, activeTier, ranges.week1.dates)),
+    [activeTier, ranges.week1.dates, week1]
+  );
+
+  const filteredWeek2 = useMemo(
+    () => week2.filter((d) => matchesMenuDayTier(d, activeTier, ranges.week2.dates)),
+    [activeTier, ranges.week2.dates, week2]
   );
 
   const stats = useMemo(
     () => ({
-      w1Approved: week1.filter((d) => d.approvedForPublish).length,
-      w1Visible: week1.filter((d) => d.customerVisible).length,
-      w2Approved: week2.filter((d) => d.approvedForPublish).length,
-      w2Visible: week2.filter((d) => d.customerVisible).length,
+      w1Approved: filteredWeek1.filter((d) => d.approvedForPublish).length,
+      w1Visible: filteredWeek1.filter((d) => d.customerVisible).length,
+      w2Approved: filteredWeek2.filter((d) => d.approvedForPublish).length,
+      w2Visible: filteredWeek2.filter((d) => d.customerVisible).length,
     }),
-    [week1, week2]
+    [filteredWeek1, filteredWeek2]
   );
 
   const renderWeek = (title: string, docs: DayDoc[], dates: string[]) => {
@@ -637,9 +688,25 @@ export default function WeekPlanner() {
               <Button text={busy === "autofill-uke1" ? "Fyller uke 1..." : "Auto-fyll uke 1"} disabled={!!busy || loading} onClick={() => autoFillWeek(ranges.week1.dates, "uke1")} />
               <Button text={busy === "autofill-uke2" ? "Fyller uke 2..." : "Auto-fyll uke 2"} disabled={!!busy || loading} onClick={() => autoFillWeek(ranges.week2.dates, "uke2")} />
               <Button tone="positive" text={busy === "approve" ? "Godkjenner..." : "Godkjenn uke 2"} disabled={!!busy || loading} onClick={approveWeek2} />
-              <Button tone="critical" text={busy === "revoke" ? "Opphever..." : "Trekk godkjenning"} disabled={!!busy || loading || week2.length === 0} onClick={revokeWeek2} />
+              <Button tone="critical" text={busy === "revoke" ? "Opphever..." : "Trekk godkjenning"} disabled={!!busy || loading || filteredWeek2.length === 0} onClick={revokeWeek2} />
               <Button text="Oppdater" disabled={!!busy || loading} onClick={fetchWeeks} />
             </Flex>
+          </Flex>
+
+          <Flex gap={2} wrap="wrap" align="center">
+            <Text size={1} weight="semibold">
+              Avtale-tier
+            </Text>
+            {PLAN_TIERS.map((tier) => (
+              <Button
+                key={tier}
+                mode={activeTier === tier ? "default" : "ghost"}
+                tone={activeTier === tier ? "primary" : "default"}
+                text={tier === "BASIS" ? "Basis" : tier === "LUXUS" ? "Luxus" : "Enterprise"}
+                disabled={!!busy || loading}
+                onClick={() => setActiveTier(tier)}
+              />
+            ))}
           </Flex>
 
           <Flex gap={2} wrap="wrap">
@@ -664,8 +731,8 @@ export default function WeekPlanner() {
             </Flex>
           ) : (
             <Grid columns={[1, 1, 2]} gap={4}>
-              {renderWeek("Denne uken (Uke 1)", week1, ranges.week1.dates)}
-              {renderWeek("Neste uke (Uke 2)", week2, ranges.week2.dates)}
+              {renderWeek(`Denne uken (Uke 1) · ${activeTier}`, filteredWeek1, ranges.week1.dates)}
+              {renderWeek(`Neste uke (Uke 2) · ${activeTier}`, filteredWeek2, ranges.week2.dates)}
             </Grid>
           )}
         </Stack>

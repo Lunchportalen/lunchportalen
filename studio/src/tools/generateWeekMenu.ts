@@ -13,6 +13,8 @@ export type NutritionPer100g = {
   saltG?: number;
 };
 
+export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
+
 export type Meal = {
   _id: string;
   title: string;
@@ -42,6 +44,8 @@ type GenerateWeekMenuArgs = {
   baseMeals: Meal[];
   fridayMeals: Meal[];
   avoidTitles: Set<string>;
+  /** Reserved for future tier-specific scoring; optional and ignored in v1. */
+  planTier?: PlanTier;
 };
 
 const TARGET_PRICE = 90;
@@ -298,7 +302,9 @@ export function generateWeekMenu({
   baseMeals,
   fridayMeals,
   avoidTitles,
+  planTier: _planTier,
 }: GenerateWeekMenuArgs): Meal[] {
+  void _planTier;
   const state = {
     usedTitles: new Set([...avoidTitles].map(normalizeTitle)),
     usedStyles: new Set<string>(),
