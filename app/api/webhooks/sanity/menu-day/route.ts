@@ -115,6 +115,16 @@ export async function POST(req: NextRequest) {
     );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? e.stack : undefined;
+    // FORCE log full detail to Vercel logs (allowDetail skjuler det i body)
+    console.error("[sanity-webhook] SYNC_FAILED", {
+      rid,
+      message: msg,
+      stack,
+      date,
+      planTier,
+      menuDayId: doc["_id"],
+    });
     return jsonErr(rid, "Kunne ikke synkronisere menu_service_days.", 500, "SYNC_FAILED", { message: msg });
   }
 }
