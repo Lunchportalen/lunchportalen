@@ -7,6 +7,7 @@ import weekTemplate from "./weekTemplate";
 import closedDate from "./closedDate";
 import page from "./page";
 import pricingInfo from "./pricingInfo";
+import lunchCategory from "./lunchCategory";
 import mealIdea from "./mealIdea";
 import menuDay from "./menuDay";
 
@@ -16,6 +17,9 @@ import menuDay from "./menuDay";
  * ---------------------------------------------------------
  * mealIdea:
  *  - Varmmatbank / basebank
+ *
+ * lunchCategory:
+ *  - Kanonisk statisk kategoriinnhold (påsmurt, salatboks, …)
  *
  * menuDay:
  *  - Dagkort brukt av WeekPlanner
@@ -30,6 +34,7 @@ export const schemaTypes = [
   closedDate,
   page,
   pricingInfo,
+  lunchCategory,
   mealIdea,
   menuDay,
 ];

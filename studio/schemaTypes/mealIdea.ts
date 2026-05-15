@@ -155,6 +155,31 @@ export default defineType({
     }),
 
     defineField({
+      name: "allowedPlanTiers",
+      title: "Tilgjengelig for avtale-tiers",
+      description:
+        "Hvilke avtaleplaner (Basis / Luxus / Enterprise) som kan få denne retten fra banken. Migreres fra costTier.",
+      type: "array",
+      of: [
+        {
+          type: "string",
+          options: {
+            list: [
+              { title: "Basis", value: "BASIS" },
+              { title: "Luxus", value: "LUXUS" },
+              { title: "Enterprise", value: "ENTERPRISE" },
+            ],
+          },
+        },
+      ],
+      options: {
+        layout: "grid",
+      },
+      initialValue: ["BASIS", "LUXUS", "ENTERPRISE"],
+      validation: (Rule) => Rule.required().min(1).error("Minst ett avtale-tier må velges."),
+    }),
+
+    defineField({
       name: "productionComplexity",
       title: "Produksjonsnivå",
       type: "string",
