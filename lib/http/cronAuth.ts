@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-export type CronAuthMode = "authorization" | "x-cron-secret";
+export type CronAuthMode = "authorization" | "x-cron-secret" | "vercel-cron";
 
 export type RequireCronAuthOptions = {
   secretEnvVar?: string;
@@ -13,17 +13,24 @@ function safeStr(v: unknown) {
 
 /**
  * FASIT:
- * - Prod/staging: Vercel sends Authorization: Bearer <CRON_SECRET>
- * - We also support x-cron-secret (local/manual), never query secrets
+ * - Vercel Cron: sends `x-vercel-cron: 1` (injected; not settable by external clients on Vercel).
+ *   When `CRON_SECRET` is unset, Vercel may send only this header — see Vercel cron docs.
+ * - When secret is configured: Vercel also sends `Authorization: Bearer <CRON_SECRET>`.
+ * - Manual / external scheduler: `Authorization: Bearer <secret>` or `x-cron-secret` (never query params).
  *
  * Throws Error with .code:
- * - cron_secret_missing
+ * - cron_secret_missing (or custom missingCode)
  * - forbidden
  */
 export function requireCronAuth(
   req: Request | NextRequest,
   options: RequireCronAuthOptions = {}
 ): { mode: CronAuthMode } {
+  // Vercel-injected header for invocations from the platform cron scheduler only.
+  if (safeStr(req.headers.get("x-vercel-cron")) === "1") {
+    return { mode: "vercel-cron" };
+  }
+
   const envName = safeStr(options.secretEnvVar) || "CRON_SECRET";
   const missingCode = safeStr(options.missingCode) || "cron_secret_missing";
   const expected = safeStr(process.env[envName]);
