@@ -475,8 +475,9 @@ function choicesForTier(tier: DayRow["tier"]): MealChoice[] {
   }));
 }
 
-function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
-  const dates = ["2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08"];
+const PREVIEW_ISO_DATES_DEFAULT = ["2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08"] as const;
+
+function buildPreviewDayRows(mode: PreviewMode, dates: readonly string[]): DayRow[] {
   return dates.map((date, index) => {
     const tier = previewTierForDay(mode, index);
     return {
@@ -509,6 +510,10 @@ function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
       menuImages: [],
     };
   });
+}
+
+function buildPreviewDays(mode: PreviewMode = "basis"): DayRow[] {
+  return buildPreviewDayRows(mode, PREVIEW_ISO_DATES_DEFAULT);
 }
 
 function ReadOnlyPreviewHint({ className = "" }: { className?: string }) {
@@ -885,12 +890,37 @@ function WeekLoadingSkeleton({ mobileLayout }: { mobileLayout: boolean }) {
   );
 }
 
+function resolvePreviewRowsForStaticPreview(
+  readOnlyPreview: boolean,
+  previewMode: PreviewMode,
+  previewHarness: { calendarDates?: string[]; osloToday?: string } | null | undefined,
+): DayRow[] {
+  if (!readOnlyPreview) return [];
+  const raw = previewHarness?.calendarDates ?? [];
+  const hd = raw.filter((d) => typeof d === "string" && isIsoDate(d.trim()));
+  if (hd.length > 0) return buildPreviewDayRows(previewMode, hd);
+  return buildPreviewDays(previewMode);
+}
+
 type Props = {
   canAct: boolean;
   billingHoldReason?: string | null;
   previewMode?: PreviewMode;
   readOnlyPreview?: boolean;
+  /**
+   * Begrenset til readOnlyPreview: overstyr hvilke datoer kalender-demo bruker
+   * og hvilken dato «Oslo today» markers som (stabile Vitest/UI-harness).
+   */
+  previewHarness?: { calendarDates: string[]; osloToday: string } | null;
 };
+
+/** Eksportert for klassenavnkontrakttester på /week-kalenderen (FASE 12A). */
+export function weekCalendarDayPillClassNames(active: boolean, isToday: boolean): string {
+  const base = ["ds-week-calendar-day-pill"];
+  base.push(active ? "ds-week-calendar-day-pill--selected" : "ds-week-calendar-day-pill--idle");
+  if (isToday) base.push("ds-week-calendar-day-pill--today");
+  return base.join(" ");
+}
 
 function WeekConfirmModal({
   open,
@@ -1369,10 +1399,19 @@ export default function EmployeeWeekClient({
   billingHoldReason,
   previewMode = "basis",
   readOnlyPreview = false,
+  previewHarness = null,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const previewDays = useMemo(() => buildPreviewDays(previewMode), [previewMode]);
-  const [days, setDays] = useState<DayRow[]>(() => (readOnlyPreview ? previewDays : []));
+  const previewHarnessCalendarKey = (previewHarness?.calendarDates ?? []).join("|");
+
+  const previewRowsResolved = useMemo(
+    () => resolvePreviewRowsForStaticPreview(readOnlyPreview, previewMode, previewHarness),
+    [readOnlyPreview, previewMode, previewHarnessCalendarKey],
+  );
+
+  const [days, setDays] = useState<DayRow[]>(() =>
+    resolvePreviewRowsForStaticPreview(readOnlyPreview, previewMode, previewHarness),
+  );
   const [agreementMessage, setAgreementMessage] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(readOnlyPreview ? "Lunchportalen demo" : null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -1388,7 +1427,13 @@ export default function EmployeeWeekClient({
   const [contentVisible, setContentVisible] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
-  const [serverOsloDate, setServerOsloDate] = useState<string | null>(readOnlyPreview ? previewDays[0]?.date ?? null : null);
+  const [serverOsloDate, setServerOsloDate] = useState<string | null>(() =>
+    readOnlyPreview
+      ? (previewHarness?.osloToday ??
+        resolvePreviewRowsForStaticPreview(true, previewMode, previewHarness)[0]?.date ??
+        PREVIEW_ISO_DATES_DEFAULT[0])
+      : null,
+  );
   const [weekOrderingAllowed, setWeekOrderingAllowed] = useState(readOnlyPreview);
   const [todayCutoffStatus, setTodayCutoffStatus] = useState<
     "PAST" | "TODAY_OPEN" | "TODAY_LOCKED" | "FUTURE_OPEN" | null
@@ -1459,12 +1504,12 @@ export default function EmployeeWeekClient({
 
   useEffect(() => {
     if (!readOnlyPreview) return;
-    setDays(previewDays);
+    setDays(previewRowsResolved);
     setCompanyName("Lunchportalen demo");
     setLoadError(null);
     setForbidden(false);
     setLoading(false);
-    setServerOsloDate(previewDays[0]?.date ?? null);
+    setServerOsloDate(previewHarness?.osloToday ?? previewRowsResolved[0]?.date ?? PREVIEW_ISO_DATES_DEFAULT[0]);
     setWeekOrderingAllowed(true);
     setTodayCutoffStatus(null);
     setOrderingUrgencyHint(false);
@@ -1477,8 +1522,8 @@ export default function EmployeeWeekClient({
     setConfirmSubmitting(false);
     setSelectedChoices({});
     navSourceRef.current = "init";
-    setSelectedDate(previewDays[0]?.date ?? null);
-  }, [previewDays, readOnlyPreview]);
+    setSelectedDate(previewRowsResolved[0]?.date ?? null);
+  }, [previewRowsResolved, readOnlyPreview, previewHarness?.osloToday]);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;
@@ -2114,22 +2159,21 @@ export default function EmployeeWeekClient({
             FASE 10A.4. */}
         {sortedDays.map((day, index) => {
           const active = activeDay?.date === day.date;
+          const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);
           const weekday = (formatWeekdayNO(day.date) || day.weekday).slice(0, 3);
           return (
             <button
               key={day.date}
               type="button"
+              data-lp-date={day.date}
+              aria-current={isToday ? "date" : undefined}
               style={selectorGridPosition(day, selectorWeekRows, index)}
               onClick={() => selectDayFromTap(day.date)}
-              className={`min-h-[52px] min-w-0 rounded-2xl px-2 py-3 text-center ring-1 transition-transform active:scale-[0.98] ${
-                active
-                  ? "bg-[#fff6d6] text-neutral-950 ring-[#f5c518] shadow-[0_10px_30px_rgba(245,197,24,0.2)]"
-                  : "bg-white/80 text-neutral-700 ring-black/5"
-              }`}
+              className={weekCalendarDayPillClassNames(active, isToday)}
               aria-pressed={active}
             >
-              <span className="block truncate text-xs font-bold capitalize">{weekday}</span>
-              <span className="mt-1 block text-[11px] font-medium text-neutral-500">{formatDateNO(day.date).split(".")[0]}</span>
+              <span className="ds-week-calendar-day-pill__weekday">{weekday}</span>
+              <span className="ds-week-calendar-day-pill__daynum">{formatDateNO(day.date).split(".")[0]}</span>
             </button>
           );
         })}

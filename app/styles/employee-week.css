@@ -1,3 +1,107 @@
+/* ── Ansatt /week ukedagsvelger (FASE 12A — dagens dato‑markering) ───────────── */
+.ds-week-calendar-day-pill {
+  box-sizing: border-box;
+  min-height: 52px;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  appearance: none;
+  border-radius: 1rem;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-week-calendar-day-pill {
+    transition:
+      transform 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
+      background-color 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
+      color 180ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
+      box-shadow 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94);
+  }
+
+  .ds-week-calendar-day-pill:active {
+    transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-week-calendar-day-pill {
+    transition: none;
+  }
+
+  .ds-week-calendar-day-pill:active {
+    transform: none;
+  }
+}
+
+.ds-week-calendar-day-pill--idle {
+  background-color: rgb(255 255 255 / 0.8);
+  color: #525252;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
+.ds-week-calendar-day-pill--selected {
+  background-color: #fff6d6;
+  color: var(--ds-text);
+  box-shadow:
+    0 0 0 1px #f5c518,
+    0 10px 30px rgb(245 197 24 / 0.2);
+}
+
+.ds-week-calendar-day-pill--today {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
+.ds-week-calendar-day-pill:focus {
+  outline: none;
+}
+
+.ds-week-calendar-day-pill:focus-visible {
+  outline: 3px solid var(--ds-accent);
+  outline-offset: 3px;
+  z-index: 1;
+  position: relative;
+}
+
+.ds-week-calendar-day-pill__weekday {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ds-body-xs, 12px);
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: capitalize;
+}
+
+.ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__weekday {
+  color: #404040;
+}
+
+.ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__weekday {
+  color: var(--ds-text);
+}
+
+.ds-week-calendar-day-pill__daynum {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--ds-body-xxs, 11px);
+  font-weight: 500;
+}
+
+.ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__daynum {
+  color: #737373;
+}
+
+.ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__daynum {
+  color: rgb(82 82 82);
+}
+
 .ds-tier-pill {
   display: inline-flex;
   align-items: center;

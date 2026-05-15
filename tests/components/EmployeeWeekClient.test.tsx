@@ -7,6 +7,7 @@ import {
   isCalendarUpcoming,
   statusPresentation,
   tierPillClass,
+  weekCalendarDayPillClassNames,
   type DayRow,
 } from "@/app/(app)/week/EmployeeWeekClient";
 
@@ -49,6 +50,46 @@ describe("EmployeeWeekClient order write migration", () => {
     expect(source).toContain('apiError.code === "INVALID_CHOICE"');
     expect(source).toContain('apiError.code === "INVALID_DAY"');
     expect(source).toContain("Ugyldig dato");
+  });
+});
+
+describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
+  test("ikke valgt, ikke i dag → idle uten --today", () => {
+    expect(weekCalendarDayPillClassNames(false, false)).toBe(
+      "ds-week-calendar-day-pill ds-week-calendar-day-pill--idle",
+    );
+  });
+
+  test("ikke valgt, i dag → idle + --today", () => {
+    expect(weekCalendarDayPillClassNames(false, true)).toBe(
+      "ds-week-calendar-day-pill ds-week-calendar-day-pill--idle ds-week-calendar-day-pill--today",
+    );
+  });
+
+  test("valgt, ikke i dag → selected uten --today", () => {
+    expect(weekCalendarDayPillClassNames(true, false)).toBe(
+      "ds-week-calendar-day-pill ds-week-calendar-day-pill--selected",
+    );
+  });
+
+  test("valgt og i dag → selected + --today (begge modifikatorer)", () => {
+    expect(weekCalendarDayPillClassNames(true, true)).toBe(
+      "ds-week-calendar-day-pill ds-week-calendar-day-pill--selected ds-week-calendar-day-pill--today",
+    );
+  });
+
+  test("kilde: knapp bruker data-lp-date, aria-current og weekCalendarDayPillClassNames(active, isToday)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("data-lp-date={day.date}");
+    expect(source).toContain('aria-current={isToday ? "date" : undefined}');
+    expect(source).toContain("const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);");
+    expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday)}");
+  });
+
+  test("CSS: dagens dato outline med var(--ds-accent)", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toContain(".ds-week-calendar-day-pill--today");
+    expect(css).toContain("outline: 2px solid var(--ds-accent)");
   });
 });
 

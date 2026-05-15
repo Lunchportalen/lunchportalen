@@ -45,6 +45,7 @@
     "sanity:dump-menu-state": "tsx scripts/sanity/dump-menu-state.ts",
     "sanity:delete-menuContent": "tsx scripts/sanity/delete-menuContent.ts",
     "sanity:seed-menu-week": "tsx scripts/sanity/seed-menu-week.ts",
+    "sanity:seed-menu-week-mix-2122": "tsx scripts/sanity/seed-menu-week-mix-2122.ts",
     "agents:check": "node scripts/agents-ci.mjs",
     "ci:guard": "node scripts/ci-guard.mjs",
     "api:contract": "node scripts/ci/api-contract-enforcer.mjs",
