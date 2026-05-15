@@ -4,57 +4,87 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
-## 2026-05-14 → 2026-05-16 (over midnatt)
+## 2026-05-14 → 2026-05-16 (over midnatt + neste morgen)
 
-### Commits (16, kronologisk etter commit-tidsstempel)
+### Commits (28, kronologisk etter commit-tidsstempel)
 
-1. da12237d — feat(cms): menuDay items[] med EU 1169/2011 presise allergener (26 oppføringer)
-2. a7050ad5 — feat(week): vis menuDay items[] med ekspanderbar velger og allergen-badges
-3. b35e7135 — chore: redeploy etter Sanity projectId-fiks til 4udoq5d8 (mismatch fra 4hl2r9he)
-4. 7032cbc1 — feat(orders): persister elementvalg på radnivå i day_choices
-5. 95f193c3 — refactor(week): felles category-card ekspander-UX på alle kategorier
-6. 9b066842 — refactor(week): fjern unit_price fra employee-vinduet (API + UI)
-7. 21ad4d28 — refactor(week): tre UI-rensk på /week
-8. b8a538fb — fix(week): behold «Bestill lunsj» i kort, fjern sticky bunn-CTA
-9. 3f1eb220 — refactor(api): fjern unit_price fra employee CancelResponse
-10. becf3acf — fix(superadmin): loadProductionReadiness alignet med reelt closed_dates-skjema
-11. b281a4d3 — fix(superadmin): fail-soft når tabell company_billing_accounts mangler
-12. 160939ba — fix(orders): instrumentering av writeOrder-feilstier for diagnose
-13. 9d10baf7 — fix(week): ekspanderpanel ved valgt kategori + toggler lukket
-14. 5bb7a511 — fix(db): opprett manglende view company_current_agreement_rules på prod
-15. 1fcbac1c — fix(db): null-sikker avtalevindu i orders hydrate-trigger (starts_at etc.)
-16. 557c2498 — fix(db): tg_order_defaults coalesce service_date fra date (RPC-/INSERT-gap)
+1. 697af46a — fix(week): read per-day tier from agreement_delivery_days, not aggregated agreements.tier
+2. 3abca6f3 — fix(week): two-week window — client uses weeks=2 as state source + cutoff 08:00 to 14:00
+3. 200f298c — fix(week): show all days in selector (not just 5) + WCAG touch-target
+4. 39657921 — fix(week): selector grid — one row per week, days in fixed weekday columns
+5. 04d33546 — feat(week): 3-week overlap window via getVisibleWindow
+6. b691c1b0 — fix(week): placeholder cells for past/unbookable days in selector grid
+7. 9b500bb9 — fix(week): consolidate duplicate /week headers into one canonical block
+8. c060ef78 — refactor(week): rename salatbar → salatboks across code, tests, docs
+9. da12237d — feat(cms): menuDay items[] with EU 1169/2011 precise allergens (26 entries)
+10. a7050ad5 — feat(week): render menuDay items[] with expanding picker and allergen badges
+11. b35e7135 — chore: redeploy after Sanity projectId fix to 4udoq5d8
+12. 7032cbc1 — feat(orders): persist item-level selection in day_choices
+13. 95f193c3 — refactor(week): unify category-card expand UX across all categories
+14. 9b066842 — refactor(week): remove unit_price from employee window response and UI
+15. 21ad4d28 — refactor(week): three UI cleanups on employee /week surface
+16. 8837c55d — fix(auth): improve contrast on "Aktiver konto" button
+17. b8a538fb — fix(week): keep in-card "Bestill lunsj", remove sticky bottom CTA
+18. 3f1eb220 — refactor(api): remove unit_price from employee CancelResponse
+19. becf3acf — fix(superadmin): align loadProductionReadiness with actual closed_dates schema
+20. b281a4d3 — fix(superadmin): fail-soft when company_billing_accounts table is absent
+21. 160939ba — fix(orders): instrument writeOrder error paths for diagnostics
+22. 9d10baf7 — fix(week): expand panel renders next to selected category + toggles closed
+23. 5bb7a511 — fix(db): create missing company_current_agreement_rules view
+24. 1fcbac1c — fix(db): null-safe agreement window in orders hydrate trigger
+25. 557c2498 — fix(db): coalesce service_date from date in tg_order_defaults
+26. e249c881 — docs(journal): kveldsoppdatering 14-16.05.2026 — 500-saga 5 av 6 lag fikset, lag 6 er arkitektur-grunnsak
+27. 5786ab33 — feat(week): mark today's date + seed Sanity menuDay for uke 21-22
+28. 2633ad21 — chore(seed): accept multiple env var names for Sanity write token
 
-### 500-saga — avdekkede lag
+**Sesjonsavslutning (samme dokumentasjonscommit):** ny fil `docs/architecture/menu-publish-pipeline.md` (FASE 13-DESIGN); oppdatert denne `docs/journal.txt` — git-melding: `docs(journal): kveldsoppdatering 14-16.05.2026 — 500-saga 5/6 fikset, 12A visning OK, 13-design dokumentert`.
+
+### 500-saga — 5 av 6 lag fikset (samme som tidligere journal-utkast)
 
 - Lag 1: Sanity projectId-mismatch (4hl2r9he → 4udoq5d8) — fikset/forankret deploy
 - Lag 2: menuDay items[] manglet i Sanity-skjema + data — CMS + innhold lukket inn
-- Lag 3: AGREEMENT_RULE_LOOKUP_FAILED — company_current_agreement_rules-view manglet på prod — migrering/view (5bb7a511)
+- Lag 3: AGREEMENT_RULE_LOOKUP_FAILED — `company_current_agreement_rules`-view manglet på prod — migrering/view (5bb7a511)
 - Lag 4: starts_at NULL-bug i tg_orders_hydrate_core_fields — fikset (1fcbac1c)
 - Lag 5: service_date NULL-bug i tg_order_defaults — fikset (557c2498)
-- Lag 6 (åpen — blokkerer bestilling): menu_service_days tomt mangler opprettelsespipeline; i tillegg rapportert skjema-/sannhetsdrift mellom locations og company_locations på analysemiljø (se under)
+- Lag 6 (åpen — blokkerer «full» bestilling til speil ligger i DB): `menu_service_days` mangler opprettelsespipeline; evt. skjema-/sannhetsdrift `locations` vs `company_locations` (FASE 13-design peker på `company_locations` som FK-sannhet — eierbeslutning før implementering)
 
-### Diagnose lag 6 (prod-kritisk)
+### FASE 12A (morgen 16.05)
 
-- Tabell menu_service_days: 0 rader totalt på diagnostiserte miljøer (ordering feiler før trigger finner meny-dag).
-- Fremmednøkkel menu_service_days.location_id peker på public.locations; denne kan være tom eller ikke speile reell operative lokasjon hvis drift bruker company_locations som autoritativ liste.
-- app/api/superadmin/menu-publish: audit-stub uten faktisk publiserings-/DB-logikk til menu_service_days.
-- Verken cron, Sanity-webhook eller synlig applikasjons-/migrationskode setter inn rader i menu_service_days på det spor som er gjennomgått (trigger tg_menu_service_day_defaults normaliserer når INSERT først finner sted — ingest mangler).
-- Konsekvens: ny install eller miljø uten legacy-seed kan ikke gjennomføre kundedrevet bestilling; tg_order_defaults krever publisert/locked meny-dag på (location_id, service_date).
+- Dagens dato markert i `/week` via kalender-pill (`ds-week-calendar-day-pill` + `--today`); tester oppdatert (`EmployeeWeekClient.test.tsx`, `employee-week.css`).
+- **42** Sanity `menuDay`-dokumenter seedet for uke 21–22 (MIX-mønster) — ledd i commit 5786ab33; seed-Script støtter flere env-navn for write-token (2633ad21).
 
-### Produksjonsklarhetsdiagnose (oppdatert)
+### FASE 13-DESIGN (ettermiddag 16.05)
 
-- Kitchen-relaterte croner/reporting: kjent tema at aggregering er per ordre, ikke konsistent utlevert per item_key (operativ presisjon).
-- Skjemadrift: locations vs company_locations, agreement_json-varianter, profiles.user_id vs id-mønstre mv. bør ryddes i egen fase.
-- MVA / pris-stier: fortsatt 25 % i flere firmapåvirkede filer (onboarding/registrering) mot 15 %-VIEW i kontraktregler — målrettede 4-fil endring (±15 %) står på listen.
-- E2E: suite finnes; full bestillingskorridor end-to-end er ikke dekning nok før lag 6 lukkes arkitekturmessig.
-- Lag 6 tilsier vesentlig grunnarbeid (ordre av størrelsesorden 2–4 uker) før bestilling kan regnes stabilt på tvers av aktive lokasjoner — «50K firma / 500K brukere» ramme krever betydelig mer enn kortsiktige plaster; lag 6 bekrefter at fundament for meny-dagers speil må inn før skalering.
+- Leveranse: `docs/architecture/menu-publish-pipeline.md`
+- Forankrede Defaults i design: **FK mot `company_locations`**, **hybrid webhook + reconcile-cron**, **månedlig declarative partisjon på `service_date`**, **trusted worker (UPSERT) — ikke Postgres direkte fra Sanity**, **08:00 Oslo** som utgangspunkt for `cutoff_at` / employee-cutoff (jf. `cutoffStatusForDate`), med eksplisitt advarsel om avvik mot 08:05-kjøkkenstier
+- **Fem åpne arkitektur-beslutninger** venter eier før implementering:
+  1. Cutoff per lokasjon vs global (og evt. 08:00 vs 08:05 canonical for brukerrettet lås)
+  2. Horizont-dybde og SLA (dager frem, alarmnivå)
+  3. Mal (`menuWeekTemplate`) vs «flate» `menuDay`-dokumenter som eneste sannhet
+  4. Migrasjonsvei fra evt. `locations`-FK / tom `menu_service_days` uten nedetid
+  5. Audit-mapping og kontrollpunkt for `menu-publish` vs kun worker/cron
 
-### PENDING (neste økt, prioritert)
+### PENDING (neste økt — oppdatert prioritet)
 
-- P0 — KRITISK: Lag 6 — menu_service_days-arkitektur: avklar en sannhet for lokasjon (locations vs company_locations); bygg publish-pipeline (Sanity/supplement → menu_service_days [+ evt. menu_service_day_items]); implementer reell POST /api/superadmin/menu-publish eller tilsvarende kontrollpunkt.
-- P1 — Skjemadrift opprydning (agreement_json, profiles-lookup-mønstre, m.fl.).
-- P2 — 15 % MVA i de fire registrerte kodestiene (fra 2026-05-14-audit).
-- P3 — Kitchen-cron/strøm: aggregasjon/forsterkning ned til item_key der operasjonelt påkrevd.
-- P4 — Onboarding E2E-test.
-- P5 — Skalering-prep etter at P0 bestillingsfundament er dokumentert og grønn.
+- **P0 KRITISK:** Lag 6 — implementering etter FASE 13-design; **blokkert til eier har tatt de fem beslutningene over**
+- **P1:** Schema-drift opprydning (`locations` / `company_profiles` / agreement_json-varianter mv.)
+- **P2:** 15 % MVA-fix (fire registrerte kodestier)
+- **P3:** Kitchen-cron — `item_key`-aggregering der operasjon krever det
+- **P4:** Onboarding E2E-test
+- **P5:** Skalering-prep (k6 loadtest etter at P0-grunnmur er grønn)
+
+### Ærlig vurdering: 50K firma / 500K brukere / 20 år
+
+- Designestimat: **~32M** `menu_service_days`-rader/år ved L ≈ 125K lokasjoner og ~260 servicedøgn — **partisjonering er obligatorisk**, ikke valgfri optimering.
+- **Implementering av pipeline alene:** orden størrelsesorden **1–2 uker** fokusert arbeid etter eierbeslutninger (worker, upsert, reconcile, migreringsplan).
+- **Full produksjonsklarhet** (overvåkning, last, RLS, kjøkkenflyt, regressjonstester): **måneder og personuker** — bekreftet som realistisk ramme, ikke «neste sprint».
+
+### Diagnose lag 6 (samme kjerne som tidligere)
+
+- Tabell `menu_service_days`: kan være tom uten pipeline — ordre-trigger finner ingen rad for `(location_id, service_date)`.
+- `POST /api/superadmin/menu-publish` har vært audit-stub uten faktisk speil til DB inntil Lag 6 leveres.
+- Konsekvens: miljø uten manuell legacy-seed kan ikke fullføre kundedrevet bestilling der DB-gate krever publisert meny-dag.
+
+—
+
+*Sist oppdatert: kveld 16.05.2026 (journal + FASE 13-designfil).*
