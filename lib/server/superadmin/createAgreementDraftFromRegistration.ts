@@ -12,6 +12,7 @@ import {
   mergeRegistrationPlanIntoAgreementJson,
   type RegistrationWeekday,
 } from "@/lib/registration/weekdayMealTiers";
+import { VAT_RATE } from "@/lib/menu-publish/tierPricing";
 
 import { loadCompanyRegistrationDetail } from "./loadCompanyRegistrationsInbox";
 
@@ -470,7 +471,7 @@ export async function createAgreementDraftFromRegistration(opts: {
       terms_binding_months: regItem.terms_binding_months!,
       terms_notice_months: regItem.terms_notice_months!,
     },
-    vatRate: 0.25,
+    vatRate: VAT_RATE,
     priceBasisExVat: cmsBasis.price,
     priceLuxusExVat: cmsLuxus.price,
     createdAtIso: companyCreatedAt,

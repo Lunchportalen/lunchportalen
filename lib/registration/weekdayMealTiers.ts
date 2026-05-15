@@ -1,3 +1,5 @@
+import { VAT_RATE } from "@/lib/menu-publish/tierPricing";
+
 /** Operativ registreringsmodell: firmaadmins BASIS/Luxus per ukedag (man–fre). */
 export const REGISTRATION_WEEKDAYS = ["mon", "tue", "wed", "thu", "fri"] as const;
 export type RegistrationWeekday = (typeof REGISTRATION_WEEKDAYS)[number];
@@ -93,7 +95,7 @@ export function mergeRegistrationPlanIntoAgreementJson(opts: {
   existing: unknown;
   weekday_meal_tiers: WeekdayMealTiers;
   commercial: RegistrationCommercialFields;
-  /** Eks. 0.25 — samme som onboarding forhåndsvisning */
+  /** Matmoms (15 %) — samme kilde som onboarding (`VAT_RATE` i tierPricing) */
   vatRate: number;
   priceBasisExVat: number;
   priceLuxusExVat: number;
@@ -103,7 +105,7 @@ export function mergeRegistrationPlanIntoAgreementJson(opts: {
   const base: Record<string, unknown> = isPlainObject(opts.existing)
     ? { ...(opts.existing as Record<string, unknown>) }
     : { version: 1 };
-  const vat = Number.isFinite(opts.vatRate) && opts.vatRate >= 0 ? opts.vatRate : 0.25;
+  const vat = Number.isFinite(opts.vatRate) && opts.vatRate >= 0 ? opts.vatRate : VAT_RATE;
   const roundNok = (n: number) => Math.round(n * 100) / 100;
 
   const days: Record<string, unknown> = {};

@@ -8,6 +8,7 @@ import { type NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { parseGrowthAbFromCookieHeader } from "@/lib/growth/growthAbCookie";
 import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
+import { VAT_RATE } from "@/lib/menu-publish/tierPricing";
 
 /* =========================================================
    Types
@@ -144,9 +145,9 @@ function getDayObj(input: any, k: DayKey) {
 
 /**
  * ✅ 90/130 = eks mva
- * inc mva beregnes fra vat_rate (default 0.25)
+ * inc mva beregnes fra vat_rate (default matmoms 15 %)
  */
-function normalizeDays(input: any, vat_rate = 0.25): { days: AgreementDays; hasAnyEnabled: boolean } | null {
+function normalizeDays(input: any, vat_rate = VAT_RATE): { days: AgreementDays; hasAnyEnabled: boolean } | null {
   const out = buildDefaultDays();
   if (!input || typeof input !== "object") return { days: out, hasAnyEnabled: false };
 
@@ -526,7 +527,7 @@ export async function POST(req: NextRequest) {
   if (!isNonEmpty(location?.city, 2)) return jsonError(rid, 400, "VALIDATION", "Poststed er påkrevd");
 
   // Agreement days validation
-  const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : 0.25;
+  const vatRate = Number.isFinite(Number(agreement?.vat_rate)) ? Number(agreement?.vat_rate) : VAT_RATE;
   const daysParsed = normalizeDays(agreement?.days, vatRate);
   if (!daysParsed) return jsonError(rid, 400, "VALIDATION", "Ugyldig avtaleoppsett. Kontroller dager/nivå.");
   if (!daysParsed.hasAnyEnabled) return jsonError(rid, 400, "VALIDATION", "Velg minst én leveringsdag (man–fre).");

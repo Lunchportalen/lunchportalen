@@ -5,6 +5,7 @@
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { VAT_RATE } from "@/lib/menu-publish/tierPricing";
 
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
@@ -149,7 +150,7 @@ export default function OnboardingForm() {
       thu: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
       fri: { enabled: false, tier: "BASIS", price_ex_vat: 0, price_inc_vat: 0 },
     };
-    const vat = 0.25;
+    const vat = VAT_RATE;
     for (const d of days) {
       const price_ex_vat = d.enabled ? Number(d.price) : 0;
       agreementDays[d.key] = {
@@ -329,7 +330,7 @@ export default function OnboardingForm() {
             <label className="text-sm font-medium">
               Passord <span className="text-red-600">*</span>
             </label>
-            <div className="mt-2 flex overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
+            <div className="mt-2 flex rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
               <input
                 type={showPw ? "text" : "password"}
                 className="w-full px-3 py-2 outline-none"
@@ -352,7 +353,7 @@ export default function OnboardingForm() {
             <label className="text-sm font-medium">
               Bekreft passord <span className="text-red-600">*</span>
             </label>
-            <div className="mt-2 flex overflow-hidden rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
+            <div className="mt-2 flex rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-white">
               <input
                 type={showPw2 ? "text" : "password"}
                 className="w-full px-3 py-2 outline-none"
