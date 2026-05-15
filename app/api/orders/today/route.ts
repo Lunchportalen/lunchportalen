@@ -18,8 +18,22 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from
 import { auditWriteMust } from "@/lib/audit/auditWrite";
 import { auditSafe } from "@/lib/ops/auditSafe";
 import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { pickOrderColumns } from "@/lib/orders/projection";
+import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 
 type Action = "place" | "cancel";
+
+/** Row shape after dynamic `.select(pickOrderColumns(...))` for orders/today. */
+type OrdersTodayRow = {
+  id: string;
+  status?: string | null;
+  date?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  note?: string | null;
+  company_id?: string | null;
+  location_id?: string | null;
+};
 
 /* =========================================================
    Helpers
@@ -303,13 +317,13 @@ export async function POST(req: NextRequest) {
 
     const { data: upserted, error: uErr } = await sb
       .from("orders")
-      .select("id,status,date,created_at,updated_at,note,company_id,location_id")
+      .select(pickOrderColumns(showOrderPricesForApiRole(scope.role)))
       .eq("user_id", user_id)
       .eq("company_id", company_id)
       .eq("location_id", location_id)
       .eq("date", today)
       .eq("slot", ORDER_TABLE_SLOT_DEFAULT)
-      .maybeSingle();
+      .maybeSingle<OrdersTodayRow>();
 
     if (!writeRes.ok || uErr || !upserted) {
       return jsonOrder(a.ctx,
@@ -435,12 +449,12 @@ export async function GET(req: NextRequest) {
 
     const { data: order, error: oErr } = await sb
       .from("orders")
-      .select("id,status,date,created_at,updated_at,note,company_id,location_id")
+      .select(pickOrderColumns(showOrderPricesForApiRole(scope.role)))
       .eq("user_id", user_id)
       .eq("date", today)
       .eq("company_id", company_id)
       .eq("location_id", location_id)
-      .maybeSingle();
+      .maybeSingle<OrdersTodayRow>();
 
     if (oErr) {
       return jsonOrder(a.ctx,

@@ -12,6 +12,7 @@ import { osloTodayISODate } from "@/lib/date/oslo";
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
+import { ORDER_PRICE_FIELDS_ONLY } from "@/lib/orders/projection";
 
 /* =========================================================
    Helpers
@@ -112,6 +113,7 @@ export async function GET(req: NextRequest) {
         slot,
         date,
         status,
+        ${ORDER_PRICE_FIELDS_ONLY},
         companies (
           id,
           name
@@ -183,6 +185,10 @@ export async function GET(req: NextRequest) {
         status: st as "ACTIVE" | "CANCELLED",
         dateISO: String(row.date),
         dateNO,
+        unit_price_nok: row.unit_price_nok ?? null,
+        subtotal_cents_ex_vat: row.subtotal_cents_ex_vat ?? null,
+        vat_cents: row.vat_cents ?? null,
+        gross_cents_inc_vat: row.gross_cents_inc_vat ?? null,
         companies: c ? { id: String(c.id), name: c.name ?? null } : null,
         company_locations: l
           ? {

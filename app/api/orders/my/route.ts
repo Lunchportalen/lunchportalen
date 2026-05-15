@@ -10,6 +10,8 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/ht
 import { cutoffStatusForDate, osloTodayISODate } from "@/lib/date/oslo";
 import { requireRule } from "@/lib/agreement/requireRule";
 import { lpOrderCancel, lpOrderSet, ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { pickOrderColumns } from "@/lib/orders/projection";
+import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 
 type CompanyLifecycle = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING" | "UNKNOWN";
 
@@ -54,10 +56,18 @@ async function companyStatusOrNull(admin: any, companyId: string) {
   return normCompanyStatus((data as any).status);
 }
 
-async function getOrder(sb: any, companyId: string, locationId: string, userId: string, dateISO: string) {
+async function getOrder(
+  sb: any,
+  companyId: string,
+  locationId: string,
+  userId: string,
+  dateISO: string,
+  role: string | null | undefined,
+) {
+  const cols = pickOrderColumns(showOrderPricesForApiRole(role));
   const { data } = await sb
     .from("orders")
-    .select("id,status,date,created_at,updated_at,note,slot")
+    .select(cols)
     .eq("user_id", userId)
     .eq("company_id", companyId)
     .eq("location_id", locationId)
@@ -130,7 +140,7 @@ export async function GET(req: NextRequest) {
       }
 
       const sb = await supabaseServer();
-      const myOrder = await getOrder(sb, companyId, locationId, userId, dateISO);
+      const myOrder = await getOrder(sb, companyId, locationId, userId, dateISO, scope.role);
 
       return jsonOk(
         rid,
@@ -215,7 +225,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+      const data = await getOrder(sb, companyId, locationId, userId, dateISO, scope.role);
 
       return jsonOk(
         rid,
@@ -285,7 +295,7 @@ export async function DELETE(req: NextRequest) {
         });
       }
 
-      const data = await getOrder(sb, companyId, locationId, userId, dateISO);
+      const data = await getOrder(sb, companyId, locationId, userId, dateISO, scope.role);
 
       return jsonOk(
         rid,

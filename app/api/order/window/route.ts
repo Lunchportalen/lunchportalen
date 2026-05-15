@@ -34,6 +34,7 @@ import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { pickOrderColumns } from "@/lib/orders/projection";
 import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
 
 /* =========================================================
@@ -383,7 +384,7 @@ async function loadOrdersByDate(
   const sb = await supabaseServer();
   const { data: ordersRaw, error: oErr } = await (sb as any)
     .from("orders")
-    .select("date,status,note,updated_at,created_at,slot,location_id,company_id,user_id")
+    .select(pickOrderColumns(false))
     .eq("user_id", sc.user_id)
     .eq("company_id", sc.company_id)
     .eq("location_id", sc.location_id)

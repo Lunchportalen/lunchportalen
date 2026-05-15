@@ -8,6 +8,8 @@ import { addDaysISO, isIsoDate, osloTodayISODate, startOfWeekISO } from "@/lib/d
 import { receiptFor } from "@/lib/api/orderResponse";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireCompanyScopeOr403, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
+import { pickOrderColumns } from "@/lib/orders/projection";
+import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 import { getMenuForDates, menuDayHasDisplayableCopy } from "@/lib/cms/menuDay";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -183,9 +185,15 @@ export async function GET(req: NextRequest) {
   }
 
   const sb = await supabaseServer();
-  const selectColumns = schema.hasSlot
-    ? "id,date,status,note,created_at,updated_at,slot"
-    : "id,date,status,note,created_at,updated_at";
+  const showPrices = showOrderPricesForApiRole(safeStr(auth.ctx.scope.role));
+  let selectColumns = pickOrderColumns(showPrices);
+  if (!schema.hasSlot) {
+    selectColumns = selectColumns
+      .split(",")
+      .map((c) => c.trim())
+      .filter((c) => c !== "slot")
+      .join(", ");
+  }
 
   let q = sb
     .from("orders")
@@ -214,11 +222,13 @@ export async function GET(req: NextRequest) {
         "company_id",
         "location_id",
         "date",
+        "service_date",
         "status",
         "note",
         "created_at",
         "updated_at",
         "slot",
+        "cutoff_at",
       ])
     ) {
       return jsonErr(rid, "Orders-schema matcher ikke forventet kontrakt.", 500, "SCHEMA_MISMATCH", {

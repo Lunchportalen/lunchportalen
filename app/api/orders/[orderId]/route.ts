@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 
 // ✅ Dag-10 helpers
 import { jsonOk } from "@/lib/http/respond";
+import { getOrderForScopedUser } from "@/lib/orders/readers/getOrderForScopedUser";
 import { noStoreHeaders } from "@/lib/http/noStore";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403 } from "@/lib/http/routeGuard";
 
@@ -44,24 +45,6 @@ function jsonErr(rid: string, message: string, status = 400, error?: unknown) {
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
-
-/* =========================================================
-   Types
-========================================================= */
-type OrderRow = {
-  id: string;
-  user_id: string;
-  company_id: string | null;
-  location_id: string | null;
-
-  date: string; // YYYY-MM-DD
-  slot: string | null;
-  status: string | null;
-  note: string | null;
-
-  created_at: string | null;
-  updated_at: string | null;
-};
 
 /* =========================================================
    GET /api/orders/[orderId]
@@ -103,32 +86,17 @@ export async function GET(
 
   const sb = await supabaseServer();
 
-  // Tenant-sikker lesing
-  let q = sb
-    .from("orders")
-    .select("id,user_id,company_id,location_id,date,slot,status,note,created_at,updated_at")
-    .eq("id", orderId)
-    .eq("company_id", companyId)
-    .eq("location_id", locationId);
+  const scoped = await getOrderForScopedUser(sb as any, {
+    orderId,
+    companyId,
+    locationId,
+    userId,
+    role,
+  });
 
-  // employee kan kun se sin egen ordre
-  if (role === "employee") {
-    q = q.eq("user_id", userId);
-  }
-
-  const { data, error } = await q.maybeSingle<OrderRow>();
-
-  if (error) {
-    return jsonErr(ctx.rid, "Kunne ikke hente ordre.", 500, { code: "DB_ERROR", detail: {
-      message: error.message,
-      code: (error as any).code ?? null,
-      orderId,
-    } });
-  }
-
-  if (!data) {
+  if (!scoped) {
     return jsonErr(ctx.rid, "Ordre finnes ikke (eller du har ikke tilgang).", 404, { code: "NOT_FOUND", detail: { orderId } });
   }
 
-  return jsonOk(ctx.rid, { order: data });
+  return jsonOk(ctx.rid, { order: scoped.order });
 }

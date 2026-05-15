@@ -10,6 +10,7 @@ import { isIsoDate, osloTodayISODate } from "@/lib/date/oslo";
 import type { EmployeeOwnLunchHistoryItem, EmployeeOwnLunchRecentHistoryPayload } from "@/lib/employee/employeeOwnLunchHistoryTypes";
 import { mineLunsjOrderTitleNb } from "@/lib/employee/mineLunsjEndringerNb";
 import { normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
+import { EMPLOYEE_ORDER_COLUMNS_WITH_LOCATION } from "@/lib/orders/projection";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type { EmployeeOwnLunchHistoryItem, EmployeeOwnLunchRecentHistoryPayload } from "@/lib/employee/employeeOwnLunchHistoryTypes";
@@ -109,7 +110,7 @@ async function fetchEmployeeOrderRows(input: {
 
   let qb = admin
     .from("orders")
-    .select("id,date,status,slot,created_at,updated_at,location_id,user_id,company_id")
+    .select(EMPLOYEE_ORDER_COLUMNS_WITH_LOCATION)
     .eq("user_id", userId)
     .eq("company_id", companyId);
 
@@ -137,7 +138,7 @@ async function fetchEmployeeOrderRows(input: {
     return { rows: [], errorMessage: m };
   }
 
-  return { rows: Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [], errorMessage: null };
+  return { rows: Array.isArray(rows) ? (rows as unknown as Record<string, unknown>[]) : [], errorMessage: null };
 }
 
 export async function loadEmployeeOwnLunchRecentHistory(input: {
