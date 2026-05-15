@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
         unchanged: 0,
         deleted: 0,
         locations: 0,
+        msdiRowsUpserted: 0,
+        msdiLocationsSkippedNoTier: 0,
       },
       200,
     );
@@ -75,6 +77,8 @@ export async function POST(req: NextRequest) {
         unchanged: 0,
         deleted: 0,
         locations: 0,
+        msdiRowsUpserted: 0,
+        msdiLocationsSkippedNoTier: 0,
       },
       200,
     );
@@ -87,7 +91,7 @@ export async function POST(req: NextRequest) {
       const { deleted } = await deleteMenuServiceDaysForMenuDay(admin, { date, planTier });
       return jsonOk(
         rid,
-        { skipped: false, unpublished: true, deleted, inserted: 0, updated: 0, unchanged: 0, locations: 0 },
+        { skipped: false, unpublished: true, deleted, inserted: 0, updated: 0, unchanged: 0, locations: 0, msdiRowsUpserted: 0, msdiLocationsSkippedNoTier: 0 },
         200,
       );
     }
@@ -104,6 +108,8 @@ export async function POST(req: NextRequest) {
         unchanged: stats.unchanged,
         deleted: 0,
         locations: stats.locationCount,
+        msdiRowsUpserted: stats.msdiRowsUpserted ?? 0,
+        msdiLocationsSkippedNoTier: stats.msdiLocationsSkippedNoTier ?? 0,
       },
       200,
     );

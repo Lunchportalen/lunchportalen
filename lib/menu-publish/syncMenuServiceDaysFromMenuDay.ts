@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publish/menuDaySyncShared";
+import { syncMenuServiceDayItemsAfterMenuDayPublish } from "@/lib/menu-publish/syncMenuServiceDayItems";
+
+export { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publish/menuDaySyncShared";
+
 export type MenuDaySyncInput = {
   date: string;
   planTier: string;
@@ -15,28 +20,9 @@ export type MenuServiceDaySyncStats = {
   unchanged: number;
   skipped: boolean;
   reason?: string;
+  msdiRowsUpserted?: number;
+  msdiLocationsSkippedNoTier?: number;
 };
-
-/** agreement_delivery_days.weekday mapping (EU weekday from ISO date noon UTC). */
-const DOW_TO_DAYKEY: Record<number, "mon" | "tue" | "wed" | "thu" | "fri" | undefined> = {
-  1: "mon",
-  2: "tue",
-  3: "wed",
-  4: "thu",
-  5: "fri",
-};
-
-export function isoDateToAgreementDayKey(dateISO: string): "mon" | "tue" | "wed" | "thu" | "fri" | null {
-  const d = new Date(`${dateISO}T12:00:00.000Z`);
-  const k = DOW_TO_DAYKEY[d.getUTCDay()];
-  return k ?? null;
-}
-
-export function normalizeMenuPlanTier(v: unknown): "BASIS" | "LUXUS" | "ENTERPRISE" | null {
-  const s = String(v ?? "").trim().toUpperCase();
-  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
-  return null;
-}
 
 /**
  * Sanity menuDay slice → ACTIVE agreements with matching per-day tier + locations → UPSERT menu_service_days.
@@ -187,7 +173,20 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
     }
   }
 
-  return { locationCount, inserted, updated, unchanged, skipped: false };
+  const msdiStats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+    serviceDate: menuDay.date,
+    locationIds,
+  });
+
+  return {
+    locationCount,
+    inserted,
+    updated,
+    unchanged,
+    skipped: false,
+    msdiRowsUpserted: msdiStats.msdiRowsUpserted,
+    msdiLocationsSkippedNoTier: msdiStats.msdiLocationsSkippedNoTier,
+  };
 }
 
 /**

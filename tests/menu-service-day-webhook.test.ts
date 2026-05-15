@@ -67,6 +67,8 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
       updated: 2,
       unchanged: 0,
       skipped: false,
+      msdiRowsUpserted: 18,
+      msdiLocationsSkippedNoTier: 0,
     });
     const body = JSON.stringify({
       _type: "menuDay",
@@ -85,6 +87,8 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
     expect(json.data.locations).toBe(3);
     expect(syncMock).toHaveBeenCalledTimes(1);
     expect(syncMock.mock.calls[0][1]).toEqual({ date: "2026-05-18", planTier: "BASIS" });
+    expect(json.data.msdiRowsUpserted).toBe(18);
+    expect(json.data.msdiLocationsSkippedNoTier).toBe(0);
   });
 
   it("synlighetsfilter=false → ingen UPSERT men slett forsøkes", async () => {
