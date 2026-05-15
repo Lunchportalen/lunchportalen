@@ -405,6 +405,14 @@ export default defineType({
     }),
 
     defineField({
+      name: "autoFilled",
+      title: "Auto-fylt (cron)",
+      description: "Satt når menydokumentet er opprettet av ukentlig menu-week-rollout (N+3).",
+      type: "boolean",
+      initialValue: false,
+    }),
+
+    defineField({
       name: "approvedForPublish",
       title: "Godkjent for publisering",
       type: "boolean",
