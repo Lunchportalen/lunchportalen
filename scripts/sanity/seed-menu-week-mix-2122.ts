@@ -2,7 +2,7 @@
  * Sanity — idempotent MIX-tier menuDay-seed for uke 21–22 (2026).
  * Oppretter 42 dokumenter: per dag ett plan‑tier (Melhus MIX) × categories for det planet.
  *
- * Requires: SANITY_TOKEN with write til dataset «production»
+ * Requires: write-token (SANITY_WRITE_TOKEN, SANITY_TOKEN, eller SANITY_API_TOKEN) til dataset «production»
  * Usage:
  *   npx tsx scripts/sanity/seed-menu-week-mix-2122.ts --dry-run
  *   npx tsx scripts/sanity/seed-menu-week-mix-2122.ts
@@ -265,14 +265,19 @@ async function main() {
     return;
   }
 
-  const token = safeEnv("SANITY_TOKEN");
-  if (!token) {
-    console.error("FAIL: SANITY_TOKEN mangler (skrivbare rettigheter til production).");
-    process.exit(1);
+  const token =
+    process.env.SANITY_WRITE_TOKEN ??
+    process.env.SANITY_TOKEN ??
+    process.env.SANITY_API_TOKEN;
+
+  if (!token || !token.trim()) {
+    throw new Error("Sanity write token missing. Set SANITY_WRITE_TOKEN, SANITY_TOKEN, or SANITY_API_TOKEN.");
   }
 
+  const writeToken = token.trim();
+
   console.log(`Sanity ${projectId}/${dataset} — mutations: ${docs.length}`);
-  const client = createClient({ projectId, dataset, apiVersion: API_VERSION, token, useCdn: false });
+  const client = createClient({ projectId, dataset, apiVersion: API_VERSION, token: writeToken, useCdn: false });
 
   for (const doc of docs) {
     await client.createOrReplace(doc);
