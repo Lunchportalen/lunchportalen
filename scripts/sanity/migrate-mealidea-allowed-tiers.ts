@@ -1,6 +1,9 @@
-import "dotenv/config";
-
 import { createClient } from "@sanity/client";
+import dotenv from "dotenv";
+import path from "node:path";
+
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const API_VERSION = "2024-01-01";
 
