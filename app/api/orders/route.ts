@@ -120,6 +120,27 @@ function mapRpcError(messageRaw: unknown) {
       message: "Fristen for i dag er passert (kl. 08:00).",
     };
   }
+  if (m.includes("CHOICE_KEY_REQUIRED")) {
+    return {
+      status: 422,
+      code: "CHOICE_KEY_REQUIRED",
+      message: "Menyvalg er påkrevd.",
+    };
+  }
+  if (m.includes("MENU_SERVICE_DAY_ITEMS_MISSING")) {
+    return {
+      status: 409,
+      code: "MENU_SERVICE_DAY_ITEMS_MISSING",
+      message: "Menyen er ikke klar i databasen ennå.",
+    };
+  }
+  if (m.includes("MENU_SERVICE_DAY_ITEM_NOT_FOUND")) {
+    return {
+      status: 409,
+      code: "MENU_SERVICE_DAY_ITEM_NOT_FOUND",
+      message: "Fant ikke menylinje for valget.",
+    };
+  }
   if (m.includes("PROFILE_MISSING") || m.includes("SCOPE_FORBIDDEN")) {
     return {
       status: 403,
@@ -290,6 +311,8 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       p_action: action,
       p_note: note,
       p_slot: tableSlot,
+      p_choice_key: finalChoiceKey || null,
+      p_item_key: persistedItemKey ?? "default",
     });
 
     if (error) {
@@ -322,11 +345,23 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const savedStatus = safeStr(out?.status).toUpperCase();
     const savedDate = safeStr(out?.date) || date;
 
-    if (!orderId || !savedStatus) {
+    if (!savedStatus) {
       return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
     }
 
-    if (action === "SET" && savedStatus === "ACTIVE") {
+    if (!orderId && action === "CANCEL") {
+      return jsonOrderWriteOk(rid, {
+        orderId: "",
+        status: "cancelled",
+        date: savedDate,
+      });
+    }
+
+    if (!orderId) {
+      return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
+    }
+
+    if (action === "SET" && (savedStatus === "ORDERED" || savedStatus === "ACTIVE")) {
       try {
         const { normalizeOrderAttributionInput, readAttributionCookieFromRequest } = await import("@/lib/revenue/session");
         const { persistOrderAttribution } = await import("@/lib/revenue/persistOrderAttribution");
@@ -429,62 +464,6 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       date: savedDate,
       slot: tableSlot,
     });
-
-    if (action === "SET" && savedStatus === "ACTIVE" && finalChoiceKey) {
-      const adminChoices = supabaseAdmin();
-      const { error: dayChoiceErr } = await (adminChoices as any)
-        .from("day_choices")
-        .upsert(
-          {
-            company_id: safeStr(g.ctx.scope.companyId),
-            location_id: safeStr(g.ctx.scope.locationId),
-            user_id: safeStr(g.ctx.scope.userId),
-            date: savedDate,
-            choice_key: finalChoiceKey,
-            item_key: persistedItemKey,
-            item_title_snapshot: persistedItemTitleSnapshot,
-            note,
-            status: "ACTIVE",
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "company_id,location_id,user_id,date" }
-        );
-      if (dayChoiceErr) {
-        const dAny = dayChoiceErr as { message?: string; code?: string; details?: string; hint?: string };
-        opsLog("orders.day_choices.upsert_failed", {
-          rid,
-          level: "error",
-          msg: "day_choices upsert failed after successful order",
-          err: {
-            message: dAny.message,
-            code: dAny.code,
-            details: dAny.details,
-            hint: dAny.hint,
-          },
-          context: {
-            date: savedDate,
-            choiceKey: finalChoiceKey,
-            itemKey: persistedItemKey,
-            userId: g.ctx.scope.userId,
-          },
-        });
-        return jsonOrderWriteErr(rid, 500, "DAY_CHOICE_SAVE_FAILED", "Bestilling lagret, men menyvalg kunne ikke lagres. Prøv igjen.");
-      }
-    }
-
-    if (action === "CANCEL" && savedStatus === "CANCELLED") {
-      const adminChoices = supabaseAdmin();
-      const del = await (adminChoices as any)
-        .from("day_choices")
-        .delete()
-        .eq("company_id", safeStr(g.ctx.scope.companyId))
-        .eq("location_id", safeStr(g.ctx.scope.locationId))
-        .eq("user_id", safeStr(g.ctx.scope.userId))
-        .eq("date", savedDate);
-      if (del?.error) {
-        return jsonOrderWriteErr(rid, 500, "DAY_CHOICE_DELETE_FAILED", "Avbestilling lagret, men menyvalg kunne ikke ryddes. Prøv igjen.");
-      }
-    }
 
     return jsonOrderWriteOk(rid, {
       orderId,

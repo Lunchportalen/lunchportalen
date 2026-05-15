@@ -15,8 +15,8 @@ async function readJson(res: Response) {
 
 let dayTiers: any;
 let rpcStatus: "ACTIVE" | "CANCELLED";
-let upsertedDayChoice: any;
-let deletedDayChoiceFilters: Array<[string, string]>;
+/** Last params passed to `lp_order_set` (DB owns day_choices — HTTP upsert removed). */
+let lastLpOrderSetParams: Record<string, unknown> | null;
 
 const resolveOrderDayItemPersist = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, item_key: null, item_title_snapshot: null })),
@@ -77,39 +77,27 @@ vi.mock("@/lib/auth/agreementStatus", async (importOriginal) => {
 
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
-    rpc: async () => ({
-      data: [{ order_id: "ord_1", status: rpcStatus, date: rpcStatus === "CANCELLED" ? "2026-05-20" : "2026-05-18" }],
-      error: null,
-    }),
+    rpc: async (fn: string, params?: Record<string, unknown>) => {
+      if (fn === "lp_order_set") lastLpOrderSetParams = params ?? null;
+      return {
+        data: [{ order_id: "ord_1", status: rpcStatus, date: rpcStatus === "CANCELLED" ? "2026-05-20" : "2026-05-18" }],
+        error: null,
+      };
+    },
   }),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
-    from: (table: string) => {
-      if (table === "day_choices") {
-        const chain: any = {
-          upsert: async (payload: any) => {
-            upsertedDayChoice = payload;
-            return { error: null };
-          },
-          delete: () => chain,
-          eq: (key: string, value: string) => {
-            deletedDayChoiceFilters.push([key, value]);
-            return chain;
-          },
-        };
-        return chain;
-      }
-      return {
-        select: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({ data: { line_total: 0 }, error: null }),
-          }),
+    from: (_table: string) => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: { line_total: 0 }, error: null }),
         }),
-        insert: async () => ({ error: null }),
-      };
-    },
+      }),
+      insert: async () => ({ error: null }),
+      upsert: async () => ({ error: null }),
+    }),
   }),
 }));
 
@@ -118,8 +106,7 @@ import { POST } from "@/app/api/orders/route";
 beforeEach(() => {
   dayTiers = { mon: "BASIS", tue: "BASIS", wed: "LUXUS", thu: "BASIS", fri: "ENTERPRISE" };
   rpcStatus = "ACTIVE";
-  upsertedDayChoice = null;
-  deletedDayChoiceFilters = [];
+  lastLpOrderSetParams = null;
   resolveOrderDayItemPersist.mockResolvedValue({ ok: true, item_key: null, item_title_snapshot: null });
 });
 
@@ -159,8 +146,8 @@ describe("POST /api/orders tier-per-day validation", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.tier).toBe("BASIS");
-    expect(upsertedDayChoice.choice_key).toBe("varmmat");
-    expect(upsertedDayChoice.item_key).toBeNull();
+    expect(lastLpOrderSetParams?.p_choice_key).toBe("varmmat");
+    expect(lastLpOrderSetParams?.p_item_key).toBe("default");
   });
 
   test("SET persist item_key/item_title_snapshot når resolver bekrefter valg", async () => {
@@ -177,9 +164,8 @@ describe("POST /api/orders tier-per-day validation", () => {
 
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
-    expect(upsertedDayChoice.choice_key).toBe("salatboks");
-    expect(upsertedDayChoice.item_key).toBe("kylling");
-    expect(upsertedDayChoice.item_title_snapshot).toBe("Kylling OG grønn salat");
+    expect(lastLpOrderSetParams?.p_choice_key).toBe("salatboks");
+    expect(lastLpOrderSetParams?.p_item_key).toBe("kylling");
   });
 
   test("SET returnerer 400 ITEM_CHOICE_REQUIRED når resolver sier manglende variant", async () => {
@@ -221,7 +207,7 @@ describe("POST /api/orders tier-per-day validation", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
     expect(json.tier).toBe("LUXUS");
-    expect(upsertedDayChoice.choice_key).toBe("sushi");
+    expect(lastLpOrderSetParams?.p_choice_key).toBe("sushi");
   });
 
   test("SET med gyldig choice_key for ENTERPRISE returnerer 200", async () => {
@@ -242,7 +228,8 @@ describe("POST /api/orders tier-per-day validation", () => {
 
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
-    expect(deletedDayChoiceFilters).toContainEqual(["date", "2026-05-20"]);
+    expect(lastLpOrderSetParams?.p_action).toBe("CANCEL");
+    expect(lastLpOrderSetParams?.p_date).toBe("2026-05-20");
   });
 
   test("weekend-dato returnerer 422 INVALID_DAY", async () => {

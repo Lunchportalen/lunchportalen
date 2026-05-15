@@ -40,6 +40,8 @@ type OrderRpcInput = {
   p_slot?: string | null;
   p_note?: string | null;
   p_action?: string | null;
+  p_choice_key?: string | null;
+  p_item_key?: string | null;
 };
 
 function pickFirstRow(data: unknown): Record<string, unknown> | null {
@@ -57,6 +59,9 @@ export function mapOrderRpcErrorCode(msg: string): string {
   if (m.includes("NO_ACTIVE_AGREEMENT") || m.includes("AGREEMENT_MISSING")) return "NO_ACTIVE_AGREEMENT";
   if (m.includes("OUTSIDE_DELIVERY_DAYS") || m.includes("AGREEMENT_DAY_NOT_DELIVERY")) return "OUTSIDE_DELIVERY_DAYS";
   if (m.includes("CUTOFF_PASSED") || m.includes("CUTOFF")) return "CUTOFF_PASSED";
+  if (m.includes("CHOICE_KEY_REQUIRED")) return "CHOICE_KEY_REQUIRED";
+  if (m.includes("MENU_SERVICE_DAY_ITEMS_MISSING")) return "MENU_SERVICE_DAY_ITEMS_MISSING";
+  if (m.includes("MENU_SERVICE_DAY_ITEM_NOT_FOUND")) return "MENU_SERVICE_DAY_ITEM_NOT_FOUND";
   if (m.includes("SCOPE_FORBIDDEN")) return "FORBIDDEN_SCOPE";
   if (m.includes("PROFILE_MISSING")) return "PROFILE_MISSING";
   if (m.includes("UNAUTH") || m.includes("AUTH")) return "UNAUTHENTICATED";
@@ -78,6 +83,12 @@ function buildRpcParams(input: OrderRpcInput): Record<string, unknown> {
   if (input.p_company_id) params.p_company_id = input.p_company_id;
   if (input.p_location_id) params.p_location_id = input.p_location_id;
 
+  const ck = input.p_choice_key != null ? String(input.p_choice_key).trim().toLowerCase() : "";
+  if (ck) params.p_choice_key = ck;
+
+  const ik = input.p_item_key != null ? String(input.p_item_key).trim().toLowerCase() : "";
+  if (ik) params.p_item_key = ik;
+
   return params;
 }
 
@@ -94,11 +105,14 @@ export async function lpOrderSet(
     p_date: string;
     p_slot: string;
     p_note: string | null;
+    p_choice_key?: string | null;
+    p_item_key?: string | null;
   }
 ) {
   const rpc = await callOrderSet(sb, {
     ...input,
     p_action: "SET",
+    p_item_key: input.p_item_key ?? "default",
   });
 
   if (rpc.error) {

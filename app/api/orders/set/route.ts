@@ -22,6 +22,8 @@ type OrderSetBody = {
   action?: "ORDER" | "CANCEL" | string;
   note?: string | null;
   slot?: string | null;
+  choice_key?: string | null;
+  item_key?: string | null;
 };
 
 type RpcOrderSetData = {
@@ -52,6 +54,13 @@ function sanitizeNote(note: unknown): string | null {
   return s.slice(0, 300);
 }
 
+function extractChoiceFromNote(note: string | null): string | null {
+  const n = safeStr(note ?? "");
+  if (!n) return null;
+  const head = n.split("||")[0]?.trim() ?? "";
+  return head ? head.toLowerCase() : null;
+}
+
 const RPC_ERROR_MESSAGES: Record<string, string> = {
   CUTOFF_PASSED:
     "Bestillingsfristen for i dag har gått ut (08:00). Du kan bestille for neste virkedag.",
@@ -60,6 +69,9 @@ const RPC_ERROR_MESSAGES: Record<string, string> = {
   AGREEMENT_NOT_ACTIVE: "Lunsjavtalen er ikke aktiv. Kontakt din administrator.",
   ALREADY_ORDERED: "Du har allerede en aktiv bestilling for denne dagen.",
   MENU_NOT_PUBLISHED: "Menyen for denne dagen er ikke publisert ennå.",
+  CHOICE_KEY_REQUIRED: "Menyvalg (choice_key) er påkrevd for å fullføre bestillingen.",
+  MENU_SERVICE_DAY_ITEMS_MISSING: "Meny er ikke materialisert i databasen (ingen linjer). Prøv igjen senere eller kontakt support.",
+  MENU_SERVICE_DAY_ITEM_NOT_FOUND: "Fant ikke menylinje for valgt kategori og prisnivå.",
   ORDER_NOT_FOUND: "Bestillingen ble ikke funnet.",
   LOCATION_NOT_FOUND: "Leveringsstedet ble ikke funnet.",
 };
@@ -74,9 +86,13 @@ function mapRpcErrorToHttp(message: string) {
   if (m.includes("DATE_REQUIRED")) return { status: 400, code: "DATE_REQUIRED" };
   if (m.includes("ACTION_INVALID")) return { status: 400, code: "ACTION_INVALID" };
   if (m.includes("PROFILE_MISSING")) return { status: 409, code: "PROFILE_MISSING" };
+  if (m.includes("INVALID_PROFILE")) return { status: 409, code: "PROFILE_MISSING" };
   if (m.includes("NO_ACTIVE_AGREEMENT")) return { status: 409, code: "NO_ACTIVE_AGREEMENT" };
   if (m.includes("OUTSIDE_DELIVERY_DAYS")) return { status: 409, code: "OUTSIDE_DELIVERY_DAYS" };
   if (m.includes("CUTOFF_PASSED")) return { status: 409, code: "CUTOFF_PASSED" };
+  if (m.includes("CHOICE_KEY_REQUIRED")) return { status: 422, code: "CHOICE_KEY_REQUIRED" };
+  if (m.includes("MENU_SERVICE_DAY_ITEMS_MISSING")) return { status: 409, code: "MENU_SERVICE_DAY_ITEMS_MISSING" };
+  if (m.includes("MENU_SERVICE_DAY_ITEM_NOT_FOUND")) return { status: 409, code: "MENU_SERVICE_DAY_ITEM_NOT_FOUND" };
   if (m.includes("ORDER_RPC_FAILED")) return { status: 500, code: "ORDER_RPC_FAILED" };
   return { status: 500, code: "ORDER_SET_FAILED" };
 }
@@ -102,6 +118,9 @@ export async function POST(req: NextRequest) {
   const action = normalizeAction(body?.action);
   const note = sanitizeNote(body?.note ?? null);
   const slot = normalizeOrderTableSlot(body?.slot ?? "");
+  const choiceKeyBody = safeStr(body?.choice_key ?? "").toLowerCase();
+  const itemKeyBody = safeStr(body?.item_key ?? "default").toLowerCase() || "default";
+  const choiceKeyForRpc = choiceKeyBody || extractChoiceFromNote(note);
 
   if (!isIsoDate(date)) {
     return jsonOrderWriteErr(rid, 400, "BAD_DATE", "Ugyldig dato. Bruk YYYY-MM-DD.");
@@ -111,15 +130,18 @@ export async function POST(req: NextRequest) {
     return jsonOrderWriteErr(rid, 400, "BAD_ACTION", "Ugyldig action. Bruk ORDER eller CANCEL.");
   }
 
-  // Fail-closed menu gate: ordering is blocked unless menu is published for date.
-  // Requirement states this gate must run before RPC on this endpoint.
-  try {
-    const menu = await getPublishedMenuForDate(date);
-    if (!menu) {
-      return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert for datoen.");
+  const rpcAction = action === "ORDER" ? "SET" : "CANCEL";
+
+  // Fail-closed menu gate kun ved ny bestilling — avbestilling skal ikke blokkeres av CMS.
+  if (action === "ORDER") {
+    try {
+      const menu = await getPublishedMenuForDate(date);
+      if (!menu) {
+        return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert for datoen.");
+      }
+    } catch {
+      return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Kunne ikke verifisere meny-status.");
     }
-  } catch {
-    return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Kunne ikke verifisere meny-status.");
   }
 
   const pricingGuard = assertEmployeeOrderBodyHasNoPricingOverrides(body, auth.ctx.scope.role);
@@ -153,9 +175,11 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await sb.rpc("lp_order_set", {
     p_date: date,
-    p_action: action,
+    p_action: rpcAction,
     p_note: note,
     p_slot: slot,
+    p_choice_key: rpcAction === "SET" ? choiceKeyForRpc || null : null,
+    p_item_key: itemKeyBody,
   });
 
   if (error) {
@@ -166,6 +190,14 @@ export async function POST(req: NextRequest) {
   const rpc = extractRpcPayload(data);
   const orderId = safeStr(rpc?.order_id);
   if (!orderId) {
+    if (action === "CANCEL") {
+      const outStatus = safeStr(rpc?.status).toUpperCase() || "CANCELED";
+      return jsonOrderWriteOk(rid, {
+        orderId: "",
+        status: orderWriteStatusFromDb(outStatus),
+        date: safeStr(rpc?.date) || date,
+      });
+    }
     return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Bestilling kunne ikke verifiseres etter lagring.");
   }
 

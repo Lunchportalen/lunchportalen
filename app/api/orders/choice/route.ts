@@ -314,6 +314,8 @@ export async function POST(req: NextRequest) {
     p_date: date,
     p_slot: ORDER_TABLE_SLOT_DEFAULT,
     p_note: nextNote,
+    p_choice_key: choice_key,
+    p_item_key: "default",
   });
 
   if (!setRes.ok) {
