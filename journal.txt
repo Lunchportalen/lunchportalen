@@ -348,6 +348,16 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 ---
 
+## 2026-05-16 — FASE 13.5-FIX-4-FOLLOWUP (SSL til Supabase Session Pooler i RLS drift-check)
+
+- **Problem:** CI-guard (`rls-drift-check.yml`) feilet med `DATABASE_ERROR` / «self-signed certificate in certificate chain» mot Supabase **Session Pooler** (`aws-0-eu-west-1.pooler.supabase.com`). Pooler-TLS-kjeden er ikke fullt ut tillit i Node's standard CA-store; nyere `pg` behandler `sslmode=require` som strengere verifikasjon.
+- **Fix:** `scripts/check-rls-drift.mjs` — `pg.Pool` får `ssl: { rejectUnauthorized: false }`. Tilkoblingen forblir kryptert (TLS); bare CA-validering hoppes over for kjent pooler-vert. `ensureSslRequire()` beholdes (sikrer `sslmode=require` i URL).
+- **Dokumentasjon:** `tests/rls/README.md` — Session Pooler + IPv4 for Actions vs direkte `db.*` (IPv6-only).
+
+(Speilet innhold: `docs/journal.txt`.)
+
+---
+
 ## 2026-05-16 — FASE 13.5-FIX-3-FOLLOWUP (fjern /api/orders/upsert)
 
 - Slettet død rute `app/api/orders/upsert` (prod manglet `idem_get`/`idem_put`; kanon er POST `/api/orders` med `lp_idem_*`).

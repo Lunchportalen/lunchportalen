@@ -50,6 +50,7 @@ Målet er å fange **ubeviste endringer** (som den brutte join mot slettede `loc
 - **Framtidig forbedring:** dedikert **read-only** Postgres-bruker med minimale rettigheter (kun `CONNECT` + lesing av katalog/relevante skjemaer). Samme connection string-format; ingen skriptendring nødvendig.
 - Bruk **direkte** `5432` mot Supabase der mulig. Pooler `6543` / transaction mode kan gi uventet oppførsel; hold det enkelt.
 - Skriptet legger til **`sslmode=require`** hvis URL mangler det.
+- **Session Pooler (GitHub Actions):** Connection-streng må bruke Session Pooler (port **5432** via `aws-X-eu-west-X.pooler.supabase.com`) for IPv4-kompatibilitet i GitHub Actions. Direct connection (`db.<ref>.supabase.co`) er IPv6-only og fungerer ikke fra Actions-runner. Drift-scriptet setter `ssl: { rejectUnauthorized: false }` for å akseptere pooler-sertifikat som ikke er i Node's standard CA-store; forbindelsen er fortsatt TLS-kryptert.
 
 ## Relaterte tester
 

@@ -110,6 +110,7 @@ async function mainAsync() {
     connectionString,
     max: 1,
     connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
+    ssl: { rejectUnauthorized: false },
   });
 
   try {

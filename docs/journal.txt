@@ -143,6 +143,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-16 — FASE 13.5-FIX-4-FOLLOWUP (SSL til Supabase Session Pooler i RLS drift-check)
+
+- **Problem:** CI feilet med «self-signed certificate in certificate chain» mot Session Pooler; Node CA vs pooler-sertifikat.
+- **Fix:** `check-rls-drift.mjs` — `ssl: { rejectUnauthorized: false }` på `pg.Pool` (TLS beholdt, CA-validering av). README oppdatert om Session Pooler / IPv4 for GitHub Actions.
+
+*Speil: `journal.txt` (rot).*
+
+---
+
 ## 2026-05-16 — FASE 13.5-FIX-3-FOLLOWUP (fjern /api/orders/upsert)
 
 - Slettet død rute `app/api/orders/upsert` (prod manglet `idem_get`/`idem_put`; kanon er POST `/api/orders` med `lp_idem_*`).
