@@ -263,5 +263,31 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 - P4 — Onboarding E2E-test.
 - P5 — Skalering-prep etter at P0 bestillingsfundament er dokumentert og grønn.
 
+---
+
+## 2026-05-16 — FASE 13-IMPL-3S-1-CLOSE (meny cron/CLI + overlevering)
+
+### Commit (amend + push)
+
+- **365897d1** (amend av 374da6f3) på `main`, pushet til `origin/main` (preflight-kjørte via git-hook før push).
+- Commit-melding rettet: **sanityServer** / prod er koblet til **getSanityWriteToken()** i `lib/config/env.ts`, ikke et ikke-eksisterende `getSanityReadToken()`.
+
+### Leveranse (kort)
+
+- CLI-paritet: `scripts/cron-menu-publish.ts` og `scripts/sanity/heal-menu-horizon.ts` leser Sanity med token og `useCdn: false` i tråd med `sanityServer`; uten token ga ACL-datasett tom mealIdea-bank og «minimum 50 retter»-feil feildiagnostisert som sesong-vokabular.
+- `mealIdeaBankQuery.ts`: `estimatedCostPerPortion <= 90` (off-by-one mot skjema max).
+- `runMenuWeekRolloutCore.ts`: `dryRun` og `clock` for deterministisk replay.
+- Diagnose: `scripts/debug-meal-idea-bank.ts`, `scripts/debug-v2-only.ts`, `scripts/find-empty-week.ts` + `npm run sanity:find-empty-week`.
+
+### Verifikasjon / åpent: ukegenerator
+
+- `sanity:find-empty-week`: mandager **2026-06-08 → 2026-08-31** — **0/5** varmrett for både BASIS og LUXUS (sommerkorridor uten `menuDay` i Sanity; uke **2026-06-01** var allerede fylt).
+- `npm run cron:menu-publish -- --target-week 2026-06-08 --dry-run`: **dag 2** feiler (`Kunne ikke fylle dag 2…`) med lesbar pool — neste fase **13-IMPL-3S-1B-GENERATOR** (pickBest / variasjonsregler).
+
+### Overlevering
+
+- **Lukket på `main`:** token/CLI-paritet, kosttak, verktøy — commit **365897d1**.
+- **Gjenstår:** generator når uken mangler `menuDay` og bank er ikke-tom.
+
 (Speilet innhold: `docs/journal.txt`.)
 

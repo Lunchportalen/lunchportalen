@@ -73,6 +73,12 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - **P4:** Onboarding E2E-test
 - **P5:** Skalering-prep (k6 loadtest etter at P0-grunnmur er grønn)
 
+### 2026-05-16 (etter middag) — FASE 13-IMPL-3S-1-CLOSE
+
+- **Commit `365897d1`** (amend + push `main`): meny **cron/CLI** Sanity-lesing med token (paritet med `sanityServer` / `getSanityWriteToken()` i `lib/config/env.ts`), `mealIdeaBankQuery` **<= 90**, `runMenuWeekRolloutCore` **dryRun/clock**, skript inkl. `find-empty-week` + `npm run sanity:find-empty-week`.
+- **Tom sommerkorridor:** `find-empty-week` viste **0/5** varmrett Man–Fre for **2026-06-08 … 2026-08-31**; `cron:menu-publish --dry-run` for **2026-06-08** feiler på **dag 2** (generator/variasjon) — følge-fase **13-IMPL-3S-1B-GENERATOR**.
+- Rotjournal: `journal.txt` (prosjektrot).
+
 ### Ærlig vurdering: 50K firma / 500K brukere / 20 år
 
 - Designestimat: **~32M** `menu_service_days`-rader/år ved L ≈ 125K lokasjoner og ~260 servicedøgn — **partisjonering er obligatorisk**, ikke valgfri optimering.
@@ -87,4 +93,4 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 —
 
-*Sist oppdatert: kveld 16.05.2026 (journal + FASE 13-designfil).*
+*Sist oppdatert: ettermiddag 16.05.2026 (FASE 13-IMPL-3S-1-CLOSE + speil).*
