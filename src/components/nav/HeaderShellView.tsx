@@ -61,7 +61,7 @@ export default function HeaderShellView({
               alt="Lunchportalen"
               width={180}
               height={32}
-              className="h-10 w-auto object-contain object-left md:h-12"
+              className="h-auto w-32 md:w-40"
               priority
               onError={() => setHeaderLogoSrc(logoSrc)}
             />

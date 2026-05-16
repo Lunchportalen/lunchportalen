@@ -4,6 +4,12 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-17 — FASE 14-UI-1e (logo size bump)
+
+- Header-logo: økt fra h-10/h-12 til w-32/w-40 (128px mobil / 160px desktop, høyde auto). Innenfor 120-130px-range definert av produkt.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-1d (header/footer polish fix)
 
 - Header logo: økt fra h-6/h-8 til h-10/h-12 (40px mobil / 48px desktop).
