@@ -122,3 +122,12 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - **Journalføring:** speilet i `journal.txt` (rot) og denne filen; `jsonOrderWriteOk` har krysshenvisning til `buildOrderWriteOkJsonBody` i `app/api/orders/route.ts`. Levert i commit på `main` rett etter `e13eb180` (se `git log`).
 
 *Speil: `journal.txt` (rot).*
+
+---
+
+## 2026-05-16 — FASE 13.5-FIX-2B (UI sender Idempotency-Key på POST /api/orders)
+
+- `generateIdempotencyKey` i `lib/orders/idempotencyKey.ts`; uke-UI og `OrderActions` sender `Idempotency-Key` på `POST /api/orders`; Vitest for helper + kilde-kontrakt.
+- Server: **FASE 13.5-FIX-2-IMPL** (`e13eb180`).
+
+*Speil: `journal.txt` (rot).*

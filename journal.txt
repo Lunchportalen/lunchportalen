@@ -324,3 +324,13 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 (Speilet innhold: `docs/journal.txt`.)
 
+---
+
+## 2026-05-16 — FASE 13.5-FIX-2B (UI sender Idempotency-Key på POST /api/orders)
+
+- Klient: `lib/orders/idempotencyKey.ts` (`generateIdempotencyKey`), `app/(app)/week/EmployeeWeekClient.tsx`, `components/orders/OrderActions.tsx` — hver `POST` til `/api/orders` sender header `Idempotency-Key`; eksisterende pending-/in-flight-guards uendret.
+- Tester: `tests/orders/idempotencyKey.test.ts`, `tests/orders/postOrdersClientIdempotency.test.ts`.
+- Bygger på server-støtte levert i **FASE 13.5-FIX-2-IMPL** (`e13eb180`).
+
+(Speilet innhold: `docs/journal.txt`.)
+

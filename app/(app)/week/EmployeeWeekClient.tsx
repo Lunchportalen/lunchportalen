@@ -7,6 +7,7 @@ import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { generateIdempotencyKey } from "@/lib/orders/idempotencyKey";
 import {
   findRecommendedDateInWindow,
   getTopWeekdayKey,
@@ -1899,7 +1900,11 @@ export default function EmployeeWeekClient({
 
         const res = await fetch("/api/orders", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-rid": rid },
+          headers: {
+            "Content-Type": "application/json",
+            "x-rid": rid,
+            "Idempotency-Key": generateIdempotencyKey(),
+          },
           cache: "no-store",
           body: JSON.stringify(body),
         });

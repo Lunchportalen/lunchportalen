@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { generateIdempotencyKey } from "@/lib/orders/idempotencyKey";
 import { getLpExperimentHeadersForFetch } from "@/lib/public/experimentVariantBrowser";
 import { getOrderAttributionForApi } from "@/lib/revenue/attributionSessionBrowser";
 
@@ -92,7 +93,11 @@ export default function OrderActions() {
       const expHeaders = getLpExperimentHeadersForFetch();
       const r = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...expHeaders },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": generateIdempotencyKey(),
+          ...expHeaders,
+        },
         cache: "no-store",
         body: JSON.stringify({
           date: effectiveDate,
@@ -130,7 +135,7 @@ export default function OrderActions() {
       const effectiveDate = res?.date ?? new Date().toISOString().slice(0, 10);
       const r = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": generateIdempotencyKey() },
         cache: "no-store",
         body: JSON.stringify({ date: effectiveDate, action: "CANCEL", slot: "default" }),
       });
