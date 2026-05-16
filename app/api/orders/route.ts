@@ -6,6 +6,7 @@ export const revalidate = 0;
 
 import "server-only";
 
+import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
 import {
   coerceOrderWriteErrorResponse,
@@ -14,6 +15,7 @@ import {
   makeRid,
   orderWriteStatusFromDb,
 } from "@/lib/http/respond";
+import { noStoreHeaders } from "@/lib/http/noStore";
 import { runInstrumentedApi } from "@/lib/http/withObservability";
 import { companyIdFromCtx, scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { recordRevenue } from "@/lib/observability/store";
@@ -91,6 +93,58 @@ function sanitizeItemKeyFromBody(body: Record<string, unknown>): string | null {
   const raw = body.itemKey ?? body.item_key;
   const s = safeStr(raw);
   return s ? s.slice(0, 160) : null;
+}
+
+/** Deterministisk nøkkel for idempotency — samme verdier som lp_order_set. */
+function canonicalOrderWritePayload(input: {
+  date: string;
+  action: string;
+  slot: string;
+  choice_key: string | null;
+  item_key: string;
+  note: string | null;
+}): string {
+  const ordered = {
+    action: input.action,
+    choice_key: input.choice_key,
+    date: input.date,
+    item_key: input.item_key,
+    note: input.note,
+    slot: input.slot,
+  };
+  return JSON.stringify(ordered);
+}
+
+function sha256Hex(s: string): string {
+  return createHash("sha256").update(s).digest("hex");
+}
+
+/**
+ * Flat JSON-kropp som må samsvare med kroppen fra `jsonOrderWriteOk` i `lib/http/respond.ts`
+ * (brukes til `lp_idem_complete` og replay). Ingen delt helper ennå — ved endring av `jsonOrderWriteOk`,
+ * oppdater denne funksjonen synkront; ved arbeid i `respond.ts`, vurder å legge inn speilkommentar ved `jsonOrderWriteOk`.
+ */
+function buildOrderWriteOkJsonBody(
+  rid: string,
+  params: {
+    orderId: string;
+    status: "active" | "cancelled";
+    date: string;
+    timestamp: string;
+    tier?: Tier | null;
+  }
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    ok: true,
+    rid,
+    orderId: params.orderId,
+    status: params.status,
+    timestamp: params.timestamp,
+    date: params.date,
+    slot: "lunch",
+  };
+  if ("tier" in params) out.tier = params.tier ?? null;
+  return out;
 }
 
 function mapRpcError(messageRaw: unknown) {
@@ -305,7 +359,64 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       }
     }
 
+    const idemKey = req.headers.get("Idempotency-Key")?.trim() ?? "";
+    let idemHash: string | null = null;
+
     const sb = await supabaseServer();
+
+    if (idemKey !== "") {
+      if (idemKey.length < 8) {
+        return jsonOrderWriteErr(rid, 400, "IDEMPOTENCY_KEY_TOO_SHORT", "Idempotency-Key må være minst 8 tegn.");
+      }
+      idemHash = sha256Hex(
+        canonicalOrderWritePayload({
+          date,
+          action,
+          slot: tableSlot,
+          choice_key: finalChoiceKey || null,
+          item_key: persistedItemKey ?? "default",
+          note,
+        })
+      );
+
+      const { data: beginData, error: beginErr } = await sb.rpc("lp_idem_begin", {
+        p_scope: "orders.write",
+        p_key: idemKey,
+        p_request_hash: idemHash,
+        p_ttl_seconds: 300,
+      });
+
+      if (beginErr) {
+        const bCode = String((beginErr as { code?: string }).code ?? "");
+        const bMsg = String(beginErr.message ?? "");
+        if (bCode === "23514" && bMsg.includes("hash mismatch")) {
+          return jsonOrderWriteErr(rid, 400, "IDEMPOTENCY_KEY_REUSE", "Idempotency-Key er allerede brukt med annen request.");
+        }
+        if (bCode === "23514" && bMsg.includes("in progress")) {
+          return jsonOrderWriteErr(rid, 409, "IDEMPOTENT_IN_PROGRESS", "Samme bestilling er allerede under behandling.");
+        }
+        return jsonOrderWriteErr(rid, 500, "IDEMPOTENCY_BEGIN_FAILED", "Kunne ikke initiere idempotency.");
+      }
+
+      if (
+        beginData &&
+        typeof beginData === "object" &&
+        !Array.isArray(beginData) &&
+        (beginData as { hit?: boolean }).hit === true
+      ) {
+        const bd = beginData as { response?: unknown; status_code?: number | null };
+        const cached = bd.response;
+        const statusCode = bd.status_code ?? 200;
+        if (cached !== null && cached !== undefined && typeof cached === "object") {
+          const headers = new Headers(noStoreHeaders() as Record<string, string>);
+          headers.set("content-type", "application/json; charset=utf-8");
+          headers.set("x-rid", rid);
+          return new Response(JSON.stringify(cached), { status: statusCode, headers });
+        }
+        return jsonOrderWriteErr(rid, 500, "IDEMPOTENCY_CACHE_INVALID", "Cachet svar mangler eller er ugyldig.");
+      }
+    }
+
     const { data, error } = await sb.rpc("lp_order_set", {
       p_date: date,
       p_action: action,
@@ -316,9 +427,26 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     });
 
     if (error) {
+      const errAny = error as { message?: string; code?: string; details?: string; hint?: string };
+      const errCode = String(errAny.code ?? "");
+      const errMsg = String(errAny.message ?? "");
+      const isUniqueViolation =
+        errCode === "23505" || (errCode !== "23514" && /unique_violation|duplicate key/i.test(errMsg));
+
+      if (isUniqueViolation) {
+        if (idemKey !== "" && idemHash) {
+          await sb.rpc("lp_idem_fail", {
+            p_scope: "orders.write",
+            p_key: idemKey,
+            p_request_hash: idemHash,
+            p_error: errMsg,
+          });
+        }
+        return jsonOrderWriteErr(rid, 409, "DUPLICATE_ORDER", "Du har allerede en bestilling for denne dagen.");
+      }
+
       const mapped = mapRpcError(error.message);
       if (mapped.status === 500 && mapped.code === "ORDER_SET_FAILED") {
-        const errAny = error as { message?: string; code?: string; details?: string; hint?: string };
         opsLog("orders.lp_order_set.rpc_unmapped", {
           rid,
           level: "error",
@@ -337,6 +465,14 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
           },
         });
       }
+      if (idemKey !== "" && idemHash) {
+        await sb.rpc("lp_idem_fail", {
+          p_scope: "orders.write",
+          p_key: idemKey,
+          p_request_hash: idemHash,
+          p_error: errMsg,
+        });
+      }
       return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapped.message);
     }
 
@@ -346,18 +482,50 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const savedDate = safeStr(out?.date) || date;
 
     if (!savedStatus) {
+      if (idemKey !== "" && idemHash) {
+        await sb.rpc("lp_idem_fail", {
+          p_scope: "orders.write",
+          p_key: idemKey,
+          p_request_hash: idemHash,
+          p_error: "ORDER_SET_BAD_RESPONSE: missing status",
+        });
+      }
       return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
     }
 
     if (!orderId && action === "CANCEL") {
+      const ts = new Date().toISOString();
+      if (idemKey !== "" && idemHash) {
+        await sb.rpc("lp_idem_complete", {
+          p_scope: "orders.write",
+          p_key: idemKey,
+          p_request_hash: idemHash,
+          p_response_json: buildOrderWriteOkJsonBody(rid, {
+            orderId: "",
+            status: "cancelled",
+            date: savedDate,
+            timestamp: ts,
+          }),
+          p_response_code: 200,
+        });
+      }
       return jsonOrderWriteOk(rid, {
         orderId: "",
         status: "cancelled",
         date: savedDate,
+        timestamp: ts,
       });
     }
 
     if (!orderId) {
+      if (idemKey !== "" && idemHash) {
+        await sb.rpc("lp_idem_fail", {
+          p_scope: "orders.write",
+          p_key: idemKey,
+          p_request_hash: idemHash,
+          p_error: "ORDER_SET_BAD_RESPONSE: missing order_id",
+        });
+      }
       return jsonOrderWriteErr(rid, 500, "ORDER_SET_BAD_RESPONSE", "Vi kunne ikke lagre bestillingen nå.");
     }
 
@@ -465,11 +633,29 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       slot: tableSlot,
     });
 
+    const successTs = new Date().toISOString();
+    const writtenStatus = orderWriteStatusFromDb(savedStatus);
+    if (idemKey !== "" && idemHash) {
+      await sb.rpc("lp_idem_complete", {
+        p_scope: "orders.write",
+        p_key: idemKey,
+        p_request_hash: idemHash,
+        p_response_json: buildOrderWriteOkJsonBody(rid, {
+          orderId,
+          status: writtenStatus,
+          date: savedDate,
+          timestamp: successTs,
+          tier: resolvedTier,
+        }),
+        p_response_code: 200,
+      });
+    }
+
     return jsonOrderWriteOk(rid, {
       orderId,
-      status: orderWriteStatusFromDb(savedStatus),
+      status: writtenStatus,
       date: savedDate,
-      timestamp: new Date().toISOString(),
+      timestamp: successTs,
       tier: resolvedTier,
     });
   } catch (e: unknown) {
