@@ -150,3 +150,19 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - Oppdatert `lib/system/routeRegistry.ts` (fjernet `orders-upsert-post`), `lib/observability/sloRegistry.ts`, `docs/SLO_ALERTING_RUNBOOK.md`; `tests/api/order-api-guards.test.ts` uten upsert-describe.
 
 *Speil: `journal.txt` (rot).*
+
+---
+
+## 2026-05-16 — FASE 13.5-FIX-5 (Migrasjonskollisjon 20260204)
+
+- Diagnose: fem filer delte versjons-prefix 20260204 i `supabase/migrations/` (audit_events, company_archive, mega_motor phase1/2/3). Lokal `supabase db reset` feilet med 23505 på `schema_migrations` unique constraint. Prod hadde INGEN rader med `version='20260204%'` i `schema_migrations`, men hybrid objekt-tilstand (audit_events finnes, companies/profiles archive-kolonner finnes, mega_motor-tabeller finnes, men `company_deletions` + `claim_repair_jobs` + `repair_jobs_state_next_run_idx` manglet).
+- Bruk-sjekk: `company_deletions` BRUKT av superadmin archive-summary route, `claim_repair_jobs` BRUKT av `superadmin/system/repairs/run`. Manglende objekter var faktiske bugs, ikke død kode.
+- Fix:
+  1. Rename 5 filer til unike timestamps (`20260204000001`–`5`) for å fjerne lokal kollisjon. Phase1+2 fikk samtidig BOM-fjerning pga Cursor Write-quirk.
+  2. Ny migrasjon: `close_20260204_drift` med idempotent DDL for `company_deletions`, `claim_repair_jobs`, `repair_jobs_state_next_run_idx`.
+  3. Apply mot prod via MCP (samme mønster som FIX-1/2). Verifisert alle tre objekter eksisterer i prod etter apply.
+- Filnavn-justering: ny migrasjon renamet i repo til `20260516191414_close_20260204_drift.sql` for å matche prod `schema_migrations`-versjon.
+- Workflow-status: `supabase-migrate.yml` vil ikke automatisk re-apply pga migration-gate blokkering på 20260513a/b (separat backlog). Prod er allerede synkronisert via MCP — workflow trenger ikke kjøre.
+- Ingen selvrefererende SHA. Levert i denne commiten.
+
+*Speil: `journal.txt` (rot).*

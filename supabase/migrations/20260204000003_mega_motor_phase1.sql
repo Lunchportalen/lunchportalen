@@ -1,4 +1,4 @@
-﻿-- supabase/migrations/20260204_mega_motor_phase1.sql
+-- supabase/migrations/20260204_mega_motor_phase1.sql
 create extension if not exists "pgcrypto";
 
 create table if not exists public.system_health_snapshots (

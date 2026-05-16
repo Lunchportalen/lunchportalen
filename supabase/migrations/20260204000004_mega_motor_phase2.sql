@@ -1,4 +1,4 @@
-﻿-- supabase/migrations/20260204_mega_motor_phase2.sql
+-- supabase/migrations/20260204_mega_motor_phase2.sql
 create extension if not exists "pgcrypto";
 
 alter table if exists public.repair_jobs
