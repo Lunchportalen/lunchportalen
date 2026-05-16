@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sanityServer } from "@/lib/sanity/server";
 
+import { filterLunchCategoryItemsRawForPlanTier } from "@/lib/cms/lunchCategory";
 import { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publish/menuDaySyncShared";
 import { TIER_PRICE_CENTS, VAT_RATE } from "./tierPricing";
 
@@ -308,7 +309,10 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
         productNameSnapshot = formatVarmrettSnapshot(cached.varmrett);
       } else {
         const title = safeTrim(cat.title) || dbCatName;
-        productNameSnapshot = formatStaticCategorySnapshot(title, cat.items ?? []);
+        productNameSnapshot = formatStaticCategorySnapshot(
+          title,
+          filterLunchCategoryItemsRawForPlanTier(cat.items ?? [], tier),
+        );
       }
 
       upsertPayload.push({

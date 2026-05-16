@@ -130,6 +130,20 @@ export default defineType({
               type: "boolean",
               initialValue: false,
             }),
+            defineField({
+              name: "allowedPlanTiers",
+              title: "Tilgjengelig for avtale-tiers (valgfritt)",
+              description:
+                "Tom liste = gjelder hele kategorien. Med verdier: varianten vises kun for valgte tiers.",
+              type: "array",
+              of: [
+                {
+                  type: "string",
+                  options: { list: [...PLAN_TIER_OPTIONS] },
+                },
+              ],
+              options: { layout: "grid" },
+            }),
           ],
         }),
       ],

@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildMenuDayCategories } from "@/app/api/order/window/route";
 import { getMenuForDateAndPlan } from "@/lib/cms/menuDay";
+import { getLunchCategoryStaticItemsByPlanTier } from "@/lib/cms/lunchCategory";
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 
@@ -36,7 +37,8 @@ export async function resolveOrderDayItemPersist(params: {
     };
   }
 
-  const categories = buildMenuDayCategories({ planTier: params.planTier, menus });
+  const staticItemsByCategory = await getLunchCategoryStaticItemsByPlanTier(params.planTier);
+  const categories = buildMenuDayCategories({ planTier: params.planTier, menus, staticItemsByCategory });
   const want = normChoiceKey(params.choiceKey);
   const cat = categories.find((c) => normChoiceKey(c.key) === want);
 

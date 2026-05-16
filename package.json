@@ -50,6 +50,7 @@
     "sanity:create-test-menuday": "tsx scripts/sanity/create-test-menuday-2026-05-18.ts",
     "sanity:delete-menuDay-weeks-2122": "tsx scripts/sanity/delete-menuDay-weeks-2122.ts",
     "sanity:seed-lunch-categories": "tsx scripts/sanity/seed-lunch-categories.ts",
+    "sanity:seed-lunch-categories-v2": "tsx scripts/sanity/seed-lunch-categories-v2.ts",
     "sanity:migrate-mealidea-allowed-tiers": "tsx scripts/sanity/migrate-mealidea-allowed-tiers.ts",
     "agents:check": "node scripts/agents-ci.mjs",
     "ci:guard": "node scripts/ci-guard.mjs",

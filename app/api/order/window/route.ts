@@ -27,6 +27,7 @@ import {
   type MenuItemData,
   type PlanTier,
 } from "@/lib/cms/menuDay";
+import { fetchActiveLunchCategoryRows, staticMenuItemsByCategoryForPlanTier } from "@/lib/cms/lunchCategory";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -237,10 +238,23 @@ export function buildMenuDayCategories(params: {
     allergens?: string[] | null;
     items?: MenuItemData[] | null;
   }>;
+  /** FASE 13: Sanity lunchCategory — faste varianter (alle unntatt varmrett). */
+  staticItemsByCategory?: Partial<Record<Category, MenuItemData[]>>;
 }): DayCategory[] {
   const expectedCategories = PLAN_CATEGORIES[params.planTier] ?? [];
+  const staticMap = params.staticItemsByCategory ?? {};
   return expectedCategories.map((category) => {
     const menu = params.menus.find((m) => m.category === category);
+    const menuItems = menu ? mapMenuDayItems(menu.items) : [];
+    const staticItemsRaw = staticMap[category];
+    const staticItems =
+      category !== "varmrett" && Array.isArray(staticItemsRaw) && staticItemsRaw.length > 0
+        ? mapMenuDayItems(staticItemsRaw)
+        : [];
+    const items = category === "varmrett" ? menuItems : staticItems.length > 0 ? staticItems : menuItems;
+    const hasMenu = menu !== undefined;
+    const hasStatic = category !== "varmrett" && staticItems.length > 0;
+    const available = category === "varmrett" ? hasMenu : hasMenu || hasStatic;
     return {
       key: MENU_DAY_CATEGORY_TO_ORDER_CHOICE[category],
       category,
@@ -248,8 +262,8 @@ export function buildMenuDayCategories(params: {
       title: menu?.mealTitle ?? menu?.title ?? null,
       description: menu?.description ?? null,
       allergens: Array.isArray(menu?.allergens) ? menu.allergens.map((a) => String(a)) : [],
-      available: menu !== undefined,
-      items: menu ? mapMenuDayItems(menu.items) : [],
+      available,
+      items,
     };
   });
 }
@@ -908,10 +922,25 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    let lunchCategoryRows: Awaited<ReturnType<typeof fetchActiveLunchCategoryRows>> = [];
+    try {
+      lunchCategoryRows = await fetchActiveLunchCategoryRows();
+    } catch (e: any) {
+      opsLog("window.lunchCategory.failed", {
+        rid,
+        company_id: sc.company_id,
+        detail: String(e?.message ?? e),
+      });
+      lunchCategoryRows = [];
+    }
+
     const days = await Promise.all(
       legacyDays.map(async (day) => {
         const planTier = asPlanTier((day as any).planTier ?? (day as any).tier);
         if (!planTier) return day;
+
+        const staticItemsByCategory = staticMenuItemsByCategoryForPlanTier(lunchCategoryRows, planTier);
+        const hasStaticCatalog = Object.keys(staticItemsByCategory).length > 0;
 
         try {
           const menus = await getMenuForDateAndPlan(day.date, planTier);
@@ -919,7 +948,15 @@ export async function GET(req: NextRequest) {
             return {
               ...day,
               planTier,
-              categories: buildMenuDayCategories({ planTier, menus }),
+              categories: buildMenuDayCategories({ planTier, menus, staticItemsByCategory }),
+            };
+          }
+
+          if (hasStaticCatalog) {
+            return {
+              ...day,
+              planTier,
+              categories: buildMenuDayCategories({ planTier, menus: [], staticItemsByCategory }),
             };
           }
         } catch (e: any) {
@@ -930,6 +967,13 @@ export async function GET(req: NextRequest) {
             planTier,
             detail: String(e?.message ?? e),
           });
+          if (hasStaticCatalog) {
+            return {
+              ...day,
+              planTier,
+              categories: buildMenuDayCategories({ planTier, menus: [], staticItemsByCategory }),
+            };
+          }
         }
 
         // Post-launch cleanup: Fjern legacy fallback når all produksjonsdata er migrert til menuDay.

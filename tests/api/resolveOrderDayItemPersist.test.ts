@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const getMenuForDateAndPlanMock = vi.hoisted(() => vi.fn());
+const getLunchCategoryStaticItemsByPlanTierMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/cms/menuDay")>();
@@ -11,11 +12,17 @@ vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/cms/lunchCategory", () => ({
+  getLunchCategoryStaticItemsByPlanTier: getLunchCategoryStaticItemsByPlanTierMock,
+}));
+
 import { resolveOrderDayItemPersist } from "@/lib/orders/resolveOrderDayItemPersist";
 
 describe("resolveOrderDayItemPersist", () => {
   beforeEach(() => {
     getMenuForDateAndPlanMock.mockReset();
+    getLunchCategoryStaticItemsByPlanTierMock.mockReset();
+    getLunchCategoryStaticItemsByPlanTierMock.mockResolvedValue({});
   });
 
   test("ITEM_CHOICE_REQUIRED når minst to items og ingen itemKey", async () => {
@@ -133,5 +140,38 @@ describe("resolveOrderDayItemPersist", () => {
       expect(r.item_key).toBe("Laks");
       expect(r.item_title_snapshot).toBe("Laks");
     }
+  });
+
+  test("statiske lunchCategory-items overstyrer menuDay når flere varianter", async () => {
+    getMenuForDateAndPlanMock.mockResolvedValue([
+      {
+        category: "salat",
+        mealTitle: "Bare én variant",
+        items: [{ key: "solo", title: "Solo", allergens: [], isVegetarian: false, available: true }],
+      },
+    ]);
+    getLunchCategoryStaticItemsByPlanTierMock.mockResolvedValue({
+      salat: [
+        { key: "skinke", title: "Skinke", allergens: [], isVegetarian: false, available: true },
+        { key: "kylling", title: "Kylling", allergens: [], isVegetarian: false, available: true },
+      ],
+    });
+
+    const rNone = await resolveOrderDayItemPersist({
+      date: "2026-05-21",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: null,
+    });
+    expect(rNone.ok).toBe(false);
+    expect(rNone.ok ? null : rNone.code).toBe("ITEM_CHOICE_REQUIRED");
+
+    const rHit = await resolveOrderDayItemPersist({
+      date: "2026-05-21",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: "kylling",
+    });
+    expect(rHit).toEqual({ ok: true, item_key: "kylling", item_title_snapshot: "Kylling" });
   });
 });

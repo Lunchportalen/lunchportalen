@@ -16,13 +16,19 @@ describe("week category cards", () => {
     expect(source).toContain("Ikke tilgjengelig");
   });
 
-  test("expanded panel: radiogrid for selectable items and Velg-variant title", () => {
+  test("expanded panel: radiogrid when minst to valgbare items; Velg-variant title kun da", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     expect(source).toContain("isSelectableItems");
     expect(source).toContain(`Velg variant for ${"${selectedCat.label}"}`);
     expect(source).toContain('role={isSelectableItems ? "radiogroup" : "region"}');
     expect(source).toContain("ds-week-items-grid");
     expect(source).toContain('role="radio"');
+  });
+
+  test("én fast variant (sushi-pakke): info-kort, ikke radio", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("itemCount === 1");
+    expect(source).toContain("ds-week-info-card__title");
   });
 
   test("expanded panel: info card mode for zero items with title/description", () => {

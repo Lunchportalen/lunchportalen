@@ -66,6 +66,11 @@ vi.mock("@/lib/cms/menuDay", () => ({
   getMenuForRange: vi.fn(async () => []),
 }));
 
+vi.mock("@/lib/cms/lunchCategory", () => ({
+  fetchActiveLunchCategoryRows: vi.fn(async () => []),
+  staticMenuItemsByCategoryForPlanTier: vi.fn(() => ({})),
+}));
+
 vi.mock("@/lib/agreement/currentAgreement", () => ({
   getCurrentAgreementState: vi.fn(async () => ({
     ok: true,

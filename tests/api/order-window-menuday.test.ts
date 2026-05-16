@@ -70,4 +70,34 @@ describe("/api/order/window menuDay categories", () => {
     expect(salat?.items.find((x) => x.key === "three")?.isVegetarian).toBe(true);
     expect(buildMenuDayCategories({ planTier: "BASIS", menus: [] }).every((c) => Array.isArray(c.items))).toBe(true);
   });
+
+  test("Sanity lunchCategory (staticItemsByCategory) gjør kategori tilgjengelig uten menuDay-rad", () => {
+    const staticItems = {
+      paasmurt: [
+        { key: "ost-skinke", title: "Ost & Skinke", allergens: ["melk"], isVegetarian: false, available: true },
+      ],
+    };
+    const categories = buildMenuDayCategories({ planTier: "BASIS", menus: [], staticItemsByCategory: staticItems });
+    const p = categories.find((c) => c.category === "paasmurt");
+    expect(p?.available).toBe(true);
+    expect(p?.items.map((i) => i.key)).toEqual(["ost-skinke"]);
+    const v = categories.find((c) => c.category === "varmrett");
+    expect(v?.available).toBe(false);
+  });
+
+  test("statiske items erstatter tomme menuDay-items for samme kategori", () => {
+    const staticItems = {
+      salat: [
+        { key: "skinke", title: "Skinke", allergens: [], isVegetarian: false, available: true },
+        { key: "kylling", title: "Kylling", allergens: [], isVegetarian: false, available: true },
+      ],
+    };
+    const categories = buildMenuDayCategories({
+      planTier: "BASIS",
+      menus: [{ category: "salat", mealTitle: "Dagens salat", items: [] }],
+      staticItemsByCategory: staticItems,
+    });
+    const salat = categories.find((c) => c.category === "salat");
+    expect(salat?.items.map((x) => x.key)).toEqual(["skinke", "kylling"]);
+  });
 });

@@ -690,7 +690,7 @@ export function WeekCategoryCards({
   const itemCount = selectedCat?.items?.length ?? 0;
   const hasCategoryHeadline =
     !!(selectedCat && (String(selectedCat.title ?? "").trim() !== "" || String(selectedCat.description ?? "").trim() !== ""));
-  const isSelectableItems = selectedCat !== undefined && (itemCount >= 2 || itemCount === 1);
+  const isSelectableItems = selectedCat !== undefined && itemCount >= 2;
   const parsed = parseStoredSelection(storedChoice ?? null);
   const selectedItemKey = parsed?.itemKey ?? null;
 
@@ -702,9 +702,7 @@ export function WeekCategoryCards({
   let sectionHeading = "";
   if (selectedCat) {
     sectionHeading =
-      itemCount >= 2 || itemCount === 1
-        ? `Velg variant for ${selectedCat.label}`
-        : `Detaljer for ${selectedCat.label}`;
+      itemCount >= 2 ? `Velg variant for ${selectedCat.label}` : `Detaljer for ${selectedCat.label}`;
   }
 
   const titleDomId = selectedCat ? `week-items-title-${selectedCat.key}` : "week-items-title";
@@ -757,6 +755,39 @@ export function WeekCategoryCards({
                 </button>
               );
             })}
+          </div>
+        ) : itemCount === 1 && selectedCat ? (
+          <div className="ds-week-info-card" role="region" aria-labelledby={titleDomId}>
+            <p id={titleDomId} className="ds-week-items-section__title">
+              {sectionHeading}
+            </p>
+            {(() => {
+              const it = selectedCat.items[0]!;
+              return (
+                <>
+                  <h3 className="ds-week-info-card__title">{it.title}</h3>
+                  {it.description ? (
+                    <p className="ds-week-info-card__desc">{String(it.description).trim()}</p>
+                  ) : null}
+                  {(it.allergens ?? []).length > 0 || it.isVegetarian ? (
+                    <div className="ds-week-info-card__meta">
+                      {(it.allergens ?? []).map((slug) => (
+                        <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+                          <span aria-hidden="true">⚠ </span>
+                          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
+                        </span>
+                      ))}
+                      {it.isVegetarian ? (
+                        <span className="ds-vegetarian-badge">
+                          <span aria-hidden="true">🌿 </span>
+                          Vegetar
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
         ) : showInfoCard ? (
           <div className="ds-week-info-card">
