@@ -334,3 +334,15 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 (Speilet innhold: `docs/journal.txt`.)
 
+---
+
+## 2026-05-16 — FASE 13.5-FIX-4 (CI-guard mot RLS-drift)
+
+- **`scripts/check-rls-drift.mjs`:** READ-ONLY introspeksjon mot `pg_policies` / `pg_proc` vs `tests/rls/golden-rls-snapshot.json` — L1 policy-nøkler (stram mengde), L2 `private.*` signaturer (stram mengde), L3 `md5(pg_get_functiondef(oid))` for nøkler i `capturedPrivateFunctionDefMd5`; exit **0** match / **1** drift / **2** konfig eller tilkobling.
+- **`.github/workflows/rls-drift-check.yml`:** planlagt kjøring daglig **06:00 UTC** + `workflow_dispatch`; secret **`DATABASE_URL`** (direkte Postgres, typisk port **5432**; skriptet sikrer `sslmode=require` ved behov).
+- **`tests/rls/README.md`** + **`package.json`** (`check:rls-drift`).
+- **Motivasjon:** tilsvarende brudd som i FIX-1-VERIFY (helpers mot feil tabell) kan ellers gå uoppdaget til produksjonssymptomer.
+- **Aktivering:** etter merge må **`DATABASE_URL`** settes i GitHub repo settings; første verifikasjon via **workflow_dispatch** (forventer grønn L3 for `can_access_location` og `can_manage_location` når prod matcher golden).
+
+(Speilet innhold: `docs/journal.txt`.)
+

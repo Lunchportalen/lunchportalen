@@ -71,6 +71,7 @@
     "ci:enterprise": "cross-env RC_MODE=true npm run ci:guard && cross-env RC_MODE=true npm run agents:check && cross-env RC_MODE=true npm run ci:platform-guards && cross-env RC_MODE=true npm run typecheck && cross-env RC_MODE=true npm run test:run && cross-env RC_MODE=true npm run test:tenant && cross-env RC_MODE=true npm run lint && cross-env RC_MODE=true npm run build:enterprise",
     "ci:critical": "npm run ci:enterprise",
     "push:ok": "npm run ci:critical && node -e \"process.exit(require('child_process').execSync('git status --porcelain').toString().trim() ? 1 : 0)\"",
+    "check:rls-drift": "node scripts/check-rls-drift.mjs",
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:check": "git config core.hooksPath",
     "postdeploy": "node scripts/postdeploy.mjs",

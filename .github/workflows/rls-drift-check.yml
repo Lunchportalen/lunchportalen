@@ -1,0 +1,38 @@
+# READ-ONLY drift: prod Postgres vs tests/rls/golden-rls-snapshot.json (varsler, blokkerer ikke PR).
+# Secret: DATABASE_URL (direkte postgresql://…@db.<ref>.supabase.co:5432/postgres?sslmode=require)
+name: RLS drift check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+concurrency:
+  group: rls-drift-check
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rls-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check RLS drift (golden snapshot)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/check-rls-drift.mjs

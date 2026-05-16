@@ -131,3 +131,12 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - Server: **FASE 13.5-FIX-2-IMPL** (`e13eb180`).
 
 *Speil: `journal.txt` (rot).*
+
+---
+
+## 2026-05-16 — FASE 13.5-FIX-4 (CI-guard mot RLS-drift)
+
+- Drift-sjekk: `scripts/check-rls-drift.mjs` + `rls-drift-check.yml` (06:00 UTC + manuell); `DATABASE_URL` secret; `tests/rls/README.md`.
+- Ikke PR-blokkerende; ingen auto-oppdatering av golden.
+
+*Speil: `journal.txt` (rot).*
