@@ -100,3 +100,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 —
 
 *Sist oppdatert: kveld 16.05.2026 (FASE 13-IMPL-3S-1B-GENERATOR + speil).*
+
+---
+
+## 2026-05-17 — FASE 13.5-FIX-1-REPAIR (locations → company_locations)
+
+- Commit: se `git log -1` etter merge (full SHA i hovedrapport / chat STEG 7).
+- `20260516320000_repair_locations_helpers.sql`: **CREATE OR REPLACE** for `private.can_access_location` og `private.can_manage_location` (én linje: join mot `public.company_locations`).
+- Prod: apply via MCP; smoke grønn (direkte + indirekte helpers); nye def-md5 som i `golden-rls-snapshot.json` (`capturedPrivateFunctionDefMd5`).
+- Capture `20260517000000` + generator oppdatert; ingen ekstra prod-kjøring av capture-fila (valgfritt STEG 6 hoppet).
+- Sommerkorridor **2026-06-08+**: merk at meny/RLS-kjeden nå ikke skal dø på manglende `public.locations`.
+
+*Speil: `journal.txt` (rot).*
