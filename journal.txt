@@ -382,3 +382,11 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 (Speilet innhold: `docs/journal.txt`.)
 
+---
+
+## 2026-05-16 — ECHO: session summary (kontinuitet)
+
+- **`docs/session-summary-2026-05-16.md`:** samlet referanse for kveldens arbeid (ti kjernerevisjoner, manuelle GitHub/Supabase-tiltak uten hemmeligheter i teksten, prod-status, sikkerhetsnotater, backlog, skala-roadmap, Cursor-mønster). Ment for ny økt uten transkriptlesing.
+
+(Speilet innhold: `docs/journal.txt`.)
+

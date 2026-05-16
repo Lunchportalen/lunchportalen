@@ -175,3 +175,11 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - Ingen selvrefererende SHA. Levert i denne commiten.
 
 *Speil: `journal.txt` (rot).*
+
+---
+
+## 2026-05-16 — ECHO: session summary (kontinuitet)
+
+- **`docs/session-summary-2026-05-16.md`:** samlet referanse for kveldens arbeid (ti kjernerevisjoner, manuelle GitHub/Supabase-tiltak uten hemmeligheter i teksten, prod-status, sikkerhetsnotater, backlog, skala-roadmap, Cursor-mønster). Ment for ny økt uten transkriptlesing.
+
+*Speil: `journal.txt` (rot).*
