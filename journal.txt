@@ -1,3 +1,12 @@
+## 2026-05-17 — FASE 14-UI-1d (header/footer polish fix)
+- Header logo: økt fra h-6/h-8 til h-10/h-12 (40px mobil / 48px desktop).
+- Header layout: flex justify-between på mobil, grid på md+ — fikser at profil-knappen sto sentralt på små skjermer.
+- Dropdown: max-width: calc(100vw - 32px) for å hindre overflow til venstre.
+- Footer: fjernet Lunchportalen-logo i fallback-modus (kun legal-lenker + copyright + Powered by FrameCore vises).
+- CMS-flyt urørt.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-1c (fix prod logo + assets)
 - Header logo: byttet fra logo-pack SVG (template med placeholder-tekst) til /Logo LunchPortalen uten bakgrunn.png i public/-roten.
 - Committet public/FrameCore.png (var untracked, brutt bilde i prod footer-fallback etter f08546de).

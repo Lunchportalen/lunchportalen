@@ -4402,6 +4402,7 @@ html[data-resolved-theme="dark"] .lp-profile-menu__btn:hover {
   top: calc(100% + 8px);
   right: 0;
   min-width: 260px;
+  max-width: calc(100vw - 32px);
   padding: 12px;
   background: var(--ds-surface, rgb(var(--lp-surface)));
   border: 1px solid var(--ds-line, rgba(17, 17, 17, 0.08));
@@ -4518,6 +4519,12 @@ html[data-resolved-theme="dark"] .lp-profile-menu__logout:hover {
 .lp-footer-fallback__partner-logo {
   height: 24px;
   width: auto;
+}
+
+.lp-footer-fallback--only {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 @media (min-width: 768px) {

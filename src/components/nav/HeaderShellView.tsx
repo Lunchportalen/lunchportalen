@@ -10,6 +10,29 @@ import type { HeaderShellViewModel } from "@/lib/layout/globalHeaderFromCms";
 /** Production logo in public/ root (logo-pack SVG is a design template, not final artwork). */
 const HEADER_LOGO_PUBLIC_PNG = "/Logo LunchPortalen uten bakgrunn.png";
 
+/** Preserves max-width from server/marketing `innerGridClassName` while fixing mobile alignment (flex vs grid). */
+function headerInnerShellClassName(innerGridClassName: string): string {
+  const max = innerGridClassName.includes("max-w-none")
+    ? "max-w-none"
+    : innerGridClassName.includes("max-w-[1600px]")
+      ? "max-w-[1600px]"
+      : "max-w-[1440px]";
+  return [
+    "mx-auto",
+    "flex",
+    "w-full",
+    max,
+    "items-center",
+    "justify-between",
+    "px-4",
+    "py-3",
+    "md:py-4",
+    "md:grid",
+    "md:grid-cols-[1fr_auto_1fr]",
+    "md:justify-normal",
+  ].join(" ");
+}
+
 type HeaderShellViewProps = HeaderShellViewModel & {
   headerClassName: string;
   innerGridClassName: string;
@@ -30,15 +53,15 @@ export default function HeaderShellView({
 
   return (
     <header className={headerClassName}>
-      <div className={innerGridClassName}>
-        <div className="flex items-center justify-self-start min-w-0">
-          <Link href="/" className="flex min-w-0 items-center" aria-label={areaLabel}>
+      <div className={headerInnerShellClassName(innerGridClassName)}>
+        <div className="flex min-w-0 items-center md:justify-self-start">
+          <Link href="/" className="flex min-w-0 items-center md:justify-self-start" aria-label={areaLabel}>
             <Image
               src={headerLogoSrc}
               alt="Lunchportalen"
               width={180}
               height={32}
-              className="h-6 w-auto object-contain object-left md:h-8"
+              className="h-10 w-auto object-contain object-left md:h-12"
               priority
               onError={() => setHeaderLogoSrc(logoSrc)}
             />
@@ -60,7 +83,7 @@ export default function HeaderShellView({
           </ul>
         </nav>
 
-        <div className="flex items-center justify-end gap-3 justify-self-end min-w-0">
+        <div className="flex min-w-0 items-center gap-3 md:justify-self-end">
           {email ? (
             <span
               className="hidden max-w-[min(280px,28vw)] truncate text-sm text-[rgb(var(--lp-muted))] md:inline"
