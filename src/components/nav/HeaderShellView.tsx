@@ -7,8 +7,8 @@ import { useState } from "react";
 import { ProfileMenu } from "@/components/nav/ProfileMenu";
 import type { HeaderShellViewModel } from "@/lib/layout/globalHeaderFromCms";
 
-const PRIMARY_WORDMARK_SVG =
-  "/LunchPortalen_Enterprise_Logo_Pack/08_VECTOR/LunchPortalen_Primary.svg";
+/** Production logo in public/ root (logo-pack SVG is a design template, not final artwork). */
+const HEADER_LOGO_PUBLIC_PNG = "/Logo LunchPortalen uten bakgrunn.png";
 
 type HeaderShellViewProps = HeaderShellViewModel & {
   headerClassName: string;
@@ -26,7 +26,7 @@ export default function HeaderShellView({
   navigation,
   email,
 }: HeaderShellViewProps) {
-  const [headerLogoSrc, setHeaderLogoSrc] = useState(PRIMARY_WORDMARK_SVG);
+  const [headerLogoSrc, setHeaderLogoSrc] = useState(HEADER_LOGO_PUBLIC_PNG);
 
   return (
     <header className={headerClassName}>
@@ -38,7 +38,7 @@ export default function HeaderShellView({
               alt="Lunchportalen"
               width={180}
               height={32}
-              className="h-6 w-auto max-w-[min(200px,100%)] object-contain object-left md:h-8"
+              className="h-6 w-auto object-contain object-left md:h-8"
               priority
               onError={() => setHeaderLogoSrc(logoSrc)}
             />

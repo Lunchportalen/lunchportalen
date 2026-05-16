@@ -4,6 +4,14 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-17 — FASE 14-UI-1c (fix prod logo + assets)
+
+- Header logo: byttet fra logo-pack SVG (template med placeholder-tekst) til /Logo LunchPortalen uten bakgrunn.png i public/-roten.
+- Committet public/FrameCore.png (var untracked, brutt bilde i prod footer-fallback etter f08546de).
+- Verifisert i prod etter neste deploy.
+
+---
+
 ## 2026-05-16 — FASE 14-UI-1 (Header + Footer redesign for ansattflate)
 
 - Bakgrunn: Email-pille i header lignet input-felt; footer var tom fordi CMS ikke leverer columns/links for app-kontekst.
