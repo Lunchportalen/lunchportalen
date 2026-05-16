@@ -1,3 +1,5 @@
+import { normalizeMeaningfulTags } from "@/lib/menu-publish/tagTaxonomy";
+
 export type CostTier = "BUDGET" | "STANDARD" | "PREMIUM";
 export type ProductionComplexity = "LOW" | "MEDIUM" | "HIGH";
 
@@ -52,6 +54,18 @@ const TARGET_PRICE = 90;
 const WEEK_DAYS = 5;
 const MIN_POOL_SIZE = 50;
 const DEFAULT_COST_PER_PORTION = 65;
+
+export type PickRelax = {
+  allowOverlap: boolean;
+  allowSameStyle: boolean;
+  allowReuseMethod: boolean;
+};
+
+const STRICT_RELAX: PickRelax = {
+  allowOverlap: false,
+  allowSameStyle: false,
+  allowReuseMethod: false,
+};
 
 function normalizeTitle(title?: string) {
   return (title ?? "")
@@ -186,47 +200,150 @@ function sortCandidates(
     });
 }
 
-function canUseMeal(
-  meal: Meal,
-  state: {
-    usedTitles: Set<string>;
-    usedStylesInOrder: string[];
-    usedTags: Set<string>;
-    usedMethods: Set<string>;
-    fishUsed: boolean;
-    soupUsed: boolean;
-    vegUsed: boolean;
-  }
-): boolean {
-  if (state.usedTitles.has(normalizeTitle(meal.title))) return false;
-  if (meal.isFishDish && state.fishUsed) return false;
-  if (meal.isSoup && state.soupUsed) return false;
-  if (isVeg(meal) && state.vegUsed) return false;
-
-  const lastStyle = state.usedStylesInOrder[state.usedStylesInOrder.length - 1];
-  if (meal.kitchenStyle && lastStyle && meal.kitchenStyle === lastStyle) return false;
-
-  const overlap = (meal.tags ?? []).filter((tag) => state.usedTags.has(tag)).length;
-  if (overlap >= 2) return false;
-
-  if (meal.method && state.usedMethods.has(meal.method)) return false;
-
-  return true;
+/** Deterministisk tie-break på `_id` — for diagnose/reproduserbare rapporter (ikke prod-ukeweek). */
+function sortCandidatesDeterministic(
+  meals: Meal[],
+  context: { friday: boolean; usedStyles: Set<string>; usedTags: Set<string> },
+): Meal[] {
+  return [...meals]
+    .filter(isValidMeal)
+    .sort((a, b) => {
+      const diff = scoreMeal(b, context) - scoreMeal(a, context);
+      if (diff !== 0) return diff;
+      return a._id.localeCompare(b._id);
+    });
 }
 
-function registerMeal(
-  meal: Meal,
-  state: {
-    usedTitles: Set<string>;
-    usedStyles: Set<string>;
-    usedStylesInOrder: string[];
-    usedTags: Set<string>;
-    usedMethods: Set<string>;
-    fishUsed: boolean;
-    soupUsed: boolean;
-    vegUsed: boolean;
+type GeneratorState = {
+  usedTitles: Set<string>;
+  usedStyles: Set<string>;
+  usedStylesInOrder: string[];
+  usedTags: Set<string>;
+  usedMeaningfulTags: Set<string>;
+  usedMethods: Set<string>;
+  fishUsed: boolean;
+  soupUsed: boolean;
+  vegUsed: boolean;
+};
+
+type MealPickState = GeneratorState;
+
+type PickRejectionStats = {
+  poolSortedLen: number;
+  validInSort: number;
+  rejectTitleCooldown: number;
+  rejectFish: number;
+  rejectSoup: number;
+  rejectVeg: number;
+  rejectSameStyleAsPreviousDay: number;
+  rejectMeaningfulTagOverlap2Plus: number;
+  rejectMethodReuse: number;
+  passedCanUse: number;
+  firstPassingTitle?: string;
+};
+
+function isMenuGeneratorDebug(): boolean {
+  const v = String(process.env.LP_MENU_GENERATOR_DEBUG ?? "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+function logRelaxation(debugLabel: string, relax: PickRelax): void {
+  // eslint-disable-next-line no-console -- telemetri ved sjelden fallback
+  console.error(
+    JSON.stringify({
+      tag: "[LP_MENU_GENERATOR_RELAX]",
+      debugLabel,
+      ...relax,
+    }),
+  );
+}
+
+type RejectReason =
+  | "rejectTitleCooldown"
+  | "rejectFish"
+  | "rejectSoup"
+  | "rejectVeg"
+  | "rejectSameStyleAsPreviousDay"
+  | "rejectMeaningfulTagOverlap2Plus"
+  | "rejectMethodReuse";
+
+/** Avvisningsregel — harde garantier (tittel, fisk, suppe, veg) relakseres aldri. */
+function classifyPickRejection(meal: Meal, state: MealPickState, relax: PickRelax): RejectReason | null {
+  if (state.usedTitles.has(normalizeTitle(meal.title))) return "rejectTitleCooldown";
+  if (meal.isFishDish && state.fishUsed) return "rejectFish";
+  if (meal.isSoup && state.soupUsed) return "rejectSoup";
+  if (isVeg(meal) && state.vegUsed) return "rejectVeg";
+
+  const lastStyle = state.usedStylesInOrder[state.usedStylesInOrder.length - 1];
+  if (!relax.allowSameStyle && meal.kitchenStyle && lastStyle && meal.kitchenStyle === lastStyle) {
+    return "rejectSameStyleAsPreviousDay";
   }
+
+  if (!relax.allowOverlap) {
+    const mealMeaningful = normalizeMeaningfulTags(meal.tags ?? []);
+    const overlap = [...mealMeaningful].filter((t) => state.usedMeaningfulTags.has(t)).length;
+    if (overlap >= 2) return "rejectMeaningfulTagOverlap2Plus";
+  }
+
+  if (!relax.allowReuseMethod && meal.method && state.usedMethods.has(meal.method)) {
+    return "rejectMethodReuse";
+  }
+
+  return null;
+}
+
+function canUseMeal(meal: Meal, state: MealPickState, relax: PickRelax): boolean {
+  return classifyPickRejection(meal, state, relax) === null;
+}
+
+function diagnosePickBestFailure(
+  label: string,
+  sorted: Meal[],
+  state: MealPickState,
+  friday: boolean,
 ): void {
+  const stats: PickRejectionStats = {
+    poolSortedLen: sorted.length,
+    validInSort: sorted.filter(isValidMeal).length,
+    rejectTitleCooldown: 0,
+    rejectFish: 0,
+    rejectSoup: 0,
+    rejectVeg: 0,
+    rejectSameStyleAsPreviousDay: 0,
+    rejectMeaningfulTagOverlap2Plus: 0,
+    rejectMethodReuse: 0,
+    passedCanUse: 0,
+  };
+
+  for (const meal of sorted) {
+    if (!isValidMeal(meal)) continue;
+    const reason = classifyPickRejection(meal, state, STRICT_RELAX);
+    if (reason === null) {
+      stats.passedCanUse += 1;
+      if (!stats.firstPassingTitle) stats.firstPassingTitle = meal.title;
+    } else {
+      stats[reason] += 1;
+    }
+  }
+
+  const payload = {
+    tag: "[LP_MENU_GENERATOR_DEBUG]",
+    label,
+    friday,
+    usedStylesInOrder: [...state.usedStylesInOrder],
+    usedTagsSample: [...state.usedTags].slice(0, 24),
+    usedTagsCount: state.usedTags.size,
+    usedMeaningfulTagsSample: [...state.usedMeaningfulTags].slice(0, 24),
+    usedMeaningfulTagsCount: state.usedMeaningfulTags.size,
+    usedMethods: [...state.usedMethods],
+    stats,
+  };
+
+  // eslint-disable-next-line no-console -- diagnostikk bak env-flagg
+  console.error(JSON.stringify(payload));
+}
+
+function registerMeal(meal: Meal, state: GeneratorState): void {
   state.usedTitles.add(normalizeTitle(meal.title));
 
   if (meal.kitchenStyle) {
@@ -236,6 +353,10 @@ function registerMeal(
 
   for (const tag of meal.tags ?? []) {
     state.usedTags.add(tag);
+  }
+
+  for (const m of normalizeMeaningfulTags(meal.tags ?? [])) {
+    state.usedMeaningfulTags.add(m);
   }
 
   if (meal.method) {
@@ -250,25 +371,85 @@ function registerMeal(
 
 function pickBest(
   pool: Meal[],
-  state: {
-    usedTitles: Set<string>;
-    usedStyles: Set<string>;
-    usedStylesInOrder: string[];
-    usedTags: Set<string>;
-    usedMethods: Set<string>;
-    fishUsed: boolean;
-    soupUsed: boolean;
-    vegUsed: boolean;
-  },
-  friday: boolean
+  state: GeneratorState,
+  friday: boolean,
+  debugLabel: string | undefined,
+  relax: PickRelax,
+  options?: { skipDiagnose?: boolean; deterministicSort?: boolean },
 ): Meal | null {
-  const sorted = sortCandidates(pool, {
-    friday,
-    usedStyles: state.usedStyles,
-    usedTags: state.usedTags,
-  });
+  const ctx = { friday, usedStyles: state.usedStyles, usedTags: state.usedTags };
+  const sorted = options?.deterministicSort ? sortCandidatesDeterministic(pool, ctx) : sortCandidates(pool, ctx);
 
-  return sorted.find((meal) => canUseMeal(meal, state)) ?? null;
+  const found = sorted.find((meal) => canUseMeal(meal, state, relax)) ?? null;
+  if (!found && !options?.skipDiagnose && isMenuGeneratorDebug()) {
+    diagnosePickBestFailure(debugLabel ?? "pickBest", sorted, state, friday);
+  }
+  return found;
+}
+
+function pickBestWithFallback(
+  pool: Meal[],
+  state: GeneratorState,
+  friday: boolean,
+  debugLabel?: string,
+  options?: { deterministicSort?: boolean },
+): Meal | null {
+  const tries: PickRelax[] = [
+    { allowOverlap: false, allowSameStyle: false, allowReuseMethod: false },
+    { allowOverlap: true, allowSameStyle: false, allowReuseMethod: false },
+    { allowOverlap: true, allowSameStyle: true, allowReuseMethod: false },
+    { allowOverlap: true, allowSameStyle: true, allowReuseMethod: true },
+  ];
+
+  for (let i = 0; i < tries.length; i += 1) {
+    const relax = tries[i];
+    const isLast = i === tries.length - 1;
+    const meal = pickBest(pool, state, friday, debugLabel, relax, {
+      skipDiagnose: !(isLast && isMenuGeneratorDebug()),
+      deterministicSort: options?.deterministicSort,
+    });
+    if (meal) {
+      if (relax.allowOverlap || relax.allowSameStyle || relax.allowReuseMethod) {
+        logRelaxation(debugLabel ?? "pick", relax);
+      }
+      return meal;
+    }
+  }
+
+  if (isMenuGeneratorDebug()) {
+    const ctx = { friday, usedStyles: state.usedStyles, usedTags: state.usedTags };
+    const sorted = options?.deterministicSort ? sortCandidatesDeterministic(pool, ctx) : sortCandidates(pool, ctx);
+    diagnosePickBestFailure(`${debugLabel ?? "pick"}:fallback-exhausted`, sorted, state, friday);
+  }
+  return null;
+}
+
+/**
+ * Første ukedags-rett som `generateWeekMenu` ville valgt (dag 1), uten å mutere ekstern state.
+ * Bruker samme fallback som prod; deterministisk sortering for stabile diagnoser.
+ */
+export function pickFirstWeekdayMealForDiagnostics(
+  baseMeals: Meal[],
+  avoidTitles: Set<string>,
+  options?: { deterministicSort?: boolean },
+): Meal | null {
+  const deterministicSort = options?.deterministicSort !== false;
+  const state: GeneratorState = {
+    usedTitles: new Set([...avoidTitles].map(normalizeTitle)),
+    usedStyles: new Set<string>(),
+    usedStylesInOrder: [] as string[],
+    usedTags: new Set<string>(),
+    usedMeaningfulTags: new Set<string>(),
+    usedMethods: new Set<string>(),
+    fishUsed: false,
+    soupUsed: false,
+    vegUsed: false,
+  };
+
+  const normalPool = baseMeals.filter(isValidMeal);
+  if (normalPool.length < MIN_POOL_SIZE) return null;
+
+  return pickBestWithFallback(normalPool, state, false, "diag-dag-1", { deterministicSort });
 }
 
 function snapshotMeal(meal: Meal): Meal {
@@ -298,6 +479,18 @@ function snapshotMeal(meal: Meal): Meal {
   };
 }
 
+function formatPickFailureDiag(state: MealPickState, poolLen: number): string {
+  return JSON.stringify({
+    poolLen,
+    usedStylesInOrder: [...state.usedStylesInOrder],
+    usedMeaningfulTagsCount: state.usedMeaningfulTags.size,
+    usedMeaningfulTagsSample: [...state.usedMeaningfulTags].slice(0, 20),
+    fishUsed: state.fishUsed,
+    soupUsed: state.soupUsed,
+    vegUsed: state.vegUsed,
+  });
+}
+
 export function generateWeekMenu({
   baseMeals,
   fridayMeals,
@@ -305,11 +498,12 @@ export function generateWeekMenu({
   planTier: _planTier,
 }: GenerateWeekMenuArgs): Meal[] {
   void _planTier;
-  const state = {
+  const state: GeneratorState = {
     usedTitles: new Set([...avoidTitles].map(normalizeTitle)),
     usedStyles: new Set<string>(),
     usedStylesInOrder: [] as string[],
     usedTags: new Set<string>(),
+    usedMeaningfulTags: new Set<string>(),
     usedMethods: new Set<string>(),
     fishUsed: false,
     soupUsed: false,
@@ -322,18 +516,20 @@ export function generateWeekMenu({
   if (normalPool.length < MIN_POOL_SIZE) {
     throw new Error(
       `Varmmatbank for liten etter filter: ${normalPool.length} retter tilgjengelig, minimum ${MIN_POOL_SIZE} kreves. ` +
-      "Sjekk at retter er aktive og har nutritionPer100g.energyKcal."
+        "Sjekk at retter er aktive og har nutritionPer100g.energyKcal.",
     );
   }
 
   const week: Meal[] = [];
 
   for (let i = 0; i < WEEK_DAYS - 1; i += 1) {
-    const meal = pickBest(normalPool, state, false);
+    const meal = pickBestWithFallback(normalPool, state, false, `weekday-dag-${i + 1}`);
 
     if (!meal) {
+      const diag = formatPickFailureDiag(state, normalPool.length);
       throw new Error(
-        `Kunne ikke fylle dag ${i + 1} med gjeldende regler. Sjekk variasjonsregler og tilgjengelig pool.`
+        `Kunne ikke fylle dag ${i + 1} med gjeldende regler (alle fallback-nivåer uttømt). ` +
+          `Sjekk variasjonsregler og tilgjengelig pool. Diagnose: ${diag}`,
       );
     }
 
@@ -341,10 +537,11 @@ export function generateWeekMenu({
     registerMeal(meal, state);
   }
 
-  const fridayMeal = pickBest(fridayPool.length ? fridayPool : normalPool, state, true);
+  const fridayMeal = pickBestWithFallback(fridayPool.length ? fridayPool : normalPool, state, true, "fredag");
 
   if (!fridayMeal) {
-    throw new Error("Kunne ikke velge fredagsrett med gjeldende regler.");
+    const diag = formatPickFailureDiag(state, fridayPool.length ? fridayPool.length : normalPool.length);
+    throw new Error(`Kunne ikke velge fredagsrett med gjeldende regler (alle fallback-nivåer uttømt). Diagnose: ${diag}`);
   }
 
   week.push(snapshotMeal(fridayMeal));

@@ -53,6 +53,7 @@
     "sanity:seed-lunch-categories-v2": "tsx scripts/sanity/seed-lunch-categories-v2.ts",
     "sanity:heal-menu-horizon": "tsx scripts/sanity/heal-menu-horizon.ts",
     "sanity:find-empty-week": "tsx scripts/find-empty-week.ts",
+    "diag:mealidea-tags": "tsx scripts/diag-mealidea-tags.ts",
     "debug:meal-idea-bank": "tsx scripts/debug-meal-idea-bank.ts",
     "debug:v2-meal-bank": "tsx scripts/debug-v2-only.ts",
     "cron:menu-publish": "tsx scripts/cron-menu-publish.ts",

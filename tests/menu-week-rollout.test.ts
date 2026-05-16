@@ -78,6 +78,14 @@ function diverseMealsFixture(prefix: string): Meal[] {
   return out;
 }
 
+/** Legg på prod-lignende «støy»-tags som ikke skal knekke generatoren etter tagTaxonomy. */
+function diverseMealsWithNoise(prefix: string): Meal[] {
+  return diverseMealsFixture(prefix).map((m) => ({
+    ...m,
+    tags: [...(m.tags ?? []), "lunsj", "varmmat"],
+  }));
+}
+
 function mockSupabaseForTiers(tiers: Array<"BASIS" | "LUXUS" | "ENTERPRISE">): SupabaseClient {
   const admin = {
     from: (table: string) => {
@@ -389,5 +397,61 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     expect(res.menuDaysCreated).toBe(0);
     expect(res.menuDaysSkipped).toBe(15);
     expect(createdDocs).toHaveLength(0);
+  });
+
+  it.each([
+    ["2026-06-08"],
+    ["2026-06-15"],
+    ["2026-07-06"],
+  ])("sommeruke %s: BASIS+LUXUS med lunsj/varmmat-støy — 5 dager uten feil", async (monday) => {
+    const reproClock = new Date("2026-05-15T12:00:00.000Z");
+    fetchImpl = async (q: string) => {
+      if (q.includes('_type == "mealIdea"')) return diverseMealsWithNoise(`week-${monday}`);
+      if (q.includes("{ date, mealTitle }")) return [];
+      if (q.includes("{ mealTitle, description }")) return [];
+      return [];
+    };
+    sanityRead = {
+      fetch: vi.fn((q: string, p?: Record<string, unknown>) => fetchImpl(q, p)),
+    } as unknown as SanityClient;
+    createdDocs = [];
+
+    const relaxCalls: string[] = [];
+    const errSpy = vi.spyOn(console, "error").mockImplementation((msg?: unknown) => {
+      if (typeof msg === "string" && msg.includes("LP_MENU_GENERATOR_RELAX")) {
+        relaxCalls.push(msg);
+      }
+    });
+
+    const res = await runMenuWeekRollout({
+      instant: reproClock,
+      overrideTargetWeekMonday: monday,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    errSpy.mockRestore();
+
+    expect(res.targetWeek).toBe(monday);
+    expect(res.errors).toEqual([]);
+    expect(res.menuDaysCreated).toBe(10);
+    expect(res.menuDaysSkipped).toBe(0);
+    expect(createdDocs).toHaveLength(10);
+
+    const byTier = new Map<string, Array<{ date: string; kitchenStyle?: unknown }>>();
+    for (const doc of createdDocs as Array<Record<string, unknown>>) {
+      const t = String(doc.planTier ?? "");
+      if (!byTier.has(t)) byTier.set(t, []);
+      byTier.get(t)!.push({ date: String(doc.date), kitchenStyle: doc.kitchenStyle });
+    }
+    for (const rows of byTier.values()) {
+      rows.sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 1; i < rows.length; i += 1) {
+        if (rows[i].kitchenStyle === rows[i - 1].kitchenStyle) {
+          expect(relaxCalls.length).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });
