@@ -131,6 +131,8 @@ export type RunMenuWeekRolloutOptions = {
   getSanityWrite: () => SanityClient;
   /** Overstyr målukes mandag. Standard: rullerende N+3 fra gjeldende Oslo-dato. */
   overrideTargetWeekMonday?: string;
+  /** Ingen Sanity commits/patches — teller forslag som om de ble skrevet (krever ikke write-token). */
+  dryRun?: boolean;
 };
 
 export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promise<MenuWeekRolloutResult> {
@@ -171,7 +173,7 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
     };
   }
 
-  const write = opts.getSanityWrite();
+  const write = !opts.dryRun ? opts.getSanityWrite() : null;
   const stamp = nowISO();
 
   for (const tier of tiersProcessed) {
@@ -199,8 +201,8 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
       }
 
       const [baseMealsRaw, fridayMealsRaw] = await Promise.all([
-        fetchMealIdeaBank(opts.sanityRead, tier, false),
-        fetchMealIdeaBank(opts.sanityRead, tier, true),
+        fetchMealIdeaBank(opts.sanityRead, tier, false, instant),
+        fetchMealIdeaBank(opts.sanityRead, tier, true, instant),
       ]);
 
       const baseMeals = baseMealsRaw.filter(hasCompleteNutrition);
@@ -222,7 +224,12 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
         throw new Error(`Retten «${bad.title}» mangler komplett næring for ${tier}.`);
       }
 
-      let tx = write.transaction();
+      if (opts.dryRun) {
+        menuDaysCreated += missingIdx.length;
+        continue;
+      }
+
+      let tx = write!.transaction();
       for (const i of missingIdx) {
         const date = targetDates[i];
         const meal = week[i];

@@ -13,10 +13,8 @@ export function mealBankCostTierClause(includePremium: boolean): string {
 }
 
 /**
- * Norsk sesong for mealIdea-bank (CMS bruker «vinter» / «vår» / «sommer» / «høst», pluss «helår» i GROQ).
- * Kalendermåned i Europe/Oslo — samme tidszonesannhet som cron og rollout.
- *
- * Merk: `WeekPlanner` i Studio bruker fortsatt engelske buckets i egen fetch; kun Node/cron/CLI-stien her er norsk.
+ * Norsk sesong + «helår» + tom/mangler `season` (all-year), i tråd med prod mealIdea-data.
+ * Kalendermåned i Europe/Oslo — samme sannhet som cron.
  */
 export function getCurrentNorwegianSeason(date: Date): "vinter" | "vår" | "sommer" | "høst" {
   const monthStr = new Intl.DateTimeFormat("en-GB", {
@@ -54,8 +52,7 @@ export function normalizeMenuTitleKey(title?: string): string {
 }
 
 /**
- * Meal pool for week generation (cron, CLI, WeekPlanner-paritet for server-sti).
- * Sesong: norske array-verdier i CMS + «helår»; manglende/ tom `season` behandles som alltid tilgjengelig.
+ * Meal pool for week generation (cron, CLI). Sesong: norsk + helår; manglende/tom array = all-year.
  */
 export async function fetchMealIdeaBank(
   sanity: SanityClient,
@@ -70,10 +67,11 @@ export async function fetchMealIdeaBank(
     tier === "ENTERPRISE"
       ? `count(allowedPlanTiers) == 1 && allowedPlanTiers[0] == "ENTERPRISE"`
       : `$tier in allowedPlanTiers`;
+  /** <= 90: skjema (mealIdea) tillater maks 90 inkl.; `<` ekskluderte kost = 90. */
   const costCap =
     tier === "ENTERPRISE"
       ? `defined(estimatedCostPerPortion)`
-      : `defined(estimatedCostPerPortion) && estimatedCostPerPortion < ${MEAL_BANK_TARGET_PRICE}`;
+      : `defined(estimatedCostPerPortion) && estimatedCostPerPortion <= ${MEAL_BANK_TARGET_PRICE}`;
   const seasonClause = `(!defined(season) || count(season) == 0 || "helår" in season || $currentSeason in season)`;
 
   const meals = await sanity.fetch<Meal[]>(
@@ -112,4 +110,19 @@ export async function fetchMealIdeaBank(
   );
 
   return Array.isArray(meals) ? meals : [];
+}
+
+/** For diagnose-skript: samme filter som fetch (count + feltutplukk). */
+export function mealIdeaBankFilterGroq(tier: PlanTier, includePremium: boolean): string {
+  const costPart = mealBankCostTierClause(includePremium);
+  const enterpriseOnly =
+    tier === "ENTERPRISE"
+      ? `count(allowedPlanTiers) == 1 && allowedPlanTiers[0] == "ENTERPRISE"`
+      : `$tier in allowedPlanTiers`;
+  const costCap =
+    tier === "ENTERPRISE"
+      ? `defined(estimatedCostPerPortion)`
+      : `defined(estimatedCostPerPortion) && estimatedCostPerPortion <= ${MEAL_BANK_TARGET_PRICE}`;
+  const seasonClause = `(!defined(season) || count(season) == 0 || "helår" in season || $currentSeason in season)`;
+  return `_type == "mealIdea" && isActive == true && ${costCap} && ${enterpriseOnly} && ${costPart} && ${seasonClause}`;
 }

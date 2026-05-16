@@ -31,14 +31,17 @@ describe("getCurrentNorwegianSeason", () => {
 });
 
 describe("fetchMealIdeaBank sesong-GROQ", () => {
-  it("inkluderer helår og $currentSeason (norsk)", async () => {
+  it("inkluderer helår og norsk sesong, ikke engelsk alias", async () => {
     const fetch = vi.fn().mockResolvedValue([]);
     await fetchMealIdeaBank({ fetch } as unknown as SanityClient, "BASIS", false);
     const q = String(fetch.mock.calls[0]?.[0] ?? "");
     expect(q).toContain('"helår" in season');
     expect(q).toContain("$currentSeason in season");
+    expect(q).not.toContain("$currentSeasonEn");
+    expect(q).not.toContain("spring");
     expect(q).toContain("!defined(season)");
     expect(q).toContain("count(season) == 0");
+    expect(q).toContain("estimatedCostPerPortion <= 90");
   });
 
   it("sender norsk currentSeason fra klokke (vår i mai)", async () => {
@@ -51,7 +54,7 @@ describe("fetchMealIdeaBank sesong-GROQ", () => {
     );
   });
 
-  it("sommer i juli", async () => {
+  it("sommer i juli (ENTERPRISE)", async () => {
     const fetch = vi.fn().mockResolvedValue([]);
     await fetchMealIdeaBank({ fetch } as unknown as SanityClient, "ENTERPRISE", true, utcNoon(2026, 7));
     expect(fetch).toHaveBeenCalledWith(
