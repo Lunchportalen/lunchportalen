@@ -105,7 +105,7 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ## 2026-05-17 — FASE 13.5-FIX-1-REPAIR (locations → company_locations)
 
-- Commit: se `git log -1` etter merge (full SHA i hovedrapport / chat STEG 7).
+- Commit **`387dfe34eb947c2ad5646ba15ef10bb429dd4be8`** (kort `387dfe34`).
 - `20260516320000_repair_locations_helpers.sql`: **CREATE OR REPLACE** for `private.can_access_location` og `private.can_manage_location` (én linje: join mot `public.company_locations`).
 - Prod: apply via MCP; smoke grønn (direkte + indirekte helpers); nye def-md5 som i `golden-rls-snapshot.json` (`capturedPrivateFunctionDefMd5`).
 - Capture `20260517000000` + generator oppdatert; ingen ekstra prod-kjøring av capture-fila (valgfritt STEG 6 hoppet).

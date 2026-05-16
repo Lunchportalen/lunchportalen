@@ -305,7 +305,7 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 ## 2026-05-17 — FASE 13.5-FIX-1-REPAIR (locations → company_locations)
 
-- Commit: se `git log -1` etter merge av denne sekvensen (SHA i FASE 13.5 STEG 7-rapport / chat).
+- Commit **`387dfe34eb947c2ad5646ba15ef10bb429dd4be8`** (kort `387dfe34`).
 - Kirurgisk repair av **private.can_access_location** og **private.can_manage_location**: `public.locations` → `public.company_locations` (migrasjon `20260516320000_repair_locations_helpers.sql`).
 - Apply via Supabase MCP til prod (`hkpokyapzarefrgqzkos`); smoke test grønn for direkte kall (false på dummy-UUID) og indirekte (`can_access_menu_day`, `can_view_order`, `can_edit_order`, `can_access_delivery_run`, `can_operate_delivery_run`, `can_manage_menu_day`).
 - **md5(pg_get_functiondef)** etter repair: `can_access_location` = `91583b4f512727d6fbf1b91f419ddb94`; `can_manage_location` = `96b9d18efea47841976ab4a514f9d586` (avviker fra pre-repair-hashene).
