@@ -289,5 +289,15 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 - **Lukket på `main`:** token/CLI-paritet, kosttak, verktøy — commit **365897d1**.
 - **Gjenstår:** generator når uken mangler `menuDay` og bank er ikke-tom.
 
+---
+
+## 2026-05-16 — FASE 13-IMPL-3S-1B-GENERATOR (kveld)
+
+- **Commit `09f945bb`:** `lib/menu-publish/tagTaxonomy.ts` + meningsfull tag-overlap + `pickBestWithFallback`; telemetri `[LP_MENU_GENERATOR_RELAX]`; `scripts/diag-mealidea-tags.ts`; tester.
+- **Verifisert** (`cron:menu-publish --dry-run`, `LP_MENU_GENERATOR_DEBUG=1`): **2026-05-25**, **2026-06-08**, **2026-06-15**, **2026-07-06** — hver **10 / 0 / []** (5 dager × 2 tier).
+- **Relax-bruk:** **0** logger per uke, **0** totalt over 4 kjøringer («fix» bekreftet — streng regime holdt på prod-data uten fallback).
+- Sommerkorridor **2026-06-08 → 2026-08-31** kan fylles autonomt av cron (forutsetter aktive avtaler/tier som i dag).
+- **V2-oppfølging (valgfri):** migrere/rydde tag-bag i Sanity og redusere duplikat-encoding.
+
 (Speilet innhold: `docs/journal.txt`.)
 

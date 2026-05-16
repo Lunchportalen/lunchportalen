@@ -79,6 +79,12 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - **Tom sommerkorridor:** `find-empty-week` viste **0/5** varmrett Man–Fre for **2026-06-08 … 2026-08-31**; `cron:menu-publish --dry-run` for **2026-06-08** feiler på **dag 2** (generator/variasjon) — følge-fase **13-IMPL-3S-1B-GENERATOR**.
 - Rotjournal: `journal.txt` (prosjektrot).
 
+### 2026-05-16 (kveld) — FASE 13-IMPL-3S-1B-GENERATOR
+
+- **Commit `09f945bb`:** meningsfull tag-overlap (`tagTaxonomy`), `pickBestWithFallback`, RELAX-telemetri, diag-skript, Vitest.
+- **Verify:** dry-run uke **2026-05-25**, **06-08**, **06-15**, **07-06** — alle **10 / 0 / []**; **0** `LP_MENU_GENERATOR_RELAX` totalt.
+- **V2 (valgfri):** Sanity tag-bag / strukturerte felt.
+
 ### Ærlig vurdering: 50K firma / 500K brukere / 20 år
 
 - Designestimat: **~32M** `menu_service_days`-rader/år ved L ≈ 125K lokasjoner og ~260 servicedøgn — **partisjonering er obligatorisk**, ikke valgfri optimering.
@@ -93,4 +99,4 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 —
 
-*Sist oppdatert: ettermiddag 16.05.2026 (FASE 13-IMPL-3S-1-CLOSE + speil).*
+*Sist oppdatert: kveld 16.05.2026 (FASE 13-IMPL-3S-1B-GENERATOR + speil).*
