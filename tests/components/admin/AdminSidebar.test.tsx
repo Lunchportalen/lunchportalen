@@ -7,9 +7,9 @@ const SIDEBAR_PATH = join(process.cwd(), "app", "admin", "AdminSidebar.tsx");
 const CSS_PATH = join(process.cwd(), "app", "styles", "ds", "admin-shell.css");
 
 describe("AdminSidebar", () => {
-  test("rendrer 7 nav-items", () => {
+  test("rendrer 8 nav-items", () => {
     const source = readFileSync(SIDEBAR_CLIENT_PATH, "utf-8");
-    expect(source.match(/href: "\/admin/g)?.length).toBe(7);
+    expect(source.match(/href: "\/admin/g)?.length).toBe(8);
   });
 
   test("aktiv state er exact for /admin og startsWith for undersider", () => {

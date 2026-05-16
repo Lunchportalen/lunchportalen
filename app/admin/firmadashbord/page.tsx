@@ -1,4 +1,4 @@
-// app/admin/company/[companyId]/dashboard/page.tsx
+// app/admin/firmadashbord/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -6,6 +6,7 @@ export const revalidate = 0;
 import "server-only";
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { DashboardHeader } from "./DashboardHeader";
 import { KpiCards } from "./KpiCards";
@@ -14,23 +15,19 @@ import { fetchCompanyOrderSummary } from "@/lib/admin/fetchCompanyOrderSummary";
 import { readCompanyDisplayName } from "@/lib/admin/readCompanyDisplayName";
 import { resolveCompanyDashboardPeriod } from "@/lib/admin/resolveCompanyDashboardPeriod";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
-import { roleHome } from "@/lib/auth/roleHome";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-type PageProps = {
-  params: Promise<{ companyId: string }>;
+export default async function FirmadashbordPage({
+  searchParams,
+}: {
   searchParams: Promise<{ start?: string; end?: string }>;
-};
-
-export default async function CompanyAdminDashboardPage(props: PageProps) {
-  const params = await props.params;
-  const searchParams = await props.searchParams;
-  const companyId = safeStr(params?.companyId);
-
+}) {
+  const sp = await searchParams;
   const auth = await getAuthContext();
+
   if (!auth.ok) {
     if (auth.reason === "UNAUTHENTICATED") {
       redirect("/login?code=NO_SESSION");
@@ -39,29 +36,23 @@ export default async function CompanyAdminDashboardPage(props: PageProps) {
   }
 
   const role = safeStr(auth.role);
-  if (role === "company_admin") {
-    const scoped = safeStr(auth.company_id);
-    if (!scoped) {
-      redirect("/admin");
-    }
-    if (!companyId || companyId !== scoped) {
-      redirect(`/admin/company/${scoped}/dashboard`);
-    }
-  } else if (role === "superadmin") {
-    /* RPC håndhever plattform-rollen; layout uten firmaside-meny er forventet. */
-  } else {
-    redirect(roleHome(role));
+  if (role === "superadmin") {
+    redirect("/superadmin");
+  }
+  if (role !== "company_admin") {
+    redirect("/admin");
   }
 
+  const companyId = safeStr(auth.company_id);
   if (!companyId) {
     redirect("/admin");
   }
 
   let period: { start: string; end: string };
   try {
-    period = resolveCompanyDashboardPeriod({ start: searchParams?.start, end: searchParams?.end });
+    period = resolveCompanyDashboardPeriod({ start: sp?.start, end: sp?.end });
   } catch {
-    redirect(`/admin/company/${companyId}/dashboard`);
+    redirect("/admin/firmadashbord");
   }
 
   let summary: Awaited<ReturnType<typeof fetchCompanyOrderSummary>> | null = null;
@@ -87,9 +78,9 @@ export default async function CompanyAdminDashboardPage(props: PageProps) {
             <h1 className="ds-admin-error__title">Dashbord utilgjengelig</h1>
             <p className="ds-admin-error__body">{loadError}</p>
             <div className="ds-admin-error__actions">
-              <a className="ds-admin-error__link" href={`/admin/company/${companyId}/dashboard`}>
+              <Link className="ds-admin-error__link" href="/admin/firmadashbord">
                 Prøv på nytt uten egendefinert periode
-              </a>
+              </Link>
             </div>
           </div>
         ) : summary ? (

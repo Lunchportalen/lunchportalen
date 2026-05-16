@@ -27,4 +27,11 @@ describe("AdminMobileNav", () => {
     expect(source).toContain("Faktura");
     expect(source).toContain('<dialog className="ds-admin-more"');
   });
+
+  test("Firmadashbord i Mer-meny bruker /admin/firmadashbord og showFirmadashbordLink", () => {
+    const source = readFileSync(MOBILE_NAV_PATH, "utf-8");
+    expect(source).toContain('href: "/admin/firmadashbord"');
+    expect(source).toContain("showFirmadashbordLink");
+    expect(source).not.toContain("companyDashboardHref");
+  });
 });

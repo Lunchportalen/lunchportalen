@@ -37,12 +37,11 @@ const NAV_GROUPS_BASE: NavGroup[] = [
   },
 ];
 
-function buildNavGroups(companyId: string | null | undefined): NavGroup[] {
-  const cid = String(companyId ?? "").trim();
+function buildNavGroups(showFirmadashbordLink: boolean): NavGroup[] {
   const innsiktItems: NavItem[] = [];
-  if (cid) {
+  if (showFirmadashbordLink) {
     innsiktItems.push({
-      href: `/admin/company/${cid}/dashboard`,
+      href: "/admin/firmadashbord",
       label: "Firmadashbord",
       icon: "document",
     });
@@ -116,9 +115,9 @@ export function AdminIcon({ name }: { name: IconName }) {
   );
 }
 
-export function AdminSidebarNav({ companyId }: { companyId?: string | null }) {
+export function AdminSidebarNav({ showFirmadashbordLink = false }: { showFirmadashbordLink?: boolean }) {
   const pathname = usePathname() || "/admin";
-  const groups = buildNavGroups(companyId);
+  const groups = buildNavGroups(showFirmadashbordLink);
 
   return (
     <nav className="ds-admin-sidebar__nav" aria-label="Hovednavigasjon">

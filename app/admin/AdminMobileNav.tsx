@@ -33,17 +33,16 @@ function MoreIcon() {
 }
 
 export default function AdminMobileNav({
-  companyDashboardHref = null,
+  showFirmadashbordLink = false,
 }: {
-  companyDashboardHref?: string | null;
+  /** Kun for firmaadmin (company_admin). */
+  showFirmadashbordLink?: boolean;
 }) {
   const pathname = usePathname() || "/admin";
   const [open, setOpen] = useState(false);
 
   const moreItems = [
-    ...(companyDashboardHref
-      ? ([{ href: companyDashboardHref, label: "Firmadashbord" }] as const)
-      : ([] as { href: string; label: string }[])),
+    ...(showFirmadashbordLink ? ([{ href: "/admin/firmadashbord", label: "Firmadashbord" }] as const) : ([] as { href: string; label: string }[])),
     ...MORE_ITEMS,
   ];
 

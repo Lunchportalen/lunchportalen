@@ -92,11 +92,9 @@ async function currentPathFromHeaders(fallback: string) {
 
 function titleForAdminPath(path: string) {
   const pathname = safeNextPath(path).split("?")[0] || "/admin";
-  if (pathname.includes("/admin/company/") && pathname.includes("/dashboard")) {
-    return "Firmadashbord";
-  }
   const items: Array<{ href: string; title: string; exact?: boolean }> = [
     { href: "/admin", title: "Oversikt", exact: true },
+    { href: "/admin/firmadashbord", title: "Firmadashbord" },
     { href: "/admin/dagens-brukere", title: "Dagens drift" },
     { href: "/admin/dagens-levering", title: "Dagens levering" },
     { href: "/admin/uke-bestillbarhet", title: "Uke og bestilling" },
@@ -132,7 +130,7 @@ async function shell(
     companyName?: string;
     userName?: string;
     pageTitle?: string;
-    companyId?: string | null;
+    showFirmadashbordLink?: boolean;
     userMenu?: { displayName: string; email: string; roleLabel: string } | null;
   },
 ) {
@@ -140,15 +138,17 @@ async function shell(
   return (
     <div className="ds-admin-root">
       {showNav ? (
-        <AdminSidebar companyName={opts?.companyName ?? "Firma"} userName={opts?.userName ?? "Firmaadmin"} companyId={opts?.companyId ?? null} />
+        <AdminSidebar
+          companyName={opts?.companyName ?? "Firma"}
+          userName={opts?.userName ?? "Firmaadmin"}
+          showFirmadashbordLink={Boolean(opts?.showFirmadashbordLink)}
+        />
       ) : null}
       <div className="ds-admin-main">
         <AdminTopbar pageTitle={opts?.pageTitle ?? "Oversikt"} userMenu={opts?.userMenu ?? null} />
         <main className="ds-admin-content">{children}</main>
       </div>
-      {showNav ? (
-        <AdminMobileNav companyDashboardHref={opts?.companyId ? `/admin/company/${opts.companyId}/dashboard` : null} />
-      ) : null}
+      {showNav ? <AdminMobileNav showFirmadashbordLink={Boolean(opts?.showFirmadashbordLink)} /> : null}
     </div>
   );
 }
@@ -174,21 +174,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const pageTitle = titleForAdminPath(currentPath);
 
   const userEmail = safeStr(auth.email) || safeStr(auth.user?.email) || "";
-  const userDisplayName =
-    safeStr((auth as { user?: { user_metadata?: { full_name?: string } } | null }).user?.user_metadata?.full_name) ||
-    userEmail ||
-    "Bruker";
 
   if (role === "superadmin") {
-    return shell(children, {
-      showCompanyAdminNav: false,
-      pageTitle,
-      userMenu: {
-        displayName: userDisplayName,
-        email: userEmail,
-        roleLabel: "Superadmin",
-      },
-    });
+    redirect("/superadmin");
   }
 
   if (role !== "company_admin") {
@@ -220,7 +208,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     companyName,
     userName,
     pageTitle,
-    companyId: auth.company_id,
+    showFirmadashbordLink: role === "company_admin",
     userMenu: companyAdminUserMenu,
   });
 }

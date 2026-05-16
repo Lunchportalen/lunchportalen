@@ -23,11 +23,12 @@ export function initialsFromName(value: unknown) {
 export default function AdminSidebar({
   companyName,
   userName,
-  companyId = null,
+  showFirmadashbordLink = false,
 }: {
   companyName: string;
   userName: string;
-  companyId?: string | null;
+  /** Kun for firmaadmin (company_admin). */
+  showFirmadashbordLink?: boolean;
 }) {
   return (
     <aside className="ds-admin-sidebar">
@@ -39,7 +40,7 @@ export default function AdminSidebar({
         </div>
       </div>
 
-      <AdminSidebarNav companyId={companyId} />
+      <AdminSidebarNav showFirmadashbordLink={showFirmadashbordLink} />
       <AdminSidebarUser initials={initialsFromName(userName)} userName={userName} />
     </aside>
   );
