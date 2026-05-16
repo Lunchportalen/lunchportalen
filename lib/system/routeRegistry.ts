@@ -43,14 +43,6 @@ export const ROUTE_REGISTRY: RouteRegistryItem[] = [
     notes: "Bruker Dag-3 routeGuard (scopeOr401 + role/scope-gate).",
   },
   {
-    id: "orders-upsert-post",
-    method: "POST",
-    path: "/api/orders/upsert",
-    owner: "orders",
-    standard: "dag3",
-    notes: "Bruker Dag-3 routeGuard (scopeOr401 + role/scope-gate).",
-  },
-  {
     id: "orders-cancel-post",
     method: "POST",
     path: "/api/order/cancel",

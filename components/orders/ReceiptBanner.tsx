@@ -10,7 +10,29 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { ReceiptState, ActionErrorState } from "@/lib/orders/useOrderActions";
+
+/** Ordrehandling som kvitteringsbanneret kan vise (tidligere i useOrderActions). */
+export type OrderBannerAction = "UPSERT" | "CANCEL";
+
+export type ReceiptState = {
+  rid: string;
+  ok: boolean;
+  action: OrderBannerAction;
+  date: string;
+  orderId: string | null;
+  status: string | null;
+  timestamp: string;
+  message?: string | null;
+  code?: string | null;
+};
+
+export type ActionErrorState = {
+  rid: string;
+  code: string;
+  message: string;
+  retryable: boolean;
+  retryAfterSeconds: number | null;
+};
 
 type ReceiptBannerProps = {
   receipt: ReceiptState | null;

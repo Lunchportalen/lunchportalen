@@ -11,7 +11,7 @@
 | `system_health` | System health | Runtime, DB, Sanity, tid OK | Andel `system_health_snapshots` med status=normal (siste 60 min) | 99,5 | 95 | 99 |
 | `cron_critical` | Kritiske cron-jobber | Forecast, preprod, week-visibility kjører OK | Andel `cron_runs` (siste 24t) med status=ok | 99 | 90 | 95 |
 | `cron_outbox` | Outbox | Outbox-cron kjører OK | Fra `cron_runs` (job=outbox) når outbox persisterer; ellers «ukjent» | 99 | 90 | 95 |
-| `order_write` | Ordre-skriving | Ordre (POST /api/orders/upsert) feiler ikke med 5xx / ingen åpne ORDER-incidents | Ingen åpne `system_incidents` type ORDER | 99,5 | 98 | 99 |
+| `order_write` | Ordre-skriving | Ordre (POST /api/orders) feiler ikke med 5xx / ingen åpne ORDER-incidents | Ingen åpne `system_incidents` type ORDER | 99,5 | 98 | 99 |
 | `auth_protected_route` | Auth / beskyttede ruter | Ingen auth-relaterte systemfeil | Ingen åpne `system_incidents` type AUTH | 99,9 | 99 | 99,5 |
 | `content_publish` | Content/CMS | Publisering og scheduler uten vedvarende feil | Ingen åpne SANITY/INTEGRATION `system_incidents` | 99 | 95 | 98 |
 
@@ -56,7 +56,7 @@
 
 - **Nye SLO-er:** Legg til i `lib/observability/sloRegistry.ts` og tilhørende SLI-beregner i `lib/observability/sli.ts`. Kall den nye SLI-beregneren fra `computeAllSlis()`.
 - **Outbox målbart:** I `app/api/cron/outbox/route.ts`, etter `processOutboxBatch`, sett inn rad i `cron_runs` (job=outbox, status=ok/error, ran_at, rid/meta) slik at `computeSliCronOutbox` får data.
-- **Ordre-rate:** Ved suksess/feil i `app/api/orders/upsert/route.ts`, skriv `ops_event` (f.eks. event=order.upsert.success / order.upsert.failure). Lag SLI som teller success/(success+failure) i vindu.
+- **Ordre-rate:** Ved suksess/feil i `app/api/orders/route.ts` (POST), skriv `ops_event` (f.eks. event=order.write.success / order.write.failure). Lag SLI som teller success/(success+failure) i vindu.
 - **Ekstern varsling:** Konsumér `status.alerts` fra en cron eller webhook og send til valgt kanal (f.eks. Slack webhook); ikke gjort i repo ennå.
 
 ---

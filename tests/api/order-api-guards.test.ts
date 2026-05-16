@@ -99,7 +99,6 @@ vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: vi.fn(() => Promise.resolve({ rpc: vi.fn(() => Promise.resolve({ data: null, error: null })) })),
 }));
 
-import { POST as ordersUpsertPOST } from "../../app/api/orders/upsert/route";
 import { POST as ordersRoutePOST } from "../../app/api/orders/route";
 import { POST as ordersCancelPOST } from "../../app/api/orders/cancel/route";
 
@@ -110,47 +109,6 @@ const authCtx = {
     scope: { userId: "u1", companyId: "c1", locationId: "l1", role: "employee", email: "emp@test.no" },
   },
 };
-
-describe("Order API guards — orders/upsert", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    readJsonMock.mockResolvedValue({});
-  });
-
-  test("returns 401 when not authenticated", async () => {
-    scopeOr401Mock.mockResolvedValue({
-      ok: false,
-      res: new Response(JSON.stringify({ ok: false, error: "UNAUTHORIZED" }), { status: 401 }),
-    });
-
-    const req = mkReq("http://localhost/api/orders/upsert", {
-      method: "POST",
-      headers: { "Idempotency-Key": "test-key-min-8-chars" },
-      body: { date: "2026-02-03", slot: "lunch" },
-    });
-    const res = await ordersUpsertPOST(req);
-    expect(res.status).toBe(401);
-    const json = await readJson(res);
-    expect(json?.ok).toBe(false);
-  });
-
-  test("returns 400 when Idempotency-Key header is missing or too short", async () => {
-    scopeOr401Mock.mockResolvedValue({
-      ok: true,
-      ctx: authCtx.ctx,
-    });
-
-    const req = mkReq("http://localhost/api/orders/upsert", {
-      method: "POST",
-      body: { date: "2026-02-03", slot: "lunch" },
-    });
-    const res = await ordersUpsertPOST(req);
-    expect(res.status).toBe(400);
-    const json = await readJson(res);
-    expect(json?.ok).toBe(false);
-    expect(String(json?.error)).toBe("IDEMPOTENCY_REQUIRED");
-  });
-});
 
 describe("Order API guards — orders create (POST /api/orders)", () => {
   const supabaseServerMod = () => import("@/lib/supabase/server");

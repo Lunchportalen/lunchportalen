@@ -346,3 +346,13 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 
 (Speilet innhold: `docs/journal.txt`.)
 
+---
+
+## 2026-05-16 — FASE 13.5-FIX-3-FOLLOWUP (fjern /api/orders/upsert)
+
+- Slettet død rute `app/api/orders/upsert` (prod manglet `idem_get`/`idem_put`; kanon er POST `/api/orders` med `lp_idem_*`).
+- Fjernet klient `upsertOrder` og hook `lib/orders/useOrderActions.ts`; kvitteringstyper for `ReceiptBanner` flyttet inn i komponenten (`OrderBannerAction`, `ReceiptState`, `ActionErrorState`).
+- Oppdatert `lib/system/routeRegistry.ts` (fjernet `orders-upsert-post`), `lib/observability/sloRegistry.ts`, `docs/SLO_ALERTING_RUNBOOK.md`; `tests/api/order-api-guards.test.ts` uten upsert-describe.
+
+(Speilet innhold: `docs/journal.txt`.)
+

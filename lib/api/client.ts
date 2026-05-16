@@ -1,7 +1,6 @@
 // lib/api/client.ts
 // A2 — Transport layer (idempotent + fail-closed) for Lunchportalen
 
-import type { OrderAttributionRecord } from "@/lib/revenue/types";
 // - Always returns ApiResp<T> (never throws for normal failures)
 // - Adds Idempotency-Key automatically (or accepts explicit key)
 // - Fail-closed if API breaks contract
@@ -25,13 +24,6 @@ export type ApiErr = {
 
 export type ApiResp<T> = ApiOk<T> | ApiErr;
 
-export type OrderReceipt = {
-  rid: string;
-  orderId: string | null;
-  status: string | null;
-  timestamp: string;
-};
-
 export type CancelResponse = {
   order: {
     id: string | null;
@@ -44,11 +36,6 @@ export type CancelResponse = {
     saved_at: string;
   };
   backup: { ok: boolean; [k: string]: any };
-};
-
-export type UpsertResponse = {
-  receipt: OrderReceipt;
-  order: Record<string, any> | null;
 };
 
 /* =========================================================
@@ -101,11 +88,6 @@ export type FetchOpts = {
   idemKey?: string;
   /** Optional AbortSignal. */
   signal?: AbortSignal;
-};
-
-export type OrderUpsertFetchOpts = FetchOpts & {
-  /** Sendes til server ved suksess — persisteres på ordre (jsonb) når gyldig. */
-  attribution?: OrderAttributionRecord | null;
 };
 
 export async function apiFetch<T>(url: string, init: RequestInit, opts: FetchOpts = {}): Promise<ApiResp<T>> {
@@ -250,38 +232,6 @@ export async function cancelOrder(
       detail: { status: res.status, url: "/api/order/cancel", body: json },
     },
   };
-}
-
-export async function upsertOrder(
-  date: string,
-  slotStart: string,
-  slotEnd: string,
-  note?: string | null,
-  opts: OrderUpsertFetchOpts = {}
-): Promise<ApiResp<UpsertResponse>> {
-  const { attribution, ...fetchOpts } = opts;
-  const payload: Record<string, unknown> = {
-    date,
-    slotStart,
-    slotEnd,
-    note: note ?? null,
-  };
-  if (attribution?.postId && attribution.source === "ai_social") {
-    payload.attribution = {
-      postId: attribution.postId,
-      source: attribution.source,
-      ...(attribution.productId ? { productId: attribution.productId } : {}),
-      ...(typeof attribution.capturedAt === "number" ? { capturedAt: attribution.capturedAt } : {}),
-    };
-  }
-  return apiFetch<UpsertResponse>(
-    "/api/orders/upsert",
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    },
-    fetchOpts
-  );
 }
 
 /* =========================================================
