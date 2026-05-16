@@ -51,6 +51,7 @@
     "sanity:delete-menuDay-weeks-2122": "tsx scripts/sanity/delete-menuDay-weeks-2122.ts",
     "sanity:seed-lunch-categories": "tsx scripts/sanity/seed-lunch-categories.ts",
     "sanity:seed-lunch-categories-v2": "tsx scripts/sanity/seed-lunch-categories-v2.ts",
+    "sanity:heal-menu-horizon": "tsx scripts/sanity/heal-menu-horizon.ts",
     "sanity:migrate-mealidea-allowed-tiers": "tsx scripts/sanity/migrate-mealidea-allowed-tiers.ts",
     "agents:check": "node scripts/agents-ci.mjs",
     "ci:guard": "node scripts/ci-guard.mjs",

@@ -13,6 +13,8 @@ const ROOT = process.cwd();
 
 const SERVICE_ROLE_ALLOW_PREFIXES = [
   "lib/supabase/admin.ts",
+  // One-shot menu horizon backfill CLI (tsx); intentional service-role read for agreements/tiers.
+  "scripts/sanity/heal-menu-horizon.ts",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",

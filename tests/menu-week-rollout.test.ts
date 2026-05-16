@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Meal } from "@/lib/menu-publish/generateWeekMenu";
 import { fetchMealIdeaBank } from "@/lib/menu-publish/mealIdeaBankQuery";
-import { runMenuWeekRollout } from "@/lib/menu-publish/runMenuWeekRollout";
+import { runMenuWeekRollout, validateRolloutWeekMondayIso } from "@/lib/menu-publish/runMenuWeekRollout";
 
 function diverseMealsFixture(prefix: string): Meal[] {
   const out: Meal[] = [];
@@ -244,5 +244,150 @@ describe("runMenuWeekRollout", () => {
     expect(res.menuDaysSkipped).toBe(2);
     expect(res.menuDaysCreated).toBe(13);
     expect(createdDocs).toHaveLength(13);
+  });
+});
+
+describe("validateRolloutWeekMondayIso", () => {
+  it("godtar mandag 2026-05-18 (Europe/Oslo)", () => {
+    expect(validateRolloutWeekMondayIso("2026-05-18")).toBe("2026-05-18");
+  });
+
+  it("kaster når dato ikke er mandag i Oslo", () => {
+    expect(() => validateRolloutWeekMondayIso("2026-05-19")).toThrow(/ikke mandag/);
+  });
+
+  it("kaster på ugyldig kalenderdato / format", () => {
+    expect(() => validateRolloutWeekMondayIso("2026-02-31")).toThrow(/ugyldig dato/);
+    expect(() => validateRolloutWeekMondayIso("not-a-date")).toThrow(/ugyldig dato/);
+  });
+});
+
+describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
+  const fixedInstant = new Date("2026-05-15T12:00:00.000Z");
+  const n3Monday = "2026-06-01";
+  const overrideMonday = "2026-05-18";
+  const overrideWeekDates = ["2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22"];
+
+  let fetchImpl: (q: string, params?: Record<string, unknown>) => Promise<unknown>;
+  let sanityRead: SanityClient;
+  let createdDocs: unknown[];
+
+  type Chain = {
+    createOrReplace: ReturnType<typeof vi.fn>;
+    patch: ReturnType<typeof vi.fn>;
+    commit: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    createdDocs = [];
+    let bankCall = 0;
+    fetchImpl = async (q: string) => {
+      if (q.includes('_type == "mealIdea"')) {
+        bankCall += 1;
+        return diverseMealsFixture(`b${bankCall}`);
+      }
+      if (q.includes("{ date, mealTitle }")) return [];
+      if (q.includes("{ mealTitle, description }")) return [];
+      return [];
+    };
+    sanityRead = {
+      fetch: vi.fn((q: string, p?: Record<string, unknown>) => fetchImpl(q, p)),
+    } as unknown as SanityClient;
+  });
+
+  function mockWrite(): SanityClient {
+    return {
+      transaction: () => {
+        const chain = {} as Chain;
+        chain.createOrReplace = vi.fn((doc: unknown) => {
+          createdDocs.push(doc);
+          return chain;
+        });
+        chain.patch = vi.fn(() => chain);
+        chain.commit = vi.fn(async () => {});
+        return chain;
+      },
+    } as unknown as SanityClient;
+  }
+
+  it("bruker override og ignorerer N+3-beregning for instant", async () => {
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      overrideTargetWeekMonday: overrideMonday,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    expect(res.targetWeek).toBe(overrideMonday);
+    expect(res.targetWeek).not.toBe(n3Monday);
+    expect(res.menuDaysCreated).toBe(15);
+    expect(createdDocs).toHaveLength(15);
+    for (const doc of createdDocs as Array<Record<string, unknown>>) {
+      expect(overrideWeekDates).toContain(doc.date);
+    }
+  });
+
+  it("uten gyldig override (kun whitespace): samme N+3 som før", async () => {
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      overrideTargetWeekMonday: "  \t\n",
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    expect(res.targetWeek).toBe(n3Monday);
+    expect(res.menuDaysCreated).toBe(15);
+  });
+
+  it("override som ikke er mandag: kaster", async () => {
+    await expect(
+      runMenuWeekRollout({
+        instant: fixedInstant,
+        overrideTargetWeekMonday: "2026-05-20",
+        supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+        sanityRead,
+        getSanityWrite: mockWrite,
+      }),
+    ).rejects.toThrow(/ikke mandag/);
+  });
+
+  it("override med ugyldig format: kaster", async () => {
+    await expect(
+      runMenuWeekRollout({
+        instant: fixedInstant,
+        overrideTargetWeekMonday: "2026-02-31",
+        supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+        sanityRead,
+        getSanityWrite: mockWrite,
+      }),
+    ).rejects.toThrow(/ugyldig dato/);
+  });
+
+  it("idempotent med override: alle finnes → 0 opprettet", async () => {
+    const fetchWithExisting = async (q: string, _p?: Record<string, unknown>) => {
+      if (q.includes('_type == "mealIdea"')) return diverseMealsFixture("idem");
+      if (q.includes("{ date, mealTitle }")) {
+        return overrideWeekDates.map((date) => ({ date, mealTitle: "Existing" }));
+      }
+      if (q.includes("{ mealTitle, description }")) return [];
+      return [];
+    };
+    sanityRead = {
+      fetch: vi.fn((q: string, p?: Record<string, unknown>) => fetchWithExisting(q, p)),
+    } as unknown as SanityClient;
+
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      overrideTargetWeekMonday: overrideMonday,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    expect(res.menuDaysCreated).toBe(0);
+    expect(res.menuDaysSkipped).toBe(15);
+    expect(createdDocs).toHaveLength(0);
   });
 });
