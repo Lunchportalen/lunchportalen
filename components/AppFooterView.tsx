@@ -14,6 +14,7 @@ type AppFooterViewProps = AppFooterViewModel & {
 export default function AppFooterView({ innerMaxClassName, footerClassName, links, columns, bottomText }: AppFooterViewProps) {
   const hasLinks = links.length > 0;
   const hasColumns = columns.length > 0;
+  const hasNothingFromCms = !hasColumns && !hasLinks && !bottomText;
 
   return (
     <footer className={footerClassName} aria-label="Footer">
@@ -47,6 +48,39 @@ export default function AppFooterView({ innerMaxClassName, footerClassName, link
               ))
             : null}
         </div>
+
+        {hasNothingFromCms ? (
+          <div className="lp-footer-fallback">
+            <nav className="lp-footer-fallback__legal" aria-label="Juridisk">
+              <a href="https://lunchportalen.no/kontakt" className="lp-footer-link" rel="noopener">
+                Kontakt
+              </a>
+              <span className="lp-footer-fallback__sep" aria-hidden="true">
+                ·
+              </span>
+              <a href="https://lunchportalen.no/vilkaar" className="lp-footer-link" rel="noopener">
+                Vilkår
+              </a>
+              <span className="lp-footer-fallback__sep" aria-hidden="true">
+                ·
+              </span>
+              <a href="https://lunchportalen.no/personvern" className="lp-footer-link" rel="noopener">
+                Personvern
+              </a>
+            </nav>
+            <div className="lp-footer-fallback__copy">© {new Date().getFullYear()} Lunchportalen AS</div>
+            <div className="lp-footer-fallback__partner">
+              <span className="lp-footer-fallback__partner-label">Powered by</span>
+              <Image
+                src="/FrameCore.png"
+                alt="FrameCore"
+                width={120}
+                height={32}
+                className="lp-footer-fallback__partner-logo"
+              />
+            </div>
+          </div>
+        ) : null}
 
         {hasLinks ? (
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-[rgb(var(--lp-border))] pt-4">

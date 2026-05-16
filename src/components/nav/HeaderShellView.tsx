@@ -1,10 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
-import LogoutClient from "@/components/auth/LogoutClient";
+import { ProfileMenu } from "@/components/nav/ProfileMenu";
 import type { HeaderShellViewModel } from "@/lib/layout/globalHeaderFromCms";
+
+const PRIMARY_WORDMARK_SVG =
+  "/LunchPortalen_Enterprise_Logo_Pack/08_VECTOR/LunchPortalen_Primary.svg";
 
 type HeaderShellViewProps = HeaderShellViewModel & {
   headerClassName: string;
@@ -16,28 +20,28 @@ type HeaderShellViewProps = HeaderShellViewModel & {
 export default function HeaderShellView({
   headerClassName,
   innerGridClassName,
-  title,
+  title: _title,
   areaLabel,
   logoSrc,
   navigation,
   email,
 }: HeaderShellViewProps) {
+  const [headerLogoSrc, setHeaderLogoSrc] = useState(PRIMARY_WORDMARK_SVG);
+
   return (
     <header className={headerClassName}>
       <div className={innerGridClassName}>
-        <div className="flex items-center justify-self-start">
-          <Link href="/" className="flex items-center gap-3" aria-label={areaLabel}>
-            <div className="h-8 w-8 overflow-clip rounded-full bg-slate-900 md:h-10 md:w-10">
-              <Image
-                src={logoSrc}
-                alt="Lunchportalen"
-                width={120}
-                height={120}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
-            <span className="hidden text-sm font-semibold text-[rgb(var(--lp-text))] md:inline">{title}</span>
+        <div className="flex items-center justify-self-start min-w-0">
+          <Link href="/" className="flex min-w-0 items-center" aria-label={areaLabel}>
+            <Image
+              src={headerLogoSrc}
+              alt="Lunchportalen"
+              width={180}
+              height={32}
+              className="h-6 w-auto max-w-[min(200px,100%)] object-contain object-left md:h-8"
+              priority
+              onError={() => setHeaderLogoSrc(logoSrc)}
+            />
           </Link>
         </div>
 
@@ -56,13 +60,16 @@ export default function HeaderShellView({
           </ul>
         </nav>
 
-        <div className="flex items-center justify-end gap-3 justify-self-end">
+        <div className="flex items-center justify-end gap-3 justify-self-end min-w-0">
           {email ? (
-            <div className="rounded-full border border-[rgb(var(--lp-border))] px-3 py-1 text-xs text-[rgb(var(--lp-muted))]">
+            <span
+              className="hidden max-w-[min(280px,28vw)] truncate text-sm text-[rgb(var(--lp-muted))] md:inline"
+              title={email}
+            >
               {email}
-            </div>
+            </span>
           ) : null}
-          <LogoutClient />
+          <ProfileMenu email={email} />
         </div>
       </div>
     </header>

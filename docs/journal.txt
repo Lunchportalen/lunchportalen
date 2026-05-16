@@ -4,6 +4,18 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-16 — FASE 14-UI-1 (Header + Footer redesign for ansattflate)
+
+- Bakgrunn: Email-pille i header lignet input-felt; footer var tom fordi CMS ikke leverer columns/links for app-kontekst.
+- Header: erstattet email-pille med ProfileMenu (40×40px rund knapp som åpner dropdown med email + Logg ut). Logo bytte til SVG fra Logo-pack, fjernet «Lunchportalen»-tekst ved siden (logoen er wordmark). På desktop vises email også som ren tekst LEFT av profil-knappen.
+- Footer: lagt til fallback-rendring som aktiveres KUN når CMS er tom. Viser 3 legal-lenker (Kontakt/Vilkår/Personvern → lunchportalen.no), copyright med dynamisk år, «Powered by FrameCore»-blokk.
+- Scope: globalt (alle innloggede sider i (app)/-gruppen).
+- A11y: 48px touch-target, focus-visible med gul ring, aria-expanded, Esc + klikk-utenfor lukker, prefers-reduced-motion respektert.
+- Mobile-first CSS i app/globals.css under tydelige kommentar-bånd for ProfileMenu og AppFooter fallback.
+- CMS-flyt bevart: hvis CMS leverer columns/links i fremtiden, brukes CMS-data (fallback aktiveres ikke).
+
+---
+
 ## 2026-05-14 → 2026-05-16 (over midnatt + neste morgen)
 
 ### Commits (28, kronologisk etter commit-tidsstempel)
