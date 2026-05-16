@@ -134,6 +134,7 @@ export async function coerceOrderWriteErrorResponse(res: Response): Promise<Resp
 
 /**
  * Vellykket create/cancel for order-endepunkter — flat, maskinlesbar kvittering (inkl. `rid` i body).
+ * Synk: `buildOrderWriteOkJsonBody` i `app/api/orders/route.ts` (idempotency / lp_idem_complete må speile denne kroppen).
  */
 export function jsonOrderWriteOk(
   rid: string,

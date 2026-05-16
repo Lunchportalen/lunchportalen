@@ -313,3 +313,14 @@ Kontekst: `company_current_agreement_rules`-VIEW bruker **15%** (`* 1.15`) for m
 - **Fra 2026-06-08 og utover:** RLS-evaluering for **authenticated** skal igjen kunne bruke helpers uten 42P01 på `delivery_runs`, `location_closed_dates`, `location_policies`, `menu_service_days`, `orders`, `standing_orders` (direkte og kjede).
 - STEG 6 (kjør capture som no-op mot prod): utelatt for å minimere prod-touch; capture speiler nå reparert helper-kode i embedded snapshot.
 
+---
+
+## 2026-05-17 — FASE 13.5-FIX-2-IMPL (HTTP-idempotency POST /api/orders)
+
+- **Feature-commit `e13eb1801e4429e53526a56ca6f479e94b0e430e`** (kort **`e13eb180`**): migrasjon `20260516330000_extend_lp_idem_begin_status_code.sql`, `app/api/orders/route.ts`, `tests/api/orders-idempotency.test.ts` (9 nye tester).
+- **DB:** `lp_idem_begin` utvidet med `status_code` slik at replay returnerer samme HTTP-status som opprinnelig suksess (f.eks. 201 når `p_response_code` var 201).
+- **API:** valgfri `Idempotency-Key` (min. 8 tegn), `lp_idem_begin` / `lp_idem_complete` / `lp_idem_fail`, kanonisk hash først etter at alle felt som sendes til `lp_order_set` er kjent; `23505` → 409 `DUPLICATE_ORDER` med eksplisitt `23514`-eksklusjon i meldings-fallback; replay bruker `status_code ?? 200`; `IDEMPOTENCY_CACHE_INVALID`; cancel uten `orderId` kaller `lp_idem_complete`; `lp_idem_fail` kun med nøkkel + `request_hash`.
+- **Journalføring + synk-JSDoc:** `journal.txt`, `docs/journal.txt` (speilet) og `lib/http/respond.ts` — levert i påfølgende commit på `main` rett etter feature-commit (se `git log`).
+
+(Speilet innhold: `docs/journal.txt`.)
+

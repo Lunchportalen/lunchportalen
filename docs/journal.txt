@@ -112,3 +112,13 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 - Sommerkorridor **2026-06-08+**: merk at meny/RLS-kjeden nå ikke skal dø på manglende `public.locations`.
 
 *Speil: `journal.txt` (rot).*
+
+---
+
+## 2026-05-17 — FASE 13.5-FIX-2-IMPL (HTTP-idempotency POST /api/orders)
+
+- **Feature-commit `e13eb1801e4429e53526a56ca6f479e94b0e430e`** (kort **`e13eb180`**): migrasjon `20260516330000_extend_lp_idem_begin_status_code.sql`, `app/api/orders/route.ts`, `tests/api/orders-idempotency.test.ts` (9 tester).
+- `lp_idem_begin` + `status_code`; valgfri header; `23505` → `DUPLICATE_ORDER`; replay-status; defensiv cache-validering; CANCEL uten `orderId` fullfører idempotency.
+- **Journalføring:** speilet i `journal.txt` (rot) og denne filen; `jsonOrderWriteOk` har krysshenvisning til `buildOrderWriteOkJsonBody` i `app/api/orders/route.ts`. Levert i commit på `main` rett etter `e13eb180` (se `git log`).
+
+*Speil: `journal.txt` (rot).*
