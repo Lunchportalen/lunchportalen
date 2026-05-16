@@ -1,5 +1,7 @@
 import type { SanityClient } from "@sanity/client";
 
+import { OSLO_TZ } from "@/lib/date/oslo";
+
 import type { Meal, PlanTier } from "./generateWeekMenu";
 
 export const MEAL_BANK_TARGET_PRICE = 90;
@@ -10,13 +12,25 @@ export function mealBankCostTierClause(includePremium: boolean): string {
     : `costTier in ["BUDGET", "STANDARD"]`;
 }
 
-/** Same season buckets as `WeekPlanner` (calendar month in local `Date`). */
-export function mealBankCurrentSeason(): "winter" | "spring" | "summer" | "autumn" {
-  const month = new Date().getMonth() + 1;
-  if (month === 12 || month <= 2) return "winter";
-  if (month <= 5) return "spring";
-  if (month <= 8) return "summer";
-  return "autumn";
+/**
+ * Norsk sesong for mealIdea-bank (CMS bruker «vinter» / «vår» / «sommer» / «høst», pluss «helår» i GROQ).
+ * Kalendermåned i Europe/Oslo — samme tidszonesannhet som cron og rollout.
+ *
+ * Merk: `WeekPlanner` i Studio bruker fortsatt engelske buckets i egen fetch; kun Node/cron/CLI-stien her er norsk.
+ */
+export function getCurrentNorwegianSeason(date: Date): "vinter" | "vår" | "sommer" | "høst" {
+  const monthStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: OSLO_TZ,
+    month: "numeric",
+  }).format(date);
+  const osloMonth = Number.parseInt(monthStr, 10);
+  if (!Number.isFinite(osloMonth) || osloMonth < 1 || osloMonth > 12) {
+    return "vinter";
+  }
+  if (osloMonth === 12 || osloMonth <= 2) return "vinter";
+  if (osloMonth <= 5) return "vår";
+  if (osloMonth <= 8) return "sommer";
+  return "høst";
 }
 
 export function hasCompleteNutrition(meal: Meal): boolean {
@@ -40,14 +54,17 @@ export function normalizeMenuTitleKey(title?: string): string {
 }
 
 /**
- * Meal pool for week generation — GROQ aligned with `WeekPlanner.fetchMealBank`.
+ * Meal pool for week generation (cron, CLI, WeekPlanner-paritet for server-sti).
+ * Sesong: norske array-verdier i CMS + «helår»; manglende/ tom `season` behandles som alltid tilgjengelig.
  */
 export async function fetchMealIdeaBank(
   sanity: SanityClient,
   tier: PlanTier,
   includePremium: boolean,
+  /** For tester og deterministisk cron-replay; standard: nå. */
+  clock: Date = new Date(),
 ): Promise<Meal[]> {
-  const season = mealBankCurrentSeason();
+  const currentSeason = getCurrentNorwegianSeason(clock);
   const costPart = mealBankCostTierClause(includePremium);
   const enterpriseOnly =
     tier === "ENTERPRISE"
@@ -57,6 +74,7 @@ export async function fetchMealIdeaBank(
     tier === "ENTERPRISE"
       ? `defined(estimatedCostPerPortion)`
       : `defined(estimatedCostPerPortion) && estimatedCostPerPortion < ${MEAL_BANK_TARGET_PRICE}`;
+  const seasonClause = `(!defined(season) || count(season) == 0 || "helår" in season || $currentSeason in season)`;
 
   const meals = await sanity.fetch<Meal[]>(
     `*[
@@ -65,7 +83,7 @@ export async function fetchMealIdeaBank(
       ${costCap} &&
       ${enterpriseOnly} &&
       ${costPart} &&
-      (!defined(season) || count(season) == 0 || $season in season)
+      ${seasonClause}
     ] {
       _id,
       title,
@@ -90,7 +108,7 @@ export async function fetchMealIdeaBank(
       lastUsedDate,
       usageCount
     }`,
-    tier === "ENTERPRISE" ? { season } : { season, tier },
+    tier === "ENTERPRISE" ? { currentSeason } : { currentSeason, tier },
   );
 
   return Array.isArray(meals) ? meals : [];

@@ -106,20 +106,20 @@ function mockSupabaseForTiers(tiers: Array<"BASIS" | "LUXUS" | "ENTERPRISE">): S
 }
 
 describe("fetchMealIdeaBank GROQ params", () => {
-  it("ENTERPRISE sender kun season til Sanity", async () => {
+  it("ENTERPRISE sender kun currentSeason til Sanity", async () => {
     const fetch = vi.fn().mockResolvedValue([]);
     await fetchMealIdeaBank({ fetch } as unknown as SanityClient, "ENTERPRISE", false);
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('allowedPlanTiers[0] == "ENTERPRISE"'),
-      { season: expect.any(String) },
+      { currentSeason: expect.any(String) },
     );
   });
 
-  it("BASIS sender season og tier", async () => {
+  it("BASIS sender currentSeason og tier", async () => {
     const fetch = vi.fn().mockResolvedValue([]);
     await fetchMealIdeaBank({ fetch } as unknown as SanityClient, "BASIS", false);
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining("$tier in allowedPlanTiers"), {
-      season: expect.any(String),
+      currentSeason: expect.any(String),
       tier: "BASIS",
     });
   });
