@@ -4,6 +4,19 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-17 — FASE 14-UI-2 FASE D+E (slett marketing-CMS + tester)
+
+- Slettet marketing-loader, Umbraco marketingAdapter, marketing-registry, delegated/maybeRedirect middleware-kode, CmsStructuredData, IntentLinks; beholdt RelatedLinks med URL-er til lunchportalen.no (related_links blokker i CMS).
+- Ny lib/cms/contentPageResult.ts for typer; readSupabasePublishedContentPageBySlug + getContentBySlug barrel uten public getContentBySlug.
+- lib/seo/site.ts uten registry (ogImageForPath fallback-only); slettet intent.ts.
+- middleware: fjernet maybeRedirectPublicMarketingToUmbracoHostedSite (next.config + marketing-domene dekker).
+- cms-integrity.mjs: kun auth-router homepage-sjekk (loader-fil borte).
+- app/product/[productId]: redirect til https://lunchportalen.no med samme query (productId-nøkkel).
+- 11 marketing-tester slettet; publicEditorialTruth og webPageJsonLd justert.
+- Bevart: parseBody, normalizeBlockForRender, CmsBlockRenderer, marketingHomeBody (AI/backoffice).
+
+---
+
 ## 2026-05-17 — chore(seo): fjernet app/sitemap.ts, robots Disallow: /
 
 - app/sitemap.ts slettet (ingen offentlig SEO-overflate på app-domenet).

@@ -4,7 +4,7 @@
 
 // Narrow presentational wrapper for the SEO tab.
 // All state and business logic live in ContentWorkspace and are passed via props.
-// Validation limits and preview mirror lib/cms/public/cmsPageMetadata.ts for consistency.
+// Validation limits and preview follow historical Next Metadata / SEO field conventions.
 
 import type { SeoRecommendationsState, SeoRecommendation } from "@/lib/seo/intelligence";
 

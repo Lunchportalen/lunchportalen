@@ -1,5 +1,3 @@
-import registryData from "./marketing-registry.json";
-
 const RAW_SITE_URL = "https://www.lunchportalen.no";
 
 function normalizeBaseUrl(input: string): string {
@@ -67,39 +65,29 @@ export function pageMetaDefaults() {
   };
 }
 
-function ogPathFromRegistry(path: string): string | null {
-  const registry = registryData as Record<string, { ogImage?: string }>;
-  const entry = registry[normalizePath(path)];
-  if (!entry || !entry.ogImage) return null;
-  return String(entry.ogImage).trim() || null;
-}
-
-// Backwards-compatible wrapper while registry migration is active.
-export function ogImageForPath(path: string, opts?: { strict?: boolean }): string {
-  const fromRegistry = ogPathFromRegistry(path);
+/** Default OG image only (marketing-registry removed with app-domain marketing). */
+export function ogImageForPath(_path: string, opts?: { strict?: boolean }): string {
+  void _path;
   const fallback = pageMetaDefaults().ogImageDefault;
 
-  const candidate = fromRegistry || fallback;
-  if (!candidate && opts?.strict) {
-    throw new Error(`SEO_OG_IMAGE_MISSING_FOR_PATH:${normalizePath(path)}`);
+  if (!fallback && opts?.strict) {
+    throw new Error(`SEO_OG_IMAGE_MISSING_FOR_PATH:${normalizePath(String(_path ?? ""))}`);
   }
 
-  if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
-    return candidate;
+  if (fallback.startsWith("http://") || fallback.startsWith("https://")) {
+    return fallback;
   }
 
-  if (!candidate.startsWith("/")) {
+  if (!fallback.startsWith("/")) {
     if (opts?.strict) {
-      throw new Error(`SEO_OG_IMAGE_INVALID_FOR_PATH:${normalizePath(path)}`);
+      throw new Error(`SEO_OG_IMAGE_INVALID_FOR_PATH:${normalizePath(String(_path ?? ""))}`);
     }
-    return absoluteUrl(fallback);
+    return absoluteUrl(pageMetaDefaults().ogImageDefault);
   }
 
-  return absoluteUrl(candidate);
+  return absoluteUrl(fallback);
 }
 
 export function ogImageUrl(opts: { path: string; strict?: boolean }): string {
   return ogImageForPath(opts.path, { strict: opts.strict });
 }
-
-export const SEO_PUBLIC_PATHS = Object.keys(registryData).map((path) => normalizePath(path));

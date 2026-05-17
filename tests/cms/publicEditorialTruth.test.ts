@@ -1,12 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { canonicalPathForPublicEditorialSlug } from "@/lib/cms/public/canonicalPathForPublicEditorialSlug";
 import { buildEditorialFallbackPublicBody } from "@/lib/cms/seed/editorialFallbackHomeBody";
 
 /**
  * Regression guard: public `/` must not use rich coded marketing as hidden editorial truth when live sources miss.
- * @see loadPublicPageWithTrustFallback — home path uses buildEditorialFallbackPublicBody()
+ * Editorial fallback body remains the fail-closed shape for overlay/seed paths (FASE 14-UI-2).
  */
 describe("public editorial fallback (Umbraco truth lock)", () => {
   test("buildEditorialFallbackPublicBody is empty blocks and explicitly not editorial live", () => {
@@ -33,25 +32,4 @@ describe("public editorial fallback (Umbraco truth lock)", () => {
     expect(src).not.toContain("generatePublicCmsSlugMetadata");
     expect(src).not.toContain("CmsBlockRenderer");
   });
-
-  test("publicCmsSlugRoute must not use fake 404 metadata when editorial row is missing (fail-closed instead)", () => {
-    const p = join(process.cwd(), "lib", "cms", "public", "publicCmsSlugRoute.tsx");
-    const src = readFileSync(p, "utf8");
-    expect(src).not.toContain("Siden finnes ikke");
-    expect(src).toContain("PublicCmsStructuredData");
-    expect(src).toContain("data-lp-public-cms-slug");
-  });
-
-  test("public getContentBySlug must not return live-supabase for public marketing resolver", () => {
-    const p = join(process.cwd(), "lib", "cms", "public", "getContentBySlug.ts");
-    const src = readFileSync(p, "utf8");
-    expect(src).toContain("Non-allowlisted slugs: public resolver does not read Supabase");
-    expect(src).not.toMatch(/publicContentOrigin:\s*["']live-supabase["']/);
-  });
-
-  test("canonicalPathForPublicEditorialSlug maps home ↔ /", () => {
-    expect(canonicalPathForPublicEditorialSlug("home")).toBe("/");
-    expect(canonicalPathForPublicEditorialSlug("kontakt")).toBe("/kontakt");
-  });
-
 });

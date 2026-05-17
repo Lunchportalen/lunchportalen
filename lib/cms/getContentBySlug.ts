@@ -1,13 +1,11 @@
 /**
- * Public entry for CMS slug resolution (re-exports server implementation).
+ * CMS slug types + Supabase published reader. Public Umbraco marketing resolver removed (FASE 14-UI-2 D+E).
  */
-export {
-  getContentBySlug,
-  type ContentBySlugResult,
-  type GetContentBySlugOptions,
-  type PublicContentLiveOrigin,
-  type PublicContentRuntimeOrigin,
-} from "./public/getContentBySlug";
+export type {
+  ContentBySlugResult,
+  GetContentBySlugOptions,
+  PublicContentLiveOrigin,
+  PublicContentRuntimeOrigin,
+} from "./contentPageResult";
 
-/** Internal / tests — Supabase published row; not used for public marketing routes. */
 export { readSupabasePublishedContentPageBySlug } from "./supabase/readPublishedContentPageBySlug";

@@ -5,7 +5,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
-import { maybeRedirectPublicMarketingToUmbracoHostedSite } from "@/lib/routing/maybeRedirectPublicMarketingToUmbraco";
 import { updateSession } from "@/utils/supabase/proxy";
 
 function isBypassPath(pathname: string) {
@@ -86,9 +85,6 @@ export async function middleware(req: NextRequest) {
     res.headers.set("x-lp-mw-bypass", "1");
     return res;
   }
-
-  const delegated = maybeRedirectPublicMarketingToUmbracoHostedSite(req);
-  if (delegated) return delegated;
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);

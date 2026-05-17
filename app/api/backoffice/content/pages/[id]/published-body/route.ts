@@ -1,7 +1,7 @@
 /**
  * Returns the published (prod) variant body for a page.
  * Used by the editor to compare preview vs published and show "differs" indicator.
- * Same contract as getContentBySlug: prod variant, locale nb.
+ * Same shape as published prod variant: locale nb, environment prod.
  */
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";

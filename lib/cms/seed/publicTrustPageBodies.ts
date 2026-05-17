@@ -1,6 +1,5 @@
 /**
- * Legacy seed bodies (rich copy) — **not** used by public `loadPublicPageWithTrustFallback` anymore;
- * allowlisted routes fail closed with {@link buildEditorialFallbackPublicBody} when Umbraco misses.
+ * Legacy seed bodies (rich copy) — reference/tooling only; app public marketing render removed (FASE 14-UI-2).
  * Retained for reference / tooling. Same block contract as backoffice (`version`, `blocks`, `meta`).
  */
 import { SUPPORT_EMAIL } from "@/lib/system/emailAddresses";

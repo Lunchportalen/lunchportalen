@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { EDITORIAL_FAIL_CLOSED_DESCRIPTION } from "@/lib/cms/public/editorialFailClosedMetadata";
 import { buildEditorialFallbackPublicBody } from "@/lib/cms/seed/editorialFallbackHomeBody";
 import { organizationJsonLd, webPageJsonLd } from "@/lib/seo/jsonld";
 import { canonicalForPath } from "@/lib/seo/site";
+
+/** Same line as legacy editorialFailClosed metadata / JSON-LD tests (module removed in FASE D+E). */
+const EDITORIAL_FAIL_CLOSED_DESCRIPTION = "Redaksjonelt innhold er ikke tilgjengelig fra CMS.";
 
 describe("webPageJsonLd — public pages must not throw on missing SEO fields", () => {
   test("empty description falls back to name (live CMS without meta.seo.description)", () => {

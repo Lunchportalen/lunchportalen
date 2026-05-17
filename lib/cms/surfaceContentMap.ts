@@ -168,7 +168,7 @@ export const SURFACE_ROUTE_RULES: SurfaceRouteRule[] = [
       storage: "content_page_slug",
       slug: "",
       nodeId: "public:home",
-      notes: "Marketing home often slug \"\" or resolved via getContentBySlug in routes",
+      notes: "Marketing home historically resolved via public CMS routes (removed from app domain FASE 14-UI-2).",
     },
   },
 ];

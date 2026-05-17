@@ -41,10 +41,10 @@ export default function nextConfig(phase: string): NextConfig {
      * Proxy Umbraco backoffice (ASP.NET host in `Umbraco/`, deployed via Azure Web App workflow) onto this app’s `/umbraco`.
      *
      * **Separation of concerns (env):**
-     * - `UMBRACO_DELIVERY_BASE_URL` — server-side Delivery API only (`…/umbraco/delivery/api/…`), see `lib/cms/umbraco/marketingAdapter.ts`.
+     * - `UMBRACO_DELIVERY_BASE_URL` — server-side Delivery API only (`…/umbraco/delivery/api/…`).
      * - `UMBRACO_CMS_ORIGIN` — preferred origin for **this** rewrite when backoffice and Delivery are not the same host; scheme + host, no path.
      * - If `UMBRACO_CMS_ORIGIN` is unset, the rewrite falls back to the origin of `UMBRACO_DELIVERY_BASE_URL` (same host as Delivery).
-     * - `UMBRACO_PUBLIC_SITE_URL` — canonical public origin for middleware redirect of marketing paths to Umbraco HTML (see `docs/architecture/PUBLIC_SITE_AND_APP_BOUNDARIES.md`); not used in rewrites.
+     * - `UMBRACO_PUBLIC_SITE_URL` — documented canonical public origin for the Umbraco HTML site; not used in Next rewrites.
      *
      * Without at least one of `UMBRACO_CMS_ORIGIN` / `UMBRACO_DELIVERY_BASE_URL`, no `/umbraco` proxy exists → `/umbraco` is handled by Next and typically 404s.
      */

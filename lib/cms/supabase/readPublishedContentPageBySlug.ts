@@ -1,10 +1,10 @@
 /**
  * Internal: Supabase `content_pages` + `content_page_variants` read — **not** public editorial truth.
- * Used by backoffice/admin bridges and tests; public marketing routes use Umbraco via {@link getContentBySlug}.
+ * Used by backoffice/admin bridges and tests.
  */
 import "server-only";
 
-import type { ContentBySlugResult, GetContentBySlugOptions } from "@/lib/cms/public/getContentBySlug";
+import type { ContentBySlugResult, GetContentBySlugOptions } from "@/lib/cms/contentPageResult";
 
 export async function readSupabasePublishedContentPageBySlug(
   slug: string,

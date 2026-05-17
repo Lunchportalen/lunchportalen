@@ -19,5 +19,5 @@ export default async function ProductAttributionLandingPage({ params, searchPara
   if (postId) q.set("postId", postId);
   if (productId && productId !== "unknown") q.set("productId", productId);
 
-  redirect(`/?${q.toString()}`);
+  redirect(`https://lunchportalen.no/?${q.toString()}`);
 }

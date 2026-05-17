@@ -1,6 +1,5 @@
 /**
  * PHASE 5: Preview/public/publish parity for **Supabase-stored** pages (internal reader).
- * Public marketing routes resolve via Umbraco only — see `getContentBySlug` + docs.
  */
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -172,8 +171,8 @@ describe("readSupabasePublishedContentPageBySlug — published (prod) variant se
 
 describe("preview uses draft content", () => {
   // Preview page fetches variants with .eq("page_id").eq("locale","nb") then picks environment==="preview" ?? variants[0].
-  // We test the selection logic: getContentBySlug (public) does NOT return preview variant; only prod.
-  // So "preview uses draft" is guaranteed by: public uses prod (tested above); preview page code explicitly prefers environment==="preview".
+  // Internal prod read (readSupabasePublishedContentPageBySlug) uses environment prod only.
+  // So "preview uses draft" is guaranteed by: prod read tested above; preview page code explicitly prefers environment==="preview".
   test("readSupabase ignores preview variant for public-style prod read", async () => {
     const pageId = "page-4";
     mockPagesBySlug["draft-only"] = { id: pageId, slug: "draft-only", title: "Draft", status: "published" };

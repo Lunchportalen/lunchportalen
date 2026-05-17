@@ -21,48 +21,64 @@ function cx(...s: Array<string | false | null | undefined>) {
  * Her ligger en enkel fallback-liste som matcher det du viser på skjermbildet.
  * Bytt gjerne til din eksisterende "getLinksByTags" om du har den.
  */
+const PUBLIC_MARKETING_ORIGIN = "https://lunchportalen.no";
+
 function getRelatedLinksByTags(tags: string[], currentPath: string, maxItems: number): RelatedLink[] {
   const all: RelatedLink[] = [
     {
-      href: "/lunsjordning",
+      href: `${PUBLIC_MARKETING_ORIGIN}/lunsjordning`,
       title: "Lunsjordning for bedrift",
       desc: "Fast ramme, mindre admin og mindre matsvinn – tydelig flyt for ansatte.",
       badge: "Kjerne",
     },
     {
-      href: "/alternativ-til-kantine",
+      href: `${PUBLIC_MARKETING_ORIGIN}/alternativ-til-kantine`,
       title: "Alternativ til kantine",
       desc: "Kantine uten kjøkkeninvestering – strukturert lunsjløsning med kontroll.",
       badge: "Modell",
     },
     {
-      href: "/system-for-lunsjbestilling",
+      href: `${PUBLIC_MARKETING_ORIGIN}/system-for-lunsjbestilling`,
       title: "System for lunsjbestilling",
       desc: "Digital lunsjportal med verifisert lagring og tydelig cut-off 08:00.",
       badge: "System",
     },
     {
-      href: "/lunsj-levering-oslo",
+      href: `${PUBLIC_MARKETING_ORIGIN}/lunsj-levering-oslo`,
       title: "Lunsj levering Oslo",
       desc: "Bedriftslunsj med fast ramme, cut-off 08:00 og full kontroll for admin.",
       badge: "Lokalt",
     },
     {
-      href: "/lunsjordning-trondheim",
+      href: `${PUBLIC_MARKETING_ORIGIN}/lunsjordning-trondheim`,
       title: "Lunsjordning Trondheim",
       desc: "Lunsj til ansatte med forutsigbar drift – mindre admin og mindre svinn.",
       badge: "Lokalt",
     },
     {
-      href: "/lunch-levering-bergen",
+      href: `${PUBLIC_MARKETING_ORIGIN}/lunch-levering-bergen`,
       title: "Lunch levering Bergen",
       desc: "Lunchordning for firma – tydelig flyt, cut-off 08:00 og kontroll.",
       badge: "Lokalt",
     },
   ];
 
-  // ✅ Filter bort current
-  const out = all.filter((x) => x.href !== currentPath);
+  function pathKey(p: string): string {
+    const t = p.trim();
+    if (!t) return "/";
+    if (t.startsWith("http://") || t.startsWith("https://")) {
+      try {
+        const u = new URL(t);
+        return u.pathname || "/";
+      } catch {
+        return t;
+      }
+    }
+    return t.startsWith("/") ? t : `/${t}`;
+  }
+
+  const curKey = pathKey(currentPath);
+  const out = all.filter((x) => pathKey(x.href) !== curKey);
 
   // ✅ Hvis du bruker tags i ditt system, kan du filtrere her.
   // Her returnerer vi alle som “relevante”.
