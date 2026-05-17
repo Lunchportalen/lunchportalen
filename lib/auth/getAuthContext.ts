@@ -17,7 +17,15 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 import type { Database } from "@/lib/types/database";
 
-export type AuthRole = "superadmin" | "company_admin" | "employee" | "kitchen" | "driver" | null;
+export type AuthRole =
+  | "superadmin"
+  | "company_admin"
+  | "company_finance"
+  | "location_admin"
+  | "employee"
+  | "kitchen"
+  | "driver"
+  | null;
 export type AuthReason = "OK" | "UNAUTHENTICATED" | "NO_PROFILE" | "BLOCKED" | "ERROR";
 export type AuthMode = "ANONYMOUS" | "SUPERADMIN_ALLOWLIST" | "DB_LOOKUP" | "CACHE" | "DEV_BYPASS";
 
@@ -298,7 +306,14 @@ function mapMembershipRoleToAuthRole(opts: {
 }
 
 function needsCompany(role: AuthRole) {
-  return role === "company_admin" || role === "employee" || role === "kitchen" || role === "driver";
+  return (
+    role === "company_admin" ||
+    role === "company_finance" ||
+    role === "location_admin" ||
+    role === "employee" ||
+    role === "kitchen" ||
+    role === "driver"
+  );
 }
 
 function needsLocation(role: AuthRole) {

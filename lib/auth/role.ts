@@ -4,7 +4,14 @@ import "server-only";
 
 import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
-export type Role = "superadmin" | "company_admin" | "employee" | "driver" | "kitchen";
+export type Role =
+  | "superadmin"
+  | "company_admin"
+  | "company_finance"
+  | "location_admin"
+  | "employee"
+  | "driver"
+  | "kitchen";
 
 /**
  * Kanonisk rolle-normalisering (DB/RPC-aliaser inkludert).
@@ -14,6 +21,8 @@ export function normalizeRole(v: unknown): Role | null {
   const r = String(v ?? "").trim().toLowerCase();
   if (r === "superadmin" || r === "super_admin" || r === "root") return "superadmin";
   if (r === "company_admin" || r === "companyadmin" || r === "admin") return "company_admin";
+  if (r === "company_finance" || r === "companyfinance") return "company_finance";
+  if (r === "location_admin" || r === "locationadmin") return "location_admin";
   if (r === "employee" || r === "ansatt") return "employee";
   if (r === "kitchen" || r === "kjokken") return "kitchen";
   if (r === "driver" || r === "sjafor") return "driver";
@@ -31,6 +40,8 @@ export function normalizeRoleDefaultEmployee(v: unknown): Role {
 export function landingForRole(role: Role): string {
   if (role === "superadmin") return "/superadmin";
   if (role === "company_admin") return "/admin";
+  if (role === "company_finance") return "/admin/insights";
+  if (role === "location_admin") return "/admin/locations";
   if (role === "driver") return "/driver";
   if (role === "kitchen") return "/kitchen";
   return "/week";
@@ -75,7 +86,9 @@ export function allowNextForRole(role: Role, nextPath: string | null): string | 
       ? nextPath
       : null;
   }
-  if (role === "company_admin") return nextPath.startsWith("/admin") ? nextPath : null;
+  if (role === "company_admin" || role === "company_finance" || role === "location_admin") {
+    return nextPath.startsWith("/admin") ? nextPath : null;
+  }
   if (role === "driver") return nextPath.startsWith("/driver") ? nextPath : null;
   if (role === "kitchen") return nextPath.startsWith("/kitchen") ? nextPath : null;
 

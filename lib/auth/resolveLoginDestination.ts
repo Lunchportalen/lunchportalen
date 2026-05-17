@@ -1,7 +1,7 @@
 // lib/auth/resolveLoginDestination.ts
 import "server-only";
 
-import { normalizeRole, type Role } from "@/lib/auth/role";
+import { landingForRole, normalizeRole, type Role } from "@/lib/auth/role";
 
 export type ResolveLoginDestinationInput = {
   role: Role | string | null | undefined;
@@ -29,6 +29,10 @@ export function resolveLoginDestination(input: ResolveLoginDestinationInput): st
 
   if (role === "company_admin") {
     return hasActiveAgreement ? "/admin" : "/avtale-ikke-aktiv";
+  }
+
+  if (role === "company_finance" || role === "location_admin") {
+    return hasActiveAgreement ? landingForRole(role) : "/avtale-ikke-aktiv";
   }
 
   if (role === "employee") {

@@ -1,5 +1,12 @@
 // lib/auth/redirect.ts
-export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+export type Role =
+  | "employee"
+  | "company_admin"
+  | "company_finance"
+  | "location_admin"
+  | "superadmin"
+  | "kitchen"
+  | "driver";
 
 export type AgreementState =
   | "active"
@@ -34,6 +41,10 @@ export function homeForRole(role: Role) {
       return "/superadmin";
     case "company_admin":
       return "/admin";
+    case "company_finance":
+      return "/admin/insights";
+    case "location_admin":
+      return "/admin/locations";
     case "kitchen":
       return "/kitchen";
     case "driver":
@@ -58,6 +69,8 @@ export function homeForUser(scope: HomeScopeHint) {
   if (role === "kitchen") return "/kitchen";
   if (role === "driver") return "/driver";
   if (role === "company_admin") return "/admin";
+  if (role === "company_finance") return "/admin/insights";
+  if (role === "location_admin") return "/admin/locations";
 
   // Employee routing (enterprise)
   const next = "/week";

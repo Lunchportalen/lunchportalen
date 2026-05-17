@@ -3,13 +3,14 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import { canCompanyOperate, getAgreementStatus } from "@/lib/auth/agreementStatus";
+import type { AuthRole } from "@/lib/auth/getAuthContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type ActiveAgreementContext = {
   companyId: string;
   agreementId: string | null;
-  role: "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+  role: NonNullable<AuthRole>;
 };
 
 function safeCompanyId(v: unknown) {

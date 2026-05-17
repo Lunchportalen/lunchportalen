@@ -350,8 +350,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(to, { status: 303 });
       }
 
-      // Roles that require an active agreement: company_admin, employee.
-      const roleNeedsAgreement = role === "company_admin" || role === "employee";
+      // Roles that require an active agreement: company_admin, finance, location-admin, employee.
+      const roleNeedsAgreement =
+        role === "company_admin" ||
+        role === "company_finance" ||
+        role === "location_admin" ||
+        role === "employee";
       const hasActiveAgreement = roleNeedsAgreement
         ? await lookupHasActiveAgreement(auth.company_id, rid)
         : true;

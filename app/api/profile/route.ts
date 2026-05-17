@@ -3,10 +3,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { AuthRole } from "@/lib/auth/getAuthContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
-type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
+type Role = NonNullable<AuthRole>;
 type CompanyStatus = "ACTIVE" | "PENDING" | "PAUSED" | "CLOSED" | "UNKNOWN";
 
 type ProfileRow = {

@@ -7,7 +7,14 @@ import { getAgreementStatus } from "@/lib/auth/agreementStatus";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import type { Database } from "@/lib/types/database";
 
-export type Role = "superadmin" | "company_admin" | "employee" | "kitchen" | "driver";
+export type Role =
+  | "superadmin"
+  | "company_admin"
+  | "company_finance"
+  | "location_admin"
+  | "employee"
+  | "kitchen"
+  | "driver";
 
 export type Scope = {
   user_id: string;
