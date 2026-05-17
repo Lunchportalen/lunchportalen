@@ -1,91 +1,28 @@
-// app/(public)/page.tsx — `/` uses same public CMS loader as `app/(public)/[slug]` (Umbraco Delivery → blocks → CmsBlockRenderer).
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import PageShell from "@/components/PageShell";
+import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { landingForRole, normalizeRole } from "@/lib/auth/role";
 
-import RelatedLinks from "@/components/seo/RelatedLinks";
-import { CmsBlockRenderer } from "@/components/cms/CmsBlockRenderer";
-import { CmsStructuredData } from "@/components/seo/CmsStructuredData";
-import { buildCmsPageMetadata } from "@/lib/cms/public/cmsPageMetadata";
-import { buildEditorialFailClosedMetadata } from "@/lib/cms/public/editorialFailClosedMetadata";
-import { loadPublicPageWithTrustFallback } from "@/lib/cms/public/loadPublicPageWithTrustFallback";
+const MARKETING_SITE_ROOT = "https://lunchportalen.no/";
 
-const ENV: "prod" | "staging" =
-  typeof process.env.NEXT_PUBLIC_APP_ENV === "string" && process.env.NEXT_PUBLIC_APP_ENV === "staging"
-    ? "staging"
-    : "prod";
-const LOCALE: "nb" | "en" = "nb";
-export const revalidate = 3600;
-
-/** CI: scripts/ci/cms-integrity.mjs string anchors — faktisk rendering: {@link CmsBlockRenderer} → normalizeBlockForRender( … ) → renderBlock( … ). */
-// getContentBySlug('home') — underlying resolver (Umbraco Delivery); entry: loadPublicPageWithTrustFallback("home")
-
-type HomeSearchParams = Record<string, string | string[] | undefined> | undefined;
-
-function isPreviewFromSearchParams(sp: HomeSearchParams): boolean {
-  const raw = sp?.preview;
-  const v = Array.isArray(raw) ? raw[0] : raw;
-  return v === "true";
-}
-
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams?: Promise<HomeSearchParams> | HomeSearchParams;
-}): Promise<Metadata> {
+export default async function AppRoot() {
+  let role: string | null = null;
   try {
-    const sp = await Promise.resolve(searchParams ?? {});
-    const page = await loadPublicPageWithTrustFallback("home", { preview: isPreviewFromSearchParams(sp) });
-    if (!page) {
-      return buildEditorialFailClosedMetadata("/", "seed-no-row");
-    }
-    if (page.publicContentOrigin === "seed-no-row" || page.publicContentOrigin === "seed-empty-body") {
-      return buildEditorialFailClosedMetadata("/", page.publicContentOrigin);
-    }
-    if (page.blocks.length === 0) {
-      return buildEditorialFailClosedMetadata("/", "seed-empty-body");
-    }
-    return buildCmsPageMetadata({
-      pageTitle: page.title ?? null,
-      slug: "",
-      body: page.body,
-    });
+    const auth = await getAuthContext();
+    role = auth?.role ?? null;
   } catch {
-    return buildEditorialFailClosedMetadata("/", "seed-no-row");
+    role = null;
   }
-}
 
-export default async function MarketingHome({
-  searchParams,
-}: {
-  searchParams?: Promise<HomeSearchParams> | HomeSearchParams;
-}) {
-  const sp = await Promise.resolve(searchParams ?? {});
-  const page = await loadPublicPageWithTrustFallback("home", { preview: isPreviewFromSearchParams(sp) });
-  const blocks = page?.blocks ?? [];
+  if (role) {
+    const normalized = normalizeRole(role);
+    if (normalized) {
+      const dest = landingForRole(normalized);
+      if (dest && dest.startsWith("/")) {
+        redirect(dest);
+      }
+    }
+  }
 
-  const cmsOrigin = page?.publicContentOrigin ?? "seed-no-row";
-
-  return (
-    <>
-      {page ? <CmsStructuredData page={page} /> : null}
-      <PageShell>
-        <div
-          className="lp-home flex w-full flex-col"
-          data-lp-public-cms-slug="home"
-          data-lp-public-cms-origin={cmsOrigin}
-        >
-          <CmsBlockRenderer
-            blocks={blocks}
-            env={ENV}
-            locale={LOCALE}
-            enableLivePricing
-            blockWrapperClassName="w-full"
-            pageCmsMeta={page?.meta ?? {}}
-          />
-        </div>
-        <RelatedLinks currentPath="/" tags={["core", "seo", "local", "system", "alt_kantine"]} />
-      </PageShell>
-    </>
-  );
+  redirect(MARKETING_SITE_ROOT);
 }

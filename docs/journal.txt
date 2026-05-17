@@ -4,6 +4,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-17 — FASE 14-UI-2 FASE A (auth-router for /)
+
+- Endret app/(public)/page.tsx: ikke lenger CMS-blokkrender. Nå ren auth-router.
+- Anonyme → https://lunchportalen.no/
+- Innloggede → landingForRole-utility
+- Out of scope (P2-backlog FASE B/C/D/E): de 22+ andre marketing-sidene på app, registrering-refaktor, sitemap-refaktor, RelatedLinks, CMS-utility cleanup.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-1e (logo size bump)
 
 - Header-logo: økt fra h-10/h-12 til w-32/w-40 (128px mobil / 160px desktop, høyde auto). Innenfor 120-130px-range definert av produkt.
