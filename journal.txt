@@ -1,3 +1,12 @@
+## 2026-05-17 — FASE A oppgave 2 (migration history rydding)
+- Slettet `20260216_kitchen_driver_scope_rls` (aldri applied i prod; prod bruker `orders_select_bridge_scoped` + helpers).
+- Omdøpt May-13-migrasjoner til faktiske `schema_migrations`-versjoner fra prod/MCP: `20260517212539` (recompute), `20260517212545` (sync), `20260517212645` (private RLS grants), beholdt `20260513090038` (company_current_agreement).
+- Ny fil `20260517212720_fix_sync_memberships_on_conflict_columns.sql` (idempotent re-apply etter feil ON CONFLICT-typo i første MCP-apply av sync).
+- MCP `apply_migration`: `recompute_respects_status`, `sync_memberships_with_status`, `grant_authenticated_private_rls_helpers`, `fix_sync_memberships_on_conflict_columns`.
+- `tests/rls/kitchenDriverScopePolicy.test.ts` fjernet.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 FASE D+E (slett marketing-CMS + tester)
 - Slettet marketing-loader, Umbraco marketingAdapter, marketing-registry, delegated/maybeRedirect middleware-kode, CmsStructuredData, IntentLinks; beholdt RelatedLinks med URL-er til lunchportalen.no (related_links blokker i CMS).
 - Ny lib/cms/contentPageResult.ts for typer; readSupabasePublishedContentPageBySlug + getContentBySlug barrel uten public getContentBySlug.
