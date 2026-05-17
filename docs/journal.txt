@@ -4,6 +4,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-18 — FASE A (RLS golden v2)
+
+- Full golden snapshot (`tests/rls/golden-rls-snapshot.json` v2): alle policies (`pg_policy` + `pg_get_expr`, roller via `unnest(polroles)`), alle `private.*`-funksjoner med `body_hash`, og `rls_enabled_tables` med `policy_count`.
+- `npm run rls:snapshot` (`scripts/rls/snapshot-rls.mjs`) + `docs/rls-golden.md`.
+- `tests/rls/migrationParity.test.ts` sammenligner mot golden (opt-in: `vitest.rls.config.ts`).
+- P3 backlog: `company_invites`, `employee_invites`, `menu_visibility_days` har RLS aktivert men 0 policyer (deny-all for authenticated). Avklare om dette er bevisst (kun service_role-bruk) eller mangler policyer for app-bruk.
+
+---
+
 ## 2026-05-17 — FASE A oppgave 2 (migration history rydding)
 
 - Slettet `20260216_kitchen_driver_scope_rls` (aldri applied i prod; prod bruker `orders_select_bridge_scoped` + helpers).

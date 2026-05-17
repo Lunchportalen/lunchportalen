@@ -1,48 +1,2852 @@
 {
-  "version": 1,
-  "migrationId": "20260517000000_capture_prod_rls_drift",
-  "description": "Kjerne RLS for ordre/meny + private.* helpers fra prod-capture. Full prod-policykatalog ~192 er utenfor omfang.",
-  "capturedPrivateFunctionDefMd5": {
-    "can_access_location": "91583b4f512727d6fbf1b91f419ddb94",
-    "can_manage_location": "96b9d18efea47841976ab4a514f9d586"
-  },
-  "expectedPolicies": [
-    "public.menu_service_days:menu_service_days_manage",
-    "public.menu_service_days:menu_service_days_select",
-    "public.menu_service_day_items:menu_service_day_items_manage",
-    "public.menu_service_day_items:menu_service_day_items_select",
-    "public.order_items:order_items_delete",
-    "public.order_items:order_items_insert",
-    "public.order_items:order_items_select",
-    "public.order_items:order_items_update",
-    "public.orders:orders_delete",
-    "public.orders:orders_delete_none",
-    "public.orders:orders_insert",
-    "public.orders:orders_insert_none",
-    "public.orders:orders_select",
-    "public.orders:orders_select_bridge_scoped",
-    "public.orders:orders_update",
-    "public.orders:orders_update_none"
+  "version": 2,
+  "generated_at": "2026-05-17T22:26:24.665Z",
+  "project_ref": "hkpokyapzarefrgqzkos",
+  "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
+  "policies": [
+    {
+      "schema": "public",
+      "table": "agreement_cleanup_audit",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_delivery_days",
+      "name": "agreement_delivery_days_delete_platform_admin",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_delivery_days",
+      "name": "agreement_delivery_days_insert_admin_scoped",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM agreements a\n  WHERE ((a.id = agreement_delivery_days.agreement_id) AND (is_platform_admin() OR can_admin_company(a.company_id) OR can_admin_location(a.location_id)))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_delivery_days",
+      "name": "agreement_delivery_days_select_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM agreements a\n  WHERE ((a.id = agreement_delivery_days.agreement_id) AND (is_platform_admin() OR can_access_company(a.company_id) OR can_access_location(a.location_id) OR can_kitchen_location(a.location_id)))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_delivery_days",
+      "name": "agreement_delivery_days_update_admin_scoped",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM agreements a\n  WHERE ((a.id = agreement_delivery_days.agreement_id) AND (is_platform_admin() OR can_admin_company(a.company_id) OR can_admin_location(a.location_id)))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM agreements a\n  WHERE ((a.id = agreement_delivery_days.agreement_id) AND (is_platform_admin() OR can_admin_company(a.company_id) OR can_admin_location(a.location_id)))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_requests",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
+      "name": "agreements_delete_platform_admin",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
+      "name": "agreements_insert_admin_scoped",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
+      "name": "agreements_select_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_access_company(company_id) OR can_access_location(location_id) OR can_kitchen_location(location_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
+      "name": "agreements_update_admin_scoped",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "check_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_action_memory",
+      "name": "ai_action_memory_service_role_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(auth.role() = 'service_role'::text)",
+      "check_expr": "(auth.role() = 'service_role'::text)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_activity_log",
+      "name": "ai_activity_log_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_activity_log",
+      "name": "ai_activity_log_insert_platform_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_activity_log",
+      "name": "ai_activity_log_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_activity_log",
+      "name": "ai_activity_log_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config",
+      "name": "ai_config_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config",
+      "name": "ai_config_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config_audit",
+      "name": "ai_config_audit_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config_audit",
+      "name": "ai_config_audit_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config_audit",
+      "name": "ai_config_audit_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_config_audit",
+      "name": "ai_config_audit_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_health_checks",
+      "name": "ai_health_checks_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_health_checks",
+      "name": "ai_health_checks_insert_platform_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_health_checks",
+      "name": "ai_health_checks_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_health_checks",
+      "name": "ai_health_checks_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_jobs",
+      "name": "ai_jobs_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_jobs",
+      "name": "ai_jobs_insert_platform_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_jobs",
+      "name": "ai_jobs_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_jobs",
+      "name": "ai_jobs_update_platform_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_suggestions",
+      "name": "ai_suggestions_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_suggestions",
+      "name": "ai_suggestions_insert_platform_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_suggestions",
+      "name": "ai_suggestions_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ai_suggestions",
+      "name": "ai_suggestions_update_platform_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "allergens",
+      "name": "allergens_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "check_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "allergens",
+      "name": "allergens_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "audit_events",
+      "name": "audit_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "audit_events",
+      "name": "audit_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "audit_events",
+      "name": "audit_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "audit_events",
+      "name": "audit_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "audit_log",
+      "name": "audit_log_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.is_platform_admin() AS is_platform_admin)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_adjustments",
+      "name": "billing_adjustments_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(billing_adjustments.company_id) AS can_finance_company)",
+      "check_expr": "( SELECT private.can_finance_company(billing_adjustments.company_id) AS can_finance_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_adjustments",
+      "name": "billing_adjustments_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(billing_adjustments.company_id) AS can_finance_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "closed_dates",
+      "name": "closed_dates_delete_platform_admin",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "closed_dates",
+      "name": "closed_dates_insert_admin_scoped",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(is_platform_admin() OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_admin_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_admin_location(scope_location_id)))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "closed_dates",
+      "name": "closed_dates_select_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR ((scope_company_id IS NULL) AND (scope_location_id IS NULL)) OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_access_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_access_location(scope_location_id)) OR ((scope_location_id IS NOT NULL) AND can_kitchen_location(scope_location_id)))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "closed_dates",
+      "name": "closed_dates_update_admin_scoped",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_admin_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_admin_location(scope_location_id)))",
+      "check_expr": "(is_platform_admin() OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_admin_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_admin_location(scope_location_id)))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
+      "name": "companies_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
+      "name": "companies_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_company(companies.id) AS can_access_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
+      "name": "companies_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_company(companies.id) AS can_manage_company)",
+      "check_expr": "( SELECT private.can_manage_company(companies.id) AS can_manage_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
+      "name": "companies_write_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_contracts",
+      "name": "company_contracts_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_company(company_contracts.company_id) AS can_manage_company)",
+      "check_expr": "( SELECT private.can_manage_company(company_contracts.company_id) AS can_manage_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_contracts",
+      "name": "company_contracts_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_company(company_contracts.company_id) AS can_access_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_locations",
+      "name": "company_locations_delete",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id()))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_locations",
+      "name": "company_locations_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id()))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_locations",
+      "name": "company_locations_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR (company_id = current_profile_company_id())))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_locations",
+      "name": "company_locations_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id()))))",
+      "check_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id()))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_memberships",
+      "name": "company_memberships_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_company(company_memberships.company_id) AS can_manage_company)",
+      "check_expr": "( SELECT private.can_manage_company(company_memberships.company_id) AS can_manage_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_memberships",
+      "name": "company_memberships_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_memberships",
+      "name": "company_memberships_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.can_access_company(company_memberships.company_id) AS can_access_company))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_memberships",
+      "name": "company_memberships_select_self_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = auth.uid()) OR is_platform_admin() OR can_admin_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_product_prices",
+      "name": "company_product_prices_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_company(company_product_prices.company_id) AS can_manage_company)",
+      "check_expr": "( SELECT private.can_manage_company(company_product_prices.company_id) AS can_manage_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_product_prices",
+      "name": "company_product_prices_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_company(company_product_prices.company_id) AS can_access_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_registrations",
+      "name": "company_registrations_service_role_full",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_registrations",
+      "name": "company_registrations_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.role = 'superadmin'::user_role))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.role = 'superadmin'::user_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "content_page_variants",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "content_pages",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "day_choices",
+      "name": "day_choices_insert_employee_own",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND ((p.role)::text = 'employee'::text) AND (day_choices.user_id = auth.uid()) AND (p.company_id = day_choices.company_id) AND (p.location_id = day_choices.location_id))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "day_choices",
+      "name": "day_choices_select_employee_kitchen_superadmin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND (((p.role)::text = 'superadmin'::text) OR (((p.role)::text = 'kitchen'::text) AND (p.company_id = day_choices.company_id) AND (p.location_id = day_choices.location_id)) OR (((p.role)::text = 'employee'::text) AND (day_choices.user_id = auth.uid()) AND (p.company_id = day_choices.company_id) AND (p.location_id = day_choices.location_id))))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "day_choices",
+      "name": "day_choices_update_employee_own",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND ((p.role)::text = 'employee'::text) AND (day_choices.user_id = auth.uid()) AND (p.company_id = day_choices.company_id) AND (p.location_id = day_choices.location_id))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND ((p.role)::text = 'employee'::text) AND (day_choices.user_id = auth.uid()) AND (p.company_id = day_choices.company_id) AND (p.location_id = day_choices.location_id))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "deliveries",
+      "name": "deliveries_delete_admin_scoped",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "deliveries",
+      "name": "deliveries_insert_admin_scoped",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "deliveries",
+      "name": "deliveries_select_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id) OR can_kitchen_location(location_id) OR (EXISTS ( SELECT 1\n   FROM driver_runs dr\n  WHERE ((dr.id = deliveries.run_id) AND (dr.driver_user_id = auth.uid())))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "deliveries",
+      "name": "deliveries_update_driver_or_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id) OR (EXISTS ( SELECT 1\n   FROM driver_runs dr\n  WHERE ((dr.id = deliveries.run_id) AND (dr.driver_user_id = auth.uid())))))",
+      "check_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id) OR (EXISTS ( SELECT 1\n   FROM driver_runs dr\n  WHERE ((dr.id = deliveries.run_id) AND (dr.driver_user_id = auth.uid())))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "delivery_run_items",
+      "name": "delivery_run_items_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_operate_delivery_run(delivery_run_items.delivery_run_id) AS can_operate_delivery_run)",
+      "check_expr": "( SELECT private.can_operate_delivery_run(delivery_run_items.delivery_run_id) AS can_operate_delivery_run)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "delivery_run_items",
+      "name": "delivery_run_items_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_delivery_run(delivery_run_items.delivery_run_id) AS can_access_delivery_run)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "delivery_runs",
+      "name": "delivery_runs_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(( SELECT private.can_manage_location(delivery_runs.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role))",
+      "check_expr": "(( SELECT private.can_manage_location(delivery_runs.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "delivery_runs",
+      "name": "delivery_runs_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(( SELECT private.can_access_location(delivery_runs.location_id) AS can_access_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "dietary_tags",
+      "name": "dietary_tags_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "check_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "dietary_tags",
+      "name": "dietary_tags_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "driver_runs",
+      "name": "driver_runs_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "driver_runs",
+      "name": "driver_runs_select_assigned_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR (driver_user_id = auth.uid()))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "enterprise_groups",
+      "name": "enterprise_groups_select_superadmin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "enterprise_groups",
+      "name": "enterprise_groups_write_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "esg_daily",
+      "name": "esg_daily_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_superadmin() OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id())))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "esg_daily",
+      "name": "esg_daily_write_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "esg_monthly",
+      "name": "esg_monthly_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_superadmin() OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id())))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "esg_monthly",
+      "name": "esg_monthly_write_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "form_submissions",
+      "name": "form_submissions_platform_admin_only",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "forms",
+      "name": "forms_platform_admin_only",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "idempotency",
+      "name": "idempotency_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "idempotency",
+      "name": "idempotency_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "idempotency",
+      "name": "idempotency_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "idempotency",
+      "name": "idempotency_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "incidents",
+      "name": "incidents_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "incidents",
+      "name": "incidents_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "incidents",
+      "name": "incidents_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "incidents",
+      "name": "incidents_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_lines",
+      "name": "invoice_lines_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(invoice_lines.company_id) AS can_finance_company)",
+      "check_expr": "( SELECT private.can_finance_company(invoice_lines.company_id) AS can_finance_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_lines",
+      "name": "invoice_lines_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_lines",
+      "name": "invoice_lines_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(invoice_lines.company_id) AS can_finance_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_lines",
+      "name": "invoice_lines_select_company_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_runs",
+      "name": "invoice_runs_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(invoice_runs.company_id) AS can_finance_company)",
+      "check_expr": "( SELECT private.can_finance_company(invoice_runs.company_id) AS can_finance_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_runs",
+      "name": "invoice_runs_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_runs",
+      "name": "invoice_runs_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_finance_company(invoice_runs.company_id) AS can_finance_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_runs",
+      "name": "invoice_runs_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoices",
+      "name": "invoices_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoices",
+      "name": "invoices_select_company_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "kitchen_batches",
+      "name": "kitchen_batches_delete_superadmin",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND ((p.role)::text = 'superadmin'::text))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "kitchen_batches",
+      "name": "kitchen_batches_insert_kitchen_superadmin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND (((p.role)::text = 'superadmin'::text) OR (((p.role)::text = 'kitchen'::text) AND (p.location_id = kitchen_batches.company_location_id))))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "kitchen_batches",
+      "name": "kitchen_batches_select_kitchen_superadmin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND (((p.role)::text = 'superadmin'::text) OR (((p.role)::text = 'kitchen'::text) AND (p.location_id = kitchen_batches.company_location_id))))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "kitchen_batches",
+      "name": "kitchen_batches_update_kitchen_superadmin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND (((p.role)::text = 'superadmin'::text) OR (((p.role)::text = 'kitchen'::text) AND (p.location_id = kitchen_batches.company_location_id))))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.disabled_at IS NULL) AND (COALESCE(p.is_active, true) = true) AND (((p.role)::text = 'superadmin'::text) OR (((p.role)::text = 'kitchen'::text) AND (p.location_id = kitchen_batches.company_location_id))))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lead_pipeline",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_closed_dates",
+      "name": "location_closed_dates_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_location(location_closed_dates.location_id) AS can_manage_location)",
+      "check_expr": "( SELECT private.can_manage_location(location_closed_dates.location_id) AS can_manage_location)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_closed_dates",
+      "name": "location_closed_dates_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_location(location_closed_dates.location_id) AS can_access_location)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_memberships",
+      "name": "location_memberships_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_memberships",
+      "name": "location_memberships_select_self_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = auth.uid()) OR is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_policies",
+      "name": "location_policies_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_location(location_policies.location_id) AS can_manage_location)",
+      "check_expr": "( SELECT private.can_manage_location(location_policies.location_id) AS can_manage_location)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "location_policies",
+      "name": "location_policies_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_location(location_policies.location_id) AS can_access_location)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "marketing_pages",
+      "name": "marketing_pages_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "media_items",
+      "name": "media_items_platform_admin_only",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_day_items",
+      "name": "menu_service_day_items_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_menu_day(menu_service_day_items.menu_service_day_id) AS can_manage_menu_day)",
+      "check_expr": "( SELECT private.can_manage_menu_day(menu_service_day_items.menu_service_day_id) AS can_manage_menu_day)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_day_items",
+      "name": "menu_service_day_items_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_menu_day(menu_service_day_items.menu_service_day_id) AS can_access_menu_day)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_days",
+      "name": "menu_service_days_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_manage_menu_day(menu_service_days.id) AS can_manage_menu_day)",
+      "check_expr": "( SELECT private.can_manage_location(menu_service_days.location_id) AS can_manage_location)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_days",
+      "name": "menu_service_days_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_access_menu_day(menu_service_days.id) AS can_access_menu_day)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ops_events",
+      "name": "ops_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ops_events",
+      "name": "ops_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ops_events",
+      "name": "ops_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "ops_events",
+      "name": "ops_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_items",
+      "name": "order_items_delete",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_edit_order(order_items.order_id) AS can_edit_order)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_items",
+      "name": "order_items_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "( SELECT private.can_edit_order(order_items.order_id) AS can_edit_order)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_items",
+      "name": "order_items_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_order(order_items.order_id) AS can_view_order)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_items",
+      "name": "order_items_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_order(order_items.order_id) AS can_view_order)",
+      "check_expr": "( SELECT private.can_edit_order(order_items.order_id) AS can_edit_order)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_status_history",
+      "name": "order_status_history_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_order(order_status_history.order_id) AS can_view_order)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_delete",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_edit_order(orders.id) AS can_edit_order)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_order(orders.id) AS can_view_order)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_select_bridge_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR (user_id = auth.uid()) OR can_admin_company(company_id) OR can_admin_location(location_id) OR can_kitchen_location(location_id) OR (EXISTS ( SELECT 1\n   FROM (deliveries d\n     JOIN driver_runs dr ON ((dr.id = d.run_id)))\n  WHERE ((d.company_id = orders.company_id) AND (d.location_id = orders.location_id) AND (d.date = orders.date) AND (dr.driver_user_id = auth.uid())))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_order(orders.id) AS can_view_order)",
+      "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "outbox",
+      "name": "outbox_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "outbox",
+      "name": "outbox_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "outbox",
+      "name": "outbox_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "outbox",
+      "name": "outbox_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "platform_user_roles",
+      "name": "platform_user_roles_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.is_platform_admin() AS is_platform_admin)",
+      "check_expr": "( SELECT private.is_platform_admin() AS is_platform_admin)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "platform_user_roles",
+      "name": "platform_user_roles_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_platform_admin() AS is_platform_admin))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_allergens",
+      "name": "product_allergens_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_allergens.product_id) AND (((p.company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((p.company_id IS NOT NULL) AND ( SELECT private.can_manage_company(p.company_id) AS can_manage_company))))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_allergens.product_id) AND (((p.company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((p.company_id IS NOT NULL) AND ( SELECT private.can_manage_company(p.company_id) AS can_manage_company))))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_allergens",
+      "name": "product_allergens_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_allergens.product_id) AND ((p.company_id IS NULL) OR ( SELECT private.can_access_company(p.company_id) AS can_access_company)))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_categories",
+      "name": "product_categories_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "check_expr": "( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_categories",
+      "name": "product_categories_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_dietary_tags",
+      "name": "product_dietary_tags_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_dietary_tags.product_id) AND (((p.company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((p.company_id IS NOT NULL) AND ( SELECT private.can_manage_company(p.company_id) AS can_manage_company))))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_dietary_tags.product_id) AND (((p.company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((p.company_id IS NOT NULL) AND ( SELECT private.can_manage_company(p.company_id) AS can_manage_company))))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "product_dietary_tags",
+      "name": "product_dietary_tags_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM products p\n  WHERE ((p.id = product_dietary_tags.product_id) AND ((p.company_id IS NULL) OR ( SELECT private.can_access_company(p.company_id) AS can_access_company)))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "production_days",
+      "name": "production_days_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "production_days",
+      "name": "production_days_select_admin_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR (EXISTS ( SELECT 1\n   FROM company_memberships cm\n  WHERE ((cm.user_id = auth.uid()) AND (cm.role = 'company_admin'::membership_role) AND (cm.active = true)))) OR (EXISTS ( SELECT 1\n   FROM location_memberships lm\n  WHERE ((lm.user_id = auth.uid()) AND (lm.role = 'location_admin'::membership_role) AND (lm.active = true)))) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (lower(COALESCE((p.role)::text, ''::text)) = ANY (ARRAY['company_admin'::text, 'location_admin'::text, 'kitchen'::text])) AND (COALESCE(p.active, true) = true) AND (p.archived_at IS NULL) AND (p.disabled_at IS NULL)))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "production_manifests",
+      "name": "production_manifests_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((current_profile_active() = true) AND ((current_profile_role() = 'superadmin'::user_role) OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id())) OR ((current_profile_role() = 'kitchen'::user_role) AND (location_id = current_profile_location_id()))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "production_manifests",
+      "name": "production_manifests_write_superadmin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "products",
+      "name": "products_manage",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(((company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((company_id IS NOT NULL) AND ( SELECT private.can_manage_company(products.company_id) AS can_manage_company)))",
+      "check_expr": "(((company_id IS NULL) AND ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)) OR ((company_id IS NOT NULL) AND ( SELECT private.can_manage_company(products.company_id) AS can_manage_company)))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "products",
+      "name": "products_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((company_id IS NULL) OR ( SELECT private.can_access_company(products.company_id) AS can_access_company))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profile_cleanup_audit",
+      "name": "profile_cleanup_audit_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profile_cleanup_audit",
+      "name": "profile_cleanup_audit_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profile_scope_legacy_write_audit",
+      "name": "profile_scope_legacy_write_audit_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profile_scope_legacy_write_audit",
+      "name": "profile_scope_legacy_write_audit_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "( SELECT private.can_view_profile(profiles.id) AS can_view_profile)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_select_authenticated_scoped",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((COALESCE(active, true) = true) AND ((id = auth.uid()) OR is_platform_admin() OR ((company_id IS NOT NULL) AND can_admin_company(company_id))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_platform_admin() AS is_platform_admin))",
+      "check_expr": "((id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.is_platform_admin() AS is_platform_admin))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "profiles",
+      "name": "profiles_update_authenticated_scoped",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((COALESCE(active, true) = true) AND ((id = auth.uid()) OR is_platform_admin() OR ((company_id IS NOT NULL) AND can_admin_company(company_id))))",
+      "check_expr": "((COALESCE(active, true) = true) AND ((id = auth.uid()) OR is_platform_admin() OR ((company_id IS NOT NULL) AND can_admin_company(company_id) AND (lower(COALESCE((role)::text, ''::text)) <> 'superadmin'::text))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "repair_jobs",
+      "name": "repair_jobs_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "repair_jobs",
+      "name": "repair_jobs_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "repair_jobs",
+      "name": "repair_jobs_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "repair_jobs",
+      "name": "repair_jobs_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "social_posts",
+      "name": "superadmin_only",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::user_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "standing_orders",
+      "name": "standing_orders_delete",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.can_manage_location(standing_orders.location_id) AS can_manage_location))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "standing_orders",
+      "name": "standing_orders_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(standing_orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(standing_orders.location_id) AS can_manage_location))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "standing_orders",
+      "name": "standing_orders_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.can_manage_location(standing_orders.location_id) AS can_manage_location) OR ( SELECT private.can_finance_company(standing_orders.company_id) AS can_finance_company))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "standing_orders",
+      "name": "standing_orders_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT private.can_manage_location(standing_orders.location_id) AS can_manage_location))",
+      "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(standing_orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(standing_orders.location_id) AS can_manage_location))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_health_snapshots",
+      "name": "health_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_health_snapshots",
+      "name": "health_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_health_snapshots",
+      "name": "health_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_health_snapshots",
+      "name": "system_health_snapshots_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_incidents",
+      "name": "system_incidents_delete_none",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_incidents",
+      "name": "system_incidents_insert_none",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_incidents",
+      "name": "system_incidents_select_platform_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_incidents",
+      "name": "system_incidents_update_none",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "false",
+      "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_settings",
+      "name": "Service role full access",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "(auth.role() = 'service_role'::text)",
+      "check_expr": "(auth.role() = 'service_role'::text)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "system_settings",
+      "name": "system_settings_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "tripletex_customers",
+      "name": "tripletex_customers_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "tripletex_customers",
+      "name": "tripletex_customers_select_company_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "tripletex_invoices",
+      "name": "tripletex_invoices_mutate_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "tripletex_invoices",
+      "name": "tripletex_invoices_select_company_admin_or_platform",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_admin_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    }
   ],
-  "expectedPrivateFunctions": [
-    "add_fk_if_possible(p_table text, p_column text, p_target_table text, p_target_column text, p_constraint_name text, p_on_delete text)",
-    "can_access_company(_company_id uuid)",
-    "can_access_delivery_run(_delivery_run_id uuid)",
-    "can_access_location(_location_id uuid)",
-    "can_access_menu_day(_menu_service_day_id uuid)",
-    "can_edit_order(_order_id uuid)",
-    "can_finance_company(_company_id uuid)",
-    "can_manage_company(_company_id uuid)",
-    "can_manage_location(_location_id uuid)",
-    "can_manage_menu_day(_menu_service_day_id uuid)",
-    "can_operate_delivery_run(_delivery_run_id uuid)",
-    "can_view_order(_order_id uuid)",
-    "can_view_profile(_profile_id uuid)",
-    "has_platform_role(_roles platform_role[])",
-    "is_platform_admin()",
-    "role_is_company_finance(_role text)",
-    "role_is_company_manager(_role text)",
-    "role_is_location_manager(_role text)",
-    "shares_company_with(_other_user_id uuid)"
+  "private_functions": [
+    {
+      "name": "add_fk_if_possible",
+      "args": "p_table text, p_column text, p_target_table text, p_target_column text, p_constraint_name text, p_on_delete text",
+      "result_type": "void",
+      "is_security_definer": false,
+      "volatility": "volatile",
+      "body_hash": "712af14595cd228774556821b1111414"
+    },
+    {
+      "name": "can_access_company",
+      "args": "_company_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "4c5d3f9dada6c64c2ca683123c52c169"
+    },
+    {
+      "name": "can_access_delivery_run",
+      "args": "_delivery_run_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "b8f57754d5a3b851dec94d9113e8ce57"
+    },
+    {
+      "name": "can_access_location",
+      "args": "_location_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "91583b4f512727d6fbf1b91f419ddb94"
+    },
+    {
+      "name": "can_access_menu_day",
+      "args": "_menu_service_day_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "76e16b6aaf3af228fac42a0e180cdec8"
+    },
+    {
+      "name": "can_edit_order",
+      "args": "_order_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "b972575a667cfffc9bc3d9b1704a813f"
+    },
+    {
+      "name": "can_finance_company",
+      "args": "_company_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "512ea65172a2f02bacc4503d5efd443e"
+    },
+    {
+      "name": "can_manage_company",
+      "args": "_company_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "58f7f7b1446f06dc0a56ca046a8007d6"
+    },
+    {
+      "name": "can_manage_location",
+      "args": "_location_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "96b9d18efea47841976ab4a514f9d586"
+    },
+    {
+      "name": "can_manage_menu_day",
+      "args": "_menu_service_day_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "adbf41b4c601cfb09e966236ac95c785"
+    },
+    {
+      "name": "can_operate_delivery_run",
+      "args": "_delivery_run_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "d16aa46eb9088649eb6d30780b4de392"
+    },
+    {
+      "name": "can_view_order",
+      "args": "_order_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "9149e04457f72e6aede6f27a45c67cdb"
+    },
+    {
+      "name": "can_view_profile",
+      "args": "_profile_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "595de69f523d630c31726e68b30e236b"
+    },
+    {
+      "name": "has_platform_role",
+      "args": "_roles platform_role[]",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "dde95c9d50ad77a100af6680e790f835"
+    },
+    {
+      "name": "is_platform_admin",
+      "args": "",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "f3150912fdb97585f9a866b739506277"
+    },
+    {
+      "name": "role_is_company_finance",
+      "args": "_role text",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "8d26dad1094727949de9d208eea0667c"
+    },
+    {
+      "name": "role_is_company_manager",
+      "args": "_role text",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "fd7468b2119a9b979616e222a90372e8"
+    },
+    {
+      "name": "role_is_location_manager",
+      "args": "_role text",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "39400986f3298f7d458012ffd9e3c099"
+    },
+    {
+      "name": "shares_company_with",
+      "args": "_other_user_id uuid",
+      "result_type": "boolean",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "ad86d4ab60099b857dec76383a648abb"
+    }
+  ],
+  "rls_enabled_tables": [
+    {
+      "schema": "public",
+      "name": "_migration_legacy_stub_invoice_lines_archive",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "_migration_legacy_stub_order_items_archive",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "_migration_legacy_stub_orders_archive",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "_migration_legacy_stub_orders_manifest",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "_migration_orders_location_id_backup",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "agreement_cleanup_audit",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "agreement_delivery_days",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "agreement_requests",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "agreements",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "ai_action_memory",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "ai_activity_log",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "ai_config",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "ai_config_audit",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "ai_health_checks",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "ai_jobs",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "ai_suggestions",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "allergens",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "audit_events",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "audit_log",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "billing_adjustments",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "closed_dates",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "companies",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "company_contracts",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "company_invites",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "company_locations",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "company_memberships",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "company_product_prices",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "company_registrations",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "content_page_variants",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "content_pages",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "day_choices",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "deliveries",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "delivery_run_items",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "delivery_runs",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "dietary_tags",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "driver_runs",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "employee_invites",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "enterprise_groups",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "esg_daily",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "esg_monthly",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "form_submissions",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "forms",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "idempotency",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "incidents",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "invoice_lines",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "invoice_runs",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "invoices",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "kitchen_batches",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "lead_pipeline",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "location_closed_dates",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "location_memberships",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "location_policies",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "marketing_pages",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "media_items",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "menu_service_day_items",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "menu_service_days",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "menu_visibility_days",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "ops_events",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "order_items",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "order_status_history",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "orders",
+      "policy_count": 8
+    },
+    {
+      "schema": "public",
+      "name": "outbox",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "platform_user_roles",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "product_allergens",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "product_categories",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "product_dietary_tags",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "production_days",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "production_manifests",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "products",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "profile_cleanup_audit",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "profile_scope_legacy_write_audit",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "profiles",
+      "policy_count": 6
+    },
+    {
+      "schema": "public",
+      "name": "repair_jobs",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "social_posts",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "standing_orders",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "system_health_snapshots",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "system_incidents",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "system_settings",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "tripletex_customers",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "tripletex_invoices",
+      "policy_count": 2
+    }
   ]
 }

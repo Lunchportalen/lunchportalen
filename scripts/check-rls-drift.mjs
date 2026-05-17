@@ -1,25 +1,41 @@
 #!/usr/bin/env node
 /**
- * READ-ONLY: introspection mot Postgres (pg_policies, pg_proc) vs tests/rls/golden-rls-snapshot.json.
- * Exit: 0 = match, 1 = drift, 2 = config/connection (ikke drift).
+ * READ-ONLY: Postgres vs tests/rls/golden-rls-snapshot.json (v2).
+ * Exit: 0 = match, 1 = drift, 2 = config/connection.
  *
- * Env: DATABASE_URL (vinner) eller SUPABASE_POSTGRES_URL. Legger til sslmode=require hvis URL mangler det.
+ * Env: SUPABASE_POSTGRES_URL eller DATABASE_URL (samme prioritet som migrationParity / rls:snapshot).
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import pg from "pg";
+import {
+  SQL_POSTGRES_VERSION,
+  SQL_POLICIES,
+  SQL_PRIVATE_FUNCTIONS,
+  SQL_RLS_ENABLED_TABLES,
+  buildGoldenPayload,
+  createSupabasePoolConfig,
+} from "./rls/golden-snapshot-lib.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const GOLDEN_REL = join(__dirname, "..", "tests", "rls", "golden-rls-snapshot.json");
+const root = join(__dirname, "..");
+const GOLDEN_REL = join(root, "tests", "rls", "golden-rls-snapshot.json");
 
-const AUDIT_TABLES = ["orders", "order_items", "menu_service_days", "menu_service_day_items"];
+dotenv.config({ path: join(root, ".env.local") });
+dotenv.config({ path: join(root, ".env") });
 
 const STATEMENT_TIMEOUT_MS = 8000;
-const CONNECTION_TIMEOUT_MS = 10000;
 
 function checkedAt() {
   return new Date().toISOString();
+}
+
+function resolveDbUrl() {
+  const supa = (process.env.SUPABASE_POSTGRES_URL ?? "").trim();
+  const db = (process.env.DATABASE_URL ?? "").trim();
+  return supa ? supa : db ? db : "";
 }
 
 function loadGolden() {
@@ -27,52 +43,24 @@ function loadGolden() {
   return JSON.parse(raw);
 }
 
-function resolveDbUrl() {
-  const db = (process.env.DATABASE_URL ?? "").trim();
-  const supa = (process.env.SUPABASE_POSTGRES_URL ?? "").trim();
-  return db ? db : supa ? supa : "";
-}
-
-/**
- * Sikrer sslmode=require (Supabase); statement_timeout kun via SET på sesjon (se client connect).
- */
-function ensureSslRequire(connectionString) {
-  let u;
-  try {
-    u = new URL(connectionString);
-  } catch {
-    return connectionString;
-  }
-  const sm = u.searchParams.get("sslmode");
-  if (!sm || sm === "prefer" || sm === "allow") {
-    u.searchParams.set("sslmode", "require");
-  }
-  return u.toString();
-}
-
-function extractIdentityArgsFromSignature(fullSig) {
-  const open = fullSig.indexOf("(");
-  const close = fullSig.lastIndexOf(")");
-  if (open === -1 || close === -1 || close <= open) {
-    throw new Error(`Ugyldig signatur i golden: ${fullSig}`);
-  }
-  return fullSig.slice(open + 1, close);
-}
-
-function findSignatureForProname(expectedPrivateFunctions, proname) {
-  const prefix = `${proname}(`;
-  const hits = expectedPrivateFunctions.filter((s) => s.startsWith(prefix));
-  if (hits.length === 0) {
-    throw new Error(`capturedPrivateFunctionDefMd5 har «${proname}», men ingen signatur i expectedPrivateFunctions`);
-  }
-  if (hits.length > 1) {
-    throw new Error(`Flere signaturer for «${proname}» i golden — tvetydig`);
-  }
-  return hits[0];
-}
-
 function printReport(obj) {
   process.stdout.write(`${JSON.stringify(obj, null, 2)}\n`);
+}
+
+function sliceDiff(label, goldenArr, liveArr) {
+  const glen = goldenArr.length;
+  const llen = liveArr.length;
+  if (glen !== llen) {
+    return { kind: "count", golden: glen, live: llen };
+  }
+  for (let i = 0; i < glen; i++) {
+    const gs = JSON.stringify(goldenArr[i]);
+    const ls = JSON.stringify(liveArr[i]);
+    if (gs !== ls) {
+      return { kind: "index", index: i, golden: goldenArr[i], live: liveArr[i] };
+    }
+  }
+  return null;
 }
 
 async function mainAsync() {
@@ -83,7 +71,7 @@ async function mainAsync() {
       checkedAt: checkedAt(),
       error: "MISSING_DATABASE_URL",
       message:
-        "Sett DATABASE_URL eller SUPABASE_POSTGRES_URL (DATABASE_URL har forrang). Legg inn som GitHub secret for scheduled drift-sjekk.",
+        "Sett SUPABASE_POSTGRES_URL eller DATABASE_URL. Legg inn som GitHub secret for scheduled drift-sjekk.",
     });
     return 2;
   }
@@ -101,134 +89,92 @@ async function mainAsync() {
     return 2;
   }
 
-  const expectedPolicies = golden.expectedPolicies;
-  const expectedPrivateFunctions = golden.expectedPrivateFunctions;
-  const capturedMd5 = golden.capturedPrivateFunctionDefMd5 ?? {};
+  if (golden.version !== 2) {
+    printReport({
+      ok: false,
+      checkedAt: checkedAt(),
+      error: "GOLDEN_VERSION",
+      message: `Forventet golden.version === 2, fikk ${golden.version}`,
+    });
+    return 2;
+  }
 
-  const connectionString = ensureSslRequire(urlRaw);
-  const pool = new pg.Pool({
-    connectionString,
-    max: 1,
-    connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
-    ssl: { rejectUnauthorized: false },
-  });
+  const pool = new pg.Pool(createSupabasePoolConfig(urlRaw, 1));
 
   try {
     const client = await pool.connect();
     try {
       await client.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`);
 
-      const { rows: policyRows } = await client.query(
-        `select schemaname || '.' || tablename || ':' || policyname as k
-         from pg_policies
-         where schemaname = 'public'
-           and tablename = any($1::text[])`,
-        [AUDIT_TABLES],
-      );
-      const havePolicies = new Set(policyRows.map((r) => r.k));
-      const expPolicies = new Set(expectedPolicies);
-      const policiesMissing = [...expPolicies].filter((k) => !havePolicies.has(k)).sort();
-      const policiesExtra = [...havePolicies].filter((k) => !expPolicies.has(k)).sort();
-
-      const { rows: privRows } = await client.query(
-        `select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as sig
-         from pg_proc p
-         join pg_namespace n on n.oid = p.pronamespace
-         where n.nspname = 'private'`,
-      );
-      const havePriv = new Set(privRows.map((r) => r.sig));
-      const expPriv = new Set(expectedPrivateFunctions);
-      const privMissing = [...expPriv].filter((s) => !havePriv.has(s)).sort();
-      const privExtra = [...havePriv].filter((s) => !expPriv.has(s)).sort();
-
-      const definitionDrifted = [];
-      for (const proname of Object.keys(capturedMd5).sort()) {
-        const expectedMd5 = capturedMd5[proname];
-        let fullSig;
-        try {
-          fullSig = findSignatureForProname(expectedPrivateFunctions, proname);
-        } catch (e) {
-          definitionDrifted.push({
-            kind: "golden_config",
-            function: proname,
-            detail: String(e?.message ?? e),
-          });
-          continue;
-        }
-        const identityArgs = extractIdentityArgsFromSignature(fullSig);
-        const { rows: defRows } = await client.query(
-          `select md5(pg_get_functiondef(p.oid)) as def_md5
-           from pg_proc p
-           join pg_namespace n on n.oid = p.pronamespace
-           where n.nspname = 'private'
-             and p.proname = $1
-             and pg_get_function_identity_arguments(p.oid) = $2`,
-          [proname, identityArgs],
-        );
-        if (defRows.length === 0) {
-          definitionDrifted.push({
-            kind: "missing",
-            function: proname,
-            expectedMd5,
-            actualMd5: null,
-            detail: "Ingen private-funksjon matchet proname + identitetsargumenter (L3).",
-          });
-          continue;
-        }
-        if (defRows.length > 1) {
-          definitionDrifted.push({
-            kind: "ambiguous",
-            function: proname,
-            expectedMd5,
-            detail: `Flere overloads matchet identitetsargumenter (${defRows.length} rader).`,
-          });
-          continue;
-        }
-        const actualMd5 = defRows[0].def_md5;
-        if (actualMd5 !== expectedMd5) {
-          definitionDrifted.push({
-            kind: "changed",
-            function: proname,
-            expectedMd5,
-            actualMd5,
-            detail: "md5(pg_get_functiondef(oid)) avviker fra golden.capturedPrivateFunctionDefMd5.",
-          });
-        }
+      const { rows: ver } = await client.query(SQL_POSTGRES_VERSION);
+      const postgres_version = ver[0]?.postgres_version;
+      if (!postgres_version) {
+        printReport({
+          ok: false,
+          checkedAt: checkedAt(),
+          error: "VERSION_QUERY_EMPTY",
+          message: "SELECT version() returnerte ingen rad",
+        });
+        return 2;
       }
 
-      const goldenConfigIssues = definitionDrifted.filter((d) => d.kind === "golden_config");
-      const definitionDriftExcludingGolden = definitionDrifted.filter((d) => d.kind !== "golden_config");
+      const { rows: policyRows } = await client.query(SQL_POLICIES);
+      const { rows: functionRows } = await client.query(SQL_PRIVATE_FUNCTIONS);
+      const { rows: rlsRows } = await client.query(SQL_RLS_ENABLED_TABLES);
 
-      const hasPolicyDrift = policiesMissing.length > 0 || policiesExtra.length > 0;
-      const hasPrivDrift = privMissing.length > 0 || privExtra.length > 0;
-      const hasDefDrift = definitionDriftExcludingGolden.length > 0;
-      const hasGoldenConfigError = goldenConfigIssues.length > 0;
+      const live = buildGoldenPayload({
+        project_ref: golden.project_ref,
+        postgres_version,
+        policyRows,
+        functionRows,
+        rlsRows,
+      });
 
-      const ok = !hasGoldenConfigError && !hasPolicyDrift && !hasPrivDrift && !hasDefDrift;
+      const metaOk =
+        live.project_ref === golden.project_ref &&
+        live.postgres_version === golden.postgres_version;
+
+      const policyDiff = sliceDiff("policies", golden.policies, live.policies);
+      const fnDiff = sliceDiff(
+        "private_functions",
+        golden.private_functions,
+        live.private_functions,
+      );
+      const rlsDiff = sliceDiff(
+        "rls_enabled_tables",
+        golden.rls_enabled_tables,
+        live.rls_enabled_tables,
+      );
+
+      const ok = metaOk && !policyDiff && !fnDiff && !rlsDiff;
 
       const report = {
         ok,
         checkedAt: checkedAt(),
-        policies: {
-          checked: expectedPolicies.length,
-          missing: policiesMissing,
-          extra: policiesExtra,
+        counts: {
+          policies: { golden: golden.policies.length, live: live.policies.length },
+          private_functions: {
+            golden: golden.private_functions.length,
+            live: live.private_functions.length,
+          },
+          rls_enabled_tables: {
+            golden: golden.rls_enabled_tables.length,
+            live: live.rls_enabled_tables.length,
+          },
         },
-        privateFunctions: {
-          checked: expectedPrivateFunctions.length,
-          missing: privMissing,
-          extra: privExtra,
+        meta: {
+          match: metaOk,
+          project_ref: { golden: golden.project_ref, live: live.project_ref },
+          postgres_version: { golden: golden.postgres_version, live: live.postgres_version },
         },
-        definitionHashes: {
-          checked: Object.keys(capturedMd5).length,
-          drifted: definitionDrifted,
+        drift: {
+          policies: policyDiff,
+          private_functions: fnDiff,
+          rls_enabled_tables: rlsDiff,
         },
       };
 
       printReport(report);
-      if (hasGoldenConfigError) {
-        return 2;
-      }
       return ok ? 0 : 1;
     } finally {
       client.release();

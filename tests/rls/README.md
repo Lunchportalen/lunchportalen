@@ -2,57 +2,61 @@
 
 ## Hva ligger her
 
-- **`golden-rls-snapshot.json`** — forventet kjerne-RLS for ordre/meny (16 policy-nøkler på fire tabeller) og settet av `private.*`-hjelpere (signaturer). To funksjoner har i tillegg **`capturedPrivateFunctionDefMd5`**: `md5(pg_get_functiondef(oid))` fra Postgres slik at **definisjonsendring** i prod oppdages.
+- **`golden-rls-snapshot.json` (v2)** — full katalog: alle RLS-policyer i `public`/`private`, alle `private.*`-funksjoner med `body_hash` (`md5(pg_get_functiondef)`), og alle tabeller med RLS aktivert inkl. `policy_count` (0 = ingen policy-rader; deny-all for vanlige roller).
+
+Se **`docs/rls-golden.md`** for arbeidsflyt (`npm run rls:snapshot`, Vitest, tolkning av `roles: []`).
 
 ## Lokalt / CI uten prod-URL
 
-**Vitest** `migrationParity.test.ts` hopper over hvis `DATABASE_URL` / `SUPABASE_POSTGRES_URL` mangler (samme mønster som andre DB-tester).
+**Vitest** `migrationParity.test.ts` hopper over hvis `DATABASE_URL` / `SUPABASE_POSTGRES_URL` mangler (samme mønster som andre DB-tester). Kjør eksplisitt med:
 
-**Drift-script** (for scheduled GitHub Actions):
+`npx vitest run --config vitest.rls.config.ts tests/rls/migrationParity.test.ts`
+
+**Drift-script**:
 
 ```bash
-node scripts/check-rls-drift.mjs
+npm run check:rls-drift
 ```
 
-- Uten URL: **exit 2** + JSON med `error: "MISSING_DATABASE_URL"`.
+- Uten URL (og uten relevante vars i `.env`): **exit 2** + JSON med `error: "MISSING_DATABASE_URL"`.
 - Med URL: **exit 0** ved match, **exit 1** ved drift, **exit 2** ved tilkoblings-/lesefeil.
 
-`DATABASE_URL` slår `SUPABASE_POSTGRES_URL` hvis begge er satt.
+`SUPABASE_POSTGRES_URL` slår `DATABASE_URL` hvis begge er satt (samme som snapshot-script og parity-test). Skriptet laster `.env.local` / `.env` via `dotenv`.
 
 ## GitHub Actions
 
 Workflow: **`.github/workflows/rls-drift-check.yml`**
 
-- Kjører daglig **06:00 UTC** og via **workflow_dispatch**.
+- Kjører daglig **06:00 UTC** og via **workflow_dispatch`.
 - Krever repo-secret **`DATABASE_URL`** (direkte Postgres, typisk port **5432** med `sslmode=require`).
 - Ingen endring av golden fra jobben — ved rød jobb: fiks prod/migrasjon **eller** oppdater golden med vilje i en egen MR.
 
 ## Når prod avviker (rød jobb)
 
-Tolking:
+Tolking (JSON fra `check-rls-drift.mjs`):
 
-- **`policies.missing` / `policies.extra`** — policy lagt til/fjernet på `orders`, `order_items`, `menu_service_days`, `menu_service_day_items` uten at golden er oppdatert (eller omvendt: migrasjon ikke applyet).
-- **`privateFunctions.missing` / `privateFunctions.extra`** — `private.*`-settet matcher ikke (ny helper, droppet funksjon, eller feil database).
-- **`definitionHashes.drifted`** med `kind: "changed"` — samme signatur, annen kropp (f.eks. annen join / feil reparert funksjon).
-- **`kind: "missing"`** — forventet funksjon for L3 finnes ikke med riktige identitetsargumenter.
+- **`drift.policies`** — policy lagt til/fjernet/endret (inkl. `using_expr` / `check_expr` / roller) uten golden-oppdatering.
+- **`drift.private_functions`** — `private.*`-signatur eller `body_hash` avviker.
+- **`drift.rls_enabled_tables`** — RLS på/av på tabell, eller endret `policy_count`.
+- **`meta.match: false`** — `project_ref` eller `postgres_version` stemmer ikke med golden (f.eks. annen database eller oppgradert Postgres).
 
-Målet er å fange **ubeviste endringer** (som den brutte join mot slettede `locations`) tidlig — ikke å erstatte menneskelig reviewing av migrasjoner.
+Målet er å fange **ubeviste endringer** tidlig — ikke å erstatte menneskelig reviewing av migrasjoner.
 
 ## Oppdatere golden ved bevisst endring
 
-1. Bekreft endring via migrasjon / Supabase MCP / replikèrbar repro.
-2. Kjør capturering etter Prosjektets etablerte flyt (`scripts/generate-prod-rls-capture.mjs` + migrasjon når aktuelt) og code review.
-3. Oppdater **`golden-rls-snapshot.json`** i MR sammen med migrasjonen — **kjør ikke** drift-script med skrivetilgang til denne fila; den skal aldri overskrives automatisk.
+1. Gjør endringen via migrasjon / MCP.
+2. `npm run rls:snapshot` (mot riktig `DATABASE_URL` / `SUPABASE_POSTGRES_URL`), code review av diff.
+3. Kjør parity-test over med `vitest.rls.config.ts`.
+4. Committ golden sammen med RLS-endringen.
 
-## Secrets / tilkobling (v1)
+## Secrets / tilkobling
 
-- **Anbefalt i GitHub:** secret **`DATABASE_URL`** med sterk passord-rolle (v1).
-- **Framtidig forbedring:** dedikert **read-only** Postgres-bruker med minimale rettigheter (kun `CONNECT` + lesing av katalog/relevante skjemaer). Samme connection string-format; ingen skriptendring nødvendig.
-- Bruk **direkte** `5432` mot Supabase der mulig. Pooler `6543` / transaction mode kan gi uventet oppførsel; hold det enkelt.
-- Skriptet legger til **`sslmode=require`** hvis URL mangler det.
-- **Session Pooler (GitHub Actions):** Connection-streng må bruke Session Pooler (port **5432** via `aws-X-eu-west-X.pooler.supabase.com`) for IPv4-kompatibilitet i GitHub Actions. Direct connection (`db.<ref>.supabase.co`) er IPv6-only og fungerer ikke fra Actions-runner. Drift-scriptet setter `ssl: { rejectUnauthorized: false }` for å akseptere pooler-sertifikat som ikke er i Node's standard CA-store; forbindelsen er fortsatt TLS-kryptert.
+- **Anbefalt i GitHub:** secret **`DATABASE_URL`** med sterk passord-rolle.
+- **Framtidig forbedring:** dedikert **read-only** Postgres-bruker med minimale rettigheter.
+- Snapshot- og drift-verktøy bruker `ssl: { rejectUnauthorized: false }` og fjerner `sslmode` fra URL der nødvendig for Node-pg mot Supabase pooler (TLS fortsatt aktivert).
+- **Session Pooler (GitHub Actions):** bruk pooler-host for IPv4-kompatibilitet mot Actions-runner der direct connection er IPv6-only.
 
 ## Relaterte tester
 
-- `migrationParity.test.ts` — samme forventninger som L1/L2 når URL er satt.
-- `check-rls-drift.mjs` — L1 + L2 (stram, inkl. ekstra policy/funksjon) + L3 (def-md5 for alle nøkler i `capturedPrivateFunctionDefMd5`). Utvidelse av L3 skjer ved å **utvide JSON-fila**, ikke ved å endre sammenligningslogikken i skriptet.
+- `migrationParity.test.ts` — full v2-paritet mot golden når URL er satt.
+- `check-rls-drift.mjs` — samme forventninger som JSON-rapport (scheduled / lokal).
