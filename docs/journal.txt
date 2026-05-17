@@ -4,6 +4,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-18 — FASE A oppgave 4 — performance baseline Rev A (readonly)
+
+- Nye dokumenter: `docs/performance-baseline-rev-a.md` (Postgres 17.6, ref `hkpokyapzarefrgqzkos`, top 20 tabeller, seq_scan-topper, full Supabase performance advisor ×196, filtrert `pg_stat_statements`-utdrag, proves/does-not-prove).
+- `docs/hot-paths.md` — 22 prioriterte kjerne-baner (ordre, uke, kjøkken, sjåfør, admin, auth).
+- `docs/performance-p-backlog.md` — P1/P2/P3 uten konkret indeks-SQL i doc (oppfølging egen commit).
+- Ingen migreringer, ingen `EXPLAIN ANALYZE` mot prod, ingen pakker.
+
+---
+
 ## 2026-05-18 — FASE A (RLS golden v2)
 
 - Full golden snapshot (`tests/rls/golden-rls-snapshot.json` v2): alle policies (`pg_policy` + `pg_get_expr`, roller via `unnest(polroles)`), alle `private.*`-funksjoner med `body_hash`, og `rls_enabled_tables` med `policy_count`.

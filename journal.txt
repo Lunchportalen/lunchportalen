@@ -1,3 +1,10 @@
+## 2026-05-18 — FASE A oppgave 4 — performance baseline Rev A (readonly)
+
+- `docs/performance-baseline-rev-a.md`, `docs/hot-paths.md`, `docs/performance-p-backlog.md` (+ detaljer i `docs/journal.txt`).
+- Readonly MCP snapshot mot prod-DB; ingen migreringer / ingen EXPLAIN ANALYZE mot prod.
+
+---
+
 ## 2026-05-17 — FASE A oppgave 2 (migration history rydding)
 - Slettet `20260216_kitchen_driver_scope_rls` (aldri applied i prod; prod bruker `orders_select_bridge_scoped` + helpers).
 - Omdøpt May-13-migrasjoner til faktiske `schema_migrations`-versjoner fra prod/MCP: `20260517212539` (recompute), `20260517212545` (sync), `20260517212645` (private RLS grants), beholdt `20260513090038` (company_current_agreement).
