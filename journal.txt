@@ -1,3 +1,9 @@
+## 2026-05-17 — FASE 14-UI-2 (cms-integrity tilpasset auth-router på /)
+- scripts/ci/cms-integrity.mjs: hopper over CMS-anker-sjekk for app/(public)/page.tsx når fila matcher auth-router (redirect, getAuthContext, landingForRole). Loader-sjekk på loadPublicPageWithTrustFallback uendret.
+- Tilpasset etter 29539835; øvrige marketing-sider fortsatt CMS — ingen endring i andre integrity-regler.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 FASE A (auth-router for /)
 - Endret app/(public)/page.tsx: ikke lenger CMS-blokkrender. Nå ren auth-router.
 - Anonyme → https://lunchportalen.no/
