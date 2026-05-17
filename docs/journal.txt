@@ -4,6 +4,13 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-17 — chore(seo): fjernet app/sitemap.ts, robots Disallow: /
+
+- app/sitemap.ts slettet (ingen offentlig SEO-overflate på app-domenet).
+- app/robots.ts: Disallow: / for alle crawlers; ingen sitemap-peker (filen finnes ikke lenger). Kanonisk SEO på lunchportalen.no.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 FASE C commit 2/2 (sletting)
 
 - Slettet 19 marketing-mapper på app-domenet.

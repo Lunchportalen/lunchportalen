@@ -1,16 +1,17 @@
 import type { MetadataRoute } from "next";
 
-import { absoluteUrl } from "@/lib/seo/site";
-
+/**
+ * App-verten er applikasjon: innlogging, redirects til public site, og
+ * autentiserte flater. Ikke crawl eller indekser denne origin;
+ * kanonisk offentlig SEO ligger på lunchportalen.no.
+ */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/superadmin", "/kitchen", "/driver", "/api"],
+        disallow: ["/"],
       },
     ],
-    sitemap: [absoluteUrl("/sitemap.xml")],
   };
 }
