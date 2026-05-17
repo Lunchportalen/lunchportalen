@@ -1,22 +1,13 @@
-import {
-  generatePublicCmsSlugMetadata,
-  PublicCmsSlugPageView,
-} from "@/lib/cms/public/publicCmsSlugRoute";
+import { permanentRedirect } from "next/navigation";
 
-type SP = Record<string, string | string[] | undefined> | undefined;
+export const dynamic = "force-dynamic";
 
-type Props = {
+export default async function PublicCatchAllRedirect({
+  params,
+}: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<SP> | SP;
-};
-export const revalidate = 3600;
-
-export async function generateMetadata({ params, searchParams }: Props) {
+}) {
   const { slug } = await params;
-  return generatePublicCmsSlugMetadata(slug, searchParams);
-}
-
-export default async function PublicCmsPage({ params, searchParams }: Props) {
-  const { slug } = await params;
-  return <PublicCmsSlugPageView slug={slug} searchParams={searchParams} />;
+  const safeSlug = encodeURIComponent(slug);
+  permanentRedirect(`https://lunchportalen.no/${safeSlug}`);
 }

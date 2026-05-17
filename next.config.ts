@@ -67,12 +67,107 @@ export default function nextConfig(phase: string): NextConfig {
         },
         {
           source: "/public/demo",
-          destination: "/ai-motor-demo",
+          destination: "https://lunchportalen.no/ai-motor-demo",
           permanent: true,
         },
         {
           source: "/public/demo/:path*",
-          destination: "/ai-motor-demo",
+          destination: "https://lunchportalen.no/ai-motor-demo",
+          permanent: true,
+        },
+        {
+          source: "/faq",
+          destination: "https://lunchportalen.no/faq",
+          permanent: true,
+        },
+        {
+          source: "/hvordan",
+          destination: "https://lunchportalen.no/hvordan",
+          permanent: true,
+        },
+        {
+          source: "/vilkar",
+          destination: "https://lunchportalen.no/vilkar",
+          permanent: true,
+        },
+        {
+          source: "/personvern",
+          destination: "https://lunchportalen.no/personvern",
+          permanent: true,
+        },
+        {
+          source: "/om-oss",
+          destination: "https://lunchportalen.no/om-oss",
+          permanent: true,
+        },
+        {
+          source: "/investor",
+          destination: "https://lunchportalen.no/investor",
+          permanent: true,
+        },
+        {
+          source: "/pitch",
+          destination: "https://lunchportalen.no/pitch",
+          permanent: true,
+        },
+        {
+          source: "/ai-motor-demo",
+          destination: "https://lunchportalen.no/ai-motor-demo",
+          permanent: true,
+        },
+        {
+          source: "/alternativ-til-kantine",
+          destination: "https://lunchportalen.no/alternativ-til-kantine",
+          permanent: true,
+        },
+        {
+          source: "/lunsjordning",
+          destination: "https://lunchportalen.no/lunsjordning",
+          permanent: true,
+        },
+        {
+          source: "/kontakt",
+          destination: "https://lunchportalen.no/kontakt",
+          permanent: true,
+        },
+        {
+          source: "/priser",
+          destination: "https://lunchportalen.no/priser",
+          permanent: true,
+        },
+        {
+          source: "/definitiv-guide-firmalunsj",
+          destination: "https://lunchportalen.no/definitiv-guide-firmalunsj",
+          permanent: true,
+        },
+        {
+          source: "/hva-er-lunsjordning",
+          destination: "https://lunchportalen.no/hva-er-lunsjordning",
+          permanent: true,
+        },
+        {
+          source: "/lunsj-levering-oslo",
+          destination: "https://lunchportalen.no/lunsj-levering-oslo",
+          permanent: true,
+        },
+        {
+          source: "/lunch-levering-bergen",
+          destination: "https://lunchportalen.no/lunch-levering-bergen",
+          permanent: true,
+        },
+        {
+          source: "/lunsjordning-trondheim",
+          destination: "https://lunchportalen.no/lunsjordning-trondheim",
+          permanent: true,
+        },
+        {
+          source: "/sikkerhet",
+          destination: "https://lunchportalen.no/sikkerhet",
+          permanent: true,
+        },
+        {
+          source: "/system-for-lunsjbestilling",
+          destination: "https://lunchportalen.no/system-for-lunsjbestilling",
           permanent: true,
         },
       ];

@@ -1,3 +1,12 @@
+## 2026-05-17 — FASE 14-UI-2 FASE C commit 1/2 (setup redirects)
+- next.config.ts: 19 nye 301-redirects + fix av /public/demo (peker nå eksternt).
+- app/(public)/[slug]/page.tsx: catch-all → redirect-only til lunchportalen.no/[slug].
+- Marketing-filer eksisterer fortsatt på disk, men redirects tar prioritet → brukere får 301 før routing til fil.
+- Verifisering i prod: marketing-paths returnerer 308/301, app-paths (/login, /registrering, /week) uendret.
+- Neste: FASE C commit 2/2 sletter marketing-filer.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 FASE B (registrering off marketing-pipeline)
 - Refaktorert app/(auth)/registrering/page.tsx bort fra loadPublicPageWithTrustFallback + CmsBlockRenderer + PublicCmsStructuredData.
 - Statisk Next.js Metadata (noindex/nofollow — app skal ikke konkurrere med marketing-site SEO).
