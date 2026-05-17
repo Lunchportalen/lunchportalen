@@ -1,38 +1,23 @@
-// app/(auth)/registrering/page.tsx — editorial shell + metadata from Umbraco when Delivery serves content; form → Supabase (operational truth).
+// app/(auth)/registrering/page.tsx — app onboarding; form → POST /api/public/register-company (operational truth). No marketing CMS pipeline.
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import PageShell from "@/components/PageShell";
-import { CmsBlockRenderer } from "@/components/cms/CmsBlockRenderer";
 import PublicRegistrationFlow from "@/components/registration/PublicRegistrationFlow";
-import { PublicCmsStructuredData } from "@/components/seo/CmsStructuredData";
-import { canonicalPathForPublicEditorialSlug } from "@/lib/cms/public/canonicalPathForPublicEditorialSlug";
-import {
-  generatePublicCmsSlugMetadata,
-} from "@/lib/cms/public/publicCmsSlugRoute";
-import { loadPublicPageWithTrustFallback } from "@/lib/cms/public/loadPublicPageWithTrustFallback";
 
-const ENV: "prod" | "staging" =
-  typeof process.env.NEXT_PUBLIC_APP_ENV === "string" && process.env.NEXT_PUBLIC_APP_ENV === "staging"
-    ? "staging"
-    : "prod";
-const LOCALE: "nb" | "en" = "nb";
-
-type SP = Record<string, string | string[] | undefined> | undefined;
-
-function isPreviewFromSearchParams(sp: SP): boolean {
-  const raw = sp?.preview;
-  const v = Array.isArray(raw) ? raw[0] : raw;
-  return v === "true";
-}
-
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams?: Promise<SP> | SP;
-}): Promise<Metadata> {
-  return generatePublicCmsSlugMetadata("registrering", searchParams);
-}
+export const metadata: Metadata = {
+  title: "Registrer firma | Lunchportalen",
+  description:
+    "Kom i gang med Lunchportalen. Som bedriftsadministrator setter du opp lunsjordning for selskapet på få minutter.",
+  robots: { index: false, follow: false },
+  openGraph: {
+    title: "Registrer firma | Lunchportalen",
+    description:
+      "Kom i gang med Lunchportalen. Som bedriftsadministrator setter du opp lunsjordning for selskapet på få minutter.",
+    type: "website",
+    locale: "nb_NO",
+  },
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -59,52 +44,12 @@ function LoadingShell() {
   );
 }
 
-export default async function RegistrationPage({
-  searchParams,
-}: {
-  searchParams?: Promise<SP> | SP;
-}) {
-  const sp = await Promise.resolve(searchParams ?? {});
-  const content = await loadPublicPageWithTrustFallback("registrering", { preview: isPreviewFromSearchParams(sp) });
-  const blocks = content?.blocks ?? [];
-  const cmsOrigin = content?.publicContentOrigin ?? "seed-no-row";
-
+export default function RegistreringPage() {
   return (
-    <>
-      {content ? (
-        <PublicCmsStructuredData
-          page={{ title: content.title, slug: content.slug, body: content.body }}
-          canonicalPath={canonicalPathForPublicEditorialSlug("registrering")}
-        />
-      ) : null}
-      <PageShell>
-        <div
-          className="w-full max-w-none px-0 py-0"
-          data-lp-public-cms-slug="registrering"
-          data-lp-public-cms-origin={cmsOrigin}
-        >
-          {content?.title ? (
-            <header className="px-4 pt-4 pb-2">
-              <h1 className="lp-h1 mb-2 text-[rgb(var(--lp-text))]">{content.title}</h1>
-            </header>
-          ) : null}
-          {blocks.length > 0 ? (
-            <div className="px-4 pb-4">
-              <CmsBlockRenderer
-                blocks={blocks}
-                env={ENV}
-                locale={LOCALE}
-                enableLivePricing={false}
-                blockWrapperClassName="w-full"
-                pageCmsMeta={content?.meta ?? {}}
-              />
-            </div>
-          ) : null}
-          <Suspense fallback={<LoadingShell />}>
-            <PublicRegistrationFlow />
-          </Suspense>
-        </div>
-      </PageShell>
-    </>
+    <PageShell>
+      <Suspense fallback={<LoadingShell />}>
+        <PublicRegistrationFlow />
+      </Suspense>
+    </PageShell>
   );
 }

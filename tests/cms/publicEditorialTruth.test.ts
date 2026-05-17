@@ -25,13 +25,13 @@ describe("public editorial fallback (Umbraco truth lock)", () => {
     expect(src).not.toContain("firmalunsj med kontroll og forutsigbarhet");
   });
 
-  test("app/(auth)/registrering/page.tsx must not use export const metadata as primary editorial SEO (Umbraco chain)", () => {
+  test("app/(auth)/registrering/page.tsx uses static app metadata (no Umbraco marketing chain)", () => {
     const p = join(process.cwd(), "app", "(auth)", "registrering", "page.tsx");
     const src = readFileSync(p, "utf8");
-    expect(src).toContain("generateMetadata");
-    expect(src).toContain("loadPublicPageWithTrustFallback");
-    expect(src).toContain("generatePublicCmsSlugMetadata");
-    expect(src).not.toMatch(/export const metadata\s*:\s*Metadata/);
+    expect(src).toMatch(/export const metadata\s*:\s*Metadata/);
+    expect(src).not.toContain("loadPublicPageWithTrustFallback");
+    expect(src).not.toContain("generatePublicCmsSlugMetadata");
+    expect(src).not.toContain("CmsBlockRenderer");
   });
 
   test("app/(public)/kontakt/page.tsx must use shared generatePublicCmsSlugMetadata (same body + metadata chain)", () => {

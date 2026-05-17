@@ -1,3 +1,14 @@
+## 2026-05-17 — FASE 14-UI-2 FASE B (registrering off marketing-pipeline)
+- Refaktorert app/(auth)/registrering/page.tsx bort fra loadPublicPageWithTrustFallback + CmsBlockRenderer + PublicCmsStructuredData.
+- Statisk Next.js Metadata (noindex/nofollow — app skal ikke konkurrere med marketing-site SEO).
+- H1-duplisering fjernet (RoleGate eier H1 nå).
+- Form-flow, validering, API-endepunkt uendret.
+- /registrer-bruker var allerede CMS-fri — ingen kodeendring der.
+- Forbereder FASE C (slett marketing-sider) og FASE D (slett loadPublicPageWithTrustFallback).
+- tests/cms/publicEditorialTruth.test.ts: invertert kontrakt — enforcer nå statisk metadata istedet for Umbraco-chain.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 (cms-integrity tilpasset auth-router på /)
 - scripts/ci/cms-integrity.mjs: hopper over CMS-anker-sjekk for app/(public)/page.tsx når fila matcher auth-router (redirect, getAuthContext, landingForRole). Loader-sjekk på loadPublicPageWithTrustFallback uendret.
 - Tilpasset etter 29539835; øvrige marketing-sider fortsatt CMS — ingen endring i andre integrity-regler.
