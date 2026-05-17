@@ -1,3 +1,9 @@
+## 2026-05-18 — FASE A oppgave 5 — Multi-tenant pen-test (STEG 3, docs-only)
+
+- `docs/multitenant-pen-test-discovery.md`, `docs/multitenant-p-backlog.md` (+ `docs/journal.txt`). Basis `5357d516dab810ab3a2ac4c080f65283ce397181`. Ingen kode/test; push etter eier-OK.
+
+---
+
 ## 2026-05-18 — FASE A oppgave 4 — performance baseline Rev A (readonly)
 
 - `docs/performance-baseline-rev-a.md`, `docs/hot-paths.md`, `docs/performance-p-backlog.md` (+ detaljer i `docs/journal.txt`).

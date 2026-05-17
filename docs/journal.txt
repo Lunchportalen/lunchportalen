@@ -4,6 +4,14 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-18 — FASE A oppgave 5 — Multi-tenant pen-test discovery Rev A (STEG 3, docs-only)
+
+- Nye dokumenter: `docs/multitenant-pen-test-discovery.md` (581 API-ruter, 204 i «bucket» uten grep-mønster — ikke det samme som «uten auth»), full segment-tabell, stikkprøver, 10 vektorer, 10 foreslåtte pen-test cases (ikke kjørt), `docs/multitenant-p-backlog.md` (P0–P3).
+- Repository-basis før leveranse: `5357d516dab810ab3a2ac4c080f65283ce397181`. Full SHA etter commit: `git log -1 --format=%H -- docs/multitenant-pen-test-discovery.md`.
+- Ingen endring i tester, RLS eller migrasjoner; ingen runtime pen-test. STEG 5: vent på eier-OK før push.
+
+---
+
 ## 2026-05-18 — FASE A oppgave 4 — performance baseline Rev A (readonly)
 
 - Nye dokumenter: `docs/performance-baseline-rev-a.md` (Postgres 17.6, ref `hkpokyapzarefrgqzkos`, top 20 tabeller, seq_scan-topper, full Supabase performance advisor ×196, filtrert `pg_stat_statements`-utdrag, proves/does-not-prove).
