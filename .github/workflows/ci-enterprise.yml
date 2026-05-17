@@ -170,10 +170,7 @@ jobs:
             npm run check:admin-copy && \
             npm run check:ai-internal-provider && \
             node scripts/verify-control-coverage.mjs && \
-            npx next build && \
-            node scripts/seo-proof.mjs && \
-            node scripts/seo-audit.mjs && \
-            node scripts/seo-content-lint.mjs
+            npx next build
 
       - name: Log enterprise audit status
         shell: bash

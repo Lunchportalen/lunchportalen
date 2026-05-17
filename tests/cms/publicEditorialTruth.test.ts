@@ -34,13 +34,6 @@ describe("public editorial fallback (Umbraco truth lock)", () => {
     expect(src).not.toContain("CmsBlockRenderer");
   });
 
-  test("app/(public)/kontakt/page.tsx must use shared generatePublicCmsSlugMetadata (same body + metadata chain)", () => {
-    const p = join(process.cwd(), "app", "(public)", "kontakt", "page.tsx");
-    const src = readFileSync(p, "utf8");
-    expect(src).toContain("generatePublicCmsSlugMetadata");
-    expect(src).toContain('generatePublicCmsSlugMetadata("kontakt"');
-  });
-
   test("publicCmsSlugRoute must not use fake 404 metadata when editorial row is missing (fail-closed instead)", () => {
     const p = join(process.cwd(), "lib", "cms", "public", "publicCmsSlugRoute.tsx");
     const src = readFileSync(p, "utf8");
@@ -61,13 +54,4 @@ describe("public editorial fallback (Umbraco truth lock)", () => {
     expect(canonicalPathForPublicEditorialSlug("kontakt")).toBe("/kontakt");
   });
 
-  test("former Next-owned marketing demos must use PublicCmsSlugPageView (pitch, investor, ai-motor-demo)", () => {
-    for (const seg of ["pitch", "investor", "ai-motor-demo"]) {
-      const p = join(process.cwd(), "app", "(public)", seg, "page.tsx");
-      const src = readFileSync(p, "utf8");
-      expect(src).toContain("PublicCmsSlugPageView");
-      expect(src).toContain("generatePublicCmsSlugMetadata");
-      expect(src).not.toContain('"use client"');
-    }
-  });
 });

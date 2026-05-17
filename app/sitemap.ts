@@ -1,15 +1,13 @@
 import type { MetadataRoute } from "next";
 
-import { listMarketingPages } from "@/lib/seo/marketingRegistry";
-import { absoluteUrl } from "@/lib/seo/site";
-
+/**
+ * App-domain has no public SEO surface. All marketing content lives
+ * on lunchportalen.no (Umbraco 17) with its own sitemap. Auth pages
+ * (/registrering, /registrer-bruker, /login) are noindex.
+ *
+ * Sitemap intentionally empty. If app-domain ever needs to expose
+ * indexable content (e.g. public product catalog), add entries here.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = listMarketingPages().filter((entry) => entry.isIndexable);
-
-  return pages.map((entry) => ({
-    url: absoluteUrl(entry.path),
-    lastModified: entry.lastmod && entry.lastmod !== "auto" ? new Date(entry.lastmod) : new Date(),
-    changeFrequency: entry.changefreq,
-    priority: entry.priority,
-  }));
+  return [];
 }

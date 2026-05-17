@@ -97,9 +97,6 @@ jobs:
           npm run check:ai-internal-provider
           node scripts/verify-control-coverage.mjs
           npx next build
-          node scripts/seo-proof.mjs
-          node scripts/seo-audit.mjs
-          node scripts/seo-content-lint.mjs
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

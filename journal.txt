@@ -1,3 +1,14 @@
+## 2026-05-17 — FASE 14-UI-2 FASE C commit 2/2 (sletting)
+- Slettet 19 marketing-mapper på app-domenet.
+- app/sitemap.ts: tom array (app har ingen offentlig SEO-overflate).
+- Asserts for slettede sider fjernet fra publicEditorialTruth.test.ts.
+- SEO-scripts (seo-proof, seo-audit, seo-content-lint) fjernet; referanser fjernet fra package.json build:enterprise* og GitHub workflows ci-enterprise / ci-e2e (marketing-sider eksisterer ikke lenger på app).
+- Bevart: app/(public)/page.tsx, layout.tsx, [slug]/page.tsx, alle app-sider, API-ruter.
+- Marketing-utility (lib/cms/public/, marketing-registry, etc.) ligger fortsatt — slettes i FASE D når referanser er null.
+- Verifisering: alle marketing-paths returnerer 308 via redirects() (commit ee0d9d49), nå uten å rendere noen fil under.
+
+---
+
 ## 2026-05-17 — FASE 14-UI-2 FASE C commit 1/2 (setup redirects)
 - next.config.ts: 19 nye 301-redirects + fix av /public/demo (peker nå eksternt).
 - app/(public)/[slug]/page.tsx: catch-all → redirect-only til lunchportalen.no/[slug].
