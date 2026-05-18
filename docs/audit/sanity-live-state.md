@@ -2,7 +2,8 @@
 
 **Dato for dump:** 2026-05-12T11:12:24.968Z  
 **Repo-commit:** 0625628d64c37e2302242bf62ec47ee65a3aea48  
-**Sanity projectId:** f3vuhd2f *(canonical per `studio/lunchportalen-studio/sanity.config.ts`; rapport‑metadata under gjenspeilet tidligere drift før P3.H3 — snapshot‑tall er ikke re‑kjørt mot ny kilde)*  
+**Sanity projectId:** 4udoq5d8 *(canonical per `studio/lunchportalen-studio/sanity.config.ts` and Vercel Production env; verified live CMS 2026-05-19)*  
+**Note:** Reverted P3.H3 (commit e3745326) in P3.H3-REVERSE 2026-05-19 — metadata corrected; dump tables below are unchanged historical audit from 2026-05-12.  
 **Sanity dataset:** production  
 **Sanity API-versjon brukt:** 2024-01-01
 

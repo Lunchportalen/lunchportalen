@@ -7,7 +7,7 @@ export default defineConfig({
   name: 'default',
   title: 'Lunchportalen Studio',
 
-  projectId: 'f3vuhd2f',
+  projectId: '4udoq5d8',
   dataset: 'production',
 
   plugins: [structureTool(), visionTool()],

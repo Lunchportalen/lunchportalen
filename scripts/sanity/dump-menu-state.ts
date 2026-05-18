@@ -1,7 +1,12 @@
 import { createClient } from "@sanity/client";
+import dotenv from "dotenv";
 import { execSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { requireSanityProjectIdFromEnv } from "./sanityProjectEnv";
+
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 type SanityDoc = Record<string, unknown> & {
   _id?: string;
@@ -28,11 +33,7 @@ type TypeConfig = {
 };
 
 const API_VERSION = safeEnv("NEXT_PUBLIC_SANITY_API_VERSION") || "2024-01-01";
-const PROJECT_ID =
-  safeEnv("NEXT_PUBLIC_SANITY_PROJECT_ID") ||
-  safeEnv("SANITY_PROJECT_ID") ||
-  safeEnv("SANITY_STUDIO_PROJECT_ID") ||
-  "f3vuhd2f";
+const PROJECT_ID = requireSanityProjectIdFromEnv();
 const DATASET =
   safeEnv("NEXT_PUBLIC_SANITY_DATASET") ||
   safeEnv("SANITY_DATASET") ||

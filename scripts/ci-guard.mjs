@@ -73,10 +73,10 @@ const ORDERS_WRITE_PATTERNS = ORDERS_FROM_PATTERNS.flatMap((p) =>
 const MOJIBAKE_MARKDOWN_PATTERN = "\u00C3|\u00E2\u20AC\u2013|\u00E2\u20AC\u2014|\u00E2\u20AC\u2122|\u00E2\u20AC\u0153|\u00E2\u20AC\u009D|\u00C2 ";
 const MOJIBAKE_DOCS_ARGS = ["-n", MOJIBAKE_MARKDOWN_PATTERN, "docs", "-g", "**/*.md"];
 
-/** Legacy Sanity project id — must not appear in scanned source (CI drift gate). */
-const LEGACY_SANITY_PROJECT_ID_SUBSTRING = "4udoq5d8";
+/** Empty/wrong Sanity project id from reverted P3.H3 — must not appear in scanned source. */
+const FORBIDDEN_SANITY_PROJECT_ID = "f3vuhd2f";
 
-const LEGACY_SANITY_PROJECT_ID_SCAN_EXTS = new Set([
+const SANITY_PROJECT_ID_REGRESSION_SCAN_EXTS = new Set([
   ".ts",
   ".tsx",
   ".js",
@@ -87,36 +87,36 @@ const LEGACY_SANITY_PROJECT_ID_SCAN_EXTS = new Set([
 ]);
 
 /** This file intentionally mentions the forbidden id only inside error output strings. */
-const LEGACY_SANITY_PROJECT_ID_GUARD_REL = "scripts/ci-guard.mjs";
+const SANITY_PROJECT_ID_REGRESSION_GUARD_REL = "scripts/ci-guard.mjs";
 
-function shouldScanLegacySanityProjectId(rel) {
-  if (rel === LEGACY_SANITY_PROJECT_ID_GUARD_REL) return false;
+function shouldScanSanityProjectIdRegression(rel) {
+  if (rel === SANITY_PROJECT_ID_REGRESSION_GUARD_REL) return false;
   if (rel.startsWith("docs/")) return false;
   if (rel === "journal.txt" || rel === "docs/journal.txt") return false;
-  return LEGACY_SANITY_PROJECT_ID_SCAN_EXTS.has(path.extname(rel).toLowerCase());
+  return SANITY_PROJECT_ID_REGRESSION_SCAN_EXTS.has(path.extname(rel).toLowerCase());
 }
 
-function runLegacySanityProjectIdGuard(trackedFiles) {
-  const legacyViolations = [];
+function runSanityProjectIdRegressionGuard(trackedFiles) {
+  const violations = [];
   for (const rel of trackedFiles) {
-    if (!shouldScanLegacySanityProjectId(rel)) continue;
+    if (!shouldScanSanityProjectIdRegression(rel)) continue;
     const content = readTrackedFileSafe(rel);
     if (content == null) continue;
-    const hits = findAllOccurrences(content, LEGACY_SANITY_PROJECT_ID_SUBSTRING);
+    const hits = findAllOccurrences(content, FORBIDDEN_SANITY_PROJECT_ID);
     for (const idx of hits) {
-      legacyViolations.push({
+      violations.push({
         file: rel,
         line: lineOfIndex(content, idx),
       });
     }
   }
 
-  if (!legacyViolations.length) return;
+  if (!violations.length) return;
 
-  console.error("\nCI GUARD FAILED - legacy Sanity project id funnet:\n");
-  for (const v of legacyViolations) {
+  console.error("\nCI GUARD FAILED - forbidden Sanity project id regression:\n");
+  for (const v of violations) {
     console.error(
-      `[SANITY_PROJECT_ID_LEGACY_FORBIDDEN] ${v.file}:${v.line} — legacy Sanity project id '4udoq5d8' must not appear in code. Canonical is 'f3vuhd2f' (see studio/lunchportalen-studio/sanity.config.ts). Remove fallback or use env NEXT_PUBLIC_SANITY_PROJECT_ID / SANITY_PROJECT_ID.\n`,
+      `[SANITY_PROJECT_ID_REGRESSION] ${v.file}:${v.line} — Found forbidden Sanity project id 'f3vuhd2f' in ${v.file}. Canonical project is '4udoq5d8'. See journal entry P3.H3-REVERSE for context.\n`,
     );
   }
   process.exit(1);
@@ -345,7 +345,7 @@ if (violations.length) {
   process.exit(1);
 }
 
-runLegacySanityProjectIdGuard(files);
+runSanityProjectIdRegressionGuard(files);
 
 runMojibakeMarkdownGuard();
 

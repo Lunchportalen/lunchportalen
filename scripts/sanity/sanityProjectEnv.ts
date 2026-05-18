@@ -1,5 +1,6 @@
 /**
- * Sanity CLI scripts: explicit project id from env only (no legacy fallbacks).
+ * Sanity CLI scripts: explicit project id from env only (no hardcoded fallback).
+ * Canonical production project: 4udoq5d8 (verified Vercel + live CMS, P3.H3-REVERSE 2026-05-19).
  */
 export function requireSanityProjectIdFromEnv(): string {
   const v =

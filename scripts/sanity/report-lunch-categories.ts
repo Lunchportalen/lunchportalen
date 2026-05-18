@@ -5,13 +5,12 @@
 import { createClient } from "@sanity/client";
 import dotenv from "dotenv";
 import path from "node:path";
+import { requireSanityProjectIdFromEnv } from "./sanityProjectEnv";
 
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
-const projectId =
-  String(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? process.env.SANITY_PROJECT_ID ?? "").trim() ||
-  "f3vuhd2f";
+const projectId = requireSanityProjectIdFromEnv();
 const dataset =
   String(process.env.NEXT_PUBLIC_SANITY_DATASET ?? process.env.SANITY_DATASET ?? "").trim() ||
   "production";
