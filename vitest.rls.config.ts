@@ -1,26 +1,18 @@
-﻿import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
-import path from "node:path";
+﻿import type { UserConfig } from "vitest/config";
+import base from "./vitest.config";
 
-export default defineConfig({
-  plugins: [tsconfigPaths({ ignoreConfigErrors: true })],
-  resolve: {
-    alias: {
-      "server-only": path.resolve(__dirname, "tests/mocks/server-only.ts")
-    }
-  },
+const cfg = base as UserConfig;
+const exclude = (cfg.test?.exclude ?? []).filter((p) => p !== "tests/rls/**");
+
+/**
+ * Opt-in config for `tests/rls/**` — base vitest.config excludes that tree so default `npm run test` stays fast.
+ */
+const out: UserConfig = {
+  ...cfg,
   test: {
-    include: ["tests/rls/**/*.test.ts"],
-    exclude: [
-      "e2e/**",
-      "**/*.spec.ts",
-      "**/node_modules/**",
-      "**/.next/**",
-      "**/dist/**",
-      "**/coverage/**",
-      "studio/node_modules/**",
-      "studio/lunchportalen-studio/node_modules/**"
-    ],
-    environment: "node"
-  }
-});
+    ...cfg.test,
+    exclude,
+  },
+};
+
+export default out;
