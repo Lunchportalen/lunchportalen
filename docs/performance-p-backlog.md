@@ -56,6 +56,8 @@
 
 **Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `f3vuhd2f`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
+| **B3 (staging provisioning)** | **AWAITING_DECISIONS (4)** — DNS-eierskap/leverandør · Supabase plan-tier (dashboard) · hard budget-cap · `staging-abc-signoff` disposition | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) — ingen infra før eier har svart |
+
 | Oppgave | Innhold |
 |---------|---------|
 | **B3a** | Supabase staging‑branch: aktiver/obruk `staging`, migrasjonssync‑flyt, budget alerts |
