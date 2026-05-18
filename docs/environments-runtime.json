@@ -1,22 +1,11 @@
 {
   "meta": {
-    "dokument": "docs/environments.json",
+    "type": "runtime_deploy_subset",
     "revisjon": "Rev A",
-    "generertIso": "2026-05-18T17:06:58.388Z",
-    "antallVariabler": 335,
-    "konsumerSubset": "docs/environments-runtime.json",
-    "kilder": [
-      "app/",
-      "lib/",
-      "middleware.ts",
-      "next.config.ts",
-      "scripts/",
-      "components/",
-      "hooks/",
-      "workers/",
-      "studio/"
-    ],
-    "merknadGruppering": "Heuristikk kun på suffiks/prefiks. For produksjonskritikk: verifiser hver klasse før B3. Ingen verdier lagres.",
+    "kilde": "docs/environments.json",
+    "formal": "Deploy-matrise for Vercel og staging. Subset av full repo-audit.",
+    "kommentar": "Verifiser mot environments.json (full audit) ved tvil. Ingen verdier lagret.",
+    "antallVariabler": 262,
     "valutaReferanse": {
       "primarKildeForsokt": [
         "Norges Banks åpne data (API/CSV) fra dokumentasjonsoppdrag — 503/500 ved automatiserte kall Mai 2026",
@@ -30,68 +19,29 @@
       }
     }
   },
-  "gruppert": {
-    "Diverse": [
-      "__RIMRAF_TESTING_BIN_FAIL__",
-      "__TESTING_RIMRAF_BIN__",
-      "_nodeLRUCacheForceNoSymbol",
-      "BOOK_LANG",
-      "CHOKIDAR_INTERVAL",
-      "CHOKIDAR_PRINT_FSEVENTS_REQUIRE_ERROR",
-      "CHOKIDAR_USEPOLLING",
-      "comspec",
-      "DATABASE_URL",
-      "DB_PASSWORD",
-      "FLOW_TEST_ORDER_ID",
-      "foo",
-      "FORCE_COLOR",
-      "HOST",
-      "LOAD_CONCURRENCY",
-      "LOAD_DURATION_MS",
-      "LOAD_MIX",
-      "NODE_COMPILE_CACHE",
-      "NODE_DEBUG",
-      "NODE_DISABLE_COLORS",
-      "NODE_DISABLE_COMPILE_CACHE",
-      "NODE_UNIQUE_ID",
-      "NODE_V8_COVERAGE",
-      "npm_config_VITE_NODE_DEPS_MODULE_DIRECTORIES",
-      "npm_lifecycle_script",
-      "npm_package_name",
-      "OSTYPE",
-      "OUTBOX_QUEUE_FANOUT",
-      "PATH",
-      "PATHEXT",
-      "PORT",
-      "POSTDEPLOY_BASE_URL",
-      "POSTDEPLOY_EXPECTED_TEXT",
-      "POSTDEPLOY_JSON_CHECKS",
-      "POSTDEPLOY_JSON_ROUTES",
-      "POSTDEPLOY_RETRIES",
-      "POSTDEPLOY_RETRY_DELAY_MS",
-      "POSTDEPLOY_ROUTES",
-      "POSTDEPLOY_TIMEOUT_MS",
-      "PRETTIER_DEBUG",
-      "PUBLIC_VERIFY_BASE_URL",
-      "QUEUE_CONCURRENCY",
-      "RLS_GOLDEN_PROJECT_REF",
-      "SKIP_HTTP",
-      "SOCIAL_FLOW_TEST_WRITE",
-      "SYSTEM_TEST_ALLOW",
-      "SYSTEM_TEST_SKIP_CLEANUP",
-      "TEST",
-      "TEST_PSEUDOMAP",
-      "TINYGLOBBY_DEBUG",
-      "TSX_DEBUG",
-      "TSX_DISABLE_CACHE",
-      "TSX_TSCONFIG_PATH",
-      "USER",
-      "VALIDATE_BASE_URL",
-      "VITE_NODE_DEBUG_DUMP",
-      "VITE_NODE_DEBUG_RUNNER",
-      "VITE_NODE_DEPS_MODULE_DIRECTORIES",
-      "WORKER_INTERNAL_ORIGIN"
+  "inklusjonsRegler": {
+    "inkludertGrupper": [
+      "AiMedia",
+      "BizFlagsMotorer",
+      "CronOgSystemMotor",
+      "EpostSMTP",
+      "MLPOS",
+      "Observabilitet",
+      "OkonomiTripletex",
+      "SalgOgBooking",
+      "Sanity",
+      "SkalaInfraGrowth",
+      "Supabase",
+      "UrlOffentlig",
+      "WebhookIntegrasjon"
     ],
+    "ekskludertGrupper": [
+      "DevscriptsVerktoy",
+      "TestRCBygg"
+    ],
+    "spesiellHaandtering": "Vercelinternt: kun VERCEL_ENV (NEXT_PUBLIC_APP_ENV ligger under UrlOffentlig). Øvrige VERCEL_* auto-injected. Diverse: prefiks-/suffix-regler + manuelle overstyringer for gjenværende nøkler."
+  },
+  "gruppert": {
     "WebhookIntegrasjon": [
       "ADS_ENABLED",
       "ADS_WEBHOOK",
@@ -112,8 +62,8 @@
     ],
     "AiMedia": [
       "AI_API_KEY",
-      "AI_AUTO_MODE",
       "AI_AUTONOMY_LAYER_ENABLED",
+      "AI_AUTO_MODE",
       "AI_CEO_CONTROLLED_ENABLED",
       "AI_CEO_ENABLED",
       "AI_DASHBOARD_MIN_MARGIN_USD",
@@ -190,26 +140,6 @@
       "APP_VERSION",
       "DEBUG_API_PERF"
     ],
-    "DevscriptsVerktoy": [
-      "AUTOFIX_ALLOW_MISSING_LIMIT",
-      "AUTOFIX_ALLOW_SELECT_STAR",
-      "AUTOFIX_ARCH",
-      "AUTOFIX_ARCH_EXTRACT",
-      "AUTOFIX_ARCH_SPLIT",
-      "AUTOFIX_PHASE2",
-      "AUTOFIX_PHASE2_DB_WRITE",
-      "AUTOFIX_PHASE2_UI_PING",
-      "AUTOFIX_PHASE2_WIRE",
-      "AUTOFIX_PHASE3",
-      "AUTOFIX_PHASE3_DEDUP",
-      "AUTOFIX_PHASE3_LOOPS",
-      "AUTOFIX_PHASE3_QUERY_LIMIT",
-      "AUTOFIX_PHASE3_WEAK_TYPING",
-      "AUTOFIX_RUNTIME_HTTP",
-      "UMBRACO_CMS_ORIGIN",
-      "UMBRACO_DELIVERY_BASE_URL",
-      "VERIFY_STRICT_LIVE_UMBRACO"
-    ],
     "BizFlagsMotorer": [
       "AUTONOMOUS_MODE",
       "AUTONOMOUS_NEXT_BUILD",
@@ -270,8 +200,8 @@
       "TRIPLETEX_CONSUMER_TOKEN",
       "TRIPLETEX_CREDIT_CHECK_ENABLED",
       "TRIPLETEX_EMPLOYEE_TOKEN",
-      "TRIPLETEX_ENABLE_CREDIT_NOTE_FLOW",
       "TRIPLETEX_ENABLED",
+      "TRIPLETEX_ENABLE_CREDIT_NOTE_FLOW",
       "TRIPLETEX_MAX_RETRIES",
       "TRIPLETEX_OUTBOX_CONCURRENCY",
       "TRIPLETEX_REVENUE_DEFAULT_CUSTOMER_ID",
@@ -281,21 +211,30 @@
       "TRIPLETEX_TIMEOUT_MS",
       "TRIPLETEX_TOKEN"
     ],
+    "Diverse": [
+      "BOOK_LANG",
+      "DATABASE_URL",
+      "DB_PASSWORD",
+      "HOST",
+      "OUTBOX_QUEUE_FANOUT",
+      "PORT",
+      "POSTDEPLOY_BASE_URL",
+      "POSTDEPLOY_EXPECTED_TEXT",
+      "POSTDEPLOY_JSON_CHECKS",
+      "POSTDEPLOY_JSON_ROUTES",
+      "POSTDEPLOY_RETRIES",
+      "POSTDEPLOY_RETRY_DELAY_MS",
+      "POSTDEPLOY_ROUTES",
+      "POSTDEPLOY_TIMEOUT_MS",
+      "PUBLIC_VERIFY_BASE_URL",
+      "QUEUE_CONCURRENCY",
+      "VALIDATE_BASE_URL",
+      "WORKER_INTERNAL_ORIGIN"
+    ],
     "SalgOgBooking": [
       "BOOKING_URL",
       "SALES_AUTOSEND_ENABLED",
       "SALES_LOOP_MODE"
-    ],
-    "TestRCBygg": [
-      "CI",
-      "INVITES_KEEP_USED_DAYS",
-      "NODE_ENV",
-      "PRODUCTION_MODE",
-      "RC_MODE",
-      "REGISTRATIONS_ENABLED",
-      "SELF_HEAL_MODE",
-      "STRICT_MODE",
-      "VITEST"
     ],
     "CronOgSystemMotor": [
       "CRON_SECRET",
@@ -393,39 +332,10 @@
       "SUPABASE_URL"
     ],
     "Vercelinternt": [
-      "VERCEL",
-      "VERCEL_ENV",
-      "VERCEL_GIT_COMMIT_REF",
-      "VERCEL_GIT_COMMIT_SHA",
-      "VERCEL_REGION",
-      "VERCEL_URL"
+      "VERCEL_ENV"
     ]
   },
   "variablerAlle": [
-    {
-      "key": "__RIMRAF_TESTING_BIN_FAIL__",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "__TESTING_RIMRAF_BIN__",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "_nodeLRUCacheForceNoSymbol",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
     {
       "key": "ADS_ENABLED",
       "gruppe": "WebhookIntegrasjon",
@@ -611,126 +521,6 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "AUTOFIX_ALLOW_MISSING_LIMIT",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_ALLOW_SELECT_STAR",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_ARCH",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_ARCH_EXTRACT",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_ARCH_SPLIT",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE2",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE2_DB_WRITE",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE2_UI_PING",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE2_WIRE",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE3",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE3_DEDUP",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE3_LOOPS",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE3_QUERY_LIMIT",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_PHASE3_WEAK_TYPING",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "AUTOFIX_RUNTIME_HTTP",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "AUTONOMOUS_MODE",
       "gruppe": "BizFlagsMotorer",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -867,48 +657,8 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "CHOKIDAR_INTERVAL",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "CHOKIDAR_PRINT_FSEVENTS_REQUIRE_ERROR",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "CHOKIDAR_USEPOLLING",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "CI",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "CMS_AI_DEFAULT_COMPANY_ID",
       "gruppe": "AiMedia",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "comspec",
-      "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -1059,30 +809,6 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "FLOW_TEST_ORDER_ID",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "foo",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "FORCE_COLOR",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "GOD_MODE_ENABLED",
       "gruppe": "BizFlagsMotorer",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -1131,40 +857,8 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "INVITES_KEEP_USED_DAYS",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "LEADER_NODE",
       "gruppe": "SkalaInfraGrowth",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "LOAD_CONCURRENCY",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "LOAD_DURATION_MS",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "LOAD_MIX",
-      "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -1827,88 +1521,8 @@
       "rotasjonVedStagingOppsett": "Ved domenebytte"
     },
     {
-      "key": "NODE_COMPILE_CACHE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_DEBUG",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_DISABLE_COLORS",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_DISABLE_COMPILE_CACHE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_ENV",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "NODE_ID",
       "gruppe": "SkalaInfraGrowth",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_UNIQUE_ID",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "NODE_V8_COVERAGE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "npm_config_VITE_NODE_DEPS_MODULE_DIRECTORIES",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "npm_lifecycle_script",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "npm_package_name",
-      "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -2035,14 +1649,6 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "OSTYPE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "OUTBOX_BATCH_SIZE",
       "gruppe": "BizFlagsMotorer",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -2069,22 +1675,6 @@
     {
       "key": "OUTBOX_TIME_BUDGET_MS",
       "gruppe": "BizFlagsMotorer",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "PATH",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "PATHEXT",
-      "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -2243,22 +1833,6 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "PRETTIER_DEBUG",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "PRODUCTION_MODE",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "PROFIT_ENGINE_ENABLED",
       "gruppe": "BizFlagsMotorer",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -2291,14 +1865,6 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "RC_MODE",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "REALITY_MODE_ENABLED",
       "gruppe": "BizFlagsMotorer",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -2317,14 +1883,6 @@
     {
       "key": "REGION",
       "gruppe": "SkalaInfraGrowth",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "REGISTRATIONS_ENABLED",
-      "gruppe": "TestRCBygg",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -2397,14 +1955,6 @@
     {
       "key": "REVENUE_MODE_ENABLED",
       "gruppe": "BizFlagsMotorer",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "RLS_GOLDEN_PROJECT_REF",
-      "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -2555,14 +2105,6 @@
       "rotasjonVedStagingOppsett": "Ja eller «deaktivert»"
     },
     {
-      "key": "SELF_HEAL_MODE",
-      "gruppe": "TestRCBygg",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "SEQUENCE_ENGINE_MODE",
       "gruppe": "MLPOS",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
@@ -2593,14 +2135,6 @@
       "stagingStrategi": "https://staging.app.lunchportalen.no eller aktuell Vercel-standard-URL",
       "prodKopi": "Aldri `app.lunchportalen.no`/prod-domain i automatisk cron mot staging-unless proxy-mocket",
       "rotasjonVedStagingOppsett": "Ved domenebytte"
-    },
-    {
-      "key": "SKIP_HTTP",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
       "key": "SLACK_WEBHOOK",
@@ -2675,24 +2209,8 @@
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
-      "key": "SOCIAL_FLOW_TEST_WRITE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "STRATEGY_MODE_ENABLED",
       "gruppe": "BizFlagsMotorer",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "STRICT_MODE",
-      "gruppe": "TestRCBygg",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
@@ -2745,46 +2263,6 @@
       "stagingStrategi": "Nye hemmeligheter eksklusive for staging",
       "prodKopi": "ALDRI",
       "rotasjonVedStagingOppsett": "Ja før første bruksdag"
-    },
-    {
-      "key": "SYSTEM_TEST_ALLOW",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "SYSTEM_TEST_SKIP_CLEANUP",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "TEST",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "TEST_PSEUDOMAP",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "TINYGLOBBY_DEBUG",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
     },
     {
       "key": "TRIPLETEX_BASE_URL",
@@ -2907,68 +2385,12 @@
       "rotasjonVedStagingOppsett": "Ja eller «deaktivert»"
     },
     {
-      "key": "TSX_DEBUG",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "TSX_DISABLE_CACHE",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "TSX_TSCONFIG_PATH",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "UMBRACO_CMS_ORIGIN",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "UMBRACO_DELIVERY_BASE_URL",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "USER",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "VALIDATE_BASE_URL",
       "gruppe": "Diverse",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
       "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "VERCEL",
-      "gruppe": "Vercelinternt",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Leveres automatisk på Preview/Staging",
-      "prodKopi": "N/A",
-      "rotasjonVedStagingOppsett": "N/A"
     },
     {
       "key": "VERCEL_ENV",
@@ -2979,80 +2401,8 @@
       "rotasjonVedStagingOppsett": "N/A"
     },
     {
-      "key": "VERCEL_GIT_COMMIT_REF",
-      "gruppe": "Vercelinternt",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Leveres automatisk på Preview/Staging",
-      "prodKopi": "N/A",
-      "rotasjonVedStagingOppsett": "N/A"
-    },
-    {
-      "key": "VERCEL_GIT_COMMIT_SHA",
-      "gruppe": "Vercelinternt",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Leveres automatisk på Preview/Staging",
-      "prodKopi": "N/A",
-      "rotasjonVedStagingOppsett": "N/A"
-    },
-    {
-      "key": "VERCEL_REGION",
-      "gruppe": "Vercelinternt",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Leveres automatisk på Preview/Staging",
-      "prodKopi": "N/A",
-      "rotasjonVedStagingOppsett": "N/A"
-    },
-    {
-      "key": "VERCEL_URL",
-      "gruppe": "Vercelinternt",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Leveres automatisk på Preview/Staging",
-      "prodKopi": "N/A",
-      "rotasjonVedStagingOppsett": "N/A"
-    },
-    {
-      "key": "VERIFY_STRICT_LIVE_UMBRACO",
-      "gruppe": "DevscriptsVerktoy",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
       "key": "VIDEO_RENDER_FONT_FILE",
       "gruppe": "AiMedia",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "VITE_NODE_DEBUG_DUMP",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "VITE_NODE_DEBUG_RUNNER",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "VITE_NODE_DEPS_MODULE_DIRECTORIES",
-      "gruppe": "Diverse",
-      "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
-      "prodKopi": "Ikke en-til-en kopi fra prod",
-      "rotasjonVedStagingOppsett": "Vurder ved token-klasser"
-    },
-    {
-      "key": "VITEST",
-      "gruppe": "TestRCBygg",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
       "stagingStrategi": "Feature-flagg eller mock-verdier; eksplisitt review per integration",
       "prodKopi": "Ikke en-til-en kopi fra prod",
