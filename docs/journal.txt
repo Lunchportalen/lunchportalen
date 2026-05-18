@@ -4,6 +4,14 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-18 — FASE B oppgave 2 — audit_log skala-strategi Rev A (STEG 3, docs-only)
+
+- Nye/oppdaterte dokumenter: `docs/audit-log-strategy.md` (trigger-basert DML-jsonb, matematikk 1K/5K/50K, art. 9 helsedata, DPO-blokkeringer før B2d, volum-baseline etter B2b, B2b-1–4, B2c–d rekkefølge, rollback, «what this does not do`), `docs/performance-p-backlog.md` (P1: B2b-1/B2b-2/B2c/B2d + renummererte øvrige P1; P2/P3 audit-rader + eksisterende performance-punkter).
+- Ingen DB, ingen migreringer, ingen applikasjonskode — ren dokumentasjon+journal.
+- STEG 5: oppsummering til eier · ** ikke push uten eksplisitt OK i chat** (jf. HARDGATE).
+
+---
+
 ## 2026-05-18 — FASE A oppgave 5 — Multi-tenant pen-test discovery Rev A (STEG 3, docs-only)
 
 - Nye dokumenter: `docs/multitenant-pen-test-discovery.md` (581 API-ruter, 204 i «bucket» uten grep-mønster — ikke det samme som «uten auth»), full segment-tabell, stikkprøver, 10 vektorer, 10 foreslåtte pen-test cases (ikke kjørt), `docs/multitenant-p-backlog.md` (P0–P3).
