@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-05-18T14:05:04.207Z",
+  "generated_at": "2026-05-18T15:57:35.425Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
@@ -2409,6 +2409,14 @@
       "is_security_definer": true,
       "volatility": "stable",
       "body_hash": "595de69f523d630c31726e68b30e236b"
+    },
+    {
+      "name": "ensure_audit_log_partitions",
+      "args": "months_ahead integer",
+      "result_type": "jsonb",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "12f7c99b83772e1a0c6424a5b90363da"
     },
     {
       "name": "has_platform_role",
