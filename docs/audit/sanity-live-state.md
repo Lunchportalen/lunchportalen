@@ -2,7 +2,7 @@
 
 **Dato for dump:** 2026-05-12T11:12:24.968Z  
 **Repo-commit:** 0625628d64c37e2302242bf62ec47ee65a3aea48  
-**Sanity projectId:** 4udoq5d8  
+**Sanity projectId:** f3vuhd2f *(canonical per `studio/lunchportalen-studio/sanity.config.ts`; rapport‑metadata under gjenspeilet tidligere drift før P3.H3 — snapshot‑tall er ikke re‑kjørt mot ny kilde)*  
 **Sanity dataset:** production  
 **Sanity API-versjon brukt:** 2024-01-01
 

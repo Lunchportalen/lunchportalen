@@ -1,6 +1,13 @@
 import { createClient } from "@sanity/client";
+import dotenv from "dotenv";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
+import path from "node:path";
+
+import { requireSanityProjectIdFromEnv } from "./sanityProjectEnv";
+
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const isDryRun = process.argv.includes("--dry-run");
 
@@ -11,7 +18,7 @@ if (!token) {
   process.exit(1);
 }
 
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "4udoq5d8";
+const projectId = requireSanityProjectIdFromEnv();
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 
 const client = createClient({

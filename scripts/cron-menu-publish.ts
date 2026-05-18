@@ -39,7 +39,7 @@ function logSanitySnapshotBeforeRollout(label: string): void {
     sanityReadTokenConfigured: tokenPresent,
   });
   console.log(
-    "[sammenlign] debug-skript forventet typisk: dataset production, projectId 4udoq5d8, apiVersion 2024-01-01, useCdn false, token satt",
+    "[sammenlign] debug-skript forventet typisk: dataset production, projectId f3vuhd2f (eller env-styrt NEXT_PUBLIC_SANITY_PROJECT_ID), apiVersion 2024-01-01, useCdn false, token satt",
   );
   console.log("");
 }

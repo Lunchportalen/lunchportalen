@@ -169,7 +169,7 @@ Kilder: `studio/schemaTypes/menu.ts:8-64`, `studio/schemaTypes/menu.ts:65-93`. P
 - Studio config bruker `defineConfig`, `deskTool`, `structure` og `schemaTypes`. `studio/sanity.config.ts:1-5`
 - `projectId` leses fra `SANITY_STUDIO_PROJECT_ID` eller `NEXT_PUBLIC_SANITY_PROJECT_ID`; `dataset` fra `SANITY_STUDIO_DATASET`, `NEXT_PUBLIC_SANITY_DATASET` eller `production`. `studio/sanity.config.ts:7-14`
 - Pluginlisten er `deskTool({ structure })`; basePath er ikke funnet i `studio/sanity.config.ts`. `studio/sanity.config.ts:22-34`
-- CLI-config har `projectId: 4udoq5d8`, `dataset: production`, `autoUpdates: false`. `studio/sanity.cli.ts:3-10`
+- CLI-config har `projectId: f3vuhd2f`, `dataset: production`, `autoUpdates: false` (`studio/sanity.cli.ts`). Tidligere dokumentasjon viste historisk drift-ID — korrigert i **P3.H3** (Commit B hygiene).
 
 ### 4.2 Struktur (sidebar)
 - Sidebar-tittel er `Lunchportalen`. `studio/deskStructure.ts:6-9`

@@ -1,8 +1,14 @@
 import { createClient } from "@sanity/client";
+import dotenv from "dotenv";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { requireSanityProjectIdFromEnv } from "./sanityProjectEnv";
+
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export const PLAN_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"] as const;
 export type PlanTier = (typeof PLAN_TIERS)[number];
@@ -234,7 +240,7 @@ async function main() {
 
   const weekStart = args.weekStart || nextMondayFrom();
   const dates = weekdaysForWeekStart(weekStart);
-  const projectId = safeEnv("NEXT_PUBLIC_SANITY_PROJECT_ID") || safeEnv("SANITY_PROJECT_ID") || "4udoq5d8";
+  const projectId = requireSanityProjectIdFromEnv();
   const dataset = safeEnv("NEXT_PUBLIC_SANITY_DATASET") || safeEnv("SANITY_DATASET") || "production";
   const client = createClient({ projectId, dataset, apiVersion: API_VERSION, token, useCdn: false });
 

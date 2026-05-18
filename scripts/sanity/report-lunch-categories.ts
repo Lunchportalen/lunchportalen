@@ -11,7 +11,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const projectId =
   String(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? process.env.SANITY_PROJECT_ID ?? "").trim() ||
-  "4udoq5d8";
+  "f3vuhd2f";
 const dataset =
   String(process.env.NEXT_PUBLIC_SANITY_DATASET ?? process.env.SANITY_DATASET ?? "").trim() ||
   "production";

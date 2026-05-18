@@ -32,7 +32,7 @@ const PROJECT_ID =
   safeEnv("NEXT_PUBLIC_SANITY_PROJECT_ID") ||
   safeEnv("SANITY_PROJECT_ID") ||
   safeEnv("SANITY_STUDIO_PROJECT_ID") ||
-  "4udoq5d8";
+  "f3vuhd2f";
 const DATASET =
   safeEnv("NEXT_PUBLIC_SANITY_DATASET") ||
   safeEnv("SANITY_DATASET") ||

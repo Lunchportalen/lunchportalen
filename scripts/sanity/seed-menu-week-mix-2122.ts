@@ -12,6 +12,8 @@ import dotenv from "dotenv";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { requireSanityProjectIdFromEnv } from "./sanityProjectEnv";
+
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
@@ -255,7 +257,7 @@ async function main() {
     process.exit(1);
   }
 
-  const projectId = safeEnv("NEXT_PUBLIC_SANITY_PROJECT_ID") || safeEnv("SANITY_PROJECT_ID") || "4udoq5d8";
+  const projectId = requireSanityProjectIdFromEnv();
   const dataset = safeEnv("NEXT_PUBLIC_SANITY_DATASET") || safeEnv("SANITY_DATASET") || "production";
 
   if (dryRun) {
