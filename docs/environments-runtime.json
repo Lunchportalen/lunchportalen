@@ -1444,7 +1444,7 @@
       "key": "NEXT_PUBLIC_SANITY_API_VERSION",
       "gruppe": "Sanity",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "projectId=f3vuhd2f og dataset=staging",
+      "stagingStrategi": "projectId=4udoq5d8 og dataset=staging",
       "prodKopi": "Aldri pek til production-dataset fra staging-branch",
       "rotasjonVedStagingOppsett": "Ved endret dataset eller prosjekt"
     },
@@ -1452,7 +1452,7 @@
       "key": "NEXT_PUBLIC_SANITY_DATASET",
       "gruppe": "Sanity",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "projectId=f3vuhd2f og dataset=staging",
+      "stagingStrategi": "projectId=4udoq5d8 og dataset=staging",
       "prodKopi": "Aldri pek til production-dataset fra staging-branch",
       "rotasjonVedStagingOppsett": "Ved endret dataset eller prosjekt"
     },
@@ -1460,7 +1460,7 @@
       "key": "NEXT_PUBLIC_SANITY_PROJECT_ID",
       "gruppe": "Sanity",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "projectId=f3vuhd2f og dataset=staging",
+      "stagingStrategi": "projectId=4udoq5d8 og dataset=staging",
       "prodKopi": "Aldri pek til production-dataset fra staging-branch",
       "rotasjonVedStagingOppsett": "Ved endret dataset eller prosjekt"
     },
@@ -1468,7 +1468,7 @@
       "key": "NEXT_PUBLIC_SANITY_STUDIO_URL",
       "gruppe": "Sanity",
       "bruksomrade": "Indeks kun; se faktiske forekomster via `rg process.env.KEY` før B3-deploy. Dokument lagrer aldri hemmelige verdier.",
-      "stagingStrategi": "projectId=f3vuhd2f og dataset=staging",
+      "stagingStrategi": "projectId=4udoq5d8 og dataset=staging",
       "prodKopi": "Aldri pek til production-dataset fra staging-branch",
       "rotasjonVedStagingOppsett": "Ved endret dataset eller prosjekt"
     },

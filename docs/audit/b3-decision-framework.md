@@ -10,7 +10,9 @@
 
 ## Bakgrunn
 
-[staging-strategy.md](../staging-strategy.md) har allerede låst **arkitekturretning**: GDPR **variant C** (syntetisk staging-data), **én persistert** Supabase staging-branch, Vercel **strategi A** (production + `staging` + PR-preview), Sanity **`staging`**-datasett på prosjekt **`f3vuhd2f`**, mål-vert **`staging.app.lunchportalen.no`**, og indikativ kost **ca. kr 470–620/mnd** før hard cap. De fire **forretnings-/driftsvalgene** (DNS-leverandør, Supabase-plan, budsjettcap, skjebne for `staging-abc-signoff`) er **besvart 2026-05-19** — se [Status (per 2026-05-19)](#status-per-2026-05-19).
+[staging-strategy.md](../staging-strategy.md) har allerede låst **arkitekturretning**: GDPR **variant C** (syntetisk staging-data), **én persistert** Supabase staging-branch, Vercel **strategi A** (production + `staging` + PR-preview), Sanity **`staging`**-datasett på prosjekt **`4udoq5d8`**, mål-vert **`staging.app.lunchportalen.no`**, og indikativ kost **ca. kr 470–620/mnd** før hard cap. De fire **forretnings-/driftsvalgene** (DNS-leverandør, Supabase-plan, budsjettcap, skjebne for `staging-abc-signoff`) er **besvart 2026-05-19** — se [Status (per 2026-05-19)](#status-per-2026-05-19).
+
+Etter P3.H3-REVERSE (40a17745, 2026-05-19): Sanity canonical = 4udoq5d8. B3c target-prosjekt oppdatert; implementeringsrekkefølge uendret.
 
 **Allerede besluttet i strategy.md (ikke gjenåpne her):** datavariant C, hostname `staging.app.lunchportalen.no`, Sanity dataset-navn/plan, Vercel deploy-modell, og kurs for NOK-estimater. Beslutningsdetaljer under STEG 1 er **historisk kontekst**; gjeldende valg står i status-tabellen.
 
@@ -317,7 +319,7 @@ flowchart TD
 |----------------|---------|--------|
 | **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **Åpen** — beslutning 2, 3, 4 lukket |
 | **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
-| **B3c** | Sanity `staging` datasett (`f3vuhd2f`) | **Åpen** — kan starte parallelt |
+| **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **Åpen** — kan starte parallelt |
 | **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
 | **B3e** | Env deploy-matrise (262 runtime-nøkler) | **Åpen** — etter B3a–d |
 | **B3f** | `scripts/seed-staging.ts` + initial smoke | **Åpen** — sist |
@@ -366,7 +368,7 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 ### B3c — Sanity staging-dataset
 
 - **AUTOMATABLE:** Sanity CLI med write-token, eller **HUMAN** via Studio/dashboard.
-- **Dataset:** `staging` på prosjekt `f3vuhd2f`.
+- **Dataset:** `staging` på prosjekt `4udoq5d8`.
 - **Kloning fra production:** valgfritt; **ingen ekte PII** (variant C).
 - **Estimat:** ~5 min.
 

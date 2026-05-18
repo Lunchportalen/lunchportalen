@@ -54,7 +54,7 @@
 
 ### Infrastruktur / Skala-validering (FASE B – grunnmur)
 
-**Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `f3vuhd2f`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
+**Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
 | **B3 (staging provisioning)** | **DECIDED** — klar for B3a–B3f implementering. Beslutninger 2026-05-19: DNS **Domeneshop** · Supabase **Pro** · cap **kr 800/mnd** · `staging-abc-signoff` **PAUSED** (behold arkiv), ny branch **`staging`** | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) — status + implementeringsplan (HUMAN/AUTOMATABLE, ~4–8 t) |
 

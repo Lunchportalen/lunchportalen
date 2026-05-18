@@ -2,7 +2,7 @@
 
 ## TL;DR (anbefaling + estimert kr/mnd)
 
-- **Beslutningsramme:** Ett **persistert Supabase-branch** (`staging`), **én Vercel `staging`**-gren med **staging.app.lunchportalen.no**, **egen Sanity `staging`-datasett** på prosjekt `f3vuhd2f`, og **kun syntetisk testdata** (ingen prod-kopi, ingen art. 9‑snapshot i seed).
+- **Beslutningsramme:** Ett **persistert Supabase-branch** (`staging`), **én Vercel `staging`**-gren med **staging.app.lunchportalen.no**, **egen Sanity `staging`-datasett** på prosjekt `4udoq5d8`, og **kun syntetisk testdata** (ingen prod-kopi, ingen art. 9‑snapshot i seed).
 - **Målekurs i dette dokumentet:** **9,3266 NOK pr. 1 USD** (ECB‑referanse via Frankfurter, observasjon **2026‑05‑15**; NB‑midtkurs bør bekreftes manuelt jf. [Kursverifikasjon](#kursverifikasjon)).
 - **Indikativ månedlig kostnad (Pro + branching + ett permanent branch + ett Vercel Pro‑seat, før valutaslipp og før mva/avgifter):**
   | Komponent | USD (liste, ref.) | → NOK (× 9,3266) |
@@ -30,9 +30,13 @@ FASE B (B4 volum‑seed, B5 last‑test, B6 materialised views) krever et **
 | **Branching MCP** | Eksisterer **branch-navn `staging-abc-signoff`** (egen `project_ref`), status **inactive** ved siste MCP‑/avlesning; detaljer jf. [Eksisterende staging-abc-signoff](#eksisterende-staging-abc-signoff). |
 | **`vercel.json`** | Bare **cron**‑plan; ingen custom domain‑definisjon der. |
 | **`supabase/config.toml`** | Aktiver seed mot `./seed.sql` — **`supabase/seed.sql` finnes ikke** i repo (**P3 hygiene** under backlog). |
-| **Sanity** | Studio har både **env‑styrt** konfigurasjon og **hardkodet** `production`/`f3vuhd2f` i undermappe; **fallback `4udoq5d8` i eldre scripts** — **P3 hygiene**, ikke løst i denne revisjonen. |
+| **Sanity** | Canonical Sanity-prosjekt 4udoq5d8 (Vercel Production, live CMS, Studio/repo etter P3.H3-REVERSE 40a17745). Tomt prosjekt f3vuhd2f brukes ikke. |
 | **Env‑inventar** | **335** `process.env.*`‑nøkler observert i kildekode under `app/`, `lib/`, `middleware.ts`, `next.config.ts`, `scripts/`, `components/`, `hooks/`, `workers/`, `studio/`. Maskinlesbar full liste: [docs/environments.json](environments.json). |
 | **Next.js offentlig app‑host** | Dokumentert som `app.lunchportalen.no` i arkitektur‑notater; **presis Vercel‑project binding** krever dashboard‑sjekk. |
+
+## Sanity projectId (etter P3.H3-REVERSE)
+
+Sanity projectId (2026-05-19): Verifisert canonical = 4udoq5d8. P3.H3 (e3745326) pekte repo feilaktig på tomt f3vuhd2f; reversert i 40a17745. B3c oppretter staging-dataset på 4udoq5d8.
 
 ---
 
@@ -128,7 +132,7 @@ Kreves **som minimum**:
 
 1. **Supabase:** Opprett/obruk **ÉN aktiv `staging`** branch (ny eller re‑aktivisert eksisterende) — **persistert**, TTL unntatt i policy. PR‑isolate branching **utsett** til etter dokumentert ROI.  
 2. **Vercel:** Strategi **A**: **Production** + **`staging`** deploy branch auto‑bygg + behold **preview** for PR‑smoke. Frem til DNS: standard `*.vercel.app`‑URL med **staging‑env‑vars**.  
-3. **Sanity:** Opprett **`staging`** datasett i **`f3vuhd2f`**, **egen write‑token** + **SANITY_WEBHOOK_SECRET staging**. Aldri staging mot `production`‑dataset uten dokumentert QA‑pause.  
+3. **Sanity:** Opprett **`staging`** datasett i **`4udoq5d8`**, **egen write‑token** + **SANITY_WEBHOOK_SECRET staging**. Aldri staging mot `production`‑dataset uten dokumentert QA‑pause.  
 4. **Domene:** `staging.app.lunchportalen.no` (**CNAME** → Vercel anbefalt mål leveres ved DNS‑oppsett).  
 5. **Data:** **Variant C** — `scripts/seed-staging.ts` (B3f) med syntetikk; **null** art. 9 felter.
 
@@ -179,7 +183,7 @@ Når `25 + 9,81·C_b` **nærmer seg** 599 USD, blir **Team** «rent USD‑regn
 
 | | |
 |---|---|
-|**Scope**|Datasett `staging` i `f3vuhd2f`, CORS & tokens.|
+|**Scope**|Datasett `staging` i `4udoq5d8`, CORS & tokens.|
 |**Risiko**|Feil token → skriv til **prod** dataset.|
 |**Rollback**|Slett datasett (etter backup av innhold) + rotér tokens.|
 |**Avhengighet**|Sanity plan‑kvote.|
