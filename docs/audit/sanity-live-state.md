@@ -4,8 +4,17 @@
 **Repo-commit:** 0625628d64c37e2302242bf62ec47ee65a3aea48  
 **Sanity projectId:** 4udoq5d8 *(canonical per `studio/lunchportalen-studio/sanity.config.ts` and Vercel Production env; verified live CMS 2026-05-19)*  
 **Note:** Reverted P3.H3 (commit e3745326) in P3.H3-REVERSE 2026-05-19 — metadata corrected; dump tables below are unchanged historical audit from 2026-05-12.  
-**Sanity dataset:** production  
+**Sanity dataset:** production *(historisk dump nedenfor; se dataset-state)*  
 **Sanity API-versjon brukt:** 2024-01-01
+
+---
+
+## Dataset-state (prosjekt `4udoq5d8`, verifisert 2026-05-19)
+
+| Dataset | aclMode | Dokumenter (`count(*)`) | Innhold (ekskl. `system.*`) | Merknad |
+|---------|---------|------------------------:|------------------------------:|---------|
+| `production` | `public` | **1120** | 1120 (alle typer) | Uendret ved B3c. Baseline **1120** er total `count(*)` (Management API + GROQ). Tidligere **~107** i audit var **filtrert/menu-relatert** telling — ikke total. |
+| `staging` | `private` | 12 | **0** | Opprettet manuelt i Sanity Manage UI (B3c). `SANITY_WRITE_TOKEN` (editor) mangler `sanity.project.datasets/create`; opprettelse via UI for å unngå midlertidig admin-token i `.env`. De 12 radene er kun Sanity bootstrap (`system.group`, `system.retention`) — ingen schema-deployment, ingen kloning fra production (variant C). |
 
 ---
 

@@ -319,7 +319,7 @@ flowchart TD
 |----------------|---------|--------|
 | **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **Åpen** — beslutning 2, 3, 4 lukket |
 | **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
-| **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **Åpen** — kan starte parallelt |
+| **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **COMPLETED** — 2026-05-19 (manuell UI-opprettelse; smoke read-only) |
 | **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
 | **B3e** | Env deploy-matrise (262 runtime-nøkler) | **Åpen** — etter B3a–d |
 | **B3f** | `scripts/seed-staging.ts` + initial smoke | **Åpen** — sist |
@@ -367,10 +367,11 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 
 ### B3c — Sanity staging-dataset
 
-- **AUTOMATABLE:** Sanity CLI med write-token, eller **HUMAN** via Studio/dashboard.
-- **Dataset:** `staging` på prosjekt `4udoq5d8`.
-- **Kloning fra production:** valgfritt; **ingen ekte PII** (variant C).
-- **Estimat:** ~5 min.
+- **Status:** **COMPLETED** 2026-05-19 — dataset `staging` opprettet i Sanity Manage UI (`aclMode: private`, prosjekt `4udoq5d8`).
+- **Token/rettigheter (for B3e):** `SANITY_WRITE_TOKEN` i `.env.local` er **editor**-rolle; Management API `PUT …/datasets/staging` og `sanity dataset create` feilet med manglende grant `sanity.project.datasets/create`. API-rute avvist; UI-opprettelse valgt for å unngå midlertidig admin-token i `.env`.
+- **Smoke (read-only):** `production` `count(*)` = **1120** (uendret); `staging` innhold **0** brukerdokumenter (12 `system.*` bootstrap-rader fra Sanity).
+- **Ikke utført i B3c:** schema-deploy, CORS, kloning fra production, webhooks, nye tokens.
+- **Kloning fra production:** **ikke** utført (variant C strict).
 
 ### B3e — Environment-variabel deploy
 
@@ -403,7 +404,7 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 |------|--------|
 | Framework opprettet | **2026-05-19** |
 | Beslutninger | **LUKKET (4/4)** — 2026-05-19 ~02:30 |
-| Implementering B3a–B3f | **ÅPEN** — klar for neste sesjon |
+| Implementering B3a–B3f | **Pågår** — **B3c COMPLETED** 2026-05-19; øvrige faser åpne |
 | P3.B3 beslutningsfase | **DECIDED** |
 | Nedstrøms B4 | Fortsatt **blokkert** til B3f ferdig |
 
