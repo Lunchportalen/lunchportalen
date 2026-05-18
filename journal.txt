@@ -1,3 +1,9 @@
+## 2026-05-18 — FASE B oppgave 2 — B2b-1 tg_audit_row (prod via MCP apply_migration)
+
+- `supabase/migrations/20260518094806_b2b1_skip_updated_at_only_updates.sql` + rollback `supabase/migrations/rollbacks/20260518094806_b2b1_ROLLBACK.sql` (MCP version 20260518094806). Oppdatert `docs/journal.txt`. Ikke pushet før eier-OK.
+
+---
+
 ## 2026-05-18 — FASE B oppgave 2 — audit_log skala-strategi Rev A (docs-only)
 
 - `docs/audit-log-strategy.md`, `docs/performance-p-backlog.md` (+ `docs/journal.txt`). Ingen DB/kode — plan for B2b-1/B2b-2/B2c/B2d (P1) m.m. Push etter eier-OK.

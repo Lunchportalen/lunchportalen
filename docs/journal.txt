@@ -4,6 +4,15 @@ Eldre hendelser: se `journal.txt` i prosjektrot.
 
 ---
 
+## 2026-05-18 — FASE B oppgave 2 — B2b-1 `tg_audit_row` skip `updated_at`-only UPDATE
+
+- Migrasjon: `supabase/migrations/20260518094806_b2b1_skip_updated_at_only_updates.sql` (MCP `schema_migrations.version` = **20260518094806**, name `b2b1_skip_updated_at_only_updates`) — `SECURITY DEFINER`, `SET search_path TO ''` uendret; ved `UPDATE` hoppes audit hvis `(to_jsonb(NEW)-'updated_at')=(to_jsonb(OLD)-'updated_at')`.
+- Manuell rollback: `supabase/migrations/rollbacks/20260518094806_b2b1_ROLLBACK.sql`.
+- Prod: MCP `apply_migration` OK; touch-test (`UPDATE products SET updated_at`): `audit_log.max(id)` og `n_tup_ins` uendret (**29822**).
+- PUSH: ikke utført (STEG 6 HARDGATE — vent eier-OK).
+
+---
+
 ## 2026-05-18 — FASE B oppgave 2 — audit_log skala-strategi Rev A (STEG 3, docs-only)
 
 - Nye/oppdaterte dokumenter: `docs/audit-log-strategy.md` (trigger-basert DML-jsonb, matematikk 1K/5K/50K, art. 9 helsedata, DPO-blokkeringer før B2d, volum-baseline etter B2b, B2b-1–4, B2c–d rekkefølge, rollback, «what this does not do`), `docs/performance-p-backlog.md` (P1: B2b-1/B2b-2/B2c/B2d + renummererte øvrige P1; P2/P3 audit-rader + eksisterende performance-punkter).
