@@ -1,0 +1,27 @@
+-- =============================================================================
+-- PLACEHOLDER — lokal Postgres-seed etter migrasjoner (P3.H4 hygiene)
+-- =============================================================================
+-- Denne filen inneholder kun kommentarer: ingen DML. Ekte seed-logikk kommer
+-- i B3f/B4 (se strategidokumenter nedenfor).
+--
+-- Hvorfor filen finnes:
+--   supabase/config.toml har [db.seed] enabled=true og sql_paths=["./seed.sql"].
+--   Manglende fil ga risiko for feilet seed-steg ved `supabase db reset` og i
+--   scripts/ci/db-rebuild-verify.mjs når lokal Supabase brukes.
+--
+-- Fremtidig implementering:
+--   • B3f — initial dev-seed / staging-baseline (syntetikk, ingen prod-kopi).
+--   • B4 — volum-seed-pipeline og gates mot staging (B5 last-test).
+--
+-- Strategi og juridisk ramme (les full tekst der — ikke gjenta her):
+--   • docs/staging-strategy.md — variant C (kun syntetiske data).
+--   • docs/volume-seed-strategy.md — B4-implementeringsplan og rekkefølge.
+--   • docs/audit-log-strategy.md — bl.a. art. 9-eksklusjon i revisjonsspor.
+--
+-- GDPR / databehandling ved fremtidig innhold i denne filen:
+--   Ingen ekte PII, ingen ekte norsk personnummer, ingen ekte telefonnumre eller
+--   adresser. Ingen art. 9-sensitive data (f.eks. helse/allergener i klartekst)
+--   uten eksplisitt vedtak og konsekvensvurdering i tråd med staging-strategien.
+--   Kun strukturelle eller dokumenterte syntetiske testdata der B3f/B4 beskriver det.
+--
+-- =============================================================================
