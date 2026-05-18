@@ -317,7 +317,7 @@ flowchart TD
 
 | B3-fase (repo) | Innhold | Status |
 |----------------|---------|--------|
-| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **Åpen** — beslutning 2, 3, 4 lukket |
+| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **PROVISIONED — schema sync BLOCKED** (2026-05-19, `crsvtxhfhjicyoycgvcd`; se [supabase-state.md](supabase-state.md)) |
 | **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
 | **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **COMPLETED** — 2026-05-19 (manuell UI-opprettelse; smoke read-only) |
 | **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
@@ -347,14 +347,11 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 
 ### B3a — Supabase staging-branch provisjon
 
-- **AUTOMATABLE (delvis):** MCP `create_branch` eller manuell via Dashboard.
-- **Branch-navn:** `staging` (**ikke** gjenbruk `staging-abc-signoff` / `iyrytpjacujscveivtfb`).
-- **Region:** samme som prod — verifiser før opprettelse.
-- **Compute size:** micro (~0,4 GB RAM; ~$0,01344/time).
-- **Verifikasjon:** MCP `list_branches`, status **ACTIVE**.
-- **Migrasjoner:** `supabase/migrations/` skal applies rent på ny branch.
-- **Estimat:** ~5 min provisjon + ~10 min migrasjonssync.
-- **Avhengighet:** Beslutning 2 (Pro) og 4 (ny branch) — **lukket**.
+- **Status (2026-05-19):** Branch **`staging`** opprettet via MCP `create_branch` → `project_ref` **`crsvtxhfhjicyoycgvcd`**, `with_data: false`, `persistent: false`. **`staging-abc-signoff` uberørt** (`INACTIVE`). Prod fortsatt `ACTIVE_HEALTHY`.
+- **Migrasjoner:** **BLOCKED** — initial `MIGRATIONS_FAILED`; `reset_branch` / `rebase_branch` uten full schema. Branch `list_migrations` viser kun orphan **`20260222233084`** (ikke i repo); `list_tables` på staging = tom `public`. Detaljer: [supabase-state.md](supabase-state.md).
+- **`persistent: false`:** MCP har ikke `update_branch` — oppfølging **B3a-PERSISTENT-FIX** (Dashboard).
+- **Neste:** **B3a-MIGRATIONS-FIX** (HUMAN/Dashboard) før B3f; B3b kan starte parallelt (env peker ikke på staging DB før fix).
+- **Kost:** ~$0.01344/time (~kr 90/mnd) per aktiv branch-compute.
 
 ### B3b — Vercel staging-env
 
@@ -404,7 +401,7 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 |------|--------|
 | Framework opprettet | **2026-05-19** |
 | Beslutninger | **LUKKET (4/4)** — 2026-05-19 ~02:30 |
-| Implementering B3a–B3f | **Pågår** — **B3c COMPLETED** 2026-05-19; øvrige faser åpne |
+| Implementering B3a–B3f | **Pågår** — **B3c COMPLETED**; **B3a branch PROVISIONED**, schema sync **BLOCKED** (2026-05-19) |
 | P3.B3 beslutningsfase | **DECIDED** |
 | Nedstrøms B4 | Fortsatt **blokkert** til B3f ferdig |
 

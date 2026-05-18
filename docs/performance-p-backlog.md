@@ -56,11 +56,11 @@
 
 **Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
-| **B3 (staging provisioning)** | **DECIDED** — klar for B3a–B3f implementering. Beslutninger 2026-05-19: DNS **Domeneshop** · Supabase **Pro** · cap **kr 800/mnd** · `staging-abc-signoff` **PAUSED** (behold arkiv), ny branch **`staging`**. **B3c COMPLETED 2026-05-19** (UI-opprettet `staging` på `4udoq5d8`; `SANITY_WRITE_TOKEN` editor mangler `datasets/create` — dokumentert for B3e) | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) — status + implementeringsplan (HUMAN/AUTOMATABLE, ~4–8 t) |
+| **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a PROVISIONED** 2026-05-19 (`crsvtxhfhjicyoycgvcd`, schema sync **BLOCKED** — se [supabase-state.md](audit/supabase-state.md)). Åpne: **B3a-MIGRATIONS-FIX**, **B3a-PERSISTENT-FIX** | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
 
 | Oppgave | Innhold |
 |---------|---------|
-| **B3a** | Supabase staging‑branch: aktiver/obruk `staging`, migrasjonssync‑flyt, budget alerts |
+| **B3a** | Supabase staging‑branch **PROVISIONED 2026-05-19** (`crsvtxhfhjicyoycgvcd`) — migrasjonssync **BLOCKED** (orphan `20260222233084`); **B3a-MIGRATIONS-FIX** + **B3a-PERSISTENT-FIX** åpne |
 | **B3b** | Vercel `staging` git‑branch + env mapping; forhindre cron mot prod‑URL ved feilkonfig |
 | **B3c** | ~~Sanity `staging` datasett~~ **COMPLETED 2026-05-19** — dataset `staging` (private) på `4udoq5d8`; egne write‑token og webhook‑secret → **B3e** |
 | **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
