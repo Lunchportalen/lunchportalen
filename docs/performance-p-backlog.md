@@ -50,16 +50,36 @@
 |---|--------|-------------|
 | P3.H1 | **DONE** — B2-prelude (mai 2026): fjernet døde `listCompanyAudit` / `listAuditGlobal` og tilhørende typer i `lib/superadmin/queries.ts`. | Oppfylt · ingen backlog-handling |
 | P3.H2 | **DONE** — B2-prelude (mai 2026): fjernet `audit_log`-fallback i `POST /api/superadmin/audit-write`; skriver kun til `audit_events`. | Oppfylt · ingen backlog-handling |
-| P3.V1–V6 | **Skala-validering** (se liste under) | Egen økt / prosjekt |
+| P3.V1–V6 | **Skala-validering** | Erstattet av detaljplan under **Infrastruktur / Skala-validering** + [docs/staging-strategy.md](staging-strategy.md) |
 
-### P3 — skala-validering (separate sesjoner / prosjekt)
+### Infrastruktur / Skala-validering (FASE B – grunnmur)
 
-1. Etabler **staging-Postgres** (Supabase branch eller dedikert prosjekt) speilet mot prod-skjema.
-2. **Volum-seed:** X firma × Y ansatte × Z ordre/dag × locations — versjonert script og dokumentert kjøretid.
-3. Installer og velg **k6** (eller tilsvarende) for HTTP-last; utvid evt. `enterprise-proof-load.mjs`-tankegang til **autentiserte** kjerne-endepunkter.
-4. Valgfritt **pgbench** mot staging for ren DB-gjennomløp der det gir mening.
-5. **Rev B:** `EXPLAIN (ANALYZE, BUFFERS)` på staging for representative queries fra `hot-paths.md`.
-6. **Sammenlign Rev A vs Rev B** — arkiver snapshots (`pg_stat_statements`, tabellstørrelser, advisors).
+**Strategidokument (Rev A):** [docs/staging-strategy.md](staging-strategy.md) — GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `f3vuhd2f`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
+
+| Oppgave | Innhold |
+|---------|---------|
+| **B3a** | Supabase staging‑branch: aktiver/obruk `staging`, migrasjonssync‑flyt, budget alerts |
+| **B3b** | Vercel `staging` git‑branch + env mapping; forhindre cron mot prod‑URL ved feilkonfig |
+| **B3c** | Sanity `staging` datasett; egne write‑token og webhook‑secret |
+| **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
+| **B3e** | Full env-dokumentasjon (JSON Rev A i repo — utvid ved behov per tjeneste) |
+| **B3f** | `scripts/seed-staging.ts` — syntetisk volum (uten art. 9), idempotent — foundation til B4 skala‑seed |
+
+**Skala‑validering etter staging står:**
+
+1. **Volum-seed:** B4 oppgraderer B3f til dokumentert firmavolum og kjøretid.
+2. **k6 / HTTP-last (B5):** representative autentiserte kjernebane-endepunkter.
+3. Valgfritt **pgbench** mot staging der isolert DB‑gjennomløp trengs.
+4. **Rev B:** `EXPLAIN (ANALYZE, BUFFERS)` på staging for representative queries fra `hot-paths.md`.
+5. **Sammenlign Rev A vs Rev B** — arkiver snapshots (`pg_stat_statements`, tabellstørrelser, advisors).
+
+### P3 — hygiene avdekket av B3-audit (ikke løst i Rev A docs)
+
+| # | Issue | Neste handling |
+|---|--------|----------------|
+| P3.H3 | **Sanity `projectId`‑drift** (`f3vuhd2f` vs historisk `4udoq5d8` i eldre scripts) | Egen P3 commit: én sann kilde + CI grep‑guard eller eslint |
+| P3.H4 | **`supabase/seed.sql` mangler** mens `supabase/config.toml` peker på fil | Opprett eller fjern seed‑kobling ved B3f/B4 avklaring |
+| P3.H5 | **Env‑inventar inneholder toolchain‑støy** (`PATH`, `npm_*`, test‑internals) — se `docs/environments.json` gruppe «Diverse» | B3e: konsumer‑kun liste for Vercel vs full repo‑audit liste |
 
 ---
 
