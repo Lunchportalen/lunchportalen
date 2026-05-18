@@ -140,6 +140,8 @@ function listTrackedFiles() {
 
 function shouldScanServiceRole(rel) {
   if (rel.toLowerCase().endsWith(".md")) return false;
+  // Referanse-/inventarinventar under docs (f.eks. env-nøkkelkart) er ikke runtime-kode.
+  if (rel.startsWith("docs/")) return false;
   if (rel.startsWith("supabase/migrations/")) return path.extname(rel).toLowerCase() === ".sql";
   if (rel.startsWith(".github/workflows/")) return true;
   return SERVICE_ROLE_CODE_EXTS.has(path.extname(rel).toLowerCase());
