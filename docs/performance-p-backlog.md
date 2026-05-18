@@ -54,7 +54,7 @@
 
 ### Infrastruktur / Skala-validering (FASE B – grunnmur)
 
-**Strategidokument (Rev A):** [docs/staging-strategy.md](staging-strategy.md) — GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `f3vuhd2f`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
+**Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `f3vuhd2f`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
 | Oppgave | Innhold |
 |---------|---------|
@@ -64,10 +64,14 @@
 | **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
 | **B3e** | Full env-dokumentasjon (JSON Rev A i repo — utvid ved behov per tjeneste) |
 | **B3f** | `scripts/seed-staging.ts` — syntetisk volum (uten art. 9), idempotent — foundation til B4 skala‑seed |
+| **B4a** | Faker-/data‑modeller og generatorer deterministiske etter `--seed`; art. 9‑null i snapshots; B4a inkluderer objekt‑typesjekk for `employee_order_items` (TABLE vs VIEW) før skriverekkefølge låses — jf. [docs/volume-seed-strategy.md](volume-seed-strategy.md) |
+| **B4b** | Bulk‑insert/COPY‑pipeline med batch‑ og parallelismekontroll, målinger mot staging |
+| **B4c** | Verifiserings‑scripts: radteller, FK‑integritet, distribusjon, audit‑ før/etter der strategi bruker post‑seed truncate |
+| **B4d** | CLI: `npm run seed:volume -- --size … --target-db … --dry-run --confirm=staging+<project_ref>` og hard gate mot feil prosjekt |
 
 **Skala‑validering etter staging står:**
 
-1. **Volum-seed:** B4 oppgraderer B3f til dokumentert firmavolum og kjøretid.
+1. **Volum-seed:** B4 oppgraderer B3f til dokumentert firmavolum og kjøretid (strategi: [volume-seed-strategy.md](volume-seed-strategy.md)).
 2. **k6 / HTTP-last (B5):** representative autentiserte kjernebane-endepunkter.
 3. Valgfritt **pgbench** mot staging der isolert DB‑gjennomløp trengs.
 4. **Rev B:** `EXPLAIN (ANALYZE, BUFFERS)` på staging for representative queries fra `hot-paths.md`.
@@ -80,6 +84,17 @@
 | P3.H3 | **Sanity `projectId`‑drift** (`f3vuhd2f` vs historisk `4udoq5d8` i eldre scripts) | Egen P3 commit: én sann kilde + CI grep‑guard eller eslint |
 | P3.H4 | **`supabase/seed.sql` mangler** mens `supabase/config.toml` peker på fil | Opprett eller fjern seed‑kobling ved B3f/B4 avklaring |
 | P3.H5 | **Env‑inventar inneholder toolchain‑støy** (`PATH`, `npm_*`, test‑internals) — se `docs/environments.json` gruppe «Diverse» | B3e: konsumer‑kun liste for Vercel vs full repo‑audit liste |
+
+### P3 — discovery fra volum‑seed/forarbeid (mai 2026)
+
+Disse punktene kommer fra read‑only kartlegging foran B4‑implementering og skal lukkes før volum‑seed kjører «blind». Detaljer finnes også i [docs/volume-seed-strategy.md](volume-seed-strategy.md).
+
+| # | Issue | Neste handling |
+|---|--------|----------------|
+| P3.D1 | **`profiles` vs `tg_audit_row`-volum** — Profiler har egen spor (`audit_direct_profile_scope_write` på BEFORE UPDATE av scope-kolonner, ikke samme som radnivå `tg_audit_row` på domene-/meny-/fakturatabel). Ikke bland antatt audit-INSERT ved profil-arbeid med medlemskaps-/ordre-writes. | B4-volumbudget: dokumenter audited tabeller eksplisitt; ikke tell `profiles`-INSERT inn i `tg_audit_row`-spike |
+| P3.D2 | **`employee_order_items` datatype** — `information_schema`/spørringer viste `%_snapshot`‑felt for et objekt med dette navnet; må verifiseres som `BASE TABLE` vs VIEW før noen INSERT‑rekkefølge låses. | B4a: `SELECT table_type FROM information_schema.tables WHERE …` på staging før implementering |
+| P3.D3 | **`audit_log` størrelses måling ved partisjon** — Observerte at `pg_total_relation_size(public.audit_log)` kan rapportere 0 eller misvisende på parent mens barn-partisjonene bærer faktiske MB og sum `n_live_tup`; `audit_log_legacy` kan også stå ved siden av aktiv struktur. | B4c/B5-måling: bruk SUM på relevante barn og/eller konkret partisjon, ikke kun parent-oid uten analyse |
+| P3.D4 | **To permissive INSERT‑policyer på `orders`** (`orders_insert` og `orders_insert_none` i prod‑snapshot) | Relatert til P2.3 («multiple permissive policies»); egen konsolidering når staging har volum og query‑profiler viser overhead |
 
 ---
 
