@@ -48,8 +48,8 @@
 
 | # | Issue | Begrunnelse |
 |---|--------|-------------|
-| P3.H1 | **`audit_log` B2-prelude — `lib/superadmin/queries.ts`** (`listCompanyAudit`, `listAuditGlobal` vs prod-skjema) | Død/feilkoblet modell · forvirrer fremtidig utvikling |
-| P3.H2 | **`audit_log` B2-prelude — `POST /api/superadmin/audit-write`** fallback mot `audit_log` mismatch | Fallback matcher ikke prod CHECK/skjema; bør ryddes |
+| P3.H1 | **DONE** — B2-prelude (mai 2026): fjernet døde `listCompanyAudit` / `listAuditGlobal` og tilhørende typer i `lib/superadmin/queries.ts`. | Oppfylt · ingen backlog-handling |
+| P3.H2 | **DONE** — B2-prelude (mai 2026): fjernet `audit_log`-fallback i `POST /api/superadmin/audit-write`; skriver kun til `audit_events`. | Oppfylt · ingen backlog-handling |
 | P3.V1–V6 | **Skala-validering** (se liste under) | Egen økt / prosjekt |
 
 ### P3 — skala-validering (separate sesjoner / prosjekt)

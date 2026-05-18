@@ -41,24 +41,6 @@ export type CompanyRow = {
   updated_at?: string | null;
 };
 
-export type AuditSeverity = "info" | "warning" | "critical" | string;
-
-export type AuditLogRow = {
-  id: string;
-  created_at: string;
-  actor_user_id: string | null;
-  actor_role: string | null;
-  action: string;
-  severity: AuditSeverity | null;
-  company_id: string | null;
-  target_type: string | null;
-  target_id: string | null;
-  target_label: string | null;
-  before: any | null;
-  after: any | null;
-  meta: any | null;
-};
-
 export type QualityRow = {
   id: string;
   company_id: string;
@@ -490,24 +472,8 @@ export async function listCompanyQuality(companyId: string, limit = 50) {
   return (res.data || []) as QualityRow[];
 }
 
-export async function listCompanyAudit(companyId: string, limit = 100) {
-  const supabase = await supabaseServer();
-
-  const res = await supabase
-    .from("audit_log")
-    .select(
-      "id,created_at,actor_user_id,actor_role,action,severity,company_id,target_type,target_id,target_label,before,after,meta"
-    )
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (res.error) throw new Error(res.error.message);
-  return (res.data || []) as AuditLogRow[];
-}
-
 /* =========================
-   GLOBAL: OPERATIONS / AUDIT
+   GLOBAL: OPERATIONS
 ========================= */
 
 export async function listDeliveriesForDate(dateISO: string) {
@@ -521,21 +487,6 @@ export async function listDeliveriesForDate(dateISO: string) {
 
   if (res.error) throw new Error(res.error.message);
   return (res.data || []) as DeliveryRow[];
-}
-
-export async function listAuditGlobal(limit = 200) {
-  const supabase = await supabaseServer();
-
-  const res = await supabase
-    .from("audit_log")
-    .select(
-      "id,created_at,actor_user_id,actor_role,action,severity,company_id,target_type,target_id,target_label,before,after,meta"
-    )
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (res.error) throw new Error(res.error.message);
-  return (res.data || []) as AuditLogRow[];
 }
 
 /* =========================

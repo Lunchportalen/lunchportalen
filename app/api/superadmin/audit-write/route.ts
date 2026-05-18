@@ -21,18 +21,6 @@ function isMissingTable(err: any) {
   return code === "42P01" || msg.includes("does not exist");
 }
 
-function isMissingColumn(err: any) {
-  const code = String(err?.code ?? "");
-  const msg = String(err?.message ?? "").toLowerCase();
-  // Postgres undefined_column = 42703
-  return (
-    code === "42703" ||
-    msg.includes("could not find the") ||
-    (msg.includes("column") && msg.includes("does not exist")) ||
-    msg.includes("does not exist")
-  );
-}
-
 type Body = {
   action: string;
   entityId: string; // company uuid
@@ -59,28 +47,19 @@ function clampDetail(input: any) {
  * da forsvinner VSCode/tsserver-problemene du ser i bildet.
  */
 type InsertAuditResult =
-  | { kind: "ok"; table: "audit_events" | "audit_log" }
+  | { kind: "ok"; table: "audit_events" }
   | { kind: "err"; error: "audit_table_missing" | "db_error"; detail: any };
 
 async function insertAudit(sb: any, payload: any): Promise<InsertAuditResult> {
-  // 1) Prøv audit_events (primær)
   const a = await sb.from("audit_events").insert(payload);
   if (!a.error) return { kind: "ok", table: "audit_events" };
 
-  // 2) Fallback audit_log (hvis dere har den)
-  if (isMissingTable(a.error) || isMissingColumn(a.error)) {
-    const b = await sb.from("audit_log").insert(payload);
-    if (!b.error) return { kind: "ok", table: "audit_log" };
-
-    if (isMissingTable(b.error) || isMissingColumn(b.error)) {
-      return {
-        kind: "err",
-        error: "audit_table_missing",
-        detail: { audit_events: a.error, audit_log: b.error },
-      };
-    }
-
-    return { kind: "err", error: "db_error", detail: b.error };
+  if (isMissingTable(a.error)) {
+    return {
+      kind: "err",
+      error: "audit_table_missing",
+      detail: { audit_events: a.error },
+    };
   }
 
   return { kind: "err", error: "db_error", detail: a.error };
@@ -153,8 +132,8 @@ export async function POST(req: Request) {
 
     if (ins.kind === "err") {
       if (ins.error === "audit_table_missing") {
-        return jsonErr(rid, "Finner verken audit_events eller audit_log i databasen.", 500, { code: "AUDIT_TABLE_MISSING", detail: {
-          hint: "Opprett audit-tabell (audit_events), eller endre route til eksisterende tabell.",
+        return jsonErr(rid, "Finner ikke audit_events-tabellen i databasen.", 500, { code: "AUDIT_TABLE_MISSING", detail: {
+          hint: "Opprett audit_events-tabellen eller kontakt drift.",
           detail: ins.detail,
         } });
       }
