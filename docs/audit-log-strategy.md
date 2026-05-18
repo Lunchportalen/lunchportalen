@@ -79,6 +79,31 @@ med **S ≈ 2048 B** (2 kB) som referansepunkt (API/ordrerader med notatfelt kan
 
 ---
 
+## Profiles audit-anomalitet
+
+`public.profiles` følger **ikke** samme spor som de **14** tabellene som har **`AFTER … tg_audit_row()`** (radnivå-audit til `audit_log`). I prod finnes **`trg_profiles_audit_legacy_scope_write`**: en **`BEFORE UPDATE OF company_id, location_id`**-trigger som kaller **`audit_direct_profile_scope_write()`** og er begrenset til **scope-kolonnene** (`company_id`, `location_id`).
+
+**Konsekvens for volum og revisjonsforståelse:** **`INSERT` på `profiles` gir ikke** `audit_log`-rad via **`tg_audit_row`** (samme bane som de 14 audited tabellene). Kun **endring av scope** på en **eksisterende** profil går inn i det **legacy profile scope**-sporet. Ved planlegging av audit-spike, B4-volum og feilanalyse må dette **ikke** blandes med `tg_audit_row`-volum fra domene-/ordre-/meny-/fakturatabeller — se også [performance-p-backlog.md](performance-p-backlog.md) (**P3.D1**, dokumentert).
+
+---
+
+## pg_total_relation_size på partition-parent: verifiseringsmønster
+
+Når `public.audit_log` er **partitionert**, kan **`pg_total_relation_size('public.audit_log'::regclass)`** mot **parent** vise **0** eller **misvisende** tall, fordi **faktiske bytes** ofte ligger på **barn-partisjoner** (evt. ved siden av `audit_log_legacy` e.l. — se baseline/backlog). Stol ikke på parent alene i B4c/B5 eller kapasitetsrapporter uten analyse.
+
+**Korrekt mønster — sum størrelse over alle direkte arvede barn:**
+
+```sql
+SELECT SUM(pg_total_relation_size(c.oid)) AS total_bytes
+FROM pg_class c
+JOIN pg_inherits i ON i.inhrelid = c.oid
+WHERE i.inhparent = 'public.audit_log'::regclass;
+```
+
+**Alternativ:** mål eksplisitt mot **konkrete partisjonsnavn** når oppsettet er kjent, eller bruk **`pg_partman`** / tilsvarende katalog-/vedlikeholdsspor når det er tatt i bruk. Detaljhåndtering knyttes til **P3.D3** i [performance-p-backlog.md](performance-p-backlog.md) — dokumentert målemøster.
+
+---
+
 ## GDPR art. 9 helsedata-risiko
 
 **Særskilt kategori personopplysninger** (helsefortrolige opplysninger eller opplysninger som ved avledning beskytter sensitiv livssituasjon — jf. GDPR art. 9) er **ikke** ting vi kan «bake» inn i generell revisjons-JSON uten **eksplisitt** behandlingsregime.

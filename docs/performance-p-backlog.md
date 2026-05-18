@@ -64,7 +64,7 @@
 | **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
 | **B3e** | Full env-dokumentasjon (JSON Rev A i repo — utvid ved behov per tjeneste) |
 | **B3f** | `scripts/seed-staging.ts` — syntetisk volum (uten art. 9), idempotent — foundation til B4 skala‑seed |
-| **B4a** | Faker-/data‑modeller og generatorer deterministiske etter `--seed`; art. 9‑null i snapshots; B4a inkluderer objekt‑typesjekk for `employee_order_items` (TABLE vs VIEW) før skriverekkefølge låses — jf. [docs/volume-seed-strategy.md](volume-seed-strategy.md) |
+| **B4a** | Faker-/data‑modeller og generatorer deterministiske etter `--seed`; art. 9‑null i snapshots; **`employee_order_items` dokumentert som VIEW på prod** (speiler `order_items`); seed skriver til **`order_items`**. Verifiser `relkind`/def på mål-branch; jf. [docs/volume-seed-strategy.md](volume-seed-strategy.md). |
 | **B4b** | Bulk‑insert/COPY‑pipeline med batch‑ og parallelismekontroll, målinger mot staging |
 | **B4c** | Verifiserings‑scripts: radteller, FK‑integritet, distribusjon, audit‑ før/etter der strategi bruker post‑seed truncate |
 | **B4d** | CLI: `npm run seed:volume -- --size … --target-db … --dry-run --confirm=staging+<project_ref>` og hard gate mot feil prosjekt |
@@ -83,7 +83,7 @@
 |---|--------|----------------|
 | P3.H3 | **Sanity `projectId`‑drift** (`f3vuhd2f` vs historisk `4udoq5d8` i eldre scripts) | Egen P3 commit: én sann kilde + CI grep‑guard eller eslint |
 | P3.H4 | **`supabase/seed.sql` mangler** mens `supabase/config.toml` peker på fil | Opprett eller fjern seed‑kobling ved B3f/B4 avklaring |
-| P3.H5 | **Env‑inventar inneholder toolchain‑støy** (`PATH`, `npm_*`, test‑internals) — se `docs/environments.json` gruppe «Diverse» | B3e: konsumer‑kun liste for Vercel vs full repo‑audit liste |
+| P3.H5 | **ÅPEN** — `docs/environments.json` full repo‑audit/inventar inkluderer **toolchain‑støy** som ikke er Vercel-konsumerbare sanne runtime-sekreter: shell/`PATH`-eksport, **`npm_*`** (f.eks. livssyklus til npm CLI), **`jest`/`playwright`-relaterte internvar** og liknende test-runner miljødump — se gruppe «Diverse». **Ikke bruk blindt** «alt i JSON» som deploy-matrise. | **ÅPEN** til **B3e-split**: konsument-liste for Vercel/deploy vs slimmet repo-auditliste (ingen dokumentasjon-lukking ennå). |
 
 ### P3 — discovery fra volum‑seed/forarbeid (mai 2026)
 
@@ -91,10 +91,11 @@ Disse punktene kommer fra read‑only kartlegging foran B4‑implementering og s
 
 | # | Issue | Neste handling |
 |---|--------|----------------|
-| P3.D1 | **`profiles` vs `tg_audit_row`-volum** — Profiler har egen spor (`audit_direct_profile_scope_write` på BEFORE UPDATE av scope-kolonner, ikke samme som radnivå `tg_audit_row` på domene-/meny-/fakturatabel). Ikke bland antatt audit-INSERT ved profil-arbeid med medlemskaps-/ordre-writes. | B4-volumbudget: dokumenter audited tabeller eksplisitt; ikke tell `profiles`-INSERT inn i `tg_audit_row`-spike |
-| P3.D2 | **`employee_order_items` datatype** — `information_schema`/spørringer viste `%_snapshot`‑felt for et objekt med dette navnet; må verifiseres som `BASE TABLE` vs VIEW før noen INSERT‑rekkefølge låses. | B4a: `SELECT table_type FROM information_schema.tables WHERE …` på staging før implementering |
-| P3.D3 | **`audit_log` størrelses måling ved partisjon** — Observerte at `pg_total_relation_size(public.audit_log)` kan rapportere 0 eller misvisende på parent mens barn-partisjonene bærer faktiske MB og sum `n_live_tup`; `audit_log_legacy` kan også stå ved siden av aktiv struktur. | B4c/B5-måling: bruk SUM på relevante barn og/eller konkret partisjon, ikke kun parent-oid uten analyse |
+| P3.D1 | **RESOLVED (DOCUMENTED)** — **`profiles` vs `tg_audit_row`-volum:** `trg_profiles_audit_legacy_scope_write` + `audit_direct_profile_scope_write()` på scope-kolonner; **ikke** samme spor som **`tg_audit_row`** på de 14 tabellene; **profil-INSERT** inngår ikke i samme `audit_log`-bane som disse. | RESOLVED (DOCUMENTED) — [docs/audit-log-strategy.md](audit-log-strategy.md) § «Profiles audit-anomalitet» |
+| P3.D2 | **RESOLVED (DOCUMENTED)** — **`employee_order_items`:** prod verifisert som **VIEW** (`pg_class.relkind = 'v'`), projeksjon av **`order_items`**; snapshot-felter forklares via underlaget, ikke egen heap. | RESOLVED (DOCUMENTED) — [docs/volume-seed-strategy.md](volume-seed-strategy.md) B4a-rad |
+| P3.D3 | **RESOLVED (DOCUMENTED)** — **`audit_log`-størrelse ved partitionering:** `pg_total_relation_size(parent)` kan være 0/misvisende; mål **barn**/SUM; hensyn til `audit_log_legacy`. | RESOLVED (DOCUMENTED) — [docs/audit-log-strategy.md](audit-log-strategy.md) § «pg_total_relation_size på partition-parent: verifiseringsmønster» |
 | P3.D4 | **To permissive INSERT‑policyer på `orders`** (`orders_insert` og `orders_insert_none` i prod‑snapshot) | Relatert til P2.3 («multiple permissive policies»); egen konsolidering når staging har volum og query‑profiler viser overhead |
+| P3.D5 | **ÅPEN** — **Duplikat `tg_set_updated_at`-trigger på `public.profiles`:** **`set_updated_at`** og **`profiles_set_updated_at`**, begge **`BEFORE UPDATE`**, samme målfunksjon. Trolig **migrasjonsdrift**. | **Migrasjon (Commit B / egen implementering):** `DROP TRIGGER` på **én** av de to + verifiser at ingen migrasjon/versjonering avhenger av begge. Oppdaget ved read-only audit i FASE B P3 hygiene Commit A. |
 
 ---
 

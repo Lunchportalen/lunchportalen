@@ -177,7 +177,7 @@ Hypotese: persistert micro-branch compute-linje forblir i størrelsesorden beskr
 
 | ID   | Scope | Risiko | Rollback |
 |------|--------|--------|----------|
-| B4a  | Dataobjekt-generatorer (deterministisk), art. 9-null policy, distribusjonsmodell, telefonformat + verifikasjons-task for `employee_order_items` (relkind: base table vs view) før noen INSERT-plan låses | Lav kode, høy compliance ved feil snapshot | Teardown whitelist |
+| B4a  | Dataobjekt-generatorer (deterministisk), art. 9-null policy, distribusjonsmodell, telefonformat + **presis klassifisering av `employee_order_items`**. På prod (mai 2026, read-only): `pg_class.relkind = 'v'` → **VIEW**, eid av `postgres`, definisjon = projeksjon av `order_items` (`order_id`, `product_name_snapshot`, `unit_name_snapshot`, `quantity`). **Seed skal ikke skrive til visningen** — kun til underliggende **`order_items`** i riktig FK-rekkefølge mot `orders`. Verifiser `relkind`/definisjon også på mål-branch før INSERT-plan låses. | Lav kode, høy compliance ved feil snapshot | Teardown whitelist |
 | B4b  | Bulk-pipeline: COPY/chunked INSERT, batch/parallel-kontroll, metrikk (tid, WAL-proxy via size delta) | Pool exhaustion, timeouts | Truncate + reseed |
 | B4c  | Verifikasjon: row counts, FK-sjekk, histogrammer, audit-før/etter ved valgt strategi | Feil partisjonsmåling | Gjenkjør fra tom DB |
 | B4d  | CLI: `--size`, `--target-db`, `--dry-run`, `--confirm`, env-guard for project_ref | Feil mål-DB | Ingen auto-rollback; krever backup/branch reset |
