@@ -1,6 +1,6 @@
 -- Capture-migration: speiler prod-RLS-kjerne (private.* helpers + ordre-/meny-tabeller) som manglet i migrasjonsrepo.
 -- FASE 13.5-FIX-1. Idempotent: CREATE OR REPLACE på funksjoner; DROP POLICY IF EXISTS + CREATE POLICY for navngitte policyer.
--- Kilde: Supabase prod (MCP execute_sql) 2026-05-17. Endrer ikke semantikk når kodedef er identisk.
+-- Kilde: Supabase prod (MCP execute_sql) 2026-05-17; orders_*_none fjernet 2026-05-18 (P3.D4-PARTIAL). Endrer ikke semantikk når kodedef er identisk.
 --
 -- PAUSE / OMFANG: Full eksport av alle ~192 prod-policies er ikke i denne filen (for stor + navnedrift vs eldre migrasjoner).
 -- Kjerne: private.* (tenant/meny/ordre), public bridge for orders_select_bridge_scoped, policies for orders / order_items / menu_service_* .
@@ -636,20 +636,10 @@ CREATE POLICY orders_delete ON public.orders
   AS PERMISSIVE FOR DELETE TO authenticated
   USING ((SELECT private.can_edit_order(orders.id) AS can_edit_order));
 
-DROP POLICY IF EXISTS orders_delete_none ON public.orders;
-CREATE POLICY orders_delete_none ON public.orders
-  AS PERMISSIVE FOR DELETE TO authenticated
-  USING (false);
-
 DROP POLICY IF EXISTS orders_insert ON public.orders;
 CREATE POLICY orders_insert ON public.orders
   AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((((user_id = (SELECT auth.uid() AS uid)) AND (SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR (SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR (SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role)));
-
-DROP POLICY IF EXISTS orders_insert_none ON public.orders;
-CREATE POLICY orders_insert_none ON public.orders
-  AS PERMISSIVE FOR INSERT TO authenticated
-  WITH CHECK (false);
 
 DROP POLICY IF EXISTS orders_select ON public.orders;
 CREATE POLICY orders_select ON public.orders
@@ -672,11 +662,6 @@ CREATE POLICY orders_update ON public.orders
   USING ((SELECT private.can_view_order(orders.id) AS can_view_order))
   WITH CHECK ((((user_id = (SELECT auth.uid() AS uid)) AND (SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR (SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR (SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role)));
 
-DROP POLICY IF EXISTS orders_update_none ON public.orders;
-CREATE POLICY orders_update_none ON public.orders
-  AS PERMISSIVE FOR UPDATE TO authenticated
-  USING (false)
-  WITH CHECK (false);
 
 
 commit;

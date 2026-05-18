@@ -1615,18 +1615,6 @@
     {
       "schema": "public",
       "table": "orders",
-      "name": "orders_delete_none",
-      "command": "DELETE",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "false",
-      "check_expr": null,
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "orders",
       "name": "orders_insert",
       "command": "INSERT",
       "roles": [
@@ -1634,18 +1622,6 @@
       ],
       "using_expr": null,
       "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role]) AS has_platform_role))",
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "orders",
-      "name": "orders_insert_none",
-      "command": "INSERT",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": null,
-      "check_expr": "false",
       "permissive": true
     },
     {
@@ -1682,18 +1658,6 @@
       ],
       "using_expr": "( SELECT private.can_view_order(orders.id) AS can_view_order)",
       "check_expr": "(((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT private.can_access_location(orders.location_id) AS can_access_location)) OR ( SELECT private.can_manage_location(orders.location_id) AS can_manage_location) OR ( SELECT private.has_platform_role(ARRAY['platform_admin'::platform_role, 'platform_ops'::platform_role, 'kitchen'::platform_role, 'courier'::platform_role]) AS has_platform_role))",
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "orders",
-      "name": "orders_update_none",
-      "command": "UPDATE",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "false",
-      "check_expr": "false",
       "permissive": true
     },
     {
@@ -2771,7 +2735,7 @@
     {
       "schema": "public",
       "name": "orders",
-      "policy_count": 8
+      "policy_count": 5
     },
     {
       "schema": "public",
