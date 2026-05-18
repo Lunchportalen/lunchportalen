@@ -1,6 +1,6 @@
 # B3 — Decision Framework for Staging Provisioning
 
-**Opprettet:** 2026-05-19 · **Status:** Beslutninger **ÅPNE** — implementering **BLOKKERT**
+**Opprettet:** 2026-05-19 · **Status:** Beslutninger **LUKKET (2026-05-19)** — B3a–B3f **klar for implementering**
 
 **Relatert:** [docs/staging-strategy.md](../staging-strategy.md) (Rev A, retning avgjort) · [docs/performance-p-backlog.md](../performance-p-backlog.md) · [docs/environments.json](../environments.json) · [docs/environments-runtime.json](../environments-runtime.json)
 
@@ -10,11 +10,37 @@
 
 ## Bakgrunn
 
-[staging-strategy.md](../staging-strategy.md) har allerede låst **arkitekturretning**: GDPR **variant C** (syntetisk staging-data), **én persistert** Supabase staging-branch, Vercel **strategi A** (production + `staging` + PR-preview), Sanity **`staging`**-datasett på prosjekt **`f3vuhd2f`**, mål-vert **`staging.app.lunchportalen.no`**, og indikativ kost **ca. kr 470–620/mnd** før hard cap. Det som **gjenstår** er fire **forretnings-/driftsvalg** som strategy.md eksplisitt ikke kan ta på brukerens vegne: hvem som eier DNS, faktisk Supabase-plan, godkjent budsjettcap med varslingsregler, og skjebne for den eksisterende inaktive preview-branchen `staging-abc-signoff`.
+[staging-strategy.md](../staging-strategy.md) har allerede låst **arkitekturretning**: GDPR **variant C** (syntetisk staging-data), **én persistert** Supabase staging-branch, Vercel **strategi A** (production + `staging` + PR-preview), Sanity **`staging`**-datasett på prosjekt **`f3vuhd2f`**, mål-vert **`staging.app.lunchportalen.no`**, og indikativ kost **ca. kr 470–620/mnd** før hard cap. De fire **forretnings-/driftsvalgene** (DNS-leverandør, Supabase-plan, budsjettcap, skjebne for `staging-abc-signoff`) er **besvart 2026-05-19** — se [Status (per 2026-05-19)](#status-per-2026-05-19).
 
-Uten disse fire svarene kan ikke B3a–B3f (og dermed B4a–B4d volum-seed) gjennomføres trygt: feil plan-tier blokkerer branching, feil branch-disposisjon gir GDPR- eller kostrisiko, manglende cap gir ingen økonomisk failsafe, og manglende DNS-eier stopper stabil URL for staging.
+**Allerede besluttet i strategy.md (ikke gjenåpne her):** datavariant C, hostname `staging.app.lunchportalen.no`, Sanity dataset-navn/plan, Vercel deploy-modell, og kurs for NOK-estimater. Beslutningsdetaljer under STEG 1 er **historisk kontekst**; gjeldende valg står i status-tabellen.
 
-**Allerede besluttet i strategy.md (ikke gjenåpne her):** datavariant C, hostname `staging.app.lunchportalen.no`, Sanity dataset-navn/plan, Vercel deploy-modell, og kurs for NOK-estimater. **Ikke** dupliser disse som nye beslutninger — kun de fire åpne punktene under.
+---
+
+## Status (per 2026-05-19)
+
+Alle fire beslutninger besvart (~02:30):
+
+| # | Tema | Valg | Kilde |
+|---|------|------|-------|
+| 1 | DNS-provider | **Domeneshop** (domene.no) | Bruker bekreftet |
+| 2 | Supabase plan | **Pro** | Dashboard skjermbilde |
+| 3 | Budgetcap | **kr 800/mnd** (hard cap akseptert) | Bruker akseptert |
+| 4 | Gammel branch (`iyrytpjacujscveivtfb`) | **Behold PAUSED** som arkiv; opprett **separat ny** `staging`-branch | Dashboard skjermbilde + bruker |
+
+### Viktig distinksjon for #4: PAUSED vs INACTIVE
+
+Tidligere dokumentasjon (Rev A, MCP) antok status **INACTIVE**. Faktisk status i Dashboard (2026-05-19): **PAUSED** (Pro-plan paused branch).
+
+| Aspekt | PAUSED (faktisk) | INACTIVE (tidligere antakelse) |
+|--------|------------------|--------------------------------|
+| Data | Lagret, men utilgjengelig til resume | Ofte tolket som «parkert» uten tilgang |
+| Compute-kost | **0** mens paused | Varierende tolkning i docs |
+| Lagring | Marginal; inkludert i Pro baseline | Ikke presisert |
+| Resume | Mulig når som helst | Re-aktivering mulig, men uklar kost |
+
+**Strategi (besluttet):** Behold `staging-abc-signoff` (`iyrytpjacujscveivtfb`) paused som **historisk arkiv** (kost nær 0). **Opprett ny separat branch** med rent navn **`staging`** for B3-implementering — **ikke** gjenbruk abc-signoff. **Ingen sletting** av gammel branch nå; vurder sletting senere hvis arkiveringskost blir merkbar.
+
+**Merk:** [staging-strategy.md](../staging-strategy.md) § «Eksisterende staging-abc-signoff» sier fortsatt INACTIVE — oppdateres ved neste Rev A-revisjon av strategy; **denne filen er sannhetskilde for beslutning #4**.
 
 ---
 
@@ -64,7 +90,7 @@ Uten disse fire svarene kan ikke B3a–B3f (og dermed B4a–B4d volum-seed) gjen
 
 | Kilde | Hva som allerede er sagt |
 |-------|---------------------------|
-| [staging-strategy.md](../staging-strategy.md) | Branch **`staging-abc-signoff`**, UUID `b426d8b0-6286-4a2b-850a-deb7c2ef6676`, `project_ref` **`iyrytpjacujscveivtfb`**, opprettet **2026-02-18**, `with_data: false`, status **INACTIVE**; migrasjonsdiff ikke verifisert (timeout); alternativer A/B/C — **ingen MCP-handling uten skriftlig eier-OK**. |
+| [staging-strategy.md](../staging-strategy.md) | Branch **`staging-abc-signoff`**, UUID `b426d8b0-6286-4a2b-850a-deb7c2ef6676`, `project_ref` **`iyrytpjacujscveivtfb`**, opprettet **2026-02-18**, `with_data: false`; Rev A sa **INACTIVE** — **korrigert til PAUSED** 2026-05-19 (se [Status](#status-per-2026-05-19)). |
 | Backlog P3.V | Én persistert `staging`-branch er mål — ikke automatisk lik gjenbruk av abc-signoff. |
 
 **Blokkerer:** **B3a** (gjenbruk vs ny branch) · **Beslutning 3** (ekstra arkiv-branch kan øke compute/lagring).
@@ -215,7 +241,7 @@ Uten disse fire svarene kan ikke B3a–B3f (og dermed B4a–B4d volum-seed) gjen
 | `project_ref` | `iyrytpjacujscveivtfb` |
 | Opprettet | **2026-02-18** |
 | `with_data` | **false** (siste kjente) |
-| Status | **INACTIVE** |
+| Status | **PAUSED** (korrigert 2026-05-19; Rev A sa INACTIVE) |
 | Kost | Avhenger av plan; inaktive branches kan fortsatt ha **lagring/compute**-linjer — verifiser i dashboard |
 
 ### Forutsetninger (bruker / dashboard)
@@ -283,18 +309,18 @@ flowchart TD
 
 ---
 
-## Blokkerte faser etter beslutninger
+## Faser etter beslutninger (implementering åpen)
 
-> **Bokstavmerknad:** [staging-strategy.md](../staging-strategy.md) og [performance-p-backlog.md](../performance-p-backlog.md) bruker **B3a = Supabase**, **B3b = Vercel**, **B3c = Sanity**, **B3d = DNS**, **B3e = env-dokumentasjon**, **B3f = seed**. Tabellen under viser **hvilke åpne beslutninger** som gjenstår per fase.
+> **Bokstavmerknad:** [staging-strategy.md](../staging-strategy.md) og [performance-p-backlog.md](../performance-p-backlog.md) bruker **B3a = Supabase**, **B3b = Vercel**, **B3c = Sanity**, **B3d = DNS**, **B3e = env-dokumentasjon**, **B3f = seed**.
 
-| B3-fase (repo) | Innhold | Krever beslutning |
-|----------------|---------|-------------------|
-| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **2**, **3**, **4** |
-| **B3b** | Vercel `staging` git-branch + env mapping | **1**, **3** (+ B3a ferdig) |
-| **B3c** | Sanity `staging` datasett (`f3vuhd2f`) | **(ingen)** — kan startes når tokens planlegges; skriv-isolasjon krever disiplin |
-| **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **1** |
-| **B3e** | Env deploy-matrise (262 runtime-nøkler) | **1**, **2**, **3**, **4** (alle pekere må være riktige) |
-| **B3f** | `scripts/seed-staging.ts` + initial smoke | **1**, **2**, **3**, **4** (alle) |
+| B3-fase (repo) | Innhold | Status |
+|----------------|---------|--------|
+| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **Åpen** — beslutning 2, 3, 4 lukket |
+| **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
+| **B3c** | Sanity `staging` datasett (`f3vuhd2f`) | **Åpen** — kan starte parallelt |
+| **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
+| **B3e** | Env deploy-matrise (262 runtime-nøkler) | **Åpen** — etter B3a–d |
+| **B3f** | `scripts/seed-staging.ts` + initial smoke | **Åpen** — sist |
 
 | Nedstrøms | Avhengig av B3 |
 |-----------|----------------|
@@ -302,20 +328,84 @@ flowchart TD
 | **B5** | k6/HTTP-last — **blokkert** til B4 + staging URL |
 | **Rev B** | `EXPLAIN ANALYZE` på staging — **blokkert** til B4 |
 
-**Estimat implementering etter alle fire beslutninger:** ca. **4–8 timer** fordelt på flere fag (infra, backend, CMS).
+**Estimat implementering B3a–B3f:** ca. **4–8 timer** fokusert arbeid — se [Implementeringsplan](#implementeringsplan-etter-beslutninger-lukket).
 
 ---
 
-## Status
+## Implementeringsplan (etter beslutninger lukket)
+
+Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUTOMATABLE** (Cursor/MCP/scripts). **Ingen** av stegene under er utført per 2026-05-19 ~02:30 — utsatt til neste sesjon.
+
+### B3d — DNS-record (Domeneshop)
+
+- **HUMAN:** Legg til CNAME `staging.app.lunchportalen.no` → `cname.vercel-dns.com` i Domeneshop (domene.no).
+- **TTL:** 3600 (1 time) når stabil; 300 under innføring om ønskelig.
+- **Verifikasjon:** `dig staging.app.lunchportalen.no` eller `nslookup`.
+- **Estimat:** 5–10 min + 1–4 timer DNS-propagering.
+
+### B3a — Supabase staging-branch provisjon
+
+- **AUTOMATABLE (delvis):** MCP `create_branch` eller manuell via Dashboard.
+- **Branch-navn:** `staging` (**ikke** gjenbruk `staging-abc-signoff` / `iyrytpjacujscveivtfb`).
+- **Region:** samme som prod — verifiser før opprettelse.
+- **Compute size:** micro (~0,4 GB RAM; ~$0,01344/time).
+- **Verifikasjon:** MCP `list_branches`, status **ACTIVE**.
+- **Migrasjoner:** `supabase/migrations/` skal applies rent på ny branch.
+- **Estimat:** ~5 min provisjon + ~10 min migrasjonssync.
+- **Avhengighet:** Beslutning 2 (Pro) og 4 (ny branch) — **lukket**.
+
+### B3b — Vercel staging-env
+
+- **HUMAN:** Vercel Project Settings → Environments → legg til `staging`, eller Vercel CLI med riktige env vars.
+- **Trinn:**
+  1. Koble `staging` git-branch (eller avtalt PR-target).
+  2. Domain-mapping `staging.app.lunchportalen.no` → Vercel deployment (etter B3d propagert).
+  3. Bekreft cron/base-URL **ikke** peker på prod.
+- **Estimat:** 10–15 min (+ DNS).
+
+### B3c — Sanity staging-dataset
+
+- **AUTOMATABLE:** Sanity CLI med write-token, eller **HUMAN** via Studio/dashboard.
+- **Dataset:** `staging` på prosjekt `f3vuhd2f`.
+- **Kloning fra production:** valgfritt; **ingen ekte PII** (variant C).
+- **Estimat:** ~5 min.
+
+### B3e — Environment-variabel deploy
+
+- **AUTOMATABLE:** Generer `.env.staging-template` fra [environments-runtime.json](../environments-runtime.json) (262 nøkler).
+- **HUMAN:** Lim inn i Vercel staging environment; review prod vs staging vs n/a per nøkkel.
+- **Estimat:** 30–60 min (mest review).
+
+### B3f — Initial smoke + seed-staging
+
+- **AUTOMATABLE:** `scripts/seed-staging.ts` (foundation, **ikke** B4-volum): 5–10 firma, 50–100 ansatte, 30 dagers ordrer, variant C syntetisk, ingen art. 9.
+- **Smoke:** deploy til staging-URL; `GET /api/health` → 200.
+- **Estimat:** 1–2 timer (script + dry-run + smoke).
+
+### Anbefalt rekkefølge (neste sesjon)
+
+1. **B3c** (Sanity) — parallelt, ingen blocker.
+2. **B3d** (DNS) — tidlig; propagering tar tid.
+3. **B3a** (Supabase branch) — før env som trenger `SUPABASE_*` for staging.
+4. **B3b** (Vercel) — krever DNS + branch.
+5. **B3e** (env-vars) — krever alle over.
+6. **B3f** (seed + smoke) — validerer hele kjeden.
+
+**Total estimat:** 4–8 timer fokusert arbeid. **Ikke** påbegynt 2026-05-19 etter ~17,5 t sesjon — implementering neste sesjon med fersk kontekst.
+
+---
+
+## Status (avsluttende)
 
 | Felt | Verdi |
 |------|--------|
 | Framework opprettet | **2026-05-19** |
-| Beslutninger | **ÅPNE (4)** |
-| Implementering B3a–B3f | **BLOKKERT** |
-| Forretningsvalg i dette dokumentet | **Ingen tatt** — kun alternativer og forutsetninger |
+| Beslutninger | **LUKKET (4/4)** — 2026-05-19 ~02:30 |
+| Implementering B3a–B3f | **ÅPEN** — klar for neste sesjon |
+| P3.B3 beslutningsfase | **DECIDED** |
+| Nedstrøms B4 | Fortsatt **blokkert** til B3f ferdig |
 
-**Neste steg for eier:** Fyll ut svar for beslutning 2 og 4 via dashboard; deretter 3 og 1; gi skriftlig OK før MCP/infra-handling.
+**Neste steg:** Følg [Implementeringsplan](#implementeringsplan-etter-beslutninger-lukket) — start med B3c + B3d parallelt.
 
 ---
 
