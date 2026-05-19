@@ -13,15 +13,24 @@ export function resetFakerSeed(): void {
   faker.seed(FAKER_SEED);
 }
 
+/** ASCII-only slug for Auth-safe email local parts (Supabase rejects æøå in local-part). */
+export function asciiSlug(value: string): string {
+  const folded = value
+    .toLowerCase()
+    .replace(/æ/g, "ae")
+    .replace(/ø/g, "o")
+    .replace(/å/g, "a");
+  return folded.replace(/[^a-z0-9]/g, "").slice(0, 24);
+}
+
+/** B4.1+ global user index in email (F1 uses index 0-9 identically via helloEmail). */
+export function dryRunEmail(globalIndex: number, firstName: string, lastName: string): string {
+  return helloEmail(globalIndex, firstName, lastName);
+}
+
 export function helloEmail(index: number, firstName: string, lastName: string): string {
-  const fn = firstName
-    .toLowerCase()
-    .replace(/[^a-zæøå]/gi, "")
-    .slice(0, 24);
-  const ln = lastName
-    .toLowerCase()
-    .replace(/[^a-zæøå]/gi, "")
-    .slice(0, 24);
+  const fn = asciiSlug(firstName);
+  const ln = asciiSlug(lastName);
   return `hello.${fn}.${ln}${index}@staging.lunchportalen.test`;
 }
 
@@ -73,6 +82,10 @@ export type HelloUserSpec = {
   userId: string;
 };
 
+export type DryRunUserSpec = HelloUserSpec & {
+  globalIndex: number;
+};
+
 export function buildHelloUsers(): HelloUserSpec[] {
   resetFakerSeed();
   const users: HelloUserSpec[] = [];
@@ -106,9 +119,80 @@ export function deterministicUserId(email: string): string {
 }
 
 export function helloCompanyId(): string {
-  return deterministicUserId("hello-company-entity");
+  return deterministicEntityId("hello-company-entity");
 }
 
 export function helloLocationId(): string {
-  return deterministicUserId("hello-location-entity");
+  return deterministicEntityId("hello-location-entity");
+}
+
+export function dryRunCompanyId(companyIndex: number): string {
+  return deterministicEntityId(`dry-run-company-${companyIndex}`);
+}
+
+export function dryRunLocationId(companyIndex: number): string {
+  return deterministicEntityId(`dry-run-location-${companyIndex}`);
+}
+
+/**
+ * All dry-run users: global 0-9 match F1 hello users; 10..N-1 continue Faker stream.
+ */
+export function buildDryRunUsers(totalUsers: number): DryRunUserSpec[] {
+  const helloUsers = buildHelloUsers();
+  const users: DryRunUserSpec[] = helloUsers.map((u) => ({
+    ...u,
+    globalIndex: u.index,
+  }));
+
+  for (let g = HELLO_USER_COUNT; g < totalUsers; g++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const email = dryRunEmail(g, firstName, lastName);
+    users.push({
+      index: g,
+      globalIndex: g,
+      firstName,
+      lastName,
+      fullName: `${firstName} ${lastName}`,
+      email,
+      phone: stagingPhone(g + 1),
+      role: "employee",
+      userId: deterministicUserId(email),
+    });
+  }
+
+  return users;
+}
+
+export function companyDataForIndex(companyIndex: number): {
+  name: string;
+  orgnr: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  postalCode: string;
+  city: string;
+} {
+  faker.seed(FAKER_SEED + companyIndex * 10_000);
+  const name = faker.company.name();
+  const contactName = faker.person.fullName();
+  return {
+    name,
+    orgnr: faker.string.numeric(9),
+    contactName,
+    contactEmail: `company.${companyIndex}@staging.lunchportalen.test`,
+    contactPhone: stagingPhone(companyIndex + 1),
+    address: faker.location.streetAddress(),
+    postalCode: faker.location.zipCode("####"),
+    city: faker.location.city(),
+  };
+}
+
+export function dryRunLocationLabel(companyIndex: number): string {
+  return companyIndex === 0 ? helloLocationName() : `Lokasjon ${companyIndex + 1}`;
+}
+
+function deterministicEntityId(seedKey: string): string {
+  return deterministicUserId(seedKey);
 }

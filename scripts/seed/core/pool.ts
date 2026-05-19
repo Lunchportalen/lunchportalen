@@ -9,6 +9,18 @@ import pg from "pg";
 
 import type { SeedEnv } from "./env.js";
 
+const DEFAULT_POOL_MAX = 10;
+
+function poolMaxConnections(): number {
+  const raw = (process.env.SEED_POOL_MAX ?? "").trim();
+  if (!raw) return DEFAULT_POOL_MAX;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 50) {
+    throw new Error(`REFUSE_INVALID_SEED_POOL_MAX value=${raw}`);
+  }
+  return n;
+}
+
 let pool: pg.Pool | null = null;
 let poolInit: Promise<pg.Pool> | null = null;
 
@@ -60,7 +72,7 @@ async function createPool(env: SeedEnv): Promise<pg.Pool> {
 
   return new pg.Pool({
     connectionString,
-    max: 5,
+    max: poolMaxConnections(),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,
     ssl: { rejectUnauthorized: false },

@@ -6,10 +6,11 @@
  */
 import type pg from "pg";
 
-import { deleteAllStagingAuthUsers } from "../auth/admin-api.js";
+import { listStagingAuthUsers } from "../auth/admin-api.js";
+import { parallelDeleteAuthUsers } from "../auth/parallel.js";
 import { closePool, getPool } from "../core/pool.js";
-import { loadSeedEnv, STAGING_EMAIL_DOMAIN, STAGING_REF } from "../core/env.js";
-import { initLogger, logEvent } from "../core/logger.js";
+import { loadSeedEnv, STAGING_EMAIL_DOMAIN, STAGING_REF, type SeedEnv } from "../core/env.js";
+import { createBatchLogger, initLogger, logEvent } from "../core/logger.js";
 
 const RUNNER = "wipe";
 const EMAIL_PATTERN = `%${STAGING_EMAIL_DOMAIN}`;
@@ -72,7 +73,12 @@ async function countByEmail(client: pg.PoolClient): Promise<{
   };
 }
 
-async function wipeDatabase(client: pg.PoolClient): Promise<void> {
+const SCALE_WIPE_PROFILE_THRESHOLD = 50;
+const ORPHAN_PARALLEL_AUTH_THRESHOLD = 100;
+const ORPHAN_DELETE_WORKERS = 10;
+const ORPHAN_DELETE_PROGRESS_EVERY = 1000;
+
+async function wipeDatabase(client: pg.PoolClient, profileCount: number): Promise<void> {
   const profileRows = await client.query<{ id: string; company_id: string | null }>(
     `SELECT id, company_id FROM public.profiles WHERE lower(email) LIKE lower($1)`,
     [EMAIL_PATTERN],
@@ -84,7 +90,23 @@ async function wipeDatabase(client: pg.PoolClient): Promise<void> {
     ),
   ];
 
-  if (profileIds.length > 0) {
+  if (profileCount >= SCALE_WIPE_PROFILE_THRESHOLD) {
+    await client.query(
+      `DELETE FROM public.location_memberships WHERE user_id IN (
+        SELECT id FROM public.profiles WHERE lower(email) LIKE lower($1)
+      )`,
+      [EMAIL_PATTERN],
+    );
+    await client.query(
+      `DELETE FROM public.company_memberships WHERE user_id IN (
+        SELECT id FROM public.profiles WHERE lower(email) LIKE lower($1)
+      )`,
+      [EMAIL_PATTERN],
+    );
+    await client.query(`DELETE FROM public.profiles WHERE lower(email) LIKE lower($1)`, [
+      EMAIL_PATTERN,
+    ]);
+  } else if (profileIds.length > 0) {
     await client.query(`DELETE FROM public.location_memberships WHERE user_id = ANY($1::uuid[])`, [
       profileIds,
     ]);
@@ -104,6 +126,52 @@ async function wipeDatabase(client: pg.PoolClient): Promise<void> {
     ]);
     await client.query(`DELETE FROM public.companies WHERE id = ANY($1::uuid[])`, [companyIds]);
   }
+}
+
+async function deleteStagingAuth(env: SeedEnv, profileCount: number): Promise<number> {
+  const users = await listStagingAuthUsers(env);
+  const ids = users.map((u) => u.id);
+  const authCount = ids.length;
+
+  if (authCount === 0) return 0;
+
+  const parallelOrphan =
+    profileCount === 0 && authCount > ORPHAN_PARALLEL_AUTH_THRESHOLD;
+  const scaleProfile = profileCount >= SCALE_WIPE_PROFILE_THRESHOLD;
+
+  if (!parallelOrphan && !scaleProfile) {
+    return parallelDeleteAuthUsers(env, ids, { workers: 1 });
+  }
+
+  const batch = createBatchLogger(RUNNER, authCount, "auth_delete_progress");
+  let lastPct = -1;
+  let lastOrphanMilestone = 0;
+
+  const deleted = await parallelDeleteAuthUsers(env, ids, {
+    ...(parallelOrphan ? { workers: ORPHAN_DELETE_WORKERS } : {}),
+    onProgress: (done, all) => {
+      if (parallelOrphan) {
+        const milestone = Math.floor(done / ORPHAN_DELETE_PROGRESS_EVERY) * ORPHAN_DELETE_PROGRESS_EVERY;
+        if (milestone > lastOrphanMilestone && milestone > 0) {
+          lastOrphanMilestone = milestone;
+          logEvent(RUNNER, {
+            action: "auth_delete_progress",
+            count: done,
+            message: `orphan_parallel of=${all}`,
+          });
+        }
+      }
+      if (scaleProfile) {
+        const pct = all > 0 ? Math.floor((done / all) * 100) : 100;
+        if (pct >= 25 && pct % 25 === 0 && pct !== lastPct) {
+          lastPct = pct;
+          batch.tick(done, `pct=${pct}`);
+        }
+      }
+    },
+  });
+  batch.finish(`deleted=${deleted} orphan_parallel=${parallelOrphan}`);
+  return deleted;
 }
 
 async function main(): Promise<void> {
@@ -148,16 +216,18 @@ async function main(): Promise<void> {
       return;
     }
 
+    const profileCount = counts.profiles;
+
     await client.query("BEGIN");
     try {
-      await wipeDatabase(client);
+      await wipeDatabase(client, profileCount);
       await client.query("COMMIT");
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
     }
 
-    const authDeleted = await deleteAllStagingAuthUsers(cli);
+    const authDeleted = await deleteStagingAuth(cli, profileCount);
     logEvent(RUNNER, { action: "auth_users_deleted", table: "auth.users", count: authDeleted });
 
     const after = await countByEmail(client);

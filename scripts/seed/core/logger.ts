@@ -47,6 +47,33 @@ export function hashId(value: string): string {
   return createHash("md5").update(value).digest("hex").slice(0, 8);
 }
 
+const EMAIL_IN_MESSAGE_RE = /email(?:_hash)?=[^\s]+/gi;
+
+/** Redact emails/UUIDs from failure messages (HV). */
+export function redactFailureMessage(message: string, maxLen = 50): string {
+  let out = message.replace(EMAIL_IN_MESSAGE_RE, "email=<redacted>");
+  out = out.replace(UUID_RE, (uuid) => `uuid_hash=${hashId(uuid)}`);
+  return out.slice(0, maxLen);
+}
+
+export type PersistedAuthFailure = {
+  global_index: number;
+  email_hash: string;
+  status: number | null;
+  message_snippet: string;
+};
+
+export function persistFailuresJsonl(failures: PersistedAuthFailure[]): string | null {
+  if (failures.length === 0) return null;
+  const dir = join(REPO_ROOT, "scripts", "seed", "logs");
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${rid}-failures.jsonl`);
+  for (const row of failures) {
+    appendFileSync(path, `${JSON.stringify(row)}\n`, "utf8");
+  }
+  return path;
+}
+
 /** e.g. company_hash=2f3f2ee9 location_hash=55450d94 */
 export function formatEntityHashes(entities: Record<string, string>): string {
   return Object.entries(entities)
@@ -90,6 +117,78 @@ export function logEvent(
   if (logFilePath) {
     appendFileSync(logFilePath, `${line}\n`, "utf8");
   }
+}
+
+export type PerfSample = {
+  duration_ms: number;
+};
+
+export function percentileMs(samples: number[], p: number): number {
+  if (samples.length === 0) return 0;
+  const sorted = [...samples].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor(sorted.length * p)));
+  return sorted[idx] ?? 0;
+}
+
+export function summarizePerf(samples: number[]): {
+  count: number;
+  total_ms: number;
+  p50_ms: number;
+  p95_ms: number;
+  throughput_per_sec: number;
+} {
+  const total = samples.reduce((a, b) => a + b, 0);
+  const count = samples.length;
+  const durationSec = total > 0 ? total / 1000 : 0;
+  return {
+    count,
+    total_ms: total,
+    p50_ms: percentileMs(samples, 0.5),
+    p95_ms: percentileMs(samples, 0.95),
+    throughput_per_sec: durationSec > 0 ? count / durationSec : 0,
+  };
+}
+
+export type BatchLogger = {
+  tick: (processed: number, message?: string) => void;
+  finish: (message?: string) => void;
+};
+
+export function createBatchLogger(
+  runner: string,
+  total: number,
+  label = "progress",
+): BatchLogger {
+  const started = Date.now();
+  let lastPct = -1;
+  const milestones = new Set<number>();
+
+  for (let p = 10; p <= 100; p += 10) {
+    milestones.add(p);
+  }
+
+  return {
+    tick(processed: number, message?: string) {
+      if (total <= 0) return;
+      const pct = Math.min(100, Math.floor((processed / total) * 100));
+      if (!milestones.has(pct) || pct === lastPct) return;
+      lastPct = pct;
+      logEvent(runner, {
+        action: label,
+        count: processed,
+        duration_ms: Date.now() - started,
+        ...(message !== undefined ? { message: `pct=${pct} ${message}` } : { message: `pct=${pct}` }),
+      });
+    },
+    finish(message?: string) {
+      logEvent(runner, {
+        action: `${label}_complete`,
+        count: total,
+        duration_ms: Date.now() - started,
+        ...(message !== undefined ? { message } : {}),
+      });
+    },
+  };
 }
 
 export async function timed<T>(

@@ -31,9 +31,15 @@ export type CreateAuthUserInput = {
   locationId: string;
 };
 
+export type CreateAuthUserOptions = {
+  /** Suppress per-user log lines (B4.1 parallel). */
+  quiet?: boolean;
+};
+
 export async function createAuthUser(
   env: SeedEnv,
   input: CreateAuthUserInput,
+  options?: CreateAuthUserOptions,
 ): Promise<{ id: string; email: string }> {
   assertStagingEmail(input.email);
   const admin = createAuthAdminClient(env);
@@ -54,19 +60,28 @@ export async function createAuthUser(
   });
 
   if (error) {
-    throw new Error(`auth.admin.createUser failed email=${input.email} message=${error.message}`);
+    const status = typeof error.status === "number" ? error.status : 0;
+    throw new Error(
+      `auth.admin.createUser failed email_hash=${hashId(input.email)} status=${status} message=${error.message}`,
+    );
   }
 
   const id = data.user?.id;
   if (!id) {
-    throw new Error(`auth.admin.createUser missing id email=${input.email}`);
+    throw new Error(`auth.admin.createUser missing id email_hash=${hashId(input.email)}`);
   }
 
-  logEvent(RUNNER, { action: "auth_user_created", count: 1 });
+  if (!options?.quiet) {
+    logEvent(RUNNER, { action: "auth_user_created", count: 1 });
+  }
   return { id, email: input.email };
 }
 
-export async function deleteAuthUserById(env: SeedEnv, userId: string): Promise<void> {
+export async function deleteAuthUserById(
+  env: SeedEnv,
+  userId: string,
+  options?: { quiet?: boolean },
+): Promise<void> {
   const admin = createAuthAdminClient(env);
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) {
@@ -74,7 +89,9 @@ export async function deleteAuthUserById(env: SeedEnv, userId: string): Promise<
       `auth.admin.deleteUser failed user_hash=${hashId(userId)} message=${error.message}`,
     );
   }
-  logEvent(RUNNER, { action: "auth_user_deleted", count: 1 });
+  if (!options?.quiet) {
+    logEvent(RUNNER, { action: "auth_user_deleted", count: 1 });
+  }
 }
 
 export async function listStagingAuthUsers(env: SeedEnv): Promise<Array<{ id: string; email: string }>> {
