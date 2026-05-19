@@ -1,6 +1,6 @@
 # Lunchportalen — Supabase branch state
 
-**Sist verifisert:** 2026-05-20 (P3.M4.S schema-dump bypass, Supabase MCP + `psql`)  
+**Sist verifisert:** 2026-05-20 (B3a-REROLL credential rotation + P3.M4.S schema re-apply, Supabase MCP + `psql`)  
 **Prod-prosjekt:** `hkpokyapzarefrgqzkos` (Lunchportalen, Pro, `eu-west-1`, Postgres 17)  
 **Org:** `wbnttmwfysreonhxgans`
 
@@ -11,7 +11,7 @@
 | Branch | Branch ID | `project_ref` | `preview_project_status` | Branch `status` | `persistent` | `with_data` | Merknad |
 |--------|-----------|---------------|--------------------------|-----------------|--------------|-------------|---------|
 | **main** (prod) | `b548ca65-55ff-489f-8cc5-ef520d205912` | `hkpokyapzarefrgqzkos` | `ACTIVE_HEALTHY` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **42** ledger-rader (orphan `20260222233084` fjernet P3.M4.O) |
-| **staging** | `986ce7e0-e0b9-47e8-8292-df6feb4ef0f7` | **`pbwivijolkoemcvgecoj`** | `ACTIVE_HEALTHY` | `MIGRATIONS_FAILED` *(platform ledger; ignorert)* | `false` | `false` | **Schema synket via P3.M4.S dump** — ikke ledger-replay |
+| **staging** | `cf127506-e3d5-4ac5-9903-a7b57563bfaf` | **`uigxsboqeruxflgzqztl`** | `ACTIVE_HEALTHY` | `MIGRATIONS_FAILED` *(platform ledger; ignorert)* | `false` | `false` | **B3a-REROLL** — schema re-applied fra dump; gamle `pbwivijolkoemcvgecoj` slettet |
 | **staging-abc-signoff** (arkiv) | `b426d8b0-6286-4a2b-850a-deb7c2ef6676` | `iyrytpjacujscveivtfb` | `INACTIVE` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **Uberørt** |
 
 ---
@@ -23,7 +23,7 @@
 | Orphan-fix (P3.M4.O) | Prod ledger **43 → 42**; orphan `20260222233084` slettet |
 | Ledger-replay på branch | Fortsatt **FAIL** på `add_rls_missing_tables` (forventet) |
 | Schema-sync | **`pg_dump --schema-only`** (`public` + `private`) → `psql` på staging (URL via `supabase branches get`, ikke committet) |
-| Baseline ledger (staging) | **`20260520000000`** — `baseline_schema_dump_from_prod_2026_05_20_v0` |
+| Baseline ledger (staging) | **`20260520000001`** — `baseline_schema_dump_from_prod_2026_05_20_v1_REROLLED` (etter B3a-REROLL; forrige branch `20260520000000` på slettet ref) |
 | Variant C | **0 rader** i `orders`, `profiles`, `companies`, `menu_service_days` |
 
 **Artefakter:** [prod-ledger-backup-2026-05-20.json](prod-ledger-backup-2026-05-20.json) · [staging-schema-dump-2026-05-20.sql](staging-schema-dump-2026-05-20.sql) · apply-script: `scripts/audit/p3m4s-apply-staging-dump.mjs`
@@ -54,6 +54,19 @@
 | Tabeller/policies match | **PASS** |
 | Variant C (ingen prod-data) | **PASS** |
 | `list_migrations` staging | **1** (baseline only) |
+
+---
+
+## B3a-REROLL — Credential rotation (2026-05-20)
+
+| Steg | Resultat |
+|------|----------|
+| Incident | `SUPABASE_SERVICE_ROLE_KEY` (+ sannsynlig anon) for `pbwivijolkoemcvgecoj` logget i chat under B3e |
+| Slett kompromittert branch | `986ce7e0-e0b9-47e8-8292-df6feb4ef0f7` — **slettet**; credentials ugyldige |
+| Ny branch | `cf127506-e3d5-4ac5-9903-a7b57563bfaf` → `uigxsboqeruxflgzqztl` |
+| Schema re-apply | Samme `staging-schema-dump-2026-05-20.sql` via `p3m4s-apply-staging-dump.mjs` — **PASS** |
+| Extract | `scripts/audit/staging-env-actual-2026-05-20.env` oppdatert (gitignored; `b3a-reroll-write-extract-creds.mjs`) |
+| Smoke | 119 tabeller, 190 policies, 20 private funcs, Variant C **0** rader |
 
 ---
 

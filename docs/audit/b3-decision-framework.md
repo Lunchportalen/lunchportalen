@@ -317,7 +317,7 @@ flowchart TD
 
 | B3-fase (repo) | Innhold | Status |
 |----------------|---------|--------|
-| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **TRULY_COMPLETED** (2026-05-20, `pbwivijolkoemcvgecoj`; schema via P3.M4.S dump bypass — se [supabase-state.md](supabase-state.md)) |
+| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **TRULY_COMPLETED** (2026-05-20, `uigxsboqeruxflgzqztl` etter **B3a-REROLL**; schema via P3.M4.S dump bypass — se [supabase-state.md](supabase-state.md)) |
 | **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
 | **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **COMPLETED** — 2026-05-19 (manuell UI-opprettelse; smoke read-only) |
 | **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
@@ -351,7 +351,8 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 - **Migrasjoner (platform):** Ledger-replay fortsatt **`MIGRATIONS_FAILED`** — **omgått** med P3.M4.S schema-dump + baseline `20260520000000` på staging.
 - **Schema:** **119** tabeller, **190** policies — paritet med prod; Variant C (**0** kunderader).
 - **`persistent: false`:** MCP har ikke `update_branch` — oppfølging **B3a-PERSISTENT-FIX** (Dashboard).
-- **Neste:** B3b (Vercel env mot `pbwivijolkoemcvgecoj`), B3f seed/smoke; **P3.M5** ledger-hygiene separat.
+- **B3a-REROLL (2026-05-20):** Kompromittert branch `pbwivijolkoemcvgecoj` slettet; ny `uigxsboqeruxflgzqztl` + dump re-apply + baseline `20260520000001`.
+- **Neste:** B3b (Vercel env mot `uigxsboqeruxflgzqztl`), B3f seed/smoke; **P3.M5** ledger-hygiene separat.
 - **Kost:** ~$0.01344/time (~kr 90/mnd) per aktiv branch-compute.
 
 ### B3b — Vercel staging-env

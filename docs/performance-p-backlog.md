@@ -56,16 +56,18 @@
 
 **Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
-| **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a TRULY_COMPLETED** 2026-05-20 (`pbwivijolkoemcvgecoj`, P3.M4.S dump bypass). Åpen: **B3a-PERSISTENT-FIX**; fremtid: **P3.M5** ledger reconcile | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
+| **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a TRULY_COMPLETED** 2026-05-20 · **B3a-REROLL** 2026-05-20 (`uigxsboqeruxflgzqztl`, credential rotation). Åpen: **B3a-PERSISTENT-FIX**; fremtid: **P3.M5** ledger reconcile | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
 
 | Oppgave | Innhold |
 |---------|---------|
-| **B3a** | Supabase staging **TRULY_COMPLETED 2026-05-20** (`pbwivijolkoemcvgecoj`) — schema via dump bypass; **B3a-MIGRATIONS-FIX RESOLVED**; **B3a-PERSISTENT-FIX** åpen; **P3.M5** ledger hygiene logget |
+| **B3a** | Supabase staging **TRULY_COMPLETED 2026-05-20** · **B3a-REROLL 2026-05-20** (`uigxsboqeruxflgzqztl`) — schema via dump bypass; **B3a-MIGRATIONS-FIX RESOLVED**; **B3a-PERSISTENT-FIX** åpen; **P3.M5** ledger hygiene logget |
 | **B3b** | Vercel `staging` git‑branch + env mapping; forhindre cron mot prod‑URL ved feilkonfig |
 | **B3c** | ~~Sanity `staging` datasett~~ **COMPLETED 2026-05-19** — dataset `staging` (private) på `4udoq5d8`; egne write‑token og webhook‑secret → **B3e** |
 | **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
 | **B3e** | Full env-dokumentasjon (JSON Rev A i repo — utvid ved behov per tjeneste) |
 | **B3f** | `scripts/seed-staging.ts` — syntetisk volum (uten art. 9), idempotent — foundation til B4 skala‑seed |
+
+**Lukket — B3a-REROLL (2026-05-20):** Staging credentials rotated due to chat exposure incident. Old branch `pbwivijolkoemcvgecoj` deleted, new `uigxsboqeruxflgzqztl` created with fresh schema dump. Variant C verified. Tighter operational discipline established: HV-hardregler for credential handling.
 | **B4a** | Faker-/data‑modeller og generatorer deterministiske etter `--seed`; art. 9‑null i snapshots; **`employee_order_items` dokumentert som VIEW på prod** (speiler `order_items`); seed skriver til **`order_items`**. Verifiser `relkind`/def på mål-branch; jf. [docs/volume-seed-strategy.md](volume-seed-strategy.md). |
 | **B4b** | Bulk‑insert/COPY‑pipeline med batch‑ og parallelismekontroll, målinger mot staging |
 | **B4c** | Verifiserings‑scripts: radteller, FK‑integritet, distribusjon, audit‑ før/etter der strategi bruker post‑seed truncate |

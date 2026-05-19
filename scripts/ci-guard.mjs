@@ -17,6 +17,9 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/sanity/heal-menu-horizon.ts",
   "scripts/debug-meal-idea-bank.ts",
   "scripts/cron-menu-publish.ts",
+  // B3e / B3a-REROLL: one-off staging env extract writers (never commit secrets).
+  "scripts/audit/b3a-reroll-write-extract-creds.mjs",
+  "scripts/audit/b3e-generate-staging-env.mjs",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",
