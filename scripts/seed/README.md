@@ -152,10 +152,12 @@ F1 (indices 0–9) had no æøå by chance; **after fix, `first10_emails_hash` i
 | Mode | When | Behaviour |
 |------|------|-------------|
 | **Serial** | `auth.users` staging count &lt; 100 (and not scale profile wipe) | 1 worker |
-| **Parallel scale** | ≥ 50 staging profiles | 10 workers, 25% progress logs |
-| **Parallel orphan** | `profiles = 0` **and** staging `auth.users` ≥ 100 | 10 workers, progress every 1000 deletes |
+| **Parallel scale** | ≥ 50 staging profiles | `SEED_ORPHAN_DELETE_WORKERS` (default **4**), 1% progress via `createBatchLogger`, delete retry/backoff |
+| **Parallel orphan** | `profiles = 0` **and** staging `auth.users` ≥ 100 | Same delete workers (default **4**), progress every 1000 deletes |
 
-Estimates: ~11 s per 100 orphans; ~1–3 min for 10K auth-only orphans (vs ~20 min serial).
+**DELETE asymmetry (B4.1 finding):** CREATE uses 10 workers; DELETE uses **4** + exponential backoff. B4.1 scale-wipe at 10 workers hit `fetch failed` / timeouts. Wipe acceptance: **complete without fatal** (no fixed duration gate).
+
+Estimates: ~11 s per 100 orphans (serial); parallel orphan/scale depends on Auth API stability.
 
 ## Logs
 
@@ -184,7 +186,7 @@ npm run seed:dry-run -- --target staging --companies 100 --total-users 10000 --w
 
 | Env / flag | Default | Purpose |
 |------------|---------|---------|
-| `SEED_POOL_MAX` | `10` | `pg.Pool` max connections |
+| `SEED_POOL_MAX` | `15` | `pg.Pool` max connections |
 | `SEED_WORKERS` | `10` | Parallel auth workers |
 | `--companies` | `100` | Number of companies |
 | `--total-users` | `10000` | Total profiles/auth users |
@@ -197,8 +199,80 @@ npm run seed:dry-run -- --target staging --companies 100 --total-users 10000 --w
 
 **Expected duration:** ~12–22 min (auth-heavy). Do not run `hello` and `dry-run` in parallel.
 
-## Next (B4.2+)
+**Progress logging:** `createBatchLogger` uses **10%** milestones when `total &lt; 50_000` (B4.1 default preserved).
+
+## B4.2.1 scale-up (100K)
+
+**Target:** 1000 companies, 100 000 users (Pareto-skewed, 10× B4.1), 100 % real `auth.users`.
+
+```bash
+npm run seed:wipe -- --target staging --confirm
+npm run seed:dry-run -- --target staging --companies 1000 --total-users 100000 --workers 10
+```
+
+Recommended env for run:
+
+```bash
+set SEED_POOL_MAX=15
+set SEED_ORPHAN_DELETE_WORKERS=4
+```
+
+| Env / flag | Default | Purpose |
+|------------|---------|---------|
+| `SEED_POOL_MAX` | `15` | `pg.Pool` max connections |
+| `SEED_ORPHAN_DELETE_WORKERS` | `4` | Parallel auth **delete** workers (wipe) |
+| `SEED_WORKERS` | `10` | Parallel auth **create** workers |
+| `--companies` | `1000` | Number of companies |
+| `--total-users` | `100000` | Total profiles/auth users |
+| `--workers` | `10` | Auth CREATE parallelism (CLI) |
+
+**Progress logging:** auth progress on `totalUsers` (1% when ≥ 50K); DB progress uses `stepPct: 1` when `totalUsers ≥ 50_000` (every 10 companies @ 1000 firms).
+
+**Pareto (seed=42):** sum=100000, p50≈62, p95≈358, ratio=50, ~34 firms at max=500.
+
+**Determinism:** `first10_emails_hash` must remain F1 (`6426909b2e5c0d63c44d31ffc6776ce1`).
+
+### B4.2.1 baselines (reference)
+
+| Fingerprint | MD5 |
+|-------------|-----|
+| `first10_emails_hash` (F1 lineage) | `6426909b2e5c0d63c44d31ffc6776ce1` |
+| `full_emails_hash` (100K) | `b3cfa2dec349592987e83d4c0ae0800e` |
+| `company_names_hash` | `fb8033a25c6a74217f3adc34c886d7c1` |
+| `location_names_hash` | `66c26d5d97bed0a59923f76c74f13ff7` |
+
+### B4.2.1 performance baseline (verified)
+
+| Phase | Duration | Throughput / detail |
+|-------|----------|---------------------|
+| Auth | 87 min | 22.27/s, p95=586 ms, 0 failures, 0×429 |
+| DB | 12 min | 1000 TX, p50=545 ms, p95=1911 ms, 0 failures |
+| **Total** | **87 min** | Under 90–110 min estimate |
+
+**Counts:** 100K profiles + 1000 companies + 100K memberships (both sides).
+
+**Wipe acceptance:** complete without fatal.
+
+**Memory (100K):** pre-generate all user specs (~120 MB heap observed) — OK for B4.2.1.
+
+### Scale linearity (B4.1 → B4.2.1)
+
+| Metric | B4.1 (10K) | B4.2.1 (100K) | Observation |
+|--------|------------|---------------|-------------|
+| Auth throughput | 22.33/s | 22.27/s | Unchanged at 10× scale |
+| Auth p95 | 574 ms | 586 ms | Stable |
+| Failure rate | 0% | 0% | Consistent |
+| Tenant TX p50 | 672 ms | 545 ms | 19% faster (warmup amortised) |
+
+### B4.2.2 (1M) implications
+
+- Linear extrapolation: ~14.5 hours end-to-end — too long for a single session.
+- Requires JWT-cache or resume mechanism before attempting 1M.
+- Streaming per-company generation required for memory (~1.2 GB at batch pre-gen).
+- Not implemented in B4.2.1.
+
+## Next (B4.2.2+)
 
 - JWT-cache for scale (`jose`, offline tokens)
-- Parallel auth batching
-- 10K / 100K / 1M ramps with HARDGATE
+- Streaming user generation per company (1M)
+- 1M ramp with HARDGATE

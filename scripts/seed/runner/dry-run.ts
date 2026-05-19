@@ -1,7 +1,8 @@
 /**
- * B4.1 dry-run — 100 companies × ~10K users on staging (Variant C).
+ * B4.1+ dry-run — Pareto-skewed companies × users on staging (Variant C).
  *
  * Usage: npm run seed:dry-run -- --target staging [--companies 100] [--total-users 10000] [--workers 10] [--seed 42]
+ * B4.2.1: --companies 1000 --total-users 100000
  */
 import type pg from "pg";
 
@@ -253,11 +254,21 @@ async function main(): Promise<void> {
     }),
   );
 
+  const authBatch = createBatchLogger(RUNNER, cli.totalUsers, "auth_progress");
+  const dbBatchOpts =
+    cli.totalUsers >= 50_000 ? { stepPct: 1 as const } : undefined;
+
   const authResult = await timed(RUNNER, "auth_phase", "auth.users", async () =>
     parallelCreateUsers(env, authSpecs, {
       workers: cli.workers,
       failureRateMax: 0.05,
+      onProgress: (done, total) => {
+        authBatch.tick(done, `of=${total}`);
+      },
     }),
+  );
+  authBatch.finish(
+    `success=${authResult.stats.success} failed=${authResult.stats.failed} throughput=${authResult.stats.throughput_per_sec.toFixed(2)}/s`,
   );
 
   const pool = await getPool(env);
@@ -266,7 +277,7 @@ async function main(): Promise<void> {
   let companiesOk = 0;
   let companiesFailed = 0;
 
-  const dbBatch = createBatchLogger(RUNNER, cli.companies, "db_company_progress");
+  const dbBatch = createBatchLogger(RUNNER, cli.companies, "db_company_progress", dbBatchOpts);
 
   try {
     for (const { plan, users } of assignments) {

@@ -57,6 +57,13 @@ export type ParallelAuthOptions = {
   workers?: number;
   failureRateMax?: number;
   maxBackoffMs?: number;
+  onProgress?: (done: number, total: number) => void;
+};
+
+export type ParallelDeleteAuthOptions = {
+  workers?: number;
+  maxBackoffMs?: number;
+  onProgress?: (done: number, total: number) => void;
 };
 
 function sleep(ms: number): Promise<void> {
@@ -66,6 +73,18 @@ function sleep(ms: number): Promise<void> {
 function isRateLimitError(message: string): boolean {
   const m = message.toLowerCase();
   return m.includes("429") || m.includes("rate limit") || m.includes("too many requests");
+}
+
+function isRetryableNetworkError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("fetch failed") ||
+    m.includes("timeout") ||
+    m.includes("econnreset") ||
+    m.includes("econnrefused") ||
+    m.includes("network") ||
+    m.includes("socket hang up")
+  );
 }
 
 function parseFailureStatus(message: string, explicit?: number): number | null {
@@ -133,6 +152,34 @@ function logAndPersistAuthFailures(failed: ParallelAuthFailure[]): void {
   });
 }
 
+async function deleteWithBackoff(
+  env: SeedEnv,
+  userId: string,
+  maxBackoffMs: number,
+): Promise<{ readonly ok: true } | { readonly ok: false; message: string }> {
+  let backoffMs = 500;
+  const maxAttempts = 12;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await deleteAuthUserById(env, userId, { quiet: true });
+      return { ok: true as const };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const retryable = isRateLimitError(message) || isRetryableNetworkError(message);
+      if (retryable && backoffMs <= maxBackoffMs) {
+        const jitter = Math.floor(Math.random() * 200);
+        await sleep(backoffMs + jitter);
+        backoffMs = Math.min(maxBackoffMs, backoffMs * 2);
+        continue;
+      }
+      return { ok: false as const, message };
+    }
+  }
+
+  return { ok: false as const, message: "AUTH_DELETE_MAX_ATTEMPTS" };
+}
+
 async function createWithBackoff(
   env: SeedEnv,
   spec: ParallelAuthUserSpec,
@@ -141,7 +188,6 @@ async function createWithBackoff(
   | { readonly ok: true; result: ParallelAuthSuccess }
   | { readonly ok: false; failure: ParallelAuthFailure }
 > {
-  let attempt = 0;
   let backoffMs = 500;
 
   const maxAttempts = 12;
@@ -241,6 +287,18 @@ function workerCountFromEnv(fallback: number): number {
   return n;
 }
 
+const DEFAULT_DELETE_WORKERS = 4;
+
+function deleteWorkerCountFromEnv(fallback: number = DEFAULT_DELETE_WORKERS): number {
+  const raw = (process.env.SEED_ORPHAN_DELETE_WORKERS ?? "").trim();
+  if (!raw) return fallback;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 16) {
+    throw new Error(`REFUSE_INVALID_SEED_ORPHAN_DELETE_WORKERS value=${raw}`);
+  }
+  return n;
+}
+
 export async function parallelCreateUsers(
   env: SeedEnv,
   specs: ParallelAuthUserSpec[],
@@ -252,12 +310,14 @@ export async function parallelCreateUsers(
 
   const queue = [...specs];
   const started = Date.now();
+  const total = specs.length;
   let processed = 0;
 
   const workerResults = await Promise.all(
     Array.from({ length: workers }, () =>
       runWorker(env, queue, maxBackoffMs, () => {
         processed += 1;
+        options?.onProgress?.(processed, total);
       }),
     ),
   );
@@ -269,7 +329,6 @@ export async function parallelCreateUsers(
   const durations = ok.map((r) => r.duration_ms);
   const perf = summarizePerf(durations);
   const durationMs = Date.now() - started;
-  const total = specs.length;
   const failureRate = total > 0 ? failed.length / total : 0;
 
   const stats = {
@@ -303,9 +362,10 @@ export async function parallelCreateUsers(
 export async function parallelDeleteAuthUsers(
   env: SeedEnv,
   userIds: string[],
-  options?: { workers?: number; onProgress?: (done: number, total: number) => void },
+  options?: ParallelDeleteAuthOptions,
 ): Promise<number> {
-  const workers = options?.workers ?? workerCountFromEnv(10);
+  const workers = options?.workers ?? deleteWorkerCountFromEnv();
+  const maxBackoffMs = options?.maxBackoffMs ?? 30_000;
   const queue = [...userIds];
   const total = userIds.length;
   let deleted = 0;
@@ -314,7 +374,12 @@ export async function parallelDeleteAuthUsers(
     for (;;) {
       const id = queue.shift();
       if (!id) return;
-      await deleteAuthUserById(env, id, { quiet: true });
+      const result = await deleteWithBackoff(env, id, maxBackoffMs);
+      if (result.ok === false) {
+        throw new Error(
+          `auth.admin.deleteUser failed user_hash=${hashId(id)} message=${redactFailureMessage(result.message)}`,
+        );
+      }
       deleted += 1;
       options?.onProgress?.(deleted, total);
     }

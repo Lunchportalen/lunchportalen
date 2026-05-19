@@ -9,7 +9,7 @@ import pg from "pg";
 
 import type { SeedEnv } from "./env.js";
 
-const DEFAULT_POOL_MAX = 10;
+const DEFAULT_POOL_MAX = 15;
 
 function poolMaxConnections(): number {
   const raw = (process.env.SEED_POOL_MAX ?? "").trim();

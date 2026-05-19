@@ -75,8 +75,18 @@ async function countByEmail(client: pg.PoolClient): Promise<{
 
 const SCALE_WIPE_PROFILE_THRESHOLD = 50;
 const ORPHAN_PARALLEL_AUTH_THRESHOLD = 100;
-const ORPHAN_DELETE_WORKERS = 10;
 const ORPHAN_DELETE_PROGRESS_EVERY = 1000;
+const DEFAULT_ORPHAN_DELETE_WORKERS = 4;
+
+function orphanDeleteWorkers(): number {
+  const raw = (process.env.SEED_ORPHAN_DELETE_WORKERS ?? "").trim();
+  if (!raw) return DEFAULT_ORPHAN_DELETE_WORKERS;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 16) {
+    throw new Error(`REFUSE_INVALID_SEED_ORPHAN_DELETE_WORKERS value=${raw}`);
+  }
+  return n;
+}
 
 async function wipeDatabase(client: pg.PoolClient, profileCount: number): Promise<void> {
   const profileRows = await client.query<{ id: string; company_id: string | null }>(
@@ -143,34 +153,32 @@ async function deleteStagingAuth(env: SeedEnv, profileCount: number): Promise<nu
     return parallelDeleteAuthUsers(env, ids, { workers: 1 });
   }
 
-  const batch = createBatchLogger(RUNNER, authCount, "auth_delete_progress");
-  let lastPct = -1;
+  const deleteWorkers = orphanDeleteWorkers();
+  const scaleBatch =
+    scaleProfile ? createBatchLogger(RUNNER, authCount, "auth_delete_progress") : null;
   let lastOrphanMilestone = 0;
 
   const deleted = await parallelDeleteAuthUsers(env, ids, {
-    ...(parallelOrphan ? { workers: ORPHAN_DELETE_WORKERS } : {}),
+    workers: deleteWorkers,
     onProgress: (done, all) => {
       if (parallelOrphan) {
-        const milestone = Math.floor(done / ORPHAN_DELETE_PROGRESS_EVERY) * ORPHAN_DELETE_PROGRESS_EVERY;
+        const milestone =
+          Math.floor(done / ORPHAN_DELETE_PROGRESS_EVERY) * ORPHAN_DELETE_PROGRESS_EVERY;
         if (milestone > lastOrphanMilestone && milestone > 0) {
           lastOrphanMilestone = milestone;
           logEvent(RUNNER, {
             action: "auth_delete_progress",
             count: done,
-            message: `orphan_parallel of=${all}`,
+            message: `orphan_parallel of=${all} workers=${deleteWorkers}`,
           });
         }
       }
-      if (scaleProfile) {
-        const pct = all > 0 ? Math.floor((done / all) * 100) : 100;
-        if (pct >= 25 && pct % 25 === 0 && pct !== lastPct) {
-          lastPct = pct;
-          batch.tick(done, `pct=${pct}`);
-        }
+      if (scaleProfile && scaleBatch) {
+        scaleBatch.tick(done, `scale_profile of=${all}`);
       }
     },
   });
-  batch.finish(`deleted=${deleted} orphan_parallel=${parallelOrphan}`);
+  scaleBatch?.finish(`deleted=${deleted} workers=${deleteWorkers}`);
   return deleted;
 }
 

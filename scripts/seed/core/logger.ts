@@ -154,18 +154,35 @@ export type BatchLogger = {
   finish: (message?: string) => void;
 };
 
+export type BatchLoggerOptions = {
+  /** Progress milestone step in percent (1 = every 1%, 10 = every 10%). */
+  stepPct?: number;
+};
+
+const BATCH_LOGGER_SCALE_THRESHOLD = 50_000;
+
+export function resolveBatchStepPct(total: number, opts?: BatchLoggerOptions): number {
+  if (opts?.stepPct !== undefined) {
+    return opts.stepPct;
+  }
+  return total >= BATCH_LOGGER_SCALE_THRESHOLD ? 1 : 10;
+}
+
 export function createBatchLogger(
   runner: string,
   total: number,
   label = "progress",
+  opts?: BatchLoggerOptions,
 ): BatchLogger {
   const started = Date.now();
   let lastPct = -1;
+  const stepPct = resolveBatchStepPct(total, opts);
   const milestones = new Set<number>();
 
-  for (let p = 10; p <= 100; p += 10) {
+  for (let p = stepPct; p <= 100; p += stepPct) {
     milestones.add(p);
   }
+  milestones.add(100);
 
   return {
     tick(processed: number, message?: string) {
