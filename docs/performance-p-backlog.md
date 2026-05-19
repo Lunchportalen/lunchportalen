@@ -76,7 +76,7 @@
 **Skala‑validering etter staging står:**
 
 1. **Volum-seed:** B4 oppgraderer B3f til dokumentert firmavolum og kjøretid (strategi: [volume-seed-strategy.md](volume-seed-strategy.md)).
-2. **k6 / HTTP-last (B5):** representative autentiserte kjernebane-endepunkter.
+2. **k6 / HTTP-last (B5):** representative autentiserte kjernebane-endepunkter. **Plan V1:** [docs/audit/b5-last-test-plan-v1.md](audit/b5-last-test-plan-v1.md) (2026-05-20) — RECON prod-baseline integrert; 4 tester (Spike → Stress → Cron → Soak); seed 10 % (2,5 M N, 5 K firma); k6 + Grafana Cloud; **implementering utsatt** (F1–F5, 8–15 sesjoner). Blokkeres av B4 MEDIUM seed på `uigxsboqeruxflgzqztl`.
 3. Valgfritt **pgbench** mot staging der isolert DB‑gjennomløp trengs.
 4. **Rev B:** `EXPLAIN (ANALYZE, BUFFERS)` på staging for representative queries fra `hot-paths.md`.
 5. **Sammenlign Rev A vs Rev B** — arkiver snapshots (`pg_stat_statements`, tabellstørrelser, advisors).
