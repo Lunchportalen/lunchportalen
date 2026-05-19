@@ -1,6 +1,6 @@
 # Lunchportalen — Supabase branch state
 
-**Sist verifisert:** 2026-05-19 (B3a, Supabase MCP read/write)  
+**Sist verifisert:** 2026-05-20 (P3.M4.S schema-dump bypass, Supabase MCP + `psql`)  
 **Prod-prosjekt:** `hkpokyapzarefrgqzkos` (Lunchportalen, Pro, `eu-west-1`, Postgres 17)  
 **Org:** `wbnttmwfysreonhxgans`
 
@@ -10,58 +10,57 @@
 
 | Branch | Branch ID | `project_ref` | `preview_project_status` | Branch `status` | `persistent` | `with_data` | Merknad |
 |--------|-----------|---------------|--------------------------|-----------------|--------------|-------------|---------|
-| **main** (prod) | `b548ca65-55ff-489f-8cc5-ef520d205912` | `hkpokyapzarefrgqzkos` | `ACTIVE_HEALTHY` | `FUNCTIONS_DEPLOYED` | `false` | `false` | Uendret; baseline prod |
-| **staging** (ny, B3a) | `26377989-406a-4e90-bcce-91fcf5f2b35d` | **`crsvtxhfhjicyoycgvcd`** | `ACTIVE_HEALTHY` | `FUNCTIONS_DEPLOYED` *(etter `reset_branch`; var `MIGRATIONS_FAILED` ved create)* | **`false`** | `false` | Opprettet MCP `create_branch` 2026-05-19. **Schema sync BLOCKED** — se [B3a migrasjons-blokker](#b3a-migrasjons-blokker-2026-05-19). **B3a-PERSISTENT-FIX:** ingen MCP `update_branch`; vurder Dashboard «persistent branch». |
-| **staging-abc-signoff** (arkiv) | `b426d8b0-6286-4a2b-850a-deb7c2ef6676` | `iyrytpjacujscveivtfb` | `INACTIVE` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **Uberørt** i B3a (id/ref/status uendret vs pre-create audit) |
+| **main** (prod) | `b548ca65-55ff-489f-8cc5-ef520d205912` | `hkpokyapzarefrgqzkos` | `ACTIVE_HEALTHY` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **42** ledger-rader (orphan `20260222233084` fjernet P3.M4.O) |
+| **staging** | `986ce7e0-e0b9-47e8-8292-df6feb4ef0f7` | **`pbwivijolkoemcvgecoj`** | `ACTIVE_HEALTHY` | `MIGRATIONS_FAILED` *(platform ledger; ignorert)* | `false` | `false` | **Schema synket via P3.M4.S dump** — ikke ledger-replay |
+| **staging-abc-signoff** (arkiv) | `b426d8b0-6286-4a2b-850a-deb7c2ef6676` | `iyrytpjacujscveivtfb` | `INACTIVE` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **Uberørt** |
 
 ---
 
-## B3a opprettelse (2026-05-19)
+## P3.M4.S — Schema-dump bypass (2026-05-20)
 
 | Steg | Resultat |
 |------|----------|
-| `get_cost` (branch) | `$0.01344`/time (~kr 90/mnd) |
-| `create_branch` (`name: staging`) | `project_ref` **`crsvtxhfhjicyoycgvcd`**, initial `status: CREATING_PROJECT` → **`MIGRATIONS_FAILED`** |
-| `reset_branch` | `success`; kortvarig `FUNCTIONS_DEPLOYED`, men schema fortsatt tom |
-| `rebase_branch` | `success`; tilbake til **`MIGRATIONS_FAILED`** |
-| `reset_branch` (`migration_version: 20260518152838`) | `success`; `FUNCTIONS_DEPLOYED`, men fortsatt kun én migrasjon på branch |
+| Orphan-fix (P3.M4.O) | Prod ledger **43 → 42**; orphan `20260222233084` slettet |
+| Ledger-replay på branch | Fortsatt **FAIL** på `add_rls_missing_tables` (forventet) |
+| Schema-sync | **`pg_dump --schema-only`** (`public` + `private`) → `psql` på staging (URL via `supabase branches get`, ikke committet) |
+| Baseline ledger (staging) | **`20260520000000`** — `baseline_schema_dump_from_prod_2026_05_20_v0` |
+| Variant C | **0 rader** i `orders`, `profiles`, `companies`, `menu_service_days` |
 
-**Kost:** ~$0.01344/time per aktiv branch-compute (innenfor cap kr 800).
-
----
-
-## B3a migrasjons-blokker (2026-05-19)
-
-| Sjekk | Prod (`hkpokyapzarefrgqzkos`) | Staging (`crsvtxhfhjicyoycgvcd`) |
-|-------|-------------------------------|----------------------------------|
-| `list_migrations` (MCP) | **44** registrerte versjoner (siste: `20260518152838`) | **1** versjon: `20260222233084` (tomt `name`, **finnes ikke** i `supabase/migrations/`) |
-| `list_tables` `public` | Full schema (f.eks. `orders`, `profiles`, `companies` med prod-rader) | **`[]`** — ingen tabeller |
-| `execute_sql` `count(*)` orders/profiles/companies | N/A (prod har data) | **`42P01`** — relasjoner finnes ikke |
-
-**Tolkning:** Branch-provisjon lyktes; **migrasjonskjede fra platform er fastlåst på orphan `20260222233084`**. Repo har **220** `.sql`-filer under `supabase/migrations/` (ekskl. `rollbacks/`); remote historikk ≠ filteller.
-
-**Variant C data:** Ingen prod-rader på staging (tom DB) — **ingen GDPR-lekkasje observert**, men **schema mangler** → B3f/B4 **blokkert** til **B3a-MIGRATIONS-FIX**.
-
-**Anbefalt oppfølging (HUMAN):** Supabase Dashboard → Branching / Migrations for `staging` — reparer eller fjern orphan `20260222233084`, deretter `reset_branch` eller re-run migrations; evt. support hvis platform-drift.
+**Artefakter:** [prod-ledger-backup-2026-05-20.json](prod-ledger-backup-2026-05-20.json) · [staging-schema-dump-2026-05-20.sql](staging-schema-dump-2026-05-20.sql) · apply-script: `scripts/audit/p3m4s-apply-staging-dump.mjs`
 
 ---
 
-## Smoke-referanse (B3a)
+## Schema-paritet (prod vs staging, 2026-05-20)
+
+| Måling | Prod | Staging |
+|--------|------|---------|
+| `public` tabeller | **119** | **119** |
+| RLS policies (`public`) | **190** | **190** |
+| `private` funksjoner | **20** | **20** |
+| `public` `pg_proc` (prokind `f`) | 338 | 150 *(pg_catalog-telling; kjerne-RPC-er verifisert)* |
+| `agreement_cleanup_audit` | finnes | finnes |
+| `orders` kolonner | 34 | 34 |
+
+**Merk:** Branch UI viser fortsatt `MIGRATIONS_FAILED` — det er **platform ledger-replay**, ikke faktisk schema-tilstand etter dump.
+
+---
+
+## Smoke-referanse (P3.M4.S)
 
 | Test | Resultat |
 |------|----------|
-| 3 branches i `list_branches` | **PASS** |
-| `staging-abc-signoff` uendret | **PASS** (`b426d8b0-…`, `INACTIVE`) |
-| Prod `ACTIVE_HEALTHY` | **PASS** |
-| Staging schema synced | **FAIL** |
-| Staging data tom (variant C) | **PASS** (ingen tabeller / ingen rader) |
-| `get_project` på staging ref | MCP `Project not found` (preview-grense; bruk `list_branches` + `execute_sql`/`list_tables`) |
+| Prod `ACTIVE_HEALTHY` under operasjon | **PASS** |
+| Staging `preview_project_status` | **ACTIVE_HEALTHY** |
+| Tabeller/policies match | **PASS** |
+| Variant C (ingen prod-data) | **PASS** |
+| `list_migrations` staging | **1** (baseline only) |
 
 ---
 
-## Åpne oppgaver (fra B3a)
+## Åpne oppgaver
 
 | ID | Beskrivelse |
 |----|-------------|
-| **B3a-MIGRATIONS-FIX** | Få full migrasjonssync på `crsvtxhfhjicyoycgvcd` (fjern/reparer orphan `20260222233084`) |
-| **B3a-PERSISTENT-FIX** | Verifiser/sett `persistent: true` på `staging` via Dashboard (MCP har ikke `update_branch`) |
+| **B3a-PERSISTENT-FIX** | Sett `persistent: true` på `staging` via Dashboard (MCP har ikke `update_branch`) |
+| **P3.M5** | Ledger reconcile (~182 repo-filer uten prod-ledger-rad) — hygiene, blokkerer ikke staging |
+| **B3b–B3f** | Vercel env, seed, B4 — se [b3-decision-framework.md](b3-decision-framework.md) |

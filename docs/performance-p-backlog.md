@@ -56,11 +56,11 @@
 
 **Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
-| **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a PROVISIONED** 2026-05-19 (`crsvtxhfhjicyoycgvcd`, schema sync **BLOCKED** — se [supabase-state.md](audit/supabase-state.md)). Åpne: **B3a-MIGRATIONS-FIX**, **B3a-PERSISTENT-FIX** | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
+| **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a TRULY_COMPLETED** 2026-05-20 (`pbwivijolkoemcvgecoj`, P3.M4.S dump bypass). Åpen: **B3a-PERSISTENT-FIX**; fremtid: **P3.M5** ledger reconcile | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
 
 | Oppgave | Innhold |
 |---------|---------|
-| **B3a** | Supabase staging‑branch **PROVISIONED 2026-05-19** (`crsvtxhfhjicyoycgvcd`) — migrasjonssync **BLOCKED** (orphan `20260222233084`); **B3a-MIGRATIONS-FIX** + **B3a-PERSISTENT-FIX** åpne |
+| **B3a** | Supabase staging **TRULY_COMPLETED 2026-05-20** (`pbwivijolkoemcvgecoj`) — schema via dump bypass; **B3a-MIGRATIONS-FIX RESOLVED**; **B3a-PERSISTENT-FIX** åpen; **P3.M5** ledger hygiene logget |
 | **B3b** | Vercel `staging` git‑branch + env mapping; forhindre cron mot prod‑URL ved feilkonfig |
 | **B3c** | ~~Sanity `staging` datasett~~ **COMPLETED 2026-05-19** — dataset `staging` (private) på `4udoq5d8`; egne write‑token og webhook‑secret → **B3e** |
 | **B3d** | DNS CNAME til Vercel for `staging.app.lunchportalen.no` |
@@ -99,6 +99,7 @@ Disse punktene kommer fra read‑only kartlegging foran B4‑implementering og s
 | P3.D4 | **PARTIAL RESOLVED** — **`multiple_permissive_policies` på `public.orders`:** 3 av 4 advisor-warnings lukket (DELETE/INSERT/UPDATE `_none`-par). Migrasjon: [`20260518200000_drop_orders_permissive_none_policies.sql`](../supabase/migrations/20260518200000_drop_orders_permissive_none_policies.sql) (commit `546eccec`, prod 2026-05-18). Gjenstående 1/4: SELECT `{orders_select, orders_select_bridge_scoped}` — **planlagt**, ikke impl. | SELECT-side: [docs/audit/orders-select-rls-consolidation-plan.md](audit/orders-select-rls-consolidation-plan.md). Impl-fase: **P3.D6**. |
 | P3.D6 | **ÅPEN** — **Orders SELECT RLS-konsolidering:** union av `orders_select` (`private.can_view_order`) og `orders_select_bridge_scoped` (public bridge) til én policy via utvidet `can_view_order`. To parallelle auth-modeller; ikke «velg én». | Følg [orders-select-rls-consolidation-plan.md](audit/orders-select-rls-consolidation-plan.md). Krever 10-bruker testmatrise + `tenantIsolation.final.test.ts` grønn. Estimat 2–4 t. **Eksplisitt godkjenning før apply.** |
 | P3.D5 | **ÅPEN** — **Duplikat `tg_set_updated_at`-trigger på `public.profiles`:** **`set_updated_at`** og **`profiles_set_updated_at`**, begge **`BEFORE UPDATE`**, samme målfunksjon. Trolig **migrasjonsdrift**. | **Migrasjon (Commit B / egen implementering):** `DROP TRIGGER` på **én** av de to + verifiser at ingen migrasjon/versjonering avhenger av begge. Oppdaget ved read-only audit i FASE B P3 hygiene Commit A. |
+| P3.M5 | **ÅPEN (deferred)** — **Ledger reconcile:** ~182 repo-migrasjoner uten `schema_migrations`-rad på prod; P3.M3 sample ~50–60 % effektivt applied. **Blokkerer ikke** prod eller staging etter P3.M4.S dump bypass. | Trinnvis reconcile (P3.M4.C-plan); backup: [prod-ledger-backup-2026-05-20.json](audit/prod-ledger-backup-2026-05-20.json) |
 
 ---
 

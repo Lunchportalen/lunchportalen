@@ -317,7 +317,7 @@ flowchart TD
 
 | B3-fase (repo) | Innhold | Status |
 |----------------|---------|--------|
-| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **PROVISIONED — schema sync BLOCKED** (2026-05-19, `crsvtxhfhjicyoycgvcd`; se [supabase-state.md](supabase-state.md)) |
+| **B3a** | Supabase staging-branch provisjon, migrasjonssync, budget alerts | **TRULY_COMPLETED** (2026-05-20, `pbwivijolkoemcvgecoj`; schema via P3.M4.S dump bypass — se [supabase-state.md](supabase-state.md)) |
 | **B3b** | Vercel `staging` git-branch + env mapping | **Åpen** — krever B3a + B3d |
 | **B3c** | Sanity `staging` datasett (`4udoq5d8`) | **COMPLETED** — 2026-05-19 (manuell UI-opprettelse; smoke read-only) |
 | **B3d** | DNS CNAME `staging.app.lunchportalen.no` | **Åpen** — beslutning 1 lukket (Domeneshop) |
@@ -348,9 +348,10 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 ### B3a — Supabase staging-branch provisjon
 
 - **Status (2026-05-19):** Branch **`staging`** opprettet via MCP `create_branch` → `project_ref` **`crsvtxhfhjicyoycgvcd`**, `with_data: false`, `persistent: false`. **`staging-abc-signoff` uberørt** (`INACTIVE`). Prod fortsatt `ACTIVE_HEALTHY`.
-- **Migrasjoner:** **BLOCKED** — initial `MIGRATIONS_FAILED`; `reset_branch` / `rebase_branch` uten full schema. Branch `list_migrations` viser kun orphan **`20260222233084`** (ikke i repo); `list_tables` på staging = tom `public`. Detaljer: [supabase-state.md](supabase-state.md).
+- **Migrasjoner (platform):** Ledger-replay fortsatt **`MIGRATIONS_FAILED`** — **omgått** med P3.M4.S schema-dump + baseline `20260520000000` på staging.
+- **Schema:** **119** tabeller, **190** policies — paritet med prod; Variant C (**0** kunderader).
 - **`persistent: false`:** MCP har ikke `update_branch` — oppfølging **B3a-PERSISTENT-FIX** (Dashboard).
-- **Neste:** **B3a-MIGRATIONS-FIX** (HUMAN/Dashboard) før B3f; B3b kan starte parallelt (env peker ikke på staging DB før fix).
+- **Neste:** B3b (Vercel env mot `pbwivijolkoemcvgecoj`), B3f seed/smoke; **P3.M5** ledger-hygiene separat.
 - **Kost:** ~$0.01344/time (~kr 90/mnd) per aktiv branch-compute.
 
 ### B3b — Vercel staging-env
@@ -401,7 +402,7 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 |------|--------|
 | Framework opprettet | **2026-05-19** |
 | Beslutninger | **LUKKET (4/4)** — 2026-05-19 ~02:30 |
-| Implementering B3a–B3f | **Pågår** — **B3c COMPLETED**; **B3a branch PROVISIONED**, schema sync **BLOCKED** (2026-05-19) |
+| Implementering B3a–B3f | **Pågår** — **B3c COMPLETED**; **B3a TRULY_COMPLETED** (P3.M4.S dump bypass, 2026-05-20) |
 | P3.B3 beslutningsfase | **DECIDED** |
 | Nedstrøms B4 | Fortsatt **blokkert** til B3f ferdig |
 
