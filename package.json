@@ -81,7 +81,9 @@
     "repo:scan": "tsx scripts/scanRepo.ts",
     "repo:update": "tsx scripts/updateRepoMemory.ts",
     "seed:sanity-menu": "tsx scripts/seed-sanity-menu.ts",
-    "worker:queue": "tsx workers/worker.ts"
+    "worker:queue": "tsx workers/worker.ts",
+    "seed:hello": "tsx scripts/seed/runner/hello.ts",
+    "seed:wipe": "tsx scripts/seed/runner/wipe.ts"
   },
   "engines": {
     "node": ">=20.11.0"
@@ -120,9 +122,11 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@playwright/test": "^1.58.2",
     "@types/node": "^20.12.12",
     "@types/nodemailer": "^7.0.9",
+    "@types/pg": "^8.20.0",
     "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
     "@types/regression": "^2.0.6",

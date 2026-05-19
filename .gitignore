@@ -29,6 +29,7 @@ docs/audit/sanity-dump/
 scripts/audit/staging-schema-chunks/
 scripts/audit/staging-schema-dump-2026-05-20.apply.sql
 scripts/audit/staging-env-actual-*.env
+scripts/seed/logs/
 
 # Build artifacts
 tsconfig.tsbuildinfo

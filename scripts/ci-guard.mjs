@@ -20,6 +20,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   // B3e / B3a-REROLL: one-off staging env extract writers (never commit secrets).
   "scripts/audit/b3a-reroll-write-extract-creds.mjs",
   "scripts/audit/b3e-generate-staging-env.mjs",
+  // B4-F1: staging volume-seed (reads service-role from gitignored env extract only).
+  "scripts/seed/",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",
