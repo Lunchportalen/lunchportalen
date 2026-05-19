@@ -54,7 +54,7 @@
 
 ### Infrastruktur / Skala-validering (FASE B – grunnmur)
 
-**Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 volum-seed, audit-spike/teardown-gates, bulk-modell). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
+**Strategidokumenter (Rev A):** [docs/staging-strategy.md](staging-strategy.md) (staging/GDPR/budget), [docs/volume-seed-strategy.md](volume-seed-strategy.md) (B4 generell strategi Rev A), **[docs/audit/b4-volume-seed-plan-v1.md](audit/b4-volume-seed-plan-v1.md)** (B4 implementerings-sannhetskilde V1, 2026-05-20). Under: GDPR variant C (syntetisk data), én persistert Supabase `staging`‑branch `uigxsboqeruxflgzqztl`, Vercel strategi A, Sanity `staging`‑datasett på `4udoq5d8`, domene `staging.app.lunchportalen.no`, budget‑cap forslag **kr 800/mnd**, fullt env‑inventar i [docs/environments.json](environments.json).
 
 | **B3 (staging provisioning)** | **DECIDED** — **B3c COMPLETED** 2026-05-19 · **B3a TRULY_COMPLETED** 2026-05-20 · **B3a-REROLL** 2026-05-20 · **B3a-PERSISTENT-FIX** 2026-05-20 (`persistent: true`). Fremtid: **P3.M5** ledger reconcile | [docs/audit/b3-decision-framework.md](audit/b3-decision-framework.md) |
 
@@ -68,15 +68,16 @@
 | **B3f** | `scripts/seed-staging.ts` — syntetisk volum (uten art. 9), idempotent — foundation til B4 skala‑seed |
 
 **Lukket — B3a-REROLL (2026-05-20):** Staging credentials rotated due to chat exposure incident. Old branch `pbwivijolkoemcvgecoj` deleted, new `uigxsboqeruxflgzqztl` created with fresh schema dump. Variant C verified. Tighter operational discipline established: HV-hardregler for credential handling.
-| **B4a** | Faker-/data‑modeller og generatorer deterministiske etter `--seed`; art. 9‑null i snapshots; **`employee_order_items` dokumentert som VIEW på prod** (speiler `order_items`); seed skriver til **`order_items`**. Verifiser `relkind`/def på mål-branch; jf. [docs/volume-seed-strategy.md](volume-seed-strategy.md). |
-| **B4b** | Bulk‑insert/COPY‑pipeline med batch‑ og parallelismekontroll, målinger mot staging |
-| **B4c** | Verifiserings‑scripts: radteller, FK‑integritet, distribusjon, audit‑ før/etter der strategi bruker post‑seed truncate |
-| **B4d** | CLI: `npm run seed:volume -- --size … --target-db … --dry-run --confirm=staging+<project_ref>` og hard gate mot feil prosjekt |
+| **B4-PLAN** | **V1 COMPLETED 2026-05-20** — [docs/audit/b4-volume-seed-plan-v1.md](audit/b4-volume-seed-plan-v1.md): sannhetskilde for implementering. Skala 2,5 M / 5 K firma trinnvis (10 K → 100 K → 1 M → 2,5 M) med HARDGATE. Hybrid auth (10–50 K real + JWT-cache). Norsk Faker `@staging.lunchportalen.test`. **SKIP ordre-historikk** (B5 genererer). Wipe-and-reseed fra dag 1. Schema-analyse staging bekreftet tom DB + FK-rekkefølge. |
+| **B4a** | Faker-/data‑modeller (`nb_NO`), deterministisk `--seed`; art. 9‑null; **`employee_order_items` VIEW** verifisert på staging (`relkind=v`); jf. B4-PLAN V1 §3. |
+| **B4b** | Bulk‑insert/COPY, batch 1k→5k, ≤5 parallelle workers; hybrid auth pipeline |
+| **B4c** | Verifikasjon + Variant C audit (`@staging.lunchportalen.test` only) |
+| **B4d** | CLI + wipe: `--confirm=staging+uigxsboqeruxflgzqztl` hard gate |
 
 **Skala‑validering etter staging står:**
 
-1. **Volum-seed:** B4 oppgraderer B3f til dokumentert firmavolum og kjøretid (strategi: [volume-seed-strategy.md](volume-seed-strategy.md)).
-2. **k6 / HTTP-last (B5):** representative autentiserte kjernebane-endepunkter. **Plan V1:** [docs/audit/b5-last-test-plan-v1.md](audit/b5-last-test-plan-v1.md) (2026-05-20) — RECON prod-baseline integrert; 4 tester (Spike → Stress → Cron → Soak); seed 10 % (2,5 M N, 5 K firma); k6 + Grafana Cloud; **implementering utsatt** (F1–F5, 8–15 sesjoner). Blokkeres av B4 MEDIUM seed på `uigxsboqeruxflgzqztl`.
+1. **Volum-seed:** B4 implementerer [b4-volume-seed-plan-v1.md](audit/b4-volume-seed-plan-v1.md) (F1–F4, 3–5 sesjoner). Overordnet strategi: [volume-seed-strategy.md](volume-seed-strategy.md).
+2. **k6 / HTTP-last (B5):** **Plan V1:** [docs/audit/b5-last-test-plan-v1.md](audit/b5-last-test-plan-v1.md) — **blokkeres av B4.2.3** (full 2,5 M seed). Auth: oppdater B5 til hybrid JWT-cache ved B4 F4 sign-off.
 3. Valgfritt **pgbench** mot staging der isolert DB‑gjennomløp trengs.
 4. **Rev B:** `EXPLAIN (ANALYZE, BUFFERS)` på staging for representative queries fra `hot-paths.md`.
 5. **Sammenlign Rev A vs Rev B** — arkiver snapshots (`pg_stat_statements`, tabellstørrelser, advisors).
