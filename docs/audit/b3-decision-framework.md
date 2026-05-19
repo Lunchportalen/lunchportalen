@@ -350,7 +350,7 @@ Hver subfase klassifisert som **HUMAN** (manuell dashboard-handling) eller **AUT
 - **Status (2026-05-19):** Branch **`staging`** opprettet via MCP `create_branch` → `project_ref` **`crsvtxhfhjicyoycgvcd`**, `with_data: false`, `persistent: false`. **`staging-abc-signoff` uberørt** (`INACTIVE`). Prod fortsatt `ACTIVE_HEALTHY`.
 - **Migrasjoner (platform):** Ledger-replay fortsatt **`MIGRATIONS_FAILED`** — **omgått** med P3.M4.S schema-dump + baseline `20260520000000` på staging.
 - **Schema:** **119** tabeller, **190** policies — paritet med prod; Variant C (**0** kunderader).
-- **`persistent: false`:** MCP har ikke `update_branch` — oppfølging **B3a-PERSISTENT-FIX** (Dashboard).
+- **B3a-PERSISTENT-FIX (2026-05-20):** `persistent: true` på `staging` (`cf127506-…`) via `supabase branches update --persistent` (MCP har ikke `update_branch`; verifisert med `list_branches`).
 - **B3a-REROLL (2026-05-20):** Kompromittert branch `pbwivijolkoemcvgecoj` slettet; ny `uigxsboqeruxflgzqztl` + dump re-apply + baseline `20260520000001`.
 - **Neste:** B3b (Vercel env mot `uigxsboqeruxflgzqztl`), B3f seed/smoke; **P3.M5** ledger-hygiene separat.
 - **Kost:** ~$0.01344/time (~kr 90/mnd) per aktiv branch-compute.

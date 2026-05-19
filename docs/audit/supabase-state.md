@@ -1,6 +1,6 @@
 # Lunchportalen — Supabase branch state
 
-**Sist verifisert:** 2026-05-20 (B3a-REROLL credential rotation + P3.M4.S schema re-apply, Supabase MCP + `psql`)  
+**Sist verifisert:** 2026-05-20 (B3a-PERSISTENT-FIX + B3a-REROLL; Supabase MCP + CLI + `psql`)  
 **Prod-prosjekt:** `hkpokyapzarefrgqzkos` (Lunchportalen, Pro, `eu-west-1`, Postgres 17)  
 **Org:** `wbnttmwfysreonhxgans`
 
@@ -11,7 +11,7 @@
 | Branch | Branch ID | `project_ref` | `preview_project_status` | Branch `status` | `persistent` | `with_data` | Merknad |
 |--------|-----------|---------------|--------------------------|-----------------|--------------|-------------|---------|
 | **main** (prod) | `b548ca65-55ff-489f-8cc5-ef520d205912` | `hkpokyapzarefrgqzkos` | `ACTIVE_HEALTHY` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **42** ledger-rader (orphan `20260222233084` fjernet P3.M4.O) |
-| **staging** | `cf127506-e3d5-4ac5-9903-a7b57563bfaf` | **`uigxsboqeruxflgzqztl`** | `ACTIVE_HEALTHY` | `MIGRATIONS_FAILED` *(platform ledger; ignorert)* | `false` | `false` | **B3a-REROLL** — schema re-applied fra dump; gamle `pbwivijolkoemcvgecoj` slettet |
+| **staging** | `cf127506-e3d5-4ac5-9903-a7b57563bfaf` | **`uigxsboqeruxflgzqztl`** | `ACTIVE_HEALTHY` | `MIGRATIONS_FAILED` *(platform ledger; ignorert)* | **`true`** | `false` | **B3a-REROLL** + **B3a-PERSISTENT-FIX** (2026-05-20) |
 | **staging-abc-signoff** (arkiv) | `b426d8b0-6286-4a2b-850a-deb7c2ef6676` | `iyrytpjacujscveivtfb` | `INACTIVE` | `FUNCTIONS_DEPLOYED` | `false` | `false` | **Uberørt** |
 
 ---
@@ -70,10 +70,20 @@
 
 ---
 
+## B3a-PERSISTENT-FIX (2026-05-20)
+
+| Felt | Verdi |
+|------|-------|
+| Før | `persistent: false` |
+| Etter | `persistent: true` |
+| Metode | `npx supabase branches update cf127506-e3d5-4ac5-9903-a7b57563bfaf --project-ref hkpokyapzarefrgqzkos --persistent --yes` |
+| MCP | Ingen `update_branch`; `list_branches` brukt til verifisering |
+
+---
+
 ## Åpne oppgaver
 
 | ID | Beskrivelse |
 |----|-------------|
-| **B3a-PERSISTENT-FIX** | Sett `persistent: true` på `staging` via Dashboard (MCP har ikke `update_branch`) |
 | **P3.M5** | Ledger reconcile (~182 repo-filer uten prod-ledger-rad) — hygiene, blokkerer ikke staging |
 | **B3b–B3f** | Vercel env, seed, B4 — se [b3-decision-framework.md](b3-decision-framework.md) |
