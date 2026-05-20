@@ -11,6 +11,7 @@ import {
   hasRemoteSupabaseIntegrationEnv,
   readRemoteSupabaseIntegrationEnv,
 } from "@/tests/_helpers/remoteSupabaseIntegration";
+import { DEFAULT_PROVIDER_ID } from "@/tests/_helpers/rlsFixtures";
 
 const hasDb = hasRemoteSupabaseIntegrationEnv();
 
@@ -49,6 +50,7 @@ describe("database integrity", () => {
           date: "2026-01-15",
           company_id: fakeCompanyId,
           location_id: fakeLocationId,
+          provider_id: DEFAULT_PROVIDER_ID,
           status: "ACTIVE",
           slot: "default",
         }).select("id").single();
@@ -56,7 +58,8 @@ describe("database integrity", () => {
         expect(data).toBeNull();
         expect(error).not.toBeNull();
         const code = String((error as any)?.code ?? "");
-        expect([FK_VIOLATION, CHECK_VIOLATION].includes(code)).toBe(true);
+        // Staging may raise P0001 from order agreement guard before FK (Patch 5+).
+        expect([FK_VIOLATION, CHECK_VIOLATION, "P0001"].includes(code)).toBe(true);
       },
     );
 
@@ -69,6 +72,7 @@ describe("database integrity", () => {
         const { data, error } = await admin.from("agreements").insert({
           company_id: fakeCompanyId,
           location_id: fakeLocationId,
+          provider_id: DEFAULT_PROVIDER_ID,
           status: "PENDING",
           tier: "BASIS",
           delivery_days: ["mon", "tue", "wed", "thu", "fri"],

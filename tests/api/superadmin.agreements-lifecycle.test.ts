@@ -3,6 +3,7 @@ import { describe, test, expect } from "vitest";
 import crypto from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { hasRemoteSupabaseIntegrationEnv } from "@/tests/_helpers/remoteSupabaseIntegration";
+import { DEFAULT_PROVIDER_ID } from "@/tests/_helpers/rlsFixtures";
 
 const hasDb = hasRemoteSupabaseIntegrationEnv();
 // Live lifecycle proof remains opt-in because it writes companies/locations/agreements.
@@ -26,7 +27,7 @@ async function insertCompany(
 ) {
   await admin
     .from("companies")
-    .insert({ id, name, status: "ACTIVE", orgnr } as any)
+    .insert({ id, name, status: "ACTIVE", orgnr, provider_id: DEFAULT_PROVIDER_ID } as any)
     .throwOnError();
 }
 
@@ -115,6 +116,7 @@ async function createPendingAgreement(opts: {
     .insert({
       company_id: companyId,
       location_id: locationId,
+      provider_id: DEFAULT_PROVIDER_ID,
       tier,
       status: "PENDING",
       delivery_days: deliveryDays,
@@ -164,7 +166,11 @@ async function approveActive(
 
   const msg = String(error.message ?? "").toUpperCase();
 
-  if (!msg.includes("SCHEMA CACHE") && !msg.includes("COULD NOT FIND THE FUNCTION")) {
+  if (
+    !msg.includes("SCHEMA CACHE") &&
+    !msg.includes("COULD NOT FIND THE FUNCTION") &&
+    !msg.includes("REGISTRATION_NOT_FOUND")
+  ) {
     return { error };
   }
 
@@ -370,9 +376,11 @@ describeIfDb("superadmin agreements lifecycle – hardening", () => {
     const admin = supabaseAdmin();
     const companyId = crypto.randomUUID();
     const locId = crypto.randomUUID();
+    const locId2 = crypto.randomUUID();
 
     await insertCompany(admin, companyId, "Company D (agreements-test)", String(Date.now()));
     await insertLocation(admin, locId, companyId, "Loc D (agreements-test)");
+    await insertLocation(admin, locId2, companyId, "Loc D2 (agreements-test)");
 
     const startsAt = isoFrom(3);
 
@@ -393,7 +401,7 @@ describeIfDb("superadmin agreements lifecycle – hardening", () => {
     const { agreementId: ag2 } = await createPendingAgreement({
       admin,
       companyId,
-      locationId: locId,
+      locationId: locId2,
       tier: "BASIS",
       deliveryDays: ["mon", "tue"],
       startsAt,

@@ -124,7 +124,9 @@ describe.skipIf(!hasDb)("provider RLS (Patch 6)", () => {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const res = await anon.from("companies").select("id").limit(1);
-      expect(res.error).not.toBeNull();
+      // With table GRANT + RLS: empty result, no error (matches database-integrity convention).
+      expect(res.error).toBeNull();
+      expect(rowCount(res)).toBe(0);
     });
   });
 
