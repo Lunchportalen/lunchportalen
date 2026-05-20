@@ -85,6 +85,7 @@ export default async function LeverandorLayout({ children }: { children: ReactNo
         userEmail={ctx.user.email}
         userRole={ctx.role}
         kitchenOnly={kitchenOnly}
+        providerAdmin={ctx.role === "provider_admin"}
       />
       <div className="ds-admin-main">
         <main className="ds-admin-content ds-page">

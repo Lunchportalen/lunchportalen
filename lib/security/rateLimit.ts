@@ -15,6 +15,9 @@ export { AI_RATE_LIMIT_SCOPE, checkAiRateLimit };
 /** Offentlig kontakt — streng (misbruk). */
 export const CONTACT_FORM_RL: AiRateLimitConfig = { windowSeconds: 60, max: 5 };
 
+/** Offentlig provider-registrering (/registrer). */
+export const PROVIDER_REGISTRATION_RL: AiRateLimitConfig = { windowSeconds: 600, max: 5 };
+
 /** SoMe AI-pakke (superadmin). */
 export const SOCIAL_AI_RL: AiRateLimitConfig = { windowSeconds: 60, max: 20 };
 

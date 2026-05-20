@@ -22,14 +22,19 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { href: "/leverandor", label: "Dashboard", icon: "grid", exact: true },
   { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders" },
   { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
+  { href: "/leverandor/registreringer", label: "Registreringer", icon: "document" },
   { href: "/leverandor/meny", label: "Meny", icon: "document", disabled: true },
   { href: "/leverandor/omrader", label: "Områder", icon: "pin", disabled: true },
   { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
   { label: "Logg ut", icon: "logout", action: "logout" },
 ];
 
-function navItemsForRole(kitchenOnly: boolean): NavItem[] {
-  if (!kitchenOnly) return NAV_ITEMS_BASE;
+function navItemsForRole(kitchenOnly: boolean, providerAdmin: boolean): NavItem[] {
+  if (!kitchenOnly) {
+    return NAV_ITEMS_BASE.filter(
+      (item) => item.href !== "/leverandor/registreringer" || providerAdmin,
+    );
+  }
   return [
     { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders", exact: true },
     { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
@@ -195,6 +200,8 @@ export type ProviderNavProps = {
   userRole: ProviderRole | null;
   /** Kitchen-only members: Ordrer as home, no admin dashboard link. */
   kitchenOnly?: boolean;
+  /** Show Registreringer queue (provider_admin only). */
+  providerAdmin?: boolean;
 };
 
 export default function ProviderNav({
@@ -203,6 +210,7 @@ export default function ProviderNav({
   userEmail,
   userRole,
   kitchenOnly = false,
+  providerAdmin = false,
 }: ProviderNavProps) {
   const pathname = usePathname() || "/leverandor";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -216,7 +224,7 @@ export default function ProviderNav({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [drawerOpen]);
 
-  const navItems = navItemsForRole(kitchenOnly);
+  const navItems = navItemsForRole(kitchenOnly, providerAdmin);
   const mobilePrimary: NavItem[] = kitchenOnly
     ? [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }]
     : [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }];

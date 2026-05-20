@@ -507,3 +507,85 @@
   font-size: 17px;
   font-weight: 800;
 }
+
+/* Provider registration queue (/leverandor/registreringer) — Patch 13 */
+.ds-provider-reg-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+  border: 1px solid var(--ds-border, rgba(17, 17, 17, 0.1));
+  background: var(--ds-surface, #fff);
+}
+
+.ds-provider-reg-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.ds-provider-reg-table th,
+.ds-provider-reg-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+  vertical-align: top;
+}
+
+.ds-provider-reg-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-reg-link {
+  display: block;
+  font-weight: 700;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+
+.ds-provider-reg-meta {
+  display: block;
+  font-size: 13px;
+  color: var(--ds-text-soft);
+  margin-top: 2px;
+}
+
+.ds-provider-reg-empty {
+  text-align: center;
+  color: var(--ds-text-soft);
+  padding: 28px 16px !important;
+}
+
+.ds-provider-reg-detail {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 16px;
+  font-size: 15px;
+}
+
+.ds-provider-reg-detail dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-reg-detail dd {
+  margin: 2px 0 0;
+}
+
+.ds-provider-dialog select {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  padding: 0 12px;
+  font: inherit;
+}
