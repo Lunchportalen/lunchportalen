@@ -8,21 +8,10 @@ import {
   PLAN_LABELS,
   type ProviderBillingBundle,
 } from "@/lib/providers/loadProviderBilling";
+import { formatDateNO, formatMonthYearLongNO, formatMonthYearShortNO } from "@/lib/date/format";
 
 function formatNok(amount: number) {
   return new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK" }).format(amount);
-}
-
-function formatPeriod(period: string) {
-  const d = new Date(`${period}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return period;
-  return d.toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
-}
-
-function formatMonthShort(period: string) {
-  const d = new Date(`${period}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return period;
-  return d.toLocaleDateString("nb-NO", { month: "short", year: "numeric" });
 }
 
 export default function ProviderBillingView({
@@ -85,7 +74,7 @@ export default function ProviderBillingView({
               {bundle.invoices.map((inv) => (
                 <article key={inv.id} className="ds-provider-service-area-row">
                   <div>
-                    <h3 className="ds-h4">{formatMonthShort(inv.invoice_period)}</h3>
+                    <h3 className="ds-h4">{formatMonthYearShortNO(inv.invoice_period)}</h3>
                     <p className="ds-provider-reg-meta">{inv.invoice_number ?? "Uten nummer"}</p>
                   </div>
                   <p className="ds-provider-billing-amount">{formatNok(inv.amount_total)}</p>
@@ -114,10 +103,10 @@ export default function ProviderBillingView({
                 <tbody>
                   {bundle.invoices.map((inv) => (
                     <tr key={inv.id}>
-                      <td>{formatPeriod(inv.invoice_period)}</td>
+                      <td>{formatMonthYearLongNO(inv.invoice_period)}</td>
                       <td>{formatNok(inv.amount_total)}</td>
                       <td>{INVOICE_STATUS_LABELS[inv.status] ?? inv.status}</td>
-                      <td>{inv.due_date ?? "—"}</td>
+                      <td>{inv.due_date ? formatDateNO(inv.due_date) : "—"}</td>
                       <td>
                         <button
                           type="button"
@@ -146,7 +135,7 @@ export default function ProviderBillingView({
           />
           <div className="ds-provider-dialog" role="dialog" aria-modal="true">
             <h2 className="ds-h3">Faktura {selected.invoice_number ?? ""}</h2>
-            <p className="ds-body">{formatPeriod(selected.invoice_period)}</p>
+            <p className="ds-body">{formatMonthYearLongNO(selected.invoice_period)}</p>
             <dl className="ds-provider-reg-detail">
               <div>
                 <dt>Netto</dt>
@@ -167,13 +156,13 @@ export default function ProviderBillingView({
               {selected.sent_at ? (
                 <div>
                   <dt>Sendt</dt>
-                  <dd>{new Date(selected.sent_at).toLocaleDateString("nb-NO")}</dd>
+                  <dd>{formatDateNO(selected.sent_at)}</dd>
                 </div>
               ) : null}
               {selected.paid_at ? (
                 <div>
                   <dt>Betalt</dt>
-                  <dd>{new Date(selected.paid_at).toLocaleDateString("nb-NO")}</dd>
+                  <dd>{formatDateNO(selected.paid_at)}</dd>
                 </div>
               ) : null}
             </dl>
