@@ -6,7 +6,7 @@ import {
   generateProviderInvoice,
   setProviderSubscription,
 } from "@/app/superadmin/providers/actions";
-import { PLAN_LABELS, type ProviderBillingBundle } from "@/lib/providers/loadProviderBilling";
+import { PLAN_LABELS, type ProviderBillingBundle } from "@/lib/providers/providerBillingShared";
 
 function currentMonthIso() {
   const d = new Date();

@@ -1,41 +1,18 @@
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import type {
+  ProviderBillingBundle,
+  ProviderInvoiceRow,
+  ProviderSubscriptionRow,
+} from "@/lib/providers/providerBillingShared";
 
-export type ProviderSubscriptionRow = {
-  id: string;
-  provider_id: string;
-  plan: string;
-  monthly_amount: number;
-  currency: string;
-  tax_code_id: string;
-  tax_rate: number;
-  billing_email: string;
-  billing_org_number: string | null;
-  billing_address: string | null;
-  active_from: string;
-  status: string;
-  notes: string | null;
-};
-
-export type ProviderInvoiceRow = {
-  id: string;
-  invoice_number: string | null;
-  invoice_period: string;
-  amount_net: number;
-  amount_tax: number;
-  amount_total: number;
-  status: string;
-  due_date: string | null;
-  sent_at: string | null;
-  paid_at: string | null;
-  created_at: string;
-};
-
-export type ProviderBillingBundle = {
-  activeSubscription: ProviderSubscriptionRow | null;
-  invoices: ProviderInvoiceRow[];
-};
+export type {
+  ProviderBillingBundle,
+  ProviderInvoiceRow,
+  ProviderSubscriptionRow,
+} from "@/lib/providers/providerBillingShared";
+export { INVOICE_STATUS_LABELS, PLAN_LABELS } from "@/lib/providers/providerBillingShared";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -45,20 +22,6 @@ function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
-
-export const PLAN_LABELS: Record<string, string> = {
-  SAAS_FIXED: "Fast SaaS-lisens",
-  SAAS_PER_COMPANY: "Per bedrift",
-  CUSTOM: "Tilpasset avtale",
-};
-
-export const INVOICE_STATUS_LABELS: Record<string, string> = {
-  DRAFT: "Utkast",
-  SENT: "Sendt",
-  PAID: "Betalt",
-  OVERDUE: "Forfalt",
-  VOID: "Annullert",
-};
 
 export async function loadProviderBilling(providerId: string): Promise<ProviderBillingBundle> {
   const sb = await supabaseServer();

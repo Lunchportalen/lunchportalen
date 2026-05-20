@@ -8,7 +8,7 @@ import {
   WEEKDAY_LABELS,
   type ServiceAreaRow,
   type WeekdayKey,
-} from "@/lib/providers/loadServiceAreas";
+} from "@/lib/providers/serviceAreaShared";
 import { normalizePostal } from "@/lib/providers/serviceAreaSchema";
 
 export type ServiceAreaEditorProps = {

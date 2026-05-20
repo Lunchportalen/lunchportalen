@@ -9,7 +9,7 @@ import {
   WEEKDAY_KEYS,
   WEEKDAY_LABELS,
   type ServiceAreaRow,
-} from "@/lib/providers/loadServiceAreas";
+} from "@/lib/providers/serviceAreaShared";
 
 function formatDays(days: string[]) {
   return WEEKDAY_KEYS.filter((d) => days.includes(d))

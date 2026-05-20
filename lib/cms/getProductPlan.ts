@@ -1,6 +1,7 @@
 import "server-only";
 
 import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
+import { operationalPlanTier, type PlanTier as AgreementPlanTier } from "@/lib/esg/pricing";
 import { sanity } from "@/lib/sanity/client";
 import type { CmsProductPlan } from "@/lib/cms/types";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -16,6 +17,18 @@ function normPlanName(raw: unknown): "basis" | "luxus" | null {
   if (s === "basis") return "basis";
   if (s === "luxus" || s === "luksus") return "luxus";
   return null;
+}
+
+/** Sanity `productPlan.name` — ENTERPRISE bruker luxus-plan (Patch 2.1). */
+export function cmsPlanNameForAgreementTier(tier: AgreementPlanTier): "basis" | "luxus" {
+  return operationalPlanTier(tier) === "BASIS" ? "basis" : "luxus";
+}
+
+export async function getProductPlanForAgreementTier(
+  tier: AgreementPlanTier,
+  opts?: ProductPlanQueryOptions,
+): Promise<CmsProductPlan | null> {
+  return getProductPlan(cmsPlanNameForAgreementTier(tier), opts);
 }
 
 export async function getProductPlan(

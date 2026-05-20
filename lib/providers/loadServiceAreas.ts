@@ -1,20 +1,10 @@
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import type { ServiceAreaRow } from "@/lib/providers/serviceAreaShared";
 
-export type ServiceAreaRow = {
-  id: string;
-  provider_id: string;
-  country: string;
-  city: string;
-  postal_code_from: string;
-  postal_code_to: string;
-  min_employees: number | null;
-  max_employees: number | null;
-  available_days: string[];
-  active: boolean;
-  created_at: string;
-};
+export type { ServiceAreaRow } from "@/lib/providers/serviceAreaShared";
+export { WEEKDAY_KEYS, WEEKDAY_LABELS, type WeekdayKey } from "@/lib/providers/serviceAreaShared";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -53,14 +43,3 @@ export async function loadServiceAreas(providerId: string): Promise<ServiceAreaR
     created_at: safeStr(row.created_at),
   }));
 }
-
-export const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri"] as const;
-export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
-
-export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
-  mon: "Man",
-  tue: "Tir",
-  wed: "Ons",
-  thu: "Tor",
-  fri: "Fre",
-};

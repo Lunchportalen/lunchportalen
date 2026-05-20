@@ -34,7 +34,7 @@ type OutboxRow = {
 type InvoicePeriodRow = {
   company_id: string;
   period: string;
-  tier: "BASIS" | "LUXUS" | "MIXED" | null;
+  tier: "BASIS" | "LUXUS" | "MIXED" | "ENTERPRISE" | null;
   count_basis: number;
   count_luxus: number;
   unit_price_basis: number;
@@ -543,6 +543,10 @@ async function processInvoiceReady(
         revenue_account: luxus.revenueAccount,
         currency: "NOK",
       });
+    } else if (tier === "ENTERPRISE") {
+      // Patch 2.1: Enterprise er ikke egen billing_products-rad — fail closed (ingen Tripletex-produkt for ENTERPRISE).
+      await markInvoicePeriodFailed(admin, uniqueRef, "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED");
+      return { ok: false, permanent: true, error: "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED" };
     } else {
       await markInvoicePeriodFailed(admin, uniqueRef, "INVOICE_PERIOD_TIER_INVALID");
       return { ok: false, permanent: true, error: "INVOICE_PERIOD_TIER_INVALID" };

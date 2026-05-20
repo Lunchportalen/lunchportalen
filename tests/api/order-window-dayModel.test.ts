@@ -254,6 +254,37 @@ describe("order/window – buildDayModel", () => {
     ]);
   });
 
+  test("ENTERPRISE day uses LUXUS CMS product plan for allowed meals (MP3)", () => {
+    const date = "2030-01-07"; // Monday (Oslo)
+    const day = buildDayModel({
+      date,
+      company: {
+        id: "c1",
+        name: "Test",
+        status: "ACTIVE",
+        canEditOrders: true,
+        lockReason: null,
+        paused_reason: null,
+        closed_reason: null,
+      },
+      agreementUsable: true,
+      deliveryDays: ["mon"],
+      dayTiers: { mon: "ENTERPRISE" } as any,
+      ordersByDate: new Map(),
+      dayChoicesByDate: new Map(),
+      agreementForChoices: null,
+      mealContract: null,
+      menuByMealType: new Map(),
+      productPlans: {
+        BASIS: { allowedMeals: ["salatboks"], price: 90, rules: { allowDailyVariation: false } } as any,
+        LUXUS: { allowedMeals: ["sushi", "pokebowl"], price: 130, rules: { allowDailyVariation: true } } as any,
+      },
+    } as any);
+
+    expect(day.tier).toBe("ENTERPRISE");
+    expect(day.allowedChoices.map((c) => c.key)).toEqual(["sushi", "pokebowl"]);
+  });
+
   test("employee window day model omits unit_price (pricing is employer-side only)", () => {
     const date = "2030-01-07"; // Monday
     const day = buildDayModel({

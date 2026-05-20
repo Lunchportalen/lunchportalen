@@ -7,7 +7,7 @@ import {
   INVOICE_STATUS_LABELS,
   PLAN_LABELS,
   type ProviderBillingBundle,
-} from "@/lib/providers/loadProviderBilling";
+} from "@/lib/providers/providerBillingShared";
 import { formatDateNO, formatMonthYearLongNO, formatMonthYearShortNO } from "@/lib/date/format";
 
 function formatNok(amount: number) {

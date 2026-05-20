@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { updateBillingContact } from "@/app/leverandor/faktura/actions";
-import type { ProviderSubscriptionRow } from "@/lib/providers/loadProviderBilling";
+import type { ProviderSubscriptionRow } from "@/lib/providers/providerBillingShared";
 
 export default function BillingContactForm({
   providerId,

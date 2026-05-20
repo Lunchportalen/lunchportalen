@@ -18,6 +18,7 @@ import { opsLog } from "@/lib/ops/log";
 import { getVisibleWindow, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getProductPlan } from "@/lib/cms/getProductPlan";
+import { operationalPlanTier } from "@/lib/esg/pricing";
 import { getMenusByMealTypesWithFetchStatus } from "@/lib/cms/getMenusByMealTypes";
 import {
   CATEGORY_LABELS,
@@ -366,7 +367,8 @@ function choicesFromCmsTier(
   productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null },
   menuByMealType: Map<string, CmsMenuByMealType>
 ): Choice[] {
-  const plan = tier === "BASIS" ? productPlans.BASIS : productPlans.LUXUS;
+  const op = operationalPlanTier(tier);
+  const plan = op === "BASIS" ? productPlans.BASIS : productPlans.LUXUS;
   if (!plan?.allowedMeals?.length) return [];
   return plan.allowedMeals.map((k) => {
     const nk = normalizeMealTypeKey(k);
