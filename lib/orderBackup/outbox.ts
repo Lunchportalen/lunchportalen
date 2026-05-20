@@ -39,6 +39,7 @@ export const OUTBOX_DECLARED_EMAIL_PREFIXES = [
 ] as const;
 
 const OUTBOX_INVOICE_READY_PREFIX = "invoice.ready:";
+const OUTBOX_TRIPLETEX_PROVIDER_CUSTOMER_PREFIX = "tripletex.provider_customer_create_lp:";
 
 function extractOutboxEmailFields(p: unknown) {
   const x: any = p ?? {};
@@ -57,6 +58,10 @@ function isOutboxInvoiceReadyKey(eventKey: string): boolean {
   return safeStr(eventKey).startsWith(OUTBOX_INVOICE_READY_PREFIX);
 }
 
+function isOutboxTripletexProviderCustomerCreateLpKey(eventKey: string): boolean {
+  return safeStr(eventKey).startsWith(OUTBOX_TRIPLETEX_PROVIDER_CUSTOMER_PREFIX);
+}
+
 function matchesDeclaredOutboxEmailPrefix(eventKey: string): boolean {
   const k = safeStr(eventKey);
   return OUTBOX_DECLARED_EMAIL_PREFIXES.some((pre) => k.startsWith(pre));
@@ -67,7 +72,9 @@ function matchesDeclaredOutboxEmailPrefix(eventKey: string): boolean {
  */
 export function isOutboxEmailRoutedEvent(eventKey: string, payload: unknown): boolean {
   const k = safeStr(eventKey);
-  if (!k || isOutboxStateEventKey(k) || isOutboxInvoiceReadyKey(k)) return false;
+  if (!k || isOutboxStateEventKey(k) || isOutboxInvoiceReadyKey(k) || isOutboxTripletexProviderCustomerCreateLpKey(k)) {
+    return false;
+  }
   const { from, to, subject } = extractOutboxEmailFields(payload);
   if (from && to && subject) return true;
   return matchesDeclaredOutboxEmailPrefix(k);
@@ -435,14 +442,14 @@ export async function processOutboxBatch(
       continue;
     }
 
-    if (isOutboxInvoiceReadyKey(key)) {
+    if (isOutboxInvoiceReadyKey(key) || isOutboxTripletexProviderCustomerCreateLpKey(key)) {
       const released = await releaseInvoiceReadyOutboxClaim(outboxId);
       if (released) {
         releasedInvoiceReady += 1;
-        outboxLog("info", "invoice_ready_released_to_pending", { rid, outbox_id: outboxId, event_key: key });
+        outboxLog("info", "tripletex_outbox_released_to_pending", { rid, outbox_id: outboxId, event_key: key });
       } else {
         failed += 1;
-        outboxLog("error", "invoice_ready_release_miss", { rid, outbox_id: outboxId, event_key: key });
+        outboxLog("error", "tripletex_outbox_release_miss", { rid, outbox_id: outboxId, event_key: key });
       }
       continue;
     }

@@ -100,6 +100,23 @@ type EnsureCustomerInput = {
   request?: RequestOptions;
 };
 
+export type EnsureProviderCustomerProvider = {
+  id: string;
+  name: string;
+  org_number: string | null;
+  contact_email: string;
+  billing_address?: string | null;
+  billing_postcode?: string | null;
+  billing_city?: string | null;
+  billing_country?: string | null;
+};
+
+type EnsureProviderCustomerInput = {
+  admin: any;
+  provider: EnsureProviderCustomerProvider;
+  request?: RequestOptions;
+};
+
 type EnsureProductInput = {
   admin: any;
   tier: "BASIS" | "LUXUS" | "ENTERPRISE";
@@ -618,6 +635,178 @@ export async function ensureCustomer(input: EnsureCustomerInput): Promise<{ cust
       message: `Customer mapping upsert failed: ${safeStr(upsertError?.message ?? upsertError)}`,
       kind: "TRANSIENT",
       code: "TRIPLETEX_CUSTOMER_MAPPING_UPSERT_FAILED",
+      detail: upsertError,
+    });
+  }
+
+  return { customerId, created: true };
+}
+
+function extractCustomerRows(value: AnyJson): AnyJson[] {
+  const v = value as { values?: unknown } | unknown[] | null;
+  if (Array.isArray(v)) return v as AnyJson[];
+  if (v && typeof v === "object" && Array.isArray((v as { values?: unknown }).values)) {
+    return ((v as { values: unknown[] }).values ?? []) as AnyJson[];
+  }
+  return [];
+}
+
+async function findTripletexCustomerIdByOrgnr(orgnr: string, request?: RequestOptions): Promise<string | null> {
+  const normalized = safeStr(orgnr);
+  if (!normalized) return null;
+
+  const res = await requestTripletex(
+    {
+      method: "GET",
+      path: "/customer",
+      query: { organizationNumber: normalized, from: 0, count: 20 },
+    },
+    request,
+  );
+
+  for (const row of extractCustomerRows(res.value)) {
+    const id = parseId(row);
+    if (id) return id;
+  }
+
+  return null;
+}
+
+function parseCustomerIdFromConflictDetail(detail: AnyJson | null): string {
+  const d = detail as any;
+  const candidates = [d?.value?.id, d?.id, d?.customerId, d?.value?.customerId];
+  for (const c of candidates) {
+    const id = safeStr(c);
+    if (id) return id;
+  }
+  return "";
+}
+
+/**
+ * Flow A: provider → Customer in Lp's Tripletex account (company_id NULL, provider_id set).
+ */
+export async function ensureProviderCustomer(
+  input: EnsureProviderCustomerInput,
+): Promise<{ customerId: string; created: boolean }> {
+  const { admin, provider, request } = input;
+  const providerId = safeStr(provider.id);
+  const orgnr = safeStr(provider.org_number);
+  const legalName = safeStr(provider.name);
+  const billingEmail = safeStr(provider.contact_email);
+  const billingAddress = safeStr(provider.billing_address) || "Ikke oppgitt";
+  const billingPostcode = safeStr(provider.billing_postcode) || "0001";
+  const billingCity = safeStr(provider.billing_city) || "Oslo";
+  const billingCountry = safeStr(provider.billing_country) || "NO";
+
+  if (!providerId || !legalName || !billingEmail) {
+    throw new TripletexClientError({
+      message: "Provider billing profile incomplete",
+      kind: "PERMANENT",
+      code: "PROVIDER_BILLING_FIELDS_MISSING",
+    });
+  }
+
+  if (!orgnr) {
+    throw new TripletexClientError({
+      message: "Provider org_number is required for Tripletex customer",
+      kind: "PERMANENT",
+      code: "PROVIDER_ORG_NUMBER_MISSING",
+    });
+  }
+
+  const { data: existing, error: lookupError } = await admin
+    .from("tripletex_customers")
+    .select("provider_id,tripletex_customer_id,company_id")
+    .eq("provider_id", providerId)
+    .is("company_id", null)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new TripletexClientError({
+      message: `Provider customer mapping lookup failed: ${safeStr(lookupError?.message ?? lookupError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_PROVIDER_MAPPING_LOOKUP_FAILED",
+      detail: lookupError,
+    });
+  }
+
+  const mappedId = safeStr((existing as any)?.tripletex_customer_id);
+  if (mappedId) return { customerId: mappedId, created: false };
+
+  let customerId = "";
+
+  try {
+    const customerRes = await requestTripletex(
+      {
+        method: "POST",
+        path: "/customer",
+        body: {
+          name: legalName,
+          organizationNumber: orgnr,
+          isPrivateIndividual: false,
+          email: billingEmail,
+          postalAddress: {
+            addressLine1: billingAddress,
+            postalCode: billingPostcode,
+            city: billingCity,
+            country: billingCountry,
+          },
+        },
+      },
+      request,
+    );
+    customerId = parseId(customerRes.value);
+  } catch (error: unknown) {
+    const err = classifyUnknown(error);
+    if (err.status === 409) {
+      customerId =
+        parseCustomerIdFromConflictDetail(err.detail) || (await findTripletexCustomerIdByOrgnr(orgnr, request)) || "";
+      if (!customerId) {
+        throw new TripletexClientError({
+          message: "Tripletex customer conflict (409) but existing id could not be resolved",
+          kind: "PERMANENT",
+          code: "TRIPLETEX_CUSTOMER_CONFLICT_UNRESOLVED",
+          status: 409,
+          detail: err.detail,
+        });
+      }
+    } else {
+      throw err;
+    }
+  }
+
+  if (!customerId) {
+    throw new TripletexClientError({
+      message: "Tripletex provider customer create returned no id",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_CUSTOMER_ID_MISSING",
+    });
+  }
+
+  const { error: upsertError } = await admin.from("tripletex_customers").upsert(
+    {
+      company_id: null,
+      provider_id: providerId,
+      tripletex_customer_id: customerId,
+      orgnr,
+      legal_name: legalName,
+      billing_email: billingEmail,
+      billing_address: billingAddress,
+      billing_postcode: billingPostcode,
+      billing_city: billingCity,
+      billing_country: billingCountry,
+      ehf_enabled: false,
+      ehf_endpoint: null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "provider_id" },
+  );
+
+  if (upsertError) {
+    throw new TripletexClientError({
+      message: `Provider customer mapping upsert failed: ${safeStr(upsertError?.message ?? upsertError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_PROVIDER_MAPPING_UPSERT_FAILED",
       detail: upsertError,
     });
   }

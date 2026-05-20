@@ -16,6 +16,7 @@ import {
   TripletexClientError,
   type TripletexAuth,
 } from "@/lib/integrations/tripletex/client";
+import { handleProviderCustomerCreateLp } from "@/lib/integrations/tripletex/providerCustomerSync";
 
 type OutboxStatus = "PENDING" | "PROCESSING" | "SENT" | "FAILED" | "FAILED_PERMANENT";
 
@@ -66,6 +67,15 @@ const MAX_ATTEMPTS = 10;
 const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 5;
 const DEFAULT_CONCURRENCY = 3;
+const INVOICE_READY_LIKE = "invoice.ready:%";
+const PROVIDER_CUSTOMER_CREATE_LP_LIKE = "tripletex.provider_customer_create_lp:%";
+
+type OutboxBatchStats = {
+  processed: number;
+  delivered: number;
+  failed: number;
+  failedPermanent: number;
+};
 
 function safeStr(value: unknown): string {
   return String(value ?? "").trim();
@@ -606,9 +616,107 @@ async function handleEvent(
     case "invoice.ready":
       return processInvoiceReady(admin, row, getRunAuth);
 
+    case "tripletex.provider_customer_create_lp":
+      return handleProviderCustomerCreateLp(admin, row, getRunAuth);
+
     default:
       return { ok: false, permanent: true, error: "UNSUPPORTED_EVENT" };
   }
+}
+
+async function processOutboxBatchByEventLike(
+  admin: any,
+  workerId: string,
+  nowIso: string,
+  concurrency: number,
+  eventKeyLike: string,
+  getRunAuth: () => Promise<TripletexAuth>,
+): Promise<OutboxBatchStats> {
+  const stats: OutboxBatchStats = { processed: 0, delivered: 0, failed: 0, failedPermanent: 0 };
+
+  const { data: pendingRows, error: pendingError } = await admin
+    .from("outbox")
+    .select("id,event_key,status,attempts,last_error,payload,locked_at,locked_by,created_at")
+    .eq("status", "PENDING")
+    .is("locked_at", null)
+    .like("event_key", eventKeyLike)
+    .order("created_at", { ascending: true })
+    .limit(BATCH_SIZE);
+
+  if (pendingError) {
+    throw new Error(safeStr(pendingError?.message) || "OUTBOX_READ_FAILED");
+  }
+
+  const ids = ((pendingRows ?? []) as OutboxRow[])
+    .map((row) => Number(row.id))
+    .filter((id) => Number.isFinite(id));
+
+  if (ids.length === 0) {
+    return stats;
+  }
+
+  const { error: claimError } = await admin
+    .from("outbox")
+    .update({
+      locked_at: nowIso,
+      locked_by: workerId,
+      status: "PROCESSING",
+    })
+    .in("id", ids)
+    .eq("status", "PENDING")
+    .is("locked_at", null);
+
+  if (claimError) {
+    throw new Error(safeStr(claimError?.message) || "OUTBOX_CLAIM_FAILED");
+  }
+
+  const { data: claimedRows, error: claimedError } = await admin
+    .from("outbox")
+    .select("id,event_key,status,attempts,last_error,payload,locked_at,locked_by,created_at")
+    .eq("status", "PROCESSING")
+    .eq("locked_by", workerId)
+    .eq("locked_at", nowIso)
+    .like("event_key", eventKeyLike)
+    .order("created_at", { ascending: true });
+
+  if (claimedError) {
+    throw new Error(safeStr(claimedError?.message) || "OUTBOX_PROCESSING_READ_FAILED");
+  }
+
+  await processWithConcurrency((claimedRows ?? []) as OutboxRow[], concurrency, async (row) => {
+    stats.processed += 1;
+
+    try {
+      const result = await handleEvent(admin, row, getRunAuth);
+
+      if (result.ok) {
+        await markOutboxSent(admin, row, workerId, nowIso);
+        stats.delivered += 1;
+        return;
+      }
+
+      const permanent = Boolean(result.permanent);
+      await markOutboxFailed(admin, row, workerId, nowIso, safeStr(result.error) || "EVENT_FAILED", permanent);
+      if (permanent) stats.failedPermanent += 1;
+      else stats.failed += 1;
+    } catch (error) {
+      const classified = classifyError(error);
+      await markOutboxFailed(admin, row, workerId, nowIso, classified.message, classified.permanent);
+      if (classified.permanent) stats.failedPermanent += 1;
+      else stats.failed += 1;
+    }
+  });
+
+  return stats;
+}
+
+function mergeOutboxStats(a: OutboxBatchStats, b: OutboxBatchStats): OutboxBatchStats {
+  return {
+    processed: a.processed + b.processed,
+    delivered: a.delivered + b.delivered,
+    failed: a.failed + b.failed,
+    failedPermanent: a.failedPermanent + b.failedPermanent,
+  };
 }
 
 export async function POST(_req: NextRequest) {
@@ -616,7 +724,7 @@ export async function POST(_req: NextRequest) {
 
   try {
     const admin = supabaseAdmin();
-    const workerId = `invoice-outbox-worker-${Date.now()}`;
+    const workerId = `tripletex-outbox-worker-${Date.now()}`;
     const nowIso = new Date().toISOString();
     const concurrency = parseConcurrency(process.env.TRIPLETEX_OUTBOX_CONCURRENCY);
 
@@ -628,87 +736,33 @@ export async function POST(_req: NextRequest) {
       return runAuthPromise;
     };
 
-    const { data: pendingRows, error: pendingError } = await admin
-      .from("outbox")
-      .select("id,event_key,status,attempts,last_error,payload,locked_at,locked_by,created_at")
-      .eq("status", "PENDING")
-      .is("locked_at", null)
-      .like("event_key", "invoice.ready:%")
-      .order("created_at", { ascending: true })
-      .limit(BATCH_SIZE);
+    const invoiceStats = await processOutboxBatchByEventLike(
+      admin,
+      workerId,
+      nowIso,
+      concurrency,
+      INVOICE_READY_LIKE,
+      getRunAuth,
+    );
 
-    if (pendingError) {
-      return jsonErr(rid, "Kunne ikke hente ventende invoice-hendelser.", 500, "OUTBOX_READ_FAILED");
-    }
+    const providerStats = await processOutboxBatchByEventLike(
+      admin,
+      workerId,
+      nowIso,
+      concurrency,
+      PROVIDER_CUSTOMER_CREATE_LP_LIKE,
+      getRunAuth,
+    );
 
-    const ids = ((pendingRows ?? []) as OutboxRow[])
-      .map((row) => Number(row.id))
-      .filter((id) => Number.isFinite(id));
+    const merged = mergeOutboxStats(invoiceStats, providerStats);
 
-    if (ids.length === 0) {
-      return jsonOk(rid, { processed: 0, delivered: 0, failed: 0, failedPermanent: 0 });
-    }
-
-    const { error: claimError } = await admin
-      .from("outbox")
-      .update({
-        locked_at: nowIso,
-        locked_by: workerId,
-        status: "PROCESSING",
-      })
-      .in("id", ids)
-      .eq("status", "PENDING")
-      .is("locked_at", null);
-
-    if (claimError) {
-      return jsonErr(rid, "Kunne ikke laase invoice-hendelser.", 500, "OUTBOX_CLAIM_FAILED");
-    }
-
-    const { data: claimedRows, error: claimedError } = await admin
-      .from("outbox")
-      .select("id,event_key,status,attempts,last_error,payload,locked_at,locked_by,created_at")
-      .eq("status", "PROCESSING")
-      .eq("locked_by", workerId)
-      .eq("locked_at", nowIso)
-      .like("event_key", "invoice.ready:%")
-      .order("created_at", { ascending: true });
-
-    if (claimedError) {
-      return jsonErr(rid, "Kunne ikke lese laaste invoice-hendelser.", 500, "OUTBOX_PROCESSING_READ_FAILED");
-    }
-
-    let processed = 0;
-    let delivered = 0;
-    let failed = 0;
-    let failedPermanent = 0;
-
-    await processWithConcurrency((claimedRows ?? []) as OutboxRow[], concurrency, async (row) => {
-      processed += 1;
-
-      try {
-        const result = await handleEvent(admin, row, getRunAuth);
-
-        if (result.ok) {
-          await markOutboxSent(admin, row, workerId, nowIso);
-          delivered += 1;
-          return;
-        }
-
-        const permanent = Boolean(result.permanent);
-        await markOutboxFailed(admin, row, workerId, nowIso, safeStr(result.error) || "EVENT_FAILED", permanent);
-        if (permanent) failedPermanent += 1;
-        else failed += 1;
-      } catch (error) {
-        const classified = classifyError(error);
-        await markOutboxFailed(admin, row, workerId, nowIso, classified.message, classified.permanent);
-        if (classified.permanent) failedPermanent += 1;
-        else failed += 1;
-      }
+    return jsonOk(rid, {
+      ...merged,
+      invoiceReady: invoiceStats,
+      providerCustomerCreateLp: providerStats,
     });
-
-    return jsonOk(rid, { processed, delivered, failed, failedPermanent });
   } catch (error: any) {
-    return jsonErr(rid, "Invoice outbox behandling feilet.", 500, {
+    return jsonErr(rid, "Tripletex outbox behandling feilet.", 500, {
       code: "OUTBOX_PROCESS_FAILED",
       detail: {
         message: safeStr(error?.message ?? error),
