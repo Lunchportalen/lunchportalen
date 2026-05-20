@@ -1,0 +1,74 @@
+# TPT-0 Schema Alignment Audit Log
+# Generated: 2026-05-20 (UTC session)
+# References: TRIPLETEX-PLAN-V1 v3.1 (f39957be), TPT-0 scope-discovery
+
+## Summary
+
+| Item | Staging (uigxsboqeruxflgzqztl) | Prod (hkpokyapzarefrgqzkos) |
+|------|-------------------------------|----------------------------|
+| invoice_periods | CREATED | CREATED |
+| tripletex_exports | CREATED | CREATED |
+| tripletex_customers R9 repair | APPLIED | APPLIED |
+| Row count tripletex_customers | 0 → 0 (no data loss) | 0 → 0 |
+
+## Anomaly: ESG block skipped
+
+Full `20260221_step6_10_fasit_periods_esg.sql` was **not** applied verbatim.
+
+**Reason:** Live `esg_monthly` exists with `month_start date` (no `month` text). Migration ESG validation would `FAIL_CLOSED`.
+
+**Applied instead:** Surgical subset (invoice_periods + tripletex_exports) via MCP migration name `tpt0_step6_10_invoice_periods_tripletex_exports`, mirrored in repo file `20260521_tpt0_step6_10_surgical.sql`.
+
+## Pre-state
+
+### Staging — tripletex_customers columns (before)
+- id, company_id, external_customer_id, created_at, updated_at
+- tripletex_customers count: 0
+- invoice_periods: MISSING
+- tripletex_exports: MISSING
+
+### Prod — tripletex_customers columns (before)
+- id, company_id, external_customer_id, created_at, updated_at
+- tripletex_customers count: 0
+- invoice_periods: MISSING
+- tripletex_exports: MISSING
+
+## Apply sequence
+
+### Staging
+1. MCP `apply_migration` `tpt0_step6_10_invoice_periods_tripletex_exports` — success
+2. Verify tables: invoice_periods, tripletex_exports — OK (2 rows)
+3. MCP `apply_migration` `tpt0_tripletex_customers_repair` — success
+4. Verify columns: tripletex_customer_id present, external_customer_id absent — OK
+5. Verify count: 0 — OK
+
+### Prod (after staging green)
+1. MCP `apply_migration` `tpt0_step6_10_invoice_periods_tripletex_exports` — success
+2. Verify tables: invoice_periods, tripletex_exports — OK
+3. MCP `apply_migration` `tpt0_tripletex_customers_repair` — success
+4. Verify columns: tripletex_customer_id + billing profile columns — OK
+5. Verify count: 0 — OK
+
+## Post-state
+
+### Staging — tripletex_customers columns (after)
+id, company_id, tripletex_customer_id, created_at, updated_at, orgnr, legal_name, billing_email, billing_address, billing_postcode, billing_city, ehf_endpoint, billing_country, ehf_enabled
+
+### Prod — tripletex_customers columns (after)
+Same as staging.
+
+## Repo artifacts
+
+| File | Role |
+|------|------|
+| `supabase/migrations/20260521_tpt0_tripletex_customers_repair.sql` | R9 repair (committed) |
+| `supabase/migrations/20260521_tpt0_step6_10_surgical.sql` | Surgical step6 subset (committed, applied via MCP) |
+| `supabase/migrations/20260221_step6_10_fasit_periods_esg.sql` | Source reference (ESG block not applied live) |
+
+## Follow-up (not TPT-0)
+
+- `invoice_periods.tier` column: outbox SELECT expects tier; migrations/cron do not persist it — flag for TPT-A-3.
+
+## Gate
+
+TPT-0 COMPLETE — ready for TPT-A-1 (client multi-tenant extension).
