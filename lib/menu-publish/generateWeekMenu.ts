@@ -1,4 +1,4 @@
-import { normalizeMeaningfulTags } from "@/lib/menu-publish/tagTaxonomy";
+import { normalizeMeaningfulTags } from "./tagTaxonomy";
 
 export type CostTier = "BUDGET" | "STANDARD" | "PREMIUM";
 export type ProductionComplexity = "LOW" | "MEDIUM" | "HIGH";
