@@ -18,7 +18,6 @@ import { opsLog } from "@/lib/ops/log";
 import { getVisibleWindow, weekStartMon } from "@/lib/week/availability";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getProductPlan } from "@/lib/cms/getProductPlan";
-import { operationalPlanTier } from "@/lib/esg/pricing";
 import { getMenusByMealTypesWithFetchStatus } from "@/lib/cms/getMenusByMealTypes";
 import {
   CATEGORY_LABELS,
@@ -364,11 +363,11 @@ function unwrapAgreement(res: any): { ok: true; agreement: AgreementNormalized }
 
 function choicesFromCmsTier(
   tier: Tier,
-  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null },
+  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null; ENTERPRISE: CmsProductPlan | null },
   menuByMealType: Map<string, CmsMenuByMealType>
 ): Choice[] {
-  const op = operationalPlanTier(tier);
-  const plan = op === "BASIS" ? productPlans.BASIS : productPlans.LUXUS;
+  const plan =
+    tier === "BASIS" ? productPlans.BASIS : tier === "LUXUS" ? productPlans.LUXUS : productPlans.ENTERPRISE;
   if (!plan?.allowedMeals?.length) return [];
   return plan.allowedMeals.map((k) => {
     const nk = normalizeMealTypeKey(k);
@@ -627,7 +626,7 @@ type DayContext = {
   agreementForChoices: any;
   mealContract: StoredMealContract | null;
   menuByMealType: Map<string, CmsMenuByMealType>;
-  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null };
+  productPlans: { BASIS: CmsProductPlan | null; LUXUS: CmsProductPlan | null; ENTERPRISE: CmsProductPlan | null };
   /** Samme operative `public.closed_dates` som order create/cancel (server-only). */
   operativeClosedReasonByDate?: Map<string, string>;
 };
@@ -853,9 +852,10 @@ export async function GET(req: NextRequest) {
     const fromISO = dates[0] ?? today;
     const toISO = dates[dates.length - 1] ?? today;
 
-    const [ppBasis, ppLuxus] = await Promise.all([
+    const [ppBasis, ppLuxus, ppEnterprise] = await Promise.all([
       getProductPlan("basis"),
       getProductPlan("luxus"),
+      getProductPlan("enterprise"),
     ]);
     // companies.agreement_json finnes ikke i prod-schema (verifisert 2026-05-14,
     // FASE 9J.3). Tidligere admin.from-kallet feilet stille i Promise.all og
@@ -863,10 +863,11 @@ export async function GET(req: NextRequest) {
     // eksplisitt. Bredere migrasjon (agreement_json -> normalized agreement-tabeller)
     // er flagget som arkitektonisk gjeld for separat fase.
     const mealContract: StoredMealContract | null = null;
-    const productPlans = { BASIS: ppBasis, LUXUS: ppLuxus };
+    const productPlans = { BASIS: ppBasis, LUXUS: ppLuxus, ENTERPRISE: ppEnterprise };
     const mealKeys = new Set<string>();
     for (const k of ppBasis?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
     for (const k of ppLuxus?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
+    for (const k of ppEnterprise?.allowedMeals ?? []) mealKeys.add(normalizeMealTypeKey(k));
     if (mealContract?.plan === "basis") mealKeys.add(normalizeMealTypeKey(mealContract.fixed_meal_type));
     if (mealContract?.plan === "luxus") {
       for (const v of Object.values(mealContract.menu_per_day)) mealKeys.add(normalizeMealTypeKey(v));

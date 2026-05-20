@@ -24,6 +24,7 @@ export default defineType({
         list: [
           { title: "Basis", value: "basis" },
           { title: "Luxus", value: "luxus" },
+          { title: "Enterprise", value: "enterprise" },
         ],
         layout: "radio",
       },

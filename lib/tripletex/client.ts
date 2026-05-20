@@ -1,9 +1,9 @@
 import "server-only";
 
 /**
- * @deprecated Legacy Tripletex-klient ù bruk `@/lib/integrations/tripletex/client` (kanonisk).
+ * @deprecated Legacy Tripletex-klient ? bruk `@/lib/integrations/tripletex/client` (kanonisk).
  * Ingen produksjonsimports i repo. Typer utvidet til 3-tier for typesafety; Enterprise-fakturering
- * er ikke konfigurert (fail closed via `PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED`).
+ * mangler i `billing_products` (fail closed via `PRODUCT_MAPPING_MISSING_*`).
  */
 export type TripletexErrorKind = "CONFIG" | "AUTH" | "TRANSIENT" | "PERMANENT";
 
@@ -396,14 +396,6 @@ export async function createTripletexCustomer(input: TripletexCustomerInput): Pr
 }
 
 export async function createTripletexProduct(input: TripletexProductInput): Promise<{ productId: string; raw: any }> {
-  if (input.tier === "ENTERPRISE") {
-    throw new TripletexError({
-      message: "Enterprise Tripletex product mapping is not configured",
-      kind: "PERMANENT",
-      code: "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED",
-    });
-  }
-
   const vatTypeId = asRequiredVatTypeId(input.tripletexVatCode);
 
   const body: Record<string, unknown> = {
@@ -465,7 +457,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!uniqueRef) {
     throw new TripletexError({
-      message: "uniqueRef er pùkrevd",
+      message: "uniqueRef er p?krevd",
       kind: "PERMANENT",
       code: "UNIQUE_REF_MISSING",
     });
@@ -473,7 +465,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!customerId) {
     throw new TripletexError({
-      message: "customerId er pùkrevd",
+      message: "customerId er p?krevd",
       kind: "PERMANENT",
       code: "CUSTOMER_ID_MISSING",
     });
@@ -481,7 +473,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!Array.isArray(input.lines) || input.lines.length === 0) {
     throw new TripletexError({
-      message: "Minst ùn fakturalinje er pùkrevd",
+      message: "Minst ?n fakturalinje er p?krevd",
       kind: "PERMANENT",
       code: "INVOICE_LINES_MISSING",
     });

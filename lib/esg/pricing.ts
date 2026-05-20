@@ -1,19 +1,11 @@
 // STATUS: KEEP
-// Patch 2.1 / MP3: Enterprise agreement tier = Luxus + premium varmrett (ikke egen billing/CMS-plan).
+// MP5: ENTERPRISE is a distinct tier with its own list price (170 NOK eks mva).
 
 export type PlanTier = "BASIS" | "LUXUS" | "ENTERPRISE";
 
-export type OperationalPlanTier = "BASIS" | "LUXUS";
-
-/**
- * Billing/CMS operational tier: ENTERPRISE maps to LUXUS (no separate product row in billing_products).
- */
-export function operationalPlanTier(tier: PlanTier): OperationalPlanTier {
-  return tier === "ENTERPRISE" ? "LUXUS" : tier;
-}
-
 export function priceForTierNok(tier: PlanTier): number {
-  return operationalPlanTier(tier) === "LUXUS" ? 130 : 90;
+  if (tier === "ENTERPRISE") return 170;
+  return tier === "LUXUS" ? 130 : 90;
 }
 
 /**

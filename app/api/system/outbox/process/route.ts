@@ -47,7 +47,7 @@ type InvoicePeriodRow = {
 };
 
 type BillingProductConfig = {
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   productName: string;
   tripletexProductId: string | null;
   revenueAccount: string | null;
@@ -293,7 +293,10 @@ async function enqueueInvoiceSent(admin: any, uniqueRef: string, tripletexInvoic
   if (error) throw error;
 }
 
-async function fetchBillingProductConfig(admin: any, tier: "BASIS" | "LUXUS"): Promise<BillingProductConfig | null> {
+async function fetchBillingProductConfig(
+  admin: any,
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE",
+): Promise<BillingProductConfig | null> {
   const { data: product, error: productError } = await admin
     .from("billing_products")
     .select("tier,product_name,tripletex_product_id,revenue_account,tax_code_id,unit")
@@ -331,7 +334,7 @@ async function ensureInvoiceTierLine(
   admin: any,
   getRunAuth: () => Promise<TripletexAuth>,
   period: InvoicePeriodRow,
-  tier: "BASIS" | "LUXUS"
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE",
 ): Promise<{ productId: string; quantity: number; unitPrice: number; productName: string; vatCode: string; revenueAccount: string | null }> {
   const config = await fetchBillingProductConfig(admin, tier);
   if (!config) {
@@ -544,9 +547,16 @@ async function processInvoiceReady(
         currency: "NOK",
       });
     } else if (tier === "ENTERPRISE") {
-      // Patch 2.1: Enterprise er ikke egen billing_products-rad — fail closed (ingen Tripletex-produkt for ENTERPRISE).
-      await markInvoicePeriodFailed(admin, uniqueRef, "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED");
-      return { ok: false, permanent: true, error: "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED" };
+      const line = await ensureInvoiceTierLine(admin, getRunAuth, period, "ENTERPRISE");
+      invoiceLines.push({
+        productId: line.productId,
+        quantity: line.quantity,
+        unit_price: line.unitPrice,
+        product_name: line.productName,
+        tripletex_vat_code: line.vatCode,
+        revenue_account: line.revenueAccount,
+        currency: "NOK",
+      });
     } else {
       await markInvoicePeriodFailed(admin, uniqueRef, "INVOICE_PERIOD_TIER_INVALID");
       return { ok: false, permanent: true, error: "INVOICE_PERIOD_TIER_INVALID" };

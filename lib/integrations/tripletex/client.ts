@@ -81,7 +81,7 @@ type EnsureCustomerInput = {
 
 type EnsureProductInput = {
   admin: any;
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   request?: RequestOptions;
 };
 
@@ -544,7 +544,7 @@ export async function ensureCustomer(input: EnsureCustomerInput): Promise<{ cust
 
 export async function ensureProduct(input: EnsureProductInput): Promise<{ productId: string; created: boolean }> {
   const tier = safeStr(input.tier).toUpperCase();
-  if (tier !== "BASIS" && tier !== "LUXUS") {
+  if (tier !== "BASIS" && tier !== "LUXUS" && tier !== "ENTERPRISE") {
     throw new TripletexClientError({
       message: "Invalid product tier",
       kind: "PERMANENT",

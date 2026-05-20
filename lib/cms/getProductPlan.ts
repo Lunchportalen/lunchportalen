@@ -1,27 +1,30 @@
 import "server-only";
 
 import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
-import { operationalPlanTier, type PlanTier as AgreementPlanTier } from "@/lib/esg/pricing";
+import type { PlanTier as AgreementPlanTier } from "@/lib/esg/pricing";
 import { sanity } from "@/lib/sanity/client";
-import type { CmsProductPlan } from "@/lib/cms/types";
+import type { CmsProductPlan, CmsProductPlanName } from "@/lib/cms/types";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 
 export type ProductPlanQueryOptions = {
   providerSlug?: string | null;
 };
 
-function normPlanName(raw: unknown): "basis" | "luxus" | null {
+function normPlanName(raw: unknown): CmsProductPlanName | null {
   const s = String(raw ?? "")
     .trim()
     .toLowerCase();
   if (s === "basis") return "basis";
   if (s === "luxus" || s === "luksus") return "luxus";
+  if (s === "enterprise") return "enterprise";
   return null;
 }
 
-/** Sanity `productPlan.name` — ENTERPRISE bruker luxus-plan (Patch 2.1). */
-export function cmsPlanNameForAgreementTier(tier: AgreementPlanTier): "basis" | "luxus" {
-  return operationalPlanTier(tier) === "BASIS" ? "basis" : "luxus";
+/** Sanity `productPlan.name` for agreement tier (MP5: 3-tier). */
+export function cmsPlanNameForAgreementTier(tier: AgreementPlanTier): CmsProductPlanName {
+  if (tier === "BASIS") return "basis";
+  if (tier === "LUXUS") return "luxus";
+  return "enterprise";
 }
 
 export async function getProductPlanForAgreementTier(
@@ -32,7 +35,7 @@ export async function getProductPlanForAgreementTier(
 }
 
 export async function getProductPlan(
-  name: "basis" | "luxus",
+  name: CmsProductPlanName,
   opts?: ProductPlanQueryOptions,
 ): Promise<CmsProductPlan | null> {
   try {

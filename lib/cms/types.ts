@@ -6,8 +6,10 @@ export type CmsProductPlanRules = {
   allowDailyVariation: boolean;
 };
 
+export type CmsProductPlanName = "basis" | "luxus" | "enterprise";
+
 export type CmsProductPlan = {
-  name: "basis" | "luxus";
+  name: CmsProductPlanName;
   price: number;
   /** Canonical allowlist; keys match DB choice_key / menu.mealType */
   allowedMeals: string[];
