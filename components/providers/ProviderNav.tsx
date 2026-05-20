@@ -15,6 +15,7 @@ type NavItem = {
   icon: IconName;
   exact?: boolean;
   disabled?: boolean;
+  adminOnly?: boolean;
   action?: "logout";
 };
 
@@ -23,17 +24,19 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders" },
   { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
   { href: "/leverandor/registreringer", label: "Registreringer", icon: "document" },
-  { href: "/leverandor/meny", label: "Meny", icon: "document", disabled: true },
-  { href: "/leverandor/omrader", label: "Områder", icon: "pin", disabled: true },
+  { href: "/leverandor/meny", label: "Meny", icon: "document" },
+  { href: "/leverandor/omrader", label: "Områder", icon: "pin", adminOnly: true },
   { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
   { label: "Logg ut", icon: "logout", action: "logout" },
 ];
 
 function navItemsForRole(kitchenOnly: boolean, providerAdmin: boolean): NavItem[] {
   if (!kitchenOnly) {
-    return NAV_ITEMS_BASE.filter(
-      (item) => item.href !== "/leverandor/registreringer" || providerAdmin,
-    );
+    return NAV_ITEMS_BASE.filter((item) => {
+      if (item.href === "/leverandor/registreringer" && !providerAdmin) return false;
+      if (item.adminOnly && !providerAdmin) return false;
+      return true;
+    });
   }
   return [
     { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders", exact: true },
