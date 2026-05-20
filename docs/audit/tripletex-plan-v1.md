@@ -1,9 +1,19 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.2 (2026-05-20 — TPT-A-1/A-2/A-3 status + renummerering)
+**Versjon:** v3.3 (2026-05-21 — TPT-A-4 + R11 GRANT-fix)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.2 → v3.3
+
+**TPT-A-4 fullført + R11 staging GRANT-repair:**
+
+1. **TPT-A-4 ✅ COMPLETED** — SaaS invoice generation (RPC + outbox + worker).
+2. **R11 NY + LUKKET** — staging `anon`/`service_role` table GRANTs gjenopprettet (`dd52f5fe`).
+3. **R10 delvis** — A-2 (7/7) og A-4 (17/17) verifisert mot staging; A-3 Tripletex smoke fortsatt manuell.
 
 ---
 
@@ -413,7 +423,7 @@ SELECT column_name FROM information_schema.columns
 - **Audit:** `docs/audit/tpt-a-2-provider-create.md`
 - RPC + `tripletex.provider_customer_create_lp:<provider_id>` outbox i samme TX
 - Schema: `tripletex_customers.provider_id` + scope CHECK
-- ⚠️ **R10:** Integrasjonstester ikke kjørt mot staging (env mismatch, se §0)
+- ✅ **R10 (A-2):** `tests/db/lp_provider_create.test.ts` 7/7 PASS mot staging (2026-05-21)
 
 #### TPT-A-3: Provider-customer worker ✅ COMPLETED
 
@@ -423,11 +433,15 @@ SELECT column_name FROM information_schema.columns
 - Enhetstester: `tests/integrations/providerCustomerCreateLp.test.ts` (6/6 PASS, mocked)
 - ⚠️ **R10:** Ikke smoke-testet mot Tripletex test-env — se `docs/audit/tpt-a-3-staging-smoke-checklist.md`
 
-#### TPT-A-4 (renummerert): SaaS Invoice generation — Ikke startet
+#### TPT-A-4: SaaS Invoice generation ✅ COMPLETED
 
-- Modifisér `lp_provider_generate_invoice_for_period` til å enqueue invoice_send
-- Cron: konverter `provider_invoices.DRAFT` → Tripletex Invoice via `tripletexEngine`
-- **Estimat: 60-90 min**
+- **Commits:** `361baa88` (feat), `be075967` (audit), `dd52f5fe` (R11 staging GRANT — pre-push)
+- **Migration:** `20260523120000_tpt_a4_saas_invoice_generation.sql` (staging + prod applied)
+- **Audit:** `docs/audit/tpt-a-4-saas-invoice-generation.md`
+- Utvidet `lp_provider_generate_invoice_for_period` + ny `lp_generate_saas_invoices_for_period`
+- Outbox: `tripletex.saas_invoice_create_lp:<invoice_id>`; worker `handleSaasInvoiceCreateLp`
+- **Tester:** 17/17 PASS (6 worker mock + 4 bulk-RPC integration + 7 TPT-A-2 regression)
+- Cron-registrering → **TPT-A-5**
 
 #### TPT-A-5 (renummerert): Cron-registrering — Ikke startet
 
@@ -452,7 +466,7 @@ SELECT column_name FROM information_schema.columns
 - `/superadmin/providers/[id]/tripletex` (per-provider sync-status)
 - **Estimat: 60-90 min**
 
-**Flow A total (gjenstående):** ~3.5-6 timer (A-4 → A-7)
+**Flow A total (gjenstående):** ~2.5-5 timer (A-5 → A-7)
 
 ---
 
@@ -534,7 +548,8 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 | Frekvens-endring mid-periode | Medium | Lav | Snapshot på agreement_invoice |
 | MVA-regler endrer seg | Lav | Lav | VatType lest fra Tripletex |
 | **R8: Ingen eksisterende Vault read/write app-pattern** | Bekreftet | Medium | TPT-B-1 bygger grønnflate |
-| **R10: TPT-A-2 + A-3 ikke verifisert end-to-end mot staging** | Medium | Medium | Sett alle staging Supabase-env i `.env.local`; kjør `tests/db/lp_provider_create.test.ts`; manuell smoke (`tpt-a-3-staging-smoke-checklist.md`) |
+| **R10: TPT-A-2 + A-3 ikke verifisert end-to-end mot staging** | Medium | Medium | **Delvis lukket:** A-2 + A-4 staging PASS; A-3 manuell Tripletex smoke gjenstår (`tpt-a-3-staging-smoke-checklist.md`) |
+| **R11: Staging core-table GRANTs manglende (`anon` + `service_role`)** | Høy (avdekket) | Høy | **LUKKET** (`dd52f5fe`) — `20260524120000_staging_repair_core_table_grants.sql`; audit `docs/audit/r11-staging-grants-repair.md` |
 
 ---
 
@@ -647,4 +662,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** Lukk **R10** (staging env komplett + integrasjonstester + manuell A-3 smoke) → **TPT-A-4** (SaaS Invoice generation).
+**Next:** **TPT-A-5** (cron `tripletex-saas-monthly` + outbox-prosessor) → lukk **R10** (A-3 manuell Tripletex smoke).
