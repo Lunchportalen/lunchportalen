@@ -103,11 +103,11 @@ type SuperadminWeekBlock = {
   dates: string[];
 };
 
-type EmployeePreviewMode = "basis" | "luxus" | "mixed";
+type EmployeePreviewMode = "basis" | "luxus" | "mixed" | "enterprise";
 
 function parseEmployeePreviewMode(value: unknown): EmployeePreviewMode {
   const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === "luxus" || raw === "mixed") return raw;
+  if (raw === "luxus" || raw === "mixed" || raw === "enterprise") return raw;
   return "basis";
 }
 
@@ -394,6 +394,7 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
   const tabs: { mode: EmployeePreviewMode; label: string; description: string }[] = [
     { mode: "basis", label: "Basis-demo", description: "Salatboks, Påsmurt og Varmmat" },
     { mode: "luxus", label: "Luxus-demo", description: "Alle seks kategorier" },
+    { mode: "enterprise", label: "Enterprise-demo", description: "Luxus-kategorier + Enterprise valggrense" },
     { mode: "mixed", label: "Blandet uke-demo", description: "Basis mandag-onsdag, Luxus torsdag-fredag" },
   ];
 
@@ -407,11 +408,11 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
           Forhåndsvis ansattvisning
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-600">
-          Kontroller hvordan Basis, Luxus og blandet uke ser ut for ansatte. Dette er kun visning og kan ikke sende bestilling.
+          Kontroller hvordan Basis, Luxus, Enterprise og blandet uke ser ut for ansatte. Dette er kun visning og kan ikke sende bestilling.
         </p>
       </div>
 
-      <div className="mx-auto mt-5 grid max-w-3xl gap-2 sm:grid-cols-3">
+      <div className="mx-auto mt-5 grid max-w-3xl gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {tabs.map((tab) => {
           const active = tab.mode === previewMode;
           return (

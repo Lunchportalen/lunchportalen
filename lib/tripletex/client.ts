@@ -1,5 +1,10 @@
 import "server-only";
 
+/**
+ * @deprecated Legacy Tripletex-klient ù bruk `@/lib/integrations/tripletex/client` (kanonisk).
+ * Ingen produksjonsimports i repo. Typer utvidet til 3-tier for typesafety; Enterprise-fakturering
+ * er ikke konfigurert (fail closed via `PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED`).
+ */
 export type TripletexErrorKind = "CONFIG" | "AUTH" | "TRANSIENT" | "PERMANENT";
 
 export class TripletexError extends Error {
@@ -52,7 +57,7 @@ export type TripletexCustomerInput = {
 };
 
 export type TripletexProductInput = {
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   productName: string;
   unit: string;
   revenueAccount: string | null;
@@ -72,7 +77,7 @@ export type TripletexInvoiceInput = {
 };
 
 export type TripletexInvoiceLineInput = {
-  tier: "BASIS" | "LUXUS";
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
   productId: string;
   quantity: number;
   unitPrice: number;
@@ -391,6 +396,14 @@ export async function createTripletexCustomer(input: TripletexCustomerInput): Pr
 }
 
 export async function createTripletexProduct(input: TripletexProductInput): Promise<{ productId: string; raw: any }> {
+  if (input.tier === "ENTERPRISE") {
+    throw new TripletexError({
+      message: "Enterprise Tripletex product mapping is not configured",
+      kind: "PERMANENT",
+      code: "PRODUCT_MAPPING_ENTERPRISE_NOT_CONFIGURED",
+    });
+  }
+
   const vatTypeId = asRequiredVatTypeId(input.tripletexVatCode);
 
   const body: Record<string, unknown> = {
@@ -452,7 +465,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!uniqueRef) {
     throw new TripletexError({
-      message: "uniqueRef er pÂkrevd",
+      message: "uniqueRef er pùkrevd",
       kind: "PERMANENT",
       code: "UNIQUE_REF_MISSING",
     });
@@ -460,7 +473,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!customerId) {
     throw new TripletexError({
-      message: "customerId er pÂkrevd",
+      message: "customerId er pùkrevd",
       kind: "PERMANENT",
       code: "CUSTOMER_ID_MISSING",
     });
@@ -468,7 +481,7 @@ export async function createInvoice(input: TripletexCreateInvoiceInput): Promise
 
   if (!Array.isArray(input.lines) || input.lines.length === 0) {
     throw new TripletexError({
-      message: "Minst Èn fakturalinje er pÂkrevd",
+      message: "Minst ùn fakturalinje er pùkrevd",
       kind: "PERMANENT",
       code: "INVOICE_LINES_MISSING",
     });

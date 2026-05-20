@@ -1,6 +1,11 @@
 "use client";
 
 // STATUS: KEEP
+/**
+ * @deprecated Orphan — `/onboarding` redirecter til `/registrering` (se `app/onboarding/page.tsx`).
+ * Kanonisk registrering: `CompanyRegistrationForm` + `POST /api/onboarding/complete`.
+ * Beholdes for sporbarhet; ikke importer i nye ruter.
+ */
 
 import Link from "next/link";
 import React from "react";

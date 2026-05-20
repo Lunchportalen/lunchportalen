@@ -106,7 +106,7 @@ type WindowPayload = {
 };
 
 type ConfirmPayload = { date: string; action: "order" | "cancel" };
-type PreviewMode = "basis" | "luxus" | "mixed";
+type PreviewMode = "basis" | "luxus" | "mixed" | "enterprise";
 type ErrorBannerState = { message: string; code: string | null };
 
 function clientRid() {
@@ -463,6 +463,7 @@ function canOrderDay(day: DayRow, canAct: boolean, globalBusy: boolean) {
 }
 
 function previewTierForDay(mode: PreviewMode, index: number): DayRow["tier"] {
+  if (mode === "enterprise") return "ENTERPRISE";
   if (mode === "luxus") return "LUXUS";
   if (mode === "mixed") return index < 3 ? "BASIS" : "LUXUS";
   return "BASIS";

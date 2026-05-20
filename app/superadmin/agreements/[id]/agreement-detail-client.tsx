@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { formatTierLabel } from "@/lib/admin/agreementLabel";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsProductPlan } from "@/lib/cms/types";
@@ -54,13 +55,6 @@ const DAY_LABEL: Record<string, string> = {
   thu: "torsdag",
   fri: "fredag",
 };
-
-function tierLabel(t: string) {
-  const s = String(t ?? "").toUpperCase();
-  if (s === "BASIS") return "Basis";
-  if (s === "LUXUS") return "Luxus";
-  return s || "-";
-}
 
 function companyStatusLabel(raw: string | null | undefined) {
   const s = String(raw ?? "").trim().toUpperCase();
@@ -125,7 +119,12 @@ export default function AgreementDetailClient({ detail, cmsBasis, cmsLuxus, menu
   const primaryHref =
     pipeline_primary_href || `/superadmin/companies/${encodeURIComponent(agreement.company_id)}`;
 
-  const cmsForTier = agreement.tier === "LUXUS" ? cmsLuxus : cmsBasis;
+  const agreementTier = String(agreement.tier ?? "")
+    .trim()
+    .toUpperCase();
+  const isEnterpriseTier = agreementTier === "ENTERPRISE";
+  const cmsForTier =
+    agreementTier === "LUXUS" || isEnterpriseTier ? cmsLuxus : cmsBasis;
   const cmsPrice = cmsForTier?.price != null && Number.isFinite(cmsForTier.price) ? cmsForTier.price : null;
   const displayPrice = cmsPrice ?? agreement.price_per_employee;
 
@@ -285,7 +284,7 @@ export default function AgreementDetailClient({ detail, cmsBasis, cmsLuxus, menu
 
       <section className="lp-card lp-card--elevated">
         <div className="lp-card-pad space-y-4">
-          <h2 className="text-base font-semibold text-neutral-900">Dagmap (Basis/Luxus man–fre)</h2>
+          <h2 className="text-base font-semibold text-neutral-900">Dagmap (Basis/Luxus/Enterprise man–fre)</h2>
           <p className="text-xs lp-muted">
             Operativt grunnlag fra <span className="font-mono">company_registrations.weekday_meal_tiers</span> (canonical daymap for bestilling).
           </p>
@@ -297,7 +296,7 @@ export default function AgreementDetailClient({ detail, cmsBasis, cmsLuxus, menu
                   className="flex items-center justify-between gap-2 rounded-xl bg-neutral-50 px-3 py-2 ring-1 ring-black/5"
                 >
                   <span className="font-medium capitalize text-neutral-800">{DAY_LABEL[d] ?? d}</span>
-                  <span className="text-neutral-900">{tierLabel(weekdayMealTiers[d])}</span>
+                  <span className="text-neutral-900">{formatTierLabel(weekdayMealTiers[d])}</span>
                 </li>
               ))}
             </ul>
@@ -319,12 +318,17 @@ export default function AgreementDetailClient({ detail, cmsBasis, cmsLuxus, menu
           <dl className="grid gap-4 sm:grid-cols-2 text-sm">
             <div>
               <dt className="text-xs font-semibold text-neutral-500">Plan</dt>
-              <dd className="mt-1 font-medium text-neutral-900">{tierLabel(agreement.tier)}</dd>
+              <dd className="mt-1 font-medium text-neutral-900">{formatTierLabel(agreement.tier)}</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold text-neutral-500">Pris (CMS hvis tilgjengelig)</dt>
               <dd className="mt-1 font-medium text-neutral-900">
                 {displayPrice != null ? `${displayPrice} kr (ex. mva)` : "—"}
+                {isEnterpriseTier && cmsPrice == null ? (
+                  <span className="block text-xs lp-muted mt-0.5">
+                    Enterprise: ingen egen CMS productPlan — viser lagret avtalepris når CMS mangler.
+                  </span>
+                ) : null}
                 {cmsPrice == null && agreement.price_per_employee != null ? (
                   <span className="block text-xs lp-muted mt-0.5">Lagret pris: {agreement.price_per_employee}</span>
                 ) : null}
@@ -372,6 +376,11 @@ export default function AgreementDetailClient({ detail, cmsBasis, cmsLuxus, menu
 
           <div>
             <h3 className="text-sm font-semibold text-neutral-900">Meny</h3>
+            {isEnterpriseTier ? (
+              <p className="mt-1 text-xs lp-muted">
+                Enterprise meny vises som Luxus + premium varmrett (forhåndsvisning mot Luxus CMS-plan).
+              </p>
+            ) : null}
             <div className="mt-2 rounded-2xl bg-neutral-50 ring-1 ring-black/5 p-4 text-sm">
               {!meal ? (
                 <p className="lp-muted">Ingen gyldig meal_contract i firmaets agreement_json.</p>
