@@ -74,6 +74,9 @@ export default async function LeverandorLayout({ children }: { children: ReactNo
   const allowed = await canAccessProvider(userId, provider.id);
   if (!allowed) redirect(roleHome(auth.role ?? "employee"));
 
+  const kitchenOnly =
+    ctx.role === "provider_kitchen" && !ctx.memberships.some((m) => m.role === "provider_admin");
+
   return (
     <div className="ds-admin-root ds-provider-root">
       <ProviderNav
@@ -81,6 +84,7 @@ export default async function LeverandorLayout({ children }: { children: ReactNo
         logoUrl={provider.logoUrl}
         userEmail={ctx.user.email}
         userRole={ctx.role}
+        kitchenOnly={kitchenOnly}
       />
       <div className="ds-admin-main">
         <main className="ds-admin-content ds-page">

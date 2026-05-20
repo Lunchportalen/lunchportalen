@@ -350,3 +350,160 @@
     background: linear-gradient(180deg, transparent, var(--ds-bg) 24%);
   }
 }
+
+/* Kitchen orders (/leverandor/ordrer) — Patch 11 */
+.ds-provider-kitchen-page {
+  max-width: 960px;
+}
+
+.ds-provider-kitchen-filters {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.ds-provider-kitchen-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ds-provider-kitchen-filters__select {
+  display: grid;
+  gap: 6px;
+  min-width: min(100%, 280px);
+}
+
+.ds-provider-kitchen-filters__row .ds-btn,
+.ds-provider-status-pill {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ds-provider-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid var(--ds-line);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  cursor: pointer;
+}
+
+.ds-provider-status-pill.is-active {
+  border-color: var(--ds-text);
+  background: var(--ds-text);
+  color: var(--ds-bg);
+}
+
+.ds-provider-status-pill--active {
+  border-color: #1a5fb4;
+  color: #1a5fb4;
+}
+
+.ds-provider-status-pill--prepared {
+  border-color: #b25000;
+  color: #b25000;
+}
+
+.ds-provider-status-pill--dispatched {
+  border-color: #0d7a4a;
+  color: #0d7a4a;
+}
+
+.ds-provider-status-pill--delivered {
+  border-color: #3d3d3d;
+  color: #3d3d3d;
+}
+
+.ds-provider-status-pill--muted {
+  opacity: 0.7;
+}
+
+.ds-provider-kitchen-grid {
+  display: grid;
+  gap: 28px;
+}
+
+.ds-provider-kitchen-group .ds-h2 {
+  margin-bottom: 12px;
+}
+
+.ds-provider-kitchen-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.ds-provider-order-card {
+  padding: 18px;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 2px solid var(--ds-line);
+  background: var(--ds-surface);
+  box-shadow: var(--ds-shadow-card);
+}
+
+.ds-provider-order-card.is-new {
+  animation: ds-provider-order-pulse 2.4s ease-in-out infinite;
+  border-color: #1a5fb4;
+}
+
+.ds-provider-order-card.is-pending {
+  opacity: 0.85;
+}
+
+@keyframes ds-provider-order-pulse {
+  0%,
+  100% {
+    box-shadow: var(--ds-shadow-card);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.25), var(--ds-shadow-card);
+  }
+}
+
+.ds-provider-order-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ds-provider-order-card__title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.ds-provider-order-card__meta {
+  font-size: 15px;
+  color: var(--ds-text-soft);
+  margin: 4px 0 0;
+}
+
+.ds-provider-order-card__items {
+  margin: 0 0 12px;
+  padding-left: 1.1rem;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.ds-provider-order-card__note {
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(230, 184, 0, 0.12);
+  margin: 0 0 12px;
+}
+
+.ds-provider-order-card__action {
+  width: 100%;
+  min-height: 56px;
+  font-size: 17px;
+  font-weight: 800;
+}

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { LogoutClientButton } from "@/components/auth/LogoutClient";
 import type { ProviderRole } from "@/lib/providers/types";
 
-type IconName = "grid" | "users" | "document" | "pin" | "settings" | "logout";
+type IconName = "grid" | "users" | "orders" | "document" | "pin" | "settings" | "logout";
 
 type NavItem = {
   href?: string;
@@ -18,8 +18,9 @@ type NavItem = {
   action?: "logout";
 };
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS_BASE: NavItem[] = [
   { href: "/leverandor", label: "Dashboard", icon: "grid", exact: true },
+  { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders" },
   { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
   { href: "/leverandor/meny", label: "Meny", icon: "document", disabled: true },
   { href: "/leverandor/omrader", label: "Områder", icon: "pin", disabled: true },
@@ -27,11 +28,28 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Logg ut", icon: "logout", action: "logout" },
 ];
 
+function navItemsForRole(kitchenOnly: boolean): NavItem[] {
+  if (!kitchenOnly) return NAV_ITEMS_BASE;
+  return [
+    { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders", exact: true },
+    { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
+    { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
+    { label: "Logg ut", icon: "logout", action: "logout" },
+  ];
+}
+
 function ProviderIcon({ name }: { name: IconName }) {
   if (name === "grid") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+      </svg>
+    );
+  }
+  if (name === "orders") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
       </svg>
     );
   }
@@ -154,14 +172,16 @@ function BrandBlock({
 
 function SidebarNav({
   pathname,
+  items,
   onNavigate,
 }: {
   pathname: string;
+  items: NavItem[];
   onNavigate?: () => void;
 }) {
   return (
     <nav className="ds-admin-sidebar__nav" aria-label="Leverandør">
-      {NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <NavLink key={item.label} item={item} pathname={pathname} onNavigate={onNavigate} />
       ))}
     </nav>
@@ -173,9 +193,17 @@ export type ProviderNavProps = {
   logoUrl: string | null;
   userEmail: string | null;
   userRole: ProviderRole | null;
+  /** Kitchen-only members: Ordrer as home, no admin dashboard link. */
+  kitchenOnly?: boolean;
 };
 
-export default function ProviderNav({ providerName, logoUrl, userEmail, userRole }: ProviderNavProps) {
+export default function ProviderNav({
+  providerName,
+  logoUrl,
+  userEmail,
+  userRole,
+  kitchenOnly = false,
+}: ProviderNavProps) {
   const pathname = usePathname() || "/leverandor";
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -188,18 +216,16 @@ export default function ProviderNav({ providerName, logoUrl, userEmail, userRole
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [drawerOpen]);
 
-  const mobilePrimary: NavItem[] = [
-    NAV_ITEMS[0],
-    NAV_ITEMS[1],
-    NAV_ITEMS[4],
-    { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" },
-  ];
+  const navItems = navItemsForRole(kitchenOnly);
+  const mobilePrimary: NavItem[] = kitchenOnly
+    ? [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }]
+    : [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }];
 
   return (
     <>
       <aside className="ds-admin-sidebar" aria-label="Leverandør (desktop)">
         <BrandBlock providerName={providerName} logoUrl={logoUrl} userEmail={userEmail} userRole={userRole} />
-        <SidebarNav pathname={pathname} />
+        <SidebarNav pathname={pathname} items={navItems} />
       </aside>
 
       <div className="ds-provider-topbar ds-provider-topbar--mobile-only">
@@ -224,7 +250,7 @@ export default function ProviderNav({ providerName, logoUrl, userEmail, userRole
           />
           <div className={`ds-provider-drawer is-open`} role="dialog" aria-modal="true" aria-label="Leverandørmeny">
             <BrandBlock providerName={providerName} logoUrl={logoUrl} userEmail={userEmail} userRole={userRole} />
-            <SidebarNav pathname={pathname} onNavigate={() => setDrawerOpen(false)} />
+            <SidebarNav pathname={pathname} items={navItems} onNavigate={() => setDrawerOpen(false)} />
           </div>
         </>
       ) : null}

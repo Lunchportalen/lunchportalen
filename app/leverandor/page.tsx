@@ -39,6 +39,11 @@ export default async function LeverandorDashboardPage() {
   const provider = ctx.primaryProvider;
   if (!provider) redirect("/login?next=%2Fleverandor");
 
+  const hasProviderAdmin = ctx.memberships.some((m) => m.role === "provider_admin");
+  if (ctx.role === "provider_kitchen" && !hasProviderAdmin) {
+    redirect("/leverandor/ordrer");
+  }
+
   const { stats, recentActivity } = await loadProviderDashboard(provider.id);
 
   const kpis = [
