@@ -13,6 +13,9 @@ import { readRemoteSupabaseIntegrationEnv } from "./remoteSupabaseIntegration";
 
 export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
+/** Default provider from Patch 5 (Melhus); required on companies/orders/agreements inserts. */
+export const DEFAULT_PROVIDER_ID = "11111111-1111-1111-1111-111111111111";
+
 export type AuthUserFx = {
   user_id: string;
   email: string;
@@ -250,6 +253,7 @@ async function insertCompany(
     name,
     status: upper,
     orgnr,
+    provider_id: DEFAULT_PROVIDER_ID,
     default_location_id: args.default_location_id ?? null,
   } as any;
 
@@ -258,6 +262,7 @@ async function insertCompany(
     name,
     status: lower,
     orgnr,
+    provider_id: DEFAULT_PROVIDER_ID,
     default_location_id: args.default_location_id ?? null,
   } as any;
 
@@ -280,6 +285,7 @@ async function insertCompany(
         name,
         status: upper,
         orgnr,
+        provider_id: DEFAULT_PROVIDER_ID,
       } as any
     );
     if (!r2err) return;
@@ -328,6 +334,7 @@ async function insertOrder(
       status: args.status,
       company_id: args.company_id,
       location_id: args.location_id,
+      provider_id: DEFAULT_PROVIDER_ID,
       slot: args.slot ?? "default",
       note: args.note ?? null,
     } as any
@@ -376,6 +383,7 @@ async function ensureActiveAgreement(
     const { error: insertErr } = await admin.from("agreements").insert({
       company_id: companyId,
       location_id: locationId,
+      provider_id: DEFAULT_PROVIDER_ID,
       tier: "BASIS",
       status: "ACTIVE",
       delivery_days: ["mon", "tue", "wed", "thu", "fri"],
