@@ -1,9 +1,20 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3 (2026-05-20 — revidert etter pre-discovery)
+**Versjon:** v3.1 (2026-05-20 — TPT-0 scope avklart, Q6/Q7/Q8 løst)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
-**Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20
+**Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3 → v3.1
+
+**TPT-0 scope avklart (Q7 + R9):**
+
+1. **Kirurgisk TPT-0** — ikke hele `202602*`-kjeden (staging er `baseline_schema_dump` + `20260520*`-patches).
+2. **Apply:** `20260221_step6_10_fasit_periods_esg.sql` (dekker `invoice_periods` + `tripletex_exports`; skip `20260219` som overflødig).
+3. **R9:** `external_customer_id` finnes ikke i repo-migrasjoner — kom fra prod baseline-dump; **separat repair-migrasjon** i TPT-0 (ikke `20260218` wholesale).
+4. **Q6/Q7/Q8 løst** — se §10; TPT-A-2 omdøpt til `lp_provider_create` + outbox.
 
 ---
 
@@ -44,12 +55,22 @@ tripletex_customers (company_id, external_customer_id, ...)
 tripletex_invoices
 ```
 
-### Manglende på staging (R1 — BLOCKER)
+### Manglende på staging og prod (R1 — BLOCKER)
 
 ```
-invoice_periods       -- kode forventer, finnes ikke
-tripletex_exports     -- kode forventer, finnes ikke
+invoice_periods       -- kode forventer, finnes ikke (bekreftet begge miljøer)
+tripletex_exports     -- kode forventer, finnes ikke (bekreftet begge miljøer)
 ```
+
+### Schema-drift (R9 — BLOCKER for Tripletex-kjøring)
+
+```
+tripletex_customers   -- live DB: external_customer_id (baseline-dump)
+                      -- kode + 20260218-migrasjon: tripletex_customer_id
+                      -- Ingen repo-migrasjon renamer til external_customer_id
+```
+
+Staging ble rerollet med `baseline_schema_dump_from_prod_2026_05_20_v1_REROLLED` (ikke `202602*`-sporet). `0` rader i `schema_migrations` med `version LIKE '202602%'`.
 
 ### Eksisterende env (dokumentert i `docs/environments-runtime.json`)
 
@@ -237,21 +258,19 @@ CREATE TABLE public.provider_tripletex_products (
 
 ## 4. End-to-end sekvenser
 
-### Sekvens A1: Provider-onboarding → Lp's Tripletex Customer
-
-**ÅPENT Q6:** Ingen `lp_provider_create`-RPC eksisterer. Vi må klargjøre:
-- Hvor opprettes en provider i dag? (Sannsynligvis manuelt via superadmin-UI eller SQL)
-- Hvilken trigger skal hooke til Tripletex Customer creation?
-
-Sannsynlig flyt (krever bekreftelse):
+### Sekvens A1: Provider-opprettelse → Lp's Tripletex Customer (BESLUTTET Q6)
 
 ```
-1. Superadmin oppretter provider (manuell SQL eller ny RPC)
-2. After-insert trigger / outbox-event:
-   enqueue tripletex_customer_create (provider_id, target='lp')
-3. Cron leser jobs → lib/integrations/tripletex/client.ts.ensureCustomer()
-4. Lagre i tripletex_customers (provider_id=null, external_customer_id=...)
-5. Audit
+1. Superadmin kaller lp_provider_create (TPT-A-2) — eneste runtime INSERT-path.
+2. RPC: INSERT providers + lifecycle_audit_log.
+3. RPC: enqueue outbox tripletex.provider_customer_create_lp (provider_id, target='lp').
+4. Outbox/cron → handler → Tripletex POST /customer (Lp-konto, resolveTripletexAuth uten providerId).
+5. Mapping i tripletex_customers (tripletex_provider_id NULL = Flow A; se Q1).
+6. Audit lifecycle_audit_log (entity_type='tripletex_sync').
+
+Seed-only (ikke runtime): 20260520160001_seed_default_provider_melhus.sql (direkte INSERT).
+Tester: tests/_helpers/providerTestFixtures.ts (direkte INSERT).
+Superadmin UI oppretter ikke provider i dag — kun lisens/faktura (Patch 15).
 ```
 
 ### Sekvens A2: Månedlig SaaS-fee → Lp's Tripletex Invoice
@@ -316,16 +335,34 @@ Polling fallback: hourly cron poller per provider's Tripletex
 
 ### TPT-0: Schema-drift fix (PRE-REQUISITE)
 
-**Mål:** Få staging på samme schema som repo.
+**Mål:** Tabeller og kolonner som aktiv Tripletex-kode forventer — uten å kjøre hele `202602*`-kjeden.
 
-**Tasks:**
-- Apply `invoice_periods`-migrasjon til staging (hvis i repo)
-- Apply `tripletex_exports`-migrasjon til staging
-- Verifiser at `app/api/cron/credit-check` + `app/api/cron/invoices/generate` ikke feiler
+**Beslutning (Q7):** Scenario B — migrasjoner finnes i repo, **ikke applied** på staging eller prod (`202602%` = 0 i `schema_migrations`). **Ikke** Variant 2 (full `202602*`-kjede): staging er baseline-rerollet; prod har eget `20260507+`-spor.
 
-**Hvis migrasjonene IKKE finnes i repo:** klargjør om de skal opprettes eller om kode skal endres.
+**Apply-liste (kirurgisk, begge miljøer — staging først):**
 
-**Estimat: 30-60 min**
+| # | Migrasjon / artefakt | Hvorfor |
+|---|----------------------|---------|
+| 1 | `supabase/migrations/20260221_step6_10_fasit_periods_esg.sql` | Oppretter/hardener `invoice_periods` + `tripletex_exports` (matcher outbox/cron) |
+| 2 | **NY** `supabase/migrations/20260521_tpt0_tripletex_customers_repair.sql` | R9: `tripletex_customer_id` + backfill fra `external_customer_id` + manglende billing-kolonner |
+| — | ~~`20260219_invoice_periods.sql`~~ | **Skip** — overflødig når (1) kjøres |
+| — | ~~Hele `202602*.sql` (26 filer)~~ | **Avvist** — konfliktrisiko mot baseline + `20260520*` |
+
+**R9 — ikke inkludert i eksisterende migrasjon:**
+- `20260218_norwegian_standard_billing.sql:293` definerer `tripletex_customer_id` ved **CREATE**.
+- `external_customer_id` finnes kun i baseline-dump (`scripts/audit/staging-schema-dump-2026-05-20.sql`) — **ingen** `git log -S external_customer_id` i `supabase/migrations/`.
+- `CREATE TABLE IF NOT EXISTS` hopper over — **repair (2) er påkrevd**.
+
+**Verifikasjon etter apply:**
+```sql
+SELECT to_regclass('public.invoice_periods'), to_regclass('public.tripletex_exports');
+SELECT column_name FROM information_schema.columns
+  WHERE table_name='tripletex_customers' AND column_name IN ('tripletex_customer_id','external_customer_id');
+```
+
+**Kjent gap (utenfor minimal TPT-0, flagg for TPT-A-3):** `outbox/process` SELECTer `invoice_periods.tier`, men verken `20260221` eller cron `invoices/generate` persisterer `tier` → risiko `INVOICE_PERIOD_TIER_INVALID`.
+
+**Estimat: 45-75 min** (inkl. ny repair-migrasjon + staging verify + prod apply)
 
 ---
 
@@ -340,13 +377,14 @@ Polling fallback: hourly cron poller per provider's Tripletex
 - Token-cache per `(providerId|'lp', env)`
 - **Estimat: 60-90 min**
 
-**TPT-A-2: Provider-onboarding RPC + Customer sync**
+**TPT-A-2: `lp_provider_create` + outbox enqueue**
 
-- Klargjør semantikk: lag `lp_provider_create`-RPC hvis ikke finnes
-- Trigger eller outbox-event: enqueue Tripletex Customer-sync
-- Cron-route eller utvidelse av eksisterende
-- Lagre i `tripletex_customers` (provider_id, target='lp')
-- **Estimat: 60-90 min**
+- Ny RPC `lp_provider_create` (superadmin-only, `SECURITY DEFINER`, audit)
+- Etter INSERT: enqueue `tripletex.provider_customer_create_lp` i `public.outbox`
+- Worker i outbox/cron (kan deles med TPT-A-3) — Tripletex Customer i Lp-konto
+- Mapping i `tripletex_customers` (Flow A — se Q1)
+- **Ikke** superadmin UI-create i samme patch (liste finnes fra Patch 15)
+- **Estimat: 45-60 min**
 
 **TPT-A-3: SaaS Invoice generation**
 
@@ -443,9 +481,10 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 
 | Risk | Sannsynlighet | Impact | Mitigering |
 |---|---|---|---|
-| **R1: Staging schema-drift** (invoice_periods/tripletex_exports mangler) | Bekreftet | Høy | TPT-0 fixer FØR TPT-A-1 |
+| **R1: Schema-drift** (`invoice_periods`/`tripletex_exports` mangler staging+prod) | Bekreftet | Høy | TPT-0 kirurgisk apply FØR TPT-A-1 |
+| **R9: `tripletex_customers` kolonneavvik** (`external_customer_id` vs `tripletex_customer_id`) | Bekreftet staging+prod | Høy | TPT-0 repair-migrasjon (2); ikke wholesale `20260218` |
 | **R2: Eksisterende client brutt** ved multi-tenant-utvidelse | Medium | Høy | Default-arg bevarer eksisterende oppførsel; eksisterende tester må PASS |
-| **R3: Provider-onboarding-semantikk uklar** (Q6) | Bekreftet | Medium | Avklar FØR TPT-A-2 |
+| **R3: Provider-onboarding-semantikk uklar** (Q6) | **Løst** | — | `lp_provider_create` + outbox (TPT-A-2) |
 | Provider's credentials leaker | Lav | Kritisk | Vault encrypted, audit-log på read |
 | Duplicate invoices | Medium | Høy | UNIQUE constraints, idempotency |
 | Tripletex API down | Lav | Medium | Retry-queue, fail-closed-mønster |
@@ -468,8 +507,9 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 - [x] Cron-infrastruktur kartlagt
 - [x] Vault-status bekreftet
 - [x] Webhook-pattern dokumentert
-- [ ] **Q7: invoice_periods + tripletex_exports migrasjoner — finnes i repo?**
-- [ ] **Q6: Provider-opprettelse i dag — manuell SQL eller egen RPC?**
+- [x] **Q7:** Løst — repo ja; staging+prod nei; TPT-0 kirurgisk apply
+- [x] **Q6:** Løst — `lp_provider_create` + outbox (TPT-A-2)
+- [x] **Q8:** Løst — optional `{ providerId?, env? }` bakoverkompatibel
 - [ ] **Vault read/write-pattern — eksempel-implementasjon?**
 - [ ] **`tripletexEngine.createInvoice` — input-format? (review signature)**
 
@@ -532,11 +572,11 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 
 5. **Q5 — Sletting av agreement_invoices:** Norge krever 5 års oppbevaring. Anbefaling: ingen auto-sletting, soft-archive senere.
 
-6. **Q6 (NY) — Provider-opprettelse semantikk:** Hvor opprettes providers i dag? Manuelt via SQL, superadmin UI, eller egen RPC? Hvilken trigger skal hooke til Tripletex Customer creation?
+6. **Q6 — LØST:** Ingen `lp_provider_create` i dag. Runtime: **TPT-A-2** RPC + outbox. Seed: Melhus-migrasjon; tester: fixture INSERT. Hook: outbox etter RPC (ikke company-registration-RPC).
 
-7. **Q7 (NY) — Migrasjons-status:** Finnes `invoice_periods` + `tripletex_exports`-migrasjoner i repo, eller må de opprettes for staging?
+7. **Q7 — LØST:** Scenario B. Repo: `20260219` + `20260221` (bruk **kun** `20260221`). Staging+prod: tabeller mangler; `202602%` ikke i `schema_migrations`. TPT-0 kirurgisk — **ikke** full `202602*`-kjede.
 
-8. **Q8 (NY) — Multi-tenant client-pattern:** Bekreft at vi kan utvide `lib/integrations/tripletex/client.ts` med `{ providerId?, env? }`-args uten å bryte eksisterende kall.
+8. **Q8 — LØST:** Ja — utvid `resolveTripletexAuth(opts?)` + `RequestOptions.auth`; eksisterende call-sites uendret. Session-cache per `(providerId|'lp', env)` er additive (~30–45 min i TPT-A-1).
 
 ---
 
@@ -567,4 +607,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** Besvar Q6-Q8 (krever discovery av migrasjons-status + provider-opprettelse), deretter TPT-0 (schema-drift fix), deretter TPT-A-1.
+**Next:** TPT-0 (kirurgisk apply + R9 repair-migrasjon) → verifiser staging → prod → TPT-A-1.
