@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { LogoutClientButton } from "@/components/auth/LogoutClient";
 import type { ProviderRole } from "@/lib/providers/types";
 
-type IconName = "grid" | "users" | "orders" | "document" | "pin" | "settings" | "logout";
+type IconName = "grid" | "users" | "orders" | "document" | "pin" | "settings" | "billing" | "logout";
 
 type NavItem = {
   href?: string;
@@ -26,6 +26,7 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { href: "/leverandor/registreringer", label: "Registreringer", icon: "document" },
   { href: "/leverandor/meny", label: "Meny", icon: "document" },
   { href: "/leverandor/omrader", label: "Områder", icon: "pin", adminOnly: true },
+  { href: "/leverandor/faktura", label: "Faktura", icon: "billing", adminOnly: true },
   { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
   { label: "Logg ut", icon: "logout", action: "logout" },
 ];
@@ -89,6 +90,14 @@ function ProviderIcon({ name }: { name: IconName }) {
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
         <path d="M19.4 15a7.9 7.9 0 0 0 .1-1l2-1.5-2-3.5-2.3.7a8 8 0 0 0-1.7-1L15 4h-6l-.5 2.7a8 8 0 0 0-1.7 1L4.5 7 2.5 10.5 4.5 12a8 8 0 0 0 0 2l-2 1.5 2 3.5 2.3-.7a8 8 0 0 0 1.7 1L9 20h6l.5-2.7a8 8 0 0 0 1.7-1l2.3.7 2-3.5-2-1.5a7.9 7.9 0 0 0-.1-1Z" />
+      </svg>
+    );
+  }
+  if (name === "billing") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 3h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z" />
+        <path d="M8 9h8M8 13h5" />
       </svg>
     );
   }
