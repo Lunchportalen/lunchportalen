@@ -1,8 +1,29 @@
 import "server-only";
 
+/**
+ * TPT-A-1 (2026-05-20): Multi-tenant signature.
+ * - resolveTripletexAuth(opts?: { providerId?, env? })
+ * - Default-args = Lp's env (unchanged behavior)
+ * - providerId set → loadProviderCredentials() throws
+ *   PROVIDER_CREDENTIALS_NOT_IMPLEMENTED until TPT-B-1
+ * - Session cache keyed per (providerId|'lp', env), TTL ~6 days
+ * References: TRIPLETEX-PLAN-V1 v3.1 §5 + Q8-discovery
+ */
+
 type AnyJson = Record<string, unknown> | unknown[] | string | number | boolean | null;
 
-export type TripletexErrorKind = "CONFIG_MISSING" | "AUTH" | "TRANSIENT" | "PERMANENT";
+export type TripletexErrorKind =
+  | "CONFIG_MISSING"
+  | "AUTH"
+  | "TRANSIENT"
+  | "PERMANENT"
+  | "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED";
+
+export type TripletexAuthOpts = {
+  providerId?: string | null;
+  env?: "test" | "prod";
+  tokenOverride?: string;
+};
 
 export class TripletexClientError extends Error {
   readonly kind: TripletexErrorKind;
@@ -114,6 +135,31 @@ type CreateInvoiceInput = {
 const DEFAULT_BASE_URL = "https://tripletex.no/v2";
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_RETRIES = 2;
+const SESSION_TTL_MS = 6 * 24 * 60 * 60 * 1000;
+
+interface CachedSession {
+  auth: TripletexAuth;
+  expiresAt: number;
+}
+
+const sessionCache = new Map<string, CachedSession>();
+
+function cacheKey(providerId: string | null | undefined, env: string): string {
+  return `${providerId ?? "lp"}:${env}`;
+}
+
+function resolveDefaultEnv(): "test" | "prod" {
+  const appEnv = safeStr(process.env.NEXT_PUBLIC_APP_ENV).toLowerCase();
+  if (appEnv === "staging") return "test";
+  const vercelEnv = safeStr(process.env.VERCEL_ENV).toLowerCase();
+  if (vercelEnv === "production") return "prod";
+  return "test";
+}
+
+/** Clears in-process session cache (Vitest isolation only). */
+export function __clearTripletexSessionCacheForTests(): void {
+  sessionCache.clear();
+}
 
 function safeStr(value: unknown): string {
   return String(value ?? "").trim();
@@ -331,13 +377,8 @@ async function createSessionToken(config: TripletexConfig): Promise<string> {
   return token;
 }
 
-export async function resolveTripletexAuth(options?: { tokenOverride?: string }): Promise<TripletexAuth> {
+async function loadLpCredentials(_env: "test" | "prod"): Promise<TripletexAuth> {
   const config = loadConfig();
-  const tokenOverride = safeStr(options?.tokenOverride);
-
-  if (tokenOverride) {
-    return { companyId: config.companyId, token: tokenOverride };
-  }
 
   if (config.directToken) {
     return { companyId: config.companyId, token: config.directToken };
@@ -345,6 +386,48 @@ export async function resolveTripletexAuth(options?: { tokenOverride?: string })
 
   const token = await createSessionToken(config);
   return { companyId: config.companyId, token };
+}
+
+async function loadProviderCredentials(providerId: string, env: "test" | "prod"): Promise<TripletexAuth> {
+  throw new TripletexClientError({
+    message:
+      `Provider Tripletex credentials loading is not yet implemented. This will be added in TPT-B-1 ` +
+      `(provider_tripletex_credentials + Vault lookup). providerId=${providerId}, env=${env}`,
+    kind: "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
+    code: "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
+    detail: { providerId, env },
+  });
+}
+
+export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<TripletexAuth> {
+  const config = loadConfig();
+  const tokenOverride = safeStr(opts?.tokenOverride);
+
+  if (tokenOverride) {
+    return { companyId: config.companyId, token: tokenOverride };
+  }
+
+  const rawProviderId = opts?.providerId;
+  const providerId =
+    rawProviderId != null && safeStr(rawProviderId) ? safeStr(rawProviderId) : null;
+  const env = opts?.env ?? resolveDefaultEnv();
+  const key = cacheKey(providerId, env);
+
+  const cached = sessionCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.auth;
+  }
+
+  const auth = providerId
+    ? await loadProviderCredentials(providerId, env)
+    : await loadLpCredentials(env);
+
+  sessionCache.set(key, {
+    auth,
+    expiresAt: Date.now() + SESSION_TTL_MS,
+  });
+
+  return auth;
 }
 
 export async function requestTripletex(input: RequestInput, options?: RequestOptions): Promise<RequestResult> {
