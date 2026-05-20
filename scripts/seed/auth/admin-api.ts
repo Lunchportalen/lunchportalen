@@ -98,6 +98,8 @@ export async function listStagingAuthUsers(env: SeedEnv): Promise<Array<{ id: st
   const admin = createAuthAdminClient(env);
   const out: Array<{ id: string; email: string }> = [];
   const perPage = 1000;
+  /** B4.2.1: 50 pages capped at 50K — raised for 100K+ orphan wipe (B4.2.2 headroom to 1.2M). */
+  const maxPages = 1200;
   let page = 1;
 
   for (;;) {
@@ -116,7 +118,7 @@ export async function listStagingAuthUsers(env: SeedEnv): Promise<Array<{ id: st
 
     if (users.length < perPage) break;
     page += 1;
-    if (page > 50) {
+    if (page > maxPages) {
       throw new Error("auth.admin.listUsers pagination safety stop");
     }
   }
