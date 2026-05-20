@@ -1,9 +1,25 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.1 (2026-05-20 — TPT-0 scope avklart, Q6/Q7/Q8 løst)
+**Versjon:** v3.2 (2026-05-20 — TPT-A-1/A-2/A-3 status + renummerering)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.1 → v3.2
+
+**Status-oppdatering og renummerering (etter TPT-A-2 split):**
+
+1. **TPT-A-1, A-2, A-3** markert ✅ COMPLETED med commit-SHA-er og audit-docs.
+2. **TPT-A-2 split dokumentert:** opprinnelig «Provider-onboarding RPC + Customer sync» → **TPT-A-2** (RPC + outbox) + **TPT-A-3** (worker).
+3. **Påfølgende Flow A-patches renummerert:**
+   - **TPT-A-4** (var A-3): SaaS Invoice generation
+   - **TPT-A-5** (var A-4): Cron-registrering
+   - **TPT-A-6** (var A-5): Webhook handler (Lp)
+   - **TPT-A-7** (var A-6): Admin UI (Lp)
+4. **R10 NY:** TPT-A-2 + A-3 ikke verifisert end-to-end mot staging (integrasjonstester + Tripletex smoke).
+5. **Integrasjonstester (2026-05-20):** `SUPABASE_POSTGRES_URL` → staging ✅; `NEXT_PUBLIC_SUPABASE_URL` → prod ❌ → tester **skipped** (se §0 env).
 
 ---
 
@@ -51,7 +67,7 @@ Pre-discovery 2026-05-20 avdekket at v2 antok grønnfelt der det allerede finnes
 billing_products.tripletex_product_id    -- text
 billing_tax_codes.tripletex_vat_code     -- text (NB: ikke vat_type_id)
 provider_invoices.tripletex_invoice_id   -- text (Patch 15)
-tripletex_customers (company_id, external_customer_id, ...)
+tripletex_customers (company_id, tripletex_customer_id, provider_id, …)
 tripletex_invoices
 ```
 
@@ -77,6 +93,21 @@ Staging ble rerollet med `baseline_schema_dump_from_prod_2026_05_20_v1_REROLLED`
 `TRIPLETEX_ENABLED`, `TRIPLETEX_BASE_URL`, `TRIPLETEX_COMPANY_ID`, `TRIPLETEX_CONSUMER_TOKEN`, `TRIPLETEX_EMPLOYEE_TOKEN`, `TRIPLETEX_SESSION_TOKEN`, `TRIPLETEX_TOKEN`, `TRIPLETEX_TIMEOUT_MS`, `TRIPLETEX_MAX_RETRIES`, `TRIPLETEX_OUTBOX_CONCURRENCY`, `TRIPLETEX_REVENUE_DEFAULT_{CUSTOMER,PRODUCT,VAT_CODE}_ID`, `TRIPLETEX_CREDIT_CHECK_ENABLED`, `TRIPLETEX_ENABLE_CREDIT_NOTE_FLOW`, `BIWEEKLY_TRIPLETEX_DIRECT_INVOICE_ENABLED`.
 
 Ingen TEST/PROD-suffix i kode — isolasjon via Vercel Preview/Production env-grupper.
+
+### Lokal staging-integrasjon (`.env.local`)
+
+For `RUN_SUPABASE_INTEGRATION_TESTS=1` (f.eks. `tests/db/lp_provider_create.test.ts`) kreves **alle** av:
+
+| Env | Må peke på staging-ref `uigxsboqeruxflgzqztl` |
+|-----|-----------------------------------------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Ja (PostgREST + Auth Admin API) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Staging branch anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Staging branch service role |
+| `SUPABASE_POSTGRES_URL` | Ja (fixture DML via `pg`) |
+
+Mapping og nøkkel-henting: `docs/audit/staging-env-mapping-2026-05-20.md` (gitignored `scripts/audit/staging-env-actual-2026-05-20.env`).
+
+**Status 2026-05-20:** Kun `SUPABASE_POSTGRES_URL` er staging; REST-URL er fortsatt prod → integrasjonstester skipper (fail-closed).
 
 ### Vault-status
 
@@ -264,8 +295,8 @@ CREATE TABLE public.provider_tripletex_products (
 1. Superadmin kaller lp_provider_create (TPT-A-2) — eneste runtime INSERT-path.
 2. RPC: INSERT providers + lifecycle_audit_log.
 3. RPC: enqueue outbox tripletex.provider_customer_create_lp (provider_id, target='lp').
-4. Outbox/cron → handler → Tripletex POST /customer (Lp-konto, resolveTripletexAuth uten providerId).
-5. Mapping i tripletex_customers (tripletex_provider_id NULL = Flow A; se Q1).
+4. Outbox/cron → **TPT-A-3** handler → Tripletex POST /customer (Lp-konto, resolveTripletexAuth uten providerId).
+5. Mapping i tripletex_customers (`provider_id` set, `company_id` NULL — Flow A; se Q1).
 6. Audit lifecycle_audit_log (entity_type='tripletex_sync').
 
 Seed-only (ikke runtime): 20260520160001_seed_default_provider_melhus.sql (direkte INSERT).
@@ -360,61 +391,68 @@ SELECT column_name FROM information_schema.columns
   WHERE table_name='tripletex_customers' AND column_name IN ('tripletex_customer_id','external_customer_id');
 ```
 
-**Kjent gap (utenfor minimal TPT-0, flagg for TPT-A-3):** `outbox/process` SELECTer `invoice_periods.tier`, men verken `20260221` eller cron `invoices/generate` persisterer `tier` → risiko `INVOICE_PERIOD_TIER_INVALID`.
+**Kjent gap (flagg for TPT-A-4):** `outbox/process` SELECTer `invoice_periods.tier`, men verken `20260221` eller cron `invoices/generate` persisterer `tier` → risiko `INVOICE_PERIOD_TIER_INVALID`.
 
 **Estimat: 45-75 min** (inkl. ny repair-migrasjon + staging verify + prod apply)
 
+**Status TPT-0:** ✅ Applied staging + prod (commits `c22fad30`, `add5cb64`; audit `docs/audit/tpt-0-schema-alignment.log`).
+
 ---
 
-### FLOW A (TPT-A-1 → TPT-A-6) — Lunchportalen → Provider
+### FLOW A (TPT-A-1 → TPT-A-7) — Lunchportalen → Provider
 
-**TPT-A-1: Audit & augment existing client**
+#### TPT-A-1: Audit & augment existing client ✅ COMPLETED
 
-- Slett legacy `lib/tripletex/client.ts` (orphan, 0 imports)
-- Utvid `lib/integrations/tripletex/client.ts`: `resolveTripletexAuth()` tar `{ providerId?, env? }`
-- Hvis `providerId` set: hent fra `provider_tripletex_credentials` + Vault
-- Hvis `providerId` null: bruk Lp's env-vars (eksisterende oppførsel)
-- Token-cache per `(providerId|'lp', env)`
-- **Estimat: 60-90 min**
+- **Commits:** `22aebd53` (feat), `9bfde463` (audit)
+- **Audit:** `docs/audit/tpt-a-1-client-augment.md`
+- Slettet legacy `lib/tripletex/client.ts`; utvidet `resolveTripletexAuth(opts?)` + session-cache; stub `loadProviderCredentials` → TPT-B-1
 
-**TPT-A-2: `lp_provider_create` + outbox enqueue**
+#### TPT-A-2: `lp_provider_create` + outbox enqueue ✅ COMPLETED
 
-- Ny RPC `lp_provider_create` (superadmin-only, `SECURITY DEFINER`, audit)
-- Etter INSERT: enqueue `tripletex.provider_customer_create_lp` i `public.outbox`
-- Worker i outbox/cron (kan deles med TPT-A-3) — Tripletex Customer i Lp-konto
-- Mapping i `tripletex_customers` (Flow A — se Q1)
-- **Ikke** superadmin UI-create i samme patch (liste finnes fra Patch 15)
-- **Estimat: 45-60 min**
+- **Commits:** `c2186bfc` (feat), `ef01197f` (audit)
+- **Audit:** `docs/audit/tpt-a-2-provider-create.md`
+- RPC + `tripletex.provider_customer_create_lp:<provider_id>` outbox i samme TX
+- Schema: `tripletex_customers.provider_id` + scope CHECK
+- ⚠️ **R10:** Integrasjonstester ikke kjørt mot staging (env mismatch, se §0)
 
-**TPT-A-3: SaaS Invoice generation**
+#### TPT-A-3: Provider-customer worker ✅ COMPLETED
+
+- **Commits:** `d657ea83` (feat), `8acfe803` (audit)
+- **Audit:** `docs/audit/tpt-a-3-provider-customer-worker.md`
+- Handler: `handleProviderCustomerCreateLp` + `ensureProviderCustomer`; dispatch i `/api/system/outbox/process`
+- Enhetstester: `tests/integrations/providerCustomerCreateLp.test.ts` (6/6 PASS, mocked)
+- ⚠️ **R10:** Ikke smoke-testet mot Tripletex test-env — se `docs/audit/tpt-a-3-staging-smoke-checklist.md`
+
+#### TPT-A-4 (renummerert): SaaS Invoice generation — Ikke startet
 
 - Modifisér `lp_provider_generate_invoice_for_period` til å enqueue invoice_send
-- TPT-A-cron: konverter `provider_invoices.DRAFT` → Tripletex Invoice via `tripletexEngine`
+- Cron: konverter `provider_invoices.DRAFT` → Tripletex Invoice via `tripletexEngine`
 - **Estimat: 60-90 min**
 
-**TPT-A-4: Cron-registrering**
+#### TPT-A-5 (renummerert): Cron-registrering — Ikke startet
 
 - Legg til i `vercel.json`:
   - `/api/cron/tripletex-saas-monthly` — 1. hver måned 03:00
   - `/api/cron/tripletex-status-poll-lp` — hver time
+  - Outbox-prosessor for `tripletex.provider_customer_create_lp` (etter A-3)
 - Bruk `requireCronAuth()` mønster
 - **Estimat: 30-45 min**
 
-**TPT-A-5: Webhook handler (Lp)**
+#### TPT-A-6 (renummerert): Webhook handler (Lp) — Ikke startet
 
 - Ny route: `app/api/webhooks/tripletex/route.ts`
 - HMAC-pattern fra Sanity-webhook
 - Webhook-secret: `TRIPLETEX_WEBHOOK_SECRET`
 - **Estimat: 45-60 min**
 
-**TPT-A-6: Admin UI (Lp)**
+#### TPT-A-7 (renummerert): Admin UI (Lp) — Ikke startet
 
 - `/superadmin/tripletex` (dashboard + queue)
 - `/superadmin/tripletex/jobs` (queue inspector)
 - `/superadmin/providers/[id]/tripletex` (per-provider sync-status)
 - **Estimat: 60-90 min**
 
-**Flow A total: ~4.5-7 timer**
+**Flow A total (gjenstående):** ~3.5-6 timer (A-4 → A-7)
 
 ---
 
@@ -496,6 +534,7 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 | Frekvens-endring mid-periode | Medium | Lav | Snapshot på agreement_invoice |
 | MVA-regler endrer seg | Lav | Lav | VatType lest fra Tripletex |
 | **R8: Ingen eksisterende Vault read/write app-pattern** | Bekreftet | Medium | TPT-B-1 bygger grønnflate |
+| **R10: TPT-A-2 + A-3 ikke verifisert end-to-end mot staging** | Medium | Medium | Sett alle staging Supabase-env i `.env.local`; kjør `tests/db/lp_provider_create.test.ts`; manuell smoke (`tpt-a-3-staging-smoke-checklist.md`) |
 
 ---
 
@@ -543,11 +582,12 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 |---|---|
 | TPT-0 | Migrasjons-revert (forsiktig — kode forventer disse tabellene) |
 | TPT-A-1 | Revert client-endringer; default-args bevarer kompatibilitet |
-| TPT-A-2 | Drop onboarding-trigger; Customer-rader forblir |
-| TPT-A-3 | Status tilbake til DRAFT |
-| TPT-A-4 | Disable cron i `vercel.json` |
-| TPT-A-5 | Disable webhook-route |
-| TPT-A-6 | UI revert |
+| TPT-A-2 | Drop `lp_provider_create`; slett test-providers + outbox-events |
+| TPT-A-3 | Revert worker; provider-mapping-rader kan stå |
+| TPT-A-4 | Status provider_invoices tilbake til DRAFT |
+| TPT-A-5 | Disable cron i `vercel.json` |
+| TPT-A-6 | Disable webhook-route |
+| TPT-A-7 | UI revert |
 | TPT-B-1 | Drop `provider_tripletex_credentials`, slett Vault-secrets |
 | TPT-B-2 | Drop `provider_tripletex_products` |
 | TPT-B-3 | Drop `tripletex_provider_id`-kolonne |
@@ -607,4 +647,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** TPT-0 (kirurgisk apply + R9 repair-migrasjon) → verifiser staging → prod → TPT-A-1.
+**Next:** Lukk **R10** (staging env komplett + integrasjonstester + manuell A-3 smoke) → **TPT-A-4** (SaaS Invoice generation).
