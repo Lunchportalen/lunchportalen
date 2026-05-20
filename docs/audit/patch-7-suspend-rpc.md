@@ -79,8 +79,14 @@ SELECT policyname FROM pg_policies WHERE tablename = 'lifecycle_audit_log';
 - `lib/admin/suspend.ts` — server wrappers via `supabaseServer()`, `SuspendError`
 - `tests/db/suspend-rpc.test.ts` — opt-in integration (`RUN_SUPABASE_INTEGRATION_TESTS=1`)
 
-```bash
-RUN_SUPABASE_INTEGRATION_TESTS=1 npx vitest run tests/db/suspend-rpc.test.ts --poolOptions.forks.maxForks=1
+**INTEGRATION TESTS PASSED 2026-05-20 (etter MP4a fixture-fix)**
+
+- `tests/db/suspend-rpc.test.ts`: **5/5 PASS** (~17s)
+- Shared fixtures: `tests/_helpers/providerTestFixtures.ts` + `fixturePg.ts`
+
+```powershell
+$env:RUN_SUPABASE_INTEGRATION_TESTS = "1"
+npx vitest run tests/db/suspend-rpc.test.ts
 ```
 
 ## Not in scope

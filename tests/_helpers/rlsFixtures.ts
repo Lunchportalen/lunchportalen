@@ -1,7 +1,7 @@
 // tests/_helpers/rlsFixtures.ts
 // RLS fixture: builds companies, locations, users, and real auth tokens via signInWithPassword.
 // Sign-ins are throttled and serialized (cross-process lock) to avoid Supabase "Request rate limit reached".
-// When running multiple RLS test files, use: vitest run --poolOptions.forks.maxForks=1 <files>
+// When running multiple RLS test files, use: vitest run --pool threads (see vitest.config.ts)
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -9,7 +9,9 @@ import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/lib/types/database";
+import { ensureIntegrationTestTableGrants, fixturePgQuery } from "./fixturePg";
 import { readRemoteSupabaseIntegrationEnv } from "./remoteSupabaseIntegration";
+import { anonClient, serviceRoleClient } from "./supabaseTestClient";
 
 export type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
@@ -68,17 +70,11 @@ function randEmail(prefix: string) {
 }
 
 function supabaseAdmin(): SupabaseClient<Database> {
-  const { url, serviceKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
-  return createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return serviceRoleClient();
 }
 
 function supabaseAnon(): SupabaseClient<Database> {
-  const { url, anonKey } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
-  return createClient<Database>(url, anonKey!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return anonClient();
 }
 
 function supabaseAs(accessToken: string): SupabaseClient<Database> {
@@ -220,10 +216,32 @@ async function insertProfile(
 
   // Canonical schema: profiles.id = auth.users.id (user_id column was dropped in bootstrap).
   // Use upsert in case a trigger or hook already created a profile row for the auth user.
-  const { error } = await admin
-    .from("profiles")
-    .upsert({ id: args.user_id, ...base } as any, { onConflict: "id" });
-  if (error) throw new Error(`insert profile failed: ${error.message}`);
+  try {
+    await fixturePgQuery(
+      `INSERT INTO public.profiles (id, email, role, company_id, location_id, full_name, disabled_at, active)
+       VALUES ($1, $2, $3::public.user_role, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO UPDATE SET
+         email = EXCLUDED.email,
+         role = EXCLUDED.role,
+         company_id = EXCLUDED.company_id,
+         location_id = EXCLUDED.location_id,
+         full_name = EXCLUDED.full_name,
+         disabled_at = EXCLUDED.disabled_at,
+         active = EXCLUDED.active`,
+      [
+        args.user_id,
+        args.email,
+        args.role,
+        args.company_id ?? null,
+        args.location_id ?? null,
+        args.full_name ?? null,
+        args.disabled_at ?? null,
+        args.is_active ?? true,
+      ],
+    );
+  } catch (e) {
+    throw new Error(`insert profile failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 /**
@@ -248,51 +266,43 @@ async function insertCompany(
   const upper = raw.toUpperCase();
   const lower = raw.toLowerCase();
 
-  const payloadUpper = {
-    id,
-    name,
-    status: upper,
-    orgnr,
-    provider_id: DEFAULT_PROVIDER_ID,
-    default_location_id: args.default_location_id ?? null,
-  } as any;
+  const insertSql = (status: string, withDefaultLoc: boolean) =>
+    withDefaultLoc
+      ? `INSERT INTO public.companies (id, name, status, orgnr, provider_id, default_location_id)
+         VALUES ($1, $2, $3, $4, $5::uuid, $6)`
+      : `INSERT INTO public.companies (id, name, status, orgnr, provider_id)
+         VALUES ($1, $2, $3, $4, $5::uuid)`;
 
-  const payloadLower = {
-    id,
-    name,
-    status: lower,
-    orgnr,
-    provider_id: DEFAULT_PROVIDER_ID,
-    default_location_id: args.default_location_id ?? null,
-  } as any;
+  const runInsert = async (status: string, withDefaultLoc: boolean) => {
+    const params = withDefaultLoc
+      ? [id, name, status, orgnr, DEFAULT_PROVIDER_ID, args.default_location_id ?? null]
+      : [id, name, status, orgnr, DEFAULT_PROVIDER_ID];
+    await fixturePgQuery(insertSql(status, withDefaultLoc), params);
+  };
 
-  const r1 = await admin.from("companies").insert(payloadUpper);
-  if (!r1.error) return;
-
-  const msg = String(r1.error?.message ?? "");
-  if (msg.includes("companies_status_check")) {
-    const r2 = await admin.from("companies").insert(payloadLower);
-    if (!r2.error) return;
-    throw new Error(`insert company failed: ${r2.error?.message ?? r1.error?.message ?? "unknown"}`);
+  try {
+    await runInsert(upper, true);
+    return;
+  } catch (e1) {
+    const msg = e1 instanceof Error ? e1.message : String(e1);
+    if (msg.includes("companies_status_check")) {
+      try {
+        await runInsert(lower, true);
+        return;
+      } catch (e2) {
+        throw new Error(`insert company failed: ${e2 instanceof Error ? e2.message : String(e2)}`);
+      }
+    }
+    if (msg.includes("default_location_id")) {
+      try {
+        await runInsert(upper, false);
+        return;
+      } catch (e3) {
+        throw new Error(`insert company failed: ${e3 instanceof Error ? e3.message : String(e3)}`);
+      }
+    }
+    throw new Error(`insert company failed: ${msg}`);
   }
-
-  // Schema cache may not know about default_location_id in some environments.
-  // Retry without that column when that specific error is seen.
-  if (msg.includes("default_location_id")) {
-    const { error: r2err } = await admin.from("companies").insert(
-      {
-        id,
-        name,
-        status: upper,
-        orgnr,
-        provider_id: DEFAULT_PROVIDER_ID,
-      } as any
-    );
-    if (!r2err) return;
-    throw new Error(`insert company failed: ${r2err?.message ?? r1.error?.message ?? "unknown"}`);
-  }
-
-  throw new Error(`insert company failed: ${r1.error?.message ?? "unknown"}`);
 }
 
 async function insertLocation(
@@ -311,35 +321,74 @@ async function insertLocation(
   const payload: Record<string, unknown> = { id, company_id, name };
   if (args.label != null) payload.label = args.label;
 
-  const { error } = await admin.from("company_locations").insert(payload as any);
-  if (!error) return;
-
-  const msg = String(error?.message ?? "");
-  if (msg.includes("label") && msg.includes("schema")) {
-    const { error: r2 } = await admin.from("company_locations").insert({ id, company_id, name } as any);
-    if (!r2) return;
+  try {
+    if (args.label != null) {
+      await fixturePgQuery(
+        `INSERT INTO public.company_locations (id, company_id, name, label) VALUES ($1, $2, $3, $4)`,
+        [id, company_id, name, args.label],
+      );
+    } else {
+      await fixturePgQuery(
+        `INSERT INTO public.company_locations (id, company_id, name) VALUES ($1, $2, $3)`,
+        [id, company_id, name],
+      );
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("label")) {
+      await fixturePgQuery(
+        `INSERT INTO public.company_locations (id, company_id, name) VALUES ($1, $2, $3)`,
+        [id, company_id, name],
+      );
+      return;
+    }
+    throw new Error(`insert location failed: ${msg}`);
   }
-  throw new Error(`insert location failed: ${error.message}`);
+}
+
+async function ensureMenuServiceDayForOrder(
+  companyId: string,
+  locationId: string,
+  serviceDate: string,
+  providerId: string = DEFAULT_PROVIDER_ID,
+) {
+  const menuDayId = crypto.randomUUID();
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() + 30);
+  await fixturePgQuery(
+    `INSERT INTO public.menu_service_days (
+       id, company_id, location_id, service_date, state, cutoff_at, provider_id, published_at
+     ) VALUES ($1, $2, $3, $4::date, 'published'::public.menu_state, $5::timestamptz, $6::uuid, now())`,
+    [menuDayId, companyId, locationId, serviceDate, cutoff.toISOString(), providerId],
+  );
+  return menuDayId;
 }
 
 async function insertOrder(
   admin: SupabaseClient<Database>,
   args: { id?: string; user_id: string; date: string; status: string; company_id: string; location_id: string; slot?: string | null; note?: string | null }
-) {
-  const { error } = await admin.from("orders").insert(
-    {
-      id: args.id ?? crypto.randomUUID(),
-      user_id: args.user_id,
-      date: args.date,
-      status: args.status,
-      company_id: args.company_id,
-      location_id: args.location_id,
-      provider_id: DEFAULT_PROVIDER_ID,
-      slot: args.slot ?? "default",
-      note: args.note ?? null,
-    } as any
-  );
-  if (error) throw new Error(`insert order failed: ${error.message}`);
+): Promise<string> {
+  const menuDayId = await ensureMenuServiceDayForOrder(args.company_id, args.location_id, args.date);
+  try {
+    await fixturePgQuery(
+      `INSERT INTO public.orders (id, user_id, date, status, company_id, location_id, provider_id, slot, note)
+       VALUES ($1, $2, $3::date, $4, $5, $6, $7::uuid, $8, $9)`,
+      [
+        args.id ?? crypto.randomUUID(),
+        args.user_id,
+        args.date,
+        args.status,
+        args.company_id,
+        args.location_id,
+        DEFAULT_PROVIDER_ID,
+        args.slot ?? "default",
+        args.note ?? null,
+      ],
+    );
+  } catch (e) {
+    throw new Error(`insert order failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  return menuDayId;
 }
 
 /**
@@ -380,18 +429,25 @@ async function ensureActiveAgreement(
   }
   const msg = String(createErr.message ?? "");
   if (msg.includes("schema cache") || msg.includes("Could not find the function")) {
-    const { error: insertErr } = await admin.from("agreements").insert({
-      company_id: companyId,
-      location_id: locationId,
-      provider_id: DEFAULT_PROVIDER_ID,
-      tier: "BASIS",
-      status: "ACTIVE",
-      delivery_days: ["mon", "tue", "wed", "thu", "fri"],
-      slot_start: "11:00",
-      slot_end: "13:00",
-      starts_at: startsAtISO,
-    } as any);
-    if (insertErr) throw new Error(`agreements insert (fallback) failed: ${insertErr.message}`);
+    try {
+      await fixturePgQuery(
+        `INSERT INTO public.agreements (
+           company_id, location_id, provider_id, tier, status,
+           delivery_days, slot_start, slot_end, starts_at
+         ) VALUES ($1, $2, $3::uuid, 'BASIS', 'ACTIVE', $4::jsonb, '11:00', '13:00', $5::timestamptz)`,
+        [
+          companyId,
+          locationId,
+          DEFAULT_PROVIDER_ID,
+          JSON.stringify(["mon", "tue", "wed", "thu", "fri"]),
+          startsAtISO,
+        ],
+      );
+    } catch (insertErr) {
+      throw new Error(
+        `agreements insert (fallback) failed: ${insertErr instanceof Error ? insertErr.message : String(insertErr)}`,
+      );
+    }
     return;
   }
   throw new Error(`lp_agreement_create_pending failed: ${createErr.message}`);
@@ -401,6 +457,7 @@ async function ensureActiveAgreement(
    Builder
 ========================================================= */
 export async function buildRlsFixtures(): Promise<Fixtures> {
+  await ensureIntegrationTestTableGrants();
   const rid = crypto.randomUUID();
   const short = rid.slice(0, 6);
   const orgnrBase = orgnrBaseFromRid(rid);
@@ -497,20 +554,25 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
   // CLOSED company cannot have an agreement (lp_agreement_create_pending raises COMPANY_CLOSED), so no order for empClosed.
   // Order insert also requires company status ACTIVE; PAUSED companies are blocked, so no order for empPaused.
 
-  await insertOrder(admin, {
-    user_id: empActive.user_id,
-    date: orderDateISO,
-    status: "ACTIVE",
-    company_id: companyActiveId,
-    location_id: locActiveId,
-  });
-  await insertOrder(admin, {
-    user_id: empOther.user_id,
-    date: orderDateISO,
-    status: "ACTIVE",
-    company_id: companyOtherId,
-    location_id: locOtherId,
-  });
+  const menuDayIds: string[] = [];
+  menuDayIds.push(
+    await insertOrder(admin, {
+      user_id: empActive.user_id,
+      date: orderDateISO,
+      status: "ACTIVE",
+      company_id: companyActiveId,
+      location_id: locActiveId,
+    }),
+  );
+  menuDayIds.push(
+    await insertOrder(admin, {
+      user_id: empOther.user_id,
+      date: orderDateISO,
+      status: "ACTIVE",
+      company_id: companyOtherId,
+      location_id: locOtherId,
+    }),
+  );
 
   const authUserIds = [
     employeeA.user_id,
@@ -531,27 +593,20 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
 
   // ✅ FASIT cleanup rekkefølge (orders -> agreements -> profiles -> locations -> companies -> auth)
   async function cleanup() {
-    await admin.from("orders").delete().in("user_id", authUserIds).throwOnError();
-
-    await admin
-      .from("agreements")
-      .delete()
-      .in("company_id", [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId])
-      .throwOnError();
-
-    await admin.from("profiles").delete().in("id", authUserIds).throwOnError();
-
-    await admin
-      .from("company_locations")
-      .delete()
-      .in("id", [locAId, locBId, locActiveId, locPausedId, locClosedId, locOtherId])
-      .throwOnError();
-
-    await admin
-      .from("companies")
-      .delete()
-      .in("id", [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId])
-      .throwOnError();
+    await fixturePgQuery(`DELETE FROM public.orders WHERE user_id = ANY($1::uuid[])`, [authUserIds]);
+    if (menuDayIds.length > 0) {
+      await fixturePgQuery(`DELETE FROM public.menu_service_days WHERE id = ANY($1::uuid[])`, [menuDayIds]);
+    }
+    await fixturePgQuery(`DELETE FROM public.agreements WHERE company_id = ANY($1::uuid[])`, [
+      [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId],
+    ]);
+    await fixturePgQuery(`DELETE FROM public.profiles WHERE id = ANY($1::uuid[])`, [authUserIds]);
+    await fixturePgQuery(`DELETE FROM public.company_locations WHERE id = ANY($1::uuid[])`, [
+      [locAId, locBId, locActiveId, locPausedId, locClosedId, locOtherId],
+    ]);
+    await fixturePgQuery(`DELETE FROM public.companies WHERE id = ANY($1::uuid[])`, [
+      [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId],
+    ]);
 
     for (const id of authUserIds) {
       try {

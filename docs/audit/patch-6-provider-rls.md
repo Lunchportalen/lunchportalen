@@ -92,11 +92,21 @@ WHERE schemaname = 'public'
 -- 14
 ```
 
-Run integration tests (staging URL recommended):
+## Integration tests
 
-```bash
-RUN_SUPABASE_INTEGRATION_TESTS=1 npx vitest run tests/db/provider-rls.test.ts --poolOptions.forks.maxForks=1
+**INTEGRATION TESTS PASSED 2026-05-20 (etter MP4a fixture-fix)**
+
+- `tests/db/provider-rls.test.ts`: **19/19 PASS** (~58s)
+- Staging: `uigxsboqeruxflgzqztl` only
+- Fixtures: postgres URL (`POSTGRES_URL_NON_POOLING` / `DATABASE_URL`) for DML; `authenticated` + JWT for RLS reads; `ensureIntegrationTestTableGrants()` for staging PostgREST GRANT drift
+
+```powershell
+# Load staging env (see scripts/audit/staging-env-actual-2026-05-20.env), then:
+$env:RUN_SUPABASE_INTEGRATION_TESTS = "1"
+npx vitest run tests/db/provider-rls.test.ts
 ```
+
+Vitest 2.1.9: use default `pool: threads` from `vitest.config.ts` (avoid `--poolOptions.forks.maxForks=1` — tinypool conflict).
 
 ## Not in scope
 

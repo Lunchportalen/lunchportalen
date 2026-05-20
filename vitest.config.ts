@@ -62,6 +62,8 @@ export default defineConfig({
     environment: "node",
     testTimeout: 120000,
     hookTimeout: 120000,
+    // DB integration tests (tests/db/*): use `npx vitest run tests/db/... --pool=threads`
+    // Avoid `--poolOptions.forks.maxForks=1` (tinypool min/max conflict on Vitest 2.1.9).
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     // Vitest: kjør bare unit/integration.
     // - E2E-spesifikasjoner i `e2e/` kjøres av Playwright (playwright.config.ts).
