@@ -3,6 +3,7 @@ import { Badge, Button, Card, Flex, Grid, Spinner, Stack, Text } from "@sanity/u
 import { useClient } from "sanity";
 import { IntentLink } from "sanity/router";
 
+import { melhusProviderReference } from "../../lib/melhusProvider";
 import { generateWeekMenu, type Meal, type NutritionPer100g, type PlanTier } from "./generateWeekMenu";
 
 const TARGET_PRICE = 90;
@@ -322,6 +323,7 @@ export default function WeekPlanner() {
         await client.createIfNotExists({
           _id: docIdForDate(date, tier),
           _type: "menuDay",
+          provider: melhusProviderReference(),
           date,
           planTier: tier,
           category: DEFAULT_CATEGORY,

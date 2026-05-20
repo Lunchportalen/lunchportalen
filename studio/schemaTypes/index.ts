@@ -2,6 +2,7 @@
 
 import announcement from "./announcement";
 import menu from "./menu";
+import provider from "./provider";
 import productPlan from "./productPlan";
 import weekTemplate from "./weekTemplate";
 import closedDate from "./closedDate";
@@ -27,6 +28,7 @@ import menuDay from "./menuDay";
  * =========================================================
  */
 export const schemaTypes = [
+  provider,
   announcement,
   menu,
   productPlan,

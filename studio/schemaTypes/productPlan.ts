@@ -10,6 +10,13 @@ export default defineType({
   type: "document",
   fields: [
     defineField({
+      name: "provider",
+      title: "Leverandør",
+      type: "reference",
+      to: [{ type: "provider" }],
+      validation: (Rule) => Rule.required().error("Leverandør er påkrevd"),
+    }),
+    defineField({
       name: "name",
       title: "Plan",
       type: "string",
@@ -17,7 +24,6 @@ export default defineType({
         list: [
           { title: "Basis", value: "basis" },
           { title: "Luxus", value: "luxus" },
-          { title: "Enterprise", value: "enterprise" },
         ],
         layout: "radio",
       },
@@ -87,9 +93,11 @@ export default defineType({
     }),
   ],
   preview: {
-    select: { title: "name", price: "price" },
-    prepare({ title, price }) {
-      return { title: title ? String(title).toUpperCase() : "Plan", subtitle: price != null ? `${price} NOK` : "" };
+    select: { title: "name", price: "price", providerName: "provider.name" },
+    prepare({ title, price, providerName }) {
+      const plan = title ? String(title).toUpperCase() : "Plan";
+      const sub = [providerName, price != null ? `${price} NOK` : null].filter(Boolean).join(" · ");
+      return { title: plan, subtitle: sub };
     },
   },
 });

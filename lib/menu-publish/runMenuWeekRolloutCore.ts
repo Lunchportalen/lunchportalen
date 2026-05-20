@@ -1,6 +1,7 @@
 import type { SanityClient } from "@sanity/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { melhusProviderReference } from "@/lib/cms/providerSanityConstants";
 import { addDaysISO, isIsoDate, nowISO } from "@/lib/date/oslo";
 
 import {
@@ -17,7 +18,8 @@ import {
 
 const MENU_DAY_CATEGORY = "varmrett" as const;
 
-const ORDERED_PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
+/** Sanity menuDay schema: BASIS + LUXUS only (Patch 12 / Patch 2.1 fail-closed). */
+const ORDERED_PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS"];
 
 export type MenuWeekRolloutResult = {
   targetWeek: string;
@@ -238,6 +240,7 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
         tx = tx.createOrReplace({
           _id,
           _type: "menuDay",
+          provider: melhusProviderReference(),
           date,
           planTier: tier,
           category: MENU_DAY_CATEGORY,

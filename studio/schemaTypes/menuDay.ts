@@ -7,10 +7,16 @@ export default defineType({
   validation: (Rule) =>
     Rule.custom(async (doc, context) => {
       if (!doc?.date || !doc?.planTier || !doc?.category) return true;
+      const providerRef =
+        doc.provider && typeof doc.provider === "object" && "_ref" in doc.provider
+          ? String((doc.provider as { _ref?: string })._ref ?? "")
+          : "";
+      if (!providerRef) return true;
       const client = context.getClient({ apiVersion: "2024-01-01" });
       const existing = await client.fetch<string | null>(
         `*[
           _type == "menuDay" &&
+          provider._ref == $providerRef &&
           date == $date &&
           planTier == $planTier &&
           category == $category &&
@@ -18,6 +24,7 @@ export default defineType({
           !(_id in path("drafts.**"))
         ][0]._id`,
         {
+          providerRef,
           date: doc.date,
           planTier: doc.planTier,
           category: doc.category,
@@ -31,6 +38,14 @@ export default defineType({
     }),
 
   fields: [
+    defineField({
+      name: "provider",
+      title: "Leverandør",
+      type: "reference",
+      to: [{ type: "provider" }],
+      validation: (Rule) => Rule.required().error("Leverandør er påkrevd"),
+    }),
+
     defineField({
       name: "date",
       title: "Dato",
@@ -47,7 +62,6 @@ export default defineType({
         list: [
           { title: "Basis", value: "BASIS" },
           { title: "Luxus", value: "LUXUS" },
-          { title: "Enterprise", value: "ENTERPRISE" },
         ],
         layout: "radio",
       },
@@ -444,6 +458,7 @@ export default defineType({
 
   preview: {
     select: {
+      providerName: "provider.name",
       date: "date",
       planTier: "planTier",
       category: "category",
@@ -454,10 +469,21 @@ export default defineType({
       allergens: "allergens",
       nutrition: "nutritionPer100g",
     },
-    prepare({ date, planTier, category, mealTitle, description, approved, visible, allergens, nutrition }) {
+    prepare({
+      providerName,
+      date,
+      planTier,
+      category,
+      mealTitle,
+      description,
+      approved,
+      visible,
+      allergens,
+      nutrition,
+    }) {
       const a = approved ? "✅ Godkjent" : "⛔ Ikke godkjent";
       const v = visible ? "👁️ Synlig" : "🙈 Skjult";
-      const scope = [planTier, category].filter(Boolean).join(" / ");
+      const scope = [providerName, planTier, category].filter(Boolean).join(" / ");
       const kcal =
         nutrition && typeof nutrition.energyKcal === "number"
           ? ` • ${nutrition.energyKcal} kcal/100g`

@@ -15,8 +15,14 @@ export {
 } from "@/lib/cms/menuDayContract";
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
 import { sanity } from "@/lib/sanity/client";
 import { menuDayHasDisplayableCopy } from "@/lib/sanity/menuDayGuards";
+
+export type MenuDayQueryOptions = {
+  /** When set, scopes reads to `provider.slug` in Sanity. Omit = legacy unscoped (dev warning). */
+  providerSlug?: string | null;
+};
 
 export type Announcement = {
   _id: string;
@@ -120,33 +126,44 @@ export async function getActiveAnnouncement(): Promise<Announcement | null> {
   );
 }
 
-export async function getMenuForDate(date: string): Promise<MenuContent | null> {
+export async function getMenuForDate(
+  date: string,
+  opts?: MenuDayQueryOptions,
+): Promise<MenuContent | null> {
   if (!isISODate(date)) {
     throw new Error(`[getMenuForDate] Invalid date (expected YYYY-MM-DD): ${date}`);
   }
 
+  const provider = menuDayProviderGroqClause(opts?.providerSlug);
   const row = await sanity.fetch<MenuContent | null>(
     `*[
       _type == "menuDay" &&
       date == $date &&
+      (${provider.clause}) &&
       ${CUSTOMER_VISIBLE_FILTER}
     ][0]{
       ${MENU_DAY_PROJECTION}
     }`,
-    { date },
+    { date, ...provider.params },
   );
 
   if (!row || !menuDayHasDisplayableCopy(row)) return null;
   return row;
 }
 
-export async function getPublishedMenuForDate(date: string): Promise<MenuContent | null> {
-  const menu = await getMenuForDate(date);
+export async function getPublishedMenuForDate(
+  date: string,
+  opts?: MenuDayQueryOptions,
+): Promise<MenuContent | null> {
+  const menu = await getMenuForDate(date, opts);
   if (!menu || menu.isPublished !== true) return null;
   return menu;
 }
 
-export async function getMenuForDates(dates: string[]): Promise<MenuContent[]> {
+export async function getMenuForDates(
+  dates: string[],
+  opts?: MenuDayQueryOptions,
+): Promise<MenuContent[]> {
   const cleaned = uniq(dates).filter(Boolean);
 
   if (!cleaned.length) return [];
@@ -156,22 +173,28 @@ export async function getMenuForDates(dates: string[]): Promise<MenuContent[]> {
     }
   }
 
+  const provider = menuDayProviderGroqClause(opts?.providerSlug);
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date in $dates &&
+      (${provider.clause}) &&
       ${CUSTOMER_VISIBLE_FILTER}
     ] | order(date asc){
       ${MENU_DAY_PROJECTION}
     }`,
-    { dates: cleaned },
+    { dates: cleaned, ...provider.params },
   );
 
   const list = Array.isArray(rows) ? rows : [];
   return list.filter((m) => m.isPublished === true && menuDayHasDisplayableCopy(m));
 }
 
-export async function getMenuForRange(from: string, to: string): Promise<MenuContent[]> {
+export async function getMenuForRange(
+  from: string,
+  to: string,
+  opts?: MenuDayQueryOptions,
+): Promise<MenuContent[]> {
   if (!isISODate(from)) {
     throw new Error(`[getMenuForRange] Invalid from-date (expected YYYY-MM-DD): ${from}`);
   }
@@ -182,15 +205,17 @@ export async function getMenuForRange(from: string, to: string): Promise<MenuCon
     throw new Error(`[getMenuForRange] Invalid range: from (${from}) > to (${to})`);
   }
 
+  const provider = menuDayProviderGroqClause(opts?.providerSlug);
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date >= $from && date <= $to &&
+      (${provider.clause}) &&
       ${CUSTOMER_VISIBLE_FILTER}
     ] | order(date asc){
       ${MENU_DAY_PROJECTION}
     }`,
-    { from, to },
+    { from, to, ...provider.params },
   );
 
   const list = Array.isArray(rows) ? rows : [];
@@ -199,7 +224,10 @@ export async function getMenuForRange(from: string, to: string): Promise<MenuCon
 
 export const getMenuForDateRange = getMenuForRange;
 
-export async function getMenuForDatesAdmin(dates: string[]): Promise<MenuContent[]> {
+export async function getMenuForDatesAdmin(
+  dates: string[],
+  opts?: MenuDayQueryOptions,
+): Promise<MenuContent[]> {
   const cleaned = uniq(dates).filter(Boolean);
 
   if (!cleaned.length) return [];
@@ -209,35 +237,43 @@ export async function getMenuForDatesAdmin(dates: string[]): Promise<MenuContent
     }
   }
 
+  const provider = menuDayProviderGroqClause(opts?.providerSlug);
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date in $dates &&
+      (${provider.clause}) &&
       !(_id in path("drafts.**"))
     ] | order(date asc){
       ${MENU_DAY_PROJECTION}
     }`,
-    { dates: cleaned },
+    { dates: cleaned, ...provider.params },
   );
 
   return Array.isArray(rows) ? rows : [];
 }
 
-export async function getMenuForDateAndPlan(date: string, planTier: PlanTier): Promise<MenuDay[]> {
+export async function getMenuForDateAndPlan(
+  date: string,
+  planTier: PlanTier,
+  opts?: MenuDayQueryOptions,
+): Promise<MenuDay[]> {
   if (!isISODate(date)) {
     throw new Error(`[getMenuForDateAndPlan] Invalid date (expected YYYY-MM-DD): ${date}`);
   }
 
+  const provider = menuDayProviderGroqClause(opts?.providerSlug);
   const rows = await sanity.fetch<MenuDay[]>(
     `*[
       _type == "menuDay" &&
       date == $date &&
       planTier == $planTier &&
+      (${provider.clause}) &&
       ${CUSTOMER_VISIBLE_FILTER}
     ] | order(category asc){
       ${MENU_DAY_PROJECTION}
     }`,
-    { date, planTier },
+    { date, planTier, ...provider.params },
   );
 
   return Array.isArray(rows) ? rows.filter((m) => menuDayHasDisplayableCopy(m)) : [];

@@ -174,7 +174,7 @@ describe("runMenuWeekRollout", () => {
     } as unknown as SanityClient;
   }
 
-  it("ingen menuDays: 3 tiers × 5 dager = 15 opprettet, alle publisert + autoFilled", async () => {
+  it("ingen menuDays: 2 tiers × 5 dager = 10 opprettet, alle publisert + autoFilled", async () => {
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
@@ -183,22 +183,23 @@ describe("runMenuWeekRollout", () => {
     });
 
     expect(res.targetWeek).toBe("2026-06-01");
-    expect(res.tiersProcessed).toEqual(["BASIS", "LUXUS", "ENTERPRISE"]);
+    expect(res.tiersProcessed).toEqual(["BASIS", "LUXUS"]);
     expect(res.menuDaysSkipped).toBe(0);
     expect(res.errors).toEqual([]);
-    expect(res.menuDaysCreated).toBe(15);
+    expect(res.menuDaysCreated).toBe(10);
 
-    expect(createdDocs).toHaveLength(15);
+    expect(createdDocs).toHaveLength(10);
     for (const doc of createdDocs as Array<Record<string, unknown>>) {
       expect(doc.customerVisible).toBe(true);
       expect(doc.approvedForPublish).toBe(true);
       expect(doc.autoFilled).toBe(true);
       expect(doc.category).toBe("varmrett");
+      expect((doc.provider as { _ref?: string })?._ref).toBe("11111111-1111-1111-1111-111111111111");
       expect(expectedDates).toContain(doc.date);
     }
   });
 
-  it("alle menuDays finnes allerede: 0 opprettet, 15 hoppet over", async () => {
+  it("alle menuDays finnes allerede: 0 opprettet, 10 hoppet over", async () => {
     fetchImpl = async (q: string) => {
       if (q.includes('_type == "mealIdea"')) return diverseMealsFixture("x");
       if (q.includes("{ date, mealTitle }")) {
@@ -219,7 +220,7 @@ describe("runMenuWeekRollout", () => {
     });
 
     expect(res.menuDaysCreated).toBe(0);
-    expect(res.menuDaysSkipped).toBe(15);
+    expect(res.menuDaysSkipped).toBe(10);
     expect(createdDocs).toHaveLength(0);
   });
 
@@ -250,8 +251,8 @@ describe("runMenuWeekRollout", () => {
     });
 
     expect(res.menuDaysSkipped).toBe(2);
-    expect(res.menuDaysCreated).toBe(13);
-    expect(createdDocs).toHaveLength(13);
+    expect(res.menuDaysCreated).toBe(8);
+    expect(createdDocs).toHaveLength(8);
   });
 });
 
@@ -329,8 +330,8 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
 
     expect(res.targetWeek).toBe(overrideMonday);
     expect(res.targetWeek).not.toBe(n3Monday);
-    expect(res.menuDaysCreated).toBe(15);
-    expect(createdDocs).toHaveLength(15);
+    expect(res.menuDaysCreated).toBe(10);
+    expect(createdDocs).toHaveLength(10);
     for (const doc of createdDocs as Array<Record<string, unknown>>) {
       expect(overrideWeekDates).toContain(doc.date);
     }
@@ -346,7 +347,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     });
 
     expect(res.targetWeek).toBe(n3Monday);
-    expect(res.menuDaysCreated).toBe(15);
+    expect(res.menuDaysCreated).toBe(10);
   });
 
   it("override som ikke er mandag: kaster", async () => {
@@ -395,7 +396,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     });
 
     expect(res.menuDaysCreated).toBe(0);
-    expect(res.menuDaysSkipped).toBe(15);
+    expect(res.menuDaysSkipped).toBe(10);
     expect(createdDocs).toHaveLength(0);
   });
 

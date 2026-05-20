@@ -1,8 +1,13 @@
 import "server-only";
 
+import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
 import { sanity } from "@/lib/sanity/client";
 import type { CmsProductPlan } from "@/lib/cms/types";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
+
+export type ProductPlanQueryOptions = {
+  providerSlug?: string | null;
+};
 
 function normPlanName(raw: unknown): "basis" | "luxus" | null {
   const s = String(raw ?? "")
@@ -13,10 +18,18 @@ function normPlanName(raw: unknown): "basis" | "luxus" | null {
   return null;
 }
 
-export async function getProductPlan(name: "basis" | "luxus"): Promise<CmsProductPlan | null> {
+export async function getProductPlan(
+  name: "basis" | "luxus",
+  opts?: ProductPlanQueryOptions,
+): Promise<CmsProductPlan | null> {
   try {
+    const provider = menuDayProviderGroqClause(opts?.providerSlug);
     const doc = await sanity.fetch(
-      `*[_type == "productPlan" && name == $name][0]{
+      `*[
+        _type == "productPlan" &&
+        name == $name &&
+        (${provider.clause})
+      ][0]{
         name,
         price,
         allowedMeals,
@@ -24,7 +37,7 @@ export async function getProductPlan(name: "basis" | "luxus"): Promise<CmsProduc
         rules,
         allowDailyVariation
       }`,
-      { name }
+      { name, ...provider.params },
     );
     if (!doc || typeof doc !== "object") return null;
     const n = normPlanName((doc as any).name);
