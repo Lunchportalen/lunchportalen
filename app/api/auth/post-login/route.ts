@@ -18,7 +18,7 @@ import {
   sanitizePostLoginNextPath,
   type Role,
 } from "@/lib/auth/role";
-import { resolveLoginDestination } from "@/lib/auth/resolveLoginDestination";
+import { resolveRoleHomeForUser } from "@/lib/auth/roleHome";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getSupabasePublicConfig } from "@/lib/config/env";
 import { makeRid } from "@/lib/http/respond";
@@ -360,7 +360,11 @@ export async function GET(req: NextRequest) {
         ? await lookupHasActiveAgreement(auth.company_id, rid)
         : true;
 
-      const baseDest = resolveLoginDestination({ role, hasActiveAgreement });
+      const baseDest = await resolveRoleHomeForUser({
+        userId: auth.userId ?? "",
+        profileRole: role,
+        hasActiveAgreement,
+      });
 
       // Honor a safe `next=` only when no agreement gate is triggered and role is resolved.
       let dest = baseDest;

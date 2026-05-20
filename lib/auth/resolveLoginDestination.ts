@@ -1,43 +1,32 @@
 // lib/auth/resolveLoginDestination.ts
 import "server-only";
 
-import { landingForRole, normalizeRole, type Role } from "@/lib/auth/role";
+import { roleHomePath } from "@/lib/auth/roleHome";
+import { normalizeRole, type Role } from "@/lib/auth/role";
+import type { ProviderRole } from "@/lib/providers/types";
 
 export type ResolveLoginDestinationInput = {
   role: Role | string | null | undefined;
   hasActiveAgreement: boolean;
+  providerRole?: ProviderRole | null;
+  isPlatformAdmin?: boolean;
 };
 
 /**
  * Canonical post-login destination resolver.
  *
  * Pure function: same inputs → same output. No DB, no side effects.
- * Single source of truth for role → landing-path mapping after login.
- * Callers responsible for supplying `hasActiveAgreement`.
+ * Delegates to `roleHomePath` (single source of truth).
+ * Callers supply `hasActiveAgreement` and optional provider role from memberships.
  */
 export function resolveLoginDestination(input: ResolveLoginDestinationInput): string {
   const role = normalizeRole(input.role);
-  const hasActiveAgreement = Boolean(input.hasActiveAgreement);
+  const isPlatformAdmin = input.isPlatformAdmin ?? role === "superadmin";
 
-  if (!role) return "/login?code=NO_ROLE";
-
-  if (role === "superadmin") return "/superadmin";
-
-  if (role === "driver") return "/driver";
-
-  if (role === "kitchen") return "/kitchen";
-
-  if (role === "company_admin") {
-    return hasActiveAgreement ? "/admin" : "/avtale-ikke-aktiv";
-  }
-
-  if (role === "company_finance" || role === "location_admin") {
-    return hasActiveAgreement ? landingForRole(role) : "/avtale-ikke-aktiv";
-  }
-
-  if (role === "employee") {
-    return hasActiveAgreement ? "/week" : "/avtale-ikke-aktiv";
-  }
-
-  return "/login?code=NO_ROLE";
+  return roleHomePath({
+    profileRole: input.role,
+    providerRole: input.providerRole ?? null,
+    isPlatformAdmin,
+    hasActiveAgreement: input.hasActiveAgreement,
+  });
 }
