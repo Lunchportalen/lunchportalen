@@ -17,6 +17,7 @@ import {
   type TripletexAuth,
 } from "@/lib/integrations/tripletex/client";
 import { handleProviderCustomerCreateLp } from "@/lib/integrations/tripletex/providerCustomerSync";
+import { handleSaasInvoiceCreateLp } from "@/lib/integrations/tripletex/providerSaasInvoiceSync";
 
 type OutboxStatus = "PENDING" | "PROCESSING" | "SENT" | "FAILED" | "FAILED_PERMANENT";
 
@@ -69,6 +70,7 @@ const MAX_CONCURRENCY = 5;
 const DEFAULT_CONCURRENCY = 3;
 const INVOICE_READY_LIKE = "invoice.ready:%";
 const PROVIDER_CUSTOMER_CREATE_LP_LIKE = "tripletex.provider_customer_create_lp:%";
+const SAAS_INVOICE_CREATE_LP_LIKE = "tripletex.saas_invoice_create_lp:%";
 
 type OutboxBatchStats = {
   processed: number;
@@ -619,6 +621,9 @@ async function handleEvent(
     case "tripletex.provider_customer_create_lp":
       return handleProviderCustomerCreateLp(admin, row, getRunAuth);
 
+    case "tripletex.saas_invoice_create_lp":
+      return handleSaasInvoiceCreateLp(admin, row, getRunAuth);
+
     default:
       return { ok: false, permanent: true, error: "UNSUPPORTED_EVENT" };
   }
@@ -754,12 +759,22 @@ export async function POST(_req: NextRequest) {
       getRunAuth,
     );
 
-    const merged = mergeOutboxStats(invoiceStats, providerStats);
+    const saasInvoiceStats = await processOutboxBatchByEventLike(
+      admin,
+      workerId,
+      nowIso,
+      concurrency,
+      SAAS_INVOICE_CREATE_LP_LIKE,
+      getRunAuth,
+    );
+
+    const merged = mergeOutboxStats(mergeOutboxStats(invoiceStats, providerStats), saasInvoiceStats);
 
     return jsonOk(rid, {
       ...merged,
       invoiceReady: invoiceStats,
       providerCustomerCreateLp: providerStats,
+      saasInvoiceCreateLp: saasInvoiceStats,
     });
   } catch (error: any) {
     return jsonErr(rid, "Tripletex outbox behandling feilet.", 500, {

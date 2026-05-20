@@ -40,6 +40,7 @@ export const OUTBOX_DECLARED_EMAIL_PREFIXES = [
 
 const OUTBOX_INVOICE_READY_PREFIX = "invoice.ready:";
 const OUTBOX_TRIPLETEX_PROVIDER_CUSTOMER_PREFIX = "tripletex.provider_customer_create_lp:";
+const OUTBOX_TRIPLETEX_SAAS_INVOICE_PREFIX = "tripletex.saas_invoice_create_lp:";
 
 function extractOutboxEmailFields(p: unknown) {
   const x: any = p ?? {};
@@ -62,6 +63,10 @@ function isOutboxTripletexProviderCustomerCreateLpKey(eventKey: string): boolean
   return safeStr(eventKey).startsWith(OUTBOX_TRIPLETEX_PROVIDER_CUSTOMER_PREFIX);
 }
 
+function isOutboxTripletexSaasInvoiceCreateLpKey(eventKey: string): boolean {
+  return safeStr(eventKey).startsWith(OUTBOX_TRIPLETEX_SAAS_INVOICE_PREFIX);
+}
+
 function matchesDeclaredOutboxEmailPrefix(eventKey: string): boolean {
   const k = safeStr(eventKey);
   return OUTBOX_DECLARED_EMAIL_PREFIXES.some((pre) => k.startsWith(pre));
@@ -72,7 +77,13 @@ function matchesDeclaredOutboxEmailPrefix(eventKey: string): boolean {
  */
 export function isOutboxEmailRoutedEvent(eventKey: string, payload: unknown): boolean {
   const k = safeStr(eventKey);
-  if (!k || isOutboxStateEventKey(k) || isOutboxInvoiceReadyKey(k) || isOutboxTripletexProviderCustomerCreateLpKey(k)) {
+  if (
+    !k ||
+    isOutboxStateEventKey(k) ||
+    isOutboxInvoiceReadyKey(k) ||
+    isOutboxTripletexProviderCustomerCreateLpKey(k) ||
+    isOutboxTripletexSaasInvoiceCreateLpKey(k)
+  ) {
     return false;
   }
   const { from, to, subject } = extractOutboxEmailFields(payload);
