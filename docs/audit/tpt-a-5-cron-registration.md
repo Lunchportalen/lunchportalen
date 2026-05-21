@@ -31,6 +31,27 @@
 
 `20260525120000_tpt_a5_cron_saas_invoice_service_role.sql` — tillater `auth.role() = 'service_role'` på SaaS invoice RPCs (cron via `supabaseAdmin`).
 
+| Miljø | Project ref | Applied (MCP) | Verifisert |
+|-------|-------------|---------------|------------|
+| **Staging** | `uigxsboqeruxflgzqztl` | 2026-05-21 | `service_role` EXECUTE ×2 + `service_role`-guard i begge RPCs |
+| **Prod** | `hkpokyapzarefrgqzkos` | 2026-05-21 | `service_role` EXECUTE ×2 |
+
+Verifikasjon (begge miljøer):
+
+```sql
+SELECT routine_name, grantee, privilege_type
+FROM information_schema.routine_privileges
+WHERE routine_schema = 'public'
+  AND routine_name IN (
+    'lp_provider_generate_invoice_for_period',
+    'lp_generate_saas_invoices_for_period'
+  )
+  AND grantee = 'service_role';
+-- Forventet: 2 rader, privilege_type = EXECUTE
+```
+
+**Kode-commit:** `f5ba993b` (feat TPT-A-5). Månedlig cron er klar for produksjonsdrift etter apply over.
+
 ---
 
 ## Tester
