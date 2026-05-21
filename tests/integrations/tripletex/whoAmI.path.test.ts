@@ -31,4 +31,18 @@ describe("tripletexWhoAmI — Tripletex path", () => {
     expect(url).toContain("%3EwhoAmI");
     expect(url).not.toMatch(/\/v2\/whoAmI(?:\?|$)/);
   });
+
+  test("bruker '0' som Basic auth username (ikke companyId)", async () => {
+    await tripletexWhoAmI({
+      auth: { companyId: "93310337", token: "session_abc" },
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    const authHeader = headers.authorization ?? headers.Authorization ?? "";
+    const decoded = Buffer.from(authHeader.replace(/^Basic /i, ""), "base64").toString("utf8");
+
+    expect(decoded).toBe("0:session_abc");
+    expect(decoded).not.toBe("93310337:session_abc");
+  });
 });

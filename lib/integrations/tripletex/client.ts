@@ -1623,7 +1623,14 @@ export type TripletexWhoAmIResult = {
 
 /** TPT-B-7 — GET /token/session/>whoAmI for token verification and daily health checks. */
 export async function tripletexWhoAmI(options?: RequestOptions): Promise<TripletexWhoAmIResult> {
-  const res = await requestTripletex({ method: "GET", path: TRIPLETEX_WHO_AM_I_PATH }, options);
+  const baseAuth = options?.auth ?? (await resolveTripletexAuth());
+  // Tripletex docs: whoAmI requires username "0" (not companyId).
+  // https://developer.tripletex.no/docs/documentation/authentication-and-tokens/
+  const whoAmIAuth: TripletexAuth = { companyId: "0", token: baseAuth.token };
+  const res = await requestTripletex(
+    { method: "GET", path: TRIPLETEX_WHO_AM_I_PATH },
+    { ...options, auth: whoAmIAuth },
+  );
   const value = res.value as any;
   const companyId = safeNum(value?.companyId ?? value?.company?.id ?? value?.company?.companyId);
   const companyName = safeStr(value?.companyName ?? value?.company?.name ?? value?.company?.displayName) || null;
