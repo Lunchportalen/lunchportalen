@@ -1,9 +1,20 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.8 (2026-05-21 — TPT-B-2 company-customer + product/VAT sync, Flow B onboarding)
+**Versjon:** v3.9 (2026-05-21 — TPT-B-3 agreement invoice generation, Flow B billing core)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.8 → v3.9
+
+**TPT-B-3 fullført — Agreement invoice generation (Provider → Company):**
+
+1. **TPT-B-3 ✅ COMPLETED** — `agreement_invoices` + `agreement_invoice_lines`, RPCs, outbox enqueue.
+2. **Audit:** `docs/audit/tpt-b-3-agreement-invoice-generation.md`
+3. **Migrasjon** `20260530120000_tpt_b3_agreement_invoices.sql` applied staging + prod (MCP).
+4. **Klar for TPT-B-4** (worker: push invoice til provider's Tripletex).
 
 ---
 
@@ -561,27 +572,27 @@ SELECT column_name FROM information_schema.columns
 - Audit: `docs/audit/tpt-b-2-company-customer-sync.md`
 - Auto-sync ved credentials-add → **TPT-B-7**
 
-**TPT-B-3: Agreement invoice generation**
+**TPT-B-3: Agreement invoice generation ✅ COMPLETED**
 
-- Aggreger orders per tier; bruk customer + product mapping fra TPT-B-2
-- **Estimat: 90-120 min**
+- Tabeller `agreement_invoices` + `agreement_invoice_lines`
+- RPC: `lp_provider_generate_agreement_invoice_for_period` (single)
+- RPC: `lp_generate_agreement_invoices_for_period` (bulk, cron)
+- Aggregering: orders per tier × unit_price; VAT fra `billing_tax_codes`
+- Outbox: `tripletex.agreement_invoice_create_provider:<invoice_id>`
+- Audit: `docs/audit/tpt-b-3-agreement-invoice-generation.md`
+- Worker push → **TPT-B-4**
 
-**TPT-B-4: agreement_invoices + billing_cycle utvidelse**
+**TPT-B-4: Tripletex invoice push worker**
 
-- Migration: ny `agreement_invoices`-tabell
-- Migration: utvide `agreements.billing_cycle` CHECK med `'biweekly'`
-- Legg til `billing_anchor_date`, `last_invoiced_at`
-- RPC: `lp_agreement_set_billing_cycle`
-- UI: `/leverandor/kunder/[id]` viser cycle-velger
+- Handler: `handleAgreementInvoiceCreateProvider`
+- Bruker `ensureProviderProduct` + customer mapping fra TPT-B-2
 - **Estimat: 60-90 min**
 
-**TPT-B-5: Invoice generering + cron + send**
+**TPT-B-5: Cron-trigger agreement billing**
 
-- RPC: `lp_agreement_generate_invoice_for_period`
-- Aggreger orders per tier
-- Cron: `/api/cron/tripletex-agreements-daily`
-- Send via eksisterende `tripletexEngine` med providerId-context
-- **Estimat: 90-120 min**
+- `/api/cron/tripletex-agreements-daily`
+- Kaller `lp_generate_agreement_invoices_for_period`
+- **Estimat: 30-45 min**
 
 **TPT-B-6: Webhook + admin UI (per provider)**
 
@@ -739,4 +750,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-B-3** (agreement invoice generation). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-4** (Tripletex invoice push worker). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
