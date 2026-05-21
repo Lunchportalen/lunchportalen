@@ -193,6 +193,7 @@ const PUBLIC_TABLE_NAMES = [
   "provider_memberships",
   "provider_service_areas",
   "provider_subscriptions",
+  "provider_tripletex_webhook_secrets",
   "providers",
   "lifecycle_audit_log",
   "quality_reports",
@@ -207,6 +208,7 @@ const PUBLIC_TABLE_NAMES = [
   "system_settings",
   "tripletex_customers",
   "tripletex_exports",
+  "tripletex_webhook_events",
   "webhook_events",
   "waste_signals",
 ] as const;

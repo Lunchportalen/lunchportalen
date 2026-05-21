@@ -1518,4 +1518,74 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<{ extern
   };
 }
 
+export type TripletexInvoicePaymentStatus = {
+  tripletexId: string;
+  isPaid: boolean;
+  amountOutstanding: number | null;
+  source: "invoice" | "order";
+  raw: AnyJson;
+};
+
+function parseAmountOutstanding(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const direct = row.amountOutstanding ?? row.amount_outstanding;
+  if (direct != null && Number.isFinite(Number(direct))) return Number(direct);
+  const invoice = row.invoice;
+  if (invoice && typeof invoice === "object") {
+    const nested = (invoice as Record<string, unknown>).amountOutstanding;
+    if (nested != null && Number.isFinite(Number(nested))) return Number(nested);
+  }
+  return null;
+}
+
+/** Re-verify invoice paid state via Tripletex API (defense in depth). */
+export async function getTripletexInvoicePaymentStatus(
+  tripletexId: string,
+  options: { auth: TripletexAuth; retries?: number },
+): Promise<TripletexInvoicePaymentStatus> {
+  const id = safeStr(tripletexId);
+  if (!id) {
+    throw new TripletexClientError({
+      message: "tripletexId is required",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_ID_MISSING",
+    });
+  }
+
+  const reqOpts: RequestOptions = { auth: options.auth, retries: options.retries };
+
+  try {
+    const invoiceRes = await requestTripletex(
+      { method: "GET", path: `/invoice/${encodeURIComponent(id)}` },
+      reqOpts,
+    );
+    const outstanding = parseAmountOutstanding(invoiceRes.value);
+    return {
+      tripletexId: id,
+      isPaid: outstanding != null ? outstanding <= 0 : false,
+      amountOutstanding: outstanding,
+      source: "invoice",
+      raw: invoiceRes.raw,
+    };
+  } catch (e) {
+    const notFound =
+      e instanceof TripletexClientError && (e.status === 404 || e.code === "TRIPLETEX_NOT_FOUND");
+    if (!notFound) throw e;
+  }
+
+  const orderRes = await requestTripletex(
+    { method: "GET", path: `/order/${encodeURIComponent(id)}` },
+    reqOpts,
+  );
+  const outstanding = parseAmountOutstanding(orderRes.value);
+  return {
+    tripletexId: id,
+    isPaid: outstanding != null ? outstanding <= 0 : false,
+    amountOutstanding: outstanding,
+    source: "order",
+    raw: orderRes.raw,
+  };
+}
+
 
