@@ -1,9 +1,19 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.4 (2026-05-21 — TPT-A-5 cron + R10 runbook)
+**Versjon:** v3.5 (2026-05-21 — TPT-A-6 webhook handler)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.4 → v3.5
+
+**TPT-A-6 fullført — Flow A inbound webhooks:**
+
+1. **TPT-A-6 ✅ COMPLETED** — `POST /api/webhooks/tripletex`, `webhook_events`, signatur/auth, idempotency, handlers.
+2. **Audit:** `docs/audit/tpt-a-6-webhook-handler.md`
+3. **Migrasjon** `20260526120000_tpt_a6_webhook_events.sql` applied staging + prod (MCP).
 
 ---
 
@@ -379,6 +389,21 @@ Webhook: POST /api/webhooks/tripletex-provider/[provider_id]
 Polling fallback: hourly cron poller per provider's Tripletex
 ```
 
+### Sekvens A4: Paid-status sync (Flow A) — TPT-A-6 ✅
+
+```
+Tripletex POST /api/webhooks/tripletex
+  → verify TRIPLETEX_WEBHOOK_SECRET (custom header / Bearer / optional HMAC)
+  → webhook_events idempotency (event_id = tripletex:{subscriptionId}:{event}:{id})
+  → lifecycle_audit_log (received / processed / failed)
+  → provider_invoices.status:
+       invoice.charged → SENT
+       closegroup.create → PAID (via posting invoice ids)
+  → HTTP 200 til Tripletex selv ved handler-feil (FAILED i webhook_events)
+
+Polling fallback: eksisterende credit-check cron (uendret)
+```
+
 ---
 
 ## 5. Patch-breakdown
@@ -460,12 +485,14 @@ SELECT column_name FROM information_schema.columns
 - Migrasjon: `20260525120000_tpt_a5_cron_saas_invoice_service_role.sql`
 - Smoke: `docs/audit/tpt-a3-tripletex-smoke-runbook.md` (R10 A-3 manuell)
 
-#### TPT-A-6 (renummerert): Webhook handler (Lp) — Ikke startet
+#### TPT-A-6 (renummerert): Webhook handler (Lp) ✅ COMPLETED
 
-- Ny route: `app/api/webhooks/tripletex/route.ts`
-- HMAC-pattern fra Sanity-webhook
-- Webhook-secret: `TRIPLETEX_WEBHOOK_SECRET`
-- **Estimat: 45-60 min**
+- **Audit:** `docs/audit/tpt-a-6-webhook-handler.md`
+- Route: `app/api/webhooks/tripletex/route.ts`
+- Auth: Tripletex custom header + optional HMAC (`TRIPLETEX_WEBHOOK_SECRET`)
+- Tabell: `webhook_events` — migrasjon `20260526120000_tpt_a6_webhook_events.sql`
+- Events: `invoice.charged`, `closegroup.create`, `customer.update` (+ test-alias `invoice.paid` / `invoice.voided`)
+- Tester: `tests/api/webhooks/tripletex.test.ts` (7/7)
 
 #### TPT-A-7 (renummerert): Admin UI (Lp) — Ikke startet
 
@@ -670,4 +697,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-A-6** (webhook handler Lp) → **TPT-A-7** (admin UI). **R10:** kjør A-3 smoke runbook mot Tripletex test-env.
+**Next:** **TPT-A-7** (admin UI Lp). **R10:** kjør A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
