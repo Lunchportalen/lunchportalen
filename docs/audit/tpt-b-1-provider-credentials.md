@@ -137,4 +137,5 @@ Verifiser med `lp_provider_get_tripletex_credentials_status`.
 
 ## 10. Neste steg
 
-**TPT-B-2:** Per-provider Product/VatType sync (`ensureProduct({ providerId, env })`).
+**TPT-B-2 ✅ COMPLETED** — se `docs/audit/tpt-b-2-company-customer-sync.md`.  
+**TPT-B-3:** Agreement invoice generation.

@@ -1,9 +1,21 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.7 (2026-05-21 — TPT-B-1 provider credentials vault, Flow B foundation)
+**Versjon:** v3.8 (2026-05-21 — TPT-B-2 company-customer + product/VAT sync, Flow B onboarding)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.7 → v3.8
+
+**TPT-B-2 fullført — Flow B customer + product/VAT foundation:**
+
+1. **TPT-B-2 ✅ COMPLETED** — `ensureCompanyCustomer`, outbox worker, `lp_company_provider_customer_create`, `ensureProviderProduct` / `ensureProviderVatCode`.
+2. **Schema:** Alternativ A — relaxed `tripletex_customers` CHECK + partial unique indexes; ny `provider_tripletex_products`.
+3. **Audit:** `docs/audit/tpt-b-2-company-customer-sync.md`
+4. **Migrasjon** `20260529120000_tpt_b2_flow_b_mapping.sql` applied staging + prod (MCP).
+5. **Klar for TPT-B-3** (agreement invoice generation).
 
 ---
 
@@ -538,19 +550,21 @@ SELECT column_name FROM information_schema.columns
 - Audit: `docs/audit/tpt-b-1-provider-credentials.md`
 - UI: `/leverandor/tripletex` → **TPT-B-7**
 
-**TPT-B-2: Per-provider Product/VatType sync**
+**TPT-B-2: Company-customer + Product/VatType sync ✅ COMPLETED**
 
-- Ny tabell `provider_tripletex_products`
-- Auto-sync ved credentials-add (eller eksplisitt re-sync)
-- Bruker eksisterende `client.ensureProduct({ providerId, env })`
-- **Estimat: 45-60 min**
+- Schema: relaxed `tripletex_customers` CHECK (Alternativ A) + partial unique indexes
+- Tabell `provider_tripletex_products` (tier × provider × env)
+- `ensureCompanyCustomer`, `ensureProviderProduct`, `ensureProviderVatCode` i `client.ts`
+- Outbox: `tripletex.company_customer_create_provider:<company_id>:<provider_id>`
+- RPC: `lp_company_provider_customer_create`
+- Handler: `handleCompanyCustomerCreateProvider`
+- Audit: `docs/audit/tpt-b-2-company-customer-sync.md`
+- Auto-sync ved credentials-add → **TPT-B-7**
 
-**TPT-B-3: Company → Provider's Tripletex Customer sync**
+**TPT-B-3: Agreement invoice generation**
 
-- Trigger på agreement-creation
-- Bruker eksisterende `client.ensureCustomer({ providerId, env })`
-- Utvide `tripletex_customers` med `tripletex_provider_id`
-- **Estimat: 60-90 min**
+- Aggreger orders per tier; bruk customer + product mapping fra TPT-B-2
+- **Estimat: 90-120 min**
 
 **TPT-B-4: agreement_invoices + billing_cycle utvidelse**
 
@@ -725,4 +739,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-B-2** (ensureProviderProduct sync). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-3** (agreement invoice generation). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
