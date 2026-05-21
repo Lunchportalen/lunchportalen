@@ -193,6 +193,7 @@ const PUBLIC_TABLE_NAMES = [
   "provider_memberships",
   "provider_service_areas",
   "provider_subscriptions",
+  "provider_tripletex_credentials",
   "provider_tripletex_webhook_secrets",
   "providers",
   "lifecycle_audit_log",

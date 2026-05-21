@@ -5,6 +5,7 @@ export const revalidate = 0;
 
 import "server-only";
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import ProviderSettingsForm from "@/components/providers/ProviderSettingsForm";
@@ -41,6 +42,13 @@ export default async function LeverandorInnstillingerPage() {
       </header>
       <section className="ds-section">
         <ProviderSettingsForm provider={provider} />
+      </section>
+      <section className="ds-section">
+        <h2 className="ds-h3">Regnskap</h2>
+        <p className="ds-body">Koble Tripletex for automatisk fakturering og betalingsstatus.</p>
+        <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
+          Tripletex-oppsett
+        </Link>
       </section>
     </div>
   );
