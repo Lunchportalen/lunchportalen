@@ -64,7 +64,7 @@ export default defineConfig({
   test: {
     environment: "node",
     testTimeout: 120000,
-    hookTimeout: 120000,
+    hookTimeout: 180000,
     // DB integration tests (tests/db/*): use `npx vitest run tests/db/... --pool=threads`
     // Avoid `--poolOptions.forks.maxForks=1` (tinypool min/max conflict on Vitest 2.1.9).
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],

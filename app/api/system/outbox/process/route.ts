@@ -19,6 +19,7 @@ import {
 import { handleAgreementInvoiceCreateProvider } from "@/lib/integrations/tripletex/agreementInvoiceSync";
 import { handleCompanyCustomerCreateProvider } from "@/lib/integrations/tripletex/companyCustomerSync";
 import { handleProviderProductSync } from "@/lib/integrations/tripletex/providerProductSync";
+import { handleOnboardingProvisioningStart } from "@/lib/integrations/tripletex/onboardingSync";
 import { handleProviderCustomerCreateLp } from "@/lib/integrations/tripletex/providerCustomerSync";
 import { handleSaasInvoiceCreateLp } from "@/lib/integrations/tripletex/providerSaasInvoiceSync";
 
@@ -77,6 +78,7 @@ const COMPANY_CUSTOMER_CREATE_PROVIDER_LIKE = "tripletex.company_customer_create
 const SAAS_INVOICE_CREATE_LP_LIKE = "tripletex.saas_invoice_create_lp:%";
 const AGREEMENT_INVOICE_CREATE_PROVIDER_LIKE = "tripletex.agreement_invoice_create_provider:%";
 const PROVIDER_PRODUCT_SYNC_LIKE = "tripletex.provider_product_sync:%";
+const ONBOARDING_PROVISIONING_START_LIKE = "tripletex.onboarding_provisioning_start:%";
 
 type OutboxBatchStats = {
   processed: number;
@@ -639,6 +641,9 @@ async function handleEvent(
     case "tripletex.provider_product_sync":
       return handleProviderProductSync(admin, row);
 
+    case "tripletex.onboarding_provisioning_start":
+      return handleOnboardingProvisioningStart(admin, row);
+
     default:
       return { ok: false, permanent: true, error: "UNSUPPORTED_EVENT" };
   }
@@ -810,6 +815,15 @@ export async function POST(_req: NextRequest) {
       getRunAuth,
     );
 
+    const onboardingProvisioningStats = await processOutboxBatchByEventLike(
+      admin,
+      workerId,
+      nowIso,
+      concurrency,
+      ONBOARDING_PROVISIONING_START_LIKE,
+      getRunAuth,
+    );
+
     const merged = mergeOutboxStats(
       mergeOutboxStats(
         mergeOutboxStats(
@@ -818,7 +832,7 @@ export async function POST(_req: NextRequest) {
         ),
         agreementInvoiceStats,
       ),
-      providerProductSyncStats,
+      mergeOutboxStats(providerProductSyncStats, onboardingProvisioningStats),
     );
 
     return jsonOk(rid, {
@@ -829,6 +843,7 @@ export async function POST(_req: NextRequest) {
       saasInvoiceCreateLp: saasInvoiceStats,
       agreementInvoiceCreateProvider: agreementInvoiceStats,
       providerProductSync: providerProductSyncStats,
+      onboardingProvisioningStart: onboardingProvisioningStats,
     });
   } catch (error: any) {
     return jsonErr(rid, "Tripletex outbox behandling feilet.", 500, {

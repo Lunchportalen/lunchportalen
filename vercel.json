@@ -9,6 +9,7 @@
     { "path": "/api/cron/tripletex-outbox", "schedule": "*/3 * * * *" },
     { "path": "/api/cron/tripletex-saas-monthly", "schedule": "0 6 1 * *" },
     { "path": "/api/cron/tripletex-agreements-daily", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/tripletex-connection-health-daily", "schedule": "0 5 * * *" },
     { "path": "/api/cron/cleanup-invites", "schedule": "30 3 * * *" },
     { "path": "/api/cron/esg/daily", "schedule": "15 1 * * *" },
     { "path": "/api/cron/esg/monthly", "schedule": "20 1 1 * *" },

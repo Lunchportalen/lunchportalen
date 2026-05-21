@@ -1282,3 +1282,188 @@ main{
     text-align:center !important;
   }
 }
+
+/* =========================================================
+   TPT-B-7 — Tripletex onboarding wizard + dashboard tokens
+   ========================================================= */
+
+.ds-wizard {
+  max-width: 720px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.ds-wizard__progress {
+  display: flex;
+  gap: 8px;
+  margin-block-end: 24px;
+}
+
+.ds-wizard__progress-step {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-line);
+  transition: background-color 0.3s var(--ds-ease);
+}
+
+.ds-wizard__progress-step--complete {
+  background: var(--ds-green);
+}
+
+.ds-wizard__progress-step--current {
+  background: var(--ds-accent);
+}
+
+.ds-wizard__actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 12px;
+  margin-block-start: 24px;
+}
+
+.ds-wizard__video {
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  margin-block: 16px;
+}
+
+.ds-verify-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-block: 24px;
+}
+
+.ds-verify-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ds-verify-item__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.ds-verify-item--success .ds-verify-item__icon {
+  color: var(--ds-green);
+}
+
+.ds-verify-item--error .ds-verify-item__icon {
+  color: #c0392b;
+}
+
+.ds-status-badge {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--ds-radius-pill);
+  font-size: var(--ds-body-sm);
+  font-weight: 500;
+  align-items: center;
+}
+
+.ds-status-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ds-status-badge--connected {
+  background: rgba(47, 122, 101, 0.12);
+  color: var(--ds-green);
+}
+
+.ds-status-badge--connected::before {
+  background: var(--ds-green);
+}
+
+.ds-status-badge--configuring {
+  background: var(--ds-accent-soft);
+  color: var(--lp-gold-dark);
+}
+
+.ds-status-badge--configuring::before {
+  background: var(--ds-accent);
+  animation: ds-pulse 1.4s infinite;
+}
+
+.ds-status-badge--degraded {
+  background: rgba(245, 180, 0, 0.18);
+  color: var(--lp-gold-dark);
+}
+
+.ds-status-badge--degraded::before {
+  background: var(--ds-accent);
+}
+
+.ds-status-badge--disconnected {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+}
+
+.ds-status-badge--disconnected::before {
+  background: #c0392b;
+}
+
+@keyframes ds-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.ds-secret-display {
+  font-family: ui-monospace, monospace;
+  background: var(--ds-bg-soft);
+  border: 1px solid var(--ds-line-strong);
+  border-radius: var(--ds-radius-sm);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  word-break: break-all;
+}
+
+.ds-secret-warning {
+  background: rgba(245, 180, 0, 0.1);
+  border-inline-start: 4px solid var(--ds-accent);
+  padding: 14px 18px;
+  border-radius: var(--ds-radius-sm);
+  font-size: var(--ds-body-sm);
+  margin-block: 16px;
+}
+
+@media (min-width: 640px) {
+  .ds-wizard {
+    padding-inline: 24px;
+  }
+
+  .ds-wizard__actions {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 980px) {
+  .ds-wizard {
+    padding-inline: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-status-badge--configuring::before {
+    animation: none;
+  }
+
+  .ds-wizard__progress-step {
+    transition: none;
+  }
+}

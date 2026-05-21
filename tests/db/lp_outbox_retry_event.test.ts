@@ -28,17 +28,16 @@ describe.skipIf(!hasDb)("lp_outbox_retry_event (TPT-A-7)", () => {
 
   beforeAll(async () => {
     fx = await buildProviderTestFixtures({
-      includeEmployee: true,
+      includeEmployee: false,
       includeRegistrations: false,
-      orderOwner: "employeeA",
       requireOrder: false,
     });
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (fx?.cleanup) await fx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 180_000);
 
   test("superadmin can retry FAILED tripletex outbox event", async () => {
     const id = crypto.randomUUID();

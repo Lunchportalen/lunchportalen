@@ -1588,4 +1588,74 @@ export async function getTripletexInvoicePaymentStatus(
   };
 }
 
+/** TPT-B-7 — Build session auth from raw consumer + employee tokens + Tripletex company id. */
+export async function createTripletexAuthFromTokens(input: {
+  tripletexCompanyId: string | number;
+  consumerToken: string;
+  employeeToken: string;
+}): Promise<TripletexAuth> {
+  const companyId = safeStr(input.tripletexCompanyId);
+  const consumerToken = safeStr(input.consumerToken);
+  const employeeToken = safeStr(input.employeeToken);
+
+  if (!companyId || !consumerToken || !employeeToken) {
+    throw new TripletexClientError({
+      message: "tripletexCompanyId, consumerToken and employeeToken are required",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_AUTH_INPUT_MISSING",
+    });
+  }
+
+  const config = loadTripletexNetworkConfig();
+  const token = await createSessionTokenFromPair({
+    baseUrl: config.baseUrl,
+    timeoutMs: config.timeoutMs,
+    consumerToken,
+    employeeToken,
+  });
+
+  return { companyId, token };
+}
+
+export type TripletexWhoAmIResult = {
+  companyId: number;
+  companyName: string | null;
+};
+
+/** TPT-B-7 — GET /whoAmI for token verification and daily health checks. */
+export async function tripletexWhoAmI(options?: RequestOptions): Promise<TripletexWhoAmIResult> {
+  const res = await requestTripletex({ method: "GET", path: "/whoAmI" }, options);
+  const value = res.value as any;
+  const companyId = safeNum(value?.companyId ?? value?.company?.id ?? value?.company?.companyId);
+  const companyName = safeStr(value?.companyName ?? value?.company?.name ?? value?.company?.displayName) || null;
+
+  if (!companyId) {
+    throw new TripletexClientError({
+      message: "Tripletex whoAmI returned no companyId",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_WHOAMI_INVALID",
+      detail: res.raw,
+    });
+  }
+
+  return { companyId, companyName };
+}
+
+/** TPT-B-7 — Scope check via GET /product?count=1. */
+export async function tripletexVerifyProductAccess(
+  options?: RequestOptions,
+): Promise<{ ok: boolean; error: string | null; status: number | null }> {
+  try {
+    await requestTripletex(
+      { method: "GET", path: "/product", query: { from: 0, count: 1 } },
+      options,
+    );
+    return { ok: true, error: null, status: 200 };
+  } catch (error: unknown) {
+    if (error instanceof TripletexClientError) {
+      return { ok: false, error: error.message, status: error.status };
+    }
+    return { ok: false, error: safeStr((error as Error)?.message ?? error), status: null };
+  }
+}
 

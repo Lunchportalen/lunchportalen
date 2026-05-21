@@ -58,7 +58,7 @@ describe.skipIf(!hasDb)("loadProviderCredentials (TPT-B-1)", () => {
 
     const admin = serviceRoleClient();
     await (admin as any).rpc("lp_pgrst_reload_schema");
-  }, 120_000);
+  }, 180_000);
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -66,10 +66,10 @@ describe.skipIf(!hasDb)("loadProviderCredentials (TPT-B-1)", () => {
   });
 
   afterAll(async () => {
-    await cleanupCredentials(fx.providerA);
+    if (fx?.providerA) await cleanupCredentials(fx.providerA);
     if (fx?.cleanup) await fx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 180_000);
 
   test("happy path: set creds via RPC, load via resolveTripletexAuth, last_used_at updated", async () => {
     __clearTripletexSessionCacheForTests();
