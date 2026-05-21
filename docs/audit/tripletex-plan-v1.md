@@ -1,9 +1,19 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.5 (2026-05-21 — TPT-A-6 webhook handler)
+**Versjon:** v3.6 (2026-05-21 — TPT-A-7 admin UI, Flow A complete)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.5 → v3.6
+
+**TPT-A-7 fullført — Flow A (A-1 … A-7) komplett:**
+
+1. **TPT-A-7 ✅ COMPLETED** — Superadmin Tripletex UI (4 sider + `lp_outbox_retry_event`).
+2. **Audit:** `docs/audit/tpt-a-7-admin-ui.md`
+3. **Flow A:** alle syv patches levert (kode); R10 smoke/webhook-registrering fortsatt manuell.
 
 ---
 
@@ -494,14 +504,16 @@ SELECT column_name FROM information_schema.columns
 - Events: `invoice.charged`, `closegroup.create`, `customer.update` (+ test-alias `invoice.paid` / `invoice.voided`)
 - Tester: `tests/api/webhooks/tripletex.test.ts` (7/7)
 
-#### TPT-A-7 (renummerert): Admin UI (Lp) — Ikke startet
+#### TPT-A-7 (renummerert): Admin UI (Lp) ✅ COMPLETED
 
-- `/superadmin/tripletex` (dashboard + queue)
-- `/superadmin/tripletex/jobs` (queue inspector)
-- `/superadmin/providers/[id]/tripletex` (per-provider sync-status)
-- **Estimat: 60-90 min**
+- **Audit:** `docs/audit/tpt-a-7-admin-ui.md`
+- `/superadmin/tripletex` (oversikt + sync-status)
+- `/superadmin/tripletex/webhooks` (`webhook_events` + retry)
+- `/superadmin/tripletex/queue` (Tripletex outbox + `lp_outbox_retry_event`)
+- `/superadmin/tripletex/invoices` (`provider_invoices`)
+- RPC: `lp_outbox_retry_event(uuid)` — migrasjon `20260527120000_tpt_a7_admin_ui.sql`
 
-**Flow A total (gjenstående):** ~2.5-5 timer (A-5 → A-7)
+**Flow A total:** ✅ Komplett (A-1 … A-7). R10: A-3 smoke + Tripletex webhook-registrering.
 
 ---
 
@@ -697,4 +709,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-A-7** (admin UI Lp). **R10:** kjør A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **Flow B** (TPT-B-1 …) eller hardening. **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
