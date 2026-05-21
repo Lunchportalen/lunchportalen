@@ -118,6 +118,30 @@ type EnsureProviderCustomerInput = {
   request?: RequestOptions;
 };
 
+type EnsureCompanyCustomerInput = {
+  admin: any;
+  providerId: string;
+  company: EnsureCustomerCompany;
+  env?: "test" | "prod";
+  request?: RequestOptions;
+};
+
+type EnsureProviderProductInput = {
+  admin: any;
+  providerId: string;
+  tier: "BASIS" | "LUXUS" | "ENTERPRISE";
+  env?: "test" | "prod";
+  request?: RequestOptions;
+};
+
+type EnsureProviderVatCodeInput = {
+  admin: any;
+  providerId: string;
+  taxCodeId: string;
+  env?: "test" | "prod";
+  request?: RequestOptions;
+};
+
 type EnsureProductInput = {
   admin: any;
   tier: "BASIS" | "LUXUS" | "ENTERPRISE";
@@ -901,6 +925,347 @@ export async function ensureProviderCustomer(
   }
 
   return { customerId, created: true };
+}
+
+/**
+ * Flow B: company → Customer in provider's Tripletex account (company_id + provider_id set).
+ */
+export async function ensureCompanyCustomer(
+  input: EnsureCompanyCustomerInput,
+): Promise<{ customerId: string; created: boolean }> {
+  const { admin, company, providerId, env = "prod", request } = input;
+  const companyId = safeStr(company.id);
+  const providerIdSafe = safeStr(providerId);
+  const orgnr = safeStr(company.orgnr);
+  const legalName = safeStr(company.legal_name);
+  const billingAddress = safeStr(company.billing_address);
+  const billingPostcode = safeStr(company.billing_postcode);
+  const billingCity = safeStr(company.billing_city);
+  const billingCountry = safeStr(company.billing_country);
+
+  if (!companyId || !providerIdSafe || !orgnr || !legalName || !billingAddress || !billingPostcode || !billingCity || !billingCountry) {
+    throw new TripletexClientError({
+      message: "Company billing profile incomplete for provider customer sync",
+      kind: "PERMANENT",
+      code: "COMPANY_BILLING_FIELDS_MISSING",
+    });
+  }
+
+  const { data: existing, error: lookupError } = await admin
+    .from("tripletex_customers")
+    .select("company_id,provider_id,tripletex_customer_id")
+    .eq("company_id", companyId)
+    .eq("provider_id", providerIdSafe)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new TripletexClientError({
+      message: `Company provider customer mapping lookup failed: ${safeStr(lookupError?.message ?? lookupError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_LOOKUP_FAILED",
+      detail: lookupError,
+    });
+  }
+
+  const mappedId = safeStr((existing as any)?.tripletex_customer_id);
+  if (mappedId) return { customerId: mappedId, created: false };
+
+  const auth = request?.auth ?? (await resolveTripletexAuth({ providerId: providerIdSafe, env }));
+  const requestWithAuth = { ...request, auth };
+
+  let customerId = "";
+
+  try {
+    const customerRes = await requestTripletex(
+      {
+        method: "POST",
+        path: "/customer",
+        body: {
+          name: legalName,
+          organizationNumber: orgnr,
+          isPrivateIndividual: false,
+          email: safeStr(company.billing_email) || undefined,
+          postalAddress: {
+            addressLine1: billingAddress,
+            postalCode: billingPostcode,
+            city: billingCity,
+            country: billingCountry,
+          },
+          ...(company.ehf_enabled && safeStr(company.ehf_endpoint)
+            ? { electronicInvoiceAddress: safeStr(company.ehf_endpoint) }
+            : {}),
+        },
+      },
+      requestWithAuth,
+    );
+    customerId = parseId(customerRes.value);
+  } catch (error: unknown) {
+    const err = classifyUnknown(error);
+    if (err.status === 409) {
+      customerId =
+        parseCustomerIdFromConflictDetail(err.detail) ||
+        (await findTripletexCustomerIdByOrgnr(orgnr, requestWithAuth)) ||
+        "";
+      if (!customerId) {
+        throw new TripletexClientError({
+          message: "Tripletex company customer conflict (409) but existing id could not be resolved",
+          kind: "PERMANENT",
+          code: "TRIPLETEX_CUSTOMER_CONFLICT_UNRESOLVED",
+          status: 409,
+          detail: err.detail,
+        });
+      }
+    } else {
+      throw err;
+    }
+  }
+
+  if (!customerId) {
+    throw new TripletexClientError({
+      message: "Tripletex company provider customer create returned no id",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_CUSTOMER_ID_MISSING",
+    });
+  }
+
+  const { error: upsertError } = await admin.from("tripletex_customers").upsert(
+    {
+      company_id: companyId,
+      provider_id: providerIdSafe,
+      tripletex_customer_id: customerId,
+      orgnr,
+      legal_name: legalName,
+      billing_email: safeStr(company.billing_email) || null,
+      billing_address: billingAddress,
+      billing_postcode: billingPostcode,
+      billing_city: billingCity,
+      billing_country: billingCountry,
+      ehf_enabled: Boolean(company.ehf_enabled),
+      ehf_endpoint: safeStr(company.ehf_endpoint) || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "provider_id,company_id" },
+  );
+
+  if (upsertError) {
+    throw new TripletexClientError({
+      message: `Company provider customer mapping upsert failed: ${safeStr(upsertError?.message ?? upsertError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_UPSERT_FAILED",
+      detail: upsertError,
+    });
+  }
+
+  return { customerId, created: true };
+}
+
+function extractVatTypeRows(value: AnyJson): AnyJson[] {
+  return extractCustomerRows(value);
+}
+
+/**
+ * Flow B: resolve VAT type id in provider's Tripletex by local tax code rate.
+ */
+export async function ensureProviderVatCode(input: EnsureProviderVatCodeInput): Promise<{
+  vatTypeId: number;
+  vatCode: string;
+}> {
+  const providerId = safeStr(input.providerId);
+  const taxCodeId = safeStr(input.taxCodeId);
+  const env = input.env ?? "prod";
+
+  if (!providerId || !taxCodeId) {
+    throw new TripletexClientError({
+      message: "providerId and taxCodeId are required",
+      kind: "PERMANENT",
+      code: "PROVIDER_VAT_INPUT_MISSING",
+    });
+  }
+
+  const { data: taxRow, error: taxError } = await input.admin
+    .from("billing_tax_codes")
+    .select("id,rate,tripletex_vat_code")
+    .eq("id", taxCodeId)
+    .maybeSingle();
+
+  if (taxError || !taxRow) {
+    throw new TripletexClientError({
+      message: "Tax code lookup failed",
+      kind: "PERMANENT",
+      code: "TAX_CODE_LOOKUP_FAILED",
+      detail: taxError ?? null,
+    });
+  }
+
+  const targetRate = safeNum((taxRow as any).rate);
+  const auth = input.request?.auth ?? (await resolveTripletexAuth({ providerId, env }));
+
+  const res = await requestTripletex(
+    {
+      method: "GET",
+      path: "/vatType",
+      query: { from: 0, count: 100 },
+    },
+    { ...input.request, auth },
+  );
+
+  for (const row of extractVatTypeRows(res.value)) {
+    const id = parseId(row);
+    const percentage = safeNum((row as any)?.percentage ?? (row as any)?.rate);
+    if (id && Math.abs(percentage - targetRate) < 0.01) {
+      return { vatTypeId: parseVatTypeId(id), vatCode: id };
+    }
+  }
+
+  const fallback = safeStr((taxRow as any).tripletex_vat_code);
+  if (fallback) {
+    return { vatTypeId: parseVatTypeId(fallback), vatCode: fallback };
+  }
+
+  throw new TripletexClientError({
+    message: `No Tripletex VAT type found for rate ${targetRate}`,
+    kind: "PERMANENT",
+    code: "PROVIDER_VAT_TYPE_NOT_FOUND",
+    detail: { providerId, taxCodeId, targetRate },
+  });
+}
+
+/**
+ * Flow B: ensure meal-tier product exists in provider's Tripletex + local mapping.
+ */
+export async function ensureProviderProduct(
+  input: EnsureProviderProductInput,
+): Promise<{ productId: string; vatCode: string; created: boolean }> {
+  const tier = safeStr(input.tier).toUpperCase();
+  const providerId = safeStr(input.providerId);
+  const env = input.env ?? "prod";
+
+  if (tier !== "BASIS" && tier !== "LUXUS" && tier !== "ENTERPRISE") {
+    throw new TripletexClientError({
+      message: "Invalid product tier",
+      kind: "PERMANENT",
+      code: "PRODUCT_TIER_INVALID",
+      detail: { tier: input.tier },
+    });
+  }
+
+  if (!providerId) {
+    throw new TripletexClientError({
+      message: "providerId is required",
+      kind: "PERMANENT",
+      code: "PROVIDER_ID_MISSING",
+    });
+  }
+
+  const { data: existing, error: existingError } = await input.admin
+    .from("provider_tripletex_products")
+    .select("tripletex_product_id,tripletex_vat_code")
+    .eq("provider_id", providerId)
+    .eq("tier", tier)
+    .eq("env", env)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new TripletexClientError({
+      message: `Provider product mapping lookup failed: ${safeStr(existingError?.message ?? existingError)}`,
+      kind: "TRANSIENT",
+      code: "PROVIDER_PRODUCT_MAPPING_LOOKUP_FAILED",
+      detail: existingError,
+    });
+  }
+
+  const mappedId = safeStr((existing as any)?.tripletex_product_id);
+  const mappedVat = safeStr((existing as any)?.tripletex_vat_code);
+  if (mappedId && mappedVat) {
+    return { productId: mappedId, vatCode: mappedVat, created: false };
+  }
+
+  const { data: productMap, error: productError } = await input.admin
+    .from("billing_products")
+    .select("tier,product_name,revenue_account,tax_code_id,unit")
+    .eq("tier", tier)
+    .maybeSingle();
+
+  if (productError || !productMap) {
+    throw new TripletexClientError({
+      message: "Billing product mapping missing",
+      kind: "PERMANENT",
+      code: "PRODUCT_MAPPING_MISSING",
+      detail: productError ?? null,
+    });
+  }
+
+  const taxCodeId = safeStr((productMap as any).tax_code_id);
+  const auth = input.request?.auth ?? (await resolveTripletexAuth({ providerId, env }));
+  const vat = await ensureProviderVatCode({
+    admin: input.admin,
+    providerId,
+    taxCodeId,
+    env,
+    request: { ...input.request, auth },
+  });
+
+  let productId = "";
+
+  try {
+    const productRes = await requestTripletex(
+      {
+        method: "POST",
+        path: "/product",
+        body: {
+          name: safeStr((productMap as any).product_name),
+          number: `LP-${providerId.slice(0, 8)}-${tier}`,
+          unit: safeStr((productMap as any).unit) || "stk",
+          isStockItem: false,
+          vatType: { id: vat.vatTypeId },
+          ...(maybeAccount((productMap as any).revenue_account)
+            ? { account: maybeAccount((productMap as any).revenue_account) }
+            : {}),
+        },
+      },
+      { ...input.request, auth },
+    );
+    productId = parseId(productRes.value);
+  } catch (error: unknown) {
+    const err = classifyUnknown(error);
+    if (err.status === 409) {
+      productId = parseId(err.detail) || "";
+    } else {
+      throw err;
+    }
+  }
+
+  if (!productId) {
+    throw new TripletexClientError({
+      message: "Tripletex provider product create returned no id",
+      kind: "PERMANENT",
+      code: "TRIPLETEX_PRODUCT_ID_MISSING",
+    });
+  }
+
+  const { error: upsertError } = await input.admin.from("provider_tripletex_products").upsert(
+    {
+      provider_id: providerId,
+      tier,
+      env,
+      tripletex_product_id: productId,
+      tripletex_vat_code: vat.vatCode,
+      synced_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "provider_id,tier,env" },
+  );
+
+  if (upsertError) {
+    throw new TripletexClientError({
+      message: `Provider product mapping upsert failed: ${safeStr(upsertError?.message ?? upsertError)}`,
+      kind: "TRANSIENT",
+      code: "PROVIDER_PRODUCT_MAPPING_UPSERT_FAILED",
+      detail: upsertError,
+    });
+  }
+
+  return { productId, vatCode: vat.vatCode, created: true };
 }
 
 export async function ensureProduct(input: EnsureProductInput): Promise<{ productId: string; created: boolean }> {

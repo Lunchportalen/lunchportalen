@@ -157,15 +157,27 @@ describe.skipIf(!hasDb)("lp_provider_create (TPT-A-2)", () => {
     expect(String(error?.message ?? "")).toMatch(/PERMISSION_DENIED/i);
   });
 
-  test("tripletex_customers scope CHECK: both company_id and provider_id fails", async () => {
-    await expect(
-      fixturePgQuery(
-        `INSERT INTO public.tripletex_customers (
-           company_id, provider_id, tripletex_customer_id, billing_country, legal_name
-         ) VALUES ($1, $2, $3, 'NO', 'CHECK violation test')`,
-        [fx.companyA, fx.providerA, `tx-both-${crypto.randomUUID().slice(0, 8)}`],
-      ),
-    ).rejects.toThrow(/tripletex_customers_scope_check|check constraint/i);
+  test("tripletex_customers scope: Flow B allows company_id + provider_id", async () => {
+    const txCompany = `tx-flowb-${crypto.randomUUID().slice(0, 8)}`;
+    await fixturePgQuery(
+      `INSERT INTO public.tripletex_customers (
+         company_id, provider_id, tripletex_customer_id, billing_country, legal_name, orgnr
+       ) VALUES ($1, $2, $3, 'NO', $4, '999888777')`,
+      [fx.companyA, fx.providerA, txCompany, "Flow B test"],
+    );
+
+    const row = await fixturePgQuery<{ company_id: string; provider_id: string }>(
+      `SELECT company_id, provider_id FROM public.tripletex_customers
+       WHERE company_id = $1 AND provider_id = $2`,
+      [fx.companyA, fx.providerA],
+    );
+    expect(String(row.rows[0]?.company_id)).toBe(fx.companyA);
+    expect(String(row.rows[0]?.provider_id)).toBe(fx.providerA);
+
+    await fixturePgQuery(
+      `DELETE FROM public.tripletex_customers WHERE company_id = $1 AND provider_id = $2`,
+      [fx.companyA, fx.providerA],
+    );
   });
 
   test("tripletex_customers scope: provider_id only insert succeeds", async () => {

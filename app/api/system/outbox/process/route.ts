@@ -16,6 +16,7 @@ import {
   TripletexClientError,
   type TripletexAuth,
 } from "@/lib/integrations/tripletex/client";
+import { handleCompanyCustomerCreateProvider } from "@/lib/integrations/tripletex/companyCustomerSync";
 import { handleProviderCustomerCreateLp } from "@/lib/integrations/tripletex/providerCustomerSync";
 import { handleSaasInvoiceCreateLp } from "@/lib/integrations/tripletex/providerSaasInvoiceSync";
 
@@ -70,6 +71,7 @@ const MAX_CONCURRENCY = 5;
 const DEFAULT_CONCURRENCY = 3;
 const INVOICE_READY_LIKE = "invoice.ready:%";
 const PROVIDER_CUSTOMER_CREATE_LP_LIKE = "tripletex.provider_customer_create_lp:%";
+const COMPANY_CUSTOMER_CREATE_PROVIDER_LIKE = "tripletex.company_customer_create_provider:%";
 const SAAS_INVOICE_CREATE_LP_LIKE = "tripletex.saas_invoice_create_lp:%";
 
 type OutboxBatchStats = {
@@ -621,6 +623,9 @@ async function handleEvent(
     case "tripletex.provider_customer_create_lp":
       return handleProviderCustomerCreateLp(admin, row, getRunAuth);
 
+    case "tripletex.company_customer_create_provider":
+      return handleCompanyCustomerCreateProvider(admin, row);
+
     case "tripletex.saas_invoice_create_lp":
       return handleSaasInvoiceCreateLp(admin, row, getRunAuth);
 
@@ -759,6 +764,15 @@ export async function POST(_req: NextRequest) {
       getRunAuth,
     );
 
+    const companyProviderStats = await processOutboxBatchByEventLike(
+      admin,
+      workerId,
+      nowIso,
+      concurrency,
+      COMPANY_CUSTOMER_CREATE_PROVIDER_LIKE,
+      getRunAuth,
+    );
+
     const saasInvoiceStats = await processOutboxBatchByEventLike(
       admin,
       workerId,
@@ -768,12 +782,16 @@ export async function POST(_req: NextRequest) {
       getRunAuth,
     );
 
-    const merged = mergeOutboxStats(mergeOutboxStats(invoiceStats, providerStats), saasInvoiceStats);
+    const merged = mergeOutboxStats(
+      mergeOutboxStats(mergeOutboxStats(invoiceStats, providerStats), companyProviderStats),
+      saasInvoiceStats,
+    );
 
     return jsonOk(rid, {
       ...merged,
       invoiceReady: invoiceStats,
       providerCustomerCreateLp: providerStats,
+      companyCustomerCreateProvider: companyProviderStats,
       saasInvoiceCreateLp: saasInvoiceStats,
     });
   } catch (error: any) {
