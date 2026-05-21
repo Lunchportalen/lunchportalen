@@ -1,9 +1,18 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.3 (2026-05-21 — TPT-A-4 + R11 GRANT-fix)
+**Versjon:** v3.4 (2026-05-21 — TPT-A-5 cron + R10 runbook)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.3 → v3.4
+
+**TPT-A-5 fullført — Flow A cron automatisert:**
+
+1. **TPT-A-5 ✅ COMPLETED** — `/api/cron/tripletex-saas-monthly` + `/api/cron/tripletex-outbox` i `vercel.json`; service_role RPC-guard.
+2. **R10** — A-3 Tripletex smoke runbook publisert (`tpt-a3-tripletex-smoke-runbook.md`); manuell utførelse i test-env lukker A-3-del.
 
 ---
 
@@ -443,14 +452,13 @@ SELECT column_name FROM information_schema.columns
 - **Tester:** 17/17 PASS (6 worker mock + 4 bulk-RPC integration + 7 TPT-A-2 regression)
 - Cron-registrering → **TPT-A-5**
 
-#### TPT-A-5 (renummerert): Cron-registrering — Ikke startet
+#### TPT-A-5: Cron-registrering ✅ COMPLETED
 
-- Legg til i `vercel.json`:
-  - `/api/cron/tripletex-saas-monthly` — 1. hver måned 03:00
-  - `/api/cron/tripletex-status-poll-lp` — hver time
-  - Outbox-prosessor for `tripletex.provider_customer_create_lp` (etter A-3)
-- Bruk `requireCronAuth()` mønster
-- **Estimat: 30-45 min**
+- **Audit:** `docs/audit/tpt-a-5-cron-registration.md`
+- `vercel.json`: `tripletex-saas-monthly` `0 6 1 * *` UTC; `tripletex-outbox` `*/3 * * * *`
+- Routes: `app/api/cron/tripletex-saas-monthly`, `app/api/cron/tripletex-outbox`
+- Migrasjon: `20260525120000_tpt_a5_cron_saas_invoice_service_role.sql`
+- Smoke: `docs/audit/tpt-a3-tripletex-smoke-runbook.md` (R10 A-3 manuell)
 
 #### TPT-A-6 (renummerert): Webhook handler (Lp) — Ikke startet
 
@@ -548,7 +556,7 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 | Frekvens-endring mid-periode | Medium | Lav | Snapshot på agreement_invoice |
 | MVA-regler endrer seg | Lav | Lav | VatType lest fra Tripletex |
 | **R8: Ingen eksisterende Vault read/write app-pattern** | Bekreftet | Medium | TPT-B-1 bygger grønnflate |
-| **R10: TPT-A-2 + A-3 ikke verifisert end-to-end mot staging** | Medium | Medium | **Delvis lukket:** A-2 + A-4 staging PASS; A-3 manuell Tripletex smoke gjenstår (`tpt-a-3-staging-smoke-checklist.md`) |
+| **R10: TPT-A-2 + A-3 ikke verifisert end-to-end mot staging** | Medium | Medium | **Delvis lukket:** A-2 + A-4 staging PASS; A-3 runbook publisert (`tpt-a3-tripletex-smoke-runbook.md`) — manuell Tripletex test-env smoke gjenstår |
 | **R11: Staging core-table GRANTs manglende (`anon` + `service_role`)** | Høy (avdekket) | Høy | **LUKKET** (`dd52f5fe`) — `20260524120000_staging_repair_core_table_grants.sql`; audit `docs/audit/r11-staging-grants-repair.md` |
 
 ---
@@ -662,4 +670,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-A-5** (cron `tripletex-saas-monthly` + outbox-prosessor) → lukk **R10** (A-3 manuell Tripletex smoke).
+**Next:** **TPT-A-6** (webhook handler Lp) → **TPT-A-7** (admin UI). **R10:** kjør A-3 smoke runbook mot Tripletex test-env.
