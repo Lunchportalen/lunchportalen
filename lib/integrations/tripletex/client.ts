@@ -1,11 +1,12 @@
 import "server-only";
 
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
 /**
  * TPT-A-1 (2026-05-20): Multi-tenant signature.
  * - resolveTripletexAuth(opts?: { providerId?, env? })
  * - Default-args = Lp's env (unchanged behavior)
- * - providerId set → loadProviderCredentials() throws
- *   PROVIDER_CREDENTIALS_NOT_IMPLEMENTED until TPT-B-1
+ * - providerId set → loadProviderCredentials() via Vault-backed RPC (TPT-B-1)
  * - Session cache keyed per (providerId|'lp', env), TTL ~6 days
  * References: TRIPLETEX-PLAN-V1 v3.1 §5 + Q8-discovery
  */
@@ -17,7 +18,7 @@ export type TripletexErrorKind =
   | "AUTH"
   | "TRANSIENT"
   | "PERMANENT"
-  | "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED";
+  | "PROVIDER_CREDENTIALS_NOT_CONFIGURED";
 
 export type TripletexAuthOpts = {
   providerId?: string | null;
@@ -264,6 +265,13 @@ function parseId(value: AnyJson): string {
   return "";
 }
 
+function loadTripletexNetworkConfig(): Pick<TripletexConfig, "baseUrl" | "timeoutMs"> {
+  return {
+    baseUrl: (safeStr(process.env.TRIPLETEX_BASE_URL) || DEFAULT_BASE_URL).replace(/\/+$/, ""),
+    timeoutMs: asInt(process.env.TRIPLETEX_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
+  };
+}
+
 function loadConfig(): TripletexConfig {
   const baseUrl = (safeStr(process.env.TRIPLETEX_BASE_URL) || DEFAULT_BASE_URL).replace(/\/+$/, "");
   const companyId = safeStr(process.env.TRIPLETEX_COMPANY_ID);
@@ -344,19 +352,16 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 
-async function createSessionToken(config: TripletexConfig): Promise<string> {
-  if (!config.consumerToken || !config.employeeToken) {
-    throw new TripletexClientError({
-      message: "Tripletex config missing consumer/employee token",
-      kind: "CONFIG_MISSING",
-      code: "TRIPLETEX_CONFIG_MISSING",
-    });
-  }
-
+async function createSessionTokenFromPair(input: {
+  baseUrl: string;
+  timeoutMs: number;
+  consumerToken: string;
+  employeeToken: string;
+}): Promise<string> {
   const expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const url = buildUrl(config.baseUrl, "/token/session/:create", {
-    consumerToken: config.consumerToken,
-    employeeToken: config.employeeToken,
+  const url = buildUrl(input.baseUrl, "/token/session/:create", {
+    consumerToken: input.consumerToken,
+    employeeToken: input.employeeToken,
     expirationDate,
   });
 
@@ -366,7 +371,7 @@ async function createSessionToken(config: TripletexConfig): Promise<string> {
       method: "PUT",
       headers: { accept: "application/json" },
     },
-    config.timeoutMs
+    input.timeoutMs,
   );
 
   const raw = parseJsonSafe(await response.text());
@@ -394,6 +399,23 @@ async function createSessionToken(config: TripletexConfig): Promise<string> {
   return token;
 }
 
+async function createSessionToken(config: TripletexConfig): Promise<string> {
+  if (!config.consumerToken || !config.employeeToken) {
+    throw new TripletexClientError({
+      message: "Tripletex config missing consumer/employee token",
+      kind: "CONFIG_MISSING",
+      code: "TRIPLETEX_CONFIG_MISSING",
+    });
+  }
+
+  return createSessionTokenFromPair({
+    baseUrl: config.baseUrl,
+    timeoutMs: config.timeoutMs,
+    consumerToken: config.consumerToken,
+    employeeToken: config.employeeToken,
+  });
+}
+
 async function loadLpCredentials(_env: "test" | "prod"): Promise<TripletexAuth> {
   const config = loadConfig();
 
@@ -405,25 +427,82 @@ async function loadLpCredentials(_env: "test" | "prod"): Promise<TripletexAuth> 
   return { companyId: config.companyId, token };
 }
 
-async function loadProviderCredentials(providerId: string, env: "test" | "prod"): Promise<TripletexAuth> {
-  throw new TripletexClientError({
-    message:
-      `Provider Tripletex credentials loading is not yet implemented. This will be added in TPT-B-1 ` +
-      `(provider_tripletex_credentials + Vault lookup). providerId=${providerId}, env=${env}`,
-    kind: "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
-    code: "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
-    detail: { providerId, env },
+type ProviderTripletexCredentialRow = {
+  provider_id?: string;
+  env?: string;
+  company_id_external?: number | string | null;
+  consumer_token?: string;
+  employee_token?: string;
+};
+
+function providerCredentialsNotConfigured(providerId: string, env: "test" | "prod", detail?: AnyJson | null) {
+  return new TripletexClientError({
+    message: `Provider Tripletex credentials not configured. providerId=${providerId}, env=${env}`,
+    kind: "PROVIDER_CREDENTIALS_NOT_CONFIGURED",
+    code: "PROVIDER_CREDENTIALS_NOT_CONFIGURED",
+    detail: { providerId, env, ...(detail && typeof detail === "object" ? detail : {}) },
   });
 }
 
-export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<TripletexAuth> {
-  const config = loadConfig();
-  const tokenOverride = safeStr(opts?.tokenOverride);
+async function loadProviderCredentials(providerId: string, env: "test" | "prod"): Promise<TripletexAuth> {
+  const admin = supabaseAdmin();
 
-  if (tokenOverride) {
-    return { companyId: config.companyId, token: tokenOverride };
+  const { data, error } = await (admin as any).rpc("lp_provider_load_tripletex_credentials", {
+    p_provider_id: providerId,
+    p_env: env,
+  });
+
+  if (error) {
+    const message = safeStr((error as any)?.message ?? error);
+    if (message.includes("PROVIDER_CREDENTIALS_NOT_CONFIGURED")) {
+      throw providerCredentialsNotConfigured(providerId, env, error);
+    }
+    if (message.includes("PROVIDER_CREDENTIALS_ENV_MISMATCH")) {
+      throw new TripletexClientError({
+        message: `Provider Tripletex credentials env mismatch. providerId=${providerId}, env=${env}`,
+        kind: "CONFIG_MISSING",
+        code: "PROVIDER_CREDENTIALS_ENV_MISMATCH",
+        detail: { providerId, env, error },
+      });
+    }
+    if (message.includes("PROVIDER_CREDENTIALS_DISABLED")) {
+      throw new TripletexClientError({
+        message: `Provider Tripletex credentials disabled. providerId=${providerId}, env=${env}`,
+        kind: "CONFIG_MISSING",
+        code: "PROVIDER_CREDENTIALS_DISABLED",
+        detail: { providerId, env, error },
+      });
+    }
+    throw new TripletexClientError({
+      message: `Provider Tripletex credentials load failed: ${message || "unknown"}`,
+      kind: "TRANSIENT",
+      code: "PROVIDER_CREDENTIALS_LOAD_FAILED",
+      detail: error,
+    });
   }
 
+  const row = (data ?? {}) as ProviderTripletexCredentialRow;
+  const consumerToken = safeStr(row.consumer_token);
+  const employeeToken = safeStr(row.employee_token);
+  const companyId = safeStr(row.company_id_external ?? "0") || "0";
+
+  if (!consumerToken || !employeeToken) {
+    throw providerCredentialsNotConfigured(providerId, env, row);
+  }
+
+  const config = loadTripletexNetworkConfig();
+  const token = await createSessionTokenFromPair({
+    baseUrl: config.baseUrl,
+    timeoutMs: config.timeoutMs,
+    consumerToken,
+    employeeToken,
+  });
+
+  return { companyId, token };
+}
+
+export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<TripletexAuth> {
+  const tokenOverride = safeStr(opts?.tokenOverride);
   const rawProviderId = opts?.providerId;
   const providerId =
     rawProviderId != null && safeStr(rawProviderId) ? safeStr(rawProviderId) : null;
@@ -433,6 +512,16 @@ export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<Tr
   const cached = sessionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.auth;
+  }
+
+  if (tokenOverride) {
+    const config = loadConfig();
+    const auth = { companyId: config.companyId, token: tokenOverride };
+    sessionCache.set(key, {
+      auth,
+      expiresAt: Date.now() + SESSION_TTL_MS,
+    });
+    return auth;
   }
 
   const auth = providerId

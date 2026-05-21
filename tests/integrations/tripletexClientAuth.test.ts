@@ -15,6 +15,14 @@ const LP_ENV = {
   TRIPLETEX_EMPLOYEE_TOKEN: "",
 };
 
+const rpcMock = vi.fn();
+
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    rpc: rpcMock,
+  }),
+}));
+
 function applyLpEnv(extra?: Record<string, string>) {
   for (const [key, value] of Object.entries({ ...LP_ENV, ...extra })) {
     if (value) process.env[key] = value;
@@ -22,12 +30,13 @@ function applyLpEnv(extra?: Record<string, string>) {
   }
 }
 
-describe("tripletexClientAuth (TPT-A-1)", () => {
+describe("tripletexClientAuth (TPT-A-1 + TPT-B-1)", () => {
   const fetchMock = vi.fn();
 
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockReset();
+    rpcMock.mockReset();
     __clearTripletexSessionCacheForTests();
     applyLpEnv();
   });
@@ -46,6 +55,7 @@ describe("tripletexClientAuth (TPT-A-1)", () => {
     expect(second).toEqual(first);
     expect(second).toBe(first);
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
   test("cache-keying: env test vs prod gir separate cache-entries", async () => {
@@ -57,17 +67,27 @@ describe("tripletexClientAuth (TPT-A-1)", () => {
   });
 
   test("cache-keying: lp vs providerId er separate keys (provider kaster)", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: "PROVIDER_CREDENTIALS_NOT_CONFIGURED" },
+    });
+
     const lpAuth = await resolveTripletexAuth();
 
     await expect(resolveTripletexAuth({ providerId: "abc-123" })).rejects.toMatchObject({
-      kind: "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
+      kind: "PROVIDER_CREDENTIALS_NOT_CONFIGURED",
     });
 
     const lpAgain = await resolveTripletexAuth();
     expect(lpAgain).toBe(lpAuth);
   });
 
-  test("provider-stub: TripletexClientError med sporbar providerId", async () => {
+  test("provider: TripletexClientError med sporbar providerId når creds mangler", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: "PROVIDER_CREDENTIALS_NOT_CONFIGURED" },
+    });
+
     let caught: TripletexClientError | null = null;
     try {
       await resolveTripletexAuth({ providerId: "abc-123", env: "test" });
@@ -76,13 +96,17 @@ describe("tripletexClientAuth (TPT-A-1)", () => {
     }
 
     expect(caught).toBeInstanceOf(TripletexClientError);
-    expect(caught?.kind).toBe("PROVIDER_CREDENTIALS_NOT_IMPLEMENTED");
-    expect(caught?.code).toBe("PROVIDER_CREDENTIALS_NOT_IMPLEMENTED");
+    expect(caught?.kind).toBe("PROVIDER_CREDENTIALS_NOT_CONFIGURED");
+    expect(caught?.code).toBe("PROVIDER_CREDENTIALS_NOT_CONFIGURED");
     expect(caught?.message).toContain("abc-123");
-    expect(caught?.message).toContain("TPT-B-1");
   });
 
-  test("provider-stub: feilede provider-kall populerer ikke cache", async () => {
+  test("provider: feilede provider-kall populerer ikke cache", async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: { message: "PROVIDER_CREDENTIALS_NOT_CONFIGURED" },
+    });
+
     const rejectProvider = () =>
       resolveTripletexAuth({ providerId: "abc-123" }).catch((e) => e);
 
@@ -92,6 +116,28 @@ describe("tripletexClientAuth (TPT-A-1)", () => {
     expect(first).toBeInstanceOf(TripletexClientError);
     expect(second).toBeInstanceOf(TripletexClientError);
     expect(first).not.toBe(second);
+  });
+
+  test("provider happy path: vault RPC + session create", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        company_id_external: 42,
+        consumer_token: "consumer-x",
+        employee_token: "employee-y",
+      },
+      error: null,
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ value: { token: "provider-session" } }), { status: 200 }),
+    );
+
+    const auth = await resolveTripletexAuth({ providerId: "abc-123", env: "test" });
+    expect(auth).toEqual({ companyId: "42", token: "provider-session" });
+    expect(rpcMock).toHaveBeenCalledWith("lp_provider_load_tripletex_credentials", {
+      p_provider_id: "abc-123",
+      p_env: "test",
+    });
   });
 
   test("TTL: session regenereres etter SESSION_TTL_MS", async () => {

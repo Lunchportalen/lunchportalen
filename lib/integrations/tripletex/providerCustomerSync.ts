@@ -71,7 +71,7 @@ function classifyHandlerError(error: unknown): { message: string; permanent: boo
         error.kind === "CONFIG_MISSING" ||
         error.kind === "AUTH" ||
         error.kind === "PERMANENT" ||
-        error.kind === "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
+        error.kind === "PROVIDER_CREDENTIALS_NOT_CONFIGURED",
     };
   }
 
@@ -82,7 +82,7 @@ function classifyHandlerError(error: unknown): { message: string; permanent: boo
       asTripletex.kind === "CONFIG_MISSING" ||
       asTripletex.kind === "AUTH" ||
       asTripletex.kind === "PERMANENT" ||
-      asTripletex.kind === "PROVIDER_CREDENTIALS_NOT_IMPLEMENTED",
+      asTripletex.kind === "PROVIDER_CREDENTIALS_NOT_CONFIGURED",
   };
 }
 
