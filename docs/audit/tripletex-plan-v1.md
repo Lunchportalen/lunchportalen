@@ -1,9 +1,21 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.14 (2026-05-21 — TPT-B-7-foundation onboarding backend)
+**Versjon:** v3.15 (2026-05-21 — TPT-B-7b Direct wizard UI)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.14 → v3.15
+
+**TPT-B-7b fullført — Direct wizard UI (happy path):**
+
+1. **TPT-B-7b ✅ COMPLETED** — `/leverandor/innstillinger/tripletex/koble-til` wizard (token → verify → provisioning → webhook → success).
+2. **Audit:** `docs/audit/tpt-b-7b.md`
+3. **Server actions:** verifyToken, completeConnection, rotateWebhookSecret, finalizeConnection, getHealth.
+4. **Flow B:** backend 7/7 + UI 2/4 (foundation + happy-path wizard).
+5. **Neste:** TPT-B-7b-edge (reconnect/disconnect). Parallelt: B-7a, B-7c.
 
 ---
 
