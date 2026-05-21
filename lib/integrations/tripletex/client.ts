@@ -289,21 +289,20 @@ function parseId(value: AnyJson): string {
   return "";
 }
 
-function loadTripletexNetworkConfig(): Pick<TripletexConfig, "baseUrl" | "timeoutMs"> {
+function loadTripletexNetworkConfig(): Pick<TripletexConfig, "baseUrl" | "timeoutMs" | "retries"> {
   return {
     baseUrl: (safeStr(process.env.TRIPLETEX_BASE_URL) || DEFAULT_BASE_URL).replace(/\/+$/, ""),
     timeoutMs: asInt(process.env.TRIPLETEX_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
+    retries: Math.max(0, asInt(process.env.TRIPLETEX_MAX_RETRIES, DEFAULT_RETRIES)),
   };
 }
 
 function loadConfig(): TripletexConfig {
-  const baseUrl = (safeStr(process.env.TRIPLETEX_BASE_URL) || DEFAULT_BASE_URL).replace(/\/+$/, "");
+  const network = loadTripletexNetworkConfig();
   const companyId = safeStr(process.env.TRIPLETEX_COMPANY_ID);
   const directToken = safeStr(process.env.TRIPLETEX_TOKEN || process.env.TRIPLETEX_SESSION_TOKEN) || null;
   const consumerToken = safeStr(process.env.TRIPLETEX_CONSUMER_TOKEN) || null;
   const employeeToken = safeStr(process.env.TRIPLETEX_EMPLOYEE_TOKEN) || null;
-  const timeoutMs = asInt(process.env.TRIPLETEX_TIMEOUT_MS, DEFAULT_TIMEOUT_MS);
-  const retries = Math.max(0, asInt(process.env.TRIPLETEX_MAX_RETRIES, DEFAULT_RETRIES));
 
   if (!companyId) {
     throw new TripletexClientError({
@@ -322,13 +321,11 @@ function loadConfig(): TripletexConfig {
   }
 
   return {
-    baseUrl,
+    ...network,
     companyId,
     directToken,
     consumerToken,
     employeeToken,
-    timeoutMs,
-    retries,
   };
 }
 
@@ -561,12 +558,12 @@ export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<Tr
 }
 
 export async function requestTripletex(input: RequestInput, options?: RequestOptions): Promise<RequestResult> {
-  const config = loadConfig();
+  const network = loadTripletexNetworkConfig();
   const auth = options?.auth ?? (await resolveTripletexAuth());
-  const retries = options?.retries ?? config.retries;
-  const timeoutMs = options?.timeoutMs ?? config.timeoutMs;
+  const retries = options?.retries ?? network.retries;
+  const timeoutMs = options?.timeoutMs ?? network.timeoutMs;
   const authHeader = `Basic ${Buffer.from(`${auth.companyId}:${auth.token}`, "utf8").toString("base64")}`;
-  const url = buildUrl(config.baseUrl, input.path, input.query);
+  const url = buildUrl(network.baseUrl, input.path, input.query);
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
