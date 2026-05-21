@@ -1,9 +1,22 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.11 (2026-05-21 — TPT-B-5 agreement billing cron scheduler)
+**Versjon:** v3.12 (2026-05-21 — TPT-B-6 webhook paid-status sync)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.11 → v3.12
+
+**TPT-B-6 fullført — Webhook paid-status sync (Flow B reverse):**
+
+1. **TPT-B-6 ✅ COMPLETED** — `POST /api/webhooks/tripletex-provider/[providerId]`, Vault secrets, re-verify, SENT → PAID.
+2. **Audit:** `docs/audit/tpt-b-6-webhook-paid-status.md`
+3. **Migrasjon** `20260601120000_tpt_b6_webhook_paid_status.sql` applied staging + prod (MCP).
+4. **Flow B:** 6/7 patches complete.
+5. **Webhook-URL-registrering** hos provider's Tripletex fortsatt manuell inntil **TPT-B-7**.
+6. **Klar for TPT-B-7** (onboarding-UI). Parallelt: **TPT-B-5b** (auto-sync hooks).
 
 ---
 
@@ -776,4 +789,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-B-6** (webhook paid-status sync). **TPT-B-5b** (auto-sync hooks). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-7** (provider Tripletex onboarding-UI). **TPT-B-5b** (auto-sync hooks). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
