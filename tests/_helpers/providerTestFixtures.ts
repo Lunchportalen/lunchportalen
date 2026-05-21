@@ -28,6 +28,7 @@ export type ProviderTestFixtures = {
   superadmin: AuthUserFx;
   outsider: AuthUserFx;
   employeeA: AuthUserFx;
+  companyAdminA: AuthUserFx | null;
   cleanup: () => Promise<void>;
 };
 
@@ -170,11 +171,14 @@ export async function buildProviderTestFixtures(options?: {
   orderOwner?: "providerAdminA" | "employeeA";
   /** Patch 7 suspend cascade — fail fixture build if order cannot be created */
   requireOrder?: boolean;
+  /** Patch 6 provider-RLS: company_admin on company A (avoids full buildRlsFixtures in parallel runs) */
+  includeCompanyAdmin?: boolean;
 }): Promise<ProviderTestFixtures> {
   const includeEmployee = options?.includeEmployee ?? false;
   const includeRegistrations = options?.includeRegistrations ?? true;
   const orderOwner = options?.orderOwner ?? "providerAdminA";
   const requireOrder = options?.requireOrder ?? false;
+  const includeCompanyAdmin = options?.includeCompanyAdmin ?? false;
 
   const rid = crypto.randomUUID().slice(0, 8);
   const admin = serviceRoleClient();
@@ -196,7 +200,7 @@ export async function buildProviderTestFixtures(options?: {
 
   const mkUser = async (
     prefix: string,
-    profileRole: "superadmin" | "employee",
+    profileRole: "superadmin" | "employee" | "company_admin",
     membership?: { providerId: string; providerRole: string },
     profileExtra?: { company_id?: string; location_id?: string },
   ) => {
@@ -225,6 +229,14 @@ export async function buildProviderTestFixtures(options?: {
   let employeeA = outsider;
   if (includeEmployee) {
     employeeA = await mkUser("employee-a", "employee", undefined, { company_id: companyA, location_id: locA });
+  }
+
+  let companyAdminA: AuthUserFx | null = null;
+  if (includeCompanyAdmin) {
+    companyAdminA = await mkUser("companyadmin-a", "company_admin", undefined, {
+      company_id: companyA,
+      location_id: locA,
+    });
   }
 
   const now = new Date();
@@ -275,6 +287,7 @@ export async function buildProviderTestFixtures(options?: {
     superadmin.user_id,
     outsider.user_id,
     ...(includeEmployee && employeeA.user_id !== outsider.user_id ? [employeeA.user_id] : []),
+    ...(companyAdminA ? [companyAdminA.user_id] : []),
   ];
 
   async function cleanup() {
@@ -326,6 +339,7 @@ export async function buildProviderTestFixtures(options?: {
     superadmin,
     outsider,
     employeeA,
+    companyAdminA,
     cleanup,
   };
 }

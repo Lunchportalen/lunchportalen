@@ -11,7 +11,6 @@ import {
   buildProviderTestFixtures,
   type ProviderTestFixtures,
 } from "@/tests/_helpers/providerTestFixtures";
-import { buildRlsFixtures, type Fixtures } from "@/tests/_helpers/rlsFixtures";
 import {
   hasRemoteSupabaseIntegrationEnv,
   readRemoteSupabaseIntegrationEnv,
@@ -28,19 +27,21 @@ function rowCount(res: { data: unknown; error: unknown }) {
 }
 
 let pfx: ProviderTestFixtures;
-let companyFx: Fixtures;
 
 describe.skipIf(!hasDb)("provider RLS (Patch 6)", () => {
   beforeAll(async () => {
-    pfx = await buildProviderTestFixtures({ includeRegistrations: true });
-    companyFx = await buildRlsFixtures();
-  }, 120_000);
+    // Single fixture builder — avoids buildRlsFixtures (~14 extra sign-ins) which queues on
+    // cross-process auth lock and times out beforeAll under parallel preflight.
+    pfx = await buildProviderTestFixtures({
+      includeRegistrations: true,
+      includeCompanyAdmin: true,
+    });
+  }, 180_000);
 
   afterAll(async () => {
     if (pfx?.cleanup) await pfx.cleanup();
-    if (companyFx?.cleanup) await companyFx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 60_000);
 
   describe("can_access_provider()", () => {
     test("true for provider membership", async () => {
@@ -98,8 +99,9 @@ describe.skipIf(!hasDb)("provider RLS (Patch 6)", () => {
 
   describe("companies SELECT (additive)", () => {
     test("company_admin still sees own company", async () => {
-      const { supabaseAs: as, users, companyA } = companyFx;
-      const res = await as(users.adminA.accessToken).from("companies").select("id").eq("id", companyA.id);
+      expect(pfx.companyAdminA).not.toBeNull();
+      const sb = authenticatedClient(pfx.companyAdminA!.accessToken);
+      const res = await sb.from("companies").select("id").eq("id", pfx.companyA);
       expect(res.error).toBeNull();
       expect(rowCount(res)).toBeGreaterThanOrEqual(1);
     });
@@ -140,9 +142,9 @@ describe.skipIf(!hasDb)("provider RLS (Patch 6)", () => {
     });
 
     test("company_admin still sees own company orders", async () => {
-      const { supabaseAs: as, users, companyA } = companyFx;
-      const sb = as(users.adminA.accessToken);
-      const res = await sb.from("orders").select("id,company_id").eq("company_id", companyA.id);
+      expect(pfx.companyAdminA).not.toBeNull();
+      const sb = authenticatedClient(pfx.companyAdminA!.accessToken);
+      const res = await sb.from("orders").select("id,company_id").eq("company_id", pfx.companyA);
       expect(res.error).toBeNull();
       expect(rowCount(res)).toBeGreaterThanOrEqual(0);
     });
