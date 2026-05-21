@@ -207,6 +207,7 @@ const PUBLIC_TABLE_NAMES = [
   "system_settings",
   "tripletex_customers",
   "tripletex_exports",
+  "webhook_events",
   "waste_signals",
 ] as const;
 
