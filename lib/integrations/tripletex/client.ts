@@ -177,6 +177,8 @@ type CreateInvoiceInput = {
 const DEFAULT_BASE_URL = "https://tripletex.no/v2";
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_RETRIES = 2;
+/** Tripletex action endpoint — not top-level /whoAmI (returns 404). */
+const TRIPLETEX_WHO_AM_I_PATH = "/token/session/>whoAmI";
 const SESSION_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 
 interface CachedSession {
@@ -1619,9 +1621,9 @@ export type TripletexWhoAmIResult = {
   companyName: string | null;
 };
 
-/** TPT-B-7 — GET /whoAmI for token verification and daily health checks. */
+/** TPT-B-7 — GET /token/session/>whoAmI for token verification and daily health checks. */
 export async function tripletexWhoAmI(options?: RequestOptions): Promise<TripletexWhoAmIResult> {
-  const res = await requestTripletex({ method: "GET", path: "/whoAmI" }, options);
+  const res = await requestTripletex({ method: "GET", path: TRIPLETEX_WHO_AM_I_PATH }, options);
   const value = res.value as any;
   const companyId = safeNum(value?.companyId ?? value?.company?.id ?? value?.company?.companyId);
   const companyName = safeStr(value?.companyName ?? value?.company?.name ?? value?.company?.displayName) || null;

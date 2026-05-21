@@ -65,5 +65,8 @@ describe("verifyTripletexEmployeeToken — parameter-auth uten singleton env", (
     expect(result.scope.ok).toBe(true);
     expect(result.all_passed).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const whoAmIUrl = (fetchMock.mock.calls[1] as [string])[0];
+    expect(whoAmIUrl).toContain("/token/session/%3EwhoAmI");
   });
 });
