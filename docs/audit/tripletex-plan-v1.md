@@ -1,9 +1,21 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.13 (2026-05-21 — TPT-B-5b agreement lifecycle hooks)
+**Versjon:** v3.14 (2026-05-21 — TPT-B-7-foundation onboarding backend)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.13 → v3.14
+
+**TPT-B-7-foundation fullført — Onboarding backend + CSS tokens:**
+
+1. **TPT-B-7-foundation ✅ COMPLETED** — state machine, 7 RPCs, worker, health-cron, CSS tokens, 34 tester.
+2. **Audit:** `docs/audit/tpt-b-7-foundation.md`, `docs/architecture/tripletex-onboarding-strategy.md`
+3. **Migrasjoner** `20260603120000_tpt_b7_foundation.sql` + `20260603120100_tpt_b7_foundation_fix.sql` applied staging + prod.
+4. **Flow B:** backend 7/7 + UI-foundation 1/4 (CSS only; wizard UI = B-7b).
+5. **Neste:** TPT-B-7b (Direct wizard — primær UI). Parallelt: TPT-B-7a (Marketplace redirect).
 
 ---
 
