@@ -1,9 +1,20 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.9 (2026-05-21 — TPT-B-3 agreement invoice generation, Flow B billing core)
+**Versjon:** v3.10 (2026-05-21 — TPT-B-4 agreement invoice worker, Flow B push)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.9 → v3.10
+
+**TPT-B-4 fullført — Agreement invoice push worker:**
+
+1. **TPT-B-4 ✅ COMPLETED** — `handleAgreementInvoiceCreateProvider`, outbox dispatch, DRAFT → SENT.
+2. **Audit:** `docs/audit/tpt-b-4-agreement-invoice-worker.md`
+3. **Flow B:** 4/7 patches complete.
+4. **Klar for TPT-B-5** (cron + auto-sync wiring).
 
 ---
 
@@ -582,11 +593,13 @@ SELECT column_name FROM information_schema.columns
 - Audit: `docs/audit/tpt-b-3-agreement-invoice-generation.md`
 - Worker push → **TPT-B-4**
 
-**TPT-B-4: Tripletex invoice push worker**
+**TPT-B-4: Tripletex invoice push worker ✅ COMPLETED**
 
-- Handler: `handleAgreementInvoiceCreateProvider`
-- Bruker `ensureProviderProduct` + customer mapping fra TPT-B-2
-- **Estimat: 60-90 min**
+- Handler: `handleAgreementInvoiceCreateProvider` (`agreementInvoiceSync.ts`)
+- Outbox dispatch: `tripletex.agreement_invoice_create_provider`
+- `resolveTripletexAuth({ providerId })`, customer/product/VAT via B-2 libraries
+- Status DRAFT → SENT, `tripletex_exports` idempotency
+- Audit: `docs/audit/tpt-b-4-agreement-invoice-worker.md`
 
 **TPT-B-5: Cron-trigger agreement billing**
 
@@ -750,4 +763,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-B-4** (Tripletex invoice push worker). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-5** (cron + auto-sync wiring). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
