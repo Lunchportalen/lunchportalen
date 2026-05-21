@@ -1,9 +1,22 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.12 (2026-05-21 — TPT-B-6 webhook paid-status sync)
+**Versjon:** v3.13 (2026-05-21 — TPT-B-5b agreement lifecycle hooks)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.12 → v3.13
+
+**TPT-B-5b fullført — Agreement lifecycle hooks (proactive sync):**
+
+1. **TPT-B-5b ✅ COMPLETED** — DB trigger `lp_agreement_lifecycle_hook`, ACTIVE → customer-sync, tier → product-sync.
+2. **Audit:** `docs/audit/tpt-b-5b-lifecycle-hooks.md`
+3. **Migrasjon** `20260602120000_tpt_b5b_agreement_lifecycle_hooks.sql` applied staging + prod (MCP).
+4. **Flow B:** 7/7 patches complete (kode; B-7 onboarding-UI gjenstår for operatør-UX).
+5. **Deferred fra B-5** (`d946606f`) nå lukket.
+6. **Klar for TPT-B-7** (provider Tripletex onboarding-UI).
 
 ---
 
@@ -789,4 +802,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **TPT-B-7** (provider Tripletex onboarding-UI). **TPT-B-5b** (auto-sync hooks). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-7** (provider Tripletex onboarding-UI). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
