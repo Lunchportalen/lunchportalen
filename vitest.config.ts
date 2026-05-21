@@ -47,6 +47,9 @@ process.on("uncaughtException", (err) => {
 });
 
 export default defineConfig({
+  esbuild: {
+    jsx: "automatic",
+  },
   plugins: [
     // ✅ gjør at @/… resolves via tsconfig.json paths (samme som Next)
     tsconfigPaths(),
