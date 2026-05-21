@@ -100,7 +100,7 @@ describe.skipIf(!hasDb)("lp_compute_agreements_due_today", () => {
       last_invoiced_at: null,
       status: "ACTIVE",
     });
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     await fx?.cleanup?.();

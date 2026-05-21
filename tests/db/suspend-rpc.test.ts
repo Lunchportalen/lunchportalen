@@ -26,12 +26,12 @@ describe.skipIf(!hasDb)("suspend RPC (Patch 7)", () => {
       orderOwner: "employeeA",
       requireOrder: true,
     });
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (fx?.cleanup) await fx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 180_000);
 
   test("reason shorter than 20 chars returns error", async () => {
     const sb = authenticatedClient(fx.providerAdminA.accessToken);

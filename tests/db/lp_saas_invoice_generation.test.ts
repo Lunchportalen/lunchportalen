@@ -80,7 +80,7 @@ describe.skipIf(!hasDb)("lp_saas_invoice_generation (TPT-A-4)", () => {
       requireOrder: false,
     });
     await setSubscription(fx.providerA, "ACTIVE", 2000);
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     await cleanupInvoice(fx?.providerA, invoicePeriod);

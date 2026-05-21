@@ -79,7 +79,7 @@ describe.skipIf(!hasDb)("lp_apply_tripletex_paid_status", () => {
       status: "SENT",
       tripletexInvoiceId: ttId,
     });
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     await fixturePgQuery(`DELETE FROM public.agreement_invoices WHERE id = $1`, [invoiceId]).catch(

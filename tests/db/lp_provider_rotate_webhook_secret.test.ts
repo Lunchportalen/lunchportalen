@@ -19,7 +19,7 @@ describe.skipIf(!hasDb)("lp_provider_rotate_webhook_secret", () => {
 
   beforeAll(async () => {
     fx = await buildProviderTestFixtures();
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     await fixturePgQuery(

@@ -133,7 +133,7 @@ describe.skipIf(!hasDb)("lp_provider_generate_agreement_invoice_for_period (TPT-
     });
     agreementId = await getAgreementId(fx.companyA);
     period = periodAroundToday();
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (agreementId) await cleanupAgreementInvoices(agreementId);

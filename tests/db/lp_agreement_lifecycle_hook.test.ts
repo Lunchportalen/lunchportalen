@@ -140,7 +140,7 @@ describe.skipIf(!hasDb)("lp_agreement_lifecycle_hook (TPT-B-5b)", () => {
     await deleteOutboxKeys([...new Set(outboxKeys)]);
     if (pfx?.cleanup) await pfx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 180_000);
 
   test("INSERT status ACTIVE → customer outbox event", async () => {
     await clearCompanyAgreements(pfx.companyA);

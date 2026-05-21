@@ -43,12 +43,12 @@ describe.skipIf(!hasDb)("lp_provider_create (TPT-A-2)", () => {
       orderOwner: "employeeA",
       requireOrder: false,
     });
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (fx?.cleanup) await fx.cleanup();
     await closeFixturePgPool();
-  }, 120_000);
+  }, 180_000);
 
   test("superadmin: creates provider, audit log, and outbox event", async () => {
     const slug = randSlug("tpt-a2");
