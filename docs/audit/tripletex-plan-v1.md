@@ -1,9 +1,20 @@
 # TRIPLETEX-PLAN-V1 — Master-plan for Tripletex-integrasjon
 
-**Versjon:** v3.6 (2026-05-21 — TPT-A-7 admin UI, Flow A complete)
+**Versjon:** v3.7 (2026-05-21 — TPT-B-1 provider credentials vault, Flow B foundation)
 **Status:** Aktiv (post-Phase E + MP1-5)
 **Eier:** Lunchportalen-arkitektur
 **Referanser:** PROVIDER-PLAN-V1 (`08b3cf49`), Patch 15 (`5cca370c`), MP5 (`75a55235`), Pre-discovery 2026-05-20, Q6/Q7/Q8-discovery 2026-05-20
+
+---
+
+## ⚠️ Endringslogg v3.6 → v3.7
+
+**TPT-B-1 fullført — Flow B foundation:**
+
+1. **TPT-B-1 ✅ COMPLETED** — `provider_tripletex_credentials` + Supabase Vault + RPCs + `loadProviderCredentials()`.
+2. **Audit:** `docs/audit/tpt-b-1-provider-credentials.md`
+3. **Migrasjon** `20260528120000_tpt_b1_provider_credentials.sql` applied staging + prod (MCP).
+4. **Flow B skisse:** TPT-B-2 (Product/Vat sync) → TPT-B-7 (provider UI).
 
 ---
 
@@ -517,16 +528,15 @@ SELECT column_name FROM information_schema.columns
 
 ---
 
-### FLOW B (TPT-B-1 → TPT-B-6) — Provider → Company
+### FLOW B (TPT-B-1 → TPT-B-7) — Provider → Company
 
-**TPT-B-1: Provider credentials vault**
+**TPT-B-1: Provider credentials vault ✅ COMPLETED**
 
-- Ny tabell `provider_tripletex_credentials`
-- Etablere Vault read/write-pattern (grønnflate)
-- RPC: `lp_provider_save_tripletex_credentials`, `lp_provider_test_tripletex_connection`
-- UI: `/leverandor/tripletex`
-- Klartekst tokens **aldri** logget, **aldri** returnert til client
-- **Estimat: 90-120 min**
+- Tabell `provider_tripletex_credentials` + Supabase Vault (`vault.create_secret`)
+- RPC: `lp_provider_set_tripletex_credentials`, `lp_provider_get_tripletex_credentials_status`, `lp_provider_load_tripletex_credentials`
+- `loadProviderCredentials()` implementert i `client.ts`
+- Audit: `docs/audit/tpt-b-1-provider-credentials.md`
+- UI: `/leverandor/tripletex` → **TPT-B-7**
 
 **TPT-B-2: Per-provider Product/VatType sync**
 
@@ -564,6 +574,12 @@ SELECT column_name FROM information_schema.columns
 - `app/api/webhooks/tripletex-provider/[provider_id]/route.ts`
 - HMAC-secret fra Vault per provider
 - `/leverandor/faktura` utvidet med agreement-invoices-tab
+- **Estimat: 60-90 min**
+
+**TPT-B-7: Provider Tripletex onboarding UI**
+
+- `/leverandor/tripletex` — sett credentials, test connection, status
+- Kaller `lp_provider_set_tripletex_credentials` + status-RPC
 - **Estimat: 60-90 min**
 
 **Flow B total: ~6.5-9.5 timer**
@@ -611,7 +627,7 @@ Redusert fra v2's 15-22 timer fordi mye er bygget. TPT-0 + Flow A er kortere; Fl
 - [x] **Q7:** Løst — repo ja; staging+prod nei; TPT-0 kirurgisk apply
 - [x] **Q6:** Løst — `lp_provider_create` + outbox (TPT-A-2)
 - [x] **Q8:** Løst — optional `{ providerId?, env? }` bakoverkompatibel
-- [ ] **Vault read/write-pattern — eksempel-implementasjon?**
+- [x] **Vault read/write-pattern — eksempel-implementasjon?** → TPT-B-1 (`vault.create_secret` + load RPC)
 - [ ] **`tripletexEngine.createInvoice` — input-format? (review signature)**
 
 ---
@@ -709,4 +725,4 @@ export async function resolveTripletexAuth(opts?: {
 
 ---
 
-**Next:** **Flow B** (TPT-B-1 …) eller hardening. **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
+**Next:** **TPT-B-2** (ensureProviderProduct sync). **R10:** A-3 smoke runbook + registrer Tripletex webhooks (test-env + prod).
