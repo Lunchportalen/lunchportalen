@@ -1687,3 +1687,162 @@ main{
     transition: none;
   }
 }
+
+/* Tripletex connection status dashboard (TPT-B-7c) */
+
+.ds-tripletex-status {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 8px;
+}
+
+.ds-tripletex-status__hero-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ds-tripletex-status__hero-cta {
+  margin-top: 16px;
+}
+
+.ds-tripletex-status__meta {
+  color: rgba(17, 17, 17, 0.62);
+  margin-top: 6px;
+}
+
+.ds-tripletex-status__warnings {
+  margin: 0 0 12px;
+  padding-inline-start: 18px;
+  color: #8a5a00;
+}
+
+.ds-tripletex-status__cards {
+  margin-top: 16px;
+}
+
+.ds-tripletex-status__resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ds-tripletex-status__resource-value {
+  margin: 0;
+}
+
+.ds-tripletex-status__dl {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.ds-tripletex-status__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.ds-tripletex-status__subheading {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ds-tripletex-status__activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ds-tripletex-status__activity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--ds-line-strong);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-bg-soft);
+}
+
+.ds-tripletex-status__empty {
+  color: rgba(17, 17, 17, 0.62);
+}
+
+.ds-tripletex-status__action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ds-tripletex-status__btn-danger {
+  border-color: rgba(192, 57, 43, 0.35);
+  color: #a93226;
+}
+
+.ds-tripletex-status__error {
+  color: #a93226;
+}
+
+.ds-tripletex-status__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(17, 17, 17, 0.45);
+}
+
+.ds-tripletex-status__modal {
+  width: min(100%, 520px);
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: var(--ds-radius-md);
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.ds-tripletex-status__modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ds-tripletex-status__test-steps {
+  margin: 12px 0 0;
+  padding-inline-start: 18px;
+}
+
+@media (max-width: 640px) {
+  .ds-tripletex-status__stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-tripletex-status__action-buttons .ds-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .ds-tripletex-status__modal-actions {
+    flex-direction: column;
+  }
+
+  .ds-tripletex-status__modal-actions .ds-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
