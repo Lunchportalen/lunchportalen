@@ -93,11 +93,10 @@ export default function StatusActions({ providerId, connectionState, onChanged }
   };
 
   return (
-    <section className="ds-surface ds-tripletex-status__actions" aria-labelledby="tpt-actions-title">
-      <h2 id="tpt-actions-title" className="ds-h3">
-        Handlinger
-      </h2>
-      <p className="ds-body-sm">Kun provider-admin kan utføre disse handlingene.</p>
+    <div className="ds-tripletex-status__actions">
+      <p className="ds-body-sm ds-tripletex-status__text-soft">
+        Kun provider-admin kan utføre disse handlingene.
+      </p>
 
       <div className="ds-tripletex-status__action-buttons">
         <button
@@ -125,13 +124,13 @@ export default function StatusActions({ providerId, connectionState, onChanged }
         {canDisconnect ? (
           <button
             type="button"
-            className="ds-btn ds-btn--secondary ds-tripletex-status__btn-danger"
+            className="ds-tripletex-status__destructive-link"
             onClick={() => {
               setModal("disconnect");
               setError(null);
             }}
           >
-            Koble fra Tripletex
+            Koble fra →
           </button>
         ) : null}
       </div>
@@ -172,9 +171,9 @@ export default function StatusActions({ providerId, connectionState, onChanged }
                   Genererer nytt secret. Oppdater webhook i Tripletex før du lukker dette vinduet.
                 </p>
                 {rotatedSecret ? (
-                  <div className="ds-secret-display">
-                    <code className="ds-body-sm">{rotatedSecret}</code>
-                    <button type="button" className="ds-btn ds-btn--secondary" onClick={() => void copySecret()}>
+                  <div className="ds-tripletex-status__copy-field">
+                    <code className="ds-tripletex-status__copy-field-value">{rotatedSecret}</code>
+                    <button type="button" className="ds-tripletex-status__copy-field-btn" onClick={() => void copySecret()}>
                       {copySecretMsg ?? "Kopier"}
                     </button>
                   </div>
@@ -224,6 +223,6 @@ export default function StatusActions({ providerId, connectionState, onChanged }
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

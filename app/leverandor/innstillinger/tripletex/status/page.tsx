@@ -54,18 +54,20 @@ export default async function TripletexStatusPage() {
     (await isSuperadminProfile(auth.user.id));
 
   return (
-    <div className="ds-container">
-      <header className="ds-section">
-        <p className="ds-eyebrow">Tripletex</p>
-        <h1 className="ds-h2">Tilkoblingsstatus</h1>
-        <p className="ds-lead">Oversikt over tilkobling, webhook og nylig aktivitet.</p>
-      </header>
+    <main className="ds-page">
+      <div className="ds-container">
+        <header className="ds-section">
+          <p className="ds-eyebrow">Tripletex</p>
+          <h1 className="ds-h2">Tilkoblingsstatus</h1>
+          <p className="ds-lead">Oversikt over tilkobling, webhook og nylig aktivitet.</p>
+        </header>
 
-      <StatusDashboardClient
-        providerId={provider.id}
-        isAdmin={isAdmin}
-        initialData={dashboardRes.data}
-      />
-    </div>
+        <StatusDashboardClient
+          providerId={provider.id}
+          isAdmin={isAdmin}
+          initialData={dashboardRes.data}
+        />
+      </div>
+    </main>
   );
 }

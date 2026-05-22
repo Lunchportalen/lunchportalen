@@ -19,6 +19,38 @@ function badgeClass(state: string): string {
   return "ds-status-badge--disconnected";
 }
 
+function heroCta(state: string, provisioningComplete: boolean): { href: string; label: string; primary: boolean } | null {
+  if (state === "CONFIGURING" && provisioningComplete) {
+    return {
+      href: "/leverandor/innstillinger/tripletex/koble-til",
+      label: "Konfigurer webhook →",
+      primary: true,
+    };
+  }
+  if (state === "CONFIGURING") {
+    return {
+      href: "/leverandor/innstillinger/tripletex/koble-til",
+      label: "Fortsett oppsett →",
+      primary: true,
+    };
+  }
+  if (state === "DISCONNECTED") {
+    return {
+      href: "/leverandor/innstillinger/tripletex/koble-til",
+      label: "Koble til igjen →",
+      primary: true,
+    };
+  }
+  if (state === "DEGRADED") {
+    return {
+      href: "/leverandor/innstillinger/tripletex/koble-til",
+      label: "Re-konfigurer →",
+      primary: false,
+    };
+  }
+  return null;
+}
+
 export default function StatusHero({ data }: Props) {
   const { state } = data;
   const companyLine =
@@ -26,19 +58,31 @@ export default function StatusHero({ data }: Props) {
       ? `${data.tripletexCompanyName} (${data.tripletexCompanyId})`
       : data.tripletexCompanyName ?? null;
 
-  const showWebhookCta = state === "CONFIGURING" && data.provisioningComplete;
-  const showSetupCta = state === "CONFIGURING" && !data.provisioningComplete;
-  const showReconnectCta = state === "DISCONNECTED";
+  const cta = heroCta(state, data.provisioningComplete);
+
+  const metaParts: string[] = [];
+  if (data.stateSince) metaParts.push(`Siden ${formatTripletexDateTime(data.stateSince)}`);
+  if (companyLine) metaParts.push(companyLine);
 
   return (
-    <section className="ds-surface ds-tripletex-status__hero" aria-labelledby="tpt-status-hero-title">
-      <div className="ds-tripletex-status__hero-head">
-        <h2 id="tpt-status-hero-title" className="ds-h3">
-          Tilkobling
-        </h2>
+    <div className="ds-tripletex-status__hero">
+      <div className="ds-tripletex-status__hero-strip">
         <span className={`ds-status-badge ${badgeClass(state)}`}>
           {tripletexConnectionStateLabel(state)}
         </span>
+
+        {metaParts.length > 0 ? (
+          <p className="ds-body-sm ds-tripletex-status__hero-meta">{metaParts.join(" · ")}</p>
+        ) : null}
+
+        {cta ? (
+          <Link
+            className={`ds-btn ${cta.primary ? "ds-btn--primary" : "ds-btn--secondary"} ds-tripletex-status__hero-cta`}
+            href={cta.href}
+          >
+            {cta.label}
+          </Link>
+        ) : null}
       </div>
 
       {state === "DEGRADED" && data.warnings.length > 0 ? (
@@ -51,58 +95,18 @@ export default function StatusHero({ data }: Props) {
         </ul>
       ) : null}
 
-      {companyLine ? <p className="ds-body">Selskap: {companyLine}</p> : null}
-
-      {data.stateSince ? (
-        <p className="ds-body-sm ds-tripletex-status__meta">
-          Siden {formatTripletexDateTime(data.stateSince)}
-        </p>
-      ) : null}
-
       {data.lastHealthCheck && (state === "CONNECTED" || state === "DEGRADED") ? (
-        <p className="ds-body-sm ds-tripletex-status__meta">
+        <p className="ds-body-sm ds-tripletex-status__text-soft">
           Siste helse-sjekk: {formatTripletexRelative(data.lastHealthCheck)}
         </p>
       ) : null}
 
       {state === "DISCONNECTED" && data.vaultPurgeAt ? (
-        <p className="ds-body-sm ds-tripletex-status__meta">
+        <p className="ds-body-sm ds-tripletex-status__text-soft">
           Credentials slettes {formatTripletexDateTime(data.vaultPurgeAt)}
           {data.daysUntilPurge != null ? ` (om ${data.daysUntilPurge} dager)` : null}.
         </p>
       ) : null}
-
-      {showWebhookCta ? (
-        <div className="ds-tripletex-status__hero-cta">
-          <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
-            Konfigurer webhook
-          </Link>
-        </div>
-      ) : null}
-
-      {showSetupCta ? (
-        <div className="ds-tripletex-status__hero-cta">
-          <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
-            Fortsett oppsett
-          </Link>
-        </div>
-      ) : null}
-
-      {showReconnectCta ? (
-        <div className="ds-tripletex-status__hero-cta">
-          <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
-            Koble til igjen
-          </Link>
-        </div>
-      ) : null}
-
-      {state === "DEGRADED" ? (
-        <div className="ds-tripletex-status__hero-cta">
-          <Link className="ds-btn ds-btn--secondary" href="/leverandor/innstillinger/tripletex/koble-til">
-            Re-konfigurer
-          </Link>
-        </div>
-      ) : null}
-    </section>
+    </div>
   );
 }

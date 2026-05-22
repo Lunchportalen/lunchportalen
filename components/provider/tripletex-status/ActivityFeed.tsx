@@ -1,3 +1,5 @@
+import { AlertTriangle, Check, Circle, XCircle } from "lucide-react";
+
 import {
   formatTripletexDateTime,
   tripletexActivityLabel,
@@ -5,54 +7,44 @@ import {
 
 import type { DashboardActivityEvent } from "@/app/leverandor/innstillinger/tripletex/status/actions";
 
+import { activityIconKind, type ActivityIconKind } from "./activityIconKind";
+
 type Props = {
   events: DashboardActivityEvent[];
-  stats30d: {
-    invoices_sent: number;
-    invoices_paid: number;
-    worker_failures: number;
-    webhook_events: number;
-  };
 };
 
-export default function ActivityFeed({ events, stats30d }: Props) {
+function ActivityIcon({ kind }: { kind: ActivityIconKind }) {
+  const props = { size: 18, strokeWidth: 2, "aria-hidden": true as const };
+
+  if (kind === "success") return <Check {...props} className="ds-tripletex-status__activity-icon ds-tripletex-status__activity-icon--success" />;
+  if (kind === "warn") return <AlertTriangle {...props} className="ds-tripletex-status__activity-icon ds-tripletex-status__activity-icon--warn" />;
+  if (kind === "error") return <XCircle {...props} className="ds-tripletex-status__activity-icon ds-tripletex-status__activity-icon--error" />;
+  return <Circle {...props} className="ds-tripletex-status__activity-icon" />;
+}
+
+export default function ActivityFeed({ events }: Props) {
+  if (events.length === 0) {
+    return <p className="ds-body-sm ds-tripletex-status__text-soft">Ingen hendelser registrert ennå.</p>;
+  }
+
   return (
-    <section className="ds-section" aria-labelledby="tpt-activity-title">
-      <h2 id="tpt-activity-title" className="ds-h3">
-        Aktivitet siste 30 dager
-      </h2>
-
-      <div className="ds-tripletex-status__stats-grid">
-        <p className="ds-body-sm">
-          Fakturaer sendt: <strong>{stats30d.invoices_sent}</strong>
-        </p>
-        <p className="ds-body-sm">
-          Fakturaer betalt: <strong>{stats30d.invoices_paid}</strong>
-        </p>
-        <p className="ds-body-sm">
-          Feilede pushes: <strong>{stats30d.worker_failures}</strong>
-        </p>
-        <p className="ds-body-sm">
-          Webhook-hendelser: <strong>{stats30d.webhook_events}</strong>
-        </p>
-      </div>
-
-      <h3 className="ds-body-sm ds-tripletex-status__subheading">Siste hendelser</h3>
-
-      {events.length === 0 ? (
-        <p className="ds-body-sm ds-tripletex-status__empty">Ingen hendelser registrert ennå.</p>
-      ) : (
-        <ul className="ds-tripletex-status__activity-list">
-          {events.map((ev) => (
-            <li key={`${ev.action}-${ev.created_at}`} className="ds-tripletex-status__activity-item">
-              <time className="ds-body-sm" dateTime={ev.created_at}>
+    <>
+      <h3 className="ds-body-sm ds-tripletex-status__feed-heading">Siste hendelser</h3>
+      <ol className="ds-tripletex-status__activity-list">
+        {events.map((ev) => {
+          const kind = activityIconKind(ev.action, ev.metadata);
+          const label = tripletexActivityLabel(ev.action, ev.metadata);
+          return (
+            <li key={`${ev.action}-${ev.created_at}`} className="ds-tripletex-status__activity-row">
+              <ActivityIcon kind={kind} />
+              <span className="ds-body">{label}</span>
+              <time className="ds-tripletex-status__activity-time" dateTime={ev.created_at}>
                 {formatTripletexDateTime(ev.created_at)}
               </time>
-              <span className="ds-body">{tripletexActivityLabel(ev.action, ev.metadata)}</span>
             </li>
-          ))}
-        </ul>
-      )}
-    </section>
+          );
+        })}
+      </ol>
+    </>
   );
 }

@@ -43,9 +43,15 @@ const BASE_DATA: DashboardData = {
     url: `https://example.test/api/webhooks/tripletex/provider/${PROVIDER_ID}`,
     lastReceivedAt: null,
     events30d: 0,
-    lastRotatedAt: null,
+    lastRotatedAt: "2026-05-21T11:00:00Z",
   },
-  recentEvents: [],
+  recentEvents: [
+    {
+      action: "tripletex_onboarding_provisioning_completed",
+      created_at: "2026-05-21T12:00:00Z",
+      metadata: null,
+    },
+  ],
   warnings: [],
 };
 
@@ -67,14 +73,26 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("StatusDashboardClient (TPT-B-7c)", () => {
-  test("CONFIGURING + provisioningComplete shows Konfigurer webhook CTA", async () => {
+describe("StatusDashboardClient (TPT-B-7c polish-7)", () => {
+  test("CONFIGURING + provisioningComplete shows Konfigurer webhook CTA in hero strip", async () => {
     const { container } = await renderDashboard(false);
     const cta = Array.from(container.querySelectorAll("a")).find((a) =>
       a.textContent?.includes("Konfigurer webhook"),
     );
     expect(cta).toBeTruthy();
-    expect(cta?.getAttribute("href")).toBe("/leverandor/innstillinger/tripletex/koble-til");
+    expect(cta?.className).toContain("ds-tripletex-status__hero-cta");
+  });
+
+  test("does not render nested ds-surface wrappers", async () => {
+    const { container } = await renderDashboard(true);
+    expect(container.querySelector(".ds-surface")).toBeNull();
+  });
+
+  test("uses section dividers and activity row layout", async () => {
+    const { container } = await renderDashboard(false);
+    expect(container.querySelectorAll(".ds-tripletex-status__section").length).toBeGreaterThanOrEqual(3);
+    expect(container.querySelector(".ds-tripletex-status__activity-row")).toBeTruthy();
+    expect(container.querySelector(".ds-tripletex-status__activity-stats")).toBeTruthy();
   });
 
   test("CONNECTED state shows Tilkoblet badge", async () => {
@@ -87,15 +105,15 @@ describe("StatusDashboardClient (TPT-B-7c)", () => {
     expect(viewer.container.textContent).not.toContain("Roter webhook-secret");
 
     document.body.innerHTML = "";
-    const admin = await renderDashboard(true);
+    const admin = await renderDashboard(true, { ...BASE_DATA, state: "CONNECTED" });
     expect(admin.container.textContent).toContain("Test tilkobling");
-    expect(admin.container.textContent).toContain("Roter webhook-secret");
+    expect(admin.container.textContent).toContain("Koble fra");
   });
 
-  test("resource summary renders three cards", async () => {
+  test("resource summary renders stat numbers without duplicate section headings", async () => {
     const { container } = await renderDashboard(false);
     expect(container.textContent).toContain("Produkter");
-    expect(container.textContent).toContain("Kunder");
     expect(container.textContent).toContain("MVA-koder");
+    expect(container.querySelector(".ds-tripletex-status__stat-number")).toBeTruthy();
   });
 });

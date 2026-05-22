@@ -8,6 +8,7 @@ import {
 } from "@/app/leverandor/innstillinger/tripletex/status/actions";
 
 import ActivityFeed from "./ActivityFeed";
+import ActivityStats from "./ActivityStats";
 import ResourceSummary from "./ResourceSummary";
 import StatusActions from "./StatusActions";
 import StatusHero from "./StatusHero";
@@ -89,11 +90,36 @@ export default function StatusDashboardClient({ providerId, isAdmin, initialData
       ) : null}
 
       <StatusHero data={data} />
-      <ResourceSummary counts={data.resourceCounts} />
-      <WebhookHealth webhook={data.webhook} />
-      <ActivityFeed events={data.recentEvents} stats30d={data.stats30d} />
+
+      <section className="ds-tripletex-status__section" aria-labelledby="tpt-resource-title">
+        <h2 id="tpt-resource-title" className="ds-h3">
+          Ressurser i Tripletex
+        </h2>
+        <ResourceSummary counts={data.resourceCounts} />
+      </section>
+
+      <section className="ds-tripletex-status__section" aria-labelledby="tpt-webhook-title">
+        <h2 id="tpt-webhook-title" className="ds-h3">
+          Webhook
+        </h2>
+        <WebhookHealth webhook={data.webhook} />
+      </section>
+
+      <section className="ds-tripletex-status__section" aria-labelledby="tpt-activity-title">
+        <h2 id="tpt-activity-title" className="ds-h3">
+          Aktivitet siste 30 dager
+        </h2>
+        <ActivityStats stats30d={data.stats30d} />
+        <ActivityFeed events={data.recentEvents} />
+      </section>
+
       {isAdmin ? (
-        <StatusActions providerId={providerId} connectionState={data.state} onChanged={() => void refresh()} />
+        <section className="ds-tripletex-status__section" aria-labelledby="tpt-actions-title">
+          <h2 id="tpt-actions-title" className="ds-h3">
+            Handlinger
+          </h2>
+          <StatusActions providerId={providerId} connectionState={data.state} onChanged={() => void refresh()} />
+        </section>
       ) : null}
     </div>
   );

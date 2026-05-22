@@ -27,38 +27,34 @@ export default function WebhookHealth({ webhook }: Props) {
   }, [webhook.url]);
 
   return (
-    <section className="ds-surface ds-tripletex-status__webhook" aria-labelledby="tpt-webhook-title">
-      <h2 id="tpt-webhook-title" className="ds-h3">
-        Webhook
-      </h2>
-
-      <dl className="ds-tripletex-status__dl">
-        <div>
-          <dt className="ds-body-sm">Siste mottatt</dt>
+    <div className="ds-tripletex-status__webhook">
+      <dl className="ds-tripletex-status__def-list">
+        <div className="ds-tripletex-status__def-row">
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">Siste mottatt</dt>
           <dd className="ds-body">
             {webhook.lastReceivedAt
               ? `${formatTripletexRelative(webhook.lastReceivedAt)} (${formatTripletexDateTime(webhook.lastReceivedAt)})`
               : "Ingen hendelser ennå"}
           </dd>
         </div>
-        <div>
-          <dt className="ds-body-sm">Siste 30 dager</dt>
+        <div className="ds-tripletex-status__def-row">
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">Siste 30 dager</dt>
           <dd className="ds-body">{webhook.events30d} hendelser</dd>
         </div>
-        <div>
-          <dt className="ds-body-sm">Secret rotert</dt>
+        <div className="ds-tripletex-status__def-row">
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">Secret rotert</dt>
           <dd className="ds-body">
             {webhook.lastRotatedAt ? formatTripletexDateTime(webhook.lastRotatedAt) : "Ikke rotert"}
           </dd>
         </div>
       </dl>
 
-      <div className="ds-secret-display">
-        <code className="ds-body-sm">{webhook.url}</code>
-        <button type="button" className="ds-btn ds-btn--secondary" onClick={() => void copyUrl()}>
-          {copyMsg ?? "Kopier URL"}
+      <div className="ds-tripletex-status__copy-field">
+        <code className="ds-tripletex-status__copy-field-value">{webhook.url}</code>
+        <button type="button" className="ds-tripletex-status__copy-field-btn" onClick={() => void copyUrl()}>
+          {copyMsg ?? "Kopier"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }
