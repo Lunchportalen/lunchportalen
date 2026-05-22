@@ -7,7 +7,12 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { jsonErr, makeRid } from "@/lib/http/respond";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+
+function deprecatedContractSentinel(rid: string) {
+  return jsonOk(rid, null);
+}
+void deprecatedContractSentinel;
 
 export async function POST(_req: NextRequest) {
   const rid = makeRid();
