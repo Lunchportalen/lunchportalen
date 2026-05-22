@@ -5,23 +5,17 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
+import {
+  aggregateLinesByCompany,
+  loadLinesForRuns,
+  loadRunsOverlappingMonth,
+  loadTripletexInvoicesForRuns,
+  parseMonth as parseInvoiceMonth,
+  tripletexKey,
+} from "@/lib/superadmin/invoiceMonthlyDb";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type ParsedMonth = {
-  month: string;
-  monthStart: string;
-  nextMonthStart: string;
-};
-
 type ReconcileStatus = "OK" | "AVVIK";
-
-type InvoiceLineRow = {
-  reference: string | null;
-  company_id: string | null;
-  quantity: number | null;
-  export_status: string | null;
-  locked: boolean | null;
-};
 
 function safeStr(value: unknown): string {
   return String(value ?? "").trim();
@@ -30,24 +24,6 @@ function safeStr(value: unknown): string {
 function safeNum(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeStatus(value: unknown): string {
-  return safeStr(value).toUpperCase();
-}
-
-function parseMonth(raw: string): ParsedMonth | null {
-  const month = safeStr(raw);
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
-
-  const [yearStr, monthStr] = month.split("-");
-  const year = Number(yearStr);
-  const mm = Number(monthStr);
-  if (!Number.isFinite(year) || !Number.isFinite(mm)) return null;
-
-  const monthStart = `${month}-01`;
-  const nextMonthStart = new Date(Date.UTC(year, mm, 1)).toISOString().slice(0, 10);
-  return { month, monthStart, nextMonthStart };
 }
 
 function parsePagination(limitRaw: unknown, offsetRaw: unknown): { limit: number; offset: number } {
@@ -81,7 +57,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   if (deny) return deny;
 
   const url = new URL(req.url);
-  const parsed = parseMonth(url.searchParams.get("month") ?? "");
+  const parsed = parseInvoiceMonth(url.searchParams.get("month") ?? "");
   if (!parsed) return jsonErr(ctx.rid, "month ma vaere pa formatet YYYY-MM.", 400, "BAD_REQUEST");
 
   const { limit, offset } = parsePagination(url.searchParams.get("limit"), url.searchParams.get("offset"));
@@ -157,7 +133,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     }
 
-    const invoiceByCompany = new Map<
+    let invoiceByCompany = new Map<
       string,
       {
         qty: number;
@@ -167,46 +143,22 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     >();
 
-    {
-      let cursor = 0;
-      const pageSize = 2000;
-      while (true) {
-        const { data, error } = await admin
-          .from("invoice_lines")
-          .select("reference,company_id,quantity,export_status,locked")
-          .in("company_id", companyIds)
-          .eq("month", parsed.monthStart)
-          .range(cursor, cursor + pageSize - 1);
-
-        if (error) {
-          if (isMissingRelationOrColumn(error)) {
-            return jsonErr(ctx.rid, "Invoice-schema mangler for reconcile.", 500, "INVOICE_SCHEMA_MISSING");
-          }
-          return jsonErr(ctx.rid, "Kunne ikke lese fakturalinjer for avstemming.", 500, {
-            code: "RECONCILE_INVOICE_READ_FAILED",
-            detail: { message: safeStr(error?.message ?? error) },
-          });
-        }
-
-        const rows = (Array.isArray(data) ? data : []) as InvoiceLineRow[];
-        for (const row of rows) {
-          const companyId = safeStr(row.company_id);
-          if (!companyId) continue;
-          const bucket = invoiceByCompany.get(companyId) ?? { qty: 0, locked: false, references: [], statuses: [] };
-
-          bucket.qty += Math.max(0, Math.floor(safeNum(row.quantity)));
-          bucket.locked = bucket.locked || Boolean(row.locked);
-
-          const ref = safeStr(row.reference);
-          if (ref) bucket.references.push(ref);
-          bucket.statuses.push(normalizeStatus(row.export_status));
-
-          invoiceByCompany.set(companyId, bucket);
-        }
-
-        if (rows.length < pageSize) break;
-        cursor += pageSize;
+    try {
+      const runs = await loadRunsOverlappingMonth(admin, parsed);
+      const runIds = runs.map((r) => r.id);
+      const runsById = new Map(runs.map((r) => [r.id, r]));
+      const lines = await loadLinesForRuns(admin, runIds, companyIds);
+      const txRows = await loadTripletexInvoicesForRuns(admin, runIds, companyIds);
+      const txByKey = new Map(txRows.map((t) => [tripletexKey(t.run_id, t.company_id), t]));
+      invoiceByCompany = aggregateLinesByCompany(lines, runsById, txByKey);
+    } catch (error: any) {
+      if (isMissingRelationOrColumn(error)) {
+        return jsonErr(ctx.rid, "Invoice-schema mangler for reconcile.", 500, "INVOICE_SCHEMA_MISSING");
       }
+      return jsonErr(ctx.rid, "Kunne ikke lese fakturalinjer for avstemming.", 500, {
+        code: "RECONCILE_INVOICE_READ_FAILED",
+        detail: { message: safeStr(error?.message ?? error) },
+      });
     }
 
     const rows = companies.map((company) => {

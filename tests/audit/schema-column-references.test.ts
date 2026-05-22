@@ -21,16 +21,33 @@ const FORBIDDEN_INVOICE_COLUMNS = new Set([
   "flags",
   "note",
   "amount_inc_vat",
+  "reference",
+  "month",
+  "locked",
+  "export_status",
+  "export_last_error",
+  "unit_price",
+  "amount",
+  "currency",
+  "tripletex_vat_code",
+  "product_tier",
+  "product_name",
 ]);
 
-/** K4 schema-alignment scope — full column ledger enforced here first. */
+/** Legacy monthly invoice routes — K2 schema cleanup scope. */
 const SCOPED_FILES = new Set([
   "lib/superadmin/invoiceRunDb.ts",
+  "lib/superadmin/invoiceMonthlyDb.ts",
   "lib/superadmin/tripletexExportByRun.ts",
   "app/api/superadmin/invoices/runs/route.ts",
   "app/api/superadmin/invoices/runs/[runId]/route.ts",
   "app/api/superadmin/invoices/runs/[runId]/exports/route.ts",
   "app/api/superadmin/companies/invoices/route.ts",
+  "app/api/superadmin/invoices/generate/route.ts",
+  "app/api/superadmin/invoices/reconcile/route.ts",
+  "app/api/superadmin/invoices/exports/route.ts",
+  "app/api/superadmin/invoices/exports/retry/route.ts",
+  "app/api/superadmin/invoices/reverse/route.ts",
 ]);
 
 const KNOWN_COLUMNS: Record<string, Set<string>> = {

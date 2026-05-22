@@ -46,7 +46,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 ### Største risikoer mot LIVE
 
 1. ~~**Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)~~ **Lukket på prod 2026-05-22 (migrasjon `20260522150000`)**
-2. **`invoice.reverse` uten handler** — broken pipeline ved fakturareversering
+2. ~~**`invoice.reverse` uten handler** — broken pipeline ved fakturareversering~~ **Lukket 2026-05-22 (K2 OPTION B — se `docs/audit/k2-invoice-reverse.md`)**
 3. **Umbraco hardcoded DB password** i repo
 4. **Ingen ekstern error/alerting** — cron-feil oppdages manuelt
 5. **259 migrasjonsfiler vs 93 prod ledger** — drift/compliance risiko
@@ -843,7 +843,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
 | K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket på prod 2026-05-22 i migrasjon `20260522150000`** (kode `92c0c447`); se `docs/audit/k1-outbox-race-fix.md` |
-| K2 | `invoice.reverse` handler | 1 dag | Tripletex API | Implementer consumer i tripletex-outbox worker |
+| K2 | ~~`invoice.reverse` handler~~ | — | — | **Lukket 2026-05-22 (OPTION B)** — dead enqueue fjernet; schema-cleanup generate/reconcile/exports/reverse |
 | K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
 | K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
 | K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22 (K4)** — se commits under K4 nedenfor |
@@ -874,7 +874,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 17 (4 KRITISK · 7 HØY · 6 MEDIUM)
+**Totalt Outstanding Work items:** 16 (3 KRITISK · 7 HØY · 6 MEDIUM)
 
 ---
 
@@ -894,7 +894,26 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 **Commits (K4):** `16d44457` `c915b54c` `b556d8d3` `59d9a614` `7e0ab915` `d8fffba2`
 
-**Outstanding KRITISK etter K4:** 2 — **K2** (`invoice.reverse`), **K5** (`/leverandor` middleware gate i repo-state §18)
+---
 
-*Audit oppdatert 2026-05-22 · K4 lukket · 19 seksjoner*
+## 20. K2 — invoice.reverse + schema-cleanup (lukket 2026-05-22)
+
+**Status:** Lukket  
+**Audit:** `docs/audit/k2-invoice-reverse.md`  
+**Beslutning:** **OPTION B** — stopp `invoice.reverse:*` outbox-produsering (ingen consumer, 0 events i prod, env-gated spike). Kreditnota/Tripletex-reversal er fremtidig feature.
+
+**Schema-cleanup (STRATEGI A):**
+
+| Rute | Endring |
+|------|---------|
+| `generate` | Delegert til `lp_generate_agreement_invoices_for_period` RPC |
+| `reconcile` | Run-basert `invoice_lines` + `tripletex_invoices` via `invoiceMonthlyDb` |
+| `exports` / `retry` | Run-basert listing; retry nullstiller `tripletex_invoices` |
+| `reverse` | Schema-aligned read; **ingen** outbox enqueue (501 deferred) |
+
+**Regression-vakt:** `tests/audit/schema-column-references.test.ts` utvidet med K2 scoped filer + legacy forbidden columns.
+
+**Outstanding KRITISK etter K2:** 1 — **K5** (`/leverandor` middleware gate, §18)
+
+*Audit oppdatert 2026-05-22 · K2 lukket · 20 seksjoner*
 
