@@ -34,7 +34,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 | Marketing (Umbraco) | **BETA** | Azure deploy; DB-passord rotert 2026-05-22 (K3 lukket) |
 | Public registration | **ALPHA** | `/registrer` + `/onboarding` duplikat |
 | AI / growth / social | **IN-PROGRESS** (lib/ai) / **STUB** (social) | lib/ai: ~26k LOC keep-set (CMS AI + demand); archive på branch |
-| Observability | **BETA** | Sentry SDK (EU) — krever DSN på Vercel; alerting i Sentry UI |
+| Observability | **PROD-READY** | Sentry (EU) end-to-end verifisert staging 2026-05-22; source-maps + PII-scrub OK |
 
 ### Største styrker
 
@@ -48,7 +48,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 1. ~~**Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)~~ **Lukket på prod 2026-05-22 (migrasjon `20260522150000`)**
 2. ~~**`invoice.reverse` uten handler** — broken pipeline ved fakturareversering~~ **Lukket 2026-05-22 (K2 OPTION B — se `docs/audit/k2-invoice-reverse.md`)**
 3. ~~**Umbraco hardcoded DB password** i repo~~ **Lukket 2026-05-22 (K3 — passord rotert i Azure, repo renset)**
-4. **Ingen ekstern error/alerting** — cron-feil oppdages manuelt
+4. ~~**Ingen ekstern error/alerting**~~ — **Lukket 2026-05-22 (H1)** — Sentry capture verifisert; Sentry UI-alerts krever fortsatt manuell oppsett
 5. **259 migrasjonsfiler vs 93 prod ledger** — drift/compliance risiko
 6. **314 API routes** — stor angrepsflate, ujevn testdekning
 
@@ -714,12 +714,12 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | Kapabilitet | Status | Detalj |
 |-------------|--------|--------|
-| **Logging** | **BETA** | `lib/core/logger.ts` → Sentry; `lib/ops/log.ts` strukturert console |
-| **Error tracking** | **BETA** | Sentry (`@sentry/nextjs`) — client/server/edge; PII-scrubbing; krever DSN env |
+| **Logging** | **PROD-READY** | `lib/core/logger.ts` → Sentry; `lib/ops/log.ts` strukturert console |
+| **Error tracking** | **PROD-READY** | Sentry (`@sentry/nextjs`) — client/server/edge; PII-scrubbing; verifisert issue `JAVASCRIPT-NEXTJS-1` (staging, source-maps OK) |
 | **Feiloppdagelse prod** | Sentry + manuell | Superadmin health, `cron_runs`, Vercel logs som supplement |
 | **Health endpoints** | Finnes | `/api/health`, `/api/health/live`, `/api/health/ready`, `/api/superadmin/system/health` |
 | **Metrics** | Delvis | `cron_runs`, `lifecycle_audit_log`, `ai_activity_log` — ingen Prometheus |
-| **Cron failure alert** | **Delvis** | Sentry capture på Vercel-scheduled crons; Sentry UI-alerts krever manuell oppsett (FASE 6) |
+| **Cron failure alert** | **Delvis** | Sentry capture på Vercel-scheduled crons; Sentry UI-alerts krever manuell oppsett |
 | **Rate limiting** | Delvis | Auth rate limit (`lib/auth/rateLimit.ts`); webhooks in-memory; public API varierer |
 
 **SYSTEM_MOTOR_SECRET:** Påkrevd for system motor health (AGENTS.md N14). Mangler → DEGRADED i system health.
@@ -862,7 +862,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
-| H1 | ~~Observability v1 (Sentry + cron alert)~~ | — | Vercel + Sentry EU | **Lukket 2026-05-22, commit 1fad9d37** — SDK + PII-scrub + cron capture; Sentry UI-alerts manuelt etter DSN (se `docs/operations/sentry-conventions.md`) |
+| H1 | ~~Observability v1 (Sentry + cron alert)~~ | — | Vercel + Sentry EU | **Lukket 2026-05-22** — Sentry capture end-to-end verifisert i issue `JAVASCRIPT-NEXTJS-1` (`a5545e58`) på staging. Source-maps + PII-scrub + serverless-safe transport bekreftet. Cron-feil rutes via `captureCronHandlerError()`. Lærdommer dokumentert i `docs/operations/sentry-conventions.md`. |
 | H2 | README + onboarding docs | 1 dag | — | Erstatt stale README |
 | H3 | Public registration unified flow | 3 dager | `/registrer` vs `/onboarding` | Én canonical path |
 | H4 | Migration ledger reconcile | 2–3 dager | supabase CLI | P3.M5 hygiene |
@@ -883,7 +883,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 14 (2 KRITISK · 6 HØY · 6 MEDIUM)
+**Totalt Outstanding Work items:** 13 (2 KRITISK · 5 HØY · 6 MEDIUM)
 
 ---
 
