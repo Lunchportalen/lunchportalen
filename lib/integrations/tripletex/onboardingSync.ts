@@ -91,7 +91,20 @@ type SkippedCustomer = {
   company_id: string;
   company_name: string | null;
   reason: string;
+  error_code?: string | null;
+  error_message?: string | null;
 };
+
+function sanitizeLookupError(error: unknown): string {
+  const message = safeStr((error as { message?: string })?.message);
+  if (!message) return "Company lookup failed";
+  return message.slice(0, 240);
+}
+
+function lookupErrorCode(error: unknown): string | null {
+  const code = safeStr((error as { code?: string })?.code);
+  return code || null;
+}
 
 /**
  * TPT-B-7 — Process outbox event tripletex.onboarding_provisioning_start:<provider_id>:<env>
@@ -168,7 +181,18 @@ export async function handleOnboardingProvisioningStart(
         .eq("id", companyId)
         .maybeSingle();
 
-      if (companyError || !company) {
+      if (companyError) {
+        skipped.push({
+          company_id: companyId,
+          company_name: null,
+          reason: "COMPANY_LOOKUP_FAILED",
+          error_code: lookupErrorCode(companyError),
+          error_message: sanitizeLookupError(companyError),
+        });
+        return false;
+      }
+
+      if (!company) {
         skipped.push({
           company_id: companyId,
           company_name: null,
