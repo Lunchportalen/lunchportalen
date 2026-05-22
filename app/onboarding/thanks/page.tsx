@@ -1,47 +1,69 @@
-// app/onboarding/thanks/page.tsx
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
+
 import { SYSTEM_EMAILS } from "@/lib/system/emails";
 
-export default function Thanks({ searchParams }: { searchParams?: Record<string, string> }) {
-  const status = searchParams?.status ?? "pending";
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
+export default async function Thanks({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+}) {
+  const sp = await Promise.resolve(searchParams ?? {});
+  const statusRaw = sp.status;
+  const status = safeStr(Array.isArray(statusRaw) ? statusRaw[0] : statusRaw) || "pending";
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-3xl font-semibold">Takk for registreringen</h1>
+    <main className="ds-page ds-empty-state">
+      <div className="ds-container">
+        <div className="ds-text-limit ds-empty-state__limit">
+          <div className="ds-empty-state__panel ds-fade-up">
+            <div
+              className="ds-empty-state__icon-wrap ds-empty-state__icon-wrap--success"
+              aria-hidden="true"
+            >
+              <CheckCircle2 />
+            </div>
 
-      <p className="mt-3 text-[rgb(var(--lp-muted))]">
-        Bedriften er opprettet. Du er nå logget inn.
-      </p>
+            <p className="ds-eyebrow">Fullført</p>
 
-      <p className="mt-3 text-[rgb(var(--lp-muted))]">
-        Vi har mottatt forespørselen. Avtalen aktiveres etter gjennomgang. Når avtalen er aktiv kan du legge til ansatte.
-      </p>
+            <h1 className="ds-h2">Takk for registreringen</h1>
 
-      <div className="mt-6 rounded-2xl border bg-white p-4 text-sm">
-        <b>Status:</b> {status}
-      </div>
+            <p className="ds-lead">Bedriften er opprettet. Du er nå logget inn.</p>
 
-      <div className="mt-8 flex gap-3">
-        <Link href="/login" className="rounded-xl border px-4 py-2">
-          Gå til innlogging
-        </Link>
-        <Link href="/" className="rounded-xl border px-4 py-2">
-          Til forsiden
-        </Link>
-      </div>
+            <p className="ds-lead">
+              Vi har mottatt forespørselen. Avtalen aktiveres etter gjennomgang. Når avtalen er aktiv kan du legge til
+              ansatte.
+            </p>
 
-      {/* Kontaktinformasjon */}
-      <div className="mt-12 rounded-2xl bg-[rgb(var(--lp-bg-muted))] p-5 text-sm">
-        <p className="font-medium">Spørsmål eller behov for hjelp?</p>
-        <p className="mt-1 text-[rgb(var(--lp-muted))]">
-          Har du spørsmål om registreringen eller veien videre, er du hjertelig velkommen til å ta kontakt med oss.
-        </p>
-        <p className="mt-2">
-          📧{" "}
-          <a href={`mailto:${SYSTEM_EMAILS.SUPPORT}`} className="font-medium underline hover:no-underline">
-            {SYSTEM_EMAILS.SUPPORT}
-          </a>
-        </p>
+            <div className="ds-empty-state__meta">
+              <b>Status:</b> {status}
+            </div>
+
+            <div className="ds-empty-state__actions">
+              <Link href="/login" className="ds-btn ds-btn--primary">
+                Gå til innlogging
+              </Link>
+              <Link href="/" className="ds-btn ds-btn--secondary">
+                Til forsiden
+              </Link>
+            </div>
+
+            <div className="ds-empty-state__note">
+              <p className="ds-empty-state__note-title">Spørsmål eller behov for hjelp?</p>
+              <p>
+                Har du spørsmål om registreringen eller veien videre, er du hjertelig velkommen til å ta kontakt med oss.
+              </p>
+              <p>
+                📧{" "}
+                <a href={`mailto:${SYSTEM_EMAILS.SUPPORT}`}>{SYSTEM_EMAILS.SUPPORT}</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

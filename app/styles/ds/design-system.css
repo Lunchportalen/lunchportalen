@@ -1019,6 +1019,71 @@ main{
   stroke-width:1.75;
 }
 
+.ds-empty-state__icon-wrap--success{
+  background:rgba(47,122,101,.12);
+  color:var(--ds-green);
+}
+
+.ds-empty-state__icon-wrap--neutral{
+  background:var(--ds-line-strong);
+  color:var(--ds-text-soft);
+}
+
+.ds-empty-state__meta{
+  margin:0 auto 40px;
+  max-width:42ch;
+  padding:16px 20px;
+  border-radius:var(--ds-radius-sm);
+  border:1px solid var(--ds-line);
+  background:var(--ds-bg-soft);
+  font-size:var(--ds-body-sm);
+  line-height:1.5;
+  color:var(--ds-text);
+  text-align:center;
+}
+
+.ds-empty-state__note{
+  margin-top:48px;
+  padding-top:40px;
+  border-top:1px solid var(--ds-line);
+  text-align:center;
+  font-size:var(--ds-body-sm);
+  line-height:1.6;
+  color:var(--ds-text-soft);
+}
+
+.ds-empty-state__note p{
+  margin:0 0 12px;
+}
+
+.ds-empty-state__note p:last-child{
+  margin-bottom:0;
+}
+
+.ds-empty-state__note a{
+  color:var(--ds-text);
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+
+.ds-empty-state__note a:hover{
+  text-decoration:none;
+}
+
+.ds-empty-state__note-title{
+  font-weight:700;
+  color:var(--ds-text);
+}
+
+.ds-empty-state__meta .ds-empty-state__mono{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+
+.ds-empty-state .ds-lead + .ds-lead{
+  margin-top:-16px;
+}
+
 .ds-empty-state .ds-eyebrow{
   display:block;
   margin:0 0 32px;
