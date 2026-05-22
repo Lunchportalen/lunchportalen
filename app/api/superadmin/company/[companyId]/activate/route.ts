@@ -8,6 +8,10 @@ import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
 import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
+import {
+  applyCompanyLifecycleStatus,
+  normalizeCompanyLifecycleStatus,
+} from "@/lib/server/superadmin/companyLifecycleStatusApply";
 
 type RouteCtx = {
   params: { companyId: string } | Promise<{ companyId: string }>;
@@ -58,13 +62,13 @@ export async function POST(_req: NextRequest, ctx: RouteCtx) {
       return jsonErr(rid, "Ugyldig forespørsel.", 400, "BAD_COMPANY_ID");
     }
 
-    const { error: activateErr } = await sb.rpc("lp_company_activate", { p_company_id: companyId });
-    if (activateErr) {
-      return jsonErr(rid, "Kunne ikke aktivere bedriften.", 500, {
-        code: "COMPANY_ACTIVATE_FAILED",
-        detail: { message: safeStr(activateErr.message) },
-      });
+    const next = normalizeCompanyLifecycleStatus("ACTIVE");
+    if (!next) {
+      return jsonErr(rid, "Kunne ikke aktivere bedriften.", 500, "INVALID_STATUS");
     }
+
+    const applied = await applyCompanyLifecycleStatus(sb, rid, companyId, next);
+    if (applied.ok === false) return applied.response;
 
     const outboxRow = {
       event_key: `company.activated:${companyId}`,
@@ -89,6 +93,8 @@ export async function POST(_req: NextRequest, ctx: RouteCtx) {
       rid,
       {
         companyId,
+        status: next,
+        already: applied.already ?? false,
         message: "Bedriften er aktiv.",
       },
       200

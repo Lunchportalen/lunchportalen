@@ -846,7 +846,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | K2 | `invoice.reverse` handler | 1 dag | Tripletex API | Implementer consumer i tripletex-outbox worker |
 | K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
 | K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
-| K5 | Broken RPC cleanup (`lp_create_company_with_location`, etc.) | 1 dag | migrations | Fjern stale refs eller implementer RPC |
+| K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22 (K4)** — se commits under K4 nedenfor |
 | K6 | Prod-smoke: Tripletex B-7 E2E | 2 dager | staging creds | Kjør polish-6 verify checklist |
 
 ### HØY — før public launch
@@ -874,8 +874,27 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 20 (5 KRITISK · 7 HØY · 8 MEDIUM)
+**Totalt Outstanding Work items:** 17 (4 KRITISK · 7 HØY · 6 MEDIUM)
 
 ---
 
-*Audit fullført 2026-05-22 · 18 seksjoner · 691 linjer*
+## 19. K4 — Broken RPC cleanup (lukket 2026-05-22)
+
+**Status:** Lukket  
+**Audit:** `docs/audit/k4-broken-rpcs.md` · `scripts/audit/k4-code-rpc-refs.json`  
+**Regression-vakt:** `tests/audit/no-broken-rpc-references.test.ts`
+
+| Bølge | Innhold | Resultat |
+|-------|---------|----------|
+| 0 | Drift-migrasjoner (ledger) | `lp_idem_complete` / `lp_idem_fail` lagt i repo (`20260522161000`) |
+| 1 | Deprecated/dead RPC-kall | `assertNotOnHold` slettet; `/api/company/create` → 410; forecast/preprod crons deaktivert; kitchen-test → `/api/kitchen/day` |
+| 2A | ESG kill | 54 filer slettet; 3 Vercel crons fjernet; `esg_daily`/`esg_monthly` droppet (tom backup i `docs/archive/esg-data-2026-05-22.json`) |
+| 2B/C | Superadmin/export trio | `superadmin_assign_profile_to_company` + `superadmin_set_user_scope` → direkte `profiles` update; `tripletex_export_by_run` → `loadTripletexExportByRun` |
+| 2D | Lukk + vakt | RPC diff app/lib vs migrasjoner = **0** (ekskl. runtime-safe: `lp_membership_get`, `lp_pgrst_reload_schema`) |
+
+**Commits (K4):** `<pending git commit — se git log>`
+
+**Outstanding KRITISK etter K4:** 2 — **K2** (`invoice.reverse`), **K5** (`/leverandor` middleware gate i repo-state §18)
+
+*Audit oppdatert 2026-05-22 · K4 lukket · 19 seksjoner*
+

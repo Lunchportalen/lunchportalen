@@ -176,7 +176,7 @@ export function analyzeSystem(root: string = process.cwd()): AnalysisResult {
     }
   }
 
-  /** Heuristic: many `.rpc(` or `orderWrite` string hits — flag for human review only. */
+  /** Heuristic: many rpc( call sites or orderWrite string hits — flag for human review only. */
   let rpcHits = 0;
   for (const abs of files) {
     try {

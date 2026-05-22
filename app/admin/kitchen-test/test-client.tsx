@@ -2,7 +2,6 @@
 
 // app/admin/kitchen-test/test-client.tsx
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function KitchenRpcTestClient() {
   const [out, setOut] = useState<any>(null);
@@ -14,54 +13,45 @@ export default function KitchenRpcTestClient() {
     setErr(null);
     setOut(null);
 
-    const supabase = supabaseBrowser();
-
-    // (1) Verifiser at du faktisk er innlogget
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session?.user?.id) {
-      setLoading(false);
-      setErr({ message: "Ikke innlogget i appen (auth.uid() blir null)." });
-      return;
-    }
-
-    // (2) Kall RPC
     const today = new Date().toISOString().slice(0, 10);
-    const { data, error } = await supabase.rpc("get_kitchen_orders", {
-      p_from: today,
-      p_to: today,
-      p_location_id: null,
-    });
+    const res = await fetch(`/api/kitchen/day?date=${encodeURIComponent(today)}`, { cache: "no-store" }).catch(
+      (e) => ({ ok: false, error: e }),
+    );
 
     setLoading(false);
 
-    if (error) {
-      setErr(error);
+    if (!res || typeof res !== "object" || !("ok" in res)) {
+      setErr({ message: "Nettverksfeil mot /api/kitchen/day." });
       return;
     }
-    setOut(data);
+
+    const httpRes = res as Response;
+    const body = await httpRes.json().catch(() => null);
+
+    if (!httpRes.ok) {
+      setErr(body ?? { message: `HTTP ${httpRes.status}` });
+      return;
+    }
+
+    setOut(body);
   }
 
   return (
-    <div className="rounded-2xl border bg-white p-4">
+    <div className="space-y-4">
       <button
+        type="button"
+        className="rounded-full border px-4 py-2 text-sm"
         onClick={run}
         disabled={loading}
-        className="rounded-xl border px-4 py-2"
       >
-        {loading ? "Tester..." : "Kjør RPC-test"}
+        {loading ? "Kjører…" : "Test kitchen API (/api/kitchen/day)"}
       </button>
-
-      {err && (
-        <pre className="mt-4 whitespace-pre-wrap rounded-xl border p-3 text-sm">
-          {JSON.stringify(err, null, 2)}
-        </pre>
-      )}
-
-      {out && (
-        <pre className="mt-4 whitespace-pre-wrap rounded-xl border p-3 text-sm">
-          {JSON.stringify(out, null, 2)}
-        </pre>
-      )}
+      {err ? (
+        <pre className="overflow-auto rounded border bg-red-50 p-3 text-xs">{JSON.stringify(err, null, 2)}</pre>
+      ) : null}
+      {out ? (
+        <pre className="overflow-auto rounded border bg-white p-3 text-xs">{JSON.stringify(out, null, 2)}</pre>
+      ) : null}
     </div>
   );
 }
