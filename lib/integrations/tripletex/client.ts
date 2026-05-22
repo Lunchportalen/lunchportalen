@@ -765,6 +765,71 @@ export async function resolveTripletexCountryId(
   });
 }
 
+const TRIPLETEX_CURRENCY_PATH = "/currency";
+
+type TripletexCurrencyRow = {
+  id?: number;
+  code?: string;
+  name?: string;
+};
+
+type CurrencyCacheEntry = {
+  rows: TripletexCurrencyRow[];
+  loadedAt: number;
+};
+
+const currencyCache = new Map<string, CurrencyCacheEntry>();
+
+function extractCurrencyRows(value: AnyJson): TripletexCurrencyRow[] {
+  const v = value as any;
+  if (Array.isArray(v?.values)) return v.values as TripletexCurrencyRow[];
+  if (Array.isArray(v)) return v as TripletexCurrencyRow[];
+  return [];
+}
+
+/** Clears in-process currency cache (Vitest isolation only). */
+export function __clearTripletexCurrencyCacheForTests(): void {
+  currencyCache.clear();
+}
+
+async function loadTripletexCurrencies(
+  auth: TripletexAuth,
+  request?: RequestOptions,
+): Promise<TripletexCurrencyRow[]> {
+  const cacheKey = `${auth.companyId}:${auth.token.slice(0, 8)}`;
+  const cached = currencyCache.get(cacheKey);
+  if (cached && Date.now() - cached.loadedAt < COUNTRY_CACHE_TTL_MS) {
+    return cached.rows;
+  }
+
+  const res = await requestTripletex(
+    { method: "GET", path: TRIPLETEX_CURRENCY_PATH, query: { from: 0, count: 300 } },
+    { ...request, auth },
+  );
+  const rows = extractCurrencyRows(res.value);
+  currencyCache.set(cacheKey, { rows, loadedAt: Date.now() });
+  return rows;
+}
+
+export async function resolveTripletexCurrencyId(
+  isoCode: string,
+  auth: TripletexAuth,
+  request?: RequestOptions,
+): Promise<number> {
+  const code = safeStr(isoCode).toUpperCase() || "NOK";
+  const rows = await loadTripletexCurrencies(auth, request);
+
+  const match = rows.find((row) => safeStr(row.code).toUpperCase() === code);
+  const id = safeNum(match?.id);
+  if (id > 0) return Math.floor(id);
+
+  throw new TripletexClientError({
+    message: `Currency '${code}' not found in Tripletex /currency`,
+    kind: "PERMANENT",
+    code: "TRIPLETEX_CURRENCY_NOT_FOUND",
+  });
+}
+
 /** Tripletex CustomerDTO — postalAddress.country is nested {id}, not ISO string. */
 export function buildTripletexCustomerCreateBody(input: {
   name: string;
@@ -855,6 +920,24 @@ export function buildTripletexProductCreateBody(input: {
     isStockItem: false,
     vatType: { id: input.vatTypeId },
     ...(maybeAccount(input.revenueAccount) ? { account: maybeAccount(input.revenueAccount) } : {}),
+  };
+}
+
+/** Tripletex OrderDTO — currency is nested {id}, not ISO string. */
+export function buildTripletexOrderCreateBody(input: {
+  customerId: string | number;
+  currencyId: number;
+  orderDate: string;
+  uniqueRef: string;
+  orderLines: Array<Record<string, unknown>>;
+}): Record<string, unknown> {
+  return {
+    customer: { id: input.customerId },
+    orderDate: safeStr(input.orderDate),
+    currency: { id: input.currencyId },
+    ourReference: safeStr(input.uniqueRef),
+    yourReference: safeStr(input.uniqueRef),
+    orderLines: input.orderLines,
   };
 }
 
@@ -1711,7 +1794,7 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<{ extern
     });
   }
 
-  const currency = normalizedLines[0]?.currency || "NOK";
+  const currencyCode = normalizedLines[0]?.currency || "NOK";
   const orderLines = normalizedLines.map((line) => {
     const orderLine: Record<string, unknown> = {
       product: { id: line.productId },
@@ -1726,20 +1809,23 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<{ extern
     return orderLine;
   });
 
+  const auth = input.request?.auth ?? (await resolveTripletexAuth());
+  const requestWithAuth = { ...input.request, auth };
+  const currencyId = await resolveTripletexCurrencyId(currencyCode, auth, requestWithAuth);
+
   const orderRes = await requestTripletex(
     {
       method: "POST",
       path: "/order",
-      body: {
-        customer: { id: customerId },
+      body: buildTripletexOrderCreateBody({
+        customerId,
+        currencyId,
         orderDate: new Date().toISOString().slice(0, 10),
-        currency,
-        ourReference: uniqueRef,
-        yourReference: uniqueRef,
+        uniqueRef,
         orderLines,
-      },
+      }),
     },
-    input.request
+    requestWithAuth,
   );
 
   const orderId = parseId(orderRes.value);
