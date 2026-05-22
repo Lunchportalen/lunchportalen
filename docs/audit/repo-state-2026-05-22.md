@@ -862,7 +862,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
-| H1 | ~~Observability v1 (Sentry + cron alert)~~ | — | Vercel + Sentry EU | **Lukket 2026-05-22** — SDK + PII-scrub + cron capture; Sentry UI-alerts manuelt etter DSN (se `docs/operations/sentry-conventions.md`) |
+| H1 | ~~Observability v1 (Sentry + cron alert)~~ | — | Vercel + Sentry EU | **Lukket 2026-05-22, commit 1fad9d37** — SDK + PII-scrub + cron capture; Sentry UI-alerts manuelt etter DSN (se `docs/operations/sentry-conventions.md`) |
 | H2 | README + onboarding docs | 1 dag | — | Erstatt stale README |
 | H3 | Public registration unified flow | 3 dager | `/registrer` vs `/onboarding` | Én canonical path |
 | H4 | Migration ledger reconcile | 2–3 dager | supabase CLI | P3.M5 hygiene |
