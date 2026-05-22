@@ -92,7 +92,6 @@ const KNOWN_COLUMNS: Record<string, Set<string>> = {
     "external_invoice_id",
     "created_at",
     "updated_at",
-    "invoice_runs",
   ]),
   tripletex_invoices: new Set([
     "id",
@@ -109,7 +108,7 @@ const KNOWN_COLUMNS: Record<string, Set<string>> = {
 };
 
 const FROM_RE = /\.from\s*\(\s*["'`]([a-z_]+)["'`]\s*\)/g;
-const SELECT_RE = /\.select\s*\(\s*(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/s;
+const SELECT_RE = /\.select\s*\(\s*(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {

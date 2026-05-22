@@ -55,3 +55,11 @@ export function formatAgreementSystemLabel(status: AgreementStatusResult): strin
 export function formatSystemPaymentLabel() {
   return "Ikke aktivert";
 }
+
+export function formatTierLabel(value: string | null | undefined): string {
+  const key = String(value ?? "").trim().toUpperCase();
+  if (key === "BASIS" || key === "LUXUS" || key === "ENTERPRISE") {
+    return TIER_LABELS[key];
+  }
+  return key ? key : "—";
+}
