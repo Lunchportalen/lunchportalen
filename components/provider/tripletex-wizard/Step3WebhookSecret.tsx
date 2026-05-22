@@ -88,10 +88,21 @@ export default function Step3WebhookSecret({ providerId, webhookUrl, onComplete 
         Lunchportalen.
       </p>
 
+      <p className="ds-body ds-text-limit">
+        Tripletex sandbox har ikke alltid webhook-konfigurasjon i UI. Hvis du ikke finner
+        webhook-innstillinger i Tripletex, kontakt support@lunchportalen.no — vi registrerer det
+        for deg via Tripletex API.
+      </p>
+
+      <p className="ds-body ds-text-limit">
+        Hvis Tripletex viser webhook-innstillinger i din konto: lim inn URL og secret nedenfor, sett
+        event-typer til invoice.* og order.*.
+      </p>
+
       <ol className="ds-body ds-text-limit">
-        <li>Gå til Tripletex → Innstillinger → Webhook-integrasjoner</li>
         <li>Lim inn webhook-URL nedenfor</li>
         <li>Lim inn webhook-secret i Tripletex (vises kun én gang her)</li>
+        <li>Sett event-typer til invoice.* og order.* der Tripletex ber om det</li>
       </ol>
 
       <p className="ds-body-sm">Webhook-URL</p>

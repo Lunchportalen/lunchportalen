@@ -1567,6 +1567,14 @@ main{
   color: #c0392b;
 }
 
+.ds-verify-item--skipped {
+  color: var(--ds-text-soft);
+}
+
+.ds-verify-item--skipped .ds-verify-item__icon {
+  color: var(--ds-text-soft);
+}
+
 .ds-status-badge {
   display: inline-flex;
   gap: 8px;

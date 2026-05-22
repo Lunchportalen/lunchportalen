@@ -1,6 +1,6 @@
 export type WizardScreen = "token" | "provisioning" | "webhook" | "success";
 
-export type VerifyItemState = "idle" | "pending" | "success" | "error";
+export type VerifyItemState = "idle" | "pending" | "success" | "error" | "skipped";
 
 export type VerifyItemKey = "auth" | "company_match" | "scope";
 

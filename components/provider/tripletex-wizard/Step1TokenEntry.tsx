@@ -38,23 +38,29 @@ function initialVerifyDisplay(): VerifyDisplay {
   };
 }
 
+const VERIFY_KEYS: VerifyItemKey[] = ["auth", "company_match", "scope"];
+
 function staggerApplyResult(
   result: TripletexTokenVerificationResult,
   apply: (key: VerifyItemKey, state: VerifyItemState, message: string) => void,
 ): Promise<void> {
-  const keys: VerifyItemKey[] = ["auth", "company_match", "scope"];
   const delays = [0, 120, 240];
 
   return new Promise((resolve) => {
-    keys.forEach((key, index) => {
+    VERIFY_KEYS.forEach((key, index) => {
       window.setTimeout(() => {
         const step = result[key];
+        const priorFailed = VERIFY_KEYS.slice(0, index).some((priorKey) => !result[priorKey].ok);
+
         if (step.ok) {
           apply(key, "success", VERIFY_SUCCESS[key]);
+        } else if (priorFailed) {
+          apply(key, "skipped", "Ikke kjørt");
         } else {
           apply(key, "error", step.error || "Feilet");
         }
-        if (index === keys.length - 1) resolve();
+
+        if (index === VERIFY_KEYS.length - 1) resolve();
       }, delays[index]);
     });
   });
@@ -79,6 +85,13 @@ function VerifyIcon({ state }: { state: VerifyItemState }) {
     return (
       <span className="ds-verify-item__icon" aria-hidden="true">
         ✗
+      </span>
+    );
+  }
+  if (state === "skipped") {
+    return (
+      <span className="ds-verify-item__icon" aria-hidden="true">
+        —
       </span>
     );
   }
@@ -211,7 +224,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step1-title">
-      <p className="ds-eyebrow">Steg 1–2 av 5</p>
+      <p className="ds-eyebrow">Steg {verifying ? 2 : 1} av 5</p>
       <h2 id="tpt-step1-title" className="ds-h3">
         Lim inn og verifiser
       </h2>
@@ -286,12 +299,18 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
                   ? "ds-verify-item--pending"
                   : item.state === "success"
                     ? "ds-verify-item--success"
-                    : "ds-verify-item--error";
+                    : item.state === "skipped"
+                      ? "ds-verify-item--skipped"
+                      : "ds-verify-item--error";
               return (
                 <li key={key} className={`ds-verify-item ${modifier}`}>
                   <VerifyIcon state={item.state} />
                   <span className="ds-body-sm">
-                    {item.state === "pending" ? VERIFY_LABELS[key] : item.message}
+                    {item.state === "pending"
+                      ? VERIFY_LABELS[key]
+                      : item.state === "skipped"
+                        ? "Ikke kjørt"
+                        : item.message}
                   </span>
                 </li>
               );

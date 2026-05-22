@@ -110,6 +110,47 @@ describe("DirectWizard (TPT-B-7b)", () => {
     expect(container.textContent).toContain("Tilkobling OK");
   });
 
+  test("auth failure marks later verify items as Ikke kjørt", async () => {
+    mockVerifyTokenAction.mockResolvedValue({
+      ok: true,
+      data: {
+        auth: { ok: false, error: "Token avvist av Tripletex" },
+        company_match: { ok: false, error: null },
+        scope: { ok: false, error: null },
+        all_passed: false,
+      },
+    });
+
+    const { container } = await renderUi(
+      <DirectWizard
+        providerId={PROVIDER_ID}
+        providerName="Test Provider"
+        webhookUrl="https://app.example/webhook"
+        initialStep="token"
+      />,
+    );
+
+    const companyInput = container.querySelector("#tpt-company-id") as HTMLInputElement;
+    const tokenInput = container.querySelector("#tpt-employee-token") as HTMLInputElement;
+    await act(async () => {
+      setInputValue(companyInput, "114612665");
+      setInputValue(tokenInput, "bad-token");
+    });
+
+    const verifyBtn = Array.from(container.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("Verifiser"),
+    );
+
+    await act(async () => {
+      verifyBtn?.click();
+      await new Promise((r) => setTimeout(r, 300));
+    });
+
+    expect(container.textContent).toContain("Token avvist av Tripletex");
+    expect(container.textContent).toContain("Ikke kjørt");
+    expect(container.querySelectorAll(".ds-verify-item--skipped").length).toBe(2);
+  });
+
   test("Fortsett disabled before verify success", async () => {
     const { container } = await renderUi(
       <DirectWizard
