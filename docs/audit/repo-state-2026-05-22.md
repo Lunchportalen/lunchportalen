@@ -892,7 +892,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | 2B/C | Superadmin/export trio | `superadmin_assign_profile_to_company` + `superadmin_set_user_scope` → direkte `profiles` update; `tripletex_export_by_run` → `loadTripletexExportByRun` |
 | 2D | Lukk + vakt | RPC diff app/lib vs migrasjoner = **0** (ekskl. runtime-safe: `lp_membership_get`, `lp_pgrst_reload_schema`) |
 
-**Commits (K4):** `<pending git commit — se git log>`
+**Commits (K4):** `16d44457` `c915b54c` `b556d8d3` `59d9a614` `7e0ab915` `d8fffba2`
 
 **Outstanding KRITISK etter K4:** 2 — **K2** (`invoice.reverse`), **K5** (`/leverandor` middleware gate i repo-state §18)
 
