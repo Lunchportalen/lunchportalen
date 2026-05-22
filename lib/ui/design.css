@@ -1,6 +1,11 @@
 /* LUNCHPORTALEN — Design primitives: icon sizes (align with lib/design/globals.ts)
  * Standard scale: xs (12) | sm (16) | md (20) | lg (24). Use Icon size prop. */
 
+svg {
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+}
+
 .lp-icon-xs {
   width: 12px;
   height: 12px;

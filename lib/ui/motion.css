@@ -278,6 +278,19 @@
   -webkit-backdrop-filter: blur(var(--lp-glass-blur-sm));
 }
 
+/* Glass-overlap: sharpen text rendered inside backdrop-filter surfaces */
+.lp-glass-overlay,
+.lp-glass-panel,
+.lp-glass-bar,
+.lp-glass-surface,
+.lp-glass-card,
+.lp-glass-nav,
+.lp-surface-glass {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 /* Opacity-only tokens: use with backdrop-blur-sm/md where needed */
 .lp-glass-bg-light {
   background: var(--lp-glass-light);

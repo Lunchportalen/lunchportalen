@@ -30,9 +30,9 @@
   --ds-max:1320px;
   --ds-text-max:760px;
 
-  --ds-pad-x:clamp(20px,4vw,48px);
-  --ds-section-y:clamp(64px,8vw,116px);
-  --ds-hero-y:clamp(120px,12vh,160px);
+  --ds-pad-x:clamp(20px,round(4vw,1px),48px);
+  --ds-section-y:clamp(64px,round(8vw,1px),116px);
+  --ds-hero-y:clamp(120px,round(12vh,1px),160px);
 
   --ds-radius-sm:14px;
   --ds-radius-md:22px;
@@ -45,11 +45,11 @@
 
   --ds-ease:cubic-bezier(.22,.61,.36,1);
 
-  --ds-h1:clamp(48px,8vw,106px);
-  --ds-h2:clamp(34px,4.5vw,62px);
-  --ds-h3:clamp(22px,2.6vw,30px);
+  --ds-h1:clamp(48px,round(8vw,1px),106px);
+  --ds-h2:clamp(34px,round(4.5vw,1px),62px);
+  --ds-h3:clamp(22px,round(2.6vw,1px),30px);
 
-  --ds-body-lg:clamp(18px,2.2vw,25px);
+  --ds-body-lg:clamp(18px,round(2.2vw,1px),25px);
   --ds-body:18px;
   --ds-body-sm:15px;
 }
@@ -369,7 +369,7 @@ main{
 .ds-hero__lead{
   margin:26px 0 0;
   max-width:760px;
-  font-size:clamp(20px,2.3vw,29px);
+  font-size:clamp(20px,round(2.3vw,1px),29px);
   line-height:1.48;
   letter-spacing:-.015em;
   color:rgba(255,255,255,.90);
@@ -473,7 +473,7 @@ main{
 .ds-social-proof__value{
   display:block;
   margin:0;
-  font-size:clamp(36px,4vw,58px);
+  font-size:clamp(36px,round(4vw,1px),58px);
   font-weight:900;
   letter-spacing:-.055em;
   line-height:.95;
@@ -619,7 +619,7 @@ main{
 
 #howitworks .ds-how-title{
   margin:0 !important;
-  font-size:clamp(32px,10vw,42px) !important;
+  font-size:clamp(32px,round(10vw,1px),42px) !important;
   line-height:.98 !important;
   letter-spacing:-.055em !important;
   font-weight:900 !important;
@@ -729,7 +729,7 @@ main{
   }
 
   #howitworks .ds-how-title{
-    font-size:clamp(34px,3.7vw,54px) !important;
+    font-size:clamp(34px,round(3.7vw,1px),54px) !important;
     line-height:.96 !important;
     max-width:11ch !important;
   }
@@ -813,7 +813,7 @@ main{
 .ds-cta-band .ds-h2{
   color:#fff;
   max-width:18ch;
-  font-size:clamp(34px,4.2vw,58px);
+  font-size:clamp(34px,round(4.2vw,1px),58px);
   line-height:.98;
 }
 
@@ -910,6 +910,19 @@ main{
     0 34px 90px rgba(0,0,0,.28),
     inset 0 1px 0 rgba(255,255,255,.28),
     inset 0 -1px 0 rgba(255,255,255,.08);
+}
+
+/* Glass-overlap: sharpen text rendered inside backdrop-filter surfaces */
+.ds-btn--secondary,
+.ds-hero__eyebrow-wrap,
+.ds-hero__trust-item,
+.ds-card,
+.ds-cta-band,
+.ds-cta--glass-soft,
+.ds-cta--glass-strong{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
 }
 
 .ds-cta--transparency-none{opacity:1;}
@@ -1042,7 +1055,7 @@ main{
   }
 
   .ds-hero__lead{
-    font-size:clamp(18px,5vw,22px);
+    font-size:clamp(18px,round(5vw,1px),22px);
     margin-top:18px;
     text-align:center;
   }
@@ -1250,7 +1263,7 @@ main{
     text-align:center !important;
   }
   .lp-footer__title{
-    font-size:clamp(30px,9vw,42px) !important;
+    font-size:clamp(30px,round(9vw,1px),42px) !important;
     text-align:center !important;
     max-width:100% !important;
   }
