@@ -357,3 +357,144 @@ Over 200 løse filer på rot, inkl.: `runner.ts`, `automationEngine.ts`, `autoEx
 ---
 
 *Audit utført uten kodeendringer. Ingen filer slettet.*
+
+---
+
+# FASE A — Presis cut-list (2026-05-22)
+
+**Metode:** `scripts/audit/lib-ai-cut-list-v2.mjs`, `scripts/audit/lib-ai-keep-closure.mjs` — ingen sletting.
+
+## A1) Keep-set (transitiv closure fra live importers)
+
+Keep-set er **ikke** manuelt begrenset til ~10 filer — transitiv closure fra alle `app/` + `lib/` (ekskl. cron) + `tests/` som importerer ikke-arkiv moduler gir:
+
+| Metrikk | Verdi |
+|---------|-------|
+| Filer | **297** |
+| LOC | **29 890** |
+| Artifacts | `scripts/audit/lib-ai-keep-closure.json` |
+
+### Kjerne-seed (eksplisitt prod-lunsj)
+
+| Path | Rolle |
+|------|-------|
+| `lib/ai/demandEngine.ts` | Deterministisk etterspørselsprognose V1 |
+| `lib/ai/demandData.ts` | Aggregering ordre → daglig historikk |
+| `lib/ai/demandInsights.ts` | Valg-signaler fra day_choices |
+| `lib/ai/wasteTracker.ts` | Svinn-metrics (admin demand-insights) |
+| `lib/ai/portionAllocation.ts` | Proporsjonal porsjonsmix |
+| `lib/ai/menuToIngredients.ts` | Statisk meny→ingrediens katalog |
+| `lib/ai/operationsFeedback.ts` | Hindcast siste leveringsdag |
+
+### CMS AI + runner (seed)
+
+| Path | Rolle |
+|------|-------|
+| `lib/ai/runner.ts` | Kanonisk OpenAI-inngang |
+| `lib/ai/_internalProvider.ts` | Provider HTTP (låst til runner) |
+| `lib/ai/suggestMotor.ts` | Backoffice suggest dispatch |
+| `lib/ai/pageBuilder.ts` + `pageBuilder*.ts` | Side-generering |
+| `lib/ai/cmsAiEngine.ts` + `cmsAi*.ts` | CMS AI motor |
+| `lib/ai/tools/*` | Verktøy-registry (SEO, landing, bilde, A/B) |
+| `lib/ai/design/*` | Design optimizer |
+| `lib/ai/autoImprove.ts`, `editorTextSuggest.ts` | Editor AI |
+| `lib/ai/blockSchema.ts`, `designTokens.ts`, `types.ts` | Kontrakter |
+
+### Querschnitt (seed)
+
+| Path | Rolle |
+|------|-------|
+| `lib/ai/logging/*` | ai_activity_log-rader |
+| `lib/ai/control/killSwitch.ts` | `AI_GLOBAL_KILL_SWITCH` gate |
+| `lib/ai/rateLimit.ts`, `responseSafety.ts` | API-beskyttelse |
+| `lib/ai/policyEngine.ts`, `runnerGovernance.ts`, `profitability.ts`, `usage.ts` | Runner-governance |
+
+Closure legger til **~250 transitive avhengigheter** (intelligence, experiments, memory, company, ceo, autonomy, osv.) som backoffice-ruter faktisk kaller.
+
+## A2) Archive-set (narrow — per refactor-brief)
+
+| Kategori | Filer | LOC |
+|----------|-------|-----|
+| `engines/` (inkl. capabilities/) | 198 | ~42 094 |
+| `reality/`, `monopoly/`, `boardroom/`, `org/`, `brain/` | 64 | ~8 500 |
+| Root meta-motorer (automationEngine, omniscient*, swarm, …) | 35 | ~2 100 |
+| **Narrow archive sum** | **262** | **~50 196** |
+
+## A3) Orphan-set (verken keep eller narrow archive)
+
+**136 filer / ~10 585 LOC** — ikke nådd fra live importers etter cron-exclusion. Eksempler: `autoExecutor.ts`, `ceoSimulate.ts`, `architecture/siteArchitect.ts`, `agents/runner.ts`. **Slettes sammen med archive-set i FASE D.**
+
+## A4) LOC før cleanup
+
+| Sett | Filer | LOC |
+|------|-------|-----|
+| **Keep** | 297 | 29 890 |
+| **Archive (narrow)** | 262 | 50 196 |
+| **Orphan** | 136 | 10 585 |
+| **Total lib/ai** | 702 | 91 007 |
+
+*Merk: LOC-telling inkluderer blanke linjer; tidligere audit (~81k) telte kun `.ts` body uten full fil-telling.*
+
+## A5) App-import-analyse
+
+| Metrikk | Verdi |
+|---------|-------|
+| Unike app-filer med `@/lib/ai`-import | **134** |
+| Import-statements totalt | **408** |
+| Import-statements til archive-set | **79** |
+| **Impact-filer (archive-import)** | **21** |
+| — daværende cron-ruter (slettes) | **16** |
+| — non-cron (refaktoreres) | **5** |
+
+### Impact-filer som krever refaktor (FASE C)
+
+| Source | Archive-imports | Forslag |
+|--------|-----------------|---------|
+| `app/api/admin/operations-tower/route.ts` | procurementEngine, purchasePlanner, supplierPlanner, productionPlanner, routePlanner, costOptimizationEngine, composeOperationsAutonomy, composeGlobalOs | **Forenkle:** behold demand/portion/feedback; fjern procurement/production/route/cost/autonomy fra respons |
+| `app/api/ai/automation/route.ts` | automationEngine | **Slett rute** (ikke i vercel.json, growth-only) |
+| `app/api/ai/swarm/route.ts` | swarm, consensus, governor | **Slett rute** |
+| `app/api/system/ai/diagnostics/route.ts` | capabilityRegistry | **Fjern** `listCapabilities()` — behold runner health |
+| `app/api/system/ai/health/route.ts` | capabilityRegistry | **Fjern** `listCapabilities()` |
+
+### Cron-ruter som slettes (33 stk, 0 i vercel.json)
+
+Alle under `app/api/cron/*` som importerer `@/lib/ai`:
+
+`ai`, `ai-ceo`, `ai-governance-auto`, `ai-optimize`, `attribution`, `autonomous`, `autonomy`, `blackbox`, `boardroom`, `budget-execution`, `capital-allocation`, `ceo`, `credit-check`, `god-mode`, `invoice-companies`, `market`, `monitor`, `monopoly`, `omniscient`, `org`, `profit`, `realtime-monitor`, `reality`, `resolve-experiments`, `retrain`, `retrain-sequence`, `revenue-mode`, `scaling`, `singularity`, `strategy`, `train-model`, `train-sequence`
+
+### Lib impact (non-cron)
+
+| Source | Archive-import | Forslag |
+|--------|----------------|---------|
+| `lib/pos/executionRouter.ts` | automationEngine | **Fjern** `runAutomation`-preview; behold policy + design tokens |
+
+## A6) Test-import-analyse
+
+**47 testfiler** importerer `@/lib/ai`. **~30 tester** peker kun på archive-set (singularityEngines, monopolyEngines, boardroomEngines, realityEngines, omniscientEngines, godModeEngines, orgEngines, marketEngines, capitalAllocationEngines, budgetExecutionEngines, revenueModeEngines, scaling, profit, predictiveLayer, outcomeLearning, autonomousSaasEngines, strategicEngines, company/controlTower, attribution, resourceAllocation, controlLayer delvis). **Slettes i FASE D.**
+
+**Beholdes:** providerFallback, seoToolPolicy, cmsAiTenant, cmsAiEngine.heuristic, autoImprove, pageBuilderDraft, designSettingsOptimizer, analyzeDesign, designPolicy, blockSchema, pageBuilder, aiSystemGuarantees, CmsAi*-tester, backofficeAi*-tester.
+
+## A7) STOP-condition
+
+| Kriterium | Resultat |
+|-----------|----------|
+| Impact-filer > 50 (narrow archive) | **NEI** — 21 totalt (16 cron + 5 refaktor) |
+| Archive-modul kritisk for live lunsj | **NEI** — kjøkken bruker kun demandEngine/demandData |
+| Broad archive (capital, memory, scaling, …) | **Ikke i scope** — forblir i keep-set inntil egen runde |
+
+### GO/STOP: **GO** — fortsett til FASE B–E
+
+## A8) Feature-områder som mister funksjonalitet ved archive-slett
+
+| Område | Hva forsvinner | RC-impact |
+|--------|----------------|-----------|
+| AI-cron automation | singularity, god-mode, boardroom, org, monopoly, reality, … | **Ingen** — ikke schedulert i prod |
+| `app/api/ai/automation`, `/swarm` | Growth API-endepunkter | **Lav** — ikke kjerne-lunsj |
+| Operations-tower utvidet | Procurement, production, route, cost, globalOs | **Medium** — admin-only forslag; demand-delen beholdes |
+| Capability registry diagnostics | Liste over 198 capabilities | **Lav** — dev/diag only |
+| POS automation preview | runAutomation forhåndsvisning | **Lav** — policy/design beholdes |
+| tests/ai/*Engines* | Sandbox engine-tester | **Ingen prod** — CI raskere |
+
+---
+
+*FASE A fullført. Neste: FASE B (archive branch) → FASE C (5 refaktor + cron-slett) → FASE D (405 filer slettes).*
