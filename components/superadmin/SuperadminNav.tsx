@@ -43,7 +43,6 @@ export default function SuperadminNav() {
     >
       {navItem("/superadmin", "Kontrollsenter")}
       {navItem("/superadmin/companies", "Firma")}
-      {navItem("/superadmin/esg", "ESG")}
       {navItem("/superadmin/audit", "Revisjon")}
     </nav>
   );

@@ -3,10 +3,10 @@ import Link from "next/link";
 import { CONTROL_PLANE_RUNTIME_MODULES } from "@/lib/cms/controlPlaneRuntimeStatusData";
 import { getGrowthModuleLivePosture, isNonBroadLivePosture } from "@/lib/cms/moduleLivePosture";
 
-const GROWTH_IDS = new Set(["seo", "social", "esg"]);
+const GROWTH_IDS = new Set(["seo", "social"]);
 
 type CmsGrowthModuleCalloutProps = {
-  moduleId: "seo" | "social" | "esg";
+  moduleId: "seo" | "social";
 };
 
 /**

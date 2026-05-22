@@ -15,10 +15,9 @@ describe("moduleLivePosture", () => {
     expect(ids.has("worker_jobs")).toBe(true);
   });
 
-  it("getGrowthModuleLivePosture mapper seo/social/esg", () => {
+  it("getGrowthModuleLivePosture mapper seo/social", () => {
     expect(getGrowthModuleLivePosture("seo")?.id).toBe("seo_growth");
     expect(getGrowthModuleLivePosture("social")?.posture).toBe("DRY_RUN");
-    expect(getGrowthModuleLivePosture("esg")?.posture).toBe("LIMITED");
   });
 
   it("isNonBroadLivePosture for LIMITED", () => {

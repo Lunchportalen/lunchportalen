@@ -70,7 +70,6 @@ function normalizePatch(current: SystemSettings, patch: any) {
       current.toggles.company_admin_can_order ?? true
     ),
     strict_mode: pickBool(nextToggles.strict_mode, current.toggles.strict_mode ?? true),
-    esg_engine: pickBool(nextToggles.esg_engine, current.toggles.esg_engine ?? false),
     email_backup: pickBool(nextToggles.email_backup, current.toggles.email_backup ?? true),
     autonomy_master_enabled: pickBool(
       nextToggles.autonomy_master_enabled,

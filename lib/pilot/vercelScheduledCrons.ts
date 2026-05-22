@@ -8,9 +8,6 @@ export const PILOT_VERCEL_CRON_PATHS = [
   "/api/cron/preprod",
   "/api/cron/outbox",
   "/api/cron/cleanup-invites",
-  "/api/cron/esg/daily",
-  "/api/cron/esg/monthly",
-  "/api/cron/esg/yearly",
 ] as const;
 
 export type PilotVercelCronPath = (typeof PILOT_VERCEL_CRON_PATHS)[number];

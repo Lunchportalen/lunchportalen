@@ -14,7 +14,6 @@ export type SystemToggles = {
   employee_self_service?: boolean;    // ansatt kan bestille/avbestille (default true)
   company_admin_can_order?: boolean;  // company_admin kan også bestille (default true)
   strict_mode?: boolean;              // ingen unntak (default true)
-  esg_engine?: boolean;               // aktiver ESG-motor (default false/true som dere ønsker)
   email_backup?: boolean;             // ordre@... outbox/retry (default true)
   /** Autonom modus — master av (default). Krever Root ved aktivering via API. */
   autonomy_master_enabled?: boolean;
@@ -85,7 +84,6 @@ export function withDefaults(raw: Partial<SystemSettings> | null): SystemSetting
       employee_self_service: toggles.employee_self_service ?? true,
       company_admin_can_order: toggles.company_admin_can_order ?? true,
       strict_mode: toggles.strict_mode ?? true,
-      esg_engine: toggles.esg_engine ?? false,
       email_backup: toggles.email_backup ?? true,
       autonomy_master_enabled: toggles.autonomy_master_enabled ?? false,
       autonomy_allow_auto_ads: toggles.autonomy_allow_auto_ads ?? false,

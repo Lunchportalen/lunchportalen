@@ -21,7 +21,6 @@ export type SystemToggles = {
   employee_self_service: boolean;
   company_admin_can_order: boolean;
   strict_mode: boolean;
-  esg_engine: boolean;
   email_backup: boolean;
 };
 

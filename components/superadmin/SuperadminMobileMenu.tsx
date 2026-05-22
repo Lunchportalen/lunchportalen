@@ -11,7 +11,6 @@ const items: Item[] = [
   { label: "CFO", href: "/superadmin/cfo" },
   { label: "Konsern", href: "/superadmin/enterprise" },
   { label: "Firma", href: "/superadmin/companies" },
-  { label: "ESG", href: "/superadmin/esg" },
   { label: "Revisjon", href: "/superadmin/audit" },
   { label: "Systemhelse", href: "/superadmin/system" },
 ];

@@ -11,7 +11,6 @@ describe("superadmin capabilities (IA contract)", () => {
     expect(ids.has("system")).toBe(true);
     expect(ids.has("bo-social-calendar")).toBe(true);
     expect(ids.has("bo-seo-growth")).toBe(true);
-    expect(ids.has("bo-esg")).toBe(true);
   });
 
   test("capabilitiesByGroup returns non-empty groups", () => {

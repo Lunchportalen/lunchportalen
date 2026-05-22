@@ -44,12 +44,6 @@ export const CONTROL_PLANE_RUNTIME_MODULES: ControlPlaneModuleStatus[] = [
       "Ekstern publisering er ikke fullt produksjonskoblet (Meta Graph API-stub returnerer dry_run inntil nøkler finnes).",
   },
   {
-    id: "esg",
-    label: "ESG",
-    badge: "LIMITED",
-    detail: "Aggregater fra runtime; tolkning skal være review-first.",
-  },
-  {
     id: "worker",
     label: "Worker (e-post / AI-jobb / eksperiment)",
     badge: "STUB",

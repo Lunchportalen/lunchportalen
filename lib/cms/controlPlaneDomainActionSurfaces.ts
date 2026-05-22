@@ -214,23 +214,6 @@ export const CONTROL_PLANE_DOMAIN_ACTION_SURFACES: ControlPlaneDomainActionSurfa
       whyMatters: "Ekstern publish kan være dry_run — ikke markedsfør som garantert live.",
     },
   },
-  {
-    id: "esg",
-    title: "ESG",
-    description: "Aggregater; tom data er ikke suksess.",
-    sourceOfTruth: "ESG API + aggregater",
-    cmsSurfaceHref: "/backoffice/esg",
-    mutationPosture: "read_only",
-    postureLabel: "LIMITED",
-    actions: [{ label: "ESG", href: "/backoffice/esg" }],
-    actionRouting: {
-      reads: ["Aggregerte miljø-/ESG-data"],
-      writes: ["Ingen direkte write fra denne flaten"],
-      affects: "Rapportering og innsikt — ikke ordre",
-      publishControl: "Read-biased — review før tolkning",
-      whyMatters: "Tomme aggregater skal ikke presenteres som full suksess.",
-    },
-  },
 ];
 
 export function getDomainActionSurfaceById(id: string): ControlPlaneDomainActionSurface | undefined {

@@ -78,22 +78,10 @@ export const MODULE_LIVE_POSTURE_REGISTRY: ModuleLivePostureEntry[] = [
     note: "Review-first; kombinasjon editor/batch.",
   },
   {
-    id: "esg",
-    label: "ESG",
-    posture: "LIMITED",
-    note: "Aggregater — review før tolkning.",
-  },
-  {
     id: "worker_jobs",
     label: "Worker (e-post / AI / eksperiment)",
     posture: "STUB",
     note: "Delvis ikke implementert — ikke produksjonsgarantert.",
-  },
-  {
-    id: "cron_growth_esg",
-    label: "Cron — growth / ESG-aggregater",
-    posture: "INTERNAL_ONLY",
-    note: "Drift/jobb — ikke brukerflate for direkte publish.",
   },
 ];
 
@@ -102,11 +90,10 @@ export function getModuleLivePostureEntry(id: string): ModuleLivePostureEntry | 
 }
 
 /** Growth-sider: koble UI-modul til register-id */
-export function getGrowthModuleLivePosture(moduleId: "seo" | "social" | "esg"): ModuleLivePostureEntry | undefined {
+export function getGrowthModuleLivePosture(moduleId: "seo" | "social"): ModuleLivePostureEntry | undefined {
   const map: Record<typeof moduleId, string> = {
     seo: "seo_growth",
     social: "social_publish",
-    esg: "esg",
   };
   return getModuleLivePostureEntry(map[moduleId]);
 }

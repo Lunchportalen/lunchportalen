@@ -1,7 +1,7 @@
 import "server-only";
 
 import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
-import type { PlanTier as AgreementPlanTier } from "@/lib/esg/pricing";
+import type { PlanTier as AgreementPlanTier } from "@/lib/agreements/types";
 import { sanity } from "@/lib/sanity/client";
 import type { CmsProductPlan, CmsProductPlanName } from "@/lib/cms/types";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";

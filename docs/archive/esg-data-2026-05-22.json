@@ -1,0 +1,13 @@
+{
+  "archived_at": "2026-05-22T00:00:00.000Z",
+  "reason": "ESG feature killed — product decision 2026-05-22 (K4 Bølge 2A). Not launch-critical for B2B firmalunsj.",
+  "tables": {
+    "esg_daily": [],
+    "esg_monthly": []
+  },
+  "row_counts": {
+    "esg_daily": 0,
+    "esg_monthly": 0
+  },
+  "note": "Tables were empty on prod at archive time. FK refs: esg_daily→companies, esg_daily→company_locations, esg_monthly→companies."
+}

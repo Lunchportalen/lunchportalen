@@ -10,10 +10,10 @@ import { formatDateTimeNO } from "@/lib/date/format";
 import AuditCompanyPanel from "@/components/audit/AuditCompanyPanel";
 import ArchivePanel from "./ArchivePanel";
 import InvoiceBasisPanel from "./InvoiceBasisPanel";
-import EsgSummaryPanel from "./EsgSummaryPanel";
 import AgreementCard from "./AgreementCard";
 import type { ContractOverview } from "@/lib/agreements/contractBindingCompute";
 import type { AgreementDocumentOverview } from "@/lib/agreements/buildAgreementDocumentOverview";
+import { asPlanTier } from "@/lib/cms/menuDayContract";
 
 type CompanyStatus = "active" | "paused" | "closed" | "pending";
 
@@ -30,7 +30,7 @@ type CompanyDetails = {
   agreement: null | {
     id: string;
     status: string;
-    tier: "BASIS" | "LUXUS" | null;
+    tier: "BASIS" | "LUXUS" | "ENTERPRISE" | null;
     delivery_days: string[];
     starts_at: string | null;
     slot_start: string | null;
@@ -114,12 +114,6 @@ function formatISO(iso: string | null | undefined) {
   }
 }
 
-function normalizeTier(raw: unknown): "BASIS" | "LUXUS" | null {
-  const t = safeStr(raw).toUpperCase();
-  if (t === "BASIS" || t === "LUXUS") return t;
-  return null;
-}
-
 function normalizeDeliveryDays(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -142,7 +136,7 @@ function normalizeAgreement(raw: any): CompanyDetails["agreement"] {
   return {
     id,
     status: safeStr(raw.status).toUpperCase() || "UKJENT",
-    tier: normalizeTier(raw.tier),
+    tier: asPlanTier(raw.tier),
     delivery_days: normalizeDeliveryDays(daysSource),
     starts_at: safeStr(raw.starts_at ?? raw.start_date) || null,
     slot_start: safeStr(raw.slot_start) || null,
@@ -480,9 +474,6 @@ export default async function SuperadminCompanyDetailPage(props: {
         <a href="#fakturagrunnlag" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
           Fakturagrunnlag
         </a>
-        <a href="#esg" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
-          ESG
-        </a>
         <a href="#ansatte" className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50">
           Ansatte
         </a>
@@ -527,14 +518,6 @@ export default async function SuperadminCompanyDetailPage(props: {
         <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Historisk grunnlag (read-only).</div>
         <div className="mt-4">
           <InvoiceBasisPanel companyId={companyId} />
-        </div>
-      </section>
-
-      <section id="esg" className="mt-6 rounded-3xl bg-white/70 p-5 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="text-sm font-semibold">ESG</div>
-        <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Basert på faktisk ordredata.</div>
-        <div className="mt-4">
-          <EsgSummaryPanel companyId={companyId} />
         </div>
       </section>
 

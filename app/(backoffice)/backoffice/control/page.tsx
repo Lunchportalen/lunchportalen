@@ -11,7 +11,7 @@ import { CONTROL_PLANE_DOMAIN_ACTION_SURFACES } from "@/lib/cms/controlPlaneDoma
 import { CONTROL_PLANE_RUNTIME_MODULES } from "@/lib/cms/controlPlaneRuntimeStatusData";
 import { ControlRunClient } from "./ControlRunClient";
 
-const GROWTH_MODULE_IDS = new Set(["seo", "social", "esg"]);
+const GROWTH_MODULE_IDS = new Set(["seo", "social"]);
 
 function formatPayload(p: Record<string, unknown>): string {
   try {

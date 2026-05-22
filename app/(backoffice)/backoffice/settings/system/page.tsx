@@ -11,7 +11,6 @@ type SystemToggles = {
   employee_self_service?: boolean;
   company_admin_can_order?: boolean;
   strict_mode?: boolean;
-  esg_engine?: boolean;
   email_backup?: boolean;
   ai_enabled?: boolean;
   autopilot_enabled?: boolean;
@@ -142,7 +141,6 @@ function normalizeSystemSettings(raw: Record<string, unknown>): SystemSettings {
     employee_self_service: pickBool(t.employee_self_service, true),
     company_admin_can_order: pickBool(t.company_admin_can_order, true),
     strict_mode: pickBool(t.strict_mode, true),
-    esg_engine: pickBool(t.esg_engine, false),
     email_backup: pickBool(t.email_backup, true),
     ai_enabled,
     autopilot_enabled,
@@ -464,14 +462,6 @@ export default function SettingsSystemPage() {
                   onChange={(e) => updateToggle("strict_mode", e.target.checked)}
                 />
                 <span>Strict mode (ingen unntak / myke feil)</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={settings?.toggles?.esg_engine ?? false}
-                  onChange={(e) => updateToggle("esg_engine", e.target.checked)}
-                />
-                <span>Aktiver ESG-motor</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
