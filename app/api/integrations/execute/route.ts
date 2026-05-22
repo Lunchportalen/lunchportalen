@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
-import { recordRevenue } from "@/lib/ai/revenueEngine";
+import { recordRevenue as recordBusinessRevenue } from "@/lib/business/revenue";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -64,8 +64,16 @@ export async function POST(req: NextRequest): Promise<Response> {
           return jsonOk(requestId, { executed: true, type: t, result: out }, 200);
         }
         case "revenue": {
-          const out = await recordRevenue(body, { rid: requestId });
-          return jsonOk(requestId, { executed: true, type: t, result: out }, 200);
+          const payload = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+          await recordBusinessRevenue({
+            amount: Number(payload.amount ?? 0),
+            source: "integration_execute",
+            context: {
+              companyId: String(payload.companyId ?? payload.company_id ?? ""),
+              rid: requestId,
+            },
+          });
+          return jsonOk(requestId, { executed: true, type: t, result: { ok: true } }, 200);
         }
         case "crm": {
           const data = (body as { data?: unknown }).data ?? body;

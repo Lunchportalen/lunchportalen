@@ -2,10 +2,24 @@
  * Read-model dashboard — metrics + insights + latest decision + policy + last automation preview.
  */
 
-import { runAutomation } from "./automationEngine";
 import { makeDecision, type DecisionInputData } from "./decisionEngine";
 import { evaluatePolicy } from "./policyEngine";
 import { generateInsights } from "./insightsEngine";
+
+function automationPreview(decision: ReturnType<typeof makeDecision>, policy: ReturnType<typeof evaluatePolicy>) {
+  const actionPreview = policy.allowed
+    ? policy.requiresApproval
+      ? "Krever manuell godkjenning."
+      : "Ingen automatisk sideeffekt."
+    : "Blokkert av policy.";
+  return {
+    executed: false,
+    actionPreview,
+    explain: policy.explain,
+    decisionType: decision.decisionType,
+    mode: "preview" as const,
+  };
+}
 
 export type DashboardMetrics = {
   conversionRate: number | null;
@@ -17,7 +31,7 @@ export type DashboardMetrics = {
 export type DashboardDecisionRow = {
   decision: ReturnType<typeof makeDecision>;
   policy: ReturnType<typeof evaluatePolicy>;
-  automationPreview: ReturnType<typeof runAutomation>;
+  automationPreview: ReturnType<typeof automationPreview>;
 };
 
 export type DashboardBundle = {
@@ -49,7 +63,7 @@ export function buildDashboard(override?: Partial<DecisionInputData>): Dashboard
   const insights = generateInsights(data);
   const decision = makeDecision(data);
   const policy = evaluatePolicy(decision);
-  const automationPreview = runAutomation(decision, { mode: "preview" });
+  const automationPreviewResult = automationPreview(decision, policy);
 
   const metrics: DashboardMetrics = {
     conversionRate: typeof data.conversionRate === "number" ? data.conversionRate : null,
@@ -67,7 +81,7 @@ export function buildDashboard(override?: Partial<DecisionInputData>): Dashboard
   return {
     metrics,
     insights,
-    decisions: [{ decision, policy, automationPreview }],
+    decisions: [{ decision, policy, automationPreview: automationPreviewResult }],
     actions,
   };
 }

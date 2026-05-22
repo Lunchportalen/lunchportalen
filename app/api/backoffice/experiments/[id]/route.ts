@@ -89,42 +89,22 @@ export async function PATCH(
     const row = await updateExperiment(supabase, id, update);
     if (update.status === "completed" && row.experiment_id) {
       try {
-        const { getExperimentStats } = await import("@/lib/ai/experiments/analytics");
-        const { detectWinningVariant } = await import("@/lib/ai/engines/capabilities/detectWinningVariant");
-        const { storeExperimentLearning } = await import("@/lib/ai/engines/capabilities/storeExperimentLearning");
-        const { insertExperimentMemoryBatch } = await import("@/lib/ai/experiments/experimentMemory");
-        const stats = await getExperimentStats(supabase, row.experiment_id);
-        if (stats.byVariant.length > 0) {
-          const detection = detectWinningVariant({
+        const evLog = await logEvent({
+          type: "experiment",
+          source: "experiment_completed",
+          payload: {
+            kind: "experiment_completed",
             experimentId: row.experiment_id,
-            variants: stats.byVariant,
-          });
-          const { records } = storeExperimentLearning({
-            experimentId: row.experiment_id,
-            variants: stats.byVariant,
-            detectionResult: detection,
-            pageId: row.page_id ?? undefined,
-          });
-          await insertExperimentMemoryBatch(supabase, records);
-          const evLog = await logEvent({
-            type: "experiment",
-            source: "experiment_completed",
-            payload: {
-              kind: "experiment_completed",
-              experimentId: row.experiment_id,
-              recordCount: records.length,
-              pageId: row.page_id ?? null,
-            },
-            page_id: row.page_id ?? null,
-            company_id: null,
-            source_rid: ctx.rid,
-          });
-          if (evLog.ok === false) {
-            opsLog("ai_intelligence.experiment_completed_log_failed", { error: evLog.error });
-          }
+            pageId: row.page_id ?? null,
+          },
+          page_id: row.page_id ?? null,
+          company_id: null,
+          source_rid: ctx.rid,
+        });
+        if (evLog.ok === false) {
+          opsLog("ai_intelligence.experiment_completed_log_failed", { error: evLog.error });
         }
       } catch (learnErr) {
-        const { opsLog } = await import("@/lib/ops/log");
         opsLog("ai_experiment_memory.record_failed", {
           experimentId: row.experiment_id,
           error: learnErr instanceof Error ? learnErr.message : String(learnErr),

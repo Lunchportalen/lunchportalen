@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     const provider = getAiProviderConfig();
     const tools = Object.entries(AI_TOOLS).map(([id, p]) => ({
       name: id,
-      description: p.description ?? "",
+      description: p.docs?.description ?? p.docs?.title ?? id,
     }));
 
     const status: "ok" | "degraded" = provider.enabled ? "ok" : "degraded";

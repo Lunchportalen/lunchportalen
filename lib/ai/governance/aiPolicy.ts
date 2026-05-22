@@ -4,7 +4,17 @@
  * Aligns with AGENTS.md: fail-closed, no silent fallbacks, tenant isolation.
  */
 
-import type { Capability, SafetyConstraint } from "../capabilityRegistry";
+/** Capability metadata shape (legacy registry removed; types kept for policy docs). */
+export type SafetyConstraint =
+  | string
+  | { code: string; description?: string; enforce?: "hard" | "soft" };
+
+export type Capability = {
+  name: string;
+  description: string;
+  safetyConstraints: SafetyConstraint[];
+  targetSurfaces: string[];
+};
 
 // ---------------------------------------------------------------------------
 // Principles (documentation; not enforced in code here)

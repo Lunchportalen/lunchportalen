@@ -4,7 +4,7 @@
  * HTML/script stripping delegates to lib/ai/safety/aiSafetyFilter.
  */
 
-import type { SchemaRef } from "../capabilityRegistry";
+import type { SchemaRef } from "../schema/schemaRef";
 import { filterString } from "../safety/aiSafetyFilter";
 
 export type ValidateAiOutputSuccess = {

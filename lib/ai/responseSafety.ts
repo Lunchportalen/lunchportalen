@@ -4,7 +4,7 @@
  * Use in app/api/backoffice/ai/* routes before jsonOk or DB insert.
  */
 
-import type { SchemaRef } from "./capabilityRegistry";
+import type { SchemaRef } from "./schema/schemaRef";
 
 /** Minimal schema for suggest-route output (ToolSuggestionPayload). All keys optional; allow extra for patch.ops etc. */
 export const SUGGEST_OUTPUT_SCHEMA: SchemaRef = {
