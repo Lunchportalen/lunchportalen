@@ -1650,18 +1650,30 @@ export async function tripletexWhoAmI(options?: RequestOptions): Promise<Triplet
 /** TPT-B-7 — Scope check via GET /product?count=1. */
 export async function tripletexVerifyProductAccess(
   options?: RequestOptions,
-): Promise<{ ok: boolean; error: string | null; status: number | null }> {
+): Promise<{
+  ok: boolean;
+  error: string | null;
+  status: number | null;
+  developerMessage: string | null;
+}> {
   try {
     await requestTripletex(
       { method: "GET", path: "/product", query: { from: 0, count: 1 } },
       options,
     );
-    return { ok: true, error: null, status: 200 };
+    return { ok: true, error: null, status: 200, developerMessage: null };
   } catch (error: unknown) {
     if (error instanceof TripletexClientError) {
-      return { ok: false, error: error.message, status: error.status };
+      const detail = error.detail as Record<string, unknown> | null;
+      const developerMessage = detail ? safeStr(detail.developerMessage) || null : null;
+      return { ok: false, error: error.message, status: error.status, developerMessage };
     }
-    return { ok: false, error: safeStr((error as Error)?.message ?? error), status: null };
+    return {
+      ok: false,
+      error: safeStr((error as Error)?.message ?? error),
+      status: null,
+      developerMessage: null,
+    };
   }
 }
 
