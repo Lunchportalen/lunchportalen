@@ -1,6 +1,5 @@
 import "server-only";
 
-import { runAutomation } from "@/lib/ai/automationEngine";
 import type { DecisionType } from "@/lib/ai/decisionEngine";
 import { evaluatePolicy } from "@/lib/ai/policyEngine";
 
@@ -34,8 +33,7 @@ function verbToDecisionType(verb: PosRoutedDecision["action"]): DecisionType {
 }
 
 /**
- * Maps routed decisions to safe execution intents: policy + automation preview only.
- * No CMS persistence, no variant DB writes — align with {@link evaluatePolicy} / {@link runAutomation}.
+ * Maps routed decisions to safe execution intents: policy preview only.
  */
 export function routeExecution(decisions: PosRoutedDecision[]): PosExecutionIntent[] {
   const dsFragment = designTokensPromptFragment();
@@ -43,7 +41,11 @@ export function routeExecution(decisions: PosRoutedDecision[]): PosExecutionInte
   return decisions.map((d) => {
     const synthetic = { ...d.base_decision, decisionType: verbToDecisionType(d.action) };
     const policy = evaluatePolicy(synthetic);
-    const auto = runAutomation(synthetic, { mode: "preview" });
+    const autoPreview = policy.allowed
+      ? policy.requiresApproval
+        ? "Forslag krever manuell godkjenning før utførelse."
+        : "Policy tillater observasjon — ingen automatisk sideeffekt."
+      : "Blokkert av policy.";
     const cfg = getProductSurfaceConfig(d.surface);
 
     let kind: PosExecutionKind = "no_side_effect";
@@ -86,7 +88,7 @@ export function routeExecution(decisions: PosRoutedDecision[]): PosExecutionInte
       policy_allowed: policy.allowed,
       requires_approval: policy.requiresApproval,
       policy_explain: policy.explain,
-      automation_preview: auto.actionPreview,
+      automation_preview: autoPreview,
       design_system_prompt_fragment: dsFragment,
       next_step,
     };

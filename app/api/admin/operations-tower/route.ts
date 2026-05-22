@@ -9,17 +9,9 @@ import type { WeekdayKeyMonFri } from "@/lib/date/weekdayKeyFromIso";
 import { aggregateOrdersByDate, type OrderRowForDemand } from "@/lib/ai/demandData";
 import { forecastDemandV1 } from "@/lib/ai/demandEngine";
 import { signalsFromChoiceCounts } from "@/lib/ai/demandInsights";
-import { buildProcurementPlan } from "@/lib/ai/procurementEngine";
-import { buildPurchaseSuggestions } from "@/lib/ai/purchasePlanner";
-import { suggestSupplierLines } from "@/lib/ai/supplierPlanner";
-import { buildProductionSchedule } from "@/lib/ai/productionPlanner";
-import { planRouteOrder, type RouteStopInput } from "@/lib/ai/routePlanner";
 import { allocatePortionsProportional } from "@/lib/ai/portionAllocation";
 import { hindcastLastDeliveryDay } from "@/lib/ai/operationsFeedback";
-import { buildCostOptimizationLines } from "@/lib/ai/costOptimizationEngine";
 import { allCatalogMenuKeys } from "@/lib/ai/menuToIngredients";
-import { composeOperationsAutonomy } from "@/lib/ai/composeOperationsAutonomy";
-import { composeGlobalOsSnapshot } from "@/lib/ai/composeGlobalOs";
 import { parseMealContractFromAgreementJson } from "@/lib/server/agreements/mealContract";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -62,7 +54,7 @@ async function buildPayload(
   locationId: string | null,
   actorUserId: string,
   actorEmail: string | null,
-  autonomyQuery: string | null,
+  _autonomyQuery: string | null,
 ) {
   const today = osloTodayISODate();
   const from = addDaysISO(today, -55);
@@ -131,42 +123,6 @@ async function buildPayload(
 
   const allocations = allocatePortionsProportional(nextForecast.predictedOrders, weights);
 
-  const procurement = buildProcurementPlan({
-    portionsByMenu: allocations,
-    bufferPercent: nextForecast.bufferPercent,
-  });
-
-  const purchase = buildPurchaseSuggestions(procurement.lines);
-  const supplierLines = suggestSupplierLines(procurement.lines.map((l) => l.ingredient));
-
-  const sortedMenus = Object.entries(allocations)
-    .sort((a, b) => b[1] - a[1])
-    .map(([k]) => k);
-
-  const production = buildProductionSchedule({
-    targetDate: nextTarget,
-    totalPortions: nextForecast.predictedOrders,
-    dominantMenus: sortedMenus,
-  });
-
-  let locQ = admin
-    .from("company_locations")
-    .select("id,name")
-    .eq("company_id", companyId)
-    .order("name", { ascending: true });
-  if (locationId) locQ = locQ.eq("id", locationId);
-  const locRes = await locQ;
-  const locRows = (locRes.data ?? []) as { id: string; name: string | null }[];
-
-  const stops: RouteStopInput[] = locRows.map((l) => ({
-    id: safeStr(l.id),
-    name: safeStr(l.name) || "Lokasjon",
-    windowStart: "08:00",
-    windowEnd: "10:00",
-  }));
-
-  const route = planRouteOrder(stops);
-
   const evalDay = lastBusinessDayOnOrBefore(addDaysISO(today, -1));
   const feedback = hindcastLastDeliveryDay({
     evaluationDate: evalDay,
@@ -174,88 +130,22 @@ async function buildPayload(
     deliveryWeekdays: deliveryWeekdays ?? undefined,
   });
 
-  const ordersLast7 = history.filter((h) => h.date >= addDaysISO(today, -6));
-  const sum7 = ordersLast7.reduce((s, h) => s + h.activeCount, 0);
-  const activeDays7 = ordersLast7.filter((h) => h.activeCount > 0).length;
-  const weeklyPortionsEstimate = activeDays7 > 0 ? Math.round((sum7 / activeDays7) * 5) : sum7;
-
-  const cost = buildCostOptimizationLines(
-    dishSignals.map((d) => ({ choiceKey: d.choiceKey, signal: d.signal })),
-    weeklyPortionsEstimate,
-  );
-
-  const priceExVatRaw = (comp as { price_per_portion_ex_vat?: unknown } | null)?.price_per_portion_ex_vat;
-  const currentPriceExVat =
-    priceExVatRaw != null && Number.isFinite(Number(priceExVatRaw)) ? Number(priceExVatRaw) : null;
-
-  const ai = composeOperationsAutonomy({
-    history,
-    dishSignals,
-    nextForecast,
-    hindcastAbsError: feedback ? Math.abs(feedback.error) : null,
-    procurementLines: procurement.lines,
-    locationCount: locRows.length,
-    weeklyPortionsEstimate,
-    currentPriceExVat,
-    deliveryWeekdays,
-    requestedAutonomy: autonomyQuery,
-  });
-
-  const globalOs = composeGlobalOsSnapshot({
-    snapshotAsOf: today,
-    companyId,
-    rows,
-    locations: locRows.map((l) => ({
-      id: safeStr(l.id),
-      name: safeStr(l.name) || "Lokasjon",
-      city: "",
-    })),
-    history,
-    nextForecastPortions: nextForecast.predictedOrders,
-    procurementLines: procurement.lines,
-    routeOrdered: route.ordered,
-    hindcastError: feedback ? Math.abs(feedback.error) : null,
-    currentPriceExVat,
-    weeklyPortionsEstimate,
-    dishSignals,
-  });
-
   const data = {
     planRid: rid,
-    autonomyLevel: ai.autonomy.level,
     transparencyRoot: [
-      ...ai.autonomy.transparency,
       "Ingen bestilling, menyendring, prisendring eller leveranse utføres automatisk uten menneskelig handling.",
-      "Alle tall bygger på ordrehistorikk, day_choices og statiske kataloger — verifiser mot faktisk drift.",
+      "Tall bygger på ordrehistorikk og day_choices — verifiser mot faktisk drift.",
+      "Innkjøp, produksjon, rute og kostnadsoptimalisering er fjernet fra denne visningen (lib/ai cleanup 2026-05).",
     ],
     dataUsed: {
       ordersWindow: { from, to: today },
       nextTargetDate: nextTarget,
       choiceKeysDistinct: choiceMap.size,
-      locations: locRows.length,
     },
     demand: {
       forecast: nextForecast,
       portionMix: allocations,
       explain: nextForecast.explanation,
-    },
-    procurement: {
-      lines: procurement.lines,
-      transparency: procurement.transparency,
-    },
-    purchase: {
-      lines: purchase.summaryLines,
-      transparencyNote: purchase.transparencyNote,
-    },
-    suppliers: {
-      lines: supplierLines,
-      transparencyNote: "Regelbasert rangering (pris, ledetid, tilgjengelighet) — ikke kontraktsfestede priser.",
-    },
-    production,
-    delivery: {
-      ordered: route.ordered,
-      transparency: route.transparency,
-      routeSummary: route.ordered.map((s, i) => `${i + 1}. ${s.name} (${s.windowStart}–${s.windowEnd})`),
     },
     feedback: feedback
       ? {
@@ -266,11 +156,7 @@ async function buildPayload(
           explain: feedback.explain,
         }
       : null,
-    cost: cost,
     menuSignals: dishSignals.slice(0, 12),
-    ai,
-    /** Global OS — additiv nyttelast; eldre klienter ignorerer feltet. */
-    globalOs,
   };
 
   await auditAdmin({
@@ -283,7 +169,6 @@ async function buildPayload(
       rid,
       nextTarget,
       predicted: nextForecast.predictedOrders,
-      globalOsSchemaVersion: globalOs.schemaVersion,
     },
   });
 

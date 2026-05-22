@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { getAiProviderConfig } from "@/lib/ai/runner";
-import { listCapabilities } from "@/lib/ai/capabilityRegistry";
+import { AI_TOOLS } from "@/lib/ai/tools/registry";
 import { isUnsafe } from "@/lib/ai/safety/aiSafetyFilter";
 import { validateAiOutput } from "@/lib/ai/validation/validateAiOutput";
 import {
@@ -106,15 +106,15 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    // Capabilities
-    const capabilities = listCapabilities();
-    if (capabilities.length === 0) {
+    // CMS tool registry (replaces legacy capability registry)
+    const tools = Object.entries(AI_TOOLS);
+    if (tools.length === 0) {
       checks.capabilities.status = "warn";
-      checks.capabilities.message = "No capabilities registered (import capability modules to register).";
+      checks.capabilities.message = "No CMS AI tools registered.";
     }
     checks.capabilities.detail = {
-      count: capabilities.length,
-      names: capabilities.map((c) => c.name),
+      count: tools.length,
+      names: tools.map(([id]) => id),
     };
 
     // Safety filter

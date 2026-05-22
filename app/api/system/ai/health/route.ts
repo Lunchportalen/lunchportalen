@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { getAiProviderConfig } from "@/lib/ai/runner";
-import { listCapabilities } from "@/lib/ai/capabilityRegistry";
+import { AI_TOOLS } from "@/lib/ai/tools/registry";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 const allowedRoles = ["superadmin"] as const;
@@ -68,7 +68,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const provider = getAiProviderConfig();
-    const capabilities = listCapabilities();
+    const tools = Object.entries(AI_TOOLS).map(([id, p]) => ({
+      name: id,
+      description: p.description ?? "",
+    }));
 
     const status: "ok" | "degraded" = provider.enabled ? "ok" : "degraded";
 
@@ -82,11 +85,8 @@ export async function GET(req: NextRequest) {
         model: provider.model,
         ...(provider.errorCode ? { errorCode: provider.errorCode } : {}),
       },
-      capabilities: capabilities.map((c) => ({
-        name: c.name,
-        description: c.description ?? "",
-      })),
-      capabilityCount: capabilities.length,
+      capabilities: tools,
+      capabilityCount: tools.length,
     };
 
     return jsonOk(s.ctx.rid, payload, 200);
