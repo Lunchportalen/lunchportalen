@@ -480,3 +480,6 @@ umbraco-package-schema.json
 
 # Media files
 /wwwroot/media/
+
+# Local dev secrets (ConnectionStrings override)
+appsettings.Development.local.json
