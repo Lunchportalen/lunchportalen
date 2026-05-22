@@ -849,6 +849,14 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22 (K4)** — se commits under K4 nedenfor |
 | K6 | Prod-smoke: Tripletex B-7 E2E | 2 dager | staging creds | Kjør polish-6 verify checklist |
 
+**K7 — Kreditnota-feature for norsk MVA-compliance**
+
+- Påkrevd av norsk merverdiavgifts-lov for fakturarettelser
+- Halvferdig spike fjernet i K2 (commit bc65c4d2), erstattet med 501 CREDIT_NOTE_NOT_IMPLEMENTED
+- Trenger: planlagt Tripletex-credit-note-flow + UI + handler + tester
+- Forventet scope: 1-2 dager (etter K5-lukking)
+- Avhengighet: ingen, men bør gjøres FØR første prod-kunde som trenger å rette en faktura
+
 ### HØY — før public launch
 
 | # | Item | Scope | Avhengigheter | Neste steg |
@@ -874,7 +882,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 16 (3 KRITISK · 7 HØY · 6 MEDIUM)
+**Totalt Outstanding Work items:** 17 (4 KRITISK · 7 HØY · 6 MEDIUM)
 
 ---
 
