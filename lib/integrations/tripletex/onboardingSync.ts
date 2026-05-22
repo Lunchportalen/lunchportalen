@@ -15,7 +15,7 @@ export type OutboxHandleResult = {
 };
 
 export type OnboardingProvisioningOutboxRow = {
-  id?: number;
+  id?: string | number;
   event_key: string;
   payload: unknown;
 };

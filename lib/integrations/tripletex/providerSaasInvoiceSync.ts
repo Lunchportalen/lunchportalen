@@ -15,7 +15,7 @@ export type OutboxHandleResult = {
 };
 
 export type SaasInvoiceCreateOutboxRow = {
-  id?: number;
+  id?: string | number;
   event_key: string;
   payload: unknown;
 };

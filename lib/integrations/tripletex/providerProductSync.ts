@@ -13,7 +13,7 @@ export type OutboxHandleResult = {
 };
 
 export type ProviderProductSyncOutboxRow = {
-  id?: number;
+  id?: string | number;
   event_key: string;
   payload: unknown;
 };

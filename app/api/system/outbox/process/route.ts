@@ -22,11 +22,12 @@ import { handleProviderProductSync } from "@/lib/integrations/tripletex/provider
 import { handleOnboardingProvisioningStart } from "@/lib/integrations/tripletex/onboardingSync";
 import { handleProviderCustomerCreateLp } from "@/lib/integrations/tripletex/providerCustomerSync";
 import { handleSaasInvoiceCreateLp } from "@/lib/integrations/tripletex/providerSaasInvoiceSync";
+import { extractOutboxClaimIds } from "@/lib/outbox/claimIds";
 
 type OutboxStatus = "PENDING" | "PROCESSING" | "SENT" | "FAILED" | "FAILED_PERMANENT";
 
 type OutboxRow = {
-  id: number;
+  id: string | number;
   event_key: string;
   status: OutboxStatus;
   attempts: number | null;
@@ -672,9 +673,7 @@ async function processOutboxBatchByEventLike(
     throw new Error(safeStr(pendingError?.message) || "OUTBOX_READ_FAILED");
   }
 
-  const ids = ((pendingRows ?? []) as OutboxRow[])
-    .map((row) => Number(row.id))
-    .filter((id) => Number.isFinite(id));
+  const ids = extractOutboxClaimIds((pendingRows ?? []) as OutboxRow[]);
 
   if (ids.length === 0) {
     return stats;
