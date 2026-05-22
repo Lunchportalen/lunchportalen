@@ -117,24 +117,46 @@ export async function POST(req: Request) {
       location_id = null;
     }
 
-    // ✅ RPC call med riktige param keys
-    const { data, error } = await supabase.rpc("superadmin_set_user_scope", {
-      p_target_email: email,
-      p_role: role,
-      p_company_id: company_id,
-      p_location_id: location_id,
-    });
+    const { data: target, error: tErr } = await supabase
+      .from("profiles")
+      .select("id, email, role, company_id, location_id")
+      .eq("email", email)
+      .maybeSingle();
 
-    if (error) {
-      console.error("[api/superadmin/users/set-scope] rpc error:", error);
-      return jsonError(rid, 500, "rpc_failed", "Kunne ikke oppdatere rolle/scope.", error);
+    if (tErr) return jsonError(rid, 500, "profile_read_failed", "Kunne ikke lese målprofil.", tErr);
+    if (!target?.id) return jsonError(rid, 404, "profile_not_found", "Fant ikke profil for e-post.");
+
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const admin = supabaseAdmin();
+
+    const { data: updated, error: uErr } = await admin
+      .from("profiles")
+      .update({
+        role,
+        company_id,
+        location_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", target.id)
+      .select("email, role, company_id, location_id")
+      .single();
+
+    if (uErr) {
+      console.error("[api/superadmin/users/set-scope] update error:", uErr);
+      return jsonError(rid, 500, "update_failed", "Kunne ikke oppdatere rolle/scope.", uErr);
     }
 
-    if (!data?.ok) {
-      return jsonError(rid, 400, data?.error ?? "failed", data?.message ?? "Kunne ikke oppdatere.", data);
-    }
-
-    return jsonOk(rid, data, 200);
+    return jsonOk(
+      rid,
+      {
+        ok: true,
+        email: updated.email,
+        role: updated.role,
+        company_id: updated.company_id,
+        location_id: updated.location_id,
+      },
+      200
+    );
   } catch (e: any) {
     console.error("[api/superadmin/users/set-scope] server error:", e);
     return jsonError(rid, 500, "server_error", "Uventet feil.", e?.message ?? e);
