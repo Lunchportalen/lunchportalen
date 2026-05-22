@@ -63,30 +63,55 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const admin = supabaseAdmin();
 
-  // Call RPC (security definer / service_role execute)
-  const { data, error } = await admin.rpc("superadmin_assign_profile_to_company", {
-    p_email: email,
-    p_company_id: companyId,
-    p_location_id: locationId,
-    p_role: role,
-    p_is_active: is_active,
-  });
+  const { data: existing, error: pErr } = await admin
+    .from("profiles")
+    .select("id, email, role, company_id, location_id, is_active")
+    .eq("email", email)
+    .maybeSingle();
 
-  if (error) {
-    const msg = String(error.message || "");
-    // Map known errors from RPC to cleaner messages
-    if (msg.includes("profile_not_found")) return jsonErr(ctx.rid, "Fant ikke profil for e-post.", 404, "NOT_FOUND");
-    if (msg.includes("company_not_found")) return jsonErr(ctx.rid, "Fant ikke firma.", 404, "NOT_FOUND");
-    if (msg.includes("location_not_in_company")) return jsonErr(ctx.rid, "Lokasjon tilhører ikke firma.", 400, "BAD_REQUEST");
+  if (pErr) {
+    return jsonErr(ctx.rid, "Kunne ikke lese profil.", 500, { code: "PROFILE_READ", detail: pErr.message });
+  }
+  if (!existing) return jsonErr(ctx.rid, "Fant ikke profil for e-post.", 404, "NOT_FOUND");
 
-    return jsonErr(ctx.rid, "Kunne ikke knytte ansatt til firma.", 500, {
-      code: "RPC_ERROR",
-      detail: { message: error.message, hint: (error as any).hint, code: (error as any).code },
-    });
+  const { data: company, error: cErr } = await admin.from("companies").select("id").eq("id", companyId).maybeSingle();
+  if (cErr) {
+    return jsonErr(ctx.rid, "Kunne ikke lese firma.", 500, { code: "COMPANY_READ", detail: cErr.message });
+  }
+  if (!company) return jsonErr(ctx.rid, "Fant ikke firma.", 404, "NOT_FOUND");
+
+  if (locationId) {
+    const { data: loc, error: lErr } = await admin
+      .from("company_locations")
+      .select("id")
+      .eq("id", locationId)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (lErr) {
+      return jsonErr(ctx.rid, "Kunne ikke verifisere lokasjon.", 500, { code: "LOCATION_READ", detail: lErr.message });
+    }
+    if (!loc) return jsonErr(ctx.rid, "Lokasjon tilhører ikke firma.", 400, "BAD_REQUEST");
   }
 
-  // Supabase rpc can return array or single depending on definition
-  const profile = Array.isArray(data) ? data[0] : data;
+  const { data: profile, error: uErr } = await admin
+    .from("profiles")
+    .update({
+      company_id: companyId,
+      location_id: locationId,
+      role,
+      is_active,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", existing.id)
+    .select("id, email, role, company_id, location_id, is_active")
+    .single();
+
+  if (uErr) {
+    return jsonErr(ctx.rid, "Kunne ikke knytte ansatt til firma.", 500, {
+      code: "PROFILE_UPDATE",
+      detail: { message: uErr.message, hint: (uErr as any).hint, code: (uErr as any).code },
+    });
+  }
 
   return jsonOk(ctx.rid, { profile }, 200);
 }
