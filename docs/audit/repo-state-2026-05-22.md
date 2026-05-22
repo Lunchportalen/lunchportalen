@@ -353,3 +353,131 @@ MCP `SELECT name FROM vault.secrets` returnerte **0 rader** (MCP har ikke vault-
 | Webhook secrets | Via `provider_tripletex_webhook_secrets.webhook_secret_id` → vault |
 
 **Env-baserte secrets (ikke vault):** `CRON_SECRET`, `SYSTEM_MOTOR_SECRET`, `SANITY_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, Tripletex Flow A webhook secret.
+
+---
+
+## 5. Server Actions Catalog
+
+**18 filer** med `"use server"` · **58** eksporterte async-funksjoner.
+
+| Domene | Fil | Funksjon | Auth | DB-effekt | Tripletex | Tester |
+|--------|-----|----------|------|-----------|-----------|--------|
+| **Onboarding** | `app/onboarding/actions.ts` | `submitOnboarding` | anon (public form) | via API → RPC | none | API tests |
+| **Registrering** | `app/registrer/actions.ts` | `registerCompany` | anon | RPC `lp_company_registration_create` | none | Delvis |
+| **Admin invite** | `app/admin/invite/actions.ts` | `createEmployeeInvite` | company_admin | INSERT invites | none | Y |
+| **Leverandør kunder** | `app/leverandor/kunder/actions.ts` | `suspendCustomer`, `pauseCustomer`, `deleteCustomer`, `resumeCustomer` | provider_admin | RPC lifecycle | none | Delvis |
+| **Leverandør områder** | `app/leverandor/omrader/actions.ts` | `saveServiceArea`, `toggleServiceArea` | provider_admin | RPC `lp_service_area_*` | none | N |
+| **Leverandør ordrer** | `app/leverandor/ordrer/actions.ts` | `advanceKitchenOrder` | provider_kitchen | RPC `lp_order_advance_status` | none | N |
+| **Leverandør faktura** | `app/leverandor/faktura/actions.ts` | `updateBillingContact` | provider_admin | RPC `lp_provider_update_billing_contact` | none | N |
+| **Leverandør registreringer** | `app/leverandor/registreringer/actions.ts` | `approveProviderRegistration`, `rejectProviderRegistration`, `getProviderIdForActions` | provider_admin | RPC approve/reject | none | N |
+| **Tripletex koble-til** | `app/leverandor/innstillinger/tripletex/koble-til/actions.ts` | `verifyTokenAction`, `completeConnectionAction`, `rotateWebhookSecretAction`, `finalizeConnectionAction`, `getHealthAction` | provider_admin | RPC + vault | read/write | Y (db) |
+| **Tripletex status** | `app/leverandor/innstillinger/tripletex/status/actions.ts` | `getDashboardDataAction`, `testConnectionAction`, `disconnectTripletexAction` | provider_admin | RPC + read | read | Y |
+| **Superadmin avtaler** | `app/superadmin/agreements/actions.ts` | `approveAgreement`, `rejectAgreement`, `pauseAgreementLedger` | superadmin | RPC + outbox | write (via outbox) | Y |
+| **Superadmin firma** | `app/superadmin/firms/[companyId]/actions.ts` | `setCompanyStatus` | superadmin | RPC suspend/pause/resume | none | Y |
+| **Superadmin providers** | `app/superadmin/providers/actions.ts` | `setProviderSubscription`, `generateProviderInvoice` | superadmin | RPC + billing | write | Delvis |
+| **Superadmin control-tower** | `app/superadmin/control-tower/actions.ts` | `controlTowerFinanceSimulationLogAction`, `controlTowerInsightAction` | superadmin | INSERT logs | none | N |
+| **Superadmin social** | `app/superadmin/growth/social/actions.ts` | 22× `socialEngine*Action` | superadmin | diverse AI/social tables | none | N |
+| **Backoffice CMS** | `app/(backoffice)/backoffice/content/_actions/generateAiPageDraft.ts` | `generateAiPageDraftAction` | backoffice auth | read/write content | none | N |
+| **Providers settings** | `lib/providers/saveProviderSettings.ts` | `saveProviderSettings` | provider_admin | UPDATE providers | none | N |
+
+**Mønster:** Kjerne-actions bruker `getAuthContext()` + rolle-sjekk + `lp_*` RPC. Onboarding/registrering er public. Social engine actions er STUB-domene uten prod-dekning.
+
+---
+
+## 6. RPC Catalog
+
+**66** `public.lp_*` funksjoner i prod (MCP 2026-05-22). Alle unntatt 3 er `SECURITY DEFINER`.
+
+### Kjerne-RPC-er (med auth-mønster)
+
+| Funksjon | DEFINER | Auth-sjekk | Beskrivelse | Brukt av |
+|----------|---------|------------|-------------|----------|
+| `lp_order_set` | Y | RLS + profile | Sett/endre bestilling | API `/api/orders`, week UI |
+| `lp_agreement_lifecycle_hook` | Y | trigger | Outbox fan-out ved avtaleendring | SQL trigger |
+| `lp_company_register` | Y | service/elevated | Firmaregistrering | onboarding API |
+| `lp_company_suspend/pause/resume/delete` | Y | `lp_assert_user_lifecycle_access` | Firmalivssyklus | admin + provider actions |
+| `lp_provider_create/delete/suspend/...` | Y | `is_platform_admin` | Provider livssyklus | superadmin |
+| `lp_provider_set_tripletex_credentials` | Y | `lp_assert_provider_admin_or_superadmin` | Lagre Tripletex tokens i vault | koble-til actions |
+| `lp_provider_test_tripletex_token` | Y | provider_admin | Verifiser token | status actions |
+| `lp_provider_load_webhook_secret` | Y | service_role | Last webhook secret | webhook routes |
+| `lp_run_daily_agreement_billing` | Y | service_role | Daglig fakturering | cron |
+| `lp_generate_agreement_invoices_for_period` | Y | elevated | Generer avtalefakturaer | cron + superadmin |
+| `lp_apply_tripletex_paid_status` | Y | service_role | Oppdater betalt status | webhook B-6 |
+| `lp_outbox_claim/mark_sent/mark_failed` | Y | service_role | Outbox worker | cron workers |
+| `lp_service_area_save/toggle_active` | Y | provider_admin | Leverandør områder | omrader actions |
+| `lp_order_advance_status` | Y | provider_kitchen | Kjøkken status | ordrer actions |
+
+### INVOKER (3 stk)
+
+| Funksjon | Beskrivelse |
+|----------|-------------|
+| `lp_advisory_lock` | Postgres advisory lock helper |
+| `lp_req_hash` | Request hash for idempotency |
+| `lp_touch_invites_updated_at` | Trigger helper |
+
+### Ubrukte / kandidater for review
+
+| Funksjon | Merknad |
+|----------|---------|
+| `lp_delivery_set_status` | Ingen TS-referanse funnet — **kandidat sletting** |
+| `lp_esg_rollup_month` | Kun cron ESG — verifiser prod-bruk |
+| `lp_invoice_build_month` | Legacy? — cross-ref billing |
+| `lp_production_freeze_day` | Kitchen-adjacent — lav referanse |
+| `lp_idem_complete/fail` | Idempotency — delvis brukt |
+
+### RPC i kode men IKKE i prod DB
+
+| RPC | Referert fra | Status |
+|-----|--------------|--------|
+| `lp_company_activate` | activate route | **Stale** — route bruker direkte SQL |
+| `lp_create_company_with_location` | company create API | **Broken** |
+| `lp_generate_forecast_range` | forecast cron | **Broken** |
+| `lp_membership_get` | membershipLookup | **Broken/fallback** |
+
+---
+
+## 7. Outbox Events Catalog
+
+### Event key prefixes
+
+| Prefix / pattern | Produsent | Konsument | Retry | Audit |
+|------------------|-----------|-----------|-------|-------|
+| `order.set:*` | `lp_order_set` (SQL) | SMTP worker (noop → SENT) | 10 attempts | — |
+| `rollup.rebuild:*` | `lp_order_set` (SQL) | SMTP worker (noop → SENT) | 10 attempts | — |
+| `invoice.ready:*` | invoice generate routes | Tripletex worker `processInvoiceReady` | 10 attempts | lifecycle_audit |
+| `invoice.sent:*` | Tripletex worker (side-effect) | **Ingen** | — | enqueue only |
+| `invoice.reverse:*` | superadmin reverse route | **Ingen** | — | **BROKEN PIPELINE** |
+| `tripletex.provider_customer_create_lp:*` | `lp_provider_create` | `handleProviderCustomerCreateLp` | 10 attempts | tripletex audit |
+| `tripletex.company_customer_create_provider:*` | lifecycle hook | `handleCompanyCustomerCreateProvider` | 10 attempts | tripletex audit |
+| `tripletex.saas_invoice_create_lp:*` | SaaS billing RPC | `handleSaasInvoiceCreateLp` | 10 attempts | tripletex audit |
+| `tripletex.agreement_invoice_create_provider:*` | agreement billing RPC | `handleAgreementInvoiceCreateProvider` | 10 attempts | tripletex audit |
+| `tripletex.provider_product_sync:*` | lifecycle hook | `handleProviderProductSync` | 10 attempts | tripletex audit |
+| `tripletex.onboarding_provisioning_start:*` | B-7 connection RPCs | `handleOnboardingProvisioningStart` | 10 attempts | tripletex audit |
+| `company.approved/rejected/activated:*` | superadmin routes | SMTP email | 10 attempts | lifecycle_audit |
+| `deviation:unpacked/undelivered:*` | check-deviations cron | SMTP email | 10 attempts | — |
+| `batch_packed:*` | kitchen batch | SMTP email | 10 attempts | — |
+| `daily_order_summary/kitchen_production:*` | daily-order-summary cron | SMTP email | 10 attempts | — |
+| `order.cancel.day_choice:*` | cancel route | SMTP email | 10 attempts | — |
+
+### Retry-policy
+
+- Max attempts: **10** (`OUTBOX_MAX_ATTEMPTS`)
+- Stale reclaim: `lp_outbox_reset_stale` (cron konfigurerbar, default 10 min)
+- Tripletex worker: releases `invoice.ready` + `provider_customer_create_lp` back to PENDING if SMTP worker claims first
+- Permanent fail: status `FAILED_PERMANENT` after max attempts
+
+### Dead handlers
+
+| Handler | Fil | Publisert? |
+|---------|-----|------------|
+| `order_created` | `lib/eventBus/handlers.ts` | **Aldri** — console.log stub |
+| `ai_run` | `lib/eventBus/handlers.ts` | **Aldri** — bruker `ai_activity_log` i stedet |
+
+### Broken / gap pipelines
+
+| Issue | Alvorlighet | Detalj |
+|-------|------------|--------|
+| `invoice.reverse:*` produsert, ingen handler | **HØY** | Superadmin reverse enqueuer uten consumer |
+| SMTP/Tripletex worker race | **HØY** | `lp_outbox_claim` henter alle PENDING — SMTP kan markere Tripletex-events som `unknown_event_kind` |
+| `order.set:` vs `order:set:` mismatch | **LAV** | `loadProductionReadiness.ts` bruker feil prefix |
+| Ad-hoc outbox keys uten email fields | **MEDIUM** | → FAILED permanent |
