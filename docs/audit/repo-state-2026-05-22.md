@@ -54,7 +54,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 
 ### Anbefalt neste kapittel
 
-1. Fix K4–K6 (middleware gate, prod-smoke) — K1–K3 lukket 2026-05-22
+1. K6 prod-smoke + K7 kreditnota — K1–K4 lukket 2026-05-22
 2. Observability v1 (Sentry + cron alert)
 3. Public registration canonical flow
 4. Prod-smoke Tripletex E2E
