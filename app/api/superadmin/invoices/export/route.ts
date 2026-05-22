@@ -7,6 +7,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { noStoreHeaders } from "@/lib/http/noStore";
+import { loadTripletexExportByRun } from "@/lib/superadmin/tripletexExportByRun";
 
 function isUuid(v: any) {
   return (
@@ -34,30 +35,19 @@ export async function GET(req: Request) {
 
   const supabase = await supabaseServer();
 
-  // Autentisering/rolle: superadmin
   const { data: userData, error: userErr } = await supabase.auth.getUser();
   if (userErr || !userData.user) return jsonErr(rid, "Ikke innlogget", 401, "NOT_AUTHENTICATED");
 
   const role = String(userData.user.user_metadata?.role ?? "");
   if (role !== "superadmin") return jsonErr(rid, "Kun superadmin", 403, "FORBIDDEN");
 
-  // Hent eksport fra DB-funksjon
-  const { data, error } = await supabase.rpc("tripletex_export_by_run", { p_run_id: runId });
-  if (error) return jsonErr(rid, "Kunne ikke hente eksportgrunnlag", 500, { code: "RPC_FAILED", detail: error });
+  const result = await loadTripletexExportByRun(runId);
+  if (result.ok === false) {
+    const status = result.code === "NOT_FOUND" ? 404 : 500;
+    return jsonErr(rid, result.message, status, { code: result.code, detail: result.detail });
+  }
 
-  const rows = (data ?? []) as Array<{
-    run_id: string;
-    customer_id: string | null;
-    company_name: string;
-    description: string;
-    period_from: string;
-    period_to: string;
-    quantity: number;
-    unit_price_ex_vat: number | null;
-    amount_ex_vat: number | null;
-    vat_code: string | null;
-    status: string;
-  }>;
+  const rows = result.rows;
 
   if (format === "csv") {
     const header = [
@@ -109,4 +99,3 @@ export async function GET(req: Request) {
 
   return jsonOk(rid, { runId, rows });
 }
-
