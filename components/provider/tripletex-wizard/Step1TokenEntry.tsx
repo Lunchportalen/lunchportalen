@@ -224,7 +224,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step1-title">
-      <p className="ds-eyebrow">Steg {verifying ? 2 : 1} av 5</p>
+      <p className="ds-eyebrow">Steg 1 av 5</p>
       <h2 id="tpt-step1-title" className="ds-h3">
         Lim inn og verifiser
       </h2>
