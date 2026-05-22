@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 export const revalidate = 0;
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isUuid(v: any) {
@@ -30,6 +31,40 @@ async function requireSuperadmin() {
   return { ok: true as const };
 }
 
+type TripletexInvoiceRow = {
+  id: string;
+  run_id: string;
+  company_id: string;
+  external_invoice_id: string | null;
+  status: string;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function mapTripletexInvoiceToExportLog(row: TripletexInvoiceRow) {
+  const statusRaw = String(row.status ?? "").toLowerCase();
+  const status =
+    statusRaw === "exported" || statusRaw === "success"
+      ? "success"
+      : statusRaw === "failed" || statusRaw === "error"
+        ? "failed"
+        : statusRaw === "pending" || statusRaw === "blocked"
+          ? "blocked"
+          : statusRaw || "blocked";
+
+  return {
+    id: row.id,
+    exported_at: row.updated_at ?? row.created_at,
+    exported_by: null,
+    status,
+    file_name: row.external_invoice_id ? `tripletex-${row.external_invoice_id}` : null,
+    rows_count: 0,
+    amount_ex_vat: null,
+    detail: row.last_error,
+  };
+}
+
 export async function GET(_: Request, ctx: { params: { runId: string } }) {
   const rid = makeRid();
   const guard = await requireSuperadmin();
@@ -42,13 +77,20 @@ export async function GET(_: Request, ctx: { params: { runId: string } }) {
   if (!db?.from) return jsonErr(rid, "supabaseAdmin er ikke tilgjengelig (mangler .from)", 500, "ADMIN_CLIENT_MISSING");
 
   const { data, error } = await db
-    .from("invoice_exports")
-    .select("id, exported_at, exported_by, status, file_name, rows_count, amount_ex_vat, detail")
+    .from("tripletex_invoices")
+    .select("id, run_id, company_id, external_invoice_id, status, last_error, created_at, updated_at")
     .eq("run_id", runId)
-    .order("exported_at", { ascending: false })
+    .order("updated_at", { ascending: false })
     .limit(25);
 
-  if (error) return jsonErr(rid, "Kunne ikke hente eksportlogg", 500, { code: "DB", detail: error });
+  if (error) {
+    if (isMissingRelationError(error, "tripletex_invoices")) {
+      return jsonOk(rid, { exports: [] });
+    }
+    return jsonErr(rid, "Kunne ikke hente eksportlogg", 500, { code: "DB", detail: error });
+  }
 
-  return jsonOk(rid, { exports: data ?? [] });
+  const exports = (Array.isArray(data) ? data : []).map((row) => mapTripletexInvoiceToExportLog(row as TripletexInvoiceRow));
+
+  return jsonOk(rid, { exports });
 }

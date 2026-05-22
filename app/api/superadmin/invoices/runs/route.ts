@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { INVOICE_RUN_LIST_SELECT, mapInvoiceRunRow } from "@/lib/superadmin/invoiceRunDb";
 
 /* =========================================================
    Helpers
@@ -38,16 +39,7 @@ export async function GET() {
   // ─────────────────────────────────────────────────────
   const { data, error } = await supabase
     .from("invoice_runs")
-    .select(
-      `
-        id,
-        period_from,
-        period_to,
-        status,
-        created_at,
-        note
-      `
-    )
+    .select(INVOICE_RUN_LIST_SELECT)
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -55,9 +47,8 @@ export async function GET() {
     return jsonErr(rid, "Kunne ikke hente fakturakjøringer", 500, { code: "DB_FAILED", detail: error });
   }
 
-  // ─────────────────────────────────────────────────────
-  // Success
-  // ─────────────────────────────────────────────────────
-  return jsonOk(rid, { runs: data ?? [] });
+  const runs = (Array.isArray(data) ? data : []).map(mapInvoiceRunRow);
+
+  return jsonOk(rid, { runs });
 }
 

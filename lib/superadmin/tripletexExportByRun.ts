@@ -1,6 +1,15 @@
 import "server-only";
 
 import { isMissingRelationError } from "@/lib/db/missingRelation";
+import {
+  INVOICE_LINE_EXPORT_SELECT,
+  INVOICE_RUN_DETAIL_SELECT,
+  type InvoiceLineDbRow,
+  lineAmountExVat,
+  lineUnitPriceExVat,
+  loadBillingTaxRates,
+  mapInvoiceRunRow,
+} from "@/lib/superadmin/invoiceRunDb";
 
 export type TripletexExportRow = {
   run_id: string;
@@ -16,20 +25,17 @@ export type TripletexExportRow = {
   status: string;
 };
 
-type InvoiceLine = {
-  company_id: string;
-  company_name: string | null;
-  plan_tier: string | null;
-  price_ex_vat: number | null;
-  billable_qty: number;
-  amount_ex_vat: number | null;
-  flags: string | null;
-};
-
 async function adminDb(): Promise<any> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const s: any = supabaseAdmin as any;
   return typeof s === "function" ? await s() : s;
+}
+
+function companyNameFromJoin(row: InvoiceLineDbRow): string {
+  const c = row.companies;
+  if (!c) return "";
+  if (Array.isArray(c)) return String(c[0]?.name ?? "");
+  return String(c.name ?? "");
 }
 
 /**
@@ -45,11 +51,7 @@ export async function loadTripletexExportByRun(runId: string): Promise<
     return { ok: false, code: "ADMIN_CLIENT_MISSING", message: "supabaseAdmin er ikke tilgjengelig" };
   }
 
-  const runRes = await db
-    .from("invoice_runs")
-    .select("id, period_from, period_to")
-    .eq("id", runId)
-    .single();
+  const runRes = await db.from("invoice_runs").select(INVOICE_RUN_DETAIL_SELECT).eq("id", runId).single();
 
   if (runRes.error) {
     return { ok: false, code: "NOT_FOUND", message: "Fant ikke invoice run", detail: runRes.error };
@@ -57,16 +59,17 @@ export async function loadTripletexExportByRun(runId: string): Promise<
 
   const linesRes = await db
     .from("invoice_lines")
-    .select("company_id, company_name, plan_tier, price_ex_vat, billable_qty, amount_ex_vat, flags")
-    .eq("run_id", runId)
-    .order("company_name", { ascending: true });
+    .select(INVOICE_LINE_EXPORT_SELECT)
+    .eq("run_id", runId);
 
   if (linesRes.error) {
     return { ok: false, code: "DB", message: "Kunne ikke hente invoice lines", detail: linesRes.error };
   }
 
-  const lines = (linesRes.data ?? []) as InvoiceLine[];
+  const lines = (linesRes.data ?? []) as InvoiceLineDbRow[];
   if (!lines.length) return { ok: true, rows: [] };
+
+  lines.sort((a, b) => companyNameFromJoin(a).localeCompare(companyNameFromJoin(b), "nb"));
 
   const companyIds = Array.from(new Set(lines.map((l) => l.company_id)));
   const map = new Map<string, { tripletex_customer_id?: string | null; product_name?: string | null; vat_code?: string | null }>();
@@ -84,28 +87,25 @@ export async function loadTripletexExportByRun(runId: string): Promise<
     for (const m of mapRes.data ?? []) map.set(m.company_id, m);
   }
 
-  const period_from = String(runRes.data.period_from ?? "");
-  const period_to = String(runRes.data.period_to ?? "");
+  const vatRateById = await loadBillingTaxRates(db);
+  const runDto = mapInvoiceRunRow(runRes.data);
 
   const rows: TripletexExportRow[] = lines.map((l) => {
     const m = map.get(l.company_id) ?? null;
-    const status = !m?.tripletex_customer_id
-      ? "MISSING_CUSTOMER_ID"
-      : l.flags
-        ? String(l.flags)
-        : "OK";
-    const product = m?.product_name ?? l.plan_tier ?? "Lunsj";
+    const vatCode = m?.vat_code ?? null;
+    const status = !m?.tripletex_customer_id ? "MISSING_CUSTOMER_ID" : "OK";
+    const product = m?.product_name ?? l.tier ?? l.description ?? "Lunsj";
     return {
       run_id: runId,
       customer_id: m?.tripletex_customer_id ?? null,
-      company_name: String(l.company_name ?? ""),
+      company_name: companyNameFromJoin(l),
       description: String(product),
-      period_from,
-      period_to,
-      quantity: Number(l.billable_qty ?? 0),
-      unit_price_ex_vat: l.price_ex_vat ?? null,
-      amount_ex_vat: l.amount_ex_vat ?? null,
-      vat_code: m?.vat_code ?? null,
+      period_from: runDto.period_from,
+      period_to: runDto.period_to,
+      quantity: Math.max(0, Math.floor(Number(l.quantity ?? 0))),
+      unit_price_ex_vat: lineUnitPriceExVat(l),
+      amount_ex_vat: lineAmountExVat(l, vatRateById, vatCode),
+      vat_code: vatCode,
       status,
     };
   });

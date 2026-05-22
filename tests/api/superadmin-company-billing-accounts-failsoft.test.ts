@@ -21,14 +21,17 @@ const COMPANY_ID = "11111111-1111-4111-8111-111111111111";
 const minimalLine = {
   id: "line-1",
   company_id: COMPANY_ID,
-  company_name: "Test AS",
-  plan_tier: "BASIS",
-  price_ex_vat: 100,
-  billable_qty: 1,
-  cancelled_qty: 0,
-  cancelled_before_0800_qty: 0,
-  amount_ex_vat: 100,
-  flags: null,
+  quantity: 1,
+  tier: "BASIS",
+  unit_price_nok: 100,
+  amount_nok: 100,
+  unit_price_cents_ex_vat: 10000,
+  line_subtotal_cents_ex_vat: 10000,
+  line_vat_cents: 2500,
+  line_total_cents_inc_vat: 12500,
+  basis: null,
+  description: "Lunsj",
+  companies: { name: "Test AS" },
 };
 
 describe("superadmin company_billing_accounts fail-soft", () => {
@@ -59,11 +62,10 @@ describe("superadmin company_billing_accounts fail-soft", () => {
                   Promise.resolve({
                     data: {
                       id: RUN_ID,
-                      period_from: "2026-01-01",
-                      period_to: "2026-01-31",
+                      period_start: "2026-01-01",
+                      period_end: "2026-01-31",
                       status: "closed",
                       created_at: "2026-02-01T00:00:00Z",
-                      note: null,
                     },
                     error: null,
                   }),
@@ -74,10 +76,13 @@ describe("superadmin company_billing_accounts fail-soft", () => {
         if (table === "invoice_lines") {
           return {
             select: () => ({
-              eq: () => ({
-                order: () => Promise.resolve({ data: [minimalLine], error: null }),
-              }),
+              eq: () => Promise.resolve({ data: [minimalLine], error: null }),
             }),
+          };
+        }
+        if (table === "billing_tax_codes") {
+          return {
+            select: () => Promise.resolve({ data: [{ id: "MVA_25", rate: 0.25 }], error: null }),
           };
         }
         if (table === "company_billing_accounts") {
