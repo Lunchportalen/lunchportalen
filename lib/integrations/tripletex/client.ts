@@ -698,6 +698,102 @@ export function __clearTripletexProductUnitCacheForTests(): void {
   productUnitCache.clear();
 }
 
+const TRIPLETEX_COUNTRY_PATH = "/country";
+/** In-memory cache TTL — Tripletex session tokens expire within 24h. */
+const COUNTRY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+type TripletexCountryRow = {
+  id?: number;
+  isoAlpha2Code?: string;
+  name?: string;
+};
+
+type CountryCacheEntry = {
+  rows: TripletexCountryRow[];
+  loadedAt: number;
+};
+
+const countryCache = new Map<string, CountryCacheEntry>();
+
+function extractCountryRows(value: AnyJson): TripletexCountryRow[] {
+  const v = value as any;
+  if (Array.isArray(v?.values)) return v.values as TripletexCountryRow[];
+  if (Array.isArray(v)) return v as TripletexCountryRow[];
+  return [];
+}
+
+/** Clears in-process country cache (Vitest isolation only). */
+export function __clearTripletexCountryCacheForTests(): void {
+  countryCache.clear();
+}
+
+async function loadTripletexCountries(
+  auth: TripletexAuth,
+  request?: RequestOptions,
+): Promise<TripletexCountryRow[]> {
+  const cacheKey = `${auth.companyId}:${auth.token.slice(0, 8)}`;
+  const cached = countryCache.get(cacheKey);
+  if (cached && Date.now() - cached.loadedAt < COUNTRY_CACHE_TTL_MS) {
+    return cached.rows;
+  }
+
+  const res = await requestTripletex(
+    { method: "GET", path: TRIPLETEX_COUNTRY_PATH, query: { from: 0, count: 300 } },
+    { ...request, auth },
+  );
+  const rows = extractCountryRows(res.value);
+  countryCache.set(cacheKey, { rows, loadedAt: Date.now() });
+  return rows;
+}
+
+export async function resolveTripletexCountryId(
+  isoAlpha2: string,
+  auth: TripletexAuth,
+  request?: RequestOptions,
+): Promise<number> {
+  const code = safeStr(isoAlpha2).toUpperCase() || "NO";
+  const rows = await loadTripletexCountries(auth, request);
+
+  const match = rows.find((row) => safeStr(row.isoAlpha2Code).toUpperCase() === code);
+  const id = safeNum(match?.id);
+  if (id > 0) return Math.floor(id);
+
+  throw new TripletexClientError({
+    message: `Country ISO '${code}' not found in Tripletex /country response`,
+    kind: "PERMANENT",
+    code: "TRIPLETEX_COUNTRY_NOT_FOUND",
+  });
+}
+
+/** Tripletex CustomerDTO — postalAddress.country is nested {id}, not ISO string. */
+export function buildTripletexCustomerCreateBody(input: {
+  name: string;
+  organizationNumber: string;
+  countryId: number;
+  billingAddress: string;
+  billingPostcode: string;
+  billingCity: string;
+  email?: string | null;
+  ehfEnabled?: boolean;
+  ehfEndpoint?: string | null;
+}): Record<string, unknown> {
+  return {
+    name: safeStr(input.name),
+    organizationNumber: safeStr(input.organizationNumber),
+    isPrivateIndividual: false,
+    ...(safeStr(input.email) ? { email: safeStr(input.email) } : {}),
+    postalAddress: {
+      addressLine1: safeStr(input.billingAddress),
+      postalCode: safeStr(input.billingPostcode),
+      city: safeStr(input.billingCity),
+      country: { id: input.countryId },
+    },
+    ...(input.ehfEnabled && safeStr(input.ehfEndpoint)
+      ? { electronicInvoiceAddress: safeStr(input.ehfEndpoint) }
+      : {}),
+  };
+}
+
 async function loadTripletexProductUnits(
   auth: TripletexAuth,
   request?: RequestOptions,
@@ -802,27 +898,27 @@ export async function ensureCustomer(input: EnsureCustomerInput): Promise<{ cust
   const mappedId = safeStr((existing as any)?.tripletex_customer_id);
   if (mappedId) return { customerId: mappedId, created: false };
 
+  const auth = request?.auth ?? (await resolveTripletexAuth());
+  const requestWithAuth = { ...request, auth };
+  const countryId = await resolveTripletexCountryId(billingCountry, auth, requestWithAuth);
+
   const customerRes = await requestTripletex(
     {
       method: "POST",
       path: "/customer",
-      body: {
+      body: buildTripletexCustomerCreateBody({
         name: legalName,
         organizationNumber: orgnr,
-        isPrivateIndividual: false,
-        email: safeStr(company.billing_email) || undefined,
-        postalAddress: {
-          addressLine1: billingAddress,
-          postalCode: billingPostcode,
-          city: billingCity,
-          country: billingCountry,
-        },
-        ...(company.ehf_enabled && safeStr(company.ehf_endpoint)
-          ? { electronicInvoiceAddress: safeStr(company.ehf_endpoint) }
-          : {}),
-      },
+        countryId,
+        billingAddress,
+        billingPostcode,
+        billingCity,
+        email: company.billing_email,
+        ehfEnabled: company.ehf_enabled,
+        ehfEndpoint: company.ehf_endpoint,
+      }),
     },
-    request
+    requestWithAuth,
   );
 
   const customerId = parseId(customerRes.value);
@@ -905,6 +1001,57 @@ function parseCustomerIdFromConflictDetail(detail: AnyJson | null): string {
   return "";
 }
 
+/** PostgREST upsert cannot target partial unique indexes — use explicit update/insert. */
+async function persistCompanyProviderCustomerMapping(
+  admin: any,
+  row: Record<string, unknown>,
+): Promise<void> {
+  const providerId = safeStr(row.provider_id);
+  const companyId = safeStr(row.company_id);
+
+  const { data: existing, error: lookupError } = await admin
+    .from("tripletex_customers")
+    .select("id")
+    .eq("provider_id", providerId)
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new TripletexClientError({
+      message: `Company provider customer mapping lookup failed: ${safeStr(lookupError?.message ?? lookupError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_LOOKUP_FAILED",
+      detail: lookupError,
+    });
+  }
+
+  if (existing?.id) {
+    const { error: updateError } = await admin
+      .from("tripletex_customers")
+      .update(row)
+      .eq("id", existing.id);
+    if (updateError) {
+      throw new TripletexClientError({
+        message: `Company provider customer mapping update failed: ${safeStr(updateError?.message ?? updateError)}`,
+        kind: "TRANSIENT",
+        code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_UPSERT_FAILED",
+        detail: updateError,
+      });
+    }
+    return;
+  }
+
+  const { error: insertError } = await admin.from("tripletex_customers").insert(row);
+  if (insertError) {
+    throw new TripletexClientError({
+      message: `Company provider customer mapping insert failed: ${safeStr(insertError?.message ?? insertError)}`,
+      kind: "TRANSIENT",
+      code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_UPSERT_FAILED",
+      detail: insertError,
+    });
+  }
+}
+
 /**
  * Flow A: provider → Customer in Lp's Tripletex account (company_id NULL, provider_id set).
  */
@@ -956,6 +1103,10 @@ export async function ensureProviderCustomer(
   const mappedId = safeStr((existing as any)?.tripletex_customer_id);
   if (mappedId) return { customerId: mappedId, created: false };
 
+  const auth = request?.auth ?? (await resolveTripletexAuth());
+  const requestWithAuth = { ...request, auth };
+  const countryId = await resolveTripletexCountryId(billingCountry, auth, requestWithAuth);
+
   let customerId = "";
 
   try {
@@ -963,27 +1114,26 @@ export async function ensureProviderCustomer(
       {
         method: "POST",
         path: "/customer",
-        body: {
+        body: buildTripletexCustomerCreateBody({
           name: legalName,
           organizationNumber: orgnr,
-          isPrivateIndividual: false,
+          countryId,
+          billingAddress,
+          billingPostcode,
+          billingCity,
           email: billingEmail,
-          postalAddress: {
-            addressLine1: billingAddress,
-            postalCode: billingPostcode,
-            city: billingCity,
-            country: billingCountry,
-          },
-        },
+        }),
       },
-      request,
+      requestWithAuth,
     );
     customerId = parseId(customerRes.value);
   } catch (error: unknown) {
     const err = classifyUnknown(error);
     if (err.status === 409) {
       customerId =
-        parseCustomerIdFromConflictDetail(err.detail) || (await findTripletexCustomerIdByOrgnr(orgnr, request)) || "";
+        parseCustomerIdFromConflictDetail(err.detail) ||
+        (await findTripletexCustomerIdByOrgnr(orgnr, requestWithAuth)) ||
+        "";
       if (!customerId) {
         throw new TripletexClientError({
           message: "Tripletex customer conflict (409) but existing id could not be resolved",
@@ -1086,25 +1236,22 @@ export async function ensureCompanyCustomer(
   let customerId = "";
 
   try {
+    const countryId = await resolveTripletexCountryId(billingCountry, auth, requestWithAuth);
     const customerRes = await requestTripletex(
       {
         method: "POST",
         path: "/customer",
-        body: {
+        body: buildTripletexCustomerCreateBody({
           name: legalName,
           organizationNumber: orgnr,
-          isPrivateIndividual: false,
-          email: safeStr(company.billing_email) || undefined,
-          postalAddress: {
-            addressLine1: billingAddress,
-            postalCode: billingPostcode,
-            city: billingCity,
-            country: billingCountry,
-          },
-          ...(company.ehf_enabled && safeStr(company.ehf_endpoint)
-            ? { electronicInvoiceAddress: safeStr(company.ehf_endpoint) }
-            : {}),
-        },
+          countryId,
+          billingAddress,
+          billingPostcode,
+          billingCity,
+          email: company.billing_email,
+          ehfEnabled: company.ehf_enabled,
+          ehfEndpoint: company.ehf_endpoint,
+        }),
       },
       requestWithAuth,
     );
@@ -1138,33 +1285,21 @@ export async function ensureCompanyCustomer(
     });
   }
 
-  const { error: upsertError } = await admin.from("tripletex_customers").upsert(
-    {
-      company_id: companyId,
-      provider_id: providerIdSafe,
-      tripletex_customer_id: customerId,
-      orgnr,
-      legal_name: legalName,
-      billing_email: safeStr(company.billing_email) || null,
-      billing_address: billingAddress,
-      billing_postcode: billingPostcode,
-      billing_city: billingCity,
-      billing_country: billingCountry,
-      ehf_enabled: Boolean(company.ehf_enabled),
-      ehf_endpoint: safeStr(company.ehf_endpoint) || null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "provider_id,company_id" },
-  );
-
-  if (upsertError) {
-    throw new TripletexClientError({
-      message: `Company provider customer mapping upsert failed: ${safeStr(upsertError?.message ?? upsertError)}`,
-      kind: "TRANSIENT",
-      code: "TRIPLETEX_COMPANY_PROVIDER_MAPPING_UPSERT_FAILED",
-      detail: upsertError,
-    });
-  }
+  await persistCompanyProviderCustomerMapping(admin, {
+    company_id: companyId,
+    provider_id: providerIdSafe,
+    tripletex_customer_id: customerId,
+    orgnr,
+    legal_name: legalName,
+    billing_email: safeStr(company.billing_email) || null,
+    billing_address: billingAddress,
+    billing_postcode: billingPostcode,
+    billing_city: billingCity,
+    billing_country: billingCountry,
+    ehf_enabled: Boolean(company.ehf_enabled),
+    ehf_endpoint: safeStr(company.ehf_endpoint) || null,
+    updated_at: new Date().toISOString(),
+  });
 
   return { customerId, created: true };
 }
