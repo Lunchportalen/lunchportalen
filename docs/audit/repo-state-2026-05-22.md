@@ -15,7 +15,7 @@
 
 ### Hva er bygget
 
-Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin livssyklus, Sanity-meny sync, og Tripletex Flow A/B billing — er **implementert og testet** etter to dager med TPT-B-7-arbeid. Repoet inneholder i tillegg ~**703 filer** i `lib/ai/` og parallelle growth/social/revenue-moduler som utgjør en **sekundær plattformflate** uten prod-verdi.
+Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin livssyklus, Sanity-meny sync, og Tripletex Flow A/B billing — er **implementert og testet** etter to dager med TPT-B-7-arbeid. `lib/ai/` er **redusert** fra ~703 filer / ~81k LOC til **277 filer / ~26k LOC** (2026-05-22 cleanup); archive på `archive/lib-ai-frozen-2026-05`.
 
 ### Modenhet per domene
 
@@ -33,7 +33,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 | CMS backoffice | **BETA** | 81 sider; høy kompleksitet |
 | Marketing (Umbraco) | **BETA** | Azure deploy; hardcoded creds i repo |
 | Public registration | **ALPHA** | `/registrer` + `/onboarding` duplikat |
-| AI / growth / social | **STUB** | ~81k LOC; ikke prod-kritisk |
+| AI / growth / social | **IN-PROGRESS** (lib/ai) / **STUB** (social) | lib/ai: ~26k LOC keep-set (CMS AI + demand); archive på branch |
 | Observability | **ALPHA** | Health endpoints; ingen APM/alerting |
 
 ### Største styrker
@@ -242,7 +242,7 @@ flowchart LR
 
 | Folder | Filer | Modenhet | Merknad |
 |--------|-------|----------|---------|
-| `lib/ai/` | **703** | **STUB** | ~81k LOC; parallell "produktflate"; mange `@deprecated` |
+| `lib/ai/` | **277** | **IN-PROGRESS** | ~26k LOC etter cleanup 2026-05-22; se `docs/audit/lib-ai-decision.md` |
 | `lib/social/` | 74 | STUB | Social engine; superadmin growth UI |
 | `lib/growth/` | 57 | STUB | GTM, attribution, domination metrics |
 | `lib/revenue/` | 45 | STUB | Revenue brain; console.log i prod paths |

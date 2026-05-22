@@ -497,4 +497,43 @@ Alle under `app/api/cron/*` som importerer `@/lib/ai`:
 
 ---
 
-*FASE A fullført. Neste: FASE B (archive branch) → FASE C (5 refaktor + cron-slett) → FASE D (405 filer slettes).*
+# FASE A–E — Cleanup gjennomført (2026-05-22)
+
+## Resultat
+
+| Metrikk | Før | Etter |
+|---------|-----|-------|
+| lib/ai filer | 702 | **277** |
+| lib/ai LOC | ~91 007 | **~26 258** |
+| App-filer med archive-import | 21 | **0** |
+| AI-cron i vercel.json | 0 | 0 |
+| AI-cron-ruter i repo | 33 | **0** |
+| Archive-engine-tester | ~20 | **0** |
+
+## Commits (main)
+
+| SHA | Fase | Beskrivelse |
+|-----|------|-------------|
+| `d04038e3` | A | Presis cut-list + analyse-scripts |
+| `16b50e1d` | C1 | Slett 34 cron/growth API-ruter |
+| `62aef71d` | C2 | Refaktor operations-tower, executionRouter, health/diagnostics |
+| `b96e3b7e` | D | Slett 425 lib/ai-filer + 21 tester |
+
+## Archive-branch
+
+**`archive/lib-ai-frozen-2026-05`** — pushet til origin, immutable snapshot før cleanup (`d04038e3`).
+
+## Verifisering
+
+- `npm run test:run` — **2322 passed**, 0 failed
+- `npm run typecheck` — PASS
+- `npm run lint` — PASS (warnings only)
+- `npm run build:enterprise` — PASS
+
+## Modenhet etter cleanup
+
+**IN-PROGRESS** — keep-set (~26k LOC) er reelt brukt: kjøkken-prognose, CMS/backoffice AI via `runner.ts`, logging, killSwitch. Archive-bulk (engines/capabilities, singularity-cron, metafor-motorer) fjernet fra main.
+
+---
+
+*Cleanup fullført 2026-05-22.*
