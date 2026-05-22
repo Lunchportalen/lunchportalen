@@ -9,6 +9,58 @@
 
 ---
 
+## 1. Executive Summary
+
+**Lunchportalen** er en multi-tenant firmalunsjplattform (Next.js 15 · Supabase · Sanity · Tripletex · Umbraco) i **RC-modus** med to deployflater: autentisert app (`app.lunchportalen.no`) og marketing (`lunchportalen.no`).
+
+### Hva er bygget
+
+Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin livssyklus, Sanity-meny sync, og Tripletex Flow A/B billing — er **implementert og testet** etter to dager med TPT-B-7-arbeid. Repoet inneholder i tillegg ~**703 filer** i `lib/ai/` og parallelle growth/social/revenue-moduler som utgjør en **sekundær plattformflate** uten prod-verdi.
+
+### Modenhet per domene
+
+| Domene | Modenhet | Notat |
+|--------|----------|-------|
+| Auth + post-login | **PROD-READY** | Frozen; middleware + layout guards |
+| Employee week/orders | **PROD-READY** | Frozen mobile-kritisk (S1.1) |
+| Company admin | **PROD-READY** | Frozen `/admin/companies` |
+| Superadmin lifecycle | **PROD-READY** | Agreements, firms, providers |
+| Onboarding (NO) | **PROD-READY** | Frozen phone UX |
+| Kitchen / driver | **PROD-READY** | Read-only truth / mobile-first |
+| Provider portal (`/leverandor`) | **BETA** | Tripletex B-7 ferdig; middleware gap |
+| Tripletex billing (A+B) | **BETA** | Pipeline komplett; outbox race gjenstår |
+| Sanity menu sync | **PROD-READY** | Webhook + reconcile cron |
+| CMS backoffice | **BETA** | 81 sider; høy kompleksitet |
+| Marketing (Umbraco) | **BETA** | Azure deploy; hardcoded creds i repo |
+| Public registration | **ALPHA** | `/registrer` + `/onboarding` duplikat |
+| AI / growth / social | **STUB** | ~81k LOC; ikke prod-kritisk |
+| Observability | **ALPHA** | Health endpoints; ingen APM/alerting |
+
+### Største styrker
+
+1. **Enterprise auth/tenant-isolasjon** — server-side `profiles.company_id`, RLS på kjerne-tabeller, `lp_*` RPC med SECURITY DEFINER
+2. **Tripletex integrasjon** — Flow A (SaaS) + Flow B (avtalefaktura) med vault, webhooks, cron, omfattende testdekning
+3. **Testkultur** — 525 test-filer, ~2 483 cases, 0 skip/only, CI enterprise gates
+4. **Dokumentasjonshistorikk** — 158 audit-filer, AGENTS.md som authoritative law
+
+### Største risikoer mot LIVE
+
+1. **Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)
+2. **`invoice.reverse` uten handler** — broken pipeline ved fakturareversering
+3. **Umbraco hardcoded DB password** i repo
+4. **Ingen ekstern error/alerting** — cron-feil oppdages manuelt
+5. **259 migrasjonsfiler vs 93 prod ledger** — drift/compliance risiko
+6. **314 API routes** — stor angrepsflate, ujevn testdekning
+
+### Anbefalt neste kapittel
+
+1. Fix K1–K3 (outbox race, invoice reverse, secrets)
+2. Observability v1 (Sentry + cron alert)
+3. Public registration canonical flow
+4. Prod-smoke Tripletex E2E
+
+---
+
 ## 2. Architecture Overview
 
 ### To-system-modellen
@@ -481,3 +533,345 @@ MCP `SELECT name FROM vault.secrets` returnerte **0 rader** (MCP har ikke vault-
 | SMTP/Tripletex worker race | **HØY** | `lp_outbox_claim` henter alle PENDING — SMTP kan markere Tripletex-events som `unknown_event_kind` |
 | `order.set:` vs `order:set:` mismatch | **LAV** | `loadProductionReadiness.ts` bruker feil prefix |
 | Ad-hoc outbox keys uten email fields | **MEDIUM** | → FAILED permanent |
+
+---
+
+## 8. Cron Jobs Catalog
+
+### Vercel-scheduled (vercel.json → prod + staging når deployet)
+
+| Path | Schedule | Target | Beskrivelse | Sist endret | Tester |
+|------|----------|--------|-------------|-------------|--------|
+| `/api/cron/week-scheduler` | `*/10 * * * *` | prod/staging | Materialiser ukeplan-slots | 2026-05 | N |
+| `/api/cron/forecast` | `0 2 * * *` | prod/staging | Forecast range (RPC **broken**) | eldre | N |
+| `/api/cron/daily-order-summary` | `5 6,7 * * 1-5` | prod/staging | Daglig ordresammendrag e-post | 2026-05 | N |
+| `/api/cron/check-deviations` | `0 8,9,12,13 * * 1-5` | prod/staging | Avvik kjøkken/levering | 2026-05 | N |
+| `/api/cron/preprod` | `5 8 * * 1-5` | prod/staging | Pre-produksjon snapshot | eldre | N |
+| `/api/cron/outbox` | `*/2 * * * *` | prod/staging | SMTP outbox worker | 2026-05-15 | **Y** |
+| `/api/cron/tripletex-outbox` | `*/3 * * * *` | prod/staging | Tripletex outbox worker | 2026-05 | Delvis |
+| `/api/cron/tripletex-saas-monthly` | `0 6 1 * *` | prod/staging | Månedlig SaaS-faktura | 2026-05 | **Y** |
+| `/api/cron/tripletex-agreements-daily` | `0 6 * * *` | prod/staging | Daglig avtalefakturering | 2026-05-21 | **Y** |
+| `/api/cron/tripletex-connection-health-daily` | `0 5 * * *` | prod/staging | Tripletex tilkoblingshelse | 2026-05 | **Y** |
+| `/api/cron/cleanup-invites` | `30 3 * * *` | prod/staging | Rydd utløpte invitasjoner | eldre | N |
+| `/api/cron/esg/daily` | `15 1 * * *` | prod/staging | ESG daglig rollup | eldre | N |
+| `/api/cron/esg/monthly` | `20 1 1 * *` | prod/staging | ESG månedlig lock | eldre | N |
+| `/api/cron/esg/yearly` | `25 1 1 1 *` | prod/staging | ESG årlig lock | eldre | N |
+| `/api/cron/menu-service-day-reconcile` | `0 */6 * * *` | prod/staging | Sanity↔DB meny reconcile | 2026-05 | N |
+| `/api/cron/menu-week-rollout` | `0 12 * * 4` | prod/staging | Ukesmeny rollout torsdag | 2026-05 | N |
+
+**Auth (alle):** `requireCronAuth` — `Authorization: Bearer ${CRON_SECRET}` eller `x-cron-secret` header.
+
+### API cron-ruter UTEN Vercel-schedule (66 totalt)
+
+**50+ ruter** under `app/api/cron/` er **STUB/AI/growth** — eksempler: `ai-ceo`, `autonomous`, `god-mode`, `singularity`, `monopoly`. Disse kjører **ikke** automatisk i prod med mindre manuelt trigget.
+
+**Cron-failure alerting:** `cron_runs`-tabell (best-effort insert). **Ingen** ekstern alerting (Sentry/PagerDuty). Feil oppdages via superadmin system health eller manuell sjekk.
+
+---
+
+## 9. Webhook Endpoints Catalog
+
+| Endpoint | Verifikasjon | Idempotency | Replay-protect | Rate-limit | Tester |
+|----------|--------------|-------------|----------------|------------|--------|
+| `POST /api/webhooks/tripletex` | HMAC + auth header (`verifyTripletexWebhookSignature`) | `tripletex_webhook_events` dedup via `event_id` hash | Y (duplicate → 200) | 120/min/IP in-memory | Y |
+| `POST /api/webhooks/tripletex-provider/[providerId]` | Per-provider secret via `lp_provider_load_webhook_secret` + HMAC | Same dedup table | Y | In-memory bucket | Y |
+| `POST /api/webhooks/sanity/menu-day` | `SANITY_WEBHOOK_SECRET` HMAC | Upsert idempotent på date+tier | Y (signature) | **Nei** | Delvis |
+
+**Handler-logikk:**
+
+- **Tripletex Flow A:** `dispatchTripletexWebhookEvent` — customer/product/order callbacks
+- **Tripletex Flow B:** `dispatchProviderTripletexWebhookEvent` → `lp_apply_tripletex_paid_status`
+- **Sanity:** `syncMenuServiceDaysForPublishedMenuDay` / delete on unpublish
+
+**Audit:** Alle Tripletex webhooks logger til `lifecycle_audit_log` (best-effort).
+
+---
+
+## 10. Third-party Integrations
+
+| Tjeneste | Env | Auth | Error-handling | Fail-mode | Idempotency | Endpoints | Webhooks | Docs |
+|----------|-----|------|----------------|-----------|-------------|-----------|----------|------|
+| **Supabase** | prod + staging | JWT + service_role | jsonErr envelope | fail-closed | RPC idempotency keys | All DB | — | `docs/audit/supabase-state.md` |
+| **Tripletex** | test + prod per provider | Session token (consumer+employee) | Retry + outbox | fail-hard (outbox retry) | Outbox event_key | `/v2/customer`, `/product`, `/order`, `/country`, `/currency` | `/api/webhooks/tripletex*` | `docs/audit/tpt-b-7b-polish-6.md` (inkl. polish-8 DTO-audit) |
+| **Sanity** | prod dataset | API token + webhook secret | jsonErr | fail-soft (skip non-menuDay) | Upsert on date | GROQ + mutations | `/api/webhooks/sanity/menu-day` | `docs/audit/sanity-live-state.md` |
+| **Umbraco** | Azure prod | Cookie (backoffice) | Proxy rewrite | fail-soft (404 uten env) | — | Delivery API | — | `docs/audit/full-system/UMBRACO_GAP_REPORT.md` |
+| **Resend/SMTP** | prod env | API key | outbox retry | fail-soft (10 attempts) | outbox event_key | sendMail | — | — |
+| **OpenAI** | prod env | API key | governance check | fail-soft | — | chat/completions | — | `scripts/ci/ai-governance-check.mjs` |
+| **Stripe** | dependency only | — | — | — | — | **Ingen aktiv bruk funnet** | — | — |
+| **Redis** | optional | — | — | — | — | rate/cache (lib) | — | — |
+
+### Tripletex (referanse — ikke re-auditert)
+
+Se **`docs/audit/tpt-b-7b-polish-6.md`** for full DTO-audit (polish-6 country, polish-8 currency/order). Hotfix-historikk: `tpt-b-7b-hotfix-*.md` (GRANTs, outbox, webhook subscriptions).
+
+**Flow A vs B:**
+- **Flow A:** Lp som Tripletex-kunde (SaaS-faktura til leverandører)
+- **Flow B:** Provider som Tripletex-kunde (avtalefaktura til firma)
+
+---
+
+## 11. Test Coverage by Area
+
+| Domene | Test-filer | ~Test cases | Dekning | Kritisk gap |
+|--------|-----------|-------------|---------|-------------|
+| **cms** | 150 | ~600 | **Høy** | `@ts-nocheck` i noen parity-tester |
+| **api** | 61 | ~400 | **Medium-Høy** | 314 API routes — mange uten dedikert test |
+| **auth** | 21 | ~120 | **Høy** | — |
+| **db** | 23 | ~150 | **Medium** | RLS kun 7 filer i `tests/rls/` |
+| **integrations** | 21 | ~100 | **Medium** | Tripletex E2E krever DB env |
+| **kitchen** | 6 | ~200 | **Høy** | — |
+| **admin** | 8 | ~50 | **Medium** | — |
+| **superadmin** | 7 | ~40 | **Lav-Medium** | 50 superadmin pages |
+| **employee/week** | 5 | ~30 | **Medium** | Mobil UX ikke e2e |
+| **leverandor/provider** | ~5 | ~30 | **Lav** | Tripletex wizard delvis |
+| **ai/growth/social** | 39+ | ~200 | **Medium** | STUB-domene — tester validerer ikke prod-verdi |
+| **e2e (playwright)** | config finnes | — | **Lav** | Ikke i CI critical path |
+
+**Totalt:** 525 test-filer · ~2 483 `test()`/`it()` invocations · **0** `.skip`/`.only`/`xit` (PASS).
+
+**Kritisk forretningslogikk uten unit-tester:**
+- Outbox SMTP/Tripletex race condition
+- `invoice.reverse` pipeline
+- Provider registrering full flow
+- Public `/registrer` vs `/onboarding` paritet
+
+---
+
+## 12. Code Health
+
+### TODO / FIXME / HACK / @deprecated
+
+| Marker | Count |
+|--------|------:|
+| `@deprecated` | 30 |
+| `TODO` | 1 |
+| `FIXME` | 0 |
+| `HACK` | 0 |
+
+Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler i prod.
+
+### console.log/debug utenfor tests/
+
+| Område | Matches |
+|--------|--------:|
+| `scripts/` | 201 |
+| `lib/` | 112 |
+| `app/` | 30 |
+
+**Prod-risiko:** 112 i `lib/` — mange i logging helpers (`lib/ops/log.ts`, `lib/audit/log.ts`) men også i revenue/growth paths.
+
+### debugger
+
+**0** utenfor tests.
+
+### Hardkodede secrets
+
+| Funn | Severity |
+|------|----------|
+| `sk_live` / `sk_test` / `bearer eyJ` | **0** |
+| Umbraco `appsettings.*.json` DB password | **HIGH** |
+| `lib/auth/canonicalDevCredentials.ts` dev password | **LOW** (dev only) |
+
+### Hardkodede URL-er (burde være env)
+
+| URL | Fil |
+|-----|-----|
+| `https://lunchportalen.no/*` | `next.config.ts` redirects (OK for prod) |
+| `https://lunchportalen.no/ai-motor-demo` | redirect target |
+
+### Filer >1000 LOC (top 10 hotspots)
+
+| LOC | Fil |
+|----:|-----|
+| 3230 | `app/superadmin/growth/social/SocialEngineClient.tsx` |
+| 2624 | `app/(backoffice)/backoffice/content/_components/useContentWorkspaceShellModel.ts` |
+| 2169 | `lib/localRuntime/cmsProvider.ts` |
+| 2141 | `app/(app)/week/EmployeeWeekClient.tsx` |
+| 1778 | `lib/integrations/tripletex/client.ts` |
+| 1639 | `app/superadmin/sales/SalesCockpitClient.tsx` |
+| 1525 | `app/superadmin/control-tower/ControlTowerClient.tsx` |
+| 1399 | `app/(backoffice)/backoffice/content/_components/ContentAiTools.tsx` |
+| 1224 | `app/(backoffice)/backoffice/content/_components/useContentWorkspaceAi.ts` |
+| 1206 | `app/superadmin/companies/companies-client.tsx` |
+
+**25 filer totalt** over 1000 LOC.
+
+### Sirkulære avhengigheter
+
+**Ikke kjørt** (madge ikke i CI). `graphlib` er dependency men ikke auditert. **ANTAKELSE:** Risiko i `lib/ai/` og `lib/cms/` basert på filstørrelse.
+
+### Stub-funksjoner (eksempler)
+
+| Fil | Mønster |
+|-----|---------|
+| `lib/eventBus/handlers.ts` | `console.log` only |
+| `lib/core/logger.ts` | `console.error` wrapper |
+| Mange `app/api/cron/ai-*` | Returnerer `{ ok: true }` uten side-effekt |
+
+---
+
+## 13. Operational Readiness
+
+| Kapabilitet | Status | Detalj |
+|-------------|--------|--------|
+| **Logging** | Delvis | `lib/ops/log.ts`, `lib/audit/log.ts` — strukturert console; `lib/core/logger.ts` er stub |
+| **Error tracking** | **Mangler** | Ingen Sentry/Datadog/LogDrain |
+| **Feiloppdagelse prod** | Manuell | Superadmin `/superadmin/system`, `cron_runs`, Vercel logs |
+| **Health endpoints** | Finnes | `/api/health`, `/api/health/live`, `/api/health/ready`, `/api/superadmin/system/health` |
+| **Metrics** | Delvis | `cron_runs`, `lifecycle_audit_log`, `ai_activity_log` — ingen Prometheus |
+| **Cron failure alert** | **Mangler** | Billing-cron feiler silently i `cron_runs` uten push-alert |
+| **Rate limiting** | Delvis | Auth rate limit (`lib/auth/rateLimit.ts`); webhooks in-memory; public API varierer |
+
+**SYSTEM_MOTOR_SECRET:** Påkrevd for system motor health (AGENTS.md N14). Mangler → DEGRADED i system health.
+
+---
+
+## 14. UI/UX Consistency
+
+| Sjekk | Status | Detalj |
+|-------|--------|--------|
+| Design system (`ds-*`/`lp-*`) | Delvis | Backoffice/superadmin har ad-hoc Tailwind; week/admin bruker tokens |
+| Empty states | Delvis | Week, onboarding har; mange superadmin-lister mangler |
+| Error boundaries | **Lav** | Kun `app/admin/error.tsx`, `app/superadmin/firms/error.tsx`, root `app/error.tsx` |
+| Loading states | **Lav** | Kun `app/superadmin/firms/loading.tsx` + Suspense sporadisk |
+| Mobile 380px | Delvis testet | Week + forside er S1.1-kritiske; superadmin/backoffice ikke |
+| aria-label | Sporadisk | ~15 filer med explicit aria-label; ikke systematisk |
+| focus-visible | Delvis | Hot-pink focus ring i header law; inkonsistent ellers |
+| Emoji i UI | **Brudd funnet** | `app/kitchen/page.tsx`, `app/driver/page.tsx`, `EmployeeWeekClient.tsx`, superadmin overview |
+
+**Header law:** `HeaderShell.tsx` + `RoleTabs.tsx` — canonical implementasjon OK for admin/employee.
+
+---
+
+## 15. Documentation State
+
+| Område | Status |
+|--------|--------|
+| **README.md** | **STALE/BROKEN** — inneholder bare "test" + redeploy-kommentar |
+| **AGENTS.md** | **Authoritative** — enterprise law, frozen flows |
+| **docs/audit/** | **158 filer** — rik TPT-B historikk, full-system audits |
+| **docs/runbooks/** | **1 fil** — `flaky-tests.md` kun |
+| **Inline JSDoc** | Sporadisk — `@deprecated` brukt, ellers lav dekning |
+| **Domener uten docs** | leverandor portal, driver mobile, public registration flow |
+
+### docs/audit/ — nøkkelfiler (sist oppdatert ca.)
+
+| Fil | Emne |
+|-----|------|
+| `repo-state-2026-05-22.md` | **Dette dokumentet** |
+| `supabase-state.md` | 2026-05-20 — branch/RLS state |
+| `tpt-b-7b-polish-6.md` | 2026-05-22 — Tripletex DTO |
+| `tpt-b-7b-final.md` | TPT-B-7 foundation |
+| `GO_LIVE_RISK_REGISTER_V2.md` | Risiko-register |
+| `full-system/SYSTEM_ARCHITECTURE_MAP.md` | Arkitektur |
+
+---
+
+## 16. Security Audit
+
+| Område | Status | Detalj |
+|--------|--------|--------|
+| **RLS coverage** | **93%** | 43/137 tabeller uten RLS (partitions + billing config) — se seksjon 4 |
+| **Secrets** | Delvis | Vault for Tripletex per-provider; env for cron/webhook; Umbraco password i repo |
+| **Token i logs** | Delvis verifisert | `opsLog` brukes; ingen systematisk secret-scrubbing audit |
+| **Input validation (Zod)** | Delvis | Onboarding, orders, API routes — ikke alle 314 routes |
+| **CSRF** | Next.js default | Server actions + POST API; ingen custom CSRF tokens |
+| **CORS** | Default Next | Ingen eksplisitt CORS-config i `next.config.ts` |
+| **GDPR** | Delvis dokumentert | Persondata: profiles (email, phone, name), orders, audit logs — retention policy **mangler** |
+| **Audit log** | Finnes | `lifecycle_audit_log`, `audit_log` partitions — superadmin actions delvis dekket |
+| **Webhook signatures** | **OK** | Tripletex HMAC + Sanity HMAC — se seksjon 9 |
+
+**Auth gaps:**
+- `/leverandor` ikke middleware-protected (layout-only)
+- `/api/*` bypass middleware (cron secret / route-level auth)
+- 50+ unscheduled cron endpoints callable hvis cron secret lekker
+
+---
+
+## 17. Routes + Auth Matrix
+
+### Middleware-protected prefixes
+
+| Prefix | Middleware | Layout guard | Tillatte roller |
+|--------|------------|--------------|-----------------|
+| `/week`, `/orders` | session required | `(app)` layout | employee |
+| `/admin` | session required | company_admin (+ agreement active) | company_admin |
+| `/superadmin` | session required | superadmin | superadmin |
+| `/backoffice` | session required | backoffice role | superadmin/editor |
+| `/kitchen` | session required | kitchen | kitchen, provider_kitchen |
+| `/driver` | session required | driver | driver |
+| `/saas` | session required | saas layout | saas roles |
+
+### Layout-only protected (ikke middleware)
+
+| Prefix | Guard | Tillatte roller |
+|--------|-------|-----------------|
+| `/leverandor` | `app/leverandor/layout.tsx` | provider_admin, provider_kitchen, provider_viewer, superadmin |
+
+### Public (anon OK)
+
+| Prefix | Merknad |
+|--------|---------|
+| `/`, `/(public)/`, `/(auth)/*` | Login, register, CMS public pages |
+| `/onboarding`, `/registrer`, `/registrering` | Registration flows |
+| `/status` | System status page |
+| `/api/auth/login`, `/api/auth/post-login` | Auth endpoints |
+
+### Worker-only
+
+| Prefix | Auth |
+|--------|------|
+| `/api/cron/*` | `CRON_SECRET` |
+| `/api/webhooks/*` | Signature/HMAC |
+| `/api/system/outbox/process` | service/internal |
+
+### Auth gap-register
+
+| Gap | Risiko |
+|-----|--------|
+| `/leverandor` uten middleware | Session refresh skjer, men unauth når layout før redirect flash |
+| `/api/*` bypass | Korrekt for webhooks; krever per-route auth (314 routes) |
+| Backoffice 81 pages | Kompleks auth — enkelte API-ruter under `/api/backoffice/` |
+| 66 cron routes | Alle bruker samme CRON_SECRET — blast radius |
+
+---
+
+## 18. Outstanding Work / Next Priorities
+
+### KRITISK — før første prod-kunde
+
+| # | Item | Scope | Avhengigheter | Neste steg |
+|---|------|-------|---------------|------------|
+| K1 | Outbox SMTP/Tripletex race | 1–2 dager | outbox RPC | Prefix-filter i `lp_outbox_claim` eller separate queues |
+| K2 | `invoice.reverse` handler | 1 dag | Tripletex API | Implementer consumer i tripletex-outbox worker |
+| K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
+| K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
+| K5 | Broken RPC cleanup (`lp_create_company_with_location`, etc.) | 1 dag | migrations | Fjern stale refs eller implementer RPC |
+| K6 | Prod-smoke: Tripletex B-7 E2E | 2 dager | staging creds | Kjør polish-6 verify checklist |
+
+### HØY — før public launch
+
+| # | Item | Scope | Avhengigheter | Neste steg |
+|---|------|-------|---------------|------------|
+| H1 | Observability v1 (Sentry + cron alert) | 3–5 dager | Vercel integration | Error boundary + cron failure webhook |
+| H2 | README + onboarding docs | 1 dag | — | Erstatt stale README |
+| H3 | Public registration unified flow | 3 dager | `/registrer` vs `/onboarding` | Én canonical path |
+| H4 | Migration ledger reconcile | 2–3 dager | supabase CLI | P3.M5 hygiene |
+| H5 | FK indexes (billing/lifecycle) | 1 dag | migration | 11 public FK indexes |
+| H6 | Mobile audit week + forside | 2 dager | Playwright | S1.1 test matrix |
+| H7 | Emoji-fjerning i prod UI | 4 timer | — | kitchen, driver, week |
+
+### MEDIUM — teknisk gjeld
+
+| # | Item | Scope | Avhengigheter | Neste steg |
+|---|------|-------|---------------|------------|
+| M1 | `lib/ai/` isolation (703 filer) | 1–2 uker | arkitekturbeslutning | Flytt til optional package eller feature flag |
+| M2 | Mega-file split (tripletex client, week client) | 1 uke | — | Incremental extract |
+| M3 | API route consolidation (314→?) | 2 uker | — | Audit `scripts/audit-api-routes.mjs` output |
+| M4 | Dead RPC removal | 2 dager | — | `lp_delivery_set_status` etc. |
+| M5 | GDPR retention policy | 3 dager | legal | Document + cron purge |
+| M6 | eventBus stub cleanup | 4 timer | — | Fjern eller wire `order_created` |
+| M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
+| M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
+
+**Totalt Outstanding Work items:** 21 (6 KRITISK · 7 HØY · 8 MEDIUM)
