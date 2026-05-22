@@ -14,6 +14,7 @@ import {
 } from "@/lib/integrations/tripletex/onboardingVerify";
 import { buildProviderTripletexWebhookUrl } from "@/lib/integrations/tripletex/providerWebhookUrl";
 import { resolveTripletexProviderEnv } from "@/lib/integrations/tripletex/resolveTripletexProviderEnv";
+import { syncWebhookSubscriptions } from "@/lib/integrations/tripletex/webhookSubscriptions";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -215,7 +216,68 @@ export async function finalizeConnectionAction(input: {
   if (denied) return denied;
 
   const env = resolveTripletexProviderEnv();
+  const admin = supabaseAdmin();
   const sb = await supabaseServer();
+
+  const { data: secretRow, error: secretError } = await admin.rpc("lp_provider_load_webhook_secret", {
+    p_provider_id: input.providerId,
+    p_env: env,
+  });
+
+  if (secretError) {
+    return {
+      ok: false as const,
+      error: "Webhook-secret må genereres først.",
+      code: "WEBHOOK_REQUIRED",
+    };
+  }
+
+  const webhookSecret = safeStr((secretRow as { webhook_secret?: string })?.webhook_secret);
+  if (!webhookSecret) {
+    return { ok: false as const, error: "Webhook-secret må genereres først.", code: "WEBHOOK_REQUIRED" };
+  }
+
+  const targetUrl = buildProviderTripletexWebhookUrl(input.providerId);
+
+  try {
+    const syncResult = await syncWebhookSubscriptions({
+      providerId: input.providerId,
+      env,
+      secret: webhookSecret,
+      targetUrl,
+    });
+
+    const auth = await getAuthContext();
+    await admin.from("lifecycle_audit_log").insert({
+      actor_id: auth.ok ? auth.user?.id ?? null : null,
+      action: "tripletex_webhooks_registered",
+      entity_type: "provider",
+      entity_id: input.providerId,
+      reason: null,
+      metadata: {
+        provider_id: input.providerId,
+        env,
+        target_url: targetUrl,
+        subscription_ids: syncResult.subscriptions.map((s) => s.subscriptionId),
+        event_types: syncResult.subscriptions.map((s) => s.eventType),
+      },
+    });
+  } catch (error: unknown) {
+    const message = safeStr((error as Error)?.message ?? error) || "Webhook-registrering feilet.";
+
+    await admin
+      .from("provider_tripletex_credentials")
+      .update({ connection_state: "CONFIGURING", updated_at: new Date().toISOString() })
+      .eq("provider_id", input.providerId)
+      .eq("env", env);
+
+    return {
+      ok: false as const,
+      error: `Kunne ikke registrere webhook i Tripletex: ${message}`,
+      code: "WEBHOOK_SYNC_FAILED",
+    };
+  }
+
   const { data, error } = await sb.rpc("lp_provider_finalize_tripletex_connection", {
     p_provider_id: input.providerId,
     p_env: env,

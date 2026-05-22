@@ -64,11 +64,7 @@ export default function DirectWizard({
       ) : null}
 
       {screen === "webhook" ? (
-        <Step3WebhookSecret
-          providerId={providerId}
-          webhookUrl={webhookUrl}
-          onComplete={goSuccess}
-        />
+        <Step3WebhookSecret providerId={providerId} onComplete={goSuccess} />
       ) : null}
 
       {screen === "success" ? <Step4Success companyName={companyName} /> : null}

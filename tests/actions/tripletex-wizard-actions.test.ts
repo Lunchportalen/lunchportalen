@@ -25,6 +25,16 @@ vi.mock("@/lib/integrations/tripletex/onboardingVerify", () => ({
   completeTripletexConnectionAfterVerify: (...args: unknown[]) => mockCompleteAfterVerify(...args),
 }));
 
+vi.mock("@/lib/integrations/tripletex/webhookSubscriptions", () => ({
+  syncWebhookSubscriptions: vi.fn().mockResolvedValue({
+    subscriptions: [{ eventType: "invoice.charged", subscriptionId: "23070" }],
+  }),
+}));
+
+vi.mock("@/lib/integrations/tripletex/providerWebhookUrl", () => ({
+  buildProviderTripletexWebhookUrl: vi.fn().mockReturnValue("https://example.test/webhook"),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: () => mockSupabaseServer(),
 }));
@@ -134,6 +144,15 @@ describe("tripletex wizard actions (TPT-B-7b)", () => {
   });
 
   test("finalizeConnectionAction happy → CONNECTED", async () => {
+    mockSupabaseAdmin.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: { webhook_secret: "whsec_test_secret_123456789012345678" },
+        error: null,
+      }),
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
     mockSupabaseServer.mockResolvedValue({
       rpc: vi.fn().mockResolvedValue({
         data: { connection_state: "CONNECTED", ready_for_billing: true },
@@ -147,6 +166,15 @@ describe("tripletex wizard actions (TPT-B-7b)", () => {
   });
 
   test("finalizeConnectionAction without provisioning complete", async () => {
+    mockSupabaseAdmin.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({
+        data: { webhook_secret: "whsec_test_secret_123456789012345678" },
+        error: null,
+      }),
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
     mockSupabaseServer.mockResolvedValue({
       rpc: vi.fn().mockResolvedValue({
         data: null,

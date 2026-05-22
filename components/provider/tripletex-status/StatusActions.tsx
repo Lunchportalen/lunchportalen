@@ -168,7 +168,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
                   Roter webhook-secret
                 </h3>
                 <p className="ds-body-sm">
-                  Genererer nytt secret. Oppdater webhook i Tripletex før du lukker dette vinduet.
+                  Genererer nytt secret og oppdaterer Tripletex-abonnement ved neste fullføring av oppsett.
                 </p>
                 {rotatedSecret ? (
                   <div className="ds-tripletex-status__copy-field">

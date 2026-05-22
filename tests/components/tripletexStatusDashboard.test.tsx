@@ -41,6 +41,8 @@ const BASE_DATA: DashboardData = {
   resourceCounts: { products: 3, customers: 1, vatCodes: 2 },
   webhook: {
     url: `https://example.test/api/webhooks/tripletex/provider/${PROVIDER_ID}`,
+    subscriptionCount: 3,
+    eventTypes: ["invoice.charged", "closegroup.create", "order.update"],
     lastReceivedAt: null,
     events30d: 0,
     lastRotatedAt: "2026-05-21T11:00:00Z",
@@ -115,5 +117,14 @@ describe("StatusDashboardClient (TPT-B-7c polish-7)", () => {
     expect(container.textContent).toContain("Produkter");
     expect(container.textContent).toContain("MVA-koder");
     expect(container.querySelector(".ds-tripletex-status__stat-number")).toBeTruthy();
+  });
+
+  test("webhook section shows subscription count and event types", async () => {
+    const { container } = await renderDashboard(false, {
+      ...BASE_DATA,
+      state: "CONNECTED",
+    });
+    expect(container.textContent).toContain("3 aktive i Tripletex");
+    expect(container.textContent).toContain("invoice.charged");
   });
 });

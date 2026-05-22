@@ -205,7 +205,7 @@ describe("DirectWizard (TPT-B-7b)", () => {
     vi.useRealTimers();
   });
 
-  test("Step 3 finalize disabled without confirmation", async () => {
+  test("Step 3 finalize enabled when secret is ready", async () => {
     mockRotateWebhookSecretAction.mockResolvedValue({
       ok: true,
       data: { webhook_secret: "whsec_test", webhook_url: "https://app.example/webhook" },
@@ -227,7 +227,8 @@ describe("DirectWizard (TPT-B-7b)", () => {
     const finalizeBtn = Array.from(container.querySelectorAll("button")).find((b) =>
       b.textContent?.includes("Fullfør"),
     ) as HTMLButtonElement;
-    expect(finalizeBtn?.disabled).toBe(true);
+    expect(finalizeBtn?.disabled).toBe(false);
+    expect(container.textContent).toContain("Lunchportalen registrerer webhook-abonnement");
   });
 
   test("prefers-reduced-motion: progress steps render without animation dependency", async () => {

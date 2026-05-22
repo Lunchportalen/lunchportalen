@@ -14,6 +14,7 @@ import {
 } from "@/lib/integrations/tripletex/onboardingVerify";
 import { buildProviderTripletexWebhookUrl } from "@/lib/integrations/tripletex/providerWebhookUrl";
 import { resolveTripletexProviderEnv } from "@/lib/integrations/tripletex/resolveTripletexProviderEnv";
+import { deleteProviderTripletexWebhookSubscriptions } from "@/lib/integrations/tripletex/webhookSubscriptions";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -50,6 +51,8 @@ export type DashboardData = {
   };
   webhook: {
     url: string;
+    subscriptionCount: number;
+    eventTypes: string[];
     lastReceivedAt: string | null;
     events30d: number;
     lastRotatedAt: string | null;
@@ -170,7 +173,7 @@ export async function getDashboardDataAction(input: {
   const admin = supabaseAdmin() as any;
   const sbAny = sb as any;
 
-  const [credRes, productsCountRes, productsVatRes, customersRes, webhookMetaRes, lastWebhookRes] =
+  const [credRes, productsCountRes, productsVatRes, customersRes, webhookMetaRes, lastWebhookRes, subscriptionsRes] =
     await Promise.all([
     admin
       .from("provider_tripletex_credentials")
@@ -205,6 +208,12 @@ export async function getDashboardDataAction(input: {
       .order("received_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    admin
+      .from("provider_tripletex_webhook_subscriptions")
+      .select("event_type")
+      .eq("provider_id", input.providerId)
+      .eq("env", env)
+      .eq("active", true),
   ]);
 
   const vatCodes = new Set<string>();
@@ -224,6 +233,12 @@ export async function getDashboardDataAction(input: {
     }
   }
 
+  const subscriptionEventTypes = Array.isArray(subscriptionsRes.data)
+    ? subscriptionsRes.data
+        .map((row) => safeStr((row as { event_type?: string }).event_type))
+        .filter(Boolean)
+    : [];
+
   return {
     ok: true as const,
     data: {
@@ -238,6 +253,8 @@ export async function getDashboardDataAction(input: {
       },
       webhook: {
         url: buildProviderTripletexWebhookUrl(input.providerId),
+        subscriptionCount: subscriptionEventTypes.length,
+        eventTypes: subscriptionEventTypes,
         lastReceivedAt: safeStr(lastWebhookRes.data?.received_at) || null,
         events30d: base.stats30d.webhook_events,
         lastRotatedAt: safeStr(webhookMetaRes.data?.last_rotated_at) || null,
@@ -319,6 +336,11 @@ export async function disconnectTripletexAction(input: {
 
   const env = resolveTripletexProviderEnv();
   const sb = await supabaseServer();
+
+  await deleteProviderTripletexWebhookSubscriptions({
+    providerId: input.providerId,
+    env,
+  });
 
   const { data, error } = await sb.rpc("lp_provider_disconnect_tripletex", {
     p_provider_id: input.providerId,

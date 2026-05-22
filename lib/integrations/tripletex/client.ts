@@ -70,7 +70,7 @@ type RequestInput = {
   body?: unknown;
 };
 
-type RequestOptions = {
+export type RequestOptions = {
   auth?: TripletexAuth;
   timeoutMs?: number;
   retries?: number;

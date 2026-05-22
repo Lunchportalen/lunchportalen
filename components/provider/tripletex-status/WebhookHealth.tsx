@@ -30,6 +30,20 @@ export default function WebhookHealth({ webhook }: Props) {
     <div className="ds-tripletex-status__webhook">
       <dl className="ds-tripletex-status__def-list">
         <div className="ds-tripletex-status__def-row">
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">Registrerte abonnement</dt>
+          <dd className="ds-body">
+            {webhook.subscriptionCount > 0
+              ? `${webhook.subscriptionCount} aktive i Tripletex`
+              : "Ingen registrert ennå"}
+          </dd>
+        </div>
+        {webhook.eventTypes.length > 0 ? (
+          <div className="ds-tripletex-status__def-row">
+            <dt className="ds-body-sm ds-tripletex-status__text-soft">Event-typer</dt>
+            <dd className="ds-body">{webhook.eventTypes.join(", ")}</dd>
+          </div>
+        ) : null}
+        <div className="ds-tripletex-status__def-row">
           <dt className="ds-body-sm ds-tripletex-status__text-soft">Siste mottatt</dt>
           <dd className="ds-body">
             {webhook.lastReceivedAt

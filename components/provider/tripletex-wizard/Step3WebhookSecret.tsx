@@ -9,59 +9,40 @@ import {
 
 type Props = {
   providerId: string;
-  webhookUrl: string;
   onComplete: () => void;
 };
 
-export default function Step3WebhookSecret({ providerId, webhookUrl, onComplete }: Props) {
-  const [webhookSecret, setWebhookSecret] = useState<string | null>(null);
+export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
+  const [secretReady, setSecretReady] = useState(false);
   const [loadingSecret, setLoadingSecret] = useState(true);
-  const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copyUrlMsg, setCopyUrlMsg] = useState<string | null>(null);
-  const [copySecretMsg, setCopySecretMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadSecret() {
+    async function prepareSecret() {
       setLoadingSecret(true);
       const res = await rotateWebhookSecretAction({ providerId });
       if (cancelled) return;
       if (res.ok === false) {
         setError(res.error);
+        setSecretReady(false);
         setLoadingSecret(false);
         return;
       }
-      setWebhookSecret(res.data.webhook_secret);
+      setSecretReady(true);
       setLoadingSecret(false);
     }
 
-    void loadSecret();
+    void prepareSecret();
     return () => {
       cancelled = true;
     };
   }, [providerId]);
 
-  const copyText = useCallback(async (text: string, kind: "url" | "secret") => {
-    try {
-      await navigator.clipboard.writeText(text);
-      if (kind === "url") {
-        setCopyUrlMsg("Kopiert");
-        window.setTimeout(() => setCopyUrlMsg(null), 2000);
-      } else {
-        setCopySecretMsg("Kopiert");
-        window.setTimeout(() => setCopySecretMsg(null), 2000);
-      }
-    } catch {
-      if (kind === "url") setCopyUrlMsg("Kunne ikke kopiere");
-      else setCopySecretMsg("Kunne ikke kopiere");
-    }
-  }, []);
-
-  const handleFinalize = async () => {
-    if (!confirmed || submitting || !webhookSecret) return;
+  const handleFinalize = useCallback(async () => {
+    if (submitting || !secretReady) return;
     setSubmitting(true);
     setError(null);
 
@@ -73,88 +54,39 @@ export default function Step3WebhookSecret({ providerId, webhookUrl, onComplete 
       return;
     }
 
-    setWebhookSecret(null);
     onComplete();
-  };
+  }, [onComplete, providerId, secretReady, submitting]);
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step3-title">
       <p className="ds-eyebrow">Steg 4 av 5</p>
       <h2 id="tpt-step3-title" className="ds-h3">
-        Registrér webhook i Tripletex
+        Webhook-registrering
       </h2>
       <p className="ds-body ds-text-limit">
-        For at vi skal motta betalingsstatus automatisk, må Tripletex sende webhook-kall til
-        Lunchportalen.
+        Lunchportalen registrerer webhook-abonnement i Tripletex automatisk. Du trenger ikke lime inn
+        URL eller secret manuelt.
       </p>
 
-      <p className="ds-body ds-text-limit">
-        Tripletex sandbox har ikke alltid webhook-konfigurasjon i UI. Hvis du ikke finner
-        webhook-innstillinger i Tripletex, kontakt support@lunchportalen.no — vi registrerer det
-        for deg via Tripletex API.
-      </p>
-
-      <p className="ds-body ds-text-limit">
-        Hvis Tripletex viser webhook-innstillinger i din konto: lim inn URL og secret nedenfor, sett
-        event-typer til invoice.* og order.*.
-      </p>
-
-      <ol className="ds-body ds-text-limit">
-        <li>Lim inn webhook-URL nedenfor</li>
-        <li>Lim inn webhook-secret i Tripletex (vises kun én gang her)</li>
-        <li>Sett event-typer til invoice.* og order.* der Tripletex ber om det</li>
-      </ol>
-
-      <p className="ds-body-sm">Webhook-URL</p>
-      <div className="ds-secret-display">
-        <span>{webhookUrl}</span>
-        <button
-          type="button"
-          className="ds-btn ds-btn--secondary"
-          onClick={() => copyText(webhookUrl, "url")}
-          aria-label="Kopier webhook-URL"
-        >
-          {copyUrlMsg ?? "Kopier"}
-        </button>
-      </div>
-
-      <p className="ds-body-sm">Webhook-secret</p>
       {loadingSecret ? (
         <p className="ds-body-sm" aria-live="polite">
-          Genererer secret…
+          Forbereder webhook-secret…
         </p>
-      ) : webhookSecret ? (
-        <>
-          <div className="ds-secret-display">
-            <span>{webhookSecret}</span>
-            <button
-              type="button"
-              className="ds-btn ds-btn--secondary"
-              onClick={() => copyText(webhookSecret, "secret")}
-              aria-label="Kopier webhook-secret. Vises kun denne ene gangen."
-            >
-              {copySecretMsg ?? "Kopier"}
-            </button>
-          </div>
-          <div className="ds-secret-warning" role="note">
-            Denne secret vises ikke igjen. Lagre den i Tripletex-konfigurasjonen nå.
-          </div>
-        </>
+      ) : secretReady ? (
+        <p className="ds-body-sm" aria-live="polite">
+          Klar. Trykk «Fullfør oppsett» for å registrere webhook og fullføre tilkoblingen.
+        </p>
       ) : (
         <p className="ds-body-sm" role="alert">
-          Kunne ikke generere webhook-secret.
+          Kunne ikke forberede webhook-secret.
         </p>
       )}
 
-      <label className="ds-body">
-        <input
-          type="checkbox"
-          checked={confirmed}
-          onChange={(e) => setConfirmed(e.target.checked)}
-          disabled={!webhookSecret || loadingSecret}
-        />{" "}
-        Jeg har registrert webhook i Tripletex
-      </label>
+      {submitting ? (
+        <p className="ds-body-sm" aria-live="polite">
+          Registrerer webhook i Tripletex…
+        </p>
+      ) : null}
 
       {error ? (
         <p className="ds-body-sm" role="alert">
@@ -166,8 +98,8 @@ export default function Step3WebhookSecret({ providerId, webhookUrl, onComplete 
         <button
           type="button"
           className="ds-btn ds-btn--primary"
-          onClick={handleFinalize}
-          disabled={!confirmed || !webhookSecret || submitting || loadingSecret}
+          onClick={() => void handleFinalize()}
+          disabled={!secretReady || submitting || loadingSecret}
         >
           {submitting ? "Fullfører…" : "Fullfør oppsett"}
         </button>
