@@ -93,12 +93,10 @@ export function scrubSentryEvent<T extends Event>(event: T): T | null {
   const errEvent = event as ErrorEvent;
   const message = String(errEvent.message ?? errEvent.exception?.values?.[0]?.value ?? "");
   if (message && IGNORE_ERROR_PATTERNS.some((re) => re.test(message))) {
-    console.log("[scrub]", { reason: "ignore_error_pattern", dropped: true, message });
     return null;
   }
 
   scrubEventPayload(event);
-  console.log("[scrub]", { reason: "scrubbed", dropped: false, message: message || null });
   return event;
 }
 
@@ -114,9 +112,7 @@ export function buildSentryInitOptions() {
     sendDefaultPii: false,
     tracesSampleRate: isProduction ? 0.1 : 1.0,
     beforeSend(event: ErrorEvent) {
-      const result = scrubSentryEvent(event);
-      console.log("[scrub]", { reason: "beforeSend", dropped: result === null });
-      return result;
+      return scrubSentryEvent(event);
     },
     ignoreErrors: IGNORE_ERROR_PATTERNS.map(String),
   };

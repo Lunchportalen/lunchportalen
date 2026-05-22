@@ -12,7 +12,7 @@ Lunchportalen bruker [Sentry](https://sentry.io) (EU-region, Frankfurt) for feil
 | `SENTRY_PROJECT` | Build | `lunchportalen-app` |
 | `SENTRY_AUTH_TOKEN` | Build | Source map upload — **aldri i repo** |
 
-Sett på Vercel: **Production** + **Preview**. La **Development** stå tom slik at lokal dev ikke sender events.
+Sett på Vercel: **Production** + **Preview** + **Staging** (custom env). Scope env-vars eksplisitt til alle relevante miljøer — ikke anta at custom staging arver Production/Preview.
 
 ## Environment-tags
 
@@ -58,6 +58,29 @@ PII fjernes også i `beforeSend` (`lib/sentry/scrubEvent.ts`).
 | Cron (Vercel-scheduled) | `captureCronHandlerError()` i catch | Tag `cron`, `rid` |
 | Outbox | `reportOutboxPermanentFailure()` ved `FAILED_PERMANENT` | Message uten payload |
 
+## Serverless route handlers
+
+Vercel serverless-funksjoner kan avsluttes **før** Sentry-transporten flusher køen. For **eksplisitte** captures i route-handlers (test, manuell feil, eller bevisst `throw` etter logging):
+
+```ts
+import * as Sentry from "@sentry/nextjs";
+
+const err = new Error("…");
+Sentry.captureException(err);
+await Sentry.flush(2000);
+throw err;
+```
+
+`flush(2000)` venter opptil 2 sekunder på at køen tømmes — nødvendig for pålitelig capture i serverless.
+
+**Uhåndterte feil** fanges fortsatt via:
+
+- `instrumentation.ts` → `export const onRequestError = Sentry.captureRequestError` (Next.js 15+)
+- `lib/core/errorResponse.ts` → `safeHandler` (automatisk capture i API routes)
+- Error boundaries (`app/error.tsx`, m.fl.)
+
+Verifisert end-to-end på staging 2026-05-22 (Sentry issue `JAVASCRIPT-NEXTJS-1`, source-maps + PII-scrub OK).
+
 ## Cron-feil
 
 Vercel-scheduled crons rapporterer håndterte feil via `lib/http/cronObservability.ts`. Uauth cron (403) sendes **ikke** til Sentry.
@@ -76,11 +99,15 @@ Vercel + Sentry integrasjon tagger releases automatisk når `SENTRY_AUTH_TOKEN` 
 
 ## Verifikasjon
 
-1. Sett DSN på staging i Vercel
+1. Sett DSN på staging i Vercel (inkl. custom staging-env scope)
 2. Deploy staging
-3. Utløs test-feil (midlertidig route eller error boundary i preview)
-4. Bekreft i Sentry: environment=`staging`, ingen PII i event
-5. Fjern test-rute før prod-promotering
+3. Bekreft i Sentry: environment=`staging`, source-maps peker til riktig fil/linje, ingen PII i event
+4. For route-handler-capture: bruk `captureException` + `flush(2000)` (se over)
+
+### Diagnose-notater (2026-05-22)
+
+- Sentry SDK `debug: true` ga begrenset synlig output i Vercel runtime-logs; stol på Sentry Issues UI for verifikasjon
+- `enabled: true` + DSN tilstede er ikke nok uten flush i serverless — se serverless-seksjonen over
 
 ## Agent-regel
 
