@@ -846,7 +846,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket på prod 2026-05-22 i migrasjon `20260522150000`** (kode `92c0c447`); se `docs/audit/k1-outbox-race-fix.md` |
 | K2 | ~~`invoice.reverse` handler~~ | — | — | **Lukket 2026-05-22 (OPTION B)** — dead enqueue fjernet; schema-cleanup generate/reconcile/exports/reverse |
 | K3 | ~~Roter/fjern Umbraco hardcoded password~~ | — | — | **Lukket 2026-05-22** — SQL-passord rotert i Azure, repo renset, legacy Umbraco/-mappe slettet (commit 601381c5 + d96cefc4). Den originale credentialen er nå dead i live-systemet (eksisterer bare i git-historikk som lukket referanse). |
-| K4 | ~~`/leverandor` middleware gate~~ | — | middleware.ts | **Lukket 2026-05-22, commit d6124a8c** — `/leverandor` i `isProtectedPath`; layout-auth beholdt som defense-in-depth |
+| K4 | ~~`/leverandor` middleware gate~~ | — | middleware.ts | **Lukket 2026-05-22, commit 9b5bdf6e** — `/leverandor` i `isProtectedPath`; layout-auth beholdt som defense-in-depth |
 | K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22** — se §19 og commits der |
 | K6 | Prod-smoke: Tripletex B-7 E2E | 2 dager | staging creds | Kjør polish-6 verify checklist |
 
