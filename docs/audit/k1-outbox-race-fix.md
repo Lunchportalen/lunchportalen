@@ -135,7 +135,16 @@ Se `tests/outbox/k1-claim-race.test.ts` og oppdatert `tests/lib/orderBackup/outb
 
 ## FASE E — Verifikasjon
 
-*(Oppdateres etter deploy med commit SHA og staging-smoke.)*
+**Commit:** `92c0c447` (main)  
+**Staging migrasjon:** applied via Supabase MCP (`k1_outbox_claim_event_kind_filter`)  
+**Vercel deploy:** `vercel deploy --target=staging -y` → preview `https://lunchportalen-amv50zwdo-lunchportalen.vercel.app`
+
+**Staging DB smoke:**
+
+- `lp_outbox_claim(integer, text, text[])` bekreftet på staging (`uigxsboqeruxflgzqztl`)
+- `unknown_event_kind` i `outbox.last_error` siste 30 dager: **0** (staging)
+
+**Kontrakt etter deploy:** SMTP cron sender `p_exclude_prefixes`; Tripletex cron uendret (prefix-filtered claim). Release-workaround for `invoice.ready` beholdt som safety net.
 
 ---
 

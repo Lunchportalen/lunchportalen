@@ -842,7 +842,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
-| K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket 2026-05-22** — `p_exclude_prefixes` på `lp_outbox_claim`; se `docs/audit/k1-outbox-race-fix.md` |
+| K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket 2026-05-22 i commit `92c0c447`** — `p_exclude_prefixes` på `lp_outbox_claim`; se `docs/audit/k1-outbox-race-fix.md` |
 | K2 | `invoice.reverse` handler | 1 dag | Tripletex API | Implementer consumer i tripletex-outbox worker |
 | K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
 | K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
