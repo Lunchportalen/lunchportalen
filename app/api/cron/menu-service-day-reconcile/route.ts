@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { syncMenuServiceDaysForPublishedMenuDay } from "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay";
 import { sanityServer } from "@/lib/sanity/server";
@@ -109,6 +110,7 @@ export async function GET(req: NextRequest) {
     );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    captureCronHandlerError("/api/cron/menu-service-day-reconcile", rid, e);
     return jsonErr(rid, "Reconcile sync feilet.", 500, "sync_failed", { message: msg });
   }
 }

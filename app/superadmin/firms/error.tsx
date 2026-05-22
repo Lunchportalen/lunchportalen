@@ -1,7 +1,14 @@
 // app/superadmin/firms/error.tsx
 "use client";
 
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6">
       <div className="rounded-2xl border bg-white p-6 shadow-sm">

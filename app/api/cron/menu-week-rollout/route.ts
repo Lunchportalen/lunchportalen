@@ -6,6 +6,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { runMenuWeekRollout } from "@/lib/menu-publish/runMenuWeekRollout";
 import { requireSanityWrite } from "@/lib/sanity/client";
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
     return jsonOk(rid, data, 200);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    captureCronHandlerError("/api/cron/menu-week-rollout", rid, e);
     return jsonErr(rid, "Menu week rollout feilet.", 500, "rollout_failed", { message: msg });
   }
 }

@@ -6,6 +6,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
 import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -103,6 +104,8 @@ async function handleOutboxCron(req: NextRequest) {
     );
   } catch (e: any) {
     const message = String(e?.message ?? e);
+
+    captureCronHandlerError("/api/cron/outbox", rid, e);
 
     void logCronRun({
       job: "outbox",

@@ -7,7 +7,17 @@
  * Use `node scripts/verify-control-coverage.mjs` (also run at build start) for the same scan.
  */
 
+import * as Sentry from "@sentry/nextjs";
+
 export async function register(): Promise<void> {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./sentry.server.config");
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("./sentry.edge.config");
+  }
+
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   try {
@@ -31,5 +41,6 @@ export async function register(): Promise<void> {
   } catch {
     /* non-fatal */
   }
-
 }
+
+export const onRequestError = Sentry.captureRequestError;

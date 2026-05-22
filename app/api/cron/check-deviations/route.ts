@@ -5,6 +5,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
@@ -156,6 +157,7 @@ async function handler(req: NextRequest) {
 
     return jsonOk(rid, { date: now.date, hour: now.hour, ...counts }, 200);
   } catch (error: any) {
+    captureCronHandlerError("/api/cron/check-deviations", rid, error);
     return jsonErr(rid, "Avvikssjekk feilet.", 500, "DEVIATION_CHECK_FAILED", {
       message: safeStr(error?.message ?? error),
     });

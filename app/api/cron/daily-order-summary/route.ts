@@ -5,6 +5,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CRON_DAILY_ORDER_SUMMARY_COLUMNS } from "@/lib/orders/projection";
@@ -306,6 +307,7 @@ export async function POST(req: NextRequest) {
       200
     );
   } catch (error: any) {
+    captureCronHandlerError("/api/cron/daily-order-summary", rid, error);
     return jsonErr(rid, "Daglig ordreoppsummering feilet.", 500, "DAILY_ORDER_SUMMARY_FAILED", {
       message: safeStr(error?.message ?? error),
     });

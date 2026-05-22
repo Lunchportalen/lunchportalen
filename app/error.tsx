@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 export default function RootError({
   error,
@@ -12,11 +13,7 @@ export default function RootError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // TBD: wire to centralized error reporter when available (Sentry etc.)
-    console.error("[ROOT_ERROR_BOUNDARY]", {
-      message: error?.message,
-      digest: error?.digest ?? null,
-    });
+    Sentry.captureException(error);
   }, [error]);
 
   return (

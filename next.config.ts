@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
 const sharedConfig: NextConfig = {
@@ -33,7 +34,7 @@ const sharedConfig: NextConfig = {
   },
 };
 
-export default function nextConfig(phase: string): NextConfig {
+function buildNextConfig(phase: string): NextConfig {
   return {
     ...sharedConfig,
     distDir: resolveNextDistDir(phase),
@@ -174,3 +175,14 @@ export default function nextConfig(phase: string): NextConfig {
     },
   };
 }
+
+export default withSentryConfig(buildNextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+});

@@ -34,7 +34,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 | Marketing (Umbraco) | **BETA** | Azure deploy; DB-passord rotert 2026-05-22 (K3 lukket) |
 | Public registration | **ALPHA** | `/registrer` + `/onboarding` duplikat |
 | AI / growth / social | **IN-PROGRESS** (lib/ai) / **STUB** (social) | lib/ai: ~26k LOC keep-set (CMS AI + demand); archive på branch |
-| Observability | **ALPHA** | Health endpoints; ingen APM/alerting |
+| Observability | **BETA** | Sentry SDK (EU) — krever DSN på Vercel; alerting i Sentry UI |
 
 ### Største styrker
 
@@ -55,7 +55,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 ### Anbefalt neste kapittel
 
 1. K6 prod-smoke + K7 kreditnota — K1–K4 lukket 2026-05-22
-2. Observability v1 (Sentry + cron alert)
+2. ~~Observability v1 (Sentry + cron alert)~~ — H1 lukket 2026-05-22
 3. Public registration canonical flow
 4. Prod-smoke Tripletex E2E
 
@@ -565,7 +565,7 @@ MCP `SELECT name FROM vault.secrets` returnerte **0 rader** (MCP har ikke vault-
 
 **50+ ruter** under `app/api/cron/` er **STUB/AI/growth** — eksempler: `ai-ceo`, `autonomous`, `god-mode`, `singularity`, `monopoly`. Disse kjører **ikke** automatisk i prod med mindre manuelt trigget.
 
-**Cron-failure alerting:** `cron_runs`-tabell (best-effort insert). **Ingen** ekstern alerting (Sentry/PagerDuty). Feil oppdages via superadmin system health eller manuell sjekk.
+**Cron-failure alerting:** Sentry capture på scheduled crons + `cron_runs`. **Sentry UI-alerts** (e-post/Slack) krever manuell oppsett etter DSN er satt — se `docs/operations/sentry-conventions.md`.
 
 ---
 
@@ -714,12 +714,12 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | Kapabilitet | Status | Detalj |
 |-------------|--------|--------|
-| **Logging** | Delvis | `lib/ops/log.ts`, `lib/audit/log.ts` — strukturert console; `lib/core/logger.ts` er stub |
-| **Error tracking** | **Mangler** | Ingen Sentry/Datadog/LogDrain |
-| **Feiloppdagelse prod** | Manuell | Superadmin `/superadmin/system`, `cron_runs`, Vercel logs |
+| **Logging** | **BETA** | `lib/core/logger.ts` → Sentry; `lib/ops/log.ts` strukturert console |
+| **Error tracking** | **BETA** | Sentry (`@sentry/nextjs`) — client/server/edge; PII-scrubbing; krever DSN env |
+| **Feiloppdagelse prod** | Sentry + manuell | Superadmin health, `cron_runs`, Vercel logs som supplement |
 | **Health endpoints** | Finnes | `/api/health`, `/api/health/live`, `/api/health/ready`, `/api/superadmin/system/health` |
 | **Metrics** | Delvis | `cron_runs`, `lifecycle_audit_log`, `ai_activity_log` — ingen Prometheus |
-| **Cron failure alert** | **Mangler** | Billing-cron feiler silently i `cron_runs` uten push-alert |
+| **Cron failure alert** | **Delvis** | Sentry capture på Vercel-scheduled crons; Sentry UI-alerts krever manuell oppsett (FASE 6) |
 | **Rate limiting** | Delvis | Auth rate limit (`lib/auth/rateLimit.ts`); webhooks in-memory; public API varierer |
 
 **SYSTEM_MOTOR_SECRET:** Påkrevd for system motor health (AGENTS.md N14). Mangler → DEGRADED i system health.
@@ -862,7 +862,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
-| H1 | Observability v1 (Sentry + cron alert) | 3–5 dager | Vercel integration | Error boundary + cron failure webhook |
+| H1 | ~~Observability v1 (Sentry + cron alert)~~ | — | Vercel + Sentry EU | **Lukket 2026-05-22** — SDK + PII-scrub + cron capture; Sentry UI-alerts manuelt etter DSN (se `docs/operations/sentry-conventions.md`) |
 | H2 | README + onboarding docs | 1 dag | — | Erstatt stale README |
 | H3 | Public registration unified flow | 3 dager | `/registrer` vs `/onboarding` | Én canonical path |
 | H4 | Migration ledger reconcile | 2–3 dager | supabase CLI | P3.M5 hygiene |
@@ -883,7 +883,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 15 (2 KRITISK · 7 HØY · 6 MEDIUM)
+**Totalt Outstanding Work items:** 14 (2 KRITISK · 6 HØY · 6 MEDIUM)
 
 ---
 

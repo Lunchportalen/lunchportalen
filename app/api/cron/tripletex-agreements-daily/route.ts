@@ -5,6 +5,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { osloTodayISODate, isIsoDate } from "@/lib/date/oslo";
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -129,6 +130,7 @@ async function handleAgreementBillingCron(req: NextRequest) {
     );
   } catch (e: unknown) {
     const message = String((e as Error)?.message ?? e);
+    captureCronHandlerError("/api/cron/tripletex-agreements-daily", rid, e, { today });
     await writeAgreementBillingCronAudit("agreement_billing_cron_failed", today, rid, {
       ok: false,
       duration_ms: Date.now() - started,

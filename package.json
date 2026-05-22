@@ -98,6 +98,7 @@
     "@sanity/client": "^7.14.0",
     "@sanity/icons": "^3.7.4",
     "@sanity/webhook": "^4.0.4",
+    "@sentry/nextjs": "^10.53.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.47.6",
     "framer-motion": "^12.38.0",

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function isoNow() {
@@ -86,6 +87,7 @@ export async function POST(req: Request) {
       return jsonErr(rid, "Ugyldig cron secret.", 403, "forbidden");
     }
 
+    captureCronHandlerError("/api/cron/cleanup-invites", rid, e);
     return jsonErr(rid, "Uventet feil.", 500, { code: "server_error", detail: msg });
   }
 }

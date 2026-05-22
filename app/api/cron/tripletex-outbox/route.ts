@@ -5,6 +5,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { POST as processTripletexOutbox } from "@/app/api/system/outbox/process/route";
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /**
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest) {
 
   const inner = await processTripletexOutbox(req);
   if (inner.status >= 400) {
+    captureCronHandlerError("/api/cron/tripletex-outbox", rid, new Error(`tripletex_outbox_status_${inner.status}`), {
+      http_status: inner.status,
+    });
     return inner;
   }
 

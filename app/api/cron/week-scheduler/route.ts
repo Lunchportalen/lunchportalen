@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 function safeStr(v: unknown) {
@@ -101,6 +102,7 @@ export async function GET(req: Request) {
       200
     );
   } catch (e: any) {
+    captureCronHandlerError("/api/cron/week-scheduler", rid, e);
     return jsonErr(rid, "Uventet feil i week-scheduler.", 500, {
       code: "WEEK_SCHEDULER_FAILED",
       detail: { message: String(e?.message ?? e) },

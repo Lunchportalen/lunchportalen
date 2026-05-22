@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import {
   createTripletexAuthFromTokens,
@@ -204,6 +205,7 @@ async function handleConnectionHealthCron(req: NextRequest) {
     });
   } catch (e: unknown) {
     const message = safeStr((e as Error)?.message ?? e);
+    captureCronHandlerError("/api/cron/tripletex-connection-health-daily", rid, e);
     await writeHealthCronAudit("tripletex_connection_health_cron_failed", rid, {
       ok: false,
       duration_ms: Date.now() - started,

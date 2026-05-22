@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
+import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -126,6 +127,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (e: unknown) {
     const message = String((e as Error)?.message ?? e);
+    captureCronHandlerError("/api/cron/tripletex-saas-monthly", rid, e, { invoice_period: invoicePeriod });
     await writeSaasInvoiceCronAudit("saas_invoice_cron_failed", invoicePeriod, rid, {
       ok: false,
       message,

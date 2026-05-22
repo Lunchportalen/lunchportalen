@@ -1,6 +1,8 @@
 import "server-only";
 
 import { opsLog } from "@/lib/ops/log";
+import { captureServerException } from "@/lib/sentry/capture";
+import { scrubLogContext } from "@/lib/sentry/scrubEvent";
 
 /**
  * Strukturert server-logg for feil (kontrakten for HTTP leveres via jsonErr i route).
@@ -18,6 +20,8 @@ export function logErrorResponse(rid: string, error: unknown, context?: Record<s
         ? (error as { message: string }).message
         : "Unexpected error";
 
-  console.error("[ERROR_RESPONSE]", { rid, code, message, raw: error, ...context });
-  opsLog("error_response", { rid, code, message, ...context });
+  const safeContext = scrubLogContext(context);
+  console.error("[ERROR_RESPONSE]", { rid, code, message, ...safeContext });
+  opsLog("error_response", { rid, code, message, ...safeContext });
+  captureServerException(error, { rid, code, ...safeContext });
 }

@@ -3,6 +3,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
 export default function AdminError({
   error,
@@ -12,11 +13,7 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Minimal logging (unngå sensitive data)
-    console.error("[ADMIN_ERROR_BOUNDARY]", {
-      message: error?.message,
-      digest: error?.digest ?? null,
-    });
+    Sentry.captureException(error);
   }, [error]);
 
   return (

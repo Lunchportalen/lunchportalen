@@ -9,6 +9,7 @@ import {
 } from "@/lib/outbox/eventKinds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsLog } from "@/lib/ops/log";
+import { reportOutboxPermanentFailure } from "@/lib/sentry/capture";
 import type { OrderBackupInput } from "./types";
 
 export type OutboxStatus = "PENDING" | "PROCESSING" | "SENT" | "FAILED" | "FAILED_PERMANENT";
@@ -347,6 +348,15 @@ export async function markOutboxFailed(idOrEventKey: string, errorMsg: string) {
     attempts,
     status,
   });
+
+  if (status === "FAILED_PERMANENT") {
+    reportOutboxPermanentFailure({
+      outbox_id: resolvedId,
+      attempts,
+      status,
+      error: safeStr(errorMsg) || "unknown_error",
+    });
+  }
 
   return {
     status: status as OutboxStatus,
