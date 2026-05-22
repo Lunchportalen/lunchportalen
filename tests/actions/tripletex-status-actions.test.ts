@@ -11,6 +11,7 @@ const mockVerify = vi.fn();
 const mockTestAndRecord = vi.fn();
 const mockSupabaseServer = vi.fn();
 const mockSupabaseAdmin = vi.fn();
+const mockWebhookSubsUpdate = vi.fn();
 
 vi.mock("@/lib/auth/getAuthContext", () => ({
   getAuthContext: () => mockGetAuthContext(),
@@ -103,6 +104,13 @@ function mockHealthRpc(state = "CONNECTED") {
 }
 
 function mockAdminCounts() {
+  mockWebhookSubsUpdate.mockReset();
+  mockWebhookSubsUpdate.mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  });
+
   const chain = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -167,6 +175,18 @@ function mockAdminCounts() {
               }),
             }),
           }),
+        };
+      }
+      if (table === "provider_tripletex_webhook_subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          }),
+          update: mockWebhookSubsUpdate,
         };
       }
       return chain;
@@ -239,6 +259,9 @@ describe("tripletex status actions (TPT-B-7c)", () => {
     const res = await disconnectTripletexAction({ providerId: PROVIDER_ID });
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.data.connection_state).toBe("DISCONNECTED");
+    expect(mockWebhookSubsUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ active: false, updated_at: expect.any(String) }),
+    );
   });
 
   test("CONFIGURING dashboard exposes webhook CTA inputs via provisioningComplete", async () => {

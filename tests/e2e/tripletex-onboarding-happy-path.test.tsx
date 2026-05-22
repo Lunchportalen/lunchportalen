@@ -129,16 +129,15 @@ describe("tripletex onboarding happy path (TPT-B-7b)", () => {
       await new Promise((r) => setTimeout(r, 3500));
     });
 
-    expect(container.textContent).toContain("Registrér webhook");
+    expect(container.textContent).toContain("Webhook-registrering");
+    expect(mockRotateWebhookSecretAction).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
 
-    const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
     await act(async () => {
-      checkbox.click();
-      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, 100));
     });
 
     const finalizeBtn = Array.from(container.querySelectorAll("button")).find((b) =>
-      b.textContent?.includes("Fullfør"),
+      b.textContent?.includes("Fullfør oppsett"),
     );
 
     await act(async () => {
@@ -146,7 +145,7 @@ describe("tripletex onboarding happy path (TPT-B-7b)", () => {
       await Promise.resolve();
     });
 
-    expect(mockFinalizeConnectionAction).toHaveBeenCalled();
+    expect(mockFinalizeConnectionAction).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
     expect(container.textContent).toContain("Tripletex er koblet til");
 
     root.unmount();
