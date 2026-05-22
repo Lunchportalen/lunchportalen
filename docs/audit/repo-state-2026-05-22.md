@@ -27,11 +27,11 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 | Superadmin lifecycle | **PROD-READY** | Agreements, firms, providers |
 | Onboarding (NO) | **PROD-READY** | Frozen phone UX |
 | Kitchen / driver | **PROD-READY** | Read-only truth / mobile-first |
-| Provider portal (`/leverandor`) | **BETA** | Tripletex B-7 ferdig; middleware gap |
+| Provider portal (`/leverandor`) | **BETA** | Tripletex B-7 ferdig; middleware gate lukket K4 2026-05-22 |
 | Tripletex billing (A+B) | **BETA** | Pipeline komplett; outbox race lukket på prod (K1, 2026-05-22) |
 | Sanity menu sync | **PROD-READY** | Webhook + reconcile cron |
 | CMS backoffice | **BETA** | 81 sider; høy kompleksitet |
-| Marketing (Umbraco) | **BETA** | Azure deploy; hardcoded creds i repo |
+| Marketing (Umbraco) | **BETA** | Azure deploy; DB-passord rotert 2026-05-22 (K3 lukket) |
 | Public registration | **ALPHA** | `/registrer` + `/onboarding` duplikat |
 | AI / growth / social | **IN-PROGRESS** (lib/ai) / **STUB** (social) | lib/ai: ~26k LOC keep-set (CMS AI + demand); archive på branch |
 | Observability | **ALPHA** | Health endpoints; ingen APM/alerting |
@@ -47,14 +47,14 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 
 1. ~~**Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)~~ **Lukket på prod 2026-05-22 (migrasjon `20260522150000`)**
 2. ~~**`invoice.reverse` uten handler** — broken pipeline ved fakturareversering~~ **Lukket 2026-05-22 (K2 OPTION B — se `docs/audit/k2-invoice-reverse.md`)**
-3. **Umbraco hardcoded DB password** i repo
+3. ~~**Umbraco hardcoded DB password** i repo~~ **Lukket 2026-05-22 (K3 — passord rotert i Azure, repo renset)**
 4. **Ingen ekstern error/alerting** — cron-feil oppdages manuelt
 5. **259 migrasjonsfiler vs 93 prod ledger** — drift/compliance risiko
 6. **314 API routes** — stor angrepsflate, ujevn testdekning
 
 ### Anbefalt neste kapittel
 
-1. Fix K2–K3 (invoice reverse, secrets) — K1 lukket 2026-05-22
+1. Fix K4–K6 (middleware gate, prod-smoke) — K1–K3 lukket 2026-05-22
 2. Observability v1 (Sentry + cron alert)
 3. Public registration canonical flow
 4. Prod-smoke Tripletex E2E
@@ -159,7 +159,7 @@ sequenceDiagram
   PL->>B: Redirect to allowlisted landing
 ```
 
-**Gap:** `/leverandor` er **ikke** middleware-protected — auth håndteres i `app/leverandor/layout.tsx`.
+**Gap (lukket K4 2026-05-22):** `/leverandor` er middleware-protected; `app/leverandor/layout.tsx` håndterer rolle som defense-in-depth.
 
 ### Onboarding-flow
 
@@ -207,7 +207,7 @@ flowchart LR
 | `app/(app)/week/` | Ansatt ukevisning + bestilling | 9 | **PROD-READY** | employee + middleware | `tests/employee/`, `tests/api/orders*` |
 | `app/admin/` | Firmadmin (company_admin) | 22 | **PROD-READY** | layout guard | `tests/admin/` (8 filer) |
 | `app/superadmin/` | Plattformadmin | 50 | **PROD-READY** | layout guard | `tests/superadmin/` (7 filer) |
-| `app/leverandor/` | Leverandørportal (provider) | 12 | **IN-PROGRESS** | layout guard (ikke middleware) | Delvis (`tests/integrations/`) |
+| `app/leverandor/` | Leverandørportal (provider) | 12 | **IN-PROGRESS** | middleware + layout guard (rolle) | Delvis (`tests/integrations/`) |
 | `app/kitchen/` | Kjøkken produksjon (read-only) | 1+ | **PROD-READY** | kitchen role | `tests/kitchen/` (6 filer) |
 | `app/driver/` | Sjåfør leveringsliste | 1+ | **PROD-READY** | driver role | `tests/driver-flow-quality.test.ts` |
 | `app/onboarding/` | Firmaregistrering Norge | 2+ | **PROD-READY** (FROZEN) | public/authenticated | `tests/auth/`, API tests |
@@ -221,7 +221,7 @@ flowchart LR
 
 | Folder | Beskrivelse | Filer | LOC (ca.) | Modenhet | Avhengigheter | Tester | Svakhet |
 |--------|-------------|-------|-----------|----------|---------------|--------|---------|
-| `lib/auth/` | Session, roller, post-login, rate limit | 34 | 3 094 | PROD-READY | supabase, profiles | 21 auth tests | `/leverandor` uten middleware |
+| `lib/auth/` | Session, roller, post-login, rate limit | 34 | 3 094 | PROD-READY | supabase, profiles | 21 auth tests | K4 lukket 2026-05-22 |
 | `lib/orders/` | Bestillingslogikk, guards | 18 | 1 424 | PROD-READY | supabase RPC | api + db tests | — |
 | `lib/kitchen/` | Produksjonshierarki, batch | 10 | 2 188 | PROD-READY | orders, supabase | 6 kitchen tests | — |
 | `lib/integrations/tripletex/` | Tripletex client + sync | 35 | 5 171 | IN-PROGRESS | outbox, vault | 21 integration tests | client.ts 1778 LOC |
@@ -669,7 +669,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | Funn | Severity |
 |------|----------|
 | `sk_live` / `sk_test` / `bearer eyJ` | **0** |
-| Umbraco `appsettings.*.json` DB password | **HIGH** |
+| Umbraco `appsettings.*.json` DB password | ~~**HIGH**~~ **Lukket 2026-05-22 (K3)** |
 | `lib/auth/canonicalDevCredentials.ts` dev password | **LOW** (dev only) |
 
 ### Hardkodede URL-er (burde være env)
@@ -772,7 +772,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | Område | Status | Detalj |
 |--------|--------|--------|
 | **RLS coverage** | **93%** | 43/137 tabeller uten RLS (partitions + billing config) — se seksjon 4 |
-| **Secrets** | Delvis | Vault for Tripletex per-provider; env for cron/webhook; Umbraco password i repo |
+| **Secrets** | Delvis | Vault for Tripletex per-provider; env for cron/webhook; ~~Umbraco password i repo~~ **K3 lukket 2026-05-22** |
 | **Token i logs** | Delvis verifisert | `opsLog` brukes; ingen systematisk secret-scrubbing audit |
 | **Input validation (Zod)** | Delvis | Onboarding, orders, API routes — ikke alle 314 routes |
 | **CSRF** | Next.js default | Server actions + POST API; ingen custom CSRF tokens |
@@ -782,7 +782,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | **Webhook signatures** | **OK** | Tripletex HMAC + Sanity HMAC — se seksjon 9 |
 
 **Auth gaps:**
-- `/leverandor` ikke middleware-protected (layout-only)
+- ~~`/leverandor` ikke middleware-protected (layout-only)~~ **Lukket 2026-05-22 (K4)**
 - `/api/*` bypass middleware (cron secret / route-level auth)
 - 50+ unscheduled cron endpoints callable hvis cron secret lekker
 
@@ -800,13 +800,14 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | `/backoffice` | session required | backoffice role | superadmin/editor |
 | `/kitchen` | session required | kitchen | kitchen, provider_kitchen |
 | `/driver` | session required | driver | driver |
+| `/leverandor` | session required | `app/leverandor/layout.tsx` (rolle) | provider_admin, provider_kitchen, provider_viewer, superadmin |
 | `/saas` | session required | saas layout | saas roles |
 
 ### Layout-only protected (ikke middleware)
 
 | Prefix | Guard | Tillatte roller |
 |--------|-------|-----------------|
-| `/leverandor` | `app/leverandor/layout.tsx` | provider_admin, provider_kitchen, provider_viewer, superadmin |
+| — | — | Ingen — K4 lukket 2026-05-22 (`/leverandor` middleware-gated) |
 
 ### Public (anon OK)
 
@@ -829,7 +830,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | Gap | Risiko |
 |-----|--------|
-| `/leverandor` uten middleware | Session refresh skjer, men unauth når layout før redirect flash |
+| `/leverandor` uten middleware | ~~Session refresh skjer, men unauth når layout før redirect flash~~ **Lukket K4 2026-05-22** |
 | `/api/*` bypass | Korrekt for webhooks; krever per-route auth (314 routes) |
 | Backoffice 81 pages | Kompleks auth — enkelte API-ruter under `/api/backoffice/` |
 | 66 cron routes | Alle bruker samme CRON_SECRET — blast radius |
@@ -844,9 +845,9 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 |---|------|-------|---------------|------------|
 | K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket på prod 2026-05-22 i migrasjon `20260522150000`** (kode `92c0c447`); se `docs/audit/k1-outbox-race-fix.md` |
 | K2 | ~~`invoice.reverse` handler~~ | — | — | **Lukket 2026-05-22 (OPTION B)** — dead enqueue fjernet; schema-cleanup generate/reconcile/exports/reverse |
-| K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
-| K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
-| K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22 (K4)** — se commits under K4 nedenfor |
+| K3 | ~~Roter/fjern Umbraco hardcoded password~~ | — | — | **Lukket 2026-05-22** — SQL-passord rotert i Azure, repo renset, legacy Umbraco/-mappe slettet (commit 601381c5 + d96cefc4). Den originale credentialen er nå dead i live-systemet (eksisterer bare i git-historikk som lukket referanse). |
+| K4 | ~~`/leverandor` middleware gate~~ | — | middleware.ts | **Lukket 2026-05-22, commit d6124a8c** — `/leverandor` i `isProtectedPath`; layout-auth beholdt som defense-in-depth |
+| K5 | ~~Broken RPC cleanup~~ | — | migrations | **Lukket 2026-05-22** — se §19 og commits der |
 | K6 | Prod-smoke: Tripletex B-7 E2E | 2 dager | staging creds | Kjør polish-6 verify checklist |
 
 **K7 — Kreditnota-feature for norsk MVA-compliance**
@@ -854,7 +855,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 - Påkrevd av norsk merverdiavgifts-lov for fakturarettelser
 - Halvferdig spike fjernet i K2 (commit bc65c4d2), erstattet med 501 CREDIT_NOTE_NOT_IMPLEMENTED
 - Trenger: planlagt Tripletex-credit-note-flow + UI + handler + tester
-- Forventet scope: 1-2 dager (etter K5-lukking)
+- Forventet scope: 1-2 dager (etter K4-lukking)
 - Avhengighet: ingen, men bør gjøres FØR første prod-kunde som trenger å rette en faktura
 
 ### HØY — før public launch
@@ -882,7 +883,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 17 (4 KRITISK · 7 HØY · 6 MEDIUM)
+**Totalt Outstanding Work items:** 15 (2 KRITISK · 7 HØY · 6 MEDIUM)
 
 ---
 
@@ -921,7 +922,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 **Regression-vakt:** `tests/audit/schema-column-references.test.ts` utvidet med K2 scoped filer + legacy forbidden columns.
 
-**Outstanding KRITISK etter K2:** 1 — **K5** (`/leverandor` middleware gate, §18)
+**Outstanding KRITISK etter K3+K4:** 2 — **K6** (prod-smoke Tripletex B-7 E2E) + **K7** (kreditnota-feature)
 
-*Audit oppdatert 2026-05-22 · K2 lukket · 20 seksjoner*
+*Audit oppdatert 2026-05-22 · K2 · K3 · K4 lukket · 20 seksjoner*
 

@@ -73,6 +73,26 @@ describe("middleware redirect safety (platform core)", () => {
     expect(decodeURIComponent(location ?? "")).toContain("/backoffice/content");
   });
 
+  it("redirects users without session on /leverandor to /login with next param", async () => {
+    const req = makeRequest("/leverandor/dashboard");
+    const res = await middleware(req);
+
+    expect(res).toBeInstanceOf(NextResponse);
+    expect(res.status).toBe(303);
+    const location = res.headers.get("location");
+    expect(location).toMatch(/^https:\/\/example\.com\/login\?/);
+    expect(location).toContain("next=%2Fleverandor%2Fdashboard");
+  });
+
+  it("allows /leverandor when Supabase SSR auth cookie jar is present", async () => {
+    const req = makeRequest("/leverandor", { withSsrSession: true });
+    const res = await middleware(req);
+
+    expect(res).toBeInstanceOf(NextResponse);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-lp-mw-user")).toBe("1");
+  });
+
   it("allows protected route when Supabase SSR auth cookie jar is present", async () => {
     const req = makeRequest("/admin", { withSsrSession: true });
     const res = await middleware(req);

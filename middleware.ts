@@ -36,7 +36,8 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/backoffice") ||
     pathname.startsWith("/orders") ||
     pathname.startsWith("/driver") ||
-    pathname.startsWith("/kitchen")
+    pathname.startsWith("/kitchen") ||
+    pathname.startsWith("/leverandor")
   );
 }
 
