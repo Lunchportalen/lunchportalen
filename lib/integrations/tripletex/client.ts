@@ -181,6 +181,8 @@ const DEFAULT_RETRIES = 2;
 const TRIPLETEX_WHO_AM_I_PATH = "/token/session/>whoAmI";
 /** Tripletex ledger namespace — not top-level /vatType (returns 404). */
 export const TRIPLETEX_VAT_TYPE_PATH = "/ledger/vatType";
+/** Product unit catalog — unit label resolves to productUnit.id, not flat `unit` string. */
+export const TRIPLETEX_PRODUCT_UNIT_PATH = "/product/unit";
 const SESSION_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 
 interface CachedSession {
@@ -259,11 +261,22 @@ function extractValue(raw: AnyJson): AnyJson {
 
 function extractMessage(raw: AnyJson): string {
   const r = raw as any;
-  const candidates = [r?.message, r?.error, r?.detail, r?.developerMessage, r?.value?.message];
+  const validation = Array.isArray(r?.validationMessages)
+    ? r.validationMessages
+        .map((m: any) => {
+          const field = safeStr(m?.field);
+          const message = safeStr(m?.message);
+          return field && message ? `${field}: ${message}` : message || field;
+        })
+        .filter(Boolean)
+        .join("; ")
+    : "";
+  const candidates = [r?.developerMessage, r?.message, r?.error, r?.detail, r?.value?.message];
   for (const c of candidates) {
     const s = safeStr(c);
-    if (s) return s;
+    if (s) return validation ? `${s} (${validation})` : s;
   }
+  if (validation) return validation;
   return "Tripletex request failed";
 }
 
@@ -657,6 +670,96 @@ function maybeAccount(revenueAccount: string | null | undefined): { id: number }
   const n = safeNum(revenueAccount);
   if (!Number.isFinite(n) || n <= 0) return undefined;
   return { id: Math.floor(n) };
+}
+
+type TripletexProductUnitRow = {
+  id?: number;
+  name?: string;
+  nameShort?: string;
+  nameShortEN?: string;
+  displayNameShort?: string;
+};
+
+const productUnitCache = new Map<string, TripletexProductUnitRow[]>();
+
+function extractProductUnitRows(value: AnyJson): TripletexProductUnitRow[] {
+  const v = value as any;
+  if (Array.isArray(v?.values)) return v.values as TripletexProductUnitRow[];
+  if (Array.isArray(v)) return v as TripletexProductUnitRow[];
+  return [];
+}
+
+function normalizeUnitToken(value: unknown): string {
+  return safeStr(value).toLowerCase();
+}
+
+/** Clears in-process product unit cache (Vitest isolation only). */
+export function __clearTripletexProductUnitCacheForTests(): void {
+  productUnitCache.clear();
+}
+
+async function loadTripletexProductUnits(
+  auth: TripletexAuth,
+  request?: RequestOptions,
+): Promise<TripletexProductUnitRow[]> {
+  const cacheKey = `${auth.companyId}:${auth.token.slice(0, 8)}`;
+  const cached = productUnitCache.get(cacheKey);
+  if (cached) return cached;
+
+  const res = await requestTripletex(
+    { method: "GET", path: TRIPLETEX_PRODUCT_UNIT_PATH, query: { from: 0, count: 100 } },
+    { ...request, auth },
+  );
+  const rows = extractProductUnitRows(res.value);
+  productUnitCache.set(cacheKey, rows);
+  return rows;
+}
+
+export async function resolveTripletexProductUnitId(
+  auth: TripletexAuth,
+  unitHint: string,
+  request?: RequestOptions,
+): Promise<number> {
+  const hint = normalizeUnitToken(unitHint) || "stk";
+  const rows = await loadTripletexProductUnits(auth, request);
+
+  const match =
+    rows.find((row) => normalizeUnitToken(row.nameShort) === hint) ??
+    rows.find((row) => normalizeUnitToken(row.nameShortEN) === hint) ??
+    rows.find((row) => normalizeUnitToken(row.displayNameShort) === hint) ??
+    rows.find((row) => normalizeUnitToken(row.name) === hint) ??
+    rows.find((row) => normalizeUnitToken(row.nameShort).includes(hint)) ??
+    rows.find((row) => hint === "stk" && normalizeUnitToken(row.nameShort) === "stk");
+
+  const id = safeNum(match?.id);
+  if (id > 0) return Math.floor(id);
+
+  const fallback = safeNum(rows[0]?.id);
+  if (fallback > 0) return Math.floor(fallback);
+
+  throw new TripletexClientError({
+    message: `Tripletex product unit not found for hint=${unitHint || "stk"}`,
+    kind: "PERMANENT",
+    code: "TRIPLETEX_PRODUCT_UNIT_NOT_FOUND",
+  });
+}
+
+/** Tripletex ProductDTO — nested {id} refs, not flat unit/vatTypeId strings. */
+export function buildTripletexProductCreateBody(input: {
+  name: string;
+  number: string;
+  productUnitId: number;
+  vatTypeId: number;
+  revenueAccount?: string | null;
+}): Record<string, unknown> {
+  return {
+    name: safeStr(input.name),
+    number: safeStr(input.number),
+    productUnit: { id: input.productUnitId },
+    isStockItem: false,
+    vatType: { id: input.vatTypeId },
+    ...(maybeAccount(input.revenueAccount) ? { account: maybeAccount(input.revenueAccount) } : {}),
+  };
 }
 
 export function classifyTripletexError(error: unknown): TripletexClientError {
@@ -1216,21 +1319,24 @@ export async function ensureProviderProduct(
 
   let productId = "";
 
+  const productUnitId = await resolveTripletexProductUnitId(
+    auth,
+    safeStr((productMap as any).unit) || "stk",
+    input.request,
+  );
+
   try {
     const productRes = await requestTripletex(
       {
         method: "POST",
         path: "/product",
-        body: {
+        body: buildTripletexProductCreateBody({
           name: safeStr((productMap as any).product_name),
           number: `LP-${providerId.slice(0, 8)}-${tier}`,
-          unit: safeStr((productMap as any).unit) || "stk",
-          isStockItem: false,
-          vatType: { id: vat.vatTypeId },
-          ...(maybeAccount((productMap as any).revenue_account)
-            ? { account: maybeAccount((productMap as any).revenue_account) }
-            : {}),
-        },
+          productUnitId,
+          vatTypeId: vat.vatTypeId,
+          revenueAccount: (productMap as any).revenue_account,
+        }),
       },
       { ...input.request, auth },
     );
@@ -1331,22 +1437,25 @@ export async function ensureProduct(input: EnsureProductInput): Promise<{ produc
   }
 
   const vatTypeId = parseVatTypeId(safeStr((taxCode as any).tripletex_vat_code));
+  const auth = input.request?.auth ?? (await resolveTripletexAuth());
+  const productUnitId = await resolveTripletexProductUnitId(
+    auth,
+    safeStr((productMap as any).unit) || "stk",
+    input.request,
+  );
   const productRes = await requestTripletex(
     {
       method: "POST",
       path: "/product",
-      body: {
+      body: buildTripletexProductCreateBody({
         name: safeStr((productMap as any).product_name),
         number: `LP-${tier}`,
-        unit: safeStr((productMap as any).unit) || "stk",
-        isStockItem: false,
-        vatType: { id: vatTypeId },
-        ...(maybeAccount((productMap as any).revenue_account)
-          ? { account: maybeAccount((productMap as any).revenue_account) }
-          : {}),
-      },
+        productUnitId,
+        vatTypeId,
+        revenueAccount: (productMap as any).revenue_account,
+      }),
     },
-    input.request
+    { ...input.request, auth },
   );
 
   const productId = parseId(productRes.value);
