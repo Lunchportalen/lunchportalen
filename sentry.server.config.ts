@@ -5,4 +5,7 @@ import { logSentryDiagnostics } from "@/lib/sentry/diagnostics";
 
 logSentryDiagnostics("sentry.server.config");
 
-Sentry.init(buildSentryInitOptions());
+Sentry.init({
+  ...buildSentryInitOptions(),
+  debug: true, // MIDLERTIDIG — Sentry capture-pipeline diagnose
+});
