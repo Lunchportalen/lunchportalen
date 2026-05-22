@@ -69,10 +69,10 @@ function createAdminMock() {
       if (table === "billing_tax_codes") {
         return {
           select: () => ({
-            in: async () => ({
+            in: async (_col: string, rates: number[]) => ({
               data: [
-                { id: "tax-25", rate: 25 },
-                { id: "tax-15", rate: 15 },
+                { id: "tax-25", rate: 0.25 },
+                { id: "tax-15", rate: 0.15 },
                 { id: "tax-0", rate: 0 },
               ],
               error: null,

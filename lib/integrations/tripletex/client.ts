@@ -179,6 +179,8 @@ const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_RETRIES = 2;
 /** Tripletex action endpoint — not top-level /whoAmI (returns 404). */
 const TRIPLETEX_WHO_AM_I_PATH = "/token/session/>whoAmI";
+/** Tripletex ledger namespace — not top-level /vatType (returns 404). */
+export const TRIPLETEX_VAT_TYPE_PATH = "/ledger/vatType";
 const SESSION_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 
 interface CachedSession {
@@ -212,6 +214,12 @@ function safeStr(value: unknown): string {
 function safeNum(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+/** billing_tax_codes.rate is decimal (0.25); Tripletex vatType.percentage is often whole (25). */
+function normalizeVatRateForComparison(value: number): number {
+  if (value > 1) return value / 100;
+  return value;
 }
 
 function asInt(value: unknown, fallback: number): number {
@@ -1096,13 +1104,13 @@ export async function ensureProviderVatCode(input: EnsureProviderVatCodeInput): 
     });
   }
 
-  const targetRate = safeNum((taxRow as any).rate);
+  const targetRate = normalizeVatRateForComparison(safeNum((taxRow as any).rate));
   const auth = input.request?.auth ?? (await resolveTripletexAuth({ providerId, env }));
 
   const res = await requestTripletex(
     {
       method: "GET",
-      path: "/vatType",
+      path: TRIPLETEX_VAT_TYPE_PATH,
       query: { from: 0, count: 100 },
     },
     { ...input.request, auth },
@@ -1110,8 +1118,10 @@ export async function ensureProviderVatCode(input: EnsureProviderVatCodeInput): 
 
   for (const row of extractVatTypeRows(res.value)) {
     const id = parseId(row);
-    const percentage = safeNum((row as any)?.percentage ?? (row as any)?.rate);
-    if (id && Math.abs(percentage - targetRate) < 0.01) {
+    const percentage = normalizeVatRateForComparison(
+      safeNum((row as any)?.percentage ?? (row as any)?.rate),
+    );
+    if (id && Math.abs(percentage - targetRate) < 0.001) {
       return { vatTypeId: parseVatTypeId(id), vatCode: id };
     }
   }

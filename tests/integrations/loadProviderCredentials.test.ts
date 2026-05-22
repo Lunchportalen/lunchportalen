@@ -95,7 +95,11 @@ describe.skipIf(!hasDb)("loadProviderCredentials (TPT-B-1)", () => {
     const nativeFetch = globalThis.fetch.bind(globalThis);
     vi.stubGlobal("fetch", ((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("tripletex.no") || url.includes("api.tripletex")) {
+      if (
+        url.includes("tripletex.no") ||
+        url.includes("api.tripletex") ||
+        url.includes("api-test.tripletex.tech")
+      ) {
         return fetchMock(input, init);
       }
       return nativeFetch(input, init);

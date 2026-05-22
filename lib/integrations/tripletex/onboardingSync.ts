@@ -20,7 +20,8 @@ export type OnboardingProvisioningOutboxRow = {
   payload: unknown;
 };
 
-const VAT_RATES = ["25", "15", "0"] as const;
+/** Decimal rates — billing_tax_codes.rate is numeric(6,4), not whole percent. */
+export const REQUIRED_VAT_RATES = [0.25, 0.15, 0] as const;
 const PRODUCT_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"] as const;
 const CONCURRENCY = 5;
 
@@ -117,7 +118,7 @@ export async function handleOnboardingProvisioningStart(
     const { data: taxRows, error: taxError } = await admin
       .from("billing_tax_codes")
       .select("id,rate")
-      .in("rate", [25, 15, 0]);
+      .in("rate", [...REQUIRED_VAT_RATES]);
 
     if (taxError) {
       return { ok: false, permanent: false, error: safeStr(taxError.message) || "TAX_LOOKUP_FAILED" };
@@ -128,8 +129,8 @@ export async function handleOnboardingProvisioningStart(
       taxByRate.set(Number((row as any).rate), safeStr((row as any).id));
     }
 
-    for (const rate of VAT_RATES) {
-      const taxCodeId = taxByRate.get(Number(rate));
+    for (const rate of REQUIRED_VAT_RATES) {
+      const taxCodeId = taxByRate.get(rate);
       if (!taxCodeId) continue;
       await ensureProviderVatCode({ admin, providerId, taxCodeId, env });
       vatEnsured += 1;
