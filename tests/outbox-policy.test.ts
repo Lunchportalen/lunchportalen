@@ -26,9 +26,13 @@ vi.mock("@/lib/orderBackup/smtp", () => ({
   sendMail: (...args: any[]) => sendMailMock(...args),
 }));
 
-function claim(limit: number) {
+function claim(limit: number, excludePrefixes?: string[]) {
   const candidates = rows
     .filter((r) => (r.status === "PENDING" || r.status === "FAILED") && r.attempts < 10)
+    .filter((r) => {
+      if (!excludePrefixes?.length) return true;
+      return !excludePrefixes.some((prefix) => r.event_key.startsWith(prefix));
+    })
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .slice(0, limit);
 
@@ -57,7 +61,10 @@ function makeAdminMock() {
       }
 
       if (fn === "lp_outbox_claim") {
-        return { data: claim(Number(params?.p_limit ?? 25)), error: null };
+        const exclude = Array.isArray(params?.p_exclude_prefixes)
+          ? (params.p_exclude_prefixes as string[])
+          : undefined;
+        return { data: claim(Number(params?.p_limit ?? 25), exclude), error: null };
       }
 
       if (fn === "lp_outbox_mark_sent") {

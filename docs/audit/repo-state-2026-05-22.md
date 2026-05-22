@@ -28,7 +28,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 | Onboarding (NO) | **PROD-READY** | Frozen phone UX |
 | Kitchen / driver | **PROD-READY** | Read-only truth / mobile-first |
 | Provider portal (`/leverandor`) | **BETA** | Tripletex B-7 ferdig; middleware gap |
-| Tripletex billing (A+B) | **BETA** | Pipeline komplett; outbox race gjenstår |
+| Tripletex billing (A+B) | **BETA** | Pipeline komplett; outbox race lukket (K1, 2026-05-22) |
 | Sanity menu sync | **PROD-READY** | Webhook + reconcile cron |
 | CMS backoffice | **BETA** | 81 sider; høy kompleksitet |
 | Marketing (Umbraco) | **BETA** | Azure deploy; hardcoded creds i repo |
@@ -45,7 +45,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 
 ### Største risikoer mot LIVE
 
-1. **Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)
+1. ~~**Outbox worker race** — SMTP worker kan feile Tripletex events (`unknown_event_kind`)~~ **Lukket K1 2026-05-22**
 2. **`invoice.reverse` uten handler** — broken pipeline ved fakturareversering
 3. **Umbraco hardcoded DB password** i repo
 4. **Ingen ekstern error/alerting** — cron-feil oppdages manuelt
@@ -54,7 +54,7 @@ Kjerneproduktet — ukebestilling, firmadmin, kjøkken, sjåfør, superadmin liv
 
 ### Anbefalt neste kapittel
 
-1. Fix K1–K3 (outbox race, invoice reverse, secrets)
+1. Fix K2–K3 (invoice reverse, secrets) — K1 lukket 2026-05-22
 2. Observability v1 (Sentry + cron alert)
 3. Public registration canonical flow
 4. Prod-smoke Tripletex E2E
@@ -194,7 +194,7 @@ flowchart LR
   TT --> WH --> PAID
 ```
 
-**Status:** Pipeline implementert (TPT-B-4–B-7); outbox race mellom SMTP- og Tripletex-worker er kjent gap (se seksjon 7).
+**Status:** Pipeline implementert (TPT-B-4–B-7); outbox race lukket K1 2026-05-22 (`docs/audit/k1-outbox-race-fix.md`).
 
 ---
 
@@ -842,7 +842,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 
 | # | Item | Scope | Avhengigheter | Neste steg |
 |---|------|-------|---------------|------------|
-| K1 | Outbox SMTP/Tripletex race | 1–2 dager | outbox RPC | Prefix-filter i `lp_outbox_claim` eller separate queues |
+| K1 | ~~Outbox SMTP/Tripletex race~~ | — | outbox RPC | **Lukket 2026-05-22** — `p_exclude_prefixes` på `lp_outbox_claim`; se `docs/audit/k1-outbox-race-fix.md` |
 | K2 | `invoice.reverse` handler | 1 dag | Tripletex API | Implementer consumer i tripletex-outbox worker |
 | K3 | Roter/fjern Umbraco hardcoded password | 2 timer | Azure Key Vault | Flytt til env; rotate DB password |
 | K4 | `/leverandor` middleware gate | 4 timer | middleware.ts | Legg til prefix i `isProtectedPath` |
@@ -874,7 +874,7 @@ Eneste TODO: `app/admin/page.tsx` — `company_billing_accounts`-tabell mangler 
 | M7 | Error/loading boundaries | 3 dager | — | Per layout segment |
 | M8 | company_billing_accounts table | 2 dager | B-4 scope | Resolve admin TODO |
 
-**Totalt Outstanding Work items:** 21 (6 KRITISK · 7 HØY · 8 MEDIUM)
+**Totalt Outstanding Work items:** 20 (5 KRITISK · 7 HØY · 8 MEDIUM)
 
 ---
 

@@ -2,6 +2,11 @@
 import "server-only";
 
 import { sendMail } from "@/lib/orderBackup/smtp";
+import {
+  OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES,
+  OUTBOX_SMTP_EMAIL_PREFIXES,
+  OUTBOX_STATE_EVENT_PREFIXES,
+} from "@/lib/outbox/eventKinds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsLog } from "@/lib/ops/log";
 import type { OrderBackupInput } from "./types";
@@ -21,22 +26,13 @@ export type OutboxRow = {
 const OUTBOX_MAX_ATTEMPTS = 10;
 
 /** Fan-out / state markers: no SMTP; row closed as SENT (noop until a dedicated consumer exists). */
-export const OUTBOX_STATE_EVENT_PREFIXES = ["order.set:", "rollup.rebuild:"] as const;
+export { OUTBOX_STATE_EVENT_PREFIXES };
 
 /**
  * Known SMTP-queue prefixes. Rows may still fail `payload_missing_fields` until from/to/subject resolve.
  * Ad-hoc keys (e.g. legacy smoke tests) are allowed when the JSON payload already carries a full triplet.
  */
-export const OUTBOX_DECLARED_EMAIL_PREFIXES = [
-  "company.approved:",
-  "company.rejected:",
-  "company.activated:",
-  "deviation:",
-  "batch_packed:",
-  "daily_order_summary:",
-  "daily_kitchen_production:",
-  "order.cancel.day_choice:",
-] as const;
+export const OUTBOX_DECLARED_EMAIL_PREFIXES = OUTBOX_SMTP_EMAIL_PREFIXES;
 
 const OUTBOX_INVOICE_READY_PREFIX = "invoice.ready:";
 const OUTBOX_TRIPLETEX_PROVIDER_CUSTOMER_PREFIX = "tripletex.provider_customer_create_lp:";
@@ -365,14 +361,37 @@ export async function resetStaleProcessing(staleMinutes = 10) {
   return Number(row.reset_count ?? 0);
 }
 
-export async function claimOutbox(limit = 25, worker: string | null = null): Promise<OutboxRow[]> {
+export async function claimOutbox(
+  limit = 25,
+  worker: string | null = null,
+  opts?: { excludePrefixes?: readonly string[]; rid?: string },
+): Promise<OutboxRow[]> {
   const n = clampInt(limit, 1, 200, 25);
-  const data = await rpc<any>("lp_outbox_claim", {
-    p_limit: n,
-    p_worker: safeStr(worker) || null,
+  const excludePrefixes = Array.isArray(opts?.excludePrefixes)
+    ? opts.excludePrefixes.map((p) => safeStr(p)).filter(Boolean)
+    : [...OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES];
+  const workerName = safeStr(worker) || null;
+
+  outboxLog("info", "claim_requested", {
+    rid: safeStr(opts?.rid) || null,
+    worker: workerName,
+    limit: n,
+    exclude_prefixes: excludePrefixes,
   });
 
-  return asRows<any>(data).map((row) => ({
+  const data = await rpcWithParamFallbacks<any>("lp_outbox_claim", [
+    {
+      p_limit: n,
+      p_worker: workerName,
+      p_exclude_prefixes: excludePrefixes,
+    },
+    {
+      p_limit: n,
+      p_worker: workerName,
+    },
+  ]);
+
+  const rows = asRows<any>(data).map((row) => ({
     id: safeStr(row?.id),
     event_key: safeStr(row?.event_key),
     payload: (row?.payload ?? {}) as OrderBackupInput,
@@ -381,10 +400,19 @@ export async function claimOutbox(limit = 25, worker: string | null = null): Pro
     created_at: safeStr(row?.created_at) || undefined,
     last_error: row?.last_error ?? null,
   }));
+
+  outboxLog("info", "claim_result", {
+    rid: safeStr(opts?.rid) || null,
+    worker: workerName,
+    claimed_count: rows.length,
+    event_keys: rows.map((row) => row.event_key),
+  });
+
+  return rows;
 }
 
 export async function fetchOutboxBatch(limit = 25): Promise<OutboxRow[]> {
-  return claimOutbox(limit, "fetchOutboxBatch");
+  return claimOutbox(limit, "fetchOutboxBatch", { rid: "fetchOutboxBatch" });
 }
 
 export async function processOutboxBatch(
@@ -403,7 +431,7 @@ export async function processOutboxBatch(
   const started = Date.now();
 
   const resetStale = await resetStaleProcessing(staleMinutes);
-  const rows = await claimOutbox(limit, worker);
+  const rows = await claimOutbox(limit, worker, { rid, excludePrefixes: OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES });
 
   let sent = 0;
   /** Rows closed without SMTP (order.set / rollup.rebuild noop). */

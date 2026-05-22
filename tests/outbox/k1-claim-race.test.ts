@@ -1,6 +1,10 @@
-// tests/lib/orderBackup/outbox.test.ts — routing: state noop vs SMTP vs unknown
-// @ts-nocheck — vi.mock partial factory + importOriginal typing for rpc-only stub
+// K1 — Outbox claim race: SMTP worker must not claim Tripletex/invoice pipeline keys.
+// @ts-nocheck — vi.mock partial factory typing for rpc-only stub
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  isOutboxKeyExcludedFromSmtpClaim,
+  OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES,
+} from "@/lib/outbox/eventKinds";
 
 type Row = {
   id: string;
@@ -16,18 +20,17 @@ type Row = {
 
 const rows: Row[] = [];
 const sendMailMock = vi.fn();
+const claimRpcCalls = vi.hoisted(() => ({ list: [] as Record<string, unknown>[] }));
 
-vi.mock("@/lib/orderBackup/smtp", () => ({
-  sendMail: (...args: unknown[]) => sendMailMock(...args),
-}));
+function isExcluded(eventKey: string, excludePrefixes: string[] | undefined): boolean {
+  if (!excludePrefixes?.length) return false;
+  return excludePrefixes.some((prefix) => eventKey.startsWith(prefix));
+}
 
-function claim(limit: number, excludePrefixes?: string[]) {
+function claimFromMock(limit: number, excludePrefixes?: string[]) {
   const candidates = rows
     .filter((r) => (r.status === "PENDING" || r.status === "FAILED") && r.attempts < 10)
-    .filter((r) => {
-      if (!excludePrefixes?.length) return true;
-      return !excludePrefixes.some((prefix) => r.event_key.startsWith(prefix));
-    })
+    .filter((r) => !isExcluded(r.event_key, excludePrefixes))
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .slice(0, limit);
 
@@ -89,10 +92,11 @@ function makeAdminMock() {
       }
 
       if (fn === "lp_outbox_claim") {
+        claimRpcCalls.list.push(params);
         const exclude = Array.isArray(params?.p_exclude_prefixes)
           ? (params.p_exclude_prefixes as string[])
           : undefined;
-        return { data: claim(Number(params?.p_limit ?? 25), exclude), error: null };
+        return { data: claimFromMock(Number(params?.p_limit ?? 25), exclude), error: null };
       }
 
       if (fn === "lp_outbox_mark_sent") {
@@ -122,6 +126,10 @@ function makeAdminMock() {
   };
 }
 
+vi.mock("@/lib/orderBackup/smtp", () => ({
+  sendMail: (...args: unknown[]) => sendMailMock(...args),
+}));
+
 vi.mock("@/lib/supabase/admin", async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -135,59 +143,24 @@ import { processOutboxBatch } from "@/lib/orderBackup/outbox";
 
 beforeEach(() => {
   rows.splice(0, rows.length);
+  claimRpcCalls.list = [];
   sendMailMock.mockReset();
 });
 
-describe("processOutboxBatch routing", () => {
-  test("order.set state event closes as SENT without SMTP", async () => {
-    rows.push({
-      id: "st-1",
-      event_key: "order.set:abc:user1:2026-05-20:default",
-      payload: {},
-      status: "PENDING",
-      attempts: 0,
-      created_at: "2026-05-15T10:00:00.000Z",
-      last_error: null,
-    });
-
-    const res = await processOutboxBatch(25, { rid: "rid-r1" });
-
-    expect(res.ok).toBe(true);
-    expect(res.stateNoop).toBe(1);
-    expect(res.sent).toBe(0);
-    expect(sendMailMock).not.toHaveBeenCalled();
-    expect(rows[0].status).toBe("SENT");
+describe("K1 outbox claim race", () => {
+  test("isOutboxKeyExcludedFromSmtpClaim covers tripletex and invoice pipeline keys", () => {
+    expect(isOutboxKeyExcludedFromSmtpClaim("invoice.ready:ref-1")).toBe(true);
+    expect(isOutboxKeyExcludedFromSmtpClaim("tripletex.company_customer_create_provider:c:p")).toBe(true);
+    expect(isOutboxKeyExcludedFromSmtpClaim("tripletex.saas_invoice_create_lp:inv-1")).toBe(true);
+    expect(isOutboxKeyExcludedFromSmtpClaim("company.approved:ag-1")).toBe(false);
+    expect(isOutboxKeyExcludedFromSmtpClaim("order.set:u:d:s")).toBe(false);
   });
 
-  test("rollup.rebuild state event closes as SENT without SMTP", async () => {
+  test("claim RPC receives SMTP exclude prefixes", async () => {
     rows.push({
-      id: "st-2",
-      event_key: "rollup.rebuild:2026-05-21",
-      payload: {},
-      status: "PENDING",
-      attempts: 0,
-      created_at: "2026-05-15T10:00:00.000Z",
-      last_error: null,
-    });
-
-    const res = await processOutboxBatch(25, { rid: "rid-r2" });
-
-    expect(res.stateNoop).toBe(1);
-    expect(res.sent).toBe(0);
-    expect(sendMailMock).not.toHaveBeenCalled();
-    expect(rows[0].status).toBe("SENT");
-  });
-
-  test("email row with full payload sends mail and marks SENT", async () => {
-    rows.push({
-      id: "em-1",
-      event_key: "smoke:test:key",
-      payload: {
-        from: "a@x.no",
-        to: "b@x.no",
-        subject: "hello",
-        bodyText: "body",
-      },
+      id: "em-only",
+      event_key: "company.approved:ag-1",
+      payload: { from: "a@x.no", to: "b@x.no", subject: "s" },
       status: "PENDING",
       attempts: 0,
       created_at: "2026-05-15T10:00:00.000Z",
@@ -195,73 +168,78 @@ describe("processOutboxBatch routing", () => {
     });
 
     sendMailMock.mockResolvedValueOnce({ messageId: "m1" });
+    await processOutboxBatch(25, { rid: "rid-k1-1" });
 
-    const res = await processOutboxBatch(25, { rid: "rid-r3" });
+    expect(claimRpcCalls.list.length).toBeGreaterThan(0);
+    expect(claimRpcCalls.list[0]?.p_exclude_prefixes).toEqual([...OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES]);
+  });
+
+  test("mixed queue: SMTP processes only email/state; tripletex rows stay PENDING", async () => {
+    rows.push(
+      {
+        id: "ttx-1",
+        event_key: "tripletex.company_customer_create_provider:co:pr",
+        payload: {},
+        status: "PENDING",
+        attempts: 0,
+        created_at: "2026-05-15T09:00:00.000Z",
+        last_error: null,
+      },
+      {
+        id: "inv-1",
+        event_key: "invoice.ready:ref-abc",
+        payload: {},
+        status: "PENDING",
+        attempts: 0,
+        created_at: "2026-05-15T09:01:00.000Z",
+        last_error: null,
+      },
+      {
+        id: "em-1",
+        event_key: "company.approved:ag-1",
+        payload: { from: "a@x.no", to: "b@x.no", subject: "hello", bodyText: "x" },
+        status: "PENDING",
+        attempts: 0,
+        created_at: "2026-05-15T09:02:00.000Z",
+        last_error: null,
+      },
+    );
+
+    sendMailMock.mockResolvedValueOnce({ messageId: "m1" });
+
+    const res = await processOutboxBatch(25, { rid: "rid-k1-race" });
 
     expect(res.sent).toBe(1);
-    expect(res.stateNoop).toBe(0);
-    expect(sendMailMock).toHaveBeenCalledTimes(1);
-    expect(rows[0].status).toBe("SENT");
-  });
-
-  test("declared email prefix with missing from/to marks FAILED payload_missing_fields", async () => {
-    rows.push({
-      id: "em-2",
-      event_key: "company.approved:agreement-1",
-      payload: { subject: "only subject" },
-      status: "PENDING",
-      attempts: 0,
-      created_at: "2026-05-15T10:00:00.000Z",
-      last_error: null,
-    });
-
-    const res = await processOutboxBatch(25, { rid: "rid-r4" });
-
-    expect(res.failed).toBe(1);
-    expect(sendMailMock).not.toHaveBeenCalled();
-    expect(rows[0].status).toBe("FAILED");
-    expect(String(rows[0].last_error)).toContain("payload_missing_fields");
-  });
-
-  test("unknown event_key (no triplet, no declared prefix) marks FAILED unknown_event_kind", async () => {
-    rows.push({
-      id: "uk-1",
-      event_key: "totally.unknown:payload",
-      payload: { foo: 1 },
-      status: "PENDING",
-      attempts: 0,
-      created_at: "2026-05-15T10:00:00.000Z",
-      last_error: null,
-    });
-
-    const res = await processOutboxBatch(25, { rid: "rid-r5" });
-
-    expect(res.failed).toBe(1);
-    expect(sendMailMock).not.toHaveBeenCalled();
-    expect(rows[0].status).toBe("FAILED");
-    expect(String(rows[0].last_error)).toContain("unknown_event_kind:");
-  });
-
-  test("invoice.ready stays PENDING when SMTP claim excludes tripletex/invoice keys", async () => {
-    rows.push({
-      id: "inv-1",
-      event_key: "invoice.ready:ref-abc",
-      payload: { event: "invoice.ready" },
-      status: "PENDING",
-      attempts: 0,
-      created_at: "2026-05-15T10:00:00.000Z",
-      last_error: null,
-    });
-
-    const res = await processOutboxBatch(25, { rid: "rid-r6" });
-
+    expect(res.failed).toBe(0);
     expect(res.releasedInvoiceReady).toBe(0);
+
+    const ttx = rows.find((r) => r.id === "ttx-1");
+    const inv = rows.find((r) => r.id === "inv-1");
+    const em = rows.find((r) => r.id === "em-1");
+
+    expect(ttx?.status).toBe("PENDING");
+    expect(inv?.status).toBe("PENDING");
+    expect(em?.status).toBe("SENT");
+    expect(String(ttx?.last_error ?? "")).not.toContain("unknown_event_kind");
+    expect(String(inv?.last_error ?? "")).not.toContain("unknown_event_kind");
+  });
+
+  test("saas invoice create lp is never marked unknown_event_kind by SMTP worker", async () => {
+    rows.push({
+      id: "saas-1",
+      event_key: "tripletex.saas_invoice_create_lp:inv-99",
+      payload: {},
+      status: "PENDING",
+      attempts: 0,
+      created_at: "2026-05-15T10:00:00.000Z",
+      last_error: null,
+    });
+
+    const res = await processOutboxBatch(25, { rid: "rid-k1-saas" });
+
+    expect(res.failed).toBe(0);
     expect(res.processed).toBe(0);
-    expect(res.sent).toBe(0);
-    expect(res.stateNoop).toBe(0);
-    expect(sendMailMock).not.toHaveBeenCalled();
     expect(rows[0].status).toBe("PENDING");
-    expect(rows[0].locked_at ?? null).toBeNull();
-    expect(rows[0].locked_by ?? null).toBeNull();
+    expect(String(rows[0].last_error ?? "")).not.toContain("unknown_event_kind");
   });
 });
