@@ -29,6 +29,7 @@ Testsuite etter PR-X1 Fase 3: **2387 PASS** / **0 FAIL** (124 skipped) — +54 s
 | D.1 meal-learning fail-open | open | **LUKKET** (Commit 4 / `970e3a89`) |
 | D.3 (6 ruter) | open | **LUKKET** (Commit 3 / `dc15f591`) |
 | D.4 (3 dev-ruter) | open | **LUKKET** (Commit 5 / `628c5604`) |
+| DC-018 | HARD-BLOCK | **LUKKET** (PR-X2, prod 2026-05-23) |
 
 ### Supabase-tilgang
 
@@ -359,11 +360,10 @@ Effort: M
 
 - `company_registrations_anon_insert` — INSERT only, PENDING + validering (frozen onboarding).
 
-[DC-018] rls | HARD-BLOCK  
-Bevis: SQL staging — `billing_products`, `billing_tax_codes` `rowsecurity=false`  
-Beskrivelse: MVA- og produktreferanse uten RLS. PostgREST eksponerer for alle roller med GRANT.  
-Anbefaling: ENABLE RLS + SELECT policy for authenticated scoped / service_role write-only.  
-Effort: M
+[DC-018] rls | HARD-BLOCK → **LUKKET (PR-X2, prod 2026-05-23)**  
+Bevis: SQL staging+prod — `billing_products`, `billing_tax_codes` `rowsecurity=false`  
+Fix: `20260609120000_dc018_enable_rls_billing.sql` — RLS + authenticated SELECT, write kun service_role  
+Dokumentasjon: `docs/audit/dc-018-rls-fix.md`
 
 [DC-019] rls | HARD-BLOCK  
 Bevis: SQL — `invoice_periods`, `tripletex_exports`, `company_deletions` `rowsecurity=false`  
@@ -633,7 +633,7 @@ Effort: M
 | DC-015 | test-gap | MEDIUM | open | L |
 | DC-016 | observability | MEDIUM | open | M |
 | DC-017 | schema-hygiene | LAV | open | M |
-| DC-018 | rls | HARD-BLOCK | open | M |
+| DC-018 | rls | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
 | DC-019 | rls | HARD-BLOCK | open | M |
 | DC-020 | rls | HØY | open | S |
 | DC-021 | rls | MEDIUM | open | M |
