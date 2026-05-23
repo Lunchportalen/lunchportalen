@@ -529,11 +529,8 @@ provider_tripletex_credentials
 | `lib/integrations/tripletex/agreementInvoiceSync.ts` | Flow 2 (per provider) |
 | `app/api/cron/tripletex-agreements-daily/route.ts` | Flow 2 |
 
-[DC-026] tripletex | HØY  
-Bevis: `client.ts:7-9` — «Default-args = Lp's env (unchanged behavior)»  
-Beskrivelse: Flow 1 er implicit default når `providerId` utelates. Prod-kjøp utsatt, men cron `tripletex-saas-monthly` kan fortsatt enqueue Flow 1-events hvis env satt.  
-Anbefaling: Se Fase 4 — feature-flag før K6 LIVE.  
-Effort: M
+[DC-026] tripletex | HØY — **LUKKET** (PR-X4, prod `b2b0e55b` 2026-05-23)  
+Bevis: `TRIPLETEX_FLOW_1_ENABLED` fail-closed; Flow 2 upåvirket. Se `docs/audit/dc-026-flow1-flag.md`.
 
 ---
 
@@ -641,7 +638,7 @@ Effort: M
 | DC-023 | schema-drift | HØY | open | M |
 | DC-024 | data-truth | MEDIUM | open | S |
 | DC-025 | architecture | LAV | open | S |
-| DC-026 | tripletex | HØY | open | M |
+| DC-026 | tripletex | HØY | **LUKKET** (PR-X4, prod 2026-05-23) | — |
 
 ### Baseline-duplikater (ikke re-funn, status uendret)
 
