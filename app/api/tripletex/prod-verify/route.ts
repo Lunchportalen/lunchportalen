@@ -9,6 +9,7 @@ import {
   TripletexClientError,
   TRIPLETEX_VAT_TYPE_PATH,
 } from "@/lib/integrations/tripletex/client";
+import { isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import { resolveTripletexProviderEnv } from "@/lib/integrations/tripletex/resolveTripletexProviderEnv";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
@@ -53,6 +54,16 @@ export async function GET(req: NextRequest): Promise<Response> {
   const ctx = s.ctx;
   const deny = requireRoleOr403(ctx, "api.tripletex.prod_verify.GET", ["superadmin"]);
   if (deny) return deny;
+
+  if (!isTripletexFlow1Enabled()) {
+    return Response.json(
+      {
+        error: "FLOW1_DISABLED",
+        message: "Tripletex Flow 1 is not enabled in this environment",
+      },
+      { status: 503 },
+    );
+  }
 
   const rid = ctx.rid;
   const baseUrl = String(process.env.TRIPLETEX_BASE_URL ?? "").trim() || "https://tripletex.no/v2";

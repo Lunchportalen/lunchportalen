@@ -22,6 +22,7 @@ async function readJson(res: Response) {
 }
 
 const origEnv = process.env.CRON_SECRET;
+const origFlow1 = process.env.TRIPLETEX_FLOW_1_ENABLED;
 
 const rpcMock = vi.hoisted(() => vi.fn());
 const auditInsertMock = vi.hoisted(() => vi.fn());
@@ -49,6 +50,28 @@ beforeEach(() => {
 afterEach(() => {
   if (origEnv !== undefined) process.env.CRON_SECRET = origEnv;
   else delete process.env.CRON_SECRET;
+  if (origFlow1 === undefined) delete process.env.TRIPLETEX_FLOW_1_ENABLED;
+  else process.env.TRIPLETEX_FLOW_1_ENABLED = origFlow1;
+});
+
+describe("Cron tripletex-saas-monthly — Flow 1 flag", () => {
+  test("returns 200 skipped when TRIPLETEX_FLOW_1_ENABLED is unset", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    delete process.env.TRIPLETEX_FLOW_1_ENABLED;
+
+    const res = await TripletexSaasMonthlyPOST(
+      mkReq("http://x/api/cron/tripletex-saas-monthly", {
+        method: "POST",
+        headers: { Authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const data = await readJson(res);
+    expect(data.ok).toBe(true);
+    expect(data.data.skipped).toBe("FLOW1_DISABLED");
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("Cron tripletex-saas-monthly — auth gate", () => {
@@ -91,6 +114,7 @@ describe("Cron tripletex-saas-monthly — auth gate", () => {
 describe("Cron tripletex-saas-monthly — RPC", () => {
   test("returns 200 with JSON when auth valid and RPC succeeds", async () => {
     process.env.CRON_SECRET = "test-secret";
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
     const period = "2026-01-01";
     rpcMock.mockResolvedValueOnce({
       data: {
@@ -132,6 +156,7 @@ describe("Cron tripletex-saas-monthly — RPC", () => {
 
   test("idempotency: second call same period returns skipped_idempotent from RPC", async () => {
     process.env.CRON_SECRET = "test-secret";
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
     const period = "2026-01-01";
     const rpcResult = {
       ok: true,
@@ -162,6 +187,7 @@ describe("Cron tripletex-saas-monthly — RPC", () => {
 
   test("returns 500 and writes audit when RPC fails", async () => {
     process.env.CRON_SECRET = "test-secret";
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
     const period = previousMonthStartUTC(new Date("2026-02-15T12:00:00Z"));
     expect(period).toBe("2026-01-01");
 

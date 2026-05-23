@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Flow1DisabledError, isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import {
   classifyTripletexError,
   createInvoice,
@@ -136,6 +137,10 @@ export async function handleSaasInvoiceCreateLp(
   row: SaasInvoiceCreateOutboxRow,
   getRunAuth: () => Promise<TripletexAuth>,
 ): Promise<OutboxHandleResult> {
+  if (!isTripletexFlow1Enabled()) {
+    throw new Flow1DisabledError();
+  }
+
   const payload = parsePayload(row.payload);
   const invoiceId = payload.invoiceId || parseInvoiceIdFromEventKey(row.event_key);
   const providerId = payload.providerId;

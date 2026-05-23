@@ -137,6 +137,7 @@ function baseState(overrides?: Partial<TableState>): TableState {
 describe("handleSaasInvoiceCreateLp (TPT-A-4)", () => {
   const originalProduct = process.env.TRIPLETEX_REVENUE_DEFAULT_PRODUCT_ID;
   const originalVat = process.env.TRIPLETEX_REVENUE_DEFAULT_VAT_CODE;
+  const origFlow1 = process.env.TRIPLETEX_FLOW_1_ENABLED;
 
   beforeEach(() => {
     createInvoiceMock.mockReset();
@@ -144,6 +145,7 @@ describe("handleSaasInvoiceCreateLp (TPT-A-4)", () => {
     resolveTripletexAuthMock.mockResolvedValue({ companyId: "1", token: "tok" });
     process.env.TRIPLETEX_REVENUE_DEFAULT_PRODUCT_ID = "prod-99";
     process.env.TRIPLETEX_REVENUE_DEFAULT_VAT_CODE = "3";
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
   });
 
   afterEach(() => {
@@ -151,6 +153,8 @@ describe("handleSaasInvoiceCreateLp (TPT-A-4)", () => {
     else process.env.TRIPLETEX_REVENUE_DEFAULT_PRODUCT_ID = originalProduct;
     if (originalVat === undefined) delete process.env.TRIPLETEX_REVENUE_DEFAULT_VAT_CODE;
     else process.env.TRIPLETEX_REVENUE_DEFAULT_VAT_CODE = originalVat;
+    if (origFlow1 === undefined) delete process.env.TRIPLETEX_FLOW_1_ENABLED;
+    else process.env.TRIPLETEX_FLOW_1_ENABLED = origFlow1;
   });
 
   test("happy path: creates Tripletex invoice, export, audit", async () => {

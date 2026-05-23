@@ -1,6 +1,9 @@
 import "server-only";
 
+import { Flow1DisabledError, isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+export { Flow1DisabledError } from "@/lib/server/config/featureFlags";
 
 /**
  * TPT-A-1 (2026-05-20): Multi-tenant signature.
@@ -558,6 +561,19 @@ export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<Tr
     return cached.auth;
   }
 
+  if (providerId) {
+    const auth = await loadProviderCredentials(providerId, env);
+    sessionCache.set(key, {
+      auth,
+      expiresAt: Date.now() + SESSION_TTL_MS,
+    });
+    return auth;
+  }
+
+  if (!isTripletexFlow1Enabled()) {
+    throw new Flow1DisabledError();
+  }
+
   if (tokenOverride) {
     const config = loadConfig();
     const auth = { companyId: config.companyId, token: tokenOverride };
@@ -568,9 +584,7 @@ export async function resolveTripletexAuth(opts?: TripletexAuthOpts): Promise<Tr
     return auth;
   }
 
-  const auth = providerId
-    ? await loadProviderCredentials(providerId, env)
-    : await loadLpCredentials(env);
+  const auth = await loadLpCredentials(env);
 
   sessionCache.set(key, {
     auth,

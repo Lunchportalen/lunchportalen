@@ -7,6 +7,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   classifyTripletexError,
@@ -87,6 +88,15 @@ type OutboxBatchStats = {
   delivered: number;
   failed: number;
   failedPermanent: number;
+  skipped?: string;
+};
+
+const FLOW1_DISABLED_BATCH_STATS: OutboxBatchStats = {
+  processed: 0,
+  delivered: 0,
+  failed: 0,
+  failedPermanent: 0,
+  skipped: "FLOW1_DISABLED",
 };
 
 function safeStr(value: unknown): string {
@@ -772,23 +782,35 @@ export async function POST(req: NextRequest) {
       return runAuthPromise;
     };
 
-    const invoiceStats = await processOutboxBatchByEventLike(
-      admin,
-      workerId,
-      nowIso,
-      concurrency,
-      INVOICE_READY_LIKE,
-      getRunAuth,
-    );
+    const flow1Enabled = isTripletexFlow1Enabled();
+    if (!flow1Enabled) {
+      console.info(
+        { event: "flow1_skip", route: "/api/system/outbox/process", rid },
+        "TRIPLETEX_FLOW_1_ENABLED=false, skipping Flow 1 outbox batches",
+      );
+    }
 
-    const providerStats = await processOutboxBatchByEventLike(
-      admin,
-      workerId,
-      nowIso,
-      concurrency,
-      PROVIDER_CUSTOMER_CREATE_LP_LIKE,
-      getRunAuth,
-    );
+    const invoiceStats = flow1Enabled
+      ? await processOutboxBatchByEventLike(
+          admin,
+          workerId,
+          nowIso,
+          concurrency,
+          INVOICE_READY_LIKE,
+          getRunAuth,
+        )
+      : { ...FLOW1_DISABLED_BATCH_STATS };
+
+    const providerStats = flow1Enabled
+      ? await processOutboxBatchByEventLike(
+          admin,
+          workerId,
+          nowIso,
+          concurrency,
+          PROVIDER_CUSTOMER_CREATE_LP_LIKE,
+          getRunAuth,
+        )
+      : { ...FLOW1_DISABLED_BATCH_STATS };
 
     const companyProviderStats = await processOutboxBatchByEventLike(
       admin,
@@ -799,14 +821,16 @@ export async function POST(req: NextRequest) {
       getRunAuth,
     );
 
-    const saasInvoiceStats = await processOutboxBatchByEventLike(
-      admin,
-      workerId,
-      nowIso,
-      concurrency,
-      SAAS_INVOICE_CREATE_LP_LIKE,
-      getRunAuth,
-    );
+    const saasInvoiceStats = flow1Enabled
+      ? await processOutboxBatchByEventLike(
+          admin,
+          workerId,
+          nowIso,
+          concurrency,
+          SAAS_INVOICE_CREATE_LP_LIKE,
+          getRunAuth,
+        )
+      : { ...FLOW1_DISABLED_BATCH_STATS };
 
     const agreementInvoiceStats = await processOutboxBatchByEventLike(
       admin,

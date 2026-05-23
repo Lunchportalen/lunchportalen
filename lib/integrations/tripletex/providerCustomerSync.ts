@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Flow1DisabledError, isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import {
   classifyTripletexError,
   ensureProviderCustomer,
@@ -94,6 +95,10 @@ export async function handleProviderCustomerCreateLp(
   row: ProviderCustomerCreateOutboxRow,
   getRunAuth: () => Promise<TripletexAuth>,
 ): Promise<OutboxHandleResult> {
+  if (!isTripletexFlow1Enabled()) {
+    throw new Flow1DisabledError();
+  }
+
   const payload = parsePayload(row.payload);
   const providerId = payload.providerId || parseProviderIdFromEventKey(row.event_key);
 
