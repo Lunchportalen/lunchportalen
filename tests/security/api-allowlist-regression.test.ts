@@ -26,6 +26,14 @@ const CRITICAL_INLINE_AUTH: Array<{ url: string; file: string; pattern: RegExp }
   { url: "/api/edge/ai", file: "app/api/edge/ai/route.ts", pattern: /denyUnlessEdgeSession/ },
 ];
 
+const CRITICAL_ALLOWLISTED = [
+  "/api/public/search",
+  "/api/public/demo-interest",
+  "/api/public/ai-demo-cta/assign",
+  "/api/system/outbox/process",
+  "/api/cron/meal-learning",
+];
+
 function walkRouteFiles(dir: string, acc: string[] = []): string[] {
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, ent.name);
@@ -42,6 +50,24 @@ function fileToApiPath(file: string): string {
   return `/api/${segs.map((s) => (s.startsWith("[") && s.endsWith("]") ? "[id]" : s)).join("/")}`;
 }
 
+function scanRoutesContaining(patterns: string[], files: string[]): string[] {
+  const hits = new Set<string>();
+  for (const file of files) {
+    const src = fs.readFileSync(file, "utf8");
+    if (patterns.some((p) => src.includes(p))) {
+      hits.add(fileToApiPath(file));
+    }
+  }
+  return [...hits].sort();
+}
+
+/** Dynamic segments → sample path for allowlist dynamic matchers. */
+function isRouteAllowlisted(apiPath: string): boolean {
+  if (isApiAuthAllowlisted(apiPath)) return true;
+  const sample = apiPath.replace(/\[id\]/g, "sample-id");
+  return sample !== apiPath && isApiAuthAllowlisted(sample);
+}
+
 const CRON_AUTH = /requireCronAuth\s*\(/;
 const WEBHOOK_AUTH = /(verifyWebhook|webhook.*secret|x-sanity-signature|tripletex.*signature|timingSafeEqual|stripe-signature|handleStripeWebhook|INVALID_SIGNATURE)/i;
 const ANON_VALIDATION =
@@ -51,9 +77,9 @@ const API_KEY_AUTH = /(x-api-key|API_KEY|apiKey|v1\/public\/orders)/i;
 describe("api-allowlist-regression (DC-011)", () => {
   const routeFiles = walkRouteFiles(API_ROOT);
 
-  test("allowlist size matches canonical count (81)", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(81);
-    expect(API_AUTH_ALLOWLIST.size + 3).toBe(81);
+  test("allowlist size matches canonical count (83)", () => {
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(83);
+    expect(API_AUTH_ALLOWLIST.size + 3).toBe(83);
   });
 
   test("every allowlisted static path maps to a route file with category auth evidence", () => {
@@ -62,7 +88,7 @@ describe("api-allowlist-regression (DC-011)", () => {
       const file = routeFiles.find((f) => fileToApiPath(f) === url);
       expect(file, `missing route file for allowlist entry ${url}`).toBeTruthy();
       const src = fs.readFileSync(file!, "utf8");
-      const isCron = url.startsWith("/api/cron/");
+      const isCron = url.startsWith("/api/cron/") || url === "/api/system/outbox/process";
       const isWebhook = url.startsWith("/api/webhooks/") || url.endsWith("/webhook");
       const isApiKey = url === "/api/v1/public/orders";
       if (isCron) expect(src).toMatch(CRON_AUTH);
@@ -83,9 +109,37 @@ describe("api-allowlist-regression (DC-011)", () => {
     test(`critical inline auth: ${entry.url}`, () => {
       const src = fs.readFileSync(entry.file, "utf8");
       expect(src).toMatch(entry.pattern);
-      expect(isApiAuthAllowlisted(entry.url)).toBe(
-        ["/api/public/search", "/api/public/demo-interest", "/api/public/ai-demo-cta/assign"].includes(entry.url),
-      );
+      expect(isApiAuthAllowlisted(entry.url)).toBe(CRITICAL_ALLOWLISTED.includes(entry.url));
     });
   }
+});
+
+describe("allowlist invariant: routes with own auth must be allowlisted", () => {
+  const routeFiles = walkRouteFiles(API_ROOT);
+
+  test("every route with requireCronAuth is in cron-secret allowlist", () => {
+    const cronRoutes = scanRoutesContaining(["requireCronAuth("], routeFiles);
+    const missing = cronRoutes.filter((r) => !isRouteAllowlisted(r));
+    expect(missing).toEqual([]);
+  });
+
+  test("every route with webhook-verify is in webhook-sig allowlist", () => {
+    const webhookRoutes = scanRoutesContaining(
+      [
+        "verifySanityWebhookSignature",
+        "verifyTripletexWebhookSignature",
+        "handleStripeWebhook",
+        "Stripe.webhooks.constructEvent(",
+      ],
+      routeFiles,
+    );
+    const missing = webhookRoutes.filter((r) => !isRouteAllowlisted(r));
+    expect(missing).toEqual([]);
+  });
+
+  test("every route with api-key validation is in api-key allowlist", () => {
+    const apiKeyRoutes = scanRoutesContaining(["validateApiKey(", "requireApiKey(", "getTenantContext("], routeFiles);
+    const missing = apiKeyRoutes.filter((r) => !isRouteAllowlisted(r));
+    expect(missing).toEqual([]);
+  });
 });

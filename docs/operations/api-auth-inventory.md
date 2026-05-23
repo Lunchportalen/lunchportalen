@@ -40,7 +40,7 @@ Alle 23 oppføringer under er adressert i Fase 3 (session/cron/superadmin/zod+ra
 | Metrikk | Verdi |
 | ------- | ----: |
 | Totalt ruter | 536 |
-| Endelig allowlist (Seksjon A) | 81 |
+| Endelig allowlist (Seksjon A) | 83 |
 | Fase 2-D fix-required | 10 |
 | UKLART-REVIEW (Seksjon C) | 12 |
 | Dekket-liste (Seksjon B) | 420 |
@@ -74,7 +74,7 @@ Alle 23 oppføringer under er adressert i Fase 3 (session/cron/superadmin/zod+ra
 
 ## Seksjon A — ENDELIG ALLOWLIST
 
-**81 ruter** — fail-closed cron/webhook, anon (a)–(d), eller api-key. Kilde: `lib/server/auth/apiAllowlist.ts`.
+**83 ruter** — fail-closed cron/webhook, anon (a)–(d), eller api-key. Kilde: `lib/server/auth/apiAllowlist.ts`.
 
 ### A.1 — cron-secret
 
@@ -92,6 +92,7 @@ Alle 23 oppføringer under er adressert i Fase 3 (session/cron/superadmin/zod+ra
 | `/api/cron/global-learning` | POST | requireCronAuth (app/api/cron/global-learning/route.ts:8) | fail-closed: requireCronAuth |
 | `/api/cron/invoices/generate` | GET | requireCronAuth (app/api/cron/invoices/generate/route.ts:11) | fail-closed: requireCronAuth |
 | `/api/cron/kitchen-print` | GET | requireCronAuth (app/api/cron/kitchen-print/route.ts:9) | fail-closed: requireCronAuth |
+| `/api/cron/meal-learning` | GET | requireCronAuth (app/api/cron/meal-learning/route.ts:142) | fail-closed: requireCronAuth |
 | `/api/cron/menu-service-day-reconcile` | GET | requireCronAuth (app/api/cron/menu-service-day-reconcile/route.ts:9) | fail-closed: requireCronAuth |
 | `/api/cron/menu-week-rollout` | GET | requireCronAuth (app/api/cron/menu-week-rollout/route.ts:8) | fail-closed: requireCronAuth |
 | `/api/cron/monitoring` | GET | requireCronAuth (app/api/cron/monitoring/route.ts:7) | fail-closed: requireCronAuth |
@@ -111,6 +112,7 @@ Alle 23 oppføringer under er adressert i Fase 3 (session/cron/superadmin/zod+ra
 | `/api/internal/production-operative-snapshot/materialize` | POST | requireCronAuth (app/api/internal/production-operative-snapshot/materialize/route.ts:9) | fail-closed: requireCronAuth |
 | `/api/internal/scheduler/run` | POST | requireCronAuth (app/api/internal/scheduler/run/route.ts:3) | fail-closed: requireCronAuth |
 | `/api/something` | POST | requireCronAuth (app/api/something/route.ts:13) | fail-closed: requireCronAuth |
+| `/api/system/outbox/process` | POST | requireCronAuth (app/api/system/outbox/process/route.ts:9) | fail-closed: requireCronAuth |
 
 ### A.2 — webhook-sig
 
@@ -835,7 +837,7 @@ _Ingen._
 
 ## Dynamiske allowlist-entries (3)
 
-Implementert i `lib/server/auth/apiAllowlist.ts` → `ALLOWLIST_DYNAMIC`. `API_AUTH_ALLOWLIST_SIZE` = 78 statiske + **3 dynamiske** = **81**.
+Implementert i `lib/server/auth/apiAllowlist.ts` → `ALLOWLIST_DYNAMIC`. `API_AUTH_ALLOWLIST_SIZE` = 80 statiske + **3 dynamiske** = **83**.
 
 | Pattern | Matchende route-fil | Hvorfor dynamisk | Risiko |
 | ------- | ------------------- | ---------------- | ------ |
@@ -849,7 +851,7 @@ Implementert i `lib/server/auth/apiAllowlist.ts` → `ALLOWLIST_DYNAMIC`. `API_A
 
 1. **Klassifiser** ruten: `cron-secret` | `webhook-sig` | `anon-allowed-with-validation` | `api-key` | `session` | `role-check`.
 2. **Implementer fail-closed auth i `route.ts`** — aldri stol kun på middleware for cron/webhook/anon.
-3. **Allowlist:** Kun cron/webhook/anon/api-key legges i `lib/server/auth/apiAllowlist.ts` (eksakt sti, ingen wildcards i `Set`).
+3. **Allowlist:** Kun cron/webhook/anon/api-key legges i `lib/server/auth/apiAllowlist.ts` (eksakt sti, ingen wildcards i `Set`). **Invariant-tester** i `tests/security/api-allowlist-regression.test.ts` håndhever at ruter med `requireCronAuth` / webhook-verify / api-key-validering må være i tilsvarende allowlist-underseksjon (A.1 / A.2 / A.4).
 4. **Tester:** Oppdater `tests/security/api-allowlist-regression.test.ts` ved allowlist-endring; legg til route-spesifikk test ved ny kritisk mutator.
 5. **Wrapper-auth:** `withApiAiEntrypoint` er **ikke** auth — prepend `denyUnlessSession` **utenfor** wrapperen.
 

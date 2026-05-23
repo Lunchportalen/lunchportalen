@@ -2,7 +2,7 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 81 routes (A.1: 31 cron, A.2: 3 webhook, A.3: 46 anon, A.4: 1 api-key).
+ * Total: 83 routes (A.1: 33 cron, A.2: 3 webhook, A.3: 46 anon, A.4: 1 api-key).
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
@@ -37,6 +37,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/cron/global-learning",
   "/api/cron/invoices/generate",
   "/api/cron/kitchen-print",
+  "/api/cron/meal-learning",
   "/api/cron/menu-service-day-reconcile",
   "/api/cron/menu-week-rollout",
   "/api/cron/monitoring",
@@ -79,6 +80,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/social/track",
   "/api/something",
   "/api/superadmin/invoices/mapping",
+  "/api/system/outbox/process",
   "/api/system/time",
   "/api/saas/billing/webhook",
   "/api/track/click",
