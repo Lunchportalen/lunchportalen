@@ -12,7 +12,7 @@ import { orderBase, receiptFor } from "@/lib/api/orderResponse";
 
 // ✅ Dag-10 standard: respond + routeGuard (rid + no-store + ok-contract)
 import { jsonErr, jsonOk } from "@/lib/http/respond";
-import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
+import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 
 // ✅ MUST audit (lukket sirkel)
 import { auditWriteMust } from "@/lib/audit/auditWrite";
@@ -120,9 +120,6 @@ export async function POST(req: NextRequest) {
 
   const denyRole = requireRoleOr403(a.ctx, "orders.today", ["employee", "company_admin"]);
   if (denyRole) return denyRole;
-
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
 
   const user_id = String(scope.userId ?? "").trim();
   const company_id = String(scope.companyId ?? "").trim();
@@ -395,9 +392,6 @@ export async function GET(req: NextRequest) {
 
   const denyRole = requireRoleOr403(a.ctx, "orders.today.read", ["employee", "company_admin"]);
   if (denyRole) return denyRole;
-
-  const denyScope = requireCompanyScopeOr403(a.ctx);
-  if (denyScope) return denyScope;
 
   const user_id = String(scope.userId ?? "").trim();
   const company_id = String(scope.companyId ?? "").trim();
