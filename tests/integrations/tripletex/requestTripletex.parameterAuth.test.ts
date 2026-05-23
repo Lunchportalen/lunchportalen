@@ -16,6 +16,7 @@ describe("requestTripletex — parameter-auth uten singleton env", () => {
     "TRIPLETEX_SESSION_TOKEN",
     "TRIPLETEX_CONSUMER_TOKEN",
     "TRIPLETEX_EMPLOYEE_TOKEN",
+    "TRIPLETEX_FLOW_1_ENABLED",
   ] as const;
 
   beforeEach(() => {
@@ -63,6 +64,7 @@ describe("requestTripletex — parameter-auth uten singleton env", () => {
   });
 
   test("uten auth + uten env → TRIPLETEX_CONFIG_MISSING", async () => {
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
     await expect(requestTripletex({ method: "GET", path: "/whoAmI" })).rejects.toMatchObject({
       code: "TRIPLETEX_CONFIG_MISSING",
       message: expect.stringContaining("TRIPLETEX_COMPANY_ID"),

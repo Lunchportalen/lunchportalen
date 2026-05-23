@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const { ensureProviderCustomerMock, resolveTripletexAuthMock, TripletexClientError } = vi.hoisted(() => {
   class TripletexClientError extends Error {
@@ -100,10 +100,18 @@ function baseState(overrides?: Partial<TableState>): TableState {
 }
 
 describe("handleProviderCustomerCreateLp (TPT-A-3)", () => {
+  const origFlow1 = process.env.TRIPLETEX_FLOW_1_ENABLED;
+
   beforeEach(() => {
     ensureProviderCustomerMock.mockReset();
     resolveTripletexAuthMock.mockReset();
     resolveTripletexAuthMock.mockResolvedValue({ companyId: "1", token: "tok" });
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
+  });
+
+  afterEach(() => {
+    if (origFlow1 === undefined) delete process.env.TRIPLETEX_FLOW_1_ENABLED;
+    else process.env.TRIPLETEX_FLOW_1_ENABLED = origFlow1;
   });
 
   test("happy path: creates mapping, audit log, returns ok", async () => {

@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { isTripletexFlow1Enabled } from "@/lib/server/config/featureFlags";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function isIsoMonth01(v: unknown): boolean {
@@ -56,6 +57,14 @@ export async function POST(req: NextRequest) {
       code: "server_error",
       detail: { message: msg },
     });
+  }
+
+  if (!isTripletexFlow1Enabled()) {
+    console.info(
+      { event: "flow1_skip", route: "/api/cron/tripletex-saas-monthly", rid },
+      "TRIPLETEX_FLOW_1_ENABLED=false, skipping",
+    );
+    return jsonOk(rid, { skipped: "FLOW1_DISABLED" });
   }
 
   const url = new URL(req.url);

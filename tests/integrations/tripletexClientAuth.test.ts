@@ -32,6 +32,7 @@ function applyLpEnv(extra?: Record<string, string>) {
 
 describe("tripletexClientAuth (TPT-A-1 + TPT-B-1)", () => {
   const fetchMock = vi.fn();
+  const origFlow1 = process.env.TRIPLETEX_FLOW_1_ENABLED;
 
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
@@ -39,12 +40,15 @@ describe("tripletexClientAuth (TPT-A-1 + TPT-B-1)", () => {
     rpcMock.mockReset();
     __clearTripletexSessionCacheForTests();
     applyLpEnv();
+    process.env.TRIPLETEX_FLOW_1_ENABLED = "true";
   });
 
   afterEach(() => {
     __clearTripletexSessionCacheForTests();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+    if (origFlow1 === undefined) delete process.env.TRIPLETEX_FLOW_1_ENABLED;
+    else process.env.TRIPLETEX_FLOW_1_ENABLED = origFlow1;
   });
 
   test("backward-compat: resolveTripletexAuth() uten args gir stabil shape og cache-hit", async () => {
