@@ -3,6 +3,7 @@ import { createClient as createSanityClient } from "@sanity/client";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import { CRON_MEAL_LEARNING_ORDER_COLUMNS } from "@/lib/orders/projection";
+import { requireCronAuth } from "@/lib/http/cronAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -137,10 +138,14 @@ export async function GET(req: NextRequest) {
     const rid = makeRid();
 
     try {
-        const cronSecret = process.env.CRON_SECRET;
-        const providedSecret = req.headers.get("authorization")?.replace("Bearer ", "").trim();
-
-        if (cronSecret && providedSecret !== cronSecret) {
+        try {
+            requireCronAuth(req);
+        } catch (e: unknown) {
+            const msg = String((e as Error)?.message ?? e);
+            const code = String((e as { code?: string })?.code ?? "").trim();
+            if (msg === "cron_secret_missing" || code === "cron_secret_missing") {
+                return jsonError(rid, "CRON_SECRET mangler i env", 500);
+            }
             return jsonError(rid, "Unauthorized", 401);
         }
 
