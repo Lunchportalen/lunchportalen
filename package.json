@@ -84,7 +84,10 @@
     "worker:queue": "tsx workers/worker.ts",
     "seed:hello": "tsx scripts/seed/runner/hello.ts",
     "seed:wipe": "tsx scripts/seed/runner/wipe.ts",
-    "seed:dry-run": "tsx scripts/seed/runner/dry-run.ts"
+    "seed:dry-run": "tsx scripts/seed/runner/dry-run.ts",
+    "k6:live": "node scripts/k6/run.mjs",
+    "k6:smoke": "cross-env K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js",
+    "k6:staging-smoke": "cross-env K6_TAG_ENV=staging K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js"
   },
   "engines": {
     "node": ">=20.11.0"
