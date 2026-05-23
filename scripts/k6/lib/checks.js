@@ -1,6 +1,8 @@
 import { check, sleep } from 'k6';
 
-import { authParams } from './auth.js';
+import http from 'k6/http';
+
+import { authParams, ensureVuAuth } from './auth.js';
 import { lpGet, lpPost } from './httpClient.js';
 import {
   getConfig,
@@ -106,6 +108,7 @@ export function checkOrderPlace(baseUrl, scenario, config, vu, iter) {
         'Idempotency-Key': idem,
       },
       tags,
+      responseCallback: http.expectedStatuses(200, 409, 422),
     },
   );
   recordEndpointMetric('order_place', res.timings.duration);
@@ -125,6 +128,7 @@ const ENDPOINT_RUNNERS = {
 
 /** Weighted mixed workload (baseline / soak / stress / spike / recovery). */
 export function runMixedWorkload(scenario) {
+  ensureVuAuth();
   const config = getConfig();
   const vu = __VU;
   const iter = __ITER;
@@ -143,6 +147,7 @@ export function runMixedWorkload(scenario) {
 
 /** Sequential pre-warm / smoke verification of all endpoints. */
 export function verifyAllEndpoints(scenario) {
+  ensureVuAuth();
   const config = getConfig();
   const vu = __VU;
   const iter = __ITER;

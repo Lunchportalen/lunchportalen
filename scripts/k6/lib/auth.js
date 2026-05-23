@@ -1,7 +1,20 @@
 import { check } from 'k6';
+import http from 'k6/http';
 
 import { vercelBypassSecret, lpGet, lpPost } from './httpClient.js';
 import { getConfig } from './data.js';
+
+function hasAuthCookieInJar(baseUrl) {
+  try {
+    const jar = http.cookieJar();
+    const cookies = jar.cookiesForURL(baseUrl) || {};
+    return Object.keys(cookies).some(
+      (name) => name.startsWith('sb-') && name.includes('auth-token'),
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Prime Vercel Deployment Protection bypass cookie before auth. */
 export function primeVercelBypass(baseUrl) {
@@ -48,6 +61,19 @@ export function hasSupabaseAuthCookie(res) {
   return Object.keys(cookies).some(
     (name) => name.startsWith('sb-') && name.includes('auth-token'),
   );
+}
+
+/** Per-VU auth: setup() cookies are not shared with scenario VUs in k6. */
+export function ensureVuAuth() {
+  const config = getConfig();
+  primeVercelBypass(config.baseUrl);
+  if (hasAuthCookieInJar(config.baseUrl)) {
+    return;
+  }
+  const res = login(config.baseUrl, config.email, config.password);
+  if (res.status !== 200 || !hasSupabaseAuthCookie(res)) {
+    throw new Error(`VU login failed for ${config.email} (${res.status})`);
+  }
 }
 
 /** Per-VU setup: authenticate once and reuse cookie jar for all iterations. */

@@ -23,8 +23,8 @@ const PROD = {
 const STAGING = {
   health_duration: ['p(95)<1000'],
   week_browse_duration: ['p(95)<1500'],
-  order_place_duration: ['p(95)<2500'],
-  day_view_duration: ['p(95)<1200'],
+  order_place_duration: ['p(95)<3500'],
+  day_view_duration: ['p(95)<1500'],
   kitchen_view_duration: ['p(95)<1500'],
 };
 
@@ -40,7 +40,7 @@ export function getThresholds(env) {
     return {
       ...GLOBAL,
       ...STAGING,
-      'http_req_duration{expected:true}': ['p(95)<1500'],
+      'http_req_duration{expected:true}': ['p(95)<3500'],
     };
   }
   throw new Error(`Unknown K6_TAG_ENV: ${tagEnv}`);

@@ -59,8 +59,15 @@ export function addDaysISO(isoDate, days) {
 
 /** Spread order writes across future weekdays to reduce duplicate-order noise. */
 export function orderTargetDate(vu, iter) {
-  const offset = 1 + ((vu * 7 + iter) % 14);
-  return addDaysISO(osloTodayISO(), offset);
+  const baseOffset = 1 + ((vu * 7 + iter) % 14);
+  let date = addDaysISO(osloTodayISO(), baseOffset);
+  for (let guard = 0; guard < 7; guard += 1) {
+    const [y, m, d] = date.split('-').map(Number);
+    const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (wd >= 1 && wd <= 5) return date;
+    date = addDaysISO(date, 1);
+  }
+  return date;
 }
 
 /** Stable idempotency key per VU + iteration + date (retries stay safe). */
