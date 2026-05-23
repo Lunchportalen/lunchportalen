@@ -6,7 +6,7 @@ import { getConfig } from './data.js';
 /** Prime Vercel Deployment Protection bypass cookie before auth. */
 export function primeVercelBypass(baseUrl) {
   if (!vercelBypassSecret()) return;
-  lpGet(`${baseUrl}/api/health`, {
+  lpGet(baseUrl, '/api/health', {
     tags: { scenario: 'auth', endpoint: 'bypass_warmup', env: __ENV.K6_TAG_ENV || 'prod' },
   });
 }
@@ -18,7 +18,8 @@ export function primeVercelBypass(baseUrl) {
 export function login(baseUrl, email, password) {
   primeVercelBypass(baseUrl);
   const res = lpPost(
-    `${baseUrl}/api/auth/login`,
+    baseUrl,
+    '/api/auth/login',
     JSON.stringify({ email, password }),
     {
       headers: { 'Content-Type': 'application/json' },

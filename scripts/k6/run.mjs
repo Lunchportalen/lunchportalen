@@ -77,6 +77,21 @@ function main() {
       ? extraArgs.shift()
       : 'scripts/k6/k6-live.js';
 
+  const tagEnv = process.env.K6_TAG_ENV || 'staging';
+  const bypassFromEnv =
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
+    envLocal.VERCEL_AUTOMATION_BYPASS_SECRET ||
+    envLocal.VERCEL_PROTECTION_BYPASS ||
+    '';
+
+  if (tagEnv === 'staging') {
+    if (!bypassFromEnv || bypassFromEnv.length < 32) {
+      console.error('DC-028: VERCEL_AUTOMATION_BYPASS_SECRET kreves for staging dry-run.');
+      console.error('Se docs/audit/k6-live-runbook.md eller .env.local');
+      process.exit(1);
+    }
+  }
+
   const env = {
     ...process.env,
     K6_BASE_URL: resolveBaseUrl(envLocal),
@@ -86,14 +101,11 @@ function main() {
       envLocal.PLAYWRIGHT_TEST_PASSWORD ||
       envLocal.K6_SMOKE_PASSWORD ||
       '',
-    K6_TAG_ENV: process.env.K6_TAG_ENV || 'staging',
+    K6_TAG_ENV: tagEnv,
     K6_OUTPUT_DIR: process.env.K6_OUTPUT_DIR || 'scripts/k6/results',
     K6_FASES: process.env.K6_FASES || 'smoke',
-    VERCEL_AUTOMATION_BYPASS_SECRET:
-      process.env.VERCEL_AUTOMATION_BYPASS_SECRET ||
-      envLocal.VERCEL_AUTOMATION_BYPASS_SECRET ||
-      envLocal.VERCEL_PROTECTION_BYPASS ||
-      '',
+    VERCEL_AUTOMATION_BYPASS_SECRET: bypassFromEnv,
+    K6_BYPASS_TOKEN: tagEnv === 'staging' ? bypassFromEnv : '',
   };
 
   if (!env.K6_SMOKE_PASSWORD) {
@@ -113,6 +125,9 @@ function main() {
 
   console.log(`k6 → ${script}`);
   console.log(`base: ${env.K6_BASE_URL} | phases: ${env.K6_FASES} | env: ${env.K6_TAG_ENV}`);
+  if (tagEnv === 'staging' && bypassFromEnv) {
+    console.log(`bypass: len=${bypassFromEnv.length} prefix=${bypassFromEnv.slice(0, 6)}…`);
+  }
   console.log(`json: ${jsonOut}`);
 
   const res = spawnSync(k6Bin, args, { stdio: 'inherit', env, shell: true, cwd: ROOT });

@@ -33,7 +33,7 @@ function isAcceptableOrderStatus(status) {
 
 export function checkWeekBrowse(baseUrl, scenario) {
   const tags = requestTags(scenario, 'week_browse');
-  const res = lpGet(`${baseUrl}/api/week`, authParams(scenario, 'week_browse'));
+  const res = lpGet(baseUrl, '/api/week', authParams(scenario, 'week_browse'));
   recordEndpointMetric('week_browse', res.timings.duration);
   check(res, {
     'week status 2xx': (r) => r.status >= 200 && r.status < 300,
@@ -46,7 +46,8 @@ export function checkDayView(baseUrl, scenario) {
   const date = osloTodayISO();
   const tags = requestTags(scenario, 'day_view');
   const res = lpGet(
-    `${baseUrl}/api/orders?date=${date}`,
+    baseUrl,
+    `/api/orders?date=${date}`,
     authParams(scenario, 'day_view'),
   );
   recordEndpointMetric('day_view', res.timings.duration);
@@ -60,7 +61,8 @@ export function checkDayView(baseUrl, scenario) {
 export function checkKitchenView(baseUrl, scenario) {
   const tags = requestTags(scenario, 'kitchen_view');
   const res = lpGet(
-    `${baseUrl}/api/kitchen/today`,
+    baseUrl,
+    '/api/kitchen/today',
     { ...authParams(scenario, 'kitchen_view'), redirects: 0 },
   );
   recordEndpointMetric('kitchen_view', res.timings.duration);
@@ -73,7 +75,7 @@ export function checkKitchenView(baseUrl, scenario) {
 
 export function checkHealth(baseUrl, scenario) {
   const tags = requestTags(scenario, 'health');
-  const res = lpGet(`${baseUrl}/api/health`, authParams(scenario, 'health'));
+  const res = lpGet(baseUrl, '/api/health', authParams(scenario, 'health'));
   recordEndpointMetric('health', res.timings.duration);
   check(res, {
     'health status 2xx': (r) => r.status >= 200 && r.status < 300,
@@ -87,7 +89,8 @@ export function checkOrderPlace(baseUrl, scenario, config, vu, iter) {
   const idem = idempotencyKey(config, vu, iter, date);
   const tags = requestTags(scenario, 'order_place', { write: 'true' });
   const res = lpPost(
-    `${baseUrl}/api/orders`,
+    baseUrl,
+    '/api/orders',
     JSON.stringify({
       date,
       action: 'SET',

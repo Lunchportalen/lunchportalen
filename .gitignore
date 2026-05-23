@@ -47,6 +47,7 @@ queue.json
 .tmp/
 tmp/
 .backups/
+.dc028-secret.tmp
 # Root-only hyphenated temp files (e.g. curl/debug .tmp-*.html / .tmp-*.headers)
 /.tmp-*
 *.log

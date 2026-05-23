@@ -2,15 +2,25 @@ import http from 'k6/http';
 
 /**
  * Vercel Deployment Protection bypass for staging dry-runs.
- * Set VERCEL_AUTOMATION_BYPASS_SECRET in env (or via run.mjs from .env.local).
+ * K6_BYPASS_TOKEN is set by run.mjs when K6_TAG_ENV=staging.
  */
 export function vercelBypassSecret() {
-  return __ENV.VERCEL_AUTOMATION_BYPASS_SECRET || __ENV.VERCEL_PROTECTION_BYPASS || '';
+  return (
+    __ENV.K6_BYPASS_TOKEN ||
+    __ENV.VERCEL_AUTOMATION_BYPASS_SECRET ||
+    __ENV.VERCEL_PROTECTION_BYPASS ||
+    ''
+  );
 }
 
-export function withVercelBypassUrl(url) {
-  // Prefer header-based bypass — query params can be stripped on 307 redirects.
-  return url;
+export function buildUrl(baseUrl, path) {
+  const url = new URL(path, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+  const bypass = vercelBypassSecret();
+  if (bypass) {
+    url.searchParams.set('x-vercel-set-bypass-cookie', 'true');
+    url.searchParams.set('x-vercel-protection-bypass', bypass);
+  }
+  return url.toString();
 }
 
 export function withVercelBypassHeaders(headers = {}) {
@@ -23,14 +33,18 @@ export function withVercelBypassHeaders(headers = {}) {
   };
 }
 
-export function lpGet(url, params = {}) {
-  const finalUrl = withVercelBypassUrl(url);
+export function lpGet(baseUrl, pathOrUrl, params = {}) {
+  const url = pathOrUrl.startsWith('http')
+    ? buildUrl(new URL(pathOrUrl).origin, `${new URL(pathOrUrl).pathname}${new URL(pathOrUrl).search}`)
+    : buildUrl(baseUrl, pathOrUrl);
   const headers = withVercelBypassHeaders(params.headers || {});
-  return http.get(finalUrl, { ...params, headers });
+  return http.get(url, { ...params, headers });
 }
 
-export function lpPost(url, body, params = {}) {
-  const finalUrl = withVercelBypassUrl(url);
+export function lpPost(baseUrl, pathOrUrl, body, params = {}) {
+  const url = pathOrUrl.startsWith('http')
+    ? buildUrl(new URL(pathOrUrl).origin, `${new URL(pathOrUrl).pathname}${new URL(pathOrUrl).search}`)
+    : buildUrl(baseUrl, pathOrUrl);
   const headers = withVercelBypassHeaders(params.headers || {});
-  return http.post(finalUrl, body, { ...params, headers });
+  return http.post(url, body, { ...params, headers });
 }

@@ -151,4 +151,4 @@ k6 run scripts/k6/scenarios/smoke.js 2>&1 | Out-File scripts/k6/results/console.
 - Ingen Sanity-skriving (kun read via `/api/week`)
 - Ingen Tripletex-webhook-trigger
 
-Se også: `docs/audit/k6-live-runbook.md`
+Se også: [`docs/audit/k6-live-runbook.md`](../../docs/audit/k6-live-runbook.md) (operasjonell sjekkliste for prod-kjøring).
