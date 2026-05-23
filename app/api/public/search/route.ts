@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import {
+  anonRateLimitOk,
+  clientIpFromAnonRequest,
+  publicSearchQuerySchema,
+} from "@/lib/public/anonRouteGuard";
 
 /** djb2 hash (32-bit) for search dedup/analytics key. */
 function djb2(str: string): number {
@@ -22,9 +27,21 @@ export async function GET(request: NextRequest) {
     return jsonErr(rid, "Method not allowed", 405, "METHOD_NOT_ALLOWED");
   }
 
-  const q = request.nextUrl?.searchParams?.get("q") ?? "";
-  const locale = (request.nextUrl?.searchParams?.get("locale") ?? "nb").toLowerCase();
-  const safeLocale = locale === "en" ? "en" : "nb";
+  const ip = clientIpFromAnonRequest(request);
+  if (!anonRateLimitOk("public-search", ip, 120)) {
+    return jsonErr(rid, "For mange forsøk", 429, "RATE_LIMIT_EXCEEDED");
+  }
+
+  const parsed = publicSearchQuerySchema.safeParse({
+    q: request.nextUrl?.searchParams?.get("q") ?? "",
+    locale: request.nextUrl?.searchParams?.get("locale") ?? "nb",
+  });
+  if (!parsed.success) {
+    return jsonErr(rid, "Ugyldige søkeparametre", 422, "INVALID_QUERY");
+  }
+
+  const q = parsed.data.q;
+  const safeLocale = parsed.data.locale;
   const response = jsonOk(rid, { ok: true, rid, results: [] }, 200);
 
   // Best-effort analytics insert; must not break or delay the response

@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import {
+  anonRateLimitOk,
+  clientIpFromAnonRequest,
+  publicDemoCtaAssignBodySchema,
+} from "@/lib/public/anonRouteGuard";
+import {
   catalogKeysInOrder,
   defaultDemoCtaSeedCatalog,
   parseDemoCtaVariantCatalog,
@@ -32,20 +37,8 @@ import {
 import { runDemoCtaAbRebalancePipeline } from "@/lib/server/demoCtaAb/rebalance";
 
 const RATE_PER_MINUTE = 120;
-const rateMap = new Map<string, number>();
-
-function minuteBucket(): number {
-  return Math.floor(Date.now() / 60_000);
-}
 
 /** Public demo CTA A/B — single assign surface; client must use lib/public/demoCtaAb/canonicalPublicCtaAb. */
-
-type AssignBody = {
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
-  referrer?: string;
-};
 
 export async function POST(request: NextRequest) {
   const rid = makeRid("dab");
@@ -55,25 +48,25 @@ export async function POST(request: NextRequest) {
         ? "staging"
         : "prod";
 
-    const fwd = request.headers.get("x-forwarded-for");
-    const ip = (fwd?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown").slice(0, 64);
-    const rk = `dab:${ip}:${minuteBucket()}`;
-    const n = (rateMap.get(rk) ?? 0) + 1;
-    rateMap.set(rk, n);
-    if (n > RATE_PER_MINUTE) {
+    const ip = clientIpFromAnonRequest(request);
+    if (!anonRateLimitOk("dab", ip, RATE_PER_MINUTE)) {
       return jsonErr(rid, "For mange forsøk", 429, "RATE_LIMIT_EXCEEDED");
     }
 
-    let body: AssignBody = {};
+    let body: {
+      utmSource?: string;
+      utmMedium?: string;
+      utmCampaign?: string;
+      referrer?: string;
+    } = {};
     try {
       const raw = await request.json().catch(() => null);
       if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-        const o = raw as Record<string, unknown>;
-        body = {
-          utmSource: typeof o.utmSource === "string" ? o.utmSource : undefined,
-          utmMedium: typeof o.utmMedium === "string" ? o.utmMedium : undefined,
-          referrer: typeof o.referrer === "string" ? o.referrer : undefined,
-        };
+        const parsed = publicDemoCtaAssignBodySchema.safeParse(raw);
+        if (!parsed.success) {
+          return jsonErr(rid, "Ugyldig body", 422, "INVALID_BODY");
+        }
+        body = parsed.data;
       }
     } catch {
       body = {};

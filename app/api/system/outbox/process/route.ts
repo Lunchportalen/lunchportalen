@@ -5,6 +5,7 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
@@ -743,8 +744,19 @@ function mergeOutboxStats(a: OutboxBatchStats, b: OutboxBatchStats): OutboxBatch
   };
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const rid = makeRid();
+
+  try {
+    requireCronAuth(req);
+  } catch (e: unknown) {
+    const msg = String((e as Error)?.message ?? e);
+    const code = String((e as { code?: string })?.code ?? "").trim();
+    if (msg === "cron_secret_missing" || code === "cron_secret_missing") {
+      return jsonErr(rid, "CRON_SECRET mangler i env", 500, "misconfigured");
+    }
+    return jsonErr(rid, "Ugyldig cron secret", 401, "forbidden");
+  }
 
   try {
     const admin = supabaseAdmin();

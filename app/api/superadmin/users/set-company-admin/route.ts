@@ -4,7 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { requireSuperadmin, authErrorToResponse } from "@/lib/server/auth/requireUser";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { scheduleAuditEvent } from "@/lib/security/audit";
 
 function jsonError(rid: string, status: number, error: string, message: string, detail?: any) {
   const err = detail !== undefined ? { code: error, detail } : error;
@@ -17,6 +19,13 @@ function cleanEmail(v: any) {
 
 export async function POST(req: Request) {
   const rid = makeRid();
+  let actor;
+  try {
+    actor = await requireSuperadmin(req);
+  } catch (err) {
+    return authErrorToResponse(err);
+  }
+
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   try {
     const body = await req.json().catch(() => null);
@@ -79,6 +88,19 @@ export async function POST(req: Request) {
 
     if (metaErr) return jsonError(rid, 500, "auth_meta_failed", "Kunne ikke oppdatere auth metadata.", metaErr);
 
+    scheduleAuditEvent({
+      companyId: company.id,
+      userId: actor.scope.userId,
+      action: "set_company_admin",
+      resource: `user:${authUser.id}`,
+      metadata: {
+        target_user_id: authUser.id,
+        target_email: email,
+        target_company_id: company.id,
+        target_location_id: loc.id,
+      },
+    });
+
     return jsonOk(rid, {
       ok: true,
       email,
@@ -90,4 +112,3 @@ export async function POST(req: Request) {
     return jsonError(rid, 500, "server_error", "Uventet feil.", e?.message ?? e);
   }
 }
-
