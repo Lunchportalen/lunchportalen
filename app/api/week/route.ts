@@ -14,6 +14,7 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 import type { MenuDay } from "@/lib/cms/menuDay";
 
 type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
@@ -97,11 +98,19 @@ export async function GET(req: Request) {
     const user = auth?.user ?? null;
     if (aerr || !user) return jsonError(401, _rid, "AUTH_REQUIRED", "Ikke innlogget.");
 
-    const { data: prof, error: perr } = await sb
-      .from("profiles")
-      .select("company_id, location_id, role, is_active, disabled_at, disabled_reason")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: profRaw, error: perr } = await loadProfileByUserId(
+      sb,
+      user.id,
+      "company_id, location_id, role, is_active, disabled_at, disabled_reason",
+    );
+    const prof = profRaw as {
+      company_id?: string | null;
+      location_id?: string | null;
+      role?: string | null;
+      is_active?: boolean | null;
+      disabled_at?: string | null;
+      disabled_reason?: string | null;
+    } | null;
 
     if (perr) return jsonError(500, _rid, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", perr);
     if (!prof?.company_id) return jsonError(409, _rid, "MISSING_COMPANY", "Mangler firmatilknytning.");
