@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import type { NextRequest } from "next/server";
 
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -18,6 +19,8 @@ function getBaseUrl() {
 }
 
 export async function GET(req: NextRequest) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   const rid = makeRid();
 
   const url = new URL(req.url);

@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { buildDashboard } from "@/lib/ai/dashboard";
 import type { DecisionInputData } from "@/lib/ai/decisionEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -36,6 +37,8 @@ function parseNum(v: string | null): number | undefined {
  * Returns metrics, insights, decisions (with policy + preview), actions — read-only aggregation.
  */
 export async function GET(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "GET", async () => {
   const requestId = makeRid("ai_dashboard");
   try {

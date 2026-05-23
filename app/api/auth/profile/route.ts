@@ -1,13 +1,17 @@
 import {
   GET as getProfile,
 } from "@/app/api/profile/route";
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET(request?: Request) {
+export async function GET(request: Request) {
+  const denied = await denyUnlessSession(request);
+  if (denied) return denied;
+
   const rid = makeRid("rid_profile_adapter");
 
   try {

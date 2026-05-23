@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import type { NextRequest } from "next/server";
 import { makeDecision, type DecisionInputData } from "@/lib/ai/decisionEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -68,6 +69,8 @@ function coerceDecisionData(raw: unknown): DecisionInputData {
  * Returns { decision } — explainable recommendation only.
  */
 export async function POST(req: NextRequest) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_decision");
   let raw: string;

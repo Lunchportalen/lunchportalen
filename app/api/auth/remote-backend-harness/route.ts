@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import "server-only";
 
 import type { NextRequest } from "next/server";
@@ -24,6 +25,8 @@ function isLoopbackHost(req: NextRequest): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   const rid = makeRid();
   const runtimeStatus = getCmsRuntimeStatus();
 

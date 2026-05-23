@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { REMOTE_BACKEND_HARNESS_EMAIL } from "@/lib/system/emails";
 
 const createServerClientMock = vi.hoisted(() => vi.fn());
+const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const listUsersMock = vi.hoisted(() => vi.fn());
 const createUserMock = vi.hoisted(() => vi.fn());
 const updateUserByIdMock = vi.hoisted(() => vi.fn());
@@ -19,6 +20,12 @@ const contentVariantsDeleteMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: createServerClientMock,
+}));
+
+vi.mock("@/lib/http/routeGuard", () => ({
+  scopeOr401: (...args: unknown[]) => scopeOr401Mock(...args),
+  requireRoleOr403: () => null,
+  denyResponse: (gate: { res?: Response }) => gate.res ?? new Response(null, { status: 401 }),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -120,6 +127,21 @@ beforeEach(() => {
   vi.stubEnv("LP_CMS_RUNTIME_MODE", "remote_backend");
   vi.stubEnv("LP_REMOTE_BACKEND_AUTH_HARNESS", "1");
   vi.stubEnv("NODE_ENV", "test");
+
+  scopeOr401Mock.mockResolvedValue({
+    ok: true,
+    ctx: {
+      rid: "rid_harness",
+      scope: {
+        userId: "superadmin_1",
+        role: "superadmin",
+        companyId: null,
+        locationId: null,
+        email: "admin@test.local",
+        sub: null,
+      },
+    },
+  });
 
   listUsersMock.mockResolvedValue({ data: { users: [] }, error: null });
   createUserMock.mockResolvedValue({

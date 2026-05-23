@@ -1,3 +1,4 @@
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -23,6 +24,8 @@ function rateLimitOk(ip: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await denyUnlessSession(request);
+  if (denied) return denied;
   return withApiAiEntrypoint(request, "POST", async () => {
   const rid = makeRid("exp");
   const secret = process.env.EXPERIMENT_INGEST_SECRET;

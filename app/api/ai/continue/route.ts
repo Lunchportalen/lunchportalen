@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { generateContinuation, type ContinuationContext } from "@/lib/ai/continuation";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -33,6 +34,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Returns multi-line continuation; never auto-applied by the server.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_continue");
   let body: unknown;

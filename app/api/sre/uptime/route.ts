@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { structuredLog } from "@/lib/core/structuredLog";
 import { traceRequest } from "@/lib/core/requestTrace";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -10,7 +11,9 @@ import { endTrace, startTrace } from "@/lib/observability/trace";
 import { trackRequest } from "@/lib/sre/metrics";
 
 /** Enkel «UP»-ping (tillegg til dyp /api/health). Blokkerer ikke brukerflyt. */
-export async function GET(): Promise<Response> {
+export async function GET(req: Request): Promise<Response> {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   const rid = makeRid("sre_uptime");
   const trace = startTrace("api_sre_uptime", rid);
   try {

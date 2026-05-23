@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { loadPatternRows } from "@/lib/ai/learning";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -49,6 +50,8 @@ function buildTrends(rows: Awaited<ReturnType<typeof loadPatternRows>>): string[
  * Same shape as /api/ai/analyze: plain handler. Read-only.
  */
 export async function GET(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "GET", async () => {
   const requestId = makeRid("ai_insights");
   try {

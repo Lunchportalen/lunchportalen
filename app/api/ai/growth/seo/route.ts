@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { runSeoEngine, type SiteData } from "@/lib/ai/seoEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -62,6 +63,8 @@ function coerceSiteData(raw: unknown): SiteData {
  * Returns { opportunities, keywords, contentIdeas } — suggestions only; no publish.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_growth_seo");
   let raw: string;

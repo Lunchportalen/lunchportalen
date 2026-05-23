@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { generateAds } from "@/lib/ai/adsEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -35,6 +36,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Returns { headlines, descriptions } — copy only; no campaigns or spend.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_growth_ads");
   let raw: string;

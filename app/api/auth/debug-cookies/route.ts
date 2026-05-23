@@ -3,7 +3,15 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export const dynamic = "force-dynamic";
 
+function devRouteBlocked(): Response {
+  return new Response(null, { status: 404 });
+}
+
 export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV === "production" || !process.env.LP_DEBUG_AUTH) {
+    return devRouteBlocked();
+  }
+
   const rid = makeRid();
   try {
     const host = req.nextUrl.host;

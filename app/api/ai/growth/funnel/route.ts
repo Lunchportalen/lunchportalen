@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { buildFunnel, type FunnelAnalytics, type FunnelContent } from "@/lib/ai/funnelEngine";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -70,6 +71,8 @@ function coerceFunnelAnalytics(raw: unknown): FunnelAnalytics {
  * Returns { steps, improvements } — analysis only; no CMS mutation.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_growth_funnel");
   let raw: string;

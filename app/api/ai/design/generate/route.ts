@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { generateDesignFixes } from "@/lib/ai/designGenerator";
 import { getCmsDesignTokens } from "@/lib/ai/designTokens";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -37,6 +38,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Returns { updatedBlocks, suggestions } — preview only; client must approve before applying.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_design_generate");
   let raw: string;
