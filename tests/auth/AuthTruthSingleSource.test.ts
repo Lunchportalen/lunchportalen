@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const getAuthContextMock = vi.hoisted(() => vi.fn());
+const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const resolveRunnerCompanyIdForBackofficeMock = vi.hoisted(() => vi.fn());
 const createServerClientMock = vi.hoisted(() => vi.fn());
 
@@ -15,6 +16,16 @@ let companyRow: { id: string; status: string | null } | null = null;
 
 vi.mock("@/lib/auth/getAuthContext", () => ({
   getAuthContext: getAuthContextMock,
+}));
+
+vi.mock("@/lib/http/routeGuard", () => ({
+  scopeOr401: (...args: unknown[]) => scopeOr401Mock(...args),
+  requireRoleOr403: () => null,
+  denyResponse: (gate: { res?: Response }) => gate.res ?? new Response(null, { status: 401 }),
+}));
+
+vi.mock("@/lib/server/auth/requireUser", () => ({
+  denyUnlessSession: vi.fn(async () => null),
 }));
 
 vi.mock("@/lib/ai/resolveRunnerCompanyForBackoffice", () => ({
@@ -137,6 +148,20 @@ describe("Auth truth single source", () => {
     };
     companyRow = { id: "company_1", status: "ACTIVE" };
     getAuthContextMock.mockResolvedValue(makeAuth());
+    scopeOr401Mock.mockResolvedValue({
+      ok: true,
+      ctx: {
+        rid: "rid_auth_truth",
+        scope: {
+          userId: "user_1",
+          role: "company_admin",
+          companyId: "company_1",
+          locationId: null,
+          email: "admin@example.com",
+          sub: null,
+        },
+      },
+    });
     resolveRunnerCompanyIdForBackofficeMock.mockResolvedValue(null);
   });
 

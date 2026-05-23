@@ -101,6 +101,24 @@ describe("middleware redirect safety (platform core)", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("x-lp-mw-user")).toBe("1");
   });
+
+  it("returns JSON 401 for non-allowlisted /api/* without session", async () => {
+    const req = makeRequest("/api/orders");
+    const res = await middleware(req);
+
+    expect(res).toBeInstanceOf(NextResponse);
+    expect(res.status).toBe(401);
+    expect(res.headers.get("x-lp-mw-api-auth")).toBe("401");
+  });
+
+  it("allows allowlisted anon /api/onboarding/complete without session", async () => {
+    const req = makeRequest("/api/onboarding/complete");
+    const res = await middleware(req);
+
+    expect(res).toBeInstanceOf(NextResponse);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-lp-mw-bypass")).toBe("allowlist");
+  });
 });
 
 describe("middleware ↔ getAuthContext local dev bypass", () => {
