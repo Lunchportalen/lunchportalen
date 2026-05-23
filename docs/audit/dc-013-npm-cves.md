@@ -35,7 +35,7 @@ Ingen endringer i `lib/` eller `app/`. Kun `package.json` + `package-lock.json`.
 |--------|-------|
 | Prod HIGH+CRITICAL | 0 |
 | Test-suite | 2403 PASS |
-| Build | Pending Vercel prod deploy |
+| Build | SUCCESS (prod deploy 2026-05-23 18:16 CET, `34ec4314`) |
 
 ## Anbefaling
 
