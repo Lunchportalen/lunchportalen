@@ -35,14 +35,26 @@ export function requirePassword(config) {
   }
 }
 
+function pad2(n) {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+/** k6 goja lacks reliable IANA timezone — Oslo offset for CEST (Mar–Oct). */
+function osloOffsetHours() {
+  const month = new Date().getUTCMonth() + 1;
+  return month >= 3 && month <= 10 ? 2 : 1;
+}
+
 export function osloTodayISO() {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Oslo' });
+  const osloMs = Date.now() + osloOffsetHours() * 3600000;
+  const dt = new Date(osloMs);
+  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
 }
 
 export function addDaysISO(isoDate, days) {
   const [y, m, d] = isoDate.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d + days));
-  return dt.toISOString().slice(0, 10);
+  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
 }
 
 /** Spread order writes across future weekdays to reduce duplicate-order noise. */
