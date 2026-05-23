@@ -5,13 +5,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
+import { isApiAuthAllowlisted } from "@/lib/server/auth/apiAllowlist";
 import { updateSession } from "@/utils/supabase/proxy";
 
 function isBypassPath(pathname: string) {
-  const isApi = pathname.startsWith("/api/");
-  const allowAuthApi =
-    pathname === "/api/auth/post-login" || pathname === "/api/auth/logout" || pathname === "/api/auth/login";
-
   return (
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon") ||
@@ -19,7 +16,6 @@ function isBypassPath(pathname: string) {
     pathname === "/sitemap.xml" ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/assets/") ||
-    (isApi && !allowAuthApi) ||
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/status" ||
@@ -69,6 +65,24 @@ function copyDebugHeaders(from: NextResponse, to: NextResponse) {
   }
 }
 
+function apiUnauthorizedResponse(rid: string): NextResponse {
+  return NextResponse.json(
+    { ok: false, rid, error: "UNAUTHORIZED", message: "Ikke innlogget.", status: 401 },
+    {
+      status: 401,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+        "x-lp-mw-api-auth": "401",
+      },
+    },
+  );
+}
+
+function makeRid(prefix = "mw"): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
@@ -90,6 +104,36 @@ export async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-url", req.nextUrl.href);
+
+  /**
+   * API auth: explicit allowlist only — all other /api/* require session (fail-closed 401 JSON).
+   * Route files must implement their own cron/webhook/anon/api-key gates when allowlisted.
+   */
+  if (pathname.startsWith("/api/")) {
+    if (isApiAuthAllowlisted(pathname)) {
+      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      res.headers.set("x-lp-mw", "1");
+      res.headers.set("x-lp-mw-bypass", "allowlist");
+      return res;
+    }
+
+    const { response: res, hasSupabaseSessionCookie } = await updateSession(req, requestHeaders);
+    res.headers.set("x-lp-mw", "1");
+
+    const localDevBypass = isLocalDevAuthenticatedRequest(req);
+    const sessionOk = hasSupabaseSessionCookie || localDevBypass;
+    res.headers.set("x-lp-mw-user", sessionOk ? "1" : "0");
+    if (localDevBypass && !hasSupabaseSessionCookie) res.headers.set("x-lp-mw-dev-bypass", "1");
+
+    if (!sessionOk) {
+      const denied = apiUnauthorizedResponse(makeRid());
+      copyCookies(res, denied);
+      copyDebugHeaders(res, denied);
+      return denied;
+    }
+
+    return res;
+  }
 
   if (isBypassPath(pathname)) {
     const res = NextResponse.next({ request: { headers: requestHeaders } });
