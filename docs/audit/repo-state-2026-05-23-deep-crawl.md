@@ -30,6 +30,7 @@ Testsuite etter PR-X1 Fase 3: **2387 PASS** / **0 FAIL** (124 skipped) — +54 s
 | D.3 (6 ruter) | open | **LUKKET** (Commit 3 / `dc15f591`) |
 | D.4 (3 dev-ruter) | open | **LUKKET** (Commit 5 / `628c5604`) |
 | DC-018 | HARD-BLOCK | **LUKKET** (PR-X2, prod 2026-05-23) |
+| DC-019 | HARD-BLOCK | **LUKKET** (PR-X3, prod 2026-05-23) |
 
 ### Supabase-tilgang
 
@@ -365,11 +366,10 @@ Bevis: SQL staging+prod — `billing_products`, `billing_tax_codes` `rowsecurity
 Fix: `20260609120000_dc018_enable_rls_billing.sql` — RLS + authenticated SELECT, write kun service_role  
 Dokumentasjon: `docs/audit/dc-018-rls-fix.md`
 
-[DC-019] rls | HARD-BLOCK  
-Bevis: SQL — `invoice_periods`, `tripletex_exports`, `company_deletions` `rowsecurity=false`  
-Beskrivelse: Faktura- og sletting-metadata uten tenant-isolasjon på DB-lag.  
-Anbefaling: RLS + policies aligned med `invoices`/`invoice_runs` mønster.  
-Effort: M
+[DC-019] rls | HARD-BLOCK → **LUKKET (PR-X3, prod 2026-05-23)**  
+Bevis: SQL staging+prod — `invoice_periods`, `tripletex_exports`, `company_deletions` `rowsecurity=false`  
+Fix: `20260609130000_dc019_enable_rls_tenant_tables.sql` — tenant SELECT via `can_access_company`; `tripletex_exports` JOIN-basert; `company_deletions` superadmin-only  
+Dokumentasjon: `docs/audit/dc-019-rls-fix.md`
 
 [DC-020] rls | HØY  
 Bevis: SQL — `company_invites`, `employee_invites` RLS=true, 0 policies  
@@ -634,7 +634,7 @@ Effort: M
 | DC-016 | observability | MEDIUM | open | M |
 | DC-017 | schema-hygiene | LAV | open | M |
 | DC-018 | rls | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
-| DC-019 | rls | HARD-BLOCK | open | M |
+| DC-019 | rls | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
 | DC-020 | rls | HØY | open | S |
 | DC-021 | rls | MEDIUM | open | M |
 | DC-022 | db-health | MEDIUM | open | S |
