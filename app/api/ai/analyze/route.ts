@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { runAIAnalysis } from "@/lib/ai/engine";
 import { logActivity } from "@/lib/ai/logActivity";
 import { makeRid } from "@/lib/http/rid";
@@ -30,6 +31,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const rid = makeRid("ai_analyze");
   const start = Date.now();

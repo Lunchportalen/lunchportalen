@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { learnFromExperiment } from "@/lib/ai/learning";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -33,6 +34,8 @@ function isUuid(v: string): boolean {
  * Same shape as /api/ai/analyze: validate JSON, call domain code. Does not modify CMS pages.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_learn");
   let body: unknown;

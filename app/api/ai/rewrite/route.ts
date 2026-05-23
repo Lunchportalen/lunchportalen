@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { rewriteText } from "@/lib/ai/rewrite";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -29,6 +30,8 @@ function errJson(ridValue: string, error: string, status: number, message?: stri
  * Rewrites selection-sized text; never auto-applied by the server.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_rewrite");
   let body: unknown;

@@ -1,3 +1,4 @@
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { randomUUID } from "node:crypto";
 
 import { buildAttributionRecord } from "@/lib/ai/attribution/attributionModel";
@@ -31,6 +32,8 @@ function normalizeType(raw: string): ExperimentEventType | null {
  * Body: { experimentId, variantId, type: impression|view|click|conversion, userId? }
  */
 export async function POST(request: Request) {
+  const denied = await denyUnlessSession(request);
+  if (denied) return denied;
   return withApiAiEntrypoint(request, "POST", async () => {
     const rid = makeRid("exp_pub");
 

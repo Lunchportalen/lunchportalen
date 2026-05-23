@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { analyzeDesign } from "@/lib/ai/designAnalyzer";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { makeRid } from "@/lib/http/rid";
@@ -36,6 +37,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Returns { score, issues, suggestions } — suggestions drive the AI panel; no persistence.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_design_analyze");
   let raw: string;

@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { runCopilot } from "@/lib/ai/copilot";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 import { buildContext, sliceBlocksForFocus, type CopilotFullPageInput } from "@/lib/ai/context";
@@ -35,6 +36,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Uses focused window of blocks for speed; same response contract as other /api/ai/* routes.
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_copilot");
   let body: unknown;

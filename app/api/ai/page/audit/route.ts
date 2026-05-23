@@ -1,9 +1,12 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { logActivity } from "@/lib/ai/logActivity";
 import { makeRid, jsonOk, jsonErr } from "@/lib/http/respond";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
 
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const rid = makeRid("ai_audit");
   const start = Date.now();

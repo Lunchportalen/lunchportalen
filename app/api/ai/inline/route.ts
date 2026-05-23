@@ -1,4 +1,5 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { renderGhostText } from "@/lib/ai/ghostText";
 import { generateInlineCompletion, type InlineContext } from "@/lib/ai/inline";
 import { withApiAiEntrypoint } from "@/lib/http/withApiAiEntrypoint";
@@ -34,6 +35,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * Returns suffix-only completion for ghost UI (no duplication of typed prefix).
  */
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   return withApiAiEntrypoint(req, "POST", async () => {
   const requestId = makeRid("ai_inline");
   let body: unknown;
