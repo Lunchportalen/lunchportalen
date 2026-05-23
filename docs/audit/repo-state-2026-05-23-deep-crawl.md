@@ -17,7 +17,18 @@
 | **Totalt**  | **46** |        **~90 t** |
 
 Testsuite før: **2333 PASS** / **0 FAIL** (124 skipped, 489 filer)  
-Testsuite etter PR-X1 Fase 3: **2387 PASS** / **0 FAIL** (124 skipped) — +54 sikkerhets-/middleware-tester
+Testsuite etter PR-X1 Fase 3: **2387 PASS** / **0 FAIL** (124 skipped) — +54 sikkerhets-/middleware-tester  
+**PR-X1 prod-deploy:** merge `44949eed` → Vercel production Ready 2026-05-23 · prod-smoke **11/11 PASS** ([dc-011-prod-smoke.md](./dc-011-prod-smoke.md))
+
+### PR-X1 — lukkede funn (prod 2026-05-23)
+
+| Finding | Alvor | Status |
+| ------- | ----- | ------ |
+| DC-011 | HARD-BLOCK | **LUKKET** (PR-X1, prod 2026-05-23, merge `44949eed`) |
+| DC-027 | HARD-BLOCK | **LUKKET** (PR-X1, samme commit) |
+| D.1 meal-learning fail-open | open | **LUKKET** (Commit 4 / `970e3a89`) |
+| D.3 (6 ruter) | open | **LUKKET** (Commit 3 / `dc15f591`) |
+| D.4 (3 dev-ruter) | open | **LUKKET** (Commit 5 / `628c5604`) |
 
 ### Supabase-tilgang
 
@@ -204,13 +215,14 @@ Effort: S
 | `/week`, `/admin`, `/superadmin`, `/backoffice`, `/orders`, `/driver`, `/kitchen`, `/leverandor` | Session cookie required |
 | `/umbraco/*` | Ingen Supabase refresh (proxy) |
 
-[DC-011] security | HARD-BLOCK → **LUKKET (PR-X1 Fase 3, 2026-05-23)**  
+[DC-011] security | HARD-BLOCK → **LUKKET (PR-X1, prod 2026-05-23, merge `44949eed`)**  
 Bevis (før): `middleware.ts` — blanket `/api/*` bypass  
-Fix: `lib/server/auth/apiAllowlist.ts` (81) + session-gate i `middleware.ts` + 33 rute-fixes  
+Fix: `lib/server/auth/apiAllowlist.ts` (83) + session-gate i `middleware.ts` + 33 rute-fixes  
 Dokumentasjon: `docs/operations/api-auth-inventory.md`  
+Prod-smoke: `docs/audit/dc-011-prod-smoke.md` — 11/11 PASS  
 Tester: `tests/security/api-allowlist-regression.test.ts`, `no-implicit-bypass.test.ts`, `ai-routes-auth.test.ts`, `dc011-route-fixes.test.ts`
 
-[DC-027] security | HARD-BLOCK → **LUKKET (samme PR, 2026-05-23)**  
+[DC-027] security | HARD-BLOCK → **LUKKET (PR-X1, prod 2026-05-23, merge `44949eed`)**  
 Bevis: 17 B8 AI-ruter uten inline auth (deep crawl / Fase 2.5)  
 Fix: `denyUnlessSession` utenfor `withApiAiEntrypoint` på alle 17 ruter
 
@@ -599,37 +611,37 @@ Effort: M
 
 ---
 
-## Komplett funnregister (DC-001 – DC-026)
+## Komplett funnregister (DC-001 – DC-027)
 
-| ID | Kategori | Alvor | Effort |
-| -- | -------- | ----- | ------ |
-| DC-001 | dead-code | MEDIUM | S |
-| DC-002 | dead-code | LAV | S |
-| DC-003 | observability | HØY | M |
-| DC-004 | observability | MEDIUM | S |
-| DC-005 | config | HØY | M |
-| DC-006 | ui-system | MEDIUM | L |
-| DC-007 | ui-system | MEDIUM | L |
-| DC-008 | ui-system | LAV | S |
-| DC-009 | a11y | MEDIUM | M |
-| DC-010 | a11y | LAV | S |
-| DC-011 | security | HARD-BLOCK | **LUKKET** |
-| DC-027 | security | HARD-BLOCK | **LUKKET** |
-| DC-012 | security | HØY | S |
-| DC-013 | dependencies | HØY | M |
-| DC-014 | migrations | HØY | M |
-| DC-015 | test-gap | MEDIUM | L |
-| DC-016 | observability | MEDIUM | M |
-| DC-017 | schema-hygiene | LAV | M |
-| DC-018 | rls | HARD-BLOCK | M |
-| DC-019 | rls | HARD-BLOCK | M |
-| DC-020 | rls | HØY | S |
-| DC-021 | rls | MEDIUM | M |
-| DC-022 | db-health | MEDIUM | S |
-| DC-023 | schema-drift | HØY | M |
-| DC-024 | data-truth | MEDIUM | S |
-| DC-025 | architecture | LAV | S |
-| DC-026 | tripletex | HØY | M |
+| ID | Kategori | Alvor | Status | Effort |
+| -- | -------- | ----- | ------ | ------ |
+| DC-001 | dead-code | MEDIUM | open | S |
+| DC-002 | dead-code | LAV | open | S |
+| DC-003 | observability | HØY | open | M |
+| DC-004 | observability | MEDIUM | open | S |
+| DC-005 | config | HØY | open | M |
+| DC-006 | ui-system | MEDIUM | open | L |
+| DC-007 | ui-system | MEDIUM | open | L |
+| DC-008 | ui-system | LAV | open | S |
+| DC-009 | a11y | MEDIUM | open | M |
+| DC-010 | a11y | LAV | open | S |
+| DC-011 | security | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
+| DC-027 | security | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
+| DC-012 | security | HØY | open | S |
+| DC-013 | dependencies | HØY | open | M |
+| DC-014 | migrations | HØY | open | M |
+| DC-015 | test-gap | MEDIUM | open | L |
+| DC-016 | observability | MEDIUM | open | M |
+| DC-017 | schema-hygiene | LAV | open | M |
+| DC-018 | rls | HARD-BLOCK | open | M |
+| DC-019 | rls | HARD-BLOCK | open | M |
+| DC-020 | rls | HØY | open | S |
+| DC-021 | rls | MEDIUM | open | M |
+| DC-022 | db-health | MEDIUM | open | S |
+| DC-023 | schema-drift | HØY | open | M |
+| DC-024 | data-truth | MEDIUM | open | S |
+| DC-025 | architecture | LAV | open | S |
+| DC-026 | tripletex | HØY | open | M |
 
 ### Baseline-duplikater (ikke re-funn, status uendret)
 
@@ -638,6 +650,15 @@ Effort: M
 - `invoice.reverse` handler — **lukket K2 2026-05-22**
 - Sentry end-to-end — **lukket H1 2026-05-22**
 - 259→262 migrasjonsfiler vs prod ledger — **oppdatert tall DC-014**
+
+---
+
+## Lessons learned (PR-X1)
+
+- **Diagnose før fix:** B3 over-flagging i Fase 2 ble avdekket i Fase 2.5 — route-inventory + manuell klassifisering ga korrekt allowlist.
+- **Invariant-tester forhindrer drift:** Commit 10 la til allowlist-regression-tester (`api-allowlist-regression.test.ts`) — fanger cron-ruter som mangler i allowlist.
+- **Staging-alias-drift maskerer security-bugs:** Fase 4.5c viste at `staging.app.lunchportalen.no` pekte på 4d gammel deploy uten DC-011 — alltid verifiser `x-lp-mw-bypass: allowlist` før GO.
+- **Preview vs staging env:** Staging-branch deploy bruker Vercel **Preview** env — `CRON_SECRET` må pulls fra Preview, ikke separat staging-env.
 
 ---
 
@@ -653,4 +674,4 @@ Effort: M
 
 ---
 
-*Generert av deep-crawl audit 2026-05-23. READ-ONLY — ingen DB-mutasjoner, ingen kodeendringer.*
+*Generert av deep-crawl audit 2026-05-23. Oppdatert PR-X1 Fase 5 prod-close 2026-05-23.*
