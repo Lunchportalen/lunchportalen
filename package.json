@@ -107,7 +107,7 @@
     "graphlib": "^2.1.8",
     "lucide-react": "^0.460.0",
     "ml-matrix": "^6.12.1",
-    "next": "15.5.10",
+    "next": "15.5.18",
     "nodemailer": "^7.0.13",
     "onnxruntime-node": "^1.24.3",
     "openai": "^4.104.0",

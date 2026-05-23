@@ -245,11 +245,8 @@ Effort: S
 
 **npm audit --omit=dev:** 11 vulnerabilities (2 high, 9 moderate) — bl.a. `ws` moderate (GHSA-58qx-3vcg-4xpx).
 
-[DC-013] dependencies | HØY  
-Bevis: `npm audit --omit=dev` 2026-05-23  
-Beskrivelse: 2 HIGH CVEs i prod dependency tree (transitive).  
-Anbefaling: `npm audit fix`; verifiser med full testsuite.  
-Effort: M
+[DC-013] dependencies | HØY — **LUKKET** (quick win, prod 2026-05-23)  
+Bevis: `lodash` 4.17.23→4.18.1 (audit fix), `next` 15.5.10→15.5.18 (patch). Se `docs/audit/dc-013-npm-cves.md`.
 
 [DC-014] migrations | HØY  
 Bevis: SQL — prod 95, staging 59, repo 262 filer  
@@ -625,7 +622,7 @@ Bevis: `TRIPLETEX_FLOW_1_ENABLED` fail-closed; Flow 2 upåvirket. Se `docs/audit
 | DC-011 | security | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
 | DC-027 | security | HARD-BLOCK | **LUKKET** (prod 2026-05-23) | — |
 | DC-012 | security | HØY | open | S |
-| DC-013 | dependencies | HØY | open | M |
+| DC-013 | dependencies | HØY | **LUKKET** (quick win, prod 2026-05-23) | — |
 | DC-014 | migrations | HØY | open | M |
 | DC-015 | test-gap | MEDIUM | open | L |
 | DC-016 | observability | MEDIUM | open | M |
