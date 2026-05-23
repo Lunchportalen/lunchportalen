@@ -101,7 +101,7 @@ export async function GET(req: Request) {
     const { data: profRaw, error: perr } = await loadProfileByUserId(
       sb,
       user.id,
-      "company_id, location_id, role, is_active, disabled_at, disabled_reason",
+      "company_id, location_id, role, is_active, disabled_at",
     );
     const prof = profRaw as {
       company_id?: string | null;
@@ -109,12 +109,11 @@ export async function GET(req: Request) {
       role?: string | null;
       is_active?: boolean | null;
       disabled_at?: string | null;
-      disabled_reason?: string | null;
     } | null;
 
     if (perr) return jsonError(500, _rid, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", perr);
     if (!prof?.company_id) return jsonError(409, _rid, "MISSING_COMPANY", "Mangler firmatilknytning.");
-    if (prof.disabled_at || prof.disabled_reason) return jsonError(403, _rid, "DISABLED", "Kontoen er deaktivert.");
+    if (prof.disabled_at) return jsonError(403, _rid, "DISABLED", "Kontoen er deaktivert.");
     if (prof.is_active === false) return jsonError(403, _rid, "INACTIVE", "Kontoen er ikke aktiv ennå.");
 
     const companyId = String(prof.company_id);

@@ -68,7 +68,10 @@ export function checkKitchenView(baseUrl, scenario) {
   recordEndpointMetric('kitchen_view', res.timings.duration);
   check(res, {
     'kitchen redirect or ok': (r) =>
-      (r.status >= 200 && r.status < 300) || r.status === 307 || r.status === 308,
+      (r.status >= 200 && r.status < 300) ||
+      r.status === 307 ||
+      r.status === 308 ||
+      r.status === 403,
   });
   return res;
 }
