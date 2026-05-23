@@ -33,8 +33,16 @@ function jsonErr(rid: string, status: number, error: string, message: string) {
   return NextResponse.json({ ok: false, rid, error, message, status }, { status });
 }
 
+function devRouteBlocked() {
+  return new Response(null, { status: 404 });
+}
+
 export async function POST(req: NextRequest) {
   const rid = makeRid();
+
+  if (process.env.NODE_ENV === "production" || !process.env.LP_DEV_BYPASS) {
+    return devRouteBlocked();
+  }
 
   if (!isLocalDevAuthBypassEnabled()) {
     return jsonErr(rid, 403, "DEV_AUTH_DISABLED", "Lokal utviklingsøkt er ikke aktivert i dette miljøet.");
