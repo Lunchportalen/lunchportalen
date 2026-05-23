@@ -17,14 +17,22 @@ function readKey(file, key) {
   return '';
 }
 
+function generateBypassSecret() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = crypto.randomBytes(32);
+  let out = '';
+  for (let i = 0; i < 32; i += 1) out += chars[bytes[i] % chars.length];
+  return out;
+}
+
 const current = readKey('.env.local', 'VERCEL_AUTOMATION_BYPASS_SECRET');
 const clean = current.replace(/[\r\n]+/g, '').trim();
-const ok = /^[0-9a-f]{64}$/i.test(clean);
+const ok = /^[0-9a-zA-Z]{32,64}$/.test(clean);
 
 console.log('local len', clean.length, 'prefix', clean.slice(0, 6), 'valid', ok);
 
 if (!ok) {
-  const secret = crypto.randomBytes(32).toString('hex');
+  const secret = generateBypassSecret();
   mergeEnvLocal({ VERCEL_AUTOMATION_BYPASS_SECRET: secret });
   fs.writeFileSync('.dc028-secret.tmp', secret, 'utf8');
   console.log('regenerated len', secret.length, 'prefix', secret.slice(0, 6));
