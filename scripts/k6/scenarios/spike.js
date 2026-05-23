@@ -24,7 +24,7 @@ export const spikeScenario = {
 
 export const options = {
   scenarios: spikeScenario,
-  thresholds: getThresholds(),
+  thresholds: getThresholds(__ENV.K6_TAG_ENV || 'staging'),
   tags: { suite: 'k6-live', phase: 'spike' },
 };
 
