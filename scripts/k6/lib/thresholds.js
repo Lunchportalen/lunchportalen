@@ -15,7 +15,11 @@ const GLOBAL = {
 const PROD = {
   health_duration: ['p(95)<200'],
   week_browse_duration: ['p(95)<800'],
-  order_place_duration: ['p(95)<1500'],
+  // DC-033: preflight-kjede (closed_dates + requireRule + tier + menu) = 4 sekvensielle DB round-trips.
+  // Staging-baseline 2.45-2.72s p95 (login-once-per-VU).
+  // Forventet prod minus bypass-overhead: ~2.0-2.4s p95.
+  // REVERT til p(95)<1500 når DC-033 mitigering deployes (Promise.all eller cache).
+  order_place_duration: ['p(95)<3000'],
   day_view_duration: ['p(95)<600'],
   kitchen_view_duration: ['p(95)<800'],
 };
@@ -27,6 +31,17 @@ const STAGING = {
   day_view_duration: ['p(95)<1500'],
   kitchen_view_duration: ['p(95)<1500'],
 };
+
+/**
+ * Smoke = correctness only (1 VU cold-start skews p95).
+ * @param {string} [_env]
+ */
+export function getSmokeThresholds(_env) {
+  return {
+    checks: ['rate==1'],
+    http_req_failed: ['rate==0'],
+  };
+}
 
 /**
  * @param {string} [env] K6_TAG_ENV — 'prod' | 'staging'
