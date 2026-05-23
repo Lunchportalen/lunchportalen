@@ -173,7 +173,7 @@ export function recoveryExec() {
 
 export const options = {
   scenarios,
-  thresholds: getThresholds(),
+  thresholds: getThresholds(__ENV.K6_TAG_ENV || 'staging'),
   tags: {
     suite: 'k6-live',
     env: config.tagEnv,

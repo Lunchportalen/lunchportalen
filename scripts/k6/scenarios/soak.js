@@ -24,7 +24,7 @@ export const soakScenario = {
 
 export const options = {
   scenarios: soakScenario,
-  thresholds: getThresholds(),
+  thresholds: getThresholds(__ENV.K6_TAG_ENV || 'staging'),
   tags: { suite: 'k6-live', phase: 'soak' },
 };
 
