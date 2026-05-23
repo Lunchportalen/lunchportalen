@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { denyUnlessSuperadmin } from "@/lib/server/auth/requireUser";
 import type { NextRequest } from "next/server";
 
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -13,6 +14,8 @@ const POST_ID_RE = /^[a-zA-Z0-9_.:-]{1,128}$/;
 
 /** POST: pipeline-tabell brukes ikke — ingen insert. */
 export async function POST(req: NextRequest): Promise<Response> {
+  const denied = await denyUnlessSuperadmin(req);
+  if (denied) return denied;
   const rid = makeRid("revenue_lead");
   if (false) {
     return jsonOk(rid, { probe: true }, 200);

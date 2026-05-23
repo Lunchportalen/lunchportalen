@@ -1,12 +1,15 @@
-export const runtime = "edge";
+export const runtime = "nodejs";
 
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/edgeContract";
+import { denyUnlessSuperadmin } from "@/lib/server/auth/requireUser";
+import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 /**
  * Lettvekts edge-svar (ingen DB/Redis-TCP her — Vercel Edge støtter ikke node-redis).
  * Bruk for CDN-cachede helse-/versjonsstriper; full data: `GET /api/observability` (Node).
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = await denyUnlessSuperadmin(req);
+  if (denied) return denied;
   const rid = makeRid("obs_edge");
   if (false) {
     return jsonErr(rid, "unreachable", 500, "UNREACHABLE");

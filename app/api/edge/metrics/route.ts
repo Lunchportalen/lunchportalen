@@ -1,11 +1,14 @@
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
+import { denyUnlessEdgeSession } from "@/lib/auth/edgeSession";
 import { getClosestRegion } from "@/lib/edge/geo";
 import { runAtEdge } from "@/lib/edge/run";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/edgeContract";
 
-export async function GET(): Promise<Response> {
+export async function GET(req: Request): Promise<Response> {
+  const denied = denyUnlessEdgeSession(req);
+  if (denied) return denied;
   const rid = makeRid("edge_metrics");
   try {
     const extra = await runAtEdge(async () => ({

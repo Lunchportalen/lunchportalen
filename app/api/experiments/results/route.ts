@@ -1,3 +1,4 @@
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { calculateResults } from "@/lib/experiments/evaluator";
 import { makeRid } from "@/lib/http/rid";
 
@@ -27,6 +28,8 @@ function isUuid(v: string): boolean {
 }
 
 export async function GET(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   const requestId = makeRid("exp_results");
   const url = new URL(req.url);
   const experimentId = (url.searchParams.get("experimentId") ?? "").trim();

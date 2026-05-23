@@ -1,7 +1,10 @@
 // @enterprise-exclude
+import { denyUnlessSession } from "@/lib/server/auth/requireUser";
 import { makeRid, jsonErr, jsonOk } from "@/lib/http/respond";
 
 export async function POST(req: Request) {
+  const denied = await denyUnlessSession(req);
+  if (denied) return denied;
   const rid = makeRid("ai_score");
 
   try {

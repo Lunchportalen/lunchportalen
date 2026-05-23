@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { denyUnlessSuperadmin } from "@/lib/server/auth/requireUser";
 import type { NextRequest } from "next/server";
 
 import { auditLog } from "@/lib/core/audit";
@@ -10,6 +11,8 @@ import { generateFollowUp } from "@/lib/sales/followup";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 
 export async function POST(req: NextRequest): Promise<Response> {
+  const denied = await denyUnlessSuperadmin(req);
+  if (denied) return denied;
   const rid = makeRid("sales_lead");
   try {
     let body: unknown;
