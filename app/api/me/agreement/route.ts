@@ -33,7 +33,7 @@ export async function GET() {
       sb
         .from("profiles")
         .select("company_id, role, is_active, disabled_at")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .maybeSingle()
     )) as { data: ProfileRow | null; error: any };
 

@@ -32,7 +32,7 @@ export async function GET() {
       supabase
         .from("profiles")
         .select("role, company_id, is_disabled")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .maybeSingle()
     )) as { data: ProfileRow | null; error: any };
 

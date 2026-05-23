@@ -21,7 +21,7 @@ export async function GET() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
   // Kun roller som faktisk kan bestille / sette scope
