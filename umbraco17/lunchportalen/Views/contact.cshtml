@@ -1,11 +1,33 @@
 ﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using System.Linq
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Extensions
 
 @{
     Layout = "~/Views/Partials/_Layout.cshtml";
 
-    var blocks = Model.Value<BlockListModel>("contentBlocks");
+    var blocksProp = Model?.Properties?.FirstOrDefault(p => p.Alias == "contentBlocks");
+    var editorAlias = blocksProp?.PropertyType?.PropertyEditorAlias ?? string.Empty;
+
+    BlockListModel? blocks = null;
+    BlockGridModel? grid = null;
+
+    if (editorAlias.Contains("BlockList", StringComparison.OrdinalIgnoreCase))
+    {
+        blocks = Model?.Value<BlockListModel>("contentBlocks");
+    }
+    else if (editorAlias.Contains("BlockGrid", StringComparison.OrdinalIgnoreCase))
+    {
+        grid = Model?.Value<BlockGridModel>("contentBlocks");
+    }
+    else
+    {
+        try { blocks = Model?.Value<BlockListModel>("contentBlocks"); } catch { /* wrong editor type */ }
+        if (blocks == null || !blocks.Any())
+        {
+            try { grid = Model?.Value<BlockGridModel>("contentBlocks"); } catch { /* wrong editor type */ }
+        }
+    }
 }
 
 @section Head {
@@ -16,5 +38,11 @@
 {
     <div class="lp-contact-page">
         @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+    </div>
+}
+else if (grid != null && grid.Any())
+{
+    <div class="lp-contact-page">
+        @await Html.GetBlockGridHtmlAsync(Model, "contentBlocks")
     </div>
 }
