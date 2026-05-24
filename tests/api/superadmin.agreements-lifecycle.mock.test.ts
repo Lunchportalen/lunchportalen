@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const requireRoleOr403Mock = vi.hoisted(() => vi.fn());
@@ -76,8 +76,13 @@ function setupCommon() {
 
 describe("superadmin agreements lifecycle API contract (mocked)", () => {
   beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost");
     vi.clearAllMocks();
     setupCommon();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   test("create pending is deprecated and returns 410", async () => {
