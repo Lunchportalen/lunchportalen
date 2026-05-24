@@ -1,0 +1,5177 @@
+{
+  "lib": [
+    {
+      "path": "_internalProvider.ts",
+      "loc": 500,
+      "class": "REFACTOR",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": "Single OpenAI provider — circuit breaker + cost ceiling."
+    },
+    {
+      "path": "actions/mapDecisionToAction.ts",
+      "loc": 104,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "adaptiveLearning.ts",
+      "loc": 914,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "adaptiveScoring.ts",
+      "loc": 131,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "adsEngine.ts",
+      "loc": 73,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "No proven prod UI consumer."
+    },
+    {
+      "path": "agents/ceoAgent.ts",
+      "loc": 30,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "agents/cmoAgent.ts",
+      "loc": 32,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "agents/contentHealthDaily.ts",
+      "loc": 140,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "agents/cooAgent.ts",
+      "loc": 20,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "agents/ctoAgent.ts",
+      "loc": 30,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "agents/index.ts",
+      "loc": 15,
+      "class": "INVESTIGATE",
+      "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "agents-boardroom",
+      "refactorNote": null
+    },
+    {
+      "path": "aiEntrypointContext.ts",
+      "loc": 50,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "aiPageGuardrails.ts",
+      "loc": 47,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "analysis/contentHealth.ts",
+      "loc": 72,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "anomaly.ts",
+      "loc": 52,
+      "class": "REFACTOR",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": "Not wired to customer SLA alerts."
+    },
+    {
+      "path": "attribution.ts",
+      "loc": 31,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "attribution/aggregationEngine.ts",
+      "loc": 62,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Attribution ROI stubs.",
+      "cutGroup": "attribution-roi-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "attribution/attributionModel.ts",
+      "loc": 47,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "attribution/insightEngine.ts",
+      "loc": 19,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Attribution ROI stubs.",
+      "cutGroup": "attribution-roi-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "attribution/roiEngine.ts",
+      "loc": 41,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Attribution ROI stubs.",
+      "cutGroup": "attribution-roi-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "attribution/storeAttribution.ts",
+      "loc": 42,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "audience.ts",
+      "loc": 23,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "autoImprove.ts",
+      "loc": 82,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/automationLayer.ts",
+      "loc": 69,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/autonomyAttribution.ts",
+      "loc": 39,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/autonomyLearning.ts",
+      "loc": 44,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/autonomyLog.ts",
+      "loc": 60,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/autonomyPolicy.ts",
+      "loc": 63,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/collectDecisions.ts",
+      "loc": 37,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomy/runner.ts",
+      "loc": 137,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": "Imports meta-engines — decouple before prod expand."
+    },
+    {
+      "path": "autonomy/types.ts",
+      "loc": 50,
+      "class": "INVESTIGATE",
+      "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "autonomy-loop",
+      "refactorNote": null
+    },
+    {
+      "path": "autonomyController.ts",
+      "loc": 65,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "batchApply.ts",
+      "loc": 145,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "billing.ts",
+      "loc": 271,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "blockFactory.ts",
+      "loc": 138,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "blockSchema.ts",
+      "loc": 411,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "buildHomeFromIntentBody.ts",
+      "loc": 131,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "businessMetrics.ts",
+      "loc": 97,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "businessObjective.ts",
+      "loc": 985,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "capital/actionGenerator.ts",
+      "loc": 23,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/actionPriority.ts",
+      "loc": 14,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/allocationEngine.ts",
+      "loc": 43,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/capitalOutput.ts",
+      "loc": 27,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/capitalState.ts",
+      "loc": 69,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/executionEngine.ts",
+      "loc": 20,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/executionPlan.ts",
+      "loc": 18,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/investmentAreas.ts",
+      "loc": 11,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/riskEngine.ts",
+      "loc": 22,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "capital/roiEngine.ts",
+      "loc": 22,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+      "cutGroup": "capital-allocation-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/attribution.ts",
+      "loc": 36,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/automationEngine.ts",
+      "loc": 63,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/ceoLog.ts",
+      "loc": 55,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/decisionEngine.ts",
+      "loc": 169,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/growthEngine.ts",
+      "loc": 53,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/learning.ts",
+      "loc": 43,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/policyEngine.ts",
+      "loc": 51,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceo/runner.ts",
+      "loc": 131,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": "Pillar 1 defer — gate CEO autopilot behind explicit env."
+    },
+    {
+      "path": "ceo/types.ts",
+      "loc": 66,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "ceoExecutor.ts",
+      "loc": 27,
+      "class": "INVESTIGATE",
+      "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "ceo-autonomy-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "cmsAiActions.ts",
+      "loc": 14,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "cmsAiEngine.ts",
+      "loc": 278,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Strict block validation on every LLM response."
+    },
+    {
+      "path": "cmsAiPrompts.ts",
+      "loc": 105,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "cmsAiTenant.ts",
+      "loc": 50,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "cmsAiTypes.ts",
+      "loc": 43,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/actionTypes.ts",
+      "loc": 62,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/anomaly.ts",
+      "loc": 69,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/automationEngine.ts",
+      "loc": 178,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/decisionEngine.ts",
+      "loc": 135,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/memory.ts",
+      "loc": 48,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/policyEngine.ts",
+      "loc": 244,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/safety.ts",
+      "loc": 48,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "company/types.ts",
+      "loc": 106,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "config.ts",
+      "loc": 41,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "context.ts",
+      "loc": 98,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "context/systemContext.ts",
+      "loc": 92,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "continuation.ts",
+      "loc": 66,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "control/controlGate.ts",
+      "loc": 49,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/ethicsEngine.ts",
+      "loc": 15,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/explainEngine.ts",
+      "loc": 18,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/governanceEngine.ts",
+      "loc": 18,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/killSwitch.ts",
+      "loc": 11,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/normalizeControlType.ts",
+      "loc": 19,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/overrideEngine.ts",
+      "loc": 12,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "control/riskEngine.ts",
+      "loc": 13,
+      "class": "CUT",
+      "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "controlTower/actionRegistry.ts",
+      "loc": 25,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "controlTower/controlExecutor.ts",
+      "loc": 109,
+      "class": "INVESTIGATE",
+      "justification": "Control-tower meta (non-core lunch) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "control-tower-meta",
+      "refactorNote": null
+    },
+    {
+      "path": "conversion/engine.ts",
+      "loc": 67,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "conversionGenerator.ts",
+      "loc": 57,
+      "class": "REFACTOR",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": "Pillar 1 — gate LLM cost."
+    },
+    {
+      "path": "copilot.ts",
+      "loc": 92,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "croAnalyzer.ts",
+      "loc": 97,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "crossSurfaceLearning.ts",
+      "loc": 44,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "ctaOptimizer.ts",
+      "loc": 11,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "dashboard.ts",
+      "loc": 88,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "dashboardEngine.ts",
+      "loc": 232,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "debounce.ts",
+      "loc": 14,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "decisionEngine.ts",
+      "loc": 271,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "decisionId.ts",
+      "loc": 13,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "decisionLog.ts",
+      "loc": 56,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "decisions.ts",
+      "loc": 39,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "demandData.ts",
+      "loc": 103,
+      "class": "KEEP",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "demandEngine.ts",
+      "loc": 224,
+      "class": "REFACTOR",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": "V1 heuristic live; ML Layer 3 deferred."
+    },
+    {
+      "path": "demandInsights.ts",
+      "loc": 114,
+      "class": "REFACTOR",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": "Dish signals live; no CO₂ weighting yet."
+    },
+    {
+      "path": "design/analyzeDesign.ts",
+      "loc": 135,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/applyDesignChanges.ts",
+      "loc": 103,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/designMetrics.ts",
+      "loc": 75,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/designPolicy.ts",
+      "loc": 116,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/designSettingsOptimizer.ts",
+      "loc": 312,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/lastDesignApply.ts",
+      "loc": 48,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/suggestDesignImprovements.ts",
+      "loc": 103,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "design/types.ts",
+      "loc": 55,
+      "class": "KEEP",
+      "justification": "Core design/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "designAnalyzer.ts",
+      "loc": 203,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "designGenerator.ts",
+      "loc": 115,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "designTokens.ts",
+      "loc": 71,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "editorRewrite.ts",
+      "loc": 88,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Orphan — zero prod/lib importers.",
+      "cutGroup": "orphan-unwired",
+      "refactorNote": null
+    },
+    {
+      "path": "editorTextSuggest.ts",
+      "loc": 85,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Align with responseSafety scrub rules."
+    },
+    {
+      "path": "engine.ts",
+      "loc": 119,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "enrichPageBuilderBlocks.ts",
+      "loc": 67,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "enterprise/buildDashboardPayload.ts",
+      "loc": 91,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "enterprise/enterpriseLog.ts",
+      "loc": 48,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "enterprise/pageInsights.ts",
+      "loc": 79,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "entitlements.ts",
+      "loc": 39,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "evaluator.ts",
+      "loc": 36,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "events/triggers.ts",
+      "loc": 22,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "evolve.ts",
+      "loc": 38,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "experienceModel.ts",
+      "loc": 65,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "experiment.ts",
+      "loc": 77,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Verify tenant isolation on experiment queries."
+    },
+    {
+      "path": "experimentGenerator.ts",
+      "loc": 29,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "experimentWinnerDecision.ts",
+      "loc": 227,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "experiments/aiExperimentsRepo.ts",
+      "loc": 279,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "experiments/analytics.ts",
+      "loc": 77,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "experiments/revenueExperimentHints.ts",
+      "loc": 66,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "fallbackHandler.ts",
+      "loc": 118,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "feedback.ts",
+      "loc": 256,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "funnelEngine.ts",
+      "loc": 111,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Growth funnel — confirm consumer before expand."
+    },
+    {
+      "path": "generateVariant.ts",
+      "loc": 31,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "generator.ts",
+      "loc": 99,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "getClient.ts",
+      "loc": 19,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "ghostText.ts",
+      "loc": 27,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "governance/aiPolicy.ts",
+      "loc": 124,
+      "class": "KEEP",
+      "justification": "Core governance/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "governanceApplySafety.ts",
+      "loc": 274,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "governor.ts",
+      "loc": 46,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "image.ts",
+      "loc": 51,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "improveContent.ts",
+      "loc": 21,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "improvementEngine.ts",
+      "loc": 162,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "industry.ts",
+      "loc": 25,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "inline.ts",
+      "loc": 50,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "insertAiSuggestionRow.ts",
+      "loc": 91,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "insightsEngine.ts",
+      "loc": 59,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/confidence.ts",
+      "loc": 70,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/index.ts",
+      "loc": 98,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/learning.ts",
+      "loc": 73,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/patterns.ts",
+      "loc": 363,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/query.ts",
+      "loc": 89,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/scale.ts",
+      "loc": 291,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/scaleApply.ts",
+      "loc": 270,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/scaleDecision.ts",
+      "loc": 112,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/scalePolicy.ts",
+      "loc": 86,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/signals.ts",
+      "loc": 153,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/store.ts",
+      "loc": 217,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/systemIntelligence.ts",
+      "loc": 71,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/trends.ts",
+      "loc": 95,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "intelligence/types.ts",
+      "loc": 80,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "jobs/backoff.ts",
+      "loc": 12,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "jobs/claim.ts",
+      "loc": 49,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "jobs/runner.ts",
+      "loc": 227,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "keywords.ts",
+      "loc": 41,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "layout.ts",
+      "loc": 67,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "layoutRules.ts",
+      "loc": 32,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "learning.ts",
+      "loc": 211,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "learningBySurface.ts",
+      "loc": 41,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "logActivity.ts",
+      "loc": 74,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "logging/aiActivityLogRow.ts",
+      "loc": 99,
+      "class": "KEEP",
+      "justification": "Core logging/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "logging/aiExecutionLog.ts",
+      "loc": 117,
+      "class": "KEEP",
+      "justification": "Core logging/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "logging/insertAiActivityLogCompat.ts",
+      "loc": 58,
+      "class": "KEEP",
+      "justification": "Core logging/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "marketSignals.ts",
+      "loc": 56,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "memory/aiMemory.ts",
+      "loc": 162,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "memory/recordOutcome.ts",
+      "loc": 137,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "memoryDecay.ts",
+      "loc": 9,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "menuToIngredients.ts",
+      "loc": 170,
+      "class": "KEEP",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "metrics.ts",
+      "loc": 60,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "normalizeCmsBlocks.ts",
+      "loc": 168,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "objectionInsights.ts",
+      "loc": 28,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "operationsFeedback.ts",
+      "loc": 59,
+      "class": "KEEP",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "opportunities.ts",
+      "loc": 144,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "optimize.ts",
+      "loc": 65,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "optimizer.ts",
+      "loc": 111,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "orchestration.ts",
+      "loc": 150,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "outcomeEvaluator.ts",
+      "loc": 23,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "pageBuilder.ts",
+      "loc": 172,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "High token surface — cap blocks + validate."
+    },
+    {
+      "path": "pageBuilderPrompts.ts",
+      "loc": 96,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "pageInsightLog.ts",
+      "loc": 72,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "pageIntent.ts",
+      "loc": 122,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "pageScore.ts",
+      "loc": 149,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "performance.ts",
+      "loc": 54,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "policy.ts",
+      "loc": 22,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "policyEngine.ts",
+      "loc": 199,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "portionAllocation.ts",
+      "loc": 34,
+      "class": "KEEP",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "pre-evaluate.ts",
+      "loc": 42,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "predictiveModel.ts",
+      "loc": 42,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "predictiveRiskEngine.ts",
+      "loc": 17,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "predictor.ts",
+      "loc": 75,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "pricing.ts",
+      "loc": 83,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "10% heuristic only — not agreement-linked."
+    },
+    {
+      "path": "pricing/engine.ts",
+      "loc": 80,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "prioritization.ts",
+      "loc": 10,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "profit/engine.ts",
+      "loc": 137,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "profit/profitState.ts",
+      "loc": 61,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "profitability.ts",
+      "loc": 274,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "prompts.ts",
+      "loc": 40,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "rateLimit.ts",
+      "loc": 104,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "recommendationActions.ts",
+      "loc": 1028,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "recommendations.ts",
+      "loc": 49,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "resolveAiSuggestionFkIds.ts",
+      "loc": 61,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "resolveRunnerCompanyForBackoffice.ts",
+      "loc": 39,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "resources/actionCost.ts",
+      "loc": 28,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "resources/capacityEngine.ts",
+      "loc": 42,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "resources/matchEngine.ts",
+      "loc": 19,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "resources/resourceModel.ts",
+      "loc": 35,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "resources/resourceOrchestrator.ts",
+      "loc": 26,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "resources/scheduler.ts",
+      "loc": 15,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Resource orchestration stubs.",
+      "cutGroup": "resources-orchestration-stubs",
+      "refactorNote": null
+    },
+    {
+      "path": "responseSafety.ts",
+      "loc": 142,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "retention/engine.ts",
+      "loc": 62,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "revenue/analyzePerformance.ts",
+      "loc": 143,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "revenue/applyRevenueActions.ts",
+      "loc": 79,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "revenue/attribution.ts",
+      "loc": 108,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "revenue/decisionEngine.ts",
+      "loc": 94,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "revenue/policy.ts",
+      "loc": 75,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+      "cutGroup": "meta-engines-dirs",
+      "refactorNote": null
+    },
+    {
+      "path": "rewrite.ts",
+      "loc": 61,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "roadmapEngine.ts",
+      "loc": 34,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "role.ts",
+      "loc": 23,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "run.ts",
+      "loc": 88,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "runner.ts",
+      "loc": 569,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Add timeout, Redis rate limit, PII scrub (P2-4)."
+    },
+    {
+      "path": "runnerGovernance.ts",
+      "loc": 382,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Profitability gate not enterprise-hardened."
+    },
+    {
+      "path": "safeApply.ts",
+      "loc": 57,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "safety/aiSafetyFilter.ts",
+      "loc": 156,
+      "class": "KEEP",
+      "justification": "Core safety/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/errors.ts",
+      "loc": 52,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/events.ts",
+      "loc": 46,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/index.ts",
+      "loc": 45,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/payloads.ts",
+      "loc": 275,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/schemaRef.ts",
+      "loc": 9,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "schema/validate.ts",
+      "loc": 218,
+      "class": "KEEP",
+      "justification": "Core schema/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "segmentation/engine.ts",
+      "loc": 88,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "seoAnalyzer.ts",
+      "loc": 159,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "seoEngine.ts",
+      "loc": 142,
+      "class": "REFACTOR",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": "Clarify deterministic vs LLM paths."
+    },
+    {
+      "path": "signalEngine.ts",
+      "loc": 18,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "signals.ts",
+      "loc": 62,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "simulator.ts",
+      "loc": 59,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "siteAnalysis.ts",
+      "loc": 122,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "siteGrowthLog.ts",
+      "loc": 32,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "socialStrategy.ts",
+      "loc": 42,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "strategicCeoDecision.ts",
+      "loc": 30,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "strategicContext.ts",
+      "loc": 76,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "strategicPrioritizer.ts",
+      "loc": 20,
+      "class": "CUT",
+      "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "strategyEngine.ts",
+      "loc": 264,
+      "class": "INVESTIGATE",
+      "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+      "cutGroup": "meta-engines-core",
+      "refactorNote": null
+    },
+    {
+      "path": "strictBlockValidator.ts",
+      "loc": 83,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "suggestMotor.ts",
+      "loc": 391,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "systemState.ts",
+      "loc": 35,
+      "class": "KEEP",
+      "justification": "Transitive dependency of live P2 route (200 without LLM).",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/abGenerateVariants.ts",
+      "loc": 257,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/blockBuilder.ts",
+      "loc": 186,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/contentMaintainPage.ts",
+      "loc": 257,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/imageGenerateBrandSafe.ts",
+      "loc": 74,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/imageImproveMetadata.ts",
+      "loc": 100,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/landingGenerateSections.ts",
+      "loc": 159,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/layoutSuggestions.ts",
+      "loc": 320,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/pageBuilder.ts",
+      "loc": 292,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/registry.ts",
+      "loc": 120,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/seoOptimizePage.ts",
+      "loc": 162,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tools/translateBlocks.ts",
+      "loc": 143,
+      "class": "KEEP",
+      "justification": "Core tools/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "tracking.ts",
+      "loc": 81,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "transientAiJsonCache.ts",
+      "loc": 46,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "types.ts",
+      "loc": 93,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "usage.ts",
+      "loc": 229,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "usageOverview.ts",
+      "loc": 273,
+      "class": "KEEP",
+      "justification": "Imported by prod app route/component on path to user response.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "validate.ts",
+      "loc": 62,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "validateComponentOutput.ts",
+      "loc": 82,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "validation/validateAiOutput.ts",
+      "loc": 203,
+      "class": "KEEP",
+      "justification": "Core validation/ infrastructure in prod import closure.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "variantGenerator.ts",
+      "loc": 145,
+      "class": "KEEP",
+      "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+      "cutGroup": null,
+      "refactorNote": null
+    },
+    {
+      "path": "wasteTracker.ts",
+      "loc": 98,
+      "class": "REFACTOR",
+      "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+      "cutGroup": null,
+      "refactorNote": "ESG rollup fail-closed on produced:null — needs production qty."
+    }
+  ],
+  "routes": [
+    {
+      "path": "app/api/ai/analyze/route.ts",
+      "loc": 88,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/block/route.ts",
+      "loc": 177,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/block/score/route.ts",
+      "loc": 49,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/business-engine/route.ts",
+      "loc": 154,
+      "class": "CUT",
+      "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+    },
+    {
+      "path": "app/api/ai/continue/route.ts",
+      "loc": 67,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/copilot/route.ts",
+      "loc": 73,
+      "class": "CUT",
+      "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+    },
+    {
+      "path": "app/api/ai/dashboard/route.ts",
+      "loc": 84,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/decision/route.ts",
+      "loc": 134,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/design/analyze/route.ts",
+      "loc": 90,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/design/generate/route.ts",
+      "loc": 83,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/experiments/route.ts",
+      "loc": 91,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/generate/route.ts",
+      "loc": 110,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/growth/ads/route.ts",
+      "loc": 78,
+      "class": "CUT",
+      "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+    },
+    {
+      "path": "app/api/ai/growth/funnel/route.ts",
+      "loc": 108,
+      "class": "CUT",
+      "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+    },
+    {
+      "path": "app/api/ai/growth/seo/route.ts",
+      "loc": 107,
+      "class": "CUT",
+      "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+    },
+    {
+      "path": "app/api/ai/image/route.ts",
+      "loc": 67,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/inline/route.ts",
+      "loc": 69,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/insights/route.ts",
+      "loc": 81,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/layout/route.ts",
+      "loc": 71,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/learn/route.ts",
+      "loc": 69,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/optimize/route.ts",
+      "loc": 95,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/page/audit/route.ts",
+      "loc": 76,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/page/build/route.ts",
+      "loc": 97,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/page/route.ts",
+      "loc": 71,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/recommendation/apply/route.ts",
+      "loc": 102,
+      "class": "INVESTIGATE",
+      "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+    },
+    {
+      "path": "app/api/ai/recommendation/history/route.ts",
+      "loc": 43,
+      "class": "INVESTIGATE",
+      "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+    },
+    {
+      "path": "app/api/ai/rewrite/route.ts",
+      "loc": 60,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/route.ts",
+      "loc": 19,
+      "class": "INVESTIGATE",
+      "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+    },
+    {
+      "path": "app/api/ai/track/route.ts",
+      "loc": 56,
+      "class": "INVESTIGATE",
+      "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+    },
+    {
+      "path": "app/api/ai/usage/route.ts",
+      "loc": 256,
+      "class": "KEEP",
+      "justification": "Backoffice AI overview reads usage — confirmed UI consumer."
+    }
+  ],
+  "libSummary": {
+    "byClass": {
+      "KEEP": [
+        {
+          "path": "actions/mapDecisionToAction.ts",
+          "loc": 104,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "adaptiveLearning.ts",
+          "loc": 914,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "adaptiveScoring.ts",
+          "loc": 131,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "aiEntrypointContext.ts",
+          "loc": 50,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "aiPageGuardrails.ts",
+          "loc": 47,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "analysis/contentHealth.ts",
+          "loc": 72,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "attribution.ts",
+          "loc": 31,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/attributionModel.ts",
+          "loc": 47,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/storeAttribution.ts",
+          "loc": 42,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "audience.ts",
+          "loc": 23,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "autoImprove.ts",
+          "loc": 82,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "batchApply.ts",
+          "loc": 145,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "billing.ts",
+          "loc": 271,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "blockFactory.ts",
+          "loc": 138,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "blockSchema.ts",
+          "loc": 411,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "buildHomeFromIntentBody.ts",
+          "loc": 131,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "businessMetrics.ts",
+          "loc": 97,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "businessObjective.ts",
+          "loc": 985,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "cmsAiActions.ts",
+          "loc": 14,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "cmsAiPrompts.ts",
+          "loc": 105,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "cmsAiTenant.ts",
+          "loc": 50,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "cmsAiTypes.ts",
+          "loc": 43,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/actionTypes.ts",
+          "loc": 62,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/anomaly.ts",
+          "loc": 69,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/automationEngine.ts",
+          "loc": 178,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/decisionEngine.ts",
+          "loc": 135,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/memory.ts",
+          "loc": 48,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/policyEngine.ts",
+          "loc": 244,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/safety.ts",
+          "loc": 48,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "company/types.ts",
+          "loc": 106,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "config.ts",
+          "loc": 41,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "context.ts",
+          "loc": 98,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "context/systemContext.ts",
+          "loc": 92,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "continuation.ts",
+          "loc": 66,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "controlTower/actionRegistry.ts",
+          "loc": 25,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "conversion/engine.ts",
+          "loc": 67,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "copilot.ts",
+          "loc": 92,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "croAnalyzer.ts",
+          "loc": 97,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "ctaOptimizer.ts",
+          "loc": 11,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "dashboard.ts",
+          "loc": 88,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "dashboardEngine.ts",
+          "loc": 232,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "debounce.ts",
+          "loc": 14,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "decisionEngine.ts",
+          "loc": 271,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "decisionId.ts",
+          "loc": 13,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "decisionLog.ts",
+          "loc": 56,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "decisions.ts",
+          "loc": 39,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "demandData.ts",
+          "loc": 103,
+          "class": "KEEP",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/analyzeDesign.ts",
+          "loc": 135,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/applyDesignChanges.ts",
+          "loc": 103,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/designMetrics.ts",
+          "loc": 75,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/designPolicy.ts",
+          "loc": 116,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/designSettingsOptimizer.ts",
+          "loc": 312,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/lastDesignApply.ts",
+          "loc": 48,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/suggestDesignImprovements.ts",
+          "loc": 103,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "design/types.ts",
+          "loc": 55,
+          "class": "KEEP",
+          "justification": "Core design/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "designAnalyzer.ts",
+          "loc": 203,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "designGenerator.ts",
+          "loc": 115,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "designTokens.ts",
+          "loc": 71,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "engine.ts",
+          "loc": 119,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "enrichPageBuilderBlocks.ts",
+          "loc": 67,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "enterprise/buildDashboardPayload.ts",
+          "loc": 91,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "enterprise/enterpriseLog.ts",
+          "loc": 48,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "enterprise/pageInsights.ts",
+          "loc": 79,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "entitlements.ts",
+          "loc": 39,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "evaluator.ts",
+          "loc": 36,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "evolve.ts",
+          "loc": 38,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "experiments/aiExperimentsRepo.ts",
+          "loc": 279,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "experiments/analytics.ts",
+          "loc": 77,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "experiments/revenueExperimentHints.ts",
+          "loc": 66,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "experimentWinnerDecision.ts",
+          "loc": 227,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "fallbackHandler.ts",
+          "loc": 118,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "feedback.ts",
+          "loc": 256,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "generateVariant.ts",
+          "loc": 31,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "generator.ts",
+          "loc": 99,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "getClient.ts",
+          "loc": 19,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "ghostText.ts",
+          "loc": 27,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "governance/aiPolicy.ts",
+          "loc": 124,
+          "class": "KEEP",
+          "justification": "Core governance/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "governanceApplySafety.ts",
+          "loc": 274,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "governor.ts",
+          "loc": 46,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "image.ts",
+          "loc": 51,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "improveContent.ts",
+          "loc": 21,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "improvementEngine.ts",
+          "loc": 162,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "industry.ts",
+          "loc": 25,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "inline.ts",
+          "loc": 50,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "insertAiSuggestionRow.ts",
+          "loc": 91,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "insightsEngine.ts",
+          "loc": 59,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/confidence.ts",
+          "loc": 70,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/index.ts",
+          "loc": 98,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/learning.ts",
+          "loc": 73,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/patterns.ts",
+          "loc": 363,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/query.ts",
+          "loc": 89,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/scale.ts",
+          "loc": 291,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/scaleApply.ts",
+          "loc": 270,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/scaleDecision.ts",
+          "loc": 112,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/scalePolicy.ts",
+          "loc": 86,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/signals.ts",
+          "loc": 153,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/store.ts",
+          "loc": 217,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/systemIntelligence.ts",
+          "loc": 71,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/trends.ts",
+          "loc": 95,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "intelligence/types.ts",
+          "loc": 80,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "keywords.ts",
+          "loc": 41,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "layout.ts",
+          "loc": 67,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "layoutRules.ts",
+          "loc": 32,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "learning.ts",
+          "loc": 211,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "learningBySurface.ts",
+          "loc": 41,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "logActivity.ts",
+          "loc": 74,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "logging/aiActivityLogRow.ts",
+          "loc": 99,
+          "class": "KEEP",
+          "justification": "Core logging/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "logging/aiExecutionLog.ts",
+          "loc": 117,
+          "class": "KEEP",
+          "justification": "Core logging/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "logging/insertAiActivityLogCompat.ts",
+          "loc": 58,
+          "class": "KEEP",
+          "justification": "Core logging/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "marketSignals.ts",
+          "loc": 56,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "memory/aiMemory.ts",
+          "loc": 162,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "memory/recordOutcome.ts",
+          "loc": 137,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "menuToIngredients.ts",
+          "loc": 170,
+          "class": "KEEP",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "metrics.ts",
+          "loc": 60,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "normalizeCmsBlocks.ts",
+          "loc": 168,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "objectionInsights.ts",
+          "loc": 28,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "operationsFeedback.ts",
+          "loc": 59,
+          "class": "KEEP",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "opportunities.ts",
+          "loc": 144,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "optimize.ts",
+          "loc": 65,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "optimizer.ts",
+          "loc": 111,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "pageBuilderPrompts.ts",
+          "loc": 96,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "pageInsightLog.ts",
+          "loc": 72,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "pageScore.ts",
+          "loc": 149,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "performance.ts",
+          "loc": 54,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "policyEngine.ts",
+          "loc": 199,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "portionAllocation.ts",
+          "loc": 34,
+          "class": "KEEP",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "pricing/engine.ts",
+          "loc": 80,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "prioritization.ts",
+          "loc": 10,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "profit/engine.ts",
+          "loc": 137,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "profit/profitState.ts",
+          "loc": 61,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "profitability.ts",
+          "loc": 274,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "prompts.ts",
+          "loc": 40,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "rateLimit.ts",
+          "loc": 104,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "recommendationActions.ts",
+          "loc": 1028,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "recommendations.ts",
+          "loc": 49,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "resolveAiSuggestionFkIds.ts",
+          "loc": 61,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "resolveRunnerCompanyForBackoffice.ts",
+          "loc": 39,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "responseSafety.ts",
+          "loc": 142,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "rewrite.ts",
+          "loc": 61,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "role.ts",
+          "loc": 23,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "run.ts",
+          "loc": 88,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "safeApply.ts",
+          "loc": 57,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "safety/aiSafetyFilter.ts",
+          "loc": 156,
+          "class": "KEEP",
+          "justification": "Core safety/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/errors.ts",
+          "loc": 52,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/events.ts",
+          "loc": 46,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/index.ts",
+          "loc": 45,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/payloads.ts",
+          "loc": 275,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/schemaRef.ts",
+          "loc": 9,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "schema/validate.ts",
+          "loc": 218,
+          "class": "KEEP",
+          "justification": "Core schema/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "segmentation/engine.ts",
+          "loc": 88,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "seoAnalyzer.ts",
+          "loc": 159,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "signalEngine.ts",
+          "loc": 18,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "signals.ts",
+          "loc": 62,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "simulator.ts",
+          "loc": 59,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "siteAnalysis.ts",
+          "loc": 122,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "siteGrowthLog.ts",
+          "loc": 32,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "socialStrategy.ts",
+          "loc": 42,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "strategicContext.ts",
+          "loc": 76,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "strictBlockValidator.ts",
+          "loc": 83,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "suggestMotor.ts",
+          "loc": 391,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "systemState.ts",
+          "loc": 35,
+          "class": "KEEP",
+          "justification": "Transitive dependency of live P2 route (200 without LLM).",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/abGenerateVariants.ts",
+          "loc": 257,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/blockBuilder.ts",
+          "loc": 186,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/contentMaintainPage.ts",
+          "loc": 257,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/imageGenerateBrandSafe.ts",
+          "loc": 74,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/imageImproveMetadata.ts",
+          "loc": 100,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/landingGenerateSections.ts",
+          "loc": 159,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/layoutSuggestions.ts",
+          "loc": 320,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/pageBuilder.ts",
+          "loc": 292,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/registry.ts",
+          "loc": 120,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/seoOptimizePage.ts",
+          "loc": 162,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tools/translateBlocks.ts",
+          "loc": 143,
+          "class": "KEEP",
+          "justification": "Core tools/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "tracking.ts",
+          "loc": 81,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "transientAiJsonCache.ts",
+          "loc": 46,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "types.ts",
+          "loc": 93,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "usage.ts",
+          "loc": 229,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "usageOverview.ts",
+          "loc": 273,
+          "class": "KEEP",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "validate.ts",
+          "loc": 62,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "validateComponentOutput.ts",
+          "loc": 82,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "validation/validateAiOutput.ts",
+          "loc": 203,
+          "class": "KEEP",
+          "justification": "Core validation/ infrastructure in prod import closure.",
+          "cutGroup": null,
+          "refactorNote": null
+        },
+        {
+          "path": "variantGenerator.ts",
+          "loc": 145,
+          "class": "KEEP",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": null
+        }
+      ],
+      "CUT": [
+        {
+          "path": "attribution/aggregationEngine.ts",
+          "loc": 62,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/insightEngine.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/roiEngine.ts",
+          "loc": 41,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/actionGenerator.ts",
+          "loc": 23,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/actionPriority.ts",
+          "loc": 14,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/allocationEngine.ts",
+          "loc": 43,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/capitalOutput.ts",
+          "loc": 27,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/capitalState.ts",
+          "loc": 69,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/executionEngine.ts",
+          "loc": 20,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/executionPlan.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/investmentAreas.ts",
+          "loc": 11,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/riskEngine.ts",
+          "loc": 22,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/roiEngine.ts",
+          "loc": 22,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "control/controlGate.ts",
+          "loc": 49,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/ethicsEngine.ts",
+          "loc": 15,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/explainEngine.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/governanceEngine.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/killSwitch.ts",
+          "loc": 11,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/normalizeControlType.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/overrideEngine.ts",
+          "loc": 12,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/riskEngine.ts",
+          "loc": 13,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "crossSurfaceLearning.ts",
+          "loc": 44,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "editorRewrite.ts",
+          "loc": 88,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Orphan — zero prod/lib importers.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "experienceModel.ts",
+          "loc": 65,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "memoryDecay.ts",
+          "loc": 9,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "outcomeEvaluator.ts",
+          "loc": 23,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "predictiveModel.ts",
+          "loc": 42,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "predictiveRiskEngine.ts",
+          "loc": 17,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/actionCost.ts",
+          "loc": 28,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/capacityEngine.ts",
+          "loc": 42,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/matchEngine.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/resourceModel.ts",
+          "loc": 35,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/resourceOrchestrator.ts",
+          "loc": 26,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/scheduler.ts",
+          "loc": 15,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "roadmapEngine.ts",
+          "loc": 34,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "strategicPrioritizer.ts",
+          "loc": 20,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        }
+      ],
+      "REFACTOR": [
+        {
+          "path": "_internalProvider.ts",
+          "loc": 500,
+          "class": "REFACTOR",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": "Single OpenAI provider — circuit breaker + cost ceiling."
+        },
+        {
+          "path": "adsEngine.ts",
+          "loc": 73,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "No proven prod UI consumer."
+        },
+        {
+          "path": "anomaly.ts",
+          "loc": 52,
+          "class": "REFACTOR",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": "Not wired to customer SLA alerts."
+        },
+        {
+          "path": "cmsAiEngine.ts",
+          "loc": 278,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Strict block validation on every LLM response."
+        },
+        {
+          "path": "conversionGenerator.ts",
+          "loc": 57,
+          "class": "REFACTOR",
+          "justification": "Supporting module in prod closure via lib hook or backoffice stack.",
+          "cutGroup": null,
+          "refactorNote": "Pillar 1 — gate LLM cost."
+        },
+        {
+          "path": "demandEngine.ts",
+          "loc": 224,
+          "class": "REFACTOR",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": "V1 heuristic live; ML Layer 3 deferred."
+        },
+        {
+          "path": "demandInsights.ts",
+          "loc": 114,
+          "class": "REFACTOR",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": "Dish signals live; no CO₂ weighting yet."
+        },
+        {
+          "path": "editorTextSuggest.ts",
+          "loc": 85,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Align with responseSafety scrub rules."
+        },
+        {
+          "path": "experiment.ts",
+          "loc": 77,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Verify tenant isolation on experiment queries."
+        },
+        {
+          "path": "funnelEngine.ts",
+          "loc": 111,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Growth funnel — confirm consumer before expand."
+        },
+        {
+          "path": "pageBuilder.ts",
+          "loc": 172,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "High token surface — cap blocks + validate."
+        },
+        {
+          "path": "pricing.ts",
+          "loc": 83,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "10% heuristic only — not agreement-linked."
+        },
+        {
+          "path": "runner.ts",
+          "loc": 569,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Add timeout, Redis rate limit, PII scrub (P2-4)."
+        },
+        {
+          "path": "runnerGovernance.ts",
+          "loc": 382,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Profitability gate not enterprise-hardened."
+        },
+        {
+          "path": "seoEngine.ts",
+          "loc": 142,
+          "class": "REFACTOR",
+          "justification": "Imported by prod app route/component on path to user response.",
+          "cutGroup": null,
+          "refactorNote": "Clarify deterministic vs LLM paths."
+        },
+        {
+          "path": "wasteTracker.ts",
+          "loc": 98,
+          "class": "REFACTOR",
+          "justification": "Pillar 2/ESG core on live kitchen/admin route returning 200 without LLM.",
+          "cutGroup": null,
+          "refactorNote": "ESG rollup fail-closed on produced:null — needs production qty."
+        }
+      ],
+      "INVESTIGATE": [
+        {
+          "path": "agents/ceoAgent.ts",
+          "loc": 30,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "agents/cmoAgent.ts",
+          "loc": 32,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "agents/contentHealthDaily.ts",
+          "loc": 140,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "agents/cooAgent.ts",
+          "loc": 20,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "agents/ctoAgent.ts",
+          "loc": 30,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "agents/index.ts",
+          "loc": 15,
+          "class": "INVESTIGATE",
+          "justification": "Agent swarm / boardroom still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "agents-boardroom",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/automationLayer.ts",
+          "loc": 69,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/autonomyAttribution.ts",
+          "loc": 39,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/autonomyLearning.ts",
+          "loc": 44,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/autonomyLog.ts",
+          "loc": 60,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/autonomyPolicy.ts",
+          "loc": 63,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/collectDecisions.ts",
+          "loc": 37,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomy/runner.ts",
+          "loc": 137,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": "Imports meta-engines — decouple before prod expand."
+        },
+        {
+          "path": "autonomy/types.ts",
+          "loc": 50,
+          "class": "INVESTIGATE",
+          "justification": "Autonomy loop modules — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "autonomy-loop",
+          "refactorNote": null
+        },
+        {
+          "path": "autonomyController.ts",
+          "loc": 65,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/attribution.ts",
+          "loc": 36,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/automationEngine.ts",
+          "loc": 63,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/ceoLog.ts",
+          "loc": 55,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/decisionEngine.ts",
+          "loc": 169,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/growthEngine.ts",
+          "loc": 53,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/learning.ts",
+          "loc": 43,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/policyEngine.ts",
+          "loc": 51,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceo/runner.ts",
+          "loc": 131,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": "Pillar 1 defer — gate CEO autopilot behind explicit env."
+        },
+        {
+          "path": "ceo/types.ts",
+          "loc": 66,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "ceoExecutor.ts",
+          "loc": 27,
+          "class": "INVESTIGATE",
+          "justification": "CEO / autonomy meta-dashboard (Pillar 1 defer) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "ceo-autonomy-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "controlTower/controlExecutor.ts",
+          "loc": 109,
+          "class": "INVESTIGATE",
+          "justification": "Control-tower meta (non-core lunch) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "control-tower-meta",
+          "refactorNote": null
+        },
+        {
+          "path": "events/triggers.ts",
+          "loc": 22,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "experimentGenerator.ts",
+          "loc": 29,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "jobs/backoff.ts",
+          "loc": 12,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "jobs/claim.ts",
+          "loc": 49,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "jobs/runner.ts",
+          "loc": 227,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "orchestration.ts",
+          "loc": 150,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "pageIntent.ts",
+          "loc": 122,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "policy.ts",
+          "loc": 22,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "pre-evaluate.ts",
+          "loc": 42,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "predictor.ts",
+          "loc": 75,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "retention/engine.ts",
+          "loc": 62,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "revenue/analyzePerformance.ts",
+          "loc": 143,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "revenue/applyRevenueActions.ts",
+          "loc": 79,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "revenue/attribution.ts",
+          "loc": 108,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "revenue/decisionEngine.ts",
+          "loc": 94,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "revenue/policy.ts",
+          "loc": 75,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engine directories (engines/reality/monopoly/…) — only Pillar 1 routes import; defer per strategy.",
+          "cutGroup": "meta-engines-dirs",
+          "refactorNote": null
+        },
+        {
+          "path": "strategicCeoDecision.ts",
+          "loc": 30,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "strategyEngine.ts",
+          "loc": 264,
+          "class": "INVESTIGATE",
+          "justification": "Meta-engines (root stubs) still in app closure — delete importer routes in Phase B first.",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        }
+      ]
+    },
+    "totals": {
+      "KEEP": {
+        "count": 181,
+        "loc": 22261
+      },
+      "CUT": {
+        "count": 36,
+        "loc": 1053
+      },
+      "REFACTOR": {
+        "count": 16,
+        "loc": 3017
+      },
+      "INVESTIGATE": {
+        "count": 44,
+        "loc": 3239
+      }
+    }
+  },
+  "routeSummary": {
+    "byClass": {
+      "KEEP": [
+        {
+          "path": "app/api/ai/usage/route.ts",
+          "loc": 256,
+          "class": "KEEP",
+          "justification": "Backoffice AI overview reads usage — confirmed UI consumer."
+        }
+      ],
+      "CUT": [
+        {
+          "path": "app/api/ai/business-engine/route.ts",
+          "loc": 154,
+          "class": "CUT",
+          "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+        },
+        {
+          "path": "app/api/ai/copilot/route.ts",
+          "loc": 73,
+          "class": "CUT",
+          "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+        },
+        {
+          "path": "app/api/ai/growth/ads/route.ts",
+          "loc": 78,
+          "class": "CUT",
+          "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+        },
+        {
+          "path": "app/api/ai/growth/funnel/route.ts",
+          "loc": 108,
+          "class": "CUT",
+          "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+        },
+        {
+          "path": "app/api/ai/growth/seo/route.ts",
+          "loc": 107,
+          "class": "CUT",
+          "justification": "Pillar 1 growth/copilot — no core lunch UI; defer per Phase 2 strategy."
+        }
+      ],
+      "REFACTOR": [],
+      "INVESTIGATE": [
+        {
+          "path": "app/api/ai/analyze/route.ts",
+          "loc": 88,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/block/route.ts",
+          "loc": 177,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/block/score/route.ts",
+          "loc": 49,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/continue/route.ts",
+          "loc": 67,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/dashboard/route.ts",
+          "loc": 84,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/decision/route.ts",
+          "loc": 134,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/design/analyze/route.ts",
+          "loc": 90,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/design/generate/route.ts",
+          "loc": 83,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/experiments/route.ts",
+          "loc": 91,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/generate/route.ts",
+          "loc": 110,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/image/route.ts",
+          "loc": 67,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/inline/route.ts",
+          "loc": 69,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/insights/route.ts",
+          "loc": 81,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/layout/route.ts",
+          "loc": 71,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/learn/route.ts",
+          "loc": 69,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/optimize/route.ts",
+          "loc": 95,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/page/audit/route.ts",
+          "loc": 76,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/page/build/route.ts",
+          "loc": 97,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/page/route.ts",
+          "loc": 71,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/recommendation/apply/route.ts",
+          "loc": 102,
+          "class": "INVESTIGATE",
+          "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+        },
+        {
+          "path": "app/api/ai/recommendation/history/route.ts",
+          "loc": 43,
+          "class": "INVESTIGATE",
+          "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+        },
+        {
+          "path": "app/api/ai/rewrite/route.ts",
+          "loc": 60,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        },
+        {
+          "path": "app/api/ai/route.ts",
+          "loc": 19,
+          "class": "INVESTIGATE",
+          "justification": "Referenced in UI (app/(backoffice)/backoffice/ai/overview/page.tsx) — confirm prod auth and 200 path."
+        },
+        {
+          "path": "app/api/ai/track/route.ts",
+          "loc": 56,
+          "class": "INVESTIGATE",
+          "justification": "Public /api/ai endpoint — no confirmed fetch from app UI."
+        }
+      ]
+    },
+    "totals": {
+      "KEEP": {
+        "count": 1,
+        "loc": 256
+      },
+      "CUT": {
+        "count": 5,
+        "loc": 520
+      },
+      "REFACTOR": {
+        "count": 0,
+        "loc": 0
+      },
+      "INVESTIGATE": {
+        "count": 24,
+        "loc": 1949
+      }
+    }
+  },
+  "cutByGroup": {
+    "attribution-roi-stubs": {
+      "label": "Attribution ROI stubs",
+      "files": [
+        {
+          "path": "attribution/aggregationEngine.ts",
+          "loc": 62,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/insightEngine.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "attribution/roiEngine.ts",
+          "loc": 41,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Attribution ROI stubs.",
+          "cutGroup": "attribution-roi-stubs",
+          "refactorNote": null
+        }
+      ],
+      "loc": 122
+    },
+    "capital-allocation-stubs": {
+      "label": "Capital / allocation stubs (Pillar 1)",
+      "files": [
+        {
+          "path": "capital/actionGenerator.ts",
+          "loc": 23,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/actionPriority.ts",
+          "loc": 14,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/allocationEngine.ts",
+          "loc": 43,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/capitalOutput.ts",
+          "loc": 27,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/capitalState.ts",
+          "loc": 69,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/executionEngine.ts",
+          "loc": 20,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/executionPlan.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/investmentAreas.ts",
+          "loc": 11,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/riskEngine.ts",
+          "loc": 22,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "capital/roiEngine.ts",
+          "loc": 22,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Capital / allocation stubs (Pillar 1).",
+          "cutGroup": "capital-allocation-stubs",
+          "refactorNote": null
+        }
+      ],
+      "loc": 269
+    },
+    "orphan-unwired": {
+      "label": "Orphan — zero prod/lib importers",
+      "files": [
+        {
+          "path": "control/controlGate.ts",
+          "loc": 49,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/ethicsEngine.ts",
+          "loc": 15,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/explainEngine.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/governanceEngine.ts",
+          "loc": 18,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/killSwitch.ts",
+          "loc": 11,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/normalizeControlType.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/overrideEngine.ts",
+          "loc": 12,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "control/riskEngine.ts",
+          "loc": 13,
+          "class": "CUT",
+          "justification": "No reachable importer from app/lib — safe orphan for Phase B.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        },
+        {
+          "path": "editorRewrite.ts",
+          "loc": 88,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Orphan — zero prod/lib importers.",
+          "cutGroup": "orphan-unwired",
+          "refactorNote": null
+        }
+      ],
+      "loc": 243
+    },
+    "meta-engines-core": {
+      "label": "Meta-engines (root stubs)",
+      "files": [
+        {
+          "path": "crossSurfaceLearning.ts",
+          "loc": 44,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "experienceModel.ts",
+          "loc": 65,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "memoryDecay.ts",
+          "loc": 9,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "outcomeEvaluator.ts",
+          "loc": 23,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "predictiveModel.ts",
+          "loc": 42,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "predictiveRiskEngine.ts",
+          "loc": 17,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "roadmapEngine.ts",
+          "loc": 34,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        },
+        {
+          "path": "strategicPrioritizer.ts",
+          "loc": 20,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Meta-engines (root stubs).",
+          "cutGroup": "meta-engines-core",
+          "refactorNote": null
+        }
+      ],
+      "loc": 254
+    },
+    "resources-orchestration-stubs": {
+      "label": "Resource orchestration stubs",
+      "files": [
+        {
+          "path": "resources/actionCost.ts",
+          "loc": 28,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/capacityEngine.ts",
+          "loc": 42,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/matchEngine.ts",
+          "loc": 19,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/resourceModel.ts",
+          "loc": 35,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/resourceOrchestrator.ts",
+          "loc": 26,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        },
+        {
+          "path": "resources/scheduler.ts",
+          "loc": 15,
+          "class": "CUT",
+          "justification": "No prod/lib consumer; Resource orchestration stubs.",
+          "cutGroup": "resources-orchestration-stubs",
+          "refactorNote": null
+        }
+      ],
+      "loc": 165
+    }
+  }
+}
