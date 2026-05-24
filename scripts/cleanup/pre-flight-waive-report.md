@@ -41,6 +41,18 @@ Gjenværende `git status --porcelain` er **overveiende Kategori 3** (spike-filer
 
 **Also on branch (pre-existing, deploy-i-vente):** `ea027081`, `35d02f64`, `2aeb7d9f` (DC-032 read-path)
 
+### Push status: **BLOCKED** (pre-push hook)
+
+`git push origin main` aborted after preflight `npm run test:run`:
+
+- **9 failures** in `tests/kitchen-batch-{start,status,summary}.test.ts` (expected 200/422, got **403**)
+- Likely tied to **deploy-i-vente** DC-032 commits (not audit doc/script commits)
+- **Local main is 16 commits ahead** of `origin/main` (3 deploy-i-vente + 13 audit/ci/waive)
+
+**Action required before push:** fix kitchen-batch tests **or** explicit owner decision on hook bypass.
+
+Additional commit after waive report: `49aa3758` fix(ci): allowlist K6/smoke provisioning CLIs (ci-guard unblocked).
+
 ---
 
 ## Category 2 — migration outcomes
@@ -62,7 +74,7 @@ Gjenværende `git status --porcelain` er **overveiende Kategori 3** (spike-filer
 
 | Assertion | Status |
 |-----------|--------|
-| PF.2 Branch | `main`; pushed to `origin/main` after audit commits |
+| PF.2 Branch | `main`; **16 commits ahead of origin** — push blocked by test hook |
 | PF.3 Tooling | PASS (Node 22, npm 11, git 2.52, Vercel CLI) |
 | PF.4 deps | PASS |
 | PF.6 Audit report | PASS (on main) |
