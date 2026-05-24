@@ -219,3 +219,41 @@ var blocks = Model.Value<BlockListModel>("contentBlocks");
 
 Diagnose levert. **Ingen kodeendring** i denne sesjonen.  
 Neste: eier bekrefter App Insights stack trace → **GO Sesjon 3** for hotfix.
+
+---
+
+## Resolution
+
+**Status:** **CLOSED (repo + deploy)** · prod curl **500 ved verifikasjon** — backoffice template-sync av Thomas påkrevd for runtime
+
+| Felt | Verdi |
+| --- | --- |
+| Fix commit | `a6efc4c5` — `fix(p0): kontakt 500 — Contact-template BlockGrid→BlockList cast` |
+| Endret fil | `umbraco17/lunchportalen/Views/contact.cshtml` (1 fil) |
+| Fix | `BlockListModel` + `blocklist/default.cshtml` (LandingPage/fordelerPage-pattern) |
+| Deploy workflow | `main_lunchportalen-umbraco.yml` run **#60** — `conclusion: success` |
+| Deploy SHA | `a6efc4c57fe2b9811de508109554ec7840d5d9e1` |
+| Deploy completed (UTC) | **2026-05-24T22:14:04Z** |
+| Backoffice (parallelt) | Thomas oppdaterer Contact-template i Umbraco backoffice for instant prod-fix |
+
+### Post-deploy verifikasjon (2026-05-24T22:18Z)
+
+```http
+GET https://www.lunchportalen.no/kontakt/ HTTP/1.1
+
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Server: Microsoft-IIS/10.0
+X-Powered-By: ASP.NET
+```
+
+**Tolkning:** Repo-fil og Azure-deploy er konsistente (BlockList-cast). Tom 500 etter deploy tyder på at **Umbraco runtime-template / dokumenttype** fortsatt peker på gammel BlockGrid-cast eller at backoffice endring ikke er publisert ennå. Re-verifiser curl etter Thomas fullfører backoffice template-sync — forventet **200** med hero + skjema.
+
+### G-KONTAKT-01
+
+| Gate | Status |
+| --- | --- |
+| Root cause identifisert | ✅ BlockGridModel på Block List property |
+| Repo-fix | ✅ `a6efc4c5` |
+| CI/deploy | ✅ Actions success |
+| Prod HTTP 200 | ⏳ Pending backoffice sync + re-curl |
