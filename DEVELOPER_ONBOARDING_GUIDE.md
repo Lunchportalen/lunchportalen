@@ -208,3 +208,79 @@ Den er bygget for kontroll.
 Din jobb er ÃƒÂ¥ forsterke arkitekturen Ã¢â‚¬â€œ ikke svekke den.
 
 Velkommen til teamet.
+
+---
+
+# 12 Secrets og lokal miljøhygiene (2026-05-25)
+
+**Formål:** Unngå at live credentials ligger i repo-roten (audit A-P1-01). Dette er **anbefalt mønster** — eier beslutter rotasjon separat ([`scripts/security/rotate-checklist-2026-05-25.md`](scripts/security/rotate-checklist-2026-05-25.md)).
+
+## 12.1 Prinsipp
+
+- **Aldri** committ `.env`-filer med ekte nøkler.
+- **Aldri** lagre `.env.local.prod-backup`, `.env.*.tmp`, eller Vercel-pull-checkpoints i repo-mappen.
+- Live secrets bor **utenfor** git clone, i en lokal secrets-katalog.
+
+## 12.2 Anbefalt layout
+
+### Windows (PowerShell)
+
+```powershell
+# Én gang per maskin
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.lp-secrets"
+
+# Prod-lignende lokalt (eksempel — filnavn efter behov)
+# Kopier KUN fra sikker kilde (1Password / Vercel pull til ~/.lp-secrets/)
+notepad "$env:USERPROFILE\.lp-secrets\local.env"
+notepad "$env:USERPROFILE\.lp-secrets\staging.env"
+```
+
+### macOS / Linux
+
+```bash
+mkdir -p ~/.lp-secrets
+chmod 700 ~/.lp-secrets
+# ~/.lp-secrets/local.env
+# ~/.lp-secrets/staging.env
+```
+
+## 12.3 `.env.local` som peker (minimal)
+
+Next.js leser `.env.local` i prosjektroten. **Anbefaling:** hold den minimal og pek til ekstern fil.
+
+**Alternativ A — symlink (Unix / Windows dev mode med admin eller Developer Mode):**
+
+```bash
+# Fra repo-root (eksempel)
+ln -sf ~/.lp-secrets/local.env .env.local
+```
+
+**Alternativ B — thin wrapper (Windows uten symlink):**
+
+`.env.local` inneholder **kun** ikke-hemmelige overrides; hemmeligheter lastes via script før `npm run dev`:
+
+```powershell
+# scripts/dev-with-secrets.ps1 (fremtidig — ikke påkrevd i audit)
+Copy-Item "$env:USERPROFILE\.lp-secrets\local.env" ".env.local" -Force
+npm run dev
+Remove-Item ".env.local" -Force -ErrorAction SilentlyContinue
+```
+
+**Alternativ C — env-file merge (nåværende mønster i scripts/smoke):**
+
+Behold `.env.local` gitignored, men generer den **kun** fra `~/.lp-secrets/` ved behov — slett etter sesjon.
+
+## 12.4 Vercel env pull
+
+```bash
+vercel env pull "$env:USERPROFILE\.lp-secrets\vercel-preview.env"
+# IKKE: vercel env pull .env.vercel.pull.checkpoint
+```
+
+## 12.5 Forbudte filer i repo-root
+
+Se [`docs/audit/enterprise-v2-2026-05-25/01-spike-cleanup.md`](docs/audit/enterprise-v2-2026-05-25/01-spike-cleanup.md) — bl.a. `.env.*.tmp`, `.env.*-check`, `.env.*-backup`, `.commit_msg_*.txt`, MCP apply JSON.
+
+## 12.6 Rotasjon
+
+Hvis du har hatt env-snapshots i repo-mappen: følg [`scripts/security/rotate-checklist-2026-05-25.md`](scripts/security/rotate-checklist-2026-05-25.md). Rotasjon kjøres **ikke** automatisk av audit.
