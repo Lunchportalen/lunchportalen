@@ -62,9 +62,14 @@ vi.mock("@/lib/http/routeGuard", async () => {
   };
 });
 
-vi.mock("@/lib/cms/menuDay", () => ({
-  getMenuForRange: vi.fn(async () => []),
-}));
+vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/cms/menuDay")>();
+  return {
+    ...actual,
+    getMenuForRange: vi.fn(async () => []),
+    getMenuForDateAndPlan: vi.fn(async () => []),
+  };
+});
 
 vi.mock("@/lib/cms/lunchCategory", () => ({
   fetchActiveLunchCategoryRows: vi.fn(async () => []),

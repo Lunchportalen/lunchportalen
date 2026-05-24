@@ -54,6 +54,14 @@ let mockCompanyStatus = "active";
 let requireRuleResult: { ok: true } | { ok: false; status: number; error: string; message: string } = { ok: true };
 let ordersCallCount = 0;
 
+vi.mock("@/lib/orders/resolveOrderDayItemPersist", () => ({
+  resolveOrderDayItemPersist: vi.fn(async () => ({
+    ok: true,
+    item_key: null,
+    item_title_snapshot: null,
+  })),
+}));
+
 vi.mock("@/lib/http/routeGuard", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/http/routeGuard")>();
   return {
