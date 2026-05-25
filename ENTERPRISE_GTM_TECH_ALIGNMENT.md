@@ -46,7 +46,7 @@ Teknisk støtte:
 
 - Composite FK + RLS
 - RPC-only writes
-- SOC2_CONTROL_MATRIX.md
+- docs/compliance/soc2-control-matrix.md
 - ISO27001_ALIGNMENT_MATRIX.md
 - docs/security/security-architecture.md
 
@@ -64,7 +64,7 @@ Enterprise krever:
 
 Teknisk støtte:
 
-- COMPLIANCE_OVERVIEW.md
+- docs/compliance/compliance-overview.md
 - RISK_REGISTER.md
 - INCIDENT_RESPONSE_PLAN.md
 - DISASTER_RECOVERY_PLAN.md

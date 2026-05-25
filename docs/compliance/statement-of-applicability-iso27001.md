@@ -189,9 +189,9 @@ Implementasjon:
 Status: APPLICABLE – IMPLEMENTED
 
 Implementasjon:
-- COMPLIANCE_OVERVIEW.md
+- docs/compliance/compliance-overview.md
 - RISK_REGISTER.md
-- SOC2_CONTROL_MATRIX.md
+- docs/compliance/soc2-control-matrix.md
 - ISO27001_ALIGNMENT_MATRIX.md
 
 ---
