@@ -33,7 +33,7 @@ Purpose: Bevisoversikt for revisjon, konsernsalg og compliance
 | SEC-001 | Role gating test | auth_flow |
 | SEC-002 | Token validation | auth_server |
 | SEC-003 | API no-store headers | http_contract |
-| SEC-010 | Kitchen/Driver scope locked (TENANT-BOUND) | ROLE_MATRIX.md |
+| SEC-010 | Kitchen/Driver scope locked (TENANT-BOUND) | docs/governance/role-matrix.md |
 | SEC-011 | Kitchen/Driver RLS policy validation | RLS_POLICIES.md |
 | OP-010 | Kitchen/Driver scope review plan | AUDIT_CALENDAR.md |
 
@@ -44,7 +44,7 @@ Purpose: Bevisoversikt for revisjon, konsernsalg og compliance
 | ID | Beskrivelse | Dokument |
 |----|------------|----------|
 | GDPR-001 | Data flow mapping | GDPR_OVERVIEW.md |
-| GDPR-002 | Role matrix validation | ROLE_MATRIX.md |
+| GDPR-002 | Role matrix validation | docs/governance/role-matrix.md |
 | GDPR-003 | Data minimization audit | DATA_PROCESSING.md |
 
 ---

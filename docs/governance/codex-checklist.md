@@ -1,4 +1,3 @@
-CODEX_CHECKLIST.md
 # 🚦 LUNCHPORTALEN CODEX CHECKLIST
 ## GO / NO-GO før Merge, Deploy og Release
 

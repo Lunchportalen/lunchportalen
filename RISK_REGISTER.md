@@ -101,7 +101,7 @@ Ny kode omgår RPC eller RLS.
 
 **Mitigering:**
 - CI guard
-- CODEX_CHECKLIST
+- docs/governance/codex-checklist.md
 - Architecture Decisions dokument
 - Preflight før deploy
 

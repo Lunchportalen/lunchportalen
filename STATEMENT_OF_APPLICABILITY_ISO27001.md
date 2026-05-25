@@ -78,7 +78,7 @@ System- og datakomponenter identifisert.
 
 Implementasjon:
 - Asset definert i SECURITY_ARCHITECTURE.md
-- Dataklassifisering i DATA_GOVERNANCE_POLICY.md
+- Dataklassifisering i docs/governance/data-governance-policy.md
 
 ---
 
@@ -137,8 +137,8 @@ Secure SDLC er kritisk for SaaS.
 
 Implementasjon:
 - CI guard
-- CODEX_DATAWRITE.md
-- CODEX_CHECKLIST.md
+- docs/governance/codex-datawrite.md
+- docs/governance/codex-checklist.md
 - Preflight krav
 - ADR-logg
 

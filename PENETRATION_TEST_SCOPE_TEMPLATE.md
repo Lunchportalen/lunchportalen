@@ -250,5 +250,5 @@ Penetrasjonstesten skal validere at systemet er like robust i praksis som dokume
 
 - SECURITY_ARCHITECTURE.md
 - THREAT_MODEL.md
-- CODEX_DATAWRITE.md
+- docs/governance/codex-datawrite.md
 - RISK_REGISTER.md

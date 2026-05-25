@@ -73,7 +73,7 @@ Dette dokumentet beskriver status for systemnivå-hardening. Noen filer under `a
 
 - **docs/CRON_AUTH.md** – cron auth: `Authorization: Bearer <CRON_SECRET>` eller `x-cron-secret`. Manglende/ugyldig → 403. Manglende server-secret → 500 misconfigured.
 - **docs/drift/cron-error-handling.md** – feilkontrakt for cron: suksess `{ ok: true, rid, data? }`, feil `{ ok: false, rid, error, message, status }`. jsonErr for 500/503. Tydelige meldinger og rid.
-- **docs/DRIFTSCODEX.md** – verifisert status for cron auth, outbox, RPC, idempotency.
+- **docs/governance/driftscodex.md** – verifisert status for cron auth, outbox, RPC, idempotency.
 
 **Hva som ikke kunne verifiseres i kode:**
 
@@ -102,7 +102,7 @@ Dette dokumentet beskriver status for systemnivå-hardening. Noen filer under `a
 |---------------------|------------------|--------|
 | Media API           | Nei              | Kontrakter avledet fra frontend; manglende backend-validering og feilkontrakt ikke verifisert. |
 | Editor-AI metrics   | Nei              | Rute må akseptere ai_error, media_error, builder_warning, content_error for full observability. |
-| Cron-ruter          | Nei              | CRON_AUTH + cron-error-handling + DRIFTSCODEX er autoritativ dokumentasjon. |
+| Cron-ruter          | Nei              | CRON_AUTH + cron-error-handling + docs/governance/driftscodex.md er autoritativ dokumentasjon. |
 | lib/http, lib/system| Nei              | Health og cron-auth kan ikke endres fra denne scope. |
 | Block-level media   | Ja               | Hardenet: ærlige tomme/mangler-states i BlockCanvas og Hero/Image-editors. |
 | Observability klient| Ja              | logEditorAiEvent sender alle typer; dev advarer ved API-feil. |

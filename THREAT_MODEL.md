@@ -209,7 +209,7 @@ Tiltak:
 - CI guard
 - CODEX policy
 - AGENTS.md
-- CODEX_CHECKLIST fÃƒÂ¸r merge
+- docs/governance/codex-checklist.md før merge
 
 ---
 
