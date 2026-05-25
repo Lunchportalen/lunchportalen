@@ -13,6 +13,23 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
+# === .env hardening (Sprint AB Gr 8 — 2026-05-25) ===
+# All .env-files except templates
+.env.local.*
+.env.vercel.local
+.env.*.tmp
+.env.k6-*
+.env.prod-k6*
+.env.sentry-diag-*
+.env.staging-check*
+.env.staging-pull*
+.env.vercel.pull*
+.env.preview-*
+
+# Explicit keep (templates only)
+!.env.example
+!.env.postdeploy.example
+
 # OS / Editor
 .DS_Store
 .vscode/
