@@ -26,9 +26,10 @@
 | **KEEP** | **148** | 54% |
 | **CUT** | **98** | 36% |
 | **REFACTOR** | **74** | 27%* |
-| **INVESTIGATE** | **12** | 4% |
+| **INVESTIGATE** | **0** (12 løst 2026-05-25) | — |
 
-\*REFACTOR overlapper KEEP (docs-flytting på KEEP-innhold) — tellemodell: 70 docs REFACTOR + 3 mapper REFACTOR + 1 fil.
+\*REFACTOR overlapper KEEP (docs-flytting på KEEP-innhold) — tellemodell: 70 docs REFACTOR + 3 mapper REFACTOR + 1 fil.  
+\*\*Etter Thomas INVESTIGATE-resolution: alle 12 enheter har beslutning — se §INVESTIGATE RESOLVED.
 
 **Security-status:** **OK** — ingen `.env`-filer med secrets committed. Kun `.env.example` og `.env.postdeploy.example` i git.
 
@@ -37,7 +38,7 @@
 2. **~106 scratch-filer** på root (untracked) — `.commit_msg_*`, p3m3, mcp, tpt, exec.
 3. **~70 governance-.md på root** — skal til `docs/{kategori}/` (REFACTOR).
 4. **`archive/`** — 32 filer, 0 runtime consumers → CUT-kandidat.
-5. **`k8s/` + `infra/`** — aspirational IaC, 0 CI/Vercel refs → INVESTIGATE.
+5. **`k8s/` + `infra/`** — **CUT** (Gruppe 12a/12b) — Thomas 2026-05-25.
 6. **OVERRASKELSE:** `ISO 27001 alignment matrix` (fil uten `.md`-suffix) · `queue.json` (gitignored snapshot) · `studio/` inkl. lokal `node_modules` (~96k filer on disk, ikke tracked).
 
 ---
@@ -117,7 +118,7 @@
 | **Siste git** | `536cba51` 2026-05-24 archive k6_test_users.sql |
 | **Innhold** | Dead-code graveyard per `archive/README.md` — ikke i aktiv import-graf |
 | **Consumers utenfor archive/** | **0** TS-imports · kun `tests/runtime/EnterpriseBuildParity.test.ts` + audit scripts ignorerer |
-| **Klassifisering** | **CUT** (atomisk Sprint AB Gruppe 11) |
+| **Klassifisering** | **CUT** (Sprint AB Gruppe 11) — Thomas 2026-05-25 |
 
 ### artifacts/
 
@@ -184,7 +185,7 @@
 | **Siste git** | `6a630e37` 2026-02-19 |
 | **Innhold** | Design brief; runtime design i `lib/design/` |
 | **Consumers** | Docs-referanse · `lib/design/*` er kanonisk runtime |
-| **Klassifisering** | **REFACTOR** → `docs/engineering/design-brief.md` |
+| **Klassifisering** | **REFACTOR** → `docs/engineering/design-brief.md` (Thomas 2026-05-25) |
 
 ### docs/
 
@@ -239,7 +240,7 @@
 | **Siste git** | `532dc713` 2026-04-18 |
 | **Innhold** | Terraform AWS ECS — **ikke prod** (Vercel + Azure) |
 | **Consumers** | 0 i `.github/`, `vercel.json` |
-| **Klassifisering** | **INVESTIGATE** → Thomas: behold aspirational eller CUT? |
+| **Klassifisering** | **CUT** (Sprint AB Gruppe 12b) — Thomas 2026-05-25 |
 
 ### k8s/
 
@@ -250,7 +251,7 @@
 | **Siste git** | `532dc713` 2026-04-18 |
 | **Innhold** | K8s template placeholders (`your-docker-image`) |
 | **Consumers** | 0 CI/Vercel |
-| **Klassifisering** | **INVESTIGATE** → Thomas: CUT vs future K8s? |
+| **Klassifisering** | **CUT** (Sprint AB Gruppe 12a) — Thomas 2026-05-25 |
 
 ### lib/
 
@@ -307,7 +308,7 @@
 | **Siste git** | `532dc713` 2026-04-18 |
 | **Innhold** | Generated repo map (`scripts/scanRepo.ts`) · last scan 2026-03-26 |
 | **Consumers** | `lib/repo/query.ts`, `lib/repo-intelligence/buildSystemGraph.ts` |
-| **Klassifisering** | **REFACTOR** — regenerer-policy (>30d stale) eller CUT hvis ubrukt |
+| **Klassifisering** | **REFACTOR** — weekly `repo:scan` CI (Thomas 2026-05-25). **Ikke CUT:** `buildSystemGraph.ts` er live (`/api/superadmin/system-graph/data`) |
 
 ### reports/
 
@@ -340,7 +341,7 @@
 | **Innhold** | Transitional shim — nav, ds, week components + 2 lib files |
 | **Consumers** | `@/components/*` alias precedence + 8 re-exports i `components/` |
 | **Konflikt** | **`app/` + `src/` begge finnes; `src/app/` finnes IKKE** — ikke dual-router, men dual-component-tree |
-| **Klassifisering** | **REFACTOR** — konsolider til `components/` |
+| **Klassifisering** | **REFACTOR** Gruppe **10.5** → `components/` — Thomas 2026-05-25 |
 
 ### studio/
 
@@ -406,7 +407,7 @@
 | **Siste git** | `532dc713` 2026-04-18 |
 | **Innhold** | Optional Redis queue consumer |
 | **Consumers** | `package.json` `worker:queue` · **0** vercel.json refs (crons brukes) |
-| **Klassifisering** | **INVESTIGATE** — Thomas: beholde for self-hosted eller CUT? |
+| **Klassifisering** | **CUT** (Sprint AB Gruppe 13) — Thomas 2026-05-25. Vercel crons primary; worker er log-only stub |
 
 ---
 
@@ -421,8 +422,8 @@
 | `.github/` | 16 | nei | `0e9314dd` 2026-05-17 | **KEEP** — 15 workflows + CODEOWNERS |
 | `.next/` | 0 | ✅ | — | ekskludert (build) |
 | `.screenshots/` | 0 | ✅ | — | **CUT** lokal (5 debug screenshots) |
-| `.tmp/` | 0 | ✅ | `54ee3482` 2026-02-19 | **INVESTIGATE** — 33+ scratch items, `.env`-navn |
-| `.vercel/` | 0 | ✅ | — | **INVESTIGATE** — `.env.production.local` on disk |
+| `.tmp/` | 0 | ✅ | `54ee3482` 2026-02-19 | **CUT lokalt** (Thomas 2026-05-25) — slett innhold; mappe gitignored |
+| `.vercel/` | 0 | ✅ | — | **KEEP** gitignored · verifiser `.env.production.local` aldri staged |
 | `.verify-logs/` | 0 | ✅ | — | **KEEP** gitignored logs |
 | `.vscode/` | 0 | ✅ | — | **KEEP** gitignored |
 
@@ -555,9 +556,9 @@
 
 **Gruppe 7 — zip (2):** `umbraco-clean.zip`, `umbraco-robots-only.zip` (also `*.zip` gitignored)
 
-**Ekstra scratch:** `.dc028-secret.tmp`, `.smoke-provision.*`, `migration_min.sql`, `.tmp_public_schema.sql`, `.tmp_remote_types.ts`, `_proof_*.log` (3), `.vercel-trigger.txt` (**tracked** — vurder CUT/REFACTOR)
+**Ekstra scratch:** `.dc028-secret.tmp`, `.smoke-provision.*`, `migration_min.sql`, `.tmp_public_schema.sql`, `.tmp_remote_types.ts`, `_proof_*.log` (3), `journal.txt` (**CUT** — Thomas 2026-05-25), `.vercel-trigger.txt` (**CUT** Gruppe 14 — tracked, siste commit `3bbd035a` 2026-01-20, 0 code refs)
 
-**Tracked legacy på root:** `audit-v4.cjs` — **INVESTIGATE** (referenced in archive README; ev. flytt til `scripts/audit/`)
+**Tracked legacy på root:** `audit-v4.cjs` → **REFACTOR** til `scripts/audit/audit-v4.cjs` (Thomas 2026-05-25)
 
 Alle scratch: **0 code consumers** verifisert via git grep.
 
@@ -590,14 +591,14 @@ Alle scratch: **0 code consumers** verifisert via git grep.
 | `tsconfig.tsbuildinfo` | ja | nei | OK |
 | `*.log` (root) | ja | nei | OK — `_proof_*.log`, `dev-smoke.*` CUT lokalt |
 
-### 9.9 Ukjent (INVESTIGATE)
+### 9.9 Ukjent — RESOLVED
 
-| Fil | Spørsmål |
-|-----|----------|
-| `journal.txt` | Personlig logg eller generert output? CUT hvis ikke team-relevant? |
-| `queue.json` | Gitignored queue snapshot — CUT lokal? |
-| `.vercel-trigger.txt` | Tracked deploy trigger — fortsatt i bruk? |
-| `audit-v4.cjs` | Flytt til `scripts/audit/` eller CUT? |
+| Fil | Beslutning (Thomas 2026-05-25) |
+|-----|--------------------------------|
+| `journal.txt` | **CUT** (lokal) |
+| `queue.json` | **CUT** lokal (gitignored) |
+| `.vercel-trigger.txt` | **CUT** — Gruppe 14; git: `3bbd035a` 2026-01-20, 0 code refs |
+| `audit-v4.cjs` | **REFACTOR** → `scripts/audit/audit-v4.cjs` |
 
 ---
 
@@ -615,11 +616,20 @@ Alle scratch: **0 code consumers** verifisert via git grep.
 | **8 env-cleanup** | `.env.*.tmp`, `.env.*-check`, backups (lokal) | ~12 | 0 | null | `smoke:uptime` |
 | **9 dead-folders-local** | `evidence/`, `artifacts/`, `.screenshots/` (lokal disk) | ~440 | 0 | null | none |
 | **10 duplicate-utils** | `utils/` etter migrering imports | 5 | ~200 | medium | `npm test` + week smoke |
+| **10.5 src-shim** | `src/` → `components/` (egen runde) | 20 | ~983 | medium | `npm test` + header/week UI |
 | **11 archive-cleanup** | hele `archive/` (32 filer) | 32 | ~2849 | lav | `npm test` + build:enterprise |
-| **12 k8s-infra** | `k8s/` + `infra/` (etter Thomas OK) | 4 | 0 | null | none |
-| **13 workers** | `workers/worker.ts` (etter Thomas OK) | 1 | ~50 | lav | cron smoke |
+| **12a k8s-cut** | `k8s/` (2 filer) | 2 | 0 | null | none |
+| **12b infra-cut** | `infra/` (2 filer) | 2 | 0 | null | none |
+| **13 workers-cut** | `workers/worker.ts` + `worker:queue` script | 1+pkg | ~50 | lav | cron smoke |
+| **14 tracked-root-cut** | `.vercel-trigger.txt` | 1 | 0 | null | none |
+| **15 audit-v4-refactor** | `audit-v4.cjs` → `scripts/audit/` | 1 | ~ | lav | `npm test` |
+| **16 design-brief-refactor** | `design/DESIGN_BRIEF.md` → `docs/engineering/` | 1 | 0 | null | none |
+| **17 repo-intel-ci** | weekly `npm run repo:scan` → `.github/workflows/repo-intelligence-refresh.yml` (søn 03:00 UTC) | workflow | — | lav | `/api/superadmin/system-graph/data` |
+| **18 lib-repo-query-cut** | `lib/repo/query.ts` (0 TS consumers — PRE-AB verifisert) | 1 | ~ | null | `npm test` |
+| **19 backoffice-governance** | Z.5 → `docs/governance/backoffice-policy-2026-05-26.md` (1 doc-PR) | 1 | 0 | null | agents:check |
+| **20 lib-ai-keep-closure** | Z.7 → verifiser/fix determinisme `scripts/audit/lib-ai-keep-closure.json` | 1 | ~ | lav | `npm test` |
 
-**Estimert Sprint AB:** 25–35 PR-er · **20–30 timer** (Fase B baseline: 7 PR / 6t for 34 filer).
+**Estimert Sprint AB:** 28–38 PR-er · **22–32 timer** (Fase B baseline: 7 PR / 6t for 34 filer).
 
 ---
 
@@ -629,26 +639,69 @@ Alle scratch: **0 code consumers** verifisert via git grep.
 70 root `.md` → `docs/{governance,strategy,security,compliance,sales,engineering}/` per tabell §9.5.  
 Oppdater eventuelle hardkodede lenker i CI/agents etter flytt.
 
-### Duplikat-dedup
-1. **`src/` → `components/`** — 20 filer, ~983 LOC, 8 re-exports
-2. **`utils/` → `lib/supabase/`** — 5 filer, ~18 import sites
-3. **`repo-intelligence/`** — regenerer via `scripts/scanRepo.ts` månedlig eller CUT
-4. **`audit/` forensic** — vurder merge inn i `docs/audit/forensic-2026-04-05/`
+### Duplikat-dedup og REFACTOR (Thomas 2026-05-25)
+
+1. **`src/` → `components/`** (Gruppe **10.5**) — 20 filer, ~983 LOC, 8 re-exports · egen runde
+2. **`utils/` → `lib/supabase/`** (Gruppe **10**) — 5 filer, ~18 import sites
+3. **`repo-intelligence/`** (Gruppe **17**) — **KEEP + weekly CI** `npm run repo:scan`  
+   Verifisert live: `lib/repo-intelligence/buildSystemGraph.ts` → `/api/superadmin/system-graph/data` · **ikke CUT**  
+   **`lib/repo/query.ts`** → **CUT** Gruppe **18** (0 consumers, PRE-AB verifisert)
+4. **`audit-v4.cjs`** (Gruppe **15**) → `scripts/audit/audit-v4.cjs`
+5. **`design/DESIGN_BRIEF.md`** (Gruppe **16**) → `docs/engineering/design-brief.md`
+6. **`audit/` forensic** — vurder merge inn i `docs/audit/forensic-2026-04-05/` (uendret, lavere prio)
+7. **Z.5 backoffice policy** (Gruppe **19**) → `docs/governance/backoffice-policy-2026-05-26.md`
+8. **Z.7 lib-ai-keep-closure** (Gruppe **20**) → determinisme-fix for `scripts/audit/lib-ai-keep-closure.json`
 
 ---
 
-## INVESTIGATE — krever Thomas's beslutning
+## INVESTIGATE — RESOLVED (Thomas 2026-05-25)
 
-1. **`k8s/` + `infra/`** (4 filer, 0 prod refs): Aspirational IaC eller CUT?  
-2. **`workers/worker.ts`** (1 fil): Self-hosted queue path eller CUT (Vercel crons er primary)?  
-3. **`archive/`** (32 filer, 0 consumers): CUT hele mappen atomisk?  
-4. **`src/` shim** (20 filer): Konsolidering til `components/` — hvilken sprint?  
-5. **`repo-intelligence/`** (stale 2026-03-26): Regenerer-policy eller CUT?  
-6. **`journal.txt`**: Personlig eller team — CUT?  
-7. **`.vercel-trigger.txt`** (tracked): Fortsatt deploy-mekanisme?  
-8. **`audit-v4.cjs`** (tracked): Flytt til scripts/ eller CUT?  
-9. **`design/DESIGN_BRIEF.md`**: Flytt sammen med `design-system.md`?  
-10. **`main_lunchportalen-umbraco.yml`**: Bekreft long-term KEEP (Azure marketing) — **default ja** etter Z.3.
+| # | Enhet | Beslutning | Sprint AB |
+|---|-------|------------|-----------|
+| 1 | `archive/` (32 filer, 0 consumers) | **CUT** hele mappen | Gruppe **11** |
+| 2a | `k8s/` | **CUT** | Gruppe **12a** |
+| 2b | `infra/` | **CUT** | Gruppe **12b** |
+| 3 | `workers/worker.ts` | **CUT** (+ fjern `worker:queue` fra package.json) | Gruppe **13** |
+| 4 | `src/` shim | **REFACTOR** → `components/` | Gruppe **10.5** (egen runde) |
+| 5 | `repo-intelligence/` | **REFACTOR** weekly `repo:scan` CI — **ikke CUT** (live consumer verifisert) | Gruppe **17** |
+| 6 | `journal.txt` | **CUT** lokal | Gruppe **1** (scratch) |
+| 7 | `.vercel-trigger.txt` | **CUT** — git `3bbd035a` 2026-01-20, 0 refs | Gruppe **14** |
+| 8 | `audit-v4.cjs` | **REFACTOR** → `scripts/audit/` | Gruppe **15** |
+| 9 | `design/DESIGN_BRIEF.md` | **REFACTOR** → `docs/engineering/design-brief.md` | Gruppe **16** |
+| 10 | `.tmp/` content | **CUT lokalt** (mappe beholdes gitignored) | Gruppe **9** (lokal disk) |
+| 11 | `main_lunchportalen-umbraco.yml` | **KEEP** (Azure marketing aktiv — Z.3 deploy OK) | — |
+
+### repo-intelligence verifikasjon (punkt 5 — PRE-AB 2026-05-25)
+
+| Consumer | Path | Status |
+|----------|------|--------|
+| System graph API | `app/api/superadmin/system-graph/data/route.ts` → `buildSystemGraph()` | **LIVE prod** |
+| System graph UI | `app/superadmin/system-graph/page.tsx` + `SystemGraphClient.tsx` | **LIVE prod** (superadmin) |
+| Generator | `scripts/scanRepo.ts` (`npm run repo:scan`) | **KEEP** — ikke i scheduled CI i dag |
+| Query engine | `lib/repo/query.ts` | **0 consumers** → CUT Gruppe **18** |
+| Autonomous tooling | `scripts/runAutonomous.ts`, `scripts/autoFix.ts`, `scripts/generateAudit.ts` | Dev/CI-adhoc (auditReport, ikke graf-JSON) |
+
+**Konklusjon:** `buildSystemGraph.ts` + graf-JSON **KEEP**. Stale data (2026-03-26) — Gruppe **17** introduserer weekly `repo-intelligence-refresh.yml`. `lib/repo/query.ts` er dead — CUT separat.
+
+---
+
+## INVESTIGATE — original (arkiv)
+
+<details>
+<summary>Original ja/nei-liste (løst 2026-05-25)</summary>
+
+1. `k8s/` + `infra/` → **CUT** (12a/12b)  
+2. `workers/worker.ts` → **CUT** (13)  
+3. `archive/` → **CUT** (11)  
+4. `src/` → **REFACTOR** (10.5)  
+5. `repo-intelligence/` → **REFACTOR** weekly CI (17)  
+6. `journal.txt` → **CUT**  
+7. `.vercel-trigger.txt` → **CUT** (14)  
+8. `audit-v4.cjs` → **REFACTOR** (15)  
+9. `design/DESIGN_BRIEF.md` → **REFACTOR** (16)  
+10. `main_lunchportalen-umbraco.yml` → **KEEP**
+
+</details>
 
 ---
 
@@ -656,8 +709,9 @@ Oppdater eventuelle hardkodede lenker i CI/agents etter flytt.
 
 | Konflikt | Status | Anbefaling |
 |----------|--------|------------|
-| `src/` vs `app/` | **Begge finnes** · `src/app/` **NEI** | REFACTOR src→components (ikke dual-router) |
-| `k8s/` vs Vercel | K8s unused | INVESTIGATE → CUT |
+| `src/` vs `app/` | **Begge finnes** · `src/app/` **NEI** | **REFACTOR** Gruppe 10.5 → `components/` |
+| `k8s/` vs Vercel | K8s unused | **CUT** Gruppe 12a (Thomas OK) |
+| `infra/` vs Vercel | ECS unused | **CUT** Gruppe 12b (Thomas OK) |
 | `utils/` vs `lib/utils/` | 18 vs 2 imports | REFACTOR dedup |
 | `evidence/` vs `reports/` vs `audit/` vs `artifacts/` | Overlappende DD/formål | KEEP tracked `audit/` · CUT gitignored rest |
 | `public/brand/` logo navn | Mulig drift vs AGENTS.md | Verifiser i egen UI-fix |
@@ -676,16 +730,33 @@ Oppdater eventuelle hardkodede lenker i CI/agents etter flytt.
 
 ## Anbefalt Sprint AB-rekkefølge
 
-1. **Scratch-cleanup** (Grupper 1–7) — null risiko · ~8 PR  
-2. **`.gitignore` hardening** (Gruppe 8 patterns) — 1 PR  
-3. **Docs-refactor** (70 filer flytt) — ~8 PR, kun paths  
-4. **`utils/` dedup** (Gruppe 10) — 1–2 PR, consumer-graf  
-5. **`src/` konsolidering** — 2 PR  
-6. **`archive/` CUT** (Gruppe 11) — 1 PR etter Thomas OK  
-7. **`k8s/`/`infra/`/`workers`** — 1 PR etter Thomas OK  
-8. **Lokal disk** (`evidence/`, `artifacts/`, `.tmp/`) — manuelt, ikke git
+1. **Scratch-cleanup** (Grupper 1–7, 14) — null risiko · ~9 PR  
+2. **`.gitignore` hardening** (Gruppe 8) — 1 PR  
+3. **Docs-refactor** (70 filer flytt) — ~8 PR  
+4. **`utils/` dedup** (Gruppe 10) — 1–2 PR  
+5. **`src/` konsolidering** (Gruppe **10.5**) — 2 PR · egen runde  
+6. **`archive/` CUT** (Gruppe 11) — 1 PR  
+7. **`k8s/` CUT** (12a) + **`infra/` CUT** (12b) + **`workers/` CUT** (13) — 3 PR  
+8. **REFACTOR** audit-v4 (15), design-brief (16), repo-intel CI (17) — 3 PR  
+9. **CUT** `lib/repo/query.ts` (18) — 1 PR  
+10. **Z.5 governance doc** (19) + **Z.7 closure determinisme** (20) — 2 PR  
+11. **Lokal disk** (`evidence/`, `artifacts/`, `.tmp/`, `journal.txt`) — manuelt
 
-**Estimert effort:** **22–30 timer** over 25–35 PR-er.
+**Estimert effort:** **22–32 timer** over 28–38 PR-er.
+
+---
+
+## Cleanup-sprint Z → Sprint AB absorpsjon
+
+| Z-item | Status | Sprint AB |
+|--------|--------|-----------|
+| **Z.1–Z.3** | ✅ Merged (`7e34bcbd`, `1d41f1b5`, `702ce987`) | — |
+| **Z.4** Contact hero backoffice-verifikasjon | Thomas-action (re-save blokk) | Rapport-doc ved behov — ikke direkte AB |
+| **Z.5** backoffice-governance policy | Absorbert | **Gruppe 19** |
+| **Z.6** 5 stale untracked-filer | Absorbert | **Gruppe 1–7** (samme filer) |
+| **Z.7** lib-ai-keep-closure determinisme | Absorbert | **Gruppe 20** |
+
+**Z paused** etter Z.3 · videre arbeid via Sprint AB.
 
 ---
 
@@ -705,8 +776,8 @@ Oppdater eventuelle hardkodede lenker i CI/agents etter flytt.
 - [x] Total counts levert
 - [x] CUT-grupperinger for Sprint AB
 - [x] REFACTOR-liste med mål-stier
-- [x] INVESTIGATE-liste med ja/nei-spørsmål
+- [x] INVESTIGATE-liste — **12/12 RESOLVED** (Thomas 2026-05-25)
 
 ---
 
-*Generert Sprint AA 2026-05-25 · READ-ONLY crawl · Forutsetning for Cleanup Z.4–Z.7 + Sprint AB.*
+*Generert Sprint AA 2026-05-25 · INVESTIGATE resolution + PRE-AB repo-intel verifikasjon 2026-05-25 · 0 INVESTIGATE remaining · Klar for Sprint AB Gruppe 1.*
