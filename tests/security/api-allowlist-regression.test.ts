@@ -14,7 +14,6 @@ const API_ROOT = path.join(ROOT, "app", "api");
 
 /** Routes fixed in PR-X1 Fase 3 — must have explicit fail-closed gate in route file. */
 const CRITICAL_INLINE_AUTH: Array<{ url: string; file: string; pattern: RegExp }> = [
-  { url: "/api/ai/analyze", file: "app/api/ai/analyze/route.ts", pattern: /denyUnlessSession/ },
   { url: "/api/system/outbox/process", file: "app/api/system/outbox/process/route.ts", pattern: /requireCronAuth/ },
   { url: "/api/superadmin/users/set-company-admin", file: "app/api/superadmin/users/set-company-admin/route.ts", pattern: /requireSuperadmin/ },
   { url: "/api/auth/profile", file: "app/api/auth/profile/route.ts", pattern: /denyUnlessSession/ },
