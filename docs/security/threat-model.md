@@ -1,4 +1,4 @@
-# Ã°Å¸â€ºÂ¡ LUNCHPORTALEN Ã¢â‚¬â€œ THREAT MODEL
+# 🛡 LUNCHPORTALEN – THREAT MODEL
 
 Dette dokumentet beskriver trusselbildet for Lunchportalen og hvordan systemet mitigere risiko.
 
@@ -12,7 +12,7 @@ Scope:
 
 ---
 
-# 1Ã¯Â¸ÂÃ¢Æ’Â£ SYSTEMKONTEKST
+# 1️⃣ SYSTEMKONTEKST
 
 Lunchportalen er et multi-tenant driftssystem for firmalunsj.
 
@@ -28,27 +28,27 @@ Kritiske verdier:
 Systemet er bygget etter:
 
 - Fail-closed prinsipp
-- Ãƒâ€°n sannhetskilde (database)
+- Én sannhetskilde (database)
 - No-exception rule
 - Deterministiske operasjoner
 - RLS-basert tilgangskontroll
 
 ---
 
-# 2Ã¯Â¸ÂÃ¢Æ’Â£ TRUSSELKATEGORIER
+# 2️⃣ TRUSSELKATEGORIER
 
 ## 2.1 Uautorisert tilgang (Authentication bypass)
 
 ### Trussel
-En bruker fÃƒÂ¥r tilgang til data uten gyldig sesjon.
+En bruker får tilgang til data uten gyldig sesjon.
 
 ### Tiltak
 - Supabase Auth (JWT)
 - `auth.uid()` brukes i RLS og RPC
 - Ingen rolle bestemmes i frontend
-- RLS aktivert pÃƒÂ¥ kritiske tabeller
+- RLS aktivert på kritiske tabeller
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
@@ -59,11 +59,11 @@ En bruker ser data fra annet firma.
 
 ### Tiltak
 - Composite FK (company_id, location_id)
-- RLS pÃƒÂ¥ `orders`, `profiles`
+- RLS på `orders`, `profiles`
 - Tenant-isolation test i CI
 - Ingen globale SELECT uten rolle-sjekk
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
@@ -77,7 +77,7 @@ Bruker endrer bestilling etter cut-off.
 - RLS + RPC validerer cutoff
 - Ingen direkte writes
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
@@ -92,22 +92,22 @@ Ordre opprettes uten ACTIVE agreement.
 - Partial unique: maks 1 ACTIVE agreement per lokasjon
 - DB-level enforcement
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
 ## 2.5 Service-role misbruk
 
 ### Trussel
-Service-role brukes i feil kontekst og omgÃƒÂ¥r sikkerhetsregler.
+Service-role brukes i feil kontekst og omgår sikkerhetsregler.
 
 ### Tiltak
 - CI-guard for SUPABASE_SERVICE_ROLE_KEY
 - Allowlist (cron/system/superadmin)
 - Forbud mot direkte writes i API
-- Repo-wide sÃƒÂ¸k stopper brudd
+- Repo-wide søk stopper brudd
 
-RisikonivÃƒÂ¥: Moderat (hÃƒÂ¥ndteres via CI og policy)
+Risikonivå: Moderat (håndteres via CI og policy)
 
 ---
 
@@ -122,14 +122,14 @@ API-rute skriver direkte til kritiske tabeller.
 - CI gate stopper `.from("orders").<write>`
 - Security Architecture policy
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
 ## 2.7 Privilege escalation (rolle-eskalering)
 
 ### Trussel
-En bruker fÃƒÂ¥r hÃƒÂ¸yere rolle enn tiltenkt.
+En bruker får høyere rolle enn tiltenkt.
 
 ### Tiltak
 - Rolle lagret i DB (`profiles.role`)
@@ -137,7 +137,7 @@ En bruker fÃƒÂ¥r hÃƒÂ¸yere rolle enn tiltenkt.
 - Ingen rolle styrt av frontend
 - Superadmin-endringer logges
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
@@ -151,14 +151,14 @@ Dupliserte requests skaper flere ordre.
 - `ON CONFLICT` i RPC
 - idempotency_keys for kritiske operasjoner
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
 ## 2.9 Driftssystem-bypass via cron
 
 ### Trussel
-Cron kjÃƒÂ¸rer operasjoner som omgÃƒÂ¥r regler.
+Cron kjører operasjoner som omgår regler.
 
 ### Tiltak
 - Cron isolert i `app/api/cron`
@@ -166,7 +166,7 @@ Cron kjÃƒÂ¸rer operasjoner som omgÃƒÂ¥r regler.
 - SYSTEM_MOTOR_SECRET kreves
 - Ingen ordre-mutasjon uten agreement/cutoff-gate
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
@@ -181,14 +181,14 @@ Bruker injiserer skadelig input.
 - RPC parametere typed
 - TypeScript typecheck i CI
 
-RisikonivÃƒÂ¥: Lav
+Risikonivå: Lav
 
 ---
 
 ## 2.11 Denial of Service
 
 ### Trussel
-Spam av API for ÃƒÂ¥ overbelaste system.
+Spam av API for å overbelaste system.
 
 ### Tiltak
 - api_rate_events logging
@@ -196,11 +196,11 @@ Spam av API for ÃƒÂ¥ overbelaste system.
 - Cron-cleanup
 - Infrastruktur-skalering (Vercel/Supabase)
 
-RisikonivÃƒÂ¥: Moderat
+Risikonivå: Moderat
 
 ---
 
-# 3Ã¯Â¸ÂÃ¢Æ’Â£ SYSTEMISKE RISIKOER
+# 3️⃣ SYSTEMISKE RISIKOER
 
 ## 3.1 Developer bypass
 En utvikler legger inn midlertidig bypass i kode.
@@ -214,7 +214,7 @@ Tiltak:
 ---
 
 ## 3.2 Manuelle inngrep i produksjon
-Noen gjÃƒÂ¸r direkte DB-endringer.
+Noen gjør direkte DB-endringer.
 
 Tiltak:
 - Ingen DELETE i orders
@@ -224,7 +224,7 @@ Tiltak:
 ---
 
 ## 3.3 Uklare feil
-System returnerer Ã¢â‚¬Å“OKÃ¢â‚¬Â uten ÃƒÂ¥ ha skrevet data.
+System returnerer "OK" uten å ha skrevet data.
 
 Tiltak:
 - Deterministiske RPC-svar
@@ -234,13 +234,13 @@ Tiltak:
 
 ---
 
-# 4Ã¯Â¸ÂÃ¢Æ’Â£ GJENSTÃƒâ€¦ENDE RISIKOER
+# 4️⃣ GJENSTÅENDE RISIKOER
 
 Ingen system er risikofritt.
 
 Akseptert risiko:
 
-- Infrastruktur-nedetid (leverandÃƒÂ¸ravhengighet)
+- Infrastruktur-nedetid (leverandøravhengighet)
 - Supabase outage
 - Vercel outage
 - Sanity outage
@@ -252,20 +252,20 @@ Mitigering:
 
 ---
 
-# 5Ã¯Â¸ÂÃ¢Æ’Â£ RISIKOMATRICE
+# 5️⃣ RISIKOMATRICE
 
 | Trussel | Sannsynlighet | Konsekvens | Risiko |
 |----------|---------------|------------|--------|
-| Cross-tenant leak | Lav | HÃƒÂ¸y | Lav |
+| Cross-tenant leak | Lav | Høy | Lav |
 | Cut-off bypass | Lav | Middels | Lav |
-| Service-role misuse | Moderat | HÃƒÂ¸y | Moderat |
-| SQL injection | Lav | HÃƒÂ¸y | Lav |
+| Service-role misuse | Moderat | Høy | Moderat |
+| SQL injection | Lav | Høy | Lav |
 | Replay | Lav | Lav | Lav |
 | Cron misbruk | Lav | Middels | Lav |
 
 ---
 
-# 6Ã¯Â¸ÂÃ¢Æ’Â£ OVERORDNET KONKLUSJON
+# 6️⃣ OVERORDNET KONKLUSJON
 
 Lunchportalen er designet etter:
 
@@ -275,7 +275,7 @@ Lunchportalen er designet etter:
 - Deterministisk drift
 - No-exception modell
 
-De stÃƒÂ¸rste risikoene er:
+De største risikoene er:
 
 - Menneskelig feil (kodeendringer som bryter policy)
 - Feil bruk av service-role
@@ -290,7 +290,7 @@ Disse mitigere via:
 
 ---
 
-# 7Ã¯Â¸ÂÃ¢Æ’Â£ OPPDATERING AV TRUSSELMODELL
+# 7️⃣ OPPDATERING AV TRUSSELMODELL
 
 Dette dokumentet skal oppdateres ved:
 
@@ -303,12 +303,11 @@ Dette dokumentet skal oppdateres ved:
 
 ---
 
-# Ã°Å¸Â§Â¾ SLUTTORD
+# 🏁 SLUTTORD
 
-Security er ikke et lag Ã¢â‚¬â€œ det er arkitektur.
+Security er ikke et lag – det er arkitektur.
 
-Lunchportalen hÃƒÂ¥ndhever sikkerhet i databasen, ikke i UI.
-Systemet er designet for ÃƒÂ¥ vÃƒÂ¦re forutsigbart, reviderbart og skalerbart.
+Lunchportalen håndhever sikkerhet i databasen, ikke i UI.
+Systemet er designet for å være forutsigbart, reviderbart og skalerbart.
 
 Dette dokumentet representerer gjeldende sikkerhetsvurdering per versjon.
-

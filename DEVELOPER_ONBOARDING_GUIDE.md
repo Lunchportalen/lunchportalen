@@ -103,7 +103,7 @@ Dokumentasjon Ã¢â€ â€™ *.md
 FÃƒÂ¸r du lager feature:
 Les:
 
-SECURITY_ARCHITECTURE.md
+docs/security/security-architecture.md
 
 docs/governance/codex-datawrite.md
 

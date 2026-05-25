@@ -33,8 +33,8 @@ Begrunnelse:
 Krav om dokumentert sikkerhetsrammeverk.
 
 Implementasjon:
-- SECURITY_ARCHITECTURE.md
-- MASTER_SECURITY_POLICY.md (hvis etablert)
+- docs/security/security-architecture.md
+- docs/security/master-security-policy.md (hvis etablert)
 - BOARD_LEVEL_SUMMARY.md
 
 ---
@@ -77,7 +77,7 @@ Begrunnelse:
 System- og datakomponenter identifisert.
 
 Implementasjon:
-- Asset definert i SECURITY_ARCHITECTURE.md
+- Asset definert i docs/security/security-architecture.md
 - Dataklassifisering i docs/governance/data-governance-policy.md
 
 ---

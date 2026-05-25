@@ -35,7 +35,7 @@ Ingen dokumenter eksisterer utenfor dette systemet.
 |----------|--------|
 | SYSTEM_ARCHITECTURE.md | App + DB + Sanity struktur |
 | DATABASE_SCHEMA.md | Endelig datamodell |
-| RLS_POLICIES.md | Multi-tenant isolasjon |
+| docs/security/rls-policies.md | Multi-tenant isolasjon |
 | API_CONTRACT.md | RID, no-store, fail-closed |
 
 ---
@@ -104,4 +104,4 @@ Next Audit: Se AUDIT_CALENDAR.md
 - `SEC-KD-SCOPE-2026-02-16`: Kitchen/Driver scope is locked to `TENANT-BOUND` (`company_id` + `location_id`), with fail-closed deny when scope is missing.
 - References:
   - `docs/governance/role-matrix.md`
-  - `RLS_POLICIES.md`
+  - `docs/security/rls-policies.md`

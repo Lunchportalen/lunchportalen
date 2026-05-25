@@ -49,11 +49,11 @@ Disse dokumentene MÅ være reflektert i:
 
 ### 2.1 Arkitektur og sikkerhet
 
-- SECURITY_ARCHITECTURE.md
+- docs/security/security-architecture.md
 - DATA_GOVERNANCE.md
-- ZERO_TRUST_ROADMAP.md
+- docs/security/zero-trust-roadmap.md
 - RBAC_MATRIX.md
-- ACCESS_CONTROL_POLICY.md
+- docs/security/access-control-policy.md
 
 Krav:
 - Rollevalidering i alle API-ruter
@@ -144,7 +144,7 @@ Disse påvirker:
 
 LEVEL 6 — ROADMAP / STRATEGISK UTVIKLING
 
-- ZERO_TRUST_ROADMAP.md
+- docs/security/zero-trust-roadmap.md
 - ESG_SUSTAINABILITY_TECH_ROADMAP.md
 - AI_PRINCIPLES.md
 - TECH_DEBT_LOG.md

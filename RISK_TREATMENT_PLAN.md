@@ -4,7 +4,7 @@ Dette dokumentet beskriver hvordan identifiserte risikoer håndteres.
 
 Basert på:
 - RISK_REGISTER.md
-- THREAT_MODEL.md
+- docs/security/threat-model.md
 - ISO 27001 Annex A
 - SOC2_CONTROL_MATRIX.md
 
