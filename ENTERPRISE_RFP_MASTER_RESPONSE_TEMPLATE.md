@@ -73,7 +73,7 @@ Behandles ikke:
 - Sensitive helseopplysninger
 
 Referanse:
-- COMPLIANCE_OVERVIEW.md
+- docs/compliance/compliance-overview.md
 - docs/governance/data-governance-policy.md
 
 ---
@@ -128,7 +128,7 @@ A:
 
 Referanse:
 - INCIDENT_RESPONSE_PLAN.md
-- CORRECTIVE_ACTIONS_LOG.md
+- docs/compliance/corrective-actions-log.md
 
 ---
 
@@ -144,9 +144,9 @@ A:
 - Statement of Applicability
 
 Referanse:
-- SOC2_CONTROL_MATRIX.md
+- docs/compliance/soc2-control-matrix.md
 - ISO27001_ALIGNMENT_MATRIX.md
-- STATEMENT_OF_APPLICABILITY_ISO27001.md
+- docs/compliance/statement-of-applicability-iso27001.md
 
 ---
 

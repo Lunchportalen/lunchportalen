@@ -64,7 +64,7 @@ Ingen dokumenter eksisterer utenfor dette systemet.
 
 ### 2.5 Evidence Layer
 
-Se: `EVIDENCE_INDEX.md`
+Se: `docs/compliance/evidence-index.md`
 
 ---
 
@@ -85,7 +85,7 @@ Se: `EVIDENCE_INDEX.md`
 
 Alle dokumentendringer:
 
-- Må registreres i `EVIDENCE_INDEX.md`
+- Må registreres i `docs/compliance/evidence-index.md`
 - Må valideres mot AVENSIA-testen
 - Må ikke bryte No-Exception Rule
 
@@ -95,7 +95,7 @@ Alle dokumentendringer:
 
 Documentation Coverage: ____ %
 Audit Ready: Yes / No
-Next Audit: Se AUDIT_CALENDAR.md
+Next Audit: Se docs/compliance/audit-calendar.md
 
 ---
 

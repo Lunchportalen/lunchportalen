@@ -6,7 +6,7 @@ Basert på:
 - RISK_REGISTER.md
 - docs/security/threat-model.md
 - ISO 27001 Annex A
-- SOC2_CONTROL_MATRIX.md
+- docs/compliance/soc2-control-matrix.md
 
 ---
 

@@ -82,7 +82,7 @@ Krav:
 
 - DATABASE_ARCHITECTURE.md
 - RLS_IMPLEMENTATION_PLAYBOOK.md
-- INTERNAL_AUDIT_TEMPLATE.md
+- docs/compliance/internal-audit-template.md
 
 Krav:
 - company_id + location_id enforced
@@ -113,10 +113,10 @@ Krav:
 
 LEVEL 4 — REVISJON & COMPLIANCE
 
-- SOC2_CONTROL_MATRIX.md
+- docs/compliance/soc2-control-matrix.md
 - ESG_SUSTAINABILITY_PLAN.md
 - DATA_PRIVACY_POLICY.md
-- INTERNAL_AUDIT_TEMPLATE.md
+- docs/compliance/internal-audit-template.md
 - docs/governance/change-management-policy.md
 
 Disse dokumentene skal:

@@ -176,7 +176,7 @@ Status: Implementert
 | Dataminimering | Minimal fields | Schema |
 | Retention | Cleanup function | DB |
 | Role isolation | RLS | Schema |
-| GDPR alignment | COMPLIANCE_OVERVIEW.md | Repo |
+| GDPR alignment | docs/compliance/compliance-overview.md | Repo |
 
 Status: Implementert
 
