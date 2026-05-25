@@ -22,9 +22,9 @@ Dette dokumentet brukes som:
 
 | Kontroll | Implementering | Evidens |
 |-----------|---------------|---------|
-| Arkitektur-dokumentasjon | SECURITY_ARCHITECTURE.md | Repo |
+| Arkitektur-dokumentasjon | docs/security/security-architecture.md | Repo |
 | Risikoanalyse | RISK_REGISTER.md | Repo |
-| Threat Model | THREAT_MODEL.md | Repo |
+| Threat Model | docs/security/threat-model.md | Repo |
 | Styregjennomgang | BOARD_LEVEL_SUMMARY.md | Repo |
 
 Status: Implementert

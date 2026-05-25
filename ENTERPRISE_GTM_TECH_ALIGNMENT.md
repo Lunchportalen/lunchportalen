@@ -48,7 +48,7 @@ Teknisk støtte:
 - RPC-only writes
 - SOC2_CONTROL_MATRIX.md
 - ISO27001_ALIGNMENT_MATRIX.md
-- SECURITY_ARCHITECTURE.md
+- docs/security/security-architecture.md
 
 ---
 

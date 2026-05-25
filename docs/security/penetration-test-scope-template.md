@@ -248,7 +248,7 @@ Lunchportalen skal tåle:
 
 Penetrasjonstesten skal validere at systemet er like robust i praksis som dokumentert i:
 
-- SECURITY_ARCHITECTURE.md
-- THREAT_MODEL.md
+- docs/security/security-architecture.md
+- docs/security/threat-model.md
 - docs/governance/codex-datawrite.md
 - RISK_REGISTER.md

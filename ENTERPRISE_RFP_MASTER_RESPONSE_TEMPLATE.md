@@ -31,8 +31,8 @@ A:
 - Ingen rolle bestemmes i frontend
 
 Referanse:
-- SECURITY_ARCHITECTURE.md
-- ACCESS_CONTROL_POLICY.md
+- docs/security/security-architecture.md
+- docs/security/access-control-policy.md
 
 ---
 
@@ -255,8 +255,8 @@ A:
 - Årlig testplan
 
 Referanse:
-- RED_TEAM_SIMULATION_PLAYBOOK.md
-- PENETRATION_TEST_SCOPE_TEMPLATE.md
+- docs/security/red-team-simulation-playbook.md
+- docs/security/penetration-test-scope-template.md
 
 ---
 

@@ -34,7 +34,7 @@ Purpose: Bevisoversikt for revisjon, konsernsalg og compliance
 | SEC-002 | Token validation | auth_server |
 | SEC-003 | API no-store headers | http_contract |
 | SEC-010 | Kitchen/Driver scope locked (TENANT-BOUND) | docs/governance/role-matrix.md |
-| SEC-011 | Kitchen/Driver RLS policy validation | RLS_POLICIES.md |
+| SEC-011 | Kitchen/Driver RLS policy validation | docs/security/rls-policies.md |
 | OP-010 | Kitchen/Driver scope review plan | AUDIT_CALENDAR.md |
 
 ---

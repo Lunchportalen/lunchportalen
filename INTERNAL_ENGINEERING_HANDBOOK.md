@@ -215,8 +215,8 @@ Skalering er planlagt, ikke improvisert.
 
 Følgende dokumenter er en del av arkitekturen:
 
-- SECURITY_ARCHITECTURE.md
-- THREAT_MODEL.md
+- docs/security/security-architecture.md
+- docs/security/threat-model.md
 - RISK_REGISTER.md
 - SCALABILITY_MODEL.md
 - docs/governance/codex-datawrite.md
