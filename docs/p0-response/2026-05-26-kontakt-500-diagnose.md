@@ -222,38 +222,25 @@ Neste: eier bekrefter App Insights stack trace → **GO Sesjon 3** for hotfix.
 
 ---
 
-## Resolution
+## Resolution (2026-05-26)
 
-**Status:** **CLOSED (repo + deploy)** · prod curl **500 ved verifikasjon** — backoffice template-sync av Thomas påkrevd for runtime
+**Faktisk root cause** (oppdaget post-fix): _ContactFormBlock.cshtml i Umbraco backoffice DB hadde @inherits med PublishedModels-typed generic argument. Etter commit 3443747b satte prod ModelsMode: "Nothing" i appsettings.Production.json — som disable'r ModelsBuilder runtime compilation. Dette gjorde at PublishedModels-namespace ikke lenger eksisterer i prod, og partial-rendring kastet ved første Model-access.
 
-| Felt | Verdi |
-| --- | --- |
-| Fix commit | `a6efc4c5` — `fix(p0): kontakt 500 — Contact-template BlockGrid→BlockList cast` |
-| Endret fil | `umbraco17/lunchportalen/Views/contact.cshtml` (1 fil) |
-| Fix | `BlockListModel` + `blocklist/default.cshtml` (LandingPage/fordelerPage-pattern) |
-| Deploy workflow | `main_lunchportalen-umbraco.yml` run **#60** — `conclusion: success` |
-| Deploy SHA | `a6efc4c57fe2b9811de508109554ec7840d5d9e1` |
-| Deploy completed (UTC) | **2026-05-24T22:14:04Z** |
-| Backoffice (parallelt) | Thomas oppdaterer Contact-template i Umbraco backoffice for instant prod-fix |
+**Hvorfor BlockGrid/BlockList-hypotesen var feil**: Repo-templatene brukte allerede BlockListModel-pattern korrekt. De 3 contact.cshtml-deployene (commits 9d1c069e, 40f6ef7d, a6efc4c5) hadde 0 effekt på prod fordi backoffice DB-template var autoritativ over repo-fil. Audit i marathon-natten (`docs/audit/repo-state-2026-05-23-post-marathon.md`) verifiserte 0 PublishedModels-arv i Views/ og at begge _Contact*.cshtml i repo brukte IPublishedElement.
 
-### Post-deploy verifikasjon (2026-05-24T22:18Z)
+**Hvordan det faktisk ble fikset**: Thomas re-saved _ContactFormBlock i backoffice (Umbraco UI), som regenererte template med korrekt IPublishedElement-typed @inherits. Etter det returnerte /kontakt/ 200.
 
-```http
-GET https://www.lunchportalen.no/kontakt/ HTTP/1.1
+**Governance-finding (P1)**: Backoffice template-edits er autoritative over repo-fil-versjonen i denne stacken. Se `docs/governance/backoffice-policy-2026-05-26.md` for langsiktig løsning.
 
-HTTP/1.1 500 Internal Server Error
-Content-Length: 0
-Server: Microsoft-IIS/10.0
-X-Powered-By: ASP.NET
-```
+**Fix-commit**: backoffice-only (ingen Git-commit)  
+**Deploy timestamp**: 2026-05-25 ~03:00 CET  
+**Verifikasjon**: curl https://www.lunchportalen.no/kontakt/ → 200  
+**Status**: CLOSED
 
-**Tolkning:** Repo-fil og Azure-deploy er konsistente (BlockList-cast). Tom 500 etter deploy tyder på at **Umbraco runtime-template / dokumenttype** fortsatt peker på gammel BlockGrid-cast eller at backoffice endring ikke er publisert ennå. Re-verifiser curl etter Thomas fullfører backoffice template-sync — forventet **200** med hero + skjema.
+---
 
-### G-KONTAKT-01
+## Lessons learned
 
-| Gate | Status |
-| --- | --- |
-| Root cause identifisert | ✅ BlockGridModel på Block List property |
-| Repo-fix | ✅ `a6efc4c5` |
-| CI/deploy | ✅ Actions success |
-| Prod HTTP 200 | ⏳ Pending backoffice sync + re-curl |
+1. **Backoffice templates kan overstyre repo silent**: 3 contact.cshtml-deploys hadde 0 prod-effekt — verifiser ALDRI fix kun via Git, ALLTID via curl mot prod URL etter deploy.
+2. **ModelsMode-endringer er high-risk**: 3443747b virket trygg men skapte 500 på alle sider som hadde backoffice-edited templates med PublishedModels-arv. Disse må auditeres FØR ModelsMode-toggling.
+3. **Observability mangler på Umbraco**: P1 G-OBS-01 fortsatt åpen (Sentry/App Insights ikke koblet). Stack trace måtte hentes manuelt fra Azure Portal.
