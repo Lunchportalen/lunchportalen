@@ -536,6 +536,35 @@ Se [phase2-refactor-backlog-2026-05-26.md](./phase2-refactor-backlog-2026-05-26.
 
 ---
 
-## STOP — FASE A.5 complete · klar for Fase B
+## Fase B Execution Log (2026-05-26)
+
+| PR | Gruppe | Squash | Filer | LOC | Baseline | Type |
+|----|--------|--------|-------|-----|----------|------|
+| #1 | meta-engines-root | c1ae3ccc | 3 | 60 | 2403→2403 | atomic |
+| #2 | attribution-roi-stubs | f5a98cc9 | 3 | 122 | 2403→2403 | atomic |
+| #3 | resources-orchestration-stubs | 7c16756f | 5 | 130 | 2403→2403 | atomic |
+| #4 | pillar1-deferred-stubs | 1c655fac | 1+1 | 131 | 2403→2403 | hybrid (engine.ts decoupling) |
+| #5 | capital-allocation-stubs | 08840a37 | 7 | 159 | 2403→2403 | atomic |
+| #6 | control-and-tests-dead | df3a872c | 9 | 155 | 2403→2396 | atomic (baseline-shift) |
+| #7 | dead-api-ai-routes | 51f9b18f | 6 | 558 | 2396→2389 | atomic (+ route-auth test trim) |
+
+**Total**: 34 filer · ~1315 LOC slettet · 7 PRs · 1 hybrid (engine decoupling)
+
+**Phase B complete**: 2026-05-26
+
+**Hybrid decoupling-detaljer (PR #4)**:
+`adaptiveScoring.ts` hadde transitive consumer i `lib/ai/engine.ts`. Slettet stub-filen + minimal endring i `engine.ts` (fjernet `adjustScore` + `loadPatternWeights`, forenklet til SEO+CRO-blend). Thomas-override fra A.5 bekreftet at dette var korrekt CUT.
+
+**Baseline-shift PR #6**: `controlLayer.test.ts` (7 tester) ble slettet sammen med `control/*`-implementasjonen. Forventet og dokumentert.
+
+**Baseline-shift PR #7**: 7 route-auth-tester fjernet sammen med 6 døde `/api/ai/*`-routes (B8 allowlist + analyze integration tests). Ny canonical baseline: **2389**.
+
+**Post-merge V.8 (PR #7)**: Slettede routes returnerer **401** (middleware fail-closed JSON) — ikke 404 — fordi `/api/*` uten allowlist aldri når route-handler. Ingen 200/500 observert.
+
+**Next: Fase C** — re-etabler `esg_monthly` + `esg_daily` med RLS, idempotent rollup, CI-gates.
+
+---
+
+## STOP — FASE A.5 complete · Fase B complete (2026-05-26)
 
 *Generated READ-ONLY · `scripts/audit/phase2-cut-list-a55-complete.mjs`*
