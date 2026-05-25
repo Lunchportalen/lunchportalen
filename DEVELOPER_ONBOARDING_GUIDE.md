@@ -105,7 +105,7 @@ Les:
 
 SECURITY_ARCHITECTURE.md
 
-CODEX_DATAWRITE.md
+docs/governance/codex-datawrite.md
 
 ARCHITECTURE_DECISIONS.md
 

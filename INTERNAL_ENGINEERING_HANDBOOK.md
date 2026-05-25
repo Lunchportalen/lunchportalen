@@ -219,8 +219,8 @@ Følgende dokumenter er en del av arkitekturen:
 - THREAT_MODEL.md
 - RISK_REGISTER.md
 - SCALABILITY_MODEL.md
-- CODEX_DATAWRITE.md
-- CODEX_CHECKLIST.md
+- docs/governance/codex-datawrite.md
+- docs/governance/codex-checklist.md
 - ADR
 - DRP
 - BCP

@@ -74,7 +74,7 @@ Behandles ikke:
 
 Referanse:
 - COMPLIANCE_OVERVIEW.md
-- DATA_GOVERNANCE_POLICY.md
+- docs/governance/data-governance-policy.md
 
 ---
 
@@ -163,8 +163,8 @@ A:
 - ADR for arkitekturendring
 
 Referanse:
-- CHANGE_MANAGEMENT_POLICY.md
-- CODEX_CHECKLIST.md
+- docs/governance/change-management-policy.md
+- docs/governance/codex-checklist.md
 
 ---
 
@@ -183,7 +183,7 @@ Alle leverandører:
 - Opererer i EU/EØS der relevant
 
 Referanse:
-- VENDOR_MANAGEMENT_POLICY.md
+- docs/governance/vendor-management-policy.md
 
 ---
 
@@ -218,7 +218,7 @@ AI brukes ikke til:
 
 Referanse:
 - AI_STRATEGY_INTERNAL_CONTROLLED.md
-- RESPONSIBLE_AI_POLICY.md
+- docs/governance/responsible-ai-policy.md
 
 ---
 

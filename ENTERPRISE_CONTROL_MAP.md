@@ -117,7 +117,7 @@ LEVEL 4 — REVISJON & COMPLIANCE
 - ESG_SUSTAINABILITY_PLAN.md
 - DATA_PRIVACY_POLICY.md
 - INTERNAL_AUDIT_TEMPLATE.md
-- CHANGE_MANAGEMENT_POLICY.md
+- docs/governance/change-management-policy.md
 
 Disse dokumentene skal:
 - Kunne fremvises ved enterprise-salg

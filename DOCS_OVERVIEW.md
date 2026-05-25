@@ -57,7 +57,7 @@ Ingen dokumenter eksisterer utenfor dette systemet.
 |----------|--------|
 | GDPR_OVERVIEW.md | Personvernstruktur |
 | DATA_PROCESSING.md | DPA-ramme |
-| ROLE_MATRIX.md | Rolle-tilgang |
+| docs/governance/role-matrix.md | Rolle-tilgang |
 | AUDIT_LOG_POLICY.md | Logging |
 
 ---
@@ -103,5 +103,5 @@ Next Audit: Se AUDIT_CALENDAR.md
 
 - `SEC-KD-SCOPE-2026-02-16`: Kitchen/Driver scope is locked to `TENANT-BOUND` (`company_id` + `location_id`), with fail-closed deny when scope is missing.
 - References:
-  - `ROLE_MATRIX.md`
+  - `docs/governance/role-matrix.md`
   - `RLS_POLICIES.md`
