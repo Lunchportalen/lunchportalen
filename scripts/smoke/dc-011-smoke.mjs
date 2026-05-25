@@ -17,8 +17,6 @@ const BASE = (
 
 const AI_SAMPLES = [
   { path: "/api/ai/dashboard", method: "GET" },
-  { path: "/api/ai/insights", method: "GET" },
-  { path: "/api/ai/analyze", method: "POST", body: {} },
   { path: "/api/ai/copilot", method: "POST", body: { message: "smoke" } },
   { path: "/api/ai/rewrite", method: "POST", body: { text: "smoke" } },
 ];

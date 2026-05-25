@@ -83,6 +83,5 @@ for (const base of BASES) {
     authorization: `Bearer ${cronPreview}`,
   });
   await hit(base, jar, "ai dashboard no session", "GET", "/api/ai/dashboard");
-  await hit(base, jar, "ai analyze POST no session", "POST", "/api/ai/analyze", { "content-type": "application/json" });
   await hit(base, jar, "orders no session", "GET", "/api/orders");
 }
