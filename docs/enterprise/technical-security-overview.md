@@ -10,7 +10,7 @@
 | Tenant-isolasjon på operative data | Ja | Se `docs/security/tenant-isolation.md` |
 | Strukturert logging / `rid` i API-feil | Ja | Utvidet observability som egen leveranse (jf. blueprint K3) |
 | SSO / SAML | Nei (standard) | `docs/enterprise/sso-roadmap.md` |
-| Full SOC2 *attest* som leverandørdokument | Utenfor repo | Matrise i `docs/security/SOC2_CONTROL_MATRIX.md` er *mapping*, ikke attest |
+| Full SOC2 *attest* som leverandørdokument | Utenfor repo | Matrise i `docs/security/soc2-architecture-mapping.md` er *mapping*, ikke attest |
 
 ## Hosting og plattform
 - Next.js App Router (Node.js) og Supabase (Postgres + Auth + Storage).

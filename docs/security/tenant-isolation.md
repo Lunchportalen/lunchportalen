@@ -17,4 +17,4 @@
 - `lib/auth/assert.ts` — `assertTenant`, `logTenantViolation`
 - `lib/auth/guards.ts` — `canAccessCompany`, `canAccessLocation`
 - `lib/auth/resolveAiTenant.ts` — AI tenant binding
-- `docs/security/SOC2_CONTROL_MATRIX.md` — control mapping
+- `docs/security/soc2-architecture-mapping.md` — control mapping

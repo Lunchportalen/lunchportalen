@@ -41,7 +41,7 @@ Dette dokumentet forklarer **arkitektur og prinsipper** på et nivå IT og sikke
 | Teknisk + sikkerhetsoversikt | `docs/enterprise/technical-security-overview.md` |
 | Tenant-isolasjon | `docs/security/tenant-isolation.md` |
 | Audit | `docs/security/audit-coverage.md` |
-| SOC2-matrise (kontekst) | `docs/security/SOC2_CONTROL_MATRIX.md` |
+| SOC2-matrise (kontekst) | `docs/security/soc2-architecture-mapping.md` |
 
 ## Ansvarsfordeling (klarering med juridisk)
 
