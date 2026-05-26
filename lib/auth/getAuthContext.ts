@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 
 import { authLog } from "@/lib/auth/log";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 import { readLocalDevAuthSession } from "@/lib/auth/devBypass";
 import { normalizeRole } from "@/lib/auth/role";
 import { lookupMembership } from "@/lib/auth/membershipLookup";

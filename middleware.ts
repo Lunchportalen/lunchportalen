@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
 import { isApiAuthAllowlisted } from "@/lib/server/auth/apiAllowlist";
-import { updateSession } from "@/utils/supabase/proxy";
+import { updateSession } from "@/lib/supabase/proxy";
 
 function isBypassPath(pathname: string) {
   return (

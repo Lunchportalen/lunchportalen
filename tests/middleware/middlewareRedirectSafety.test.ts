@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextResponse } from "next/server";
 import { LOCAL_DEV_AUTH_COOKIE } from "@/lib/auth/localDevBypassCookie";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
-vi.mock("@/utils/supabase/proxy", () => ({
+vi.mock("@/lib/supabase/proxy", () => ({
   updateSession: async (req: { cookies: { getAll: () => Array<{ name: string; value: string }> } }, headers: Headers) => ({
     response: NextResponse.next({ request: { headers } }),
     hasSupabaseSessionCookie: hasSupabaseSsrAuthCookieInJar(req.cookies.getAll()),

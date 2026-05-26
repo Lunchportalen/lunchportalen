@@ -3,7 +3,7 @@
  * Does not validate JWT — middleware + Node routes use full scopeOr401.
  */
 import { jsonErr, makeRid } from "@/lib/http/edgeContract";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 function cookiesFromRequest(req: Request): { name: string; value: string }[] {
   const raw = req.headers.get("cookie") ?? "";

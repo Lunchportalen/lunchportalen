@@ -34,7 +34,7 @@ vi.mock("@/lib/system/emails", () => ({
   SYSTEM_EMAILS: { ORDER: "ordre@lunchportalen.no" },
 }));
 
-vi.mock("@/utils/supabase/ssrSessionCookies", () => ({
+vi.mock("@/lib/supabase/ssrSessionCookies", () => ({
   hasSupabaseSsrAuthCookieInJar: () => true,
 }));
 
