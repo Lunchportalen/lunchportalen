@@ -94,7 +94,7 @@ SELECT count(*) FROM auth.users WHERE email LIKE 'k6-vu-%@lunchportalen.no';
 
 | Fil/path | Kat | Audit-relasjon | Anbefaling | Sjekk-bevis |
 |----------|-----|----------------|------------|-------------|
-| `DEVELOPER_ONBOARDING_GUIDE.md` | **1** | A-P1-01 / §12 secret-hygiene | Commit: `docs(onboarding): §12 secret-hygiene` | `git diff` → ny §12, lenker til `01-spike-cleanup.md` + `rotate-checklist-2026-05-25.md` |
+| `docs/engineering/developer-onboarding-guide.md` | **1** | A-P1-01 / §12 secret-hygiene | Commit: `docs(onboarding): §12 secret-hygiene` | `git diff` → ny §12, lenker til `01-spike-cleanup.md` + `rotate-checklist-2026-05-25.md` |
 | `docs/audit/enterprise-v2-2026-05-25/**` (13 filer) | **1** | Audit v2 A–I baseline | Commit: `docs(audit): enterprise-v2 report` | Filer listet via glob; §3 LYVENDE confirmed |
 | `docs/audit/dc-032-staging-paritet-K6.md` | **1** | DC-032 / K6 parity | Commit med audit docs batch | Untracked `??` |
 | `docs/audit/dc-034-add-internal-test-flag-companies.md` | **1** | DC-034 | Commit med audit docs batch | Untracked |
@@ -179,7 +179,7 @@ SELECT count(*) FROM auth.users WHERE email LIKE 'k6-vu-%@lunchportalen.no';
 | 3 | `feat(audit): add v2 audit automation scripts` | 19× untracked `scripts/audit/*` **excluding** `staging-schema-dump` unless user overrides |
 | 4 | `chore(archive): preserve audit-v1 historical baseline` | `archive/audit-v1-shallow/**` |
 | 5 | `docs(security): rotation checklist from audit-v2` | `scripts/security/rotate-checklist-2026-05-25.md` |
-| 6 | `docs(onboarding): §12 secret-hygiene pattern (per audit)` | `DEVELOPER_ONBOARDING_GUIDE.md` |
+| 6 | `docs(onboarding): §12 secret-hygiene pattern (per audit)` | `docs/engineering/developer-onboarding-guide.md` |
 | 7 | `chore(audit): pre-flight PF.1 classification` | `scripts/cleanup/pre-flight-classification.md` |
 
 **Optional batch 8 (needs cat 4 GO):** `feat(k6): staging/prod pool tooling from SP-4` — `scripts/k6/*.mjs` (not results/)

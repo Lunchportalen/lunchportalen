@@ -35,7 +35,7 @@ Ingen dokumenter eksisterer utenfor dette systemet.
 |----------|--------|
 | SYSTEM_ARCHITECTURE.md | App + DB + Sanity struktur |
 | DATABASE_SCHEMA.md | Endelig datamodell |
-| docs/security/rls-policies.md | Multi-tenant isolasjon |
+| ../security/rls-policies.md | Multi-tenant isolasjon |
 | API_CONTRACT.md | RID, no-store, fail-closed |
 
 ---
@@ -57,14 +57,14 @@ Ingen dokumenter eksisterer utenfor dette systemet.
 |----------|--------|
 | GDPR_OVERVIEW.md | Personvernstruktur |
 | DATA_PROCESSING.md | DPA-ramme |
-| docs/governance/role-matrix.md | Rolle-tilgang |
+| ../governance/role-matrix.md | Rolle-tilgang |
 | AUDIT_LOG_POLICY.md | Logging |
 
 ---
 
 ### 2.5 Evidence Layer
 
-Se: `docs/compliance/evidence-index.md`
+Se: `../compliance/evidence-index.md`
 
 ---
 
@@ -85,7 +85,7 @@ Se: `docs/compliance/evidence-index.md`
 
 Alle dokumentendringer:
 
-- Må registreres i `docs/compliance/evidence-index.md`
+- Må registreres i `../compliance/evidence-index.md`
 - Må valideres mot AVENSIA-testen
 - Må ikke bryte No-Exception Rule
 
@@ -95,7 +95,7 @@ Alle dokumentendringer:
 
 Documentation Coverage: ____ %
 Audit Ready: Yes / No
-Next Audit: Se docs/compliance/audit-calendar.md
+Next Audit: Se ../compliance/audit-calendar.md
 
 ---
 
@@ -103,5 +103,5 @@ Next Audit: Se docs/compliance/audit-calendar.md
 
 - `SEC-KD-SCOPE-2026-02-16`: Kitchen/Driver scope is locked to `TENANT-BOUND` (`company_id` + `location_id`), with fail-closed deny when scope is missing.
 - References:
-  - `docs/governance/role-matrix.md`
-  - `docs/security/rls-policies.md`
+  - `../governance/role-matrix.md`
+  - `../security/rls-policies.md`

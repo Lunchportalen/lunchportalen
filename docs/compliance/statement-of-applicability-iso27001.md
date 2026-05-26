@@ -49,7 +49,7 @@ Definerer ansvar og roller.
 Implementasjon:
 - Rollemodell (profiles.role)
 - Governance-dokumenter
-- ARCHITECTURE_DECISIONS.md
+- docs/engineering/architecture-decisions.md
 
 ---
 

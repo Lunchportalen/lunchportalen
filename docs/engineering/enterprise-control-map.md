@@ -49,11 +49,11 @@ Disse dokumentene MÅ være reflektert i:
 
 ### 2.1 Arkitektur og sikkerhet
 
-- docs/security/security-architecture.md
+- ../security/security-architecture.md
 - DATA_GOVERNANCE.md
-- docs/security/zero-trust-roadmap.md
+- ../security/zero-trust-roadmap.md
 - RBAC_MATRIX.md
-- docs/security/access-control-policy.md
+- ../security/access-control-policy.md
 
 Krav:
 - Rollevalidering i alle API-ruter
@@ -82,7 +82,7 @@ Krav:
 
 - DATABASE_ARCHITECTURE.md
 - RLS_IMPLEMENTATION_PLAYBOOK.md
-- docs/compliance/internal-audit-template.md
+- ../compliance/internal-audit-template.md
 
 Krav:
 - company_id + location_id enforced
@@ -96,11 +96,11 @@ LEVEL 3 — DRIFT & INCIDENT CONTROL
 
 Disse styrer operativ stabilitet.
 
-- docs/security/incident/incident-response-plan.md
-- docs/security/incident/disaster-recovery-plan.md
+- ../security/incident/incident-response-plan.md
+- ../security/incident/disaster-recovery-plan.md
 - RISK_ESCALATION.md
-- docs/security/incident/business-continuity-plan.md
-- docs/strategy/frameworks/executive-monitoring-dashboard-blueprint.md
+- ../security/incident/business-continuity-plan.md
+- ../strategy/frameworks/executive-monitoring-dashboard-blueprint.md
 - SYSTEM_HEALTH.md
 
 Krav:
@@ -113,11 +113,11 @@ Krav:
 
 LEVEL 4 — REVISJON & COMPLIANCE
 
-- docs/compliance/soc2-control-matrix.md
+- ../compliance/soc2-control-matrix.md
 - ESG_SUSTAINABILITY_PLAN.md
 - DATA_PRIVACY_POLICY.md
-- docs/compliance/internal-audit-template.md
-- docs/governance/change-management-policy.md
+- ../compliance/internal-audit-template.md
+- ../governance/change-management-policy.md
 
 Disse dokumentene skal:
 - Kunne fremvises ved enterprise-salg
@@ -144,7 +144,7 @@ Disse påvirker:
 
 LEVEL 6 — ROADMAP / STRATEGISK UTVIKLING
 
-- docs/security/zero-trust-roadmap.md
+- ../security/zero-trust-roadmap.md
 - ESG_SUSTAINABILITY_TECH_ROADMAP.md
 - AI_PRINCIPLES.md
 - TECH_DEBT_LOG.md
@@ -186,7 +186,7 @@ Alle endringer i:
 Krever:
 
 1. Avensia Decision Test
-2. Oppdatert ENTERPRISE_CONTROL_MAP.md
+2. Oppdatert enterprise-control-map.md
 3. CI grønn
 4. Dokumentert commit-melding
 

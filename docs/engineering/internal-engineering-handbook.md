@@ -215,12 +215,12 @@ Skalering er planlagt, ikke improvisert.
 
 Følgende dokumenter er en del av arkitekturen:
 
-- docs/security/security-architecture.md
-- docs/security/threat-model.md
-- docs/security/incident/risk-register.md
-- docs/strategy/frameworks/scalability-model.md
-- docs/governance/codex-datawrite.md
-- docs/governance/codex-checklist.md
+- ../security/security-architecture.md
+- ../security/threat-model.md
+- ../security/incident/risk-register.md
+- ../strategy/frameworks/scalability-model.md
+- ../governance/codex-datawrite.md
+- ../governance/codex-checklist.md
 - ADR
 - DRP
 - BCP
