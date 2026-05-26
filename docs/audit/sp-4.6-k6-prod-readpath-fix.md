@@ -11,7 +11,7 @@
 |------|----------|
 | Sentry API | **UNVERIFIED** — `SENTRY_AUTH_TOKEN` tom i alle lokale env-filer |
 | Affected users | **Ukjent** — manuell dashboard-sjekk påkrevd |
-| P1 note | [`p1-2026-05-24-ghost-columns.md`](p1-2026-05-24-ghost-columns.md) |
+| P1 note | `p1-2026-05-24-ghost-columns.md` (referanse — fil ikke arkivert i repo) |
 
 ---
 

@@ -58,6 +58,7 @@
     "debug:v2-meal-bank": "tsx scripts/debug-v2-only.ts",
     "cron:menu-publish": "tsx scripts/cron-menu-publish.ts",
     "sanity:migrate-mealidea-allowed-tiers": "tsx scripts/sanity/migrate-mealidea-allowed-tiers.ts",
+    "check:links": "node scripts/check-doc-links.mjs",
     "agents:check": "node scripts/agents-ci.mjs",
     "ci:guard": "node scripts/ci-guard.mjs",
     "api:contract": "node scripts/ci/api-contract-enforcer.mjs",
