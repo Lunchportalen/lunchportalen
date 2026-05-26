@@ -464,81 +464,39 @@
 
 `README.md`, `CHANGELOG.md`, `AGENTS.md`, `AGENTS_TLDR.md`
 
-### 9.5 Docs til flytting (REFACTOR) — 70 filer
+### 9.5 Doc-flytting status (post Sprint AB Fase B)
 
-| Fil | Mål-sti | Begrunnelse |
-|-----|---------|-------------|
-| `ACCESS_CONTROL_POLICY.md` | `docs/governance/access-control-policy.md` | Governance |
-| `AI_KPI_FRAMEWORK.md` | `docs/strategy/ai-kpi-framework.md` | Strategy |
-| `AI_RISK_ASSESSMENT_FRAMEWORK.md` | `docs/governance/ai-risk-assessment-framework.md` | Governance |
-| `AI_STRATEGY_INTERNAL_CONTROLLED.md` | `docs/strategy/ai-strategy-internal-controlled.md` | Strategy |
-| `ARCHITECTURE_DECISIONS.md` | `docs/engineering/architecture-decisions.md` | Engineering |
-| `AUDIT_CALENDAR.md` | `docs/governance/audit-calendar.md` | Governance |
-| `BOARD_LEVEL_SUMMARY.md` | `docs/governance/board-level-summary.md` | Governance |
-| `BUSINESS_CONTINUITY_PLAN.md` | `docs/governance/business-continuity-plan.md` | Governance |
-| `CHANGE_MANAGEMENT_POLICY.md` | `docs/governance/change-management-policy.md` | Governance |
-| `CODEX_CHECKLIST.md` | `docs/engineering/codex-checklist.md` | Engineering |
-| `CODEX_DATAWRITE.md` | `docs/engineering/codex-datawrite.md` | Engineering |
-| `COMPLIANCE_OVERVIEW.md` | `docs/compliance/compliance-overview.md` | Compliance |
-| `COMPLIANCE_ROADMAP_12M_ISO.md` | `docs/compliance/compliance-roadmap-12m-iso.md` | Compliance |
-| `CORRECTIVE_ACTIONS_LOG.md` | `docs/governance/corrective-actions-log.md` | Governance |
-| `COST_MODEL.md` | `docs/strategy/cost-model.md` | Strategy |
-| `CRO_FRAMEWORK.md` | `docs/strategy/cro-framework.md` | Strategy |
-| `CURSOR_MASTER_PROMPT_LUNCHPORTALEN_V4.md` | `docs/engineering/cursor-master-prompt-v4.md` | Engineering |
-| `CURSOR_PHASED_PROMPTS_LUNCHPORTALEN_V5.md` | `docs/engineering/cursor-phased-prompts-v5.md` | Engineering |
-| `DATA_FLOW_DIAGRAM.md` | `docs/engineering/data-flow-diagram.md` | Engineering |
-| `DATA_GOVERNANCE_POLICY.md` | `docs/governance/data-governance-policy.md` | Governance |
-| `design-system.md` | `docs/engineering/design-system.md` | Engineering |
-| `DEVELOPER_ONBOARDING_GUIDE.md` | `docs/engineering/developer-onboarding-guide.md` | Engineering |
-| `DISASTER_RECOVERY_PLAN.md` | `docs/governance/disaster-recovery-plan.md` | Governance |
-| `DOCS_OVERVIEW.md` | `docs/governance/docs-overview.md` | Governance |
-| `DRIFTSCODEX.md` | `docs/engineering/driftscodex.md` | Engineering |
-| `ENGINEERING_KPI_FRAMEWORK.md` | `docs/engineering/engineering-kpi-framework.md` | Engineering |
-| `ENTERPRISE_AI_POSITIONING_BRIEF.md` | `docs/sales/enterprise-ai-positioning-brief.md` | Sales |
-| `ENTERPRISE_CONTROL_MAP.md` | `docs/governance/enterprise-control-map.md` | Governance |
-| `ENTERPRISE_GTM_TECH_ALIGNMENT.md` | `docs/sales/enterprise-gtm-tech-alignment.md` | Sales |
-| `ENTERPRISE_RFP_MASTER_RESPONSE_TEMPLATE.md` | `docs/sales/enterprise-rfp-master-response-template.md` | Sales |
-| `ENTERPRISE_SALES_TECHNICAL_PACK.md` | `docs/sales/enterprise-sales-technical-pack.md` | Sales |
-| `ESG_KPI_FRAMEWORK.md` | `docs/strategy/esg-kpi-framework.md` | Strategy / Pillar 2 |
-| `ESG_SALES_NARRATIVE_PACK.md` | `docs/sales/esg-sales-narrative-pack.md` | Sales |
-| `ESG_SUSTAINABILITY_TECHNICAL_BRIEF.md` | `docs/strategy/esg-sustainability-technical-brief.md` | Strategy |
-| `EVIDENCE_INDEX.md` | `docs/compliance/evidence-index.md` | Compliance |
-| `EXECUTIVE_ESG_DASHBOARD_BLUEPRINT.md` | `docs/strategy/executive-esg-dashboard-blueprint.md` | Strategy |
-| `EXECUTIVE_MONITORING_DASHBOARD_BLUEPRINT.md` | `docs/strategy/executive-monitoring-dashboard-blueprint.md` | Strategy |
-| `GROWTH_AND_RISK_ALIGNMENT_BRIEF.md` | `docs/strategy/growth-and-risk-alignment-brief.md` | Strategy |
-| `INCIDENT_RESPONSE_PLAN.md` | `docs/governance/incident-response-plan.md` | Governance |
-| `INTERNAL_AUDIT_TEMPLATE.md` | `docs/governance/internal-audit-template.md` | Governance |
-| `INTERNAL_ENGINEERING_HANDBOOK.md` | `docs/engineering/internal-engineering-handbook.md` | Engineering |
-| `INTERNAL_ENGINEERING_PLAYBOOK.md` | `docs/engineering/internal-engineering-playbook.md` | Engineering |
-| `INVESTOR_SECURITY_BRIEF.md` | `docs/security/investor-security-brief.md` | Security |
-| `MANAGEMENT_REVIEW_TEMPLATE.md` | `docs/governance/management-review-template.md` | Governance |
-| `MASTER_SECURITY_POLICY.md` | `docs/security/master-security-policy.md` | Security |
-| `MISSION_CRITICAL_OPERATIONS_STANDARD.md` | `docs/governance/mission-critical-operations-standard.md` | Governance |
-| `PENETRATION_TEST_SCOPE_TEMPLATE.md` | `docs/security/penetration-test-scope-template.md` | Security |
-| `PLATFORM_VISION_DOCUMENT.md` | `docs/strategy/platform-vision-document.md` | Strategy |
-| `PRODUCT_ROADMAP_5Y_DETAILED.md` | `docs/strategy/product-roadmap-5y-detailed.md` | Strategy |
-| `RED_TEAM_SIMULATION_PLAYBOOK.md` | `docs/security/red-team-simulation-playbook.md` | Security |
-| `REPO_DEEP_DIVE_REPORT.md` | `docs/audit/repo-deep-dive-report.md` | Audit |
-| `RESPONSIBLE_AI_POLICY.md` | `docs/governance/responsible-ai-policy.md` | Governance |
-| `RISK_REGISTER.md` | `docs/governance/risk/risk-register.md` | Risk |
-| `RISK_TREATMENT_PLAN.md` | `docs/governance/risk/risk-treatment-plan.md` | Risk |
-| `RLS_POLICIES.md` | `docs/security/rls-policies.md` | Security |
-| `ROLE_MATRIX.md` | `docs/governance/role-matrix.md` | Governance |
-| `SCALABILITY_MODEL.md` | `docs/engineering/scalability-model.md` | Engineering |
-| `SECURITY_ARCHITECTURE.md` | `docs/security/security-architecture.md` | Security |
-| `SECURITY_STRATEGY_5Y.md` | `docs/security/security-strategy-5y.md` | Security |
-| `SEO_STRATEGY_DOCUMENT.md` | `docs/strategy/seo-strategy-document.md` | Strategy |
-| `SOC2_CONTROL_MATRIX.md` | `docs/compliance/soc2-control-matrix.md` | Compliance |
-| `SOC2_PREPARATION_OUTLINE.md` | `docs/compliance/soc2-preparation-outline.md` | Compliance |
-| `SOCIAL_MEDIA_PLAYBOOK.md` | `docs/sales/social-media-playbook.md` | Sales |
-| `STATEMENT_OF_APPLICABILITY_ISO27001.md` | `docs/compliance/statement-of-applicability-iso27001.md` | Compliance |
-| `TECH_DUE_DILIGENCE_PACKAGE.md` | `docs/compliance/tech-due-diligence-package.md` | DD |
-| `TECHNOLOGY_STRATEGY_5Y.md` | `docs/strategy/technology-strategy-5y.md` | Strategy |
-| `THREAT_MODEL.md` | `docs/security/threat-model.md` | Security |
-| `UI_UX_GOVERNANCE.md` | `docs/governance/ui-ux-governance.md` | Governance |
-| `VENDOR_MANAGEMENT_POLICY.md` | `docs/governance/vendor-management-policy.md` | Governance |
-| `ZERO_TRUST_ROADMAP.md` | `docs/security/zero-trust-roadmap.md` | Security |
-| `ISO 27001 alignment matrix` | `docs/compliance/iso27001-alignment-matrix.md` | Compliance (rename + .md) |
+**Status:** COMPLETE.
+
+Sprint AB Fase B Gr 10.1–10.8 fullførte alle hub-doc-flyttinger som tidligere lå i Sprint AA backlog. Merge-/commit-evidens:
+
+| Batch | Commit | Beskrivelse |
+|-------|--------|-------------|
+| Gr 10.1 | `3f83e325` | governance & codex → `docs/governance/` |
+| Gr 10.2 | `febff1f1` | security → `docs/security/` |
+| Gr 10.3 | `34ef6265` | compliance → `docs/compliance/` |
+| Gr 10.4 | `4a7105c2` | strategy & roadmap → `docs/strategy/` |
+| Gr 10.4.5 | `e7cfc47a` | REPO_DEEP_DIVE → `docs/audit/` |
+| Gr 10.5 | `2a28afe1` (PR #27) | KPI & frameworks → `docs/strategy/frameworks/` |
+| Gr 10.6 | `cab3dfc7` (PR #28) | incident/continuity → `docs/security/incident/` |
+| Gr 10.7 | `cb1cd492` (PR #29) | sales & positioning → `docs/sales/` |
+| Gr 10.8 | `d6fd427c` (PR #30) | engineering & process → `docs/engineering/` |
+
+Hub-strukturen er nå:
+
+- **`docs/governance/`** (9 filer) — `codex-checklist`, `codex-datawrite`, `driftscodex`, plus `change-management-policy`, `data-governance-policy`, `responsible-ai-policy`, `role-matrix`, `ui-ux-governance`, `vendor-management-policy`
+- **`docs/security/`** (21 filer) — `access-control-policy`, `threat-model`, plus 13 top-level docs and `docs/security/incident/` subkatalog (6)
+- **`docs/compliance/`** (10 filer) — `audit-calendar`, `corrective-actions-log`, `internal-audit-template`, `management-review-template`, plus 6 docs (`compliance-overview`, `evidence-index`, `soc2-*`, m.m.)
+- **`docs/strategy/`** (26 `.md` filer) — `enterprise-ai-positioning-brief`, `enterprise-gtm-tech-alignment`, `tech-due-diligence-package`, plus 14 root docs and `docs/strategy/frameworks/` subkatalog (9)
+- **`docs/engineering/`** (11 filer) — `docs-overview`, `enterprise-control-map`, `esg-sustainability-technical-brief`, plus 8 engineering/process docs (onboarding, handbook, architecture, design-system, cursor prompts, m.m.)
+
+Verifisert **2026-05-26** (Fase E E.1 pre-flight): 14 av 15 Sprint AA doc-corrections ligger på endelig sti. `GTM_LAUNCH_PLAYBOOK` fra Sprint AA-listen ble Sprint AA-overridet til `enterprise-gtm-tech-alignment.md` (Gr 10.4).
+
+Live cross-doc-refs (~18 call-sites) er korrekte. UPPERCASE legacy labels i `docs/audit/parts/*` og `docs/repo-audit/*` er repo-root inventar-record fra pre-move audits, ikke ødelagte markdown-lenker.
+
+**Prevention (Fase E E.1):** `scripts/check-doc-links.mjs` + `npm run check:links` verifiserer relative `.md`-lenker under `docs/`. CI-wireing planlagt Gr 17.
+
+**Historisk note:** Tabellen «Docs til flytting (REFACTOR) — 70 filer» som stod her (2026-05-25 audit) viste Gr-10 *mellomstier*, ikke Sprint AA endelige hub-stier. Den er erstattet av dette avsnittet for å unngå DD-forvirring.
 
 ### 9.6 Scratch/stale (CUT) — 106+ filer untracked
 
