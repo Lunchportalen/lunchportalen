@@ -41,7 +41,7 @@
 
 **AI:** Brukes til innhold, forslag og styrt beslutningsstøtte der det er implementert — **ikke** solgt som synlig sluttbrukerprodukt der det ikke er live. Se `docs/product/technical.md`.
 
-**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/AUDIT_COVERAGE.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
+**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/audit-coverage.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
 
 ---
 

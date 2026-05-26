@@ -11,7 +11,7 @@
 | Credential protection | CC6.1 | Sessions via httpOnly cookies; no client-trusted tokens for server truth | `middleware.ts` (presence gate for `sb-access-token`), login/post-login cookie set (`app/api/auth/login/route.ts`, `app/api/auth/post-login/route.ts`) | Partial (full key mgmt is org process) |
 | Data isolation — tenant | CC6.6 | Tenant data scoped server-side | `ctx.company_id` / scope from `getAuthContext` and `getScope`; `assertTenant` / `canAccessCompany` (`lib/auth/assert.ts`, `lib/auth/guards.ts`); `resolveAiTenantExecutionIds` (`lib/auth/resolveAiTenant.ts`) for AI routes | Partial (not every route audited; see matrix notes) |
 | Data isolation — superadmin / ops | CC6.6 | Elevated roles documented | Superadmin allowlist + routes under `app/superadmin/**`, `app/api/superadmin/**` | Implemented |
-| Audit logging | CC7.2 | Security-relevant events recorded | `auditLog` / `buildAuditEvent` (`lib/audit/log.ts`); `authLog` (`lib/auth/log.ts`) | Partial (coverage map: `AUDIT_COVERAGE.md`) |
+| Audit logging | CC7.2 | Security-relevant events recorded | `auditLog` / `buildAuditEvent` (`lib/audit/log.ts`); `authLog` (`lib/auth/log.ts`) | Partial (coverage map: `audit-coverage.md`) |
 | Monitoring / alerting | CC7.2 | Ops visibility | `lib/ops/log.ts`, observability wrappers (e.g. `observeResponse`), platform health surfaces | Partial (alerting is deployment-specific) |
 | Change management | CC7.3 | Controlled changes | Git, CI workflows (`.github/workflows`), `AGENTS.md` / RC gates | Partial (process + tooling; not code-only) |
 | Incident handling | CC7.4 / CC7.5 | Defined response expectations | `docs/security/INCIDENT_RESPONSE.md` | Partial (policy doc) |
