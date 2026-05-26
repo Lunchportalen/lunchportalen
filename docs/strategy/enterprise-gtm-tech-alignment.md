@@ -47,7 +47,7 @@ Teknisk støtte:
 - Composite FK + RLS
 - RPC-only writes
 - docs/compliance/soc2-control-matrix.md
-- ISO27001_ALIGNMENT_MATRIX.md
+- [iso27001-alignment-matrix.md](../compliance/iso27001-alignment-matrix.md)
 - docs/security/security-architecture.md
 
 ---
