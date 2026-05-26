@@ -110,7 +110,7 @@ Status: Implementert
 |-----------|---------------|---------|
 | PR review | Git workflow | Git history |
 | CI hardening | ci:guard + preflight | CI logs |
-| ADR documentation | ARCHITECTURE_DECISIONS.md | Repo |
+| ADR documentation | docs/engineering/architecture-decisions.md | Repo |
 | No manual overrides | CODEX policy | Repo |
 
 Status: Implementert

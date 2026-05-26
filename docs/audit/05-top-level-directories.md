@@ -15,7 +15,7 @@ Vurdering: **Rolle**, **Risiko**, **Viktighet**, **Ryddighet** (subjektiv, tekni
 | `scripts/` | CI, audit, SEO, db-hjelpere. | Lav | Høy | Mange verktøy; dokumenter hva som er obligatorisk i CI. |
 | `tests/` | Vitest. | Lav | Høy | Stor dekning mange domener. |
 | `e2e/` | Playwright. | Lav | Middels | Støtter release-kvalitet. |
-| `docs/` | Dokumentasjon (stor). | Lav | Middels | Mange filer — navigér via `DOCS_OVERVIEW.md` / indekser. |
+| `docs/` | Dokumentasjon (stor). | Lav | Middels | Mange filer — navigér via `docs/engineering/docs-overview.md` / indekser. |
 | `workers/` | Bakgrunnsarbeid (`worker.ts`). | Medium | Middels | Avhengig av drift. |
 | `studio/` | Sanity Studio (kilde; vendor under `node_modules` klassifisert generert). | Lav | Middels | ~60 ikke-genererte poster (kilde/config). |
 | `.github/` | CI workflows. | Lav | **Kritisk** for merge | Standard. |
