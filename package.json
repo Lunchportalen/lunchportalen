@@ -82,7 +82,6 @@
     "repo:scan": "tsx scripts/scanRepo.ts",
     "repo:update": "tsx scripts/updateRepoMemory.ts",
     "seed:sanity-menu": "tsx scripts/seed-sanity-menu.ts",
-    "worker:queue": "tsx workers/worker.ts",
     "seed:hello": "tsx scripts/seed/runner/hello.ts",
     "seed:wipe": "tsx scripts/seed/runner/wipe.ts",
     "seed:dry-run": "tsx scripts/seed/runner/dry-run.ts",
