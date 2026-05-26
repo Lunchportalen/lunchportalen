@@ -47,6 +47,7 @@ export const CONTROL_PLANE_RUNTIME_MODULES: ControlPlaneModuleStatus[] = [
     id: "worker",
     label: "Worker (e-post / AI-jobb / eksperiment)",
     badge: "STUB",
-    detail: "workers/worker.ts — send_email, ai_generate og experiment_run er stub inntil implementert.",
+    detail:
+      "Redis sidecar worker fjernet; outbox draines via Vercel cron. send_email, ai_generate og experiment_run er ikke implementert.",
   },
 ];
