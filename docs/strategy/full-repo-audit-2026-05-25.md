@@ -498,6 +498,17 @@ Live cross-doc-refs (~18 call-sites) er korrekte. UPPERCASE legacy labels i `doc
 
 **Historisk note:** Tabellen «Docs til flytting (REFACTOR) — 70 filer» som stod her (2026-05-25 audit) viste Gr-10 *mellomstier*, ikke Sprint AA endelige hub-stier. Den er erstattet av dette avsnittet for å unngå DD-forvirring.
 
+### Sprint AA backlog state-correction (post Fase E)
+
+Under Fase E pre-flight (E.1-E.3) ble flere Sprint AA backlog-elementer funnet å være feilklassifisert eller foreldede:
+
+- **Punkt 5 "docs/security/ naming UPPERCASE (5+1 SOC2)"**: Faktisk 4 filer renamed (E.2). SOC2 keep-both-strategi bekreftet med semantisk skille (security: architecture-mapping, compliance: control-matrix).
+- **Punkt 8 "ISO27001_ALIGNMENT_MATRIX missing-ref"**: Filen eksisterte på repo-root med mellomrom-navn. Flyttet til docs/compliance/ + 3 ref-updates (E.3).
+- **Punkt 14 "ENTERPRISE_CONTROL_MAP ~20 phantom refs"**: Klassifisert som 6 audit-record inventar-labels per CONVENTIONS.md immutability. Ingen broken markdown-lenker.
+- **Punkt 15 "dead-code audit (WeekMenuReadOnly, NavActiveClient, AuthSlot)"**: Komponenter fortsatt aktive i components/. Defer til separat component-audit-sprint.
+
+Status: Sprint AA backlog fullstendig behandlet via Sprint AB Fase A-E. Resterende post-Sprint-AB items i §10 (sub-sprint TBD).
+
 ### 9.6 Scratch/stale (CUT) — 106+ filer untracked
 
 **Gruppe 1 — commit_msg (40):** alle `.commit_msg_*.txt`
