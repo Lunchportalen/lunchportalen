@@ -2,10 +2,35 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { createClient as createSsrCookieClient } from "@/utils/supabase/server";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { createServerClient } from "@supabase/ssr";
+
+import { getSupabasePublicConfig } from "@/lib/config/env";
+import type { Database } from "@/lib/types/database";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
+
+async function createSsrCookieClient() {
+  const cookieStore = await cookies();
+  const { url, anonKey } = getSupabasePublicConfig();
+
+  return createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          /* Server Components cannot always set cookies — middleware refresh handles it */
+        }
+      },
+    },
+  });
+}
 
 function hasSupabaseSsrAuthCookie(cookieStore: CookieStore): boolean {
   return hasSupabaseSsrAuthCookieInJar(cookieStore.getAll());

@@ -21,7 +21,7 @@ import { formatDateNO, formatMenuDateNO } from "@/lib/date/format";
 import { weekRangeISO } from "@/lib/date/week";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export const metadata: Metadata = {
   title: "Ukeplan – Lunchportalen",

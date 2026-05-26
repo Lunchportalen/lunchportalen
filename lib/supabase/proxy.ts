@@ -8,8 +8,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/lib/types/database";
-import { getSupabasePublicCredentials } from "@/utils/supabase/publicEnv";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { getSupabasePublicCredentials } from "@/lib/supabase/publicEnv";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export type UpdateSessionResult = {
   response: NextResponse;

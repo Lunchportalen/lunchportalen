@@ -26,7 +26,7 @@ import { fetchOrderWindowServerSide, type OrderWindowData } from "@/lib/server/e
 import { loadEmployeePastLunchDayHistory } from "@/lib/server/employee/loadEmployeeOwnLunchRecentHistory";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export const metadata: Metadata = {
   title: "Mine registrerte dager – Lunchportalen",

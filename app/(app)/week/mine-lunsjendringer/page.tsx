@@ -18,7 +18,7 @@ import { formatDateNO, formatTimeNO } from "@/lib/date/format";
 import { loadEmployeeOwnLunchRecentHistory } from "@/lib/server/employee/loadEmployeeOwnLunchRecentHistory";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export const metadata: Metadata = {
   title: "Mine lunsjendringer – Lunchportalen",
