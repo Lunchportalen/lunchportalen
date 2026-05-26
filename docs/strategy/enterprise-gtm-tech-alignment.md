@@ -101,7 +101,7 @@ Enterprise spør:
 
 Teknisk støtte:
 
-- SCALABILITY_MODEL.md
+- docs/strategy/frameworks/scalability-model.md
 - Orders-partisjonering (roadmap)
 - Read replicas (roadmap)
 - Zero Trust roadmap
