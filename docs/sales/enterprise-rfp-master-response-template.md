@@ -145,7 +145,7 @@ A:
 
 Referanse:
 - ../compliance/soc2-control-matrix.md
-- ISO27001_ALIGNMENT_MATRIX.md
+- [iso27001-alignment-matrix.md](../compliance/iso27001-alignment-matrix.md)
 - ../compliance/statement-of-applicability-iso27001.md
 
 ---

@@ -192,7 +192,7 @@ Implementasjon:
 - docs/compliance/compliance-overview.md
 - docs/security/incident/risk-register.md
 - docs/compliance/soc2-control-matrix.md
-- ISO27001_ALIGNMENT_MATRIX.md
+- [iso27001-alignment-matrix.md](./iso27001-alignment-matrix.md)
 
 ---
 
