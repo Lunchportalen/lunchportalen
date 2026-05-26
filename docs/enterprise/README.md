@@ -36,12 +36,12 @@
 | API-kontrakt `{ ok, rid, … }`, fail-closed | Ja | — |
 | Ordre, uke, kjøkken leseflate, company_admin rammer | Ja (RC) | — |
 | SSO / SAML / SCIM | Nei | `sso-roadmap.md` |
-| Full ekstern compliance-sertifisering (f.eks. SOC2 *attest*) | Kontekst-dokumentert | `docs/security/SOC2_CONTROL_MATRIX.md` beskriver *mapping*, ikke leverandør-attest i seg selv |
+| Full ekstern compliance-sertifisering (f.eks. SOC2 *attest*) | Kontekst-dokumentert | `docs/security/soc2-architecture-mapping.md` beskriver *mapping*, ikke leverandør-attest i seg selv |
 | K4-observabilitet som full incident-plattform | Delvis (`opsLog`, health) | Utvidet drift/alarm som produkt — se `AGENTS.md` Q17 K3 |
 
 **AI:** Brukes til innhold, forslag og styrt beslutningsstøtte der det er implementert — **ikke** solgt som synlig sluttbrukerprodukt der det ikke er live. Se `docs/product/technical.md`.
 
-**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/AUDIT_COVERAGE.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
+**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/audit-coverage.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
 
 ---
 

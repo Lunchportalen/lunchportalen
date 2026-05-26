@@ -25,7 +25,7 @@ Dette dokumentet forklarer **arkitektur og prinsipper** på et nivå IT og sikke
 
 - **TLS** for trafikk  
 - **Hemmeligheter** i miljøvariabler — ikke i kildekode  
-- **RLS og tenant-isolasjon** som designprinsipp i database (detaljer i `docs/security/TENANT_ISOLATION.md`)  
+- **RLS og tenant-isolasjon** som designprinsipp i database (detaljer i `docs/security/tenant-isolation.md`)  
 - **API-kontrakter** med forutsigbare svar for klienter (suksess/feil med sporings-ID der relevant)  
 
 ## Tilgjengelighet og drift
@@ -39,9 +39,9 @@ Dette dokumentet forklarer **arkitektur og prinsipper** på et nivå IT og sikke
 |------|-----|
 | **Samlet enterprise-pakke (index)** | `docs/enterprise/README.md` |
 | Teknisk + sikkerhetsoversikt | `docs/enterprise/technical-security-overview.md` |
-| Tenant-isolasjon | `docs/security/TENANT_ISOLATION.md` |
-| Audit | `docs/security/AUDIT_COVERAGE.md` |
-| SOC2-matrise (kontekst) | `docs/security/SOC2_CONTROL_MATRIX.md` |
+| Tenant-isolasjon | `docs/security/tenant-isolation.md` |
+| Audit | `docs/security/audit-coverage.md` |
+| SOC2-matrise (kontekst) | `docs/security/soc2-architecture-mapping.md` |
 
 ## Ansvarsfordeling (klarering med juridisk)
 

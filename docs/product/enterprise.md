@@ -20,7 +20,7 @@ For detaljert teknisk og sikkerhetsdokumentasjon, se `docs/enterprise/` og `docs
 
 - Sikkerhets- og enterprise-hendelser kan logges med **append-only** tenkning der det er bygget inn  
 - Egnet for **intern kontroll**, **hendelsesanalyse** og **dialog med revisor** — omfang avhenger av aktivert funksjonalitet og konfigurasjon  
-- **Dekning og begrensninger** beskrives konkret i `docs/security/AUDIT_COVERAGE.md` — ikke anta «full revisjonspakke» uten avklart scope  
+- **Dekning og begrensninger** beskrives konkret i `docs/security/audit-coverage.md` — ikke anta «full revisjonspakke» uten avklart scope  
 
 ## Etterlevelse og personvern (GDPR)
 
