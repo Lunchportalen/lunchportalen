@@ -217,7 +217,7 @@ AI brukes ikke til:
 - Automatisk ordrejustering
 
 Referanse:
-- AI_STRATEGY_INTERNAL_CONTROLLED.md
+- docs/strategy/ai-strategy-internal-controlled.md
 - docs/governance/responsible-ai-policy.md
 
 ---
