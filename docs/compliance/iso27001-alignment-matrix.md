@@ -18,10 +18,10 @@ Formål:
 
 | Kontroll | Implementering | Status |
 |----------|---------------|--------|
-| Overordnet sikkerhetsrammeverk | SECURITY_ARCHITECTURE.md | Implementert |
-| Risk management | RISK_REGISTER.md | Implementert |
-| Incident Response | INCIDENT_RESPONSE_PLAN.md | Implementert |
-| DR & BCP | DISASTER_RECOVERY_PLAN.md + BUSINESS_CONTINUITY_PLAN.md | Implementert |
+| Overordnet sikkerhetsrammeverk | [security-architecture.md](../security/security-architecture.md) | Implementert |
+| Risk management | [risk-register.md](../security/incident/risk-register.md) | Implementert |
+| Incident Response | [incident-response-plan.md](../security/incident/incident-response-plan.md) | Implementert |
+| DR & BCP | [disaster-recovery-plan.md](../security/incident/disaster-recovery-plan.md) + [business-continuity-plan.md](../security/incident/business-continuity-plan.md) | Implementert |
 
 Gap:
 - Formell styregodkjenning av sikkerhetspolicy (prosedyre)
@@ -34,7 +34,7 @@ Gap:
 |----------|---------------|--------|
 | Rolledefinisjon | profiles.role + dokumentasjon | Implementert |
 | Separation of duties | RPC + RLS + no admin override | Implementert |
-| Governance documentation | BOARD_LEVEL_SUMMARY.md | Implementert |
+| Governance documentation | [board-level-summary.md](../sales/board-level-summary.md) | Implementert |
 
 Gap:
 - Formell “Security Officer” rollebeskrivelse
@@ -59,8 +59,8 @@ Gap:
 
 | Kontroll | Implementering | Status |
 |----------|---------------|--------|
-| Identifiserte kritiske systemer | Dokumentert i Security Architecture | Implementert |
-| Dataklassifisering | COMPLIANCE_OVERVIEW.md | Delvis |
+| Identifiserte kritiske systemer | Dokumentert i [Security Architecture](../security/security-architecture.md) | Implementert |
+| Dataklassifisering | [compliance-overview.md](./compliance-overview.md) | Delvis |
 | Retention policy | DB cleanup-funksjon | Implementert |
 
 Gap:
@@ -114,7 +114,7 @@ Gap:
 
 | Kontroll | Implementering | Status |
 |----------|---------------|--------|
-| Secure coding | CODEX policy | Implementert |
+| Secure coding | [codex-checklist.md](../governance/codex-checklist.md) | Implementert |
 | CI guard | ci:guard | Implementert |
 | No exception rule | Dokumentert | Implementert |
 | Deterministic DB enforcement | RPC + RLS | Implementert |
@@ -154,8 +154,8 @@ Gap:
 
 | Kontroll | Implementering | Status |
 |----------|---------------|--------|
-| BCP | BUSINESS_CONTINUITY_PLAN.md | Implementert |
-| DRP | DISASTER_RECOVERY_PLAN.md | Implementert |
+| BCP | [business-continuity-plan.md](../security/incident/business-continuity-plan.md) | Implementert |
+| DRP | [disaster-recovery-plan.md](../security/incident/disaster-recovery-plan.md) | Implementert |
 | RTO/RPO | Definert | Implementert |
 
 Gap:
@@ -167,9 +167,9 @@ Gap:
 
 | Kontroll | Implementering | Status |
 |----------|---------------|--------|
-| GDPR alignment | COMPLIANCE_OVERVIEW.md | Implementert |
-| Risk register | RISK_REGISTER.md | Implementert |
-| SOC 2 alignment | SOC2_CONTROL_MATRIX.md | Implementert |
+| GDPR alignment | [compliance-overview.md](./compliance-overview.md) | Implementert |
+| Risk register | [risk-register.md](../security/incident/risk-register.md) | Implementert |
+| SOC 2 alignment | [soc2-control-matrix.md](./soc2-control-matrix.md) | Implementert |
 
 Gap:
 - Formell intern revisjonsprosess
