@@ -8,7 +8,7 @@
 
 | Dokument | Innhold |
 |----------|---------|
-| `PHASE2D_BASELINE_DELTA_AUDIT.md` | Delta mot `REPO_DEEP_DIVE_REPORT.md` |
+| `PHASE2D_BASELINE_DELTA_AUDIT.md` | Delta mot `docs/audit/repo-deep-dive-report.md` |
 | `SOCIAL_CALENDAR_RUNTIME_PLAN.md` | SoMe-spor, API, flyt, integrasjoner |
 | `SEO_CMS_GROWTH_PLAN.md` | SEO i CMS, AI, datakilder |
 | `ESG_RUNTIME_PLAN.md` | Snapshots, RPC, visning, gap |

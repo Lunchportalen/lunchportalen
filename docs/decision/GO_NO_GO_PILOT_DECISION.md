@@ -26,7 +26,7 @@
 | `docs/audit/FULL_REPO_AUDIT_V2.md` | Omfang, API-sprawl, komponent-alias |
 | `docs/audit/GO_LIVE_RISK_REGISTER_V2.md` | R1–R10 |
 | `docs/phase2b`–`2d` (oversikt) | Social/SEO/ESG intent vs runtime |
-| `REPO_DEEP_DIVE_REPORT.md` (rot) | **Before snapshot** — ikke brukt som nåstatus |
+| `docs/audit/repo-deep-dive-report.md` (rot) | **Before snapshot** — ikke brukt som nåstatus |
 | **Kode** | `middleware.ts`, `lib/http/routeGuard.ts`, `lib/auth/role.ts`, `lib/week/availability.ts`, `workers/worker.ts`, stikkprøver `app/api/**` |
 
 **Verifikasjon (2026-03-29):** `npm run typecheck` ✅ · `npm run build:enterprise` ✅ · `npm run test:run` ✅ (212 filer / 1191 tester).

@@ -1,7 +1,7 @@
 # LIVE READY — Baseline delta (deep-dive → nå)
 
 **Dato:** 2026-03-29  
-**Before snapshot:** `REPO_DEEP_DIVE_REPORT.md` / tidligere baseline — **historikk**, ikke automatisk nåstatus.  
+**Before snapshot:** `docs/audit/repo-deep-dive-report.md` / tidligere baseline — **historikk**, ikke automatisk nåstatus.  
 **After / sannhet:** Kode + `docs/hardening/**`, `docs/audit/**`, `docs/decision/**`, fase 2a–2d dokumenter.
 
 ---

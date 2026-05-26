@@ -1,7 +1,7 @@
 # CMS Control Plane — Baseline (faktabasert)
 
 **Dato:** 2026-03-29  
-**Referanser:** `REPO_DEEP_DIVE_REPORT.md`, `docs/audit/CMS_BOUNDARY_AND_RUNTIME_BOUNDARY_REPORT.md`, `docs/hardening/RESOLVED_BASELINE_ITEMS.md`, `docs/hardening/OPEN_PLATFORM_RISKS.md`, `docs/hardening/DELTA_AUDIT_FROM_BASELINE.md`, `docs/live-ready/LIVE_READY_PUBLISH_AND_CMS_SAFETY.md`, `docs/enterprise-ready/UNCONDITIONAL_ENTERPRISE_LIVE_DECISION.md`, kode: `app/api/backoffice/**`, `lib/cms/**`, `app/api/week/route.ts`.
+**Referanser:** `docs/audit/repo-deep-dive-report.md`, `docs/audit/CMS_BOUNDARY_AND_RUNTIME_BOUNDARY_REPORT.md`, `docs/hardening/RESOLVED_BASELINE_ITEMS.md`, `docs/hardening/OPEN_PLATFORM_RISKS.md`, `docs/hardening/DELTA_AUDIT_FROM_BASELINE.md`, `docs/live-ready/LIVE_READY_PUBLISH_AND_CMS_SAFETY.md`, `docs/enterprise-ready/UNCONDITIONAL_ENTERPRISE_LIVE_DECISION.md`, kode: `app/api/backoffice/**`, `lib/cms/**`, `app/api/week/route.ts`.
 
 ---
 
@@ -39,7 +39,7 @@
 1. **Fredagstid for ukesynlighet:** Kode retter seg mot **15:00** Oslo (baseline hadde 14:00 som CONTRADICTION).
 2. **Employee `next`-allowlist:** Strammet til **kun** `/week*`-prefiks for employee (baseline tillot flere stier).
 
-**Merk:** `REPO_DEEP_DIVE_REPORT.md` er fortsatt nyttig som **before snapshot**, men tall (f.eks. antall route handlers) kan være historiske — re-tell ved behov.
+**Merk:** `docs/audit/repo-deep-dive-report.md` er fortsatt nyttig som **before snapshot**, men tall (f.eks. antall route handlers) kan være historiske — re-tell ved behov.
 
 ---
 
