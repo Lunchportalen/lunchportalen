@@ -1,7 +1,7 @@
 # E0 — Enterprise-ready baseline delta
 
 **Dato:** 2026-03-29  
-**Referanse-baseline:** `REPO_DEEP_DIVE_REPORT.md` (historikk), `docs/hardening/RESOLVED_BASELINE_ITEMS.md`, `docs/hardening/DELTA_AUDIT_FROM_BASELINE.md`, `docs/live-ready/LIVE_READY_BASELINE_DELTA.md`.
+**Referanse-baseline:** `docs/audit/repo-deep-dive-report.md` (historikk), `docs/hardening/RESOLVED_BASELINE_ITEMS.md`, `docs/hardening/DELTA_AUDIT_FROM_BASELINE.md`, `docs/live-ready/LIVE_READY_BASELINE_DELTA.md`.
 
 ---
 

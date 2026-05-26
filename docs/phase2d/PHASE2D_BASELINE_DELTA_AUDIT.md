@@ -1,7 +1,7 @@
 # Phase 2D0 — Baseline delta-audit (mot REPO_DEEP_DIVE_REPORT)
 
 **Dato:** 2026-03-28  
-**Referanse:** `REPO_DEEP_DIVE_REPORT.md` (generert samme dato)  
+**Referanse:** `docs/audit/repo-deep-dive-report.md` (generert samme dato)  
 **Formål:** Hva fra deep-dive som nå er **adressert**, hva som **fortsatt gjelder**, og hva som bør anses **historisk** for 2D-planlegging.
 
 ---
