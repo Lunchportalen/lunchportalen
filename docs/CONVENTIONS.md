@@ -38,6 +38,17 @@ Disse bevarer revisjonshistorikk og audit-trail for DD-prosesser.
 
 docs/umbraco-parity/ inneholder auto-genererte filer fra Umbraco backoffice-eksport. Filnavnene følger Umbraco content-type-ID-konvensjon (UPPERCASE_SNAKE) og skal IKKE manuelt renames. Regenerasjon via Umbraco-eksport overskriver.
 
+## artifacts/ — gitignored proof bank
+
+Repository-root `artifacts/` er et gitignored lokalt bevislager (PNG/JSON/gate-logs) for utviklerverifikasjon. Konvensjon:
+
+- **Ikke committet**: Per `.gitignore` linje 113. Filer her er ikke del av repo eller DD-deliverable direkte.
+- **Naming**: u{NN}-{beskrivelse}-proof/ for proof-bundles (eksempel: u97-binding-disposition-proof/).
+- **Referansier**: Audit-record (docs/audit/, docs/repo-audit/) kan henvise til artifacts/-bundles som evidens-referanse. Slike refs er ikke markdown-lenker (gitignored target) og er ekskludert fra check:links-validering.
+- **Reorganisering**: Subkatalog-struktur (cms-proof/, gate-logs/) kan vurderes i fremtidig sprint hvis artifacts/-volum vokser over 50 MB.
+
+Status (2026-05-26): 315 filer i 23 proof-bundles, ~29 MB lokalt.
+
 ### Date-suffix policy
 
 Versjonerte audit-docs bruker ISO-dato-suffix:
