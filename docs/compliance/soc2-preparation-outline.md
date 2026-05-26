@@ -171,7 +171,7 @@ Dette må formaliseres:
 
 ## 3.5 Incident Response
 
-- INCIDENT_RESPONSE_PLAN.md
+- docs/security/incident/incident-response-plan.md
 - Dokumentert prosess
 - Root cause analyse
 - Årlig øvelse

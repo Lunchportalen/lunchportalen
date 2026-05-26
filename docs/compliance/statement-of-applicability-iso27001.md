@@ -123,8 +123,8 @@ Implementasjon:
 - ops_events logging
 - Supabase backup (PITR)
 - Retention policy
-- INCIDENT_RESPONSE_PLAN.md
-- DISASTER_RECOVERY_PLAN.md
+- docs/security/incident/incident-response-plan.md
+- docs/security/incident/disaster-recovery-plan.md
 
 ---
 
@@ -167,7 +167,7 @@ Tiltak:
 Status: APPLICABLE – IMPLEMENTED
 
 Implementasjon:
-- INCIDENT_RESPONSE_PLAN.md
+- docs/security/incident/incident-response-plan.md
 - Logging via ops_events
 - Red Team Simulation Playbook
 
@@ -178,8 +178,8 @@ Implementasjon:
 Status: APPLICABLE – IMPLEMENTED
 
 Implementasjon:
-- BUSINESS_CONTINUITY_PLAN.md
-- DISASTER_RECOVERY_PLAN.md
+- docs/security/incident/business-continuity-plan.md
+- docs/security/incident/disaster-recovery-plan.md
 - Definerte RTO/RPO
 
 ---
@@ -190,7 +190,7 @@ Status: APPLICABLE – IMPLEMENTED
 
 Implementasjon:
 - docs/compliance/compliance-overview.md
-- RISK_REGISTER.md
+- docs/security/incident/risk-register.md
 - docs/compliance/soc2-control-matrix.md
 - ISO27001_ALIGNMENT_MATRIX.md
 

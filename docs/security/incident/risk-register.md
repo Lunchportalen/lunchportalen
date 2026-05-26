@@ -101,7 +101,7 @@ Ny kode omgår RPC eller RLS.
 
 **Mitigering:**
 - CI guard
-- docs/governance/codex-checklist.md
+- ../../governance/codex-checklist.md
 - Architecture Decisions dokument
 - Preflight før deploy
 
@@ -262,7 +262,7 @@ Rask vekst før teknisk optimalisering.
 **Risikonivå:** Moderat  
 
 **Mitigering:**
-- docs/strategy/frameworks/scalability-model.md
+- ../../strategy/frameworks/scalability-model.md
 - Monitoring
 - Planlagt partisjonering
 

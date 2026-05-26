@@ -103,8 +103,8 @@ A:
 - RTO/RPO definert
 
 Referanse:
-- DISASTER_RECOVERY_PLAN.md
-- BUSINESS_CONTINUITY_PLAN.md
+- docs/security/incident/disaster-recovery-plan.md
+- docs/security/incident/business-continuity-plan.md
 
 ---
 
@@ -127,7 +127,7 @@ A:
 - Dokumentert corrective action log
 
 Referanse:
-- INCIDENT_RESPONSE_PLAN.md
+- docs/security/incident/incident-response-plan.md
 - docs/compliance/corrective-actions-log.md
 
 ---

@@ -57,7 +57,7 @@
 | **Tester uten TS** | **79** filer med `@ts-nocheck` under `tests/**/*.ts`. |
 | **Type-grenser** | `as unknown as` i produksjonskode (`grep` — `lib/ai`, `lib/revenue`, `componentRegistry`, m.fl.). |
 | **Bilde/LCP** | `@next/next/no-img-element` warnings i CMS-komponenter. |
-| **RLS på `global_content`** | Uendret risiko i policy (se `RISK_REGISTER.md` R7) — **krever** sikkerhetsmessig avklaring. |
+| **RLS på `global_content`** | Uendret risiko i policy (se `docs/security/incident/risk-register.md` R7) — **krever** sikkerhetsmessig avklaring. |
 
 ---
 

@@ -65,10 +65,10 @@ Enterprise krever:
 Teknisk støtte:
 
 - docs/compliance/compliance-overview.md
-- RISK_REGISTER.md
-- INCIDENT_RESPONSE_PLAN.md
-- DISASTER_RECOVERY_PLAN.md
-- BUSINESS_CONTINUITY_PLAN.md
+- docs/security/incident/risk-register.md
+- docs/security/incident/incident-response-plan.md
+- docs/security/incident/disaster-recovery-plan.md
+- docs/security/incident/business-continuity-plan.md
 
 ---
 
