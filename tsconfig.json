@@ -26,11 +26,9 @@
         "./app/*"
       ],
       "@/lib/*": [
-        "./lib/*",
-        "./src/lib/*"
+        "./lib/*"
       ],
       "@/components/*": [
-        "./src/components/*",
         "./components/*"
       ],
       "@/types/*": [

@@ -1,4 +1,4 @@
-// src/components/nav/HeaderShell.tsx
+// components/nav/HeaderShell.tsx
 import "server-only";
 
 import HeaderShellView from "@/components/nav/HeaderShellView";
