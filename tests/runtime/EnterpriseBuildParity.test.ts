@@ -9,7 +9,7 @@ import nextConfig from "@/next.config";
 import { NEXT_BUILD_DIST_DIR } from "@/lib/runtime/nextOutput";
 
 const repoRoot = process.cwd();
-const sourceIgnore = ["**/node_modules/**", "**/.next/**", "**/dist/**", "studio/**", "archive/**"];
+const sourceIgnore = ["**/node_modules/**", "**/.next/**", "**/dist/**", "studio/**"];
 
 describe("Enterprise build parity", () => {
   it("keeps /_document as a generated Next internal instead of a repo source dependency", () => {

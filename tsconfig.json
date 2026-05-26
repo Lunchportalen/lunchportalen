@@ -74,7 +74,6 @@
     "out",
     "coverage",
     "studio/**",
-    "archive/**",
     "artifacts/**",
     "Umbraco/**",
     "playwright-report/**",
