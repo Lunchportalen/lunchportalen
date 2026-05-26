@@ -25,7 +25,7 @@ Dette dokumentet brukes som:
 | Arkitektur-dokumentasjon | docs/security/security-architecture.md | Repo |
 | Risikoanalyse | docs/security/incident/risk-register.md | Repo |
 | Threat Model | docs/security/threat-model.md | Repo |
-| Styregjennomgang | BOARD_LEVEL_SUMMARY.md | Repo |
+| Styregjennomgang | docs/sales/board-level-summary.md | Repo |
 
 Status: Implementert
 

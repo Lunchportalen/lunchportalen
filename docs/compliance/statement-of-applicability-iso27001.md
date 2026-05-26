@@ -35,7 +35,7 @@ Krav om dokumentert sikkerhetsrammeverk.
 Implementasjon:
 - docs/security/security-architecture.md
 - docs/security/master-security-policy.md (hvis etablert)
-- BOARD_LEVEL_SUMMARY.md
+- docs/sales/board-level-summary.md
 
 ---
 

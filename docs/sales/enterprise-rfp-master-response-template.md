@@ -31,8 +31,8 @@ A:
 - Ingen rolle bestemmes i frontend
 
 Referanse:
-- docs/security/security-architecture.md
-- docs/security/access-control-policy.md
+- ../security/security-architecture.md
+- ../security/access-control-policy.md
 
 ---
 
@@ -73,8 +73,8 @@ Behandles ikke:
 - Sensitive helseopplysninger
 
 Referanse:
-- docs/compliance/compliance-overview.md
-- docs/governance/data-governance-policy.md
+- ../compliance/compliance-overview.md
+- ../governance/data-governance-policy.md
 
 ---
 
@@ -103,8 +103,8 @@ A:
 - RTO/RPO definert
 
 Referanse:
-- docs/security/incident/disaster-recovery-plan.md
-- docs/security/incident/business-continuity-plan.md
+- ../security/incident/disaster-recovery-plan.md
+- ../security/incident/business-continuity-plan.md
 
 ---
 
@@ -127,8 +127,8 @@ A:
 - Dokumentert corrective action log
 
 Referanse:
-- docs/security/incident/incident-response-plan.md
-- docs/compliance/corrective-actions-log.md
+- ../security/incident/incident-response-plan.md
+- ../compliance/corrective-actions-log.md
 
 ---
 
@@ -144,9 +144,9 @@ A:
 - Statement of Applicability
 
 Referanse:
-- docs/compliance/soc2-control-matrix.md
+- ../compliance/soc2-control-matrix.md
 - ISO27001_ALIGNMENT_MATRIX.md
-- docs/compliance/statement-of-applicability-iso27001.md
+- ../compliance/statement-of-applicability-iso27001.md
 
 ---
 
@@ -163,8 +163,8 @@ A:
 - ADR for arkitekturendring
 
 Referanse:
-- docs/governance/change-management-policy.md
-- docs/governance/codex-checklist.md
+- ../governance/change-management-policy.md
+- ../governance/codex-checklist.md
 
 ---
 
@@ -183,7 +183,7 @@ Alle leverandører:
 - Opererer i EU/EØS der relevant
 
 Referanse:
-- docs/governance/vendor-management-policy.md
+- ../governance/vendor-management-policy.md
 
 ---
 
@@ -217,8 +217,8 @@ AI brukes ikke til:
 - Automatisk ordrejustering
 
 Referanse:
-- docs/strategy/ai-strategy-internal-controlled.md
-- docs/governance/responsible-ai-policy.md
+- ../strategy/ai-strategy-internal-controlled.md
+- ../governance/responsible-ai-policy.md
 
 ---
 
@@ -241,7 +241,7 @@ Tiltak:
 - Read replicas (roadmap)
 
 Referanse:
-- docs/strategy/frameworks/scalability-model.md
+- ../strategy/frameworks/scalability-model.md
 
 ---
 
@@ -255,8 +255,8 @@ A:
 - Årlig testplan
 
 Referanse:
-- docs/security/red-team-simulation-playbook.md
-- docs/security/penetration-test-scope-template.md
+- ../security/red-team-simulation-playbook.md
+- ../security/penetration-test-scope-template.md
 
 ---
 
