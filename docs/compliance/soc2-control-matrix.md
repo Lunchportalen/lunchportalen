@@ -23,7 +23,7 @@ Dette dokumentet brukes som:
 | Kontroll | Implementering | Evidens |
 |-----------|---------------|---------|
 | Arkitektur-dokumentasjon | docs/security/security-architecture.md | Repo |
-| Risikoanalyse | RISK_REGISTER.md | Repo |
+| Risikoanalyse | docs/security/incident/risk-register.md | Repo |
 | Threat Model | docs/security/threat-model.md | Repo |
 | Styregjennomgang | BOARD_LEVEL_SUMMARY.md | Repo |
 
@@ -35,9 +35,9 @@ Status: Implementert
 
 | Kontroll | Implementering | Evidens |
 |-----------|---------------|---------|
-| Dokumentert Incident Plan | INCIDENT_RESPONSE_PLAN.md | Repo |
-| Disaster Recovery Plan | DISASTER_RECOVERY_PLAN.md | Repo |
-| Business Continuity Plan | BUSINESS_CONTINUITY_PLAN.md | Repo |
+| Dokumentert Incident Plan | docs/security/incident/incident-response-plan.md | Repo |
+| Disaster Recovery Plan | docs/security/incident/disaster-recovery-plan.md | Repo |
+| Business Continuity Plan | docs/security/incident/business-continuity-plan.md | Repo |
 
 Status: Implementert
 
@@ -47,7 +47,7 @@ Status: Implementert
 
 | Kontroll | Implementering | Evidens |
 |-----------|---------------|---------|
-| Identifiserte risikoer | RISK_REGISTER.md | Repo |
+| Identifiserte risikoer | docs/security/incident/risk-register.md | Repo |
 | Periodisk revisjon | ADR + Risk update | Git history |
 
 Status: Implementert

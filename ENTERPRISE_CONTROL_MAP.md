@@ -96,10 +96,10 @@ LEVEL 3 — DRIFT & INCIDENT CONTROL
 
 Disse styrer operativ stabilitet.
 
-- INCIDENT_RESPONSE_PLAN.md
-- DISASTER_RECOVERY_PLAN.md
+- docs/security/incident/incident-response-plan.md
+- docs/security/incident/disaster-recovery-plan.md
 - RISK_ESCALATION.md
-- BUSINESS_CONTINUITY_PLAN.md
+- docs/security/incident/business-continuity-plan.md
 - docs/strategy/frameworks/executive-monitoring-dashboard-blueprint.md
 - SYSTEM_HEALTH.md
 
