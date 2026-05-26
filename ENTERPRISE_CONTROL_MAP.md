@@ -100,7 +100,7 @@ Disse styrer operativ stabilitet.
 - DISASTER_RECOVERY_PLAN.md
 - RISK_ESCALATION.md
 - BUSINESS_CONTINUITY_PLAN.md
-- EXECUTIVE_MONITORING_DASHBOARD_BLUEPRINT.md
+- docs/strategy/frameworks/executive-monitoring-dashboard-blueprint.md
 - SYSTEM_HEALTH.md
 
 Krav:

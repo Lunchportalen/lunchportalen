@@ -241,7 +241,7 @@ Tiltak:
 - Read replicas (roadmap)
 
 Referanse:
-- SCALABILITY_MODEL.md
+- docs/strategy/frameworks/scalability-model.md
 
 ---
 

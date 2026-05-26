@@ -48,7 +48,7 @@
 | **Cancellation signal** | ✅ `orders.status`, `day_choices.status`, `demandData.isCancelledBeforeOsloCutoff()` | — |
 | **Portion weight** | ❌ | No `portion_weight_kg` on order or menu |
 | **Produced volume** | ❌ | `wasteTracker` requires `produced` — always `null` in `demand-insights` |
-| **Avoided kg formula** | ⚠️ Concept in `ESG_KPI_FRAMEWORK.md` + Phase 1 design | No `order_lifecycle` or rollup job |
+| **Avoided kg formula** | ⚠️ Concept in `docs/strategy/frameworks/esg-kpi-framework.md` + Phase 1 design | No `order_lifecycle` or rollup job |
 
 **Current code path:** `app/api/admin/demand-insights` maps `consumed: h.activeCount`, `produced: null` → waste rollup returns *"Ingen registrert produksjon"*.
 

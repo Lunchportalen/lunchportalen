@@ -262,7 +262,7 @@ Rask vekst før teknisk optimalisering.
 **Risikonivå:** Moderat  
 
 **Mitigering:**
-- SCALABILITY_MODEL.md
+- docs/strategy/frameworks/scalability-model.md
 - Monitoring
 - Planlagt partisjonering
 

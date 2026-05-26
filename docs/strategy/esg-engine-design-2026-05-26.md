@@ -3,7 +3,7 @@
 **Date:** 2026-05-26  
 **Mode:** READ-ONLY strategic design (no schema implementation)  
 **Status:** Phase 1 complete · Phases 2–4 pending **GO**  
-**Cross-ref:** [AI Feature Inventory Phase 1](./ai-feature-inventory-2026-05-26.md) · [ESG KPI Framework](../../ESG_KPI_FRAMEWORK.md) · Audit v2 Fase C (ESG schema drift)
+**Cross-ref:** [AI Feature Inventory Phase 1](./ai-feature-inventory-2026-05-26.md) · [ESG KPI Framework](./frameworks/esg-kpi-framework.md) · Audit v2 Fase C (ESG schema drift)
 
 ---
 
@@ -21,7 +21,7 @@ Lunchportalen har en **strukturell matsvinn-reduserende mekanisme** som er vansk
 |-------|--------|------|
 | `lib/ai/wasteTracker.ts` | Prod-ready (Type C) | Fail-closed uten produksjonsdata |
 | `lib/ai/demandEngine.ts` | Prod-ready (Type C) | Moving-avg forecast; ML Layer 3 kandidat |
-| `ESG_KPI_FRAMEWORK.md` | Konseptuell | KPI-definisjoner, ikke DB |
+| `docs/strategy/frameworks/esg-kpi-framework.md` | Konseptuell | KPI-definisjoner, ikke DB |
 | `esg_monthly` / `esg_daily` | **Dropped** | `20260522160000_k4_kill_esg_tables.sql` — må re-etableres med nytt skjema |
 | Backoffice ESG UI spec | Dokumentert | `/backoffice/esg` — superadmin read-only |
 | AI-012 / AI-013 | Inventory | Direkte cross-ref til Phase 4 ML |

@@ -218,7 +218,7 @@ Følgende dokumenter er en del av arkitekturen:
 - docs/security/security-architecture.md
 - docs/security/threat-model.md
 - RISK_REGISTER.md
-- SCALABILITY_MODEL.md
+- docs/strategy/frameworks/scalability-model.md
 - docs/governance/codex-datawrite.md
 - docs/governance/codex-checklist.md
 - ADR
