@@ -76,9 +76,10 @@ Gap:
 | Multi-tenant isolation | Composite FK + RLS | Implementert |
 | Service-role allowlist | CI guard | Implementert |
 | No direct writes | RPC-only enforcement | Implementert |
+| Periodisk tilgangsrevisjon (admin/backoffice) | [backoffice-policy.md](../governance/backoffice-policy.md) — kvartalsvis access register | Delvis — register [TBD] owner-fylling |
 
 Gap:
-- Periodisk tilgangsrevisjon dokumentert
+- Access register med faktiske navn (owner-maintained, utenfor repo)
 
 ---
 
