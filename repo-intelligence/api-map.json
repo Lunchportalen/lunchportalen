@@ -4084,6 +4084,50 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/saas/billing/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/saas/billing",
+      "rpc_calls": [],
+      "uses_tables": [
+        "companies",
+        "saas_subscriptions"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/saas/billing/webhook/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/saas/billing/webhook",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/saas/onboarding/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/saas/onboarding",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/saas/tenant/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/saas/tenant",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/sales/agent/run/route.ts",
       "methods": [
         "POST"
@@ -6039,50 +6083,6 @@
         "GET"
       ],
       "route": "/api/system/time",
-      "rpc_calls": [],
-      "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "file": "app/api/saas/billing/route.ts",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "route": "/api/saas/billing",
-      "rpc_calls": [],
-      "uses_tables": [
-        "companies",
-        "saas_subscriptions"
-      ]
-    },
-    {
-      "confidence": "confirmed",
-      "file": "app/api/saas/billing/webhook/route.ts",
-      "methods": [
-        "POST"
-      ],
-      "route": "/api/saas/billing/webhook",
-      "rpc_calls": [],
-      "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "file": "app/api/saas/onboarding/route.ts",
-      "methods": [
-        "POST"
-      ],
-      "route": "/api/saas/onboarding",
-      "rpc_calls": [],
-      "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "file": "app/api/saas/tenant/route.ts",
-      "methods": [
-        "POST"
-      ],
-      "route": "/api/saas/tenant",
       "rpc_calls": [],
       "uses_tables": []
     },

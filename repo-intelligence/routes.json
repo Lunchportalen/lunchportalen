@@ -1136,6 +1136,27 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/saas/billing/page.tsx",
+      "url_path": "/saas/billing",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/saas/onboarding/page.tsx",
+      "url_path": "/saas/onboarding",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/saas/plans/page.tsx",
+      "url_path": "/saas/plans",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/status/page.tsx",
       "url_path": "/status",
       "uses_tables": []
@@ -1516,27 +1537,6 @@
       "uses_tables": [
         "profiles"
       ]
-    },
-    {
-      "confidence": "confirmed",
-      "fetch_urls": [],
-      "file": "app/saas/billing/page.tsx",
-      "url_path": "/saas/billing",
-      "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "fetch_urls": [],
-      "file": "app/saas/onboarding/page.tsx",
-      "url_path": "/saas/onboarding",
-      "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "fetch_urls": [],
-      "file": "app/saas/plans/page.tsx",
-      "url_path": "/saas/plans",
-      "uses_tables": []
     },
     {
       "confidence": "confirmed",

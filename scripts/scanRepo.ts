@@ -14,6 +14,11 @@ const OUT = path.join(ROOT, "repo-intelligence");
 
 const SCAN_GLOBS = ["app", "lib", "supabase", "components", "scripts"] as const;
 const EXT = "**/*.{ts,tsx,mjs}";
+const GLOB_IGNORE = ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/next-env.d.ts"] as const;
+
+function stableCompare(a: string, b: string): number {
+  return a.localeCompare(b, "en", { sensitivity: "base", numeric: true });
+}
 
 const KEYWORDS = ["lead_pipeline", "orders", "social_posts"] as const;
 
@@ -240,7 +245,7 @@ export function collectFiles(): string[] {
     const pattern = path.join(ROOT, root, EXT).split("\\").join("/");
     const files = glob.sync(pattern, {
       nodir: true,
-      ignore: ["**/node_modules/**", "**/.next/**", "**/dist/**"],
+      ignore: [...GLOB_IGNORE],
     });
     all.push(...files.map((f) => rel(f)));
   }
@@ -288,7 +293,7 @@ export function buildRoutes(files: RepoFileEntry[]) {
       uses_tables: f.uses_tables,
       confidence: "confirmed" as const,
     }))
-    .sort((a, b) => a.url_path.localeCompare(b.url_path));
+    .sort((a, b) => stableCompare(a.url_path, b.url_path));
 }
 
 export function buildApiMap(files: RepoFileEntry[]) {
@@ -305,7 +310,7 @@ export function buildApiMap(files: RepoFileEntry[]) {
         confidence: "confirmed" as const,
       };
     })
-    .sort((a, b) => a.route.localeCompare(b.route));
+    .sort((a, b) => stableCompare(a.route, b.route));
 }
 
 export function buildDbMap(files: RepoFileEntry[]) {

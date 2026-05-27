@@ -24801,19 +24801,6 @@
       "uses_tables": []
     },
     {
-      "exports": [],
-      "fetch_urls": [],
-      "http_methods": [],
-      "imports": [
-        "./.next/dev/types/routes.d.ts"
-      ],
-      "keywords_hit": [],
-      "path": "app/next-env.d.ts",
-      "rpc_calls": [],
-      "type": "other",
-      "uses_tables": []
-    },
-    {
       "exports": [
         "default"
       ],

@@ -6438,7 +6438,6 @@
       "lib/auth/redirect.ts",
       "lib/auth/scope.ts"
     ],
-    "app/next-env.d.ts": [],
     "app/not-found.tsx": [],
     "app/onboarding/OnboardingForm.tsx": [
       "lib/menu-publish/tierPricing.ts"
