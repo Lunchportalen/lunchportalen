@@ -27,6 +27,17 @@ describe("/api/order/window menuDay categories", () => {
 
     expect(categories).toHaveLength(3);
     expect(categories.every((c) => c.available === false)).toBe(true);
+    expect(categories.find((c) => c.category === "varmrett")?.key).toBe("varmmat");
+  });
+
+  test("published varmrett menuDay is available for ENTERPRISE tier", () => {
+    const categories = buildMenuDayCategories({
+      planTier: "ENTERPRISE",
+      menus: [{ category: "varmrett", mealTitle: "Biff gryte", description: "Dagens varmrett", allergens: [] }],
+    });
+    const varmrett = categories.find((c) => c.category === "varmrett");
+    expect(varmrett?.available).toBe(true);
+    expect(varmrett?.title).toBe("Biff gryte");
   });
 
   test("legacy fallback preserves behavior for companies without tier data", () => {

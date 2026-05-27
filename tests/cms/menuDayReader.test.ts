@@ -64,7 +64,8 @@ describe("menuDay reader", () => {
     const query = String(fetchMock.mock.calls[0]?.[0] ?? "");
     expect(query).toContain("planTier");
     expect(query).toContain("category");
-    expect(query).toContain('"title": mealTitle');
+    expect(query).toContain('"title": coalesce(mealTitle, mealRef->title)');
+    expect(query).toContain('"allergens": coalesce(allergens, mealRef->allergens)');
     expect(query).toContain('"tier": costTier');
     expect(query).toContain('"isPublished": approvedForPublish == true && customerVisible == true');
     expect(query).not.toContain("isPublished == true");
