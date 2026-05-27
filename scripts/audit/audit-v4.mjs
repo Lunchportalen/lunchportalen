@@ -1,14 +1,16 @@
 // FULL AUDIT v4 — AST + Dependency Graph + AI FLOW
 
-const fs = require("fs");
-const path = require("path");
-const glob = require("glob");
-const parser = require("@babel/parser");
-const traverse = require("@babel/traverse").default;
-const graphlib = require("graphlib");
+import fs from "node:fs";
+import path from "node:path";
+import { globSync } from "glob";
+import parser from "@babel/parser";
+import traversePkg from "@babel/traverse";
+import graphlib from "graphlib";
+
+const traverse = traversePkg.default;
 
 const graph = new graphlib.Graph();
-const files = glob.sync("**/*.{ts,tsx,js,jsx}", {
+const files = globSync("**/*.{ts,tsx,js,jsx}", {
     ignore: [
         "**/node_modules/**",
         "**/.next/**",
@@ -16,7 +18,8 @@ const files = glob.sync("**/*.{ts,tsx,js,jsx}", {
         "**/build/**",
         "**/coverage/**",
         "**/studio/node_modules/**"
-    ]
+    ],
+    windowsPathsNoEscape: true
 });
 
 /** Canonical graph node id: repo-relative posix path */
