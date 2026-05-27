@@ -1,8 +1,9 @@
 {
   "flows": [
     {
-      "name": "social_to_revenue",
       "confidence": "high",
+      "inference": "Confirmed API files and tables exist; /kontakt is the redirect target in app/api/social/redirect (not re-verified here).",
+      "name": "social_to_revenue",
       "steps": [
         "social_posts",
         "/api/social/redirect",
@@ -11,8 +12,7 @@
         "lead_pipeline",
         "/api/orders",
         "orders"
-      ],
-      "inference": "Confirmed API files and tables exist; /kontakt is the redirect target in app/api/social/redirect (not re-verified here)."
+      ]
     }
   ]
 }

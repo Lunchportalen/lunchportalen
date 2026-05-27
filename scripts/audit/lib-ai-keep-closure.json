@@ -1,4 +1,7 @@
 {
+  "archiveFiles": [
+    "governor.ts"
+  ],
   "keepFiles": [
     "_internalProvider.ts",
     "actions/mapDecisionToAction.ts",
@@ -235,9 +238,6 @@
     "validateComponentOutput.ts",
     "validation/validateAiOutput.ts",
     "wasteTracker.ts"
-  ],
-  "archiveFiles": [
-    "governor.ts"
   ],
   "orphanFiles": [
     "capital/actionGenerator.ts",

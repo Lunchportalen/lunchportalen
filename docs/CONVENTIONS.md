@@ -64,32 +64,25 @@ Tracked JSON-filer som er output fra audit-scripts (`scripts/audit/*.json`, `rep
 ### Verifikasjon
 
 - **Pre-merge**: Re-generering skal produsere 0-diff mot committed file
-- **CI (Gr 17 weekly TBD)**: Cron regenerer + verifiserer diff = 0; hvis diff: rapport om hva som endret seg + commit auto-update
+- **CI**: `.github/workflows/weekly-repo-intelligence-refresh.yml` kjører hver søndag 03:00 UTC (+ `workflow_dispatch`). Workflow regenererer cron-scope artifacts, verifiserer V.20 determinisme (2× re-run, diff = 0), kjører `npm run check:links`, og oppretter auto-PR med label `automated-refresh` hvis diff
+
+### Shared helper
+
+Bruk `scripts/audit/lib/stable-json.mjs` (`sortKeys`, `stableStringify`, `writeStableJson`) for all committed JSON-generering. Call-sites:
+
+- `scripts/audit/lib-ai-keep-closure.mjs` → `scripts/audit/lib-ai-keep-closure.json`
+- `scripts/audit/extract-code-rpc-refs.mjs` → `scripts/audit/k4-code-rpc-refs.json`
+- `scripts/scanRepo.ts` → `repo-intelligence/{meta,repo-map,routes,api-map,db-map,flows,dependencies,errors}.json`
+
+Cron-scope ekskluderer append-only logs (`evolution-log.json`, `run-log.json`) og autonomous pipeline-output (`auditReport.json`, `tasks.json`).
 
 ### Eksempel: deterministic write
 
 ```javascript
-import fs from 'node:fs';
+import { writeStableJson } from './lib/stable-json.mjs';
 
-const sortKeys = (obj) => {
-  if (Array.isArray(obj)) return obj.map(sortKeys);
-  if (obj && typeof obj === 'object') {
-    return Object.keys(obj).sort().reduce((acc, key) => {
-      acc[key] = sortKeys(obj[key]);
-      return acc;
-    }, {});
-  }
-  return obj;
-};
-
-const data = { /* ... */ };
-fs.writeFileSync(
-  outputPath,
-  JSON.stringify(sortKeys(data), null, 2) + '\n'
-);
+writeStableJson(outputPath, data);
 ```
-
-Hvis 3+ scripts trenger samme pattern: opprett `scripts/audit/lib/stable-json.mjs` helper (TBD per Gr 17 scope).
 
 ### Date-suffix policy
 
@@ -119,7 +112,7 @@ Hver hub har egen README.md som index.
 ## Enforcement
 
 - **Pre-merge**: `npm run check:links` verifiserer at alle relative .md-lenker peker på eksisterende filer (etablert E.1, scaffold i scripts/check-doc-links.mjs)
-- **Weekly (TBD Gr 17)**: repo-intelligence refresh + filename convention compliance check
+- **Weekly**: `.github/workflows/weekly-repo-intelligence-refresh.yml` — repo-intelligence + audit JSON refresh med auto-PR ved drift
 
 ## Endring av konvensjon
 
