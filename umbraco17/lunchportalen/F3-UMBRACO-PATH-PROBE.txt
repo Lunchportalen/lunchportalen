@@ -1,0 +1,1 @@
+F.3 V.23 path-filter probe (Umbraco-only). Safe to delete after F.3 merge verification.
