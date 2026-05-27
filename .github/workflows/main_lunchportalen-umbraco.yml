@@ -128,6 +128,26 @@ jobs:
           ls -la "${{ github.workspace }}/umbraco-app" | head -n 120 || true
           echo "::endgroup::"
 
+      - name: V.25 + V.26 — Deploy-payload integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT="${{ github.workspace }}/umbraco-app"
+
+          # V.25 — wwwroot/media/ skal IKKE være i artifact
+          if find "$ARTIFACT/wwwroot/media" -type f 2>/dev/null | grep -q .; then
+            echo "::error::V.25 FAIL — wwwroot/media/ inneholder filer i deploy-artifact"
+            exit 1
+          fi
+          echo "V.25 OK — wwwroot/media/ ikke i artifact"
+
+          # V.26 — appsettings.Development.json skal IKKE være i artifact
+          if [ -f "$ARTIFACT/appsettings.Development.json" ]; then
+            echo "::error::V.26 FAIL — appsettings.Development.json er i deploy-artifact"
+            exit 1
+          fi
+          echo "V.26 OK — Development.json ikke i artifact"
+
       - name: Azure login
         uses: azure/login@v2
         with:
@@ -139,4 +159,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: production
           package: ${{ github.workspace }}/umbraco-app
+          clean: false
