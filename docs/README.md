@@ -6,6 +6,7 @@ Toppnivå-index for repository documentation. For naming-regler og hub-struktur:
 
 | Hub | Beskrivelse | Hovedinnhold |
 |-----|-------------|--------------|
+| [architecture/](./architecture/) | **Monorepo og systemgrenser** | [monorepo.md](./architecture/monorepo.md) — canonical two-system layout, deploy, data, CI |
 | [governance/](./governance/) | Beslutningstaking og prosesser | Codex-policies, drift-prosedyrer, audit-templates |
 | [security/](./security/README.md) | Sikkerhetspolicy og runbooks | Threat model, RLS, tenant isolation, incident response |
 | [compliance/](./compliance/) | Compliance-rammeverk | SOC2 control matrix, ISO27001 SoA + alignment, GDPR |

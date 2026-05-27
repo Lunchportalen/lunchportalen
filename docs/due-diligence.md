@@ -2,15 +2,18 @@
 
 Dette dokumentet beskriver den faktiske tekniske strukturen, sikkerhetsregimet og driftsflaten i repoet. Det er ment som en kort og verifiserbar oversikt for ekstern gjennomgang.
 
+**Monorepo:** Ett Git-repo, to deploybare systemer (Next.js på Vercel + Umbraco på Azure). Canonical kart: [architecture/monorepo.md](./architecture/monorepo.md).
+
 ## Arkitektur og ansvarsdeling
 
-Repoet har ett tydelig lagdelt ansvar:
+Repoet har ett tydelig lagdelt ansvar **innen Next.js-applikasjonen** (`app.lunchportalen.no`):
 
 - `app/` inneholder kun Next.js routes, layouts og server/client entrypoints.
 - `lib/` inneholder all domenelogikk, guards, cutoff, idempotens, ops/audit/logging og delte regler.
 - `components/` inneholder kun UI-komponenter (presentasjon uten forretningslogikk).
 - `app/api/` inneholder kun API-ruter som bruker guards og returnerer standard responsformat.
-- `scripts/` inneholder kun scripts for auditing/sanity/CI, ikke runtime-kode.
+- `umbraco17/lunchportalen/` inneholder Umbraco 17 CMS (marketing site, separat Azure-deploy).
+- `scripts/` inneholder scripts for auditing/sanity/CI og repo-vedlikehold (begge systemer der relevant).
 - `docs/` inneholder drift, compliance og runbooks.
 
 Ingen duplikat-ansvar er tillatt. Endringer i domenelogikk skjer kun i `lib/`.
