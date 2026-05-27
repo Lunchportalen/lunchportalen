@@ -1,7 +1,6 @@
 {
-  "generated_at": "2026-05-22T20:12:58.675Z",
   "scope": "app + lib (excludes tests/scripts)",
-  "count": 42,
+  "count": 43,
   "rpcs": [
     "claim_ai_jobs",
     "claim_repair_jobs",
@@ -15,6 +14,7 @@
     "lp_company_registration_approve_provider",
     "lp_company_registration_create",
     "lp_company_registration_reject_provider",
+    "lp_generate_agreement_invoices_for_period",
     "lp_generate_saas_invoices_for_period",
     "lp_idem_begin",
     "lp_idem_complete",
@@ -86,6 +86,9 @@
     ],
     "lp_company_registration_reject_provider": [
       "app/leverandor/registreringer/actions.ts"
+    ],
+    "lp_generate_agreement_invoices_for_period": [
+      "app/api/superadmin/invoices/generate/route.ts"
     ],
     "lp_generate_saas_invoices_for_period": [
       "app/api/cron/tripletex-saas-monthly/route.ts"

@@ -44,7 +44,6 @@ function collect(file) {
 
 const names = [...refs.keys()].sort();
 const payload = {
-  generated_at: new Date().toISOString(),
   scope: "app + lib (excludes tests/scripts)",
   count: names.length,
   rpcs: names,
