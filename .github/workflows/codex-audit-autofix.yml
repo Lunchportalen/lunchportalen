@@ -17,15 +17,17 @@ jobs:
   audit_autofix:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -47,7 +49,7 @@ jobs:
 
       - name: Upload critical.log (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: critical-log
           path: critical.log
@@ -97,7 +99,7 @@ jobs:
 
       - name: Upload patch artifacts (if any)
         if: steps.critical.outputs.exitcode != '0'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: codex-patch-artifacts
           path: |
@@ -126,7 +128,7 @@ jobs:
 
       - name: Upload critical.after.log (if patch path)
         if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: critical-after-log
           path: critical.after.log
@@ -236,7 +238,7 @@ jobs:
       # -------------------------
       - name: Create pull request (commit + push + PR)
         if: steps.critical.outputs.exitcode != '0' && steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
