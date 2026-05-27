@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { glob } from "glob";
+import { writeStableJson } from "./audit/lib/stable-json.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -460,7 +461,7 @@ export function scanAllFileEntries(): RepoFileEntry[] {
   return files;
 }
 
-export function writeRepoIntelligence(files: RepoFileEntry[], startedIso: string) {
+export function writeRepoIntelligence(files: RepoFileEntry[]) {
   const publicTables = loadPublicTableNames();
   const graph = buildDependencyGraph(files);
   const routes = buildRoutes(files);
@@ -471,27 +472,23 @@ export function writeRepoIntelligence(files: RepoFileEntry[], startedIso: string
 
   fs.mkdirSync(OUT, { recursive: true });
 
-  const meta = {
+  writeStableJson(path.join(OUT, "meta.json"), {
     version: 1,
-    last_scan: startedIso,
     files_scanned: files.length,
     roots: [...SCAN_GLOBS],
-  };
-
-  fs.writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "repo-map.json"), JSON.stringify({ files }, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "routes.json"), JSON.stringify({ routes }, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "api-map.json"), JSON.stringify({ endpoints: apiMap }, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "db-map.json"), JSON.stringify(dbMap, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "flows.json"), JSON.stringify(flows, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "dependencies.json"), JSON.stringify({ graph }, null, 2), "utf8");
-  fs.writeFileSync(path.join(OUT, "errors.json"), JSON.stringify(errors, null, 2), "utf8");
+  });
+  writeStableJson(path.join(OUT, "repo-map.json"), { files });
+  writeStableJson(path.join(OUT, "routes.json"), { routes });
+  writeStableJson(path.join(OUT, "api-map.json"), { endpoints: apiMap });
+  writeStableJson(path.join(OUT, "db-map.json"), dbMap);
+  writeStableJson(path.join(OUT, "flows.json"), flows);
+  writeStableJson(path.join(OUT, "dependencies.json"), { graph });
+  writeStableJson(path.join(OUT, "errors.json"), errors);
 }
 
 export function runScanCli() {
-  const started = new Date().toISOString();
   const files = scanAllFileEntries();
-  writeRepoIntelligence(files, started);
+  writeRepoIntelligence(files);
   console.log(`[scanRepo] Wrote ${files.length} files to ${OUT}`);
 }
 

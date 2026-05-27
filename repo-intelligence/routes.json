@@ -1,210 +1,214 @@
 {
   "routes": [
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(public)/page.tsx",
       "url_path": "/",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(public)/[slug]/page.tsx",
       "url_path": "/[slug]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/accept-invite/page.tsx",
       "url_path": "/accept-invite",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/page.tsx",
       "url_path": "/admin",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/agreement/page.tsx",
       "url_path": "/admin/agreement",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/admin/ansatte/page.tsx",
-      "url_path": "/admin/ansatte",
-      "fetch_urls": [
-        "/api/admin/employees/list",
-        "/api/admin/employees/set-disabled",
-        "/api/admin/invites/create"
-      ],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/admin/audit/page.tsx",
       "url_path": "/admin/audit",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
-      "file": "app/admin/baerekraft/page.tsx",
-      "url_path": "/admin/baerekraft",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/admin/companies/page.tsx",
       "url_path": "/admin/companies",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/control-tower/page.tsx",
       "url_path": "/admin/control-tower",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/dagens-brukere/page.tsx",
+      "url_path": "/admin/dagens-brukere",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/dagens-levering/page.tsx",
+      "url_path": "/admin/dagens-levering",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/dashboard/page.tsx",
       "url_path": "/admin/dashboard",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/admin/employees/page.tsx",
-      "url_path": "/admin/employees",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/admin/firma-onboarding/page.tsx",
       "url_path": "/admin/firma-onboarding",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/firmadashbord/page.tsx",
+      "url_path": "/admin/firmadashbord",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/history/page.tsx",
       "url_path": "/admin/history",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/insights/page.tsx",
       "url_path": "/admin/insights",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/invite/page.tsx",
       "url_path": "/admin/invite",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/kitchen-test/page.tsx",
       "url_path": "/admin/kitchen-test",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/kjokken/page.tsx",
       "url_path": "/admin/kjokken",
-      "fetch_urls": [],
-      "uses_tables": [
-        "orders",
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/leveringsgrunnlag/page.tsx",
+      "url_path": "/admin/leveringsgrunnlag",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/locations/page.tsx",
       "url_path": "/admin/locations",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/menus/page.tsx",
       "url_path": "/admin/menus",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/orders/page.tsx",
       "url_path": "/admin/orders",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/admin/people/page.tsx",
       "url_path": "/admin/people",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/admin/users/page.tsx",
-      "url_path": "/admin/users",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "file": "app/admin/uke-bestillbarhet/page.tsx",
+      "url_path": "/admin/uke-bestillbarhet",
+      "uses_tables": []
     },
     {
-      "file": "app/(public)/alternativ-til-kantine/page.tsx",
-      "url_path": "/alternativ-til-kantine",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/auth/callback/page.tsx",
       "url_path": "/auth/callback",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/acquire/page.tsx",
-      "url_path": "/backoffice/acquire",
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/avtale-ikke-aktiv/page.tsx",
+      "url_path": "/avtale-ikke-aktiv",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/acquire",
         "/api/acquire/strategy"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/acquire/page.tsx",
+      "url_path": "/backoffice/acquire",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/ai/page.tsx",
-      "url_path": "/backoffice/ai",
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/agreement-runtime/page.tsx",
+      "url_path": "/backoffice/agreement-runtime",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/ai/health/latest",
         "/api/backoffice/ai/health/scan",
@@ -212,26 +216,26 @@
         "/api/backoffice/ai/jobs/run",
         "/api/backoffice/experiments/stats"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/ai/page.tsx",
+      "url_path": "/backoffice/ai",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/ai-control/page.tsx",
       "url_path": "/backoffice/ai-control",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/ai/editor-verification/page.tsx",
       "url_path": "/backoffice/ai/editor-verification",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/ai/overview/page.tsx",
-      "url_path": "/backoffice/ai/overview",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/ai/business-engine",
         "/api/ai/recommendation/apply",
@@ -239,309 +243,330 @@
         "/api/ai/usage",
         "/api/backoffice/ai/status"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/ai/overview/page.tsx",
+      "url_path": "/backoffice/ai/overview",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/automation/page.tsx",
-      "url_path": "/backoffice/automation",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/automation/mode",
         "/api/revenue/live",
         "/api/sales/ai"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/automation/page.tsx",
+      "url_path": "/backoffice/automation",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/autonomy/page.tsx",
-      "url_path": "/backoffice/autonomy",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/autonomy/recommendations"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/autonomy/page.tsx",
+      "url_path": "/backoffice/autonomy",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/autonomy/optimize/page.tsx",
-      "url_path": "/backoffice/autonomy/optimize",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/autonomy/optimize"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/autonomy/optimize/page.tsx",
+      "url_path": "/backoffice/autonomy/optimize",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/board/page.tsx",
-      "url_path": "/backoffice/board",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/board"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/board/page.tsx",
+      "url_path": "/backoffice/board",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/business/page.tsx",
-      "url_path": "/backoffice/business",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/ceo/run"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/business/page.tsx",
+      "url_path": "/backoffice/business",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/business-exec/page.tsx",
-      "url_path": "/backoffice/business-exec",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/business/run",
         "/api/exit/sell",
         "/api/sales/scale"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/business-exec/page.tsx",
+      "url_path": "/backoffice/business-exec",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/content/page.tsx",
       "url_path": "/backoffice/content",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/content/[id]/page.tsx",
       "url_path": "/backoffice/content/[id]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/content/growth/page.tsx",
+      "url_path": "/backoffice/content/growth",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/content/recycle-bin/page.tsx",
       "url_path": "/backoffice/content/recycle-bin",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/control/page.tsx",
       "url_path": "/backoffice/control",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/control-tower/page.tsx",
-      "url_path": "/backoffice/control-tower",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/control-tower"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/control-tower/page.tsx",
+      "url_path": "/backoffice/control-tower",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/customers/page.tsx",
+      "url_path": "/backoffice/customers",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/design/page.tsx",
       "url_path": "/backoffice/design",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/domains/page.tsx",
+      "url_path": "/backoffice/domains",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/enterprise/page.tsx",
       "url_path": "/backoffice/enterprise",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/execution/page.tsx",
-      "url_path": "/backoffice/execution",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/execution/approve",
         "/api/execution/queue",
         "/api/execution/run"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/execution/page.tsx",
+      "url_path": "/backoffice/execution",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/exit/page.tsx",
-      "url_path": "/backoffice/exit",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/exit"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/exit/page.tsx",
+      "url_path": "/backoffice/exit",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/exit-now/page.tsx",
-      "url_path": "/backoffice/exit-now",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/exit/now"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/exit-now/page.tsx",
+      "url_path": "/backoffice/exit-now",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/exit/execute/page.tsx",
-      "url_path": "/backoffice/exit/execute",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/exit/execute"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/exit/execute/page.tsx",
+      "url_path": "/backoffice/exit/execute",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/experiments/page.tsx",
-      "url_path": "/backoffice/experiments",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/content/pages",
         "/api/backoffice/experiments"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/experiments/page.tsx",
+      "url_path": "/backoffice/experiments",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/experiments/[id]/page.tsx",
-      "url_path": "/backoffice/experiments/[id]",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/experiments/${encodeURIComponent(id)}"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/experiments/[id]/page.tsx",
+      "url_path": "/backoffice/experiments/[id]",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/forms/page.tsx",
-      "url_path": "/backoffice/forms",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/forms"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/forms/page.tsx",
+      "url_path": "/backoffice/forms",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/forms/[id]/page.tsx",
-      "url_path": "/backoffice/forms/[id]",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/forms/${encodeURIComponent(formId)}",
         "/api/backoffice/forms/${encodeURIComponent(formId)}/submissions"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/forms/[id]/page.tsx",
+      "url_path": "/backoffice/forms/[id]",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/global/page.tsx",
-      "url_path": "/backoffice/global",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/ops/global"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/global/page.tsx",
+      "url_path": "/backoffice/global",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/intelligence/page.tsx",
-      "url_path": "/backoffice/intelligence",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/ai/intelligence/dashboard",
         "/api/backoffice/ai/intelligence/query"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/intelligence/page.tsx",
+      "url_path": "/backoffice/intelligence",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/internal/ai-verification/page.tsx",
-      "url_path": "/backoffice/internal/ai-verification",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/ai/capability",
         "/api/backoffice/ai/text-improve"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/internal/ai-verification/page.tsx",
+      "url_path": "/backoffice/internal/ai-verification",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/ipo/page.tsx",
-      "url_path": "/backoffice/ipo",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/ipo"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/ipo/page.tsx",
+      "url_path": "/backoffice/ipo",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/market/page.tsx",
-      "url_path": "/backoffice/market",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/market"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/market/page.tsx",
+      "url_path": "/backoffice/market",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/market/domination/page.tsx",
-      "url_path": "/backoffice/market/domination",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/market/domination"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/market/domination/page.tsx",
+      "url_path": "/backoffice/market/domination",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/media/page.tsx",
-      "url_path": "/backoffice/media",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/ai/image-metadata",
         "/api/backoffice/media/items",
         "/api/backoffice/media/items/${encodeURIComponent(itemId)}",
         "/api/backoffice/media/upload"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/media/page.tsx",
+      "url_path": "/backoffice/media",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/members/page.tsx",
-      "url_path": "/backoffice/members",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/admin/employees"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/members/page.tsx",
+      "url_path": "/backoffice/members",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/observability/page.tsx",
-      "url_path": "/backoffice/observability",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/observability"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/observability/page.tsx",
+      "url_path": "/backoffice/observability",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/ops/page.tsx",
-      "url_path": "/backoffice/ops",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/ops"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/ops/page.tsx",
+      "url_path": "/backoffice/ops",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/preview/[id]/page.tsx",
       "url_path": "/backoffice/preview/[id]",
-      "fetch_urls": [],
       "uses_tables": [
         "content_page_variants",
         "content_pages"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/realtime/page.tsx",
       "url_path": "/backoffice/realtime",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/releases/page.tsx",
-      "url_path": "/backoffice/releases",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/releases",
         "/api/backoffice/releases/${encodeURIComponent(id)}",
@@ -550,768 +575,1046 @@
         "/api/backoffice/releases/${encodeURIComponent(selectedId)}/items/${encodeURIComponent(variantId)}",
         "/api/backoffice/releases/${encodeURIComponent(selectedId)}/schedule"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/releases/page.tsx",
+      "url_path": "/backoffice/releases",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/revenue/page.tsx",
-      "url_path": "/backoffice/revenue",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/revenue"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/revenue/page.tsx",
+      "url_path": "/backoffice/revenue",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/runtime/page.tsx",
+      "url_path": "/backoffice/runtime",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/sales/page.tsx",
       "url_path": "/backoffice/sales",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/sales-machine/page.tsx",
-      "url_path": "/backoffice/sales-machine",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/sales/run"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/sales-machine/page.tsx",
+      "url_path": "/backoffice/sales-machine",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/sdr/page.tsx",
-      "url_path": "/backoffice/sdr",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/sdr/queue",
         "/api/sdr/run"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/sdr/page.tsx",
+      "url_path": "/backoffice/sdr",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/security/page.tsx",
       "url_path": "/backoffice/security",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/seo-growth/page.tsx",
+      "url_path": "/backoffice/seo-growth",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/settings/page.tsx",
       "url_path": "/backoffice/settings",
-      "fetch_urls": [
-        "/api/backoffice/settings",
-        "/api/superadmin/system"
-      ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/system/page.tsx",
-      "url_path": "/backoffice/system",
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/ai-governance/page.tsx",
+      "url_path": "/backoffice/settings/ai-governance",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/block-editor-data-types/page.tsx",
+      "url_path": "/backoffice/settings/block-editor-data-types",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/block-editor-data-types/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/block-editor-data-types/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/compositions/page.tsx",
+      "url_path": "/backoffice/settings/compositions",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/compositions/workspace/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/compositions/workspace/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/create-options/page.tsx",
+      "url_path": "/backoffice/settings/create-options",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/create-policy/page.tsx",
+      "url_path": "/backoffice/settings/create-policy",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/data-types/page.tsx",
+      "url_path": "/backoffice/settings/data-types",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/data-types/[kind]/page.tsx",
+      "url_path": "/backoffice/settings/data-types/[kind]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/document-types/page.tsx",
+      "url_path": "/backoffice/settings/document-types",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/document-types/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/document-types/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/document-types/workspace/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/document-types/workspace/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/element-types/page.tsx",
+      "url_path": "/backoffice/settings/element-types",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/element-types/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/element-types/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/element-types/workspace/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/element-types/workspace/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [
+        "/api/backoffice/content/batch-normalize-legacy",
+        "/api/backoffice/content/governance-usage"
+      ],
+      "file": "app/(backoffice)/backoffice/settings/governance-insights/page.tsx",
+      "url_path": "/backoffice/settings/governance-insights",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/languages/page.tsx",
+      "url_path": "/backoffice/settings/languages",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/languages/workspace/[alias]/page.tsx",
+      "url_path": "/backoffice/settings/languages/workspace/[alias]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/management-read/page.tsx",
+      "url_path": "/backoffice/settings/management-read",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/settings/schema/page.tsx",
+      "url_path": "/backoffice/settings/schema",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [
+        "/api/backoffice/settings"
+      ],
+      "file": "app/(backoffice)/backoffice/settings/system/page.tsx",
+      "url_path": "/backoffice/settings/system",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/social/page.tsx",
+      "url_path": "/backoffice/social",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/system/run"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/system/page.tsx",
+      "url_path": "/backoffice/system",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/system/ai-config/page.tsx",
-      "url_path": "/backoffice/system/ai-config",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/superadmin/ai-config"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/system/ai-config/page.tsx",
+      "url_path": "/backoffice/system/ai-config",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/system/ai-prompts/page.tsx",
-      "url_path": "/backoffice/system/ai-prompts",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/superadmin/ai-config",
         "/api/superadmin/ai-prompts"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/system/ai-prompts/page.tsx",
+      "url_path": "/backoffice/system/ai-prompts",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(backoffice)/backoffice/templates/page.tsx",
       "url_path": "/backoffice/templates",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/translation/page.tsx",
-      "url_path": "/backoffice/translation",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/translation/summary"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/translation/page.tsx",
+      "url_path": "/backoffice/translation",
+      "uses_tables": []
     },
     {
-      "file": "app/(backoffice)/backoffice/users/page.tsx",
-      "url_path": "/backoffice/users",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/backoffice/users${params.toString() "
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(backoffice)/backoffice/users/page.tsx",
+      "url_path": "/backoffice/users",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(backoffice)/backoffice/week-menu/page.tsx",
+      "url_path": "/backoffice/week-menu",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(app)/dashboard/page.tsx",
       "url_path": "/dashboard",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/definitiv-guide-firmalunsj/page.tsx",
-      "url_path": "/definitiv-guide-firmalunsj",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/driver/page.tsx",
       "url_path": "/driver",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
-      "file": "app/(auth)/forgot-password/page.tsx",
-      "url_path": "/forgot-password",
+      "confidence": "confirmed",
       "fetch_urls": [
         "/api/auth/forgot-password"
       ],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/(auth)/forgot-password/page.tsx",
+      "url_path": "/forgot-password",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(app)/home/page.tsx",
       "url_path": "/home",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/hva-er-lunsjordning/page.tsx",
-      "url_path": "/hva-er-lunsjordning",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/(public)/hvordan/page.tsx",
-      "url_path": "/hvordan",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/(public)/investor/page.tsx",
-      "url_path": "/investor",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/kitchen/page.tsx",
       "url_path": "/kitchen",
-      "fetch_urls": [],
       "uses_tables": [
         "agreements",
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/kitchen/print/page.tsx",
+      "url_path": "/kitchen/print",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/kitchen/report/page.tsx",
       "url_path": "/kitchen/report",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/kontakt/page.tsx",
-      "url_path": "/kontakt",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/leverandor/page.tsx",
+      "url_path": "/leverandor",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/faktura/page.tsx",
+      "url_path": "/leverandor/faktura",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/innstillinger/page.tsx",
+      "url_path": "/leverandor/innstillinger",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/innstillinger/tripletex/koble-til/page.tsx",
+      "url_path": "/leverandor/innstillinger/tripletex/koble-til",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/innstillinger/tripletex/status/page.tsx",
+      "url_path": "/leverandor/innstillinger/tripletex/status",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/kunder/page.tsx",
+      "url_path": "/leverandor/kunder",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/kunder/[id]/page.tsx",
+      "url_path": "/leverandor/kunder/[id]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/kunder/ny/page.tsx",
+      "url_path": "/leverandor/kunder/ny",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/meny/page.tsx",
+      "url_path": "/leverandor/meny",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/omrader/page.tsx",
+      "url_path": "/leverandor/omrader",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/ordrer/page.tsx",
+      "url_path": "/leverandor/ordrer",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/registreringer/page.tsx",
+      "url_path": "/leverandor/registreringer",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/login/page.tsx",
       "url_path": "/login",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/logout/page.tsx",
       "url_path": "/logout",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/lunch-levering-bergen/page.tsx",
-      "url_path": "/lunch-levering-bergen",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/lunsj-levering-oslo/page.tsx",
-      "url_path": "/lunsj-levering-oslo",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/(public)/lunsjordning/page.tsx",
-      "url_path": "/lunsjordning",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/lunsjordning-trondheim/page.tsx",
-      "url_path": "/lunsjordning-trondheim",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/menus/week/page.tsx",
       "url_path": "/menus/week",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/min-side/page.tsx",
       "url_path": "/min-side",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/onboarding/page.tsx",
       "url_path": "/onboarding",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/onboarding/thanks/page.tsx",
       "url_path": "/onboarding/thanks",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/orders/page.tsx",
       "url_path": "/orders",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/outbox/page.tsx",
       "url_path": "/outbox",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/pending/page.tsx",
       "url_path": "/pending",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/personvern/page.tsx",
-      "url_path": "/personvern",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/(public)/pitch/page.tsx",
-      "url_path": "/pitch",
-      "fetch_urls": [
-        "/api/pitch",
-        "/api/sales/lead"
-      ],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/priser/page.tsx",
-      "url_path": "/priser",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/product/[productId]/page.tsx",
       "url_path": "/product/[productId]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/public/demo/page.tsx",
-      "url_path": "/public/demo",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/(auth)/register/page.tsx",
       "url_path": "/register",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/register/employee/page.tsx",
       "url_path": "/register/employee",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/registrer/page.tsx",
+      "url_path": "/registrer",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(auth)/registrer-bruker/page.tsx",
+      "url_path": "/registrer-bruker",
+      "uses_tables": [
+        "company_invites"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/registrer/takk/page.tsx",
+      "url_path": "/registrer/takk",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/registrering/page.tsx",
       "url_path": "/registrering",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/registrering/mottatt/page.tsx",
       "url_path": "/registrering/mottatt",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(auth)/reset-password/page.tsx",
       "url_path": "/reset-password",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/sikkerhet/page.tsx",
-      "url_path": "/sikkerhet",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/status/page.tsx",
       "url_path": "/status",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/page.tsx",
       "url_path": "/superadmin",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/agreements/page.tsx",
       "url_path": "/superadmin/agreements",
-      "fetch_urls": [],
       "uses_tables": [
         "agreements"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/agreements/[id]/page.tsx",
       "url_path": "/superadmin/agreements/[id]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/audit/page.tsx",
       "url_path": "/superadmin/audit",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/audit/[id]/page.tsx",
       "url_path": "/superadmin/audit/[id]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/autonomy/page.tsx",
       "url_path": "/superadmin/autonomy",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/billing/page.tsx",
       "url_path": "/superadmin/billing",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/cfo/page.tsx",
       "url_path": "/superadmin/cfo",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/companies/page.tsx",
       "url_path": "/superadmin/companies",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/companies/[companyId]/page.tsx",
       "url_path": "/superadmin/companies/[companyId]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/companies/[companyId]/agreement/page.tsx",
       "url_path": "/superadmin/companies/[companyId]/agreement",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/control-tower/page.tsx",
       "url_path": "/superadmin/control-tower",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/cto/page.tsx",
       "url_path": "/superadmin/cto",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/daily-brief/page.tsx",
+      "url_path": "/superadmin/daily-brief",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/enterprise/page.tsx",
       "url_path": "/superadmin/enterprise",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/enterprise/[groupId]/page.tsx",
       "url_path": "/superadmin/enterprise/[groupId]",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/superadmin/esg/page.tsx",
-      "url_path": "/superadmin/esg",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
-      "file": "app/superadmin/esg/[companyId]/page.tsx",
-      "url_path": "/superadmin/esg/[companyId]",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/superadmin/experiments/page.tsx",
       "url_path": "/superadmin/experiments",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/firms/page.tsx",
       "url_path": "/superadmin/firms",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/firms/[companyId]/page.tsx",
       "url_path": "/superadmin/firms/[companyId]",
-      "fetch_urls": [],
       "uses_tables": [
         "companies",
-        "company_locations",
-        "profiles"
-      ],
-      "confidence": "confirmed"
+        "company_locations"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/firms/[companyId]/employees/page.tsx",
       "url_path": "/superadmin/firms/[companyId]/employees",
-      "fetch_urls": [],
       "uses_tables": [
         "companies",
-        "company_locations",
-        "profiles"
-      ],
-      "confidence": "confirmed"
+        "company_locations"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/global/page.tsx",
       "url_path": "/superadmin/global",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/growth/social/page.tsx",
       "url_path": "/superadmin/growth/social",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/investor/page.tsx",
       "url_path": "/superadmin/investor",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/invoices/page.tsx",
       "url_path": "/superadmin/invoices",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/invoices/[runId]/page.tsx",
       "url_path": "/superadmin/invoices/[runId]",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/invoices/reconcile/page.tsx",
       "url_path": "/superadmin/invoices/reconcile",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/operations/page.tsx",
       "url_path": "/superadmin/operations",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/orders-today/page.tsx",
       "url_path": "/superadmin/orders-today",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/outbox/page.tsx",
       "url_path": "/superadmin/outbox",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/overview/page.tsx",
       "url_path": "/superadmin/overview",
-      "fetch_urls": [],
       "uses_tables": [
         "companies"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/pipeline/page.tsx",
       "url_path": "/superadmin/pipeline",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/production-check/page.tsx",
+      "url_path": "/superadmin/production-check",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/providers/page.tsx",
+      "url_path": "/superadmin/providers",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/providers/[id]/billing/page.tsx",
+      "url_path": "/superadmin/providers/[id]/billing",
+      "uses_tables": [
+        "providers"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/registrations/page.tsx",
+      "url_path": "/superadmin/registrations",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/registrations/[companyId]/page.tsx",
+      "url_path": "/superadmin/registrations/[companyId]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/sales/page.tsx",
       "url_path": "/superadmin/sales",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/sales-agent/page.tsx",
       "url_path": "/superadmin/sales-agent",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/sales-loop/page.tsx",
       "url_path": "/superadmin/sales-loop",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/strategy/page.tsx",
       "url_path": "/superadmin/strategy",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/system/page.tsx",
       "url_path": "/superadmin/system",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/system-graph/page.tsx",
       "url_path": "/superadmin/system-graph",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/system/operations/page.tsx",
       "url_path": "/superadmin/system/operations",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/tripletex/page.tsx",
+      "url_path": "/superadmin/tripletex",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/tripletex/invoices/page.tsx",
+      "url_path": "/superadmin/tripletex/invoices",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/tripletex/queue/page.tsx",
+      "url_path": "/superadmin/tripletex/queue",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/tripletex/webhooks/page.tsx",
+      "url_path": "/superadmin/tripletex/webhooks",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/users/page.tsx",
       "url_path": "/superadmin/users",
-      "fetch_urls": [],
-      "uses_tables": [
-        "profiles"
-      ],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/system/page.tsx",
       "url_path": "/system",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/system-for-lunsjbestilling/page.tsx",
-      "url_path": "/system-for-lunsjbestilling",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
-    },
-    {
       "file": "app/system/[section]/page.tsx",
       "url_path": "/system/[section]",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/system/kvittering/page.tsx",
       "url_path": "/system/kvittering",
-      "fetch_urls": [],
       "uses_tables": [
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/saas/billing/page.tsx",
       "url_path": "/saas/billing",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/saas/onboarding/page.tsx",
       "url_path": "/saas/onboarding",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/saas/plans/page.tsx",
       "url_path": "/saas/plans",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/today/page.tsx",
       "url_path": "/today",
-      "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "uses_tables": []
     },
     {
-      "file": "app/vilkar/page.tsx",
-      "url_path": "/vilkar",
+      "confidence": "confirmed",
       "fetch_urls": [],
-      "uses_tables": [],
-      "confidence": "confirmed"
+      "file": "app/vilkår/page.tsx",
+      "url_path": "/vilkår",
+      "uses_tables": []
     },
     {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(app)/week/page.tsx",
       "url_path": "/week",
-      "fetch_urls": [],
       "uses_tables": [
         "companies",
         "profiles"
-      ],
-      "confidence": "confirmed"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/bestillingsprofil/page.tsx",
+      "url_path": "/week/bestillingsprofil",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/min-dag/page.tsx",
+      "url_path": "/week/min-dag",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/mine-lunsjendringer/page.tsx",
+      "url_path": "/week/mine-lunsjendringer",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/mine-registrerte-dager/page.tsx",
+      "url_path": "/week/mine-registrerte-dager",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/ordre/[date]/page.tsx",
+      "url_path": "/week/ordre/[date]",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/tidligere-lunsjdager/page.tsx",
+      "url_path": "/week/tidligere-lunsjdager",
+      "uses_tables": [
+        "profiles"
+      ]
     }
   ]
 }
