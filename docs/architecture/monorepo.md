@@ -135,15 +135,22 @@ graph LR
 
 The repository contains **16** GitHub Actions workflows under `.github/workflows/`.
 
-| Category | Workflows | Path-selective? |
-|----------|-----------|-----------------|
-| Next.js CI gates | `ci.yml`, `ci-agents.yml`, `ci-e2e.yml`, `ci-enterprise.yml` | No — run on all PRs / main pushes |
-| Database | `supabase-migrate.yml` | No — runs on all PRs and main push |
+| Category | Workflows | Path-selective on PR/push? |
+|----------|-----------|----------------------------|
+| Next.js CI gates | `ci.yml`, `ci-agents.yml`, `ci-e2e.yml`, `ci-enterprise.yml` | **Yes** — explicit `paths:` include for Next.js / Supabase stack (Sprint AB F.3) |
+| Database | `supabase-migrate.yml` | **Yes** — `supabase/**` + migration gate scripts |
 | Umbraco deploy | `main_lunchportalen-umbraco.yml` | **Yes** — `umbraco17/lunchportalen/**` |
 | Tooling | `policy-merge.yml` | **Yes** — `cua/**` only |
-| Scheduled / dispatch | `security-audit`, `rls-drift-check`, `deps-weekly`, `codex-*`, `weekly-repo-intelligence-refresh`, `auto-engineer`, `postdeploy`, `automerge-lowrisk` | No (trigger-based, not path-filtered) |
+| Scheduled / dispatch | `security-audit`, `rls-drift-check`, `deps-weekly`, `codex-*`, `weekly-repo-intelligence-refresh`, `auto-engineer` | No — trigger on schedule or `workflow_dispatch` only |
+| Chain / label | `postdeploy.yml`, `automerge-lowrisk.yml` | No — `postdeploy` follows `workflow_run` on `ci-agents`; `automerge` on PR label |
 
-**DD note:** Currently **2 of 16** workflows are path-selective (`main_lunchportalen-umbraco.yml`, `policy-merge.yml`). The remaining **14** run on all pull requests regardless of which system is modified (or trigger on schedule/dispatch without path filters). This is documented as a known optimization opportunity (Sprint AB Fase F.3 — selective CI verification).
+**DD note (F.3):** **7 of 16** workflows are path-selective on `pull_request` / `push` (`ci`, `ci-agents`, `ci-e2e`, `ci-enterprise` PR+push only, `supabase-migrate`, `main_lunchportalen-umbraco`, `policy-merge`). The remaining **9** are schedule/dispatch, label-gated, or `workflow_run`-chained — they do not run heavy Next.js CI on every unrelated PR.
+
+**Docs-only PR trade-off:** Changes under `docs/**` alone do **not** match the Next.js CI path filters and therefore skip the five PR CI workflows. This reduces noise and CI minutes for documentation edits. Link integrity (`check:links`) is not enforced on docs-only PRs unless run manually or via scheduled refresh — acceptable trade-off documented in F.3 (mitigated by `weekly-repo-intelligence-refresh` and release gates on code paths).
+
+**Sanity / studio:** Path filters include `studio/**` so Sanity schema and Studio config changes trigger Next.js CI (including `ci-agents` Sanity env guard).
+
+**`ci-enterprise.yml` schedule:** Nightly cron (`0 3 * * *`) and `workflow_dispatch` remain **without** path filters — full release gate still runs on schedule.
 
 Full workflow inventory: [.github/workflows/](../../.github/workflows/).
 
