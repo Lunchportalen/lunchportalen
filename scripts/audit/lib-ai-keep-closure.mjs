@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeStableJson } from "./lib/stable-json.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const AI = path.join(ROOT, "lib/ai");
@@ -142,7 +143,8 @@ console.log(JSON.stringify({
   total: { files: allAi.length, loc: keepLoc + archiveLoc + orphanLoc },
 }, null, 2));
 
-fs.writeFileSync(
-  path.join(ROOT, "scripts/audit/lib-ai-keep-closure.json"),
-  `${JSON.stringify({ keepFiles, archiveFiles, orphanFiles }, null, 2)}\n`,
-);
+writeStableJson(path.join(ROOT, "scripts/audit/lib-ai-keep-closure.json"), {
+  keepFiles,
+  archiveFiles,
+  orphanFiles,
+});
