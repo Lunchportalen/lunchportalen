@@ -44,20 +44,36 @@ jobs:
 
       - name: Verify V.20 determinism
         run: |
+          BASELINE=/tmp/v20-baseline
+          mkdir -p "$BASELINE/repo-intelligence" "$BASELINE/scripts/audit"
           npm run repo:scan
           node scripts/audit/lib-ai-keep-closure.mjs
           node scripts/audit/extract-code-rpc-refs.mjs
-          git diff --exit-code -- \
-            repo-intelligence/meta.json \
-            repo-intelligence/repo-map.json \
-            repo-intelligence/routes.json \
-            repo-intelligence/api-map.json \
-            repo-intelligence/db-map.json \
-            repo-intelligence/flows.json \
-            repo-intelligence/dependencies.json \
-            repo-intelligence/errors.json \
-            scripts/audit/lib-ai-keep-closure.json \
-            scripts/audit/k4-code-rpc-refs.json
+          cp repo-intelligence/meta.json \
+             repo-intelligence/repo-map.json \
+             repo-intelligence/routes.json \
+             repo-intelligence/api-map.json \
+             repo-intelligence/db-map.json \
+             repo-intelligence/flows.json \
+             repo-intelligence/dependencies.json \
+             repo-intelligence/errors.json \
+             "$BASELINE/repo-intelligence/"
+          cp scripts/audit/lib-ai-keep-closure.json \
+             scripts/audit/k4-code-rpc-refs.json \
+             "$BASELINE/scripts/audit/"
+          npm run repo:scan
+          node scripts/audit/lib-ai-keep-closure.mjs
+          node scripts/audit/extract-code-rpc-refs.mjs
+          diff -q "$BASELINE/repo-intelligence/meta.json" repo-intelligence/meta.json
+          diff -q "$BASELINE/repo-intelligence/repo-map.json" repo-intelligence/repo-map.json
+          diff -q "$BASELINE/repo-intelligence/routes.json" repo-intelligence/routes.json
+          diff -q "$BASELINE/repo-intelligence/api-map.json" repo-intelligence/api-map.json
+          diff -q "$BASELINE/repo-intelligence/db-map.json" repo-intelligence/db-map.json
+          diff -q "$BASELINE/repo-intelligence/flows.json" repo-intelligence/flows.json
+          diff -q "$BASELINE/repo-intelligence/dependencies.json" repo-intelligence/dependencies.json
+          diff -q "$BASELINE/repo-intelligence/errors.json" repo-intelligence/errors.json
+          diff -q "$BASELINE/scripts/audit/lib-ai-keep-closure.json" scripts/audit/lib-ai-keep-closure.json
+          diff -q "$BASELINE/scripts/audit/k4-code-rpc-refs.json" scripts/audit/k4-code-rpc-refs.json
 
       - name: Run check-doc-links
         run: npm run check:links
