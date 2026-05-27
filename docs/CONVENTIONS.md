@@ -49,6 +49,48 @@ Repository-root `artifacts/` er et gitignored lokalt bevislager (PNG/JSON/gate-l
 
 Status (2026-05-26): 315 filer i 23 proof-bundles, ~29 MB lokalt.
 
+## Generated JSON artifacts
+
+Tracked JSON-filer som er output fra audit-scripts (`scripts/audit/*.json`, `repo-intelligence/*.json`, og lignende) skal være deterministisk og matche generating script-output på samme codebase.
+
+### Krav
+
+- **Stabile keys**: `Object.keys().sort()` før `JSON.stringify`, eller rekursiv `sortKeys()`-helper for nested structures
+- **Stabile arrays**: Sortér by konsistent key der order ikke er semantisk meningsfull (path-strenger, IDer)
+- **Ingen timestamps**: Ingen `Date.now()`, `new Date().toISOString()`, eller `process.uptime()` i committed output. Generation-tid hører i CI-metadata eller commit-message, ikke i artifact-innhold
+- **Ingen random**: Ingen `Math.random()`, `crypto.randomUUID()` i output
+- **Trailing newline**: Skriv med `\n` på slutten (POSIX-konvensjon)
+
+### Verifikasjon
+
+- **Pre-merge**: Re-generering skal produsere 0-diff mot committed file
+- **CI (Gr 17 weekly TBD)**: Cron regenerer + verifiserer diff = 0; hvis diff: rapport om hva som endret seg + commit auto-update
+
+### Eksempel: deterministic write
+
+```javascript
+import fs from 'node:fs';
+
+const sortKeys = (obj) => {
+  if (Array.isArray(obj)) return obj.map(sortKeys);
+  if (obj && typeof obj === 'object') {
+    return Object.keys(obj).sort().reduce((acc, key) => {
+      acc[key] = sortKeys(obj[key]);
+      return acc;
+    }, {});
+  }
+  return obj;
+};
+
+const data = { /* ... */ };
+fs.writeFileSync(
+  outputPath,
+  JSON.stringify(sortKeys(data), null, 2) + '\n'
+);
+```
+
+Hvis 3+ scripts trenger samme pattern: opprett `scripts/audit/lib/stable-json.mjs` helper (TBD per Gr 17 scope).
+
 ### Date-suffix policy
 
 Versjonerte audit-docs bruker ISO-dato-suffix:
