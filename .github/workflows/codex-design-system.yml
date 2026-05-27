@@ -17,15 +17,17 @@ jobs:
   design_system:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -71,7 +73,7 @@ jobs:
 
       - name: Upload design artifacts (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: codex-design-artifacts
           path: |
@@ -177,7 +179,7 @@ jobs:
 
       - name: Open pull request
         if: steps.patch.outputs.has_patch == 'true' && steps.changes.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: ${{ steps.branch.outputs.branch }}
           title: "chore(design): design system + ux polish"
