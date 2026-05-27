@@ -979,11 +979,10 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        // Post-launch cleanup: Fjern legacy fallback når all produksjonsdata er migrert til menuDay.
         return {
           ...day,
           planTier,
-          categories: Array.isArray((day as any).categories) ? (day as any).categories : [],
+          categories: buildMenuDayCategories({ planTier, menus: [], staticItemsByCategory }),
         };
       })
     );

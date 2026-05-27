@@ -147,6 +147,19 @@ function normalizeCategoryText(value: unknown) {
     .replace(/å/g, "a");
 }
 
+function menuDayCategoryEnum(value: unknown): SuperadminMenuCategory | null {
+  const c = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (c === "paasmurt") return "Påsmurt";
+  if (c === "salat") return "Salatboks";
+  if (c === "sushi") return "Sushi";
+  if (c === "pokebowl") return "Pokebowl";
+  if (c === "thai") return "Thaimat";
+  if (c === "varmrett") return "Varmmat";
+  return null;
+}
+
 function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   const text = normalizeCategoryText(value);
   if (!text) return null;
@@ -154,13 +167,16 @@ function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   if (/\bpoke\s*bowl\b|\bpokebowl\b|\bpoke\b/.test(text)) return "Pokebowl";
   if (/\bthai\b|\bthaimat\b/.test(text)) return "Thaimat";
   if (/\bpasmurt\b|\bsandwich\b/.test(text)) return "Påsmurt";
-  if (/\bvarm\b|\bvarmmat\b/.test(text)) return "Varmmat";
+  if (/\bvarmrett\b|\bvarmmat\b/.test(text)) return "Varmmat";
+  if (/\bvarm\b/.test(text)) return "Varmmat";
   if (/\bsalat\b|\bsalatboks\b/.test(text)) return "Salatboks";
   return null;
 }
 
 function normalizeMenuCategory(menu: MenuDay): SuperadminMenuCategory | null {
   const row = menu as MenuDay & Record<string, unknown>;
+  const fromEnum = menuDayCategoryEnum(row.category);
+  if (fromEnum) return fromEnum;
   const directSources = [row.category, row.menuType, row.type, row.kind, row.title];
   for (const source of directSources) {
     const category = matchMenuCategory(source);
