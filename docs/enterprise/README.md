@@ -2,7 +2,7 @@
 
 **Formål:** Én inngang for **innkjøp, IT, sikkerhet og ledelse** uten å måtte lete i hele `docs/`. Innholdet **pakker og presiser** det som allerede finnes — det introduserer ikke nye produktløfter.
 
-**Master Blueprint (uendret ansvar):** Umbraco = public/content · Sanity = meny/weekplan · Supabase = operativ sannhet · Next.js = experience/integrasjon. Se `AGENTS.md` for låste regler og RC-gates.
+**Master Blueprint (uendret ansvar):** Umbraco = public/content · Sanity = meny/weekplan · Supabase = operativ sannhet · Next.js = experience/integrasjon. **Repo-struktur og deploy:** [../architecture/monorepo.md](../architecture/monorepo.md). Se `AGENTS.md` for låste regler og RC-gates.
 
 **Ubetinget enterprise-live (E0):** Salgs- og due diligence-pakken under er **ikke** det samme som «ubetinget enterprise-live» i E0-forstand. E0-tabellen (`docs/enterprise-ready/ENTERPRISE_LIVE_LIMITATIONS.md`) og rad-for-rad-fasit Closeout 12 (`docs/enterprise-ready/ENTERPRISE_LIVE_E0_CLOSEOUT_12.md`) fastholder **NO-GO** for ubetinget status frem til dokumenterte blokkere er lukket med bevis. **RC-/produktkjerne** vurderes i `docs/decision/MASTER_BLUEPRINT_FINAL_PARITY.md`.
 

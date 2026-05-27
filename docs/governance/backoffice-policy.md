@@ -9,7 +9,7 @@
 
 ## 1. Scope
 
-Denne policy dekker **administrativ og operativ tilgang** til plattformens kontrollflater — ikke sluttbrukerroller (`employee`, `company_admin`, `kitchen`, `driver`). Produktroller håndteres i [access-control-policy.md](../security/access-control-policy.md) og [role-matrix.md](./role-matrix.md).
+Denne policy dekker **administrativ og operativ tilgang** til plattformens kontrollflater — ikke sluttbrukerroller (`employee`, `company_admin`, `kitchen`, `driver`). Produktroller håndteres i [access-control-policy.md](../security/access-control-policy.md) og [role-matrix.md](./role-matrix.md). To-system repo-kontekst: [../architecture/monorepo.md](../architecture/monorepo.md).
 
 ### In scope
 
@@ -21,7 +21,7 @@ Denne policy dekker **administrativ og operativ tilgang** til plattformens kontr
 | Umbraco backoffice | `lunchportalen.no/umbraco` | Umbraco identity | Headless CMS admin (separat deploy) |
 | Supabase Studio | Supabase dashboard → project | Supabase org membership | DB/schema/RLS — **service role aldri i klient** |
 | Deployment console | Vercel project dashboard | Vercel team membership | Preview + production deploy, env secrets |
-| Azure (if used) | Azure portal resources | Azure AD / RBAC | [TBD — hvilke ressurser] |
+| Azure App Service + Azure SQL | Azure portal / App Service Configuration | Azure AD / RBAC | Umbraco CMS (`lunchportalen-umbraco`) + marketing DB (`umbracoDbDSN` off-repo) — se [monorepo.md](../architecture/monorepo.md) |
 
 ### Out of scope
 

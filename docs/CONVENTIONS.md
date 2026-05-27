@@ -1,5 +1,7 @@
 # Dokumentasjonskonvensjoner
 
+Repository layout (Next.js + Umbraco monorepo, deploy targets, data stores): [architecture/monorepo.md](./architecture/monorepo.md).
+
 ## Filnavn
 
 ### Hovedregel: kebab-case
