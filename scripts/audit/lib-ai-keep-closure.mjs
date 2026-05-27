@@ -122,9 +122,9 @@ while (queue.length) {
 }
 
 const allAi = walk(AI).map((f) => norm(path.relative(AI, f)));
-const archiveFiles = allAi.filter((r) => isArchiveRel(r));
+const archiveFiles = allAi.filter((r) => isArchiveRel(r)).sort();
 const keepFiles = [...keep].sort();
-const orphanFiles = allAi.filter((r) => !isArchiveRel(r) && !keep.has(r));
+const orphanFiles = allAi.filter((r) => !isArchiveRel(r) && !keep.has(r)).sort();
 
 let keepLoc = 0, archiveLoc = 0, orphanLoc = 0;
 for (const f of walk(AI)) {
@@ -138,11 +138,11 @@ for (const f of walk(AI)) {
 console.log(JSON.stringify({
   keep: { files: keepFiles.length, loc: keepLoc, paths: keepFiles },
   archive: { files: archiveFiles.length, loc: archiveLoc },
-  orphan: { files: orphanFiles.length, loc: orphanLoc, paths: orphanFiles.sort() },
+  orphan: { files: orphanFiles.length, loc: orphanLoc, paths: orphanFiles },
   total: { files: allAi.length, loc: keepLoc + archiveLoc + orphanLoc },
 }, null, 2));
 
 fs.writeFileSync(
   path.join(ROOT, "scripts/audit/lib-ai-keep-closure.json"),
-  JSON.stringify({ keepFiles, archiveFiles, orphanFiles: orphanFiles.sort() }, null, 2),
+  `${JSON.stringify({ keepFiles, archiveFiles, orphanFiles }, null, 2)}\n`,
 );
