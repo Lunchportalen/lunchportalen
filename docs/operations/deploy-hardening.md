@@ -60,7 +60,7 @@ Erstatter `azure/webapps-deploy@v3` (folder OneDeploy) med **stop → zip deploy
 | Stop | `az webapp stop -n lunchportalen-umbraco -g rg-lunchportalen-prod` |
 | Deploy | `az webapp deploy --type zip --clean true` |
 | Start | `az webapp start` med **`if: always()`** (sikrer oppstart ved deploy-feil) |
-| V.27a | Kudu VFS: les `App_Data/deploy-stamp.json` — `sha == GITHUB_SHA`, `dllSize` match artifact |
+| V.27a | Kudu VFS: les `App_Data/deploy-stamp.json` — **kun** `sha == GITHUB_SHA` (hard fail) |
 | V.27b | Poll `https://www.lunchportalen.no/` → **200** innen ~5 min (cold start) |
 
 **Concurrency:** `deploy-prod`, `cancel-in-progress: false` — ingen overlappende prod-deploys.
@@ -76,7 +76,9 @@ CI-grønn alene er **ikke** nok (#68). V.27 kjører etter hver prod-deploy:
 | **V.27a** | Kudu Bearer (`az account get-access-token --resource https://appservice.azure.com`) → `/api/vfs/site/wwwroot/App_Data/deploy-stamp.json` | Mismatch/manglende stamp → deploy antatt no-op eller stale disk |
 | **V.27b** | HTTP GET forsiden → 200 innen 300 s | App nede etter cold start |
 
-V.27a sammenligner **primært** `sha` mot `GITHUB_SHA`. `dllSize` er sekundær sanity (samme verdi som build-artifact).
+V.27a har **én hard gate:** `disk-stamp.sha == GITHUB_SHA`. Manglende stamp eller mismatch → fail-closed (fanger OneDeploy no-op / stale disk).
+
+`dllSize` skrives fortsatt i `deploy-stamp.json` ved build (audit/sporbarhet), men **sjekkes ikke** i V.27a — stamp-felt mot seg selv gir ingen ekstra deteksjon etter atomisk zip+clean deploy.
 
 ### Første kjøring etter merge
 
@@ -96,7 +98,7 @@ V.27a sammenligner **primært** `sha` mot `GITHUB_SHA`. `dllSize` er sekundær s
 
 Automatisert i workflow (F.X.7):
 
-1. **V.27a** — `deploy-stamp.json` på prod-disk matcher commit + dllSize
+1. **V.27a** — `deploy-stamp.json` på prod-disk: `sha == GITHUB_SHA`
 2. **V.27b** — `https://www.lunchportalen.no/` returnerer 200
 
 Manuell sanity (valgfritt etter første grønn V.27):

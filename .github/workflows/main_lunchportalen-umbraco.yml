@@ -245,7 +245,6 @@ jobs:
 
           ARTIFACT_STAMP="${{ github.workspace }}/umbraco-app/${{ env.DEPLOY_STAMP_PATH }}"
           EXPECTED_SHA="$(jq -r '.sha' "$ARTIFACT_STAMP")"
-          EXPECTED_DLL="$(jq -r '.dllSize' "$ARTIFACT_STAMP")"
 
           TOKEN="$(az account get-access-token --resource "https://appservice.azure.com" --query accessToken -o tsv)"
           SCM_HOST="$(az webapp show \
@@ -269,24 +268,16 @@ jobs:
           fi
 
           DISK_SHA="$(jq -r '.sha' /tmp/disk-deploy-stamp.json)"
-          DISK_DLL="$(jq -r '.dllSize' /tmp/disk-deploy-stamp.json)"
 
           echo "Expected SHA: ${EXPECTED_SHA}"
           echo "Disk SHA:     ${DISK_SHA}"
-          echo "Expected dllSize: ${EXPECTED_DLL}"
-          echo "Disk dllSize:     ${DISK_DLL}"
 
           if [[ "$DISK_SHA" != "$EXPECTED_SHA" ]] || [[ "$DISK_SHA" != "${GITHUB_SHA}" ]]; then
             echo "::error::V.27a FAIL — deploy-stamp sha mismatch (OneDeploy no-op or stale disk)"
             exit 1
           fi
 
-          if [[ "$DISK_DLL" != "$EXPECTED_DLL" ]]; then
-            echo "::error::V.27a FAIL — deploy-stamp dllSize mismatch (expected ${EXPECTED_DLL}, got ${DISK_DLL})"
-            exit 1
-          fi
-
-          echo "V.27a OK — prod disk deploy-stamp matches GITHUB_SHA and artifact dllSize"
+          echo "V.27a OK — prod disk deploy-stamp sha matches GITHUB_SHA"
 
       - name: V.27b — Poll prod homepage (cold start)
         shell: bash
