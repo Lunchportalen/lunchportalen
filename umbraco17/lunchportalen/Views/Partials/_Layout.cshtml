@@ -1,8 +1,18 @@
 ﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Web.Common
+@inject UmbracoHelper UmbracoHelper
 
 @{
+    var siteSettings = UmbracoHelper.ContentAtRoot()
+        .FirstOrDefault(x => x.ContentType.Alias == "siteSettings");
+
+    var faviconUrl = siteSettings?.Value<MediaWithCrops>("favIcon")?.MediaUrl()
+        ?? siteSettings?.Value<IPublishedContent>("favIcon")?.Url()
+        ?? "/media/zkhfkr4f/favicon-16x16.png";
+
     var pageTitle = Model?.Value<string>("pageTitle");
     var seoDescription = Model?.Value<string>("seoDescription");
     var ogImageItem = Model?.Value<IPublishedContent>("ogImage");
@@ -20,7 +30,7 @@
 
     if (string.IsNullOrWhiteSpace(ogImage))
     {
-        ogImage = "https://www.lunchportalen.no/media/zkhfkr4f/favicon-16x16.png";
+        ogImage = faviconUrl;
     }
 
     if (!string.IsNullOrWhiteSpace(ogImage) && ogImage.StartsWith("/"))
@@ -78,10 +88,8 @@
 
     @await RenderSectionAsync("Head", required: false)
 
-    <link rel="icon" type="image/png" sizes="32x32" href="/media/zkhfkr4f/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/media/zkhfkr4f/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/media/zkhfkr4f/favicon-16x16.png" />
-    <link rel="shortcut icon" href="/media/zkhfkr4f/favicon-16x16.png" />
+    <link rel="icon" type="image/png" href="@faviconUrl" />
+    <link rel="apple-touch-icon" href="@faviconUrl" />
 </head>
 
 <body>
