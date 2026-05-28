@@ -21,6 +21,9 @@ env:
   UMBRACO_CSPROJ: ./umbraco17/lunchportalen/lunchportalen.csproj
   PUBLISH_DIR: ${{ github.workspace }}/publish/umbraco-app
   AZURE_WEBAPP_NAME: lunchportalen-umbraco
+  AZURE_RESOURCE_GROUP: rg-lunchportalen-prod
+  DEPLOY_STAMP_PATH: App_Data/deploy-stamp.json
+  PROD_HOME_URL: https://www.lunchportalen.no/
 
 jobs:
   build:
@@ -92,6 +95,27 @@ jobs:
 
           echo "OK: Umbraco Release publish artifact is valid."
 
+      - name: Write deploy-stamp.json
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PUBLISH_DIR="${{ env.PUBLISH_DIR }}"
+          STAMP_FILE="${PUBLISH_DIR}/${{ env.DEPLOY_STAMP_PATH }}"
+          APP_DLL="$(find "$PUBLISH_DIR" -maxdepth 1 -type f -iname "lunchportalen.dll" | head -n 1)"
+          DLL_SIZE="$(stat -c%s "$APP_DLL")"
+
+          mkdir -p "$(dirname "$STAMP_FILE")"
+          printf '{"sha":"%s","dllSize":%s}\n' "${GITHUB_SHA}" "${DLL_SIZE}" > "$STAMP_FILE"
+
+          if [[ ! -f "$STAMP_FILE" ]]; then
+            echo "::error::deploy-stamp.json was not written to artifact path"
+            exit 1
+          fi
+
+          echo "deploy-stamp.json written:"
+          cat "$STAMP_FILE"
+
       - name: Upload umbraco-app artifact
         uses: actions/upload-artifact@v4
         with:
@@ -103,6 +127,9 @@ jobs:
     name: Deploy Umbraco CMS to Azure
     runs-on: ubuntu-latest
     needs: build
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
 
     permissions:
       id-token: write
@@ -122,11 +149,19 @@ jobs:
 
           echo "Triggering commit SHA: ${GITHUB_SHA}"
           echo "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          echo "Deploying to Azure Web App: ${{ env.AZURE_WEBAPP_NAME }}"
+          echo "Deploying to Azure Web App: ${{ env.AZURE_WEBAPP_NAME }} (${{ env.AZURE_RESOURCE_GROUP }})"
 
           echo "::group::Downloaded artifact sample"
           ls -la "${{ github.workspace }}/umbraco-app" | head -n 120 || true
           echo "::endgroup::"
+
+          STAMP="${{ github.workspace }}/umbraco-app/${{ env.DEPLOY_STAMP_PATH }}"
+          if [[ ! -f "$STAMP" ]]; then
+            echo "::error::Artifact missing ${{ env.DEPLOY_STAMP_PATH }}"
+            exit 1
+          fi
+          echo "Artifact deploy-stamp.json:"
+          cat "$STAMP"
 
       - name: V.25 + V.26 — Deploy-payload integrity
         shell: bash
@@ -155,9 +190,128 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          slot-name: production
-          package: ${{ github.workspace }}/umbraco-app
+      - name: Package app.zip for deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_DIR="${{ github.workspace }}/umbraco-app"
+          ZIP_PATH="${{ github.workspace }}/app.zip"
+
+          rm -f "$ZIP_PATH"
+          (cd "$APP_DIR" && zip -r "$ZIP_PATH" .)
+
+          if [[ ! -f "$ZIP_PATH" ]]; then
+            echo "::error::app.zip was not created"
+            exit 1
+          fi
+
+          ls -lh "$ZIP_PATH"
+
+      - name: Stop App Service before deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Stopping ${{ env.AZURE_WEBAPP_NAME }} for clean zip deploy..."
+          az webapp stop \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}"
+
+      - name: Deploy zip with clean true
+        id: deploy_zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          az webapp deploy \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --src-path "${{ github.workspace }}/app.zip" \
+            --type zip \
+            --clean true
+
+      - name: Start App Service after deploy
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Starting ${{ env.AZURE_WEBAPP_NAME }} (if: always — rollback-safe)..."
+          az webapp start \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}"
+
+      - name: V.27a — Post-deploy disk stamp (Kudu VFS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARTIFACT_STAMP="${{ github.workspace }}/umbraco-app/${{ env.DEPLOY_STAMP_PATH }}"
+          EXPECTED_SHA="$(jq -r '.sha' "$ARTIFACT_STAMP")"
+          EXPECTED_DLL="$(jq -r '.dllSize' "$ARTIFACT_STAMP")"
+
+          TOKEN="$(az account get-access-token --resource "https://appservice.azure.com" --query accessToken -o tsv)"
+          SCM_HOST="$(az webapp show \
+            --name "${{ env.AZURE_WEBAPP_NAME }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --query "enabledHostNames[?contains(@, '.scm.')] | [0]" -o tsv)"
+
+          if [[ -z "$SCM_HOST" ]]; then
+            echo "::error::V.27a FAIL — could not resolve SCM host"
+            exit 1
+          fi
+
+          STAMP_URL="https://${SCM_HOST}/api/vfs/site/wwwroot/${{ env.DEPLOY_STAMP_PATH }}"
+          HTTP_CODE="$(curl -sS -o /tmp/disk-deploy-stamp.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "$STAMP_URL")"
+
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "::error::V.27a FAIL — deploy-stamp.json missing on prod disk (HTTP ${HTTP_CODE})"
+            exit 1
+          fi
+
+          DISK_SHA="$(jq -r '.sha' /tmp/disk-deploy-stamp.json)"
+          DISK_DLL="$(jq -r '.dllSize' /tmp/disk-deploy-stamp.json)"
+
+          echo "Expected SHA: ${EXPECTED_SHA}"
+          echo "Disk SHA:     ${DISK_SHA}"
+          echo "Expected dllSize: ${EXPECTED_DLL}"
+          echo "Disk dllSize:     ${DISK_DLL}"
+
+          if [[ "$DISK_SHA" != "$EXPECTED_SHA" ]] || [[ "$DISK_SHA" != "${GITHUB_SHA}" ]]; then
+            echo "::error::V.27a FAIL — deploy-stamp sha mismatch (OneDeploy no-op or stale disk)"
+            exit 1
+          fi
+
+          if [[ "$DISK_DLL" != "$EXPECTED_DLL" ]]; then
+            echo "::error::V.27a FAIL — deploy-stamp dllSize mismatch (expected ${EXPECTED_DLL}, got ${DISK_DLL})"
+            exit 1
+          fi
+
+          echo "V.27a OK — prod disk deploy-stamp matches GITHUB_SHA and artifact dllSize"
+
+      - name: V.27b — Poll prod homepage (cold start)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          URL="${{ env.PROD_HOME_URL }}"
+          TIMEOUT_SEC=300
+          INTERVAL_SEC=10
+          ELAPSED=0
+
+          echo "Polling ${URL} for HTTP 200 (timeout ${TIMEOUT_SEC}s)..."
+
+          while [[ "$ELAPSED" -lt "$TIMEOUT_SEC" ]]; do
+            HTTP_CODE="$(curl -sS -o /dev/null -w "%{http_code}" "$URL" || true)"
+            echo "  t=${ELAPSED}s → HTTP ${HTTP_CODE}"
+
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "V.27b OK — ${URL} returned 200"
+              exit 0
+            fi
+
+            sleep "$INTERVAL_SEC"
+            ELAPSED=$((ELAPSED + INTERVAL_SEC))
+          done
+
+          echo "::error::V.27b FAIL — ${URL} did not return 200 within ${TIMEOUT_SEC}s"
+          exit 1
