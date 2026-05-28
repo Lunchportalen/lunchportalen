@@ -79,10 +79,12 @@ graph LR
     nextjs --> supabase[("Supabase Postgres")]
     nextjs --> sanity[("Sanity")]
     umbraco --> azuresql[("Azure SQL")]
+    umbraco --> blob[("Azure Blob — lunchportalen-media")]
 
     supabase -.-> ops["orders, profiles, companies, deliveries"]
     sanity -.-> menu["week menus, dishes"]
-    azuresql -.-> content["marketing pages, media, navigation"]
+    azuresql -.-> content["marketing pages, media refs"]
+    blob -.-> mediafiles["media/<hash>/files"]
 ```
 
 | Data domain | Store | Location in repo | Notes |
@@ -92,6 +94,21 @@ graph LR
 | Marketing content | Umbraco / Azure SQL | `umbraco17/lunchportalen/` (code only) | DB connection string **not in repo** — Azure App Service config `umbracoDbDSN` |
 
 Data does not duplicate across these stores. Next.js may read Umbraco Delivery API for development or mapping; production public HTML is documented as Umbraco-hosted (see boundaries doc above).
+
+### Umbraco media strategy (F.X.3 — canonical)
+
+One source of truth per layer:
+
+| Layer | Store | Notes |
+|-------|-------|-------|
+| **Media files** | Azure Blob (`lunchportalenmedia`, container `lunchportalen-media`) | Path: `media/<umbraco-hash>/<filename>`. Provider: `Umbraco.StorageProviders.AzureBlob` 17.0.0 |
+| **Media references** | Azure SQL (Umbraco) | Content + media picker values; not duplicated in Git |
+| **Application code** | Git (`umbraco17/lunchportalen/`) | Views, Program.cs, appsettings skeleton |
+| **Secrets** | Azure App Service config | `UMBRACO__STORAGE__AZUREBLOB__MEDIA__CONNECTIONSTRING` (interim; Key Vault in F.X.4) |
+
+Deploy artifact **must not** contain `wwwroot/media/` (V.25 gate). `clean:true` OneDeploy is safe because files live in Blob, not on App Service disk.
+
+See [deploy-hardening.md](../operations/deploy-hardening.md) for incident history, OneDeploy verification, and rollback procedure.
 
 ---
 
@@ -127,6 +144,7 @@ graph LR
 | Target | Azure Web App `lunchportalen-umbraco` |
 | Production URL | `https://lunchportalen.no` (`appsettings.Production.json`) |
 | Database | Azure SQL — credentials in Azure App Service configuration, not committed |
+| Media files | Azure Blob Storage (`lunchportalenmedia` / `lunchportalen-media`) — see [deploy-hardening.md](../operations/deploy-hardening.md) |
 | Schema versioning | uSync activation planned (Sprint AB Fase F.4) |
 
 ---
