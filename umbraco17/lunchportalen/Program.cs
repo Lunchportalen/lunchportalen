@@ -1,4 +1,5 @@
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
+using uSync.BackOffice;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,7 @@ builder.CreateUmbracoBuilder()
     .AddComposers()
     .AddAzureBlobMediaFileSystem()
     .AddAzureBlobImageSharpCache()
+    .AdduSync()
     .Build();
 
 WebApplication app = builder.Build();

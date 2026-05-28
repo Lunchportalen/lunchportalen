@@ -23,6 +23,7 @@
     <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" />
     <PackageReference Include="SeoToolkit.Umbraco" />
     <PackageReference Include="SeoToolkit.Umbraco.Sitemap" />
+    <PackageReference Include="uSync" />
   </ItemGroup>
 
   <ItemGroup>
