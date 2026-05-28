@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" />
+    <PackageReference Include="Umbraco.StorageProviders.AzureBlob" />
+    <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" />
     <PackageReference Include="SeoToolkit.Umbraco" />
     <PackageReference Include="SeoToolkit.Umbraco.Sitemap" />
   </ItemGroup>

@@ -161,4 +161,3 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: production
           package: ${{ github.workspace }}/umbraco-app
-          clean: false
