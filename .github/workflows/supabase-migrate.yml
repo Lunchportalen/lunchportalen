@@ -53,6 +53,9 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
       DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       EVIDENCE_DIR: evidence/staging
 
     steps:
@@ -71,43 +74,98 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.24.3
+
+      - name: Install psql
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
 
       - name: Prepare evidence dir
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
           echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
 
+      - name: Verify required secrets present (staging)
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD CRON_SECRET BASE_URL SYSTEM_MOTOR_SECRET; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required staging secrets/env: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required staging secrets present."
+
+      - name: Build staging DATABASE_URL
+        run: |
+          set -euo pipefail
+          echo "DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres" >> "$GITHUB_ENV"
+          echo "Staging DATABASE_URL configured from SUPABASE_STAGING_PROJECT_REF + SUPABASE_STAGING_DB_PASSWORD."
+
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
         run: |
+          set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
       - name: Link project (staging)
         run: |
-          supabase link --project-ref "$PROJECT_REF"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" --password "$DB_PASSWORD"
 
       # ✅ Apply migrations to staging
       - name: Apply migrations (staging)
         run: |
-          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+          set -euo pipefail
+          supabase db push --linked --password "$DB_PASSWORD" --yes \
+            2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      - name: Verify migration actually applied (staging)
+        run: |
+          set -euo pipefail
+          LATEST_LOCAL="$(ls supabase/migrations/ | sort | tail -1 | grep -oP '^\d+' || true)"
+          if [ -z "$LATEST_LOCAL" ]; then
+            echo "No local migrations found — skipping verify."
+            exit 0
+          fi
+          echo "Verifying $LATEST_LOCAL is in schema_migrations (staging)..."
+          APPLIED="$(psql "$DATABASE_URL" -t -A -c \
+            "SELECT version FROM supabase_migrations.schema_migrations \
+             WHERE version = '$LATEST_LOCAL'")"
+          if [ "$APPLIED" != "$LATEST_LOCAL" ]; then
+            echo "::error::Migration $LATEST_LOCAL not in staging schema_migrations!"
+            echo "Last 5 applied versions:"
+            psql "$DATABASE_URL" -c \
+              "SELECT version FROM supabase_migrations.schema_migrations \
+               ORDER BY version DESC LIMIT 5"
+            exit 1
+          fi
+          echo "Migration $LATEST_LOCAL verified applied on staging."
 
       # ✅ Verify DB contracts (fail-closed)
       - name: Verify DB contracts (staging)
         run: |
+          set -euo pipefail
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
       # ✅ Optional: run your smoke scripts (cron/auth/RPC etc.)
       - name: Smoke tests (staging)
         run: |
+          set -euo pipefail
           bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
 
       # ✅ Typegen (committed types are optional; here we just generate + upload as evidence)
       - name: Typegen (staging)
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR/typegen"
           supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
@@ -130,6 +188,10 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
       DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       EVIDENCE_DIR: evidence/prod
 
     steps:
@@ -148,62 +210,88 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.24.3
+
+      - name: Install psql
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
 
       - name: Prepare evidence dir
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
           echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
 
+      - name: Verify required secrets present (prod)
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD DATABASE_URL CRON_SECRET BASE_URL SYSTEM_MOTOR_SECRET; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required prod secrets/env: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required prod secrets present."
+
       # ✅ Gate 1: same gate in prod (fail before touching prod)
       - name: Migration gate (order + bootstrap-safe)
         run: |
+          set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
-      # Must fail with clear message before supabase link (empty secrets → cryptic CLI errors, often exit ≠ 0).
-      - name: Precheck prod link inputs (no secret values printed)
-        shell: bash
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+      - name: Link project (prod)
         run: |
           set -euo pipefail
-          echo "=== Prod link precheck (boolean only) ==="
-          if [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
-            echo "SUPABASE_ACCESS_TOKEN: set=yes"
-          else
-            echo "::error::SUPABASE_ACCESS_TOKEN is missing. Add org/repo secret SUPABASE_ACCESS_TOKEN (Supabase CLI personal access token)."
-            exit 1
-          fi
-          if [[ -n "${PROJECT_REF:-}" ]]; then
-            echo "SUPABASE_PROD_PROJECT_REF (PROJECT_REF): set=yes"
-          else
-            echo "::error::Prod project ref is missing. Add repository secret SUPABASE_PROD_PROJECT_REF (Dashboard → Project Settings → General → Reference ID)."
-            exit 1
-          fi
-          echo "DB password for db push is checked later (SUPABASE_PROD_DB_PASSWORD)."
-
-      - name: Link project (prod)
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          supabase link --project-ref "$PROJECT_REF"
+          supabase link --project-ref "$PROJECT_REF" --password "$DB_PASSWORD"
 
       - name: Apply migrations (prod)
         run: |
-          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+          set -euo pipefail
+          supabase db push --linked --password "$DB_PASSWORD" --yes \
+            2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      - name: Verify migration actually applied (prod)
+        run: |
+          set -euo pipefail
+          LATEST_LOCAL="$(ls supabase/migrations/ | sort | tail -1 | grep -oP '^\d+' || true)"
+          if [ -z "$LATEST_LOCAL" ]; then
+            echo "No local migrations found — skipping verify."
+            exit 0
+          fi
+          echo "Verifying $LATEST_LOCAL is in schema_migrations (prod)..."
+          APPLIED="$(psql "$DATABASE_URL" -t -A -c \
+            "SELECT version FROM supabase_migrations.schema_migrations \
+             WHERE version = '$LATEST_LOCAL'")"
+          if [ "$APPLIED" != "$LATEST_LOCAL" ]; then
+            echo "::error::Migration $LATEST_LOCAL not in prod schema_migrations!"
+            echo "Last 5 applied versions:"
+            psql "$DATABASE_URL" -c \
+              "SELECT version FROM supabase_migrations.schema_migrations \
+               ORDER BY version DESC LIMIT 5"
+            exit 1
+          fi
+          echo "Migration $LATEST_LOCAL verified applied on prod."
 
       - name: Verify DB contracts (prod)
         run: |
+          set -euo pipefail
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
       - name: Smoke tests (prod)
         run: |
+          set -euo pipefail
           bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
 
       - name: Typegen (prod)
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR/typegen"
           supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"

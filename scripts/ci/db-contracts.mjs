@@ -12,8 +12,8 @@ function mustEnv(name) {
 
 const url = process.env.DATABASE_URL;
 if (!url) {
-  console.log("SKIP: DATABASE_URL not set (add if you want deep DB checks).");
-  process.exit(0);
+  console.error("FAIL: DATABASE_URL not set (required for DB contract checks).");
+  process.exit(1);
 }
 
 const requiredTables = [
