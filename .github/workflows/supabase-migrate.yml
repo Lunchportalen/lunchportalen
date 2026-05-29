@@ -107,8 +107,8 @@ jobs:
       - name: Build staging DATABASE_URL
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres" >> "$GITHUB_ENV"
-          echo "Staging DATABASE_URL configured from SUPABASE_STAGING_PROJECT_REF + SUPABASE_STAGING_DB_PASSWORD."
+          echo "DATABASE_URL=postgresql://postgres.${PROJECT_REF}:${DB_PASSWORD}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres" >> "$GITHUB_ENV"
+          echo "Staging DATABASE_URL configured (Supavisor pooler, user postgres.${PROJECT_REF})."
 
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
