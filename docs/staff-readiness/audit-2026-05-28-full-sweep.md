@@ -547,6 +547,7 @@ app/api/cron/tripletex-agreements-daily/route.ts:65  lp_run_daily_agreement_bill
 | Flag | Item | Notes |
 |------|------|-------|
 | **Medium (DD)** | CLI-pin-strategi for `supabase-cli` | Pin i `.github/workflows/supabase-migrate.yml` skaper config-format-fragilitet (`config.toml`-nøkler vs CLI-versjon). Vurdér Dependabot/Renovate på workflow-filen for automatiske bump-PR-er ved nye CLI-releases. |
+| **Lav (DD)** | `onnxruntime-node` som CI-dep | Postinstall henter binærer via CDN — ga `ETIMEDOUT` i supabase-migrate run 26640909257 (2026-05-29). Undersøk `npm ls onnxruntime-node` om avhengigheten er ekstraherbar, eller legg retry-wrapper rundt `npm ci`-steget. |
 
 ---
 
