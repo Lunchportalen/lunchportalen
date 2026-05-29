@@ -12,11 +12,12 @@ function snippetAround(source: string, needle: string, radius = 520): string {
 }
 
 describe("POST /api/orders sends Idempotency-Key from UI call-sites", () => {
-  test("EmployeeWeekClient: POST headers include Idempotency-Key via generateIdempotencyKey()", () => {
+  test("EmployeeWeekClient: POST headers include stable Idempotency-Key via ensureIdemKey()", () => {
     const src = readFileSync(WEEK_CLIENT, "utf-8");
-    expect(src).toContain('import { generateIdempotencyKey } from "@/lib/orders/idempotencyKey"');
+    expect(src).toContain("idemKeyRef");
+    expect(src).toContain("ensureIdemKey");
     const block = snippetAround(src, 'fetch("/api/orders"');
-    expect(block).toContain('"Idempotency-Key": generateIdempotencyKey()');
+    expect(block).toContain('"Idempotency-Key": ensureIdemKey(idemScope)');
   });
 
   test("OrderActions: både place og cancel POST inkluderer Idempotency-Key", () => {
