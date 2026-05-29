@@ -125,6 +125,7 @@ jobs:
       - name: Apply migrations (staging)
         run: |
           set -euo pipefail
+          export SUPABASE_DB_PASSWORD="$DB_PASSWORD"
           supabase db push --linked --password "$DB_PASSWORD" --yes \
             2>&1 | tee "$EVIDENCE_DIR/db-push.log"
 
