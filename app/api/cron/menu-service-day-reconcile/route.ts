@@ -9,6 +9,7 @@ import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { opsLog } from "@/lib/ops/log";
 import { syncMenuServiceDaysForPublishedMenuDay } from "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay";
 import { sanityServer } from "@/lib/sanity/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -73,44 +74,67 @@ export async function GET(req: NextRequest) {
   let inserted = 0;
   let updated = 0;
   let unchanged = 0;
+  let failed = 0;
 
-  try {
-    const admin = supabaseAdmin();
+  const admin = supabaseAdmin();
 
-    const seen = new Set<string>();
-    for (const d of docs) {
-      const date = String(d?.date ?? "").trim();
-      const planTier = String(d?.planTier ?? "").trim();
-      if (!date || !planTier) continue;
-      const k = `${date}|${planTier}`;
-      if (seen.has(k)) continue;
-      seen.add(k);
+  const seen = new Set<string>();
+  for (const d of docs) {
+    const date = String(d?.date ?? "").trim();
+    const planTier = String(d?.planTier ?? "").trim();
+    if (!date || !planTier) continue;
+    const k = `${date}|${planTier}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
 
+    try {
       const stats = await syncMenuServiceDaysForPublishedMenuDay(admin, { date, planTier });
       if (!stats.skipped) {
         inserted += stats.inserted;
         updated += stats.updated;
         unchanged += stats.unchanged;
       }
+    } catch (e: unknown) {
+      failed += 1;
+      const msg = e instanceof Error ? e.message : String(e);
+      const pgCodeMatch = msg.match(/\b(23\d{3})\b/);
+      const locationMatch = msg.match(/location_id=([0-9a-f-]{36})/i);
+      opsLog("cron.menu_service_day_reconcile.sync_failed", {
+        rid,
+        level: "error",
+        date,
+        plan_tier: planTier,
+        location_id: locationMatch?.[1] ?? null,
+        error_code: pgCodeMatch?.[1] ?? "sync_failed",
+        message: msg,
+      });
+      captureCronHandlerError("/api/cron/menu-service-day-reconcile", rid, e, {
+        date,
+        error_code: pgCodeMatch?.[1] ?? "sync_failed",
+        location_id: locationMatch?.[1] ?? null,
+      });
     }
-
-    console.log(`[menu-service-day-reconcile] Reconcile: ${inserted} nye, ${updated} oppdaterte, ${unchanged} uendret`);
-
-    return jsonOk(
-      rid,
-      {
-        menuDays: seen.size,
-        inserted,
-        updated,
-        unchanged,
-        from: today,
-        to: toInclusive,
-      },
-      200,
-    );
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    captureCronHandlerError("/api/cron/menu-service-day-reconcile", rid, e);
-    return jsonErr(rid, "Reconcile sync feilet.", 500, "sync_failed", { message: msg });
   }
+
+  console.log(
+    `[menu-service-day-reconcile] Reconcile: ${inserted} nye, ${updated} oppdaterte, ${unchanged} uendret, ${failed} feilet`,
+  );
+
+  if (failed > 0 && inserted === 0 && updated === 0 && unchanged === 0) {
+    return jsonErr(rid, "Reconcile sync feilet for alle menuDay.", 500, "sync_failed", { failed });
+  }
+
+  return jsonOk(
+    rid,
+    {
+      menuDays: seen.size,
+      inserted,
+      updated,
+      unchanged,
+      failed,
+      from: today,
+      to: toInclusive,
+    },
+    200,
+  );
 }

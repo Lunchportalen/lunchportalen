@@ -2,12 +2,12 @@
 
 import { ClockIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-import { generateIdempotencyKey } from "@/lib/orders/idempotencyKey";
 import {
   findRecommendedDateInWindow,
   getTopWeekdayKey,
@@ -139,6 +139,46 @@ function isCutoffApiError(code: string | null, message: string): boolean {
   const c = String(code ?? "").toUpperCase();
   const m = String(message ?? "").toUpperCase();
   return c === "CUTOFF_PASSED" || c === "LOCKED" || m.includes("BESTILLINGSFRISTEN") || m.includes("FRISTEN");
+}
+
+function isDayCutoffClosed(day: DayRow | undefined): boolean {
+  return Boolean(day?.isLocked && day.lockReason === "CUTOFF");
+}
+
+function orderErrorKey(json: Record<string, unknown> | null): string {
+  if (!json || typeof json !== "object") return "";
+  if (typeof json.error === "string" && json.error.trim()) return json.error.trim();
+  if (typeof json.code === "string" && json.code.trim()) return json.code.trim();
+  return "";
+}
+
+function handleOrderError(
+  status: number,
+  json: Record<string, unknown> | null,
+  setErrorBanner: (state: ErrorBannerState) => void,
+): void {
+  const errorKey = orderErrorKey(json);
+  if (status === 409 && errorKey === "menu_not_published") {
+    setErrorBanner({ code: errorKey, message: "Menyen for valgt dag er ikke publisert ennå" });
+    return;
+  }
+  if (status === 409 && errorKey === "menu_items_missing") {
+    setErrorBanner({ code: errorKey, message: "Menyen er ikke ferdig klargjort — prøv igjen om litt" });
+    return;
+  }
+  if (status === 422 && errorKey === "data_integrity") {
+    setErrorBanner({ code: errorKey, message: "Teknisk feil — support er varslet" });
+    Sentry.captureMessage("Order data_integrity", {
+      level: "warning",
+      tags: { error_code: String(json?.code ?? "NOT_NULL_VIOLATION") },
+    });
+    return;
+  }
+  if (status === 422 && errorKey === "provider_unresolvable") {
+    setErrorBanner({ code: errorKey, message: "Konfigurasjonsfeil for valgt dag — kontakt support" });
+    return;
+  }
+  setErrorBanner({ code: errorKey || null, message: "Noe gikk galt — prøv igjen" });
 }
 
 function asOrderStatus(v: unknown): "ACTIVE" | "CANCELLED" | null {
@@ -1485,6 +1525,25 @@ export default function EmployeeWeekClient({
   const ioRef = useRef<IntersectionObserver | null>(null);
   /** Under programmatisk scroll (init/tap): ikke la IO overskrive valgt dag midlertidig. */
   const suppressIoUntilRef = useRef(0);
+  const idemKeyRef = useRef<string | null>(null);
+  const idemScopeRef = useRef<string | null>(null);
+
+  const resetIdemKey = useCallback(() => {
+    idemKeyRef.current = null;
+    idemScopeRef.current = null;
+  }, []);
+
+  const ensureIdemKey = useCallback((scope: string): string => {
+    if (idemScopeRef.current !== scope || !idemKeyRef.current) {
+      idemScopeRef.current = scope;
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        idemKeyRef.current = crypto.randomUUID();
+      } else {
+        idemKeyRef.current = `idem-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+      }
+    }
+    return idemKeyRef.current;
+  }, []);
 
   const [patternTick, setPatternTick] = useState(0);
   const patterns = useMemo(() => {
@@ -1561,6 +1620,10 @@ export default function EmployeeWeekClient({
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  useEffect(() => {
+    resetIdemKey();
+  }, [selectedChoices, resetIdemKey]);
 
   useEffect(() => {
     if (readOnlyPreview) return;
@@ -1898,13 +1961,14 @@ export default function EmployeeWeekClient({
         const itemKeyForOrder =
           wantsLunch && typeof pick?.itemKey === "string" && pick.itemKey.trim().length ? pick.itemKey.trim() : null;
         const body = buildOrderWriteBody(date, wantsLunch, choiceKey, itemKeyForOrder);
+        const idemScope = `${date}:${wantsLunch ? "SET" : "CANCEL"}:${choiceKey ?? ""}:${itemKeyForOrder ?? ""}`;
 
         const res = await fetch("/api/orders", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-rid": rid,
-            "Idempotency-Key": generateIdempotencyKey(),
+            "Idempotency-Key": ensureIdemKey(idemScope),
           },
           cache: "no-store",
           body: JSON.stringify(body),
@@ -1941,9 +2005,10 @@ export default function EmployeeWeekClient({
             setErrorBanner({ code: apiError.code, message: "Ugyldig dato" });
             return false;
           }
-          showErrorBanner(apiError.message, apiError.code);
+          handleOrderError(res.status, json, setErrorBanner);
           return false;
         }
+        resetIdemKey();
         const refreshed = await loadWindow({ silent: true });
         if (!refreshed) {
           showErrorBanner("");
@@ -1967,7 +2032,7 @@ export default function EmployeeWeekClient({
         return false;
       }
     },
-    [days, loadWindow, readOnlyPreview, selectedChoices, showErrorBanner, showSuccessToast],
+    [days, ensureIdemKey, loadWindow, readOnlyPreview, resetIdemKey, selectedChoices, showErrorBanner, showSuccessToast],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
@@ -1991,6 +2056,7 @@ export default function EmployeeWeekClient({
   const requestOrder = useCallback((date: string) => {
     if (readOnlyPreview) return;
     const day = days.find((d) => d.date === date);
+    if (isDayCutoffClosed(day)) return;
     if (day && choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoices[date])) {
       setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
       return;
@@ -2009,13 +2075,15 @@ export default function EmployeeWeekClient({
 
   const requestCancel = useCallback((date: string) => {
     if (readOnlyPreview) return;
+    const day = days.find((d) => d.date === date);
+    if (isDayCutoffClosed(day)) return;
     setErrorBanner(null);
     if (errorTimerRef.current) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
     setConfirm({ date, action: "cancel" });
-  }, [readOnlyPreview]);
+  }, [days, readOnlyPreview]);
 
   const blocked = !readOnlyPreview && (!canAct || !weekOrderingAllowed);
   const globalBusy = busyDate !== null;
