@@ -104,7 +104,7 @@ jobs:
           fi
           echo "All required staging secrets present."
 
-      - name: Build staging direct DATABASE_URL (IPv4)
+      - name: Build staging DATABASE_URL (session pooler)
         run: |
           set -euo pipefail
           if [ "${PROJECT_REF}" != "btgxrtqurtazlnfljjrd" ]; then
@@ -112,10 +112,10 @@ jobs:
             exit 1
           fi
           ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
-          URL="postgresql://postgres:${ENCODED}@db.${PROJECT_REF}.supabase.co:5432/postgres"
-          echo "STAGING_DIRECT_URL=${URL}" >> "$GITHUB_ENV"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+          echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
-          echo "Staging direct IPv4 URL configured."
+          echo "Staging session pooler URL configured."
 
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
@@ -123,11 +123,11 @@ jobs:
           set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
-      # ✅ Apply migrations to staging (direct IPv4 db-url)
-      - name: Apply migrations (staging, direct db-url)
+      # ✅ Apply migrations to staging (session pooler db-url)
+      - name: Apply migrations (staging, session pooler)
         run: |
           set -euo pipefail
-          npx supabase@beta db push --db-url "$STAGING_DIRECT_URL" --yes \
+          npx supabase@beta db push --db-url "$STAGING_DATABASE_URL" --yes \
             2>&1 | tee "$EVIDENCE_DIR/db-push.log"
 
       - name: Verify migration actually applied (staging)
