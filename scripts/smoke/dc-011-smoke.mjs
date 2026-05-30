@@ -287,7 +287,7 @@ async function runAIdempotency() {
   }
 
   const idemKey = `smoke-idem-${Date.now()}-${crypto.randomUUID().replace(/-/g, "")}`;
-  const body = { date: orderDate, action: "place", slot: "lunch", choice_key: choiceKey };
+  const body = { date: orderDate, action: "place", slot: "lunch", choice_key: choiceKey, item_key: "default" };
   const headers = { "Idempotency-Key": idemKey };
 
   const r1 = await request("POST", "/api/orders", { body, headers });
