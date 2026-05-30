@@ -11,7 +11,7 @@
 -- ensure_audit_log_partitions_monthly (prod-equivalent).
 -- =============================================================================
 
-﻿-- prod-baseline preamble: extensions (prod read-only 2026-05-30)
+-- prod-baseline preamble: extensions (prod read-only 2026-05-30)
 CREATE SCHEMA IF NOT EXISTS public;
 CREATE SCHEMA IF NOT EXISTS private;
 CREATE SCHEMA IF NOT EXISTS extensions;
