@@ -104,24 +104,18 @@ jobs:
           fi
           echo "All required staging secrets present."
 
-      - name: Diagnose staging DB password shape
+      - name: Build staging direct DATABASE_URL (IPv4)
         run: |
           set -euo pipefail
-          node - <<'NODE'
-          const crypto = require("crypto");
-          const value = process.env.DB_PASSWORD || "";
-          console.log("DB_PASSWORD_LENGTH=" + value.length);
-          console.log("DB_PASSWORD_STARTS_WITH_POSTGRES_URL=" + String(value.startsWith("postgresql://")));
-          console.log("DB_PASSWORD_CONTAINS_MPH_MARKER=" + String(value.includes("mphTwHq6yRu9i2Wv")));
-          console.log("DB_PASSWORD_CONTAINS_WHITESPACE=" + String(/\s/.test(value)));
-          console.log("DB_PASSWORD_SHA256_12=" + crypto.createHash("sha256").update(value).digest("hex").slice(0, 12));
-          NODE
-
-      - name: Build staging DATABASE_URL
-        run: |
-          set -euo pipefail
-          echo "DATABASE_URL=postgresql://postgres.${PROJECT_REF}:${DB_PASSWORD}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres" >> "$GITHUB_ENV"
-          echo "Staging DATABASE_URL configured (Supavisor pooler, user postgres.${PROJECT_REF})."
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing staging job: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres:${ENCODED}@db.${PROJECT_REF}.supabase.co:5432/postgres"
+          echo "STAGING_DIRECT_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "Staging direct IPv4 URL configured."
 
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
@@ -129,29 +123,11 @@ jobs:
           set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
-      - name: Diagnose staging project ref
+      # ✅ Apply migrations to staging (direct IPv4 db-url)
+      - name: Apply migrations (staging, direct db-url)
         run: |
           set -euo pipefail
-          echo "PROJECT_REF=${PROJECT_REF}"
-          if [ "${PROJECT_REF}" = "uigxsboqeruxflgzqztl" ]; then
-            echo "PROJECT_REF_IS_EXPECTED_STAGING=true"
-          else
-            echo "PROJECT_REF_IS_EXPECTED_STAGING=false"
-          fi
-          supabase --version
-
-      - name: Link project (staging, beta skip-pooler)
-        run: |
-          set -euo pipefail
-          npx supabase@beta link --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" --skip-pooler \
-            2>&1 | tee "$EVIDENCE_DIR/beta-link.log"
-
-      # ✅ Apply migrations to staging (beta skip-pooler test)
-      - name: Apply migrations (staging, beta skip-pooler)
-        run: |
-          set -euo pipefail
-          export SUPABASE_DB_PASSWORD="$DB_PASSWORD"
-          npx supabase@beta db push --linked --yes \
+          npx supabase@beta db push --db-url "$STAGING_DIRECT_URL" --yes \
             2>&1 | tee "$EVIDENCE_DIR/db-push.log"
 
       - name: Verify migration actually applied (staging)
