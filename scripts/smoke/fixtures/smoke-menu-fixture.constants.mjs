@@ -3,7 +3,9 @@
  * Used by seed-smoke-menu-fixture.mjs and dc-011 A6 idempotency test.
  */
 export const SMOKE_EMAIL = "smoke-test@lunchportalen.no";
-export const SMOKE_USER_ID = "b0e90b33-8c05-47f9-8f5f-96777575442d";
+/** Override via SMOKE_USER_ID when provision creates a new auth.users id. */
+export const SMOKE_USER_ID =
+  process.env.SMOKE_USER_ID?.trim() || "b0e90b33-8c05-47f9-8f5f-96777575442d";
 export const SMOKE_COMPANY_ID = "8b0b8fa4-8d89-4795-b92b-e09129dd635f";
 export const SMOKE_LOCATION_ID = "f319b299-8914-4c52-9984-569ce07c914d";
 

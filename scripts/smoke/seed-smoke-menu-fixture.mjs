@@ -235,7 +235,7 @@ export async function countSmokeOrdersOnFixtureDate() {
        from public.orders
        where user_id = $1
          and date = $2::date
-         and upper(status) in ('ACTIVE', 'ORDERED')`,
+         and status::text = 'ACTIVE'`,
       [SMOKE_USER_ID, SMOKE_ORDER_DATE],
     );
     return res.rows[0]?.n ?? 0;

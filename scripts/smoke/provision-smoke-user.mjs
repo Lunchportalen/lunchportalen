@@ -10,6 +10,7 @@ import path from "node:path";
 
 const EMAIL = "smoke-test@lunchportalen.no";
 const COMPANY_ID = "8b0b8fa4-8d89-4795-b92b-e09129dd635f";
+const LOCATION_ID = "f319b299-8914-4c52-9984-569ce07c914d";
 const COMPANY_NAME = "Company A (agreements-test)";
 
 function loadEnvFile(file) {
@@ -163,23 +164,33 @@ async function main() {
 
   // Emit SQL for MCP follow-up (profile + membership) — printed for agent; also write artifact
   const sql = `-- smoke user provision follow-up
-INSERT INTO public.profiles (id, email, full_name, role, company_id, active)
-VALUES ('${userId}', '${EMAIL}', 'Smoke Test', 'employee', '${COMPANY_ID}', true)
+INSERT INTO public.profiles (id, email, full_name, role, company_id, location_id, active, is_active)
+VALUES ('${userId}', '${EMAIL}', 'Smoke Test', 'employee', '${COMPANY_ID}', '${LOCATION_ID}', true, true)
 ON CONFLICT (id) DO UPDATE SET
   email = EXCLUDED.email,
   full_name = EXCLUDED.full_name,
   role = 'employee',
   company_id = EXCLUDED.company_id,
+  location_id = EXCLUDED.location_id,
   active = true,
+  is_active = true,
   updated_at = now();
 
-INSERT INTO public.company_memberships (user_id, company_id, role, active, source, status, activated_at)
-VALUES ('${userId}', '${COMPANY_ID}', 'employee', true, 'manual', 'active', now())
+INSERT INTO public.company_memberships (user_id, company_id, role, active, source, status, location_id, activated_at)
+VALUES ('${userId}', '${COMPANY_ID}', 'employee', true, 'manual', 'active', '${LOCATION_ID}', now())
 ON CONFLICT (user_id, company_id) DO UPDATE SET
   role = 'employee',
   active = true,
   status = 'active',
+  location_id = EXCLUDED.location_id,
   activated_at = COALESCE(public.company_memberships.activated_at, now()),
+  updated_at = now();
+
+INSERT INTO public.location_memberships (user_id, company_id, location_id, role, active, source)
+VALUES ('${userId}', '${COMPANY_ID}', '${LOCATION_ID}', 'employee', true, 'manual')
+ON CONFLICT (user_id, location_id) DO UPDATE SET
+  role = 'employee',
+  active = true,
   updated_at = now();
 `;
   const sqlPath = path.join(process.cwd(), ".smoke-provision.sql");
