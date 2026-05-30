@@ -107,12 +107,12 @@ jobs:
       - name: Build staging DATABASE_URL (session pooler)
         run: |
           set -euo pipefail
-          if [ "${PROJECT_REF}" != "btgxrtqurtazlnfljjrd" ]; then
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
             echo "::error::Refusing staging job: PROJECT_REF=${PROJECT_REF}"
             exit 1
           fi
           ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
-          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
           echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "Staging session pooler URL configured."
