@@ -92,7 +92,13 @@ describe("ledger agreement reject/pause — canonical statusporter", () => {
 
 describe("ledger agreement — migrasjonskontrakt (ingen resume-RPC)", () => {
   it("20260320193000 definerer reject + pause_ledger, ikke resume", () => {
-    const p = path.join(process.cwd(), "supabase", "migrations", "20260320193000_agreements_approval_reject_pause.sql");
+    const p = path.join(
+      process.cwd(),
+      "supabase",
+      "migrations",
+      "_archive",
+      "20260320193000_agreements_approval_reject_pause.sql",
+    );
     const sql = fs.readFileSync(p, "utf8");
     expect(sql).toContain("lp_agreement_reject_pending");
     expect(sql).toContain("lp_agreement_pause_ledger_active");

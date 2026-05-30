@@ -43,20 +43,32 @@ function collectCodeRpcs(): Set<string> {
 
 function collectMigrationRpcs(): Set<string> {
   const names = new Set<string>();
-  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"))) {
-    const text = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
-    MIGRATION_FN_RE.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = MIGRATION_FN_RE.exec(text)) !== null) {
-      const name = (m[1] ?? m[2] ?? "").trim();
-      if (name) names.add(name);
+
+  function scanDir(dir: string) {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      const st = statSync(p);
+      if (st.isDirectory()) {
+        scanDir(p);
+        continue;
+      }
+      if (!name.endsWith(".sql")) continue;
+      const text = readFileSync(p, "utf8");
+      MIGRATION_FN_RE.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = MIGRATION_FN_RE.exec(text)) !== null) {
+        const fn = (m[1] ?? m[2] ?? "").trim();
+        if (fn) names.add(fn);
+      }
     }
   }
+
+  scanDir(MIGRATIONS_DIR);
   return names;
 }
 
 describe("audit: no broken RPC references in app/lib", () => {
-  it("every .rpc() in app/lib is defined in supabase/migrations (or runtime-safe allowlist)", () => {
+  it("every .rpc() in app/lib is defined in supabase/migrations (incl. _archive) or runtime-safe allowlist", () => {
     const codeRpcs = collectCodeRpcs();
     const migrationRpcs = collectMigrationRpcs();
 
