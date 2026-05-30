@@ -107,7 +107,7 @@ jobs:
       - name: Build staging direct DATABASE_URL (IPv4)
         run: |
           set -euo pipefail
-          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+          if [ "${PROJECT_REF}" != "btgxrtqurtazlnfljjrd" ]; then
             echo "::error::Refusing staging job: PROJECT_REF=${PROJECT_REF}"
             exit 1
           fi
