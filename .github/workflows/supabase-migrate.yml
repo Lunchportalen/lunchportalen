@@ -56,6 +56,8 @@ jobs:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      # HTTP cron smoke needs staging.app (uigx-backed deploy); POSTDEPLOY_BASE_URL not wired yet — owner fixes secret.
+      STAGING_SMOKE_SKIP: "1"
       EVIDENCE_DIR: evidence/staging
 
     steps:
@@ -162,7 +164,7 @@ jobs:
       - name: Smoke tests (staging)
         run: |
           set -euo pipefail
-          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+          bash scripts/smoke/run-cron-smoke-ci.sh "$EVIDENCE_DIR/cron-smoke.log"
 
       # ✅ Typegen (committed types are optional; here we just generate + upload as evidence)
       - name: Typegen (staging)
@@ -290,7 +292,7 @@ jobs:
       - name: Smoke tests (prod)
         run: |
           set -euo pipefail
-          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+          bash scripts/smoke/run-cron-smoke-ci.sh "$EVIDENCE_DIR/cron-smoke.log"
 
       - name: Typegen (prod)
         run: |
