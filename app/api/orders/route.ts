@@ -300,6 +300,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     let idemHash: string | null = null;
 
     const sb = await supabaseServer();
+    const idemAdmin = supabaseAdmin();
 
     if (idemKey !== "") {
       if (idemKey.length < 8) {
@@ -316,7 +317,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
         })
       );
 
-      const { data: beginData, error: beginErr } = await sb.rpc("lp_idem_begin", {
+      const { data: beginData, error: beginErr } = await idemAdmin.rpc("lp_idem_begin", {
         p_scope: "orders.write",
         p_key: idemKey,
         p_request_hash: idemHash,
@@ -372,7 +373,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
       if (isUniqueViolation) {
         if (idemKey !== "" && idemHash) {
-          await sb.rpc("lp_idem_fail", {
+          await idemAdmin.rpc("lp_idem_fail", {
             p_scope: "orders.write",
             p_key: idemKey,
             p_request_hash: idemHash,
@@ -426,7 +427,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
         });
       }
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -443,7 +444,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (!savedStatus) {
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -456,7 +457,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     if (!orderId && action === "CANCEL") {
       const ts = new Date().toISOString();
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_complete", {
+        await idemAdmin.rpc("lp_idem_complete", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -479,7 +480,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (!orderId) {
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -596,7 +597,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const successTs = new Date().toISOString();
     const writtenStatus = orderWriteStatusFromDb(savedStatus);
     if (idemKey !== "" && idemHash) {
-      await sb.rpc("lp_idem_complete", {
+      await idemAdmin.rpc("lp_idem_complete", {
         p_scope: "orders.write",
         p_key: idemKey,
         p_request_hash: idemHash,

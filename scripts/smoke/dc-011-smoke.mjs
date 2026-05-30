@@ -8,12 +8,30 @@
  *
  * Writes docs/audit/dc-011-staging-smoke.md (appends run section).
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-const BASE = (
-  process.env.STAGING_BASE_URL || "https://lunchportalen-git-staging-lunchportalen.vercel.app"
-).replace(/\/$/, "");
+import {
+  SMOKE_CHOICE_KEY,
+  SMOKE_ORDER_DATE,
+} from "./fixtures/smoke-menu-fixture.constants.mjs";
+import { countSmokeOrdersOnFixtureDate, seedSmokeMenuFixture } from "./seed-smoke-menu-fixture.mjs";
+
+const DEFAULT_STAGING_BASE = "https://staging.app.lunchportalen.no";
+const FALLBACK_STAGING_BASE = "https://lunchportalen-git-staging-lunchportalen.vercel.app";
+
+/** Resolved in main() after loadDotEnv — do not read at module load. */
+let BASE = DEFAULT_STAGING_BASE;
+
+function resolveBaseUrl() {
+  const explicit = String(process.env.DC011_BASE_URL ?? "").trim();
+  if (explicit) {
+    BASE = explicit.replace(/\/$/, "");
+    return;
+  }
+  BASE = (process.env.STAGING_BASE_URL || DEFAULT_STAGING_BASE || FALLBACK_STAGING_BASE).replace(/\/$/, "");
+}
 
 const AI_SAMPLES = [
   { path: "/api/ai/dashboard", method: "GET" },
@@ -149,7 +167,12 @@ async function login(email, password) {
 function cronSecret() {
   const staging = String(process.env.STAGING_CRON_SECRET ?? "").trim();
   const preview = String(process.env.CRON_SECRET ?? "").trim();
-  // Preview deploys use Preview env CRON_SECRET — staging env value may differ or be corrupted.
+  const base = BASE.toLowerCase();
+  // Canonical staging.app must use STAGING_CRON_SECRET (Preview CRON_SECRET is a different deploy).
+  if (base.includes("staging.app.lunchportalen") && staging && !staging.startsWith("<")) {
+    return staging;
+  }
+  // Vercel preview URLs: prefer Preview CRON_SECRET when staging placeholder/mismatch.
   if (preview && (!staging || staging.startsWith("<") || staging.length !== preview.length)) return preview;
   return staging || preview;
 }
@@ -183,6 +206,178 @@ async function ensureLoggedIn() {
   if (!email || !pass) return false;
   const res = await login(email, pass);
   return hasSessionCookie(res.cookie);
+}
+
+/** Next Mon–Fri ISO date in Europe/Oslo (for order POST smoke). */
+function nextWeekdayIsoOslo() {
+  const probe = new Date();
+  for (let i = 0; i < 14; i += 1) {
+    const d = new Date(probe.getTime() + i * 86_400_000);
+    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Oslo", weekday: "short" }).format(d);
+    if (weekday !== "Sat" && weekday !== "Sun") {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Oslo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(d);
+    }
+  }
+  throw new Error("nextWeekdayIsoOslo: no weekday in 14d");
+}
+
+/**
+ * POST /api/orders med Idempotency-Key — krever aktiv session (ingen SKIP).
+ * Forventer 200 på første kall og identisk replay på andre (samme orderId).
+ */
+async function runAIdempotency() {
+  const email = testEmail();
+  const pass = testPassword();
+  if (!email || !pass) {
+    record(
+      "A6",
+      "POST /api/orders idempotency (replay)",
+      "/api/orders",
+      "POST",
+      "200 + identisk replay",
+      "FAIL (mangler PLAYWRIGHT_TEST_EMAIL/PASSWORD)",
+      "FAIL",
+      "Sett creds via scripts/smoke/provision-smoke-user.mjs",
+    );
+    return;
+  }
+
+  clearSessionCookies();
+  const loginRes = await login(email, pass);
+  if (
+    !((loginRes.status === 200 || (loginRes.status >= 300 && loginRes.status < 400)) && hasSessionCookie(loginRes.cookie))
+  ) {
+    record(
+      "A6",
+      "POST /api/orders idempotency (replay)",
+      "/api/orders",
+      "POST",
+      "200 + identisk replay",
+      `FAIL (login ${loginRes.status})`,
+      "FAIL",
+      snippet(loginRes.text),
+    );
+    return;
+  }
+
+  let orderDate = String(process.env.DC011_ORDER_DATE ?? SMOKE_ORDER_DATE).trim() || SMOKE_ORDER_DATE;
+  const choiceKey = SMOKE_CHOICE_KEY;
+
+  if (process.env.DC011_SKIP_MENU_SEED !== "1") {
+    try {
+      await seedSmokeMenuFixture();
+    } catch (e) {
+      record(
+        "A6",
+        "POST /api/orders idempotency (fixture seed)",
+        "/api/orders",
+        "POST",
+        "seed ok",
+        `seed fail: ${String(e)}`,
+        "FAIL",
+        "Sett DATABASE_URL mot uigx eller DC011_SKIP_MENU_SEED=1 etter manuell seed",
+      );
+      return;
+    }
+  }
+
+  const idemKey = `smoke-idem-${Date.now()}-${crypto.randomUUID().replace(/-/g, "")}`;
+  const body = { date: orderDate, action: "place", slot: "lunch", choice_key: choiceKey };
+  const headers = { "Idempotency-Key": idemKey };
+
+  const r1 = await request("POST", "/api/orders", { body, headers });
+  const j1 = r1.json;
+
+  if (r1.status === 500 && j1?.code === "IDEMPOTENCY_BEGIN_FAILED") {
+    record(
+      "A6",
+      "POST /api/orders idempotency (første kall)",
+      "/api/orders",
+      "POST",
+      "≠ IDEMPOTENCY_BEGIN_FAILED (lp_idem via service_role)",
+      `${r1.status} IDEMPOTENCY_BEGIN_FAILED`,
+      "FAIL",
+      "Deploy mangler orders-route med supabaseAdmin() for lp_idem_* — push PR og vent på Vercel staging.",
+    );
+    return;
+  }
+
+  const ok1 = r1.status === 200 && j1 && j1.ok === true && typeof j1.orderId === "string" && j1.orderId.length > 0;
+  if (!ok1) {
+    const detail =
+      j1?.code === "menu_not_published" || j1?.code === "menu_items_missing"
+        ? `staging data: ingen menu_service_day_items for ${orderDate} på smoke-brukerens location (uigx)`
+        : snippet(r1.text);
+    record(
+      "A6",
+      "POST /api/orders idempotency (første kall)",
+      "/api/orders",
+      "POST",
+      "200 ok:true + orderId",
+      `${r1.status} ${j1?.code ?? j1?.error ?? "no-ok"}`,
+      "FAIL",
+      detail,
+    );
+    return;
+  }
+
+  const r2 = await request("POST", "/api/orders", { body, headers });
+  const j2 = r2.json;
+  const sameReplay =
+    r2.status === 200 &&
+    j2 &&
+    j2.ok === true &&
+    j2.orderId === j1.orderId &&
+    j2.status === j1.status &&
+    j2.date === j1.date;
+
+  if (!sameReplay) {
+    record(
+      "A6",
+      "POST /api/orders idempotency (replay)",
+      "/api/orders",
+      "POST",
+      `200 + samme orderId (${j1.orderId})`,
+      `${r2.status} orderId=${j2?.orderId ?? "?"} (første=${j1.orderId})`,
+      "FAIL",
+      snippet(r2.text),
+    );
+    return;
+  }
+
+  let orderCount = -1;
+  try {
+    orderCount = await countSmokeOrdersOnFixtureDate();
+  } catch (e) {
+    record(
+      "A6",
+      "POST /api/orders idempotency (DB count)",
+      "/api/orders",
+      "POST",
+      "1 ACTIVE/ORDERED rad",
+      `count query fail: ${String(e)}`,
+      "FAIL",
+      orderDate,
+    );
+    return;
+  }
+
+  const noDuplicate = orderCount === 1;
+  record(
+    "A6",
+    "POST /api/orders idempotency (replay + DB)",
+    "/api/orders",
+    "POST",
+    `200 replay + exactly 1 order on ${orderDate}`,
+    `replay ok; db_orders=${orderCount}`,
+    noDuplicate ? "PASS" : "FAIL",
+    noDuplicate ? `orderId=${j2.orderId}` : `forventet 1 ordre, fant ${orderCount}`,
+  );
 }
 
 async function runA() {
@@ -222,7 +417,10 @@ async function runA() {
     loginOk ? "PASS" : "FAIL",
     snippet(loginRes.text),
   );
-  if (!loginOk) return;
+  if (!loginOk) {
+    await runAIdempotency();
+    return;
+  }
 
   const r3 = await request("GET", "/api/orders");
   const ordersOk = r3.status === 200 || r3.status === 403;
@@ -236,6 +434,8 @@ async function runA() {
     ordersOk ? "PASS" : "FAIL",
     snippet(r3.text),
   );
+
+  await runAIdempotency();
 
   const r4 = await request("POST", "/api/auth/logout");
   const logoutOk = r4.status === 200 || r4.status === 303;
@@ -621,6 +821,7 @@ async function main() {
   loadDotEnv(".env.staging-check");
   loadDotEnv(".env.k6-staging-verify.tmp");
   loadDotEnv(".env.local", true);
+  resolveBaseUrl();
 
   const email = testEmail();
   const pass = testPassword();
