@@ -16,7 +16,11 @@ const header = `-- =============================================================
 `;
 
 let body = fs.readFileSync(".backups/prod-baseline-2026-05-30.sql", "utf8");
-body = body.replace(/^\uFEFF/, "");
+body = body
+  .replace(/^\uFEFF/, "")
+  .split("\n")
+  .filter((line) => !/^\\(restrict|unrestrict)\b/.test(line.trim()))
+  .join("\n");
 const out = "supabase/migrations/20260528000000_baseline_prod_schema.sql";
 fs.writeFileSync(out, header + body, { encoding: "utf8" });
 console.log("wrote", out, "bytes", fs.statSync(out).size);

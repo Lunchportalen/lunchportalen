@@ -29,7 +29,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 -- PostgreSQL database dump
 --
 
-\restrict dGJFQQjQus6B4cgrN8nSOoY4L4wqA8avUGiGq5XKxPAfHXvAm9cjegxd2FdDQ46
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.2
@@ -23875,7 +23874,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES 
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dGJFQQjQus6B4cgrN8nSOoY4L4wqA8avUGiGq5XKxPAfHXvAm9cjegxd2FdDQ46
 
 -- operational supplement (prod read-only; after public schema objects)
 CREATE OR REPLACE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
