@@ -163,7 +163,7 @@ export default async function DashboardPage() {
   const nextDelivery = "Mandag 16.02 • 10:30–11:15";
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--s-4) var(--s-2)" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--s-4) var(--s-2)" }}>
       {topBanner ? <div style={{ marginBottom: 12 }}>{topBanner}</div> : null}
       {headerSlot ? <div style={{ marginBottom: 12 }}>{headerSlot}</div> : null}
       {/* Topbar */}
@@ -274,6 +274,6 @@ export default async function DashboardPage() {
       </section>
       {helpSlot ? <div style={{ marginTop: 24 }}>{helpSlot}</div> : null}
       {footerCtaSlot ? <div style={{ marginTop: 24 }}>{footerCtaSlot}</div> : null}
-    </main>
+    </div>
   );
 }

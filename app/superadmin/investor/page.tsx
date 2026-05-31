@@ -11,7 +11,7 @@ export default async function SuperadminInvestorPage() {
   const initial = await buildInvestorValuationResult({ log: false });
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Investor</h1>
         <p className="mt-2 max-w-3xl text-sm text-[rgb(var(--lp-muted))]">
@@ -20,6 +20,6 @@ export default async function SuperadminInvestorPage() {
         </p>
       </div>
       <InvestorDashboardClient initial={initial} />
-    </main>
+    </div>
   );
 }

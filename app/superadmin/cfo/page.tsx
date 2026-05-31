@@ -7,7 +7,7 @@ import CfoClient from "./CfoClient";
 
 export default async function SuperadminCfoPage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 lp-select-text">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 lp-select-text">
       <header className="mb-6">
         <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">CFO-dashboard</h1>
@@ -19,6 +19,6 @@ export default async function SuperadminCfoPage() {
       <section className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
         <CfoClient />
       </section>
-    </main>
+    </div>
   );
 }

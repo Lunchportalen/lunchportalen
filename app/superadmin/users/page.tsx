@@ -23,7 +23,7 @@ export default async function SuperadminUsersPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
+    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
       <h1 className="text-2xl font-semibold tracking-tight">Brukere (Superadmin)</h1>
       <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
         Full oversikt. Slett eller deaktiver. Alt skal audites.
@@ -32,6 +32,6 @@ export default async function SuperadminUsersPage() {
       <div className="mt-6 rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
         <SuperadminUsersClient />
       </div>
-    </main>
+    </div>
   );
 }

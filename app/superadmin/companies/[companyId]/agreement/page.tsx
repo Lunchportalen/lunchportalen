@@ -60,7 +60,7 @@ export default async function CompanyAgreementPage(props: { params: { id: string
   // UI
   // -----------------------------
   return (
-    <main className="mx-auto max-w-5xl p-6 lp-select-text">
+    <div className="mx-auto max-w-5xl p-6 lp-select-text">
       <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-neutral-500">Superadmin</div>
@@ -79,6 +79,6 @@ export default async function CompanyAgreementPage(props: { params: { id: string
       </header>
 
       <AgreementClient companyId={companyId} />
-    </main>
+    </div>
   );
 }

@@ -11,7 +11,7 @@ export default async function SuperadminSalesPage() {
   const initial = await loadSalesCockpitServerData();
 
   return (
-    <main className="mx-auto max-w-[1440px] pb-16 pt-2 lp-select-text">
+    <div className="mx-auto max-w-[1440px] pb-16 pt-2 lp-select-text">
       <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Sales Cockpit</h1>
       <p className="mt-2 max-w-3xl text-sm text-[rgb(var(--lp-muted))]">
         Samlet oversikt: pipeline, innsikt, utrekk og kontrollerte handlinger. Data lastes på server; oppdatering skjer
@@ -20,6 +20,6 @@ export default async function SuperadminSalesPage() {
       <div className="mt-8">
         <SalesCockpitClient initial={initial} />
       </div>
-    </main>
+    </div>
   );
 }

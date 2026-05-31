@@ -53,13 +53,13 @@ export default async function EmployeeTidligereLunsjdagerPage() {
 
   if (role === "superadmin") {
     return (
-      <main className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
         <h1 className="lp-h1">Tidligere lunsjdager</h1>
         <p className="mt-4 text-sm text-neutral-700">Superadmin har ikke tilgang til denne siden.</p>
         <Link href="/superadmin" className="mt-6 inline-block text-sm font-semibold text-neutral-900 underline">
           Til superadmin
         </Link>
-      </main>
+      </div>
     );
   }
 
@@ -86,7 +86,7 @@ export default async function EmployeeTidligereLunsjdagerPage() {
   const weekGroups = groupEmployeePastLunchByWeekDescending(hist.items);
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-8 text-center sm:max-w-2xl">
+    <div className="mx-auto w-full max-w-lg px-4 py-8 text-center sm:max-w-2xl">
       <h1 className="lp-h1">Tidligere lunsjdager</h1>
       <p className="mx-auto mt-2 max-w-md text-sm text-[rgb(var(--lp-muted))]">
         Dine tidligere dager med ordrelinje i den operative ordretabellen (leveringsdato før {formatDateNO(todayIso)}). Samme
@@ -183,6 +183,6 @@ export default async function EmployeeTidligereLunsjdagerPage() {
           ))}
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }

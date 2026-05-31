@@ -54,7 +54,7 @@ export default async function TripletexStatusPage() {
     (await isSuperadminProfile(auth.user.id));
 
   return (
-    <main className="ds-page">
+    <div className="ds-page">
       <div className="ds-container">
         <header className="ds-section">
           <p className="ds-eyebrow">Tripletex</p>
@@ -68,6 +68,6 @@ export default async function TripletexStatusPage() {
           initialData={dashboardRes.data}
         />
       </div>
-    </main>
+    </div>
   );
 }

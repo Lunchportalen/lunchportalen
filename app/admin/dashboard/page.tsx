@@ -117,7 +117,7 @@ export default async function CompanyAdminDashboardPage() {
   const beforeRate = d ? pct(d.totals.cancelled_before_0800, d.totals.cancelled) : "–";
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="mb-6 flex flex-col gap-2">
         <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin</div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
@@ -229,7 +229,7 @@ export default async function CompanyAdminDashboardPage() {
           </Card>
         </>
       )}
-    </main>
+    </div>
   );
 }
 

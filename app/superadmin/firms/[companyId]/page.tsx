@@ -118,7 +118,7 @@ export default async function FirmPage({ params }: PageProps) {
   }));
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
+    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
       {/* Top */}
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
@@ -208,6 +208,6 @@ export default async function FirmPage({ params }: PageProps) {
       <div className="mt-6">
         <ChangeCompanyAdmin companyId={company.id} companyName={company.name} locations={locations} />
       </div>
-    </main>
+    </div>
   );
 }
