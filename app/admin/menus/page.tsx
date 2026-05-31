@@ -64,7 +64,7 @@ export default async function AdminMenusPage() {
   if (role !== "superadmin") redirect("/admin");
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -107,6 +107,6 @@ export default async function AdminMenusPage() {
           </p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

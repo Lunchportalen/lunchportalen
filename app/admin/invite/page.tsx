@@ -55,7 +55,7 @@ export default async function AdminInvitePage() {
 
   if (isAdminContextBlocked(ctx)) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
+      <div className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
           <div className="mb-6">
             <GhostLink href="/admin">← Tilbake</GhostLink>
@@ -87,12 +87,12 @@ export default async function AdminInvitePage() {
             ]}
           />
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
+    <div className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(176,139,87,.20),transparent),radial-gradient(1000px_600px_at_100%_10%,rgba(16,185,129,.12),transparent)]">
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -117,7 +117,7 @@ export default async function AdminInvitePage() {
 
         <InviteClient companyId={ctx.companyId} companyName={ctx.company?.name ?? "Firma"} />
       </div>
-    </main>
+    </div>
   );
 }
 

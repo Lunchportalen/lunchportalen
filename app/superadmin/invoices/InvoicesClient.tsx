@@ -48,7 +48,7 @@ export default function InvoicesClient() {
   const count = useMemo(() => runs.length, [runs]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-[rgb(var(--lp-text))]">Fakturakjøringer</h1>
@@ -134,6 +134,6 @@ export default function InvoicesClient() {
           </table>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

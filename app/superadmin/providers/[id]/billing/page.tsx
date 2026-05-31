@@ -46,7 +46,7 @@ export default async function SuperadminProviderBillingPage({
   const bundle = await loadProviderBilling(providerId);
 
   return (
-    <main className="lp-select-text mx-auto max-w-3xl px-4 py-10">
+    <div className="lp-select-text mx-auto max-w-3xl px-4 py-10">
       <header className="mb-6">
         <Link href="/superadmin/providers" className="text-sm text-[rgb(var(--lp-muted))] hover:underline">
           ← Leverandører
@@ -73,6 +73,6 @@ export default async function SuperadminProviderBillingPage({
           </ul>
         </section>
       ) : null}
-    </main>
+    </div>
   );
 }

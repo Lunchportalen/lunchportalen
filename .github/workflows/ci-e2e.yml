@@ -40,7 +40,7 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 55
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -49,9 +49,10 @@ jobs:
       NODE_OPTIONS: "--max-old-space-size=8192"
       PLAYWRIGHT_BASE_URL: "http://localhost:3000"
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # E2E targets uigx scratch only — staging secrets, never prod NEXT_PUBLIC_SUPABASE_*.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -80,9 +81,9 @@ jobs:
       - name: Verify required env
         shell: bash
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
           NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
           NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -100,14 +101,31 @@ jobs:
           : "${SYSTEM_MOTOR_SECRET:?Missing SYSTEM_MOTOR_SECRET secret}"
           echo "✅ Required env present (aligned with main CI)."
 
+      - name: Verify E2E Supabase target is uigx (not prod)
+        shell: bash
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+        run: |
+          set -euo pipefail
+          url="${NEXT_PUBLIC_SUPABASE_URL}"
+          if [[ "$url" == *"hkpokyapzarefrgqzkos"* ]]; then
+            echo "::error::E2E must not target prod Supabase (hkpokyapzarefrgqzkos)"
+            exit 1
+          fi
+          if [[ "$url" != *"uigxsboqeruxflgzqztl"* ]]; then
+            echo "::error::E2E Supabase URL must target uigx (uigxsboqeruxflgzqztl)"
+            exit 1
+          fi
+          echo "✅ E2E Supabase target is uigx."
+
       # Required gate: same steps as package.json `build:enterprise`, but audit:api does not block E2E (see ci-enterprise audit policy).
       - name: Build (Enterprise)
         shell: bash
         env:
           SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
           NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
           NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -128,6 +146,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Install psql
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
       - name: Bootstrap E2E env from secrets
         shell: bash
         env:
@@ -141,6 +166,14 @@ jobs:
           E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
         run: |
           set -euo pipefail
+          : "${E2E_TEST_USER_EMAIL:?Missing E2E_TEST_USER_EMAIL secret}"
+          : "${E2E_TEST_USER_PASSWORD:?Missing E2E_TEST_USER_PASSWORD secret}"
+          : "${E2E_EMPLOYEE_EMAIL:?Missing E2E_EMPLOYEE_EMAIL secret}"
+          : "${E2E_EMPLOYEE_PASSWORD:?Missing E2E_EMPLOYEE_PASSWORD secret}"
+          : "${E2E_ADMIN_EMAIL:?Missing E2E_ADMIN_EMAIL secret}"
+          : "${E2E_ADMIN_PASSWORD:?Missing E2E_ADMIN_PASSWORD secret}"
+          : "${E2E_SUPERADMIN_EMAIL:?Missing E2E_SUPERADMIN_EMAIL secret}"
+          : "${E2E_SUPERADMIN_PASSWORD:?Missing E2E_SUPERADMIN_PASSWORD secret}"
           d=E2EENV__DELIM__LP
           {
             echo "E2E_TEST_USER_EMAIL<<${d}"
@@ -183,6 +216,58 @@ jobs:
             echo "${d}"
           } >> "$GITHUB_ENV"
 
+      - name: Verify E2E staging seed prerequisites
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          : "${PROJECT_REF:?Missing SUPABASE_STAGING_PROJECT_REF secret}"
+          : "${DB_PASSWORD:?Missing SUPABASE_STAGING_DB_PASSWORD secret}"
+          : "${NEXT_PUBLIC_SUPABASE_URL:?Missing SUPABASE_STAGING_URL secret}"
+          : "${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Missing SUPABASE_STAGING_ANON_KEY secret}"
+          : "${SUPABASE_SERVICE_ROLE_KEY:?Missing SUPABASE_STAGING_SERVICE_ROLE_KEY secret}"
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing E2E seed: SUPABASE_STAGING_PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          echo "✅ E2E staging seed prerequisites present (uigx)."
+
+      - name: Build staging DATABASE_URL (session pooler)
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing E2E seed: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "Staging session pooler URL configured for E2E seed chain."
+
+      - name: Seed staging tenant (uigx SQL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${STAGING_DATABASE_URL:?Missing STAGING_DATABASE_URL — build step failed}"
+          psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/smoke/seed-staging-tenant.sql
+          echo "✅ seed-staging-tenant.sql applied."
+
+      - name: Seed smoke menu fixture (uigx)
+        run: node scripts/smoke/seed-smoke-menu-fixture.mjs
+
+      - name: Seed E2E role users (uigx)
+        run: node scripts/smoke/seed-e2e-users.mjs
+
       - name: Start server and run E2E
         run: |
           npm run start &
@@ -192,10 +277,56 @@ jobs:
             if [ "$i" -eq 60 ]; then echo "Server did not become ready"; exit 1; fi
             sleep 2
           done
-          npx playwright test --config playwright.config.ts --project=chromium
+          # Core lane only (deployed product): auth/redirect, orders, shells, mobile-invariants — excludes parked CMS/u8x–u9x.
+          npx playwright test \
+            e2e/auth.e2e.ts \
+            e2e/auth-role.e2e.ts \
+            e2e/auth-redirect-safety.e2e.ts \
+            e2e/shells.e2e.ts \
+            e2e/mobile-invariants.e2e.ts \
+            e2e/core-flows.e2e.ts \
+            --config playwright.config.ts \
+            --project=chromium \
+            --grep-invert "backoffice content shell|/backoffice/content authenticated" \
+            --reporter=json
         env:
           PORT: 3000
           CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
+
+      - name: Assert E2E tests executed
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="playwright-results.json"
+          if [[ ! -f "$report" ]]; then
+            echo "::error::Playwright JSON report missing: $report"
+            exit 1
+          fi
+          expected="$(jq -r '.stats.expected // 0' "$report")"
+          skipped="$(jq -r '.stats.skipped // 0' "$report")"
+          # core baseline ~49; gulv 45 = baseline minus liten churn; revurder hvis kjerne-suitens størrelse endres vesentlig
+          min_expected=45
+          if [[ "${CI:-}" == "true" ]]; then
+            if [[ "$expected" -lt "$min_expected" ]]; then
+              echo "::error::E2E stats.expected=$expected below core floor $min_expected (empty run or mass filter/skip)."
+              exit 1
+            fi
+            if [[ "$skipped" != "0" ]]; then
+              echo "::error::E2E stats.skipped=$skipped — core lane requires 0 skipped."
+              exit 1
+            fi
+          fi
+          echo "E2E floor OK (stats.expected=$expected, stats.skipped=$skipped, min_expected=$min_expected)"
+
+      - name: Upload Playwright JSON on success
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-results-json
+          path: playwright-results.json
+          retention-days: 7
 
       - name: Upload report on failure
         if: failure()

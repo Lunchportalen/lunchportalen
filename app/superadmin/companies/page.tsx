@@ -51,7 +51,7 @@ export default async function SuperadminCompaniesPage() {
   const intro = cms?.intro ?? "Administrer firma, status og avtaler uten avbrudd.";
 
   return (
-    <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+    <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
@@ -92,6 +92,6 @@ export default async function SuperadminCompaniesPage() {
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }

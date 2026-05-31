@@ -1,6 +1,11 @@
 // e2e/shells.e2e.ts — Critical app surfaces render (unauthenticated → login; optional auth → shell content)
 import { test, expect } from "@playwright/test";
-import { getE2ETestUser, loginViaForm, waitForPostLoginNavigation } from "./helpers/auth";
+import {
+  getCredentialsForRole,
+  getE2ETestUser,
+  loginViaForm,
+  waitForPostLoginNavigation,
+} from "./helpers/auth";
 import { waitForMainContent } from "./helpers/ready";
 
 test.describe("Shells — unauthenticated", () => {
@@ -41,11 +46,9 @@ test.describe("Shells — unauthenticated", () => {
 });
 
 test.describe("Shells — public and login", () => {
-  test("public front page renders main and hero", async ({ page }) => {
+  test("public root redirects to marketing site", async ({ page }) => {
     await page.goto("/");
-    await waitForMainContent(page);
-    await expect(page.getByRole("main")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/^https:\/\/lunchportalen\.no\/?/);
   });
 
   test("login page shows form and no loop", async ({ page }) => {
@@ -57,6 +60,7 @@ test.describe("Shells — public and login", () => {
 });
 
 const hasTestUser = !!getE2ETestUser();
+const hasAdminCreds = !!getCredentialsForRole("company_admin");
 
 test.describe("Shells — authenticated (when E2E test user set)", () => {
   test.skip(!hasTestUser);
@@ -70,8 +74,9 @@ test.describe("Shells — authenticated (when E2E test user set)", () => {
     await expect(page.getByRole("main")).toBeVisible({ timeout: 15_000 });
   });
 
+  test.skip(!hasAdminCreds, "E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD must be set");
   test("admin shell reachable after login (company_admin)", async ({ page }) => {
-    const creds = getE2ETestUser()!;
+    const creds = getCredentialsForRole("company_admin")!;
     await loginViaForm(page, creds.email, creds.password, "/admin");
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/admin/);

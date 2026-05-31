@@ -77,7 +77,7 @@ export default async function SuperadminFirmsPage(props: { searchParams?: SP }) 
   const data = await listFirms({ q, status, page, pageSize, sortKey, sortDir, todayISO });
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 lp-select-text">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 lp-select-text">
       <header className="mb-4">
         <h1 className="text-xl font-semibold">Firma</h1>
         <p className="text-sm text-muted-foreground">
@@ -86,6 +86,6 @@ export default async function SuperadminFirmsPage(props: { searchParams?: SP }) 
       </header>
 
       <FirmsTable initial={data} />
-    </main>
+    </div>
   );
 }

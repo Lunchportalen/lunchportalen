@@ -322,7 +322,7 @@ export default async function SuperadminCompanyDetailPage(props: {
   if (!res || (res as any).ok !== true) {
     const err = res as ApiErr;
     return (
-      <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+      <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
@@ -343,7 +343,7 @@ export default async function SuperadminCompanyDetailPage(props: {
             {err.message || "Ukjent feil."} {err.rid ? <span className="ml-2 text-xs">rid: {err.rid}</span> : null}
           </div>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -357,7 +357,7 @@ export default async function SuperadminCompanyDetailPage(props: {
   const adminsCount = employees.filter((e) => safeStr(e.role).toLowerCase() === "company_admin").length;
 
   return (
-    <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+    <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin / Firma</div>
@@ -579,7 +579,7 @@ export default async function SuperadminCompanyDetailPage(props: {
         companyStatus={company?.status ?? null}
         companyDeletedAt={company?.deleted_at ?? null}
       />
-    </main>
+    </div>
   );
 }
 

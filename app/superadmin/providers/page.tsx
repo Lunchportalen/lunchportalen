@@ -35,7 +35,7 @@ export default async function SuperadminProvidersPage() {
   const providers = await loadAllProvidersWithSubscriptions();
 
   return (
-    <main className="lp-select-text mx-auto max-w-6xl px-4 py-10">
+    <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
       <header className="mb-8">
         <p className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">Leverandører</h1>
@@ -80,6 +80,6 @@ export default async function SuperadminProvidersPage() {
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

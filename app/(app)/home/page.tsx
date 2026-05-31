@@ -130,7 +130,7 @@ export default async function Page() {
   );
 
   return (
-    <main className="lp-container">
+    <div className="lp-container">
       {!sanityOk && (
         <div className="lp-card mb-6 border border-yellow-200 bg-yellow-50 p-5 text-yellow-900">
           <div className="text-sm font-semibold">Menydata er midlertidig utilgjengelig</div>
@@ -281,7 +281,7 @@ export default async function Page() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
