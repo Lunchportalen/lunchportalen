@@ -1,6 +1,6 @@
 /**
  * Prod db push preflight: interpret `supabase db push --dry-run` output.
- * PROCEED on up-to-date OR repo forward migrations; ABORT on errors/drift.
+ * Patterns match verbatim CLI output (supabase@beta 2.103.x dry-run).
  */
 
 /** @typedef {"proceed" | "abort"} PreflightDecision */
@@ -18,16 +18,12 @@ const CONNECTION_MARKERS = [
   "network is unreachable",
 ];
 
-/** Remote-ahead / ledger drift — migrations on remote not represented in repo. */
+/** Remote-ahead / ledger drift (check before PROCEED). */
 const DRIFT_MARKERS = [
+  "not found in local migrations directory",
   "migration repair",
-  "not found locally",
-  "remote migration",
-  "history does not match",
-  "out of sync",
-  "divergent",
-  "reverted migration",
-  "found remote migrations",
+  "found remote migration",
+  "remote migration versions not found",
 ];
 
 /**
@@ -59,7 +55,7 @@ export function evaluateDbPushDryRun(input) {
     return { decision: "proceed", reason: "up_to_date" };
   }
 
-  if (/Would apply migration/i.test(output)) {
+  if (/Would push these migrations:/i.test(output)) {
     return { decision: "proceed", reason: "pending_forward_migrations" };
   }
 
