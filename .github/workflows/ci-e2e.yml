@@ -141,6 +141,14 @@ jobs:
           E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
         run: |
           set -euo pipefail
+          : "${E2E_TEST_USER_EMAIL:?Missing E2E_TEST_USER_EMAIL secret}"
+          : "${E2E_TEST_USER_PASSWORD:?Missing E2E_TEST_USER_PASSWORD secret}"
+          : "${E2E_EMPLOYEE_EMAIL:?Missing E2E_EMPLOYEE_EMAIL secret}"
+          : "${E2E_EMPLOYEE_PASSWORD:?Missing E2E_EMPLOYEE_PASSWORD secret}"
+          : "${E2E_ADMIN_EMAIL:?Missing E2E_ADMIN_EMAIL secret}"
+          : "${E2E_ADMIN_PASSWORD:?Missing E2E_ADMIN_PASSWORD secret}"
+          : "${E2E_SUPERADMIN_EMAIL:?Missing E2E_SUPERADMIN_EMAIL secret}"
+          : "${E2E_SUPERADMIN_PASSWORD:?Missing E2E_SUPERADMIN_PASSWORD secret}"
           d=E2EENV__DELIM__LP
           {
             echo "E2E_TEST_USER_EMAIL<<${d}"
@@ -192,10 +200,28 @@ jobs:
             if [ "$i" -eq 60 ]; then echo "Server did not become ready"; exit 1; fi
             sleep 2
           done
-          npx playwright test --config playwright.config.ts --project=chromium
+          npx playwright test --config playwright.config.ts --project=chromium --reporter=json
         env:
           PORT: 3000
           CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
+
+      - name: Assert E2E tests executed
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="playwright-results.json"
+          if [[ ! -f "$report" ]]; then
+            echo "::error::Playwright JSON report missing: $report"
+            exit 1
+          fi
+          expected="$(jq -r '.stats.expected // 0' "$report")"
+          if [[ "${CI:-}" == "true" ]] && [[ "$expected" == "0" ]]; then
+            echo "::error::E2E reported success but 0 tests executed (skipped/empty). Failing."
+            exit 1
+          fi
+          echo "E2E executed tests (stats.expected=$expected)"
 
       - name: Upload report on failure
         if: failure()
