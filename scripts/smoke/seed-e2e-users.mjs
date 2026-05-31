@@ -25,6 +25,7 @@ export const E2E_CANONICAL_EMAILS = {
 const A6_COMPANY_ID = "8b0b8fa4-8d89-4795-b92b-e09129dd635f";
 const A6_LOCATION_ID = "f319b299-8914-4c52-9984-569ce07c914d";
 
+/** Mirrors sync_memberships_from_legacy_profile(): company vs location roles differ. */
 const ROLE_SPECS = [
   {
     key: "test_user",
@@ -34,7 +35,8 @@ const ROLE_SPECS = [
     fullName: "E2E Test User",
     companyId: A6_COMPANY_ID,
     locationId: A6_LOCATION_ID,
-    membershipRole: "employee",
+    companyMembershipRole: "employee",
+    locationMembershipRole: "employee",
   },
   {
     key: "employee",
@@ -44,7 +46,8 @@ const ROLE_SPECS = [
     fullName: "E2E Employee",
     companyId: A6_COMPANY_ID,
     locationId: A6_LOCATION_ID,
-    membershipRole: "employee",
+    companyMembershipRole: "employee",
+    locationMembershipRole: "employee",
   },
   {
     key: "admin",
@@ -54,7 +57,8 @@ const ROLE_SPECS = [
     fullName: "E2E Company Admin",
     companyId: A6_COMPANY_ID,
     locationId: A6_LOCATION_ID,
-    membershipRole: "company_admin",
+    companyMembershipRole: "company_admin",
+    locationMembershipRole: "employee",
   },
   {
     key: "superadmin",
@@ -64,7 +68,8 @@ const ROLE_SPECS = [
     fullName: "E2E Superadmin",
     companyId: null,
     locationId: null,
-    membershipRole: null,
+    companyMembershipRole: null,
+    locationMembershipRole: null,
   },
 ];
 
@@ -152,12 +157,12 @@ async function upsertProfile(admin, userId, spec, email) {
 }
 
 async function upsertMemberships(admin, userId, spec) {
-  if (!spec.membershipRole || !spec.companyId) return;
+  if (!spec.companyId || !spec.companyMembershipRole) return;
 
   const companyRow = {
     user_id: userId,
     company_id: spec.companyId,
-    role: spec.membershipRole,
+    role: spec.companyMembershipRole,
     active: true,
     source: "manual",
     status: "active",
@@ -170,12 +175,12 @@ async function upsertMemberships(admin, userId, spec) {
     .upsert(companyRow, { onConflict: "user_id,company_id" });
   if (cmErr) throw new Error(`company_memberships ${spec.key}: ${cmErr.message}`);
 
-  if (spec.locationId) {
+  if (spec.locationId && spec.locationMembershipRole) {
     const locRow = {
       user_id: userId,
       company_id: spec.companyId,
       location_id: spec.locationId,
-      role: spec.membershipRole,
+      role: spec.locationMembershipRole,
       active: true,
       source: "manual",
       updated_at: new Date().toISOString(),
