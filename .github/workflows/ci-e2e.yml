@@ -146,6 +146,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Install psql
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
       - name: Bootstrap E2E env from secrets
         shell: bash
         env:
@@ -209,7 +216,56 @@ jobs:
             echo "${d}"
           } >> "$GITHUB_ENV"
 
-      - name: Seed E2E users on uigx
+      - name: Verify E2E staging seed prerequisites
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          : "${PROJECT_REF:?Missing SUPABASE_STAGING_PROJECT_REF secret}"
+          : "${DB_PASSWORD:?Missing SUPABASE_STAGING_DB_PASSWORD secret}"
+          : "${NEXT_PUBLIC_SUPABASE_URL:?Missing SUPABASE_STAGING_URL secret}"
+          : "${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Missing SUPABASE_STAGING_ANON_KEY secret}"
+          : "${SUPABASE_SERVICE_ROLE_KEY:?Missing SUPABASE_STAGING_SERVICE_ROLE_KEY secret}"
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing E2E seed: SUPABASE_STAGING_PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          echo "✅ E2E staging seed prerequisites present (uigx)."
+
+      - name: Build staging DATABASE_URL (session pooler)
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing E2E seed: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "Staging session pooler URL configured for E2E seed chain."
+
+      - name: Seed staging tenant (uigx SQL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${STAGING_DATABASE_URL:?Missing STAGING_DATABASE_URL — build step failed}"
+          psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/smoke/seed-staging-tenant.sql
+          echo "✅ seed-staging-tenant.sql applied."
+
+      - name: Seed smoke menu fixture (uigx)
+        run: node scripts/smoke/seed-smoke-menu-fixture.mjs
+
+      - name: Seed E2E role users (uigx)
         run: node scripts/smoke/seed-e2e-users.mjs
 
       - name: Start server and run E2E
