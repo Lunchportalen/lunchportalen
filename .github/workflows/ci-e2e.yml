@@ -305,11 +305,20 @@ jobs:
             exit 1
           fi
           expected="$(jq -r '.stats.expected // 0' "$report")"
-          if [[ "${CI:-}" == "true" ]] && [[ "$expected" == "0" ]]; then
-            echo "::error::E2E reported success but 0 tests executed (skipped/empty). Failing."
-            exit 1
+          skipped="$(jq -r '.stats.skipped // 0' "$report")"
+          # core baseline ~49; gulv 45 = baseline minus liten churn; revurder hvis kjerne-suitens størrelse endres vesentlig
+          min_expected=45
+          if [[ "${CI:-}" == "true" ]]; then
+            if [[ "$expected" -lt "$min_expected" ]]; then
+              echo "::error::E2E stats.expected=$expected below core floor $min_expected (empty run or mass filter/skip)."
+              exit 1
+            fi
+            if [[ "$skipped" != "0" ]]; then
+              echo "::error::E2E stats.skipped=$skipped — core lane requires 0 skipped."
+              exit 1
+            fi
           fi
-          echo "E2E executed tests (stats.expected=$expected)"
+          echo "E2E floor OK (stats.expected=$expected, stats.skipped=$skipped, min_expected=$min_expected)"
 
       - name: Upload Playwright JSON on success
         if: success()
