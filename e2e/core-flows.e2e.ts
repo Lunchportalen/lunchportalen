@@ -71,13 +71,12 @@ test.describe("Employee core (week + orders)", () => {
     await assertProtectedShellReady(page);
   });
 
-  test("orders page loads as authenticated employee", async ({ page }) => {
+  test("employee visiting /orders redirects to /week (canonical ordering surface)", async ({ page }) => {
     const { email, password } = requireRoleCreds("employee");
     await loginViaForm(page, email, password, "/orders");
     await waitForPostLoginNavigation(page);
-    await expect(page).toHaveURL(/\/orders/);
-    await waitForMainContent(page);
-    await expect(page.getByRole("heading", { name: /bestillinger/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/week/);
+    await assertProtectedShellReady(page);
   });
 });
 

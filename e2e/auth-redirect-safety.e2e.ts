@@ -4,14 +4,14 @@ import {
   visitProtectedRouteAndAssertRedirect,
   loginAsRole,
   getCredentialsForRole,
-  getHomeForRole,
+  roleHomeUrlPattern,
   waitForPostLoginNavigation,
   loginViaForm,
 } from "./helpers/auth";
 import { assertLoginPageReady, assertProtectedShellReady } from "./helpers/ready";
 
 const hasEmployee = !!getCredentialsForRole("employee");
-const hasAdmin = !!getCredentialsForRole("company_admin");
+const hasSuperadmin = !!getCredentialsForRole("superadmin");
 
 test.describe("Auth redirect safety (browser)", () => {
   test("protected /backoffice/content redirects to /login with internal next only", async ({ page }) => {
@@ -29,13 +29,13 @@ test.describe("Auth redirect safety (browser)", () => {
     await assertLoginPageReady(page);
   });
 
-  test.skip(!hasAdmin, "E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD or fallback test user must be set");
-  test("successful login returns admin to intended protected route without loop", async ({ page }) => {
+  test.skip(!hasSuperadmin, "E2E_SUPERADMIN_EMAIL / E2E_SUPERADMIN_PASSWORD must be set");
+  test("successful login returns superadmin to backoffice without loop", async ({ page }) => {
     const target = "/backoffice/content";
     await visitProtectedRouteAndAssertRedirect(page, target);
     await assertLoginPageReady(page);
 
-    await loginAsRole(page, "company_admin", { next: target });
+    await loginAsRole(page, "superadmin", { next: target });
     await waitForPostLoginNavigation(page);
 
     await expect(page).not.toHaveURL(/\/login(\?|$)/);
@@ -46,7 +46,6 @@ test.describe("Auth redirect safety (browser)", () => {
   test.skip(!hasEmployee, "E2E_EMPLOYEE_EMAIL / E2E_EMPLOYEE_PASSWORD or fallback test user must be set");
   test("unsafe next=external URL is rejected and falls back to role home", async ({ page }) => {
     const creds = getCredentialsForRole("employee")!;
-    const home = getHomeForRole("employee");
 
     await page.goto("/login?next=https://evil.example");
     await assertLoginPageReady(page);
@@ -55,21 +54,20 @@ test.describe("Auth redirect safety (browser)", () => {
 
     const finalUrl = new URL(page.url());
     expect(finalUrl.origin).not.toBe("https://evil.example");
-    await expect(page).toHaveURL(new RegExp(`^${home.replace("/", "\\/")}`));
+    await expect(page).toHaveURL(roleHomeUrlPattern("employee"));
     await assertProtectedShellReady(page);
   });
 
   test.skip(!hasEmployee, "E2E_EMPLOYEE_EMAIL / E2E_EMPLOYEE_PASSWORD or fallback test user must be set");
   test("role-disallowed next (/admin for employee) is rejected and falls back to employee home", async ({ page }) => {
     const creds = getCredentialsForRole("employee")!;
-    const home = getHomeForRole("employee");
 
     await page.goto("/login?next=/admin");
     await assertLoginPageReady(page);
     await loginViaForm(page, creds.email, creds.password, "/admin");
     await waitForPostLoginNavigation(page);
 
-    await expect(page).toHaveURL(new RegExp(`^${home.replace("/", "\\/")}`));
+    await expect(page).toHaveURL(roleHomeUrlPattern("employee"));
     await expect(page).not.toHaveURL(/\/admin/);
     await assertProtectedShellReady(page);
   });
@@ -77,7 +75,6 @@ test.describe("Auth redirect safety (browser)", () => {
   test.skip(!hasEmployee, "E2E_EMPLOYEE_EMAIL / E2E_EMPLOYEE_PASSWORD or fallback test user must be set");
   test("already-authenticated user visiting /login is routed onward (no trap or blank page)", async ({ page }) => {
     const creds = getCredentialsForRole("employee")!;
-    const home = getHomeForRole("employee");
 
     await loginViaForm(page, creds.email, creds.password);
     await waitForPostLoginNavigation(page);
@@ -94,7 +91,7 @@ test.describe("Auth redirect safety (browser)", () => {
     if (final.pathname === "/login" || final.pathname.startsWith("/login/")) {
       await assertLoginPageReady(page);
     } else {
-      await expect(page).toHaveURL(new RegExp(`^${home.replace("/", "\\/")}`));
+      await expect(page).toHaveURL(roleHomeUrlPattern("employee"));
       await assertProtectedShellReady(page);
     }
   });

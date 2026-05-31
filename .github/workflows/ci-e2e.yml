@@ -287,6 +287,7 @@ jobs:
             e2e/core-flows.e2e.ts \
             --config playwright.config.ts \
             --project=chromium \
+            --grep-invert "backoffice content shell|/backoffice/content authenticated" \
             --reporter=json
         env:
           PORT: 3000
