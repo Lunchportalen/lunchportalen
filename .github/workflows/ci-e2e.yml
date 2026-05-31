@@ -277,7 +277,17 @@ jobs:
             if [ "$i" -eq 60 ]; then echo "Server did not become ready"; exit 1; fi
             sleep 2
           done
-          npx playwright test --config playwright.config.ts --project=chromium --reporter=json
+          # Core lane only (deployed product): auth/redirect, orders, shells, mobile-invariants — excludes parked CMS/u8x–u9x.
+          npx playwright test \
+            e2e/auth.e2e.ts \
+            e2e/auth-role.e2e.ts \
+            e2e/auth-redirect-safety.e2e.ts \
+            e2e/shells.e2e.ts \
+            e2e/mobile-invariants.e2e.ts \
+            e2e/core-flows.e2e.ts \
+            --config playwright.config.ts \
+            --project=chromium \
+            --reporter=json
         env:
           PORT: 3000
           CI: "true"
@@ -299,6 +309,14 @@ jobs:
             exit 1
           fi
           echo "E2E executed tests (stats.expected=$expected)"
+
+      - name: Upload Playwright JSON on success
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-results-json
+          path: playwright-results.json
+          retention-days: 7
 
       - name: Upload report on failure
         if: failure()

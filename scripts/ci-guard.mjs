@@ -27,6 +27,7 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/k6/provision-k6-prod-pool.mjs",
   "scripts/smoke/preflight-prod-env.mjs",
   "scripts/smoke/provision-smoke-user.mjs",
+  "scripts/smoke/seed-e2e-users.mjs",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",
