@@ -1,36 +1,12 @@
 # Browser E2E + visual regression (Phase 6 — dedicated workflow; ci-enterprise unchanged)
 name: CI E2E
 
+# Ingen paths-filter — e2e er required check på main; en paths-filtrert required check dødlåser PR-er som ikke matcher pathene.
 on:
   push:
     branches: ["main"]
-    paths: &nextjs_ci_paths
-      - "app/**"
-      - "components/**"
-      - "lib/**"
-      - "public/**"
-      - "studio/**"
-      - "supabase/**"
-      - "scripts/**"
-      - "tests/**"
-      - "e2e/**"
-      - "middleware.ts"
-      - "next.config.ts"
-      - "instrumentation.ts"
-      - "vercel.json"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - "vitest.config.ts"
-      - "playwright.config.ts"
-      - "tailwind.config.cjs"
-      - "postcss.config.cjs"
-      - ".eslintrc.cjs"
-      - "eslint.config.*"
-      - "AGENTS.md"
-      - ".github/workflows/ci-e2e.yml"
   pull_request:
-    paths: *nextjs_ci_paths
+    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
