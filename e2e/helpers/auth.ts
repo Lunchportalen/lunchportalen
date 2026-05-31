@@ -114,10 +114,10 @@ export function getHomeForRole(role: E2ERole): string {
   return ROLE_HOME[role];
 }
 
-/** Pathname match for role home; tolerates post-login `?rid=` query (no weakening of route intent). */
+/** Full-URL match for role home; tolerates post-login `?rid=` (Playwright toHaveURL matches entire href). */
 export function roleHomeUrlPattern(role: E2ERole): RegExp {
   const home = getHomeForRole(role).replace(/\//g, "\\/");
-  return new RegExp(`^${home}(\\?|$|/)`);
+  return new RegExp(`${home}(\\?|$|/)`);
 }
 
 export async function visitProtectedRouteAndAssertRedirect(
