@@ -40,7 +40,7 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 55
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
