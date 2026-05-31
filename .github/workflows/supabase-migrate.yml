@@ -194,7 +194,7 @@ jobs:
       PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
       DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
-      BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+      APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       EVIDENCE_DIR: evidence/prod
 
@@ -233,7 +233,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=()
-          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD CRON_SECRET BASE_URL SYSTEM_MOTOR_SECRET; do
+          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD CRON_SECRET APP_BASE_URL SYSTEM_MOTOR_SECRET; do
             if [ -z "${!var:-}" ]; then
               missing+=("$var")
             fi
@@ -309,6 +309,8 @@ jobs:
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
       - name: Smoke tests (prod)
+        env:
+          BASE_URL: ${{ secrets.APP_BASE_URL }}
         run: |
           set -euo pipefail
           bash scripts/smoke/run-cron-smoke-ci.sh "$EVIDENCE_DIR/cron-smoke.log"
