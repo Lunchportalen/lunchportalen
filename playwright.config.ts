@@ -10,6 +10,7 @@ const externalServer =
 
 export default defineConfig({
   testDir: "./e2e",
+  testMatch: ["**/*.e2e.ts", "**/*@(spec|test).?(c|m)[jt]s?(x)"],
   timeout: 30_000,
   expect: {
     timeout: 15_000,

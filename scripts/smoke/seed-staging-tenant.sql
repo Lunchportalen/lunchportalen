@@ -9,8 +9,9 @@
 --   ACTIVE agreement 2356f773-… (BASIS, mon–fri incl. wed → 2026-06-04)
 --   smoke profile + company_membership + location_membership (b0e90b33-…)
 --
--- Auth user (auth.users) is NOT in SQL — use scripts/smoke/provision-smoke-user.mjs after this.
+-- Auth user (auth.users) is NOT in SQL — use scripts/smoke/provision-smoke-user.mjs or seed-e2e-users.mjs after this.
 -- Menu (menu_service_days/items) — use scripts/smoke/seed-smoke-menu-fixture.mjs after this.
+-- E2E four-role users — scripts/smoke/seed-e2e-users.mjs (see docs/e2e/UIGX-RESEED-CHAIN.md).
 
 begin;
 

@@ -49,9 +49,10 @@ jobs:
       NODE_OPTIONS: "--max-old-space-size=8192"
       PLAYWRIGHT_BASE_URL: "http://localhost:3000"
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # E2E targets uigx scratch only — staging secrets, never prod NEXT_PUBLIC_SUPABASE_*.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -80,9 +81,9 @@ jobs:
       - name: Verify required env
         shell: bash
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
           NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
           NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -100,14 +101,31 @@ jobs:
           : "${SYSTEM_MOTOR_SECRET:?Missing SYSTEM_MOTOR_SECRET secret}"
           echo "✅ Required env present (aligned with main CI)."
 
+      - name: Verify E2E Supabase target is uigx (not prod)
+        shell: bash
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+        run: |
+          set -euo pipefail
+          url="${NEXT_PUBLIC_SUPABASE_URL}"
+          if [[ "$url" == *"hkpokyapzarefrgqzkos"* ]]; then
+            echo "::error::E2E must not target prod Supabase (hkpokyapzarefrgqzkos)"
+            exit 1
+          fi
+          if [[ "$url" != *"uigxsboqeruxflgzqztl"* ]]; then
+            echo "::error::E2E Supabase URL must target uigx (uigxsboqeruxflgzqztl)"
+            exit 1
+          fi
+          echo "✅ E2E Supabase target is uigx."
+
       # Required gate: same steps as package.json `build:enterprise`, but audit:api does not block E2E (see ci-enterprise audit policy).
       - name: Build (Enterprise)
         shell: bash
         env:
           SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
           NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
           NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
@@ -190,6 +208,9 @@ jobs:
             printf '%s\n' "$E2E_SUPERADMIN_PASSWORD"
             echo "${d}"
           } >> "$GITHUB_ENV"
+
+      - name: Seed E2E users on uigx
+        run: node scripts/smoke/seed-e2e-users.mjs
 
       - name: Start server and run E2E
         run: |
