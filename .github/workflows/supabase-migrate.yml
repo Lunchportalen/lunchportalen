@@ -267,13 +267,12 @@ jobs:
       - name: Preflight dry-run (prod, session pooler)
         run: |
           set -euo pipefail
+          set +e
           OUT="$(npx supabase@beta db push --dry-run --db-url "$PROD_DATABASE_URL" 2>&1)"
+          DRY_EXIT=$?
+          set -e
           echo "$OUT" | tee "$EVIDENCE_DIR/db-push-dry-run.log"
-          if ! echo "$OUT" | grep -q "Remote database is up to date"; then
-            echo "::error::Prod dry-run is not up to date — aborting before push"
-            exit 1
-          fi
-          echo "Prod dry-run: Remote database is up to date."
+          node scripts/ci/db-push-preflight-guard.mjs --exit "$DRY_EXIT" < "$EVIDENCE_DIR/db-push-dry-run.log"
 
       - name: Apply migrations (prod, session pooler)
         run: |
