@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildOrderWriteBody,
   isCalendarUpcoming,
+  orderedMealDisplayLine,
   statusPresentation,
   tierPillClass,
   weekCalendarDayPillClassNames,
@@ -178,6 +179,32 @@ describe("isCalendarUpcoming", () => {
   });
 });
 
+describe("orderedMealDisplayLine", () => {
+  test("ACTIVE + CMS item resolves «Kategori – variant» (Melhus 02.06 shape)", () => {
+    const line = orderedMealDisplayLine(
+      dayFixture({
+        orderStatus: "ACTIVE",
+        selectedChoiceKey: "paasmurt",
+        selectedItemKey: "ost-skinke",
+        categories: [
+          {
+            key: "paasmurt",
+            category: "paasmurt",
+            label: "Påsmurt",
+            title: null,
+            description: null,
+            allergens: [],
+            available: true,
+            items: [{ key: "ost-skinke", title: "Ost & skinke", allergens: [], isVegetarian: false }],
+          },
+        ],
+        allowedChoices: [{ key: "paasmurt", label: "Påsmurt" }],
+      }),
+    );
+    expect(line).toBe("Påsmurt – Ost & skinke");
+  });
+});
+
 describe("statusPresentation", () => {
   test("Bestilt → grønn pill", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "ACTIVE", isEnabled: true, isLocked: false }));
@@ -208,6 +235,36 @@ describe("statusPresentation", () => {
     );
     expect(p.label).toBe("Frist passert");
     expect(p.className).toContain("bg-neutral-100");
+  });
+});
+
+describe("EmployeeWeekClient ordered vs insight styling", () => {
+  test("kilde: is-ordered på kategori-kort, ds-week-insight-pill for anbefaling", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("is-ordered");
+    expect(source).toContain("ds-week-insight-pill");
+    expect(source).toContain("ds-ordered-meal-line");
+    expect(source).toContain("Bestilt:");
+    expect(css).toContain(".week-category-card.is-ordered");
+    expect(css).toContain(".ds-week-insight-pill");
+    expect(css).not.toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*var\(--ds-accent\)/);
+  });
+
+  test("ACTIVE: kategori-kort ikke låst; SET-bytte via applyActiveOrderChange", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).not.toContain("cardsLocked");
+    expect(source).toContain("applyActiveOrderChange");
+    expect(source).toContain("postSetDayInner(date, true, selection)");
+    expect(source).toMatch(/day\.orderStatus === "ACTIVE"\) return prev/);
+  });
+
+  test("CSS: focus-visible gull outline 3px + offset, ingen ugyldig ring-property", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).not.toMatch(/^\s*ring\s*:/m);
+    expect(css).toContain(".week-category-card.is-ordered:focus-visible");
+    expect(css).toMatch(/outline:\s*3px solid var\(--ds-accent\)/);
+    expect(css).toMatch(/outline-offset:\s*3px/);
   });
 });
 

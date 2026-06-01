@@ -48,11 +48,24 @@ describe("week category cards", () => {
     expect(source).toContain("Ingen meny lagt inn enda");
   });
 
-  test("clicking a card triggers onSelectCategory and aria-pressed", () => {
+  test("ordered vs pending: bestilt card is not pending-selection styling", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("onClick={() => onSelectCategory(cat.key)}");
-    expect(source).toContain("aria-pressed={isSelected}");
-    expect(source).toContain('isSelected ? "is-selected" : ""');
+    const fnStart = source.indexOf("export function WeekCategoryCards");
+    const fnEnd = source.indexOf("\nfunction DayMenuSummary", fnStart);
+    const block = source.slice(fnStart, fnEnd);
+
+    // Bestilt = system truth (order snapshot); pending = user is changing choice on ACTIVE day.
+    expect(block).toContain("const isPendingCat = isSelected && !isOrdered");
+    expect(block).toContain('isOrdered ? "is-ordered" : ""');
+    expect(block).toContain('isPendingCat ? "is-selected" : ""');
+    expect(block.includes('isSelected ? "is-selected"')).toBe(false);
+
+    expect(block).toContain("week-category-card__ordered-tag");
+    expect(block).toContain("Bestilt");
+    expect(block).toContain("aria-pressed={isOrdered || isPendingCat}");
+    expect(block).toContain("onClick={() => onSelectCategory(cat.key)}");
+    expect(block).toContain("isOrdered ? `${cat.label}, bestilt`");
+    expect(block).toContain("isPendingCat ? `${cat.label}, valgt`");
   });
 
   test("category toggle: selectCategory clears same key and resets item (ghost guard)", () => {
@@ -63,7 +76,7 @@ describe("week category cards", () => {
     expect(source).toContain("itemKey: null");
   });
 
-  test("expand renders inline: Fragment + expand sibling inside category map (no post-grid panel)", () => {
+  test("expand renders inline only for pending selection (not for bestilt-only card)", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     const fnStart = source.indexOf("export function WeekCategoryCards");
     const fnEnd = source.indexOf("\nfunction DayMenuSummary", fnStart);
@@ -72,10 +85,11 @@ describe("week category cards", () => {
     const block = source.slice(fnStart, fnEnd);
     expect(block).toContain("Fragment key={cat.key}");
     expect(block).toContain("ds-week-items-section--inline");
-    expect(block).toContain("{isSelected ? expandSection : null}");
+    expect(block).toContain("{isPendingCat ? expandSection : null}");
+    expect(block.includes("{isSelected ? expandSection : null}")).toBe(false);
     expect(block).toContain('className="week-day__categories"');
     const closesCategories = block.lastIndexOf("</div>");
-    const expandInMap = block.indexOf("{isSelected ? expandSection : null}");
+    const expandInMap = block.indexOf("{isPendingCat ? expandSection : null}");
     expect(expandInMap).toBeGreaterThan(-1);
     expect(expandInMap).toBeLessThan(closesCategories);
   });
@@ -89,6 +103,12 @@ describe("week category cards", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).toContain(".ds-week-items-section--inline");
     expect(css).toContain("grid-column: 1 / -1");
+  });
+
+  test("CSS: bestilt category card uses is-ordered (distinct from pending is-selected)", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toContain(".week-category-card.is-ordered");
+    expect(css).toContain(".ds-ordered-meal-line");
   });
 
   test("category cards disable when unavailable; CSS keeps 48px touch + motion/focus tokens", () => {
