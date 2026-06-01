@@ -2444,7 +2444,7 @@ export default function EmployeeWeekClient({
 
       {upcomingDays.length > 0 ? (
         <section className="pb-2">
-          <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende menyer</h2>
+          <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende dager</h2>
           <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
             {upcomingDays.map((day) => {
               const { label: statusLabel, className: statusClass } = statusPresentation(day);
