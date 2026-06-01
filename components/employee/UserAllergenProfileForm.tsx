@@ -3,11 +3,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  LP_ALLERGEN_CODES,
+  LP_ALLERGEN_CATEGORY_CODES,
   LP_ALLERGEN_LABELS_NB,
+  LP_GLUTEN_SUBTYPE_CODES,
+  LP_TREE_NUT_SUBTYPE_CODES,
   LP_USER_ALLERGEN_FREE_TEXT_MAX,
   normalizeLpAllergenCodes,
   normalizeLpAllergenFreeText,
+  stripGlutenSubtypes,
+  stripTreeNutSubtypes,
+  type LpAllergenCategoryCode,
   type LpAllergenCode,
   type LpUserAllergenProfile,
 } from "@/lib/allergens/lpUserAllergens";
@@ -35,6 +40,8 @@ export default function UserAllergenProfileForm() {
 
   const charCount = freeText.length;
   const charCountId = "allergen-free-text-count";
+  const glutenSelected = codes.includes("gluten");
+  const treeNutsSelected = codes.includes("tree_nuts");
 
   const loadProfile = useCallback(async () => {
     setLoadError(null);
@@ -61,15 +68,30 @@ export default function UserAllergenProfileForm() {
     void loadProfile();
   }, [loadProfile]);
 
-  const toggleCode = (code: LpAllergenCode) => {
+  const resetSaveFeedback = () => {
     setSaveState("idle");
     setSaveMessage(null);
+  };
+
+  const toggleCategory = (code: LpAllergenCategoryCode) => {
+    resetSaveFeedback();
+    setCodes((prev) => {
+      if (prev.includes(code)) {
+        if (code === "gluten") return stripGlutenSubtypes(prev.filter((c) => c !== "gluten"));
+        if (code === "tree_nuts") return stripTreeNutSubtypes(prev.filter((c) => c !== "tree_nuts"));
+        return prev.filter((c) => c !== code);
+      }
+      return [...prev, code];
+    });
+  };
+
+  const toggleSubtype = (code: LpAllergenCode) => {
+    resetSaveFeedback();
     setCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   };
 
   const onFreeTextChange = (value: string) => {
-    setSaveState("idle");
-    setSaveMessage(null);
+    resetSaveFeedback();
     setFreeText(value.slice(0, LP_USER_ALLERGEN_FREE_TEXT_MAX));
   };
 
@@ -112,11 +134,6 @@ export default function UserAllergenProfileForm() {
 
   return (
     <div className="ds-allergen-profile mx-auto w-full px-4 py-6">
-      <p className="mx-auto max-w-md text-sm text-[rgb(var(--lp-muted))]">
-        Oppgi allergener du vil at kjøkkenet skal se som ekstra informasjon. Dette er ikke knyttet til rett-allergener i
-        menyen og er ikke en garanti — kun det du selv velger å dele.
-      </p>
-
       {loadError ? (
         <p className="mt-4 text-sm text-red-800" role="alert">
           {loadError}
@@ -124,15 +141,15 @@ export default function UserAllergenProfileForm() {
       ) : null}
 
       <fieldset className="ds-allergen-fieldset mt-6">
-        <legend>Allergener (EU-14)</legend>
-        <div className="ds-allergen-chip-grid" role="group" aria-label="Velg allergener">
-          {LP_ALLERGEN_CODES.map((code) => (
+        <legend>Hva er du allergisk mot?</legend>
+        <div className="ds-allergen-chip-grid" role="group" aria-label="Hva er du allergisk mot?">
+          {LP_ALLERGEN_CATEGORY_CODES.map((code) => (
             <button
               key={code}
               type="button"
               className="ds-allergen-chip"
               aria-pressed={codes.includes(code)}
-              onClick={() => toggleCode(code)}
+              onClick={() => toggleCategory(code)}
               disabled={saveDisabled}
             >
               {LP_ALLERGEN_LABELS_NB[code]}
@@ -141,9 +158,49 @@ export default function UserAllergenProfileForm() {
         </div>
       </fieldset>
 
+      {glutenSelected ? (
+        <fieldset className="ds-allergen-fieldset mt-6">
+          <legend>Velg kornslag</legend>
+          <div className="ds-allergen-chip-grid" role="group" aria-label="Velg kornslag">
+            {LP_GLUTEN_SUBTYPE_CODES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="ds-allergen-chip"
+                aria-pressed={codes.includes(code)}
+                onClick={() => toggleSubtype(code)}
+                disabled={saveDisabled}
+              >
+                {LP_ALLERGEN_LABELS_NB[code]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+
+      {treeNutsSelected ? (
+        <fieldset className="ds-allergen-fieldset mt-6">
+          <legend>Velg type nøtt</legend>
+          <div className="ds-allergen-chip-grid" role="group" aria-label="Velg type nøtt">
+            {LP_TREE_NUT_SUBTYPE_CODES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="ds-allergen-chip"
+                aria-pressed={codes.includes(code)}
+                onClick={() => toggleSubtype(code)}
+                disabled={saveDisabled}
+              >
+                {LP_ALLERGEN_LABELS_NB[code]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+
       <div className="mt-8 text-left">
         <label htmlFor="allergen-free-text" className="block text-sm font-semibold text-neutral-900">
-          Synlig for kjøkkenet som ekstra info
+          Er det noe mer vi bør vite?
         </label>
         <textarea
           id="allergen-free-text"
@@ -154,7 +211,7 @@ export default function UserAllergenProfileForm() {
           rows={4}
           disabled={saveDisabled}
           aria-describedby={charCountId}
-          placeholder="Valgfritt, f.eks. kryssreaksjon eller preferanser kjøkken bør kjenne til."
+          placeholder="F.eks. kryssreaksjoner eller noe kjøkkenet bør være ekstra obs på."
         />
         <p id={charCountId} className="ds-allergen-char-count" aria-live="polite">
           {charCount} / {LP_USER_ALLERGEN_FREE_TEXT_MAX} tegn
