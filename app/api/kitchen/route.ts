@@ -32,6 +32,8 @@ type KitchenRow = {
   menu_title?: string | null;
   menu_description?: string | null;
   menu_allergens?: string[];
+  employee_allergen_codes?: string[];
+  employee_allergen_free_text?: string | null;
 };
 
 type KitchenData = {
@@ -179,7 +181,7 @@ export async function GET(req: NextRequest) {
   const locationIds = Array.from(new Set(list.map((r: any) => safeStr(r.location_id)).filter((x) => isUuid(x))));
   const userIds = Array.from(new Set(list.map((r: any) => safeStr(r.user_id)).filter((x) => isUuid(x))));
 
-  const [companiesRes, locationsRes, profilesRes] = await Promise.all([
+  const [companiesRes, locationsRes, profilesRes, allergenRes] = await Promise.all([
     companyIds.length
       ? admin.from("companies").select("id,name,agreement_json").in("id", companyIds)
       : Promise.resolve({ data: [] as any[], error: null as any }),
@@ -188,6 +190,12 @@ export async function GET(req: NextRequest) {
       : Promise.resolve({ data: [] as any[], error: null as any }),
     userIds.length
       ? admin.from("profiles").select("user_id,email,full_name,name,department").in("user_id", userIds)
+      : Promise.resolve({ data: [] as any[], error: null as any }),
+    userIds.length
+      ? (admin as any)
+          .from("lp_user_allergens")
+          .select("user_id, codes, free_text")
+          .in("user_id", userIds)
       : Promise.resolve({ data: [] as any[], error: null as any }),
   ]);
 
@@ -209,10 +217,25 @@ export async function GET(req: NextRequest) {
       message: profilesRes.error.message,
     } });
   }
+  if (allergenRes.error) {
+    return jsonErr(rid, "Kunne ikke hente allergenprofiler.", 500, { code: "DB_ERROR", detail: {
+      code: allergenRes.error.code,
+      message: allergenRes.error.message,
+    } });
+  }
 
   const companies = new Map((companiesRes.data ?? []).map((c: any) => [safeStr(c.id), c]));
   const locations = new Map((locationsRes.data ?? []).map((l: any) => [safeStr(l.id), l]));
   const profiles = new Map((profilesRes.data ?? []).map((p: any) => [safeStr(p.user_id), p]));
+  const allergenByUser = new Map<string, { codes: string[]; free_text: string | null }>(
+    (allergenRes.data ?? []).map((a: any) => [
+      safeStr(a.user_id),
+      {
+        codes: Array.isArray(a.codes) ? a.codes.map((c: unknown) => String(c)) : [],
+        free_text: a.free_text != null ? String(a.free_text) : null,
+      },
+    ]),
+  );
 
   const { parseMealContractFromAgreementJson } = await import("@/lib/server/agreements/mealContract");
   const { resolveMenuForDay } = await import("@/lib/domain/resolveMenuForDay");
@@ -299,6 +322,8 @@ export async function GET(req: NextRequest) {
       menu_title: (m?.title != null ? String(m.title).trim() : "") || titleFallback,
       menu_description: m?.description != null ? String(m.description) : null,
       menu_allergens: Array.isArray(m?.allergens) ? m!.allergens! : [],
+      employee_allergen_codes: allergenByUser.get(uid)?.codes ?? [],
+      employee_allergen_free_text: allergenByUser.get(uid)?.free_text ?? null,
     };
   });
 
