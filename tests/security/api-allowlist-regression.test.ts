@@ -5,6 +5,7 @@ import path from "node:path";
 
 import {
   API_AUTH_ALLOWLIST,
+  API_AUTH_ALLOWLIST_GET_ONLY,
   API_AUTH_ALLOWLIST_SIZE,
   isApiAuthAllowlisted,
 } from "@/lib/server/auth/apiAllowlist";
@@ -78,7 +79,7 @@ describe("api-allowlist-regression (DC-011)", () => {
 
   test("allowlist size matches canonical count (83)", () => {
     expect(API_AUTH_ALLOWLIST_SIZE).toBe(83);
-    expect(API_AUTH_ALLOWLIST.size + 3).toBe(83);
+    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(83);
   });
 
   test("every allowlisted static path maps to a route file with category auth evidence", () => {
@@ -94,6 +95,15 @@ describe("api-allowlist-regression (DC-011)", () => {
       else if (isWebhook) expect(src).toMatch(WEBHOOK_AUTH);
       else if (isApiKey) expect(src).toMatch(API_KEY_AUTH);
       else expect(src).toMatch(ANON_VALIDATION);
+    }
+    for (const url of API_AUTH_ALLOWLIST_GET_ONLY) {
+      expect(isApiAuthAllowlisted(url, "GET")).toBe(true);
+      expect(isApiAuthAllowlisted(url, "POST")).toBe(false);
+      const file = routeFiles.find((f) => fileToApiPath(f) === url);
+      expect(file, `missing route file for GET-only allowlist entry ${url}`).toBeTruthy();
+      const src = fs.readFileSync(file!, "utf8");
+      expect(src).toMatch(/scopeOr401/);
+      expect(src).toMatch(/requireRoleOr403/);
     }
   });
 

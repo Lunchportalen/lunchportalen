@@ -2,7 +2,7 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 83 routes (A.1: 33 cron, A.2: 3 webhook, A.3: 46 anon, A.4: 1 api-key).
+ * Total: 83 routes (78 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
@@ -23,8 +23,6 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/auth/session",
   "/api/company/create",
   "/api/contact",
-  "/api/content/global/footer",
-  "/api/content/global/header",
   "/api/cron/ai-experiment-generator",
   "/api/cron/autopilot",
   "/api/cron/business",
@@ -89,6 +87,15 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/webhooks/tripletex",
 ]);
 
+/**
+ * Middleware session-bypass for GET only (POST must pass session gate + route superadmin guard).
+ * Used for public marketing chrome reads while blocking anon writes at middleware layer.
+ */
+export const API_AUTH_ALLOWLIST_GET_ONLY: ReadonlySet<string> = new Set([
+  "/api/content/global/footer",
+  "/api/content/global/header",
+]);
+
 /** Dynamic allowlist entries from inventory A.2/A.3 — one segment, route-level auth verified. */
 const ALLOWLIST_DYNAMIC: ReadonlyArray<(pathname: string) => boolean> = [
   (p) => /^\/api\/public\/forms\/[^/]+$/.test(p),
@@ -96,9 +103,19 @@ const ALLOWLIST_DYNAMIC: ReadonlyArray<(pathname: string) => boolean> = [
   (p) => /^\/api\/webhooks\/tripletex-provider\/[^/]+$/.test(p),
 ];
 
-export function isApiAuthAllowlisted(pathname: string): boolean {
+export function isApiAuthAllowlisted(pathname: string, method?: string): boolean {
+  const verb = safeHttpMethod(method);
+  if (API_AUTH_ALLOWLIST_GET_ONLY.has(pathname)) {
+    return verb === "GET";
+  }
   if (API_AUTH_ALLOWLIST.has(pathname)) return true;
   return ALLOWLIST_DYNAMIC.some((fn) => fn(pathname));
 }
 
-export const API_AUTH_ALLOWLIST_SIZE = API_AUTH_ALLOWLIST.size + ALLOWLIST_DYNAMIC.length;
+function safeHttpMethod(method: string | undefined): string {
+  const m = String(method ?? "GET").trim().toUpperCase();
+  return m || "GET";
+}
+
+export const API_AUTH_ALLOWLIST_SIZE =
+  API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + ALLOWLIST_DYNAMIC.length;

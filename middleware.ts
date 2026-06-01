@@ -110,7 +110,7 @@ export async function middleware(req: NextRequest) {
    * Route files must implement their own cron/webhook/anon/api-key gates when allowlisted.
    */
   if (pathname.startsWith("/api/")) {
-    if (isApiAuthAllowlisted(pathname)) {
+    if (isApiAuthAllowlisted(pathname, req.method)) {
       const res = NextResponse.next({ request: { headers: requestHeaders } });
       res.headers.set("x-lp-mw", "1");
       res.headers.set("x-lp-mw-bypass", "allowlist");
