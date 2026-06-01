@@ -77,7 +77,17 @@ describe("buildCompanyOperativeDeliverySummary", () => {
       },
     ];
     const dcMap = new Map<string, KitchenDayChoiceMapEntry>([
-      [`${cid}|${lid}|${u2}`, { choice_key: "basis", note: "B", updated_at: null, status: "ACTIVE" }],
+      [
+        `${cid}|${lid}|${u2}`,
+        {
+          choice_key: "basis",
+          item_key: null,
+          item_title_snapshot: null,
+          note: "B",
+          updated_at: null,
+          status: "ACTIVE",
+        },
+      ],
     ]);
     const locLabels = new Map([[lid, "Kontoret"]]);
     const s = buildCompanyOperativeDeliverySummary(operative, dcMap, locLabels);
