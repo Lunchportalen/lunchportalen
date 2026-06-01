@@ -282,3 +282,11 @@ describe("EmployeeWeekClient in-card CTA (WeekDayCardMobile)", () => {
     expect(source).not.toContain("stickyCtaForDay");
   });
 });
+
+describe("EmployeeWeekClient inline allergenkort", () => {
+  test("monterer WeekAllergenProfileCard rett under intro-header når ikke readOnlyPreview", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("WeekAllergenProfileCard");
+    expect(source).toMatch(/<\/header>[\s\S]*!readOnlyPreview \? <WeekAllergenProfileCard \/>/);
+  });
+});

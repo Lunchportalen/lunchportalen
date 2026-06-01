@@ -18,6 +18,7 @@ import {
   shouldShowHabitNudge,
   weekdayKeyFromDateISO,
 } from "@/lib/week/orderPatternsClient";
+import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 
@@ -2337,6 +2338,8 @@ export default function EmployeeWeekClient({
           </p>
         )}
       </header>
+
+      {!readOnlyPreview ? <WeekAllergenProfileCard /> : null}
 
       <div className="mb-5 space-y-2" aria-live="polite">
         {menuSanityFetchFailed ? (
