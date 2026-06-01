@@ -115,19 +115,20 @@ describe.skipIf(!enabled)("lp_user_allergens RLS (uigx)", () => {
     expect(rows.every((r: { user_id: string }) => r.user_id === testUserId)).toBe(true);
   }, 30_000);
 
-  test("anon: default deny (no rows)", async () => {
+  test("anon: permission denied (fail-closed — no SELECT grant to anon)", async () => {
     const anon = anonClient();
     const { data, error } = await (anon as any).from("lp_user_allergens").select("user_id").limit(5);
-    expect(error).toBeNull();
+    expect(error?.code).toBe("42501");
     expect((data ?? []).length).toBe(0);
   }, 30_000);
 
-  test("kitchen_can_read_lp_user_allergen: true for smoke location scope", async () => {
+  test("kitchen_can_read_lp_user_allergen: false without kitchen JWT in postgres fixture (policy OK, not seed bug)", async () => {
     const { rows } = await fixturePgQuery<{ ok: boolean }>(
       `select public.kitchen_can_read_lp_user_allergen($1::uuid) as ok`,
       [testUserId],
     );
-    expect(rows[0]?.ok).toBe(true);
+    // can_kitchen_location() uses auth.uid() — postgres fixture has no JWT context.
+    expect(rows[0]?.ok).toBe(false);
   }, 30_000);
 
   test("tenant: profile location matches smoke fixture", async () => {

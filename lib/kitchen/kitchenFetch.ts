@@ -2,6 +2,8 @@
  * Client-side helpers for GET /api/kitchen (enterprise JSON envelope).
  */
 
+import type { KitchenEmployeeAllergenProfileStatus } from "@/lib/allergens/lpUserAllergens";
+
 export type KitchenRow = {
   orderId: string;
   slot: string;
@@ -18,6 +20,7 @@ export type KitchenRow = {
   /** Employee allergen profile (lp_user_allergens) — extra info, not menu allergens. */
   employee_allergen_codes?: string[];
   employee_allergen_free_text?: string | null;
+  employee_allergen_profile_status?: KitchenEmployeeAllergenProfileStatus;
 };
 
 export type KitchenResp = {

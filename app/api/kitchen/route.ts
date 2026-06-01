@@ -13,6 +13,10 @@ import { buildKitchenMealNote, buildVariantTitleLookup } from "@/lib/kitchen/kit
 import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import { opsLog } from "@/lib/ops/log";
+import {
+  resolveEmployeeAllergenProfileStatus,
+  type KitchenEmployeeAllergenProfileStatus,
+} from "@/lib/allergens/lpUserAllergens";
 
 const allowedRoles = ["kitchen", "superadmin"] as const;
 
@@ -34,6 +38,7 @@ type KitchenRow = {
   menu_allergens?: string[];
   employee_allergen_codes?: string[];
   employee_allergen_free_text?: string | null;
+  employee_allergen_profile_status: KitchenEmployeeAllergenProfileStatus;
 };
 
 type KitchenData = {
@@ -300,6 +305,7 @@ export async function GET(req: NextRequest) {
     const lookupKey = mealTypeResolved || nk;
     const m = lookupKey ? menuByMeal.get(lookupKey) : null;
     const titleFallback = mealTypeResolved || nk || null;
+    const allergenRow = allergenByUser.get(uid);
 
     return {
       orderId: safeStr(r.id),
@@ -322,8 +328,9 @@ export async function GET(req: NextRequest) {
       menu_title: (m?.title != null ? String(m.title).trim() : "") || titleFallback,
       menu_description: m?.description != null ? String(m.description) : null,
       menu_allergens: Array.isArray(m?.allergens) ? m!.allergens! : [],
-      employee_allergen_codes: allergenByUser.get(uid)?.codes ?? [],
-      employee_allergen_free_text: allergenByUser.get(uid)?.free_text ?? null,
+      employee_allergen_codes: allergenRow?.codes ?? [],
+      employee_allergen_free_text: allergenRow?.free_text ?? null,
+      employee_allergen_profile_status: resolveEmployeeAllergenProfileStatus(allergenRow ?? null),
     };
   });
 

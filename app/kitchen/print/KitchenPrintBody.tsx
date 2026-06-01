@@ -11,6 +11,7 @@ import {
   slotHeading,
 } from "@/lib/kitchen/buildProductionHierarchy";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import KitchenEmployeeAllergenExtra from "@/components/kitchen/KitchenEmployeeAllergenExtra";
 
 function osloPretty(dateISO: string) {
   const d = new Date(`${dateISO}T12:00:00+01:00`);
@@ -154,20 +155,30 @@ export default function KitchenPrintBody() {
                         <div className="px-4 py-1 text-xs font-semibold text-slate-600">{loc.location}</div>
                         <ul className="divide-y divide-slate-100 px-2 pb-2">
                           {loc.rows.map((r) => (
-                            <li key={r.orderId} className="flex flex-col gap-0.5 px-2 py-2 text-sm text-slate-900 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                              <div className="min-w-0 font-medium">
-                                {r.employeeName}
-                                {r.department ? (
-                                  <span className="ml-1 font-normal text-slate-600">· {r.department}</span>
-                                ) : null}
+                            <li key={r.orderId} className="px-2 py-2 text-sm text-slate-900">
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                                <div className="min-w-0 font-medium">
+                                  {r.employeeName}
+                                  {r.department ? (
+                                    <span className="ml-1 font-normal text-slate-600">· {r.department}</span>
+                                  ) : null}
+                                </div>
+                                <div className="min-w-0 shrink-0 text-left text-slate-800 sm:max-w-[55%] sm:text-right">
+                                  <div>{mealLabel(r)}</div>
+                                  {r.note ? <div className="mt-0.5 text-xs text-slate-600">Notat: {r.note}</div> : null}
+                                  {Array.isArray(r.menu_allergens) && r.menu_allergens.length ? (
+                                    <div className="mt-0.5 text-xs text-slate-600">
+                                      Meny-allergener: {r.menu_allergens.join(", ")}
+                                    </div>
+                                  ) : null}
+                                </div>
                               </div>
-                              <div className="min-w-0 shrink-0 text-right text-slate-800 sm:max-w-[55%]">
-                                <div>{mealLabel(r)}</div>
-                                {r.note ? <div className="mt-0.5 text-xs text-slate-600">Notat: {r.note}</div> : null}
-                                {Array.isArray(r.menu_allergens) && r.menu_allergens.length ? (
-                                  <div className="mt-0.5 text-xs text-slate-600">Allergener: {r.menu_allergens.join(", ")}</div>
-                                ) : null}
-                              </div>
+                              <KitchenEmployeeAllergenExtra
+                                variant="print"
+                                status={r.employee_allergen_profile_status}
+                                codes={r.employee_allergen_codes}
+                                free_text={r.employee_allergen_free_text}
+                              />
                             </li>
                           ))}
                         </ul>

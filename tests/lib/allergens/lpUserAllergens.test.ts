@@ -4,6 +4,7 @@ import {
   LP_ALLERGEN_CODES,
   normalizeLpAllergenCodes,
   normalizeLpAllergenFreeText,
+  resolveEmployeeAllergenProfileStatus,
 } from "@/lib/allergens/lpUserAllergens";
 
 describe("lpUserAllergens", () => {
@@ -17,5 +18,13 @@ describe("lpUserAllergens", () => {
 
   test("normalizeLpAllergenFreeText caps at 280", () => {
     expect(normalizeLpAllergenFreeText("a".repeat(400)).length).toBe(280);
+  });
+
+  test("resolveEmployeeAllergenProfileStatus distinguishes three safety states", () => {
+    expect(resolveEmployeeAllergenProfileStatus(null)).toBe("unknown");
+    expect(resolveEmployeeAllergenProfileStatus(undefined)).toBe("unknown");
+    expect(resolveEmployeeAllergenProfileStatus({ codes: [], free_text: "" })).toBe("declared_empty");
+    expect(resolveEmployeeAllergenProfileStatus({ codes: ["gluten"], free_text: "" })).toBe("has_data");
+    expect(resolveEmployeeAllergenProfileStatus({ codes: [], free_text: "Kryss" })).toBe("has_data");
   });
 });

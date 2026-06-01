@@ -45,6 +45,24 @@ export type LpUserAllergenProfile = {
   updated_at: string | null;
 };
 
+/** Kitchen + print: explicit safety state per employee (never ambiguous blank). */
+export type KitchenEmployeeAllergenProfileStatus = "has_data" | "declared_empty" | "unknown";
+
+export type LpUserAllergenRowLike = {
+  codes?: unknown;
+  free_text?: unknown;
+};
+
+export function resolveEmployeeAllergenProfileStatus(
+  row: LpUserAllergenRowLike | null | undefined,
+): KitchenEmployeeAllergenProfileStatus {
+  if (row == null) return "unknown";
+  const codes = normalizeLpAllergenCodes(row.codes);
+  const text = normalizeLpAllergenFreeText(row.free_text);
+  if (codes.length > 0 || text.length > 0) return "has_data";
+  return "declared_empty";
+}
+
 const CODE_SET = new Set<string>(LP_ALLERGEN_CODES);
 
 export function normalizeLpAllergenCodes(raw: unknown): LpAllergenCode[] {
