@@ -7,10 +7,12 @@ import {
   LP_TREE_NUT_SUBTYPE_CODES,
   allergenCodesForKitchenDisplay,
   formatLpAllergenCodesForKitchen,
+  formatLpAllergenDisclosureSummaryItems,
   labelLpAllergenCodeForKitchen,
   normalizeLpAllergenCodes,
   normalizeLpAllergenFreeText,
   resolveEmployeeAllergenProfileStatus,
+  resolveEmployeeAllergenProfileStatusFromClientProfile,
 } from "@/lib/allergens/lpUserAllergens";
 
 describe("lpUserAllergens", () => {
@@ -57,5 +59,31 @@ describe("lpUserAllergens", () => {
     expect(labelLpAllergenCodeForKitchen("gluten_wheat")).toBe("Hvete");
     expect(labelLpAllergenCodeForKitchen("nut_walnut")).toBe("Valnøtt");
     expect(formatLpAllergenCodesForKitchen(["gluten", "gluten_wheat", "nut_hazelnut"])).toBe("Hvete, Hasselnøtt");
+  });
+
+  test("formatLpAllergenDisclosureSummaryItems groups undertyper", () => {
+    expect(formatLpAllergenDisclosureSummaryItems(["gluten", "gluten_wheat", "milk"])).toEqual([
+      "Gluten (hvete)",
+      "Melk",
+    ]);
+  });
+
+  test("resolveEmployeeAllergenProfileStatusFromClientProfile distinguishes unknown vs declared_empty", () => {
+    expect(
+      resolveEmployeeAllergenProfileStatusFromClientProfile({
+        user_id: "u1",
+        codes: [],
+        free_text: "",
+        updated_at: null,
+      }),
+    ).toBe("unknown");
+    expect(
+      resolveEmployeeAllergenProfileStatusFromClientProfile({
+        user_id: "u1",
+        codes: [],
+        free_text: "",
+        updated_at: "2026-01-01",
+      }),
+    ).toBe("declared_empty");
   });
 });

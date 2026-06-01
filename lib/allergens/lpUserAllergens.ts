@@ -173,3 +173,51 @@ export function stripGlutenSubtypes(codes: LpAllergenCode[]): LpAllergenCode[] {
 export function stripTreeNutSubtypes(codes: LpAllergenCode[]): LpAllergenCode[] {
   return codes.filter((c) => !isTreeNutSubtypeCode(c));
 }
+
+/** Client GET: unknown = never saved (no updated_at); declared_empty = saved empty row. */
+export function resolveEmployeeAllergenProfileStatusFromClientProfile(
+  profile: LpUserAllergenProfile | null | undefined,
+): KitchenEmployeeAllergenProfileStatus {
+  if (!profile) return "unknown";
+  const codes = normalizeLpAllergenCodes(profile.codes);
+  const text = normalizeLpAllergenFreeText(profile.free_text);
+  if (codes.length > 0 || text.length > 0) return "has_data";
+  if (profile.updated_at) return "declared_empty";
+  return "unknown";
+}
+
+/** Collapsed disclosure summary chips, e.g. «Gluten (hvete)», «Melk». */
+export function formatLpAllergenDisclosureSummaryItems(codes: LpAllergenCode[]): string[] {
+  const normalized = normalizeLpAllergenCodes(codes);
+  const items: string[] = [];
+
+  for (const cat of LP_ALLERGEN_CATEGORY_CODES) {
+    if (cat === "gluten") {
+      const subs = normalized.filter(isGlutenSubtypeCode);
+      if (subs.length > 0) {
+        for (const sub of subs) {
+          items.push(`Gluten (${LP_ALLERGEN_LABELS_NB[sub].toLowerCase()})`);
+        }
+      } else if (normalized.includes("gluten")) {
+        items.push("Gluten");
+      }
+      continue;
+    }
+    if (cat === "tree_nuts") {
+      const subs = normalized.filter(isTreeNutSubtypeCode);
+      if (subs.length > 0) {
+        for (const sub of subs) {
+          items.push(`Nøtter (${LP_ALLERGEN_LABELS_NB[sub].toLowerCase()})`);
+        }
+      } else if (normalized.includes("tree_nuts")) {
+        items.push("Nøtter");
+      }
+      continue;
+    }
+    if (normalized.includes(cat)) {
+      items.push(LP_ALLERGEN_LABELS_NB[cat]);
+    }
+  }
+
+  return items;
+}

@@ -2147,3 +2147,138 @@ main{
     transition: none;
   }
 }
+
+/* ── Allergen disclosure (week card, collapsed by default) ── */
+.ds-allergen-disclosure {
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.ds-allergen-disclosure__summary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 48px;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--ds-radius-sm, 14px);
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  background: #fff;
+  color: var(--lp-text, #111);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ds-ease, ease),
+    background 0.15s var(--ds-ease, ease);
+}
+
+.ds-allergen-disclosure__summary:focus-visible {
+  outline: 3px solid var(--lp-gold-dark, #a07c00);
+  outline-offset: 3px;
+}
+
+.ds-allergen-disclosure__summary-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.5rem;
+}
+
+.ds-allergen-disclosure__summary-label {
+  font-weight: 700;
+  color: var(--lp-text, #111);
+}
+
+.ds-allergen-disclosure__summary-hint {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ds-text-soft, #5f5f5f);
+}
+
+.ds-allergen-disclosure__summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.ds-allergen-chip--readonly {
+  min-height: 36px;
+  min-width: auto;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  cursor: default;
+  pointer-events: none;
+}
+
+.ds-allergen-disclosure__chevron {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 8l5 5 5-5' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  opacity: 0.7;
+  transition: transform 0.25s var(--ds-ease, ease);
+}
+
+.ds-allergen-disclosure__summary[aria-expanded="true"] .ds-allergen-disclosure__chevron {
+  transform: rotate(180deg);
+}
+
+.ds-allergen-disclosure__panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.35s var(--ds-ease, ease),
+    opacity 0.25s var(--ds-ease, ease);
+}
+
+.ds-allergen-disclosure__panel.is-open {
+  max-height: 3200px;
+  opacity: 1;
+}
+
+.ds-allergen-disclosure__panel-inner {
+  padding-top: 0.75rem;
+}
+
+.ds-allergen-disclosure__declare-empty {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  background: #fff;
+  color: var(--lp-text, #111);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ds-allergen-disclosure__declare-empty:focus-visible {
+  outline: 3px solid var(--lp-gold-dark, #a07c00);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-allergen-disclosure__summary,
+  .ds-allergen-disclosure__panel,
+  .ds-allergen-disclosure__chevron {
+    transition: none;
+  }
+
+  .ds-allergen-disclosure__summary[aria-expanded="true"] .ds-allergen-disclosure__chevron {
+    transform: rotate(180deg);
+  }
+}
