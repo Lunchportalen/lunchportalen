@@ -91,6 +91,10 @@ afterEach(() => {
 describe("WeekAllergenProfileCard disclosure", () => {
   test("default kollapset — panel skjult, chip-grid ikke i DOM", async () => {
     const container = await renderCard();
+    expect(container.querySelector("#week-allergen-heading")?.textContent).toMatch(/Dine allergener/);
+    expect(container.querySelector("section")?.getAttribute("aria-labelledby")).toBe("week-allergen-heading");
+    expect(container.textContent).toMatch(/Fortell oss hva du ikke tåler/);
+    expect(container.textContent).toMatch(/senke skuldrene og nyte lunsjen/);
     await waitForProfileReady(container);
 
     const summary = summaryButton(container)!;
@@ -215,9 +219,9 @@ describe("WeekAllergenProfileCard disclosure", () => {
     expect(container.textContent).toMatch(/Allergener: ingen oppgitt ✓/);
   });
 
-  test("Melhus-ingress uten konkurrerende h2", async () => {
+  test("Melhus heading og ingress uten wordy disclaimer", async () => {
     const container = await renderCard();
-    expect(container.querySelector("h2")).toBeNull();
+    expect(container.querySelector("h2#week-allergen-heading")?.textContent).toMatch(/Dine allergener/);
     expect(container.textContent).toMatch(/Fortell oss hva du ikke tåler/);
     expect(container.textContent).not.toMatch(/sendes som info til kjøkkenet/);
   });
