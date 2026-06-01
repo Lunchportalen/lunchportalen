@@ -31,6 +31,8 @@ function expectKitchenRowsSingleDeliveryBucket(
 const KITCHEN_ROW_CONTRACT_KEYS = [
   "department",
   "employeeName",
+  "employee_allergen_codes",
+  "employee_allergen_free_text",
   "location",
   "menu_allergens",
   "menu_description",
@@ -62,6 +64,8 @@ function kitchenRowParityPayload(row: any) {
     menu_title: row.menu_title ?? null,
     menu_description: row.menu_description ?? null,
     menu_allergens: row.menu_allergens ?? [],
+    employee_allergen_codes: row.employee_allergen_codes ?? [],
+    employee_allergen_free_text: row.employee_allergen_free_text ?? null,
   };
 }
 
@@ -151,6 +155,7 @@ function makeAdminMock(seed: {
   companies?: any[];
   company_locations?: any[];
   profiles?: any[];
+  lp_user_allergens?: any[];
 }) {
   const db = {
     orders: seed.orders ?? [],
@@ -159,6 +164,7 @@ function makeAdminMock(seed: {
     companies: seed.companies ?? [],
     company_locations: seed.company_locations ?? [],
     profiles: seed.profiles ?? [],
+    lp_user_allergens: seed.lp_user_allergens ?? [],
   };
 
   return {
