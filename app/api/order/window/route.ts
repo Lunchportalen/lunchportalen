@@ -35,6 +35,7 @@ import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
 
@@ -408,14 +409,7 @@ async function loadOrdersByDate(
 
   if (oErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
 
-  const ordersByDate = new Map<string, OrderRow>();
-  for (const o of (ordersRaw ?? []) as OrderRow[]) {
-    const dISO = asDateISO((o as any)?.date);
-    if (!dISO) continue;
-    ordersByDate.set(dISO, o);
-  }
-
-  return ordersByDate;
+  return foldOrdersByDate((ordersRaw ?? []) as OrderRow[], (o) => asDateISO((o as any)?.date));
 }
 
 async function loadDayChoicesByDate(

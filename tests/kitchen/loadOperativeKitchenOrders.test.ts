@@ -189,6 +189,62 @@ describe("loadOperativeKitchenOrders — order_status filter", () => {
     expect(loaded.operative.map((r) => r.id)).toEqual([O1]);
   });
 
+  it("cancel-then-reorder: DB har CANCELLED + ACTIVE — operative er kun ACTIVE med variant (status-filter)", async () => {
+    const O_CANCEL = "4704a693-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const O_ACTIVE = "ec35331c-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const admin = makeChainAdmin({
+      orders: [
+        {
+          id: O_CANCEL,
+          user_id: U1,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          status: "CANCELLED",
+          slot: "default",
+          note: null,
+        },
+        {
+          id: O_ACTIVE,
+          user_id: U1,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          status: "ACTIVE",
+          slot: "default",
+          note: null,
+        },
+      ],
+      day_choices: [
+        {
+          user_id: U1,
+          company_id: CID,
+          location_id: LID,
+          date: DATE,
+          choice_key: "salatboks",
+          item_key: "skinke",
+          item_title_snapshot: null,
+          note: null,
+          updated_at: "2026-06-01T11:19:00.000Z",
+          status: "ACTIVE",
+        },
+      ],
+    });
+
+    const loaded = await loadOperativeKitchenOrders({
+      admin,
+      dateISO: DATE,
+      tenant: { companyId: CID, locationId: LID },
+    });
+
+    expect(loaded.ok).toBe(true);
+    if (loaded.ok !== true) return;
+    expect(loaded.operative.map((r) => r.id)).toEqual([O_ACTIVE]);
+    const dc = loaded.dcMap.get(`${CID}|${LID}|${U1}`);
+    expect(dc?.choice_key).toBe("salatboks");
+    expect(dc?.item_key).toBe("skinke");
+  });
+
   it("inkluderer ikke lowercase active i order_status-filteret", async () => {
     const admin = makeChainAdmin({
       orders: [
