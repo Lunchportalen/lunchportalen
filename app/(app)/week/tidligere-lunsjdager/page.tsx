@@ -99,25 +99,25 @@ export default async function EmployeeTidligereLunsjdagerPage() {
       </p>
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Ukeplan
         </Link>
-        <Link href="/week/min-dag" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/min-dag" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Min dag
         </Link>
-        <Link href="/week/mine-lunsjendringer" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/mine-lunsjendringer" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Mine lunsjendringer
         </Link>
-        <Link href="/week/mine-registrerte-dager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/mine-registrerte-dager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Mine registrerte dager
         </Link>
-        <Link href="/week/bestillingsprofil" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/bestillingsprofil" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Bestillingsprofil
         </Link>
-        <Link href="/orders" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/orders" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Bestillinger
         </Link>
-        <Link href={`/week/ordre/${encodeURIComponent(osloTodayISODate())}`} className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href={`/week/ordre/${encodeURIComponent(osloTodayISODate())}`} className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Ordre i dag
         </Link>
       </div>

@@ -319,8 +319,8 @@ const CARD_TRANSFORM =
 const BASIS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Varmmat"];
 const LUXUS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"];
 const PRIMARY_CTA =
-  "bg-gradient-to-r from-[#f5c518] to-[#ffd43b] text-neutral-950 shadow-[0_16px_40px_rgba(245,197,24,0.32)]";
-const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-[0_10px_26px_rgba(24,20,16,0.06)]";
+  "bg-gradient-to-r from-accent to-accent-gradient-end text-neutral-950 shadow-accent";
+const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-secondary";
 const WEEKDAY_GRID_COLUMN: Record<string, number> = {
   mon: 1,
   tue: 2,
@@ -421,7 +421,7 @@ function isNoTierForDay(day: DayRow) {
 
 function NoTierForDayNotice() {
   return (
-    <div className="rounded-2xl bg-[#faf7ef] px-4 py-4 text-center ring-1 ring-black/5">
+    <div className="rounded-2xl bg-bg-soft px-4 py-4 text-center ring-1 ring-black/5">
       <p className="text-sm font-semibold text-neutral-900">Denne dagen er ikke tilgjengelig for bestilling.</p>
       <p className="mt-1 text-sm text-neutral-600">Kontakt firmaadmin.</p>
     </div>
@@ -972,7 +972,7 @@ function DayMenuSummary({
             Valgt: {highlightLine.body}
           </span>
         ) : highlightLine.mode === "variant_pending" ? (
-          <span className="inline-flex min-h-[32px] items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
+          <span className="inline-flex min-h-chip items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
             Velg variant for {highlightLine.categoryLabel}
           </span>
         ) : null}
@@ -1078,7 +1078,7 @@ function WeekConfirmModal({
     : "motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out";
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 sm:items-center ${shell}`}
+      className={`fixed inset-0 z-modal flex items-end justify-center bg-black/40 p-4 sm:items-center ${shell}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="week-confirm-title"
@@ -1092,7 +1092,7 @@ function WeekConfirmModal({
             type="button"
             disabled={confirming}
             onClick={onCancel}
-            className={`flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-semibold text-neutral-900 disabled:opacity-50 ${BTN_TOUCH}`}
+            className={`flex min-h-touch flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-semibold text-neutral-900 disabled:opacity-50 ${BTN_TOUCH}`}
           >
             Avbryt
           </button>
@@ -1100,7 +1100,7 @@ function WeekConfirmModal({
             type="button"
             disabled={confirming}
             onClick={onConfirm}
-            className={`flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white disabled:opacity-50 ${BTN_TOUCH}`}
+            className={`flex min-h-touch flex-1 items-center justify-center rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white disabled:opacity-50 ${BTN_TOUCH}`}
           >
             {confirming ? (
               <span className="inline-flex items-center gap-2">
@@ -1238,7 +1238,7 @@ function WeekDayRowDesktop({
             <button
               type="button"
               disabled
-              className={`min-h-[48px] w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 sm:w-auto ${BTN_TOUCH}`}
+              className={`min-h-touch w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 sm:w-auto ${BTN_TOUCH}`}
             >
               Frist passert kl. 08:00
             </button>
@@ -1254,7 +1254,7 @@ function WeekDayRowDesktop({
               aria-disabled={readOnlyPreview || !canClick}
               title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
               onClick={readOnlyPreview ? undefined : onRequestCancel}
-              className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
+              className={`flex min-h-cta items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
             >
               {busyThis ? (
                 <>
@@ -1275,7 +1275,7 @@ function WeekDayRowDesktop({
               aria-disabled={readOnlyPreview || !canOrderClick}
               title={primaryTitle}
               onClick={readOnlyPreview ? undefined : onRequestOrder}
-              className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
+              className={`flex min-h-cta items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
             >
               {busyThis ? (
                 <>
@@ -1341,10 +1341,10 @@ const WeekDayCardMobile = memo(
       <div
         role="group"
         aria-label={formatMenuDateNO(day.date)}
-        className={`rounded-[2rem] bg-white/85 p-5 text-center shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
+        className={`rounded-lg bg-white/85 p-5 text-center shadow-soft ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
-            ? "motion-safe:scale-[1.01] ring-[#f5c518]/45"
-            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-[#f5c518]/35 motion-safe:animate-pulse" : ""}`
+            ? "motion-safe:scale-[1.01] ring-accent/45"
+            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-accent/35 motion-safe:animate-pulse" : ""}`
         }`}
       >
         <div
@@ -1360,7 +1360,7 @@ const WeekDayCardMobile = memo(
             if ((e.target as HTMLElement).closest("button")) return;
             onSelectDay();
           }}
-          className="cursor-pointer rounded-[1.5rem] outline-none transition-colors duration-100 active:bg-[#faf7ef] focus-visible:ring-2 focus-visible:ring-[#f5c518]/50"
+          className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-accent/50"
         >
           <div className="flex flex-wrap items-center justify-center gap-2">
             <TierPill tier={day.tier} />
@@ -1425,7 +1425,7 @@ const WeekDayCardMobile = memo(
                 {categories.map((category) => (
                   <div
                     key={category}
-                    className="flex min-h-[48px] items-center gap-3 rounded-2xl bg-[#faf7ef] px-4 text-sm font-semibold text-neutral-900 ring-1 ring-black/5"
+                    className="flex min-h-touch items-center gap-3 rounded-2xl bg-bg-soft px-4 text-sm font-semibold text-neutral-900 ring-1 ring-black/5"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm ring-1 ring-black/5">
                       {category.slice(0, 1)}
@@ -1435,7 +1435,7 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl bg-[#faf7ef] px-4 py-4 text-center ring-1 ring-black/5">
+              <div className="rounded-2xl bg-bg-soft px-4 py-4 text-center ring-1 ring-black/5">
                 <p className="text-sm font-semibold text-neutral-900">Menyen er ikke publisert ennå.</p>
                 <p className="mt-1 text-sm text-neutral-600">Denne dagen er ikke klar for bestilling.</p>
               </div>
@@ -1453,7 +1453,7 @@ const WeekDayCardMobile = memo(
               <button
                 type="button"
                 disabled
-                className={`min-h-[48px] w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 ${BTN_TOUCH}`}
+                className={`min-h-touch w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 ${BTN_TOUCH}`}
               >
                 Frist passert kl. 08:00
               </button>
@@ -1469,7 +1469,7 @@ const WeekDayCardMobile = memo(
                 aria-disabled={readOnlyPreview || !canClick}
                 title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
                 onClick={readOnlyPreview ? undefined : onRequestCancel}
-                className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
+                className={`flex min-h-cta items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
                   <>
@@ -1490,7 +1490,7 @@ const WeekDayCardMobile = memo(
                 aria-disabled={readOnlyPreview || !canOrderClick}
                 title={primaryTitle}
                 onClick={readOnlyPreview ? undefined : onRequestOrder}
-                className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
+                className={`flex min-h-cta w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
                   <>
@@ -2265,7 +2265,7 @@ export default function EmployeeWeekClient({
           <button
             type="button"
             onClick={() => void loadWindow()}
-            className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 ${BTN_TOUCH}`}
+            className={`mt-4 inline-flex min-h-touch items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 ${BTN_TOUCH}`}
           >
             Prøv igjen
           </button>
@@ -2292,8 +2292,8 @@ export default function EmployeeWeekClient({
     <div
       className={`mx-auto w-full px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 ${
         readOnlyPreview
-          ? "max-w-[430px] rounded-[2rem] bg-[#fbf8f1] shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5"
-          : `min-h-dvh max-w-lg bg-[#fbf8f1] md:max-w-2xl`
+          ? "max-w-week-mobile rounded-lg bg-bg shadow-soft ring-1 ring-black/5"
+          : `min-h-dvh max-w-lg bg-bg md:max-w-2xl`
       } ${contentVisible ? "opacity-100" : "opacity-0"}`}
     >
       <WeekConfirmModal
@@ -2411,7 +2411,7 @@ export default function EmployeeWeekClient({
               key={`placeholder-${cell.date}`}
               aria-hidden="true"
               style={{ gridColumnStart, gridRowStart }}
-              className="min-h-[52px] min-w-0 rounded-2xl bg-neutral-50/60 px-2 py-3 text-center select-none"
+              className="min-h-calendar-pill min-w-0 rounded-2xl bg-neutral-50/60 px-2 py-3 text-center select-none"
             >
               <div className="text-xs uppercase tracking-wide text-neutral-400">
                 {weekdayShort}
@@ -2458,7 +2458,7 @@ export default function EmployeeWeekClient({
                   data-date={day.date}
                   data-day-slide=""
                   onClick={() => selectDayFromTap(day.date)}
-                  className="flex min-h-[58px] w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+                  className="flex min-h-day w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-bold capitalize text-neutral-950">

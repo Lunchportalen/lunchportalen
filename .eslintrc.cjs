@@ -38,5 +38,26 @@ module.exports = {
         ],
       },
     },
+    {
+      files: [
+        "app/(app)/week/**/*.{js,jsx,ts,tsx}",
+        "components/employee/**/*.{js,jsx,ts,tsx}",
+      ],
+      plugins: ["design-tokens"],
+      rules: {
+        "design-tokens/no-arbitrary": "error",
+      },
+    },
+    {
+      files: ["app/**/*.{js,jsx,ts,tsx}", "components/**/*.{js,jsx,ts,tsx}"],
+      excludedFiles: [
+        "app/(app)/week/**/*",
+        "components/employee/**/*",
+      ],
+      plugins: ["design-tokens"],
+      rules: {
+        "design-tokens/no-arbitrary": "warn",
+      },
+    },
   ],
 };
