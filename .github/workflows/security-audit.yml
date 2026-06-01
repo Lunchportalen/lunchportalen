@@ -1,5 +1,8 @@
 name: "Security: audit"
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   schedule:
     - cron: "0 7 * * *" # daglig 07:00

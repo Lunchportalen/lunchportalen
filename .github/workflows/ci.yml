@@ -2,6 +2,9 @@
 # All steps blocking: ci:guard → typecheck → lint → test:run → test:tenant → build:enterprise:ci (+ informational audits)
 name: CI
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   push:
     branches: ["main"]

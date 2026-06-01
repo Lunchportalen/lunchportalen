@@ -1,6 +1,9 @@
 # Release gate: npm run ci:critical (docs/RELEASE_GATE.md). PROOF/audit logging; api/repo audits run but do not fail the job (see warnings).
 name: CI Enterprise
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   push:
     branches: ["main"]

@@ -1,5 +1,8 @@
 name: Codex – Critical Audit & Autofix
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   schedule:
     - cron: "0 20 * * *" # hver dag 20:00
