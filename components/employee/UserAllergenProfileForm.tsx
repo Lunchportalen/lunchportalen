@@ -31,7 +31,11 @@ function readProfile(json: ApiEnvelope): LpUserAllergenProfile | null {
   return json.data.profile;
 }
 
-export default function UserAllergenProfileForm() {
+type UserAllergenProfileFormProps = {
+  onProfileChange?: (profile: LpUserAllergenProfile) => void;
+};
+
+export default function UserAllergenProfileForm({ onProfileChange }: UserAllergenProfileFormProps) {
   const [codes, setCodes] = useState<LpAllergenCode[]>([]);
   const [freeText, setFreeText] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -58,6 +62,7 @@ export default function UserAllergenProfileForm() {
       setCodes(normalizeLpAllergenCodes(profile.codes));
       setFreeText(normalizeLpAllergenFreeText(profile.free_text));
       setSaveState("idle");
+      onProfileChange?.(profile);
     } catch {
       setLoadError("Kunne ikke hente allergiprofil.");
       setSaveState("error");
@@ -123,6 +128,7 @@ export default function UserAllergenProfileForm() {
       if (profile) {
         setCodes(normalizeLpAllergenCodes(profile.codes));
         setFreeText(normalizeLpAllergenFreeText(profile.free_text));
+        onProfileChange?.(profile);
       }
       setSaveState("success");
       setSaveMessage("Lagret. Kjøkkenet kan se dette som ekstra info ved produksjon.");
