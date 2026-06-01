@@ -33,6 +33,7 @@ const KITCHEN_ROW_CONTRACT_KEYS = [
   "employeeName",
   "employee_allergen_codes",
   "employee_allergen_free_text",
+  "employee_allergen_profile_status",
   "location",
   "menu_allergens",
   "menu_description",
@@ -66,6 +67,7 @@ function kitchenRowParityPayload(row: any) {
     menu_allergens: row.menu_allergens ?? [],
     employee_allergen_codes: row.employee_allergen_codes ?? [],
     employee_allergen_free_text: row.employee_allergen_free_text ?? null,
+    employee_allergen_profile_status: row.employee_allergen_profile_status ?? "unknown",
   };
 }
 
@@ -1296,5 +1298,75 @@ describe("api/kitchen – production visibility", () => {
     expectKitchenRowsCanonicallySorted(snRows);
     expectKitchenRowsSingleDeliveryBucket(snRows, { slot: "lunch", company: "TestCo", location: "Loc1" });
     for (const r of snRows) expectKitchenRowFieldContract(r);
+  });
+
+  test("employee allergen profile_status: has_data, declared_empty, unknown from lp_user_allergens join", async () => {
+    adminDb = makeAdminMock({
+      ...kSupport,
+      orders: [
+        {
+          id: K_O1,
+          user_id: K_U1,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "lunch",
+          note: null,
+        },
+        {
+          id: K_O2,
+          user_id: K_U2,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "lunch",
+          note: null,
+        },
+      ],
+      lp_user_allergens: [
+        { user_id: K_U1, codes: ["gluten", "milk"], free_text: "test-X" },
+        { user_id: K_U2, codes: [], free_text: "" },
+      ],
+    });
+
+    const res = await kitchenGET(mkReq(`http://localhost/api/kitchen?date=${K_DATE}`, { method: "GET" }));
+    expect(res.status).toBe(200);
+    const body = await readJson(res);
+    const r1 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O1);
+    const r2 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O2);
+    expect(r1?.employee_allergen_profile_status).toBe("has_data");
+    expect(r1?.employee_allergen_codes).toEqual(["gluten", "milk"]);
+    expect(r1?.employee_allergen_free_text).toBe("test-X");
+    expect(r2?.employee_allergen_profile_status).toBe("declared_empty");
+    expect(r2?.employee_allergen_codes).toEqual([]);
+    expect(r2?.employee_allergen_free_text).toBe("");
+  });
+
+  test("employee allergen profile_status unknown when no lp_user_allergens row", async () => {
+    adminDb = makeAdminMock({
+      ...kSupport,
+      orders: [
+        {
+          id: K_O1,
+          user_id: K_U1,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "lunch",
+          note: null,
+        },
+      ],
+      lp_user_allergens: [],
+    });
+
+    const res = await kitchenGET(mkReq(`http://localhost/api/kitchen?date=${K_DATE}`, { method: "GET" }));
+    const body = await readJson(res);
+    const row = (body?.data?.rows ?? [])[0];
+    expect(row?.employee_allergen_profile_status).toBe("unknown");
+    expect(row?.employee_allergen_codes).toEqual([]);
+    expect(row?.employee_allergen_free_text).toBeNull();
   });
 });

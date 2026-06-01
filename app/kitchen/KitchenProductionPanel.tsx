@@ -652,6 +652,7 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
                                 </div>
                               ) : null}
                               <KitchenEmployeeAllergenExtra
+                                status={row.employee_allergen_profile_status}
                                 codes={row.employee_allergen_codes}
                                 free_text={row.employee_allergen_free_text}
                               />
