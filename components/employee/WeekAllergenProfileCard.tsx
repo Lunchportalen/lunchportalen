@@ -9,8 +9,14 @@ export default function WeekAllergenProfileCard() {
       aria-labelledby="week-allergen-heading"
     >
       <h2 id="week-allergen-heading" className="text-base font-semibold tracking-tight text-neutral-950 md:text-lg">
-        Dine allergener — sendes som info til kjøkkenet
+        Dine allergener
       </h2>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-neutral-700">
+        Fortell oss hva du ikke tåler — så tar kjøkkenet hensyn til det når vi lager maten din.
+      </p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-600">
+        Vi vil at alle skal kunne senke skuldrene og nyte lunsjen. Det du krysser av her følger rett til kjøkkenet vårt.
+      </p>
       <UserAllergenProfileForm />
     </section>
   );

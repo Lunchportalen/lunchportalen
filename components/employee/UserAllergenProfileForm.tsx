@@ -112,11 +112,6 @@ export default function UserAllergenProfileForm() {
 
   return (
     <div className="ds-allergen-profile mx-auto w-full px-4 py-6">
-      <p className="mx-auto max-w-md text-sm text-[rgb(var(--lp-muted))]">
-        Oppgi allergener du vil at kjøkkenet skal se som ekstra informasjon. Dette er ikke knyttet til rett-allergener i
-        menyen og er ikke en garanti — kun det du selv velger å dele.
-      </p>
-
       {loadError ? (
         <p className="mt-4 text-sm text-red-800" role="alert">
           {loadError}
@@ -124,8 +119,8 @@ export default function UserAllergenProfileForm() {
       ) : null}
 
       <fieldset className="ds-allergen-fieldset mt-6">
-        <legend>Allergener (EU-14)</legend>
-        <div className="ds-allergen-chip-grid" role="group" aria-label="Velg allergener">
+        <legend>Hva er du allergisk mot?</legend>
+        <div className="ds-allergen-chip-grid" role="group" aria-label="Hva er du allergisk mot?">
           {LP_ALLERGEN_CODES.map((code) => (
             <button
               key={code}
@@ -143,7 +138,7 @@ export default function UserAllergenProfileForm() {
 
       <div className="mt-8 text-left">
         <label htmlFor="allergen-free-text" className="block text-sm font-semibold text-neutral-900">
-          Synlig for kjøkkenet som ekstra info
+          Er det noe mer vi bør vite?
         </label>
         <textarea
           id="allergen-free-text"
@@ -154,7 +149,7 @@ export default function UserAllergenProfileForm() {
           rows={4}
           disabled={saveDisabled}
           aria-describedby={charCountId}
-          placeholder="Valgfritt, f.eks. kryssreaksjon eller preferanser kjøkken bør kjenne til."
+          placeholder="F.eks. kryssreaksjoner eller noe kjøkkenet bør være ekstra obs på."
         />
         <p id={charCountId} className="ds-allergen-char-count" aria-live="polite">
           {charCount} / {LP_USER_ALLERGEN_FREE_TEXT_MAX} tegn
