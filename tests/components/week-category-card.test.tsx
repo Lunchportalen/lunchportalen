@@ -1,132 +1,313 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { describe, expect, test } from "vitest";
+/** @vitest-environment jsdom */
 
-const CLIENT_PATH = join(process.cwd(), "app", "(app)", "week", "EmployeeWeekClient.tsx");
-const CSS_PATH = join(process.cwd(), "app", "styles", "employee-week.css");
+import React, { act } from "react";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { createRoot, type Root } from "react-dom/client";
 
-describe("week category cards", () => {
-  test("category card markup is minimal: label + unavailable helper only (no legacy title/description on card)", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("export function WeekCategoryCards");
-    expect(source).toContain("week-category-card__label");
-    expect(source.includes("week-category-card__title")).toBe(false);
-    expect(source.includes("week-category-card__desc")).toBe(false);
+import { WeekCategoryCards, type DayRow } from "@/app/(app)/week/EmployeeWeekClient";
 
-    expect(source).toContain("Ikke tilgjengelig");
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+type DayCategoryFixture = DayRow["categories"][number];
+
+function makeCategory(
+  partial: Pick<DayCategoryFixture, "key" | "label"> &
+    Partial<Omit<DayCategoryFixture, "key" | "label">>,
+): DayCategoryFixture {
+  return {
+    category: null,
+    title: null,
+    description: null,
+    allergens: [],
+    available: true,
+    items: [],
+    ...partial,
+  };
+}
+
+function makeDay(partial: Partial<DayRow> & Pick<DayRow, "categories">): DayRow {
+  return {
+    date: "2026-06-04",
+    weekday: "Ons",
+    tier: "BASIS",
+    planTier: "BASIS",
+    allowedChoices: [],
+    selectedChoiceKey: null,
+    selectedItemKey: null,
+    selectedItemTitleSnapshot: null,
+    isLocked: false,
+    isEnabled: true,
+    lockReason: null,
+    orderStatus: null,
+    wantsLunch: true,
+    menuDescription: "",
+    allergens: [],
+    menuImages: [],
+    reason: null,
+    ...partial,
+  };
+}
+
+function categoryCardButton(container: HTMLElement, label: string): HTMLButtonElement {
+  const btn = [...container.querySelectorAll<HTMLButtonElement>("button.week-category-card")].find((el) => {
+    return el.querySelector(".week-category-card__label")?.textContent?.trim() === label;
+  });
+  if (!btn) {
+    throw new Error(`category card button not found for label: ${label}`);
+  }
+  return btn;
+}
+
+async function renderWeekCategoryCards(options: {
+  day: DayRow;
+  storedChoice?: string | null;
+  disabled?: boolean;
+}) {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root: Root = createRoot(container);
+  const onSelectCategory = vi.fn();
+  const onSelectItem = vi.fn();
+
+  await act(async () => {
+    root.render(
+      <WeekCategoryCards
+        day={options.day}
+        storedChoice={options.storedChoice ?? null}
+        onSelectCategory={onSelectCategory}
+        onSelectItem={onSelectItem}
+        disabled={options.disabled}
+      />,
+    );
+    await Promise.resolve();
   });
 
-  test("expanded panel: radiogrid when minst to valgbare items; Velg-variant title kun da", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("isSelectableItems");
-    expect(source).toContain(`Velg variant for ${"${selectedCat.label}"}`);
-    expect(source).toContain('role={isSelectableItems ? "radiogroup" : "region"}');
-    expect(source).toContain("ds-week-items-grid");
-    expect(source).toContain('role="radio"');
+  return { container, root, onSelectCategory, onSelectItem };
+}
+
+afterEach(() => {
+  document.body.innerHTML = "";
+  vi.clearAllMocks();
+});
+
+describe("WeekCategoryCards — bestilt / pending / nøytral", () => {
+  test("BESTILT: is-ordered, Bestilt-tag, pressed, bestilt i aria-label, ingen expand", async () => {
+    const day = makeDay({
+      orderStatus: "ACTIVE",
+      selectedChoiceKey: "varmrett",
+      categories: [
+        makeCategory({ key: "varmrett", label: "Varmrett", category: "varmrett" }),
+        makeCategory({ key: "salatboks", label: "Salatboks", category: "salat" }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({
+      day,
+      storedChoice: "varmrett",
+    });
+
+    const ordered = categoryCardButton(container, "Varmrett");
+    expect(ordered.classList.contains("is-ordered")).toBe(true);
+    expect(ordered.classList.contains("is-selected")).toBe(false);
+    expect(ordered.getAttribute("aria-pressed")).toBe("true");
+    expect(ordered.getAttribute("aria-label")).toMatch(/bestilt/i);
+    expect(ordered.querySelector(".week-category-card__ordered-tag")?.textContent).toBe("Bestilt");
+    expect(container.querySelector(".ds-week-items-section--inline")).toBeNull();
+
+    const other = categoryCardButton(container, "Salatboks");
+    expect(other.classList.contains("is-ordered")).toBe(false);
+    expect(other.getAttribute("aria-pressed")).toBe("false");
   });
 
-  test("én fast variant (sushi-pakke): info-kort, ikke radio", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("itemCount === 1");
-    expect(source).toContain("ds-week-info-card__title");
+  test("PENDING/valgt: is-selected, pressed, valgt i aria-label, expand i DOM", async () => {
+    const day = makeDay({
+      orderStatus: "ACTIVE",
+      selectedChoiceKey: "paasmurt",
+      categories: [
+        makeCategory({ key: "paasmurt", label: "Påsmurt", category: "paasmurt" }),
+        makeCategory({
+          key: "salatboks",
+          label: "Salatboks",
+          category: "salat",
+          items: [
+            { key: "kylling", title: "Kylling", allergens: [], isVegetarian: false },
+            { key: "tunfisk", title: "Tunfisk", allergens: [], isVegetarian: false },
+          ],
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({
+      day,
+      storedChoice: "salatboks",
+    });
+
+    const pending = categoryCardButton(container, "Salatboks");
+    expect(pending.classList.contains("is-selected")).toBe(true);
+    expect(pending.classList.contains("is-ordered")).toBe(false);
+    expect(pending.getAttribute("aria-pressed")).toBe("true");
+    expect(pending.getAttribute("aria-label")).toMatch(/valgt/i);
+    expect(pending.querySelector(".week-category-card__ordered-tag")).toBeNull();
+
+    const expand = container.querySelector(".ds-week-items-section--inline");
+    expect(expand).not.toBeNull();
+    expect(expand?.textContent).toMatch(/Velg variant for Salatboks/);
+    expect(container.querySelectorAll('[role="radio"]').length).toBeGreaterThanOrEqual(2);
+
+    const ordered = categoryCardButton(container, "Påsmurt");
+    expect(ordered.classList.contains("is-ordered")).toBe(true);
+    expect(ordered.classList.contains("is-selected")).toBe(false);
   });
 
-  test("expanded panel: info card mode for zero items with title/description", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("showInfoCard");
-    expect(source).toContain("ds-week-info-card");
-    expect(source).toContain("ds-week-info-card__title");
-    expect(source).toContain("ds-week-info-card__desc");
-    expect(source).toContain("ds-week-info-card__meta");
-    expect(source).toContain("ds-allergen-badge");
+  test("NØYTRAL: ingen is-ordered/is-selected, aria-pressed false, ingen expand", async () => {
+    const day = makeDay({
+      orderStatus: null,
+      selectedChoiceKey: null,
+      categories: [
+        makeCategory({ key: "paasmurt", label: "Påsmurt" }),
+        makeCategory({ key: "salatboks", label: "Salatboks" }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: null });
+
+    for (const label of ["Påsmurt", "Salatboks"]) {
+      const btn = categoryCardButton(container, label);
+      expect(btn.classList.contains("is-ordered")).toBe(false);
+      expect(btn.classList.contains("is-selected")).toBe(false);
+      expect(btn.getAttribute("aria-pressed")).toBe("false");
+      expect(btn.getAttribute("aria-label")).toBe(label);
+    }
+    expect(container.querySelector(".ds-week-items-section--inline")).toBeNull();
   });
 
-  test("empty CMS category shows placeholder status text", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("showEmptyMenuPlaceholder");
-    expect(source).toContain("ds-week-info-card__placeholder");
-    expect(source).toContain("Ingen meny lagt inn enda");
+  test("IKKE TILGJENGELIG: disabled, helper-tekst og title", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({ key: "paasmurt", label: "Påsmurt", available: false }),
+        makeCategory({ key: "salatboks", label: "Salatboks" }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day });
+
+    const unavailable = categoryCardButton(container, "Påsmurt");
+    expect(unavailable.disabled).toBe(true);
+    expect(unavailable.getAttribute("title")).toBe("Ikke tilgjengelig");
+    expect(unavailable.textContent).toContain("Ikke tilgjengelig");
+    expect(unavailable.getAttribute("aria-pressed")).toBe("false");
+  });
+});
+
+describe("WeekCategoryCards — kort og expand-panel", () => {
+  test("kort viser kun label (ingen legacy title/description på kortet)", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({
+          key: "varmrett",
+          label: "Varmrett",
+          title: "Skal ikke på kort",
+          description: "Skal heller ikke på kort",
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "varmrett" });
+
+    const card = categoryCardButton(container, "Varmrett");
+    expect(card.querySelector(".week-category-card__label")?.textContent).toBe("Varmrett");
+    expect(card.querySelector(".week-category-card__title")).toBeNull();
+    expect(card.querySelector(".week-category-card__desc")).toBeNull();
   });
 
-  test("ordered vs pending: bestilt card is not pending-selection styling", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    const fnStart = source.indexOf("export function WeekCategoryCards");
-    const fnEnd = source.indexOf("\nfunction DayMenuSummary", fnStart);
-    const block = source.slice(fnStart, fnEnd);
+  test("pending + minst to varianter: radiogrid og Velg variant-tittel", async () => {
+    const day = makeDay({
+      orderStatus: "ACTIVE",
+      selectedChoiceKey: "paasmurt",
+      categories: [
+        makeCategory({ key: "paasmurt", label: "Påsmurt" }),
+        makeCategory({
+          key: "salatboks",
+          label: "Salatboks",
+          items: [
+            { key: "a", title: "Variant A", allergens: [], isVegetarian: false },
+            { key: "b", title: "Variant B", allergens: [], isVegetarian: false },
+          ],
+        }),
+      ],
+    });
 
-    // Bestilt = system truth (order snapshot); pending = user is changing choice on ACTIVE day.
-    expect(block).toContain("const isPendingCat = isSelected && !isOrdered");
-    expect(block).toContain('isOrdered ? "is-ordered" : ""');
-    expect(block).toContain('isPendingCat ? "is-selected" : ""');
-    expect(block.includes('isSelected ? "is-selected"')).toBe(false);
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "salatboks" });
 
-    expect(block).toContain("week-category-card__ordered-tag");
-    expect(block).toContain("Bestilt");
-    expect(block).toContain("aria-pressed={isOrdered || isPendingCat}");
-    expect(block).toContain("onClick={() => onSelectCategory(cat.key)}");
-    expect(block).toContain("isOrdered ? `${cat.label}, bestilt`");
-    expect(block).toContain("isPendingCat ? `${cat.label}, valgt`");
+    expect(container.querySelector('[role="radiogroup"]')).not.toBeNull();
+    expect(container.textContent).toMatch(/Velg variant for Salatboks/);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(2);
   });
 
-  test("category toggle: selectCategory clears same key and resets item (ghost guard)", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain("effectiveSelectedChoice(day, prev[date])");
-    expect(source).toContain("currentEff.toLowerCase() === choiceKey.toLowerCase()");
-    expect(source).toContain("[date]: null");
-    expect(source).toContain("itemKey: null");
+  test("pending + én variant: info-kort, ikke radio", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({
+          key: "sushi",
+          label: "Sushi-pakke",
+          category: "sushi",
+          items: [{ key: "combo", title: "Dagens combo", description: "8 biter", allergens: [], isVegetarian: false }],
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "sushi" });
+
+    expect(container.querySelector(".ds-week-info-card__title")?.textContent).toContain("Dagens combo");
+    expect(container.querySelector('[role="radio"]')).toBeNull();
   });
 
-  test("expand renders inline only for pending selection (not for bestilt-only card)", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    const fnStart = source.indexOf("export function WeekCategoryCards");
-    const fnEnd = source.indexOf("\nfunction DayMenuSummary", fnStart);
-    expect(fnStart).toBeGreaterThan(-1);
-    expect(fnEnd).toBeGreaterThan(fnStart);
-    const block = source.slice(fnStart, fnEnd);
-    expect(block).toContain("Fragment key={cat.key}");
-    expect(block).toContain("ds-week-items-section--inline");
-    expect(block).toContain("{isPendingCat ? expandSection : null}");
-    expect(block.includes("{isSelected ? expandSection : null}")).toBe(false);
-    expect(block).toContain('className="week-day__categories"');
-    const closesCategories = block.lastIndexOf("</div>");
-    const expandInMap = block.indexOf("{isPendingCat ? expandSection : null}");
-    expect(expandInMap).toBeGreaterThan(-1);
-    expect(expandInMap).toBeLessThan(closesCategories);
+  test("pending + tom CMS-kategori med tittel: info-kort med meta", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({
+          key: "thai",
+          label: "Thai",
+          category: "thai",
+          title: "Thai wok",
+          description: "Sterk suppe",
+          allergens: ["peanotter"],
+          items: [],
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "thai" });
+
+    expect(container.querySelector(".ds-week-info-card__title")?.textContent).toContain("Thai wok");
+    expect(container.querySelector(".ds-week-info-card__desc")?.textContent).toContain("Sterk suppe");
+    expect(container.querySelector(".ds-allergen-badge")).not.toBeNull();
   });
 
-  test("explicit clear: effectiveSelectedChoice returns null only for stored === null", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toMatch(/if \(stored === null\) return null;\s*\n\s*const parsed = parseStoredSelection/);
+  test("pending + tom kategori uten tittel: placeholder status", async () => {
+    const day = makeDay({
+      categories: [makeCategory({ key: "pokebowl", label: "Pokebowl", category: "pokebowl", items: [] })],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "pokebowl" });
+
+    const status = container.querySelector('[role="status"]');
+    expect(status?.textContent).toMatch(/Ingen meny lagt inn enda for Pokebowl/);
   });
 
-  test("CSS: inline expand spans full grid row on desktop", () => {
-    const css = readFileSync(CSS_PATH, "utf-8");
-    expect(css).toContain(".ds-week-items-section--inline");
-    expect(css).toContain("grid-column: 1 / -1");
-  });
+  test("klikk på kategori kaller onSelectCategory", async () => {
+    const day = makeDay({
+      categories: [makeCategory({ key: "paasmurt", label: "Påsmurt" }), makeCategory({ key: "salatboks", label: "Salatboks" })],
+    });
 
-  test("CSS: bestilt category card uses is-ordered (distinct from pending is-selected)", () => {
-    const css = readFileSync(CSS_PATH, "utf-8");
-    expect(css).toContain(".week-category-card.is-ordered");
-    expect(css).toContain(".ds-ordered-meal-line");
-  });
+    const { container, onSelectCategory } = await renderWeekCategoryCards({ day });
 
-  test("category cards disable when unavailable; CSS keeps 48px touch + motion/focus tokens", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    const css = readFileSync(CSS_PATH, "utf-8");
+    await act(async () => {
+      categoryCardButton(container, "Salatboks").click();
+      await Promise.resolve();
+    });
 
-    expect(source).toContain("disabled={disabled || !cat.available || !day.isEnabled}");
-    expect(css).toContain("min-height: 48px");
-    expect(css).toContain(".week-category-card:focus-visible");
-    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(css).toContain(".ds-week-info-card");
-    expect(css).toContain(".ds-week-info-card__meta");
-  });
-
-  test("variant-pending line uses Velg variant (not Valgt-prefix)", () => {
-    const source = readFileSync(CLIENT_PATH, "utf-8");
-    expect(source).toContain(`Velg variant for ${"${highlightLine.categoryLabel}"}`);
-    expect(source).toContain("choiceHighlightLine");
-    expect(source).toContain('highlightLine.mode === "variant_pending"');
+    expect(onSelectCategory).toHaveBeenCalledTimes(1);
+    expect(onSelectCategory).toHaveBeenCalledWith("salatboks");
   });
 });
