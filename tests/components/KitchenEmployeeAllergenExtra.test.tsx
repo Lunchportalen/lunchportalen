@@ -76,4 +76,34 @@ describe("KitchenEmployeeAllergenExtra", () => {
     expect(container.textContent).toMatch(/Gluten/);
     expect(container.textContent).toMatch(/Test/);
   });
+
+  test("print variant uses monochrome box styling (not status-colored backgrounds)", async () => {
+    for (const status of ["has_data", "declared_empty", "unknown"] as const) {
+      const container = await renderExtra({ variant: "print", status });
+      const box = container.querySelector(`[data-allergen-variant="print"]`);
+      expect(box?.className).toMatch(/bg-white/);
+      expect(box?.className).toMatch(/border-slate-500/);
+      expect(box?.className).not.toMatch(/bg-sky-/);
+      expect(box?.className).not.toMatch(/bg-emerald-/);
+      expect(box?.className).not.toMatch(/bg-amber-/);
+    }
+  });
+
+  test("print variant: three states remain text-distinct under simulated grayscale", async () => {
+    const labels: string[] = [];
+    for (const status of ["has_data", "declared_empty", "unknown"] as const) {
+      const container = await renderExtra({
+        variant: "print",
+        status,
+        codes: status === "has_data" ? ["gluten"] : [],
+        free_text: status === "has_data" ? "Test" : "",
+      });
+      container.style.filter = "grayscale(100%)";
+      labels.push(container.textContent?.replace(/\s+/g, " ").trim() ?? "");
+    }
+    expect(new Set(labels).size).toBe(3);
+    expect(labels[0]).toMatch(/Ansatt har oppgitt/);
+    expect(labels[1]).toMatch(/Ingen allergener oppgitt/);
+    expect(labels[2]).toMatch(/Ikke utfylt \/ ukjent/);
+  });
 });

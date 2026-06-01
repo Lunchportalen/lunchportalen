@@ -54,11 +54,10 @@ const PANEL_STYLES: Record<KitchenEmployeeAllergenProfileStatus, string> = {
   unknown: "border-amber-300 bg-amber-50/95 text-amber-950",
 };
 
-const PRINT_STYLES: Record<KitchenEmployeeAllergenProfileStatus, string> = {
-  has_data: "border-sky-300 bg-sky-50 text-sky-950",
-  declared_empty: "border-emerald-400 bg-emerald-50 text-emerald-950",
-  unknown: "border-amber-400 bg-amber-50 text-amber-950",
-};
+/** Print: monochrome-safe — distinction via icon + label only (survives B&W / grayscale). */
+const PRINT_BOX_CLASS =
+  "border border-slate-500 bg-white text-slate-900 print:border-black print:bg-white print:text-black";
+const PRINT_TITLE_CLASS = "text-slate-900 print:text-black";
 
 export default function KitchenEmployeeAllergenExtra({
   status: statusProp,
@@ -70,8 +69,22 @@ export default function KitchenEmployeeAllergenExtra({
   const normalized = normalizeLpAllergenCodes(codes ?? []);
   const text = String(free_text ?? "").trim();
   const copy = STATE_COPY[status];
-  const boxClass = variant === "print" ? PRINT_STYLES[status] : PANEL_STYLES[status];
   const compact = variant === "print";
+  const boxClass = compact ? PRINT_BOX_CLASS : PANEL_STYLES[status];
+  const titleClass = compact
+    ? PRINT_TITLE_CLASS
+    : status === "has_data"
+      ? "text-sky-900"
+      : status === "declared_empty"
+        ? "text-emerald-900"
+        : "text-amber-900";
+  const bodyClass = compact
+    ? "text-slate-800 print:text-black"
+    : status === "has_data"
+      ? "text-sky-900/90"
+      : status === "declared_empty"
+        ? "text-emerald-900/90"
+        : "text-amber-900/90";
 
   return (
     <div
@@ -79,33 +92,18 @@ export default function KitchenEmployeeAllergenExtra({
       role="region"
       aria-label={copy.aria}
       data-allergen-profile-status={status}
+      data-allergen-variant={variant}
     >
       <p
-        className={`font-bold uppercase tracking-wide ${compact ? "text-[10px]" : "text-xs"} ${
-          status === "has_data"
-            ? "text-sky-900"
-            : status === "declared_empty"
-              ? "text-emerald-900"
-              : "text-amber-900"
-        }`}
+        className={`font-bold uppercase tracking-wide ${compact ? "text-[10px]" : "text-xs"} ${titleClass}`}
       >
-        <span aria-hidden="true" className="mr-1.5">
+        <span aria-hidden="true" className="mr-1.5 font-bold">
           {copy.icon}
         </span>
         {copy.title}
       </p>
       {!compact ? (
-        <p
-          className={`mt-1 text-xs ${
-            status === "has_data"
-              ? "text-sky-900/90"
-              : status === "declared_empty"
-                ? "text-emerald-900/90"
-                : "text-amber-900/90"
-          }`}
-        >
-          {copy.body}
-        </p>
+        <p className={`mt-1 text-xs ${bodyClass}`}>{copy.body}</p>
       ) : null}
       {status === "has_data" && normalized.length > 0 ? (
         <ul className={`list-none space-y-0.5 ${compact ? "mt-1" : "mt-2"} ${compact ? "text-xs" : "text-sm"}`}>
