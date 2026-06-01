@@ -85,6 +85,34 @@ async function runA() {
     r3.text,
   );
 
+  const r3b = await request("POST", "/api/content/global/header", {
+    body: { action: "save", data: { nav: [] } },
+  });
+  record(
+    "A3b",
+    "A",
+    "POST content/global/header uten cookie",
+    "/api/content/global/header",
+    "POST",
+    "401",
+    String(r3b.status),
+    r3b.status === 401,
+    r3b.text,
+  );
+
+  const r3c = await request("GET", "/api/content/global/header");
+  record(
+    "A3c",
+    "A",
+    "GET content/global/header uten cookie (public chrome)",
+    "/api/content/global/header",
+    "GET",
+    "200",
+    String(r3c.status),
+    r3c.status === 200,
+    r3c.text,
+  );
+
   const r4 = await request("GET", "/api/auth/debug-cookies");
   record(
     "A4",
