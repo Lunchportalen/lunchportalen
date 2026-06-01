@@ -35,6 +35,31 @@ describe("KitchenEmployeeAllergenExtra", () => {
     expect(container.textContent).toMatch(/Ikke garanti/);
   });
 
+  test("has_data: renders specific undertype labels, not generic parent when subtype present", async () => {
+    const container = await renderExtra({
+      status: "has_data",
+      codes: ["gluten", "gluten_wheat", "tree_nuts", "nut_hazelnut"],
+      free_text: "",
+    });
+
+    expect(container.textContent).toMatch(/Hvete/);
+    expect(container.textContent).toMatch(/Hasselnøtt/);
+    expect(container.textContent).not.toMatch(/\bGluten\b/);
+    expect(container.textContent).not.toMatch(/\bNøtter\b/);
+  });
+
+  test("print variant renders specific undertype labels", async () => {
+    const container = await renderExtra({
+      variant: "print",
+      status: "has_data",
+      codes: ["gluten_wheat", "nut_walnut"],
+      free_text: "",
+    });
+
+    expect(container.textContent).toMatch(/Hvete/);
+    expect(container.textContent).toMatch(/Valnøtt/);
+  });
+
   test("declared_empty: always renders distinct empty state", async () => {
     const container = await renderExtra({ status: "declared_empty", codes: [], free_text: "" });
 

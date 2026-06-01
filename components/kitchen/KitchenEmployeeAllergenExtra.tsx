@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  formatLpAllergenCodesForKitchen,
+  allergenCodesForKitchenDisplay,
+  labelLpAllergenCodeForKitchen,
   normalizeLpAllergenCodes,
   resolveEmployeeAllergenProfileStatus,
   type KitchenEmployeeAllergenProfileStatus,
@@ -66,7 +67,7 @@ export default function KitchenEmployeeAllergenExtra({
   variant = "panel",
 }: KitchenEmployeeAllergenExtraProps) {
   const status = resolveStatus({ status: statusProp, codes, free_text });
-  const normalized = normalizeLpAllergenCodes(codes ?? []);
+  const normalized = allergenCodesForKitchenDisplay(normalizeLpAllergenCodes(codes ?? []));
   const text = String(free_text ?? "").trim();
   const copy = STATE_COPY[status];
   const compact = variant === "print";
@@ -112,7 +113,7 @@ export default function KitchenEmployeeAllergenExtra({
               <span className="font-semibold" aria-hidden="true">
                 ✓
               </span>
-              <span>{formatLpAllergenCodesForKitchen([code])}</span>
+              <span>{labelLpAllergenCodeForKitchen(code)}</span>
             </li>
           ))}
         </ul>

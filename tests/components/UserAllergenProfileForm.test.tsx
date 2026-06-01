@@ -108,6 +108,105 @@ describe("UserAllergenProfileForm", () => {
     expect(typeof body.free_text).toBe("string");
   });
 
+  test("gluten selected expands kornslag fieldset and saves undertyper in PUT", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/me/user-allergens" && (!init?.method || init.method === "GET")) {
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              rid: "r1",
+              data: { profile: { user_id: "u1", codes: [], free_text: "", updated_at: null } },
+            }),
+            { status: 200 },
+          );
+        }
+        if (url === "/api/me/user-allergens" && init?.method === "PUT") {
+          const body = JSON.parse(String(init.body));
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              rid: "r2",
+              data: { profile: { user_id: "u1", codes: body.codes, free_text: body.free_text, updated_at: "2026-01-01" } },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({ ok: false }), { status: 500 });
+      }),
+    );
+
+    const container = await renderForm();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const gluten = [...container.querySelectorAll<HTMLButtonElement>(".ds-allergen-chip")].find((b) =>
+      b.textContent?.includes("Gluten"),
+    );
+    await act(async () => {
+      gluten!.click();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toMatch(/Velg kornslag/);
+    const wheat = [...container.querySelectorAll<HTMLButtonElement>(".ds-allergen-chip")].find((b) =>
+      b.textContent?.includes("Hvete"),
+    );
+    expect(wheat).toBeTruthy();
+    await act(async () => {
+      wheat!.click();
+      await Promise.resolve();
+    });
+
+    const saveBtn = container.querySelector<HTMLButtonElement>("button.lp-btn--primary");
+    await act(async () => {
+      saveBtn!.click();
+      await Promise.resolve();
+    });
+
+    const putCall = vi.mocked(fetch).mock.calls.find((c) => c[0] === "/api/me/user-allergens" && c[1]?.method === "PUT");
+    const body = JSON.parse(String(putCall![1]?.body));
+    expect(body.codes).toContain("gluten");
+    expect(body.codes).toContain("gluten_wheat");
+  });
+
+  test("tree_nuts selected expands nøttetype fieldset", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/me/user-allergens" && (!init?.method || init.method === "GET")) {
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              rid: "r1",
+              data: { profile: { user_id: "u1", codes: [], free_text: "", updated_at: null } },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({ ok: false }), { status: 500 });
+      }),
+    );
+
+    const container = await renderForm();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const nuts = [...container.querySelectorAll<HTMLButtonElement>(".ds-allergen-chip")].find((b) =>
+      b.textContent?.includes("Nøtter"),
+    );
+    await act(async () => {
+      nuts!.click();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toMatch(/Velg type nøtt/);
+    expect(container.textContent).toMatch(/Hasselnøtt/);
+  });
+
   test("PUT 500 shows error state, never success styling", async () => {
     vi.stubGlobal(
       "fetch",
