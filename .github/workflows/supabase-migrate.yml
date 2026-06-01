@@ -1,5 +1,8 @@
 name: Supabase Migrate + Verify + Evidence + Typegen
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   pull_request:
     branches: [ "**" ]

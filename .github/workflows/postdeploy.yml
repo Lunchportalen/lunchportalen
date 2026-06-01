@@ -1,5 +1,8 @@
 name: postdeploy-gate
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   workflow_run:
     workflows: ["CI (AGENTS gate)"]

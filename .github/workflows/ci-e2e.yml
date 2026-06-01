@@ -1,6 +1,9 @@
 # Browser E2E + visual regression (Phase 6 — dedicated workflow; ci-enterprise unchanged)
 name: CI E2E
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 # Ingen paths-filter — e2e er required check på main; en paths-filtrert required check dødlåser PR-er som ikke matcher pathene.
 on:
   push:

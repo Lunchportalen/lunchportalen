@@ -1,6 +1,9 @@
 # Autonomous audit → tasks → (optional) fix → validate. PR only; never pushes to main.
 name: Auto Engineer
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   workflow_dispatch:
 

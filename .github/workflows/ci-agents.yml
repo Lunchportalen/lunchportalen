@@ -1,5 +1,8 @@
 name: CI (AGENTS gate)
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   pull_request:
     paths: &nextjs_ci_paths

@@ -7,23 +7,11 @@ import "../lib/ui/motion.css";
 import "../lib/ui/design.css";
 
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 
 import DevOverflowGuard from "@/components/DevOverflowGuard";
 import AttributionCapture from "@/components/revenue/AttributionCapture";
-
-/* =========================================================
-   Fonts
-========================================================= */
-const fontBody = Manrope({ subsets: ["latin"], variable: "--lp-font-body", display: "swap" });
-const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--lp-font-display", display: "swap" });
-const fontHeading = Inter({
-  subsets: ["latin"],
-  variable: "--lp-font-heading",
-  display: "swap",
-  weight: ["600", "700"],
-});
+import { fontBody, fontDisplay, fontHeading } from "@/app/fonts/fonts";
 
 /* =========================================================
    Metadata

@@ -1,5 +1,8 @@
 name: Deps – Weekly update PR
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   schedule:
     - cron: "0 6 * * 1" # mandag 06:00
