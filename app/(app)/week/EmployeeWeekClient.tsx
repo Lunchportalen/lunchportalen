@@ -19,6 +19,7 @@ import {
   weekdayKeyFromDateISO,
 } from "@/lib/week/orderPatternsClient";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
+import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 
 const API_ORDER = "/api/order";
 
@@ -568,6 +569,22 @@ function selectedChoiceLabel(day: DayRow) {
   return selected?.label ?? day.selectedChoiceKey;
 }
 
+/** ACTIVE order line — «Kategori – variant» (CMS items / snapshot, not raw slug). */
+export function orderedMealDisplayLine(day: DayRow): string | null {
+  return buildOrderedMealDisplayLine(day);
+}
+
+function OrderedMealStatusLine({ day, className = "" }: { day: DayRow; className?: string }) {
+  const body = orderedMealDisplayLine(day);
+  if (day.orderStatus !== "ACTIVE" || !body) return null;
+  return (
+    <p className={`ds-ordered-meal-line ${className}`.trim()} role="status">
+      <span className="ds-ordered-meal-line__prefix">Bestilt:</span>{" "}
+      <span className="ds-ordered-meal-line__body">{body}</span>
+    </p>
+  );
+}
+
 function parseStoredSelection(stored: WeekChoiceStored): DayChoiceSelection | null {
   if (stored == null) return null;
   if (typeof stored === "string") {
@@ -622,6 +639,18 @@ function choiceRequired(day: DayRow) {
   return day.categories.filter((c) => c.available).length > 1;
 }
 
+function singleCategoryItemDefault(cat: DayCategory | undefined): DayChoiceSelection | null {
+  if (!cat?.items?.length || cat.items.length !== 1) return null;
+  const it = cat.items[0]!;
+  const ik = String(it.key ?? "").trim();
+  if (!ik) return null;
+  return {
+    categoryKey: cat.key,
+    itemKey: ik,
+    itemTitle: String(it.title ?? "").trim() || null,
+  };
+}
+
 function variantPickSatisfied(day: DayRow, stored: WeekChoiceStored): boolean {
   const ck = effectiveSelectedChoice(day, stored);
   if (!ck) return true;
@@ -674,6 +703,10 @@ type ChoiceHighlightLine =
   | { mode: "valgt_body"; body: string };
 
 function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighlightLine {
+  if (day.orderStatus === "ACTIVE") {
+    const ordered = orderedMealDisplayLine(day);
+    return ordered ? { mode: "valgt_body", body: ordered } : { mode: "none" };
+  }
   const ck = effectiveSelectedChoice(day, stored);
   if (!ck) return { mode: "none" };
   const cat = day.categories.find((c) => c.key.toLowerCase() === ck.toLowerCase());
@@ -724,10 +757,19 @@ export function WeekCategoryCards({
   if (isNoTierForDay(day)) return null;
   if (!day.categories.length) return null;
   const selectedKey = effectiveSelectedChoice(day, storedChoice);
+  const orderedChoiceKey =
+    day.orderStatus === "ACTIVE" && day.selectedChoiceKey
+      ? String(day.selectedChoiceKey).trim().toLowerCase()
+      : null;
   const selectedCat = selectedKey
     ? day.categories.find((c) => c.key.toLowerCase() === selectedKey.toLowerCase())
     : undefined;
-  const showExpandedPanel = Boolean(selectedCat && selectedCat.available && day.isEnabled && !disabled);
+  const isPendingSelection = Boolean(
+    selectedKey && selectedCat && (!orderedChoiceKey || selectedCat.key.toLowerCase() !== orderedChoiceKey),
+  );
+  const showExpandedPanel = Boolean(
+    selectedCat && selectedCat.available && day.isEnabled && !disabled && isPendingSelection,
+  );
 
   const itemCount = selectedCat?.items?.length ?? 0;
   const hasCategoryHeadline =
@@ -863,21 +905,34 @@ export function WeekCategoryCards({
   return (
     <div className="week-day__categories" aria-label="Velg kategori">
       {day.categories.map((cat) => {
-        const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === cat.key.toLowerCase());
+        const keyLower = cat.key.toLowerCase();
+        const isOrdered = Boolean(orderedChoiceKey && orderedChoiceKey === keyLower);
+        const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === keyLower);
+        const isPendingCat = isSelected && !isOrdered;
         return (
           <Fragment key={cat.key}>
             <button
               type="button"
-              className={`week-category-card ${isSelected ? "is-selected" : ""}`}
+              className={[
+                "week-category-card",
+                isOrdered ? "is-ordered" : "",
+                isPendingCat ? "is-selected" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               onClick={() => onSelectCategory(cat.key)}
               disabled={disabled || !cat.available || !day.isEnabled}
-              aria-pressed={isSelected}
-              title={!cat.available ? "Ikke tilgjengelig" : undefined}
+              aria-pressed={isOrdered || isPendingCat}
+              aria-label={
+                isOrdered ? `${cat.label}, bestilt` : isPendingCat ? `${cat.label}, valgt` : cat.label
+              }
+              title={!cat.available ? "Ikke tilgjengelig" : isOrdered ? "Bestilt" : undefined}
             >
               <span className="week-category-card__label">{cat.label}</span>
+              {isOrdered ? <span className="week-category-card__ordered-tag">Bestilt</span> : null}
               {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
             </button>
-            {isSelected ? expandSection : null}
+            {isPendingCat ? expandSection : null}
           </Fragment>
         );
       })}
@@ -904,12 +959,14 @@ function DayMenuSummary({
   const choices = getTierCategories(day);
   const chipSummary = selectedChoiceSummaryLabel(day, storedChoice ?? null);
   const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
+  const orderedLine = orderedMealDisplayLine(day);
 
   return (
     <div className={`${compact ? "mt-3" : "mt-4"} text-center md:text-center`}>
+      {orderedLine ? <OrderedMealStatusLine day={day} className={compact ? "mb-2" : "mb-3"} /> : null}
       <div className="flex flex-wrap items-center justify-center gap-2">
         <TierPill tier={day.tier} />
-        {highlightLine.mode === "valgt_body" ? (
+        {day.orderStatus !== "ACTIVE" && highlightLine.mode === "valgt_body" ? (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
             Valgt: {highlightLine.body}
           </span>
@@ -1121,9 +1178,10 @@ function WeekDayRowDesktop({
             </span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
           </div>
+          <OrderedMealStatusLine day={day} className="mt-2" />
           {insightRecommended ? (
             <div className="mt-2 max-w-md space-y-0.5 text-center md:text-left">
-              <span className="inline-flex rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-pink-950 ring-1 ring-pink-200">
+              <span className="ds-week-insight-pill">
                 Anbefalt for deg
               </span>
               <p className="text-[11px] text-neutral-600">Du bestiller ofte denne dagen</p>
@@ -1267,12 +1325,15 @@ const WeekDayCardMobile = memo(
     const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
     const categories = getTierCategories(day);
     const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
+    const orderedLine = orderedMealDisplayLine(day);
     const mobileChoiceLine =
-      highlightLine.mode === "variant_pending"
-        ? `Velg variant for ${highlightLine.categoryLabel}`
-        : highlightLine.mode === "valgt_body"
-          ? `Valgt: ${highlightLine.body}`
-          : undefined;
+      orderedLine
+        ? `Bestilt: ${orderedLine}`
+        : highlightLine.mode === "variant_pending"
+          ? `Velg variant for ${highlightLine.categoryLabel}`
+          : highlightLine.mode === "valgt_body"
+            ? `Valgt: ${highlightLine.body}`
+            : undefined;
     const status = statusPresentation(day);
 
     return (
@@ -1323,9 +1384,10 @@ const WeekDayCardMobile = memo(
             ) : null}
           </div>
 
+          <OrderedMealStatusLine day={day} className="mt-3" />
           {insightRecommended ? (
             <div className="mt-2 space-y-0.5 text-center">
-              <span className="inline-flex rounded-full bg-[#fff6d6] px-2.5 py-0.5 text-[11px] font-semibold text-neutral-950 ring-1 ring-[#f5c518]/40">
+              <span className="ds-week-insight-pill">
                 Anbefalt for deg
               </span>
               <p className="text-[11px] text-neutral-600">Du bestiller ofte denne dagen</p>
@@ -1890,30 +1952,6 @@ export default function EmployeeWeekClient({
     setSelectedDate(date);
   }, []);
 
-  const selectCategory = useCallback(
-    (date: string, choiceKey: string) => {
-      setSelectedChoices((prev) => {
-        const day = days.find((d) => d.date === date);
-        if (!day) {
-          return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
-        }
-        const currentEff = effectiveSelectedChoice(day, prev[date]);
-        if (currentEff && currentEff.toLowerCase() === choiceKey.toLowerCase()) {
-          return { ...prev, [date]: null };
-        }
-        return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
-      });
-    },
-    [days],
-  );
-
-  const selectItemForDay = useCallback((date: string, categoryKey: string, itemKey: string, itemTitle: string) => {
-    setSelectedChoices((prev) => ({
-      ...prev,
-      [date]: { categoryKey, itemKey, itemTitle },
-    }));
-  }, []);
-
   const showSuccessToast = useCallback((msg: string) => {
     setToastSuccess(msg);
     if (successTimerRef.current) clearTimeout(successTimerRef.current);
@@ -1937,7 +1975,7 @@ export default function EmployeeWeekClient({
   }, []);
 
   const postSetDayInner = useCallback(
-    async (date: string, wantsLunch: boolean): Promise<boolean> => {
+    async (date: string, wantsLunch: boolean, selectionOverride?: WeekChoiceStored): Promise<boolean> => {
       if (readOnlyPreview) return false;
       const rid = clientRid();
       setErrorBanner(null);
@@ -1948,16 +1986,18 @@ export default function EmployeeWeekClient({
 
       try {
         const day = days.find((d) => d.date === date);
-        const choiceKey = day ? effectiveSelectedChoice(day, selectedChoices[date]) : null;
-        if (wantsLunch && day && choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoices[date])) {
+        const storedForPost =
+          selectionOverride !== undefined ? selectionOverride : (selectedChoices[date] ?? null);
+        const choiceKey = day ? effectiveSelectedChoice(day, storedForPost) : null;
+        if (wantsLunch && day && choiceRequired(day) && !effectiveSelectedChoice(day, storedForPost)) {
           setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
           return false;
         }
-        if (wantsLunch && day && !variantPickSatisfied(day, selectedChoices[date])) {
+        if (wantsLunch && day && !variantPickSatisfied(day, storedForPost)) {
           setErrorBanner({ code: "VARIANT_REQUIRED", message: "Velg variant før du bestiller." });
           return false;
         }
-        const pick = parseStoredSelection(selectedChoices[date] ?? null);
+        const pick = parseStoredSelection(storedForPost ?? null);
         const itemKeyForOrder =
           wantsLunch && typeof pick?.itemKey === "string" && pick.itemKey.trim().length ? pick.itemKey.trim() : null;
         const body = buildOrderWriteBody(date, wantsLunch, choiceKey, itemKeyForOrder);
@@ -2033,6 +2073,77 @@ export default function EmployeeWeekClient({
       }
     },
     [days, ensureIdemKey, loadWindow, readOnlyPreview, resetIdemKey, selectedChoices, showErrorBanner, showSuccessToast],
+  );
+
+  const applyActiveOrderChange = useCallback(
+    async (date: string, selection: DayChoiceSelection) => {
+      const day = days.find((d) => d.date === date);
+      if (!day || day.orderStatus !== "ACTIVE" || readOnlyPreview) return;
+      if (!canOrderDay(day, true, Boolean(busyDate))) return;
+      const orderedKey = day.selectedChoiceKey ? String(day.selectedChoiceKey).trim().toLowerCase() : "";
+      if (orderedKey && orderedKey === selection.categoryKey.trim().toLowerCase()) {
+        const sameItem =
+          !selection.itemKey ||
+          (day.selectedItemKey &&
+            String(day.selectedItemKey).trim().toLowerCase() === selection.itemKey.trim().toLowerCase());
+        if (sameItem) return;
+      }
+      if (!variantPickSatisfied(day, selection)) return;
+      await guardedAction(date, async () => {
+        setBusyDate(date);
+        try {
+          await postSetDayInner(date, true, selection);
+        } finally {
+          setBusyDate(null);
+        }
+      });
+    },
+    [busyDate, days, guardedAction, postSetDayInner, readOnlyPreview],
+  );
+
+  const selectCategory = useCallback(
+    (date: string, choiceKey: string) => {
+      const day = days.find((d) => d.date === date);
+      const cat = day?.categories.find((c) => c.key.toLowerCase() === choiceKey.toLowerCase());
+      const singleDefault = singleCategoryItemDefault(cat);
+      const nextSelection: DayChoiceSelection = singleDefault ?? {
+        categoryKey: choiceKey,
+        itemKey: null,
+        itemTitle: null,
+      };
+
+      setSelectedChoices((prev) => {
+        if (!day) {
+          return { ...prev, [date]: nextSelection };
+        }
+        const currentEff = effectiveSelectedChoice(day, prev[date]);
+        if (currentEff && currentEff.toLowerCase() === choiceKey.toLowerCase()) {
+          if (day.orderStatus === "ACTIVE") return prev;
+          return { ...prev, [date]: null };
+        }
+        return { ...prev, [date]: nextSelection };
+      });
+
+      if (day?.orderStatus === "ACTIVE") {
+        void applyActiveOrderChange(date, nextSelection);
+      }
+    },
+    [applyActiveOrderChange, days],
+  );
+
+  const selectItemForDay = useCallback(
+    (date: string, categoryKey: string, itemKey: string, itemTitle: string) => {
+      const selection: DayChoiceSelection = { categoryKey, itemKey, itemTitle };
+      setSelectedChoices((prev) => ({
+        ...prev,
+        [date]: selection,
+      }));
+      const day = days.find((d) => d.date === date);
+      if (day?.orderStatus === "ACTIVE") {
+        void applyActiveOrderChange(date, selection);
+      }
+    },
+    [applyActiveOrderChange, days],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
