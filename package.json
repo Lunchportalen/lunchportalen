@@ -28,6 +28,8 @@
     "e2e:ui": "playwright test --config playwright.config.ts --ui",
     "e2e:headed": "playwright test --config playwright.config.ts --headed",
     "e2e:update-snapshots": "playwright test --config playwright.config.ts --update-snapshots",
+    "e2e:week-visual": "playwright test --config playwright.week-visual.config.ts",
+    "e2e:week-visual:update": "playwright test --config playwright.week-visual.config.ts --update-snapshots",
     "e2e:install": "playwright install --with-deps",
     "e2e:debug": "playwright test --config playwright.config.ts --debug",
     "check:admin-copy": "node scripts/check-admin-no-hardcoded-text.mjs",
