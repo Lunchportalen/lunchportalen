@@ -1,0 +1,185 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+  LP_ALLERGEN_CODES,
+  LP_ALLERGEN_LABELS_NB,
+  LP_USER_ALLERGEN_FREE_TEXT_MAX,
+  normalizeLpAllergenCodes,
+  normalizeLpAllergenFreeText,
+  type LpAllergenCode,
+  type LpUserAllergenProfile,
+} from "@/lib/allergens/lpUserAllergens";
+
+type SaveState = "idle" | "loading" | "success" | "invalid" | "error";
+
+type ApiEnvelope = {
+  ok?: boolean;
+  data?: { profile?: LpUserAllergenProfile };
+  message?: string;
+  error?: string;
+};
+
+function readProfile(json: ApiEnvelope): LpUserAllergenProfile | null {
+  if (!json.ok || !json.data?.profile) return null;
+  return json.data.profile;
+}
+
+export default function UserAllergenProfileForm() {
+  const [codes, setCodes] = useState<LpAllergenCode[]>([]);
+  const [freeText, setFreeText] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const charCount = freeText.length;
+  const charCountId = "allergen-free-text-count";
+
+  const loadProfile = useCallback(async () => {
+    setLoadError(null);
+    setSaveState("loading");
+    try {
+      const res = await fetch("/api/me/user-allergens", { credentials: "include" });
+      const json = (await res.json()) as ApiEnvelope;
+      const profile = readProfile(json);
+      if (!res.ok || !profile) {
+        setLoadError("Kunne ikke hente allergiprofil.");
+        setSaveState("error");
+        return;
+      }
+      setCodes(normalizeLpAllergenCodes(profile.codes));
+      setFreeText(normalizeLpAllergenFreeText(profile.free_text));
+      setSaveState("idle");
+    } catch {
+      setLoadError("Kunne ikke hente allergiprofil.");
+      setSaveState("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
+
+  const toggleCode = (code: LpAllergenCode) => {
+    setSaveState("idle");
+    setSaveMessage(null);
+    setCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+  };
+
+  const onFreeTextChange = (value: string) => {
+    setSaveState("idle");
+    setSaveMessage(null);
+    setFreeText(value.slice(0, LP_USER_ALLERGEN_FREE_TEXT_MAX));
+  };
+
+  const saveDisabled = useMemo(() => saveState === "loading", [saveState]);
+
+  const handleSave = async () => {
+    if (charCount > LP_USER_ALLERGEN_FREE_TEXT_MAX) {
+      setSaveState("invalid");
+      setSaveMessage("Teksten er for lang (maks 280 tegn).");
+      return;
+    }
+
+    setSaveState("loading");
+    setSaveMessage(null);
+    try {
+      const res = await fetch("/api/me/user-allergens", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes, free_text: freeText }),
+      });
+      const json = (await res.json()) as ApiEnvelope;
+      if (!res.ok) {
+        setSaveState(res.status === 422 ? "invalid" : "error");
+        setSaveMessage(json.message ?? "Kunne ikke lagre.");
+        return;
+      }
+      const profile = readProfile(json);
+      if (profile) {
+        setCodes(normalizeLpAllergenCodes(profile.codes));
+        setFreeText(normalizeLpAllergenFreeText(profile.free_text));
+      }
+      setSaveState("success");
+      setSaveMessage("Lagret. Kjøkkenet kan se dette som ekstra info ved produksjon.");
+    } catch {
+      setSaveState("error");
+      setSaveMessage("Kunne ikke lagre. Prøv igjen.");
+    }
+  };
+
+  return (
+    <div className="ds-allergen-profile mx-auto w-full px-4 py-6">
+      <p className="mx-auto max-w-md text-sm text-[rgb(var(--lp-muted))]">
+        Oppgi allergener du vil at kjøkkenet skal se som ekstra informasjon. Dette er ikke knyttet til rett-allergener i
+        menyen og er ikke en garanti — kun det du selv velger å dele.
+      </p>
+
+      {loadError ? (
+        <p className="mt-4 text-sm text-red-800" role="alert">
+          {loadError}
+        </p>
+      ) : null}
+
+      <fieldset className="ds-allergen-fieldset mt-6">
+        <legend>Allergener (EU-14)</legend>
+        <div className="ds-allergen-chip-grid" role="group" aria-label="Velg allergener">
+          {LP_ALLERGEN_CODES.map((code) => (
+            <button
+              key={code}
+              type="button"
+              className="ds-allergen-chip"
+              aria-pressed={codes.includes(code)}
+              onClick={() => toggleCode(code)}
+              disabled={saveDisabled}
+            >
+              {LP_ALLERGEN_LABELS_NB[code]}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="mt-8 text-left">
+        <label htmlFor="allergen-free-text" className="block text-sm font-semibold text-neutral-900">
+          Synlig for kjøkkenet som ekstra info
+        </label>
+        <textarea
+          id="allergen-free-text"
+          className="ds-allergen-free-text"
+          value={freeText}
+          onChange={(e) => onFreeTextChange(e.target.value)}
+          maxLength={LP_USER_ALLERGEN_FREE_TEXT_MAX}
+          rows={4}
+          disabled={saveDisabled}
+          aria-describedby={charCountId}
+          placeholder="Valgfritt, f.eks. kryssreaksjon eller preferanser kjøkken bør kjenne til."
+        />
+        <p id={charCountId} className="ds-allergen-char-count" aria-live="polite">
+          {charCount} / {LP_USER_ALLERGEN_FREE_TEXT_MAX} tegn
+        </p>
+      </div>
+
+      <div className="mt-6 flex flex-col items-center gap-2">
+        <button
+          type="button"
+          className="lp-btn lp-btn--primary lp-neon-focus min-h-[48px] min-w-[12rem]"
+          onClick={() => void handleSave()}
+          disabled={saveDisabled}
+          aria-busy={saveState === "loading"}
+        >
+          {saveState === "loading" ? "Lagrer…" : "Lagre allergiprofil"}
+        </button>
+        {saveMessage ? (
+          <p
+            className={`text-sm ${saveState === "success" ? "text-emerald-800" : saveState === "invalid" ? "text-amber-900" : "text-red-800"}`}
+            role="status"
+          >
+            {saveMessage}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
