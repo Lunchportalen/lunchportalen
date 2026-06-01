@@ -8,6 +8,7 @@ import { addDaysISO, isIsoDate, osloTodayISODate, startOfWeekISO } from "@/lib/d
 import { receiptFor } from "@/lib/api/orderResponse";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { requireCompanyScopeOr403, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
+import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 import { getMenuForDates, menuDayHasDisplayableCopy } from "@/lib/cms/menuDay";
@@ -241,12 +242,10 @@ export async function GET(req: NextRequest) {
   // Max one Sanity call per request, or a server-side cache hit.
   const published = await getPublishedDatesCached(days).catch(() => new Set<string>());
 
-  const bestByDate = new Map<string, WeekOrderRow>();
-  for (const row of ((data ?? []) as unknown as WeekOrderRow[])) {
+  const bestByDate = foldOrdersByDate(((data ?? []) as unknown) as WeekOrderRow[], (row) => {
     const date = safeStr(row?.date);
-    if (!date || bestByDate.has(date)) continue;
-    bestByDate.set(date, row);
-  }
+    return date || null;
+  });
 
   const out = days.map((date) => {
     const row = bestByDate.get(date) ?? null;
