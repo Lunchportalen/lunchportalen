@@ -630,6 +630,10 @@ export default async function EmployeeWeekPage({
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
           </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
+          </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason={null} />
       </>
@@ -662,6 +666,10 @@ export default async function EmployeeWeekPage({
           {" · "}
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
+          </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
           </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." />
@@ -705,6 +713,10 @@ export default async function EmployeeWeekPage({
           {" · "}
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
+          </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
           </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." />

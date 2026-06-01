@@ -15,6 +15,9 @@ export type KitchenRow = {
   menu_title?: string | null;
   menu_description?: string | null;
   menu_allergens?: string[];
+  /** Employee allergen profile (lp_user_allergens) — extra info, not menu allergens. */
+  employee_allergen_codes?: string[];
+  employee_allergen_free_text?: string | null;
 };
 
 export type KitchenResp = {
