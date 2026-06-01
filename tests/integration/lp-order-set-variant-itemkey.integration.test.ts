@@ -1,7 +1,10 @@
 /**
  * lp_order_set variant item_key (CMS slug) — uigx only (RUN_SUPABASE_INTEGRATION_TESTS=1).
- * Requires 20260611120000_lp_order_set_variant_itemkey applied on staging branch.
+ * Requires 20260611120000_lp_order_set_variant_itemkey on staging.
  */
+import fs from "node:fs";
+import path from "node:path";
+
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
@@ -14,15 +17,28 @@ import {
   STAGING_SUPABASE_REF,
 } from "../_helpers/remoteSupabaseIntegration";
 import {
-  SMOKE_BASIS_PRICE_CENTS,
+  buildProdRealisticVariantSeedSql,
+  VARIANT_TEST_BASIS_DATE,
+  VARIANT_TEST_LUXUS_DATE,
+  VARIANT_TEST_PRODUCT_SKUS,
+} from "../_helpers/variantItemkeyUigxSeed.mjs";
+import {
   SMOKE_COMPANY_ID,
   SMOKE_EMAIL,
   SMOKE_LOCATION_ID,
-  SMOKE_ORDER_DATE,
   SMOKE_USER_ID,
 } from "../../scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs";
 
 const enabled = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
+
+const MIG_BASE = path.join(
+  process.cwd(),
+  "supabase/migrations/20260610130000_lp_order_set_varmmat_msdi_alias.sql",
+);
+const MIG_VARIANT = path.join(
+  process.cwd(),
+  "supabase/migrations/20260611120000_lp_order_set_variant_itemkey.sql",
+);
 
 function assertStagingOnly() {
   const { url } = readRemoteSupabaseIntegrationEnv({ requireAnon: true });
@@ -35,60 +51,19 @@ function assertStagingOnly() {
   }
 }
 
-function buildTriCategorySeedSql(serviceDate: string) {
-  const catPaasmurt = "c1111111-1111-4111-8111-000000000101";
-  const catSalat = "c1111111-1111-4111-8111-000000000102";
-  const catVarmrett = "c1111111-1111-4111-8111-000000000103";
-  const prodPaasmurt = "c1111111-1111-4111-8111-000000000201";
-  const prodSalat = "c1111111-1111-4111-8111-000000000202";
-  const prodVarmrett = "c1111111-1111-4111-8111-000000000203";
-  const msdId = "c1111111-1111-4111-8111-000000000301";
-
-  return `
-insert into public.product_categories (id, name, sort_order, created_at, updated_at)
-values
-  ('${catPaasmurt}', 'Paasmurt', 1, now(), now()),
-  ('${catSalat}', 'Salatboks', 2, now(), now()),
-  ('${catVarmrett}', 'Varmrett', 3, now(), now())
-on conflict (name) do update set updated_at = now();
-
-insert into public.products (id, company_id, category_id, name, sku, unit_name, vat_rate, base_price_cents_ex_vat, currency_code, is_active, is_visible, sort_order, created_at, updated_at)
-values
-  ('${prodPaasmurt}', null, (select id from public.product_categories where name = 'Paasmurt' limit 1), 'LP Test Paasmurt', 'paasmurt', 'porsjon', 0.15, ${SMOKE_BASIS_PRICE_CENTS}, 'NOK', true, true, 1, now(), now()),
-  ('${prodSalat}', null, (select id from public.product_categories where name = 'Salatboks' limit 1), 'LP Test Salatboks', 'salatboks', 'porsjon', 0.15, ${SMOKE_BASIS_PRICE_CENTS}, 'NOK', true, true, 2, now(), now()),
-  ('${prodVarmrett}', null, (select id from public.product_categories where name = 'Varmrett' limit 1), 'LP Test Varmrett', 'varmrett', 'porsjon', 0.15, ${SMOKE_BASIS_PRICE_CENTS}, 'NOK', true, true, 3, now(), now())
-on conflict (id) do update set category_id = excluded.category_id, sku = excluded.sku, updated_at = now();
-
-insert into public.menu_service_days (id, company_id, location_id, service_date, state, provider_id, created_at, updated_at)
-select '${msdId}', '${SMOKE_COMPANY_ID}', '${SMOKE_LOCATION_ID}', '${serviceDate}'::date, 'published', c.provider_id, now(), now()
-from public.companies c where c.id = '${SMOKE_COMPANY_ID}'
-on conflict (location_id, service_date) do nothing;
-
-insert into public.menu_service_day_items (menu_service_day_id, product_id, product_name_snapshot, unit_name_snapshot, offered_price_cents_ex_vat, vat_rate_snapshot, quantity, sort_order, is_optional, created_at, updated_at)
-select msd.id, p.id, p.name, 'porsjon', ${SMOKE_BASIS_PRICE_CENTS}, 0.15, 1,
-  10 + row_number() over (order by p.sku), false, now(), now()
-from public.menu_service_days msd
-cross join public.products p
-where msd.location_id = '${SMOKE_LOCATION_ID}' and msd.service_date = '${serviceDate}'::date
-  and msd.state in ('published', 'locked')
-  and p.sku in ('paasmurt', 'salatboks', 'varmrett') and p.company_id is null
-  and not exists (
-    select 1 from public.menu_service_day_items x
-    where x.menu_service_day_id = msd.id and x.product_id = p.id
-  );
-`;
+function expectMenuNotFound(error: { message?: string } | null) {
+  expect(error).not.toBeNull();
+  expect(String(error?.message ?? "")).toContain("MENU_SERVICE_DAY_ITEM_NOT_FOUND");
 }
 
 describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", () => {
-  const serviceDate = SMOKE_ORDER_DATE;
+  const basisDate = VARIANT_TEST_BASIS_DATE;
+  const luxusDate = VARIANT_TEST_LUXUS_DATE;
+
   let admin: ReturnType<typeof createClient<Database>>;
   let userClient: ReturnType<typeof createClient<Database>>;
   let testUserId = SMOKE_USER_ID;
-  const productIds = {
-    paasmurt: "c1111111-1111-4111-8111-000000000201",
-    salatboks: "c1111111-1111-4111-8111-000000000202",
-    varmrett: "c1111111-1111-4111-8111-000000000203",
-  };
+  let productIdBySku: Record<string, string> = {};
 
   beforeAll(async () => {
     assertStagingOnly();
@@ -97,11 +72,25 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    await fixturePgQuery(buildTriCategorySeedSql(serviceDate));
+    await fixturePgQuery(buildProdRealisticVariantSeedSql());
+    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
 
-    const email = String(
-      process.env.SMOKE_TEST_EMAIL ?? SMOKE_EMAIL ?? process.env.PLAYWRIGHT_TEST_PASSWORD ?? "",
-    ).trim();
+    const skus = Object.values(VARIANT_TEST_PRODUCT_SKUS);
+    const { rows: prods } = await fixturePgQuery<{ id: string; sku: string }>(
+      `select id, sku from public.products
+       where company_id is null and sku = any($1::text[])`,
+      [skus],
+    );
+    for (const row of prods) {
+      if (row.sku) productIdBySku[row.sku] = row.id;
+    }
+    for (const sku of skus) {
+      if (!productIdBySku[sku]) {
+        throw new Error(`ABORT: missing global product sku=${sku} on uigx — seed catalog first`);
+      }
+    }
+
+    const email = String(process.env.SMOKE_TEST_EMAIL ?? SMOKE_EMAIL).trim();
     const password = String(process.env.PLAYWRIGHT_TEST_PASSWORD ?? process.env.SMOKE_TEST_PASSWORD ?? "").trim();
     if (!email || !password) {
       throw new Error("SKIP_AUTH: set PLAYWRIGHT_TEST_PASSWORD for lp_order_set RPC");
@@ -122,7 +111,11 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
   }, 120_000);
 
   afterAll(async () => {
-    await closeFixturePgPool();
+    try {
+      await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+    } finally {
+      await closeFixturePgPool();
+    }
   });
 
   async function cancelIfActive(date: string) {
@@ -136,11 +129,7 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
     });
   }
 
-  async function setOrder(
-    date: string,
-    choiceKey: string,
-    itemKey: string = "default",
-  ) {
+  async function setOrder(date: string, choiceKey: string, itemKey: string = "default") {
     return userClient.rpc("lp_order_set", {
       p_date: date,
       p_action: "SET",
@@ -166,9 +155,22 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
       : undefined;
   }
 
-  test("PROVE-FIRE: variant slug ost-skinke → 200 (pre-migration RPC returned MENU_SERVICE_DAY_ITEM_NOT_FOUND)", async () => {
-    await cancelIfActive(serviceDate);
-    const { error } = await setOrder(serviceDate, "paasmurt", "ost-skinke");
+  test("prove-fire: BASE RPC → 409, variant RPC → 200 (paasmurt+ost-skinke)", async () => {
+    await fixturePgQuery(fs.readFileSync(MIG_BASE, "utf8"));
+    await cancelIfActive(basisDate);
+    const base = await setOrder(basisDate, "paasmurt", "ost-skinke");
+    expectMenuNotFound(base.error);
+
+    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+    await cancelIfActive(basisDate);
+    const variant = await setOrder(basisDate, "paasmurt", "ost-skinke");
+    expect(variant.error).toBeNull();
+    expect(await activeOrderProductId(basisDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.paasmurt]);
+  }, 90_000);
+
+  test("BASIS: paasmurt+variant → 200 + item_key", async () => {
+    await cancelIfActive(basisDate);
+    const { error } = await setOrder(basisDate, "paasmurt", "ost-skinke");
     expect(error).toBeNull();
 
     const { data: dc } = await admin
@@ -177,44 +179,85 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
       .eq("user_id", testUserId)
       .eq("company_id", SMOKE_COMPANY_ID)
       .eq("location_id", SMOKE_LOCATION_ID)
-      .eq("date", serviceDate)
+      .eq("date", basisDate)
       .maybeSingle();
     expect(dc?.choice_key).toBe("paasmurt");
     expect(dc?.item_key).toBe("ost-skinke");
-    expect(await activeOrderProductId(serviceDate)).toBe(productIds.paasmurt);
+    expect(await activeOrderProductId(basisDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.paasmurt]);
   }, 60_000);
 
-  test("salatboks variant slug → 200 + item_key", async () => {
-    await cancelIfActive(serviceDate);
-    const { error } = await setOrder(serviceDate, "salatboks", "kylling-karri");
+  test("BASIS: salatboks+variant → 200 + item_key", async () => {
+    await cancelIfActive(basisDate);
+    const { error } = await setOrder(basisDate, "salatboks", "kylling-karri");
     expect(error).toBeNull();
     const { data: dc } = await admin
       .from("day_choices")
       .select("item_key")
       .eq("user_id", testUserId)
-      .eq("date", serviceDate)
+      .eq("date", basisDate)
       .maybeSingle();
     expect(dc?.item_key).toBe("kylling-karri");
-    expect(await activeOrderProductId(serviceDate)).toBe(productIds.salatboks);
+    expect(await activeOrderProductId(basisDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.salatboks]);
   }, 60_000);
 
-  test("varmmat default → 200 (alias + no variant regression)", async () => {
-    await cancelIfActive(serviceDate);
-    const { error } = await setOrder(serviceDate, "varmmat", "default");
+  test("BASIS: varmmat default → 200 (alias)", async () => {
+    await cancelIfActive(basisDate);
+    const { error } = await setOrder(basisDate, "varmmat", "default");
     expect(error).toBeNull();
-    expect(await activeOrderProductId(serviceDate)).toBe(productIds.varmrett);
+    expect(await activeOrderProductId(basisDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.varmrett]);
   }, 60_000);
 
-  test("default item_key → 200, item_key null in day_choices", async () => {
-    await cancelIfActive(serviceDate);
-    const { error } = await setOrder(serviceDate, "paasmurt", "default");
+  test("BASIS: default item_key → 200, item_key null", async () => {
+    await cancelIfActive(basisDate);
+    const { error } = await setOrder(basisDate, "paasmurt", "default");
     expect(error).toBeNull();
     const { data: dc } = await admin
       .from("day_choices")
       .select("item_key")
       .eq("user_id", testUserId)
-      .eq("date", serviceDate)
+      .eq("date", basisDate)
       .maybeSingle();
     expect(dc?.item_key).toBeNull();
+  }, 60_000);
+
+  test("BASIS: sushi+variant → 409 (ikke på meny @9000)", async () => {
+    await cancelIfActive(basisDate);
+    const { error } = await setOrder(basisDate, "sushi", "laks-avokado");
+    expectMenuNotFound(error);
+  }, 60_000);
+
+  test("LUXUS: sushi+variant → 200", async () => {
+    await cancelIfActive(luxusDate);
+    const { error } = await setOrder(luxusDate, "sushi", "laks-avokado");
+    expect(error).toBeNull();
+    const { data: dc } = await admin
+      .from("day_choices")
+      .select("item_key")
+      .eq("user_id", testUserId)
+      .eq("date", luxusDate)
+      .maybeSingle();
+    expect(dc?.item_key).toBe("laks-avokado");
+    expect(await activeOrderProductId(luxusDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.sushi]);
+  }, 60_000);
+
+  test("LUXUS: pokebowl+variant → 200", async () => {
+    await cancelIfActive(luxusDate);
+    const { error } = await setOrder(luxusDate, "pokebowl", "kylling");
+    expect(error).toBeNull();
+    expect(await activeOrderProductId(luxusDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.pokebowl]);
+  }, 60_000);
+
+  test("LUXUS: thaimat+variant → 200 (kategori Thaimat)", async () => {
+    await cancelIfActive(luxusDate);
+    const { error } = await setOrder(luxusDate, "thaimat", "kylling-curry");
+    expect(error).toBeNull();
+    const { data: dc } = await admin
+      .from("day_choices")
+      .select("item_key")
+      .eq("user_id", testUserId)
+      .eq("date", luxusDate)
+      .maybeSingle();
+    expect(dc?.item_key).toBe("kylling-curry");
+    expect(await activeOrderProductId(luxusDate)).toBe(productIdBySku[VARIANT_TEST_PRODUCT_SKUS.thaimat]);
   }, 60_000);
 });
