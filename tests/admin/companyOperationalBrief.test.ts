@@ -98,7 +98,14 @@ describe("summarizeOperativeOrdersForBrief", () => {
       dcMap: new Map([
         [
           "00000000-0000-4000-8000-0000000000bb|00000000-0000-4000-8000-0000000000cc|00000000-0000-4000-8000-0000000000dd",
-          { choice_key: "basis", note: "Ekstra", updated_at: null, status: "ACTIVE" },
+          {
+            choice_key: "basis",
+            item_key: null,
+            item_title_snapshot: null,
+            note: "Ekstra",
+            updated_at: null,
+            status: "ACTIVE",
+          },
         ],
       ]),
     } satisfies Extract<LoadOperativeKitchenOrdersResult, { ok: true }>;

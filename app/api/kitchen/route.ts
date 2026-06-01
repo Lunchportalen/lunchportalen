@@ -9,6 +9,9 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
 import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
+import { buildKitchenMealNote, buildVariantTitleLookup } from "@/lib/kitchen/kitchenMealNote";
+import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
+import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import { opsLog } from "@/lib/ops/log";
 
 const allowedRoles = ["kitchen", "superadmin"] as const;
@@ -211,8 +214,6 @@ export async function GET(req: NextRequest) {
   const locations = new Map((locationsRes.data ?? []).map((l: any) => [safeStr(l.id), l]));
   const profiles = new Map((profilesRes.data ?? []).map((p: any) => [safeStr(p.user_id), p]));
 
-  const { normalizeMealTypeKey } = await import("@/lib/cms/mealTypeKey");
-  const { getMenusByMealTypes } = await import("@/lib/cms/getMenusByMealTypes");
   const { parseMealContractFromAgreementJson } = await import("@/lib/server/agreements/mealContract");
   const { resolveMenuForDay } = await import("@/lib/domain/resolveMenuForDay");
   const { weekdayKeyFromOsloISODate } = await import("@/lib/date/weekdayKeyFromIso");
@@ -245,8 +246,10 @@ export async function GET(req: NextRequest) {
   }
 
   let menuByMeal = new Map<string, import("@/lib/cms/types").CmsMenuByMealType>();
+  let variantLookup = new Map<string, string>();
   try {
     menuByMeal = await getMenusByMealTypes([...mealKeys]);
+    variantLookup = await buildVariantTitleLookup();
   } catch (e: any) {
     opsLog("kitchen.cms.menu_fetch_threw", {
       rid,
@@ -283,7 +286,15 @@ export async function GET(req: NextRequest) {
       location: safeStr(loc?.name) || "Lokasjon",
       employeeName,
       department: prof?.department ? safeStr(prof.department) : null,
-      note: r.note ? safeStr(r.note) : null,
+      note:
+        buildKitchenMealNote({
+          choiceKey: ck || null,
+          itemKey: dc?.item_key ?? null,
+          itemTitleSnapshot: dc?.item_title_snapshot ?? null,
+          note: dc?.note ?? r.note ?? null,
+          menuByMeal,
+          variantLookup,
+        }) ?? (r.note ? safeStr(r.note) : null),
       tier: null, // kobles senere til avtale (BASIS/LUXUS)
       menu_title: (m?.title != null ? String(m.title).trim() : "") || titleFallback,
       menu_description: m?.description != null ? String(m.description) : null,
