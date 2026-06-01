@@ -77,7 +77,11 @@ afterEach(() => {
 describe("WeekAllergenProfileCard on /week", () => {
   test("viser kart med brukerens lagrede valg fra GET", async () => {
     const container = await renderCard();
-    expect(container.textContent).toMatch(/Dine allergener — sendes som info til kjøkkenet/);
+    expect(container.textContent).toMatch(/Dine allergener/);
+    expect(container.textContent).toMatch(/Fortell oss hva du ikke tåler/);
+    expect(container.textContent).toMatch(/senke skuldrene og nyte lunsjen/);
+    expect(container.textContent).toMatch(/Hva er du allergisk mot\?/);
+    expect(container.textContent).toMatch(/Er det noe mer vi bør vite\?/);
     await waitForProfileLoad(container);
 
     const gluten = [...container.querySelectorAll<HTMLButtonElement>(".ds-allergen-chip")].find((b) =>
