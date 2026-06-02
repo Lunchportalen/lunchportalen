@@ -104,12 +104,26 @@ jobs:
           E2E_TEST_USER_PASSWORD: ${{ secrets['E2E_TEST_USER_PASSWORD'] }}
           E2E_EMPLOYEE_EMAIL: ${{ secrets['E2E_EMPLOYEE_EMAIL'] }}
           E2E_EMPLOYEE_PASSWORD: ${{ secrets['E2E_EMPLOYEE_PASSWORD'] }}
+          E2E_ADMIN_EMAIL: ${{ secrets['E2E_ADMIN_EMAIL'] }}
+          E2E_ADMIN_PASSWORD: ${{ secrets['E2E_ADMIN_PASSWORD'] }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets['E2E_SUPERADMIN_EMAIL'] }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
         run: |
           set -euo pipefail
-          : "${E2E_EMPLOYEE_EMAIL:?Missing E2E_EMPLOYEE_EMAIL}"
-          : "${E2E_EMPLOYEE_PASSWORD:?Missing E2E_EMPLOYEE_PASSWORD}"
+          : "${E2E_TEST_USER_EMAIL:?Missing E2E_TEST_USER_EMAIL secret}"
+          : "${E2E_TEST_USER_PASSWORD:?Missing E2E_TEST_USER_PASSWORD secret}"
+          : "${E2E_EMPLOYEE_EMAIL:?Missing E2E_EMPLOYEE_EMAIL secret}"
+          : "${E2E_EMPLOYEE_PASSWORD:?Missing E2E_EMPLOYEE_PASSWORD secret}"
+          : "${E2E_ADMIN_EMAIL:?Missing E2E_ADMIN_EMAIL secret}"
+          : "${E2E_ADMIN_PASSWORD:?Missing E2E_ADMIN_PASSWORD secret}"
+          : "${E2E_SUPERADMIN_EMAIL:?Missing E2E_SUPERADMIN_EMAIL secret}"
+          : "${E2E_SUPERADMIN_PASSWORD:?Missing E2E_SUPERADMIN_PASSWORD secret}"
           d=E2EENV__DELIM__LP
-          for key in E2E_TEST_USER_EMAIL E2E_TEST_USER_PASSWORD E2E_EMPLOYEE_EMAIL E2E_EMPLOYEE_PASSWORD; do
+          for key in \
+            E2E_TEST_USER_EMAIL E2E_TEST_USER_PASSWORD \
+            E2E_EMPLOYEE_EMAIL E2E_EMPLOYEE_PASSWORD \
+            E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD \
+            E2E_SUPERADMIN_EMAIL E2E_SUPERADMIN_PASSWORD; do
             val="${!key:-}"
             {
               echo "${key}<<${d}"
