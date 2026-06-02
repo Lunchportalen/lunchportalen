@@ -4,11 +4,7 @@ import { join } from "node:path";
 
 import { expect, type Page } from "@playwright/test";
 
-import {
-  getCredentialsForRole,
-  loginViaForm,
-  waitForPostLoginNavigation,
-} from "./auth";
+import { waitForPostLoginNavigation } from "./auth";
 import { waitForFontsReady } from "./ready";
 
 export type WeekAllergenVisualProfile = "declared_empty" | "has_data";
@@ -221,13 +217,10 @@ export async function installWeekVisualMocks(
   });
 }
 
-export async function loginEmployeeToWeek(page: Page): Promise<void> {
-  const creds = getCredentialsForRole("employee");
-  if (!creds) {
-    throw new Error("E2E_EMPLOYEE_EMAIL/PASSWORD required for week visual regression.");
-  }
-  await loginViaForm(page, creds.email, creds.password, "/week");
-  await waitForPostLoginNavigation(page);
+/** Reuses employee session from global-setup storageState — no per-test login. */
+export async function navigateToWeek(page: Page): Promise<void> {
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await waitForPostLoginNavigation(page, { timeout: 15_000 });
   await expect(page).toHaveURL(/\/week/);
 }
 

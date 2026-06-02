@@ -13,6 +13,8 @@ on:
       - "app/styles/**"
       - "e2e/week-visual-regression.e2e.ts"
       - "e2e/helpers/week-visual.ts"
+      - "e2e/helpers/week-visual-auth.ts"
+      - "e2e/global-setup/week-visual-auth.setup.ts"
       - "e2e/fixtures/week-visual-window.base.json"
       - "playwright.week-visual.config.ts"
       - "e2e/week-visual-regression.e2e.ts-snapshots/**"
@@ -25,6 +27,8 @@ on:
       - "app/styles/**"
       - "e2e/week-visual-regression.e2e.ts"
       - "e2e/helpers/week-visual.ts"
+      - "e2e/helpers/week-visual-auth.ts"
+      - "e2e/global-setup/week-visual-auth.setup.ts"
       - "e2e/fixtures/week-visual-window.base.json"
       - "playwright.week-visual.config.ts"
       - "e2e/week-visual-regression.e2e.ts-snapshots/**"
@@ -153,15 +157,23 @@ jobs:
       - name: Start server
         shell: bash
         run: |
-          npm run start &
+          : > server.log
+          npm run start 2>&1 | tee -a server.log &
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000/ || true)
             if [[ "$code" =~ ^[23][0-9][0-9]$ ]]; then echo "Server ready ($code)"; break; fi
-            if [ "$i" -eq 60 ]; then echo "Server did not become ready"; exit 1; fi
+            if [ "$i" -eq 60 ]; then
+              echo "::group::server.log (startup failure)"
+              tail -n 200 server.log || true
+              echo "::endgroup::"
+              echo "Server did not become ready"
+              exit 1
+            fi
             sleep 2
           done
         env:
           PORT: 3000
+          LP_DEBUG_AUTH: "1"
 
       - name: Week visual regression (screenshot diff)
         shell: bash
@@ -170,7 +182,23 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_snapshots }}" = "true" ]; then
             FLAGS="--update-snapshots"
           fi
+          set +e
           npx playwright test --config playwright.week-visual.config.ts --reporter=list ${FLAGS}
+          EXIT=$?
+          if [ "$EXIT" -ne 0 ]; then
+            echo "::group::server.log (tail 300)"
+            tail -n 300 server.log 2>/dev/null || echo "server.log missing"
+            echo "::endgroup::"
+          fi
+          exit $EXIT
+
+      - name: Dump full server log on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "::group::server.log (full)"
+          cat server.log 2>/dev/null || echo "server.log missing"
+          echo "::endgroup::"
 
       - name: Upload updated week visual snapshots
         if: github.event_name == 'workflow_dispatch' && inputs.update_snapshots == true
@@ -188,4 +216,5 @@ jobs:
           path: |
             playwright-week-visual-report/
             test-results/
+            server.log
           retention-days: 14

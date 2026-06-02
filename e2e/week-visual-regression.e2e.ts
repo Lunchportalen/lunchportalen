@@ -5,7 +5,7 @@ import {
   buildWeekVisualWindowDaySelected,
   buildWeekVisualWindowOrderedUpcoming,
   installWeekVisualMocks,
-  loginEmployeeToWeek,
+  navigateToWeek,
   selectWeekDay,
   waitForWeekVisualReady,
   WEEK_VISUAL_SCREENSHOT_OPTS,
@@ -27,7 +27,7 @@ test.describe("Week visual regression @week-visual", () => {
       allergenProfile: "declared_empty",
       windowBody: buildWeekVisualWindowDaySelected(),
     });
-    await loginEmployeeToWeek(page);
+    await navigateToWeek(page);
     await waitForWeekVisualReady(page);
 
     const summary = page.locator(".ds-allergen-disclosure__summary");
@@ -45,7 +45,7 @@ test.describe("Week visual regression @week-visual", () => {
       allergenProfile: "has_data",
       windowBody: buildWeekVisualWindowDaySelected(),
     });
-    await loginEmployeeToWeek(page);
+    await navigateToWeek(page);
     await waitForWeekVisualReady(page);
 
     const summary = page.locator(".ds-allergen-disclosure__summary");
@@ -63,7 +63,7 @@ test.describe("Week visual regression @week-visual", () => {
       allergenProfile: "declared_empty",
       windowBody: buildWeekVisualWindowDaySelected(),
     });
-    await loginEmployeeToWeek(page);
+    await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
     await expect(page.getByRole("heading", { name: /tirsdag 02\.06\.2026/i })).toBeVisible();
@@ -79,7 +79,7 @@ test.describe("Week visual regression @week-visual", () => {
       allergenProfile: "declared_empty",
       windowBody: buildWeekVisualWindowOrderedUpcoming(),
     });
-    await loginEmployeeToWeek(page);
+    await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
 

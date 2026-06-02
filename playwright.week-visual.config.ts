@@ -1,6 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import {
+  hasWeekVisualEmployeeCreds,
+  WEEK_VISUAL_AUTH_STATE_PATH,
+} from "./e2e/helpers/week-visual-auth";
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const useEmployeeSession = hasWeekVisualEmployeeCreds();
 
 const externalServer =
   process.env.LP_E2E_EXTERNAL_SERVER === "1" ||
@@ -12,6 +18,9 @@ const externalServer =
 export default defineConfig({
   testDir: "./e2e",
   testMatch: ["**/week-visual-regression.e2e.ts"],
+  globalSetup: useEmployeeSession
+    ? "./e2e/global-setup/week-visual-auth.setup.ts"
+    : undefined,
   timeout: 60_000,
   expect: {
     timeout: 20_000,
@@ -28,6 +37,9 @@ export default defineConfig({
     "{testDir}/{testFileDir}/{testFileName}-snapshots/{projectName}/{arg}{ext}",
   use: {
     baseURL,
+    ...(useEmployeeSession
+      ? { storageState: WEEK_VISUAL_AUTH_STATE_PATH }
+      : {}),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
