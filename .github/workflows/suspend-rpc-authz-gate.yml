@@ -2,7 +2,8 @@
 # Golden RLS drift does not cover public RPC wiring — this integration test is the guard.
 #
 # Required status check (branch protection): suspend-rpc-authz
-# Runs on PR/push when supabase/** or lib/admin/** change; nightly on all paths.
+# PR: always runs and reports status; N/A pass when diff excludes supabase/** + lib/admin/**.
+# Push/schedule/dispatch: always runs full gate.
 name: Suspend RPC authz gate (uigx)
 
 env:
@@ -11,21 +12,8 @@ env:
 on:
   pull_request:
     branches: ["main"]
-    paths: &suspend_rpc_gate_paths
-      - "supabase/**"
-      - "lib/admin/**"
-      - "tests/db/suspend-rpc.test.ts"
-      - "tests/_helpers/providerTestFixtures.ts"
-      - "tests/_helpers/fixturePg.ts"
-      - "tests/_helpers/remoteSupabaseIntegration.ts"
-      - "tests/_helpers/supabaseTestClient.ts"
-      - "tests/_helpers/rlsFixtures.ts"
-      - "scripts/ci/run-suspend-rpc-integration.mjs"
-      - "scripts/ci/assert-db-target.mjs"
-      - ".github/workflows/suspend-rpc-authz-gate.yml"
   push:
     branches: ["main"]
-    paths: *suspend_rpc_gate_paths
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch: {}
@@ -56,17 +44,65 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR base/head (scope detect)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
+      - name: Detect gate relevance (supabase/** or lib/admin/**)
+        id: scope
+        env:
+          GATE_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          GATE_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "suspend-rpc-authz: full gate (${{ github.event_name }})"
+            exit 0
+          fi
+          set +e
+          node scripts/ci/detect-suspend-rpc-gate-scope.mjs
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          elif [ "$code" -eq 2 ]; then
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "suspend-rpc-authz: N/A — no supabase/** or lib/admin/** changes (required-check safe pass)"
+          else
+            echo "::error::suspend-rpc gate scope detect failed (exit ${code})"
+            exit "$code"
+          fi
+
+      - name: N/A — skip integration (required-check safe)
+        if: steps.scope.outputs.relevant == 'false'
+        run: |
+          echo "suspend-rpc-authz: skipped integration — PR does not touch supabase/** or lib/admin/**"
+          echo "This is not a false-green: skip-guard applies only when the gate is relevant."
+
+      - name: Skip-guard self-test (unit, always)
+        run: node scripts/ci/run-suspend-rpc-integration.test.mjs
 
       - name: Setup Node
+        if: steps.scope.outputs.relevant == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: steps.scope.outputs.relevant == 'true'
         run: npm ci
 
       - name: Verify staging secrets present
+        if: steps.scope.outputs.relevant == 'true'
         run: |
           set -euo pipefail
           missing=()
@@ -90,6 +126,7 @@ jobs:
           echo "Staging secrets OK (uigx)."
 
       - name: Build staging postgres URL (session pooler)
+        if: steps.scope.outputs.relevant == 'true'
         run: |
           set -euo pipefail
           ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
@@ -98,10 +135,9 @@ jobs:
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
 
       - name: Assert DB target (staging, fail-closed)
+        if: steps.scope.outputs.relevant == 'true'
         run: node scripts/ci/assert-db-target.mjs --expect staging
 
       - name: Run suspend-rpc authz integration (skip-guard)
+        if: steps.scope.outputs.relevant == 'true'
         run: node scripts/ci/run-suspend-rpc-integration.mjs
-
-      - name: Skip-guard self-test (unit)
-        run: node scripts/ci/run-suspend-rpc-integration.test.mjs
