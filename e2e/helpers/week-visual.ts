@@ -219,9 +219,23 @@ export async function installWeekVisualMocks(
 
 /** Reuses employee session from global-setup storageState — no per-test login. */
 export async function navigateToWeek(page: Page): Promise<void> {
-  await page.goto("/week", { waitUntil: "domcontentloaded" });
-  await waitForPostLoginNavigation(page, { timeout: 15_000 });
-  await expect(page).toHaveURL(/\/week/);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await page.goto("/week", { waitUntil: "commit", timeout: 30_000 });
+      await waitForPostLoginNavigation(page, { timeout: 15_000 });
+      await expect(page).toHaveURL(/\/week/);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        await page.waitForTimeout(1000 * attempt);
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 export async function waitForWeekVisualReady(page: Page): Promise<void> {

@@ -158,7 +158,9 @@ jobs:
         shell: bash
         run: |
           : > server.log
-          npm run start 2>&1 | tee -a server.log &
+          # File redirect only — avoid tee pipe backpressure deadlocking next start stdout.
+          npm run start >> server.log 2>&1 &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000/ || true)
             if [[ "$code" =~ ^[23][0-9][0-9]$ ]]; then echo "Server ready ($code)"; break; fi
