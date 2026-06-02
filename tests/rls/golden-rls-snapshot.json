@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-05-18T15:57:35.425Z",
+  "generated_at": "2026-06-02T18:17:05.724Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
@@ -64,6 +64,78 @@
     },
     {
       "schema": "public",
+      "table": "agreement_invoice_lines",
+      "name": "agreement_invoice_lines_company_admin_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM (agreement_invoices ai\n     JOIN profiles p ON ((p.id = auth.uid())))\n  WHERE ((ai.id = agreement_invoice_lines.invoice_id) AND (p.role = 'company_admin'::user_role) AND (p.company_id = ai.company_id))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_invoice_lines",
+      "name": "agreement_invoice_lines_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM agreement_invoices ai\n  WHERE ((ai.id = agreement_invoice_lines.invoice_id) AND can_access_provider(ai.provider_id))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_invoice_lines",
+      "name": "agreement_invoice_lines_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_invoices",
+      "name": "agreement_invoices_company_admin_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.role = 'company_admin'::user_role) AND (p.company_id = agreement_invoices.company_id))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_invoices",
+      "name": "agreement_invoices_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreement_invoices",
+      "name": "agreement_invoices_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "agreement_requests",
       "name": "superadmin_only",
       "command": "ALL",
@@ -99,6 +171,18 @@
     {
       "schema": "public",
       "table": "agreements",
+      "name": "agreements_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
       "name": "agreements_select_scoped",
       "command": "SELECT",
       "roles": [
@@ -118,6 +202,18 @@
       ],
       "using_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
       "check_expr": "(is_platform_admin() OR can_admin_company(company_id) OR can_admin_location(location_id))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "agreements",
+      "name": "agreements_update_provider_scope",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": "can_access_provider(provider_id)",
       "permissive": true
     },
     {
@@ -468,30 +564,6 @@
     },
     {
       "schema": "public",
-      "table": "audit_log",
-      "name": "audit_log_select",
-      "command": "SELECT",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "( SELECT private.is_platform_admin() AS is_platform_admin)",
-      "check_expr": null,
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "audit_log_legacy",
-      "name": "audit_log_select",
-      "command": "SELECT",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "( SELECT private.is_platform_admin() AS is_platform_admin)",
-      "check_expr": null,
-      "permissive": true
-    },
-    {
-      "schema": "public",
       "table": "billing_adjustments",
       "name": "billing_adjustments_manage",
       "command": "ALL",
@@ -511,6 +583,30 @@
         "authenticated"
       ],
       "using_expr": "( SELECT private.can_finance_company(billing_adjustments.company_id) AS can_finance_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_products",
+      "name": "billing_products_authenticated_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_tax_codes",
+      "name": "billing_tax_codes_authenticated_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
       "check_expr": null,
       "permissive": true
     },
@@ -589,6 +685,18 @@
     {
       "schema": "public",
       "table": "companies",
+      "name": "companies_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
       "name": "companies_update",
       "command": "UPDATE",
       "roles": [
@@ -596,6 +704,18 @@
       ],
       "using_expr": "( SELECT private.can_manage_company(companies.id) AS can_manage_company)",
       "check_expr": "( SELECT private.can_manage_company(companies.id) AS can_manage_company)",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "companies",
+      "name": "companies_update_provider_scope",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": "can_access_provider(provider_id)",
       "permissive": true
     },
     {
@@ -631,6 +751,18 @@
         "authenticated"
       ],
       "using_expr": "( SELECT private.can_access_company(company_contracts.company_id) AS can_access_company)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_deletions",
+      "name": "company_deletions_superadmin_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
       "check_expr": null,
       "permissive": true
     },
@@ -757,6 +889,31 @@
     {
       "schema": "public",
       "table": "company_registrations",
+      "name": "company_registrations_anon_insert",
+      "command": "INSERT",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "((status = 'PENDING'::text) AND (company_id IS NULL) AND (length(btrim(COALESCE(company_name, ''::text))) > 0) AND (length(btrim(COALESCE(contact_email, ''::text))) > 0) AND (requested_postal_code IS NOT NULL) AND (length(regexp_replace(btrim(COALESCE(requested_postal_code, ''::text)), '\\D'::text, ''::text, 'g'::text)) = 4))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_registrations",
+      "name": "company_registrations_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((provider_id IS NOT NULL) AND can_access_provider(provider_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_registrations",
       "name": "company_registrations_service_role_full",
       "command": "ALL",
       "roles": [
@@ -776,6 +933,18 @@
       ],
       "using_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.role = 'superadmin'::user_role))))",
       "check_expr": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.role = 'superadmin'::user_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "company_registrations",
+      "name": "company_registrations_update_provider_scope",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((provider_id IS NOT NULL) AND can_access_provider(provider_id))",
+      "check_expr": "((provider_id IS NOT NULL) AND can_access_provider(provider_id))",
       "permissive": true
     },
     {
@@ -1004,54 +1173,6 @@
     },
     {
       "schema": "public",
-      "table": "esg_daily",
-      "name": "esg_daily_select",
-      "command": "SELECT",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "(is_superadmin() OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id())))",
-      "check_expr": null,
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "esg_daily",
-      "name": "esg_daily_write_superadmin",
-      "command": "ALL",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "is_superadmin()",
-      "check_expr": "is_superadmin()",
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "esg_monthly",
-      "name": "esg_monthly_select",
-      "command": "SELECT",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "(is_superadmin() OR ((current_profile_role() = 'company_admin'::user_role) AND (company_id = current_profile_company_id())))",
-      "check_expr": null,
-      "permissive": true
-    },
-    {
-      "schema": "public",
-      "table": "esg_monthly",
-      "name": "esg_monthly_write_superadmin",
-      "command": "ALL",
-      "roles": [
-        "authenticated"
-      ],
-      "using_expr": "is_superadmin()",
-      "check_expr": "is_superadmin()",
-      "permissive": true
-    },
-    {
-      "schema": "public",
       "table": "form_submissions",
       "name": "form_submissions_platform_admin_only",
       "command": "ALL",
@@ -1220,6 +1341,18 @@
     },
     {
       "schema": "public",
+      "table": "invoice_periods",
+      "name": "invoice_periods_tenant_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_access_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "invoice_runs",
       "name": "invoice_runs_manage",
       "command": "ALL",
@@ -1350,6 +1483,38 @@
     },
     {
       "schema": "public",
+      "table": "lifecycle_audit_log",
+      "name": "lifecycle_audit_log_insert_via_rpc",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "((actor_id = auth.uid()) OR is_platform_admin())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lifecycle_audit_log",
+      "name": "lifecycle_audit_log_select_provider_scope",
+      "command": "SELECT",
+      "roles": [],
+      "using_expr": "(((entity_type = 'provider'::text) AND can_access_provider(entity_id)) OR ((entity_type = 'company'::text) AND (EXISTS ( SELECT 1\n   FROM companies c\n  WHERE ((c.id = lifecycle_audit_log.entity_id) AND can_access_provider(c.provider_id))))) OR ((entity_type = 'user'::text) AND (EXISTS ( SELECT 1\n   FROM (company_memberships cm\n     JOIN companies c ON ((c.id = cm.company_id)))\n  WHERE ((cm.user_id = lifecycle_audit_log.entity_id) AND can_access_provider(c.provider_id))))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lifecycle_audit_log",
+      "name": "lifecycle_audit_log_superadmin_select",
+      "command": "SELECT",
+      "roles": [],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "location_closed_dates",
       "name": "location_closed_dates_manage",
       "command": "ALL",
@@ -1422,6 +1587,66 @@
     },
     {
       "schema": "public",
+      "table": "lp_user_allergens",
+      "name": "lp_user_allergens_kitchen_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "kitchen_can_read_lp_user_allergen(user_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lp_user_allergens",
+      "name": "lp_user_allergens_self_delete",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(user_id = auth.uid())",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lp_user_allergens",
+      "name": "lp_user_allergens_self_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(user_id = auth.uid())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lp_user_allergens",
+      "name": "lp_user_allergens_self_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(user_id = auth.uid())",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "lp_user_allergens",
+      "name": "lp_user_allergens_self_update",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(user_id = auth.uid())",
+      "check_expr": "(user_id = auth.uid())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "marketing_pages",
       "name": "marketing_pages_platform_admin_all",
       "command": "ALL",
@@ -1490,6 +1715,30 @@
       ],
       "using_expr": "( SELECT private.can_access_menu_day(menu_service_days.id) AS can_access_menu_day)",
       "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_days",
+      "name": "menu_service_days_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_service_days",
+      "name": "menu_service_days_update_provider_scope",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": "can_access_provider(provider_id)",
       "permissive": true
     },
     {
@@ -1645,6 +1894,18 @@
         "authenticated"
       ],
       "using_expr": "(is_platform_admin() OR (user_id = auth.uid()) OR can_admin_company(company_id) OR can_admin_location(location_id) OR can_kitchen_location(location_id) OR (EXISTS ( SELECT 1\n   FROM (deliveries d\n     JOIN driver_runs dr ON ((dr.id = d.run_id)))\n  WHERE ((d.company_id = orders.company_id) AND (d.location_id = orders.location_id) AND (d.date = orders.date) AND (dr.driver_user_id = auth.uid())))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "orders",
+      "name": "orders_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
       "check_expr": null,
       "permissive": true
     },
@@ -1998,6 +2259,260 @@
     },
     {
       "schema": "public",
+      "table": "provider_invoices",
+      "name": "invoices_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_invoices",
+      "name": "invoices_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_memberships",
+      "name": "provider_memberships_delete_admin",
+      "command": "DELETE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_memberships.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_memberships",
+      "name": "provider_memberships_insert_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_memberships.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_memberships",
+      "name": "provider_memberships_select_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_memberships",
+      "name": "provider_memberships_superadmin_all",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_service_areas",
+      "name": "provider_service_areas_superadmin_all",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_service_areas",
+      "name": "service_areas_insert_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_service_areas.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) OR is_platform_admin())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_service_areas",
+      "name": "service_areas_select_admin",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_service_areas",
+      "name": "service_areas_update_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_service_areas.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) OR is_platform_admin())",
+      "check_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_service_areas.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) OR is_platform_admin())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_subscriptions",
+      "name": "subscriptions_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_subscriptions",
+      "name": "subscriptions_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_credentials",
+      "name": "provider_tripletex_credentials_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_products",
+      "name": "provider_tripletex_products_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_products",
+      "name": "provider_tripletex_products_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_webhook_secrets",
+      "name": "provider_tripletex_webhook_secrets_provider_admin_select",
+      "command": "SELECT",
+      "roles": [],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_webhook_secrets",
+      "name": "provider_tripletex_webhook_secrets_superadmin_all",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_webhook_subscriptions",
+      "name": "provider_tripletex_webhook_subscriptions_provider_read",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_tripletex_webhook_subscriptions",
+      "name": "provider_tripletex_webhook_subscriptions_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_superadmin()",
+      "check_expr": "is_superadmin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "providers",
+      "name": "providers_select_member",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "providers",
+      "name": "providers_superadmin_all",
+      "command": "ALL",
+      "roles": [],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "providers",
+      "name": "providers_update_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = providers.id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = providers.id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "repair_jobs",
       "name": "repair_jobs_delete_none",
       "command": "DELETE",
@@ -2246,6 +2761,18 @@
     },
     {
       "schema": "public",
+      "table": "tripletex_exports",
+      "name": "tripletex_exports_tenant_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR (EXISTS ( SELECT 1\n   FROM invoice_periods ip\n  WHERE ((ip.unique_ref = tripletex_exports.unique_ref) AND can_access_company(ip.company_id)))) OR (EXISTS ( SELECT 1\n   FROM agreement_invoices ai\n  WHERE ((tripletex_exports.unique_ref = ('lp_agreement:'::text || (ai.id)::text)) AND can_access_company(ai.company_id)))) OR ((unique_ref ~~ 'lp_bw:%'::text) AND can_access_company((split_part(unique_ref, ':'::text, 2))::uuid)))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "tripletex_invoices",
       "name": "tripletex_invoices_mutate_platform_admin",
       "command": "ALL",
@@ -2277,6 +2804,14 @@
       "is_security_definer": false,
       "volatility": "volatile",
       "body_hash": "712af14595cd228774556821b1111414"
+    },
+    {
+      "name": "audit_log_harden_relation",
+      "args": "p_rel regclass",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "a09bf1b588c3c894bf4c8f5e67dd05fb"
     },
     {
       "name": "can_access_company",
@@ -2380,7 +2915,7 @@
       "result_type": "jsonb",
       "is_security_definer": true,
       "volatility": "volatile",
-      "body_hash": "12f7c99b83772e1a0c6424a5b90363da"
+      "body_hash": "1882a2c33d103fa25e9a9ebbff786b36"
     },
     {
       "name": "has_platform_role",
@@ -2397,6 +2932,182 @@
       "is_security_definer": true,
       "volatility": "stable",
       "body_hash": "f3150912fdb97585f9a866b739506277"
+    },
+    {
+      "name": "lp_assert_provider_admin_or_superadmin",
+      "args": "p_provider_id uuid",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "00b6f7841699204ce4a5045f0554bea5"
+    },
+    {
+      "name": "lp_assert_provider_kitchen_access",
+      "args": "p_provider_id uuid",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "5c6312a9e5017b8eee9318129f2f2a09"
+    },
+    {
+      "name": "lp_assert_provider_member_read",
+      "args": "p_provider_id uuid",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "0c8398ecac3800ac807f94704a2267f3"
+    },
+    {
+      "name": "lp_assert_registration_approve_access",
+      "args": "p_registration_id uuid",
+      "result_type": "company_registrations",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "0b8ee650cdc4f792f0f7ef560d801095"
+    },
+    {
+      "name": "lp_assert_user_lifecycle_access",
+      "args": "p_user_id uuid, OUT o_company_id uuid, OUT o_provider_id uuid",
+      "result_type": "record",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "fdba375b54f641232d2b43dd44a64217"
+    },
+    {
+      "name": "lp_enqueue_agreement_invoice_outbox",
+      "args": "p_invoice_id uuid, p_provider_id uuid, p_agreement_id uuid, p_request_rid text",
+      "result_type": "text",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "d5c05cfc2940eb71a2d7e4a82db8653b"
+    },
+    {
+      "name": "lp_enqueue_saas_invoice_outbox",
+      "args": "p_invoice_id uuid, p_provider_id uuid, p_request_rid text",
+      "result_type": "text",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "783a51f048b22486f0caf35f03274c0b"
+    },
+    {
+      "name": "lp_generate_agreement_invoice_core",
+      "args": "p_agreement_id uuid, p_period_start date, p_period_end date, p_request_rid text",
+      "result_type": "jsonb",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "2cbf951d53705dbe3cf80862e452f38f"
+    },
+    {
+      "name": "lp_is_elevated_caller",
+      "args": "",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "stable",
+      "body_hash": "88e7254037cf2835ad3f3490c23fd8e8"
+    },
+    {
+      "name": "lp_lifecycle_audit",
+      "args": "p_action text, p_entity_type text, p_entity_id uuid, p_reason text, p_metadata jsonb",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "4b54dcc39fa59a7e8d4745ea3a82ad90"
+    },
+    {
+      "name": "lp_lifecycle_require_reason",
+      "args": "p_reason text",
+      "result_type": "void",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "e2681e4b597991099a446ca8fbd3c640"
+    },
+    {
+      "name": "lp_orders_cancel_active",
+      "args": "p_company_id uuid, p_provider_id uuid",
+      "result_type": "integer",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "b21cb457f8af23462ef68ac35ef63794"
+    },
+    {
+      "name": "lp_orders_pause_active",
+      "args": "p_company_id uuid, p_provider_id uuid",
+      "result_type": "integer",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "028424c80e5b4ed02d7ed2aec5458843"
+    },
+    {
+      "name": "lp_orders_resume_paused",
+      "args": "p_company_id uuid, p_provider_id uuid",
+      "result_type": "integer",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "e63d76038627afcfeddf2a03c7b87fed"
+    },
+    {
+      "name": "lp_provider_tripletex_credentials_vault_cleanup",
+      "args": "",
+      "result_type": "trigger",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "90dc0816a45c1e28e91ce3cd2feb2d3a"
+    },
+    {
+      "name": "lp_provider_webhook_secret_vault_cleanup",
+      "args": "",
+      "result_type": "trigger",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "1be376e1969e4fd8126b6a01df94d5d4"
+    },
+    {
+      "name": "lp_tripletex_allowed_transition",
+      "args": "p_from text, p_to text",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "a073e2cea4d5596d5c44931600e093fb"
+    },
+    {
+      "name": "lp_tripletex_onboarding_audit",
+      "args": "p_action text, p_provider_id uuid, p_env text, p_actor uuid, p_metadata jsonb",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "77724a77a8b22fd9a65e7b0033a4c484"
+    },
+    {
+      "name": "lp_tripletex_transition_connection_state",
+      "args": "p_provider_id uuid, p_env text, p_new_state text, p_actor uuid, p_metadata jsonb",
+      "result_type": "provider_tripletex_credentials",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "1eb28df4427069b052ad38fe21dd88c9"
+    },
+    {
+      "name": "lp_tripletex_validate_verification_result",
+      "args": "p_result jsonb",
+      "result_type": "boolean",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "c259d44d72efd46c478c1453cf3980ca"
+    },
+    {
+      "name": "lp_tripletex_vault_secret_name",
+      "args": "p_provider_id uuid, p_env text, p_kind text",
+      "result_type": "text",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "9e7298a91f86590e8319879e464dd897"
+    },
+    {
+      "name": "lp_tripletex_webhook_vault_name",
+      "args": "p_provider_id uuid, p_env text",
+      "result_type": "text",
+      "is_security_definer": false,
+      "volatility": "immutable",
+      "body_hash": "9d077aa24faa7a3f655f90d51049bf63"
     },
     {
       "name": "role_is_company_finance",
@@ -2469,13 +3180,23 @@
     },
     {
       "schema": "public",
+      "name": "agreement_invoice_lines",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "agreement_invoices",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "agreement_requests",
       "policy_count": 1
     },
     {
       "schema": "public",
       "name": "agreements",
-      "policy_count": 4
+      "policy_count": 6
     },
     {
       "schema": "public",
@@ -2525,12 +3246,207 @@
     {
       "schema": "public",
       "name": "audit_log_legacy",
-      "policy_count": 1
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m05",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m06",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m07",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m08",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m09",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m10",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m11",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2026m12",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m01",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m02",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m03",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m04",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m05",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m06",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m07",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m08",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m09",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m10",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m11",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2027m12",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m01",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m02",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m03",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m04",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m05",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m06",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m07",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m08",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m09",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m10",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m11",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2028m12",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2029m01",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2029m02",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2029m03",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y2029m04",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "audit_log_y_default",
+      "policy_count": 0
     },
     {
       "schema": "public",
       "name": "billing_adjustments",
       "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "billing_products",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "billing_tax_codes",
+      "policy_count": 1
     },
     {
       "schema": "public",
@@ -2540,12 +3456,17 @@
     {
       "schema": "public",
       "name": "companies",
-      "policy_count": 4
+      "policy_count": 6
     },
     {
       "schema": "public",
       "name": "company_contracts",
       "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "company_deletions",
+      "policy_count": 1
     },
     {
       "schema": "public",
@@ -2570,7 +3491,7 @@
     {
       "schema": "public",
       "name": "company_registrations",
-      "policy_count": 2
+      "policy_count": 5
     },
     {
       "schema": "public",
@@ -2624,16 +3545,6 @@
     },
     {
       "schema": "public",
-      "name": "esg_daily",
-      "policy_count": 2
-    },
-    {
-      "schema": "public",
-      "name": "esg_monthly",
-      "policy_count": 2
-    },
-    {
-      "schema": "public",
       "name": "form_submissions",
       "policy_count": 1
     },
@@ -2659,6 +3570,11 @@
     },
     {
       "schema": "public",
+      "name": "invoice_periods",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
       "name": "invoice_runs",
       "policy_count": 4
     },
@@ -2679,6 +3595,11 @@
     },
     {
       "schema": "public",
+      "name": "lifecycle_audit_log",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "location_closed_dates",
       "policy_count": 2
     },
@@ -2691,6 +3612,11 @@
       "schema": "public",
       "name": "location_policies",
       "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "lp_user_allergens",
+      "policy_count": 5
     },
     {
       "schema": "public",
@@ -2710,7 +3636,7 @@
     {
       "schema": "public",
       "name": "menu_service_days",
-      "policy_count": 2
+      "policy_count": 4
     },
     {
       "schema": "public",
@@ -2735,7 +3661,7 @@
     {
       "schema": "public",
       "name": "orders",
-      "policy_count": 5
+      "policy_count": 6
     },
     {
       "schema": "public",
@@ -2794,6 +3720,51 @@
     },
     {
       "schema": "public",
+      "name": "provider_invoices",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "provider_memberships",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "provider_service_areas",
+      "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "provider_subscriptions",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "provider_tripletex_credentials",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "provider_tripletex_products",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "provider_tripletex_webhook_secrets",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "provider_tripletex_webhook_subscriptions",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "providers",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "repair_jobs",
       "policy_count": 4
     },
@@ -2829,8 +3800,23 @@
     },
     {
       "schema": "public",
+      "name": "tripletex_exports",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
       "name": "tripletex_invoices",
       "policy_count": 2
+    },
+    {
+      "schema": "public",
+      "name": "tripletex_webhook_events",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "webhook_events",
+      "policy_count": 0
     }
   ]
 }
