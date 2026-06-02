@@ -28,6 +28,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/smoke/preflight-prod-env.mjs",
   "scripts/smoke/provision-smoke-user.mjs",
   "scripts/smoke/seed-e2e-users.mjs",
+  // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
+  "scripts/ci/run-suspend-rpc-integration.mjs",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",
