@@ -83,7 +83,8 @@ test.describe("Week visual regression @week-visual", () => {
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
 
-    await expect(page.locator(".ds-ordered-meal-line__prefix")).toBeVisible();
+    await expect(page.locator(".ds-ordered-meal-line__body")).toBeVisible();
+    await expect(page.locator(".ds-ordered-meal-line")).toHaveAttribute("role", "status");
     await expect(page.getByRole("heading", { name: /kommende dager/i })).toBeVisible();
 
     await expect(weekMainLocator(page)).toHaveScreenshot(

@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("WeekCategoryCards — bestilt / pending / nøytral", () => {
-  test("BESTILT: is-ordered, Bestilt-tag, pressed, bestilt i aria-label, ingen expand", async () => {
+  test("BESTILT: is-ordered, check-markør, pressed, bestilt i aria-label, ingen expand", async () => {
     const day = makeDay({
       orderStatus: "ACTIVE",
       selectedChoiceKey: "varmrett",
@@ -111,7 +111,7 @@ describe("WeekCategoryCards — bestilt / pending / nøytral", () => {
     expect(ordered.classList.contains("is-selected")).toBe(false);
     expect(ordered.getAttribute("aria-pressed")).toBe("true");
     expect(ordered.getAttribute("aria-label")).toMatch(/bestilt/i);
-    expect(ordered.querySelector(".week-category-card__ordered-tag")?.textContent).toBe("Bestilt");
+    expect(ordered.querySelector(".week-category-card__ordered-tag")).toBeNull();
     expect(container.querySelector(".ds-week-items-section--inline")).toBeNull();
 
     const other = categoryCardButton(container, "Salatboks");
