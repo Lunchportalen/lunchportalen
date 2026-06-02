@@ -14,4 +14,11 @@ foreach ($line in $lines) {
 }
 if (-not $env:DATABASE_URL) { Write-Error 'ABORT: no uigx SUPABASE_POSTGRES_URL'; exit 2 }
 if ($env:DATABASE_URL -match 'hkpoky') { Write-Error 'ABORT: prod URL'; exit 2 }
-Write-Output "UIGX_ENV_OK DATABASE_URL set (uigx)"
+
+node scripts/ci/assert-db-target.mjs --expect staging
+if ($LASTEXITCODE -ne 0) {
+  Write-Error 'ABORT: assert-db-target staging failed'
+  exit $LASTEXITCODE
+}
+
+Write-Output "UIGX_ENV_OK DATABASE_URL set (uigx) + assert-db-target staging proceed"
