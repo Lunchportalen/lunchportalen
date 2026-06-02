@@ -1,0 +1,107 @@
+# Standing authz gate for lp_company_* lifecycle RPCs (#92 strict provider gate).
+# Golden RLS drift does not cover public RPC wiring — this integration test is the guard.
+#
+# Required status check (branch protection): suspend-rpc-authz
+# Runs on PR/push when supabase/** or lib/admin/** change; nightly on all paths.
+name: Suspend RPC authz gate (uigx)
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths: &suspend_rpc_gate_paths
+      - "supabase/**"
+      - "lib/admin/**"
+      - "tests/db/suspend-rpc.test.ts"
+      - "tests/_helpers/providerTestFixtures.ts"
+      - "tests/_helpers/fixturePg.ts"
+      - "tests/_helpers/remoteSupabaseIntegration.ts"
+      - "tests/_helpers/supabaseTestClient.ts"
+      - "tests/_helpers/rlsFixtures.ts"
+      - "scripts/ci/run-suspend-rpc-integration.mjs"
+      - "scripts/ci/assert-db-target.mjs"
+      - ".github/workflows/suspend-rpc-authz-gate.yml"
+  push:
+    branches: ["main"]
+    paths: *suspend_rpc_gate_paths
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: suspend-rpc-authz-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  suspend-rpc-authz:
+    name: suspend-rpc-authz
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      CI: "true"
+      RUN_SUPABASE_INTEGRATION_TESTS: "1"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify staging secrets present
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY PROJECT_REF DB_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing staging secrets: ${missing[*]}"
+            exit 1
+          fi
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing suspend-rpc gate: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == *"hkpokyapzarefrgqzkos"* ]]; then
+            echo "::error::Refusing prod Supabase URL"
+            exit 1
+          fi
+          echo "Staging secrets OK (uigx)."
+
+      - name: Build staging postgres URL (session pooler)
+        run: |
+          set -euo pipefail
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "SUPABASE_POSTGRES_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+
+      - name: Assert DB target (staging, fail-closed)
+        run: node scripts/ci/assert-db-target.mjs --expect staging
+
+      - name: Run suspend-rpc authz integration (skip-guard)
+        run: node scripts/ci/run-suspend-rpc-integration.mjs
+
+      - name: Skip-guard self-test (unit)
+        run: node scripts/ci/run-suspend-rpc-integration.test.mjs
