@@ -19,9 +19,13 @@
   --ds-brand:#111111;
   --ds-brand-hover:#000000;
 
-  --ds-accent:#f5b400;
-  --ds-accent-hover:#e2a600;
-  --ds-accent-soft:rgba(245,180,0,.14);
+  /* Canonical gold — aligned with --lp-gold (#f5c518) and employee /week surfaces */
+  --ds-accent:#f5c518;
+  --ds-accent-hover:#e2b70f;
+  --ds-accent-soft:rgba(245,197,24,.14);
+  --ds-accent-wash:#fff3c8;
+  --ds-accent-wash-strong:#fff6d6;
+  --ds-accent-gradient-end:#ffd43b;
 
   --ds-dark:#111111;
   --ds-warm-dark:#1b1712;
@@ -42,6 +46,12 @@
   --ds-shadow-soft:0 20px 60px rgba(0,0,0,.08);
   --ds-shadow-card:0 14px 34px rgba(0,0,0,.04);
   --ds-shadow-card-hover:0 22px 56px rgba(0,0,0,.11);
+  --ds-shadow-accent:0 16px 40px rgba(245,197,24,.32);
+  --ds-shadow-accent-sm:0 10px 30px rgba(245,197,24,.2);
+  --ds-shadow-secondary:0 10px 26px rgba(24,20,16,.06);
+
+  --ds-week-mobile-max:430px;
+  --ds-week-admin-max:1120px;
 
   --ds-ease:cubic-bezier(.22,.61,.36,1);
 

@@ -227,7 +227,7 @@ export default function UserAllergenProfileForm({ onProfileChange }: UserAllerge
       <div className="mt-6 flex flex-col items-center gap-2">
         <button
           type="button"
-          className="lp-btn lp-btn--primary lp-neon-focus min-h-[48px] min-w-[12rem]"
+          className="lp-btn lp-btn--primary lp-neon-focus min-h-touch min-w-48"
           onClick={() => void handleSave()}
           disabled={saveDisabled}
           aria-busy={saveState === "loading"}

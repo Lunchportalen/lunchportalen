@@ -4414,7 +4414,7 @@ html[data-resolved-theme="dark"] .lp-profile-menu__btn:hover {
 }
 
 .lp-profile-menu__btn:focus-visible {
-  outline: 3px solid var(--ds-accent, #f5b400);
+  outline: 3px solid var(--ds-accent, #f5c518);
   outline-offset: 3px;
 }
 
@@ -4483,7 +4483,7 @@ html[data-resolved-theme="dark"] .lp-profile-menu__logout:hover {
 }
 
 .lp-profile-menu__logout:focus-visible {
-  outline: 3px solid var(--ds-accent, #f5b400);
+  outline: 3px solid var(--ds-accent, #f5c518);
   outline-offset: 2px;
 }
 

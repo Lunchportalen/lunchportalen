@@ -55,10 +55,10 @@ export default async function AllergenProfilPage() {
       </p>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2">
-        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Ukeplan
         </Link>
-        <Link href="/week/bestillingsprofil" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/bestillingsprofil" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Bestillingsprofil
         </Link>
       </div>
