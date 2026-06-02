@@ -281,7 +281,7 @@ function SuperadminCategoryLine({ status }: { status: SuperadminCategoryDayStatu
         className={`inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
           isPublished
             ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-            : "bg-accent-wash text-amber-950 ring-amber-200/80"
+            : "bg-amber-50 text-amber-950 ring-amber-200/80"
         }`}
       >
         {isPublished ? "Publisert" : "Mangler"}
@@ -317,7 +317,7 @@ function SuperadminUncategorizedMenuLine({ menus }: { menus: MenuDay[] }) {
       <p className="min-w-0 text-sm leading-6 text-neutral-700 sm:truncate">
         Publisert meny uten kategori{menus.length > 1 ? ` (${menus.length})` : ""}
       </p>
-      <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-accent-wash px-2.5 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
+      <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
         Uten kategori
       </span>
     </div>
@@ -372,7 +372,7 @@ function SuperadminWeekPreviewCard({
           className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
             counts.isComplete
               ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-              : "bg-accent/15 text-neutral-950 ring-accent/25"
+              : "bg-amber-50 text-amber-950 ring-amber-200"
           }`}
         >
           {counts.isComplete ? "Komplett" : "Mangler"}
@@ -389,7 +389,7 @@ function SuperadminWeekPreviewCard({
       </div>
 
       {!counts.hasPublishedMenu ? (
-        <div className="mt-5 border-l-2 border-accent pl-4">
+        <div className="mt-5 border-l-2 border-neutral-300 pl-4">
           <p className="text-base font-semibold tracking-[-0.01em] text-neutral-950">{block.emptyTitle}</p>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
             Publiser Salatboks, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.
@@ -435,9 +435,9 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
             <Link
               key={tab.mode}
               href={`/week?preview=${tab.mode}`}
-              className={`min-h-day rounded-2xl px-4 py-3 text-center ring-1 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+              className={`min-h-day rounded-2xl px-4 py-3 text-center ring-1 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/40 ${
                 active
-                  ? "bg-accent-wash-strong text-neutral-950 ring-accent shadow-accent-sm"
+                  ? "bg-white text-neutral-950 ring-neutral-900 shadow-secondary"
                   : "bg-white text-neutral-800 ring-black/10"
               }`}
             >
@@ -551,7 +551,7 @@ async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
         </div>
 
         {menuDataError ? (
-          <div className="mx-auto mt-5 max-w-2xl border-l-2 border-accent bg-white/55 px-4 py-3 text-sm text-amber-950">
+          <div className="mx-auto mt-5 max-w-2xl border-l-2 border-neutral-300 bg-white/55 px-4 py-3 text-sm text-neutral-800">
             Kunne ikke hente publisert meny akkurat nå. Superadmin-preview viser derfor trygge placeholders.
           </div>
         ) : null}

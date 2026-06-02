@@ -30,6 +30,17 @@
   --ds-dark:#111111;
   --ds-warm-dark:#1b1712;
   --ds-green:#2f7a65;
+  --ds-warning:#b45309;
+  --ds-warning-soft:rgba(180,83,9,.12);
+  --ds-danger:#b42318;
+  --ds-danger-soft:rgba(180,35,24,.1);
+
+  /* Week status semantics (STEG 2 — one meaning per color) */
+  --ds-status-success:var(--ds-green);
+  --ds-status-success-soft:rgba(47,122,101,.1);
+  --ds-status-neutral-bg:#f5f5f5;
+  --ds-status-neutral-text:#404040;
+  --ds-status-neutral-line:rgba(17,17,17,.12);
 
   --ds-max:1320px;
   --ds-text-max:760px;

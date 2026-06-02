@@ -87,10 +87,10 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
     expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday)}");
   });
 
-  test("CSS: dagens dato outline med var(--ds-accent)", () => {
+  test("CSS: dagens dato outline nøytral (gull reservert til primær-CTA)", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).toContain(".ds-week-calendar-day-pill--today");
-    expect(css).toContain("outline: 2px solid var(--ds-accent)");
+    expect(css).toContain("outline: 2px solid var(--ds-line-strong)");
   });
 });
 
@@ -209,17 +209,18 @@ describe("statusPresentation", () => {
   test("Bestilt → grønn pill", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "ACTIVE", isEnabled: true, isLocked: false }));
     expect(p.label).toBe("Bestilt");
-    expect(p.className).toContain("ds-green");
+    expect(p.className).toContain("ds-status-success");
     expect(p.className).toContain("text-white");
   });
 
-  test("Ikke bestilt → gul accent-pill og normalisert label", () => {
+  test("Ikke bestilt → nøytral grå pill (tilstand, ikke merkeaksent)", () => {
     const p = statusPresentation(
       dayFixture({ orderStatus: null, isEnabled: true, isLocked: false, lockReason: null }),
     );
     expect(p.label).toBe("Ikke bestilt");
-    expect(p.className).toContain("ds-accent");
-    expect(p.className).toContain("ds-text");
+    expect(p.className).toContain("ds-status-neutral-bg");
+    expect(p.className).toContain("ds-status-neutral-text");
+    expect(p.className).not.toContain("ds-accent");
   });
 
   test("Avbestilt → transparent/outline", () => {
@@ -235,6 +236,21 @@ describe("statusPresentation", () => {
     );
     expect(p.label).toBe("Frist passert");
     expect(p.className).toContain("bg-neutral-100");
+  });
+
+  test("Ikke bestilt grå oppfyller WCAG AA kontrast (4.5:1)", () => {
+    function relLuminance(hex: string) {
+      const n = parseInt(hex.slice(1), 16);
+      const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+    }
+    const fg = relLuminance("#404040");
+    const bg = relLuminance("#f5f5f5");
+    const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 });
 
@@ -259,12 +275,23 @@ describe("EmployeeWeekClient ordered vs insight styling", () => {
     expect(source).toMatch(/day\.orderStatus === "ACTIVE"\) return prev/);
   });
 
-  test("CSS: focus-visible gull outline 3px + offset, ingen ugyldig ring-property", () => {
+  test("CSS: focus-visible nøytral outline 3px + offset; is-ordered uten grønn kort-ramme", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).not.toMatch(/^\s*ring\s*:/m);
     expect(css).toContain(".week-category-card.is-ordered:focus-visible");
-    expect(css).toMatch(/outline:\s*3px solid var\(--ds-accent\)/);
+    expect(css).toMatch(/outline:\s*3px solid var\(--ds-text\)/);
     expect(css).toMatch(/outline-offset:\s*3px/);
+    expect(css).toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*border-color:\s*var\(--ds-line\)/);
+    expect(css).not.toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*var\(--ds-green\)/);
+  });
+
+  test("gull reservert til PRIMARY_CTA; dag-valg og insight uten accent", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("from-accent");
+    expect(source).not.toContain("ring-accent/");
+    expect(css).not.toMatch(/\.ds-week-calendar-day-pill--selected[\s\S]*#f5c518/);
+    expect(css).toMatch(/\.ds-week-insight-pill[\s\S]*var\(--ds-status-neutral-bg\)/);
   });
 });
 

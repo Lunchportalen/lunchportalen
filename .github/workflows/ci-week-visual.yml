@@ -1,0 +1,222 @@
+# STEG 0 — /week visual regression (blocking, Docker-rendered baselines)
+name: CI Week Visual
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "app/(app)/week/**"
+      - "components/employee/**"
+      - "app/styles/**"
+      - "e2e/week-visual-regression.e2e.ts"
+      - "e2e/helpers/week-visual.ts"
+      - "e2e/helpers/week-visual-auth.ts"
+      - "e2e/global-setup/week-visual-auth.setup.ts"
+      - "e2e/fixtures/week-visual-window.base.json"
+      - "playwright.week-visual.config.ts"
+      - "e2e/week-visual-regression.e2e.ts-snapshots/**"
+      - ".github/workflows/ci-week-visual.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "app/(app)/week/**"
+      - "components/employee/**"
+      - "app/styles/**"
+      - "e2e/week-visual-regression.e2e.ts"
+      - "e2e/helpers/week-visual.ts"
+      - "e2e/helpers/week-visual-auth.ts"
+      - "e2e/global-setup/week-visual-auth.setup.ts"
+      - "e2e/fixtures/week-visual-window.base.json"
+      - "playwright.week-visual.config.ts"
+      - "e2e/week-visual-regression.e2e.ts-snapshots/**"
+      - ".github/workflows/ci-week-visual.yml"
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Regenerate Linux baselines (--update-snapshots). Use only for intentional STEG 2+ visual changes."
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-week-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  week-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+
+    env:
+      RC_MODE: "true"
+      CI: "true"
+      NODE_OPTIONS: "--max-old-space-size=8192"
+      PLAYWRIGHT_BASE_URL: "http://localhost:3000"
+      LP_DEBUG_AUTH: "1"
+      LP_E2E_EXTERNAL_SERVER: "1"
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+      SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Verify E2E Supabase target is uigx (not prod)
+        shell: bash
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+        run: |
+          set -euo pipefail
+          url="${NEXT_PUBLIC_SUPABASE_URL}"
+          if [[ "$url" == *"hkpokyapzarefrgqzkos"* ]]; then
+            echo "::error::Week visual E2E must not target prod Supabase"
+            exit 1
+          fi
+          if [[ "$url" != *"uigxsboqeruxflgzqztl"* ]]; then
+            echo "::error::Week visual E2E Supabase URL must target uigx"
+            exit 1
+          fi
+
+      - name: Build (production)
+        run: npx next build
+
+      - name: Install psql
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq postgresql-client
+
+      - name: Bootstrap E2E env from secrets
+        shell: bash
+        env:
+          E2E_TEST_USER_EMAIL: ${{ secrets['E2E_TEST_USER_EMAIL'] }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets['E2E_TEST_USER_PASSWORD'] }}
+          E2E_EMPLOYEE_EMAIL: ${{ secrets['E2E_EMPLOYEE_EMAIL'] }}
+          E2E_EMPLOYEE_PASSWORD: ${{ secrets['E2E_EMPLOYEE_PASSWORD'] }}
+          E2E_ADMIN_EMAIL: ${{ secrets['E2E_ADMIN_EMAIL'] }}
+          E2E_ADMIN_PASSWORD: ${{ secrets['E2E_ADMIN_PASSWORD'] }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets['E2E_SUPERADMIN_EMAIL'] }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
+        run: |
+          set -euo pipefail
+          : "${E2E_TEST_USER_EMAIL:?Missing E2E_TEST_USER_EMAIL secret}"
+          : "${E2E_TEST_USER_PASSWORD:?Missing E2E_TEST_USER_PASSWORD secret}"
+          : "${E2E_EMPLOYEE_EMAIL:?Missing E2E_EMPLOYEE_EMAIL secret}"
+          : "${E2E_EMPLOYEE_PASSWORD:?Missing E2E_EMPLOYEE_PASSWORD secret}"
+          : "${E2E_ADMIN_EMAIL:?Missing E2E_ADMIN_EMAIL secret}"
+          : "${E2E_ADMIN_PASSWORD:?Missing E2E_ADMIN_PASSWORD secret}"
+          : "${E2E_SUPERADMIN_EMAIL:?Missing E2E_SUPERADMIN_EMAIL secret}"
+          : "${E2E_SUPERADMIN_PASSWORD:?Missing E2E_SUPERADMIN_PASSWORD secret}"
+          d=E2EENV__DELIM__LP
+          for key in \
+            E2E_TEST_USER_EMAIL E2E_TEST_USER_PASSWORD \
+            E2E_EMPLOYEE_EMAIL E2E_EMPLOYEE_PASSWORD \
+            E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD \
+            E2E_SUPERADMIN_EMAIL E2E_SUPERADMIN_PASSWORD; do
+            val="${!key:-}"
+            {
+              echo "${key}<<${d}"
+              printf '%s\n' "$val"
+              echo "${d}"
+            } >> "$GITHUB_ENV"
+          done
+
+      - name: Build staging DATABASE_URL
+        shell: bash
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+
+      - name: Seed staging tenant + E2E users
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/smoke/seed-staging-tenant.sql
+          node scripts/smoke/seed-smoke-menu-fixture.mjs
+          node scripts/smoke/seed-e2e-users.mjs
+
+      - name: Start server
+        shell: bash
+        run: |
+          : > server.log
+          # File redirect only — avoid tee pipe backpressure deadlocking next start stdout.
+          npm run start >> server.log 2>&1 &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000/ || true)
+            if [[ "$code" =~ ^[23][0-9][0-9]$ ]]; then echo "Server ready ($code)"; break; fi
+            if [ "$i" -eq 60 ]; then
+              echo "::group::server.log (startup failure)"
+              tail -n 200 server.log || true
+              echo "::endgroup::"
+              echo "Server did not become ready"
+              exit 1
+            fi
+            sleep 2
+          done
+        env:
+          PORT: 3000
+          LP_DEBUG_AUTH: "1"
+
+      - name: Week visual regression (screenshot diff)
+        shell: bash
+        run: |
+          FLAGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_snapshots }}" = "true" ]; then
+            FLAGS="--update-snapshots"
+          fi
+          set +e
+          npx playwright test --config playwright.week-visual.config.ts --reporter=list ${FLAGS}
+          EXIT=$?
+          if [ "$EXIT" -ne 0 ]; then
+            echo "::group::server.log (tail 300)"
+            tail -n 300 server.log 2>/dev/null || echo "server.log missing"
+            echo "::endgroup::"
+          fi
+          exit $EXIT
+
+      - name: Dump full server log on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "::group::server.log (full)"
+          cat server.log 2>/dev/null || echo "server.log missing"
+          echo "::endgroup::"
+
+      - name: Upload updated week visual snapshots
+        if: github.event_name == 'workflow_dispatch' && inputs.update_snapshots == true
+        uses: actions/upload-artifact@v6
+        with:
+          name: week-visual-snapshots-linux
+          path: e2e/week-visual-regression.e2e.ts-snapshots/
+          retention-days: 7
+
+      - name: Upload week visual report on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-week-visual-report
+          path: |
+            playwright-week-visual-report/
+            test-results/
+            server.log
+          retention-days: 14
