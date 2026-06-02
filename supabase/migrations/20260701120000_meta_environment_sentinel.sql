@@ -1,6 +1,9 @@
 -- Authoritative environment sentinel for fail-closed DB target guard
--- (scripts/ci/assert-db-target.mjs). Seed value is applied once per project via
--- scripts/db/seed-environment-sentinel-{staging,production}.sql — not in this migration.
+-- (scripts/ci/assert-db-target.mjs).
+--
+-- Idempotent (IF NOT EXISTS) — safe for CI db push re-apply after bootstrap.
+-- Prod/staging first-time setup: scripts/db/seed-environment-sentinel.mjs --expect <env>
+--   applies this DDL + sentinel seed + ledger record 20260701120000 in one B-only chain.
 
 CREATE SCHEMA IF NOT EXISTS _meta;
 
