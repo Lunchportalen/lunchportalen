@@ -17,17 +17,26 @@ export function detectPrMigrationChanges(base, head, options = {}) {
   }
 
   if (fetch) {
-    execFileSync("git", ["fetch", "--no-tags", "--depth=1", "origin", base, head], {
+    execFileSync("git", ["fetch", "--no-tags", "origin", base, head], {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
     });
   }
 
-  const raw = execFileSync(
-    "git",
-    ["diff", "--name-only", "--diff-filter=ACMR", `${base}...${head}`, "--", "supabase/migrations/"],
-    { cwd, encoding: "utf8" },
-  ).trim();
+  const diffArgs = (range) =>
+    execFileSync(
+      "git",
+      ["diff", "--name-only", "--diff-filter=ACMR", range, "--", "supabase/migrations/"],
+      { cwd, encoding: "utf8" },
+    ).trim();
+
+  let raw = "";
+  try {
+    raw = diffArgs(`${base}...${head}`);
+  } catch {
+    // Shallow history may lack merge-base; PR base..head is equivalent when base is target tip.
+    raw = diffArgs(`${base}..${head}`);
+  }
 
   const files = raw
     ? raw
