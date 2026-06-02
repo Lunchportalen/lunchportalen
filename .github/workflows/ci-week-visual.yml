@@ -52,7 +52,8 @@ jobs:
       RC_MODE: "true"
       CI: "true"
       NODE_OPTIONS: "--max-old-space-size=8192"
-      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3000"
+      PLAYWRIGHT_BASE_URL: "http://localhost:3000"
+      LP_DEBUG_AUTH: "1"
       LP_E2E_EXTERNAL_SERVER: "1"
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
@@ -154,7 +155,7 @@ jobs:
         run: |
           npm run start &
           for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://127.0.0.1:3000/ || true)
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000/ || true)
             if [[ "$code" =~ ^[23][0-9][0-9]$ ]]; then echo "Server ready ($code)"; break; fi
             if [ "$i" -eq 60 ]; then echo "Server did not become ready"; exit 1; fi
             sleep 2
