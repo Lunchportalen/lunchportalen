@@ -18,6 +18,9 @@ on:
       - "e2e/fixtures/week-visual-window.base.json"
       - "playwright.week-visual.config.ts"
       - "e2e/week-visual-regression.e2e.ts-snapshots/**"
+      - "scripts/e2e/retry-seed-with-backoff.sh"
+      - "scripts/ci/retry-npm-ci.sh"
+      - "scripts/ci/retry-transient-network.sh"
       - ".github/workflows/ci-week-visual.yml"
   pull_request:
     branches: ["main"]
@@ -32,6 +35,9 @@ on:
       - "e2e/fixtures/week-visual-window.base.json"
       - "playwright.week-visual.config.ts"
       - "e2e/week-visual-regression.e2e.ts-snapshots/**"
+      - "scripts/e2e/retry-seed-with-backoff.sh"
+      - "scripts/ci/retry-npm-ci.sh"
+      - "scripts/ci/retry-transient-network.sh"
       - ".github/workflows/ci-week-visual.yml"
   workflow_dispatch:
     inputs:
@@ -73,7 +79,8 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: npm ci
+        shell: bash
+        run: bash scripts/ci/retry-npm-ci.sh
 
       - name: Typecheck
         run: npm run typecheck
@@ -149,10 +156,8 @@ jobs:
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
 
       - name: Seed staging tenant + E2E users
-        run: |
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/smoke/seed-staging-tenant.sql
-          node scripts/smoke/seed-smoke-menu-fixture.mjs
-          node scripts/smoke/seed-e2e-users.mjs
+        shell: bash
+        run: bash scripts/e2e/retry-seed-with-backoff.sh
 
       - name: Start server
         shell: bash
