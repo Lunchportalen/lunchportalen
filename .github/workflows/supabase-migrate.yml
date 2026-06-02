@@ -33,6 +33,7 @@ on:
       - ".github/workflows/supabase-migrate.yml"
       - "scripts/ci/migration-gate.mjs"
       - "scripts/ci/db-contracts.mjs"
+      - "scripts/ci/assert-db-target.mjs"
       - "scripts/smoke/cron-smoke.sh"
   push:
     branches: [ "main" ]
@@ -158,6 +159,11 @@ jobs:
           echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "Staging session pooler URL configured."
+
+      - name: Assert DB target (staging, fail-closed)
+        run: |
+          set -euo pipefail
+          node scripts/ci/assert-db-target.mjs --expect staging
 
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
@@ -299,6 +305,11 @@ jobs:
           echo "PROD_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
           echo "Prod session pooler URL configured."
+
+      - name: Assert DB target (prod, fail-closed)
+        run: |
+          set -euo pipefail
+          node scripts/ci/assert-db-target.mjs --expect production
 
       # ✅ Gate 1: same gate in prod (fail before touching prod)
       - name: Migration gate (order + bootstrap-safe)
