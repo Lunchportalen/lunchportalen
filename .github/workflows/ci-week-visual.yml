@@ -150,6 +150,7 @@ jobs:
           node scripts/smoke/seed-e2e-users.mjs
 
       - name: Start server
+        shell: bash
         run: |
           npm run start &
           for i in $(seq 1 60); do
@@ -162,6 +163,7 @@ jobs:
           PORT: 3000
 
       - name: Week visual regression (screenshot diff)
+        shell: bash
         run: |
           FLAGS=""
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_snapshots }}" = "true" ]; then
